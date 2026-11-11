@@ -68,7 +68,8 @@ export const savedOutcomeLabels={ACCEPT:"Passed",HOLD:"Held",REJECT:"Not passed"
 export type RoomResult={outcome:keyof typeof savedOutcomeLabels;withoutVote:boolean};
 /** The between-applicant result slide: outcome only, never ballot totals. Without-vote wording matches the pass history. */
 export function resultOutcomeLabel({outcome,withoutVote}:RoomResult){
-  if(outcome==="HOLD")return "Held for another pass";
+  // Hold is the club's private marker for a later voting session, never an applicant-facing decision.
+  if(outcome==="HOLD")return "Held for another vote";
   return withoutVote?`${savedOutcomeLabels[outcome]} without a vote`:savedOutcomeLabels[outcome];
 }
 /** A candidate's confirmed outcome as every room viewer already receives it (room.history), or null while undecided. */

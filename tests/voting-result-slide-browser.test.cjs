@@ -1,142 +1,155 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
 const {sessionId,apps,leaderId}=require('./helpers/voting-room-harness.cjs');
-// One fixture (the loopback bundle is slow to build), four scenarios against the same live room:
-// Undo during the result, the result on every view with no blank gap, projector fit, and reduced motion
-// with the leader advancing during the result.
-test('decision result slide between applicants: views, no blank gap, projector fit, reduced motion and Undo',{timeout:600000},async()=>{
- const f=await fixture(),browser=await chromium.launch({headless:true}),errors=[];
- const contexts=[],open=async(viewport,view,actor,options={})=>{const c=await browser.newContext({viewport,...options});contexts.push(c);const p=await c.newPage();p.on('pageerror',e=>errors.push(`${view}: ${e.message}`));await p.goto(`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=${view}&actor=${actor}`);return p;};
- const refresh=pages=>Promise.all(pages.map(p=>p.evaluate(()=>window.dispatchEvent(new Event('focus')))));
- const heading=(p,name)=>p.locator('.vr-slide-in [data-applicant-heading]',{hasText:name});
+// Applicant-to-applicant motion: the confirmed outcome shows beside the outgoing applicant's name (~200 ms), then the
+// outgoing applicant moves left and fades while the next arrives from the right (~520 ms), with no blank frame.
+// Synthetic applicants only. The fixture's applicants have no photos, so every slide uses the reserved placeholder.
+
+const roomUrl=(f,view,actor)=>`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=${view}&actor=${actor}`;
+const focus=pages=>Promise.all(pages.map(p=>p.evaluate(()=>window.dispatchEvent(new Event('focus')))));
+const heading=(p,name)=>p.locator('.vr-slide-in [data-applicant-heading]',{hasText:name});
+// Per-frame sampler: blank frames, loading placeholders, outcome marks seen, and the slide's direction and timing.
+const sample=p=>p.evaluate(()=>{const shown=e=>!!e&&e.checkVisibility({visibilityProperty:true});const s=window.__s={blank:0,loading:0,outcomes:[],firstOutcome:0,slideStart:0,slideEnd:0,outX:[],inX:[],on:true};
+ const x=e=>{const m=e&&getComputedStyle(e).transform;return !m||m==='none'?0:new DOMMatrix(m).m41;};
+ const tick=t=>{const stage=document.querySelector('.vr-slide-stage');if(stage){const heads=[...stage.querySelectorAll('[data-applicant-heading]')].filter(shown);if(!heads.length)s.blank++;
+  if([...stage.querySelectorAll('[data-slot=loading-state]')].some(shown))s.loading++;
+  const mark=stage.querySelector('.vr-slide-out .vr-outcome');if(shown(mark)){const text=mark.textContent;if(s.outcomes.at(-1)!==text)s.outcomes.push(text);s.firstOutcome||=t;}
+  if(stage.classList.contains('vr-slide-sliding')){s.slideStart||=t;s.outX.push(x(stage.querySelector('.vr-slide-out')));s.inX.push(x(stage.querySelector('.vr-slide-in')));}else if(s.slideStart&&!s.slideEnd)s.slideEnd=t;}
+  if(s.on)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
+const stop=p=>p.evaluate(()=>{window.__s.on=false;return window.__s;});
+const unlocked=(p,name)=>p.waitForFunction(n=>{const b=[...document.querySelectorAll('.vr-leader button')].find(b=>b.textContent.trim()===n);return !!b&&!b.closest('fieldset')?.disabled;},name);
+
+test('decision motion: outcome beside the name, then a same-direction slide on every view; Undo; reduced motion; repeated clicks',{timeout:600000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),errors=[],contexts=[];
+ const open=async(viewport,view,actor)=>{const c=await browser.newContext({viewport});contexts.push(c);const p=await c.newPage();p.on('pageerror',e=>errors.push(`${view}: ${e.message}`));await p.goto(roomUrl(f,view,actor));return p;};
  const leaderAct=async(...commands)=>{f.h.as(leaderId);for(const c of commands)await f.h.command(c);};
  try{
   await f.h.create();await leaderAct('START','OPEN_VOTING','CLOSE_VOTING');
   const leader=await open({width:1366,height:768},'leader','leader');
   await heading(leader,'QA Applicant One').waitFor();
 
-  // 1. Undo during the result slide returns to the applicant. The next slide's read is slow, so the result is still up.
-  f.delay('getLiveVotingPresentation',4000);
+  // 1. Undo while the outcome is showing (next slide slow to load): back to the same applicant, no reload, no skeleton.
+  f.delay('getLiveVotingPresentation',3000);
+  await sample(leader);
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic decision reason');
   await leader.getByRole('button',{name:'Pass',exact:true}).click();
-  const leaderResult=leader.getByRole('region',{name:'Decision result'});
-  await leaderResult.waitFor();
-  assert.equal(await leaderResult.getByRole('heading').textContent(),'QA Applicant One');
-  assert.match(await leaderResult.textContent(),/Passed$/);
-  assert.equal(f.h.state().sessions[0].activeApplicationId,apps[1]);
+  const mark=leader.locator('.vr-slide-out .vr-outcome');
+  await mark.waitFor();
+  assert.equal((await mark.textContent()).trim(),'Passed');assert.equal(await mark.getAttribute('data-outcome'),'ACCEPT');
+  assert.equal(await leader.locator('.vr-slide-out [data-applicant-heading]').textContent(),'QA Applicant One','outcome beside the outgoing name');
   await leader.getByRole('button',{name:'Undo',exact:true}).click();
-  await leaderResult.waitFor({state:'detached'});
-  await heading(leader,'QA Applicant One').waitFor();
-  await leader.getByRole('button',{name:'Pass',exact:true}).waitFor();
+  await mark.waitFor({state:'detached'});
+  await heading(leader,'QA Applicant One').waitFor();await leader.getByRole('button',{name:'Pass',exact:true}).waitFor();
   assert.equal(f.h.state().sessions[0].activeApplicationId,apps[0]);
-  assert.equal(await leader.locator('.vr-result').count(),0);
+  let s=await stop(leader);assert.equal(s.blank,0,'no blank frame through Undo');assert.equal(s.loading,0,'the applicant is not reloaded on Undo');
 
-  // 2. Presentation (1366×768 and 1920×1080), member and leader all show the same result, then the next applicant.
+  // 2. Every view: outcome beside the name, ~200 ms, then out left / in from the right; fits both projector sizes.
   f.delay('getLiveVotingPresentation',0);
   const small=await open({width:1366,height:768},'present','leader'),large=await open({width:1920,height:1080},'present','leader'),member=await open({width:390,height:844},'member','member');
-  const join=member.getByRole('button',{name:'Join session',exact:true});
-  if(await join.isVisible().catch(()=>false))await join.click();
-  const viewers=[small,large,member];
-  for(const p of viewers)await heading(p,'QA Applicant One').waitFor();
-  // Joining moves the room revision; the leader picks it up before deciding (as its poll would).
-  await leader.reload();await heading(leader,'QA Applicant One').waitFor();
-  // Sample every frame on the projector: something (the result or an applicant) is always on the stage.
-  await small.evaluate(()=>{const shown=e=>!!e&&e.checkVisibility({visibilityProperty:true});window.__frames={blank:0,result:0,loading:0,done:false};
-   const tick=()=>{const s=window.__frames;const r=document.querySelector('.vr-result'),h=document.querySelector('.vr-slide-in [data-applicant-heading]'),l=[...document.querySelectorAll('.vr-slide-stage [data-slot=loading-state]')].some(shown);
-    if(shown(r))s.result++;else if(!shown(h))s.blank++;if(l&&!shown(r))s.loading++;if(!(shown(h)&&h.textContent==='QA Applicant Two'&&document.querySelector('.vr-slide-ready')))requestAnimationFrame(tick);else s.done=true;};requestAnimationFrame(tick);});
-  f.delay('getLiveVotingPresentation',3000);
-  await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic decision reason');
-  await leader.getByRole('button',{name:'Pass',exact:true}).click();
-  const results=[leader,...viewers].map(p=>p.getByRole('region',{name:'Decision result'}));
-  const poll=setInterval(()=>void refresh(viewers).catch(()=>{}),400);
+  const join=member.getByRole('button',{name:'Join session',exact:true});if(await join.isVisible().catch(()=>false))await join.click();
+  const viewers=[small,large,member];for(const p of viewers)await heading(p,'QA Applicant One').waitFor();
+  await leader.reload();await heading(leader,'QA Applicant One').waitFor(); // picks up the join's revision
+  for(const p of [leader,...viewers])await sample(p);
+  const poll=setInterval(()=>void focus(viewers).catch(()=>{}),300);
   try{
-   const names=['leader','present 1366','present 1920','member'],pages=[leader,...viewers];
-   for(const [i,r] of results.entries()){await r.waitFor().catch(async e=>{const dump=await Promise.all(pages.map(async(p,j)=>`${names[j]}: ${await p.evaluate(()=>`${document.querySelector('.vr-slide-stage')?.className} | ${[...document.querySelectorAll('[data-applicant-heading]')].map(h=>h.textContent).join(',')} | ${document.querySelector('.vr-stats')?.textContent}`)}`));const messages=await leader.locator('[role=alert],[role=status]').allTextContents();throw Error(`${names[i]} never showed the result\n${dump.join('\n')}\nleader messages: ${messages.join(' | ')}\naudit: ${f.h.state().audit.map(x=>x.action).join(',')}\n${e.message}`);});assert.equal(await r.getByRole('heading').textContent(),'QA Applicant One');assert.match(await r.textContent(),/Passed$/);
-    // Outcome only: no ballot totals on the result, whatever the room's anonymity rules.
-    assert.doesNotMatch(await r.textContent(),/\d|Hold|Do not pass/);}
-   for(const [p,size] of [[small,'1366×768'],[large,'1920×1080']]){
-    const fit=await p.evaluate(()=>{const b=document.querySelector('.vr-result').getBoundingClientRect();return {w:document.documentElement.scrollWidth<=innerWidth,h:document.documentElement.scrollHeight<=innerHeight,inside:b.top>=0&&b.left>=0&&b.right<=innerWidth&&b.bottom<=innerHeight};});
-    assert.deepEqual(fit,{w:true,h:true,inside:true},`result slide fits the projector at ${size}`);}
+   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic decision reason');
+   await leader.getByRole('button',{name:'Pass',exact:true}).click();
+   for(const p of [leader,...viewers])await heading(p,'QA Applicant Two').waitFor({timeout:20000});
+   for(const p of [leader,...viewers])await p.locator('.vr-slide-ready').waitFor();
   }finally{clearInterval(poll);}
-  for(const p of [leader,...viewers])await heading(p,'QA Applicant Two').waitFor({timeout:20000});
-  await small.waitForFunction(()=>window.__frames.done);
-  const frames=await small.evaluate(()=>window.__frames);
-  assert.equal(frames.blank,0,'no frame without the result or an applicant');
-  assert.equal(frames.loading,0,'the loading placeholder never replaces the result');
-  assert.ok(frames.result>0);
-  for(const p of [leader,...viewers])await p.locator('.vr-result').waitFor({state:'detached',timeout:5000});
+  for(const [i,p] of [leader,...viewers].entries()){
+   const r=await stop(p),name=['leader','present 1366','present 1920','member'][i];
+   assert.deepEqual(r.outcomes,['Passed'],`${name}: outcome shown beside the name`);
+   assert.equal(r.blank,0,`${name}: no blank frame`);assert.equal(r.loading,0,`${name}: no loading placeholder between applicants`);
+   assert.ok(r.slideStart-r.firstOutcome>=150,`${name}: outcome holds ~200 ms (${Math.round(r.slideStart-r.firstOutcome)} ms)`);
+   assert.ok(r.slideEnd-r.slideStart>=400&&r.slideEnd-r.slideStart<=900,`${name}: slide ~520 ms (${Math.round(r.slideEnd-r.slideStart)} ms)`);
+   assert.ok(r.outX.some(v=>v<-1)&&r.outX.every(v=>v<=0.5),`${name}: outgoing moves left only`);
+   assert.ok(r.inX.some(v=>v>1)&&r.inX.every(v=>v>=-0.5),`${name}: incoming arrives from the right and settles without overshoot`);
+  }
+  for(const [p,size] of [[small,'1366×768'],[large,'1920×1080']])assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight),`projector fits at ${size}`);
+  assert.ok(await member.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'phone: no horizontal scroll');
+  // Counters come from the confirmed room state.
+  await leader.getByText('Reviewed 1 of 3 this pass · Pass 1',{exact:true}).waitFor();
+  // Focus lands on the new applicant's name, never on a decision control.
+  assert.equal(await leader.evaluate(()=>document.activeElement?.textContent),'QA Applicant Two');
 
-  // 3. Reduced motion: the result appears with no animation, and the leader can open voting on the next applicant at once.
-  f.delay('getLiveVotingPresentation',0);
+  // 3. Reduced motion: a short crossfade (no movement); repeated clicks decide once and never touch the next applicant.
   await leader.emulateMedia({reducedMotion:'reduce'});
-  await leaderAct('OPEN_VOTING','CLOSE_VOTING');await refresh([leader]);
+  await leaderAct('OPEN_VOTING','CLOSE_VOTING');await focus([leader]);
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Reduced motion test');
-  // Every frame: never the result and the next applicant on screen together (no one-frame overlap).
-  await leader.evaluate(()=>{const shown=e=>!!e&&e.checkVisibility({visibilityProperty:true});window.__overlap=0;window.__sampling=true;
-   const tick=()=>{if(shown(document.querySelector('.vr-result'))&&shown(document.querySelector('.vr-slide-in [data-applicant-heading]'))){window.__overlap++;(window.__od??=[]).push(document.querySelector('.vr-slide-stage').className+' | '+getComputedStyle(document.querySelector('.vr-result-layer')).display+' | '+getComputedStyle(document.querySelector('.vr-slide-in')).visibility+' | '+getComputedStyle(document.querySelector('.vr-slide-in [data-applicant-heading]')).visibility);}if(window.__sampling)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
-  await leader.getByRole('button',{name:'Do not pass',exact:true}).click();
-  await leaderResult.waitFor();
-  const shownAt=Date.now();
-  assert.match(await leaderResult.textContent(),/QA Applicant Two\s*Not passed$/);
-  assert.equal(await leader.locator('.vr-result').evaluate(e=>getComputedStyle(e).animationName),'none');
-  // Not blocked by the result: Open voting for the next applicant is enabled while the result is still showing.
-  const openVoting=leader.getByRole('button',{name:'Open voting',exact:true});
-  await leader.waitForFunction(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent==='Open voting');return !!b&&!b.closest('fieldset')?.disabled;});
-  assert.equal(await leader.locator('.vr-result').count(),1,'controls unlocked during the result');
-  await openVoting.click();
-  await leader.locator('.vr-result').waitFor({state:'detached'});
-  // Reduced motion has no slide-out, so ending before the 1400 ms hold means opening voting released it.
-  const lasted=Date.now()-shownAt;assert.ok(lasted<1400,`opening voting ends the result without waiting out the hold (${lasted} ms)`);
+  await sample(leader);
+  const decided=f.h.state().audit.filter(a=>a.action==='voting.room.decide_and_advance').length;
+  await unlocked(leader,'Do not pass');
+  await leader.evaluate(()=>{const b=[...document.querySelectorAll('.vr-leader button')].find(b=>b.textContent.trim()==='Do not pass');for(let i=0;i<4;i++)b.click();});
+  await leader.locator('.vr-slide-out .vr-outcome[data-outcome=REJECT]').waitFor();
+  assert.equal((await leader.locator('.vr-slide-out .vr-outcome').textContent()).trim(),'Not passed');
+  await leader.locator('.vr-slide-sliding').waitFor();
+  const fade=await leader.evaluate(()=>[...document.querySelectorAll('.vr-slide-sliding>div')].map(e=>getComputedStyle(e).animationName));
+  assert.deepEqual(fade.sort(),['vr-fade-in','vr-fade-out']);
   await leader.locator('.vr-slide-ready').waitFor();
-  assert.equal(await leader.locator('.vr-slide-in').evaluate(e=>getComputedStyle(e).animationName),'none');
-  assert.equal(await leader.evaluate(()=>{window.__sampling=false;return window.__overlap;}),0,'reduced motion: result and next applicant never overlap '+JSON.stringify(await leader.evaluate(()=>window.__od)));
+  s=await stop(leader);assert.equal(s.blank,0);assert.ok(s.outX.every(v=>v===0)&&s.inX.every(v=>v===0),'reduced motion: no movement');
+  assert.ok(s.slideEnd-s.slideStart<400,`reduced motion: short crossfade (${Math.round(s.slideEnd-s.slideStart)} ms)`);
+  assert.equal(f.h.state().audit.filter(a=>a.action==='voting.room.decide_and_advance').length,decided+1,'four rapid clicks decide once');
   const pass=f.h.state().sessions[0].passes.find(p=>p.number===1);
-  assert.equal(pass.candidates.find(c=>c.applicationId===apps[2]).ballotState,'OPEN');
+  assert.equal(pass.candidates.find(c=>c.applicationId===apps[2]).ballotState,'PENDING','the next applicant is not decided by a repeated click');
   assert.deepEqual(errors,[]);
  }finally{for(const c of contexts)await c.close();await browser.close();await f.close();}
 });
 
-// Review findings: a failed next-slide load must not freeze the result or hide its Retry, and a decision made
-// while a result is up (before the next slide is revealed) still gets its own result, never re-showing a decided slide.
-test('result slide: failed next-slide load shows Retry; a decision made during the result gets its own result',{timeout:600000},async()=>{
- const f=await fixture(),browser=await chromium.launch({headless:true}),errors=[];
- const c=await browser.newContext({viewport:{width:1366,height:768}}),leader=await c.newPage();leader.on('pageerror',e=>errors.push(e.message));
- const heading=name=>leader.locator('.vr-slide-in [data-applicant-heading]',{hasText:name});
- const leaderAct=async(...commands)=>{f.h.as(leaderId);for(const [c,extra] of commands)assert.equal((await f.h.command(c,extra)).ok,true,c);};
+test('decision motion: failed and delayed saves, failed next slide, Hold, reserved photo box, narrow layout, decision from another device',{timeout:600000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),errors=[],contexts=[];
+ const open=async(viewport,view,actor)=>{const c=await browser.newContext({viewport});contexts.push(c);const p=await c.newPage();p.on('pageerror',e=>errors.push(`${view}: ${e.message}`));await p.goto(roomUrl(f,view,actor));return p;};
  try{
-  await f.h.create();await leaderAct(['START'],['OPEN_VOTING'],['CLOSE_VOTING']);
-  await leader.goto(`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=leader&actor=leader`);
-  await heading('QA Applicant One').waitFor();
+  await f.h.create();f.h.as(leaderId);for(const c of ['START','OPEN_VOTING','CLOSE_VOTING'])await f.h.command(c);
+  const leader=await open({width:1366,height:768},'leader','leader');
+  await heading(leader,'QA Applicant One').waitFor();
+  const photo=await leader.locator('.vr-slide-in .oc-applicant-identity-photo').evaluate(e=>{const r=e.getBoundingClientRect();return [r.width,r.height,e.getAttribute('data-photo')];});
+  assert.equal(photo[2],'placeholder');assert.ok(photo[0]>0&&photo[1]>0,'missing photo keeps a reserved box');
 
-  // 1. The next applicant's slide fails to load: the result gives way at once and Retry is reachable.
+  // 1. Failed save: the applicant stays, no outcome, Retry. Then a failed next-slide load: Retry is reachable.
+  await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic decision reason');
+  f.failCommand();await leader.getByRole('button',{name:'Pass',exact:true}).click();
+  await leader.getByRole('button',{name:'Retry command',exact:true}).waitFor();
+  assert.equal(f.h.state().sessions[0].activeApplicationId,apps[0]);assert.equal(await leader.locator('.vr-outcome').count(),0);
+  await heading(leader,'QA Applicant One').waitFor();
   f.failAction('getLiveVotingPresentation');
-  await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic decision reason');
-  await leader.getByRole('button',{name:'Pass',exact:true}).click();
-  const retry=leader.getByRole('button',{name:'Retry presentation',exact:true});
-  await retry.click({timeout:4000});
-  await heading('QA Applicant Two').waitFor();
-  assert.equal(await leader.locator('.vr-result').count(),0);
+  await leader.getByRole('button',{name:'Retry command',exact:true}).click();
+  await leader.getByRole('button',{name:'Retry presentation',exact:true}).click({timeout:5000});
+  await heading(leader,'QA Applicant Two').waitFor();await leader.locator('.vr-slide-ready').waitFor();
+  // After Retry the new applicant is focused and announced, as after any other arrival.
+  await leader.waitForFunction(()=>document.activeElement?.textContent==='QA Applicant Two');
+  await leader.locator('.sr-only[role=status]',{hasText:'QA Applicant Two'}).first().waitFor({state:'attached'});
+  assert.equal(await leader.locator('.vr-slide-in .oc-applicant-identity-photo').evaluate(e=>{const r=e.getBoundingClientRect();return `${r.width}x${r.height}`;}),`${photo[0]}x${photo[1]}`,'the photo box keeps its size');
+  await unlocked(leader,'Open voting'); // controls unlock after Retry
 
-  // 2. While B's result is up and C has loaded beneath it, C is decided (e.g. on another leader device).
-  await leaderAct(['OPEN_VOTING'],['CLOSE_VOTING']);await leader.evaluate(()=>window.dispatchEvent(new Event('focus')));
-  await leader.getByRole('button',{name:'Hold',exact:true}).waitFor();
-  await leader.evaluate(()=>{const shown=e=>!!e&&e.checkVisibility({visibilityProperty:true});window.__s={results:[],decidedSlide:0,on:true};
-   const tick=()=>{const r=document.querySelector('.vr-result');if(shown(r)){const t=r.innerText;if(window.__s.results.at(-1)!==t)window.__s.results.push(t);}
-    // A decided applicant's slide must never slide out again once its result has shown.
-    if([...document.querySelectorAll('.vr-slide-out:not(.vr-result-layer) [data-applicant-heading]')].some(shown))window.__s.decidedSlide++;
-    if(window.__s.on)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
+  // 2. Delayed save: acknowledged at once (locked), a restrained "Saving" line only once it takes a moment; then Hold.
+  const member=await open({width:390,height:844},'member','member');
+  const join=member.getByRole('button',{name:'Join session',exact:true});if(await join.isVisible().catch(()=>false))await join.click();
+  await heading(member,'QA Applicant Two').waitFor();
+  f.h.as(leaderId);for(const c of ['OPEN_VOTING','CLOSE_VOTING'])await f.h.command(c);
+  await leader.reload();await heading(leader,'QA Applicant Two').waitFor();
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic decision reason');
-  await leader.getByRole('button',{name:'Hold',exact:true}).click();
-  await leader.getByRole('region',{name:'Decision result'}).waitFor();
-  // C loaded under B's result: the leader's controls unlock; decide C before B's result has given way.
-  await leader.waitForFunction(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent==='Open voting');return !!b&&!b.closest('fieldset')?.disabled;});
-  await leader.waitForTimeout(100);
-  await leaderAct(['DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[2],passNumber:1,choice:'REJECT',reason:'Decided on another device',confirmed:true}]);
-  await leader.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  f.delay('commandLiveVotingRoom',1500);
+  await sample(member);const poll=setInterval(()=>void focus([member]).catch(()=>{}),300);
+  const hold=leader.getByRole('button',{name:'Hold',exact:true});await hold.click();
+  assert.ok(await hold.isDisabled(),'the press is acknowledged at once');
+  await leader.getByText('Saving Hold...',{exact:true}).waitFor();
+  assert.equal(await leader.locator('.vr-outcome').count(),0,'no outcome before the save is confirmed');
+  f.delay('commandLiveVotingRoom',0);
+  const holdMark=leader.locator('.vr-slide-out .vr-outcome[data-outcome=HOLD]');await holdMark.waitFor();
+  assert.equal((await holdMark.textContent()).trim(),'Held for another vote');
+  // Narrow layout: the member sees the same outcome; nothing overflows.
+  try{await member.waitForFunction(()=>window.__s.outcomes.length>0&&document.querySelector('.vr-slide-ready'),null,{timeout:20000});}finally{clearInterval(poll);}
+  const m=await stop(member);assert.deepEqual(m.outcomes,['Held for another vote']);assert.equal(m.blank,0);
+  assert.ok(await member.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'phone: no horizontal scroll');
+
+  // 3. The last applicant is decided on another device: the outcome shows, then the pass ends cleanly.
+  await leader.locator('.vr-slide-ready').waitFor();
+  await sample(leader);
+  f.h.as(leaderId);assert.equal((await f.h.command('DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[2],passNumber:1,choice:'REJECT',reason:'Decided on another device',confirmed:true})).ok,true);
+  await focus([leader]);
   await leader.locator('.vr-slide-in [data-applicant-heading]',{hasText:'Pass complete'}).waitFor({timeout:20000});
-  const s=await leader.evaluate(()=>{window.__s.on=false;return window.__s;});
-  assert.deepEqual(s.results.map(t=>t.replace(/\s+/g,' ').trim()),['QA Applicant Two Held for another pass','QA Applicant Two Not passed without a vote']);
-  assert.equal(s.decidedSlide,0,'no decided applicant slides back out');
+  const l=await stop(leader);assert.deepEqual(l.outcomes,['Not passed without a vote']);assert.equal(l.blank,0);
   assert.deepEqual(errors,[]);
- }finally{await c.close();await browser.close();await f.close();}
+ }finally{for(const c of contexts)await c.close();await browser.close();await f.close();}
 });

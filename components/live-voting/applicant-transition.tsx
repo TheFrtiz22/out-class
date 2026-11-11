@@ -1,88 +1,95 @@
 "use client";
 import {cloneElement,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactElement} from "react";
 import {resultOutcomeLabel,type RoomResult} from "@/lib/voting-room";
-import {Check,Pause,XIcon} from "@/components/icons";
 
-/** How long the decision result holds before the next applicant, unless the leader opens voting sooner. */
-export const RESULT_HOLD_MS=1400; // plus the 550 ms slide-out: about 2 s in all
-type Slide=ReactElement<{onReady?:()=>void;onFailed?:()=>void;paused?:boolean}>;
-type Shown={key:string;name:string;result:RoomResult};
+/** How long a confirmed outcome shows beside the name before the room moves on, and the move itself. */
+export const OUTCOME_HOLD_MS=200,SLIDE_MS=520,REDUCED_FADE_MS=150;
+type Slide=ReactElement<{onReady?:()=>void;onFailed?:()=>void;paused?:boolean;outcome?:RoomResult|null}>;
+type Outgoing={key:string;node:Slide;result:RoomResult|null};
+type Track={key:string;outgoing:Outgoing|null};
 
-/** Between applicants: the decided applicant's name (as this viewer was shown it) and outcome. No ballot totals. */
-export function ResultSlide({name,result}:{name:string;result:RoomResult}){
- const Icon=result.outcome==="ACCEPT"?Check:result.outcome==="HOLD"?Pause:XIcon;
- return <section className="vr-result" aria-label="Decision result" data-result-outcome={result.outcome}>
-  <h2 className="vr-result-name">{name}</h2>
-  <p className="vr-result-outcome"><span className="vr-result-icon" aria-hidden="true"><Icon size={22}/></span>{resultOutcomeLabel(result)}</p>
- </section>;
-}
-
-/** One outgoing layer only. It is inert, never cached across identity/access changes.
- *  When the applicant who just left has a confirmed outcome (`resultFor`, read from this viewer's room snapshot),
- *  the result shows in their place while the next slide loads underneath; it gives way after RESULT_HOLD_MS, or
- *  as soon as `release` (voting opened on the next applicant), but never before that slide has loaded. */
+/**
+ * Applicant-to-applicant motion for every room view. Only applicant content moves; the page around it is untouched.
+ * When the current applicant changes, the slide that was on screen stays mounted (same element, so its data and photo
+ * stay) as the outgoing layer. If the room's snapshot shows that applicant's outcome confirmed (`resultFor`), the
+ * outcome appears beside the name. The next applicant loads hidden beneath; once it has loaded and the outcome has
+ * shown for OUTCOME_HOLD_MS (or `release`: voting already opened on it), both move left together. Nothing here
+ * decides anything: the transition only follows confirmed room snapshots.
+ */
 export function ApplicantTransition({applicantId,passNumber,children,onReady,summary,resultFor,release=false}:{applicantId:string|null;passNumber:number;children:Slide;onReady:(key:string|null)=>void;summary:boolean;resultFor?:(passNumber:number,applicationId:string)=>RoomResult|null;release?:boolean}){
- const key=`${passNumber}:${applicantId}`,root=useRef<HTMLDivElement>(null),previous=useRef<{key:string;node:Slide;time:number;height:number}|null>(null),loaded=useRef<string|null>(null),outgoingRef=useRef(false);
- const [height,setHeight]=useState(300);
- const [outgoing,setOutgoing]=useState<{key:string;node:Slide}|null>(null),[phase,setPhase]=useState<"loading"|"sliding"|"ready">("loading"),[announce,setAnnounce]=useState("");
- const [shown,setShown]=useState<Shown|null>(null),[held,setHeld]=useState(false),[incoming,setIncoming]=useState<string|null>(null);
- const shouldFocus=useRef(false),lastKey=useRef(key),last=useRef({passNumber,applicantId}),heading=useRef<{key:string;text:string}|null>(null),resultRef=useRef(resultFor),shownKey=useRef<string|null>(null);
- useLayoutEffect(()=>{resultRef.current=resultFor;});
+ const key=`${passNumber}:${applicantId}`,root=useRef<HTMLDivElement>(null);
+ // Refs read during render below are written only in effects (deterministic under StrictMode re-renders).
+ const loaded=useRef<string|null>(null),onScreen=useRef<string|null>(null),restHeight=useRef(300),lastNode=useRef<{key:string;node:Slide;applicantId:string|null;passNumber:number}|null>(null);
+ const [height,setHeight]=useState(300),[phase,setPhase]=useState<"loading"|"sliding"|"ready">("loading"),[announce,setAnnounce]=useState("");
+ const [held,setHeld]=useState(false),[incoming,setIncoming]=useState<string|null>(null),shouldFocus=useRef(false);
+ const [track,setTrack]=useState<Track>({key,outgoing:null});
+ // Decide the outgoing layer during render (not in an effect), so the slide on screen is never unmounted in between.
+ let outgoing=track.outgoing;
+ if(track.key!==key){
+  const prev=lastNode.current;
+  if(outgoing?.key===key)outgoing=null; // Undo back to the applicant still sliding out: it simply stays.
+  // Only a slide that actually reached the screen may leave it; a loaded-but-hidden one is dropped, never flashed.
+  else if(prev&&prev.key===track.key&&onScreen.current===prev.key){
+   // The slide that was showing becomes the outgoing layer, with its outcome if the room has confirmed one.
+   const result=prev.applicantId?resultFor?.(prev.passNumber,prev.applicantId)??null:null;
+   outgoing={key:prev.key,node:prev.node,result};
+  }
+  // Otherwise the current slide never finished loading: keep whatever was already leaving, drop the half-loaded one.
+  setTrack({key,outgoing});
+ }
+ const handled=useRef<string|null>(null);
  useLayoutEffect(()=>{
-  if(lastKey.current===key)return;
-  shouldFocus.current=true;loaded.current=null;setIncoming(null);onReady(null);
-  const from=last.current,prior=previous.current,wasResult=shownKey.current===lastKey.current;
-  // The name is the heading this viewer actually saw, so anonymous rooms keep their anonymous labels.
-  const seen=from.applicantId&&heading.current?.key===lastKey.current?heading.current.text:null;
-  const result=seen&&from.applicantId?resultRef.current?.(from.passNumber,from.applicantId)??null:null;
-  setHeight(h=>Math.max(h,prior?.height??300));setPhase("loading");setHeld(false);
-  shownKey.current=result&&seen?key:null;
-  if(result&&seen){outgoingRef.current=true;setOutgoing(null);setShown({key,name:seen,result});setAnnounce(`${seen}: ${resultOutcomeLabel(result)}`);}
-  else{
-   // Undo returns to the applicant who was showing: no slide from it to itself.
-   // Leaving a result early (another change mid-result): never slide an already-decided applicant back out.
-   const retained=!wasResult&&prior&&prior.key!==key&&Date.now()-prior.time<10000?prior:null;outgoingRef.current=!!retained;setOutgoing(retained);setShown(null);
+  // Once per applicant change (and on mount), after the render that set up the layers; not when a transition ends.
+  if(track.key!==key||handled.current===key)return;handled.current=key;
+  shouldFocus.current=true;loaded.current=null;setIncoming(null);setHeld(false);setPhase("loading");onReady(null);
+  const out=track.outgoing;
+  if(out){
+   // Hold the stage at the height the outgoing slide had at rest (not with its outcome added).
+   setHeight(h=>Math.max(h,restHeight.current));
+   if(out.result){const name=root.current?.querySelector(".vr-slide-out [data-applicant-heading]")?.textContent;if(name)setAnnounce(`${name}: ${resultOutcomeLabel(out.result)}`);}
   }
-  lastKey.current=key;last.current={passNumber,applicantId};
- },[key,onReady,passNumber,applicantId]);
- const result=shown?.key===key?shown:null;
- useEffect(()=>{if(!result)return;const t=setTimeout(()=>setHeld(true),RESULT_HOLD_MS);return()=>clearTimeout(t);},[result]);
- const ready=useCallback(()=>{
-  if(loaded.current===key)return;loaded.current=key;setIncoming(key);
-  if(shownKey.current===key){
-   // Loaded under the result: the leader's controls unlock now. Note the heading it will show, so a decision
-   // made before this slide is revealed still gets its own result.
-   onReady(key);
-   requestAnimationFrame(()=>{const h=root.current?.querySelector<HTMLElement>(".vr-slide-in [data-applicant-heading]");if(h&&shownKey.current===key)heading.current={key,text:h.textContent??""};});
-   return;
-  }
-  setPhase(outgoingRef.current?"sliding":"ready");
-  if(!outgoingRef.current)onReady(key);
- },[key,onReady]);
- // The next slide failed to load: drop the result at once so its Retry is visible and reachable.
- const failed=useCallback(()=>{if(shownKey.current!==key)return;shownKey.current=null;outgoingRef.current=false;setShown(null);setPhase("ready");},[key]);
- // The result gives way once the next slide has loaded and the hold has passed (or voting already opened).
- useEffect(()=>{if(result&&phase==="loading"&&incoming===key&&(held||release))setPhase("sliding");},[result,phase,incoming,key,held,release]);
+ // Keyed on `track` alone: `onReady` is stable and `key` is checked against track.key above.
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[track]);
+ useEffect(()=>{if(!track.outgoing?.result)return;const t=setTimeout(()=>setHeld(true),OUTCOME_HOLD_MS);return()=>clearTimeout(t);},[track]);
+ const ready=useCallback(()=>{if(loaded.current===key)return;loaded.current=key;setIncoming(key);},[key]);
+ // The next slide failed to load: stop the transition at once so its Retry is visible and reachable.
+ const failed=useCallback(()=>{setTrack(t=>t.key===key&&t.outgoing?{key,outgoing:null}:t);setPhase(p=>p==="loading"?"ready":p);},[key]);
  const node=useMemo(()=>applicantId?cloneElement(children,{onReady:ready,onFailed:failed}):<section className="vr-applicant"><h2 data-applicant-heading tabIndex={-1}>{summary?"Pass complete":"Waiting for the leader"}</h2></section>,[applicantId,children,ready,failed,summary]);
+ useLayoutEffect(()=>{lastNode.current={key,node,applicantId,passNumber};});
  useEffect(()=>{if(!applicantId)ready()},[applicantId,ready]);
- useLayoutEffect(()=>{
-  if(phase!=="ready")return;
-  previous.current={key,node,time:Date.now(),height:root.current?.getBoundingClientRect().height??300};
-  const frame=requestAnimationFrame(()=>{const h=root.current?.querySelector<HTMLElement>(".vr-slide-in [data-applicant-heading]");if(applicantId&&h)heading.current={key,text:h.textContent??""};
-   // Move focus to the new applicant only if it was not taken elsewhere meanwhile (e.g. the leader's Undo).
-   const active=document.activeElement;if(shouldFocus.current&&(!active||active===document.body||root.current?.contains(active)))h?.focus();shouldFocus.current=false;setAnnounce(h?.textContent??"");});
-  return()=>cancelAnimationFrame(frame);
- },[phase,key,node,applicantId]);
+ // Move on once the next slide is ready: straight away with nothing leaving, else after the outcome has shown.
+ const out=track.key===key?track.outgoing:null;
+ useEffect(()=>{
+  if(phase!=="loading"||incoming!==key)return;
+  if(!out){setPhase("ready");onReady(key);return;}
+  // A taller next applicant grows the stage once, as the slide starts; the stage never shrinks mid-session.
+  if(!out.result||held||release)setPhase("sliding");
+ },[phase,incoming,key,out,held,release,onReady]);
  useEffect(()=>{
   if(phase!=="sliding")return;
-  const finish=()=>{outgoingRef.current=false;setOutgoing(null);setShown(null);shownKey.current=null;setPhase("ready");onReady(key);};
   const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const timer=setTimeout(finish,reduced?0:550);return()=>clearTimeout(timer);
+  const timer=setTimeout(()=>{setTrack(t=>t.key===key?{key,outgoing:null}:t);setPhase("ready");onReady(key);},reduced?REDUCED_FADE_MS:SLIDE_MS);
+  return()=>clearTimeout(timer);
  },[phase,key,onReady]);
- const showingResult=!!result&&phase!=="ready";
- return <><div ref={root} style={{minHeight:applicantId||phase!=="ready"||showingResult?height:0}} className={`vr-slide-stage vr-slide-${phase}${showingResult?" vr-slide-result":""}`} aria-busy={phase!=="ready"&&!showingResult}>
- {showingResult?<div className="vr-slide-out vr-result-layer" key={`result:${result.key}`} inert={phase==="sliding"} aria-hidden={phase==="sliding"||undefined}><ResultSlide name={result.name} result={result.result}/></div>
-  :outgoing&&<div className="vr-slide-out" key={outgoing.key} inert aria-hidden="true">{typeof outgoing.node.type==="string"?outgoing.node:cloneElement(outgoing.node,{onReady:undefined,paused:true})}</div>}
- <div className="vr-slide-in" key={key} inert={phase==="sliding"||showingResult&&phase==="loading"} aria-hidden={showingResult&&phase==="loading"||undefined}>{node}</div>
+ useLayoutEffect(()=>{
+  if(phase!=="ready")return;
+  if(incoming===key)onScreen.current=key;
+  if(!track.outgoing)restHeight.current=root.current?.getBoundingClientRect().height??restHeight.current;
+  const frame=requestAnimationFrame(()=>{const h=root.current?.querySelector<HTMLElement>(".vr-slide-in [data-applicant-heading]");if(!h)return; // e.g. a failed load: wait for Retry
+   // Focus the new applicant's name (never a decision button), unless focus was deliberately moved elsewhere (e.g. Undo).
+   const active=document.activeElement;if(shouldFocus.current&&(!active||active===document.body||root.current?.contains(active)))h?.focus();shouldFocus.current=false;
+   setAnnounce(h?.textContent??"");});
+  return()=>cancelAnimationFrame(frame);
+ },[phase,key,incoming,track.outgoing]);
+ // Controls unlock only for an applicant that is on screen and loaded (also after a Retry following a failed load).
+ useEffect(()=>{if(phase==="ready"&&incoming===key)onReady(key);},[phase,incoming,key,onReady]);
+ // Pending from the very render that creates the outgoing layer (before the phase update), so the next slide's
+ // placeholder never enters the flow or the stage's height.
+ const pending=!!out&&phase!=="sliding";
+ // Keyed layers: the outgoing applicant keeps its mounted element (and data) as it changes role.
+ const layers=[...(out?[{key:out.key,role:"out" as const,node:typeof out.node.type==="string"?out.node:cloneElement(out.node,{onReady:undefined,onFailed:undefined,paused:true,outcome:out.result})}]:[]),{key,role:"in" as const,node}];
+ return <><div ref={root} style={{minHeight:applicantId||phase!=="ready"?height:0}} className={`vr-slide-stage vr-slide-${phase}${pending?" vr-slide-pending":""}`} aria-busy={phase==="loading"&&!pending}>
+  {layers.map(l=><div key={l.key} className={l.role==="out"?"vr-slide-out":"vr-slide-in"} inert={l.role==="out"||pending||phase==="sliding"} aria-hidden={l.role==="out"||l.role==="in"&&pending||undefined}>{l.node}</div>)}
  </div><p className="sr-only" role="status" aria-live="polite">{announce}</p></>;
 }
