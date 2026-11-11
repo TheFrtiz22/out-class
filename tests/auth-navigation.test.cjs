@@ -55,7 +55,7 @@ test('public header exposes separate signup and login links without identity-dep
   for (const hero of [true, false]) {
     const tree = nodes(PublicNavigation({ hero }))
     assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Get Started').props.href, '/signup')
-    assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Log In').props.href, '/login')
+    assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Sign in').props.href, '/login')
     assert.ok(!tree.some(n => n.props?.href?.startsWith('/platform')))
     assert.equal(tree.find(n => n.props?.className === 'oc-public-account').props.children.length, 3)
   }
