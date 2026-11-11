@@ -5,6 +5,7 @@ import { Lock, ShieldCheck } from "@/components/icons"
 import { DataTable, DataTableSecondary, type DataTableColumn } from "@/components/ui/data-table"
 import { joinFacts } from "@/lib/join-facts"
 import { StatusPill } from "@/components/ui/status-pill"
+import { PreviouslyAppliedBadge } from "@/components/previously-applied-badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { ApplicantSort } from "@/lib/live-applicant-sorting"
@@ -47,7 +48,7 @@ const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gp
 /** Applicants: email drops first, then SAT and ACT combine into Test, then Year drops. Cards below 640px. */
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection, profileFields = defaultProfileFieldVisibility() }: Props) {
   const columns = ([
-    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <ApplicantIdentity label={name(app)} anonymous={anonymous(app)} />, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
+    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-applicant-person-row"><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><PreviouslyAppliedBadge priors={app.priorApplications} /></span>, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
     { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Not available" },
     { id: "gpa", header: "GPA", sortKey: "gpa", align: "end", cell: app => app.student.studentProfile?.gpa?.toFixed(2) ?? "—" },
@@ -62,7 +63,7 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
     sort={sortBy ? { key: sort, descending, toggle: key => sortBy(key as ApplicantSort) } : undefined}
     selection={votingSelection ? { label: "Select for voting", rowLabel: app => `Select ${name(app)} for voting`, isSelected: app => votingSelection.ids.includes(app.id), toggle: app => votingSelection.toggle(app.id), disabled: app => !votingEligible(app.status) } : undefined}
     card={{
-      title: app => <span className="oc-dt-name">{name(app)}</span>,
+      title: app => <span className="oc-dt-name">{name(app)} <PreviouslyAppliedBadge priors={app.priorApplications} /></span>,
       trailing: app => <StatusPill status={app.status} />,
       meta: app => joinFacts(profileFields.academicYear && app.student.studentProfile?.academicYear, roundName(rounds, app), profileFields.gpa && app.student.studentProfile?.gpa != null && `GPA ${app.student.studentProfile.gpa.toFixed(2)}`, testScores(app, profileFields), app.roundScore?.average != null && `Rating ${formatAverage(app.roundScore.average)}`),
     }} />
