@@ -1,4 +1,5 @@
 import { TERMS } from "@/lib/copy/terms"
+import { RECRUITING_SETTINGS_PARAM } from "@/lib/recruiting-settings"
 
 /**
  * Club workspace URL helpers that need no UI imports, so the server page,
@@ -12,13 +13,13 @@ function read(query: Query, key: string) {
 }
 
 const sectionTitles: Record<string, string> = {
-  overview: TERMS.clubHome, meetings: "Meetings", events: "Events", tasks: TERMS.tasks, members: "Members",
-  announcements: TERMS.announcements, settings: "Settings",
+  overview: "Home", calendar: "Calendar", meetings: "Calendar", events: "Calendar", tasks: TERMS.tasks, members: "Members",
+  announcements: "Home", settings: "Settings",
 }
 const toolTitles: Record<string, string> = {
-  overview: TERMS.recruiting, applicants: TERMS.applicants, rejected: TERMS.applicants, interviews: "Interviews", decisions: "Decisions",
-  "scheduled-decisions": "Scheduled Decisions", resumes: "Résumé moderation", reviews: "Submitted reviews",
-  rounds: "Anonymous Review", rules: "Auto-Reject Rules",
+  overview: TERMS.recruiting, applicants: TERMS.applicants, rejected: TERMS.applicants, interviews: "Interviews", decisions: "Decide",
+  "scheduled-decisions": "Decide", resumes: "Résumé moderation", reviews: "Submitted reviews",
+  rounds: TERMS.applicants, rules: TERMS.applicants,
 }
 
 /** The `<title>` text (before " · OutClass") for a club workspace URL. */
@@ -26,8 +27,6 @@ export function clubWorkspaceTitle(query: Query) {
   const section = read(query, "section") || "overview"
   if (section !== "recruitment") return sectionTitles[section] ?? "Club workspace"
   const tool = read(query, "tool") || "applicants"
-  if (tool === "decisions" && read(query, "decisionTab") === "letters") return "Decision letters"
-  if (tool === "decisions" && read(query, "decisionTab") !== "overview") return TERMS.votingRoom
   return toolTitles[tool] ?? TERMS.recruiting
 }
 
@@ -42,16 +41,28 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
   const section = q.get("section"), tool = q.get("tool")
   let changed = false
   const set = (key: string, value: string | null) => { if (value === null) q.delete(key); else q.set(key, value); changed = true }
-  // Club events have their own section (owner decision 2026-11-05, FE-12); the old Meetings tab redirects there.
-  if (section === "meetings" && q.get("meetingTab") === "events") { set("section", "events"); set("meetingTab", null) }
+  // Meetings and Events are one Calendar with a type filter. The old Meetings → Events tab maps to the Events filter.
+  if (section === "meetings" || section === "events") {
+    const type = section === "events" || q.get("meetingTab") === "events" ? "events" : "meetings"
+    set("section", "calendar"); set("type", type); set("meetingTab", null)
+  }
+  // Announcements moved into Home as its own section; `compose=1` still opens the composer there.
+  if (section === "announcements") { set("section", "overview"); set("focus", "announcements"); set("mode", null) }
   if (section === "recruitment") {
     // Configuration moved to Settings.
     if (tool === "cycles") { set("section", "settings"); set("setting", "cycles"); set("tool", null) }
     // Voting and letters used to be tools; they are Decisions tabs.
     if (tool === "voting") { set("tool", "decisions"); set("decisionTab", "voting") }
     if (tool === "letters" || tool === "decision-letters") { set("tool", "decisions"); set("decisionTab", "letters") }
+    // Scheduled Decisions was its own page; scheduled sends live in Decide's Send step.
+    if (tool === "scheduled-decisions") { set("tool", "decisions"); set("decisionTab", "letters") }
+    // Anonymous Review and Auto-Reject Rules were rail drawers; they are sections of the Recruiting settings drawer on Applicants.
+    if (tool === "rounds" || tool === "rules") { set("tool", "applicants"); set(RECRUITING_SETTINGS_PARAM, tool === "rounds" ? "anonymous" : "rules") }
     // Rejected Applicants is the Applicants list filtered to Rejected.
     if (tool === "rejected") { set("tool", "applicants"); set("decision", "rejected") }
+    // Decide's step names, if typed or linked, map to the internal tab values.
+    if (q.get("tool") === "decisions" && q.get("decisionTab") === "vote") set("decisionTab", "voting")
+    if (q.get("tool") === "decisions" && q.get("decisionTab") === "send") set("decisionTab", "letters")
     // Decisions → Overview is the Applicants decision filter.
     if (q.get("tool") === "decisions" && q.get("decisionTab") === "overview") { set("tool", "applicants"); set("decisionTab", null) }
     // The board ballot opens from the Voting room, not from Applicants.

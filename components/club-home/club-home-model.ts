@@ -18,12 +18,24 @@ export function railHrefs(member: ClubAccess, clubId: string) {
   const href = (id: string) => items.find(item => item.id === id)?.href ?? null
   return {
     applicants: href("applicants"), interviews: href("interviews"), decisions: href("decisions"),
-    meetings: href("meetings"), tasks: href("tasks"), announcements: href("announcements"), members: href("members"),
+    // Calendar filtered to meetings (New meeting adds `&new=1`).
+    meetings: href("calendar") ? `${href("calendar")}&type=meetings` : null, tasks: href("tasks"), members: href("members"),
+    // Announcements live on Home (its own section, scrolled to by `focus=announcements`); posting needs meetings.manage.
+    announcements: hasPermission(member, "meetings.manage") && href("club-home") ? `${href("club-home")}&focus=announcements` : null,
     // The Recruiting Overview; only members with a recruiting tool have one.
     recruiting: items.find(item => item.id === "overview" && item.mode === "recruiting")?.href ?? null,
   }
 }
 export type RailHrefs = ReturnType<typeof railHrefs>
+
+/**
+ * Applicants filtered to the round with the most reviews left for you, with quick review open on the first one you
+ * haven't reviewed (`quickReview=1`, handled by the Applicants workspace). Ties go to the earlier round.
+ */
+export function quickReviewHref(applicants: string, rounds: { id: string; pending: number }[]) {
+  const busiest = rounds.reduce<{ id: string; pending: number } | null>((best, round) => round.pending > (best?.pending ?? 0) ? round : best, null)
+  return `${applicants}${busiest ? `&roundId=${encodeURIComponent(busiest.id)}` : ""}&quickReview=1`
+}
 
 export type NeedsAction =
   | { kind: "link"; href: string; label: string }
@@ -94,7 +106,7 @@ export function recruitingNeeds(data: Overview, hrefs: RailHrefs): NeedsCard[] {
   const live = op.votes.filter(v => v.state === "OPEN" || !v.participants.length && !!v.joinOpenedAt && !voteComplete(v) && !hasPermission(m, "decisions.manage"))
   if (live[0]) cards.push({ id: "vote-live", priority: 1, title: live[0].state === "OPEN" ? live.length === 1 ? "Voting is open" : `${live.length} voting sessions are open` : "You can join a voting session", detail: live.map(v => `${v.round.name} · ${votingStateLabel(v.state)}`).join(" · "), action: { kind: "link", href: voteHref(club.id, m, live[0]), label: live[0].state === "OPEN" ? TERMS.openVoting : "Join session" } })
   const pending = op.rounds.reduce((n, r) => n + r.pending, 0), eligible = op.rounds.reduce((n, r) => n + r.eligible, 0)
-  if (hasPermission(m, "applications.review") && pending > 0 && hrefs.applicants) cards.push({ id: "reviews", priority: 2, title: `${plural(pending, "application")} to review`, detail: op.rounds.filter(r => r.pending > 0).map(r => `${r.name} · ${r.pending} left`).join(" · "), progress: { done: eligible - pending, total: eligible }, action: { kind: "link", href: hrefs.applicants, label: "Open applicants" } })
+  if (hasPermission(m, "applications.review") && pending > 0 && hrefs.applicants) cards.push({ id: "reviews", priority: 2, title: `${plural(pending, "application")} to review`, detail: op.rounds.filter(r => r.pending > 0).map(r => `${r.name} · ${r.pending} left`).join(" · "), progress: { done: eligible - pending, total: eligible }, action: { kind: "link", href: quickReviewHref(hrefs.applicants, op.rounds), label: "Open applicants" } })
   const unscheduled = op.rounds.filter(r => r.needsBooking > 0), needsTime = unscheduled.reduce((n, r) => n + r.needsBooking, 0)
   if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${plural(needsTime, "applicant")} ${needsTime === 1 ? "needs" : "need"} an interview time`, detail: unscheduled.map(r => r.name).join(" · "), action: { kind: "link", href: `${hrefs.interviews}&interviewTab=schedule&roundId=${unscheduled[0]!.id}`, label: TERMS.scheduleInterviews } })
   const done = op.votes.filter(voteComplete)

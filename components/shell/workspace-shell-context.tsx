@@ -19,7 +19,6 @@ export type ShellBindings = {
   bare?: boolean
   onNavigate?: (view: ViewId, section?: PersonalSection) => void
   onSelect?: (id: string) => void
-  onReviewTool?: (id: string) => void
   onModeSelect?: (id: "recruiting" | "club") => void
 }
 
@@ -51,16 +50,15 @@ export function useShellBindings(bindings: ShellBindings, enabled = true) {
   // Committed callbacks only: a discarded concurrent render never reaches the shell.
   useBrowserLayoutEffect(() => { latest.current = bindings })
   const { title, active, bare } = bindings
-  const has = [!!bindings.onNavigate, !!bindings.onSelect, !!bindings.onReviewTool, !!bindings.onModeSelect].join()
+  const has = [!!bindings.onNavigate, !!bindings.onSelect, !!bindings.onModeSelect].join()
   useEffect(() => {
     if (!registry) return
     if (!enabled) { registry.register(owner, null); return }
-    const [navigate, select, review, mode] = has.split(",").map(value => value === "true")
+    const [navigate, select, mode] = has.split(",").map(value => value === "true")
     registry.register(owner, {
       title, active, bare,
       onNavigate: navigate ? (view, section) => latest.current.onNavigate?.(view, section) : undefined,
       onSelect: select ? id => latest.current.onSelect?.(id) : undefined,
-      onReviewTool: review ? id => latest.current.onReviewTool?.(id) : undefined,
       onModeSelect: mode ? id => latest.current.onModeSelect?.(id) : undefined,
     })
   }, [registry, owner, enabled, title, active, bare, has])

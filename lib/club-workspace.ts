@@ -4,8 +4,7 @@ import { interviewCapabilities } from "@/lib/interview-access";
 export const clubSections = [
   "overview",
   "members",
-  "meetings",
-  "events",
+  "calendar",
   "tasks",
   "recruitment",
   "settings",
@@ -16,7 +15,6 @@ export function clubWorkspaceSections(
 ): ClubSection[] {
   if (!member) return [];
   return clubSections.filter((section) => {
-    if (section === "events") return hasPermission(member, "meetings.manage");
     if (section === "members")
       return (
         hasPermission(member, "members.manage") ||
@@ -46,10 +44,9 @@ export function recruitmentTools(member: ClubAccess) {
   return tools;
 }
 export const clubSectionLabels: Record<ClubSection, string> = {
-  overview: "Overview",
+  overview: "Home",
   members: "Members",
-  meetings: "Meetings",
-  events: "Events",
+  calendar: "Calendar",
   tasks: "Tasks",
   recruitment: "Recruitment",
   settings: "Settings",

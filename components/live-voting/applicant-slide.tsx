@@ -9,6 +9,7 @@ import {formatAverage,scoredEvaluationsLabel} from "@/lib/interview-review-summa
 import {NO_INTERVIEW_SCORES} from "@/lib/interview-feedback";
 import {highlightAttribution} from "@/lib/voting-slide-preparation";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
+import {SLIDE_FACT_MAX,SLIDE_NOTE_CHARS,slideExcerpt,feedbackExcerpt} from "@/lib/voting-slide-excerpt";
 import {Button} from "@/components/ui/button";
 import {InterviewFeedbackSection,EarlierFeedbackRounds} from "@/components/interview-feedback-section";
 
@@ -18,32 +19,21 @@ const highlightPreview=(text:string)=>text.length>110?`${text.slice(0,107)}…`:
 
 /* Automatic layout. Values that fit on one short line become compact facts; anything longer, or with
    line breaks, joins the evidence area, where the field with the most text gets the most room.
-   Evidence shows more before truncating, bounded by characters and lines so the projector never scrolls;
-   anything cut keeps "Read full …" and the full text stays in Applicant details. */
-const SLIDE_FACT_MAX=60,SLIDE_EVIDENCE_CHARS=400,SLIDE_EVIDENCE_LINES=8,SLIDE_FEEDBACK_CHARS=560,SLIDE_FEEDBACK_LINES=10,SLIDE_NOTE_CHARS=150;
-/** Cuts at a word boundary within `chars` and after `lines` lines; returns the text unchanged when it fits. */
-function slideExcerpt(text:string,chars=SLIDE_EVIDENCE_CHARS,lines=SLIDE_EVIDENCE_LINES){
-  const all=text.split(/\r?\n/);let out=all.slice(0,lines).join("\n").trimEnd();
-  if(out.length<=chars&&all.length<=lines)return text;
-  if(out.length>chars){const cut=out.slice(0,chars-1),space=cut.lastIndexOf(" ");out=space>chars*.8?cut.slice(0,space):cut;}
-  return `${out.replace(/[\s,;:.–-]+$/,"")}…`;
-}
-// Several interviewers share one budget, so each keeps a readable excerpt and the section stays one size.
-const feedbackExcerpt=(text:string,entries:number)=>entries>1?slideExcerpt(text,Math.max(160,Math.floor(SLIDE_FEEDBACK_CHARS/entries)),Math.max(3,Math.floor(SLIDE_FEEDBACK_LINES/entries))):slideExcerpt(text);
+   Character and line budgets live in lib/voting-slide-excerpt.ts. */
 const isFact=(text:string)=>text.length<=SLIDE_FACT_MAX&&!/\n/.test(text);
 /** Visual weight of an excerpt: its characters, where each line (a bullet, a break) costs at least half a line. */
 const weigh=(text:string)=>text.split("\n").reduce((n,line)=>n+Math.max(line.length,30),0);
 const bullet=/^\s*(?:[-*•‣◦–]|\d{1,2}[.)])\s+/;
-type Block={kind:"p"|"ul"|"ol";lines:string[]};
+type Block={kind:"p"|"ul"|"ol";lines:string[];start?:number};
 /** Preserves line breaks and renders "-", "*", "•" or "1." lines as real lists. */
 function SlideText({text}:{text:string}){
   const blocks:Block[]=[];let gap=true;
   for(const line of text.split(/\r?\n/)){
     if(!line.trim()){gap=true;continue;}
     const m=line.match(bullet),kind:Block["kind"]=m?(/\d/.test(m[0])?"ol":"ul"):"p",body=m?line.slice(m[0].length):line,last=blocks[blocks.length-1];
-    if(!gap&&last?.kind===kind)last.lines.push(body);else blocks.push({kind,lines:[body]});gap=false;
+    if(!gap&&last?.kind===kind)last.lines.push(body);else blocks.push({kind,lines:[body],start:kind==="ol"?Number(m![0].match(/\d+/)![0]):undefined});gap=false;
   }
-  return <div className="vr-text">{blocks.map((b,i)=>b.kind==="p"?<p key={i}>{b.lines.join("\n")}</p>:b.kind==="ul"?<ul key={i}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ul>:<ol key={i}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ol>)}</div>;
+  return <div className="vr-text">{blocks.map((b,i)=>b.kind==="p"?<p key={i}>{b.lines.join("\n")}</p>:b.kind==="ul"?<ul key={i}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ul>:<ol key={i} start={b.start}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ol>)}</div>;
 }
 const renderSlideText=(text:string)=><SlideText text={text}/>;
 

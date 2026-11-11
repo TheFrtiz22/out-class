@@ -96,7 +96,7 @@ function RoutedShell({ children }: { children: ReactNode }) {
   return <WorkspaceShellContext.Provider value={registry}>
     <ProductShell workspaceKind={route.kind === "admin" ? "admin" : undefined} manager={route.manager} clubId={route.clubId} clubName={route.membership?.club.name}
       mode={route.mode} sections={route.sections} active={bound.active ?? route.active} title={bound.title ?? route.title}
-      chrome={!bound.bare} onSelect={select} onNavigate={navigate} onReviewTool={bound.onReviewTool} onModeSelect={bound.onModeSelect}>
+      chrome={!bound.bare} onSelect={select} onNavigate={navigate} onModeSelect={bound.onModeSelect}>
       {children}
     </ProductShell>
   </WorkspaceShellContext.Provider>
