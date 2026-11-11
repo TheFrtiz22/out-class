@@ -35,7 +35,7 @@ function Review({ app }: { app: Candidate; average?: Props["average"] }) {
 /** The rating on one line: the average (or the submitted count) with the detail in a tooltip and for screen readers. */
 function Rating({ app }: { app: Candidate }) {
   const summary = app.roundScore
-  if (!summary) return <span className="oc-applicant-review-hidden oc-dt-muted" title="Hidden until you review"><Lock aria-hidden="true" size={13} />Hidden<span className="sr-only"> until you review</span></span>
+  if (!summary) return <span className="oc-applicant-review-hidden oc-dt-muted" title="Hidden until you review"><Lock aria-hidden="true" size={14} />Hidden<span className="sr-only"> until you review</span></span>
   const detail = `${summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}${summary.provisional ? " · Provisional" : ""}`
   return <span title={detail}>{summary.average === null ? <span className="oc-dt-muted">{summary.submitted}/{summary.required} reviews</span> : <><strong className="font-semibold">{formatAverage(summary.average)}</strong><span className="oc-dt-muted"> /10{summary.provisional ? "*" : ""}</span></>}<span className="sr-only"> · {detail}</span></span>
 }
@@ -45,14 +45,14 @@ const roundName = (rounds: Pipeline["rounds"], app: Candidate) => rounds.find(ro
 const testScores = (app: Candidate, fields: ProfileFieldVisibility) => joinFacts(fields.sat && app.student.studentProfile?.satScore != null && `SAT ${app.student.studentProfile.satScore}`, fields.act && app.student.studentProfile?.actScore != null && `ACT ${app.student.studentProfile.actScore}`)
 /** Profile columns the club has hidden are not rendered (their values are already withheld by the server). */
 const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gpa" ? fields.gpa : id === "sat" ? fields.sat : id === "act" ? fields.act : id === "test" ? fields.sat || fields.act : id === "year" ? fields.academicYear : true
-/** Applicants: email drops first, then SAT and ACT combine into Test, then Year drops. Cards below 640px. */
+/** Applicants: email drops first, then SAT and ACT combine into one "Test scores" column (below 880px, never beside them), then Year drops. Cards below 640px. */
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection, profileFields = defaultProfileFieldVisibility() }: Props) {
   const columns = ([
     { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-applicant-person-row"><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><PreviouslyAppliedBadge priors={app.priorApplications} /></span>, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
     { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Not available" },
     { id: "gpa", header: "GPA", sortKey: "gpa", align: "end", cell: app => app.student.studentProfile?.gpa?.toFixed(2) ?? "—" },
-    { id: "test", header: "Test", hideFrom: "lg", cell: app => testScores(app, profileFields) || "—" },
+    { id: "test", header: "Test scores", hideFrom: "lg", cell: app => testScores(app, profileFields) || "—" },
     { id: "sat", header: "SAT", sortKey: "sat", align: "end", showFrom: "lg", cell: app => app.student.studentProfile?.satScore ?? "—" },
     { id: "act", header: "ACT", sortKey: "act", align: "end", showFrom: "lg", cell: app => app.student.studentProfile?.actScore ?? "—" },
     { id: "score", header: "Rating", sortKey: "score", cell: app => <Rating app={app} /> },

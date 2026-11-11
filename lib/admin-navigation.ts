@@ -5,8 +5,12 @@ export const adminNavigation: (ProductNavItem & { group: string })[] = [
   { id: "events", label: "Event Approvals", href: "/platform/events", group: "Operations" },
   { id: "claims", label: "Club Approvals", href: "/platform/claims", group: "Operations" },
   { id: "school-requests", label: "School Requests", href: "/platform/school-requests", group: "Operations" },
-  ...["Onboarding", "Support", "Activity"].map(label => ({ id: label.toLowerCase(), label, href: `/platform/${label.toLowerCase()}`, group: "Operations" })),
+  ...["Onboarding", "Support"].map(label => ({ id: label.toLowerCase(), label, href: `/platform/${label.toLowerCase()}`, group: "Operations" })),
   { id: "permissions", label: "Permissions", href: "/platform/permissions", group: "System" },
   { id: "settings", label: "Platform Settings", href: "/platform/settings", group: "System" },
   { id: "audit", label: "Audit Log", href: "/platform/audit", group: "System" },
 ];
+/** Retired section ids that still resolve, so bookmarks keep working. Activity and Audit Log both
+ * listed the audit trail; Audit Log now carries it with support sessions. */
+export const adminSectionAliases: Record<string, string> = { activity: "audit" };
+export const adminSectionId = (id: string) => adminSectionAliases[id] ?? id;

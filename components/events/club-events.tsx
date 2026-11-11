@@ -57,12 +57,12 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
       {["PUBLISHED", "PENDING"].includes(e.status) && <Button variant="outline" disabled={busy} onClick={click => { removeOrigin.current = click.currentTarget; removed.current = false; setConfirm(e); }}>Remove from Corkboard</Button>}
     </div>;
   }
-  return <section aria-label="Corkboard Events" className="min-w-0 space-y-5">
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Corkboard Events</h2><p className="mt-2 text-sm text-muted-foreground">Public events, approval, and RSVP intent. Check-in attendance stays in Meetings.</p></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create Corkboard Event</Button></header>
+  return <section aria-label="Events" className="min-w-0 space-y-5">
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Events</h2><p className="mt-2 text-sm text-muted-foreground">Public events, approval, and RSVP intent. Check-in attendance stays in Meetings.</p></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create event</Button></header>
     {notice && <p role="status" className="rounded-lg border p-3 text-sm">{notice}</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}{!rows.length && !loading && <> <Button variant="outline" size="sm" disabled={busy} onClick={() => setRetry(n => n + 1)}>Try again</Button></>}</p>}
     {event ? <div className="oc-event-management-detail">
-      <div><Button variant="ghost" onClick={() => setSelected(null)}><ArrowLeft size={16} aria-hidden="true" />All Corkboard events</Button><EventFlyer event={event} /></div>
+      <div><Button variant="ghost" onClick={() => setSelected(null)}><ArrowLeft size={16} aria-hidden="true" />All events</Button><EventFlyer event={event} /></div>
       <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><span className="oc-event-status">{managedEventStatus(event)}</span><p>{eventScheduleLabel(event)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
         {event.status === "PENDING" && <p role="status">Waiting for OutClass approval.</p>}
         {event.rejectionReason && <p className="rounded-lg border p-3 text-sm">Review feedback: {event.rejectionReason}</p>}
@@ -72,7 +72,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
       </div>
     </div> : <>
       <SegmentedControl label="Event filter" className="oc-event-management-tabs" value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t}${t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}` }))} />
-      {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No Corkboard events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : !visible.length ? <div className="space-y-3 rounded-lg border p-8 text-sm"><p>None of your club’s events are {tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.</p><Button variant="outline" size="sm" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
+      {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create event</Button></div> : !visible.length ? <div className="space-y-3 rounded-lg border p-8 text-sm"><p>None of your club’s events are {tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.</p><Button variant="outline" size="sm" onClick={() => setEditing(null)}>Create event</Button></div> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
         <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}
     </>}
@@ -231,7 +231,7 @@ function EventEditor({
     <section>
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-serif text-2xl">
-          {event ? "Edit event" : "Create Corkboard Event"}
+          {event ? "Edit event" : "Create event"}
         </h2>
         <Button variant="ghost" disabled={busy} onClick={() => void draftSave.flush().then(onClose).catch(() => {})}>
           Back to events

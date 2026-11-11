@@ -54,7 +54,8 @@
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
   .oc-dock-rail nav [aria-current="page"]::after { display: none; }
   .oc-dock-icon { display: grid; place-items: center; width: 60px; flex: 0 0 60px; transform: scale(1); transform-origin: center; transition: transform 240ms var(--oc-floating-ease); }
-  .oc-dock-icon > :is(svg,[data-slot="avatar"]) { width: 22px; height: 22px; }
+  .oc-dock-icon > svg { width: 24px; height: 24px; }
+  .oc-dock-icon > [data-slot="avatar"] { width: 22px; height: 22px; }
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"]) .oc-dock-icon > svg { color: var(--brand-orange); }
   .oc-dock-item-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .oc-dock-preview { margin-inline: auto 10px; }
