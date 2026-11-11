@@ -167,7 +167,7 @@ test('moving from the drawer locates the target-round review by stable ID despit
 
 test('rejected applicants leave active queues and remain in the deliberate retained-history tab',async()=>{
  const active=harness();active.setServerStatus('REJECTED');active.render();await flush();let activeTree=active.render();decisionGroupButton(activeTree,'Pending').props.onClick();activeTree=active.render();await flush();activeTree=active.render();assert.equal(view(activeTree),undefined);
- const rejected=harness(undefined,false,true);rejected.setServerStatus('REJECTED');rejected.render();await flush();const rejectedTree=rejected.render();assert.equal(view(rejectedTree).props.applicants.length,1);assert.equal(view(rejectedTree).props.applicants[0].status,'REJECTED');assert.equal(text(rejectedTree).match(/keep their reviews and decision history/g).length,1,'the retention explainer shows once');
+ const rejected=harness(undefined,false,true);rejected.setServerStatus('REJECTED');rejected.render();await flush();const rejectedTree=rejected.render();assert.equal(view(rejectedTree).props.applicants.length,1);assert.equal(view(rejectedTree).props.applicants[0].status,'REJECTED');assert.equal(text(rejectedTree).match(/its history is kept/g).length,1,'the retention explainer shows once');
 });
 
 test('recruitment review actions sit in one header row before the toolbar, without a card or Refresh; Decisions keeps only Review applicants', async () => {
