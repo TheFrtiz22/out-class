@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
@@ -14,9 +16,9 @@ export function AccountSettings({ email, passwordAccount, impersonating }: { ema
     try {
       const response = await fetch("/api/auth/password-recovery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", email, turnstileToken }) })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || "Could not request a password reset.")
+      if (!response.ok) throw new UserFacingError(result.error || "Could not request a password reset.")
       setMessage(result.message || "Check your university email for password reset instructions.")
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not request a password reset.") }
+    } catch (reason) { setError(userMessage(reason, "Could not request a password reset.")) }
     finally { setBusy(false); setTurnstileReset(value => value + 1) }
   }
   return <div className="max-w-[var(--oc-reading-width)] divide-y rounded-lg border oc-glass-surface px-5">

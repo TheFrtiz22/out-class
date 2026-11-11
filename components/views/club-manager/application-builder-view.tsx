@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
@@ -8,7 +9,7 @@ import { getApplicationSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
 import { Plus, ArrowUp, ArrowDown, Trash2, Eye } from "@/components/icons";
 import {
-  saveApplicationSettings,
+  saveApplicationSettings as saveApplicationSettingsAction,
 } from "@/actions/club-settings";
 import {
   applicationSettingsSchema,
@@ -32,6 +33,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import "@/components/clubs/club-settings.css";
+import { unwrapped } from "@/lib/action-result"
+const saveApplicationSettings = unwrapped(saveApplicationSettingsAction)
 const localDate = (date: Date | string | null) => {
   if (!date) return "";
   const d = new Date(date);
@@ -150,9 +153,7 @@ export function ApplicationBuilderView({
       );
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : "Could not save. Your edits are still here.",
+        userMessage(e, "Could not save. Your edits are still here."),
       );
     } finally {
       working.current = false;

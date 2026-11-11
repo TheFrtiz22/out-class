@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 
 import { useEffect, useRef, useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -38,7 +39,7 @@ function InvitationComposer({ meeting, done }: { meeting: Meeting; done: () => v
         await publishClubAnnouncement({ clubId: meeting.clubId, title: `Meeting: ${meeting.title}`.slice(0, 200), body: `${meetingDate(meeting.date)} · ${meeting.location}\n\nJoin us for ${meeting.title}.\n${window.location.origin}/meetings/${meeting.id}`, audience: "CUSTOM", audienceSpec: audience, requestKey: requestKey.current })
         done()
       }
-    } catch (error) { setError(error instanceof Error ? error.message : "Could not send the meeting announcement. Try again.") }
+    } catch (error) { setError(userMessage(error, "Could not send the meeting announcement. Try again.")) }
     finally { working.current = false; setBusy(false) }
   }
   return <div className="space-y-5" data-saving={busy}>

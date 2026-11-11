@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { PillGroup } from "@/components/ui/segmented-control"
 import { useEffect, useRef, useState } from "react"
 import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MapPin } from "@/components/icons"
@@ -21,7 +22,7 @@ export function BookingPicker({ rooms, clubName, roundName, booking, onReserve, 
   const selectedDay = availableDates.includes(day) && day.startsWith(month) ? day : availableDates.find(d => d.startsWith(month)) ?? ""
   const choice = slots.find(s => s.id === selected && dayKey(s.startTime, zone) === selectedDay)
   const first = new Date(`${month}-01T12:00:00`), days = new Date(first.getFullYear(), first.getMonth()+1,0).getDate()
-  async function run(fn: () => Promise<void>, success: string) { if (saving.current) return; saving.current = true; setBusy(true); setError(""); setNotice(""); try { await fn(); setSelected(""); setCancelConfirm(false); setNotice(success) } catch(e) { setError(e instanceof Error && !("digest" in e) ? e.message : "Could not confirm your booking update. Check your reservation and available times, or reload and retry.") } finally { saving.current = false; setBusy(false) } }
+  async function run(fn: () => Promise<void>, success: string) { if (saving.current) return; saving.current = true; setBusy(true); setError(""); setNotice(""); try { await fn(); setSelected(""); setCancelConfirm(false); setNotice(success) } catch(e) { setError(userMessage(e, "Could not confirm your booking update. Check your reservation and available times, or reload and retry.")) } finally { saving.current = false; setBusy(false) } }
   return <div className="ir-booking" aria-busy={busy}>
     <aside className="ir-booking-intro"><div className="ir-symbol"><CalendarDays /></div><p className="ir-eyebrow">{clubName}</p><h2>{roundName || "Your interview"}</h2><p>{booking ? bookingPast ? "Your recorded interview details are below." : allowRescheduling ? "Your time is reserved. You can reschedule before the interview starts." : "Your time is reserved. Contact the club if you need a different time." : "Choose a day, select a time, then confirm your interview."}</p><div className="ir-detail"><Clock3 size={16} />{[...new Set(rooms.map(r => r.duration))].join(" / ") || (booking ? (+new Date(booking.endTime)-+new Date(booking.startTime))/60000 : "—")} minute interviews</div><div className="ir-detail"><MapPin size={16} />{rooms.length} {rooms.length === 1 ? "room" : "rooms"} available</div><p className="mt-6 text-xs font-medium">{SCHEDULING_TIMEZONE_LABEL}</p>{preview && <p className="mt-5 rounded-lg border border-dashed p-3 text-xs">Applicant preview · picking a time here doesn’t book anything.</p>}</aside>
     <div className="min-w-0 p-5 sm:p-7">
