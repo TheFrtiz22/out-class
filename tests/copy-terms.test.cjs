@@ -82,3 +82,19 @@ test("retired names do not come back in navigation, search or Home", () => {
   assert.doesNotMatch(clubHome, /Join voting|Open scheduler|Post update|assignment"/)
   assert.match(clubHome, /interviewTab=schedule/)
 })
+
+test("FE-23: no user-facing 'Corkboard Events' label remains; event lists say Events", () => {
+  const offenders = []
+  const walk = dir => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name)
+      if (entry.isDirectory()) walk(file)
+      else if (/\.(tsx?|jsx?|mjs|cjs)$/.test(entry.name) && /\bCorkboard events?\b/i.test(fs.readFileSync(file, "utf8"))) offenders.push(file)
+    }
+  }
+  for (const dir of ["app", "components", "lib"]) walk(dir)
+  assert.deepEqual(offenders, [])
+  const clubEvents = fs.readFileSync("components/events/club-events.tsx", "utf8")
+  assert.match(clubEvents, /aria-label="Events"/)
+  assert.match(clubEvents, />\+ Create event<\/Button>/)
+})

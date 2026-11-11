@@ -22,3 +22,21 @@ export function calendarEventFile(event: {
     ...(event.url ? [`URL:${event.url.replace(/[\r\n]/g, "")}`] : []), "END:VEVENT", "END:VCALENDAR",
   ].map(fold).join("\r\n") + "\r\n";
 }
+
+export type FeedEvent = { id: string; title: string; description: string; location: string; start: Date; end: Date; allDay?: boolean; url?: string }
+
+/** A whole subscribable calendar: one VCALENDAR with a VEVENT per event.
+ * Same escaping, folding and UTC rules as calendarEventFile. Invalid dates are skipped. */
+export function calendarFeedFile(name: string, events: readonly FeedEvent[], now = new Date()) {
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//OutClass//Calendar Feed//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    `X-WR-CALNAME:${feedEscape(name)}`, "X-WR-TIMEZONE:America/New_York", "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H"]
+  for (const event of events) {
+    if (!Number.isFinite(+event.start) || !Number.isFinite(+event.end) || event.end < event.start) continue
+    const single = calendarEventFile(event, now).split("\r\n")
+    const start = single.indexOf("BEGIN:VEVENT"), end = single.indexOf("END:VEVENT")
+    lines.push(...single.slice(start, end + 1))
+  }
+  lines.push("END:VCALENDAR")
+  return lines.join("\r\n") + "\r\n"
+}
+function feedEscape(value: string) { return value.replace(/\\/g, "\\\\").replace(/\r\n|\r|\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\;") }
