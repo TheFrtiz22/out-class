@@ -1,9 +1,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{PGlite}=require('@electric-sql/pglite');
 test('shared timer migration: additive, LF, one row per room, revision-ordered, same-club attribution, runtime-only access',{timeout:240000},async()=>{
- const file='prisma/migrations/20261111120000_interview_shared_timer/migration.sql',sql=fs.readFileSync(file,'utf8');
+ const file='prisma/migrations/20261111180000_interview_shared_timer/migration.sql',sql=fs.readFileSync(file,'utf8');
  assert.ok(!sql.includes('\r'),'LF line endings');assert.match(sql,/^BEGIN; SET LOCAL lock_timeout='5s';/);
  assert.doesNotMatch(sql,/\b(DROP|TRUNCATE|DELETE FROM)\b|ALTER TABLE "(?!InterviewTimer")/i,'touches no existing table');
- assert.ok(fs.readdirSync('prisma/migrations').filter(n=>/^\d{14}_/.test(n)).sort().pop()==='20261111120000_interview_shared_timer','latest migration');
+ // Must sort after migrations already applied in production (incl. 20261111120000_voting_setup_edit_prepared, PR #290).
+ assert.ok('20261111180000_interview_shared_timer'>'20261111120000_voting_setup_edit_prepared');assert.ok(fs.readdirSync('prisma/migrations').filter(n=>/^\d{14}_/.test(n)&&n<'20261111180000').every(n=>!n.includes('interview_shared_timer')),'no earlier copy of this migration');
  const db=new PGlite();try{
  await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE outclass_production_app;');
  for(const n of fs.readdirSync('prisma/migrations').filter(n=>fs.existsSync(path.join('prisma/migrations',n,'migration.sql'))).sort())await db.exec(fs.readFileSync(path.join('prisma/migrations',n,'migration.sql'),'utf8'));
