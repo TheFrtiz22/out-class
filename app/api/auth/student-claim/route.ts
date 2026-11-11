@@ -11,9 +11,12 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { studentInvitationFingerprint } from "@/lib/student-invitation";
 import { createClient as providerClient } from "@supabase/supabase-js";
 import { turnstileMessage, turnstileRemoteIp, verifyTurnstile } from "@/lib/turnstile";
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
 const schema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), tokenHash: z.string().regex(/^[a-f0-9]{56,64}$/), password: newPasswordSchema }).strict();
 export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
+  const limited = limitRequest(request, RATE_LIMITS.studentClaim);
+  if (limited) return limited;
   let body: unknown;
   try { body = await request.json(); } catch { body = null; }
   // The bot check runs before any account lookup, so its answer never depends on the address.

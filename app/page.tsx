@@ -16,6 +16,7 @@ import { unstable_cache } from "next/cache"
 import { redirect } from "next/navigation"
 import { SITE_TITLE, SITE_DESCRIPTION, publicPageMetadata, privateRobots, privateHomepageParams, websiteStructuredData } from "@/lib/seo"
 import { initialLandingAudience, landingAudienceBootScript, LANDING_AUDIENCE_PREFERENCE } from "@/lib/landing-audience"
+import { cspNonce } from "@/utils/csp-nonce"
 
 const getCachedLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
 
@@ -97,11 +98,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     user ? getStudentDashboardData().catch(e => { console.error(e); return null }) : null,
     getCachedLaunchClubs(),
   ])
+  const nonce = await cspNonce()
   const landingAudience = initialLandingAudience(params.audience, cookieStore.get(LANDING_AUDIENCE_PREFERENCE)?.value)
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />
+    <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />
     <style id="oc-landing-audience-gate" />
-    <script dangerouslySetInnerHTML={{ __html: landingAudienceBootScript }} />
+    <script nonce={nonce} dangerouslySetInnerHTML={{ __html: landingAudienceBootScript }} />
     <HomeEntry initialLandingAudience={landingAudience} launchClubs={launchClubs} initialView={!user && next !== "/" ? "auth" : "landing"} initialSession={user} initialData={initialData} hasProfile={hasProfile} />
   </>
 }

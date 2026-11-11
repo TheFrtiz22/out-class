@@ -19,18 +19,18 @@
 }
 .oc-login .oc-login-logo { width: 128px; height: auto; align-self: flex-start; }
 .oc-login-brand-content { width: 100%; max-width: 660px; margin-block: auto; padding-block: 56px 40px; }
-.oc-login-brand h1 { font-size: clamp(42px, 4.55vw, 72px); font-weight: var(--oc-weight-bold); line-height: 1.1; letter-spacing: -.04em; }
-.oc-login-brand-description { max-width: 410px; margin-top: 22px; color: color-mix(in srgb, var(--primary-foreground) 76%, var(--primary)); font-size: 16px; line-height: 1.8; text-wrap: pretty; }
-.oc-login-origin { color: color-mix(in srgb, var(--primary-foreground) 65%, var(--primary)); font-size: 12px; }
+.oc-login-brand h1 { font-size: clamp(2.625rem, 4.55vw, 4.5rem); font-weight: var(--oc-weight-bold); line-height: 1.1; letter-spacing: -.04em; }
+.oc-login-brand-description { max-width: 410px; margin-top: 22px; color: color-mix(in srgb, var(--primary-foreground) 76%, var(--primary)); font-size: var(--oc-size-16); line-height: 1.8; text-wrap: pretty; }
+.oc-login-origin { color: color-mix(in srgb, var(--primary-foreground) 65%, var(--primary)); font-size: var(--oc-size-12); }
 
 .oc-login-auth { display: flex; flex-direction: column; min-width: 0; padding: 36px clamp(32px, 4vw, 72px) 28px; }
-.oc-login-back { display: inline-flex; align-items: center; min-height: 44px; gap: 9px; color: var(--muted-foreground); font-size: 12px; font-weight: var(--oc-weight-regular); transition: color 180ms; }
+.oc-login-back { display: inline-flex; align-items: center; min-height: 44px; gap: 9px; color: var(--muted-foreground); font-size: var(--oc-size-12); font-weight: var(--oc-weight-regular); transition: color 180ms; }
 .oc-login-back:hover { color: var(--primary); }
 .oc-login-auth-content { width: 100%; max-width: 440px; margin: auto; padding: clamp(1.25rem, 2.5vw, 2rem); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
-.oc-login-auth h2 { color: var(--primary); font-size: clamp(32px, 2.8vw, 42px); font-weight: 500; line-height: 1.2; letter-spacing: -.035em; }
-.oc-login-auth-description { margin-top: 12px; color: var(--muted-foreground); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.oc-login-auth h2 { color: var(--primary); font-size: clamp(2rem, 2.8vw, 2.625rem); font-weight: 500; line-height: 1.2; letter-spacing: -.035em; }
+.oc-login-auth-description { margin-top: 12px; color: var(--muted-foreground); font-size: var(--oc-size-14); line-height: 1.7; overflow-wrap: anywhere; }
 .oc-login-auth-description strong { font-weight: var(--oc-weight-medium); color: var(--foreground); }
-.oc-login .oc-login-uva, .oc-login .oc-login-submit { width: 100%; height: 54px; border-radius: var(--oc-radius-md); font-size: 14px; font-weight: var(--oc-weight-bold); transition: background-color 180ms, transform 180ms, opacity 180ms; }
+.oc-login .oc-login-uva, .oc-login .oc-login-submit { width: 100%; height: 54px; border-radius: var(--oc-radius-md); font-size: var(--oc-size-14); font-weight: var(--oc-weight-bold); transition: background-color 180ms, transform 180ms, opacity 180ms; }
 .oc-login .oc-login-uva { margin-top: 32px; gap: 12px; }
 .oc-login .oc-login-uva:hover, .oc-login .oc-login-submit:hover { background: color-mix(in srgb, var(--primary) 88%, black); }
 .oc-login .oc-login-uva:active, .oc-login .oc-login-submit:active { transform: translateY(1px); }
@@ -43,51 +43,51 @@
 .oc-login-email-form { display: grid; gap: 18px; padding: 24px 0 4px; border-top: 1px solid var(--border); margin-top: 12px; }
 .oc-login-email-reveal :is(button, a):focus-visible { outline-offset: 2px; }
 .oc-login-field { display: grid; gap: 9px; }
-.oc-login-field label { font-size: 12px; font-weight: var(--oc-weight-medium); }
-.oc-login-field input { height: 50px; border-radius: var(--oc-radius-md); font-size: 16px; }
+.oc-login-field label { font-size: var(--oc-size-13); font-weight: var(--oc-weight-medium); }
+.oc-login-field input { height: 50px; border-radius: var(--oc-radius-md); font-size: var(--oc-size-16); }
 .oc-login-field input:hover:not(:disabled):not(:focus-visible):not([aria-invalid="true"]) { border-color: var(--primary); }
 .oc-login-field input:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
-.oc-login-hint { color: var(--muted-foreground); font-size: 12px; line-height: 1.6; }
+.oc-login-hint { color: var(--muted-foreground); font-size: var(--oc-size-13); line-height: 1.6; }
 .oc-login-password-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.oc-login-text-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; color: var(--primary); font-size: 12px; font-weight: var(--oc-weight-medium); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: color 180ms, text-decoration-color 180ms; }
+.oc-login-text-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; color: var(--primary); font-size: var(--oc-size-13); font-weight: var(--oc-weight-medium); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: color 180ms, text-decoration-color 180ms; }
 .oc-login-text-link:hover { text-decoration-color: currentColor; }
-.oc-login-password-label .oc-login-text-link { min-height: 24px; font-size: 12px; }
+.oc-login-password-label .oc-login-text-link { min-height: 24px; font-size: var(--oc-size-13); }
 .oc-login-code-link { margin-top: -8px; }
-.oc-login-create { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 6px; padding-top: 20px; margin-top: 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted-foreground); }
-.oc-login-error { border-left: 2px solid var(--destructive); margin-top: 16px; padding: 4px 0 4px 12px; color: var(--destructive); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.oc-login-create { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 6px; padding-top: 20px; margin-top: 18px; border-top: 1px solid var(--border); font-size: var(--oc-size-12); color: var(--muted-foreground); }
+.oc-login-error { border-left: 2px solid var(--destructive); margin-top: 16px; padding: 4px 0 4px 12px; color: var(--destructive); font-size: var(--oc-size-14); line-height: 1.7; overflow-wrap: anywhere; }
 .oc-login-footer { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-.oc-login-footer .oc-login-text-link { min-height: 32px; color: var(--muted-foreground); font-size: 12px; }
-.oc-login-footer p { color: var(--muted-foreground); font-size: 12px; line-height: 1.7; text-wrap: balance; }
+.oc-login-footer .oc-login-text-link { min-height: 32px; color: var(--muted-foreground); font-size: var(--oc-size-13); }
+.oc-login-footer p { color: var(--muted-foreground); font-size: var(--oc-size-12); line-height: 1.7; text-wrap: balance; }
 .oc-login-verify-form { display: grid; gap: 20px; margin-top: 28px; }
-.oc-login-notice { border-left: 2px solid var(--primary); padding: 2px 0 2px 12px; color: var(--muted-foreground); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
-.oc-login-field .oc-login-code-input { height: 56px; font-size: 24px; letter-spacing: .35em; text-align: center; }
+.oc-login-notice { border-left: 2px solid var(--primary); padding: 2px 0 2px 12px; color: var(--muted-foreground); font-size: var(--oc-size-12); line-height: 1.7; overflow-wrap: anywhere; }
+.oc-login-field .oc-login-code-input { height: 56px; font-size: var(--oc-size-24); letter-spacing: .35em; text-align: center; }
 .oc-login-verify-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 
 @media (min-width: 1100px) and (max-height: 850px) {
   .oc-login-brand { padding-block: 32px 24px; }
   .oc-login-brand-content { padding-block: 32px 24px; }
-  .oc-login-brand-description { margin-top: 18px; font-size: 15px; line-height: 1.7; }
+  .oc-login-brand-description { margin-top: 18px; font-size: 0.9375rem; line-height: 1.7; }
 }
 @media (min-width: 768px) and (max-width: 1099px) {
   .oc-login { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .oc-login-brand { padding: 32px 28px 28px; }
   .oc-login-brand-content { padding-block: 44px 32px; }
-  .oc-login-brand h1 { font-size: clamp(32px, 4.1vw, 44px); }
-  .oc-login-brand-description { font-size: 14px; }
+  .oc-login-brand h1 { font-size: clamp(2rem, 4.1vw, 2.75rem); }
+  .oc-login-brand-description { font-size: var(--oc-size-14); }
   .oc-login-auth { padding: 26px 28px 24px; }
-  .oc-login-auth h2 { font-size: 32px; }
+  .oc-login-auth h2 { font-size: var(--oc-size-32); }
 }
 @media (max-width: 767px) {
   .oc-login { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
   .oc-login-brand { padding: 24px 24px 22px; }
   .oc-login .oc-login-logo { width: 106px; }
   .oc-login-brand-content { max-width: 440px; padding: 24px 0 0; margin: 0; }
-  .oc-login-brand h1 { font-size: clamp(29px, 8.2vw, 40px); line-height: 1.13; }
-  .oc-login-brand-description { margin-top: 12px; max-width: 350px; font-size: 12px; line-height: 1.7; }
+  .oc-login-brand h1 { font-size: clamp(1.8125rem, 8.2vw, 2.5rem); line-height: 1.13; }
+  .oc-login-brand-description { margin-top: 12px; max-width: 350px; font-size: var(--oc-size-12); line-height: 1.7; }
   .oc-login-auth { padding: 12px 24px 22px; }
   .oc-login-auth-content { max-width: 440px; padding: 1.25rem; margin: 0 auto; }
-  .oc-login-auth h2 { font-size: 30px; }
-  .oc-login-auth-description { margin-top: 8px; font-size: 12px; }
+  .oc-login-auth h2 { font-size: 1.875rem; }
+  .oc-login-auth-description { margin-top: 8px; font-size: var(--oc-size-12); }
   .oc-login .oc-login-uva { margin-top: 22px; }
   .oc-login-email-toggle { margin-top: 6px; }
   .oc-login-create { padding-top: 10px; margin-top: 10px; }
@@ -118,22 +118,22 @@
   gap: 8px 12px;
   padding-bottom: 18px;
   border-bottom: 1px solid rgb(255 247 236 / 18%);
-  font-size: 12px;
+  font-size: var(--oc-size-12);
   letter-spacing: .09em;
 }
 .oc-login-example-caption strong { color: var(--oc-glass-cream); font-weight: 600; }
 .oc-login-example-heading { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding-block: 22px 18px; }
-.oc-login-example-heading p { font-size: 12px; color: rgb(255 247 236 / 72%); }
-.oc-login-example-heading h3 { margin-top: 7px; font-size: clamp(17px, 2vw, 21px); font-weight: 600; line-height: 1.3; }
-.oc-login-example-state { flex-shrink: 0; padding: 6px 9px; border: 1px solid rgb(255 247 236 / 28%); border-radius: var(--oc-radius-sm); font-size: 12px; }
+.oc-login-example-heading p { font-size: var(--oc-size-12); color: rgb(255 247 236 / 72%); }
+.oc-login-example-heading h3 { margin-top: 7px; font-size: clamp(1.0625rem, 2vw, 1.3125rem); font-weight: 600; line-height: 1.3; }
+.oc-login-example-state { flex-shrink: 0; padding: 6px 9px; border: 1px solid rgb(255 247 236 / 28%); border-radius: var(--oc-radius-sm); font-size: var(--oc-size-12); }
 .oc-login-example-steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
-.oc-login-example-steps li { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid rgb(255 247 236 / 12%); font-size: 13px; color: rgb(255 247 236 / 76%); }
+.oc-login-example-steps li { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid rgb(255 247 236 / 12%); font-size: var(--oc-size-13); color: rgb(255 247 236 / 76%); }
 .oc-login-example-steps li[aria-current="step"] { color: var(--primary-foreground); font-weight: 600; }
 .oc-login-example-step-mark { display: grid; flex: 0 0 25px; width: 25px; height: 25px; place-items: center; border: 1px solid rgb(255 247 236 / 40%); border-radius: 50%; }
 .oc-login-example-steps li:first-child .oc-login-example-step-mark { color: var(--oc-glass-cream); border-color: var(--oc-glass-cream); }
 .oc-login-example-steps li[aria-current="step"] .oc-login-example-step-mark { background: var(--oc-glass-cream); border-color: var(--oc-glass-cream); color: var(--primary); }
 .oc-login-example-steps li[aria-current="step"] .oc-login-example-step-mark::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.oc-login-example-footnote { margin-top: 14px; color: rgb(255 247 236 / 65%); font-size: 12px; line-height: 1.6; }
+.oc-login-example-footnote { margin-top: 14px; color: rgb(255 247 236 / 65%); font-size: var(--oc-size-12); line-height: 1.6; }
 /* The authentication form takes priority on phones. */
 @media (max-width: 767px) {
   .oc-login-example { display: none; }
@@ -144,21 +144,21 @@
 .oc-auth-page .oc-login { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); min-height: 0; align-items: start; background: transparent; }
 .oc-auth-page .oc-login-auth { padding: 0; }
 .oc-auth-page .oc-login-auth-content, .oc-auth-page .oc-signup-content { max-width: 480px; margin: 0; padding: clamp(24px, 3.5vw, 40px); border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-overlay-radius); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
-.oc-auth-title, .oc-login-auth h1.oc-auth-title { font-family: var(--oc-font-display); color: var(--primary); font-size: clamp(32px, 2.6vw + 12px, 44px); font-weight: 400; line-height: 1.12; letter-spacing: -.03em; text-wrap: balance; }
-.oc-auth-page .oc-login-auth-description { font-size: 16px; line-height: 1.6; }
-.oc-auth-page .oc-login-uva, .oc-auth-page .oc-login-submit { height: auto; min-height: 52px; border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); font-size: 15px; }
+.oc-auth-title, .oc-login-auth h1.oc-auth-title { font-family: var(--oc-font-display); color: var(--primary); font-size: clamp(2rem, 2.6vw + 0.75rem, 2.75rem); font-weight: 400; line-height: 1.12; letter-spacing: -.03em; text-wrap: balance; }
+.oc-auth-page .oc-login-auth-description { font-size: var(--oc-size-16); line-height: 1.6; }
+.oc-auth-page .oc-login-uva, .oc-auth-page .oc-login-submit { height: auto; min-height: 52px; border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); font-size: 0.9375rem; }
 .oc-auth-page .oc-login-uva:hover:not(:disabled), .oc-auth-page .oc-login-submit:hover:not(:disabled) { background: var(--oc-glass-pill-navy-hover); box-shadow: var(--oc-glass-pill-navy-hover-depth); }
 /* Disabled keeps the pill's shape, navy fill and label so it still reads as a button. */
 .oc-auth-page button:disabled { opacity: .62; cursor: not-allowed; }
 .oc-auth-page .oc-login-submit:disabled { background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
-.oc-auth-page .oc-login-field label, .oc-auth-page .oc-login-hint, .oc-auth-page .oc-login-error, .oc-auth-page .oc-login-notice, .oc-auth-page .oc-login-create { font-size: 14px; }
-.oc-auth-page .oc-login-password-label .oc-login-text-link { min-height: 44px; font-size: 14px; }
+.oc-auth-page .oc-login-field label, .oc-auth-page .oc-login-hint, .oc-auth-page .oc-login-error, .oc-auth-page .oc-login-notice, .oc-auth-page .oc-login-create { font-size: var(--oc-size-14); }
+.oc-auth-page .oc-login-password-label .oc-login-text-link { min-height: 44px; font-size: var(--oc-size-14); }
 .oc-auth-page .oc-login-field input { border-radius: var(--oc-glass-row-radius); box-shadow: var(--oc-glass-field-depth); }
 .oc-auth-page .oc-login-brand { position: relative; padding: clamp(24px, 3vw, 36px); border-radius: var(--oc-overlay-radius); border: 1px solid var(--oc-glass-navy-edge); background: var(--oc-glass-navy-material); box-shadow: var(--oc-glass-navy-depth); }
-.oc-auth-sample-chip { display: inline-flex; width: fit-content; padding: 2px 12px; border-radius: var(--oc-radius-full); border: 1px solid rgb(255 247 236 / 35%); color: var(--oc-glass-cream); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-.oc-login-brand-title { margin-top: 16px; font-family: var(--oc-font-display); font-size: clamp(22px, 1.6vw + 8px, 30px); line-height: 1.25; color: var(--primary-foreground); }
+.oc-auth-sample-chip { display: inline-flex; width: fit-content; padding: 2px 12px; border-radius: var(--oc-radius-full); border: 1px solid rgb(255 247 236 / 35%); color: var(--oc-glass-cream); font-size: var(--oc-size-12); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.oc-login-brand-title { margin-top: 16px; font-family: var(--oc-font-display); font-size: clamp(1.375rem, 1.6vw + 0.5rem, 1.875rem); line-height: 1.25; color: var(--primary-foreground); }
 .oc-auth-page .oc-login-example { margin-top: 24px; max-width: none; }
-.oc-login-example-name { margin-top: 7px; font-size: clamp(17px, 2vw, 21px); font-weight: 600; line-height: 1.3; }
+.oc-login-example-name { margin-top: 7px; font-size: clamp(1.0625rem, 2vw, 1.3125rem); font-weight: 600; line-height: 1.3; }
 .oc-auth-page .oc-signup-content > fieldset { margin-top: 20px; }
 @media (max-width: 899px) {
   .oc-auth-page .oc-login { grid-template-columns: minmax(0, 1fr); }
@@ -166,6 +166,6 @@
   .oc-auth-page .oc-login-example { display: block; }
 }
 @media (max-width: 767px) {
-  .oc-auth-page .oc-login-auth-description { font-size: 15px; }
+  .oc-auth-page .oc-login-auth-description { font-size: 0.9375rem; }
   .oc-auth-page .oc-login-auth-content, .oc-auth-page .oc-signup-content { padding: 20px; }
 }

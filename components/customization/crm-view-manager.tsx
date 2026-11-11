@@ -48,7 +48,7 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
             <form className="space-y-3" onSubmit={event => { event.preventDefault(); saveView() }}>
               <label className="space-y-1 text-sm">View name<Input value={name} onChange={event => setName(event.target.value)} placeholder="Target Sophomores" maxLength={60} /></label>
               <p className="text-xs text-muted-foreground">Saves your current search, stage, and all applied filters. Changes to filters are temporary until saved.</p>
-              {error && <p role="alert" className="text-xs text-red-700">{error}</p>}
+              {error && <p role="alert" className="text-control text-red-700">{error}</p>}
               <Button type="submit" className="shadow-none">Save as new view</Button>
             </form>
           </PopoverContent>

@@ -4,7 +4,7 @@
 .oc-interview-room.oc-interview-room .oc-room-header button { color: var(--foreground); font-weight: 500; }
 .oc-interview-room.oc-interview-room .oc-room-header button:hover { background: var(--accent); }
 .oc-interview-room > details { margin: 0; padding: 6px 24px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; }
-.oc-interview-room > details > summary { font-size: .75rem; color: var(--muted-foreground); }
+.oc-interview-room > details > summary { font-size: var(--oc-size-13); color: var(--muted-foreground); }
 .oc-room-save { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .oc-room-save [role="status"] { font-size: .75rem; color: var(--muted-foreground); }
 .oc-interview-room.oc-interview-room .oc-interview-columns { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; align-items: stretch; }
