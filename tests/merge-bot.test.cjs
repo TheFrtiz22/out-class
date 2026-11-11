@@ -2,7 +2,7 @@ const test = require("node:test")
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
 const path = require("node:path")
-const { evaluate, protectedFiles, requiredChecksStatus, lastLabeler, latestApproval, checkProvenanceProblems, MERGE_LABEL } = require("../.github/scripts/merge-bot.cjs")
+const { actionsClient, evaluate, protectedFiles, requiredChecksStatus, lastLabeler, latestApproval, checkProvenanceProblems, MERGE_LABEL } = require("../.github/scripts/merge-bot.cjs")
 
 const REPO = "TheFrtiz22/out-class"
 const REQUIRED = ["validate", "Native PostgreSQL / security"]
@@ -147,4 +147,15 @@ test("required checks only count from GitHub Actions, and only from allowed work
   assert.equal(checkProvenanceProblems(passed, new Map(), { headSha: SHA, repoFullName: REPO }).length, 1)
   const otherSha = new Map([[1, { ...ok.get(1), head_sha: "c".repeat(40) }]])
   assert.equal(checkProvenanceProblems(passed, otherSha, { headSha: SHA, repoFullName: REPO }).length, 1)
+})
+
+test("the approval client uses the workflow token even without getOctokit", () => {
+  class FakeOctokit { constructor(options) { this.options = options } }
+  const github = new FakeOctokit({ auth: "pat" })
+  const client = actionsClient({ github, token: "workflow-token" })
+  assert.equal(client.options.auth, "workflow-token")
+  assert.ok(client instanceof FakeOctokit)
+  assert.throws(() => actionsClient({ github, token: "" }))
+  const workflow = fs.readFileSync(path.join(__dirname, "../.github/workflows/merge-bot.yml"), "utf8")
+  assert.doesNotMatch(workflow, /getOctokit/)
 })
