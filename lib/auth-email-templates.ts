@@ -1,7 +1,7 @@
 import { emailButton, emailCode, emailFallback, emailNotice, emailParagraph, transactionalEmailHtml } from '@/lib/transactional-email';
 
 export const authEmailSubjects = {
-  confirmation: 'Verify your UVA email — OutClass',
+  confirmation: 'Verify your UVA email for OutClass',
   'magic-link': 'Your OutClass sign-in code',
   recovery: 'Reset your password',
   'password-changed': 'Your password was changed',

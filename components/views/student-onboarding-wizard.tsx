@@ -751,7 +751,7 @@ export function StudentOnboardingWizard({
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   Add your LinkedIn and resume to strengthen your profile. Both
-                  are optional — you can always add them later.
+                  are optional, and you can add them later.
                 </p>
               </div>
 
@@ -775,7 +775,7 @@ export function StudentOnboardingWizard({
                   <Label htmlFor="linkedinUrl">
                     LinkedIn profile{" "}
                     <span className="font-normal text-muted-foreground">
-                      — Optional / Skippable
+                      (optional)
                     </span>
                   </Label>
                   <Input

@@ -205,7 +205,7 @@ function Submission({
         <label className="oc-task-submission-field oc-task-upload">
           <span><UploadCloud size={19} />File upload <small>{task.requirements.includes("FILE") ? "Required" : "Optional"}</small></span>
           <span className="text-muted-foreground">
-            — up to 5, 10 MB each; PDF, images, text, or Office documents
+            Up to 5, 10 MB each. PDF, images, text, or Office documents.
           </span>
           <Input
             type="file"

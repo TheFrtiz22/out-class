@@ -261,7 +261,7 @@ function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, a
     finally { setSaving(false) }
   }
   return <div className="oc-ranked-settings text-sm">
-    <p className="text-xs text-muted-foreground">{summary ? <>Discussion bands: {summary}</> : canManage ? "No discussion bands yet — ranks only. Set bands to group ranks for discussion." : "No discussion bands set — ranks only."}</p>
+    <p className="text-xs text-muted-foreground">{summary ? <>Discussion bands: {summary}</> : canManage ? "No discussion bands yet, so only ranks show. Set bands to group ranks for discussion." : "No discussion bands set, so only ranks show."}</p>
     {canManage && <details className="mt-2" open={!bands || undefined}>
       <summary className="min-h-9 cursor-pointer py-2 text-xs font-medium">{bands ? "Edit discussion bands" : "Set discussion bands"}</summary>
       <form className="mt-2 flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); if (proposed.ok) void save(proposed.bands) }}>
