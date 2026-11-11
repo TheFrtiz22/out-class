@@ -48,7 +48,7 @@ test('health returns 503 when the database does not answer within 2 seconds', as
   t.mock.method(console, 'error', () => {})
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const health = route(() => new Promise(() => {}))
-  assert.equal(health.DATABASE_TIMEOUT_MS, 2000)
+  assert.match(fs.readFileSync('app/api/health/route.ts', 'utf8'), /\bconst DATABASE_TIMEOUT_MS = 2000\b/)
   const pending = health.GET()
   await Promise.resolve()
   t.mock.timers.tick(1999)

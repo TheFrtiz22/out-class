@@ -7,7 +7,8 @@ import { prisma } from "@/utils/prisma"
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export const DATABASE_TIMEOUT_MS = 2000
+// Not exported: a route module may export only Next.js route fields.
+const DATABASE_TIMEOUT_MS = 2000
 const HEADERS = { "Cache-Control": "no-store, max-age=0", "X-Robots-Tag": "noindex, nofollow" }
 
 function version() {
