@@ -80,6 +80,15 @@ function isOffOrigin(location, appUrl) {
  *  allowed — any other 2xx, or a redirect off the app origin (e.g. a signed Storage URL)
  *  error   — 5xx
  */
+function deniedJson(body) {
+  try {
+    const value = JSON.parse(body);
+    const inner = value && typeof value === "object" && "data" in value && Object.keys(value).length <= 2 ? value.data : value;
+    return !!inner && typeof inner === "object" && inner.status === "denied" &&
+      Object.entries(inner).every(([key, item]) => key === "status" || item == null || (Array.isArray(item) && item.length === 0));
+  } catch { return false; }
+}
+
 function classify(status, { location = null, body = "", appUrl } = {}) {
   if ([401, 403, 404, 405, 410].includes(status)) return "denied";
   if (status === 400 || status === 422) return "invalid";
@@ -88,6 +97,8 @@ function classify(status, { location = null, body = "", appUrl } = {}) {
   if (status >= 200 && status < 300) {
     const target = metaRedirect(body);
     if (target && appUrl && !isOffOrigin(target, appUrl)) return "denied";
+    // Some workspace loaders answer a refusal with 200 and { status: "denied" } and no data.
+    if (deniedJson(body)) return "denied";
     return "allowed";
   }
   return "error";

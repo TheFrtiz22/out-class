@@ -170,7 +170,12 @@ test("attacker pass: IDOR, logout replay, public-key access, headers, enumeratio
       // Cross-club binding: M's own club id with X's application or session.
       await probe(rows, M.actor, "M workspace applicantDisplay Y + A app", q("applicantDisplay", [{ clubId: Y.id, applicationId: appId }]));
       await probe(rows, M.actor, "M workspace attendance Y + A app", q("attendance", [Y.id, appId]));
-      if (seed.voting) await probe(rows, M.actor, "M workspace voting Y + X session", q("voting", [Y.id, seed.voting.id]));
+      if (seed.voting) {
+        // M may read its own club Y; the X session id must not resolve. The leak scan skips
+        // markers that appear in the request, so check for X's session explicitly.
+        const row = await probe(rows, M.actor, "M workspace voting Y + X session", q("voting", [Y.id, seed.voting.id]), { selfScoped: true });
+        if (row.verdict === "allowed" && row.text.includes(seed.voting.id)) rows[rows.length - 1].leaks.push("X voting session id in Y workspace");
+      }
       for (const kind of ["applicants", "roster", "attendance", "rsvps"]) await probe(rows, M.actor, `M /api/club-exports ${kind} on X`, `/api/club-exports?clubId=${X.id}&kind=${kind}`);
       await probe(rows, M.actor, "M /api/club-exports applicants X round", `/api/club-exports?clubId=${X.id}&kind=applicants&roundId=${seed.round.id}`);
       await probe(rows, M.actor, "M /api/recruiting-resumes X/A", `/api/recruiting-resumes?clubId=${X.id}&applicationId=${appId}`);

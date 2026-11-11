@@ -106,3 +106,11 @@ test("AttackerSummary records pass, skip and fail rows and writes JSON", async (
     assert.deepEqual(written.counts, { pass: 1, skip: 1, fail: 1 });
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("classify: a 200 that only says denied counts as denied; any data counts as allowed", () => {
+  assert.equal(h.classify(200, { body: JSON.stringify({ status: "denied", rounds: [] }) }), "denied");
+  assert.equal(h.classify(200, { body: JSON.stringify({ data: { status: "denied", rounds: [] } }) }), "denied");
+  assert.equal(h.classify(200, { body: JSON.stringify({ status: "denied", rounds: [{ id: "r1" }] }) }), "allowed");
+  assert.equal(h.classify(200, { body: JSON.stringify({ status: "ok", rounds: [] }) }), "allowed");
+  assert.equal(h.classify(200, { body: "not json" }), "allowed");
+});
