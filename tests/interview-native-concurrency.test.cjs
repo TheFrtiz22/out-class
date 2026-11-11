@@ -14,7 +14,7 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:unwrapActions(load('actions/interview-kits.ts')),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts')};
 }
 test('native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening',{skip:!databaseUrl,timeout:120000},async t=>{
  const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
@@ -75,7 +75,7 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  assert.equal(await prisma.evaluation.count({where:{applicationId:app.id,interviewerId:oneMember.id}}),1);
  assert.equal((await b.kits.openInterviewSession(scope)).completedAt,null);
  await assert.rejects(prisma.interviewRecord.update({where:{id:second.id},data:{completedAt:new Date()}}),/canonical submitted evaluation/,'The old deployed completion order must be blocked until the matching application is released');
- await assert.rejects(a.kits.saveInterviewSession({...scope,revision:2,draft:{...closing,score:9},complete:true}),/completed/);
+ await refused(a.kits.saveInterviewSession({...scope,revision:2,draft:{...closing,score:9},complete:true}),/completed/);
  await assert.rejects(a.evaluations.submitEvaluation({applicationId:app.id,clubId:club.id,roundId:round.id,score:9,notes:'Attempt rewrite'}));
  await assert.rejects(prisma.evaluation.update({where:{id:finished[0].evaluation.id},data:{score:9}}),/immutable/);
  const next=await prisma.pipelineRound.create({data:{clubId:club.id,name:'Interview',order:1,anonymousReview:true}});

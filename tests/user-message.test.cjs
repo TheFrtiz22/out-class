@@ -2,7 +2,7 @@ const { test } = require('node:test'), assert = require('node:assert/strict');
 const { loader } = require('./helpers/communications-loader.cjs');
 const load = loader({});
 const { userMessage } = load('lib/user-message.ts');
-const { ActionError, UserFacingError, actionFailure, actionSuccess, unwrapAction, unwrapped, isActionResult } = load('lib/action-result.ts');
+const { ActionError, UserFacingError, actionFailure, actionSuccess, unwrapAction, unwrapped, isActionResult, browserRefusal } = load('lib/action-result.ts');
 
 const fallback = 'Couldn’t save your changes. Try again.';
 const nextProduction = Object.assign(new Error('An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.'), { digest: '2817390912' });
@@ -45,6 +45,10 @@ test('messages our own code marked user-facing are kept', () => {
   ]) assert.equal(userMessage(new UserFacingError(message), fallback), message);
   // A server-side ActionError that was thrown (not returned) never reaches the browser intact.
   assert.equal(userMessage(new ActionError('Applicant access denied.'), fallback), fallback);
+  // Thrown in the browser (demo or local validation) it was never serialized, so it may be shown.
+  assert.equal(userMessage(browserRefusal(new ActionError('Choose a CSV file.')), fallback), 'Choose a CSV file.');
+  const other = new Error('internal');
+  assert.equal(browserRefusal(other), other);
 });
 
 test('unwrapAction returns data, throws a user-facing error for failures, and passes other values through', async () => {

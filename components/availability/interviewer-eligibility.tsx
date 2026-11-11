@@ -3,7 +3,9 @@ import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useState } from "react"
-import { getInterviewerEligibility, setInterviewerEligibility } from "@/actions/availability"
+import { getInterviewerEligibility, setInterviewerEligibility as setInterviewerEligibilityAction } from "@/actions/availability"
+import { unwrapped } from "@/lib/action-result"
+const setInterviewerEligibility = unwrapped(setInterviewerEligibilityAction)
 import { organizationRoles, organizationRoleLabels } from "@/lib/organization-authorization"
 import { useDemoMode } from "@/contexts/demo-context"
 import { Button } from "@/components/ui/button"

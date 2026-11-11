@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./action-result.cjs');
 // Actual server actions backed by migrated disposable PostgreSQL/WASM; Auth is synthetic.
 // This is a small SQL adapter for their Prisma calls, not a native Prisma-engine race test.
 const fs=require('fs'),path=require('path'),ts=require('typescript'),{randomUUID}=require('crypto'),{PGlite}=require('@electric-sql/pglite');
@@ -43,6 +44,7 @@ async function harness(options={}){
  }
  const prisma={...orm(db),$transaction:fn=>db.transaction(client=>fn(orm(client)))};
  const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const m={exports:{}};cache[file]=m;const mocks={'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:actor}}),requireClubPermission:async(club,permissions)=>{const m=await prisma.clubMember.findUnique({where:{userId_clubId:{userId:actor,clubId:club}}});if(!m||m.status!=='ACTIVE'||!permissions.every(p=>m.isOwner||m.permissions.includes(p)))throw Error('Denied');return{user:{id:actor},membership:m};}},'next/cache':{revalidatePath(){}}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return m.exports;}
- return{db,prisma,ids,load,as:id=>actor=id,scope:{clubId:ids.club,applicationId:ids.app,roundId:ids.round}};
+ // Actions converted to actionResult() resolve to their data and throw marked refusals; see ./action-result.cjs.
+ return{db,prisma,ids,load:file=>/^actions\//.test(file)?unwrapActions(load(file)):load(file),as:id=>actor=id,scope:{clubId:ids.club,applicationId:ids.app,roundId:ids.round}};
 }
 module.exports={harness};

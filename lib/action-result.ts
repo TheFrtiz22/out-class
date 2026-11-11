@@ -70,6 +70,13 @@ export function unwrapAction<T>(value: T): Unwrapped<T> {
   throw new UserFacingError(value.error, value.code)
 }
 
+/** For code that runs in the browser (demo implementations, local validation):
+ * an `ActionError` thrown there was never serialized by Next, so its message is
+ * as safe to show as a returned one. Any other value is returned unchanged. */
+export function browserRefusal(error: unknown): unknown {
+  return isActionError(error) ? new UserFacingError(error.message, error.code) : error
+}
+
 /** A client-side binding of a Server Action that unwraps its result. */
 export function unwrapped<A extends unknown[], R>(action: (...args: A) => Promise<R>): (...args: A) => Promise<Unwrapped<Awaited<R>>> {
   return async (...args: A) => unwrapAction(await action(...args))

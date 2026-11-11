@@ -1,17 +1,18 @@
 "use client";
-import { UserFacingError } from "@/lib/action-result"
+import { UserFacingError, browserRefusal, unwrapped } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import { useRef, useState } from "react";
 import { announceDataChanged } from "@/hooks/use-revalidate";
-import { previewRosterImport, confirmRosterImport } from "@/actions/roster-import";
+import { previewRosterImport as previewRosterImportAction, confirmRosterImport as confirmRosterImportAction } from "@/actions/roster-import";
 import { parseRosterCsv, ROSTER_MAX_BYTES, ROSTER_MAX_ROWS } from "@/lib/roster-csv";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "@/components/icons";
 import { onboardingTable } from "@/lib/onboarding-presentation";
 import { Input } from "@/components/ui/input";
 
+const previewRosterImport = unwrapped(previewRosterImportAction), confirmRosterImport = unwrapped(confirmRosterImportAction);
 type Preview = Awaited<ReturnType<typeof previewRosterImport>>;
 const labels = { READY: "Ready", INVALID: "Invalid", DUPLICATE: "Duplicate", ALREADY_MEMBER: "Already a member", ALREADY_INVITED: "Already invited" };
 
@@ -30,7 +31,8 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
       if (!/\.csv$/i.test(file.name)) throw new UserFacingError("Choose a comma-separated CSV file.");
       if (file.size > ROSTER_MAX_BYTES) throw new UserFacingError("CSV must be 1 MB or smaller.");
       const csv = await file.text();
-      parseRosterCsv(csv); // Immediate structural feedback; server independently parses and validates.
+      // Immediate structural feedback; server independently parses and validates.
+      try { parseRosterCsv(csv); } catch (e) { throw browserRefusal(e); }
       const data = await previewRosterImport({ clubId, filename: file.name, csv, requestId: upload.current.requestId });
       setPreview(data);
     } catch (e) { setError(userMessage(e, "Could not validate CSV. Try again.")); }

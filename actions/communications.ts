@@ -1,4 +1,5 @@
 "use server";
+import { ActionError, actionResult } from "@/lib/action-result";
 import { z } from "zod";
 import { recipientAudienceSchema } from "@/lib/recipient-audience";
 import { publishAnnouncementTransaction } from "@/utils/announcement-publication";
@@ -98,9 +99,9 @@ export async function getClubAnnouncements(clubId: string) {
 }
 
 /** Publication and its email intent commit atomically. Provider I/O belongs to the worker. */
-export async function publishClubAnnouncement(input: unknown) {
+async function publishClubAnnouncementCommand(input: unknown) {
   const data = boundedParse(publishInput, input);
-  if ((data.audience === "CUSTOM") !== !!data.audienceSpec) throw Error("Custom audience rules are required only for custom recipients.");
+  if ((data.audience === "CUSTOM") !== !!data.audienceSpec) throw new ActionError("Custom audience rules are required only for custom recipients.");
   const { user } = await requireClubPermission(data.clubId, ["meetings.manage"]);
   return clubWriteTransaction(tx => publishAnnouncementTransaction(tx, { ...data, senderId: user.id }));
 }
@@ -156,7 +157,7 @@ export async function getDecisionTemplates(clubId:string) {
  const club=await prisma.club.findUniqueOrThrow({where:{id:clubId},select:{name:true,logoUrl:true,marketing:true,color:true,decisionLetterTemplates:true,sendFormalDecisionLetters:true}});
  return {...club,templates:letterTemplatesSchema.parse(club.decisionLetterTemplates ?? {})};
 }
-export async function saveDecisionTemplates(clubId:string,input:unknown,expectedTemplates?:string) {
+async function saveDecisionTemplatesCommand(clubId:string,input:unknown,expectedTemplates?:string) {
  z.string().uuid().parse(clubId);const templates=letterTemplatesSchema.parse(input);
  const {user}=await requireClubPermission(clubId,['recruitment.manage']);
  await clubWriteTransaction(async tx=>{
@@ -165,7 +166,7 @@ export async function saveDecisionTemplates(clubId:string,input:unknown,expected
    z.string().max(50000).parse(expectedTemplates);
    const current=await tx.club.findUniqueOrThrow({where:{id:clubId},select:{decisionLetterTemplates:true}});
    const saved=JSON.stringify(letterTemplatesSchema.parse(current.decisionLetterTemplates??{}));
-   if(saved!==expectedTemplates && saved!==JSON.stringify(templates))throw Error('Letter templates changed in another tab. Your text is retained. Reopen to compare.');
+   if(saved!==expectedTemplates && saved!==JSON.stringify(templates))throw new ActionError("Letter templates changed in another tab. Your text is retained. Reopen to compare.", "STALE");
   }
   await tx.club.update({where:{id:clubId},data:{decisionLetterTemplates:templates as Prisma.InputJsonValue}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:clubId,action:'recruitment.letter.templates.updated',details:{types:Object.keys(templates)}}});
@@ -181,4 +182,12 @@ export async function setFormalDecisionLetters(clubId:string, enabled:boolean) {
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:clubId,action:'recruitment.letter.setting.updated',details:{enabled}}});
   return {success:true};
  });
+}
+
+export async function publishClubAnnouncement(...args: Parameters<typeof publishClubAnnouncementCommand>) {
+  return actionResult(() => publishClubAnnouncementCommand(...args), "publishClubAnnouncement")
+}
+
+export async function saveDecisionTemplates(...args: Parameters<typeof saveDecisionTemplatesCommand>) {
+  return actionResult(() => saveDecisionTemplatesCommand(...args), "saveDecisionTemplates")
 }

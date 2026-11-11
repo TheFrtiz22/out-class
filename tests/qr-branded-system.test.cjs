@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -326,7 +327,7 @@ test("14. Authentication and authorization are strictly preserved during check-i
     $queryRaw: async () => [],
   };
 
-  const meetingsAction = load("actions/meetings.ts", {
+  const meetingsAction = unwrapActions(load("actions/meetings.ts", {
     "@/utils/prisma": { prisma: mockPrisma },
     "@/utils/auth": {
       requireAuth: async () => {
@@ -338,7 +339,7 @@ test("14. Authentication and authorization are strictly preserved during check-i
       assertClubOperational: async () => {},
       lockOperationalClub: async () => {},
     },
-  });
+  }));
 
   // 1. Unauthenticated request rejected
   await assert.rejects(
@@ -348,10 +349,11 @@ test("14. Authentication and authorization are strictly preserved during check-i
 
   // 2. Non-member request rejected
   authenticatedUser = { id: "outsider-student" };
-  await assert.rejects(
+  const outsider = await refused(
     meetingsAction.checkInMeeting(meetingId, "a".repeat(64)),
     /members only/,
   );
+  assert.equal(outsider.code, "FORBIDDEN");
 });
 
 test("15. Duplicate attendance scans do not duplicate credits or change timestamps", async () => {
@@ -385,7 +387,7 @@ test("15. Duplicate attendance scans do not duplicate credits or change timestam
     $queryRaw: async () => [],
   };
 
-  const meetingsAction = load("actions/meetings.ts", {
+  const meetingsAction = unwrapActions(load("actions/meetings.ts", {
     "@/utils/prisma": { prisma: mockPrisma },
     "@/utils/auth": {
       requireAuth: async () => ({ user: { id: "student-123" } }),
@@ -395,7 +397,7 @@ test("15. Duplicate attendance scans do not duplicate credits or change timestam
       lockOperationalClub: async () => {},
     },
     "next/cache": { revalidatePath: () => {} },
-  });
+  }));
 
   // First scan
   const first = await meetingsAction.checkInMeeting(meetingId, "a".repeat(64));

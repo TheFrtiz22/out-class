@@ -373,10 +373,10 @@ export function InterviewKitSession({
           if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
         }
         return true;
-      } catch {
+      } catch (e) {
         if (mounted.current) setFailedFinish(complete);
         if (mounted.current)
-          setError("Your interview could not be saved. Retry, or refresh your access and revision.");
+          setError(userMessage(e, "Your interview could not be saved. Retry, or refresh your access and revision."));
         return false;
       } finally {
         savingRef.current = false;
@@ -525,7 +525,7 @@ export function InterviewKitSession({
       sessionRef.current = fresh; setSession(fresh);
       setDraft(local => ({ ...local, completedQuestionIds: [...new Set([...(fresh.draft.completedQuestionIds || []), ...(local.completedQuestionIds || [])])], additionalQuestions: [...fresh.draft.additionalQuestions.filter(q => !local.additionalQuestions.some(l => l.id === q.id)), ...local.additionalQuestions] }));
       setError("Revision refreshed. Review your retained text, then choose Retry save.");
-    } catch { setError("Could not refresh access and revision. Your text remains here."); }
+    } catch (e) { setError(userMessage(e, "Could not refresh access and revision.")); }
     finally { savingRef.current = false; setSaving(false); }
   }
   async function nextApplicant() {

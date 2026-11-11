@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require("./helpers/action-result.cjs");
 const { test } = require("node:test"),
   assert = require("node:assert/strict"),
   fs = require("node:fs"),
@@ -217,7 +218,7 @@ function setup() {
       return { user: { id: actor }, membership: { ...member, isOwner: true } };
     },
   };
-  const api = load("actions/tasks.ts", {
+  const api = unwrapActions(load("actions/tasks.ts", {
     "@/utils/prisma": { prisma: { ...tx, $transaction: async (fn) => fn(tx) } },
     "@/utils/auth": auth,
     "@supabase/supabase-js": {
@@ -231,7 +232,7 @@ function setup() {
         },
       }),
     },
-  });
+  }));
   return {
     api,
     task,
@@ -309,23 +310,23 @@ test("task creation denies non-managers, foreign assignees/projects, empty audie
     input = { clubId, title: "Brief", audience: { everyone: true } };
   await assert.rejects(h.api.saveTask(input), /Denied/);
   h.manager();
-  await assert.rejects(
+  await refused(
     h.api.saveTask({ ...input, audience: { members: [uuid(99)] } }),
     /no longer a member/,
   );
-  await assert.rejects(
+  await refused(
     h.api.saveTask({ ...input, audience: { groups: ["Missing"] } }),
     /at least one/,
   );
-  await assert.rejects(
+  await refused(
     h.api.saveTask({ ...input, projectId: uuid(99) }),
     /project/,
   );
-  await assert.rejects(
+  await refused(
     h.api.saveTask({ ...input, id: taskId, revision: 99 }),
     /changed/,
   );
-  await assert.rejects(
+  await refused(
     h.api.saveTask({
       ...input,
       id: taskId,
@@ -390,7 +391,7 @@ test("submissions enforce ownership, current membership, formats, revision and c
   assert.equal(h.assignment.text, input.text);
   assert.equal(h.assignment.revision, 1);
   assert.equal(h.audits[0].action, "club.task.submit");
-  await assert.rejects(h.api.submitTask(input), /changed/);
+  await refused(h.api.submitTask(input), /changed/);
   await assert.rejects(
     h.api.submitTask({ ...input, revision: 1, link: "javascript:alert(1)" }),
   );
@@ -405,12 +406,12 @@ test("review requires a submission, supports reopen, and prevents stale overwrit
     };
   await assert.rejects(h.api.reviewTask(input), /Denied/);
   h.manager();
-  await assert.rejects(h.api.reviewTask(input), /not yet submitted/);
+  await refused(h.api.reviewTask(input), /not yet submitted/);
   h.assignment.submittedAt = new Date();
   await h.api.reviewTask(input);
   assert.ok(h.assignment.reviewedAt);
   assert.equal(h.assignment.feedback, input.feedback);
-  await assert.rejects(h.api.reviewTask(input), /changed/);
+  await refused(h.api.reviewTask(input), /changed/);
   await h.api.reviewTask({ ...input, revision: 1, reopen: true });
   assert.equal(h.assignment.reviewedAt, null);
 });
@@ -467,7 +468,7 @@ test("private uploads validate ownership, file size/type/name, storage metadata,
     assert.equal(upload.id, fileId);
     assert.ok(!h.files()[0].path.includes(input.name));
     h.validObject(false);
-    await assert.rejects(
+    await refused(
       h.api.submitTask({
         assignmentId,
         revision: 0,
@@ -477,7 +478,7 @@ test("private uploads validate ownership, file size/type/name, storage metadata,
       }),
       /incomplete or invalid/,
     );
-    await assert.rejects(h.api.downloadTaskFile(fileId), /unavailable/);
+    await refused(h.api.downloadTaskFile(fileId), /unavailable/);
     h.validObject(true);
     await h.api.submitTask({
       assignmentId,
@@ -491,12 +492,12 @@ test("private uploads validate ownership, file size/type/name, storage metadata,
       "https://storage.test/download",
     );
     h.outsider();
-    await assert.rejects(h.api.downloadTaskFile(fileId), /unavailable/);
+    await refused(h.api.downloadTaskFile(fileId), /unavailable/);
     assert.equal(h.downloads(), 1);
     h.manager();
     await h.api.downloadTaskFile(fileId);
     h.revoke();
-    await assert.rejects(h.api.downloadTaskFile(fileId), /unavailable/);
+    await refused(h.api.downloadTaskFile(fileId), /unavailable/);
   } finally {
     if (oldUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     else process.env.NEXT_PUBLIC_SUPABASE_URL = oldUrl;
@@ -522,12 +523,12 @@ test('random samples and balanced groups are deterministic across roster orderin
  const groups=rules.resolveTaskRecipients(members,{...audience,random:{seed:uuid(40),count:null,groups:5}});const sizes=Object.values(Object.groupBy(groups,r=>r.groupLabel)).map(rows=>rows.length);assert.ok(Math.max(...sizes)-Math.min(...sizes)<=1);assert.equal(groups.length,24);
  assert.throws(()=>rules.resolveTaskRecipients(members,{...audience,random:{...audience.random,count:25}}),/Only 24/);
  const h=setup();h.manager();const input={clubId,title:'Random group work',audience:{everyone:true,random:{seed:uuid(40),count:null,groups:2}}};const preview=await h.api.previewTaskAudience(input);await h.api.saveTask({...input,expectedRecipients:preview.map(r=>r.member.id)});assert.deepEqual(h.creates[0].assignments.create.map(a=>({memberId:a.memberId,groupLabel:a.groupLabel})),preview.map(r=>({memberId:r.member.id,groupLabel:r.groupLabel})));
- await assert.rejects(h.api.saveTask({...input,expectedRecipients:[uuid(99)]}),/recipient list changed/);
+ await refused(h.api.saveTask({...input,expectedRecipients:[uuid(99)]}),/recipient list changed/);
 });
 test('drafts create no assignments; publishing a draft checks the exact recipient preview and fixed audiences',async()=>{
  const h=setup();h.manager();await h.api.saveTask({clubId,title:'Saved draft',status:'DRAFT',audience:{}});assert.equal(h.creates[0].assignments.create.length,0);assert.equal(h.audits[0].action,'club.task.draft');
  h.task.status='DRAFT';const audience={members:[memberId]};await h.api.saveTask({clubId,id:taskId,title:'Publish draft',audience,expectedRecipients:[memberId]});assert.deepEqual(h.creates[1].assignmentRows.map(a=>a.memberId),[memberId]);assert.equal(h.task.status,'OPEN');
- await assert.rejects(h.api.saveTask({clubId,id:taskId,revision:1,title:'Undo publish',status:'DRAFT',audience}),/cannot become a draft/);
+ await refused(h.api.saveTask({clubId,id:taskId,revision:1,title:'Undo publish',status:'DRAFT',audience}),/cannot become a draft/);
 });
 test('revision requests require feedback, persist separately from approval, and clear on resubmission',async()=>{
  const h=setup();h.manager();h.assignment.submittedAt=new Date();const input={assignmentId,revision:0,feedback:'',reopen:true,requestChanges:true};await assert.rejects(h.api.reviewTask(input),/feedback/);
@@ -537,15 +538,15 @@ test('revision requests require feedback, persist separately from approval, and 
 });
 test('bulk approval rejects unsubmitted, revision-requested, stale, foreign and non-manager work',async()=>{
  const input={clubId,assignments:[{id:assignmentId,revision:0}]};let h=setup();await assert.rejects(h.api.bulkApproveTaskSubmissions(input),/Denied/);
- for(const change of [h=>{},h=>h.assignment.revision=2,h=>h.assignment.revisionRequestedAt=new Date(),h=>h.assignment.task.clubId=uuid(99),h=>h.assignment.reviewedAt=new Date()]){h=setup();h.manager();h.assignment.submittedAt=new Date();change(h);if(change.toString()==='h=>{}')h.assignment.submittedAt=null;await assert.rejects(h.api.bulkApproveTaskSubmissions(input),/changed|unavailable/)}
+ for(const change of [h=>{},h=>h.assignment.revision=2,h=>h.assignment.revisionRequestedAt=new Date(),h=>h.assignment.task.clubId=uuid(99),h=>h.assignment.reviewedAt=new Date()]){h=setup();h.manager();h.assignment.submittedAt=new Date();change(h);if(change.toString()==='h=>{}')h.assignment.submittedAt=null;await refused(h.api.bulkApproveTaskSubmissions(input),/changed|unavailable/)}
  h=setup();h.manager();h.assignment.submittedAt=new Date();await h.api.bulkApproveTaskSubmissions(input);assert.ok(h.assignment.reviewedAt);assert.equal(h.audits.at(-1).action,'club.task.review');
 });
 test('adding recipients preserves existing work and checks membership, permission and expected recipients',async()=>{
- const h=setup(),input={clubId,taskId,revision:0,audience:{everyone:true},expectedRecipients:[uuid(6)]};await assert.rejects(h.api.addTaskRecipients(input),/Denied/);h.manager();h.task.assignments=[{memberId}];await h.api.addTaskRecipients(input);assert.deepEqual(h.creates[0].assignmentRows.map(a=>a.memberId),[uuid(6)]);assert.deepEqual(h.task.assignments,[{memberId}]);await assert.rejects(h.api.addTaskRecipients({...input,revision:1,expectedRecipients:[memberId]}),/recipient list changed/);
+ const h=setup(),input={clubId,taskId,revision:0,audience:{everyone:true},expectedRecipients:[uuid(6)]};await assert.rejects(h.api.addTaskRecipients(input),/Denied/);h.manager();h.task.assignments=[{memberId}];await h.api.addTaskRecipients(input);assert.deepEqual(h.creates[0].assignmentRows.map(a=>a.memberId),[uuid(6)]);assert.deepEqual(h.task.assignments,[{memberId}]);await refused(h.api.addTaskRecipients({...input,revision:1,expectedRecipients:[memberId]}),/recipient list changed/);
 });
 
 test('task notification reads stay scoped to the authenticated active member and expose no other submissions',async()=>{
- let query;const api=load('actions/tasks.ts',{'@/utils/prisma':{prisma:{taskAssignment:{findMany:async input=>{query=input;return[]}}}},'@/utils/auth':{requireAuth:async()=>({user:{id:'authenticated-student'}})}});
+ let query;const api=unwrapActions(load('actions/tasks.ts',{'@/utils/prisma':{prisma:{taskAssignment:{findMany:async input=>{query=input;return[]}}}},'@/utils/auth':{requireAuth:async()=>({user:{id:'authenticated-student'}})}}));
  assert.deepEqual(await api.getTaskNotifications(),[]);
  assert.equal(query.where.userId,'authenticated-student');assert.equal(query.where.member.userId,'authenticated-student');assert.equal(query.where.member.status,'ACTIVE');assert.equal(query.where.member.user.disabledAt,null);assert.equal(query.where.task.kind,'TASK');assert.equal(query.where.task.status.not,'DRAFT');assert.equal(query.take,100);assert.equal(query.select.text,undefined);assert.equal(query.select.files,undefined);assert.equal(query.select.member,undefined);
 });
@@ -557,5 +558,5 @@ test('legacy cohort audiences project academic labels without changing stored ta
  const workspace=await h.api.getTaskWorkspace(clubId);assert.equal('gradYear' in workspace.members[0].user.studentProfile,false);assert.deepEqual(workspace.tasks[0].audience,projected);
  const preview=await h.api.previewTaskAudience({clubId,audience:projected});assert.equal(preview.length,2);assert.ok(!JSON.stringify(preview).includes('gradYear'));
  await h.api.saveTask({clubId,id:taskId,title:'Preserve legacy targeting',kind:'TASK',status:'OPEN',revision:h.task.revision,audience:projected});assert.deepEqual(h.task.audience.years,[2028]);assert.deepEqual(h.task.audience.academicYears,[]);
- await assert.rejects(h.api.saveTask({clubId,id:taskId,title:'Changed targeting',status:'OPEN',revision:h.task.revision,audience:{everyone:true}}),/fixed/);
+ await refused(h.api.saveTask({clubId,id:taskId,title:'Changed targeting',status:'OPEN',revision:h.task.revision,audience:{everyone:true}}),/fixed/);
 });

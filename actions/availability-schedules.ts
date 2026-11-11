@@ -1,4 +1,5 @@
 "use server";
+import { ActionError, actionResult } from "@/lib/action-result";
 import {z} from "zod";
 import {Prisma} from "@prisma/client";
 import {requireClubPermission} from "@/utils/auth";
@@ -10,17 +11,17 @@ import {availabilityScheduleInput} from "@/lib/availability-schedule";
 import {loadInterviewerPool} from "@/utils/interviewer-pool";
 import {activeAvailabilityRound} from "@/utils/availability-publication";
 import { boundedParse } from "@/lib/bounded-input";
-export async function saveAvailabilitySchedule(input:unknown){
+async function saveAvailabilityScheduleCommand(input:unknown){
  const d=boundedParse(availabilityScheduleInput, input),{clubId,roundId}=d.scope,scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence),{user}=await requireClubPermission(clubId,["interviews.manage"]);
- if(await supportContext())throw Error("Exit support impersonation before scheduling future communications.");
+ if(await supportContext())throw new ActionError("Exit support impersonation before scheduling future communications.", "FORBIDDEN");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"]);
   const old=await tx.scheduledCommunication.findUnique({where:{id:d.id}}),body=JSON.stringify(d);
-  if(old){if(old.clubId===clubId&&old.senderId===user.id&&old.kind==="AVAILABILITY_REQUEST"&&old.body===body)return {id:old.id,status:old.status};throw Error("Schedule identifier already used.");}
+  if(old){if(old.clubId===clubId&&old.senderId===user.id&&old.kind==="AVAILABILITY_REQUEST"&&old.body===body)return {id:old.id,status:old.status};throw new ActionError("This schedule was already saved with different details. Reload and schedule it again.", "STALE");}
   requireFutureSchedule(scheduledAt);
-  if(await tx.scheduledCommunication.count({where:{clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100)throw Error("Cancel unused scheduled work first.");
+  if(await tx.scheduledCommunication.count({where:{clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100)throw new ActionError("This club has too many pending schedules. Cancel unused scheduled work first.");
   await activeAvailabilityRound(tx,clubId,roundId);const pool=await loadInterviewerPool(tx,clubId,roundId,d.scope.memberIds);
-  if(pool.members.length!==d.scope.memberIds.length||pool.members.some(m=>!m.eligible||m.disabledAt))throw Error("Choose interviewers from this club and round.");
+  if(pool.members.length!==d.scope.memberIds.length||pool.members.some(m=>!m.eligible||m.disabledAt))throw new ActionError("Choose interviewers from this club and round. Reload to see who is eligible now.", "STALE");
   await tx.scheduledCommunication.create({data:{id:d.id,clubId,senderId:user.id,actorId:user.id,kind:"AVAILABILITY_REQUEST",title:`Availability ${d.scope.reminder?"reminders":"requests"} · ${pool.members.length}`,body,audience:{},snapshot:d.scope as Prisma.InputJsonValue,recipientMode:"FIXED",scheduledAt,timeZone:d.timeZone,localTime:d.localTime,occurrence:d.occurrence,requestKey:d.id}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:d.id,action:"communication.availability.schedule",details:{roundId,count:pool.members.length,scheduledAt:scheduledAt.toISOString()}}});return {id:d.id,status:"SCHEDULED" as const};
  });
@@ -29,7 +30,15 @@ export async function getAvailabilitySchedules(clubId:string){
  z.string().uuid().parse(clubId);const {user}=await requireClubPermission(clubId,["interviews.manage"]);
  return clubWriteTransaction(async tx=>{await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"],{readOnly:true});const select={id:true,title:true,status:true,revision:true,scheduledAt:true,timeZone:true,recipientCount:true} as const;return [...await tx.scheduledCommunication.findMany({where:{clubId,kind:"AVAILABILITY_REQUEST",status:{in:["SCHEDULED","PROCESSING","FAILED"]}},orderBy:{scheduledAt:"asc"},take:100,select}),...await tx.scheduledCommunication.findMany({where:{clubId,kind:"AVAILABILITY_REQUEST",status:{in:["PUBLISHED","CANCELLED"]}},orderBy:{updatedAt:"desc"},take:50,select})];});
 }
-export async function cancelAvailabilitySchedule(clubId:string,id:string,revision:number){
+async function cancelAvailabilityScheduleCommand(clubId:string,id:string,revision:number){
  z.string().uuid().parse(clubId);z.string().uuid().parse(id);z.number().int().nonnegative().parse(revision);const {user}=await requireClubPermission(clubId,["interviews.manage"]);
- return clubWriteTransaction(async tx=>{await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"]);const row=await tx.scheduledCommunication.findFirst({where:{id,clubId,kind:"AVAILABILITY_REQUEST"}});if(!row)throw Error("Schedule unavailable.");if(row.status==="CANCELLED"&&row.revision===revision+1)return {cancelled:true};if(row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status))throw Error("Schedule changed or processing.");await tx.scheduledCommunication.update({where:{id},data:{status:"CANCELLED",revision:{increment:1},failureCode:null}});await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:id,action:"communication.availability.cancel"}});return {cancelled:true};});
+ return clubWriteTransaction(async tx=>{await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"]);const row=await tx.scheduledCommunication.findFirst({where:{id,clubId,kind:"AVAILABILITY_REQUEST"}});if(!row)throw new ActionError("Schedule unavailable. Reload the schedule list.", "NOT_FOUND");if(row.status==="CANCELLED"&&row.revision===revision+1)return {cancelled:true};if(row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status))throw new ActionError("This schedule changed or is already sending. Reload to see its current status.", "STALE");await tx.scheduledCommunication.update({where:{id},data:{status:"CANCELLED",revision:{increment:1},failureCode:null}});await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:id,action:"communication.availability.cancel"}});return {cancelled:true};});
+}
+
+export async function saveAvailabilitySchedule(...args: Parameters<typeof saveAvailabilityScheduleCommand>) {
+  return actionResult(() => saveAvailabilityScheduleCommand(...args), "saveAvailabilitySchedule")
+}
+
+export async function cancelAvailabilitySchedule(...args: Parameters<typeof cancelAvailabilityScheduleCommand>) {
+  return actionResult(() => cancelAvailabilityScheduleCommand(...args), "cancelAvailabilitySchedule")
 }

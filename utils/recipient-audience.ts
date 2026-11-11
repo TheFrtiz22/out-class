@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 import type { Prisma } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
@@ -21,16 +22,16 @@ export async function resolveRecipientAudience(tx: AppTransactionClient, clubId:
   const identify = canIdentifyRecipients(actor);
   let evaluatedRules = 0;
   async function rule(r: AudienceRule, stack: Set<string>): Promise<string[]> {
-    if (++evaluatedRules > 100) throw Error("Audience rule graph exceeds 100 evaluations. Simplify saved groups.");
+    if (++evaluatedRules > 100) throw new ActionError("Audience rule graph exceeds 100 evaluations. Simplify saved groups.");
     let where: Prisma.UserWhereInput;
     if (r.source === "GROUP") {
-      if (stack.has(r.groupId) || stack.size >= 5) throw Error("Group rules contain a cycle or exceed five levels.");
+      if (stack.has(r.groupId) || stack.size >= 5) throw new ActionError("Group rules contain a cycle or exceed five levels.");
       const group = await tx.recipientGroup.findFirst({ where: { id: r.groupId, clubId } });
-      if (!group) throw Error("Recipient group unavailable in this club.");
+      if (!group) throw new ActionError("Recipient group unavailable in this club.", "STALE");
       const next = new Set(stack).add(group.id);
       if (group.kind === "RULES") return evaluate(recipientAudienceSchema.parse(group.rules), next);
       const entries = await tx.recipientGroupEntry.findMany({ where: { groupId: group.id, clubId }, select: { userId: true }, take: limit + 1 });
-      if (entries.length > limit) throw Error("Audience exceeds 1,000 recipients.");
+      if (entries.length > limit) throw new ActionError("Audience exceeds 1,000 recipients.");
       return rule({ source: "PEOPLE", userIds: entries.map(e => e.userId) }, next);
     }
     if (r.source === "MEMBERS" || r.source === "OFFICERS") {
@@ -42,9 +43,9 @@ export async function resolveRecipientAudience(tx: AppTransactionClient, clubId:
         ...(r.joinedAfter || r.joinedBefore ? { joinedAt: { ...(r.joinedAfter ? { gte: new Date(r.joinedAfter) } : {}), ...(r.joinedBefore ? { lte: new Date(r.joinedBefore) } : {}) } } : {}),
       } } };
     } else if (r.source === "APPLICANTS" || r.source === "REJECTED") {
-      if (!identify) throw Error("Identified applicant recipient access required.");
-      if (r.roundIds.length && await tx.pipelineRound.count({ where: { clubId, id: { in: r.roundIds } } }) !== new Set(r.roundIds).size) throw Error("Round unavailable in this club.");
-      if(r.cycleIds.length && await tx.recruitmentCycle.count({where:{clubId,id:{in:r.cycleIds}}})!==new Set(r.cycleIds).size)throw Error("Cycle unavailable in this club.");
+      if (!identify) throw new ActionError("Identified applicant recipient access required.", "FORBIDDEN");
+      if (r.roundIds.length && await tx.pipelineRound.count({ where: { clubId, id: { in: r.roundIds } } }) !== new Set(r.roundIds).size) throw new ActionError("Round unavailable in this club.", "STALE");
+      if(r.cycleIds.length && await tx.recruitmentCycle.count({where:{clubId,id:{in:r.cycleIds}}})!==new Set(r.cycleIds).size)throw new ActionError("Cycle unavailable in this club.", "STALE");
       const now = new Date();
       const offers: Prisma.ApplicationWhereInput[] = r.offerStatuses.map(status => status === "NONE" ? { recruitmentOffer: null }
         : status === "EXPIRED" ? { recruitmentOffer: { OR: [{ status: "EXPIRED" }, { status: "PENDING", expiresAt: { lte: now } }] } }
@@ -60,7 +61,7 @@ export async function resolveRecipientAudience(tx: AppTransactionClient, clubId:
         ...(offers.length ? { OR: offers } : {}),
       } } };
     } else if (r.source === "EVENT" || r.source === "LEADS") {
-      if (await tx.meeting.count({ where: { clubId, id: { in: r.eventIds } } }) !== new Set(r.eventIds).size) throw Error("Event unavailable in this club.");
+      if (await tx.meeting.count({ where: { clubId, id: { in: r.eventIds } } }) !== new Set(r.eventIds).size) throw new ActionError("Event unavailable in this club.", "STALE");
       const event = { clubId, id: { in: r.eventIds } };
       where = { AND: [{ OR: [
         ...(r.participation !== "ATTENDED" ? [{ eventRsvps: { some: { event } } }] : []),
@@ -73,14 +74,14 @@ export async function resolveRecipientAudience(tx: AppTransactionClient, clubId:
     else throw Error("Unsupported audience source.");
     if ("gradYears" in r && r.gradYears.length) where = { AND: [where, { studentProfile: { gradYear: { in: r.gradYears } } }] };
     const rows = await tx.user.findMany({ where: { AND: [where, { disabledAt: null }, ...(candidateIds ? [{ id: { in: [...candidateIds] } }] : [])] }, select: { id: true }, take: limit + 1, orderBy: { id: "asc" } });
-    if (rows.length > limit) throw Error("Audience exceeds 1,000 recipients. Narrow the filters.");
+    if (rows.length > limit) throw new ActionError("Audience exceeds 1,000 recipients. Narrow the filters.");
     return rows.map(row => row.id);
   }
   async function evaluate(spec: RecipientAudience, stack: Set<string>): Promise<string[]> {
     const included = new Set<string>();
     for (const r of spec.include) for (const id of await rule(r, stack)) included.add(id);
     for (const r of spec.exclude) for (const id of await rule(r, stack)) included.delete(id);
-    if (included.size > limit) throw Error("Audience exceeds 1,000 recipients. Narrow the filters.");
+    if (included.size > limit) throw new ActionError("Audience exceeds 1,000 recipients. Narrow the filters.");
     return [...included].sort();
   }
   return evaluate(audience, new Set());

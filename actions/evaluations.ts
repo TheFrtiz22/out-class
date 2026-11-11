@@ -8,6 +8,7 @@ import { hasPermission } from "@/lib/permissions";
 import { assertNotRecused } from "@/lib/recusal";
 import { interviewScoreSchema } from "@/lib/interview-access";
 import { openInterviewSession, saveInterviewSession } from "@/actions/interview-kits";
+import { unwrapAction } from "@/lib/action-result";
 
 const evaluateSchema = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), roundId: z.string().uuid().optional(), roundName: z.string().min(1), score: interviewScoreSchema, notes: z.string().max(20000).optional() });
 /** Compatibility endpoint uses the same session finalization; it cannot overwrite finals. */
@@ -37,9 +38,10 @@ export async function submitEvaluation(data: z.infer<typeof evaluateSchema>) {
     return round.id;
   });
   const scope = { clubId: input.clubId, applicationId: input.applicationId, roundId };
-  const session = await openInterviewSession(scope);
+  // The kit actions return refusals as results; this action still throws them, as before.
+  const session = unwrapAction(await openInterviewSession(scope));
   if (session.completedAt) throw new Error("Submitted evaluation is immutable.");
-  const result = await saveInterviewSession({ ...scope, revision: session.revision, draft: { ...session.draft, score: input.score, additionalNotes: input.notes ?? session.draft.additionalNotes ?? session.draft.overallReview, overallReview: input.notes ?? session.draft.overallReview }, complete: true });
+  const result = unwrapAction(await saveInterviewSession({ ...scope, revision: session.revision, draft: { ...session.draft, score: input.score, additionalNotes: input.notes ?? session.draft.additionalNotes ?? session.draft.overallReview, overallReview: input.notes ?? session.draft.overallReview }, complete: true }));
   return { success: true, evaluation: result.evaluation! };
 }
 export async function getEvaluations(clubId: string, applicationId: string) {

@@ -1,10 +1,13 @@
 "use client"
+import { unwrapped } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 
 import { useEffect, useRef, useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
-import { publishClubAnnouncement } from "@/actions/communications"
-import { getRecipientGroups, previewRecipientAudience } from "@/actions/recipient-groups"
+import { publishClubAnnouncement as publishClubAnnouncementAction } from "@/actions/communications"
+const publishClubAnnouncement = unwrapped(publishClubAnnouncementAction)
+import { getRecipientGroups, previewRecipientAudience as previewRecipientAudienceAction } from "@/actions/recipient-groups"
+const previewRecipientAudience = unwrapped(previewRecipientAudienceAction)
 import { AudienceEditor, AudiencePreview } from "@/components/recipient-audiences"
 import { recipientAudienceSchema } from "@/lib/recipient-audience"
 import { ActionWorkflow } from "@/components/product/action-workflow"
