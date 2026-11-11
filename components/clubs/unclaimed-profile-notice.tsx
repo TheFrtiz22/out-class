@@ -26,7 +26,7 @@ export function UnclaimedProfileNotice({ club }: { club: DirectoryClub }) {
                     className="size-8"
                     aria-label="About this directory profile"
                   >
-                    <Info size={15} />
+                    <Info size={16} />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="space-y-3 text-sm" align="start">

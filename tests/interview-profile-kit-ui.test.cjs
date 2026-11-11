@@ -7,7 +7,7 @@ function ui(file,props,mocks,exportName){
  const slots=[],effects=[],cleanups=[];let index=0;
  const react={useState(v){const i=index++;if(!(i in slots))slots[i]=typeof v==='function'?v():v;return[slots[i],x=>slots[i]=typeof x==='function'?x(slots[i]):x]},useRef(value){const i=index++;return slots[i]??={current:value}},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
  const autosave=require('./helpers/autosave-ui-harness.cjs').autosaveHook(react);
- const cache={};function load(p){if(cache[p])return cache[p];const m={exports:{}};const code=ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n==='@/components/icons'?require('./helpers/icons.cjs'):n==='react'?react:n==='@/hooks/use-autosave'?autosave:n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='@/components/profile-photo-crop'?{ProfilePhotoCrop:'ProfilePhotoCrop'}:(n==='@/components/product/action-workflow'||n.startsWith('@/components/ui/'))?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[p]=m.exports}
+ const cache={};function load(p){if(cache[p])return cache[p];const m={exports:{}};const code=ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n==='@/components/icons'?require('./helpers/icons.cjs'):n==='react'?react:n==='@/hooks/use-autosave'?autosave:n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='@/components/profile-photo-crop'?{ProfilePhotoCrop:'ProfilePhotoCrop'}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):(n==='@/components/product/action-workflow'||n.startsWith('@/components/ui/'))?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[p]=m.exports}
  const component=exportName?load(file)[exportName]:Object.values(load(file))[0];return {render(){index=0;const tree=component(props);while(effects.length)effects.shift()();return tree}};
 }
 const button=(t,label)=>nodes(t).find(n=>n.type==='Button'&&text(n)===label);
@@ -50,4 +50,34 @@ test('workspace queue query scopes identity to current panel and projects no aca
 test('verified offices enable workspace navigation without granting unrelated permissions',()=>{
  const {harness}=require('./helpers/interview-harness.cjs');const h=harness(),{hasWorkspace,hasPermission}=h.load('lib/permissions.ts');
  const board={status:'ACTIVE',interviewOffices:['BOARD'],permissions:[]};assert.equal(hasWorkspace(board),true);assert.equal(hasPermission(board,'applications.review'),false);assert.equal(hasPermission(board,'interviews.manage'),false);assert.equal(hasWorkspace({...board,status:'INACTIVE'}),false);assert.equal(hasWorkspace({status:'ACTIVE',permissions:[],title:'President'}),false);
+});
+
+test('Edit profile reopens on its first section with that section\'s snapshot after another section was shown',async()=>{
+ const calls=[],profile={firstName:'Alex',lastName:'Test',headshotUrl:null,major:'Economics',gradYear:2029,gpa:3.7,satScore:null,actScore:null,scholarStatus:null,linkedinUrl:'https://www.linkedin.com/in/alex',resumeUrl:'keep/pdf',experiences:[]};
+ const h=ui('components/edit-student-profile-dialog.tsx',{profile,section:'identity',sections:['identity','education','experience','links']},{'@/contexts/auth-context':{useAuth:()=>({user:{id:'u'},refreshUser:async()=>{}})},'@/lib/workspace-api':{updateStudentProfileSection:async(input,expected)=>{calls.push([input,expected]);return {profile:{...profile,...input}}}}});
+ let t=h.render();await nodes(t).find(n=>n.type==='Dialog').props.onOpenChange(true);t=h.render();
+ await nodes(t).find(n=>n.type==='SegmentedControl'&&n.props.label==='Profile section').props.onChange('links');t=h.render();
+ await nodes(t).find(n=>n.type==='Dialog').props.onOpenChange(false);t=h.render();
+ await nodes(t).find(n=>n.type==='Dialog').props.onOpenChange(true);t=h.render();
+ assert.equal(nodes(t).find(n=>n.type==='SegmentedControl'&&n.props.label==='Profile section').props.value,'identity');
+ nodes(t).find(n=>n.props?.value==='Alex'&&typeof n.props.onChange==='function').props.onChange({target:{value:'Alexa'}});t=h.render();
+ await nodes(t).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
+ const [input,expected]=calls.at(-1);assert.equal(input.section,'identity');
+ assert.deepEqual(JSON.parse(expected).map(([key])=>key),['firstName','lastName','headshotUrl'],'the concurrency snapshot belongs to the section being saved');
+});
+
+test('a résumé import inside Edit profile loads the imported profile into the open editor',async()=>{
+ const calls=[],profile={firstName:'Alex',lastName:'Test',headshotUrl:null,major:'Economics',gradYear:2029,gpa:3.7,satScore:null,actScore:null,scholarStatus:null,linkedinUrl:'',resumeUrl:'',experiences:[]};
+ let sync;const props={profile,section:'identity',sections:['identity','links'],extra:s=>{sync=s;return 'Import'}};
+ const h=ui('components/edit-student-profile-dialog.tsx',props,{'@/contexts/auth-context':{useAuth:()=>({user:{id:'u'},refreshUser:async()=>{}})},'@/lib/workspace-api':{updateStudentProfileSection:async(input,expected)=>{calls.push([input,expected]);return {profile:{...profile,...input}}}}});
+ let t=h.render();await nodes(t).find(n=>n.type==='Dialog').props.onOpenChange(true);t=h.render();
+ assert.equal(typeof sync,'function');sync({...profile,firstName:'Imported'});t=h.render();
+ await nodes(t).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
+ const [input,expected]=calls.at(-1);assert.equal(input.firstName,'Imported');assert.equal(JSON.parse(expected)[0][1],'Imported','the snapshot matches the imported server state');
+});
+
+test('people without a club still see pending invitations on My Clubs',()=>{
+ const source=fs.readFileSync('components/personal-clubs.tsx','utf8');
+ const empty=source.slice(source.indexOf('if (!member) return'),source.indexOf('\n',source.indexOf('if (!member) return')));
+ assert.match(empty,/<OrganizationOwnershipRequests enabled includeDismissed \/>/);
 });

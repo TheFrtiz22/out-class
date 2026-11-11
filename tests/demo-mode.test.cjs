@@ -417,7 +417,7 @@ test("demo interview room creation, booking, reschedule and cancel persist throu
  await api.createInterviewRoom({clubId,roundId,name:'Test room',location:'Test Hall',kind:'IN_PERSON',timezone:'America/New_York',dates:['2099-09-07'],start:'10:00',end:'12:00',duration:20,buffer:0,capacity:1,interviewersNeeded:1,panelMemberIds:[]})
  let workspace=await api.getRoomWorkspace(clubId);assert.equal(workspace.rooms.length,1);assert.equal(workspace.rooms[0].slots.length,6)
  const slots=workspace.rooms[0].slots
- await assert.rejects(api.reserveInterview({applicationId,slotId:slots[0].id}),/published/)
+ await assert.rejects(api.reserveInterview({applicationId,slotId:slots[0].id}),/aren.t open/)
  const scope={clubId,roundId},initial=await api.getPanelProposalWorkspace(scope),plan=await api.generatePanelProposal({...scope,revision:0,window:initial.suggestedWindow,options:{maxConsecutiveMinutes:null,breakMinutes:15},mode:'REGENERATE'})
  const review=await api.reviewPanelPublication({...scope,revision:plan.proposal.revision});assert.equal(review.ok,true,review.error)
  const published=await api.publishPanelSchedule({...scope,...review.value});assert.equal(published.ok,true,published.error)
@@ -434,15 +434,20 @@ test("demo interview room creation, booking, reschedule and cancel persist throu
  assert.equal(h.calls(),0)
 })
 
-test("persisted voting demo uses the same boundary, holds and two-pass history survive refresh, reset restores seeded sessions", async () => {
+test("persisted board voting history in Demo uses the same boundary, survives refresh, closes with the close-only command and reset restores seeded sessions", async () => {
   const h=harness(), {demoStore}=h.load('lib/demo/store.ts'), api=h.load('lib/workspace-api.ts');
   demoStore.start(); const clubId=demoStore.get().clubs[0].id;
   await assert.rejects(api.getVotingWorkspace(clubId),/leader/);
   demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});
-  const id=await api.seedVotingDemo(clubId), view=await api.getVotingWorkspace(clubId,id);
-  assert.equal(view.session.passes.length,2);assert.equal(view.summary.passed,1);assert.ok(view.summary.held>=1);assert.ok(view.summary.notPassed>=1);assert.equal(view.summary.target,2);assert.ok(view.session.passes[0].candidates.every(c=>c.ballots.length===1));
+  const view=await api.getVotingWorkspace(clubId), id=view.session.id;
+  assert.equal(view.session.mode,'LEGACY');assert.equal(view.session.passes.length,2);assert.equal(view.candidateLabels.length,view.session.candidates.length);
+  assert.ok(view.session.passes.every(p=>p.candidates.every(c=>c.ballots.every(b=>b.memberId===view.memberId))),'only the viewer\'s own ballots leave the store');
   const ballot=JSON.stringify(view.session.passes);demoStore.start();assert.equal(JSON.stringify((await api.getVotingWorkspace(clubId,id)).session.passes),ballot);assert.equal(h.calls(),0);
-  demoStore.reset();demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});assert.equal((await api.getVotingWorkspace(clubId)).sessions.length,2);assert.equal((await api.getVotingWorkspace(clubId)).session.currentPass,2);
+  await assert.rejects(api.commandVotingSession({clubId,sessionId:id,revision:view.session.revision,action:'START_PASS'}),/read-only/);
+  const step=await api.commandVotingSession({clubId,sessionId:id,revision:view.session.revision,action:'COMPLETE_PASS'});
+  await api.commandVotingSession({clubId,sessionId:id,revision:step.revision,action:'FINISH'});
+  const closed=await api.getVotingWorkspace(clubId,id);assert.equal(closed.session.state,'COMPLETED');assert.equal(JSON.stringify(closed.session.passes.map(p=>p.candidates.map(c=>c.ballotCount))),JSON.stringify(view.session.passes.map(p=>p.candidates.map(c=>c.ballotCount))),'ballots are kept');assert.equal(h.calls(),0);
+  demoStore.reset();demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});assert.equal((await api.getVotingWorkspace(clubId)).sessions.length,2);assert.equal((await api.getVotingWorkspace(clubId)).session.state,'OPEN');
 });
 
 test('Explore and Corkboard share deterministic demo clubs; saved items survive refresh/reset and never call production',async()=>{

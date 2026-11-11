@@ -112,6 +112,28 @@ test("disabled Microsoft login cannot initiate OAuth even when its handler is ca
   assert.equal(render().microsoftLoading, false)
 })
 
+test("email-code request looks identical for an address with and without an account; real failures still show", async () => {
+  const outcome = async result => {
+    const { render } = setup({ signInWithOtp: async () => result })
+    render().onEmailChange("Student@virginia.edu")
+    await render().onRequestCode()
+    const { step, notice, error, resendSeconds, email } = render()
+    return { step, notice, error, resendSeconds, email }
+  }
+  const known = await outcome({ error: null })
+  const unknown = await outcome({ error: { code: "otp_disabled", status: 422, message: "Signups not allowed for otp" } })
+  assert.deepEqual(unknown, known)
+  assert.equal(known.step, "verify")
+  assert.equal(known.notice, "If student@virginia.edu has an OutClass account, we sent it a 6-digit code.")
+  assert.equal(known.error, "")
+  const limited = await outcome({ error: { code: "over_email_send_rate_limit", status: 429 } })
+  assert.equal(limited.step, "email")
+  assert.match(limited.error, /Too many attempts/)
+  const failed = await outcome({ error: { code: "unexpected_failure", status: 500 } })
+  assert.equal(failed.step, "email")
+  assert.equal(failed.error, "Unable to send a code. Please try again in a moment.")
+})
+
 test("email-code flow preserves existing-account restriction, resend cooldown, token validation and confirmed identity redirect", async () => {
   const calls = []
   const user = { id: "student-id", email: "student@virginia.edu", email_confirmed_at: "2026-01-01" }
@@ -167,7 +189,7 @@ test("auth presentation keeps collapsed controls inert and callback errors annou
   assert.equal(reveal.props.inert, true)
   assert.equal(reveal.props["aria-hidden"], true)
   assert.equal(tree.find(n => n.props?.role === "alert").props.children, "Microsoft sign-in failed.")
-  const uva = tree.find(n => n.type === "Button")
+  const uva = tree.find(n => n.type === "Button" && n.props.className === "oc-login-uva")
   assert.equal(uva.props.onClick, p.onMicrosoftLogin)
   const form = load("components/auth/email-login-form.tsx").EmailLoginForm(p)
   assert.equal(form.props.onSubmit, p.onSignIn)

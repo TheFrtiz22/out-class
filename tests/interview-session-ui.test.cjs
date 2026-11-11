@@ -50,7 +50,7 @@ test('Proceed never submits an unfinished review and Stay here leaves private co
 });
 test('fresh and legacy drafts stay in interview until explicit ending; saved phase belongs only to that personal record',async()=>{
  const h=harness();h.record.draft.score=8.5;h.record.draft.applicantQuestions='Legacy discussion';h.record.draft.additionalNotes='Keep legitimate notes';h.render();await flush();let t=h.render();
- assert.ok(button(t,'End current interview'));assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts'),undefined);assert.doesNotMatch(text(t),/Your previous five/);assert.equal(button(t,'Next candidate →'),undefined);
+ assert.ok(button(t,'End current interview'));assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts'),undefined);assert.doesNotMatch(text(t),/Your previous five/);assert.equal(button(t,'Next candidate'),undefined);
  const before=harness(structuredClone(h.record));before.render();await flush();assert.ok(button(before.render(),'End current interview'));
  button(t,'End current interview').props.onClick();await flush();t=h.render();assert.equal(h.record.draft.postInterview,true);assert.equal(h.record.completedAt,null);
  const resumed=harness(structuredClone(h.record));resumed.render();await flush();t=resumed.render();assert.ok(scoreInput(t));assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'');assert.match(text(t),/Questions the applicant asked · HistoricalLegacy discussion/);
@@ -90,9 +90,29 @@ test('assigned interviewer browses current bank without editing; session wording
  const h=harness();h.render();await flush();let t=h.render();button(t,'Question bank').props.onClick();h.render();await flush();t=h.render();assert.deepEqual(h.calls,[['library']]);assert.equal(button(t,'Save kit'),undefined)
  button(t,'Use question').props.onClick();await flush();t=h.render();assert.match(text(t),/Club answer key/);assert.doesNotMatch(text(t),/Off-script<|Off-script$/);button(t,'Save & close').props.onClick();await flush();t=h.render();assert.equal(h.record.questions[0].prompt,'Snapshot question');assert.equal(h.record.draft.additionalQuestions[0].id,'q2');assert.deepEqual(h.record.draft.completedQuestionIds,['q2'])
 })
-test('off-script questions persist independently of opening and typing',async()=>{
- const h=harness();h.render();await flush();let t=h.render();button(t,'+ Off-script question').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='new-interview-question').props.onChange({target:{value:'Follow-up'}});t=h.render();button(t,'Add question').props.onClick();t=h.render();h.tick();await flush();t=h.render();assert.equal(h.record.draft.additionalQuestions[0].question,'Follow-up');assert.deepEqual(h.record.draft.completedQuestionIds,[])
- button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.completedQuestionIds[0],h.record.draft.additionalQuestions[0].id)
+test('plus button adds an original question to this interview (shared with the room, never the master kit): saved before it opens, blank and double submits blocked, failures keep text with retry',async()=>{
+ const plus=t=>nodes(t).find(n=>n.type==='Button'&&n.props?.['aria-label']==='Add original question');const field=t=>nodes(t).find(n=>n.props?.id==='new-interview-question');
+ const saves=h=>h.calls.filter(c=>c[0]==='save'&&c[1].draft.additionalQuestions?.length).length;
+ const shared=[];const h=harness(undefined,{select:async id=>{shared.push(id);return{revision:1,question:{id,prompt:'Follow-up',guidance:''}}}});h.render();await flush();let t=h.render();
+ assert.ok(plus(t));assert.equal(field(t),undefined);assert.equal(button(t,'+ Off-script question'),undefined,'the old entry point is replaced');
+ plus(t).props.onClick();t=h.render();assert.ok(field(t));assert.equal(plus(t).props['aria-expanded'],true);
+ await button(t,'Add question').props.onClick();t=h.render();assert.match(text(t),/Enter a question before adding it/);assert.equal(saves(h),0);
+ field(t).props.onChange({target:{value:'Follow-up'}});t=h.render();h.fail(true);
+ const add=button(t,'Add question').props.onClick;const first=add(),second=add();await Promise.all([first,second]);await flush();t=h.render();
+ assert.equal(saves(h),1,'repeated clicks send one save');assert.equal(h.record.draft.additionalQuestions.length,0);
+ assert.equal(field(t).props.value,'Follow-up','the typed question survives a failed save');assert.match(text(t),/Couldn.t save your question/);assert.doesNotMatch(text(t),/Original question added/);
+ assert.equal(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),undefined,'nothing opens before the save succeeds');assert.deepEqual(shared,[],'nothing is shared before the save succeeds');
+ const attemptId=h.calls.filter(c=>c[0]==='save').at(-1)[1].draft.additionalQuestions[0].id;
+ h.fail(false);nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Unsaved misc note'}});t=h.render();
+ await button(t,'Retry').props.onClick();await flush();t=h.render();
+ const saved=h.record.draft.additionalQuestions;assert.equal(saved.length,1);assert.equal(saved[0].question,'Follow-up');assert.equal(saved[0].id,attemptId,'retry reuses the same question id');assert.equal(saved[0].bankQuestion,undefined,'no answer key is invented');
+ assert.equal(field(t),undefined);assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),'the new question opens for private notes');assert.match(text(t),/Original question added/);assert.deepEqual(shared,[saved[0].id],'the saved original question is shared with the room');h.tick();await flush();const after=h.calls.filter(c=>c[0]==='save').map(c=>c[1].draft.additionalQuestions.map(q=>q.id));const firstWith=after.findIndex(ids=>ids.includes(saved[0].id));assert.ok(firstWith>=0&&after.slice(firstWith).every(ids=>ids.includes(saved[0].id)),'no follow-up save drops the just-added question: '+JSON.stringify(after));
+ assert.deepEqual(h.calls.filter(c=>c[0]==='library'),[],'the master kit is not read or changed');
+ button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.completedQuestionIds[0],saved[0].id);
+ const c=harness();c.render();await flush();t=c.render();plus(t).props.onClick();t=c.render();field(t).props.onChange({target:{value:'Never mind'}});t=c.render();button(t,'Cancel').props.onClick();t=c.render();
+ assert.equal(field(t),undefined);assert.equal(saves(c),0);assert.equal(c.record.draft.additionalQuestions.length,0);
+ const done=harness({id:'session',revision:2,completedAt:new Date().toISOString(),questions:[{id:'q1',prompt:'Snapshot question',guidance:''}],draft:{questionNotes:[],additionalQuestions:[],overallReview:'',additionalNotes:'',applicantQuestions:'',completedQuestionIds:['q1'],score:8}});done.render();await flush();t=done.render();
+ assert.match(text(t),/Submitted · Read only/);assert.equal(plus(t),undefined,'submitted reviews cannot add questions');assert.equal(field(t),undefined);
 })
 test('End interview opens a nullable-score draft, and explicit half-point slider selection enables final submission',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();await flush();assert.ok(button(t,'End post-interview').props.disabled);assert.equal(h.record.draft.score,null);assert.equal(h.record.completedAt,null)
@@ -162,8 +182,8 @@ test('completion stays locked, next failures retry without duplicate requests, a
  const h=harness(undefined,{onNextApplicant:async()=>{attempts++;if(fail)throw Error('access');await new Promise(r=>release=r);return false;},onReturnToList(){}});
  h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();
  button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.match(text(t),/Interview complete/);assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.type==='fieldset').props.disabled,true);
- button(t,'Next candidate →').props.onClick();await flush();t=h.render();assert.match(text(t),/Could not load the next applicant/);assert.ok(h.record.completedAt);
- fail=false;const next=button(t,'Next candidate →');next.props.onClick();next.props.onClick();t=h.render();assert.ok(button(t,'Loading next candidate…').props.disabled);release();await flush();t=h.render();
+ button(t,'Next candidate').props.onClick();await flush();t=h.render();assert.match(text(t),/Could not load the next applicant/);assert.ok(h.record.completedAt);
+ fail=false;const next=button(t,'Next candidate');next.props.onClick();next.props.onClick();t=h.render();assert.ok(button(t,'Loading next candidate…').props.disabled);release();await flush();t=h.render();
  assert.equal(attempts,2);assert.match(text(t),/No more applicants/);assert.ok(button(t,'Return to interview list'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
 });
 
@@ -259,7 +279,7 @@ test('revision conflict preserves the latest closing review and retry refreshes 
  scoreInput(t).props.onChange({currentTarget:{value:'9.5'}});t=h.render();nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.onChange({target:{value:'Retain the latest answer'}});t=h.render();
  h.record.revision++;button(t,'End post-interview').props.onClick();await flush();t=h.render();
  assert.equal(h.record.completedAt,null);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'Retain the latest answer');assert.equal(scoreInput(t).props.value,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);
- button(t,'Refresh revision, keep my text').props.onClick();await flush();t=h.render();button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();
+ button(t,'Load latest version, keep my text').props.onClick();await flush();t=h.render();button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();
  assert.ok(h.record.completedAt);assert.equal(h.record.draft.finalInterviewThoughts,'Retain the latest answer');assert.equal(h.record.draft.score,9.5);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
 });
 
@@ -274,5 +294,5 @@ test('failed pending autosave cannot consume finish; failed submission retains i
 
 test('an unacknowledged submission never unlocks Next or reports completion',async()=>{
  const h=harness(undefined,{unacknowledged:true});h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();button(t,'End post-interview').props.onClick();await flush();t=h.render();
- assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);assert.equal(button(t,'Next candidate \u2192'),undefined);assert.equal(scoreInput(t).props.value,6.5);
+ assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);assert.equal(button(t,'Next candidate'),undefined);assert.equal(scoreInput(t).props.value,6.5);
 });

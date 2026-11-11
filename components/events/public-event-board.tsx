@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { z } from "zod";
+import { isUuid } from "@/lib/uuid";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Search, SlidersHorizontal, Check } from "@/components/icons";
+import { Check, ChevronDown, Rows3, StickyNote } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getPublicCorkboard,
@@ -36,6 +36,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import "./events.css";
+import { eventBoardEmpty } from "@/lib/event-board-empty";
+import { SearchField } from "@/components/ui/search-field"
+import { FilterPopover } from "@/components/ui/filter-popover"
+import { PillSelect } from "@/components/ui/pill-select"
+import { Toggle } from "@/components/ui/toggle"
+import { DateField } from "@/components/ui/date-picker"
 const initialFilters: EventFilters = {
   query: "",
   period: "All",
@@ -48,7 +54,7 @@ const initialFilters: EventFilters = {
   sort: "soonest",
   page: 0,
 };
-export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode } = {}) {
+export function PublicEventBoard() {
   const { user } = useAuth(),
     identity = user?.id || "";
   const [filters, setFilters] = useState(initialFilters),
@@ -73,6 +79,8 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
     try {
       const preference = localStorage.getItem("outclass:events:view:v1");
       if (preference === "list" || preference === "corkboard") setView(preference);
+      // Phones open on the list of event cards, as in the OutClass app, until the student picks a view.
+      else if (window.matchMedia?.("(max-width: 1023px)").matches) setView("list");
     } catch { /* Storage may be unavailable in private browsing. */ }
   }, []);
   useEffect(() => {
@@ -125,7 +133,7 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
     setSelected(null);
     setLinkedLoading(!!eventId);
     if (!eventId) return;
-    if (!z.string().uuid().safeParse(eventId).success) {
+    if (!isUuid(eventId)) {
       setLinkedLoading(false);
       setLinkedMissing(true);
       return;
@@ -147,6 +155,9 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
   function filter(p: EventFilters) {
     setFilters((f) => ({ ...f, ...p, page: 0 }));
   }
+  // Everything inside the Filter menu, so its button can show how many apply.
+  const menuFilters = [filters.category, filters.clubId, filters.date, filters.location, filters.required, !!identity && filters.savedOnly].filter(Boolean).length;
+  const narrowed = menuFilters > 0 || !!filters.query || filters.period !== "All";
   function updateEvent(eventId: string, count: number) {
     setEvents((rows) =>
       rows.map((e) => (e.id === eventId ? { ...e, rsvpCount: count } : e)),
@@ -162,114 +173,49 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
       {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
       {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
       <div className="oc-event-toolbar">
-        <div className="oc-event-periods" role="group" aria-label="Event date range">
-          {["All", "Today", "This Week", "Weekend"].map((period) => (
-            <button
-              type="button"
-              key={period}
-              aria-pressed={filters.period === period}
-              onClick={() =>
-                filter({ period: period as EventFilters["period"] })
-              }
-            >
-              {period === "All" ? "All Events" : period}
-            </button>
-          ))}
-        </div>
-        {identity && <button type="button" className="oc-event-pill oc-event-saved-filter" aria-pressed={!!filters.savedOnly} onClick={() => filter({ savedOnly: !filters.savedOnly })}>Saved events</button>}
+        <SegmentedControl
+          label="Event date range"
+          className="oc-event-periods"
+          value={filters.period ?? "All"}
+          onChange={(period) => filter({ period })}
+          options={(["All", "Today", "This Week", "Weekend"] as const).map((period) => ({
+            value: period,
+            label: period === "All" ? "All Events" : period,
+          }))}
+        />
         <div className="oc-event-toolbar-actions">
-        <label className="oc-event-search">
-          <Search size={16} aria-hidden="true" />
-          <Input
-            aria-label="Search events"
-            value={filters.query || ""}
-            placeholder="Search events…"
-            onChange={(e) => filter({ query: e.target.value })}
-          />
-        </label>
-        <details className="oc-event-filter">
-          <summary>
-            <SlidersHorizontal size={16} aria-hidden="true" />
-            Filter
-          </summary>
-          <div className="oc-event-filter-fields">
-            <label>
-              Category
-              <select
-                value={filters.category}
-                onChange={(e) =>
-                  filter({
-                    category: e.target.value as EventFilters["category"],
-                  })
-                }
-              >
-                <option value="">All categories</option>
-                {eventCategories.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
+        <SearchField
+          aria-label="Search events"
+          value={filters.query || ""}
+          placeholder="Search events…"
+          onChange={(e) => filter({ query: e.target.value })}
+          onClear={() => filter({ query: "" })}
+          containerClassName="oc-event-search"
+        />
+        <FilterPopover count={menuFilters} label="Filter" title="Event filters"
+          footer={<Button type="button" variant="ghost" size="sm" onClick={() => setFilters(initialFilters)}>Reset filters</Button>}>
+            {identity && <Toggle label="Saved events" checked={!!filters.savedOnly} onCheckedChange={(savedOnly) => filter({ savedOnly })} />}
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Category</span>
+              <PillSelect label="Category" size="compact" allLabel="All categories" value={filters.category || ""} onChange={(category) => filter({ category: category as EventFilters["category"] })}
+                options={eventCategories.map((c) => ({ value: c, label: c }))} />
+            </div>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Club</span>
+              <PillSelect label="Club" size="compact" allLabel="All clubs" value={filters.clubId || ""} onChange={(clubId) => filter({ clubId })}
+                options={clubs.map((c) => ({ value: c.id, label: c.name }))} />
+            </div>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Date (Eastern Time)</span>
+              <DateField label="Date (Eastern Time)" value={filters.date || ""} onChange={(date) => filter({ date })} placeholder="Any date" clearLabel="Any date" />
+            </div>
+            <label className="oc-filter-field"><span className="oc-filter-field-label">Location</span>
+              <Input className="oc-pill-input" value={filters.location} onChange={(e) => filter({ location: e.target.value })} />
             </label>
-            <label>
-              Club
-              <select
-                value={filters.clubId}
-                onChange={(e) => filter({ clubId: e.target.value })}
-              >
-                <option value="">All clubs</option>
-                {clubs.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Date (Eastern Time)
-              <Input
-                type="date"
-                value={filters.date}
-                onChange={(e) => filter({ date: e.target.value })}
-              />
-            </label>
-            <label>
-              Location
-              <Input
-                value={filters.location}
-                onChange={(e) => filter({ location: e.target.value })}
-              />
-            </label>
-            <label>
-              Sort
-              <select
-                value={filters.sort}
-                onChange={(e) =>
-                  filter({ sort: e.target.value as EventFilters["sort"] })
-                }
-              >
-                <option value="soonest">Soonest first</option>
-                <option value="latest">Latest first</option>
-                <option value="name">Name A–Z</option>
-              </select>
-            </label>
-            <label className="oc-event-check">
-              <input
-                type="checkbox"
-                checked={filters.required || false}
-                onChange={(e) => filter({ required: e.target.checked })}
-              />
-              RSVP required
-            </label>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setFilters(initialFilters)}
-            >
-              Reset filters
-            </Button>
-          </div>
-        </details>
-        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Corkboard" }, { value: "list", label: "List View" }]} />
-        {toolbarAction}
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Sort</span>
+              <PillSelect label="Sort" size="compact" active={(filters.sort ?? "soonest") !== "soonest"} value={filters.sort ?? "soonest"} onChange={(sort) => filter({ sort: sort as EventFilters["sort"] })}
+                options={[{ value: "soonest", label: "Soonest" }, { value: "latest", label: "Latest" }, { value: "name", label: "Name A–Z" }]} />
+            </div>
+            <Toggle label="RSVP required" checked={filters.required || false} onCheckedChange={(required) => filter({ required })} />
+        </FilterPopover>
+        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch oc-view-switch" size="compact" options={[{ value: "corkboard", label: null, ariaLabel: "Board", icon: <StickyNote /> }, { value: "list", label: null, ariaLabel: "List", icon: <Rows3 /> }]} />
         </div>
       </div>
       {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}
@@ -291,28 +237,15 @@ export function PublicEventBoard({ toolbarAction }: { toolbarAction?: ReactNode 
             setOpen(value);
           }}
         >
-          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
+          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Event board" : "Event list"}>
             {!loading && !events.length ? (
-              <div className="oc-events-empty">
-                <h2>{filters.savedOnly ? "No saved events here yet." : filters.query ? "No search results." : filters.category || filters.clubId || filters.date || filters.location || filters.required || filters.period !== "All" ? "No events match your filters." : "No upcoming events yet."}</h2>
-                <p>
-                  {filters.query ||
-                  filters.category ||
-                  filters.clubId ||
-                  filters.date ||
-                  filters.location ||
-                  filters.required ||
-                  filters.period !== "All"
-                    ? "Try another date or clear your filters."
-                    : filters.savedOnly ? "Save an event to find it here. Your saved events follow you between views." : "Approved campus events will appear here. Come back soon."}
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setFilters(initialFilters)}
-                >
-                  Show all events
-                </Button>
-              </div>
+              (() => { const empty = eventBoardEmpty(filters); return <div className="oc-events-empty">
+                <h2>{empty.title}</h2>
+                <p>{empty.description}</p>
+                {empty.action.kind === "explore-clubs"
+                  ? <Button variant="outline" asChild><Link href="/explore">{empty.action.label}</Link></Button>
+                  : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>}
+              </div> })()
             ) : view === "list" ? (
               <ul className="oc-smart-event-list">
                 {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id) }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}
@@ -664,8 +597,9 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     }
   }
   return (
-    <details className="mt-5 rounded-lg border p-4">
-      <summary className="cursor-pointer text-sm font-medium">
+    <details className="oc-event-rsvps group mt-5 rounded-lg border p-4">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        <ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />
         Your RSVPs{!loading && !error && ` (${rows.length})`}
       </summary>
       <p className="my-3 text-xs text-muted-foreground">
@@ -681,7 +615,7 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
       )}
       {loading && <LoadingState label="Loading your RSVPs…" layout="inline" />}
       {notice && <p role="status" className="my-3 text-sm">{notice}</p>}
-      {!loading && !error && !rows.length && <p className="my-3 text-sm text-muted-foreground">No RSVPs yet. Open a campus event to RSVP.</p>}
+      {!loading && !error && !rows.length && <div className="my-3 space-y-2 text-sm text-muted-foreground"><p>You haven’t RSVP’d to an event. Events you RSVP to also appear on your calendar.</p><Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/calendar">Open your calendar</Link></div>}
       <ul className="space-y-3">
         {rows.map((r) => (
           <li

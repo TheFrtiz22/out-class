@@ -15,3 +15,10 @@ export function applicationDecisionGroup(status: string): DecisionGroup | null {
     default: return null
   }
 }
+
+/** The Applicants decision filter row: All plus each decision group. */
+export const decisionFilters = [{ id: "all", label: "All" }, ...decisionGroups] as const
+export type DecisionFilter = typeof decisionFilters[number]["id"]
+export function decisionFilter(value: string | null | undefined): DecisionFilter {
+  return decisionFilters.some(item => item.id === value) ? value as DecisionFilter : "all"
+}

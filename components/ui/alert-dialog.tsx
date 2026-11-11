@@ -46,11 +46,15 @@ function AlertDialogOverlay({
 
 function AlertDialogContent({
   className,
+  overlayProps,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
+  /** Props for the backdrop, e.g. an onClick that treats an outside click as Cancel. */
+  overlayProps?: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>
+}) {
   return (
     <AlertDialogPortal>
-      <AlertDialogOverlay />
+      <AlertDialogOverlay {...overlayProps} />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
@@ -124,6 +128,7 @@ function AlertDialogAction({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
   return (
     <AlertDialogPrimitive.Action
+      data-slot="button" data-button="" data-variant="default" data-size="default"
       className={cn(buttonVariants(), className)}
       {...props}
     />
@@ -136,6 +141,7 @@ function AlertDialogCancel({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
+      data-slot="button" data-button="" data-variant="outline" data-size="default"
       className={cn(buttonVariants({ variant: 'outline' }), className)}
       {...props}
     />

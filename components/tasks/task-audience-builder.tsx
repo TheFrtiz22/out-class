@@ -1,25 +1,27 @@
 "use client"
+import { SearchField } from "@/components/ui/search-field"
 import { NativeSelect } from "@/components/ui/native-select"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useState } from "react"
-import { Search, Shuffle, Users, UserRound, GraduationCap, Shield, Layers, SlidersHorizontal } from "@/components/icons"
+import { Shuffle, Users, UserRound, GraduationCap, Shield, Layers, SlidersHorizontal } from "@/components/icons"
 import { taskAudienceSchema, resolveTaskRecipients, type TaskAudience } from "@/lib/tasks"
 import { taskAudienceMode, taskMemberName, taskRoleLabels, type TaskWorkspace, type TaskMember } from "@/lib/task-presentation"
 import { Button } from "@/components/ui/button"
+import { PillSelect } from "@/components/ui/pill-select"
 import { Input } from "@/components/ui/input"
 const choices=[{id:"everyone",label:"Everyone",icon:Users},{id:"boys",label:"Boys",icon:Users},{id:"girls",label:"Girls",icon:Users},{id:"members",label:"Choose members",icon:UserRound},{id:"years",label:"Class year",icon:GraduationCap},{id:"groups",label:"Groups & cohorts",icon:Layers},{id:"roles",label:"Role",icon:Shield},{id:"random",label:"Random",icon:Shuffle},{id:"advanced",label:"Advanced",icon:SlidersHorizontal}]
 export function TaskMemberList({members,selected,onChange,label="Choose members"}:{members:TaskMember[];selected:string[];onChange:(ids:string[])=>void;label?:string}) {
   const [query,setQuery]=useState("")
   const visible=members.filter(member=>`${taskMemberName(member)} ${member.user.email} ${member.user.studentProfile?.academicYear ?? ""} ${member.groups.join(" ")}`.toLowerCase().includes(query.toLowerCase()))
   return <section className="oc-recipient-selector" aria-label={label}>
-    <label className="oc-task-search"><Search size={16} aria-hidden="true"/><Input aria-label={`Search ${label.toLowerCase()}`} type="search" placeholder="Search members, years, or groups" value={query} onChange={event=>setQuery(event.target.value)}/></label>
+    <SearchField aria-label={`Search ${label.toLowerCase()}`} placeholder="Search members, years, or groups" value={query} onChange={event=>setQuery(event.target.value)} onClear={()=>setQuery("")}/>
     <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span role="status">{selected.length} members selected</span><div><Button type="button" size="sm" variant="ghost" onClick={()=>onChange([...new Set([...selected,...visible.map(member=>member.id)])])}>Select all{query ? " results" : ""}</Button><Button type="button" size="sm" variant="ghost" onClick={()=>onChange([])}>Clear</Button></div></div>
     <div className="oc-recipient-scroll">{visible.map(member=><label className="oc-recipient-person" key={member.id}><input type="checkbox" checked={selected.includes(member.id)} onChange={event=>onChange(event.target.checked?[...selected,member.id]:selected.filter(id=>id!==member.id))}/><span className="oc-task-avatar" aria-hidden="true">{taskMemberName(member).split(/\s+/).map(word=>word[0]).slice(0,2).join("")}</span><span><strong>{taskMemberName(member)}</strong><small>{member.user.studentProfile?.academicYear ? member.user.studentProfile.academicYear : "Year not provided"} · {taskRoleLabels[member.role]}{member.groups.length ? ` · ${member.groups.join(", ")}` : ""}</small></span></label>)}{!visible.length && <p className="py-3 text-sm text-muted-foreground">No matching members.</p>}</div>
   </section>
 }
 export function TaskRecipientPreview({recipients}:{recipients:{member:TaskMember;groupLabel:string|null}[]}) {
   const [all,setAll]=useState(false)
-  return <section className="oc-recipient-preview" aria-label="Recipient preview"><div className="flex flex-wrap items-center justify-between gap-2"><strong role="status">{recipients.length} recipients</strong>{recipients.length>4 && <Button type="button" variant="ghost" size="sm" onClick={()=>setAll(!all)}>{all?"Show fewer":`View all ${recipients.length}`}</Button>}</div><ul className={all?"oc-recipient-scroll":""}>{recipients.slice(0,all?undefined:4).map(({member,groupLabel})=><li className="oc-recipient-person" key={member.id}><span className="oc-task-avatar" aria-hidden="true">{taskMemberName(member).split(/\s+/).map(word=>word[0]).slice(0,2).join("")}</span><span><strong>{taskMemberName(member)}</strong><small>{member.user.studentProfile?.academicYear ?? "Year not provided"}{groupLabel ? ` · ${groupLabel}` : ""}</small></span></li>)}</ul>{!recipients.length && <p className="mt-2 text-sm text-muted-foreground">Choose who should receive this assignment.</p>}</section>
+  return <section className="oc-recipient-preview" aria-label="Recipient preview"><div className="flex flex-wrap items-center justify-between gap-2"><strong role="status">{recipients.length} recipients</strong>{recipients.length>4 && <Button type="button" variant="ghost" size="sm" onClick={()=>setAll(!all)}>{all?"Show fewer":`View all ${recipients.length}`}</Button>}</div><ul className={all?"oc-recipient-scroll":""}>{recipients.slice(0,all?undefined:4).map(({member,groupLabel})=><li className="oc-recipient-person" key={member.id}><span className="oc-task-avatar" aria-hidden="true">{taskMemberName(member).split(/\s+/).map(word=>word[0]).slice(0,2).join("")}</span><span><strong>{taskMemberName(member)}</strong><small>{member.user.studentProfile?.academicYear ?? "Year not provided"}{groupLabel ? ` · ${groupLabel}` : ""}</small></span></li>)}</ul>{!recipients.length && <p className="mt-2 text-sm text-muted-foreground">Choose who should receive this task.</p>}</section>
 }
 export function TaskAudienceBuilder({workspace,value,onChange,mode:initialMode,onModeChange,omitMembers=[]}:{workspace:TaskWorkspace;value:TaskAudience;onChange:(audience:TaskAudience)=>void;mode?:string;onModeChange?:(mode:string)=>void;omitMembers?:string[]}) {
   const [mode,setMode]=useState(initialMode ?? taskAudienceMode(value)),[pool,setPool]=useState(value.everyone?"everyone":value.academicYears.length?"years":value.groups.length||value.cohorts.length?"groups":value.roles.length?"roles":value.members.length?"members":"everyone"),[randomKind,setRandomKind]=useState(value.random?.groups?"groups":"sample"),[count,setCount]=useState(value.random?.count ?? 10),[groupCount,setGroupCount]=useState(value.random?.groups ?? 3)
@@ -34,8 +36,8 @@ export function TaskAudienceBuilder({workspace,value,onChange,mode:initialMode,o
   let recipients:{member:TaskMember;groupLabel:string|null}[]=[],previewError=""
   try{recipients=resolveTaskRecipients(members,value,excluded)}catch(error){previewError=error instanceof Error?error.message:"Check your selection."}
   return <div className="oc-audience-builder">
-    <div className="oc-audience-options" role="group" aria-label="Who should receive this?">{choices.map(choice=><button type="button" aria-pressed={mode===choice.id} key={choice.id} onClick={()=>choose(choice.id)}><choice.icon size={17} aria-hidden="true"/>{choice.label}</button>)}</div>
-    {mode==="everyone" && <p className="text-sm text-muted-foreground">Everyone on the current club roster. Each person receives their own assignment.</p>}
+    <PillSelect label="Send to" prefix="Send to" active={false} value={mode} onChange={choose} options={choices.map(choice=>({value:choice.id,label:choice.label}))}/>
+    {mode==="everyone" && <p className="text-sm text-muted-foreground">Everyone on the current club roster. Each person receives their own copy of the task.</p>}
     {(mode==="boys" || mode==="girls") && <p className="text-sm text-muted-foreground">Members assigned to the “{mode === "boys" ? "Boys" : "Girls"}” group in Members.</p>}
     {mode==="members" && <TaskMemberList members={members} selected={value.members} onChange={ids=>patch({members:ids})}/>}
     {mode==="years" && yearControls()}{mode==="groups" && groupControls()}{mode==="roles" && roleControls()}

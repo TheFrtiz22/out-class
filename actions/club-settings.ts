@@ -3,6 +3,7 @@
 import { finalRecruitmentStatuses, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
@@ -10,7 +11,9 @@ import {
   applicationSettingsSchema,
   pipelineSettingsSchema,
 } from "@/lib/club-settings";
+import { normalizeProfileFieldVisibility, sameProfileFieldVisibility, saveProfileFieldVisibilityInput } from "@/lib/profile-field-visibility";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { boundedParse } from "@/lib/bounded-input";
 async function authorize(
   tx: AppTransactionClient,
   clubId: string,
@@ -29,7 +32,7 @@ function invalidate(clubId: string) {
   revalidateTag("club-directory");
   revalidatePath(`/club/${clubId}`);
   revalidatePath(`/club/${clubId}/workspace`);
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 export async function getApplicationSettings(clubId: string) {
   z.string().uuid().parse(clubId);
@@ -51,13 +54,14 @@ export async function getApplicationSettings(clubId: string) {
           required: true,
           wordLimit: true,
           options: true,
+          showIf: true,
         },
       },
     },
   });
 }
 export async function saveApplicationSettings(input: unknown) {
-  const data = applicationSettingsSchema.parse(input);
+  const data = boundedParse(applicationSettingsSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "application.manage",
   ]);
@@ -77,7 +81,7 @@ export async function saveApplicationSettings(input: unknown) {
       });
       for (const q of data.questions) {
         if (
-          q.type === "MULTIPLE_CHOICE" &&
+          (q.type === "MULTIPLE_CHOICE" || q.type === "MULTI_SELECT") &&
           q.options.length === 0 &&
           !current.some(
             (saved) =>
@@ -107,7 +111,8 @@ export async function saveApplicationSettings(input: unknown) {
           type: q.type,
           required: q.required,
           wordLimit: q.type === "ESSAY" ? q.wordLimit : null,
-          options: q.type === "MULTIPLE_CHOICE" ? q.options : [],
+          options: q.type === "MULTIPLE_CHOICE" || q.type === "MULTI_SELECT" ? q.options : [],
+          showIf: q.showIf ?? Prisma.DbNull,
           order,
         };
         if (saved) {
@@ -122,8 +127,8 @@ export async function saveApplicationSettings(input: unknown) {
           if (
             Object.entries(fields).some(
               ([key, value]) =>
-                JSON.stringify(saved[key as keyof typeof saved]) !==
-                JSON.stringify(value),
+                JSON.stringify(saved[key as keyof typeof saved] ?? null) !==
+                JSON.stringify(value === Prisma.DbNull ? null : value),
             )
           )
             await tx.applicationQuestion.update({
@@ -194,7 +199,7 @@ export async function getPipelineSettings(clubId: string) {
   });
 }
 export async function savePipelineSettings(input: unknown) {
-  const data = pipelineSettingsSchema.parse(input);
+  const data = boundedParse(pipelineSettingsSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "recruitment.manage",
   ]);
@@ -376,4 +381,32 @@ export async function saveClubPreferences(input: unknown) {
     });
   });
   invalidate(data.clubId);
+}
+
+/** The club's leader-facing applicant profile fields, normalized to the shared defaults. */
+export async function getProfileFieldVisibility(clubId: string) {
+  z.string().uuid().parse(clubId);
+  await requireClubPermission(clubId, ["club.settings"]);
+  const club = await prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { profileFieldVisibility: true } });
+  return { fields: normalizeProfileFieldVisibility(club.profileFieldVisibility) };
+}
+
+export async function saveProfileFieldVisibility(input: unknown) {
+  const data = saveProfileFieldVisibilityInput.parse(input);
+  const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
+  const fields = normalizeProfileFieldVisibility(data.fields);
+  await prisma.$transaction(async (tx) => {
+    await authorize(tx, data.clubId, user.id, "club.settings");
+    const club = await tx.club.findUniqueOrThrow({ where: { id: data.clubId }, select: { profileFieldVisibility: true } });
+    const current = normalizeProfileFieldVisibility(club.profileFieldVisibility);
+    // An identical retry is accepted; a change made by another leader since loading is not.
+    if (!sameProfileFieldVisibility(current, normalizeProfileFieldVisibility(data.expected)) && !sameProfileFieldVisibility(current, fields))
+      throw new Error("Profile field settings changed. Reload before editing.");
+    await tx.club.update({ where: { id: data.clubId }, data: { profileFieldVisibility: fields } });
+    await tx.auditLog.create({
+      data: { actorId: user.id, action: "club.profile_fields.configure", targetId: data.clubId, clubId: data.clubId, details: fields },
+    });
+  });
+  invalidate(data.clubId);
+  return { fields };
 }

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
 function load(file, mocks = {}) {
+  mocks = { ...require('./helpers/shell-stubs.cjs'), ...mocks }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === '@/components/icons' ? require('./helpers/icons.cjs') : name.startsWith('@/') ? {} : require(name), mod, mod.exports)
@@ -47,7 +48,7 @@ test('public SEO fails closed during a database outage without loading sample cl
 })
 test('sitemap emits canonical public pages without query strings or fabricated timestamps', async () => {
   const { default: sitemap } = load('app/sitemap.ts', { '@/lib/seo': seo, '@/lib/public-club-seo': { getIndexableClubs: async () => [club] } })
-  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
+  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/request-school', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
 })
 test('robots permits marketing and public clubs while excluding actual product interfaces', () => {
   const result = load('app/robots.ts', { '@/lib/seo': seo }).default()
@@ -105,7 +106,7 @@ test('public information pages render factual content, consistent entity referen
     assert.equal(meta.alternates.canonical, `${seo.SITE_URL}${path}`)
     assert.equal(meta.openGraph.url, meta.alternates.canonical)
     assert.equal(meta.openGraph.siteName, 'OutClass')
-    assert.equal(meta.openGraph.images[0].url, `${seo.SITE_URL}/images/outclass-social.jpg`)
+    assert.equal(meta.openGraph.images[0].url, `${seo.SITE_URL}/og/outclass.png`)
     assert.equal(meta.robots.index, true)
     assert.equal(meta.robots.follow, true)
     const html = renderToStaticMarkup(React.createElement(page.default))
@@ -122,7 +123,7 @@ test('public information pages render factual content, consistent entity referen
     assert.equal(webpage.about['@id'], `${seo.SITE_URL}/#organization`)
     assert.equal(graph.some(item => ['Organization', 'WebSite'].includes(item['@type'])), false)
     if (path === '/uva') {
-      assert.equal(meta.title.absolute, 'OutClass at UVA | Club Recruitment at the University of Virginia')
+      assert.equal(meta.title.absolute, 'Club recruitment at UVA · OutClass')
       const faq = graph.find(item => item['@type'] === 'FAQPage')
       assert.equal(faq.mainEntity.length, (html.match(/<details\b/g) || []).length)
       assert.equal(new Set(publicFaq.publicFaqs.map(item => item.id)).size, faq.mainEntity.length)
@@ -131,7 +132,7 @@ test('public information pages render factual content, consistent entity referen
         assert.ok(html.includes(`<p>${item.acceptedAnswer.text}</p>`))
       }
     } else {
-      assert.equal(meta.title.absolute, 'OutClass | About')
+      assert.equal(meta.title.absolute, 'About · OutClass')
       assert.match(html, /OutClass is operated by OutClassPlatforms LLC, a Virginia limited liability company/)
     }
   }
@@ -150,7 +151,8 @@ test('shared public footer connects all public pages with real HTML links', () =
   assert.ok(html.includes('class="oc-footer-letters" aria-hidden="true"'))
   assert.ok(html.includes('OutClass is operated by OutClassPlatforms LLC'))
   assert.ok(html.includes('© 2026 OutClassPlatforms LLC. All rights reserved.'))
-  assert.ok(!html.includes('href="/privacy"') && !html.includes('href="/terms"'))
+  // Privacy and Terms are real pages now (Phase 3), linked from the footer's Legal column.
+  assert.ok(!html.includes('href="/explore"'))
 })
 test('landing entry preserves student and leader sign-in intent without loading a workspace view first', () => {
   let role
@@ -175,11 +177,13 @@ test('sign-in intent overrides a saved demo perspective or existing session and 
     const changes = [], effects = []
     const { AppShell } = load('components/app-shell.tsx', {
       'next/dynamic': { __esModule: true, default: () => 'LazyView' },
-      'next/navigation': { useRouter: () => ({}), useSearchParams: () => new URLSearchParams() },
-      react: { useState: value => [value, next => changes.push(next)], useEffect: fn => effects.push(fn) },
+      'next/navigation': { useRouter: () => ({}), useSearchParams: () => new URLSearchParams(), usePathname: () => '/' },
+      '@/lib/navigation': require('./helpers/navigation-module.cjs'),
+      react: { useState: value => [value, next => changes.push(next)], useEffect: fn => effects.push(fn), useRef: current => ({ current }), useMemo: fn => fn() },
       '@/contexts/auth-context': { useAuth: () => ({ user: null, selectClub() {} }) },
       '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: true, state: { perspective: { role: 'leader', clubId: 'sample' } } }) },
       '@/lib/demo/store': { demoDashboard: () => ({}) },
+      '@/lib/demo/loader': { loadedDemoStore: () => ({ demoDashboard: () => ({}) }) },
       '@/lib/student-navigation': { canonicalStudentParams: () => null },
     })
     const tree = AppShell({ initialView: 'landing', initialAuthRole: role, initialSession: { id: 'existing' }, hasProfile: true })

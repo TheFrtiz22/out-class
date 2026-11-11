@@ -63,9 +63,23 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
  });
  await t.test('terminated PostgreSQL transaction leaves no orphaned processing or partial inbox',async()=>{
   const data=input();await actions.saveCommunicationSchedule(data);await due(data.id);crashAudit=true;
-  assert.equal((await worker.processScheduledCommunications()).failed,1);assert.equal(terminated,true,'The PostgreSQL backend was actually terminated');
-  const row=await db.scheduledCommunication.findUniqueOrThrow({where:{id:data.id}});assert.equal(row.status,'FAILED');assert.equal(row.publicationId,null);assert.equal(await db.clubAnnouncement.count({where:{clubId:club.id,requestKey:data.id}}),0);
-  await actions.saveCommunicationSchedule({...data,revision:row.revision});await due(data.id);assert.equal((await worker.processScheduledCommunications()).published,1);
+  const result=await worker.processScheduledCommunications();assert.equal(terminated,true,'The PostgreSQL backend was actually terminated');assert.equal(result.published,0);
+  // Termination can also invalidate the failure-marker connection. The worker
+  // deliberately retains a fenced PROCESSING lease in that case, then recovers.
+  const row=await op.scheduledCommunication.findUniqueOrThrow({where:{id:data.id}});
+  assert.ok(['FAILED','PROCESSING'].includes(row.status));assert.equal(result.failed,row.status==='FAILED'?1:0);
+  assert.equal(row.publicationId,null);assert.equal(await op.clubAnnouncement.count({where:{clubId:club.id,requestKey:data.id}}),0);
+  if(row.status==='FAILED'){
+   assert.equal(row.failureCode,'PUBLICATION_UNAVAILABLE');
+   await actions.saveCommunicationSchedule({...data,revision:row.revision});await due(data.id);
+  }else{
+   assert.equal((await worker.processScheduledCommunications()).published,0,'A live crash lease must not be reclaimed');
+   await op.scheduledCommunication.update({where:{id:data.id},data:{updatedAt:new Date(Date.now()-180000)}});
+  }
+  assert.equal((await worker.processScheduledCommunications()).published,1);
+  assert.equal((await op.scheduledCommunication.findUniqueOrThrow({where:{id:data.id}})).status,'PUBLISHED');
+  assert.equal(await op.clubAnnouncement.count({where:{clubId:club.id,requestKey:data.id}}),1);
+  assert.equal((await worker.processScheduledCommunications()).published,0,'Recovery cannot publish a duplicate');
  });
  await t.test('processing claim is observable, rejects edit/cancel, and expired crash lease is reclaimed once',async()=>{
   const data=input();await actions.saveCommunicationSchedule(data);await due(data.id);
@@ -103,7 +117,7 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
   await assert.rejects(actions.saveCommunicationSchedule(input({audience:{include:[{source:'GROUP',groupId:randomUUID()}]}})));
   const foreign=await db.club.create({data:{slug:randomUUID(),name:'Foreign scheduling',tagline:'',description:'',category:'Other',color:'#142d45'}});const foreignGroup=await db.recipientGroup.create({data:{clubId:foreign.id,name:'Private foreign group',kind:'MANUAL'}});
   await assert.rejects(actions.saveCommunicationSchedule(input({audience:{include:[{source:'GROUP',groupId:foreignGroup.id}]}})));
-  support={id:randomUUID()};await assert.rejects(actions.saveCommunicationSchedule(input()),/Exit support/);support=null;
+  support={id:randomUUID()};await assert.rejects(actions.saveCommunicationSchedule(input()),/Leave support mode/);support=null;
  });
  await t.test('another authorized manager may cancel but cannot rewrite the original sender intent',async()=>{
   const data=input();await actions.saveCommunicationSchedule(data);actingUser=recipient;

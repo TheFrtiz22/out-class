@@ -12,17 +12,17 @@ export async function publishAnnouncementTransaction(tx: AppTransactionClient, d
  await authorizeClubTransaction(tx, data.clubId, data.senderId, ["meetings.manage"]);
  const previous = await tx.clubAnnouncement.findUnique({where:{clubId_requestKey:{clubId:data.clubId,requestKey:data.requestKey}},include:{_count:{select:{notifications:true}}}});
  if (previous) {
-  if(previous.title!==data.title || previous.body!==data.body || previous.authorId!==data.senderId || previous.audience!==data.audience || audienceKey(previous.audienceSpec??null)!==audienceKey(data.audienceSpec??null)) throw Error("This publication request was already used.");
+  if(previous.title!==data.title || previous.body!==data.body || previous.authorId!==data.senderId || previous.audience!==data.audience || audienceKey(previous.audienceSpec??null)!==audienceKey(data.audienceSpec??null)) throw Error("This was already sent.");
   return {id:previous.id,recipientCount:previous._count.notifications};
  }
  if(await tx.clubAnnouncement.count({where:{clubId:data.clubId,publishedAt:{gt:new Date(Date.now()-3600000)}}})>=20) throw Error("Please wait before publishing another announcement.");
  const spec=data.audienceSpec??{include:[{source:data.audience==="MEMBERS"?"MEMBERS" as const:"APPLICANTS" as const}]};
  const userIds=resolvedIds??await resolveRecipientAudience(tx,data.clubId,data.senderId,spec);
- if(!userIds.length) throw Error("No eligible recipients for this audience.");
+ if(!userIds.length) throw Error("No one in this audience can receive this.");
  // Lock and recheck recipients against concurrent account disable until commit.
  const eligible=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "User" WHERE id=ANY(${userIds}::text[]) AND "disabledAt" IS NULL ORDER BY id FOR SHARE`;
- if(!eligible.length) throw Error("No eligible recipients for this audience.");
+ if(!eligible.length) throw Error("No one in this audience can receive this.");
  const announcement=await tx.clubAnnouncement.create({data:{id:randomUUID(),clubId:data.clubId,authorId:data.senderId,title:data.title,body:data.body,audience:data.audience,requestKey:data.requestKey,...(data.audienceSpec?{audienceSpec:data.audienceSpec}:{})}});
- await tx.userNotification.createMany({data:eligible.map(({id:userId})=>({id:randomUUID(),userId,clubId:data.clubId,announcementId:announcement.id,eventKey:"announcement:"+announcement.id,type:"ANNOUNCEMENT",title:data.title,body:data.body,href:"/?workspace=student&view=inbox"}))});
+ await tx.userNotification.createMany({data:eligible.map(({id:userId})=>({id:randomUUID(),userId,clubId:data.clubId,announcementId:announcement.id,eventKey:"announcement:"+announcement.id,type:"ANNOUNCEMENT",title:data.title,body:data.body,href:"/inbox"}))});
  return {id:announcement.id,recipientCount:eligible.length};
 }

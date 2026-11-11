@@ -8,10 +8,11 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
-import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
+import { previewVerifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { canGrantOnboardingRole } from "@/lib/club-onboarding";
 import { acceptIdentityInvitationInTransaction, recipientInvitation, createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
+import { boundedParse } from "@/lib/bounded-input";
 
 const id = z.string().uuid();
 const invitationInput = z.object({
@@ -34,17 +35,21 @@ export async function createClubIdentityInvitation(input: unknown) {
   });
 }
 
+/** Read-only: served by GET /api/workspace (prefetched on focus and visibility).
+ * Identity binding and its audit entry happen only in the explicit accept, decline
+ * and dismiss actions, each through recipientInvitation in its own transaction.
+ * Expired rows are filtered here, never rewritten.
+ */
 export async function getOrganizationInvitations(includeDismissed = false) {
   z.boolean().parse(includeDismissed);
   const account = await requireAuth({ verifyEmail: true });
   await prepareVerifiedSchoolAccount(account);
-  return clubWriteTransaction(async tx => {
-    const identities = await verifiedSchoolIdentities(tx, account);
-    return tx.clubInvitation.findMany({
-      where: { schoolIdentityId: { in: identities.map(i => i.id) }, status: "PENDING", expiresAt: { gt: new Date() }, ...(includeDismissed ? {} : { dismissedAt: null }) },
-      select: { id: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, expiresAt: true, dismissedAt: true, club: { select: { id: true, name: true, logoUrl: true, marketing: true, color: true } } },
-      orderBy: { createdAt: "desc" }, ...(includeDismissed ? {} : { take: 100 }),
-    });
+  const identities = await previewVerifiedSchoolIdentities(prisma, account);
+  if (!identities.length) return [];
+  return prisma.clubInvitation.findMany({
+    where: { schoolIdentityId: { in: identities.map(i => i.id) }, status: "PENDING", expiresAt: { gt: new Date() }, ...(includeDismissed ? {} : { dismissedAt: null }) },
+    select: { id: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, expiresAt: true, dismissedAt: true, club: { select: { id: true, name: true, logoUrl: true, marketing: true, color: true } } },
+    orderBy: { createdAt: "desc" }, ...(includeDismissed ? {} : { take: 100 }),
   });
 }
 
@@ -98,10 +103,10 @@ export async function revokeIdentityClubInvitation(invitationId: string, platfor
 
 /** Audit foundation only: CSV parsing/confirmation and invitation processing come later. */
 export async function recordRosterImport(input: unknown) {
-  const data = z.object({
+  const data = boundedParse(z.object({
     clubId: id, filename: z.string().trim().min(1).max(255), idempotencyKey: z.string().min(1).max(100),
     rows: z.array(z.record(z.string().max(2000))).max(10000),
-  }).strict().parse(input);
+  }).strict(), input);
   const serialized = JSON.stringify(data.rows);
   if (Buffer.byteLength(serialized) > 1024 * 1024) throw new Error("Roster audit payload exceeds 1 MB.");
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);

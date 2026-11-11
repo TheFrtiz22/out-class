@@ -9,17 +9,19 @@ function load(file, mocks = {}) {
 const { defaultDisplayConfig, projectApplicantDisplay, displayConfigSchema } = load('lib/applicant-display.ts');
 const clubId='00000000-0000-4000-8000-000000000001', applicationId='00000000-0000-4000-8000-000000000002', roundId='00000000-0000-4000-8000-000000000003', observationId='00000000-0000-4000-8000-000000000004';
 function application() {
-  return { id:applicationId, clubId, roundId, studentId:'student', status:'IN_REVIEW', submittedAt:new Date(), anonymousReviewText:null,
+  // A club that has turned GPA and LinkedIn on; the default ceiling is covered in profile-field-visibility tests.
+  return { id:applicationId, clubId, roundId, studentId:'student', status:'IN_REVIEW', submittedAt:new Date(), anonymousReviewText:null, club:{profileFieldVisibility:{gpa:true,linkedin:true}},
     round:{id:roundId,name:'Interview',anonymousReview:false,applicantDisplay:defaultDisplayConfig,displayVersion:0},
     student:{id:'student',email:'private@virginia.edu',studentProfile:{id:'profile',userId:'student',firstName:'HiddenFirst',lastName:'HiddenLast',computingId:'secretid',major:'HiddenMajor',gradYear:2028,gpa:3.8,satScore:1500,actScore:32,headshotUrl:'https://example.com/secret-photo',resumeUrl:'secret-resume',linkedinUrl:'secret-link',bio:'Hidden biography',experiences:[{title:'Hidden experience',subtitle:'Private employer',period:'2025'}]}},
     answers:[{id:'answer',question:{type:'ESSAY',prompt:'Why?'},response:'Secret essay'}],bookings:[],evaluations:[{id:'evaluation',applicationId,interviewerId:'reviewer',round:'Interview',score:8,notes:'Secret feedback',createdAt:new Date()}] };
 }
 function harness() {
-  let app=application(), permission=true, actor='author'; let observations=[];
+  let app=application(), permission=true, actor='author'; let observations=[]; const recusals=[];
   const member={id:'membership',permissions:['applications.review','applicants.identify','interviews.manage'],status:'ACTIVE'};
   const tx={
     evaluation:{findMany:async()=>app.evaluations.filter(e=>e.submittedAt)},
     $queryRaw:async()=>[],
+    applicantRecusal:{findFirst:async({where})=>recusals.find(r=>r.applicationId===where.applicationId&&r.memberId===where.memberId&&where.liftedAt===null)??null},
     clubMember:{findFirst:async({where})=>permission&&where.clubId===clubId?member:null},
     application:{findFirst:async({where})=>where.id===applicationId&&where.clubId===clubId&&app.status!=='DRAFTING'?app:null},
     applicantObservation:{
@@ -32,7 +34,7 @@ function harness() {
     auditLog:{create:async()=>({})},
   };
   const api=load('actions/applicant-intelligence.ts',{'@/utils/auth':{requireClubPermission:async(id,caps)=>{if(!permission||id!==clubId||!caps.every(c=>member.permissions.includes(c)))throw Error('Denied');return{user:{id:actor},membership:member}}},'@/utils/prisma':{prisma:{...tx,$transaction:async f=>f(tx)}}});
-  return {api,app,member,observations:()=>observations,deny(){permission=false},otherAuthor(){actor='other'},scope:{clubId,applicationId}};
+  return {api,app,member,observations:()=>observations,recuse(){recusals.push({applicationId,memberId:member.id})},deny(){permission=false},otherAuthor(){actor='other'},scope:{clubId,applicationId}};
 }
 for(const kind of ['PRO','CON']) test(`${kind} creation, attribution, own edit/delete and other-author denial`,async()=>{
  const h=harness();await h.api.saveApplicantObservation({...h.scope,kind,body:'Thoughtful evidence'});
@@ -65,10 +67,10 @@ test('configuration updates reject unknown fields, duplicate fields, stale versi
  await assert.rejects(h.api.saveApplicantDisplayConfiguration({clubId:roundId,roundId,version:1,config:defaultDisplayConfig}),/Denied/);
  h.member.permissions=['applications.review'];await assert.rejects(h.api.getApplicantDisplayConfiguration(clubId,roundId),/Denied/);
 });
-test('Interview uses a narrow panel and Voting retains its server-filtered panel; legacy voting transport never receives production data',()=>{
- assert.match(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);assert.doesNotMatch(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/getClubPipeline|ApplicantDisplayPanel/);
+test('Interview uses a narrow panel and the leader workspace keeps the server-filtered panel; no browser-local voting transport remains',()=>{
+ assert.match(fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);assert.doesNotMatch(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/getClubPipeline|ApplicantDisplayPanel/);
  assert.match(fs.readFileSync('components/applicant-intelligence.tsx','utf8'),/getApplicantDisplay\(\{ clubId, applicationId, sessionId, previewConfig:/);
- assert.doesNotMatch(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/useProctorSession|localStorage|BroadcastChannel/);
+ for(const gone of ['components/live-voting/board-decision-mode.tsx','lib/use-live-voting.ts'])assert.equal(fs.existsSync(gone),false,gone);
 });
 test('migration preserves historical feedback and links canonical evaluations, constraints and browser isolation',async()=>{
  const {PGlite}=require('@electric-sql/pglite');const db=new PGlite();
@@ -122,4 +124,13 @@ test('configuration cannot override feedback disclosure in voting or preview',as
  const h=harness();h.member.permissions.push('decisions.manage');
  const view=await h.api.getApplicantDisplay({...h.scope,previewConfig:{version:1,fields:['feedback']}});assert.equal(view.sections[0].withheld,true);assert.deepEqual(view.sections[0].items,[]);
  h.deny();await assert.rejects(h.api.getApplicantDisplay(h.scope),/Denied/);
+});
+test('a recused member cannot read, add, edit or delete Pros and Cons; others are unaffected',async()=>{
+ const h=harness();await h.api.saveApplicantObservation({...h.scope,kind:'PRO',body:'Before stepping out'});assert.equal((await h.api.getApplicantDisplay(h.scope)).observations.length,1);
+ h.recuse();
+ await assert.rejects(h.api.getApplicantDisplay(h.scope),/stepped out/);
+ await assert.rejects(h.api.saveApplicantObservation({...h.scope,kind:'CON',body:'New'}),/stepped out/);
+ await assert.rejects(h.api.saveApplicantObservation({...h.scope,id:observationId,kind:'PRO',body:'Edited'}),/stepped out/);
+ await assert.rejects(h.api.deleteApplicantObservation({...h.scope,id:observationId}),/stepped out/);
+ assert.deepEqual(h.observations().map(o=>o.body),['Before stepping out']);
 });

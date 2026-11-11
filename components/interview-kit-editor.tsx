@@ -2,6 +2,7 @@
 import { useAutosave } from "@/hooks/use-autosave";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import { canDiscoverInterviewSetup, interviewSetupHref, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { interviewCapabilities } from "@/lib/interview-access";
@@ -39,7 +40,11 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   const [open, setOpen] = useState(initiallyOpen);
   useEffect(() => { if (initiallyOpen) setOpen(true); }, [initiallyOpen]);
   const { user } = useAuth();
+  const confirm = useConfirm();
   const version = useRef(0);
+  // IDs the server has accepted. A newly added question stays a local draft until it
+  // has a prompt; an existing question cleared to blank still fails validation visibly.
+  const savedIds = useRef(new Set<string>());
   const canEdit = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).editKit;
   const round = roundInfo.id;
   const [questions, setQuestions] = useState<KitQuestion[]>([]),
@@ -58,6 +63,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
         if (current) {
           setQuestions(result.questions);
           version.current = result.version;
+          savedIds.current = new Set(result.questions.map(q => q.id));
           setLoaded(true);
         }
       })
@@ -71,7 +77,12 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   const autosave = useAutosave({
     identity: `${user?.id}:kit:${clubId}:${round}`,
     value: questions, restore: setQuestions, enabled: loaded && canEdit && canReadKit,
-    save: async value => { const result = await saveInterviewKit(clubId, round, version.current, value); version.current = result.version; },
+    save: async value => {
+      const ready = value.filter(q => q.prompt.trim() || savedIds.current.has(q.id));
+      const result = await saveInterviewKit(clubId, round, version.current, ready);
+      version.current = result.version;
+      savedIds.current = new Set(ready.map(q => q.id));
+    },
   });
   const dirty = autosave.dirty, busy = autosave.saving;
   function edit(value: KitQuestion[]) {
@@ -91,7 +102,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
       <div id={'kit-panel-' + round} hidden={!open} aria-labelledby={'kit-heading-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
-          <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
+          <h4 className="oc-kit-builder-label"><ListChecks size={20} aria-hidden="true" />Question builder</h4>
         <fieldset disabled={!loaded || !canEdit || autosave.recovery != null} className="space-y-5">
           {questions.map((q, i) => (
             <section key={q.id} className="oc-kit-question space-y-2">
@@ -179,7 +190,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
           variant="ghost"
           disabled={busy}
           onClick={async () => {
-            if (!dirty || window.confirm("Discard unsaved changes and reload?")) {
+            if (!dirty || await confirm({ title: "Discard changes and reload?", description: "Your unsaved interview kit changes will be lost.", confirmLabel: "Discard and reload", tone: "danger" })) {
               await autosave.discardRecovery?.();
               setRetry((v) => v + 1);
             }
@@ -233,6 +244,6 @@ export function ClubInterviewKitSettings({ clubId, initialRoundId }: { clubId: s
     return (
       <p>{member && canDiscoverInterviewSetup(member) ? "No active interview rounds. Configure an Interview or Group Interview round in Recruiting Pipeline." : "No assigned interview rounds. Ask your club owner to confirm your panel assignment."}</p>
     );
-  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">The requested round is unavailable under your current access or is no longer an active interview round. Return to Interview Setup to choose an eligible round.</p>;
+  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">That round isn’t available to you or is no longer active. Go back to Interview setup and choose another.</p>;
   return <InterviewKitEditor key={`${clubId}:${initialRoundId || ""}`} clubId={clubId} rounds={rounds} initialRoundId={initialRoundId} />;
 }

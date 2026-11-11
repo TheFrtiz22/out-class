@@ -34,7 +34,10 @@ function setup() {
     user: { findUnique: async ({where}) => ({ id: where.id, email: where.id+'@virginia.edu', disabledAt: where.id==='inviter' && state.disabledInviter ? new Date() : null }), create: () => { throw Error('Fake User creation forbidden'); } },
     club: { findUniqueOrThrow: async () => ({ id: clubId, schoolId: 'school-uva', claimedAt: null }), update: async args => { state.writes.push(['club',args]); } },
     schoolIdentifierType: { findMany: async () => [{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}], findUniqueOrThrow: async () => ({ id: 'computing', schoolId: 'school-uva', normalization: 'TRIM_LOWERCASE', validationRegex: '^[a-z0-9]+$', verification: 'EMAIL_LOCAL_PART', emailDomain: 'virginia.edu', school: { active: true } }) },
-    schoolIdentity: { findUniqueOrThrow: async () => ({id:'identity',userId:state.actorId}), findMany: async ({where}) => { assert.equal(where.userId,state.actorId); return state.identityIds.filter(id => where.id.in.includes(id)).map(id => ({ id, userId: state.actorId })); }, upsert: async args => { state.queries.push(['identity',args]); return {id:'identity'}; } },
+    schoolIdentity: { findUniqueOrThrow: async () => ({id:'identity',userId:state.actorId}), findMany: async ({where}) => {
+      // Read-only preview: derived identities by school/type/identifier, bound or not yet bound.
+      if (where.OR) return state.identityIds.map(id => ({ id, userId: state.previewUnbound ? null : state.actorId, verifiedAt: state.previewUnbound ? null : new Date() }));
+      assert.equal(where.userId,state.actorId); return state.identityIds.filter(id => where.id.in.includes(id)).map(id => ({ id, userId: state.actorId })); }, upsert: async args => { state.queries.push(['identity',args]); return {id:'identity'}; } },
     platformAdmin: { findUnique: async () => ({ active: state.platformAllowed }) },
     clubMember: {
       findFirst: async () => null,
@@ -56,9 +59,10 @@ function setup() {
     },
     auditLog: { create: async args => { state.audits.push(args.data); } },
   };
+  const prisma = {...tx,$transaction:fn=>fn(tx)};
   const load = loader({
     '@/utils/verified-email-policy': { ...loader({})('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
-    '@/utils/prisma': { prisma: {...tx,$transaction:fn=>fn(tx)} },
+    '@/utils/prisma': { prisma },
     '@/utils/auth': { requireAuth: async () => account(), requireClubPermission: async (_id,permissions) => {
       assert.deepEqual(permissions,['members.manage']);
       if (!state.recipient?.isOwner && !state.recipient?.permissions.includes('members.manage')) throw Error('Roster access denied');
@@ -66,7 +70,7 @@ function setup() {
     } },
     '@/utils/platform-admin': { requirePlatformAdmin: async () => { if (!state.platformAllowed) throw Error('Platform denied'); return {id:'inviter'}; } },
   });
-  return {state,tx,load,api:load('actions/club-onboarding.ts')};
+  return {state,tx,prisma,load,api:load('actions/club-onboarding.ts')};
 }
 
 test('membership roles cannot appoint owners through global role or ordinary admin capabilities', () => {
@@ -176,6 +180,44 @@ test('roster audit guards uploads and records every raw input row idempotently',
   await assert.rejects(h.api.recordRosterImport({...input,rows:[]}),/another upload/);
 });
 
+test('accepting from another school or another account is denied without any write', async () => {
+  // Another school's verified email derives only that school's identity, never the invited one.
+  let h=setup();
+  h.tx.schoolIdentifierType.findMany=async({where})=>{assert.equal(where.emailDomain,'virginia.edu');return[{id:'other-computing',schoolId:'school-other',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];};
+  h.tx.schoolIdentity.upsert=async args=>{h.state.queries.push(['identity',args]);return{id:'other-identity'};};
+  h.tx.schoolIdentity.findUniqueOrThrow=async()=>({id:'other-identity',userId:h.state.actorId});
+  h.state.identityIds=['other-identity'];
+  for (const accept of [h.api.acceptIdentityClubInvitation, h.api.declineIdentityClubInvitation]) await assert.rejects(accept(inviteId),/unavailable/);
+  assert.equal(h.state.writes.length,0); assert.equal(h.state.invitation.status,'PENDING');
+  // A second account at the same school cannot take over the invited identity.
+  h=setup(); h.state.actorId='intruder';
+  h.tx.schoolIdentity.findUniqueOrThrow=async()=>({id:'identity',userId:'recipient'});
+  await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/manual review/);
+  assert.equal(h.state.writes.length,0); assert.equal(h.state.audits.length,0);
+});
+
+test('read-only identity preview never writes, includes an unbound match, and fails closed on another account', async () => {
+  const h=setup(), helper=h.load('utils/school-identity.ts'), seen=[];
+  const account={user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at:'2026-09-01',email_confirmed_at:'2026-10-01'}};
+  let rows=[{id:'identity',userId:null,verifiedAt:null}];
+  const db={
+    user:{findUnique:async()=>({email:'recipient@virginia.edu',disabledAt:null})},
+    schoolIdentifierType:{findMany:async()=>[{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}]},
+    schoolIdentity:{findMany:async({where})=>{seen.push(where);return rows;}},
+  };
+  assert.deepEqual((await helper.previewVerifiedSchoolIdentities(db,account)).map(i=>i.id),['identity']);
+  assert.deepEqual(seen[0].OR,[{schoolId:'school-uva',identifierTypeId:'computing',normalizedIdentifier:'recipient'}]);
+  assert.deepEqual(seen[0].school,{active:true});
+  rows=[{id:'identity',userId:'someone-else',verifiedAt:new Date()}];
+  await assert.rejects(helper.previewVerifiedSchoolIdentities(db,account),/manual review/);
+  rows=[{id:'identity',userId:'recipient',verifiedAt:null}];
+  assert.deepEqual(await helper.previewVerifiedSchoolIdentities(db,account),[]);
+  db.user.findUnique=async()=>({email:'recipient@virginia.edu',disabledAt:new Date()});
+  await assert.rejects(helper.previewVerifiedSchoolIdentities(db,account),/account unavailable/);
+  await assert.rejects(helper.previewVerifiedSchoolIdentities(db,{...account,supabaseUser:{...account.supabaseUser,email_confirmed_at:null}}),/./);
+  assert.equal(h.state.writes.length,0); assert.equal(h.state.audits.length,0);
+});
+
 test('verified identity binding never moves a university identifier between accounts', async () => {
   const h=setup();
   h.tx.schoolIdentifierType.findMany=async()=>[{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];
@@ -185,15 +227,43 @@ test('verified identity binding never moves a university identifier between acco
   assert.equal(h.state.writes.length,0);
 });
 
-test('first login binds the normalized provider identity and discovers invitations without a recipient User insert', async () => {
-  const h=setup();let bound=false;
+test('invitation discovery reads only; the explicit accept binds the normalized identity without a recipient User insert', async () => {
+  const h=setup();let bound=false;h.state.previewUnbound=true;
+  const forbid=name=>()=>{throw Error(`${name} during an invitation read`);};
   h.tx.schoolIdentifierType.findMany=async ({where})=>{assert.equal(where.emailDomain,'virginia.edu');return[{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];};
+  const writable={upsert:h.tx.schoolIdentity.upsert,update:async({data})=>{assert.equal(data.userId,'recipient');assert.ok(data.verifiedAt instanceof Date);bound=true;}};
+  h.tx.schoolIdentity.upsert=forbid('schoolIdentity.upsert');h.tx.schoolIdentity.update=forbid('schoolIdentity.update');
   h.tx.schoolIdentity.findUniqueOrThrow=async()=>({id:'identity',userId:bound?'recipient':null});
-  h.tx.schoolIdentity.update=async({data})=>{assert.equal(data.userId,'recipient');assert.ok(data.verifiedAt instanceof Date);bound=true;};
-  const invitations=await h.api.getOrganizationInvitations();
-  assert.equal(bound,true);assert.equal(invitations.length,1);
+  // A not-yet-bound identity still shows its pending invitations, in both list modes.
+  assert.equal((await h.api.getOrganizationInvitations()).length,1);
+  assert.equal((await h.api.getOrganizationInvitations(true)).length,1);
+  assert.equal(bound,false);assert.equal(h.state.writes.length,0);assert.equal(h.state.audits.length,0);
+  assert.equal(h.state.queries.some(([kind])=>kind==='identity'),false);
+  Object.assign(h.tx.schoolIdentity,writable);
+  assert.deepEqual(await h.api.acceptIdentityClubInvitation(inviteId),{clubId});
+  assert.equal(bound,true);
   assert.equal(h.state.queries.find(([kind])=>kind==='identity')[1].create.normalizedIdentifier,'recipient');
-  assert.equal(h.state.audits[0].action,'school.identity.verify');
+  assert.deepEqual(h.state.audits.map(a=>a.action).slice(0,1),['school.identity.verify']);
+  assert.ok(h.state.audits.some(a=>a.action==='club.invite.accept'));
+  assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
+});
+
+test('invitation list loader issues no Prisma create, update, upsert or delete and opens no write transaction', async () => {
+  const h=setup(), calls=[];
+  const guard=(model,name)=>{const original=h.tx[model][name];h.tx[model][name]=(...args)=>{calls.push(`${model}.${name}`);return original?.(...args);};};
+  for (const model of Object.keys(h.tx)) if (h.tx[model] && typeof h.tx[model]==='object')
+    for (const name of ['create','createMany','update','updateMany','upsert','delete','deleteMany']) guard(model,name);
+  let transactions=0;const run=h.prisma.$transaction;h.prisma.$transaction=(...args)=>{transactions++;return run(...args);};
+  for (const include of [false,true]) assert.equal((await h.api.getOrganizationInvitations(include)).length,1);
+  h.state.previewUnbound=true;
+  assert.equal((await h.api.getOrganizationInvitations(true)).length,1);
+  assert.deepEqual(calls,[]);assert.equal(transactions,0);
+  assert.equal(h.state.writes.length,0);assert.equal(h.state.audits.length,0);
+  // The explicit actions still write through the same client.
+  await h.api.setOrganizationInvitationDismissed(inviteId,true);
+  await h.api.declineIdentityClubInvitation(inviteId);
+  assert.ok(calls.includes('clubInvitation.update'));assert.ok(calls.includes('auditLog.create'));
+  assert.equal(h.state.invitation.status,'DECLINED');assert.ok(transactions>=2);
 });
 
 test('expired, revoked, declined, or previously claimed invitations cannot be replayed',async()=>{

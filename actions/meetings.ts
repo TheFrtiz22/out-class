@@ -19,6 +19,7 @@ import {
   type CheckInResult,
 } from "@/lib/meetings";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { boundedParse } from "@/lib/bounded-input";
 export async function listMeetings(clubId?: string) {
   const { user } = await requireAuth();
   if (clubId) z.string().uuid().parse(clubId);
@@ -51,7 +52,7 @@ export async function getMeeting(meetingId: string) {
   return meeting;
 }
 export async function saveMeeting(input: unknown) {
-  const data = meetingInputSchema.parse(input);
+  const data = boundedParse(meetingInputSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "meetings.manage",
   ]);
@@ -87,7 +88,7 @@ export async function saveMeeting(input: unknown) {
         clubId: data.clubId,
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     revalidatePath("/meetings");
     revalidatePath("/corkboard");
     revalidateTag("club-directory");
@@ -218,7 +219,7 @@ export async function checkInMeeting(
     const attendance = await tx.eventAttendance.create({
       data: { eventId: meetingId, studentId: user.id },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return {
       status: "checked-in",
       checkedInAt: attendance.checkedInAt.toISOString(),

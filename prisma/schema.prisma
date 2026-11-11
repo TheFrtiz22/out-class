@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  calendarFeedToken CalendarFeedToken?
   interviewAvailabilityOverrides InterviewAvailabilityOverride[]
   editorDrafts EditorDraft[]
   scheduledCommunications ScheduledCommunication[]
@@ -126,6 +127,8 @@ model Club {
   pipelineVersion Int @default(0)
   isDiscoverable Boolean @default(true)
   invitationEmailEnabled Boolean @default(true)
+  features Json? // Pilot feature switches set by platform admins; NULL or unknown keys read as off. See lib/club-features.ts.
+  profileFieldVisibility Json? // Leader-facing applicant profile fields; NULL uses defaults (GPA and LinkedIn off). See lib/profile-field-visibility.ts.
   corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
   schoolId            String           @default("school-uva")
@@ -145,6 +148,7 @@ model Club {
   id                  String           @id @default(uuid())
   slug                String           @unique
   name                String
+  shortName           String? // Optional nickname shown in navigation; null falls back to an abbreviation.
   tagline             String
   description         String
   logoUrl             String?
@@ -166,6 +170,7 @@ model Club {
 }
 
 model ClubMember {
+  recusals ApplicantRecusal[]
   availabilityOverrides InterviewAvailabilityOverride[]
   interviewerEligible Boolean?
   interviewParticipation InterviewRoundParticipation[]
@@ -255,6 +260,7 @@ model PipelineRound {
 
 model ApplicationQuestion {
   order Int @default(0)
+  showIf Json?
   options String[] @default([])
   archivedAt DateTime?
   id        String       @id @default(uuid())
@@ -275,9 +281,11 @@ enum QuestionType {
   ESSAY
   FILE_UPLOAD
   MULTIPLE_CHOICE
+  MULTI_SELECT
 }
 
 model Application {
+  recusals ApplicantRecusal[]
   decisionStateRevision Int @default(0)
   recruitmentCycleId String?
   recruitmentCycle RecruitmentCycle? @relation(fields: [recruitmentCycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
@@ -520,6 +528,8 @@ model InterviewRoom {
   panelApprovedBy String?
   panelApprover User? @relation("RoomPanelApprover", fields: [panelApprovedBy], references: [id], onDelete: Restrict)
   panelApprovalRevision Int @default(0)
+  /// Leader-confirmed: the physical room was also reserved through the school's system (UVA: 25Live).
+  externallyBookedAt DateTime?
   createdAt      DateTime        @default(now())
   slots          InterviewSlot[]
 
@@ -1110,6 +1120,75 @@ model VotingObservationReference {
   @@index([sessionId, applicationId])
 }
 
+// Club default (roundId null) or per-round override for live voting rules.
+// Unique per (clubId, COALESCE(roundId,'')) in SQL.
+model VotingRuleDefault {
+  id String @id @default(uuid())
+  clubId String
+  roundId String?
+  rules Json
+  revision Int @default(1)
+  updatedBy String
+  updatedAt DateTime @default(now())
+}
+
+// Rule and eligible electorate captured for one ballot instance; insert-only.
+model VotingBallotRule {
+  sessionId String
+  passNumber Int
+  applicationId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  version Int
+  rules Json
+  electorate String[]
+  reason String?
+  createdBy String
+  createdAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId, version])
+}
+
+// Leader-prepared applicant highlights (editable) and their per-pass immutable copies.
+model VotingSlidePreparation {
+  sessionId String
+  applicationId String
+  candidate VotingCandidate @relation(fields: [sessionId, applicationId], references: [sessionId, applicationId], onDelete: Restrict)
+  highlights Json @default("[]")
+  revision Int @default(1)
+  updatedBy String
+  updatedAt DateTime @default(now())
+  @@id([sessionId, applicationId])
+}
+
+model VotingSlideLock {
+  sessionId String
+  passNumber Int
+  applicationId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  highlights Json
+  preparationRevision Int
+  createdAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId])
+}
+
+// "Something to add" discussion requests: one per participant per applicant per pass.
+// Never a ballot, outcome or observation.
+model VotingHandRaise {
+  sessionId String
+  passNumber Int
+  applicationId String
+  memberId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  participant VotingParticipant @relation(fields: [sessionId, memberId], references: [sessionId, memberId], onDelete: Restrict)
+  raisedAt DateTime @default(now())
+  withdrawnAt DateTime?
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  clearedAt DateTime?
+  clearedBy String?
+  updatedAt DateTime @default(now())
+  @@id([sessionId, passNumber, applicationId, memberId])
+}
+
 // Durable decisions are separate from published application statuses.
 model VotingSession {
   observationReferences VotingObservationReference[]
@@ -1154,6 +1233,7 @@ model VotingParticipant {
   member ClubMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
   joinedAt DateTime?
   ballots VotingBallot[]
+  handRaises VotingHandRaise[]
   @@id([sessionId, memberId])
 }
 model VotingCandidate {
@@ -1165,6 +1245,7 @@ model VotingCandidate {
   expectedStatus AppStatus
   publishedStatus AppStatus?
   passes VotingPassCandidate[]
+  slidePreparation VotingSlidePreparation?
   @@id([sessionId, applicationId])
   @@unique([sessionId, position])
 }
@@ -1196,6 +1277,9 @@ model VotingPassCandidate {
   overrideBy String?
   overrideAt DateTime?
   ballots VotingBallot[]
+  ballotRules VotingBallotRule[]
+  handRaises VotingHandRaise[]
+  slideLock VotingSlideLock?
   @@id([sessionId, passNumber, applicationId])
   @@unique([sessionId, passNumber, position])
 }
@@ -1664,4 +1748,32 @@ model EditorDraft {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
+}
+
+// A member who knows an applicant steps out of reviewing, interviewing and
+// voting on that applicant. Retained when lifted (liftedAt) for the audit trail.
+model ApplicantRecusal {
+  id            String      @id @default(uuid())
+  clubId        String
+  applicationId String
+  application   Application @relation(fields: [applicationId, clubId], references: [id, clubId], onDelete: Cascade)
+  memberId      String
+  member        ClubMember  @relation(fields: [memberId, clubId], references: [id, clubId], onDelete: Cascade)
+  createdById   String
+  createdAt     DateTime    @default(now())
+  liftedAt      DateTime?
+  liftedById    String?
+
+  @@unique([applicationId, memberId])
+  @@index([clubId, memberId])
+}
+
+// Private calendar subscription (webcal). Only a SHA-256 hash of the secret is
+// stored; creating a new link replaces it, so old links stop working.
+model CalendarFeedToken {
+  userId     String    @id
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 }

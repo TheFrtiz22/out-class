@@ -12,10 +12,11 @@ import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
 import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import type { z } from "zod"
+import { boundedParse } from "@/lib/bounded-input"
 
 async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
   const { user } = await requireAuth()
-  const parsed = applicationInputSchema.parse(input)
+  const parsed = boundedParse(applicationInputSchema, input)
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction")
   const applicationId = await clubWriteTransaction(async (tx) => {
     // FOR SHARE (not FOR UPDATE) on the club: leader configuration changes,
@@ -88,7 +89,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     })
     return application.id
   })
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   revalidatePath(`/club/${parsed.clubId}`)
   return { success: true, applicationId }
 }
@@ -122,7 +123,7 @@ export async function getStudentApplications() {
           color: true,
           pipelineRounds: { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: "asc" } },
           questions: {
-            select: { id: true, prompt: true, type: true, required: true, wordLimit: true, options: true, archivedAt: true },
+            select: { id: true, prompt: true, type: true, required: true, wordLimit: true, options: true, showIf: true, archivedAt: true },
             orderBy: [{ order: "asc" }, { id: "asc" }],
           },
         },

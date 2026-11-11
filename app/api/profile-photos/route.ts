@@ -10,6 +10,7 @@ import { authorizeCrmPhoto } from "@/lib/crm-photo-authorization";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { getInterviewApplicantPanel } from "@/actions/interview-resumes";
 import { getEvaluations } from "@/actions/evaluations";
+import { ProfileFieldHiddenError } from "@/lib/profile-field-visibility";
 const input = z.object({ path: storagePathSchema.refine(v => !!v), clubId: z.string().uuid().optional(), applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), sessionId: z.string().uuid().optional(), mode: z.enum(["evaluation", "preview", "crm"]).optional() }).strict();
 const headers = { "Cache-Control": "private, no-store", Vary: "Cookie", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" };
 export async function GET(request: Request) {
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
     if (error || !data || data.size > 5 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp"].includes(data.type)) return new NextResponse("Not found", { status: 404, headers });
     return new NextResponse(await data.arrayBuffer(), { headers: { ...headers, "Content-Type": data.type } });
   } catch (error) {
+    if (error instanceof ProfileFieldHiddenError) return new NextResponse("Not found", { status: 404, headers });
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT");
     return new NextResponse(redirect ? "Unauthorized" : "Forbidden", { status: redirect ? 401 : 403, headers });
   }

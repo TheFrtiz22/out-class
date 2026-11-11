@@ -27,16 +27,16 @@ export async function setInterviewBookingPublication(raw: unknown) {
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null, type: { in: ["INTERVIEW", "GROUP_INTERVIEW"] } } })
     if (!round || round.anonymousReview) throw new Error("Choose an active identified interview round.")
     if (input.cycleId && !await tx.recruitmentCycle.findFirst({ where: { id: input.cycleId, clubId: input.clubId, archivedAt: null } })) throw new Error("Choose an active recruitment cycle from this club.")
-    if (input.action !== "PUBLISH" && input.cycleId !== round.bookingCycleId) throw new Error("Publish booking to change the recruitment cycle. Existing reservations are retained.")
+    if (input.action !== "PUBLISH" && input.cycleId !== round.bookingCycleId) throw new Error("Publish the schedule to change the recruiting cycle. Existing interviews are kept.")
     // Exact retries do not republish or send another notification.
     if (input.action === "PUBLISH" && round.bookingPublishedAt && !round.bookingPaused && round.bookingCycleId === input.cycleId && round.bookingAllowCancellation === input.allowCancellation && round.bookingAllowRescheduling === input.allowRescheduling && round.bookingRevision === input.revision + 1) return { revision: round.bookingRevision }
-    if (round.bookingRevision !== input.revision) throw new Error("Booking settings changed in another tab. Reload before publishing.")
+    if (round.bookingRevision !== input.revision) throw new Error("Booking settings changed in another tab. Reload and try again.")
     let bookingSlots: ReturnType<typeof bookingSlotSnapshot>[] | undefined
     if (input.action === "PUBLISH") {
       const coverage = await interviewBookingCoverage(tx, input.clubId, input.roundId)
-      if (!coverage.length) throw new Error("Create future interview sessions before publishing booking.")
+      if (!coverage.length) throw new Error("Add upcoming interview times before publishing the schedule.")
       const blocked = coverage.find(s => !s.bookable)
-      if (blocked) throw new Error(`Booking cannot be published: ${blocked.reasons.join(" ")} Review the session's panel.`)
+      if (blocked) throw new Error(`The schedule can't be published yet: ${blocked.reasons.join(" ")} Check this session's interviewers.`)
       const slots = await tx.interviewSlot.findMany({ where: { id: { in: coverage.map(s => s.slotId) }, clubId: input.clubId }, include: { room: true } })
       bookingSlots = slots.map(s => bookingSlotSnapshot(s, s.room!))
     }
@@ -46,6 +46,6 @@ export async function setInterviewBookingPublication(raw: unknown) {
     return { revision: saved.bookingRevision }
   }, { isolationLevel: "ReadCommitted", timeout: 60000 })
   revalidatePath(`/club/${input.clubId}/workspace`)
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   return result
 }

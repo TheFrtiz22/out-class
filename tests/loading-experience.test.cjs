@@ -1,6 +1,8 @@
 const { test } = require("node:test")
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
+const { execSync } = require("node:child_process")
+const path = require("node:path")
 const ts = require("typescript")
 
 function load(file, mocks, globals = {}) {
@@ -156,8 +158,27 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(label.props.children, "Loading OutClass…")
   assert.equal(label.props.className, "oc-loading-caption")
   assert.equal(OutClassLoadingScreen({ variant: "navy" }).props["data-variant"], "navy")
-  const Loading = load("app/loading.tsx", { "@/components/outclass-loading-screen": { OutClassLoadingScreen } }).default
-  assert.equal(Loading().type, OutClassLoadingScreen)
+  // Workspace routes keep the persistent shell on screen: their loaders are content-area placeholders, never the
+  // full-screen cover (that stays for the first session restore, demo setup and /preview). Public routes have none.
+  for (const route of ["app/(workspace)/home", "app/(workspace)/platform/events", "app/(workspace)/calendar", "app/(workspace)/profile", "app/(workspace)/explore/categories", "app/(workspace)/settings/account", "app/(workspace)/meetings"]) {
+    const Loading = load(`${route}/loading.tsx`, { "@/components/outclass-loading-screen": { OutClassLoadingScreen }, "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" }, "@/components/shell/workspace-route-loading": { WorkspaceRouteLoading: "WorkspaceRouteLoading" }, "@/components/ui/loading-state": { LoadingState: "LoadingState" } }).default
+    assert.notEqual(Loading().type, OutClassLoadingScreen, route)
+    assert.ok(["WorkspaceLoading", "WorkspaceRouteLoading", "LoadingState"].includes(Loading().type), route)
+  }
+  // A loading.tsx streams the persistent shell before its page runs, so a page that redirects under one loads a
+  // second document instead of answering 307. Redirecting pages sit under no loader; their placeholder streams from
+  // the page itself (club workspace, applications, clubs, inbox, platform overview), after the redirect check.
+  const pages = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? pages(`${dir}/${entry.name}`) : entry.name === "page.tsx" ? [`${dir}/page.tsx`] : [])
+  for (const page of pages("app/(workspace)").filter(page => /\bredirect\(/.test(fs.readFileSync(page, "utf8")))) {
+    for (let dir = page.slice(0, page.lastIndexOf("/")); dir !== "app"; dir = dir.slice(0, dir.lastIndexOf("/"))) assert.equal(fs.existsSync(`${dir}/loading.tsx`), false, `${page} redirects under ${dir}/loading.tsx`)
+  }
+  for (const [page, fallback] of [["club/[clubId]/workspace", "WorkspaceRouteLoading"], ["applications", "WorkspaceLoading"], ["clubs", "WorkspaceLoading"], ["inbox", "WorkspaceLoading"], ["platform", "WorkspaceLoading"]]) {
+    const source = fs.readFileSync(`app/(workspace)/${page}/page.tsx`, "utf8")
+    assert.match(source, new RegExp(`<Suspense fallback={<${fallback} `.replace(/[{}()<]/g, "\\$&")), page)
+    if (source.includes("redirect(")) assert.ok(source.indexOf("redirect(") < source.indexOf("<Suspense"), `${page} redirects before its placeholder streams`)
+  }
+  assert.equal(fs.existsSync("app/(workspace)/loading.tsx"), false, "a group loading.tsx would stream 200s for pages that call notFound()")
+  assert.equal(fs.existsSync("app/loading.tsx"), false, "a root loading.tsx would cover every public page and turn 404s into 200s")
 })
 
 test("root providers keep demo data, workspace adapters and the Supabase client out of every page's bundle", () => {
@@ -170,6 +191,103 @@ test("root providers keep demo data, workspace adapters and the Supabase client 
   for (const file of ["contexts/auth-context.tsx", "components/shell/product-shell.tsx"])
     assert.equal(staticImport(source(file), "@/utils/supabase/client"), false, `${file} must load the Supabase browser client on demand`)
   assert.match(source("contexts/auth-context.tsx"), /import\("@\/utils\/supabase\/client"\)/, "signed-in sessions load the auth listener on demand")
-  assert.match(source("contexts/demo-context.tsx"), /import\("@\/lib\/demo\/store"\)/, "demo data loads on demand")
+  // Demo data loads on demand through the shared loader, which the provider uses.
+  assert.ok(staticImport(source("contexts/demo-context.tsx"), "@/lib/demo/loader"), "the demo provider loads the store through the shared loader")
+  assert.match(source("lib/demo/loader.ts"), /import\("\.\/store"\)/, "demo data loads on demand")
   assert.match(source("contexts/corkboard-context.tsx"), /import\("@\/lib\/workspace-api"\)/, "corkboard adapters load on demand")
+})
+
+// Static (non-type) module specifiers of a source file: imports, side-effect imports,
+// re-exports and require(), including multi-line forms. import() is excluded.
+function staticSpecifiers(text) {
+  const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+  const found = []
+  for (const match of code.matchAll(/(?:^|[;\n])\s*(import|export)\s+(type\s+)?(?:[^"']*?\sfrom\s*)?["']([^"']+)["']/g))
+    if (!match[2]) found.push(match[3])
+  for (const match of code.matchAll(/\brequire\(\s*["']([^"']+)["']\s*\)/g)) found.push(match[1])
+  return found
+}
+// Only modules without demo records may load statically outside lib/demo: the gate
+// (loader, activation), server-side access/validation, and the monogram glyph generator (assets).
+const allowedDemo = new Set(["loader", "activation", "access", "validate", "assets"])
+function demoTarget(file, specifier) {
+  const resolved = specifier.startsWith("@/") ? specifier.slice(2) : specifier.startsWith(".") ? path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier)) : null
+  const match = resolved?.match(/^lib\/demo\/([^/]+?)(\.tsx?)?$/)
+  return match ? match[1] : null
+}
+
+test("the static-import scanner sees every form a regression could take", () => {
+  const cases = [
+    ['import { demoStore } from "@/lib/demo/store"', ["@/lib/demo/store"]],
+    ['import {\n  demoStore,\n  demoUser,\n} from "@/lib/demo/store"\nimport { z } from "zod"', ["@/lib/demo/store", "zod"]],
+    ['import "@/lib/demo/seed"', ["@/lib/demo/seed"]],
+    ['"use client"\nimport "@/lib/demo/store"\nimport { z } from "zod"', ["@/lib/demo/store", "zod"]],
+    ['export { demoDirectory } from "@/lib/demo/store"', ["@/lib/demo/store"]],
+    ['export * from "@/lib/demo/workspace"', ["@/lib/demo/workspace"]],
+    ['const store = require("@/lib/demo/store")', ["@/lib/demo/store"]],
+  ]
+  for (const [text, expected] of cases) assert.deepEqual(staticSpecifiers(text), expected, text)
+  assert.equal(demoTarget("lib/x.ts", "./demo/store"), "store", "relative paths resolve")
+  for (const text of ['import type { DemoState } from "@/lib/demo/seed"', 'const load = () => import("@/lib/demo/store")', '// import { demoStore } from "@/lib/demo/store"'])
+    assert.deepEqual(staticSpecifiers(text).filter(s => demoTarget("components/x.tsx", s)), [], text)
+})
+
+test("live client adapters and components never statically import demo data or implementations", () => {
+  const source = file => fs.readFileSync(file, "utf8")
+  const files = execSync("git ls-files 'app/*.ts' 'app/*.tsx' 'components/*.ts' 'components/*.tsx' 'contexts/*.ts' 'contexts/*.tsx' 'hooks/*.ts' 'hooks/*.tsx' 'lib/*.ts' 'lib/*.tsx'", { encoding: "utf8" }).split("\n").filter(Boolean)
+  for (const nested of ["components/qr/meeting-check-in.tsx", "app/layout.tsx", "lib/demo/store.ts", "components/views/explore-view.tsx"])
+    assert.ok(files.includes(nested), `scanner covers ${nested}`)
+  assert.ok(files.length > 300, "scanner covers the source tree")
+  const imports = files.filter(file => !file.startsWith("lib/demo/")).flatMap(file => staticSpecifiers(source(file)).map(s => [file, demoTarget(file, s)]).filter(([, target]) => target))
+  assert.deepEqual(imports.filter(([, target]) => !allowedDemo.has(target)), [], "load demo modules with import() behind the demo gate")
+  assert.deepEqual(imports.filter(([, target]) => target === "assets").map(([file]) => file), ["components/product/design-patterns.tsx"], "the glyph generator stays limited to the design-system page")
+  for (const gate of ["lib/demo/loader.ts", "lib/demo/activation.ts", "lib/demo/assets.ts"])
+    assert.deepEqual(staticSpecifiers(source(gate)).filter(s => /^\.\/(store|seed|workspace|tasks|voting|interview)/.test(s)), [], `${gate} stays free of demo records`)
+})
+
+test("the root layout carries no club-customization provider or seed data", () => {
+  const layout = fs.readFileSync("app/layout.tsx", "utf8")
+  // Any import form (named, side-effect, re-export), including multi-line.
+  const imports = [...layout.matchAll(/(?:^|[;\n])\s*(?:import|export)\s+(?:type\s+)?(?:[^"']*?\sfrom\s*)?["']([^"']+)["']/g)].map(m => m[1])
+  assert.ok(imports.includes("@/contexts/corkboard-context"), "the import scan sees the layout's imports")
+  assert.deepEqual(imports.filter(s => /club-customization|lib\/data$/.test(s)), [], "club customization loads only with the views that use it")
+  assert.doesNotMatch(layout, /ClubCustomizationProvider/)
+  assert.doesNotMatch(fs.readFileSync("lib/club-customization.tsx", "utf8"), /export function ClubCustomizationProvider/, "the store replaced the root provider")
+})
+
+// Polish item 2 (skeletons shaped like content). Each student page's loading state draws the page's own layout from
+// skeleton blocks; its only text is the screen-reader label, and there is no spinner. Reduced motion stills the sheen.
+test("student page loading states are layout-shaped skeletons, not a spinner or loading text", async () => {
+  const loose = (file, mocks = {}) => load(file, new Proxy(mocks, { has: () => true, get: (target, name) => name in target ? target[name] : String(name).startsWith("@/") ? {} : require(name) }))
+  const fallbackOf = element => element.type === "Suspense" ? element.props.fallback : element
+  const page = async route => fallbackOf(await loose(`app/(workspace)/${route}/page.tsx`, { react: { Suspense: "Suspense" }, "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" }, "@/components/student-workspace-page": { StudentWorkspacePage: "StudentWorkspacePage" } }).default({ searchParams: Promise.resolve({}) }))
+  const routeLoader = route => loose(`app/(workspace)/${route}/loading.tsx`, { "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" } }).default()
+  const shell = fs.readFileSync("components/app-shell.tsx", "utf8")
+  const lazyFallback = name => { const [, label, layout] = shell.match(new RegExp(`const ${name} = dynamic\\(.*loading: \\(\\) => <WorkspaceLoading label="([^"]+)" layout="([^"]+)"`)); return { type: "WorkspaceLoading", props: { label, layout } } }
+  const states = {
+    "/home": [routeLoader("home"), lazyFallback("StudentDashboardView")],
+    "/applications": [await page("applications"), lazyFallback("ApplicationTrackerView")],
+    "/calendar": [routeLoader("calendar"), lazyFallback("CalendarView")],
+    "/inbox": [await page("inbox"), lazyFallback("InboxView")],
+    "/explore": [routeLoader("explore/categories"), lazyFallback("ExploreView")],
+  }
+  const expected = { "/home": "home", "/applications": "applications", "/calendar": "schedule", "/inbox": "feed", "/explore": "explore" }
+  const { LoadingState } = load("components/ui/loading-state.tsx", { "@/components/ui/loading-indicator": { LoadingIndicator: "LoadingIndicator" }, "@/lib/utils": { cn: (...names) => names.filter(Boolean).join(" ") }, "@/components/ui/skeleton": { Skeleton: "Skeleton" } })
+  const walk = node => !node || typeof node !== "object" ? (typeof node === "string" ? [node] : []) : Array.isArray(node) ? node.flatMap(walk) : [node, ...walk(node.props?.children)]
+  for (const [path, elements] of Object.entries(states)) for (const element of elements) {
+    assert.equal(element.type, "WorkspaceLoading", path)
+    assert.equal(element.props.layout, expected[path], `${path} uses its own layout`)
+    const tree = LoadingState({ label: element.props.label, layout: element.props.layout, rows: element.props.rows })
+    const nodes = walk(tree)
+    assert.ok(nodes.filter(node => node.type === "Skeleton").length >= 4, `${path} draws skeleton blocks`)
+    assert.equal(nodes.some(node => node.type === "LoadingIndicator"), false, `${path} has no spinner`)
+    const texts = nodes.filter(node => typeof node === "string")
+    assert.deepEqual(texts, [element.props.label], `${path}: the label is the only text`)
+    assert.ok(nodes.some(node => node.props?.className === "sr-only" && node.props.children === element.props.label), `${path}: the label is for screen readers only`)
+    assert.equal(tree.props["aria-busy"], "true")
+  }
+  // The shared sheen is the only motion, and it stops under reduced motion.
+  const css = fs.readFileSync("styles/loading.css", "utf8")
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.oc-loading-indicator \{ animation: none; \}\s*\.oc-loading-preview::after[^{]*\{ animation: none; display: none; \}/)
+  for (const layout of ["oc-loading-home", "oc-loading-explore-grid"]) assert.doesNotMatch(css.match(new RegExp(`\\.${layout} \\{[^}]*\\}`))[0], /animation/)
 })

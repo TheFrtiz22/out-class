@@ -6,6 +6,7 @@ const os = require('node:os');
 const { chromium } = require('playwright');
 const { PrismaClient } = require('@prisma/client');
 const { Actor, readConfig, randomUUID, totp } = require('./helpers/onboarding-e2e.cjs');
+const { captureHydration } = require('./helpers/hydration-capture.cjs');
 
 const configFile = process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
 test('settings and authenticated navigation across roles, saves, history and responsive layouts', { skip: !configFile, timeout: 240000 }, async t => {
@@ -38,7 +39,7 @@ test('settings and authenticated navigation across roles, saves, history and res
   async function session(actor, viewport = { width: 1440, height: 1000 }) {
     const context = await browser.newContext({ viewport });
     await context.addCookies([...actor.cookies].map(([name, value]) => ({ name, value, url: config.appUrl })));
-    const page = await context.newPage(); page.setDefaultTimeout(15000); page.on("pageerror", error => { const entry = { path: new URL(page.url()).pathname, message: error.message }; browserErrors.push(entry); console.log("Browser exception:", JSON.stringify(entry)); });
+    const page = await context.newPage(); captureHydration(page, 'settings'); page.setDefaultTimeout(15000); page.on("pageerror", error => { const entry = { path: new URL(page.url()).pathname, message: error.message }; browserErrors.push(entry); console.log("Browser exception:", JSON.stringify(entry)); });
     return page;
   }
   async function open(page, route) {
@@ -60,9 +61,12 @@ test('settings and authenticated navigation across roles, saves, history and res
   });
   const studentPage = await session(student);
   await t.test('desktop settings keeps one shell, active navigation and state across personal sections', async () => {
-    await open(studentPage, '/settings/profile');
-    await studentPage.getByRole('heading', { name: 'Profile', exact: true }).waitFor();
-    await studentPage.getByRole('heading', { name: 'Education', exact: true }).waitFor();
+    // Settings → Profile redirects to Profile; Settings → Notifications redirects to the Inbox's notification settings.
+    await studentPage.goto(config.appUrl + '/settings/profile'); await studentPage.waitForURL(url => url.pathname === '/profile');
+    await studentPage.goto(config.appUrl + '/settings/notifications'); await studentPage.waitForURL(url => url.pathname + url.search === '/inbox?tab=preferences');
+    await studentPage.getByRole('dialog', { name: 'Notification settings', exact: true }).waitFor();
+    await open(studentPage, '/settings/availability');
+    await studentPage.getByRole('heading', { name: 'Availability', exact: true }).waitFor();
     const nav = studentPage.getByRole('navigation', { name: 'Personal settings', exact: true });
     assert.ok(await nav.isVisible());
     assert.ok(!(await nav.textContent()).includes('Organization settings'));
@@ -76,30 +80,61 @@ test('settings and authenticated navigation across roles, saves, history and res
     await noOverflow(studentPage);
     await studentPage.screenshot({ path: path.join(artifacts, 'desktop-account.png'), fullPage: true });
   });
-  await t.test('notification preferences save through the existing action and survive refresh/history', async () => {
-    await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).getByRole('link', { name: 'Notifications', exact: true }).click();
-    const checkbox = studentPage.getByRole('checkbox', { name: 'Club announcements', exact: true });
+  await t.test('notification preferences open from the Inbox, save through the existing action and survive refresh/history', async () => {
+    // The Inbox header's gear opens the same preferences form in a sheet with local state only (no URL change, no
+    // history entry); Escape closes it and returns focus to the gear.
+    await open(studentPage, '/inbox');
+    const gear = studentPage.getByRole('button', { name: 'Notification settings', exact: true });
+    const sheet = studentPage.getByRole('dialog', { name: 'Notification settings', exact: true });
+    const checkbox = sheet.getByRole('checkbox', { name: 'Club announcements', exact: true });
+    const entries = await studentPage.evaluate(() => history.length);
+    await gear.click(); await sheet.waitFor();
+    assert.equal(new URL(studentPage.url()).search, '', 'the gear changes no URL');
+    assert.equal(await studentPage.evaluate(() => history.length), entries, 'the gear adds no history entry');
     await checkbox.uncheck();
-    await studentPage.getByRole('button', { name: 'Save preferences', exact: true }).click();
-    await studentPage.getByText('Preferences saved.', { exact: true }).waitFor();
+    await sheet.getByRole('button', { name: 'Save preferences', exact: true }).click();
+    await sheet.getByText('Preferences saved.', { exact: true }).waitFor();
     assert.equal((await db.userNotificationPreference.findUniqueOrThrow({ where: { userId: student.user.id } })).emailAnnouncements, false);
-    await studentPage.reload(); await checkbox.waitFor(); assert.equal(await checkbox.isChecked(), false);
-    await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).getByRole('link', { name: 'Profile', exact: true }).click();
-    await studentPage.getByRole('heading', { name: 'Profile', exact: true }).waitFor();
-    await studentPage.goBack(); await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
-    await studentPage.goForward(); await studentPage.getByRole('heading', { name: 'Profile', exact: true }).waitFor();
-    await studentPage.getByRole('button', { name: 'Edit education', exact: true }).click();
-    const dialog = studentPage.getByRole('dialog', { name: 'Education', exact: true });
+    await studentPage.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
+    assert.equal(await gear.evaluate(node => node === document.activeElement), true, 'focus returns to the gear');
+    // A deep link (emails, the old Settings URL) opens it from the URL; the save survived a full load; closing clears the param.
+    await open(studentPage, '/inbox?tab=preferences'); await checkbox.waitFor(); assert.equal(await checkbox.isChecked(), false);
+    await studentPage.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
+    await studentPage.waitForURL(url => url.pathname + url.search === '/inbox');
+    // Settings keeps a Notifications entry that leads to the same place; history moves between them.
+    await open(studentPage, '/settings/account');
+    await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).getByRole('link', { name: 'Notifications', exact: true }).click();
+    await sheet.waitFor();
+    await studentPage.goBack(); await studentPage.getByRole('heading', { name: 'Account & Security', exact: true }).waitFor();
+    await studentPage.goForward(); await sheet.waitFor();
+    // Unsaved edits: Escape asks inline (focus on Keep editing); Discard closes without saving.
+    await open(studentPage, '/inbox'); await gear.click(); await sheet.waitFor();
+    await checkbox.check();
+    await studentPage.keyboard.press('Escape');
+    const keep = sheet.getByRole('button', { name: 'Keep editing', exact: true });
+    await sheet.getByText('Discard changes?', { exact: true }).waitFor();
+    assert.equal(await keep.evaluate(node => node === document.activeElement), true, 'focus moves to Keep editing');
+    await keep.click(); assert.equal(await checkbox.isChecked(), true);
+    await studentPage.keyboard.press('Escape'); await sheet.getByText('Discard changes?', { exact: true }).waitFor();
+    await sheet.getByRole('button', { name: 'Discard', exact: true }).click(); await sheet.waitFor({ state: 'hidden' });
+    assert.equal((await db.userNotificationPreference.findUniqueOrThrow({ where: { userId: student.user.id } })).emailAnnouncements, false, 'discarded edits are not saved');
+    // Profile has one Edit profile entry point with sections.
+    await open(studentPage, '/profile');
+    await studentPage.getByRole('button', { name: 'Edit profile', exact: true }).click();
+    const dialog = studentPage.getByRole('dialog', { name: 'Edit profile', exact: true });
+    await dialog.getByRole('group', { name: 'Profile section', exact: true }).getByRole('button', { name: 'Education', exact: true }).click();
     await dialog.getByLabel('Major / intended major').fill('Computer Science');
     await dialog.getByRole('button', { name: 'Done', exact: true }).click();
     await dialog.waitFor({ state: 'hidden' });
     assert.equal((await db.studentProfile.findUniqueOrThrow({ where: { userId: student.user.id } })).major, 'Computer Science');
   });
   await t.test('dismissed invitations remain recoverable, accept/decline refresh membership, and claims submit', async () => {
-    await open(studentPage, '/settings/organizations');
+    // Settings → Organizations redirects to My Clubs, which carries pending invitations.
+    // The redirect streams under the Settings loading boundary; wait for it to land before checking the page.
+    await studentPage.goto(config.appUrl + '/settings/organizations'); await studentPage.waitForURL(url => url.pathname === '/clubs'); await open(studentPage, '/clubs');
     const pending = studentPage.getByRole('region', { name: 'Pending organization invitations' });
     await pending.getByRole('button', { name: 'Accept', exact: true }).click();
-    await studentPage.getByRole('link', { name: `Open organization · ${first.name}` }).waitFor();
+    await studentPage.getByRole('link', { name: `Open member workspace · ${first.name}` }).waitFor();
     assert.equal((await db.clubMember.findUniqueOrThrow({ where: { userId_clubId: { userId: student.user.id, clubId: first.id } } })).accessRole, 'MEMBER');
     const decline = await call(leader, 'club-onboarding', 'createClubIdentityInvitation', { clubId: second.id, identifierTypeId: 'school-uva-computing-id', identifier: `navstudent${suffix}`, requestedRole: 'MEMBER' });
     await studentPage.reload(); await pending.getByRole('button', { name: 'Decline', exact: true }).click();
@@ -113,7 +148,7 @@ test('settings and authenticated navigation across roles, saves, history and res
     assert.equal(await db.clubClaim.count({ where: { clubId: unclaimed.id, userId: student.user.id, status: 'PENDING' } }), 1);
   });
   await t.test('ordinary members cannot see configuration via navigation or direct URLs/actions', async () => {
-    await open(studentPage, '/settings/organizations');
+    await open(studentPage, '/settings/account');
     assert.ok(!(await studentPage.getByRole('navigation', { name: 'Personal settings', exact: true }).textContent()).includes('Organization settings'));
     await open(studentPage, `/club/${first.id}/workspace?section=settings&setting=application`);
     await studentPage.getByRole('alert').filter({ hasText: 'This section isn’t available' }).waitFor();
@@ -142,20 +177,22 @@ test('settings and authenticated navigation across roles, saves, history and res
     await leaderPage.waitForURL('**/workspace?section=settings&setting=cycles');
     await open(leaderPage, `/club/${first.id}/workspace?section=recruitment&tool=letters`);
     await leaderPage.waitForURL('**/workspace?section=recruitment&tool=decisions&decisionTab=letters');
-    await leaderPage.getByRole('navigation', {name:'Decisions navigation'}).waitFor();
-    await leaderPage.getByText('Decision Letters', { exact: true }).waitFor();
+    // Decide: Vote and Send are tabs; the old letters link lands on Send, which links to individual decisions.
+    await leaderPage.getByRole('tablist', { name: 'Decide steps' }).waitFor();
+    assert.equal(await leaderPage.getByRole('tab', { name: /^Step 2: Send/ }).getAttribute('aria-selected'), 'true');
+    await leaderPage.getByRole('link', { name: 'Send individual decisions', exact: true }).waitFor();
     await open(leaderPage, `/club/${first.id}/tasks?taskView=mine`);
     assert.ok(new URL(leaderPage.url()).searchParams.get('section') === 'tasks');
     assert.equal(new URL(leaderPage.url()).searchParams.get('taskView'), 'mine');
   });
   await t.test('interviewer settings show only granted sections and deny unauthorized direct sections', async () => {
     const page = await session(interviewer);
+    // Settings → Interviews only repeated the Interviews tool; it redirects there (kits tab).
     await open(page, `/club/${first.id}/workspace?section=settings&setting=interviews`);
-    await page.getByRole('heading', { name: 'Interview configuration', exact: true }).waitFor();
-    const nav = page.getByRole('navigation', { name: 'Settings sections', exact: true });
-    assert.equal(await nav.getByRole('link').count(), 1);
+    await page.waitForURL(url => url.searchParams.get('tool') === 'interviews' && url.searchParams.get('interviewTab') === 'kits');
+    await page.getByRole('tab', { name: 'Interview master kit', exact: true }).waitFor();
     await open(page, `/club/${first.id}/workspace?section=settings&setting=general`);
-    await page.getByText('This settings section isn’t available with your current access.', { exact: true }).waitFor();
+    await page.getByText(/isn’t available with your current access/).first().waitFor();
     assert.equal(await page.getByRole('button', { name: 'Publish profile', exact: true }).count(), 0);
     await db.clubMember.update({ where: { userId_clubId: { userId: interviewer.user.id, clubId: first.id } }, data: { permissions: ['interviews.manage'] } });
     await open(page, `/club/${first.id}/workspace?section=recruitment&tool=interviews&interviewTab=schedule`);
@@ -176,21 +213,28 @@ test('settings and authenticated navigation across roles, saves, history and res
   await t.test('tablet and mobile keep primary navigation and accessible Settings selectors', async () => {
     for (const width of [820, 390]) {
       await studentPage.setViewportSize({ width, height: 900 });
-      await open(studentPage, '/settings/organizations');
-      const selector = studentPage.locator('#personal-settings-section');
-      await selector.selectOption('/settings/notifications');
-      await studentPage.getByRole('heading', { name: 'Notifications', exact: true }).waitFor();
+      // Phones and tablets use the Settings list and drill in; a section links back to the list.
+      await open(studentPage, '/settings');
+      await studentPage.getByRole('region', { name: 'Settings overview', exact: true }).getByRole('link', { name: /^Notifications/ }).click();
+      const sheet = studentPage.getByRole('dialog', { name: 'Notification settings', exact: true });
+      await sheet.waitFor();
+      assert.equal(await studentPage.locator('#personal-settings-section').count(), 0);
       await noOverflow(studentPage);
-      await studentPage.getByRole('button', { name: 'More navigation and workspaces', exact: true }).click();
-      const drawer = studentPage.getByRole('dialog', { name: 'Workspace navigation', exact: true });
-      await drawer.waitFor();
-      assert.ok(await drawer.getByRole('link', { name: 'Settings', exact: true }).isVisible());
-      await studentPage.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' });
+      await studentPage.screenshot({ path: path.join(artifacts, `${width === 390 ? 'mobile' : 'tablet'}-notification-settings.png`), fullPage: true });
+      await studentPage.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
+      // The personal phone bar holds the app's five tabs (no More), Profile among them.
+      const bar = studentPage.getByRole('navigation', { name: 'Sections', exact: true });
+      assert.ok(await bar.getByRole('link', { name: 'Profile', exact: true }).isVisible());
+      assert.equal(await bar.getByRole('button', { name: 'More sections', exact: true }).count(), 0);
+      // Settings is reached from the account menu at every width.
+      await studentPage.getByRole('button', { name: /^Account menu for/ }).click();
+      assert.ok(await studentPage.getByRole('menuitem', { name: 'Settings', exact: true }).isVisible());
+      await studentPage.keyboard.press('Escape');
       await studentPage.screenshot({ path: path.join(artifacts, `${width === 390 ? 'mobile' : 'tablet'}-notifications.png`), fullPage: true });
       await leaderPage.setViewportSize({ width, height: 900 });
       await open(leaderPage, `/club/${first.id}/workspace?section=settings&setting=application`);
-      await leaderPage.locator('#organization-settings-section').selectOption('interviews');
-      await leaderPage.getByRole('heading', { name: 'Interview configuration', exact: true }).waitFor();
+      await leaderPage.locator('#organization-settings-section').selectOption('members');
+      await leaderPage.getByRole('heading', { name: 'Interviewer eligibility', exact: true }).waitFor();
       await noOverflow(leaderPage);
     }
   });

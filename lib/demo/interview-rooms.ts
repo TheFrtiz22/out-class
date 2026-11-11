@@ -2,7 +2,7 @@ import { syncDemoBookingPanel } from "./interview-access-setup";
 import { demoBookingSettings, demoBookingCoverage, demoBookingNotice } from "./interview-booking";
 import { hasPermission } from "@/lib/permissions";
 import { demoStore, demoMember } from "./store"
-import { roomInputSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
+import { roomInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 // Snapshot hydration revives dates; match the production DTO's ISO strings at this boundary.
 function presentBooking(booking: import("@/lib/interview-rooms").RoomBooking) {
   return { ...booking, startTime: new Date(booking.startTime).toISOString(), endTime: new Date(booking.endTime).toISOString() }
@@ -18,7 +18,7 @@ function manager(clubId: string) {
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const s = manager(clubId), club = s.clubs.find(c => c.id === clubId)!
   const bookings = (s.roomBookings ?? []).filter(b => (s.interviewRooms ?? []).some(r => r.id === b.roomId && r.clubId === clubId))
-  return { clubName: club.name, cycles: [], rounds: club.rounds.map(r => ({ id: r.id, name: r.name, type: r.type, configuration: r.configuration, booking: demoBookingSettings(r.id) })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(b => {
+  return { clubName: club.name, cycles: [], rounds: club.rounds.map(r => ({ id: r.id, name: r.name, type: r.type, configuration: r.configuration, booking: demoBookingSettings(r.id) })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, externallyBookedAt: r.externallyBookedAt ? new Date(r.externallyBookedAt).toISOString() : null, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(b => {
     const app = s.applications.find(a => a.id === b.applicationId && a.clubId === clubId);
     const historical = club.rounds.find(r => r.id === b.roundId), current = club.rounds.find(r => r.id === app?.roundId);
     const identified = hasPermission(demoMember(), "applicants.identify") && historical?.anonymousReview === false && current?.anonymousReview === false;
@@ -43,6 +43,23 @@ export async function setInterviewRoomOpen({ roomId, open }: { roomId: string; o
   demoStore.mutate(s => { const r=s.interviewRooms.find(r => r.id === roomId)!;r.isOpen = open;if(!open){r.approvedPanelMemberIds=[];r.panelApprovedBy=null;r.panelApprovalRevision=(r.panelApprovalRevision||0)+1;} })
   for(const b of demoStore.get().roomBookings.filter(b=>b.roomId===roomId))syncDemoBookingPanel(b.applicationId,b.roundId);
 }
+export async function renameInterviewRoom(raw: unknown) {
+  const input = roomRenameSchema.parse(raw), s = manager(input.clubId)
+  const room = s.interviewRooms?.find(r => r.id === input.roomId && r.clubId === input.clubId)
+  if (!room) throw new Error("Room unavailable.")
+  if (room.name === input.name) return { name: room.name }
+  if (s.interviewRooms.some(r => r.id !== room.id && r.clubId === input.clubId && (r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && r.name.toLowerCase() === input.name.toLowerCase() && r.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(r.buffer, room.buffer)))))) throw new Error("Another room with this name has overlapping interview times. Choose a different name.")
+  demoStore.mutate(s => { s.interviewRooms.find(r => r.id === input.roomId)!.name = input.name })
+  return { name: input.name }
+}
+export async function setInterviewRoomExternallyBooked(raw: unknown) {
+  const input = roomExternalBookingSchema.parse(raw), s = manager(input.clubId)
+  const room = s.interviewRooms?.find(r => r.id === input.roomId && r.clubId === input.clubId)
+  if (!room) throw new Error("Room unavailable.")
+  const externallyBookedAt = input.booked ? room.externallyBookedAt ?? new Date().toISOString() : null
+  demoStore.mutate(s => { s.interviewRooms.find(r => r.id === input.roomId)!.externallyBookedAt = externallyBookedAt })
+  return { externallyBookedAt }
+}
 function ownApplication(id: string) {
   const s = demoStore.get(), app = s.applications.find(a => a.id === id && a.studentId === s.students[0].id)
   if (!app || app.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
@@ -63,13 +80,13 @@ export async function reserveInterview({ applicationId, slotId }: { applicationI
   if (existing?.slotId === slotId) { syncDemoBookingPanel(app.id, app.roundId); return { id: existing.id } }
   if (existing && +new Date(existing.startTime) <= Date.now()) throw new Error("This interview has already started.")
   const settings=demoBookingSettings(app.roundId)
-  if(!isPublishedBookingSlot(s.bookingFlow.publishedSlots[app.roundId],slot,room)||!settings.bookingPublishedAt||settings.bookingPaused)throw Error("Booking has not been published or is paused.")
+  if(!isPublishedBookingSlot(s.bookingFlow.publishedSlots[app.roundId],slot,room)||!settings.bookingPublishedAt||settings.bookingPaused)throw Error("Interview times aren’t open for your round right now.")
   if(existing&&!settings.bookingAllowRescheduling)throw Error("The club does not allow self-service rescheduling. Your original reservation is retained.")
   if(!demoBookingCoverage(app.clubId,app.roundId,app.studentId).some(row=>row.slotId===slot.id&&row.bookable))throw Error("This session is no longer fully staffed with approved interviewers.")
   if (!room.isOpen || +new Date(slot.startTime) <= Date.now() || (s.roomBookings ?? []).filter(b => b.slotId === slotId).length >= slot.capacity) throw new Error("This slot is no longer available.")
   const owned = s.applications.filter(a => a.studentId === app.studentId).map(a => a.id)
   if (s.slots.some(b => b.id !== existing?.id && b.applicationId && owned.includes(b.applicationId) && overlaps(b, slot))) throw new Error("You already have an interview at that time.")
-  if (s.slots.some(b => b.applicationId === app.id && b.id !== existing?.id && +b.startTime > Date.now())) throw new Error("You already have a sample booking with this club. Use an application without an existing booking.")
+  if (s.slots.some(b => b.applicationId === app.id && b.id !== existing?.id && +b.startTime > Date.now())) throw new Error("You already have a sample interview with this club. Use an application without an existing interview.")
   const id = crypto.randomUUID()
   demoStore.mutate(s => {
     s.roomBookings ??= []
@@ -84,13 +101,13 @@ export async function reserveInterview({ applicationId, slotId }: { applicationI
 }
 export async function cancelRoomBooking(id: string) {
   const booking = demoStore.get().roomBookings?.find(b => b.id === id)
-  if (!booking) throw new Error("Booking not found.")
+  if (!booking) throw new Error("We couldn’t find that interview.")
   const app=ownApplication(booking.applicationId)
   if(!demoBookingSettings(booking.roundId).bookingAllowCancellation)throw Error("The club does not allow self-service cancellation.")
   if (+new Date(booking.startTime) <= Date.now()) throw new Error("This interview has already started.")
   demoStore.mutate(s => { s.roomBookings = s.roomBookings.filter(b => b.id !== id); s.slots = s.slots.filter(slot => slot.id !== id) });
   syncDemoBookingPanel(booking.applicationId, booking.roundId)
-  demoBookingNotice(app.studentId,app.clubId,`booking-cancelled:${booking.id}`,"Interview booking changed","Your reservation was released.",`/interviews/book?clubId=${app.clubId}&roundId=${app.roundId}`)
+  demoBookingNotice(app.studentId,app.clubId,`booking-cancelled:${booking.id}`,"Interview changed","Your reservation was released.",`/interviews/book?clubId=${app.clubId}&roundId=${app.roundId}`)
 }
 export async function getBookingApplication(clubId: string, roundId: string) {
   const s = demoStore.get(), app = s.applications.find(a => a.clubId === clubId && a.roundId === roundId && a.studentId === s.students[0].id && a.status === "INTERVIEWING")

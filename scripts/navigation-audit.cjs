@@ -33,7 +33,18 @@ function validateActiveOutput(explicitOutput) {
   assert.ok(!fs.existsSync(path.join(explicitOutput,'browser-samples.json')),'Existing benchmark evidence must not be overwritten');
 }
 async function seed(config) {
-  if(fs.existsSync(fixtureFile)) return JSON.parse(fs.readFileSync(fixtureFile));
+  if(fs.existsSync(fixtureFile)) {
+    // Reuse a fixture only while its owner and clubs exist in this stack's database: a
+    // restarted stack has a fresh database, and stale credentials fail every sign-in.
+    const existing=JSON.parse(fs.readFileSync(fixtureFile));
+    const check=new PrismaClient({datasourceUrl:config.status.DB_URL});
+    try {
+      const clubIds=Array.isArray(existing.clubIds)?existing.clubIds:[];
+      if(existing.userId&&clubIds.length&&await check.user.count({where:{id:existing.userId}})===1&&await check.club.count({where:{id:{in:clubIds}}})===clubIds.length) return existing;
+    } finally { await check.$disconnect(); }
+    // Keep the stale file for inspection rather than deleting it.
+    fs.renameSync(fixtureFile,`${fixtureFile}.stale-${Date.now()}`);
+  }
   const actor = new Actor(config), tag='navaudit'+randomUUID().replaceAll('-','').slice(0,10);
   const email=tag+'@virginia.edu', password='Local-audit-only!'+randomUUID();
   const signup=await actor.client.auth.signUp({email,password});
@@ -79,11 +90,11 @@ function routes(f) {
     announcements:{href:base+'?section=announcements',selector:'section[aria-label="Announcements"]',text:'Audit Announcement',tour:'nav-announcements'},
     recruiting:{href:base+'?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 1',tour:'nav-overview'},
     applicants:{href:base+'?section=recruitment&tool=applicants',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-applicants'},
-    interviews:{href:base+'?section=recruitment&tool=interviews',selector:'section[aria-label="Interview rooms"]',text:'No assigned interviews.',tour:'nav-interviews'},
+    interviews:{href:base+'?section=recruitment&tool=interviews',selector:'section[aria-label="Interview rooms"]',text:'You aren’t assigned to any interview rooms yet. Club leaders add you to a panel when they schedule interviews.',tour:'nav-interviews'},
     decisions:{href:base+'?section=recruitment&tool=decisions',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-decisions'},
     settings:{href:base+'?section=settings',selector:'.oc-settings-workspace',text:'Organization settings',tour:'nav-settings'},
     club2:{href:'/club/'+f.clubIds[1]+'/workspace?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 2'},
-    personal:{href:'/?workspace=student',selector:'.oc-student-home:not([role="status"])',text:'Your next step'},
+    personal:{href:'/home',selector:'.oc-student-home:not([role="status"])',text:'Needs you'},
     voting:{selector:'[role="dialog"]',text:'No voting session yet.'},
     applicantDetail:{selector:'[data-slot="sheet-content"]',text:'configured fields'},
     memberDetail:{selector:'[data-slot="sheet-content"]',text:'Audit Student 000'},
@@ -159,7 +170,7 @@ async function main() {
   const browser=await chromium.launch({headless:true});
   const descriptors=routes(fixture), allSamples=[], failures=[];
   if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
-  if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
+  if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-club-home'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
   if(process.argv.includes('--deferred-screens')) {
     const base='/club/'+fixture.clubIds[0]+'/workspace';
     descriptors.settingsProfile={href:base+'?section=settings',selector:'.oc-club-settings fieldset:not([disabled])',text:'One-line pitch',tour:'nav-settings'};

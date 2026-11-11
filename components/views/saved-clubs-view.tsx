@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Bookmark, ArrowRight, RefreshCw } from "@/components/icons";
 import { useCorkboard } from "@/contexts/corkboard-context";
-import { PageHeader } from "@/components/product/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { DiscoveryCard } from "@/components/clubs/discovery-card";
 import { CorkboardButton } from "@/components/clubs/corkboard-button";
 import { ClubProfileView } from "@/components/views/club-profile-view";
@@ -15,8 +15,11 @@ import "@/components/clubs/club-discovery.css";
 import "@/components/clubs/explore-directory.css";
 export function SavedClubsView({
   onNavigate,
+  headerAction,
 }: {
   onNavigate: (view: ViewId) => void;
+  /** The page's own link (Explore clubs) sits in the title row, never above it. */
+  headerAction?: ReactNode;
 }) {
   const { items, loading, authenticated, error, refresh } = useCorkboard();
   const [selected, setSelected] = useState<DirectoryClub | null>(null);
@@ -33,6 +36,7 @@ export function SavedClubsView({
     <div className="oc-corkboard space-y-6">
       <PageHeader
         title="Saved clubs"
+        action={headerAction}
       />
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <p>Saving a club does not apply, subscribe, or join you.</p>
@@ -57,7 +61,7 @@ export function SavedClubsView({
         <LoadingState label="Loading Saved clubs…" layout="cards" rows={3} />
       ) : !authenticated ? (
         <section className="oc-directory-empty">
-          <Bookmark className="size-7" />
+          <Bookmark className="size-6" />
           <h2>Sign in to see your saved clubs.</h2>
           <p>Sign in to save clubs and revisit them across devices.</p>
           <Button onClick={() => onNavigate("auth")}>Sign in</Button>

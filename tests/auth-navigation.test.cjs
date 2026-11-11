@@ -55,7 +55,7 @@ test('public header exposes separate signup and login links without identity-dep
   for (const hero of [true, false]) {
     const tree = nodes(PublicNavigation({ hero }))
     assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Get Started').props.href, '/signup')
-    assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Log In').props.href, '/login')
+    assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Sign in').props.href, '/login')
     assert.ok(!tree.some(n => n.props?.href?.startsWith('/platform')))
     assert.equal(tree.find(n => n.props?.className === 'oc-public-account').props.children.length, 3)
   }
@@ -71,11 +71,11 @@ test('new visitors get normal signup and login; only confirmed UVA sessions reac
 })
 test('completed students, club leaders, ordinary members and platform operators get permission-based public destinations', async () => {
   for (const [memberships, expected] of [
-    [[], '/?workspace=student'],
+    [[], '/home'],
     [[{ clubId: 'club-a', status: 'ACTIVE', isOwner: true }], '/club/club-a/workspace'],
     [[{ clubId: 'club-b', status: 'ACTIVE', permissions: ['applications.review'] }], '/club/club-b/workspace'],
-    [[{ clubId: 'club-c', status: 'ACTIVE', permissions: [], role: 'PRESIDENT' }], '/?workspace=student'],
-    [[{ clubId: 'club-d', status: 'REMOVED', isOwner: true }], '/?workspace=student'],
+    [[{ clubId: 'club-c', status: 'ACTIVE', permissions: [], role: 'PRESIDENT' }], '/home'],
+    [[{ clubId: 'club-d', status: 'REMOVED', isOwner: true }], '/home'],
   ]) {
     const h = entry({ account: { studentProfile: { id: 'p' }, memberships, role: 'SUPERADMIN' } })
     await destination(h.page('signup'), expected)
@@ -94,7 +94,7 @@ test('disabled accounts cannot enter either flow and signup excludes platform de
   const h = entry({ account: { disabledAt: new Date(), memberships: [] } })
   for (const route of ['login', 'signup']) assert.equal((await h.page(route)).type, 'main')
   for (const next of ['/platform', '/platform/login', '/%70latform', '//evil.invalid', '/a/../platform', '/signup']) {
-    await destination(entry().page('signup', { next }), '/?workspace=student')
+    await destination(entry().page('signup', { next }), '/home')
   }
   await destination(entry().page('login', { next: '/platform' }), '/platform')
 })
@@ -185,4 +185,29 @@ test('OAuth callback preserves signup, invitations and claims on both success an
     }
     assert.equal(signedOut, true)
   }
+})
+
+test('return paths stay on this site: valid same-site paths are kept', () => {
+  for (const path of [
+    '/', '/home', '/login', '/invitations/a', '/club-claims/a', '/club/club-one',
+    '/voting/00000000-0000-4000-8000-000000000001/join?demo=1',
+    '/signup?next=%2Finvitations%2Fa', '/signup?next=%2Finvitations%2Fa&intent=leader',
+    '/settings/interviews?clubId=a&roundId=b#panel', '/clubs/Name%20With%20Spaces', '/a/b/', '/files/report.v2',
+    '/search?q=a%2Fb%5Cc%2E', '/discount/100%25',
+  ]) assert.equal(policy.safeReturnPath(path), path, path)
+  assert.equal(policy.safeReturnPath('  /home  '), '/home')
+  for (const empty of [undefined, null, '', '   ']) assert.equal(policy.safeReturnPath(empty), '/')
+})
+
+test('return paths stay on this site: other sites, parent segments and encoded separators fall back to /', () => {
+  for (const path of [
+    'https://elsewhere.test', 'elsewhere.test/home', '//elsewhere.test', '/\\elsewhere.test', '/home/../platform',
+    '/..', '/../elsewhere', '/a/./b', '/a/..', '/a/..?x=1',
+    '/%2felsewhere.test', '/%2Felsewhere.test', '/a%2fb', '/%5celsewhere.test', '/a%5Cb',
+    '/%2e%2e/platform', '/a/%2E%2E/b', '/a/%2e/b', '/a/.%2e/b',
+    '/%252felsewhere.test', '/%25252e%25252e/platform', '/a/%255cb',
+    '/%09/elsewhere.test', '/a%00b', '/a%zz', '/a\tb', '/a b', '/x?next=https://elsewhere.test',
+  ]) assert.equal(policy.safeReturnPath(path), '/', path)
+  assert.equal(policy.loginReturnPath('/%2f%2felsewhere.test'), '/login')
+  assert.equal(policy.signInReturnPath('/home/../platform'), '/home')
 })

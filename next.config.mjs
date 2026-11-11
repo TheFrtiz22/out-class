@@ -4,6 +4,9 @@ const nextConfig = {
   distDir: process.env.OUTCLASS_PUBLISH_BUILD
     ? ".next-publish"
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
+  // Turnstile bot checks are completely off (no script, no widget) unless BOTH keys are
+  // set at build time. Only this on/off flag reaches the browser, never the secret.
+  env: { TURNSTILE_ENABLED: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY ? "1" : "" },
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   poweredByHeader: false,
   // Interface icons are one module each (components/icons/<Name>.tsx) behind the
@@ -16,7 +19,8 @@ const nextConfig = {
   },
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
   // Native PDF workers resolve the package manifest at runtime, outside the bundle.
-  outputFileTracingIncludes: { "/*": ["./prisma/certs/supabase-root.crt", "./public/brand/premium-board/07_favicon.svg", "./public/apple-icon.png", "./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
+  // Link-preview cards read their fonts and artwork from disk at request time (lib/share-card.tsx).
+  outputFileTracingIncludes: { "/club/**": ["./app/fonts/libre-caslon-text/*-static.ttf", "./public/brand/premium-board/04_wordmark_no_sword.svg", "./public/images/campus/sunset-rotunda-1600.webp", "./public/logos/**"], "/og/**": ["./app/fonts/libre-caslon-text/*-static.ttf", "./public/brand/premium-board/04_wordmark_no_sword.svg", "./public/images/campus/sunset-rotunda-1600.webp"], "/*": ["./prisma/certs/supabase-root.crt", "./public/brand/premium-board/07_favicon.svg", "./public/apple-icon.png", "./public/brand/pwa/apple-touch-icon-180.png", "./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
   trailingSlash: false,
   htmlLimitedBots: /.*/,
   images: { formats: ["image/avif", "image/webp"] },
@@ -40,12 +44,46 @@ const nextConfig = {
       { source: "/:path*", headers: [
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        // Pages may be framed only by this origin (the leader workspace frames /api/recruiting-resumes).
+        // X-Frame-Options covers browsers without CSP frame-ancestors support.
+        { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
       ] },
       ...privateRoutes.map(route => ({ source: `/${route}/:path*`, headers: noindex })),
       ...["workspace", "tasks"].map(route => ({ source: `/club/:clubId/${route}/:path*`, headers: noindex })),
+      // The service worker must be revalidated on every check so a new version ships with each deploy.
+      // It lives at the root, so its default scope is "/" and Service-Worker-Allowed is not needed.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }, { key: "Content-Type", value: "application/javascript; charset=utf-8" }] },
       ...["forgot-password", "reset-password", "auth/callback"].map(route => ({ source: `/${route}`, headers: [{ key: "Referrer-Policy", value: "no-referrer" }] })),
     ]
   },
 }
 
-export default nextConfig
+// Readable stack traces without public source maps: on Vercel builds that have an upload
+// token, maps are generated hidden (no sourceMappingURL comment), uploaded to Sentry and
+// deleted before deploy; scripts/check-no-public-sourcemaps.cjs then fails the build if
+// any map is left in the public static folder. Without a token (local builds, CI,
+// previews without the secret) the config is exactly the one above.
+const uploadSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN) && process.env.VERCEL === "1"
+
+export default uploadSourceMaps
+  ? (await import("@sentry/nextjs/config")).withSentryConfig(nextConfig, {
+      org: "outclass-ot",
+      project: "out-class",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Upload output stays in the Vercel log, so a failed upload (which then fails the
+      // public source map check) shows its cause.
+      silent: false,
+      telemetry: false,
+      widenClientFileUpload: true,
+      sourcemaps: { deleteSourcemapsAfterUpload: true },
+      // Upload and release tagging only. Server code is not wrapped at build time:
+      // errors already come from onRequestError and timings from Next.js's own spans.
+      webpack: {
+        autoInstrumentServerFunctions: false,
+        autoInstrumentMiddleware: false,
+        autoInstrumentAppDirectory: false,
+        treeshake: { removeDebugLogging: true },
+      },
+    })
+  : nextConfig

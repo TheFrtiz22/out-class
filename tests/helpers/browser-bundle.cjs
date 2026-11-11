@@ -1,5 +1,12 @@
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript')
 function bundle(entry,mocks={}){
+ // pdf.js is loaded on demand (dynamic import) by résumé previews and pulls in Node-only
+ // canvas bindings; these fixtures never render a PDF, so bundle it as an empty module.
+ mocks={'pdfjs-dist':'module.exports={}',...mocks}
+ // The app mounts ConfirmProvider once in the root layout; give every fixture root the same
+ // provider so components that call useConfirm() render as they do in the app.
+ const client=JSON.stringify(require.resolve('react-dom/client'))
+ mocks={'react-dom/client':`const real=require(${client}),React=require('react'),{ConfirmProvider}=require('@/components/ui/confirm-dialog');exports.hydrateRoot=real.hydrateRoot;exports.createRoot=(el,options)=>{const root=real.createRoot(el,options),render=root.render.bind(root);root.render=node=>render(React.createElement(ConfirmProvider,null,node));return root}`,...mocks}
  // Match the QR package's browser entry, as Next's client bundler does. The
  // Node entry imports fs/PNG streams and cannot run inside these browser fixtures.
  const modules=[],ids=new Map()

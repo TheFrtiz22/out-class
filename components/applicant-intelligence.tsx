@@ -7,10 +7,21 @@ import { getApplicantDisplay, saveApplicantObservation, deleteApplicantObservati
 import { applicantFields, fieldLabels, type ApplicantDisplay, type ApplicantDisplayConfig } from "@/lib/applicant-display";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Panel } from "@/components/ui/panel";
+import { NativeSelect } from "@/components/ui/native-select"
 
-export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", mode = "review", sessionId, previewConfig, layout = "detail", onFitChange }: { clubId: string; applicationId: string; refreshKey?: string; mode?: "review" | "interview" | "voting"; sessionId?: string; previewConfig?: ApplicantDisplayConfig; layout?: "detail" | "slide"; onFitChange?: (fits: boolean|null)=>void }) {
+export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", mode = "review", sessionId, previewConfig, layout = "detail", onFitChange, additionalObservations = true, embedded = false, onSummary }: { clubId: string; applicationId: string; refreshKey?: string; mode?: "review" | "interview" | "voting"; sessionId?: string; previewConfig?: ApplicantDisplayConfig; layout?: "detail" | "slide"; onFitChange?: (fits: boolean|null)=>void;
+  /** Review mode: also render Additional observations (callers that gate eligibility render their own). */
+  additionalObservations?: boolean;
+  /** Inside a collapsible section that already names it: no card chrome or heading. */
+  embedded?: boolean;
+  /** Review mode: pros and cons count, and whether this viewer may add one (null while loading or on error). */
+  onSummary?: (summary: { count: number; canAdd: boolean } | "error") => void }) {
   const [data, setData] = useState<ApplicantDisplay | null>(null), [error, setError] = useState(""), [revision, setRevision] = useState(0);
   const slideRef=useRef<HTMLElement|null>(null)
+  const summarize=useRef(onSummary);summarize.current=onSummary
+  // Settled states only: a failed load reports "error" so the caller keeps the section (and its retry) visible.
+  useEffect(()=>{if(data)summarize.current?.({count:data.observations.filter(o=>o.kind==="PRO"||o.kind==="CON").length,canAdd:!data.anonymous});else if(error)summarize.current?.("error")},[data,error])
   const previewKey=JSON.stringify(previewConfig)
   const [body, setBody] = useState(""), [kind, setKind] = useState<"PRO" | "CON">("PRO"), [editing, setEditing] = useState<string | undefined>(), [editorOpen, setEditorOpen] = useState(false), [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -44,8 +55,8 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
       <ApplicantSlide data={data}/>
     </>}
   </section>;
-  return <><section aria-label={`${mode} applicant information`} className={mode === "review" ? "oc-review-observations space-y-3 rounded-lg border bg-card p-4" : "space-y-5 rounded-lg border bg-card p-5"}>
-    <header><h3 className="oc-card-heading">{mode === "review" ? "Pros & cons" : "Applicant information"}</h3>{mode !== "review" && <p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p>}</header>
+  return <><section aria-label={`${mode} applicant information`} className={embedded ? "space-y-3" : mode === "review" ? "oc-review-observations space-y-3 rounded-lg border bg-card p-4" : "space-y-5 rounded-lg border bg-card p-5"}>
+    <header className={embedded ? "sr-only" : undefined}><h3 className="oc-card-heading">{mode === "review" ? "Pros & cons" : "Applicant information"}</h3>{mode !== "review" && <p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p>}</header>
     {error && <p role="alert" className="text-sm text-destructive">{error} <Button type="button" variant="ghost" onClick={() => setRevision(v => v + 1)}>Reload</Button></p>}
     {!data && !error && <LoadingState label="Loading authorized review information…" layout="form" rows={2} />}
     {data && <>
@@ -69,14 +80,14 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
       </>}
       {mode === "review" && !data.anonymous && !editorOpen && <div className="flex gap-2 border-t pt-2"><Button type="button" size="sm" variant="ghost" onClick={() => { setKind("PRO"); setEditorOpen(true) }}>Add pro</Button><Button type="button" size="sm" variant="ghost" onClick={() => { setKind("CON"); setEditorOpen(true) }}>Add con</Button></div>}
       {mode === "review" && !data.anonymous && editorOpen && <form className="space-y-3 border-t pt-4" onSubmit={e => { e.preventDefault(); void mutate() }}>
-        <label className="block text-sm">Observation type<select className="ml-3 rounded border p-2" value={kind} disabled={busy} onChange={e => setKind(e.target.value as "PRO" | "CON")}><option value="PRO">Pro</option><option value="CON">Con</option></select></label>
+        <label className="block text-sm">Observation type<NativeSelect className="ml-3" value={kind} disabled={busy} onChange={e => setKind(e.target.value as "PRO" | "CON")}><option value="PRO">Pro</option><option value="CON">Con</option></NativeSelect></label>
         <label className="block text-sm">{editing ? "Edit your observation" : "Add a reviewer observation"}<Textarea value={body} required maxLength={3000} disabled={busy} onChange={e => setBody(e.target.value)} /></label>
         <p className="text-xs text-muted-foreground">Separate from application answers, private interview notes, and overall evaluation feedback.</p>
         <Button disabled={busy || !body.trim()}>{editing ? "Save observation" : "Add observation"}</Button><Button type="button" variant="ghost" disabled={busy} onClick={() => { setEditing(undefined); setBody(""); setEditorOpen(false) }}>{editing ? "Cancel edit" : "Cancel"}</Button>
       </form>}
     </>}
   </section>
-    {mode==='review'&&data&&!data.anonymous&&<AdditionalObservations key={applicationId} clubId={clubId} applicationId={applicationId}/>}
+    {additionalObservations&&mode==='review'&&data&&!data.anonymous&&<AdditionalObservations key={applicationId} clubId={clubId} applicationId={applicationId}/>}
   </>;
 }
 
@@ -98,9 +109,9 @@ export function ApplicantSlide({data}:{data:ApplicantDisplay}){
         {data.anonymous&&<p className="text-sm text-muted-foreground">Anonymous candidate · identity and documents withheld</p>}
       </div>
       <div className="oc-voting-facts">
-        {data.sections.filter(s=>s.field!=="name").map(s=><section key={s.field} className="oc-content-panel min-w-0"><h3 className="text-sm text-muted-foreground">{s.label}</h3>{s.items.length?<>{s.items.map((item,i)=><p key={i} className="mt-2 whitespace-pre-wrap break-words text-xl">{item}</p>)}{s.withheld&&<p className="mt-2 text-sm text-muted-foreground">Additional feedback is withheld.</p>}</>:<p className="mt-2 text-lg text-muted-foreground">{s.withheld ? "Withheld by feedback access policy." : "Not provided"}</p>}</section>)}
-        {data.links.map(link=><section key={link.field} className="oc-content-panel"><h3 className="text-sm text-muted-foreground">{link.label}</h3><a href={link.href} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center text-xl underline">Open {link.label}</a></section>)}
-        {data.visible.filter(f=>["resume","linkedin"].includes(f)&&!data.links.some(l=>l.field===f)).map(f=><section key={f} className="oc-content-panel"><h3 className="text-sm text-muted-foreground">{fieldLabels[f]}</h3><p className="mt-2 text-lg text-muted-foreground">Not provided</p></section>)}
+        {data.sections.filter(s=>s.field!=="name").map(s=><Panel as="section" key={s.field} className="min-w-0"><h3 className="text-sm text-muted-foreground">{s.label}</h3>{s.items.length?<>{s.items.map((item,i)=><p key={i} className="mt-2 whitespace-pre-wrap break-words text-xl">{item}</p>)}{s.withheld&&<p className="mt-2 text-sm text-muted-foreground">Additional feedback is withheld.</p>}</>:<p className="mt-2 text-lg text-muted-foreground">{s.withheld ? "Withheld by feedback access policy." : "Not provided"}</p>}</Panel>)}
+        {data.links.map(link=><Panel as="section" key={link.field}><h3 className="text-sm text-muted-foreground">{link.label}</h3><a href={link.href} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center text-xl underline">Open {link.label}</a></Panel>)}
+        {data.visible.filter(f=>["resume","linkedin"].includes(f)&&!data.links.some(l=>l.field===f)).map(f=><Panel as="section" key={f}><h3 className="text-sm text-muted-foreground">{fieldLabels[f]}</h3><p className="mt-2 text-lg text-muted-foreground">Not provided</p></Panel>)}
       </div>
   </>
 }

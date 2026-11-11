@@ -2,6 +2,7 @@
 import { memberGroupSplitSchema, planMemberGroups } from "@/lib/member-groups";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
+import { normalizeProfileFieldVisibility, restrictProfileFields } from "@/lib/profile-field-visibility";
 
 import { lockSchedulingPeople } from "@/utils/panel-publication";
 import { retryOnDeadlock } from "@/utils/club-write-transaction";
@@ -23,30 +24,31 @@ import { requireAuth } from "@/utils/auth";
 import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOrganizationInvitation, organizationCapabilities, organizationRoles, organizationRolePermissions } from "@/lib/organization-authorization";
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
+import { boundedParse } from "@/lib/bounded-input";
 
 const id = z.string().uuid();
 
 /** Group labels are targeting metadata, never an access-role or permission grant. */
 export async function assignOrganizationMemberGroups(input: unknown) {
-  const data = z.object({
+  const data = boundedParse(z.object({
     clubId: id,
     targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100),
     group: z.string().trim().min(1).max(80),
     operation: z.enum(["ADD", "REMOVE"]),
-  }).strict().parse(input);
+  }).strict(), input);
   if (new Set(data.targets.map(target => target.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
     const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
-    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members and try again.");
+    if (members.length !== data.targets.length) throw new Error("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
       const groups = data.operation === "ADD" ? [...new Set([...member.groups, data.group])] : member.groups.filter(group => group !== data.group);
       if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
       const result = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
-      if (result.count !== 1) throw new Error("A member changed. Refresh members before assigning groups.");
+      if (result.count !== 1) throw new Error("A member changed. Check the list and try again.");
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, action: "club.member.groups.bulk", targetId: data.clubId, details: { memberIds: members.map(member => member.id), group: data.group, operation: data.operation } } });
     return { updated: members.length };
@@ -55,7 +57,7 @@ export async function assignOrganizationMemberGroups(input: unknown) {
 
 /** Save a previewed group or partition as roster labels, without changing access or other groups. */
 export async function createOrganizationMemberGroups(input: unknown) {
-  const data = z.object({ clubId: id, name: z.string().trim().min(1).max(64), targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(500), split: memberGroupSplitSchema.nullable() }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, name: z.string().trim().min(1).max(64), targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(500), split: memberGroupSplitSchema.nullable() }).strict(), input);
   if (new Set(data.targets.map(target => target.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
   const plan = planMemberGroups(data.targets.map(target => target.id), data.name, data.split);
   const { user } = await requireAuth();
@@ -63,14 +65,14 @@ export async function createOrganizationMemberGroups(input: unknown) {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
     const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
-    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members before creating groups.");
+    if (members.length !== data.targets.length) throw new Error("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
       const subgroup = plan.find(group => group.memberIds.includes(member.id))!;
       const groups = [...new Set([...member.groups, data.name, subgroup.name])];
       if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
       const saved = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
-      if (saved.count !== 1) throw new Error("A member changed. Refresh members before creating groups.");
+      if (saved.count !== 1) throw new Error("A member changed. Check the list and try again.");
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.clubId, action: "club.member.groups.create", details: { name: data.name, memberIds: members.map(member => member.id), groups: plan.map(group => ({ name: group.name, count: group.memberIds.length })) } } });
     return { groups: plan, members: members.length };
@@ -79,7 +81,7 @@ export async function createOrganizationMemberGroups(input: unknown) {
 
 /** Explicit attestation by an active owner, never inferred from an access-role template. */
 export async function setMemberInterviewOffices(input: unknown) {
-  const data = z.object({ clubId: id, memberId: id, offices: interviewOfficesSchema }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, memberId: id, offices: interviewOfficesSchema }).strict(), input);
   const { user } = await requireAuth({ verifyEmail: true });
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
@@ -150,13 +152,15 @@ export async function getOrganizationMemberManagement(clubId: string) {
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, clubId, user.id, false);
-    const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { schoolId: true } });
+    const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { schoolId: true, profileFieldVisibility: true } });
+    // Roster identity (name, email), roles and permissions stay; academic fields follow the club's profile setting.
+    const profileFields = normalizeProfileFieldVisibility(club.profileFieldVisibility);
     const [members, invitations, identifierTypes] = await Promise.all([
       tx.clubMember.findMany({ where: { clubId }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } }, orderBy: { joinedAt: "asc" } }),
       tx.clubInvitation.findMany({ where: { clubId }, select: { id: true, email: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, status: true, expiresAt: true, schoolIdentity: { select: { normalizedIdentifier: true } }, deliveries: { select: { status: true, createdAt: true, failureCode: true }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" } }),
       tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, school: { active: true }, verification: "EMAIL_LOCAL_PART" }, select: { id: true, label: true }, orderBy: { id: "asc" } }),
     ]);
-    return { actor, members: members.map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } })), invitations, identifierTypes };
+    return { actor, profileFields, members: members.map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? restrictProfileFields(memberAcademicProfile(m.user.studentProfile), profileFields) : null } })), invitations, identifierTypes };
   });
 }
 
@@ -228,13 +232,13 @@ export async function manageOrganizationInvitation(input: unknown) {
 
 /** One atomic mutation: authorization and sole-owner checks cover the complete selection. */
 export async function bulkOrganizationMembers(input: unknown) {
-  const data = z.object({ clubId: id, targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100), action: z.enum(["ROLE", "PERMISSIONS", "REMOVE"]), role: z.enum(organizationRoles).optional(), permissions: z.array(z.enum(clubPermissions)).max(clubPermissions.length).optional() }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100), action: z.enum(["ROLE", "PERMISSIONS", "REMOVE"]), role: z.enum(organizationRoles).optional(), permissions: z.array(z.enum(clubPermissions)).max(clubPermissions.length).optional() }).strict(), input);
   if (new Set(data.targets.map(t => t.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     const targets = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(t => t.id) } }, include: { user: { select: { disabledAt: true, email: true } } } });
-    if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new Error("Selected memberships changed. Refresh before trying again.");
+    if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new Error("Selected memberships changed. Reload the page and try again.");
     if (data.action === "ROLE" && (!data.role || targets.some(t => !canChangeOrganizationRole(actor, t, data.role!)))) throw new Error("You cannot grant this role to the complete selection.");
     if (data.action === "REMOVE" && targets.some(t => !canRemoveOrganizationMember(actor, t))) throw new Error("You cannot remove the complete selection.");
     if (data.action === "PERMISSIONS" && (!data.permissions || !hasPermission(actor, "leaders.manage") || targets.some(t => t.isOwner || !canControlOrganizationAccess(actor, t)) || data.permissions.some(p => !hasPermission(actor, p)))) throw new Error("These permissions exceed your authority, or the selection contains an owner.");
@@ -250,7 +254,7 @@ export async function bulkOrganizationMembers(input: unknown) {
   });
 }
 export async function bulkOrganizationInvitations(input: unknown) {
-  const data = z.object({ clubId: id, invitationIds: z.array(id).min(1).max(100), action: z.enum(["REVOKE", "RESEND"]) }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, invitationIds: z.array(id).min(1).max(100), action: z.enum(["REVOKE", "RESEND"]) }).strict(), input);
   if (new Set(data.invitationIds).size !== data.invitationIds.length) throw new Error("Duplicate invitations in selection.");
   const { user } = await requireAuth();
   if (data.action === "RESEND") invitationEmailConfig();

@@ -34,14 +34,13 @@ test("workspace navigation follows explicit capabilities and never changes ident
   assert.deepEqual(clubWorkspaceSections(null), []);
   assert.deepEqual(clubWorkspaceSections({ permissions: [] }), [
     "overview",
-    "meetings",
+    "calendar",
     "tasks",
   ]);
   assert.deepEqual(clubWorkspaceSections({ isOwner: true }), [
     "overview",
     "members",
-    "meetings",
-    "events",
+    "calendar",
     "tasks",
     "recruitment",
     "settings",
@@ -49,13 +48,13 @@ test("workspace navigation follows explicit capabilities and never changes ident
   assert.deepEqual(clubWorkspaceSections({ permissions: ["members.manage"] }), [
     "overview",
     "members",
-    "meetings",
+    "calendar",
     "tasks",
     "settings",
   ]);
   assert.deepEqual(clubWorkspaceSections({ permissions: ["club.settings"] }), [
     "overview",
-    "meetings",
+    "calendar",
     "tasks",
     "settings",
   ]);
@@ -108,6 +107,8 @@ function setup(permissions = [], isOwner = false) {
     },
     interviewBooking: { count: async (args) => { queries.interviews = args; return 2; } },
     votingSession: { findMany: async (args) => { queries.voting = args; return [{ id: "session", state: "OPEN" }]; } },
+    clubMember: { count: async (args) => { queries.members = args; return 4; } },
+    clubInvitation: { count: async (args) => { queries.invitations = args; return 1; } },
     pipelineRound: {
       findMany: async (args) => {
         queries.rounds = args;
@@ -177,6 +178,10 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
   assert.equal(owner.queries.review.where.task.clubId, clubId);
   assert.equal(owner.queries.interviews.where.slot.clubId, clubId);
   assert.equal(owner.queries.voting.where.clubId, clubId);
+  assert.equal(h.queries.members, undefined);
+  assert.equal(h.queries.invitations, undefined);
+  assert.equal(owner.queries.members.where.clubId, clubId);
+  assert.equal(owner.queries.invitations.where.clubId, clubId);
   await owner.api.getWorkspaceRounds(clubId);
   assert.deepEqual(owner.queries.rounds.select, {
     id: true,
@@ -188,14 +193,14 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
 test("product modes preserve scoped URLs and limit manager destinations by capability", () => {
   const { managerNavigation, personalMode } = load("lib/product-navigation.ts");
   const ids = (permissions, mode) => managerNavigation({ permissions }, clubId, mode).map(item => item.id);
-  assert.deepEqual(ids(["members.manage"], "club"), ["overview", "meetings", "tasks", "members", "settings"]);
-  assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "rejected", "interviews", "decisions"]);
-  assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews", "settings"]);
-  assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "decisions", "rounds", "rules", "settings"]);
-  const owner = managerNavigation({ isOwner: true }, clubId, "recruiting");
-  assert.equal(owner.find(item => item.id === "rules").preview, undefined)
-  assert.equal(owner.find(item => item.id === "rules").quiet, true);
-  assert.ok(owner.find(item => item.id === "rounds").quiet);
+  assert.deepEqual(ids(["members.manage"], "club"), ["overview", "calendar", "tasks", "members", "settings"]);
+  assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "interviews"]);
+  assert.deepEqual(ids(["applications.review", "decisions.vote"], "recruiting"), ["overview", "applicants", "interviews", "decisions"]);
+  assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews"]);
+  // Anonymous Review and Auto-Reject Rules are the Recruiting settings drawer now, not destinations.
+  assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "interviews", "decisions", "settings"]);
+  const owner = managerNavigation({ isOwner: true }, clubId, "recruiting").filter(item => !item.hidden);
+  assert.ok(!owner.some(item => ["rounds", "rules", "announcements"].includes(item.id)));
   for (const item of owner) {
     const url = new URL(item.href, "https://outclass.test");
     assert.equal(url.pathname, `/club/${clubId}/workspace`);

@@ -10,7 +10,7 @@ test('native LIVE voting: locked races, changed ballots, scope/revocation, held 
  try{
   const id=await db.$queryRaw`SELECT current_user AS role,inet_server_addr()='127.0.0.1'::inet AS loopback`;assert.equal(id[0].role,'outclass_production_app');assert.equal(id[0].loopback,true);
   const users=await Promise.all(Array.from({length:6},()=>db.user.create({data:{email:`voting-${randomUUID()}@demo.invalid`}})));
-  const club=await db.club.create({data:{name:'Synthetic native voting',slug:randomUUID(),tagline:'',description:'',color:'#142d45',category:'Other'}});
+  const club=await db.club.create({data:{name:'Synthetic native voting',slug:randomUUID(),tagline:'',description:'',color:'#142d45',category:'Other',profileFieldVisibility:{gpa:true}}});
   const cycle=await db.recruitmentCycle.create({data:{clubId:club.id,name:'Synthetic cycle'}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Interview',type:'INTERVIEW',order:0}}),next=await db.pipelineRound.create({data:{clubId:club.id,name:'Next interview',type:'INTERVIEW',order:1}});
   const caps=['applications.review','applicants.identify','decisions.vote','decisions.start','decisions.manage','decisions.finish','decisions.publish','recruitment.manage'];
   const members=await Promise.all(users.slice(0,3).map((user,i)=>db.clubMember.create({data:{clubId:club.id,userId:user.id,permissions:i===0?caps:i===1?['applications.review','applicants.identify','decisions.vote']:['applications.review','applicants.identify']}})));
@@ -44,5 +44,72 @@ test('native LIVE voting: locked races, changed ballots, scope/revocation, held 
    ok(await cmd('UNDO_DECISION',{applicationId:apps[2].id,passNumber:1,undoRequestId:saved.result.decision.requestId}));assert.equal((await leader.getLiveVotingRoom(other)).history[0].candidates[0].ballotState,'CLOSED');const hold=await cmd('DECIDE_AND_ADVANCE',{applicationId:apps[2].id,passNumber:1,choice:'HOLD'});ok(hold);ok(await cmd('NEXT_PASS'));ok(await cmd('OPEN_VOTING'));assert.equal((await cmd('UNDO_DECISION',{applicationId:apps[2].id,passNumber:1,undoRequestId:hold.result.decision.requestId})).code,'UNDO_UNSAFE');assert.equal(await db.votingBallot.count({where:{sessionId:other.sessionId}}),0);
   });
   await t.test('revocation denies even receipt retries and historical reads',async()=>{await db.clubMember.update({where:{id:members[1].id},data:{status:'LEFT',permissions:[],interviewOffices:[]}});await assert.rejects(voter.getLiveVotingRoom(scope));assert.equal((await voter.getLiveVotingJoinInfo(scope)).status,'DENIED');assert.equal(await db.votingBallot.count({where:{sessionId:scope.sessionId,passNumber:2}}),0);});
+ }finally{await db.$disconnect();await owner.$disconnect()}
+});
+
+// Lock-wait and duplicate-delivery coverage for LIVE finalization; the board publication tests that
+// used to exercise these paths were retired with the board (FE-27).
+test('native LIVE finalization: revocation during the club lock wait, and a concurrent double finalize deliver at most once',{skip:!url,timeout:180000},async t=>{
+ const u=new URL(url);assert.equal(u.hostname,'127.0.0.1');assert.equal(u.pathname,'/outclass_security_test');
+ const {PrismaClient}=require('@prisma/client'),owner=new PrismaClient({datasourceUrl:url,log:[]});
+ const runtime=new URL(url);runtime.username='outclass_production_app';const db=new PrismaClient({datasourceUrl:runtime.toString(),log:[]});
+ try{
+  const club=await db.club.create({data:{name:'Synthetic native finalization',slug:randomUUID(),tagline:'',description:'',color:'#142d45',category:'Other'}});
+  const cycle=await db.recruitmentCycle.create({data:{clubId:club.id,name:'Synthetic cycle'}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Final interview',type:'INTERVIEW',order:0}});
+  const caps=['applications.review','applicants.identify','decisions.vote','decisions.start','decisions.manage','decisions.finish','decisions.publish','recruitment.manage'];
+  const staff=await Promise.all(Array.from({length:2},()=>db.user.create({data:{email:`finalize-${randomUUID()}@demo.invalid`}})));
+  const [leaderMember,voterMember]=await Promise.all(staff.map((user,i)=>db.clubMember.create({data:{clubId:club.id,userId:user.id,permissions:i===0?caps:['applications.review','applicants.identify','decisions.vote']}})));
+  function api(user){const mocks={'@/utils/prisma':{prisma:db},'@/utils/auth':{requireAuth:async()=>({user:{id:user.id}}),requireClubPermission:async(clubId,permissions)=>{const m=await db.clubMember.findUnique({where:{userId_clubId:{userId:user.id,clubId}}});assert.ok(m&&m.status==='ACTIVE'&&permissions.every(p=>m.permissions.includes(p)),'Denied');return {user:{id:user.id},membership:m}}},'@/utils/club-write-transaction':{votingWriteLimits:{},clubWriteTransaction:fn=>db.$transaction(fn,{timeout:30000})},'next/cache':{revalidatePath(){}}};return {...load('actions/voting-room.ts',mocks),...load('actions/voting-room-setup.ts',mocks),...load('actions/voting-room-finalization.ts',mocks)}}
+  const leader=api(staff[0]),voter=api(staff[1]);
+  // A closed room with one accepted and one rejected applicant, ready to finalize with the ADMISSION mapping.
+  async function closedRoom(){
+   const students=await Promise.all(Array.from({length:2},()=>db.user.create({data:{email:`finalize-student-${randomUUID()}@demo.invalid`}})));
+   const apps=await Promise.all(students.map(user=>db.application.create({data:{clubId:club.id,studentId:user.id,roundId:round.id,recruitmentCycleId:cycle.id,status:'IN_REVIEW',submittedAt:new Date()}})));
+   const scope={clubId:club.id,sessionId:randomUUID()};
+   await leader.createLiveVotingRoom({...scope,cycleId:cycle.id,roundId:round.id,applicationIds:apps.map(a=>a.id),participantIds:[leaderMember.id,voterMember.id],leaderMemberIds:[leaderMember.id],targetSize:1,presentationOptions:{fields:['name'],highlights:{}}});
+   const read=()=>leader.getLiveVotingRoom(scope),command=async(action,extra={})=>{const r=await leader.commandLiveVotingRoom({...scope,action,requestId:randomUUID(),revision:(await read()).revision,confirmed:true,...extra});assert.equal(r.ok,true,`${action}: ${JSON.stringify(r)}`);return r};
+   const vote=async(as,choice)=>{const s=await as.getLiveVotingRoom(scope),e=s.history.find(p=>p.number===s.passNumber).candidates.find(c=>c.applicationId===s.currentApplicantId);const r=await as.castLiveVotingBallot({...scope,applicationId:s.currentApplicantId,passNumber:s.passNumber,ballotRevision:e.ownBallot?.revision??null,choice,requestId:randomUUID()});assert.equal(r.ok,true,JSON.stringify(r))};
+   await command('START');await command('ACCEPT_WITHOUT_VOTE',{reason:'Synthetic decision'});await command('ADVANCE');
+   await command('OPEN_VOTING');await vote(leader,'REJECT');await vote(voter,'REJECT');await command('CLOSE_VOTING');await command('CONFIRM',{choice:'REJECT',reason:'Synthetic decision'});await command('END');
+   const mapping={kind:'ADMISSION'},plan=await leader.previewLiveVotingFinalization({...scope,mapping});
+   return {scope,apps,read,body:{...scope,mapping,guard:plan.guard,revision:plan.revision,requestId:randomUUID(),confirmed:true}};
+  }
+  async function blocked(){const deadline=Date.now()+10000;while(Date.now()<deadline){const rows=await db.$queryRaw`SELECT pid FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%SELECT id FROM "Club"%'`;if(rows.length)return;await new Promise(r=>setTimeout(r,15))}throw Error('Expected actual club lock wait')}
+  async function waitingRace(operation,mutation){
+   let release,ready;const hold=new Promise(r=>release=r),locked=new Promise(r=>ready=r);
+   const blocker=db.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;ready();await hold;await mutation(tx)},{timeout:20000});await locked;
+   const pending=operation();const settled=pending.then(value=>({value}),error=>({error}));
+   try{await blocked()}finally{release()}await blocker;return settled;
+  }
+  await t.test('a leader whose access is revoked while waiting on the club lock changes no status and writes no offer or audit',async()=>{
+   for(const denial of ['capability','membership']){
+    const room=await closedRoom();
+    const result=await waitingRace(()=>leader.finalizeLiveVotingRoom(room.body),tx=>tx.clubMember.update({where:{id:leaderMember.id},data:denial==='membership'?{status:'LEFT',permissions:[]}:{permissions:[]}}));
+    assert.ok(result.error||result.value?.ok===false,`${denial}: finalization is refused`);
+    assert.equal((await room.read().catch(()=>null))?.finalizedAt??null,null);
+    assert.deepEqual((await db.application.findMany({where:{id:{in:room.apps.map(a=>a.id)}},select:{status:true}})).map(a=>a.status),['IN_REVIEW','IN_REVIEW'],`${denial}: statuses unchanged`);
+    assert.equal(await db.clubInvitation.count({where:{applicationId:{in:room.apps.map(a=>a.id)}}}),0,`${denial}: no offer`);
+    assert.equal(await db.auditLog.count({where:{targetId:room.scope.sessionId,action:'voting.room.finalized'}}),0,`${denial}: no finalization audit`);
+    assert.equal(await db.auditLog.count({where:{targetId:{in:room.apps.map(a=>a.id)},action:{in:['recruitment.decision.published','club.round.move']}}}),0,`${denial}: no decision audit`);
+    assert.equal(await db.votingRoomCommand.count({where:{sessionId:room.scope.sessionId,requestId:room.body.requestId}}),0,`${denial}: no receipt`);
+    await db.clubMember.update({where:{id:leaderMember.id},data:{status:'ACTIVE',permissions:caps}});
+   }
+  });
+  await t.test('a concurrent double finalize and double send produce one letter, one notification and one outbox row per applicant',async()=>{
+   const room=await closedRoom();
+   (await Promise.all([leader.finalizeLiveVotingRoom(room.body),leader.finalizeLiveVotingRoom(room.body)])).forEach(r=>assert.equal(r.ok,true,JSON.stringify(r)));
+   assert.equal(await db.auditLog.count({where:{targetId:room.scope.sessionId,action:'voting.room.finalized'}}),1);
+   assert.deepEqual((await db.application.findMany({where:{id:{in:room.apps.map(a=>a.id)}},orderBy:{id:'asc'},select:{id:true,status:true}})).map(a=>a.status).sort(),['ACCEPTED','REJECTED']);
+   const send=requestId=>leader.sendLiveVotingNotifications({...room.scope,requestId,confirmed:true});
+   const results=await Promise.allSettled([send(randomUUID()),send(randomUUID())]);
+   assert.ok(results.some(r=>r.status==='fulfilled'),JSON.stringify(results.map(r=>r.reason?.message)));
+   for(const a of room.apps){
+    const eventKey=`decision:${a.id}:1`;
+    assert.equal(await db.decisionLetter.count({where:{applicationId:a.id}}),1,`one letter for ${eventKey}`);
+    assert.equal(await db.userNotification.count({where:{userId:a.studentId,eventKey}}),1,`one notification ${eventKey}`);
+    assert.equal(await db.notificationEmailOutbox.count({where:{notification:{userId:a.studentId,eventKey}}}),1,`one outbox row ${eventKey}`);
+   }
+   assert.equal(await db.clubInvitation.count({where:{applicationId:{in:room.apps.map(a=>a.id)}}}),1,'one offer, for the accepted applicant');
+  });
  }finally{await db.$disconnect();await owner.$disconnect()}
 });

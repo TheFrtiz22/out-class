@@ -104,7 +104,7 @@ test('club priorities use existing authorized counts and individual schedule tim
   op.intake = { applicationOpen: true, applicationDeadline: at(8) }
   assert.equal(welcomeSubtitle(ctx, now), 'Your application deadline is approaching.')
   ctx.data.work = [{ id: 'task', task: { dueAt: at(-1) } }]
-  assert.equal(welcomeSubtitle(ctx, now), 'You have an overdue assignment.')
+  assert.equal(welcomeSubtitle(ctx, now), 'You have an overdue task.')
   ctx.data.work = []; op.intake = null; op.bookings = []; op.rounds[0].pending = 0
   assert.equal(welcomeSubtitle(ctx, now), '3 interviews still need to be scheduled.')
   op.rounds[0].needsBooking = 0; op.tasks.awaitingReview = 1
@@ -112,7 +112,7 @@ test('club priorities use existing authorized counts and individual schedule tim
   op.tasks.awaitingReview = null; op.meetings = [{ id: 'meeting', date: at(5) }]
   assert.match(welcomeSubtitle(ctx, now), /next meeting/)
   op.meetings = []; op.tasks.overdue = 2
-  assert.equal(welcomeSubtitle(ctx, now), 'You have 2 overdue assignments.')
+  assert.equal(welcomeSubtitle(ctx, now), 'You have 2 overdue tasks.')
 })
 
 test('role switching, different clubs/members, revoked grants and partial data stay isolated', () => {
@@ -120,17 +120,17 @@ test('role switching, different clubs/members, revoked grants and partial data s
   op.rounds = [{ pending: 99, needsBooking: 42 }]; op.tasks.awaitingReview = 10
   op.intake = { applicationOpen: true, applicationDeadline: at(1) }
   op.bookings = [{ id: 'private', slot: { startTime: at(.5) } }]
-  assert.equal(welcomeSubtitle(ctx, now), "Here's what's happening in your club.")
+  assert.equal(welcomeSubtitle(ctx, now), "Nothing due this week.")
   ctx.membership = member(['applications.review']); ctx.data.membership = member(['applications.review'])
   assert.match(welcomeSubtitle(ctx, now), /deadline/)
   op.intake = null
   assert.equal(welcomeSubtitle(ctx, now), '99 applications are ready for your review.')
   ctx.data.membership.permissions = []
-  assert.equal(welcomeSubtitle(ctx, now), "Here's what's happening in your club.")
+  assert.equal(welcomeSubtitle(ctx, now), "Nothing due this week.")
   ctx.data.membership = member(['applications.review'])
-  for (const extra of [{ clubId: 'two' }, { membership: { ...ctx.membership, id: 'someone-else' } }, { membership: { ...ctx.membership, status: 'REVOKED' } }, { data: null }]) assert.equal(welcomeSubtitle({ ...ctx, ...extra }, now), "Here's what's happening in your club.")
+  for (const extra of [{ clubId: 'two' }, { membership: { ...ctx.membership, id: 'someone-else' } }, { membership: { ...ctx.membership, status: 'REVOKED' } }, { data: null }]) assert.equal(welcomeSubtitle({ ...ctx, ...extra }, now), "Nothing due this week.")
   assert.equal(welcomeSubtitle(personal(), now), "Explore what's new in OutClass.")
-  for (const invalid of [NaN, -1, 1.2, Infinity]) { op.rounds[0].pending = invalid; assert.equal(welcomeSubtitle(ctx, now), "Here's what's happening in your club.") }
+  for (const invalid of [NaN, -1, 1.2, Infinity]) { op.rounds[0].pending = invalid; assert.equal(welcomeSubtitle(ctx, now), "Nothing due this week.") }
 })
 
 test('clock aligns ticks, responds to lifecycle/clock changes, suspends hidden work, and cleans up', () => {
@@ -155,7 +155,7 @@ test('personal assignment urgency reuses structured task notifications and curre
   const { taskNotifications } = load('lib/task-notifications.ts')
   const source = { id: 'assignment', assignedAt: at(-48), submittedAt: null, reviewedAt: null, revisionRequestedAt: null, feedback: '', task: { id: 'task', clubId: 'one', title: 'Memo', kind: 'TASK', status: 'OPEN', dueAt: at(-1), club: { name: 'One', color: null } } }
   const ctx = personal({ memberClubIds: ['one'], notifications: taskNotifications([source], +now), events: [event('interview', .5)] })
-  assert.equal(welcomeSubtitle(ctx, now), 'You have an overdue assignment.')
+  assert.equal(welcomeSubtitle(ctx, now), 'You have an overdue task.')
   ctx.memberClubIds = ['two']
   assert.match(welcomeSubtitle(ctx, now), /next interview/)
   ctx.memberClubIds = ['one']; source.reviewedAt = at(-.5)
@@ -166,7 +166,7 @@ test('personal assignment urgency reuses structured task notifications and curre
   assert.match(welcomeSubtitle(ctx, now), /next interview/)
   ctx.events = []; source.task.status = 'OPEN'; source.task.dueAt = at(5)
   ctx.notifications = taskNotifications([source], +now)
-  assert.equal(welcomeSubtitle(ctx, now), 'You have an assignment due today.')
+  assert.equal(welcomeSubtitle(ctx, now), 'You have a task due today.')
   ctx.notifications = [{ clubId: 'one', title: 'Urgent task: 99 overdue assignments', urgent: true }]
   assert.equal(welcomeSubtitle(ctx, now), "Explore what's new in OutClass.")
 })
@@ -178,6 +178,7 @@ test('personal welcome uses current authenticated applications, neutral loading 
     '@/contexts/auth-context': { useAuth: () => auth },
     '@/lib/application-state': { useApplicationState: () => state },
     '@/hooks/use-welcome-clock': { useWelcomeClock: () => now },
+    '@/hooks/use-suggested-clubs': { useSuggestedClubs: () => ({ suggestions: [], hasSignal: false }) },
   }
   // Unrelated content uses element sentinels; the actual welcome logic is evaluated below.
   for (const name of [...fs.readFileSync('components/views/student-dashboard-view.tsx', 'utf8').matchAll(/from "(@\/components\/[^"]+)"/g)].map(m => m[1])) mocks[name] = new Proxy({}, { get: (_, key) => key })
@@ -192,7 +193,7 @@ test('personal welcome uses current authenticated applications, neutral loading 
   assert.equal(welcomeSubtitle(header().context, header().now), "Explore what's new in OutClass.")
   auth.user.memberships = [{ clubId: 'one', status: 'ACTIVE' }]
   state.personalTaskActivities = { userId: 'student', items: [{ clubId: 'one', taskActivity: { assignmentId: 'task', dueAt: at(-1), needsSubmission: true } }] }
-  assert.equal(welcomeSubtitle(header().context, header().now), 'You have an overdue assignment.')
+  assert.equal(welcomeSubtitle(header().context, header().now), 'You have an overdue task.')
   state.personalTaskActivities.userId = 'other-student'
   assert.equal(welcomeSubtitle(header().context, header().now), "Explore what's new in OutClass.")
   auth.user = null

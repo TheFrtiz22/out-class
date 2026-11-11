@@ -1,4 +1,5 @@
 "use client"
+import { PillGroup } from "@/components/ui/segmented-control"
 import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useState } from "react"
@@ -8,14 +9,15 @@ import { schoolRequestStatuses, schoolRequestRoleLabels, type schoolRequestRoles
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
+import { Panel } from "@/components/ui/panel"
 
 function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: () => void }) {
   const [status, setStatus] = useState(row.status)
   const [note, setNote] = useState(row.reviewNote || "")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  return <article className="oc-content-panel space-y-4">
-    <div><p className="text-sm text-muted-foreground">{row.status.replaceAll("_", " ")} · {new Date(row.createdAt).toLocaleDateString()}</p><h2 className="text-xl font-semibold">{row.university}</h2></div>
+  return <Panel as="article" className="space-y-4">
+    <div><p className="text-sm text-muted-foreground">{row.status.replaceAll("_", " ")} · {new Date(row.createdAt).toLocaleDateString()}</p><h2 className="oc-section-heading">{row.university}</h2></div>
     <p>{row.fullName} · {schoolRequestRoleLabels[row.role as (typeof schoolRequestRoles)[number]]}<br /><a className="break-all underline" href={`mailto:${row.email}`}>{row.email}</a>{row.organization && <><br />{row.organization}</>}</p>
     {row.message && <p className="whitespace-pre-wrap break-words text-sm">{row.message}</p>}
     {row.reviewedAt && <p className="text-xs text-muted-foreground">Last reviewed {new Date(row.reviewedAt).toLocaleString()} by {row.reviewedBy}</p>}
@@ -32,7 +34,7 @@ function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: ()
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <Button disabled={busy || note.trim().length < 10} type="submit">{busy ? "Saving…" : "Save review"}</Button>
     </form>
-  </article>
+  </Panel>
 }
 
 export function SchoolRequestReview() {
@@ -50,7 +52,7 @@ export function SchoolRequestReview() {
   }, [status, page, refresh])
   return <section className="space-y-5">
     <p className="text-sm text-muted-foreground">These are expressions of interest. Reviewing or closing a request never approves a university or grants account access.</p>
-    <label className="block space-y-1"><span>Filter by status</span><NativeSelect className="block" value={status} onChange={event => { setStatus(event.target.value); setPage(0) }}><option value="">All requests</option>{schoolRequestStatuses.map(value => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}</NativeSelect></label>
+    <div className="space-y-1"><span className="block">Filter by status</span><PillGroup label="Filter by status" size="compact" value={status} onChange={value => { setStatus(value); setPage(0) }} options={[{ value: "", label: "All requests" }, ...schoolRequestStatuses.map(value => ({ value, label: value.replaceAll("_", " ") }))]} /></div>
     {error && <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(value => value + 1)}>Try again</Button></div>}
     {loading ? <LoadingState label="Loading school requests…" layout="table" rows={3} /> : !error && <>
       {result.rows.length ? result.rows.map(row => <RequestReview key={`${row.id}:${row.revision}`} row={row} onReviewed={() => setRefresh(value => value + 1)} />) : <p>No matching school requests.</p>}

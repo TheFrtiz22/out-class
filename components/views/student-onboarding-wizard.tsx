@@ -1,7 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
+import { passwordNotSavedNotice, setPasswordAfterConfirmation } from "@/lib/signup-password"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
@@ -22,23 +24,14 @@ import {
 } from "@/components/icons"
 
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
+import { TurnstileWidget } from "@/components/security/turnstile-widget"
+import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
 import { uploadProfileFile } from "@/actions/storage"
 import {
@@ -53,6 +46,7 @@ import {
   type ExperienceAssetsData,
   type WizardData,
 } from "@/lib/onboarding-schemas"
+import { Panel } from "@/components/ui/panel"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -64,6 +58,14 @@ const STEPS = [
 ] as const
 
 const GRAD_YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
+
+// Steps 2 and 3 widgets load in their own chunks (server-rendered when visible). The wizard starts
+// both downloads after mount, and each placeholder matches the control's height, so a later step
+// does not shift or flash.
+const loadVerificationCodeInput = () => import("@/components/onboarding/verification-code-input")
+const loadGraduationYearSelect = () => import("@/components/onboarding/graduation-year-select")
+const VerificationCodeInput = dynamic(() => loadVerificationCodeInput().then(module => module.VerificationCodeInput), { loading: () => <div aria-hidden="true" className="h-12 w-[calc(6*clamp(28px,8vw,48px))]" /> })
+const GraduationYearSelect = dynamic(() => loadGraduationYearSelect().then(module => module.GraduationYearSelect), { loading: () => <div aria-hidden="true" className="h-11 w-full rounded-md border border-border" /> })
 const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10 MB
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -82,7 +84,7 @@ function StepProgress({ current }: { current: number }) {
           <div key={step.label} className="flex-1">
             <div
               className={`h-1.5 rounded-full transition-colors duration-300 ${
-                i + 1 <= current ? "bg-primary" : "bg-neutral-200"
+                i + 1 <= current ? "bg-primary" : "bg-secondary"
               }`}
             />
           </div>
@@ -142,7 +144,7 @@ function ResumeDropZone({
 
   if (file) {
     return (
-      <div className="flex items-center gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-3">
+      <div className="flex items-center gap-3 rounded-md border border-border bg-muted p-3">
         <FileText className="size-5 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
@@ -152,14 +154,13 @@ function ResumeDropZone({
             {(file.size / 1024).toFixed(0)} KB
           </p>
         </div>
-        <button
-          type="button"
+        <IconButton
+          size="icon-lg"
           onClick={onRemove}
           aria-label="Remove résumé"
-          className="rounded-md p-1 text-muted-foreground hover:bg-neutral-100 hover:text-neutral-700"
         >
           <X className="size-4" />
-        </button>
+        </IconButton>
       </div>
     )
   }
@@ -180,13 +181,13 @@ function ResumeDropZone({
       className={`flex cursor-pointer flex-col items-center gap-2 rounded-md border-2 border-dashed p-8 text-center transition-colors ${
         dragOver
           ? "border-primary bg-primary/5"
-          : "border-neutral-200 bg-neutral-50 hover:border-neutral-300"
+          : "border-border bg-muted hover:border-border"
       }`}
     >
       <Upload
-        className={`size-8 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
+        className={`size-6 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
       />
-      <p className="text-sm font-medium text-neutral-700">
+      <p className="text-sm font-medium text-foreground">
         Drag & drop your resume here
       </p>
       <p className="text-xs text-muted-foreground">PDF only, up to 10 MB</p>
@@ -214,8 +215,11 @@ export function StudentOnboardingWizard({
 }) {
   const { isImpersonating } = useAuth()
   const [step, setStep] = useState(1)
+  // Warm the later steps' chunks while the visitor fills in step 1.
+  useEffect(() => { void loadVerificationCodeInput(); void loadGraduationYearSelect() }, [])
   const [globalError, setGlobalError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
   const [codeSent, setCodeSent] = useState(false)
   const [accountCreated, setAccountCreated] = useState(!!initialUser?.email_confirmed_at)
   const [resendSeconds, setResendSeconds] = useState(0)
@@ -236,6 +240,10 @@ export function StudentOnboardingWizard({
   })
 
   const supabase = createClient()
+  // Held only until the email code is verified, then cleared.
+  const pendingPassword = useRef<string | undefined>(undefined)
+  useEffect(() => () => { pendingPassword.current = undefined }, [])
+  const [confirmNotice, setConfirmNotice] = useState("")
 
   // ── Step 1: Account Basics ────────────────────────────────────────────────
 
@@ -249,10 +257,13 @@ export function StudentOnboardingWizard({
     setGlobalError("")
     wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
     if (accountCreated) { setStep(3); return }
+    if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     try {
-      const result = await registerStudent(step1Form.getValues())
+      const values = step1Form.getValues()
+      const result = await registerStudent(values, turnstileToken)
       if (result.error) { setGlobalError(result.error); return }
+      pendingPassword.current = values.password
       setCodeSent(true)
       setResendSeconds(60)
       setNotice("")
@@ -261,7 +272,7 @@ export function StudentOnboardingWizard({
       setStep(2)
     } catch {
       setGlobalError("Unable to create your account. Please try again.")
-    } finally { setLoading(false) }
+    } finally { setLoading(false); setTurnstileReset(value => value + 1) /* tokens are single use */ }
   }
 
   // ── Step 2: OTP Verification ──────────────────────────────────────────────
@@ -293,6 +304,10 @@ export function StudentOnboardingWizard({
         setGlobalError("Unable to confirm your email. Please verify again.")
         return
       }
+      // The signup password was stored while the address was unconfirmed; set it again as the verified owner.
+      const password = await setPasswordAfterConfirmation(supabase, pendingPassword.current)
+      pendingPassword.current = undefined
+      setConfirmNotice(password.saved ? "" : passwordNotSavedNotice)
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
@@ -306,16 +321,18 @@ export function StudentOnboardingWizard({
   async function resendCode() {
     if (loading || resendSeconds > 0) return
     if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
+    if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     setGlobalError("")
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email: wizardData.current.accountBasics!.email })
-      if (error) {
+      const { error } = await supabase.auth.resend(withCaptcha({ type: "signup" as const, email: wizardData.current.accountBasics!.email }, turnstileToken))
+      if (captchaFailed(error)) setGlobalError(turnstileMessage("rejected"))
+      else if (error) {
         setGlobalError(authEmailError(error, "send"))
         if (error.status === 429) setResendSeconds(60)
       } else { setNotice("Code sent"); setResendSeconds(60) }
     } catch { setGlobalError("Unable to resend the code. Please try again.") }
-    finally { setLoading(false) }
+    finally { setLoading(false); setTurnstileReset(value => value + 1) }
   }
 
   // ── Step 3: Academic Profile ──────────────────────────────────────────────
@@ -337,6 +354,7 @@ export function StudentOnboardingWizard({
   }
 
   function onStep3Submit(data: AcademicProfileData) {
+    setConfirmNotice("")
     wizardData.current.academic = data
     setStep(4)
   }
@@ -417,21 +435,21 @@ export function StudentOnboardingWizard({
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  if (isImpersonating && !initialUser) return <p className="p-4">Account registration is unavailable during impersonation. <Link className="underline" href="/?workspace=student">Open the user’s workspace</Link> to review their existing profile.</p>
+  if (isImpersonating && !initialUser) return <p className="p-4">Account registration is unavailable during impersonation. <Link className="underline" href="/home">Open the user’s workspace</Link> to review their existing profile.</p>
 
   return (
     <div className={embedded ? "font-sans" : "flex min-h-svh items-center justify-center bg-background px-4 py-10 font-sans"}>
       <div className="mx-auto w-full max-w-[480px]">
         {onBack && <Button variant="ghost" onClick={onBack} disabled={loading} className="mb-4"><ArrowLeft className="size-4" />Back to home</Button>}
         {/* Logo */}
-        <div className="mb-6 flex justify-center">
+        {!embedded && <div className="mb-6 flex justify-center">
           <OutClassLogo variant="light" className="h-8 w-auto" />
-        </div>
+        </div>}
 
         <InvitationProfileSuggestions enabled={accountCreated && !isImpersonating} onDefaults={applyInvitationDefaults} />
 
         {/* Card */}
-        <div className="oc-content-panel">
+        <Panel>
           <StepProgress current={step} />
 
           {/* Global error */}
@@ -446,7 +464,7 @@ export function StudentOnboardingWizard({
             <>
               <div className="mb-6">
                 <h2 className="oc-section-heading text-foreground">
-                  {accountCreated ? "Let’s finish your profile" : "Create your account"}
+                  {accountCreated ? "Let’s finish your profile" : embedded ? "Your account" : "Create your account"}
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   {accountCreated ? "Review your name below. We’ll help you complete your academics and optional experience next." : "Use your UVA email to get started."}
@@ -464,7 +482,7 @@ export function StudentOnboardingWizard({
                       id="firstName"
                       autoComplete="given-name"
                       placeholder="Jordan"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step1Form.register("firstName")}
                     />
                     {step1Form.formState.errors.firstName && (
@@ -479,7 +497,7 @@ export function StudentOnboardingWizard({
                       id="lastName"
                       autoComplete="family-name"
                       placeholder="Avery"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step1Form.register("lastName")}
                     />
                     {step1Form.formState.errors.lastName && (
@@ -500,7 +518,7 @@ export function StudentOnboardingWizard({
                     autoCapitalize="none"
                     spellCheck={false}
                     placeholder="computingid@virginia.edu"
-                    className="h-11 rounded-md border-neutral-200"
+                    className="h-11 rounded-md border-border"
                     {...step1Form.register("email")}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -519,6 +537,7 @@ export function StudentOnboardingWizard({
                   <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
                   {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
+                {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button
                   type="submit"
                   loading={loading}
@@ -551,29 +570,14 @@ export function StudentOnboardingWizard({
                 className="space-y-5"
               >
                 <div className="flex justify-center">
-                  <InputOTP
-                    maxLength={6}
-                    pattern="[0-9]*"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    aria-label="Six-digit verification code"
+                  <VerificationCodeInput
                     value={step2Form.watch("code")}
                     onChange={(value) =>
                       step2Form.setValue("code", value, {
                         shouldValidate: true,
                       })
                     }
-                  >
-                    <InputOTPGroup>
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <InputOTPSlot
-                          key={i}
-                          index={i}
-                          className="h-12 w-[clamp(28px,8vw,48px)] text-lg shadow-none"
-                        />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
+                  />
                 </div>
                 {step2Form.formState.errors.code && (
                   <p className="text-center text-xs text-red-600">
@@ -591,29 +595,35 @@ export function StudentOnboardingWizard({
                 </Button>
 
                 {notice && <p role="status" className="text-center text-sm">{notice}</p>}
+                <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />
                 <div className="flex justify-between text-xs">
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={resendCode}
                     disabled={loading || resendSeconds > 0}
-                    className="font-medium text-neutral-600 hover:text-foreground"
+                    className="min-h-11 px-0 text-xs"
                   >
                     {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Didn’t receive it? Resend code"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     disabled={loading}
                     onClick={() => {
                       setStep(1)
                       setCodeSent(false)
+                      pendingPassword.current = undefined
                       setNotice("")
                       step2Form.reset()
                       setGlobalError("")
                     }}
-                    className="font-medium text-neutral-600 hover:text-foreground"
+                    className="min-h-11 px-0 text-xs"
                   >
                     Use a different email
-                  </button>
+                  </Button>
                 </div>
               </form>}
             </>
@@ -630,6 +640,7 @@ export function StudentOnboardingWizard({
                   Clubs use this to understand your background. GPA and test
                   scores are optional.
                 </p>
+                {confirmNotice && <p role="status" className="mt-3 text-sm text-muted-foreground">{confirmNotice}</p>}
               </div>
 
               <form
@@ -639,25 +650,15 @@ export function StudentOnboardingWizard({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="onboarding-grad-year">Graduation year</Label>
-                    <Select
+                    <GraduationYearSelect
+                      years={GRAD_YEARS}
                       value={step3Form.watch("gradYear")}
                       onValueChange={(v) =>
                         step3Form.setValue("gradYear", v, {
                           shouldValidate: true,
                         })
                       }
-                    >
-                      <SelectTrigger id="onboarding-grad-year" className="h-11 w-full rounded-md border-neutral-200 shadow-none">
-                        <SelectValue placeholder="Year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GRAD_YEARS.map((y) => (
-                          <SelectItem key={y} value={y}>
-                            {y}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                     {step3Form.formState.errors.gradYear && (
                       <p className="text-xs text-red-600">
                         {step3Form.formState.errors.gradYear.message}
@@ -670,7 +671,7 @@ export function StudentOnboardingWizard({
                     <Input
                       id="major"
                       placeholder="e.g. Computer Science"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step3Form.register("major")}
                     />
                     {step3Form.formState.errors.major && (
@@ -694,7 +695,7 @@ export function StudentOnboardingWizard({
                       type="text"
                       inputMode="decimal"
                       placeholder="3.85"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step3Form.register("gpa")}
                     />
                     {step3Form.formState.errors.gpa && (
@@ -719,7 +720,7 @@ export function StudentOnboardingWizard({
                       type="text"
                       inputMode="numeric"
                       placeholder="1520"
-                      className="h-11 rounded-md border-neutral-200"
+                      className="h-11 rounded-md border-border"
                       {...step3Form.register("satScore")}
                     />
                     {step3Form.formState.errors.satScore && (
@@ -781,7 +782,7 @@ export function StudentOnboardingWizard({
                     id="linkedinUrl"
                     type="text" inputMode="url"
                     placeholder="https://linkedin.com/in/your-profile"
-                    className="h-11 rounded-md border-neutral-200"
+                    className="h-11 rounded-md border-border"
                     {...step4Form.register("linkedinUrl")}
                   />
                   {step4Form.formState.errors.linkedinUrl && (
@@ -811,7 +812,7 @@ export function StudentOnboardingWizard({
                     onClick={onSkipStep4}
                     disabled={loading}
                     variant="secondary"
-                    className="h-11 flex-1 rounded-md border border-neutral-300 bg-white font-medium text-foreground shadow-none hover:bg-neutral-50"
+                    className="h-11 flex-1 rounded-md border border-border bg-white font-medium text-foreground shadow-none hover:bg-muted"
                   >
                     Skip for now
                   </Button>
@@ -827,10 +828,10 @@ export function StudentOnboardingWizard({
               </form>
             </>
           )}
-        </div>
+        </Panel>
 
         {step === 4 && <Button variant="ghost" disabled={loading} onClick={() => setStep(3)} className="mt-3"><ArrowLeft className="size-4" />Back to academics</Button>}
-        {onSignIn && <p className="mt-5 text-center text-sm text-neutral-600">Already have an account? <button type="button" disabled={loading} onClick={onSignIn} className="font-semibold text-primary underline">Sign in</button></p>}
+        {onSignIn && <p className="mt-5 text-center text-sm text-muted-foreground">Already have an account? <Button type="button" variant="link" disabled={loading} onClick={onSignIn} className="min-h-11 px-1 font-semibold">Sign in</Button></p>}
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-muted-foreground">
           For University of Virginia students and club leaders.

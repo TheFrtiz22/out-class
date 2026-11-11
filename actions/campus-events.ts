@@ -10,6 +10,8 @@ import {
   eventCommandSchema,
   eventReviewSchema,
   eventFiltersSchema,
+} from "@/lib/campus-event-schemas";
+import {
   eventDateWindow,
   eventIsPublished,
   type CampusEvent,
@@ -76,7 +78,7 @@ function managed(e: EventRecord): ManagedCampusEvent {
 }
 function refresh() {
   revalidatePath("/corkboard");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/platform/events");
   revalidateTag("club-directory");
 }

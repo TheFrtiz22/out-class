@@ -33,15 +33,15 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
    const response=await visitor.request(route);assert.equal(response.status,200);
    const html=await response.text();
    assert.match(html,/<a[^>]+href="\/signup"[^>]*>Get Started<\/a>/);
-   assert.match(html,/<a[^>]+href="\/login"[^>]*>Log In<\/a>/);
+   assert.match(html,/<a[^>]+href="\/login"[^>]*>Sign in<\/a>/);
    assert.ok(!/<a[^>]+href="\/platform/.test(html));
   }
   const signup=await visitor.request('/signup'),signupHtml=await signup.text();assert.equal(signup.status,200);
-  assert.ok(signupHtml.includes('aria-label="Create your OutClass account"'));
-  assert.match(signupHtml,/<h2[^>]*>Create your account<\/h2>/);
+  assert.ok(signupHtml.includes('aria-labelledby="signup-title"')&&/<h1 id="signup-title"[^>]*>Create your profile<\/h1>/.test(signupHtml));
+  assert.match(signupHtml,/<h2[^>]*>Your account<\/h2>/);
   assert.match(signupHtml,/autocomplete="new-password"/i);
   assert.ok(!signupHtml.includes('oc-login-uva')&&!signupHtml.includes('Continue with UVA'));
-  const login=await visitor.request('/login'),loginHtml=await login.text();assert.equal(login.status,200);assert.ok(loginHtml.includes('Welcome back.'));
+  const login=await visitor.request('/login'),loginHtml=await login.text();assert.equal(login.status,200);assert.ok(loginHtml.includes('Welcome back'));
   assert.ok(!loginHtml.includes('oc-login-uva')&&!loginHtml.includes('Continue with UVA'));
   assert.match(loginHtml,/autocomplete="current-password"/i);
   await assertEntryRedirect(visitor,'/?signup=student&next=%2Finvitations%2Fpublic-test','/signup?next=%2Finvitations%2Fpublic-test');
@@ -84,10 +84,10 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const resumeHtml=await resume.text();assert.ok(resumeHtml.includes('finish your profile'));assert.ok(!/autocomplete="new-password"/i.test(resumeHtml));
   await assertEntryRedirect(actor,'/login?next=%2Finvitations%2Fpending','/signup?next=%2Finvitations%2Fpending');
   await actor.profile('OTP Test',2028);
-  await assertEntryRedirect(actor,'/signup','/?workspace=student');
-  await assertEntryRedirect(actor,'/login','/?workspace=student');
-  await assertEntryRedirect(actor,'/signup?next=%2Fplatform','/?workspace=student');
-  assert.equal((await actor.request('/')).status,200);
+  await assertEntryRedirect(actor,'/signup','/home');
+  await assertEntryRedirect(actor,'/login','/home');
+  await assertEntryRedirect(actor,'/signup?next=%2Fplatform','/home');
+  await assertEntryRedirect(actor,'/','/home');
   assert.equal((await actor.request('/api/users/me')).status,200);
   await actor.client.auth.signOut();await actor.signIn(email,password);
   assert.equal((await actor.request('/api/users/me')).status,200);
@@ -96,7 +96,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const loginMessage=await confirmationMessage(config,email,/Your OutClass sign-in code/);
   const loginCode=loginMessage.Text.match(/\b(\d{6})\b/)[1];
   const loginVerified=await actor.client.auth.verifyOtp({email,token:loginCode,type:'email'});assert.equal(loginVerified.error,null);assert.ok(loginVerified.data.session);
-  const absent=await actor.client.auth.signInWithOtp({email:`absent${suffix}@virginia.edu`,options:{shouldCreateUser:false}});assert.ok(absent.error);
+  const absent=await actor.client.auth.signInWithOtp({email:`absent${suffix}@virginia.edu`,options:{shouldCreateUser:false}});assert.ok(absent.error);assert.equal(absent.error.code,'otp_disabled');assert.ok([400,422].includes(absent.error.status),String(absent.error.status));// the sign-in screen maps exactly this to the same notice as a sent code
   const after=await authAdmin.auth.admin.listUsers();assert.ok(!after.data.users.some(user=>user.email===`absent${suffix}@virginia.edu`));
  });
  await scenario('A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard',async()=>{
@@ -108,7 +108,8 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   await president.signUp('John Smith',ids.president,2027);
   fs.writeFileSync(path.join(path.dirname(configFile),'ui-fixture.json'),JSON.stringify({clubId,ownerInvitation,name,president:president.credentials}),{mode:0o600});
   const pending=await call(president,'club-onboarding','getOrganizationInvitations',true);assert.equal(pending.length,1);assert.equal(pending[0].invitedName,'John Smith');assert.equal(pending[0].invitedYear,'2027');
-  assert.equal((await db.schoolIdentity.findUniqueOrThrow({where:{id:invitation.schoolIdentityId}})).userId,president.user.id);
+  // Listing is read-only; the identity is bound by the explicit acceptance below.
+  assert.equal((await db.schoolIdentity.findUniqueOrThrow({where:{id:invitation.schoolIdentityId}})).userId,null);
   // Email invitation entry points must guide first-time users through the existing profile wizard.
   assert.equal(await db.studentProfile.count({where:{userId:president.user.id}}),0);
   for(const target of [`/invitations/${ownerInvitation}`,'/settings/organizations']){
@@ -122,6 +123,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   assert.ok(!invitationHtml.includes('id="__next-page-redirect"'),'Completed profile must not redirect away from the invitation');
   await call(president,'club-onboarding','acceptIdentityClubInvitation',ownerInvitation);
   invitation=await db.clubInvitation.findUniqueOrThrow({where:{id:ownerInvitation}});assert.equal(invitation.status,'ACCEPTED');assert.equal(invitation.claimedUserId,president.user.id);assert.ok(invitation.claimedAt);
+  assert.equal((await db.schoolIdentity.findUniqueOrThrow({where:{id:invitation.schoolIdentityId}})).userId,president.user.id);
   const membership=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:president.user.id,clubId}}});assert.equal(membership.isOwner,true);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.status,'ACTIVE');
   await assertEntryRedirect(president,'/login',`/club/${clubId}/workspace`);
   await assertEntryRedirect(president,'/signup',`/club/${clubId}/workspace`);
@@ -164,7 +166,8 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   await call(dismissed,'club-onboarding','setOrganizationInvitationDismissed',invitation.id,true);
   assert.equal((await call(dismissed,'club-onboarding','getOrganizationInvitations')).length,0);assert.equal((await db.clubInvitation.findUniqueOrThrow({where:{id:invitation.id}})).status,'PENDING');
   const [recovered]=await call(dismissed,'club-onboarding','getOrganizationInvitations',true);assert.equal(recovered.id,invitation.id);
-  const settings=await dismissed.request('/settings/organizations');assert.equal(settings.status,200);
+  // Settings → Organizations moved to My Clubs; the old route still gates on the profile, then redirects.
+  const settings=await dismissed.request('/settings/organizations');assert.equal((await require('./helpers/onboarding-e2e.cjs').redirectDestination(settings,config.appUrl)).pathname,'/clubs');assert.equal((await dismissed.request('/clubs')).status,200);
   await call(dismissed,'club-onboarding','acceptIdentityClubInvitation',recovered.id);assert.equal(await db.clubMember.count({where:{clubId,userId:dismissed.user.id}}),1);
  });
  await scenario('F — incremental upload preserves all prior members and creates only additive invitations',async()=>{

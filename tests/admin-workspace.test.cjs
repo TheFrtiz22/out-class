@@ -23,10 +23,11 @@ test('platform settings have safe defaults, reject infrastructure fields, and au
  const logs=[];let saved;
  const tx={platformContent:{upsert:async({update})=>{saved=update.value;}},auditLog:{create:async({data})=>logs.push(data)}};
  const server=api({platformContent:{findUnique:async()=>null},auditLog:tx.auditLog,$transaction:async fn=>fn(tx)});
- assert.deepEqual(await server.getAdminSettings(),{supportEmail:'',campusNotice:'',maintenanceNotice:''});
+ assert.deepEqual(await server.getAdminSettings(),{supportEmail:'',campusNotice:'',maintenanceNotice:'',maintenanceMode:false});
  await assert.rejects(server.saveAdminSettings({serviceRoleKey:'secret'},'Update supported platform settings.'));
  await server.saveAdminSettings({supportEmail:'support@virginia.edu',campusNotice:'Welcome'},'Update supported platform settings.');
- assert.equal(saved.maintenanceNotice,'');assert.ok(logs.some(r=>r.action==='platform.settings.change'&&r.reason));
+ assert.equal(saved.maintenanceNotice,'');assert.equal(saved.maintenanceMode,false,'maintenance mode defaults OFF');assert.ok(logs.some(r=>r.action==='platform.settings.change'&&r.reason));
+ await assert.rejects(server.saveAdminSettings({maintenanceMode:'yes'},'Update supported platform settings.'));
 });
 test('complete isolated migration chain denies browser CRUD even with broad grants/policies and preserves append-only audit',async t=>{
  const db=new PGlite();t.after(()=>db.close());await db.exec('CREATE ROLE anon;CREATE ROLE authenticated;');
@@ -81,7 +82,7 @@ test('sensitive workspace operations demand fresh verification; ordinary setting
   if(options?.fresh)throw Error('Verify your password and authenticator again');
   return{id:'actor'};
  });
- assert.deepEqual(await server.getAdminSettings(),{supportEmail:'',campusNotice:'',maintenanceNotice:''});
+ assert.deepEqual(await server.getAdminSettings(),{supportEmail:'',campusNotice:'',maintenanceNotice:'',maintenanceMode:false});
  for(const [name,args]of Object.entries({resolveAdminReport:[{}],inspectAdminClub:['bad','bad'],setAdminClubSuspended:['bad',true,'bad'],saveAdminSettings:[{},'bad'],createAdminStudent:[{}],resendAdminStudentInvitation:['bad','bad'],createAdminClub:[{}],resendAdminClubInvitation:['bad','bad','bad'],changeAdminDesignatedLeader:[{}],inspectAdminStudent:['bad','bad']})){
   await assert.rejects(server[name](...args),/Verify your password/);
   assert.equal(checked.at(-1)?.fresh,true);

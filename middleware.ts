@@ -2,11 +2,31 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from '@/lib/demo/access'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
+import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
+import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 
 export async function middleware(request: NextRequest) {
   // Protect both the presenter route and its sample assets before static-file shortcuts.
   let path = request.nextUrl.pathname
   try { path = decodeURIComponent(path) } catch { return new NextResponse(null, { status: 400 }) }
+  // Student workspace views moved from `/?workspace=student&view=…` to real paths. Old URLs live
+  // on in stored notifications and sent email, so this redirect stays (307 until the paths are
+  // proven in production; then 308). Next rewrites a 127.0.0.1/[::1] host to localhost in any
+  // middleware redirect, which drops host-scoped session cookies, so loopback-IP requests fall
+  // through to the same mapping in app/page.tsx, whose redirect keeps the browser's host.
+  if (path === "/" && ["GET", "HEAD"].includes(request.method) && !/^(127\.0\.0\.1|\[::1\])(:\d+)?$/.test(request.headers.get("host") ?? "")) {
+    const destination = legacyStudentRedirect(request.nextUrl.searchParams)
+    if (destination) {
+      const response = NextResponse.redirect(new URL(destination, request.url), 307)
+      response.headers.set("Cache-Control", "private, no-store")
+      return response
+    }
+  }
+  // Privacy and Terms are not public until the owner turns them on: serve the real 404 page (an
+  // unmatched path), not a streamed 200, and never their titles.
+  if (!LEGAL_PAGES_PUBLIC && (path === "/privacy" || path === "/terms")) {
+    return NextResponse.rewrite(new URL("/__not-public", request.url), { headers: { "X-Robots-Tag": "noindex, nofollow" } })
+  }
   if (path === "/preview" || path.startsWith("/preview/") || path === "/demo" || path.startsWith("/demo/")) {
     if (!["GET", "HEAD"].includes(request.method) || request.cookies.get(DEMO_COOKIE)?.value !== "1" || request.cookies.has(PLATFORM_VIEW_COOKIE)) {
       return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } })
@@ -15,8 +35,10 @@ export async function middleware(request: NextRequest) {
   }
   // The internal delivery route checks its independent bearer secret. Cron needs no Supabase session refresh.
   if (["/api/internal/invitation-delivery", "/api/internal/notification-delivery"].includes(request.nextUrl.pathname)) return NextResponse.next()
-  // Metadata routes contain only public content and need no session refresh.
-  if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest", "/icon", "/apple-icon"].includes(request.nextUrl.pathname)) return NextResponse.next()
+  // Metadata routes, the service worker and its offline page contain only public content and need no session refresh.
+  if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest", "/icon", "/apple-icon", "/sw.js", "/offline.html"].includes(request.nextUrl.pathname)) return NextResponse.next()
+  // Club link-preview cards (opengraph-image / twitter-image) are public and CDN-cached.
+  if (["GET", "HEAD"].includes(request.method) && /^\/club\/[^/]+\/(?:opengraph|twitter)-image(?:-[\w-]+)?$/.test(request.nextUrl.pathname)) return NextResponse.next()
   // Static GETs can skip auth refresh; POSTs must never bypass read-only guards by using an image-like URL.
   if (["GET", "HEAD"].includes(request.method) && /\.(svg|png|jpg|jpeg|gif|webp|ico)$/.test(request.nextUrl.pathname) && !/^\/(club|club-access|club-claims|invitations|meetings|platform|api)\//.test(request.nextUrl.pathname)) return NextResponse.next()
 
@@ -37,7 +59,9 @@ export async function middleware(request: NextRequest) {
   const response = ownsAuth ? NextResponse.next() : await createClient(request)
   // Product views share the homepage URL. Preserve their query parameters and
   // authentication while explicitly keeping those responses out of search.
-  const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error", "signup"].some(key => request.nextUrl.searchParams.has(key))
+  const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error", "signup"].some(key => request.nextUrl.searchParams.has(key)) ||
+    // /corkboard predates the move and stays a public page.
+    STUDENT_ROUTES.some(route => route.path !== "/corkboard" && route.path === request.nextUrl.pathname)
   const accountCookie = request.cookies.has(PLATFORM_VIEW_COOKIE) || request.cookies.get(DEMO_COOKIE)?.value === "1" || request.cookies.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   if (accountView || accountCookie) response.headers.set("X-Robots-Tag", "noindex, nofollow")
   return response

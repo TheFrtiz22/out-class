@@ -1,15 +1,21 @@
 "use client"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, minuteLabel } from "@/lib/scheduling-config"
 import { AvailabilityButton } from "@/components/availability/availability-button"
+import { CalendarSubscribe } from "@/components/calendar-subscribe"
 import { localParts } from "@/lib/availability"
 import Link from "next/link";
 
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { useEffect, useMemo, useState } from "react"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { NativeSelectField } from "@/components/ui/native-select"
+import { SearchField } from "@/components/ui/search-field"
+import { PillSelect } from "@/components/ui/pill-select"
+import { PillGroup } from "@/components/ui/segmented-control"
+import { Toggle } from "@/components/ui/toggle"
+import { DateField } from "@/components/ui/date-picker"
+import { FilterButton } from "@/components/ui/filter-popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -35,7 +41,10 @@ const eventStyle = {
   "Coffee Chat": "bg-secondary/60 text-foreground",
 }
 
-export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
+const MEETINGS_FILTER = "club-meetings"
+function readSearchParam(key: string) { return typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(key) }
+
+export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: ViewId) => void; serverNow?: number }) {
   const {
     events,
     trackedApps,
@@ -53,17 +62,19 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
   const [view, setView] = useState<"agenda" | "month" | "week" | "day">("agenda")
   const [includePast, setIncludePast] = useState(false)
   const [includeDeclined, setIncludeDeclined] = useState(false)
+  // `?type=meeting` (old /clubs/meetings) opens Calendar filtered to club meetings.
   const [filter, setFilter] = useState("all")
+  const [phoneFilters, setPhoneFilters] = useState(false)
+  useEffect(() => { if (readSearchParam("type") === "meeting") setFilter(MEETINGS_FILTER) }, [])
   const [query, setQuery] = useState("")
+  const phoneActive = Number(!!query) + Number(filter !== "all") + Number(includePast) + Number(includeDeclined)
   const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(new Set())
+  const clearCalendarFilters = () => { setQuery(""); setFilter("all"); setHiddenClubs(new Set()) }
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [booking, setBooking] = useState(false)
   const [bookingDate, setBookingDate] = useState("")
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60000)
-    return () => window.clearInterval(timer)
-  }, [])
+  const nowMs = useServerAnchoredNow(serverNow)
+  const now = useMemo(() => new Date(nowMs), [nowMs])
   const today = localParts(now, SCHEDULING_TIMEZONE).date
   useEffect(() => {
     if (!focusEventId) return
@@ -81,7 +92,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
         .filter(
           (event) =>
             !hiddenClubs.has(event.club) &&
-            (filter === "all" || event.type === filter) &&
+            (filter === "all" || (filter === MEETINGS_FILTER ? event.id.startsWith("meeting-") : event.type === filter)) &&
             `${event.title} ${event.club} ${event.location ?? ""}`
               .toLowerCase()
               .includes(query.trim().toLowerCase()),
@@ -162,20 +173,20 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
         <div>
           <p className="text-sm text-muted-foreground">
             Meetings, interviews, and recruiting dates, together.
-            <Link href="/meetings" className="ml-2 underline">Club agendas and recaps</Link>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             Times shown in {SCHEDULING_TIMEZONE_LABEL}.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton />{bookingDates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" /><CalendarSubscribe />{bookingDates.length > 0 && (
           <Button variant="outline" onClick={() => setBooking(true)}>
             Book / change interview
           </Button>
         )}</div>
       </header>
-      <SegmentedControl label="Calendar view" value={view} onChange={setView} options={(["agenda", "month", "week", "day"] as const).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} />
-      {view !== "agenda" && (
+      {/* With nothing scheduled, show the agenda empty state only; views and filters appear once there are events. */}
+      {events.length > 0 && <SegmentedControl label="Calendar view" value={view} onChange={setView} options={(["agenda", "month", "week", "day"] as const).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} />}
+      {events.length > 0 && view !== "agenda" && (
         <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
@@ -199,53 +210,34 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           <Button variant="ghost" onClick={() => setDate(today)}>
             Today
           </Button>
-          <Input
-            type="date"
-            aria-label="Go to date"
-            value={date}
-            onChange={(event) => event.target.value && setDate(event.target.value)}
-            className="w-auto"
-          />
+          <DateField label="Go to date" value={date} onChange={(value) => { if (value) setDate(value) }} placeholder="Choose a date" clearLabel="Today" />
         </div>
       )}
-      <div className="oc-toolbar">
-        <Input
+      {/* Phones, as in the app: search and filters sit behind a Filter button. */}
+      {events.length > 0 && <FilterButton size="sm" label="Filter" count={phoneActive} className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)} />}
+      {events.length > 0 && <div id="calendar-tools" className="oc-toolbar oc-calendar-tools" data-phone-open={phoneFilters || undefined}>
+        <SearchField
           aria-label="Search calendar"
           placeholder="Search events, clubs, or locations"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="max-w-sm"
+          onClear={() => setQuery("")}
+          containerClassName="min-w-0 flex-1 basis-60 max-w-sm"
         />
-        <NativeSelectField
-          aria-label="Filter event type"
+        <PillSelect
+          label="Filter event type"
           value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-          className="max-w-full"
-        >
-          <option value="all">All event types</option>
-          {Object.keys(eventStyle).map((type) => (
-            <option key={type}>{type}</option>
-          ))}
-        </NativeSelectField>
+          active={filter !== "all"}
+          onChange={setFilter}
+          options={[{ value: "all", label: "All event types" }, { value: MEETINGS_FILTER, label: "Club meetings" }, ...Object.keys(eventStyle).map((type) => ({ value: type, label: type }))]}
+        />
         {view === "agenda" && (
           <>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={includePast}
-                onCheckedChange={(value) => setIncludePast(value === true)}
-              />
-              Include past events
-            </label>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={includeDeclined}
-                onCheckedChange={(value) => setIncludeDeclined(value === true)}
-              />
-              Include declined
-            </label>
+            <Toggle label="Include past events" checked={includePast} onCheckedChange={setIncludePast} />
+            <Toggle label="Include declined" checked={includeDeclined} onCheckedChange={setIncludeDeclined} />
           </>
         )}
-      </div>
+      </div>}
       <div className="grid min-w-0 items-start gap-[var(--oc-content-gap)] xl:grid-cols-[minmax(0,1fr)_17rem]">
         <div
           className={
@@ -315,22 +307,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </h3>
                   <p className="max-w-md text-sm leading-7 text-muted-foreground">
                     {query || filter !== "all" || hiddenClubs.size
-                      ? "Try a different search or show all your club calendars."
-                      : "No upcoming events are on your calendar. Scheduled interviews and club events will appear here."}
+                      ? "Your search, type filter or hidden club calendars leave nothing to show."
+                      : "You have no interviews or RSVP’d events coming up."}
                   </p>
-                  {(query || filter !== "all" || hiddenClubs.size > 0) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setQuery("")
-                        setFilter("all")
-                        setHiddenClubs(new Set())
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  )}
+                  <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
                 </div>
               )}
             </div>
@@ -353,7 +333,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         <div
                           key={key}
                           className={cn(
-                            "min-h-32 space-y-1 border-b border-r border-neutral-100 p-2",
+                            "min-h-32 space-y-1 border-b border-r border-border p-2",
                             day.getMonth() !== cursor.getMonth() &&
                               "bg-muted text-muted-foreground",
                           )}
@@ -366,7 +346,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               setView("day")
                             }}
                             className={cn(
-                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-neutral-300",
+                              "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                               key === today && "bg-primary text-white",
                             )}
                           >
@@ -379,7 +359,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-neutral-300",
+                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
@@ -389,16 +369,18 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                             </button>
                           ))}
                           {dayEvents.length > 3 && (
-                            <button
+                            <Button
                               type="button"
+                              variant="link"
+                              size="sm"
                               onClick={() => {
                                 setDate(key)
                                 setView("day")
                               }}
-                              className="text-xs underline"
+                              className="h-auto px-0 py-0.5 text-xs"
                             >
                               +{dayEvents.length - 3} more
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )
@@ -428,7 +410,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                                 type="button"
                                 onClick={() => open(event)}
                                 className={cn(
-                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-neutral-300",
+                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                                   eventStyle[event.type],
                                 )}
                               >
@@ -445,9 +427,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No events match your filters for this day.
-                          </p>
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <p>{query || filter !== "all" || hiddenClubs.size ? "No events on this day match your filters." : "Nothing is scheduled on this day."}</p>
+                            <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
+                          </div>
                         )}
                       </section>
                     )
@@ -492,7 +475,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                     type="button"
                     key={event.id}
                     onClick={() => open(event)}
-                    className="w-full rounded-[var(--oc-content-radius-small)] border border-border bg-card p-3 text-left hover:bg-muted"
+                    className="w-full rounded-[var(--oc-content-radius-small)] border border-border oc-glass-surface p-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   >
                     <p className="text-xs text-muted-foreground">
                       {dateFromKey(event.date).toLocaleDateString("en-US", {
@@ -505,7 +488,10 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   </button>
                 ))}
                 {!upcoming.length && (
-                  <p className="text-sm text-muted-foreground">No upcoming events match your filters.</p>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>{query || filter !== "all" || hiddenClubs.size ? "No upcoming events match your filters." : "Nothing upcoming on your calendar."}</p>
+                    <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
+                  </div>
                 )}
               </div>
             </section>
@@ -541,7 +527,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
               {application && (
                 <p className="text-xs text-muted-foreground">Application status: {application.status}</p>
               )}
-              <p className="text-sm leading-6 text-neutral-600">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {selected.description ??
                   (selected.readOnly
                     ? "Review your scheduled event details below."
@@ -671,16 +657,8 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           </DialogHeader>
           {bookingDates.length ? (
             <>
-              <select
-                aria-label="Interview date"
-                className="rounded border p-2"
-                value={activeBookingDate}
-                onChange={(event) => setBookingDate(event.target.value)}
-              >
-                {bookingDates.map((day) => (
-                  <option key={day}>{day}</option>
-                ))}
-              </select>
+              <PillGroup label="Interview date" size="compact" value={activeBookingDate} onChange={setBookingDate}
+                options={bookingDates.map((day) => ({ value: day, label: day }))} />
               <StudentBookingPreview
                 key={activeBookingDate}
                 blocks={scheduleBlocks.filter((block) => block.date === activeBookingDate)}
@@ -696,4 +674,11 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
       </Dialog>
     </div>
   )
+}
+
+/** One next step for an empty calendar: clear what hides events, or go find some. */
+function CalendarEmptyAction({ filtered, onClear, onNavigate }: { filtered: boolean; onClear: () => void; onNavigate?: (view: ViewId) => void }) {
+  return filtered
+    ? <Button variant="outline" size="sm" onClick={onClear}>Clear filters</Button>
+    : onNavigate ? <Button variant="outline" size="sm" onClick={() => onNavigate("corkboard")}>Browse events</Button> : null
 }

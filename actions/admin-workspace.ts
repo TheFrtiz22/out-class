@@ -1,4 +1,5 @@
 "use server";
+import { redactBallotAudit } from "@/lib/ballot-audit-privacy";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { inspectPlatformRecord } from "@/actions/platform-admin";
@@ -14,13 +15,15 @@ import { randomUUID } from "node:crypto";
 import { studentInvitationFingerprint } from "@/lib/student-invitation";
 import { enqueueInvitationEmail } from "@/utils/invitation-delivery";
 import { scheduleInvitationDelivery } from "@/utils/invitation-background";
+import { PLATFORM_SETTINGS_KEY, SITE_SETTINGS_TAG, platformSettingsSchema } from "@/lib/site-settings";
 import { createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
+import { boundedParse } from "@/lib/bounded-input";
 const reasonSchema = z.string().trim().min(10).max(1000);
 const uuid = z.string().uuid();
 const statuses = z.enum(["OPEN", "INVESTIGATING", "RESOLVED", "DISMISSED"]);
 function adminAuth() {
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) throw Error("Account invitations are not configured.");
+  if (!secret) throw Error("Account invitations are unavailable right now. Try again later.");
   return providerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, secret, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 export async function getAdminOverview() {
@@ -78,7 +81,7 @@ export async function inspectAdminClub(clubId: string, reason: string) {
     claims: { take: 100 }, events: { select: { id: true, title: true, date: true, publication: { select: { status: true } } }, take: 100 },
     _count: { select: { applications: true, members: true } },
   } });
-  const activity = await prisma.auditLog.findMany({ where: { clubId }, orderBy: { createdAt: "desc" }, take: 30 });
+  const activity = (await prisma.auditLog.findMany({ where: { clubId }, orderBy: { createdAt: "desc" }, take: 30 })).map(redactBallotAudit);
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.club.inspect", targetId: clubId, clubId, reason, details: { result: "success" } } });
   return { club, activity };
 }
@@ -94,19 +97,22 @@ export async function setAdminClubSuspended(clubId: string, suspended: boolean, 
   revalidatePath(`/club/${clubId}/workspace`);
   revalidatePath("/corkboard");
 }
-const settingsSchema = z.object({ supportEmail: z.union([z.string().email().max(254), z.literal("")]).default(""), campusNotice: z.string().trim().max(500).default(""), maintenanceNotice: z.string().trim().max(500).default("") }).strict();
+// One schema for Admin and the site-wide notice reader; stored as JSON, so new fields need no migration.
+const settingsSchema = platformSettingsSchema;
 export async function getAdminSettings() {
   const actor = await requirePlatformAdmin();
-  const row = await prisma.platformContent.findUnique({ where: { key: "platform:settings" } });
+  const row = await prisma.platformContent.findUnique({ where: { key: PLATFORM_SETTINGS_KEY } });
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.settings.read", targetId: "platform:settings", details: { result: "success" } } });
   return settingsSchema.parse(row?.value || {});
 }
 export async function saveAdminSettings(input: unknown, reason: string) {
   const actor = await requirePlatformAdmin({ fresh: true }), value = settingsSchema.parse(input); reasonSchema.parse(reason);
   await prisma.$transaction(async tx => {
-    await tx.platformContent.upsert({ where: { key: "platform:settings" }, create: { key: "platform:settings", value }, update: { value } });
-    await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.settings.change", targetId: "platform:settings", reason, details: { result: "success", fields: Object.keys(value) } } });
+    await tx.platformContent.upsert({ where: { key: PLATFORM_SETTINGS_KEY }, create: { key: PLATFORM_SETTINGS_KEY, value }, update: { value } });
+    await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.settings.change", targetId: PLATFORM_SETTINGS_KEY, reason, details: { result: "success", fields: Object.keys(value), maintenanceMode: value.maintenanceMode } } });
   });
+  // Site-wide banners and maintenance mode pick the change up on the next request.
+  revalidateTag(SITE_SETTINGS_TAG);
 }
 const studentSchema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), firstName: z.string().trim().min(1).max(100), lastName: z.string().trim().min(1).max(100), major: z.string().trim().max(120).optional(), gradYear: z.number().int().min(2000).max(2100).optional(), clubId: uuid.optional(), reason: reasonSchema }).strict();
 export async function createAdminStudent(input: unknown) {
@@ -115,7 +121,7 @@ export async function createAdminStudent(input: unknown) {
   if (await prisma.user.findFirst({ where: { email: { equals: d.email, mode: "insensitive" } } })) throw Error("An account already exists. Inspect it in Users before resending an invitation.");
   const relationship = d.clubId ? await prisma.club.findUniqueOrThrow({ where: { id: d.clubId }, include: { school: { include: { identifierTypes: true } } } }) : null;
   const relationshipType = relationship?.school.identifierTypes.find(t => t.verification === "EMAIL_LOCAL_PART" && t.emailDomain === "virginia.edu");
-  if (relationship && (!relationshipType || !relationship.school.active || relationship.suspendedAt)) throw Error("Choose an active club configured for UVA invitations.");
+  if (relationship && (!relationshipType || !relationship.school.active || relationship.suspendedAt)) throw Error("Choose an active UVA club that can receive invitations.");
   const client = adminAuth();
   // Auth owns expiry and single use. The audit fingerprint binds the issued
   // capability to this account before verification can consume it.
@@ -152,7 +158,7 @@ export async function resendAdminStudentInvitation(userId: string, reason: strin
 }
 export async function createAdminClub(input: unknown) {
   await requirePlatformAdmin({ fresh: true });
-  const d = z.object({ organization: z.object({ requestId: uuid, identifierTypeId: z.string().min(1), organizationName: z.string(), presidentName: z.string(), presidentIdentifier: z.string(), presidentYear: z.string(), reason: reasonSchema }), leaderEmail: z.string().trim().toLowerCase().email(), description: z.string().trim().max(2000), category: z.string().trim().min(1).max(100), organizationInfo: z.string().trim().max(2000).default(""), additionalLeaders: z.array(z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().min(1).max(200) })).max(10).default([]) }).strict().parse(input);
+  const d = boundedParse(z.object({ organization: z.object({ requestId: uuid, identifierTypeId: z.string().min(1), organizationName: z.string(), presidentName: z.string(), presidentIdentifier: z.string(), presidentYear: z.string(), reason: reasonSchema }), leaderEmail: z.string().trim().toLowerCase().email(), description: z.string().trim().max(2000), category: z.string().trim().min(1).max(100), organizationInfo: z.string().trim().max(2000).default(""), additionalLeaders: z.array(z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().min(1).max(200) })).max(10).default([]) }).strict(), input);
   invitationEmailConfig();
   const mapping = await prisma.schoolIdentifierType.findUniqueOrThrow({ where: { id: d.organization.identifierTypeId } });
   const addresses = [d.leaderEmail, ...d.additionalLeaders.map(l => l.email)];
@@ -197,6 +203,17 @@ export async function changeAdminDesignatedLeader(input: unknown) {
   });
   await resendAdminClubInvitation(d.clubId, next.id, d.reason);
   return next;
+}
+/** Picker read for "Change designated leader": only the invitations that action can replace,
+ * with the fields Inspect club already shows. Same fresh check as the write it feeds. */
+export async function listAdminPendingOwnerInvitations(clubId: string) {
+  const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(clubId);
+  // Matches the picker's active-only club list: suspended clubs offer nothing to replace.
+  const club = await prisma.club.findUnique({ where: { id: clubId }, select: { suspendedAt: true } });
+  if (!club || club.suspendedAt) return [];
+  const invitations = await prisma.clubInvitation.findMany({ where: { clubId, status: "PENDING", requestedRole: "OWNER", authoritySource: "PLATFORM_ADMIN" }, select: { id: true, email: true, invitedName: true, expiresAt: true }, orderBy: { createdAt: "desc" }, take: 20 });
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.club.owner-invitations.read", targetId: clubId, clubId, details: { result: "success" } } });
+  return invitations;
 }
 
 export async function inspectAdminStudent(userId: string, reason: string) {

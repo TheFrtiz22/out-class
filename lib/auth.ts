@@ -3,16 +3,36 @@ export function isUvaEmail(value: string): boolean {
   return /^[a-z0-9]+(?:[._+-][a-z0-9]+)*@virginia\.edu$/i.test(value.trim())
 }
 
+/**
+ * The path part of a return destination stays a plain same-site path at every
+ * decoding step: no encoded slashes, backslashes or dots, no "." or ".."
+ * segments, and no leading "//". The query string keeps its normal encoding.
+ */
+function isPlainReturnPathname(pathname: string): boolean {
+  let layer = pathname
+  for (let step = 0; step < 4; step++) {
+    if (/%(2f|5c|2e)/i.test(layer) || /[\\\x00-\x1f\x7f]/.test(layer) || layer.startsWith("//")) return false
+    if (layer.split("/").some(segment => segment === "." || segment === "..")) return false
+    let decoded: string
+    // Malformed escapes are refused; a literal "%" left by an earlier step is fine.
+    try { decoded = decodeURIComponent(layer) } catch { return step > 0 }
+    if (decoded === layer) return true
+    layer = decoded
+  }
+  return false
+}
+
 /** Keep sign-in return destinations on this origin. */
 export function safeReturnPath(raw: string | null | undefined): string {
   const value = raw?.trim() || "/"
-  return !value.startsWith("/") || value.startsWith("//") || value.includes("://") || /[\\\x00-\x20]/.test(value) ? "/" : value
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("://") || /[\\\x00-\x20]/.test(value)) return "/"
+  return isPlainReturnPathname(value.split(/[?#]/, 1)[0]) ? value : "/"
 }
 
 /** Successful sign-in opens the workspace unless a specific return route was requested. */
 export function signInReturnPath(raw: string | null | undefined): string {
   const path = safeReturnPath(raw)
-  return path === "/" ? "/?workspace=student" : path
+  return path === "/" ? "/home" : path
 }
 
 /** Resolve the current account's workspace on the server after normal sign-in. */

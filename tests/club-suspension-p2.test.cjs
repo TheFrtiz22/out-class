@@ -14,7 +14,7 @@ function loader(mocks) {
     }).outputText;
     new Function('require', 'module', 'exports', code)(name => {
       if (name in mocks) return mocks[name];
-      if (name.startsWith('@/')) return load(name.slice(2) + '.ts');
+      if (name.startsWith('@/')) return load(fs.existsSync(name.slice(2) + '.ts') ? name.slice(2) + '.ts' : name.slice(2) + '.tsx');
       if (name === './prisma') return mocks['@/utils/prisma'];
       if (name === './supabase/server') return mocks['@/utils/supabase/server'];
       return require(name);
@@ -53,7 +53,7 @@ function workspaceHarness({ demo = true, allowed = true, providerError = false, 
   let liveReads = 0, providerReads = 0;
   function Workspace() {} function Boundary() {} function SharedLayout() {}
   const mocks = {
-    'next/headers': { cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
     '@/utils/auth': { getSessionUser: async () => { providerReads++; return { data: { user: { email: 'presenter@virginia.edu' } }, error: providerError ? Error('expired') : null }; } },
     '@/lib/demo/access': { DEMO_COOKIE: 'outclass-demo-session', canAccessDemo: email => allowed && email === 'presenter@virginia.edu' },
     '@/utils/current-user': { getCurrentUser: async () => { liveReads++; if (liveDenied) throw Error('Live authorization denied'); return { memberships: [{ clubId, club: { name: 'Club', suspendedAt: suspended ? new Date() : null } }] }; } },
@@ -61,9 +61,12 @@ function workspaceHarness({ demo = true, allowed = true, providerError = false, 
     '@/components/auth-session-boundary': { AuthSessionBoundary: Boundary },
     '@/components/shell/authenticated-page-layout': { AuthenticatedPageLayout: SharedLayout },
     'next/link': { default: () => null },
+    '@/components/shell/workspace-route-loading': { WorkspaceRouteLoading: () => null },
   };
-  const page = loader(mocks)('app/club/[clubId]/workspace/page.tsx').default;
-  return { render: () => page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve({ section: 'members' }) }), Workspace, Boundary, SharedLayout, liveReads: () => liveReads, providerReads: () => providerReads };
+  const page = loader(mocks)('app/(workspace)/club/[clubId]/workspace/page.tsx').default;
+  // The page streams the workspace inside its own Suspense placeholder (after the legacy-URL redirect); render the inner part.
+  const render = async () => { const outer = await page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve({ section: 'members' }) }); return outer.props.children.type(outer.props.children.props); };
+  return { render, Workspace, Boundary, SharedLayout, liveReads: () => liveReads, providerReads: () => providerReads };
 }
 test('authorized Demo workspace renders its existing client boundary without live identity reads', async () => {
   const h = workspaceHarness({ liveDenied: true }); const result = await h.render();
@@ -119,7 +122,7 @@ function invitationHarness(patch = {}) {
   const load = loader({
     '@/utils/prisma': { prisma }, '@/utils/supabase/server': { createClient: async () => provider },
     '@/utils/platform-view-as': { platformViewSession: async () => ({ targetUserId: actorId }) },
-    'next/headers': { cookies: async () => ({ has: key => key === 'outclass-platform-view' && state.impersonating, get: key => key === 'outclass-admin-elevation' && state.elevated ? { value: token } : undefined }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === 'outclass-platform-view' && state.impersonating, get: key => key === 'outclass-admin-elevation' && state.elevated ? { value: token } : undefined }) },
     'next/navigation': { redirect: () => { throw Error('Authentication required'); } },
     '@/utils/email': { invitationEmailConfig() {}, sendInvitationEmail: async message => { sent.push(message); return { messageId: 'local' }; } },
     '@/utils/invitation-background': { scheduleInvitationDelivery: id => scheduled.push(id) },

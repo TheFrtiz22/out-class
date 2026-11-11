@@ -9,6 +9,8 @@ import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilities } from "@/lib/interview-access";
+import { hasPermission } from "@/lib/permissions";
+import { profilePhotoSource } from "@/lib/profile-photo";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
 import { approvedBookingPanel, collaborationAccess } from "@/utils/interview-collaboration";
@@ -17,6 +19,7 @@ import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
+import { boundedParse } from "@/lib/bounded-input";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
   const draft = interviewDraftSchema.parse(record.draft);
@@ -51,7 +54,7 @@ export async function getInterviewWorkspace(clubId: string) {
 }
 export async function saveInterviewKit(clubId: string, roundId: string, version: number, questions: unknown) {
   z.string().uuid().parse(clubId); z.string().uuid().parse(roundId);
-  const parsed = kitSchema.parse(questions); z.number().int().min(0).parse(version);
+  const parsed = boundedParse(kitSchema, questions); z.number().int().min(0).parse(version);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     await authorizeQuestionBank(tx, clubId, roundId, user.id, true);
@@ -86,7 +89,7 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
   }, interviewTransactionOptions);
 }
 export async function saveInterviewSession(input: z.infer<typeof scope> & { revision: number; draft: unknown; complete?: boolean }) {
-  const data = scope.extend({ revision: z.number().int().min(0), draft: interviewDraftSchema, complete: z.boolean().default(false) }).parse(input);
+  const data = boundedParse(scope.extend({ revision: z.number().int().min(0), draft: interviewDraftSchema, complete: z.boolean().default(false) }), input);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { app, round, member } = await authorizeInterview(tx, data, user.id);
@@ -189,14 +192,16 @@ export async function getSubmittedInterviewReviews(clubId: string, filters: impo
   const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { caps } = await interviewActor(tx, clubId, user.id);
+    const { caps, member } = await interviewActor(tx, clubId, user.id);
     if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
+    // Photos follow the identified-CRM rule the photo route re-checks (applicants.identify, non-anonymous).
+    const identify = hasPermission(member, "applicants.identify");
     const records = await tx.interviewRecord.findMany({
       where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), completedAt: { not: null }, round: { clubId }, application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } },
       orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: 100,
-      select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
+      select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true, headshotUrl: true } } } } } } },
     });
-    return records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided" }; });
+    return records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", photo: anonymous || !identify ? null : profilePhotoSource(r.application.student.studentProfile?.headshotUrl, { clubId, applicationId: r.applicationId, mode: "crm" }) ?? null }; });
   }, interviewTransactionOptions);
 }
 export async function getSubmittedInterviewReview(input: z.infer<typeof scope> & { interviewerId: string }) {

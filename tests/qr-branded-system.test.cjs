@@ -495,7 +495,7 @@ test("16b. The browser-callable short-link action requires a session and only sh
   assert.deepEqual(Object.keys(shortLinksAction), ["createShortLink"]);
   assert.match(fs.readFileSync("lib/short-link-store.ts", "utf8").split("\n").find((l) => l.trim()) || "", /^\/\*\*/);
   assert.ok(!/^\s*["']use server["']/m.test(fs.readFileSync("lib/short-link-store.ts", "utf8")));
-  assert.match(fs.readFileSync("app/q/[code]/page.tsx", "utf8"), /from "@\/lib\/short-link-store"/);
+  assert.match(fs.readFileSync("app/(focus)/q/[code]/page.tsx", "utf8"), /from "@\/lib\/short-link-store"/);
 });
 
 test("17. Reusable destinations share short links while check-in links are unique", async () => {

@@ -1,23 +1,8 @@
 "use client"
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
+import { useEffect, useState } from "react"
 import { Search } from "@/components/icons"
 import { Button } from "@/components/ui/button"
-import type { ProductNavItem } from "@/lib/product-navigation"
-
-/** Routing owns selection; the decorative indicator never owns another mode. */
-export function FloatingModeNavigation({ modes, mode, children, "aria-label": label = "Product modes" }: {
-  modes: ProductNavItem[]
-  mode: string
-  children: ReactNode
-  "aria-label"?: string
-}) {
-  const index = modes.findIndex(item => item.id === mode)
-  return <nav aria-label={label} className="oc-floating-modes" data-has-active={index >= 0} style={{ "--mode-count": modes.length, "--mode-index": Math.max(0, index) } as CSSProperties}>
-    <span className="oc-floating-mode-indicator" aria-hidden="true" />
-    {children}
-  </nav>
-}
 
 /** One responsive trigger opens the existing global search dialog. */
 export function FloatingSearchTrigger({ open, onOpen }: { open: boolean; onOpen: (trigger: HTMLButtonElement) => void }) {

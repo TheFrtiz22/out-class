@@ -6,10 +6,14 @@ import { useApplicationState } from "@/lib/application-state"
 import { getRecruitingRules, saveRecruitingRule, previewRecruitingRule, applyRecruitingRuleFlags, getRecruitingRuleFlags, clearRecruitingRuleFlags } from "@/lib/workspace-api"
 import { emptyRuleThresholds, type RulePreview, type RuleThresholds } from "@/lib/recruiting-rules"
 import { testRequirementLabels } from "@/lib/test-scores"
+import { PillGroup } from "@/components/ui/segmented-control"
+import { RangeSlider } from "@/components/ui/range-slider"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 
 type Rules = Awaited<ReturnType<typeof getRecruitingRules>>
 type Round = Rules["rounds"][number]
 export function ScreeningDashboardView({ clubId, onReview }: { clubId?: string; onReview?: () => void }) {
+  const confirm = useConfirm()
   const [data, setData] = useState<Rules | null>(null)
   const [roundId, setRoundId] = useState("")
   const [error, setError] = useState(false)
@@ -28,16 +32,18 @@ export function ScreeningDashboardView({ clubId, onReview }: { clubId?: string; 
   const round = data.rounds.find(round => round.id === roundId)
   return <div className="space-y-6 py-6">
     <p className="border-l-2 border-brand-orange pl-3 text-sm text-muted-foreground">Saved rules suggest candidates for rejection review. Only an explicit action applies flags. Application decisions never change here and no messages are sent.</p>
-    <label className="block text-sm font-medium">Recruitment round<select aria-label="Rule round" className="mt-2 min-h-11 w-full rounded-md border bg-background px-3" value={roundId} onChange={event => {
+    <div className="space-y-2"><span id="rule-round-label" className="block text-sm font-medium">Recruitment round</span>
+    <PillGroup label="Rule round" value={roundId} onChange={async next => {
       if (document.querySelector('[data-saving="true"]')) return
-      if (document.querySelector('[data-rule-dirty="true"]') && !window.confirm("Discard unsaved rule changes?")) return
-      setRoundId(event.target.value)
-    }}>{data.rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</select></label>
+      if (document.querySelector('[data-rule-dirty="true"]') && !(await confirm({ title: "Discard rule changes?", description: "Your unsaved rule changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", tone: "danger" }))) return
+      setRoundId(next)
+    }} options={data.rounds.map(round => ({ value: round.id, label: round.name }))} /></div>
     {round ? <RuleEditor key={round.id + ":" + (round.screeningRule?.revision ?? 0)} clubId={clubId} round={round} data={data} onReview={onReview} onReload={() => setReload(n => n + 1)} onSaved={saved => setData(current => current && ({ ...current, rounds: current.rounds.map(item => item.id === round.id ? { ...item, screeningRule: saved } : item) }))} /> : <p>No recruitment rounds are available.</p>}
   </div>
 }
 
 function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { clubId: string; round: Round; data: Rules; onSaved: (saved: NonNullable<Round["screeningRule"]>) => void; onReload: () => void; onReview?: () => void }) {
+  const confirm = useConfirm()
   const canPreview = data.canPreview && (round.anonymousReview || data.canIdentify)
   const source: RuleThresholds = round.screeningRule ? { minGpa: round.screeningRule.minGpa, minSat: round.screeningRule.minSat, minAct: round.screeningRule.minAct } : emptyRuleThresholds
   const [thresholds, setThresholds] = useState<RuleThresholds>(source)
@@ -78,14 +84,15 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
     <p className="text-sm">{testRequirementLabels[data.testRequirement as keyof typeof testRequirementLabels]}</p>
     <form onSubmit={event => { event.preventDefault(); void run(async () => { const saved = await saveRecruitingRule({ ...scope, expectedRevision: round.screeningRule?.revision ?? 0, thresholds }); onSaved(saved) }) }} className="space-y-4">
       <fieldset disabled={busy} className="space-y-3"><legend className="mb-3 font-medium">Minimum scores</legend>
-        {fields.map(field => <label key={field.key} className="flex items-center justify-between gap-4 text-sm">{field.label}<input aria-label={`Minimum ${field.label}`} type="number" min={field.min} max={field.max} step={field.step} value={thresholds[field.key] ?? ""} onChange={event => { setThresholds(current => ({ ...current, [field.key]: event.target.value === "" ? null : event.target.valueAsNumber })); setPreview(null) }} className="min-h-11 w-28 rounded-md border bg-background px-3" /></label>)}
+        {fields.map(field => <RangeSlider key={field.key} label={`Minimum ${field.label}`} min={field.min} max={field.max} step={field.step} noneLabel="No threshold" nullAtMin={false} disabled={busy}
+          value={thresholds[field.key]} onChange={value => { setThresholds(current => ({ ...current, [field.key]: value })); setPreview(null) }} />)}
       </fieldset>
-      <p className="text-xs text-muted-foreground">Blank means no threshold. Missing or invalid scores require manual review, never automatic failure. GPA is evaluated independently. SAT-only and ACT-only clubs use that test; Both evaluates each configured threshold. For SAT-or-ACT, set both test thresholds or neither. When both optional test thresholds are set, either qualifying score also suffices.</p>
+      <p className="text-xs text-muted-foreground">No threshold until you move a slider; to remove one, select its value and clear it. Missing or invalid scores require manual review, never automatic failure. GPA is evaluated independently. SAT-only and ACT-only clubs use that test; Both evaluates each threshold you set. For SAT-or-ACT, set both test thresholds or neither. When both optional test thresholds are set, either qualifying score also suffices.</p>
       <p className="text-xs text-muted-foreground">Saving replaces this round’s configuration and clears its previous flags. It does not evaluate or change any applicant.</p>
       <Button type="submit" disabled={busy || (!dirty && !!round.screeningRule)}>Save rules</Button>
       {round.screeningRule && <p role="status" className="text-xs text-muted-foreground">Saved version {round.screeningRule.revision}</p>}
     </form>
-    {error && <div role="alert" className="space-y-2 text-sm"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => { if (!dirty || window.confirm("Discard unsaved rule changes and reload?")) onReload() }}>Reload</Button></div>}
+    {error && <div role="alert" className="space-y-2 text-sm"><p>{error}</p><Button variant="outline" disabled={busy} onClick={async () => { if (!dirty || await confirm({ title: "Discard changes and reload?", description: "Your unsaved rule changes will be lost.", confirmLabel: "Discard and reload", tone: "danger" })) onReload() }}>Reload</Button></div>}
     {message && <p role="status" className="text-sm">{message}</p>}
     <section className="space-y-4 border-t pt-5">
       <h3 className="oc-card-heading ">Preview current applicants</h3>

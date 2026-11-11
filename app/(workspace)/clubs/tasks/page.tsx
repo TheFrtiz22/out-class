@@ -1,0 +1,11 @@
+import type { Metadata } from "next"
+import { StudentWorkspacePage } from "@/components/student-workspace-page"
+import { PersonalClubs } from "@/components/personal-clubs"
+import { privateRobots } from "@/lib/seo"
+
+export const metadata: Metadata = { title: "Tasks", robots: privateRobots }
+export const maxDuration = 60
+
+export default function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  return <StudentWorkspacePage path="/clubs/tasks" searchParams={searchParams} views={{ PersonalClubs }} />
+}

@@ -85,7 +85,8 @@ test('shared public renderer displays marketing content and respects empty and h
   assert.match(renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile })), /background-color:#123456/)
   assert.match(sections, /Mentorship/)
   assert.match(sections, /Who can join\?/)
-  assert.match(sections, /https:\/\/example.com\/join/)
+  // Outbound links render in the About section, beside the description.
+  assert.match(renderToStaticMarkup(React.createElement(mod.exports.AboutSection, { profile })), /https:\/\/example.com\/join/)
   profile.marketing.showMembers = false
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile })), />Members</)
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile: profileDraft({ name: 'Empty' }) })), /Frequently asked|Life in the club|A look inside/)
@@ -113,7 +114,10 @@ test('selectivity context round trips and does not present unknown or hidden rat
   const p = profileDraft({ name: 'Research fund', acceptanceRate: 3, marketing: { acceptanceApproximate: true, acceptanceNote: 'Approximate · cohort not specified', acceptanceSource: 'https://example.com/' } })
   assert.deepEqual(profileDraft(clubProfileSchema.parse(p)), p)
   assert.equal(profileStatistics(p)[0].value, '~3%')
-  assert.equal(profileStatistics({ marketing: {} })[0].value, 'Not disclosed')
+  assert.equal(profileStatistics(p)[0].detail, 'Club-reported')
+  assert.equal('source' in profileStatistics(p)[0], false)
+  // Unknown rates are hidden, never shown as "Not disclosed".
+  assert.equal(profileStatistics({ marketing: {} }).length, 0)
   assert.equal(profileStatistics({ ...p, marketing: { ...p.marketing, showAcceptance: false } }).length, 0)
   for (const bannerPosition of [{ x: -1, y: 50 }, { x: 50, y: 101 }]) assert.equal(clubProfileSchema.safeParse({ ...p, marketing: { ...p.marketing, bannerPosition } }).success, false)
   assert.equal(clubProfileSchema.safeParse({ ...p, marketing: { ...p.marketing, acceptanceSource: 'javascript:alert(1)' } }).success, false)
@@ -125,7 +129,8 @@ test('researched package keeps cohort/approximation explicit and does not confus
   const vcg = data.profiles.find(p => p.key === 'vcg').profile
   assert.equal(vcg.acceptanceRate, 3); assert.match(vcg.marketing.acceptanceNote, /Spring 2026/)
   const fbif = data.profiles.find(p => p.key === 'fbif').profile
-  assert.equal(fbif.marketing.acceptanceApproximate, true); assert.match(fbif.marketing.acceptanceNote, /cohort not specified/)
+  // The approximation stays explicit (~ prefix); the research caveat is no longer public copy.
+  assert.equal(fbif.marketing.acceptanceApproximate, true); assert.doesNotMatch(fbif.marketing.acceptanceNote, /not specified/)
   assert.equal(data.profiles.find(p => p.key === 'vvf').profile.acceptanceRate, null)
   assert.equal(data.profiles.filter(p => p.profile.acceptanceRate == null).length, 11)
 })

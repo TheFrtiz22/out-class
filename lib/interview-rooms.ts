@@ -1,8 +1,21 @@
 import { z } from "zod"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
+/** OutClass room entries are coordination records only; UVA rooms are reserved in 25Live. */
+export const UVA_ROOM_BOOKING_URL = "https://25live.collegenet.com/pro/virginia#!/home/dash"
+export const ROOM_NAME_MAX_LENGTH = 60
+const roomName = z.string().trim().min(1, "Name your room.").max(ROOM_NAME_MAX_LENGTH, `Keep room names to ${ROOM_NAME_MAX_LENGTH} characters.`)
+/** Free-text room names: trimmed, never blank (keeps the previous name), capped in length. */
+export function normalizeRoomName(next: string, previous: string) {
+  const trimmed = next.trim().slice(0, ROOM_NAME_MAX_LENGTH)
+  return trimmed || previous
+}
+export const roomRenameSchema = z.object({ clubId: z.string().uuid(), roomId: z.string().uuid(), name: roomName }).strict()
+export const roomExternalBookingSchema = z.object({ clubId: z.string().uuid(), roomId: z.string().uuid(), booked: z.boolean() }).strict()
+
 export const roomInputSchema = z.object({
   clubId: z.string().uuid(), roundId: z.string().uuid(),
+  // Rooms created before the 60-character rename cap may hold up to 100; "Add dates" copies them.
   name: z.string().trim().min(1, "Name your room.").max(100),
   location: z.string().trim().min(1, "Add a room location or meeting link.").max(2000),
   kind: z.enum(["IN_PERSON", "VIRTUAL"]),
@@ -16,11 +29,11 @@ export const roomInputSchema = z.object({
 }).refine(v => v.kind !== "VIRTUAL" || /^https:\/\//i.test(v.location) && (() => { try { return !!new URL(v.location).hostname } catch { return false } })(), { message: "Use a full https:// meeting link.", path: ["location"] })
 export type RoomInput = z.infer<typeof roomInputSchema>
 export type RoomSlot = { publishedPanelMemberIds?: string[]; panelScheduleVersionId?: string | null; interviewersNeeded?: number | null; staffingRevision?: number; id: string; startTime: string; endTime: string; capacity: number; booked: number }
-export type InterviewRoom = { interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
+export type InterviewRoom = { externallyBookedAt?: string | null; interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
 export type RoomBooking = { id: string; applicationId: string; slotId: string; roomId: string; roundId: string; candidate: string; startTime: string; endTime: string; location: string }
 export type BookingSettings = { bookingPublishedAt: string | null; bookingPaused: boolean; bookingRevision: number; bookingCycleId: string | null; bookingAllowCancellation: boolean; bookingAllowRescheduling: boolean }
 export type RoomWorkspace = { clubName: string; rounds: { id: string; name: string; configuration?: unknown; type?: string; booking?: BookingSettings }[]; cycles?: { id: string; name: string }[]; members: { id: string; name: string }[]; rooms: InterviewRoom[]; bookings: RoomBooking[] }
-export type ApplicantSchedule = { applicationId: string; clubName: string; roundName: string; rooms: InterviewRoom[]; booking: RoomBooking | null; publicationState?: "NOT_PUBLISHED" | "PAUSED" | "PUBLISHED"; allowCancellation?: boolean; allowRescheduling?: boolean }
+export type ApplicantSchedule = { applicationId: string; clubName: string; roundName: string; rooms: InterviewRoom[]; booking: RoomBooking | null; publicationState?: "NOT_PUBLISHED" | "PAUSED" | "PUBLISHED"; allowCancellation?: boolean; allowRescheduling?: boolean; conflictingTimes?: number }
 export function bookingSlotSnapshot(slot: { id: string; startTime: Date | string; endTime: Date | string; capacity: number }, room: { id: string; duration: number; buffer: number }) {
   return { id: slot.id, roomId: room.id, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString(), capacity: slot.capacity, duration: room.duration, buffer: room.buffer }
 }

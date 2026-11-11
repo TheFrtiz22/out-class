@@ -1,4 +1,156 @@
 # Live voting room - Parts 1-3 handoff
+## One voting system — November 10, 2026
+
+**Branch `voting/one-voting-system`; no migration, no data change; not yet released.**
+
+Voting rooms (`actions/voting-room.ts`, `/voting/rooms/...`) are the only way to run voting. Retired: the board (`BoardDecisionMode`, its setup, projector, QR and member join page) and the browser-local preview (`/vote`, `/live-voting`, `lib/use-live-voting.ts`, `lib/live-voting.ts`).
+
+- **Board (LEGACY) sessions stay visible** at `/voting/rooms/<id>/history?clubId=…`, a read-only list of outcomes and ballot counts. It uses the board's existing read (`getVotingWorkspace`) and its rules: leaders with `decisions.view` or `decisions.manage` see every session; voters see sessions they took part in; only the viewer's own ballot leaves the server. Names appear only when the round identifies applicants, the viewer has `applicants.identify` and the session's display showed names; otherwise the anonymous label.
+- **Unfinished sessions can be closed.** `commandVotingSession` now accepts only `COMPLETE_PASS` (`decisions.start`) and `FINISH` (`decisions.finish`), with the same locks, revision check and audit actions as before. *Close session* runs both. Ballots are kept and application statuses do not change. Every other board command is refused.
+- **Links.** Every link into a board session (Voting room list, Recruiting overview, Home) opens its history. `/vote?session=…`, `/live-voting?session=…` and `/voting/<id>/join` (printed QR codes and short links) send a verified active member to the live room or the board session's history; anyone else, and every Demo join link, gets one generic page with sign-in, so the link reveals nothing.
+- **Removed server actions:** `createVotingSession`, `submitVotingBallot`, `joinVotingSession`, `getVotingJoinInfo` and the board's publish, override, reopen, configure and pass commands. Demo mirrors this.
+- **Not changed:** draft board sessions (never started) stay as they are; `decision-schedules` and `utils/voting-publication.ts` still accept an already-completed, unpublished board session.
+
+## Discussion: "Something to add" — November 6, 2026
+
+**Implemented on branch `feature/voting-hand-raise`; requires migration `20261106120000_voting_hand_raise` (owner approval before production); not yet released.**
+
+How it is used:
+- **Members** (eligible session voters) see a **Something to add** button under the applicant on their phone. Pressing it raises a hand for the applicant currently being discussed and shows "Hand raised. The leader can see your request." Once the leader acknowledges it, the status reads "The leader has seen your request." **Withdraw** lowers the hand. **Save an observation instead** opens the separate Additional observations feature with its own sharing and attribution rules (not offered in anonymous rounds).
+- **Leaders** see a **Something to add · N** list beside their controls: each member's name and time, with **Acknowledge** and **Clear**. The conversation itself happens in person; there is no queue, microphone or automatic speaking turn.
+- Session leaders and voters see who interviewed the applicant, by round ("Interviewed by Riley Interviewer (First interview)"). This uses the same per-viewer gate as interview evidence on slides (`votingInterviewEvidence`): only identified interview rounds the viewer is authorized for, only completed records with a submitted evaluation, never anonymous records. No notes, drafts or scores are shown. Nothing is shown in anonymous rounds, and nothing is computed for observers or the presentation. Only leaders learn whether an interviewer is on the session roster. An interviewer who isn't an eligible participant gets no access. (Authorization review follow-up: the first draft listed all completed records for every viewer.)
+- The audience presentation shows none of this.
+
+Guarantees:
+- A request never casts a ballot, reveals a vote, saves an observation, pauses or advances voting, changes an outcome, or changes the room revision.
+- Requests are keyed to one participant, applicant and pass (`VotingHandRaise`), so duplicate clicks converge on one row. Re-raising after a withdrawal or clear starts unacknowledged.
+- When the room moves to another applicant (decide-and-advance, advance, without-vote decisions, Undo, End), that applicant's open requests are cleared in the same transaction. A reconnect therefore restores only current requests, and Undo does not revive old ones. A request for an applicant no longer being discussed returns `APPLICANT_CHANGED`.
+- Members see only their own request. Leaders see requests only from currently eligible voters, so a revoked member's request disappears at once, and the actions re-check membership and session roles on every call; leaders cannot acknowledge or clear a revoked member's request.
+
+Migration (additive, forward-only): one table, `VotingHandRaise`, with foreign keys to the pass candidate and to the session participant. The guard allows raising only for the session's active applicant, keeps identity immutable and denies deletes. RLS is enabled and browser roles are denied; only the bounded runtime role gets SELECT/INSERT/UPDATE, with explicit policies.
+
+Evidence:
+- `tests/voting-discussion.test.cjs` (5): multiple members, leader/member visibility, acknowledge/clear/withdraw/re-raise, no ballot, outcome or revision change, duplicate clicks, reconnect, clearing on advance with no revival after Undo, stale-applicant refusal, non-participant/voter/revoked denial, interviewer list and non-participant interviewer, anonymous rounds.
+- `tests/voting-hand-raise-migration.test.cjs`: PGlite guard, immutability, retention, RLS and grants.
+- `tests/voting-discussion-browser.test.cjs`: phone (390px) keyboard raise, leader keyboard acknowledge, reload restoring the status, withdraw, Axe clean on both panels, presentation without discussion controls.
+
+## Pass / Do not pass without a vote — November 5, 2026
+
+**Implemented on branch `feature/decide-without-vote`; no migration; not yet released.**
+
+- **Command.** New `DECIDE_WITHOUT_VOTE_AND_ADVANCE`: choice `ACCEPT` or `REJECT`, a required reason and `confirmed: true`, bound to the active applicant and pass number. Requires current session leadership plus the explicit `decisions.manage` capability; voters and other E-board members are not granted it. The older Pass-only `PASS_WITHOUT_VOTE_AND_ADVANCE` stays for compatibility, but the UI no longer uses it.
+- **Atomic.** In one club-locked transaction:
+  - a *pending* instance is opened and closed with no ballots
+  - an *open* instance is closed, keeping every ballot already cast
+  - the instance is then confirmed with the leader's outcome, recorded in the existing `override`/`overrideBy`/`overrideAt` fields
+
+  No ballots are created. *Update, November 9 (migration `20261109150000_voting_without_vote_flag`):* when no ballot exists, the instance is confirmed directly with `withoutVote=true` for Pass or Do not pass (pending keeps no open/close times; an instance opened with zero ballots keeps its real `openedAt` and records `closedAt`). When ballots were cast, it is closed then confirmed with `withoutVote=false`; the override fields mark it. The SQL guard and CHECK refuse the flag with any ballot, from CLOSED, or for Hold. A late ballot finds the instance closed and returns `VOTING_CLOSED`. Advancing, end of pass and receipts reuse the existing decide-and-advance path, so the approved slide transition runs after the saved acknowledgement. There is no target cap.
+- **Separate from ballots.** The room projection marks the instance `withoutVote` (leader decision) while `totals` still show the ballots actually cast.
+- **Audit:** `voting.room.decide_without_vote_and_advance` records actor, time (`createdAt`), reason, session (`targetId`), applicationId, passNumber, decision, `previousState`, `ballotsCast` (a count, never choices), `withoutVote` and `overridden`.
+- **Undo** clears the override fields and `withoutVote`. A never-opened instance returns to PENDING; an instance that was opened (including one decided after voting opened) returns to CLOSED with its times. The leader then decides again with a reason; this grants no extra capability. **Correct an outcome** also clears an earlier override, and its audit keeps the previous decision. Demo applies the same `decisions.manage` and open-session checks (authorization review follow-up). The audited **Correct an outcome** workflow returns an applicant to Hold before finalization. Finalized sessions stay read only.
+- **Scope:** changes the voting-session outcome only. Recruitment finalization and applicant notifications stay separate.
+- **UI.** The leader's *More actions* menu has one **Decide without a vote** section, replacing the Pass-only entry: a reason field, *Pass without vote* and *Do not pass without vote*. It appears only for leaders with decision rights while the applicant is pending or voting is open. The confirmation names the applicant (or the permitted anonymous label), states what happens to ballots already cast, and says it is not a final recruitment decision and sends no messages. Demo mirrors the command.
+
+Evidence:
+- `tests/voting-decide-without-vote.test.cjs` (5): unauthorized voter, outsider and leader without `decisions.manage`; reason, confirmation and Hold refusal; audited no-ballot override; open-vote override keeping the cast ballot and refusing a late ballot; duplicate clicks replaying one receipt; a second leader tab getting `STALE_STATE`; an injected failed save rolling everything back; Undo; last applicant completing the pass; three passes above target 1; Correct to Hold; no notifications or recruitment changes.
+- `tests/voting-decide-without-vote-sql.test.cjs`: real migrations on PGlite accept the exact transaction, preserve the cast ballot, refuse the late ballot and create no synthetic ballots.
+- Existing browser tests updated only for the renamed reason field.
+## Ballot privacy (anonymous to participants) — November 5, 2026
+
+**Implemented on branch `feature/voting-ballot-privacy`; no migration; not yet released.**
+
+What is true now, and what is not:
+- **Club members and leaders, including session leaders, cannot see who voted Pass, Hold or Do not pass.** Every browser-facing response returns only the caller's own ballot.
+  - Live rooms: the existing `projectVotingRoom` returns `ownBallot`, `ballotsReceived` while open, and `totals` only once a ballot instance is CLOSED or CONFIRMED. The rule `ruleResult` is also returned only after closing.
+  - Legacy board sessions: `getVotingWorkspace` previously returned every ballot with member IDs and choices to every viewer. It now returns `projectLegacyVoting` output: own ballot plus `ballotCount`. Outcomes of a pass that is still open are hidden (`UNRESOLVED`) unless a leader recorded an attributed override. Automatic-rule results (unanimous/threshold) are also hidden until the pass completes, because a unanimous Pass would reveal every voter's choice. Legacy ballots remain immutable once submitted (unchanged behaviour), and the legacy note says so.
+  - Demo uses the same projection.
+- **Not anonymous to OutClass operators.** Ballots are stored with the voter's membership ID (`VotingBallot.memberId`) so the server can enforce one ballot per voter and allow changes while voting is open. Anyone with direct database access (platform operators, the bounded server role) can link ballots to voters, and a platform administrator in an audited support session that views the app as a voter sees that voter's own ballot. Live-room command receipts store a hash of each request, including the choice. Historical legacy audit rows (`voting.ballot.submitted`, written before this change) contain the choice. They are retained unchanged (no destructive anonymization without separate approval); platform-admin audit views now omit that field, and new rows no longer record it. Platform views also hide the actor of `voting.candidate.auto-advanced`, the voter whose ballot completed a rule, because it implies a Pass.
+- **Inference:** totals after closing can reveal individual choices in small groups (for example a group of two). The UI says so.
+- **Unchanged:** leader confirmations, overrides, corrections and Pass-without-vote stay attributed and audited. Observations, interview thoughts and comments stay attributed. One ballot per voter, changes while open, and server authorization are unchanged.
+- **UI:** the member ballot (live and legacy) shows "Your choice is hidden from club members and leaders." with a "Who can see ballots" disclosure stating the points above.
+- **Paths checked:** room projection and polling (no Supabase realtime publication includes voting tables), the finalization summary, setup, the legacy workspace, join and command actions, decision schedules (counts only, server-side), dashboard summary (session state only), audit readers (platform admins only), and exports (none for ballots).
+
+Evidence: `tests/voting-ballot-privacy.test.cjs`. It walks each payload for any member ID paired with a choice, for leader, voter, non-participant member, outsider and revoked voter (live), and leader, voter and outsider (legacy), including the finalization summary, ballot audits and command receipts. Authorization-review follow-ups are covered: a unanimous auto-advance stays hidden mid-pass, the legacy note wording is correct, the auto-advance actor is redacted, and a Demo joined member sees only their own ballot. The legacy test fails against the previous `actions/voting.ts`. `durable-voting` and `demo-mode` assertions that expected open-pass tallies now assert they're hidden while open and shown after the pass completes.
+
+## Club voting rules (leader confirms / threshold decides) — November 5, 2026
+
+**Released:** PR #125 merged as `0a9a34f0`; Vercel production `dpl_9TMorBuQ8uqQtjhk4KdZZK9L38jh` READY. Migration `20261105170000_voting_rules` applied to production with owner approval (ledger 69; checksum = SHA-256 of the committed file). Post-merge: no new runtime error classes, advisor delta 0. Not yet exercised in an authenticated hosted walkthrough.
+
+- **Modes.** *Leader confirms* is the existing behaviour and the default. Any session without explicit `presentationOptions.rules`, including every existing session, behaves exactly as before and creates no rule rows. *Threshold decides* is opt-in per session. The legacy durable-voting `threshold`/`autoAdvance` columns and recruiting screening rules are untouched.
+- **Threshold rule** (`lib/voting-rules.ts`) has:
+  - an exact fraction (`numerator/denominator`, ≤1; "at least")
+  - a denominator: `BALLOTS_CAST` (Pass, Hold and Do not pass ballots all count; missing ballots don't) or `ELIGIBLE_VOTERS` (missing ballots stay in the total)
+  - minimum participation, as a fraction of eligible voters (always at least 1 ballot)
+  - a below-threshold outcome, Hold or Do not pass
+  - `reviewed: true`, which is required
+
+  Arithmetic is integer cross-multiplication: 2/3 of 10 counted ballots needs 7 Pass; 6 of 9 meets 2/3. Missing ballots are never Do not pass ballots. Unmet participation, zero ballots or an empty electorate give **no automatic outcome**; the leader either holds for another vote (no reason needed) or decides explicitly with a recorded reason. Nothing is auto-rejected.
+- **Configuration.**
+  - *Default voting rules* (Voting room landing, leaders with `decisions.manage`) hold a club default and an optional override for the round in context (`VotingRuleDefault`, revisioned, retry-safe, audited `voting.rules.default_saved`).
+  - Setup step 2 pre-fills from round → club → leader-confirms. Consequential choices (denominator, below-threshold outcome) start empty for a new threshold rule, and a defaulted threshold rule must be re-reviewed for each session.
+  - The editor shows a plain-language description and worked examples using the selected voter count. The review step shows the rule.
+  - Rules lock with the rest of setup once voting starts. Defaults never change existing sessions.
+- **Snapshots.** OPEN_VOTING in a threshold room inserts `VotingBallotRule` version 1 with the rule and the currently eligible electorate, before any ballot. The ballots counted are those from that electorate.
+- **Eligibility changes.** Access is still revoked immediately by the existing room checks. If a snapshotted voter has lost eligibility, CLOSE_VOTING returns `ELECTORATE_CHANGED` and the ballot stays open. The leader may recount with `resolveElectorate` and a reason: this inserts a new version (same rule, removals only), audits `voting.room.electorate_resolved`, and the removed voter's ballot no longer counts. Earlier versions are kept.
+- **Closing and confirming.** Closing remains an explicit leader action, with the existing missing-ballot confirmation. After closing, everyone sees the rule result alongside the totals. Counts are never shown while voting is open. The leader sees a single *Confirm {outcome}* action that advances through the existing DECIDE_AND_ADVANCE transition. A different outcome is refused (`RULE_DECIDED`). Pass without vote remains an explicit, reasoned leader action. The target stays informational. Close and confirm audits include the rule result.
+
+Migration (additive, forward-only): `VotingRuleDefault` (one per club and one per round via a unique `(clubId, COALESCE(roundId,''))`; same-club rounds only; revisioned; delete denied) and `VotingBallotRule` (insert-only; version 1 only while the ballot is open and before any ballot; later versions keep the rule, only remove voters, need a reason; nothing after close). RLS is enabled and browser roles have no access. Only the bounded runtime role has SELECT/INSERT/UPDATE (defaults) and SELECT/INSERT (snapshots), with explicit policies.
+
+Evidence (local, synthetic, mocked Auth/database):
+- `voting-rules.test.cjs`: fraction boundaries, both denominators, Hold and missing ballots, participation, zero/no electorate, legacy fallback, previews.
+- `voting-rules-room.test.cjs`, through the real room actions:
+  - unconfigured sessions unchanged
+  - snapshot per ballot and per Hold pass, preserved history
+  - rule decides and the leader can't override it
+  - no-result paths
+  - revoked voter: immediate denial, paused close, reasoned recount with the ballot excluded
+  - concurrent closure applies once
+  - rules locked after start
+  - an unreviewed rule is refused
+- `voting-rule-defaults.test.cjs`: defaults save, retry, conflict, review requirement, round scope, permissions.
+- `voting-rules-migration.test.cjs`: PGlite guards, immutability, RLS and grants.
+- `voting-rules-browser.test.cjs`: setup refuses unchosen and unreviewed rules, shows the preview, saves the exact rule; the leader sees the rule result and a single Confirm Pass; Axe clean on the editor.
+- Shared voting harnesses gained rule-table stubs and the fixture registers the new actions; no assertions changed. Existing voting and observation suites pass (three long browser tests timed out under parallel load and passed when rerun individually).
+
+Limitations: Demo mode keeps leader-confirmed voting only (no defaults editor). Anonymous rounds follow the same rule logic. A threshold ballot opened before this release has no snapshot and is handled as leader-confirmed.
+## Slide preparation — November 5, 2026
+
+**Released** (see the release note below); not yet exercised in an authenticated hosted walkthrough.
+
+What it does:
+- Session leaders (current session leader plus `decisions.manage`) open **Prepare slides** from the Voting room landing page or the room's *Session options* menu (`/voting/rooms/{sessionId}/prepare?clubId=…`). It is not offered in Demo mode or in anonymous review rounds.
+- For each applicant in the session, the server gathers only material the leader may already see: permitted application/profile fields (major, year, GPA, SAT/ACT, experiences, application answers and context; never gender or legacy pros/cons/feedback), submitted interview scores per round, submitted final interview thoughts, shared Additional observations, and saved résumé highlights. Private interview drafts are never read. Each source carries its type, author, round, stable ID and a SHA-256 content version (plus the observation revision where one exists).
+- Leaders choose up to three highlights per applicant: a verbatim **excerpt** (server-checked to be an exact substring of the source) or a clearly labelled **leader summary** (≤280 characters, attributed to the leader). Nothing is generated, ranked or rewritten automatically. Missing highlights are flagged in the applicant list (“N of M without highlights”, “Show only missing”) and never block voting.
+- Progress autosaves per applicant (request-ID idempotency through `VotingRoomCommand` receipts; per-applicant revision conflict detection; unsaved input is kept in the browser if a save fails or conflicts). Saving never changes the voting room revision, so it cannot disturb live commands. Audit entries (`voting.slides.prepared`) record IDs, modes and source references, never the highlighted text.
+- **Locking:** START and NEXT_PASS copy each applicant's saved preparation into an immutable `VotingSlideLock` for that pass, in the same transaction, before any applicant is presented. Slides read the lock for the most recent pass that included the applicant; before voting starts (and in the leader-only preview) they read the working copy. Later source or preparation edits never change a presented pass. When a source changes after selection, the preparation page shows “The source was updated after you selected it” with a version comparison; the leader may deliberately apply it (quotes only if the excerpt still appears verbatim). It then applies from the next pass.
+- **Access at display time:** each highlight is rechecked for every viewer on every read. A summary inherits its source's restriction. Interview-derived highlights require current interview-evidence authorization for that round, observation highlights require observation access and a non-removed observation, résumé highlights require résumé access. Anonymous rounds show none.
+- **Slides:** up to three highlights appear in a compact band (quotations in quotation marks, summaries prefixed “Leader summary:”, attribution beneath). On projectors (≥1100×650) the band shares the header row with the name so the normal slide still fits one screen; full text and the full original source are in *Applicant details and highlight sources*.
+
+Migration (additive, forward-only): `20261105150000_voting_slide_preparation` creates `VotingSlidePreparation` (revisioned working copy; delete denied; closed after finalization) and `VotingSlideLock` (insert-only; only the exact saved copy, only while the pass candidate is still pending with no ballots). RLS enabled; browser roles have no access; only the existing bounded runtime role `outclass_production_app` receives SELECT/INSERT/UPDATE (preparation) and SELECT/INSERT (locks) with explicit row policies, following `20261103200000`. No existing table, trigger, grant or row changes.
+
+Evidence (local, synthetic, mocked Auth/database; not hosted acceptance):
+- `tests/voting-slide-preparation.test.cjs` (5): verbatim/summary rules, three-highlight limit, stale-version refusal, update/unavailable status; attributed gathering with sensitive-field exclusion; per-viewer filtering (voter without interview access sees no thought highlight; removed observation hidden); lock-per-pass immutability; leader-only, retry, conflict, invalid-quote, audit-without-text, unchanged room revision; non-leader, anonymous and finalized denial.
+- `tests/voting-slide-preparation-migration.test.cjs`: all migrations on PGlite; revision/delete/size guards; lock only of the exact saved copy before presentation; lock immutability; finalized read-only; RLS, browser denial and exact runtime grants/policies.
+- `tests/voting-slide-preparation-browser.test.cjs`: real slide components; three highlights plus all eight selected fields fit 1280×720; locked copy shown after a later edit; full sources in details; consistent structure for the next applicant; phone reflow; Axe clean.
+- `tests/voting-slide-preparation-page-browser.test.cjs`: leader selects an excerpt inside a long submitted thought, quotes a profile field and writes a summary; private draft notes never appear; autosave; refresh restores; preview; source edit shown and deliberately applied; concurrent-leader conflict keeps input without overwriting; phone width; Axe clean; voting member denied.
+- Shared test harness mocks gained empty `votingSlidePreparation`/`votingSlideLock` stubs; no assertions changed.
+
+**Released:** PR #120 (`3a1be040`) with migration applied (owner-approved, ledger 68). Authorization review follow-up PR #127 (`2427d3b8`): the preparation page withholds highlights whose source the current leader cannot view (count only; preserved unchanged on save), and profile highlights are limited to fields the round applicant display shows.
+
+Limitations: Demo mode has no preparation (explicit message). Anonymous rounds have no preparation. Sessions started before this release have no locks and show no highlights. A session created with **Start now** goes straight to voting, so highlights prepared afterwards apply from the next Hold pass; schedule the session to prepare before the first pass.
+## Voting in every recruitment round — November 5, 2026
+
+**Released:** PR #121 merged as `b872cafa`; Vercel production `dpl_CKY6uFSoom6tKMBa37QYEhZTiLwt` READY. No migration. Post-merge: no new runtime error classes, advisors unchanged (0/54/43).
+
+Audit result: live voting already had no interview-only assumption in setup, joining, ballots, results or finalization. Setup lists every active round in the selected cycle. Eligibility uses submitted statuses (SUBMITTED, IN_REVIEW, INTERVIEWING, WAITLISTED), and the stable cycle, round and application IDs are stored on the session and candidates. Interview scores and final thoughts come only from authorized interview rounds. When there are none (application review before interviews), those fields are omitted, never shown as zero. Later rounds show earlier finalized interview evidence labelled by round name. Hold passes create new ballot instances within the same session and round, never a recruitment round. Finalization already offered **Advance to {later round}** (stage move; not admission; status kept except INTERVIEWING→IN_REVIEW when leaving interview rounds) or **Final club admission**, using the existing recruitment transition rules, guard fingerprint, receipt idempotency and deferred notifications. Threshold mode and privacy rules are unchanged.
+
+Changes:
+- **Stale applicants are listed, not hidden behind a generic failure.** The finalization preview now returns `stale` entries with a plain reason: moved to another round, moved to another recruitment cycle, status changed (e.g. SUBMITTED → WITHDRAWN), or no longer available. Those applicants are excluded from `changes`, the confirm button is disabled, and `finalizeLiveVotingRoom` refuses with the same per-applicant list. Nothing is changed for anyone. Previously the preview threw, which reached leaders in production only as a generic error.
+- **Admission from an intermediate round is explicit.** The preview reports `laterRounds` and `roundType`; choosing Final club admission while later active rounds exist shows “{round} is not the last recruitment round. Final admission skips N later rounds…”. It remains allowed, because clubs may end early.
+- Test harness: `voting-room-harness` now supports multiple rounds (`h.rounds`, `pipelineRound.count`); existing assertions are unchanged.
+
+Evidence: `tests/voting-every-round.test.cjs` (4) covers application-review voting before interviews; two repeated Hold passes without new rounds; preview of advance vs admission; advance into the interview round keeping SUBMITTED (not admission); Hold preserved; retry-safe finalization with one move per applicant; no notifications; a later interview-round session leaving the earlier session byte-identical; cross-round selection refused; stale round, status and cycle listed individually with nothing finalized; early-round slides omitting interview evidence. Existing voting suites pass locally (117 of 119 in a parallel run). One transition browser test timed out under load and passed on its own, and one is a native skip.
+
 ## Additional observations release verified — November 4, 2026
 
 **LIVE, with synthetic real-mode acceptance verified on www.out-class.net.** PR #115 introduced the feature; PR #116 completed the bounded runtime policies and corrected applicant-review entry. PR #116 merged normally as `969eadc4bfb70f10707de4a089e29b7f437b80af`; Vercel production `EkUMoFePnfyn2hpP86Jq36wiitz4` is Ready with that source and the www.out-class.net domain assignment. Final reviewed head `7951b73060d05e7cb2129d8780c1ced5edb76870`, tree `545ae01adf798a21914040b61b0a09ee12d0e9e5`, local equivalent `7a847d81`. Concurrent main QR improvements (`2f3a541`) are preserved. This section supersedes pending release statements below while retaining their original evidence attribution.

@@ -1,5 +1,5 @@
 import type { FrozenLetterSettings } from "@/lib/decision-schedule";
-import { publishDecisionCommunication, offerResponseNotification } from "@/utils/decision-communications";
+import { publishDecisionCommunication, offerResponseNotification, declinedOfferLeaderNotification } from "@/utils/decision-communications";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import type { AppStatus } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -16,7 +16,7 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
   await lockOperationalClub(tx, input.clubId);
   const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId }, include: { round: true } });
   if (!app || input.roundId && input.roundId !== app.roundId || input.expectedStatus && input.expectedStatus !== app.status && input.status !== app.status)
-    throw Error("Application changed. Refresh before deciding.");
+    throw Error("Application changed. Reload the page and try again.");
   assertRecruitmentTransition(app.status, input.status, app.round.type);
   if (app.status !== input.status) await tx.application.update({ where: { id: app.id }, data: { status: input.status, ...( ["ACCEPTED","WAITLISTED","REJECTED"].includes(input.status) ? { decisionVersion: { increment: 1 } } : {} ) } });
   const existing = await tx.clubInvitation.findUnique({ where: { applicationId: app.id } });
@@ -66,11 +66,12 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
   }
   if (response === "DECLINE" && offer.status === "DECLINED") return { clubId: app.clubId, status: "DECLINED" as const };
   if (app.status !== "ACCEPTED" || offer.status !== "PENDING" || offer.expiresAt <= new Date() || offer.revokedAt || offer.acceptedAt || offer.declinedAt || offer.expiredAt)
-    throw Error("Offer unavailable or expired. Refresh your status.");
+    throw Error("This offer is unavailable or has expired.");
   if (response === "DECLINE") {
     await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await event(tx, userId, app.clubId, offer.id, "offer.declined", app.id);
     await offerResponseNotification(tx, app, offer.id, "DECLINE");
+    await declinedOfferLeaderNotification(tx, app, offer.id);
     return { clubId: app.clubId, status: "DECLINED" as const };
   }
   if (existing && existing.status !== "ACTIVE") return { clubId: app.clubId, status: "INACTIVE_MEMBERSHIP" as const };

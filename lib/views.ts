@@ -15,7 +15,6 @@ export type ViewId =
   | "calendar"
   | "leader-dashboard"
   | "club-manager"
-  | "club-management-portal"
   | "screening-dashboard"
   | "interview-scheduler"
   | "interview-workspace"
@@ -31,10 +30,9 @@ export const adminClubName = "Virginia Venture Fund"
 /** Standard student navigation, shown when appMode === "student". */
 export const studentNav: NavItem[] = [
   { id: "student-dashboard", title: "Home", icon: Home },
-  { id: "explore", title: "Discover", icon: Compass },
-  { id: "corkboard", title: "Corkboard", icon: Bookmark },
+  { id: "explore", title: "Explore", icon: Compass },
+  { id: "corkboard", title: "Events", icon: Bookmark },
   { id: "tracker", title: "Applications", icon: ClipboardList },
-  { id: "status", title: "Status", icon: ClipboardList },
   { id: "calendar", title: "Calendar", icon: CalendarDays },
   { id: "student-profile", title: "Profile", icon: UserRound },
 ]
@@ -43,8 +41,8 @@ export const studentNav: NavItem[] = [
 export const adminNav: NavItem[] = [
   { id: "leader-dashboard", title: "Applicants", icon: Table2 },
   { id: "interview-scheduler", title: "Interviews", icon: CalendarClock },
-  { id: "interview-workspace", title: "Interview workspace", icon: MessageSquareText },
-  { id: "broadcast-messages", title: "Messages", icon: Megaphone },
+  { id: "interview-workspace", title: "Interview room", icon: MessageSquareText },
+  { id: "broadcast-messages", title: "Announcements", icon: Megaphone },
   { id: "club-manager", title: "Settings", icon: Settings2 },
 ]
 
@@ -53,7 +51,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     label: "Account",
     items: [
       { id: "landing", title: "Landing Page", icon: Globe },
-      { id: "auth", title: "Login & Sign Up", icon: LogIn },
+      { id: "auth", title: "Sign in & sign up", icon: LogIn },
       { id: "student-onboarding", title: "Student Onboarding", icon: UserRound },
     ],
   },
@@ -69,54 +67,49 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Club Leader",
+    label: "Club workspace",
     items: [
       { id: "leader-dashboard", title: "Applicant CRM", icon: Table2 },
       { id: "screening-dashboard", title: "Screening & Auto-Filter", icon: ShieldAlert },
       { id: "interview-scheduler", title: "Interview Scheduler", icon: CalendarClock },
-      { id: "interview-workspace", title: "Interview Workspace", icon: MessageSquareText },
+      { id: "interview-workspace", title: "Interview room", icon: MessageSquareText },
       { id: "club-manager", title: "Settings", icon: Settings2 },
-      { id: "club-management-portal", title: "Management Portal", icon: Settings2 },
     ],
   },
 ]
 
 export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
-  "my-clubs": { title: "My Clubs", subtitle: "Your communities, meetings, and assignments." },
+  "my-clubs": { title: "My Clubs", subtitle: "Your clubs, meetings, and tasks." },
   landing: { title: "OutClass home", subtitle: "Discover and apply to participating university clubs." },
   auth: { title: "Welcome to OutClass", subtitle: "One profile. Every selective club." },
   "student-onboarding": { title: "Create Your Profile", subtitle: "Set up your OutClass student profile." },
   "student-dashboard": { title: "Home", subtitle: "Your applications, next steps, and upcoming events." },
   "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
-  inbox: { title: "Notifications", subtitle: "Stay on top of club updates, interviews, and deadlines." },
+  inbox: { title: "Inbox", subtitle: "Stay on top of club updates, interviews, and deadlines." },
   explore: { title: "Explore", subtitle: "Browse clubs, interests, and campus opportunities." },
-  corkboard: { title: "Corkboard", subtitle: "Clubs and opportunities you want to revisit." },
+  corkboard: { title: "Events", subtitle: "Events on Grounds." },
   tracker: { title: "Applications", subtitle: "Manage your drafts, responses, and submissions." },
-  status: { title: "Status", subtitle: "Review progress, interviews, and decisions for your submitted applications." },
+  status: { title: "Applications", subtitle: "Your drafts, applications in review, interviews and decisions." },
   calendar: { title: "Calendar", subtitle: "Deadlines, interviews, and chats for your clubs." },
   "leader-dashboard": { title: "Applicant CRM", subtitle: "Review, score, and advance your applicants." },
   "club-manager": {
     title: "Settings",
     subtitle: "Manage roster permissions, application questions, and your public profile.",
   },
-  "club-management-portal": {
-    title: "Club Management Portal",
-    subtitle: "Edit your club's public page and manage your executive team.",
-  },
   "screening-dashboard": {
     title: "Screening & Auto-Filter",
     subtitle: "Preview saved recruiting thresholds and mark applicants for review.",
   },
   "interview-scheduler": {
-    title: "Interview Scheduler & Booking Manager",
-    subtitle: "Build the master slot schedule and preview the student booking flow.",
+    title: "Interview scheduling",
+    subtitle: "Set interview times and preview what applicants see.",
   },
   "interview-workspace": {
-    title: "Live In-Interview Workspace",
+    title: "Interview room",
     subtitle: "Take real-time notes and score the candidate as the interview happens.",
   },
   "broadcast-messages": {
-    title: "Broadcast & Messages",
-    subtitle: "Example message composer; send real announcements from a club workspace.",
+    title: "Announcements",
+    subtitle: "Announcements for your club, sent from its workspace.",
   },
 } satisfies Record<ViewId, { title: string; subtitle: string }>

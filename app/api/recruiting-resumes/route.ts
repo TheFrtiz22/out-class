@@ -5,6 +5,7 @@ import { authorizeRecruitingResume } from "@/utils/recruiting-resume";
 import { createClient } from "@supabase/supabase-js";
 import { validateProfileFile } from "@/lib/student-profile";
 import { auditSupportAction } from "@/utils/support-audit";
+import { ProfileFieldHiddenError } from "@/lib/profile-field-visibility";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const input = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid() }).safeParse({ clubId: url.searchParams.get("clubId"), applicationId: url.searchParams.get("applicationId") });
@@ -27,6 +28,7 @@ export async function GET(request: Request) {
     return new Response(bytes, { headers });
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")) throw error;
+    if (error instanceof ProfileFieldHiddenError) return new Response("Not found", { status: 404, headers: { "Cache-Control": "private, no-store" } });
     return new Response("Resume unavailable", { status: 403, headers: { "Cache-Control": "private, no-store" } });
   }
 }

@@ -1,3 +1,4 @@
+import { assertNotRecused } from "@/lib/recusal";
 import { assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
@@ -15,6 +16,11 @@ export async function interviewActor(tx: AppTransactionClient, clubId: string, u
 
 export const interviewTransactionOptions = { maxWait: 10000, timeout: 20000 };
 
+/** The expected denials authorizeInterview raises for a viewer without current access. */
+export function isInterviewAccessDenial(e: unknown) {
+  return e instanceof Error && [/^Interview access unavailable/, /^Identified interview unavailable/, /^Current panel assignment or explicit leadership permission required/].some(p => p.test(e.message));
+}
+
 export async function authorizeInterview(tx: AppTransactionClient, scope: InterviewScope, userId: string, mode: "panel" | "resume" | "closing" | "closingReview" = "panel", applicationLock: "share" | "update" = "update") {
   const actor = await interviewActor(tx, scope.clubId, userId);
   if (applicationLock === "share") await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${scope.applicationId} FOR SHARE`;
@@ -27,6 +33,8 @@ export async function authorizeInterview(tx: AppTransactionClient, scope: Interv
   const anonymous = !!(round?.anonymousReview || currentRound?.anonymousReview);
   if (!app || !round || !currentRound || app.studentId === userId || (anonymous && !(mode === "closingReview" && actor.caps.readClosing)))
     throw new Error("Identified interview unavailable under current privacy settings.");
+  // A member who stepped out because they know this applicant is out of every interview path for them.
+  await assertNotRecused(tx, app.id, actor.member.id);
   const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: app.id, roundId: round.id, memberId: actor.member.id } } });
   const panel = actor.caps.participate && !!assignment && !assignment.revokedAt;
   if (!(panel || (mode === "resume" && actor.caps.moderateResume) || ((mode === "closing" || mode === "closingReview") && actor.caps.readClosing)))

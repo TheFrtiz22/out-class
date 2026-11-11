@@ -9,8 +9,9 @@ import {resolveScheduleTime,requireFutureSchedule} from "@/lib/communication-sch
 import {availabilityScheduleInput} from "@/lib/availability-schedule";
 import {loadInterviewerPool} from "@/utils/interviewer-pool";
 import {activeAvailabilityRound} from "@/utils/availability-publication";
+import { boundedParse } from "@/lib/bounded-input";
 export async function saveAvailabilitySchedule(input:unknown){
- const d=availabilityScheduleInput.parse(input),{clubId,roundId}=d.scope,scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence),{user}=await requireClubPermission(clubId,["interviews.manage"]);
+ const d=boundedParse(availabilityScheduleInput, input),{clubId,roundId}=d.scope,scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence),{user}=await requireClubPermission(clubId,["interviews.manage"]);
  if(await supportContext())throw Error("Exit support impersonation before scheduling future communications.");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"]);
@@ -19,7 +20,7 @@ export async function saveAvailabilitySchedule(input:unknown){
   requireFutureSchedule(scheduledAt);
   if(await tx.scheduledCommunication.count({where:{clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100)throw Error("Cancel unused scheduled work first.");
   await activeAvailabilityRound(tx,clubId,roundId);const pool=await loadInterviewerPool(tx,clubId,roundId,d.scope.memberIds);
-  if(pool.members.length!==d.scope.memberIds.length||pool.members.some(m=>!m.eligible||m.disabledAt))throw Error("Select eligible current interviewers.");
+  if(pool.members.length!==d.scope.memberIds.length||pool.members.some(m=>!m.eligible||m.disabledAt))throw Error("Choose interviewers from this club and round.");
   await tx.scheduledCommunication.create({data:{id:d.id,clubId,senderId:user.id,actorId:user.id,kind:"AVAILABILITY_REQUEST",title:`Availability ${d.scope.reminder?"reminders":"requests"} · ${pool.members.length}`,body,audience:{},snapshot:d.scope as Prisma.InputJsonValue,recipientMode:"FIXED",scheduledAt,timeZone:d.timeZone,localTime:d.localTime,occurrence:d.occurrence,requestKey:d.id}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:d.id,action:"communication.availability.schedule",details:{roundId,count:pool.members.length,scheduledAt:scheduledAt.toISOString()}}});return {id:d.id,status:"SCHEDULED" as const};
  });

@@ -12,12 +12,19 @@ export async function votingFinalizationPlan(tx:AppTransactionClient,s:LiveRoom,
  if(!round||mapping.kind==="ADVANCE"&&(!target||target.order<=round.order))throw Error("Choose an active later recruitment round in this club.");
  const rows=await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId:s.clubId},include:{round:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}},orderBy:{id:"asc"}});
  const outcomes=roomOutcomes(s);
- const changes=s.candidates.map(c=>{
+ const label=(a:(typeof rows)[number]|undefined,id:string)=>{const profile=a?.student.studentProfile;return !a||round.anonymousReview||a.round.anonymousReview?anonymousApplicantLabel(id):profile?`${profile.firstName} ${profile.lastName}`:"Applicant";};
+ // Applicants whose recruitment state moved since the session began are listed
+ // individually and block finalization; nothing is changed for anyone.
+ const stale:{applicationId:string;label:string;outcome:string;reason:string}[]=[];
+ const changes=s.candidates.flatMap(c=>{
   const a=rows.find(a=>a.id===c.applicationId),outcome=outcomes.find(o=>o.applicationId===c.applicationId)!.outcome;
-  if(!a||a.roundId!==s.roundId||a.recruitmentCycleId!==s.cycleId||a.status!==c.expectedStatus)throw Error("Application changed since voting began. Finalization cancelled; review recruitment state.");
-  const change=votingRecruitmentChange(a.status,outcome,round.type,target),profile=a.student.studentProfile;
-  return {applicationId:a.id,label:round.anonymousReview||a.round.anonymousReview?anonymousApplicantLabel(a.id):profile?`${profile.firstName} ${profile.lastName}`:"Applicant",outcome,fromStatus:a.status,toStatus:change.status,fromRoundId:a.roundId,toRoundId:change.roundId??a.roundId,guard:decisionPublicationGuard(a)};
+  const reason=!a?"no longer available":a.recruitmentCycleId!==s.cycleId?"moved to another recruitment cycle":a.roundId!==s.roundId?`moved to ${a.round.name} after this session began`:a.status!==c.expectedStatus?`status changed from ${c.expectedStatus} to ${a.status}`:null;
+  if(reason){stale.push({applicationId:c.applicationId,label:label(a,c.applicationId),outcome,reason});return [];}
+  const change=votingRecruitmentChange(a!.status,outcome,round.type,target);
+  return [{applicationId:a!.id,label:label(a,a!.id),outcome,fromStatus:a!.status,toStatus:change.status,fromRoundId:a!.roundId,toRoundId:change.roundId??a!.roundId,guard:decisionPublicationGuard(a!)}];
  });
- const guard=roomFingerprint({revision:s.revision,mapping,round:{id:round.id,type:round.type,order:round.order,anonymous:round.anonymousReview},target:target?{id:target.id,type:target.type,order:target.order,anonymous:target.anonymousReview}:null,changes});
- return {guard,revision:s.revision,mapping,roundName:round.name,targetRoundName:target?.name??null,changes};
+ // Admission from a round that has later active rounds is allowed but must be explicit.
+ const laterRounds=await tx.pipelineRound.count({where:{clubId:s.clubId,archivedAt:null,order:{gt:round.order}}});
+ const guard=roomFingerprint({revision:s.revision,mapping,round:{id:round.id,type:round.type,order:round.order,anonymous:round.anonymousReview},target:target?{id:target.id,type:target.type,order:target.order,anonymous:target.anonymousReview}:null,changes,stale});
+ return {guard,revision:s.revision,mapping,roundName:round.name,roundType:round.type,targetRoundName:target?.name??null,laterRounds,changes,stale};
 }

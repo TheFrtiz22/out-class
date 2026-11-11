@@ -8,6 +8,8 @@ import {
 } from "@/lib/password-recovery";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
+import { authTurnstile, captchaFailed, turnstileMessage, turnstileRemoteIp } from "@/lib/turnstile";
+import { authRedirectOrigin } from "@/lib/site-origin";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -50,6 +52,30 @@ export async function POST(request: NextRequest) {
       400,
     );
 
+  // Same responses for every address: the reset-link origin and the bot check
+  // both run before any account or provider lookup. The origin is checked first
+  // so a guaranteed 503 never spends the visitor's single-use Turnstile token.
+  // Reset links always point at the configured site URL, never the request's Host.
+  const siteOrigin = input.action === "request" ? authRedirectOrigin(request.nextUrl.origin) : null;
+  if (input.action === "request" && !siteOrigin)
+    return reply(
+      {
+        error:
+          "Password recovery is temporarily unavailable. Please try again later.",
+      },
+      503,
+    );
+  let captcha: { captchaToken?: string } = {};
+  if (input.action === "request") {
+    const check = await authTurnstile(input.turnstileToken, {
+      action: "password-recovery",
+      remoteIp: turnstileRemoteIp(request.headers.get("x-forwarded-for")),
+    });
+    if (!check.ok)
+      return reply({ error: turnstileMessage(check.reason) }, check.reason === "unavailable" ? 503 : 400);
+    captcha = check.captcha;
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key)
@@ -68,11 +94,16 @@ export async function POST(request: NextRequest) {
       detectSessionInUrl: false,
     },
   });
-  if (input.action === "request" && email.success) {
+  if (input.action === "request" && email.success && siteOrigin) {
     try {
+      // Only requests send email. The token is forwarded only when Supabase verifies it.
       const { error } = await client.auth.resetPasswordForEmail(email.data, {
-        redirectTo: `${request.nextUrl.origin}/reset-password`,
+        redirectTo: `${siteOrigin}/reset-password`,
+        ...captcha,
       });
+      // A failed security check says nothing about whether the account exists.
+      if (captchaFailed(error))
+        return reply({ error: turnstileMessage("rejected") }, 400);
       if (error)
         console.warn("Password recovery delivery unavailable", {
           code: error.code,

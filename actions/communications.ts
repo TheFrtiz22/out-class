@@ -13,6 +13,7 @@ import { panelScheduleNotificationPrefix,currentPanelScheduleNotification } from
 import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/availability-request-notifications";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
+import { boundedParse } from "@/lib/bounded-input";
 
 const uuid = z.string().uuid();
 const publishInput = z.object({
@@ -63,7 +64,7 @@ export async function getDurableNotifications(cursor?: string) {
     return Promise.all(rows.slice(0, 50).map(async row => {
     if (row.eventKey.startsWith(applicantBookingNotificationPrefix)) {
       const context = await currentApplicantBookingNotification(tx, row, user.id);
-      return { ...row, ...(context ?? { title: "Interview booking update", body: "Open your current application to review its interview details.", href: "/?workspace=student&view=tracker" }) };
+      return { ...row, ...(context ?? { title: "Interview update", body: "Open your current application to review its interview details.", href: "/applications" }) };
     }
     if (row.eventKey.startsWith(availabilityRequestPrefix)) { const context = await currentAvailabilityRequest(tx, row, user.id); return { ...row, ...(context ?? { title: "Availability response recorded or request closed", body: "View your current round responses in My Availability.", href: "/settings/availability" }) } }
     if(row.eventKey?.startsWith(panelScheduleNotificationPrefix)){const context=await currentPanelScheduleNotification(tx,row,user.id);return {...row,...(context?{title:context.title,body:context.body,href:context.href}:{title:"Interview panel schedule changed",body:"Your assignment is no longer available. Check your current official interview schedule.",href:"/settings/interviews"})}}
@@ -80,7 +81,7 @@ export async function getDurableNotifications(cursor?: string) {
 
 export async function setDurableNotificationsRead(ids: string[], read: boolean) {
   const { user } = await requireAuth();
-  const selected = z.array(uuid).max(100).parse(ids);
+  const selected = boundedParse(z.array(uuid).max(100), ids);
   z.boolean().parse(read);
   if (!selected.length) return { updated: 0 };
   const result = await prisma.userNotification.updateMany({ where: { id: { in: selected }, userId: user.id }, data: { readAt: read ? new Date() : null } });
@@ -98,7 +99,7 @@ export async function getClubAnnouncements(clubId: string) {
 
 /** Publication and its email intent commit atomically. Provider I/O belongs to the worker. */
 export async function publishClubAnnouncement(input: unknown) {
-  const data = publishInput.parse(input);
+  const data = boundedParse(publishInput, input);
   if ((data.audience === "CUSTOM") !== !!data.audienceSpec) throw Error("Custom audience rules are required only for custom recipients.");
   const { user } = await requireClubPermission(data.clubId, ["meetings.manage"]);
   return clubWriteTransaction(tx => publishAnnouncementTransaction(tx, { ...data, senderId: user.id }));
@@ -106,7 +107,7 @@ export async function publishClubAnnouncement(input: unknown) {
 
 export async function setDurableNotificationsArchived(ids: string[], archived: boolean) {
   const { user } = await requireAuth();
-  const selected = z.array(uuid).max(100).parse(ids);
+  const selected = boundedParse(z.array(uuid).max(100), ids);
   z.boolean().parse(archived);
   return prisma.userNotification.updateMany({ where: { userId: user.id, id: { in: selected } }, data: { archivedAt: archived ? new Date() : null } });
 }

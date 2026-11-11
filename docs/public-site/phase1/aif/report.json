@@ -1,0 +1,95 @@
+[
+  {
+    "name": "club",
+    "url": "/club/aif",
+    "server": {
+      "status": 200,
+      "location": null,
+      "title": "Alternative Investment Fund · OutClass",
+      "description": "Founded in 2007, the Alternative Investment Fund trains UVA students in investment management and financial markets through research, pitches and professional d",
+      "ogImage": true,
+      "robots": "index, follow",
+      "h1": [
+        "Alternative Investment Fund"
+      ],
+      "headings": [
+        "h1 Alternative Investment Fund",
+        "h2 About",
+        "h2 What members do",
+        "h3 Where members go Club-reported",
+        "h2 Recruitment and requirements",
+        "h3 Before you apply",
+        "h2 Life in the club"
+      ],
+      "loadingCover": true
+    },
+    "widths": {
+      "390": {
+        "status": 200,
+        "finalUrl": "/club/aif",
+        "overflowX": 0,
+        "h1": [
+          "Alternative Investment Fund"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [],
+        "smallTargetCount": 0,
+        "axe": [],
+        "errors": []
+      },
+      "1440": {
+        "status": 200,
+        "finalUrl": "/club/aif",
+        "overflowX": 0,
+        "h1": [
+          "Alternative Investment Fund"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "131x40 button Explore clubs"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      },
+      "reduced-motion": {
+        "status": 200,
+        "finalUrl": "/club/aif",
+        "overflowX": 0,
+        "h1": [
+          "Alternative Investment Fund"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "131x40 button Explore clubs"
+        ],
+        "smallTargetCount": 1,
+        "axe": null,
+        "errors": []
+      },
+      "forced-colors": {
+        "status": 200,
+        "finalUrl": "/club/aif",
+        "overflowX": 0,
+        "h1": [
+          "Alternative Investment Fund"
+        ],
+        "loadingCover": false,
+        "smallText": [],
+        "smallTextCount": 0,
+        "smallTargets": [
+          "131x40 button Explore clubs"
+        ],
+        "smallTargetCount": 1,
+        "axe": [],
+        "errors": []
+      }
+    }
+  }
+]

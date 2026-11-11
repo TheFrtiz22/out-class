@@ -35,7 +35,9 @@ export function getInterviewCollaboration(input: Input): CollaborationView {
 export function selectSharedInterviewQuestion(input: Input & { questionId: string }) {
   return withRoom(input, (r, own) => {
   if (own.completedAt || own.draft.postInterview) throw Error("Only active interviews can select shared questions.");
-  const question = r.questions.find(q => q.id === input.questionId) || getInterviewWorkspace(input.clubId) && demoStore.get().clubs.find(c => c.id === input.clubId)!.rounds.find(r => r.id === input.roundId)!.interviewKit.find(q => q.id === input.questionId);
+  const added = own.draft.additionalQuestions.find(q => q.id === input.questionId);
+  const kitQuestion = demoStore.get().clubs.find(c => c.id === input.clubId)?.rounds.find(x => x.id === input.roundId)?.interviewKit.find(q => q.id === input.questionId);
+  const question = r.questions.find(q => q.id === input.questionId) || (added?.bankQuestion ? { id: added.id, prompt: added.question, guidance: added.bankQuestion.guidance } : kitQuestion) || (added ? { id: added.id, prompt: added.question, guidance: "" } : undefined) || getInterviewWorkspace(input.clubId) && demoStore.get().clubs.find(c => c.id === input.clubId)!.rounds.find(r => r.id === input.roundId)!.interviewKit.find(q => q.id === input.questionId);
   if (!question) throw Error("Select a bank question.");
   return demoStore.mutate(s => { const target = s.interviewFoundation.collaboration!.rooms.find(x => x.id === r.id)!; if (!target.questions.some(q => q.id === question.id)) target.questions.push(question); target.revision++; target.selection = { question, by: "You", memberId: demoMember().id }; return { revision: target.revision, question }; });
   });
@@ -48,7 +50,7 @@ export function simulateDemoInterviewSelection(input: InterviewScope) {
 }
 export function simulateDemoInterviewAdvance(input: InterviewScope) {
   const r = room(input), next = nextInterviewApplicant(getInterviewWorkspace(input.clubId).applications, input.roundId, input.applicationId);
-  if (!next) throw Error("No eligible sample candidate remains.");
+  if (!next) throw Error("No sample candidates left.");
   demoStore.mutate(s => { const c = s.interviewFoundation.collaboration!; c.invites = c.invites.filter(i => i.source.applicationId !== r.scope.applicationId); c.invites.push({ id: crypto.randomUUID(), source: input, destination: { ...input, applicationId: next.id }, expires: Date.now() + 600000, dismissed: false }); });
 }
 export function leaveInterviewCollaboration(input: Input) { void input; }

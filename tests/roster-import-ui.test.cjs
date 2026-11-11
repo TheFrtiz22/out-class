@@ -14,6 +14,7 @@ function harness(api,props={}) {
       if(name==='react')return{useState:initial=>{const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],value=>state[i]=typeof value==='function'?value(state[i]):value];},useRef:initial=>{const i=cursor++;if(!(i in state))state[i]={current:initial};return state[i];}};
       if(name==='@/actions/roster-import')return api;
       if(name.startsWith('@/components/ui/'))return new Proxy({},{get:(_,key)=>key});
+      if(name==='@/components/icons')return new Proxy({},{get:(_,key)=>key});
       if(name.startsWith('@/'))return load(name.slice(2)+'.ts');return require(name);
     },mod,mod.exports);return mod.exports;
   }
@@ -77,6 +78,6 @@ test('completed additional CSV imports refresh the member directory once without
   for(const fail of [false,true]){
     let refreshes=0;const h=harness({previewRosterImport:async()=>preview,confirmRosterImport:async()=>({created:1,completed:true,alreadyMember:0,alreadyInvited:0,invalid:0,duplicates:0,failed:0,rows:[]})},{onImported:async()=>{refreshes++;if(fail)throw Error('Directory unavailable');}});
     pick(h.render(),file());await h.flush();nodes(h.render()).find(node=>node.type==='Button'&&node.props.children==='Import members').props.onClick();await h.flush();
-    assert.equal(refreshes,1);assert.ok(JSON.stringify(h.render()).includes('Roster import confirmed'));if(fail)assert.ok(JSON.stringify(h.render()).includes('Refresh members'));
+    assert.equal(refreshes,1);assert.ok(JSON.stringify(h.render()).includes('Roster import confirmed'));if(fail)assert.ok(JSON.stringify(h.render()).includes('The member list will update'));
   }
 });

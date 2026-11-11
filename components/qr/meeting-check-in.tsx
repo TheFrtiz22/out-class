@@ -1,4 +1,5 @@
 "use client";
+import { PageHeader } from "@/components/ui/page-header";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -54,8 +55,8 @@ export function MeetingCheckIn() {
     };
   }, [user?.id, id]);
   return (
-    <main className="mx-auto max-w-lg space-y-5 px-5 py-12">
-      <h1 className="oc-page-title ">Meeting check-in</h1>
+    <div className="space-y-5">
+      <PageHeader title="Meeting check-in" />
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
           Demo check-in is local to this browser. It does not record real
@@ -67,15 +68,13 @@ export function MeetingCheckIn() {
       ) : !user ? (
         <>
           <p>
-            Sign in with your UVA account, then scan the current code again.
-            Codes expire quickly to protect attendance.
+            This records your attendance at a club meeting. Sign in with your
+            UVA account, then scan the current code again. Codes expire quickly
+            to protect attendance.
           </p>
-          <a
-            className="underline"
-            href={`/?next=${encodeURIComponent(`/check-in?meetingId=${id}`)}`}
-          >
-            Sign in
-          </a>
+          <Button asChild className="w-fit">
+            <a href={`/login?next=${encodeURIComponent(`/check-in${id ? `?meetingId=${encodeURIComponent(id)}` : ""}`)}`}>Sign in</a>
+          </Button>
         </>
       ) : !id || !token ? (
         <p role="alert">
@@ -123,11 +122,11 @@ export function MeetingCheckIn() {
       )}
       {error && <p role="alert">{error}</p>}
       <a
-        className="block text-sm underline"
+        className="inline-flex min-h-11 items-center text-sm underline"
         href={id ? `/meetings/${id}` : "/meetings"}
       >
         Meeting agenda and resources
       </a>
-    </main>
+    </div>
   );
 }

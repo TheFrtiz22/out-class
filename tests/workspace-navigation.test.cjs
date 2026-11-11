@@ -5,14 +5,18 @@ function shell(routeSearch,windowSearch='') {
  const effects=[],changes=[],redirects=[],stateChanges=[],historyChanges=[]
  const demo={isDemoEnabled:true,state:{perspective:{role:'leader',clubId:'mii'}},viewAs:(...args)=>changes.push(args)}
  const router={replace:path=>redirects.push(path),push:path=>redirects.push(path)}
- const mocks={
-  react:{useState:initial=>[typeof initial==='function'?initial():initial,value=>stateChanges.push(value)],useEffect:effect=>effects.push(effect)},
-  'next/navigation':{useRouter:()=>router,useSearchParams:()=>new URLSearchParams(routeSearch)},
+ const mocks={...require('./helpers/shell-stubs.cjs'),
+  react:{useState:initial=>[typeof initial==='function'?initial():initial,value=>stateChanges.push(value)],useEffect:effect=>effects.push(effect),useRef:current=>({current}),useMemo:fn=>fn()},
+  'next/navigation':{useRouter:()=>router,useSearchParams:()=>new URLSearchParams(routeSearch),usePathname:()=>'/'},
   '@/contexts/demo-context':{useDemoMode:()=>demo},
   '@/contexts/auth-context':{useAuth:()=>({user:{memberships:[]},selectClub(){}})},
   '@/lib/demo/store':{demoDashboard:()=>({applications:[],attendances:[]})},
+  '@/lib/demo/loader':{loadedDemoStore:()=>({demoDashboard:()=>({applications:[],attendances:[]})})},
   '@/lib/student-navigation':navigationModule.exports,
+  '@/lib/navigation':require('./helpers/navigation-module.cjs'),
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`},
+  // Lazy views resolve to their export name, as the static `@/` proxy does, so the tree is inspectable.
+  'next/dynamic':{__esModule:true,default:loader=>[...String(loader).matchAll(/module\.(\w+)/g)].pop()[1]},
  }
  const mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync('components/app-shell.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
@@ -60,7 +64,7 @@ test('student route scope preserves existing interviews, decisions, membership t
 });
 
 test('student tab changes retain the client shell and update browser history without a server navigation',()=>{
- const result=shell('?workspace=student');result.navigate('explore','explore');result.navigate('tracker','applications');assert.deepEqual(result.redirects,[]);assert.deepEqual(result.historyChanges,['/?workspace=student&view=explore','/?workspace=student&view=tracker&section=applications']);assert.ok(result.stateChanges.includes('explore'));assert.ok(result.stateChanges.includes('tracker'));
+ const result=shell('?workspace=student');result.navigate('explore','explore');result.navigate('tracker','applications');assert.deepEqual(result.redirects,[]);assert.deepEqual(result.historyChanges,['/explore','/applications']);assert.ok(result.stateChanges.includes('explore'));assert.ok(result.stateChanges.includes('tracker'));
 });
 
 test('opening the universal Calendar retains each originating tab in the URL and on reload',()=>{
@@ -68,9 +72,11 @@ test('opening the universal Calendar retains each originating tab in the URL and
  for(const [view,section] of [['explore','explore'],['corkboard','explore'],['tracker','applications'],['status','status'],['my-clubs','clubs'],['my-clubs','meetings'],['my-clubs','tasks']]){
   const result=shell(`?workspace=student&view=${view}&section=${section}`);
   result.navigate('calendar');
-  const route=canonicalStudentParams(new URL(result.historyChanges.at(-1),'https://outclass.test').searchParams);
-  assert.equal(route.view,'calendar');assert.equal(route.section,section);
-  assert.equal(canonicalStudentParams(route.params).params.toString(),route.params.toString());
+  const href=result.historyChanges.at(-1),url=new URL(href,'https://outclass.test'),paths=require('./helpers/navigation-module.cjs');
+  const route=paths.studentRouteForPath(url.pathname,url.searchParams);
+  assert.equal(url.pathname,'/calendar');assert.equal(route.view,'calendar');assert.equal(route.section,section);
+  // Reloading the pushed URL resolves to the same tab, and building it again is stable.
+  assert.equal(paths.studentPath('calendar',route.section),href);
  }
  for(const section of [null,'calendar','unknown','recruitment']){
   assert.equal(navigationModule.exports.sectionForStudentView('calendar',section),'explore');

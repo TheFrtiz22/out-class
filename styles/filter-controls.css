@@ -1,0 +1,162 @@
+/* Filter, search and view-switching controls: one pill language with the segmented control
+   (styles/product-components.css). Tokens come from styles/navigation-glass.css; nothing here adds a
+   colour, shadow or radius literal except the 999px pill. Layered, so call-site utilities can size them. */
+
+/* Counts and icons inside segments ("Pending 1"). */
+.oc-segmented-control .oc-segment-icon { display: inline-flex; margin-inline-end: .375rem; vertical-align: -.15em; }
+.oc-segmented-control .oc-segment-icon svg { width: 1rem; height: 1rem; }
+.oc-segmented-control .oc-segment-count { margin-inline-start: .375rem; font-variant-numeric: tabular-nums; opacity: .72; }
+.oc-segmented-control :is(button, a)[data-selected] .oc-segment-count { opacity: .9; }
+
+/* Navigating section tabs share the segmented track; links take the segment look. */
+.oc-section-tabs > a[data-segment] { position: relative; z-index: 1; display: inline-flex; flex: 1 0 auto; align-items: center; justify-content: center; min-width: max-content; min-height: 36px; padding: .375rem 1rem; border-radius: var(--oc-radius-full); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; text-decoration: none; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+.oc-section-tabs > a[data-selected] { color: var(--oc-glass-cream); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
+.oc-section-tabs[data-measured="true"] > a[data-selected] { background: transparent; box-shadow: none; }
+.oc-section-tabs > a:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
+.oc-section-tabs > a[data-selected]:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
+@media (hover: hover) and (pointer: fine) { .oc-section-tabs > a:not([data-selected]):hover { background: var(--oc-glass-hover-tint); } }
+@media (max-width: 767px) { .oc-section-tabs { width: 100%; } }
+
+/* FilterChips' "+N more" sits in the track as one more chip. */
+.oc-segmented-control .oc-filter-chips-more { position: relative; z-index: 1; flex: 0 0 auto; min-height: 36px; padding: .375rem .875rem; border: 1px dashed var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); white-space: nowrap; }
+.oc-segmented-control:not([data-size="compact"]) .oc-filter-chips-more { min-height: 44px; }
+.oc-segmented-control .oc-filter-chips-more:hover { background: var(--oc-glass-hover-tint); }
+.oc-segmented-control .oc-filter-chips-more:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
+
+/* A single row of pill filters that scrolls sideways on narrow screens instead of wrapping. */
+.oc-filter-bar { display: flex; flex-wrap: nowrap; align-items: center; gap: .5rem; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding-block: 2px; }
+.oc-filter-bar > * { flex: 0 0 auto; }
+.oc-filter-bar > .oc-search-field { flex: 1 1 14rem; min-width: 12rem; }
+
+/* These restyle Radix wrappers that already carry Tailwind utilities (w-72 p-4, h-[1.15rem] w-8, px-3 h-10),
+   so they stay unlayered to win over those utilities. */
+/* PillSelect: a pill trigger on the same track; the menu is the frosted overlay material. */
+[data-slot="select-trigger"].oc-pill-select-trigger { min-height: 46px; height: auto; gap: .5rem; padding: .5rem .875rem .5rem 1.125rem; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); color: var(--primary); font-weight: var(--oc-weight-medium); }
+[data-slot="select-trigger"].oc-pill-select-trigger[data-pill-size="compact"] { min-height: 40px; }
+[data-slot="select-trigger"].oc-pill-select-trigger[data-active] { border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
+[data-slot="select-trigger"].oc-pill-select-trigger[data-active] svg { color: var(--oc-glass-cream); opacity: .8; }
+[data-slot="select-trigger"].oc-pill-select-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+[data-slot="select-trigger"].oc-pill-select-trigger[data-active]:focus-visible { outline-color: var(--ring); box-shadow: var(--focus-halo-outset); }
+.oc-pill-select-trigger .oc-pill-select-prefix { color: var(--muted-foreground); font-weight: var(--oc-weight-medium); }
+[data-active] > .oc-pill-select-prefix { color: inherit; opacity: .78; }
+.oc-pill-select-content { max-height: min(22rem, var(--radix-select-content-available-height)); border-radius: var(--oc-radius-lg); }
+
+/* Toggle: the whole pill is the target; the switch inside is the navy pill when on. */
+.oc-toggle { display: inline-flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 46px; padding: .25rem .375rem .25rem 1.125rem; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
+.oc-toggle-text { display: grid; min-width: 0; }
+.oc-toggle-label { color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); cursor: pointer; }
+.oc-toggle-description { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+.oc-toggle[data-disabled] { opacity: .5; }
+[data-slot="switch"].oc-toggle-switch { position: relative; width: 2.75rem; height: 1.625rem; padding: 2px; border-radius: var(--oc-radius-full); }
+/* The phone rule that gives every product button a 44px minimum would turn these into circles; the Toggle pill
+   and the clear button's ::after already give each a 44px target. */
+[data-slot="switch"].oc-toggle-switch, .oc-search-field .oc-search-field-clear { min-width: 0; min-height: 0; }
+.oc-toggle-switch [data-slot="switch-thumb"] { width: 1.25rem; height: 1.25rem; translate: 0 0; transition: translate var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+.oc-toggle-switch [data-slot="switch-thumb"][data-state="checked"] { translate: 1.125rem 0; background: var(--oc-glass-cream); }
+[data-slot="switch"].oc-toggle-switch[data-state="checked"] { border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
+
+/* FilterPopover / bottom sheet: always inside the viewport, scrolls internally. */
+[data-slot="popover-content"].oc-filter-popover { display: flex; flex-direction: column; width: min(30rem, calc(100vw - 2rem)); max-height: min(36rem, calc(var(--radix-popover-content-available-height, 80vh) - .5rem)); padding: 0; overflow: hidden; border-radius: var(--oc-radius-lg); }
+.oc-filter-panel-description { padding: 1rem 1.25rem 0; color: var(--muted-foreground); font-size: var(--oc-text-small); }
+.oc-filter-panel-body { display: grid; gap: 1rem; min-height: 0; padding: 1.25rem; overflow-y: auto; overscroll-behavior: contain; }
+.oc-filter-panel-body > * { min-width: 0; }
+.oc-filter-panel-body .oc-segmented-control { width: 100%; }
+.oc-filter-panel-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding: .875rem 1.25rem; border-top: 1px solid var(--border); }
+[data-slot="sheet-content"].oc-filter-sheet { max-height: 88dvh; gap: 0; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)); border-radius: var(--oc-radius-lg) var(--oc-radius-lg) 0 0; }
+.oc-filter-sheet .oc-filter-panel-body { padding-inline: 0; }
+.oc-filter-sheet .oc-filter-panel-footer { padding-inline: 0; }
+.oc-filter-field { display: grid; gap: .5rem; }
+.oc-filter-field-label { color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); letter-spacing: .02em; text-transform: uppercase; }
+
+/* DateField: the DatePicker trigger as a pill on the segmented track. */
+.oc-date-picker-trigger[data-variant="pill"] { min-height: 46px; padding-inline: 1rem 1.125rem; border-color: var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }
+.oc-date-picker-trigger[data-variant="pill"][data-empty="false"] { border-color: var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
+.oc-date-picker-trigger[data-variant="pill"][data-empty="false"] svg { color: var(--oc-glass-cream); }
+.oc-date-picker-trigger[data-variant="pill"][data-empty="false"]:focus-visible { outline-color: var(--ring); box-shadow: var(--focus-halo-outset); }
+
+@layer components {
+  /* SearchField: the segmented track's material and height, fully rounded. */
+  .oc-search-field { position: relative; display: flex; align-items: center; min-width: 0; min-height: 46px; padding-inline: .875rem .375rem; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); color: var(--foreground); transition: box-shadow var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease); }
+  .oc-search-field:focus-within { border-color: var(--primary); outline: 2px solid var(--ring); outline-offset: 2px; }
+  .oc-search-field-icon { width: 1rem; height: 1rem; flex: none; color: var(--muted-foreground); }
+  .oc-search-field-input { flex: 1; min-width: 0; height: 44px; padding-inline: .625rem .25rem; border: 0; background: transparent; color: inherit; font-size: var(--oc-text-small); outline: none; }
+  .oc-search-field-input::placeholder { color: var(--muted-foreground); }
+  .oc-search-field-input::-webkit-search-cancel-button { appearance: none; }
+  .oc-search-field-clear { position: relative; display: inline-grid; place-items: center; flex: none; width: 2rem; height: 2rem; border-radius: var(--oc-radius-full); color: var(--muted-foreground); }
+  .oc-search-field-clear::after { content: ""; position: absolute; inset: -6px; }
+  .oc-search-field-clear svg { width: 1rem; height: 1rem; }
+  .oc-search-field-clear:hover { background: var(--oc-glass-hover-tint); color: var(--foreground); }
+  .oc-search-field-clear:focus-visible { outline: 2px solid var(--ring); outline-offset: 0; }
+  .oc-search-field-shortcut { flex: none; min-width: 1.5rem; margin-inline-end: .375rem; padding: .0625rem .375rem; border: 1px solid var(--border); border-radius: var(--oc-radius-full); color: var(--muted-foreground); font-family: inherit; font-size: var(--oc-text-caption); text-align: center; }
+  @media (max-width: 767px) { .oc-search-field-input { font-size: max(1rem, var(--oc-text-small)); } .oc-search-field-shortcut { display: none; } }
+
+  /* RangeSlider: pill track, navy range, cream-ringed navy thumb, value bubble as a pill button. */
+  .oc-range-slider { display: grid; gap: .5rem; min-width: 12rem; }
+  .oc-range-slider-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  .oc-range-slider-label { color: var(--foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }
+  .oc-range-slider-value, .oc-range-slider-input { min-width: 4.5rem; min-height: 2rem; padding: .25rem .75rem; border-radius: var(--oc-radius-full); font-size: var(--oc-text-small); font-variant-numeric: tabular-nums; text-align: center; }
+  .oc-range-slider-value { border: 1px solid var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); font-weight: var(--oc-weight-semibold); cursor: text; }
+  .oc-range-slider[data-empty] .oc-range-slider-value { border-color: var(--oc-glass-light-edge); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); color: var(--muted-foreground); font-weight: var(--oc-weight-medium); }
+  .oc-range-slider-value:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
+  .oc-range-slider[data-empty] .oc-range-slider-value:focus-visible { outline-color: var(--ring); box-shadow: var(--focus-halo-outset); }
+  .oc-range-slider-input { width: 6.5rem; border: 1px solid var(--primary); background: var(--card); color: var(--foreground); box-shadow: var(--oc-glass-field-depth); outline: 2px solid var(--ring); outline-offset: 2px; }
+  .oc-range-slider-root { position: relative; display: flex; align-items: center; height: 44px; touch-action: none; user-select: none; }
+  .oc-range-slider-track { position: relative; flex: 1; height: .5rem; overflow: hidden; border-radius: var(--oc-radius-full); background: var(--oc-surface-glass-track); box-shadow: var(--oc-glass-track-inset); }
+  .oc-range-slider-range { position: absolute; height: 100%; border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); }
+  .oc-range-slider[data-empty] .oc-range-slider-range { opacity: 0; }
+  .oc-range-slider-thumb { position: relative; display: block; width: 1.375rem; height: 1.375rem; border: 3px solid var(--oc-glass-cream); border-radius: var(--oc-radius-full); background: var(--primary); box-shadow: var(--oc-glass-pill-navy-depth); cursor: grab; transition: transform var(--oc-glass-quick) var(--oc-glass-ease); }
+  .oc-range-slider-thumb::after { content: ""; position: absolute; inset: -.75rem; }
+  .oc-range-slider-thumb:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
+  .oc-range-slider[data-empty] .oc-range-slider-thumb { background: var(--muted-foreground); }
+  .oc-range-slider[data-disabled] { opacity: .5; }
+
+  /* FilterButton: the light pill; navy count badge. */
+  .oc-filter-button[data-active] { border-color: var(--primary); }
+  .oc-filter-button-count { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding-inline: .375rem; border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); color: var(--oc-glass-cream); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); font-variant-numeric: tabular-nums; }
+
+  /* Stepper: numbered steps as pills in a segmented track. */
+  .oc-stepper ol { display: flex; flex-wrap: nowrap; gap: 4px; width: fit-content; max-width: 100%; margin: 0; padding: 4px; overflow-x: auto; list-style: none; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); scrollbar-width: thin; }
+  .oc-stepper li { flex: 0 0 auto; }
+  .oc-stepper-step { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .375rem 1rem .375rem .375rem; border-radius: var(--oc-radius-full); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; }
+  button.oc-stepper-step:hover:not([aria-current]) { background: var(--oc-glass-hover-tint); }
+  .oc-stepper-step[aria-current="step"] { border: 1px solid var(--oc-glass-pill-navy-edge); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
+  .oc-stepper-step:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4); }
+  .oc-stepper-step[aria-current="step"]:focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset); }
+  .oc-stepper-step:disabled { cursor: not-allowed; opacity: .5; }
+  .oc-stepper-marker { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--oc-radius-full); background: var(--oc-surface-glass-track); box-shadow: var(--oc-glass-track-inset); font-variant-numeric: tabular-nums; }
+  .oc-stepper-marker svg { width: 1rem; height: 1rem; }
+  .oc-stepper-step[aria-current="step"] .oc-stepper-marker { background: var(--oc-glass-cream); box-shadow: none; color: var(--primary); }
+  .oc-stepper li[data-complete] .oc-stepper-marker { background: var(--oc-glass-pill-navy); color: var(--oc-glass-cream); }
+
+  /* Themed native checkboxes (bulk select). They stay real checkboxes; the look matches Checkbox. */
+  input[type="checkbox"].oc-checkbox { appearance: none; display: inline-grid; place-content: center; flex: none; width: 1.125rem; height: 1.125rem; margin: 0; border: 1px solid var(--input); border-radius: var(--oc-radius-sm); background: var(--card); box-shadow: var(--oc-glass-field-depth); cursor: pointer; vertical-align: middle; }
+  input[type="checkbox"].oc-checkbox::before { content: ""; width: .625rem; height: .625rem; background: var(--oc-glass-cream); clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); transform: scale(0); transition: transform var(--oc-glass-quick) var(--oc-glass-ease); }
+  input[type="checkbox"].oc-checkbox:is(:checked, :indeterminate) { border-color: var(--primary); background: var(--oc-glass-pill-navy); }
+  input[type="checkbox"].oc-checkbox:checked::before { transform: scale(1); }
+  input[type="checkbox"].oc-checkbox:indeterminate::before { height: .125rem; clip-path: none; transform: scale(1); }
+  input[type="checkbox"].oc-checkbox:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  input[type="checkbox"].oc-checkbox:disabled { cursor: not-allowed; opacity: .5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-search-field, .oc-range-slider-thumb, input[type="checkbox"].oc-checkbox::before, .oc-section-tabs > a { transition: none; }
+}
+@media (forced-colors: active) {
+  .oc-search-field, .oc-toggle, .oc-stepper ol, [data-slot="select-trigger"].oc-pill-select-trigger, .oc-date-picker-trigger[data-variant="pill"] { border: 1px solid CanvasText; }
+  .oc-section-tabs > a[data-selected], .oc-stepper-step[aria-current="step"], .oc-range-slider-value, .oc-range-slider-range, .oc-filter-button-count,
+  [data-slot="select-trigger"].oc-pill-select-trigger[data-active], .oc-date-picker-trigger[data-variant="pill"][data-empty="false"],
+  input[type="checkbox"].oc-checkbox:checked { background: Highlight; color: HighlightText; forced-color-adjust: none; }
+  .oc-range-slider-thumb { background: CanvasText; border-color: Canvas; forced-color-adjust: none; }
+  input[type="checkbox"].oc-checkbox { appearance: auto; }
+}
+
+/* A free-text filter field (e.g. Location) on the pill track. Unlayered: Input carries Tailwind utilities. */
+[data-slot="input"].oc-pill-input { min-height: 46px; padding-inline: 1.125rem; border-color: var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
+[data-slot="input"].oc-pill-input:focus-visible { border-color: var(--primary); outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (forced-colors: active) { [data-slot="input"].oc-pill-input { border: 1px solid CanvasText; } }
+
+/* Icon-only view switch (List / Kanban / Ranked): square segments, never stretched to full width. */
+.oc-segmented-control.oc-view-switch button { min-width: 44px; padding-inline: .625rem; }
+.oc-segmented-control.oc-view-switch .oc-segment-icon { margin-inline-end: 0; }
+.oc-segmented-control.oc-view-switch .oc-segment-icon svg { width: 1.125rem; height: 1.125rem; }
+@media (max-width: 767px) { .oc-segmented-control.oc-view-switch { width: fit-content; } }

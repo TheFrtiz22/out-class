@@ -5,14 +5,18 @@ import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { registrationSchema } from "@/lib/onboarding-schemas"
 import { authEmailError } from "@/lib/auth-email"
+import { authTurnstile, captchaFailed, turnstileMessage } from "@/lib/turnstile"
 
 /** Normal signup always requires Supabase email confirmation, in every environment. */
-export async function registerStudent(input: unknown) {
+export async function registerStudent(input: unknown, turnstileToken?: unknown) {
   const cookieStore = await cookies()
   if (cookieStore.has(PLATFORM_VIEW_COOKIE)) return { error: "Exit impersonation before registering an account." }
   const parsed = registrationSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { email, password, firstName, lastName } = parsed.data
+  // Bot check before any provider call: siteverify here, or (once Supabase enforces it) a presence check.
+  const check = await authTurnstile(turnstileToken, { action: "signup" })
+  if (!check.ok) return { error: turnstileMessage(check.reason) }
   const supabase = await createClient(cookieStore)
   try {
     // Fail closed before creating a user if this project's confirmation policy is unsafe.
@@ -25,8 +29,9 @@ export async function registerStudent(input: unknown) {
     if (settings.mailer_autoconfirm !== false || settings.external?.email !== true) {
       return { error: "Account registration is temporarily unavailable. Contact OutClass support." }
     }
+    // The token is forwarded only when Supabase Bot and Abuse Protection is its verifier.
     const { data, error } = await supabase.auth.signUp({
-      email, password, options: { data: { first_name: firstName, last_name: lastName } },
+      email, password, options: { data: { first_name: firstName, last_name: lastName }, ...check.captcha },
     })
     // Never retain an unexpected auto-authenticated signup, including malformed
     // responses that also claim an existing account.
@@ -34,6 +39,7 @@ export async function registerStudent(input: unknown) {
       await supabase.auth.signOut()
       return { error: "Account registration is temporarily unavailable. Contact OutClass support." }
     }
+    if (captchaFailed(error)) return { error: turnstileMessage("rejected") }
     if (error) {
       // Provider versions/settings can use either this documented error or an
       // obfuscated user. Neither is an account-existence signal for the caller.

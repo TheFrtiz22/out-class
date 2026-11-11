@@ -81,7 +81,7 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
         <div className="oc-public-nav-row">
           <Link prefetch={false} className="oc-public-logo" href="/" aria-label="OutClass home" onClick={close}>
             <span className="oc-public-logo-light"><OutClassLogo variant="light" /></span>
-            <span className="oc-public-logo-dark" aria-hidden="true"><OutClassLogo variant="dark" /></span>
+            {hero && <span className="oc-public-logo-ivory" aria-hidden="true"><OutClassLogo variant="dark" /></span>}
           </Link>
           {journey && <div className="oc-public-journey oc-public-journey-desktop" inert={!journey.merged} aria-hidden={!journey.merged}>
             <PerspectiveSwitcher compact perspective={journey.perspective} onChange={journey.onChange} />
@@ -90,10 +90,10 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
             {links.map(link => <a className="oc-public-link" key={link.href} href={link.href} aria-current={active(link.href) ? (link.href.includes("#") ? "location" : "page") : undefined}><RollingNavigationLabel>{link.label}</RollingNavigationLabel></a>)}
           </nav>
           <div className="oc-public-account">
-            <a className="oc-public-login" href="/login" onClick={close}><RollingNavigationLabel>Log In</RollingNavigationLabel></a>
+            <a className="oc-public-login" href="/login" onClick={close}><RollingNavigationLabel>Sign in</RollingNavigationLabel></a>
             <Button className="oc-public-primary" asChild><Link prefetch={false} href="/signup" onClick={close}><RollingNavigationLabel>Get Started</RollingNavigationLabel></Link></Button>
             <button ref={toggle} type="button" className="oc-public-menu-toggle" aria-expanded={open} aria-controls={mobileMenuId} aria-label={open ? "Close navigation menu" : journey?.merged ? "Open navigation menu and perspective switcher" : "Open navigation menu"} onClick={() => setOpen(value => !value)}>
-              <span className="oc-public-menu-icon" aria-hidden="true"><Menu size={18} /><X size={18} /></span>
+              <span className="oc-public-menu-icon" aria-hidden="true"><Menu size={16} /><X size={16} /></span>
             </button>
           </div>
         </div>
@@ -102,7 +102,7 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
             <div className="oc-public-mobile-links">
               {journey?.merged && <div className="oc-public-journey oc-public-journey-mobile"><PerspectiveSwitcher compact perspective={journey.perspective} onChange={journey.onChange} /></div>}
               {links.map(link => <a className="oc-public-link" key={link.href} href={link.href} onClick={close} aria-current={active(link.href) ? (link.href.includes("#") ? "location" : "page") : undefined}><RollingNavigationLabel>{link.label}</RollingNavigationLabel></a>)}
-              <a className="oc-public-link oc-public-mobile-login" href="/login" onClick={close}><RollingNavigationLabel>Log In</RollingNavigationLabel></a>
+              <a className="oc-public-link oc-public-mobile-login" href="/login" onClick={close}><RollingNavigationLabel>Sign in</RollingNavigationLabel></a>
             </div>
           </div>
         </nav>

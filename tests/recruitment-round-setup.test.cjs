@@ -7,7 +7,7 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 function ui(file,name,props,mocks){
  const slots=[],effects=[],cleanups=[];let cursor=0;const cache={};
  const react={useState(value){const i=cursor++;if(!(i in slots))slots[i]=typeof value==='function'?value():value;return[slots[i],next=>slots[i]=typeof next==='function'?next(slots[i]):next]},useRef(value){const i=cursor++;return slots[i]??=( {current:value})},useEffect(fn,deps){const i=cursor++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
- function load(file){if(cache[file])return cache[file];const m={exports:{}};new Function('require','module','exports',compile(file))(n=>n==='react'?react:n==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:n==='@/hooks/use-autosave'?require('./helpers/autosave-ui-harness.cjs').autosaveHook(react):n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='next/link'?{default:'Link'}:n.startsWith('@/components/')?new Proxy({},{get:(_,k)=>k}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[file]=m.exports;}
+ function load(file){if(cache[file])return cache[file];const m={exports:{}};new Function('require','module','exports',compile(file))(n=>n==='react'?react:n==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:n==='@/hooks/use-autosave'?require('./helpers/autosave-ui-harness.cjs').autosaveHook(react):n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='next/link'?{default:'Link'}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/components/')?new Proxy({},{get:(_,k)=>k}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[file]=m.exports;}
  const component=load(file)[name];return{render(){cursor=0;const result=component(props);effects.splice(0).forEach(fn=>fn());return result},close(){cleanups.forEach(fn=>fn?.())}};
 }
 function persisted(){
@@ -73,6 +73,7 @@ test('Demo fresh and saved fixtures discover by stable type/ID and persist kits 
 test('both setup entry points admit explicit kit editors and pipeline managers without granting scheduling or kit-edit privileges',()=>{
  const h=harness(),{availableSettings}=h.load('lib/club-settings.ts'),{hasPermission}=h.load('lib/permissions.ts'),{interviewCapabilities}=h.load('lib/interview-access.ts');
  const board={status:'ACTIVE',permissions:[],interviewOffices:['BOARD']},manager={status:'ACTIVE',permissions:['recruitment.manage'],interviewOffices:[]};
- for(const m of [board,manager])assert.ok(availableSettings(m).some(s=>s.id==='interviews'));
+ const {managerNavigation}=h.load('lib/product-navigation.ts');
+ for(const m of [board,manager]){assert.ok(!availableSettings(m).some(s=>s.id==='interviews'));assert.ok(managerNavigation(m,'club','recruiting').some(i=>i.id==='interviews'),'kit editors and pipeline managers reach kits in Interviews')}
  assert.equal(hasPermission(board,'interviews.manage'),false);assert.equal(interviewCapabilities(manager).editKit,false);assert.equal(availableSettings({...board,status:'INACTIVE'}).length,0);
 });

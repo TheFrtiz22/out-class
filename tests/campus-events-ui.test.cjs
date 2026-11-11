@@ -105,6 +105,10 @@ test("board uses original flyer in accessible modal, keyboard button activation 
   slots[3] = 1;
   slots[5] = false;
   let tree = render();
+  const filterPanel = all(tree).find((n) => n.type === "FilterPopover");
+  assert.equal(filterPanel.props.label, "Filter", "Corkboard filters sit in the viewport-safe FilterPopover (Escape and outside press close it)");
+  assert.equal(filterPanel.props.count, 0);
+  assert.ok(all(tree).some((n) => n.type === "SearchField" && n.props["aria-label"] === "Search events"));
   const trigger = all(tree).find(
     (n) =>
       n.type === "button" && n.props.className === "oc-pinned-flyer",
@@ -149,10 +153,11 @@ test("board uses original flyer in accessible modal, keyboard button activation 
   });
   assert.equal(focused, true);
   assert.equal(prevented, true);
-  const filter = all(tree).find((n) => n.type === "details");
+  const filter = all(tree).find((n) => n.type === "FilterPopover");
   assert.ok(filter);
   assert.ok(
-    all(filter).some((n) => n.type === "Input" && n.props.type === "date"),
+    all(filter).some((n) => n.type === "DateField" && n.props.label === "Date (Eastern Time)"),
+    "the date filter is the pill DateField, not a native date input",
   );
 });
 test("reduced motion removes pull and overlay animation; Escape and focus trapping use the existing Radix primitive", () => {
@@ -169,29 +174,43 @@ test("reduced motion removes pull and overlay animation; Escape and focus trappi
   assert.match(dialog, /@radix-ui\/react-dialog/);
 });
 
-test("leader local Meetings switch keeps member tools and isolates unavailable Demo events", () => {
-  let params = new URLSearchParams('section=meetings'), demo = false, navigated;
-  const { ClubMeetingsWorkspace } = load('components/events/club-meetings-workspace.tsx', {
-    'next/navigation': { useSearchParams: () => params, useRouter: () => ({ push: value => navigated = value }) },
+test("Calendar shows meetings and events with an All / Meetings / Events filter; Demo still isolates events", () => {
+  let params = new URLSearchParams('section=calendar'), demo = false;
+  const { ClubCalendar } = load('components/events/club-meetings-workspace.tsx', {
+    'next/navigation': { useSearchParams: () => params, useRouter: () => ({ replace() {} }) },
     '@/contexts/demo-context': { useDemoMode: () => ({isDemoEnabled: demo}) },
-    '@/lib/workspace-navigation': { navigateWithinClub: value => {navigated=value;return true} },
   });
-  const props={clubId:'club',clubName:'Club',canSeeAttendees:true};
-  let tree=ClubMeetingsWorkspace(props);
-  assert.ok(all(tree).some(n=>n.type==='MeetingList' && n.props.initialAudience==='ALL'));
-  all(tree).find(n=>title(n)==='Corkboard Events' && n.type==='Button').props.onClick();
-  assert.match(navigated,/section=meetings&meetingTab=events/);
-  params=new URLSearchParams('section=meetings&meetingTab=events');tree=ClubMeetingsWorkspace(props);
+  const props={clubId:'club',clubName:'Club',canManage:true,canSeeAttendees:true};
+  let tree=ClubCalendar(props);
+  const filter=all(tree).find(n=>n.type==='PillGroup');
+  assert.deepEqual(filter.props.options.map(o=>o.label),['All','Meetings','Events']);
+  assert.equal(filter.props.value,'all');
+  assert.equal(all(tree).find(n=>n.type==='MeetingList').props.initialAudience,'ALL');
+  assert.ok(all(tree).some(n=>n.type==='ClubEvents'),'All shows events too');
+  params=new URLSearchParams('section=calendar&type=meetings&new=1');tree=ClubCalendar(props);
+  assert.equal(all(tree).find(n=>n.type==='MeetingList').props.openCreate,true);
+  assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
+  params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar(props);
   assert.ok(all(tree).some(n=>n.type==='ClubEvents'));
-  demo=true;tree=ClubMeetingsWorkspace(props);
+  assert.ok(!all(tree).some(n=>n.type==='MeetingList'));
+  demo=true;tree=ClubCalendar(props);
   assert.match(title(tree),/not available in Demo yet/);
   assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
+  // Without meetings.manage: meetings only, no filter, even on an Events link.
+  demo=false;params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar({...props,canManage:false,personalOnly:true});
+  assert.equal(tree.type,'MeetingList');assert.equal(tree.props.personalOnly,true);
+});
+
+test("the workspace renders Calendar for every member; events stay behind meetings.manage", () => {
+  const workspace=fs.readFileSync('components/club-workspace.tsx','utf8');
+  assert.match(workspace,/section === "calendar" && <ClubCalendar [^>]*canManage=\{hasPermission\(membership, "meetings\.manage"\)\}/);
+  assert.doesNotMatch(workspace,/eventsFallback|section === "events"|section === "meetings"/);
 });
 
 test("leader removal requires confirmation and returns keyboard focus to its origin", async () => {
   const slots=[], refs=[];let cursor=0,refCursor=0;const calls=[];
   const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef(initial){return refs[refCursor++]??={current:initial}},useEffect(){}};
-  const {ClubEvents}=load('components/events/club-events.tsx',{react,'@/lib/workspace-api':{commandCampusEvent:async input=>calls.push(input)}});
+  const {ClubEvents}=load('components/events/club-events.tsx',{react,'@/hooks/use-revalidate':{useRevalidate(){}},'@/lib/workspace-api':{commandCampusEvent:async input=>calls.push(input)}});
   const render=()=>{cursor=0;refCursor=0;return ClubEvents({clubId:'club',clubName:'Club',canSeeAttendees:true})};
   render();slots[0]=[{id:'event',clubId:'club',title:'Public night',date:'2099-10-16T23:00:00Z',endDate:'2099-10-17T01:00:00Z',location:'Hall',status:'PUBLISHED',revision:2,rsvpCount:1,capacity:2}];slots[1]=false;
   let tree=render();let focused=false;const origin={isConnected:true,focus(){focused=true}};

@@ -4,6 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), ts = require('typesc
 const { NextRequest } = require('next/server');
 const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)];
 function loader(mocks = {}, globals = {}) {
+  mocks = { ...require('./helpers/shell-stubs.cjs'), ...mocks };
   const cache = {};
   function load(file) {
     file = path.resolve(file); if (cache[file]) return cache[file].exports;
@@ -11,6 +12,7 @@ function loader(mocks = {}, globals = {}) {
     const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
     new Function('require', 'module', 'exports', ...Object.keys(globals), code)(name => {
       if (name in mocks) return mocks[name];
+      if (name === '@/components/ui/confirm-dialog') return require('./helpers/confirm-stub.cjs');
       if (name.startsWith('@/components/')) return new Proxy({}, { get: (_, key) => String(key) });
       if (name.endsWith('.css')) return {};
       if (name.startsWith('@/')) return load(name.slice(2) + '.ts');
@@ -63,7 +65,7 @@ test('read API preserves dates and user JSON, validates scope, and never caches 
   const seen = [];
   let demo = false;
   const load = loader({
-    'next/headers': { cookies: async () => ({ get: () => demo ? { value: '1' } : undefined }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ get: () => demo ? { value: '1' } : undefined }) },
     '@/actions/club-overview': {}, '@/actions/crm': {}, '@/actions/club-onboarding': {}, '@/actions/club-directory': {}, '@/actions/tasks': {}, '@/actions/tutorials': {}, '@/actions/club-settings': {}, '@/actions/applicant-intelligence': {}, '@/actions/meetings': {}, '@/actions/applications': {},
     '@/actions/organization-members': { getOrganizationMemberManagement: async id => { seen.push(id); if (id !== clubId) throw Error('Access denied'); return dates; } },
   });
@@ -108,7 +110,7 @@ test('verified Supabase identity is reused only inside the same React request; m
   let requestCache = new Map(), authCalls = 0, memberReads = 0, sessionReads = 0, allowed = true;
   const react = { cache: fn => { const key = Symbol(); return (...args) => { if (!requestCache.has(key)) requestCache.set(key, fn(...args)); return requestCache.get(key); }; } };
   const load = loader({
-    react, 'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
+    react, 'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/navigation': { redirect: () => { throw Error('Unauthenticated'); } },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     './supabase/server': { createClient: async () => ({ auth: { getSession: async () => require('./helpers/auth-session.cjs').sessionFor('user'), getUser: async token => { assert.equal(token,require('./helpers/auth-session.cjs').tokenFor('user')); authCalls++; return { data: { user: { id: 'user', email: 'user@virginia.edu', email_confirmed_at: '2026-01-01' } }, error: null }; } } }) },

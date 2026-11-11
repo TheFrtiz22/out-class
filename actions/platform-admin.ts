@@ -1,4 +1,5 @@
 "use server";
+import { redactBallotAudit } from "@/lib/ballot-audit-privacy";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { readDemoTemplate } from "@/lib/demo/validate";
 import { clubPermissions } from "@/lib/permissions";
+import { boundedParse } from "@/lib/bounded-input";
 
 const resources = z.enum(platformResources);
 export type PlatformResource = z.infer<typeof resources>;
@@ -75,7 +77,13 @@ export async function readPlatformResource(
             : f.status === "STUDENT" ? { role: "STUDENT" } : {}),
           ...(dates ? { createdAt: dates } : {}),
         },
-        select: { id: true, email: true, disabledAt: true, createdAt: true },
+        select: {
+          id: true,
+          email: true,
+          disabledAt: true,
+          createdAt: true,
+          studentProfile: { select: { firstName: true, lastName: true } },
+        },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
     case "clubs":
@@ -327,7 +335,7 @@ export async function readPlatformResource(
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
     case "audit":
-      return prisma.auditLog.findMany({
+      return (await prisma.auditLog.findMany({
         ...paging,
         where: {
           ...club,
@@ -349,7 +357,7 @@ export async function readPlatformResource(
             : {}),
         },
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
-      });
+      })).map(redactBallotAudit);
   }
 }
 
@@ -445,7 +453,7 @@ const operations = z.discriminatedUnion("kind", [
 ]);
 export async function changePlatformResource(input: unknown, reason: string) {
   const actor = await requirePlatformAdmin({ fresh: true });
-  const data = operations.parse(input);
+  const data = boundedParse(operations, input);
   const justification = z.string().trim().min(10).max(1000).parse(reason);
   if (data.kind === "content" && JSON.stringify(data.value).length > 4_000_000)
     throw new Error("Content exceeds the 4 MB limit.");

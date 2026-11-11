@@ -6,8 +6,10 @@ const {createClient}=require('@supabase/supabase-js');
 const {PrismaClient}=require('@prisma/client');
 const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
 const dashboards=process.argv.includes('--dashboards'),writing=process.argv.includes('--application-writing')||dashboards,appPort=dashboards?3115:writing?3109:3107;
-const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?(process.env.OUTCLASS_DASHBOARD_E2E_PORT_PREFIX||'593'):writing?'573':'553';
+const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?(process.env.OUTCLASS_DASHBOARD_E2E_PORT_PREFIX||'593'):writing?'573':(process.env.OUTCLASS_ONBOARDING_E2E_PORT_PREFIX||'553');
 const releaseRepair=process.argv.includes('--pipeline-release-repair');
+// --shell: persistent workspace shell, header height and dashboard checks on the onboarding stack (no onboarding suite).
+const shellSuite=process.argv.includes('--shell');
 const selectedNavigation=process.argv.includes('--selected-navigation')||releaseRepair;
 if(selectedNavigation&&(writing||!process.argv.includes('--club-integration')))throw Error('--selected-navigation requires --club-integration on the onboarding fixture.');
 if(!/^[1-5]\d{2}$|^6[0-4]\d$/.test(portPrefix))throw Error('A disposable port prefix must reserve a valid three-digit local range.');
@@ -40,9 +42,29 @@ function logged(binary,args,log,env=process.env){
  const fd=fs.openSync(path.join(root,log),'w');const result=spawnSync(executable,argv,{cwd:repo,env,stdio:['ignore',fd,fd]});fs.closeSync(fd);
  if(binary==='supabase'){
   const filename=path.join(root,log),output=fs.readFileSync(filename,'utf8');
-  fs.writeFileSync(filename,output.split('\n').map(line=>/DB_URL|SERVICE_ROLE_KEY|SECRET_KEY|JWT_SECRET|ANON_KEY|PUBLISHABLE_KEY|S3_PROTOCOL_ACCESS|sb_(secret|publishable)_|postgresql:\/\//.test(line)?'[Local service connection/key line redacted]':line).join('\n'));
+  fs.writeFileSync(filename,output.split('\n').map(line=>/DB_URL|SERVICE_ROLE_KEY|SECRET_KEY|JWT_SECRET|ANON_KEY|PUBLISHABLE_KEY|S3_PROTOCOL_ACCESS|sb_(secret|publishable)_|postgres(?:ql)?:\/\/|eyJ[\w-]{10,}\./.test(line)?'[Local service connection/key line redacted]':line).join('\n'));
  }
  if(result.status!==0)throw Error(`${binary} failed; inspect ${path.join(root,log)}`);
+}
+// CI's Supabase containers occasionally fail to start (image pulls, port races). Retry once after a clean
+// stop; keep each failed attempt's (already redacted) log, and copy it to OUTCLASS_E2E_LOG_DIR for upload.
+function keepStartLog(name){
+ const from=path.join(root,'supabase-start.log'),dir=process.env.OUTCLASS_E2E_LOG_DIR;
+ try{fs.copyFileSync(from,path.join(root,name));if(dir){fs.mkdirSync(dir,{recursive:true});fs.copyFileSync(from,path.join(dir,`${projectId}-${name}`));}}
+ catch(error){console.warn(`Could not keep ${name}: ${error.message}`);}
+}
+function startSupabase(){
+ const args=['start','--workdir',root,'-x','studio,edge-runtime,logflare,vector,imgproxy'];
+ let first;
+ try{logged('supabase',args,'supabase-start.log');return 1;}
+ catch(error){first=error;keepStartLog('supabase-start-attempt-1.log');}
+ // A half-initialised volume would fail the same way: discard it (the project is disposable).
+ logged('supabase',['stop','--workdir',root,'--no-backup'],'supabase-stop-retry.log');
+ try{logged('supabase',args,'supabase-start.log');}
+ catch(error){keepStartLog('supabase-start-attempt-2.log');throw error;}
+ // Visible on a green run too, so a recurring infrastructure problem is not hidden by the retry.
+ console.log(`::warning title=supabase start retried::First attempt failed (${first.message}); the retry started. See the supabase-start-logs artifact.`);
+ return 2;
 }
 async function ready(url,headers={}){
  for(let n=0;n<100;n++){try{const response=await fetch(url,{headers,signal:AbortSignal.timeout(1000)});if(response.ok)return;}catch{}await new Promise(resolve=>setTimeout(resolve,200));}
@@ -70,7 +92,7 @@ async function ready(url,headers={}){
  // Stop only this explicitly disposable project; the normal out-class stack is untouched.
  stackTouched=true;
  logged('supabase',['stop','--workdir',root],'supabase-stop.log');
- logged('supabase',['start','--workdir',root,'-x','studio,edge-runtime,logflare,vector,imgproxy'],'supabase-start.log');
+ startSupabase();
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
  const settings={projectId,portPrefix,appUrl:`http://127.0.0.1:${appPort}`,status,buildDir:path.join(repo,writing?'.next':'.next-publish'),suite:dashboards?'dashboards':writing?'application-writing':undefined};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
@@ -106,18 +128,25 @@ async function ready(url,headers={}){
  // --club-integration runs all tests gated by the reserved onboarding project,
  // including settings/navigation and real built PDF import (which needs the
  // ui-fixture.json written by onboarding). Keep files serialized.
- const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs'];
+ const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/student-paths-e2e.test.cjs','tests/focus-frame-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs','tests/share-card-production-e2e.test.cjs'];
  const testFiles=dashboards?['tests/operational-dashboards-e2e.test.cjs']:process.argv.includes('--application-writing')?['tests/application-writing-e2e.test.cjs']:
    process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
-   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
-   process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs',...onboardingTests]:onboardingTests;
- const result=spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
+   process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs',...onboardingTests]:shellSuite?[]:onboardingTests;
+ const result=testFiles.length===0?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(selectedNavigation){
   logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'selected-navigation-seed.log',env);
   const navigationTests=['tests/navigation-phase1-e2e.test.cjs','tests/navigation-phase2-e2e.test.cjs','tests/navigation-phase10-e2e.test.cjs','tests/navigation-phase12-e2e.test.cjs'];
   const navigationResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...navigationTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
   if(navigationResult.status!==0)throw Error('Selected navigation integration failed; inspect the disposable test log.');
+ }
+ if(shellSuite){
+  logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'shell-seed.log',env);
+  const shellTests=['tests/workspace-shell-e2e.test.cjs','tests/header-gap-e2e.test.cjs','tests/overview-view-authz-e2e.test.cjs','tests/dashboards-split-e2e.test.cjs'];
+  for(const file of shellTests)if(!fs.existsSync(path.join(repo,file)))throw Error(`Missing shell suite ${file}`);
+  const shellResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...shellTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+  if(shellResult.status!==0)throw Error('Workspace shell integration failed; inspect the disposable test log.');
  }
  if(releaseRepair){
   logged(process.execPath,['scripts/pipeline-release-fixtures.cjs'],'pipeline-release-fixtures.log',env);

@@ -7,7 +7,7 @@ const { renderToStaticMarkup } = require('react-dom/server')
 function load(file) {
  const mod = { exports: {} }
  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
- new Function('require','exports',code)(name => name === '@/components/icons' ? require('./helpers/icons.cjs') : name.endsWith('.css') ? {} : name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : name === './campus-illustration' ? load('components/product/campus-illustration.tsx') : require(name), mod.exports)
+ new Function('require','exports',code)(name => name === '@/components/icons' ? require('./helpers/icons.cjs') : name.endsWith('.css') ? {} : name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : require(name), mod.exports)
  return mod.exports
 }
 const { campusIllustrations } = load('lib/campus-illustrations.ts')
@@ -22,19 +22,8 @@ test('approved assets preserve full viewBoxes and filled external vector groups'
  assert.equal(campusIllustrations.columns.asset,'rotunda')
  assert.equal(fs.existsSync('public/images/campus/illustrations/columns.svg'),false)
 })
-test('decorative rendering is silent, unfocusable and references both exact asset groups',()=>{
- const {CampusIllustration}=load('components/product/campus-illustration.tsx')
- for(const variant of Object.keys(campusIllustrations)) {
- const html=renderToStaticMarkup(React.createElement(CampusIllustration,{variant}))
- assert.match(html,/aria-hidden="true"/);assert.match(html,/focusable="false"/)
- assert.ok(html.includes(`${campusIllustrations[variant].asset}.svg#linework`))
- assert.ok(html.includes(`${campusIllustrations[variant].asset}.svg#accent`))
- assert.doesNotMatch(html,/tabindex|<title|<desc/)
- assert.match(html,/preserveAspectRatio="xMidYMid meet"/)
- }
-})
 test('page headers preserve titles and actions without decorative artwork',()=>{
- const {PageHeader}=load('components/product/page-header.tsx')
+ const {PageHeader}=load('components/ui/page-header.tsx')
  const html=renderToStaticMarkup(React.createElement(PageHeader,{title:'Applications',eyebrow:'Research Club',description:'Deadline: Friday',action:React.createElement('button',null,'New application'),ribbon:true,illustration:'rotunda'}))
  assert.doesNotMatch(html,/oc-campus|data-illustrated/)
  assert.match(html,/<h1>Applications<\/h1>/);assert.match(html,/Research Club/);assert.match(html,/Deadline: Friday/);assert.match(html,/<button>New application<\/button>/)
@@ -50,7 +39,7 @@ test('standalone brand artwork keeps original colors and reduced-motion support 
  assert.match(css,/color: #507b9e/);assert.match(css,/color: #f07835/)
  assert.doesNotMatch(css,/oc-page-header|mask-image|overflow:\s*hidden/)
  assert.match(css,/prefers-reduced-motion: reduce/)
- assert.match(css,/aspect-ratio: var\(--oc-campus-aspect-ratio\)/)
+ assert.match(css,/aspect-ratio: var\(--oc-campus-aspect-ratio(, auto)?\)/)
 })
 
 test("approved SVG bytes remain unchanged",()=>{
@@ -64,12 +53,13 @@ const settingsCases = [
  ['profile capability Appearance', {permissions:['club.settings']}, 'general', 'general', undefined],
  ['application-only inaccessible General', {permissions:['application.manage']}, 'general', 'application', undefined],
  ['members-only inaccessible General', {permissions:['members.manage']}, 'general', 'members', undefined],
- ['interviews-only inaccessible General', {permissions:['interviews.manage']}, 'general', 'interviews', undefined],
+ // Settings → Interviews moved into the Interviews tool, so interview managers have no Settings section.
+ ['interviews-only has no settings', {permissions:['interviews.manage']}, 'general', undefined, undefined],
  ['direct operational tab', {isOwner:true}, 'application', 'application', undefined],
  ['inaccessible operational request falls back to Appearance', {permissions:['club.settings']}, 'interviews', 'general', undefined],
  ['inaccessible operational request falls back to permitted operational tab', {permissions:['application.manage']}, 'members', 'application', undefined],
  ['unknown requested tab follows permitted Appearance fallback', {isOwner:true}, 'unknown', 'general', undefined],
- ['default limited-permission tab', {permissions:['interviews.manage']}, null, 'interviews', undefined],
+ ['default limited-permission tab', {permissions:['members.manage']}, null, 'members', undefined],
  ['no permitted settings', {permissions:[]}, 'general', undefined, undefined],
  ['revoked membership', {isOwner:true,status:'REVOKED'}, 'general', undefined, undefined],
 ]
@@ -101,12 +91,13 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/lib/application-state') return {ApplicationStateProvider:passthrough,useApplicationState:()=>({focusLeader:()=>{}})}
    if(name==='@/lib/utils') return {cn:(...s)=>s.filter(Boolean).join(' ')}
    if(name==='@/components/shell/product-shell') return {ProductShell:passthrough}
+   if(name==='@/components/shell/shell-state') return {ShellState:passthrough}
    if(name==='@/components/club-settings-workspace') return component('components/club-settings-workspace.tsx')
    if(name==='@/components/product/welcome-header') return component('components/product/welcome-header.tsx')
    if(name==='@/lib/welcome') return load('lib/welcome.ts')
-   if(name==='@/components/product/page-header') return component('components/product/page-header.tsx')
-   if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
-   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
+   if(name==='@/components/ui/page-header') return component('components/ui/page-header.tsx')
+   if(name==='@/components/product/dashboard/dashboard') return component('components/product/dashboard/dashboard.tsx')
+   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation','@/lib/organization-authorization','@/lib/club-onboarding','@/lib/copy/terms','@/lib/recruiting-settings'].includes(name)) return load(name.replace('@/','')+'.ts')
    return new Proxy({}, {get:()=>()=>null})
   },exports)
   return exports
@@ -129,9 +120,9 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
 })
 
-test('club Overview keeps its club name and neutral welcome without repetitive public profile shortcuts or artwork',()=>{
+test('club Overview opens with the club name, not a greeting, without repetitive public profile shortcuts or artwork',()=>{
  const html=renderSettingsWorkspace({isOwner:true},null,'overview');
- assert.match(html,/<h1[^>]*>.*Welcome to OutClass\..*<\/h1>/);assert.match(html,/Fixture Club/);
+ assert.match(html,/<h1[^>]*>.*Fixture Club.*<\/h1>/);assert.doesNotMatch(html,/Good (morning|afternoon|evening)|Welcome to OutClass|Still up/);
  assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
 })

@@ -1,13 +1,13 @@
 .oc-interview-management { gap: 18px; min-width: 0; }
-.oc-interview-management [data-slot="tabs-list"] { height: auto; width: 100%; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; justify-content: start; gap: 4px; padding: 5px; border-radius: var(--oc-radius-lg); background: #edf1f6; }
-.oc-interview-management [data-slot="tabs-trigger"] { min-height: 44px; padding: 10px 15px; border-radius: var(--oc-radius-md); white-space: nowrap; flex: 0 0 auto; color: #153052; }
-.oc-interview-management [data-slot="tabs-trigger"][data-state="active"] { background: #fff; box-shadow: 0 1px 4px #14243b12; }
+.oc-interview-management [data-slot="tabs-list"] { height: auto; width: 100%; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; justify-content: start; gap: 4px; padding: 5px; border-radius: var(--oc-radius-lg); background: var(--oc-content-soft-blue); }
+.oc-interview-management [data-slot="tabs-trigger"] { min-height: 44px; padding: 10px 15px; border-radius: var(--oc-radius-md); white-space: nowrap; flex: 0 0 auto; color: var(--primary); }
+.oc-interview-management [data-slot="tabs-trigger"][data-state="active"] { background: var(--card); box-shadow: var(--oc-shadow-surface); }
 .oc-kit-editor { container-type: inline-size; }
 .oc-kit-heading { margin-bottom: 16px; }
 .oc-kit-heading h2 { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); color: var(--primary); margin-bottom: 8px; }
 .oc-kit-heading p { max-width: 730px; line-height: var(--oc-leading-body); }
 .oc-kit-sections { display: grid; gap: 10px; }
-.oc-kit-round { min-width: 0; border: 1px solid var(--border); border-radius: var(--oc-radius-md); background: var(--card); overflow: hidden; }
+.oc-kit-round { min-width: 0; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-radius-md); background: var(--oc-content-surface); overflow: hidden; box-shadow: var(--oc-content-shadow) }
 .oc-kit-round-trigger { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; width: 100%; min-height: 48px; padding: 12px 16px; text-align: left; color: var(--primary); }
 .oc-kit-round-trigger:hover { background: var(--muted); }
 .oc-kit-round-name { flex: 1; min-width: 100px; overflow-wrap: anywhere; font-weight: 500; }

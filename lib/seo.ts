@@ -2,20 +2,33 @@ import type { Metadata } from "next"
 
 export const LEGAL_ORGANIZATION_NAME = "OutClassPlatforms LLC"
 export const SITE_URL = "https://www.out-class.net"
-export const SITE_TITLE = "OutClass | UVA Club Applications & Recruitment"
+/** Every page title is "<Page> · OutClass"; the root layout's template adds the suffix exactly once. */
+export const TITLE_SUFFIX = " · OutClass"
+export function pageTitle(name: string) {
+  const bare = name.replace(/(?:\s*[·|]\s*OutClass)+$/i, "").trim()
+  return bare ? `${bare}${TITLE_SUFFIX}` : "OutClass"
+}
+export const SITE_TITLE = "OutClass · UVA club applications and recruitment"
 export const SITE_DESCRIPTION = "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place."
 export const ORGANIZATION_DESCRIPTION = "OutClass is a platform for college club recruitment, helping students discover and apply to organizations while giving club leaders tools to manage applicants, interviews, scheduling, evaluations, and decisions."
+/** Shared defaults for every page (inherited unless a page sets its own openGraph/twitter). */
+export const socialDefaults = (): Metadata => ({
+  openGraph: { siteName: "OutClass", type: "website", locale: "en_US", ...(socialImage ? { images: [socialImage] } : {}) },
+  twitter: { card: "summary_large_image", ...(socialImage ? { images: [socialImage.url] } : {}) },
+})
 export const privateRobots: Metadata["robots"] = { index: false, follow: false }
 export const publicRobots: Metadata["robots"] = { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } }
 
-// Use the bundled 1200 × 630 social card unless a deployment overrides its public path.
-const imagePath = process.env.OUTCLASS_OG_IMAGE_PATH || "/images/outclass-social.jpg"
-const socialImage = imagePath?.startsWith("/") && !imagePath.startsWith("//")
-  ? { url: `${SITE_URL}${imagePath}`, width: 1200, height: 630, alt: "OutClass — Student club applications and recruitment" }
+// The glass 1200 × 630 card prerendered at /og/outclass.png (lib/share-card.tsx), unless a
+// deployment overrides its public path.
+const imagePath = process.env.OUTCLASS_OG_IMAGE_PATH || "/og/outclass.png"
+export const socialImage = imagePath?.startsWith("/") && !imagePath.startsWith("//")
+  ? { url: `${SITE_URL}${imagePath}`, width: 1200, height: 630, alt: "OutClass: apply to UVA clubs with one profile" }
   : undefined
 
-export function publicPageMetadata(title: string, description: string, path: string): Metadata {
+export function publicPageMetadata(name: string, description: string, path: string): Metadata {
   const url = new URL(path, SITE_URL).toString()
+  const title = name === SITE_TITLE ? name : pageTitle(name)
   return {
     title: { absolute: title },
     description,

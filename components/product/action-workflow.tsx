@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import "@/components/shell/responsive-workspace.css";
 import { flushEditors } from "@/lib/autosave-navigation"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,7 @@ export function ActionWorkflow({ title, description, trigger, children, variant 
   showCloseAction?: boolean
 }) {
   const [localOpen, setLocalOpen] = useState(false)
+  const confirm = useConfirm()
   const [error, setError] = useState("")
   const body = useRef<HTMLDivElement>(null)
   const changed = useRef(false)
@@ -47,7 +49,7 @@ export function ActionWorkflow({ title, description, trigger, children, variant 
     closing.current = true
     try {
       if (body.current?.querySelector('[data-autosave-editor="true"]')) await flushEditors()
-      else if (hasUnsavedChanges() && !window.confirm("Close this workflow? Unsaved changes will be lost.")) return
+      else if (hasUnsavedChanges() && !(await confirm({ title: "Close this workflow?", description: "Unsaved changes will be lost.", confirmLabel: "Close workflow", cancelLabel: "Keep editing", tone: "danger" }))) return
       done()
     } catch { setError("Your draft could not be saved. Keep this workflow open and retry.") }
     finally { closing.current = false }

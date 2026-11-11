@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { flushSync } from "react-dom";
 import { resumeCommentInput } from "@/lib/resume-comment-input";
 import { composerEnter } from "@/lib/composer-enter";
@@ -10,12 +11,14 @@ import { annotationContentSchema } from "@/lib/interview-access";
 import { anchorFromRange, anchorMatchesText, rangeForText, type ResumeAnchor } from "@/lib/resume-anchors";
 import { getInterviewResumeAnnotations, saveInterviewResumeAnnotation, deleteInterviewResumeAnnotation } from "@/lib/workspace-api";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, Download, StickyNote } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import { InterviewResumeResource, ResumeAccessError } from "@/lib/interview-resume-resource";
 import { InterviewResumePlaceholder } from "@/components/interview-resume-placeholder";
+import { NativeSelect } from "@/components/ui/native-select"
 
 type Annotation = { id: string; revision: number; kind: "TEXT_HIGHLIGHT" | "GENERAL_NOTE"; comment: string; anchor: ResumeAnchor | null; authorName: string; canEdit: boolean };
 type Draft = { id: string; revision?: number; kind: Annotation["kind"]; comment: string; anchor: ResumeAnchor | null };
@@ -124,6 +127,7 @@ export default function InterviewResumeViewer(props: ViewerProps) {
 }
 function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resource: sharedResource, initialPage = 1 }: ViewerProps) {
   const { user } = useAuth();
+  const confirm = useConfirm();
   const request = useMemo(() => ({ ...scope, documentId }), [scope, documentId]);
   const [demoSource, setDemoSource] = useState("/demo/sample-resume.pdf");
   const path = isDemo ? demoSource : `/api/interview-resumes?${new URLSearchParams(request)}`;
@@ -198,7 +202,14 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
 
   function begin(anchor: ResumeAnchor | null, initialText = "") {
     if (writing.current || !currentAccess) return false;
-    if (draft && !window.confirm("Discard the unsaved résumé comment?")) return false;
+    if (draft) {
+      // Ask first; the composer opens only after the reader chooses to discard.
+      void confirm({ title: "Discard the unsaved comment?", description: "Your unsaved résumé comment will be lost.", confirmLabel: "Discard comment", cancelLabel: "Keep editing", tone: "danger" }).then(ok => { if (ok && !writing.current) startDraft(anchor, initialText); });
+      return false;
+    }
+    return startDraft(anchor, initialText);
+  }
+  function startDraft(anchor: ResumeAnchor | null, initialText: string) {
     // Focus must exist before the browser's next input/composition event. The
     // first printable key is seeded once rather than replaying synthetic keys.
     flushSync(() => { setDraft({ id: crypto.randomUUID(), kind: anchor ? "TEXT_HIGHLIGHT" : "GENERAL_NOTE", comment: initialText, anchor }); setNotesOpen(true); setMobileTab("comments"); setError(""); });
@@ -217,7 +228,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     } finally { writing.current = false; if (mounted.current) setBusy(false); }
   }
   async function remove(a: Annotation) {
-    if (writing.current || !window.confirm(`Delete this résumé comment by ${a.authorName}? Moderation history is retained.`)) return;
+    if (writing.current || !(await confirm({ title: `Delete this comment by ${a.authorName}?`, description: "Moderation history is retained.", confirmLabel: "Delete comment", tone: "danger" })) || writing.current) return;
     writing.current = true; ++serial.current; setBusy(true); setError("");
     try { await deleteInterviewResumeAnnotation({ ...request, id: a.id, revision: a.revision }); if (draft?.id === a.id) setDraft(null); await refresh(true); }
     catch { setError("Comment was not deleted. Refresh and review its latest version before retrying."); await refresh(true); }
@@ -246,14 +257,14 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
       {currentAccess && pdf && <>
         {pdf.numPages > 1 && <>
         <Button type="button" variant="ghost" size="icon" className="size-9" aria-label="Previous page" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="size-4" aria-hidden="true" /></Button>
-        <label className="flex items-center gap-1 text-sm">Page <select aria-label="Résumé page" className="rounded border bg-background p-1" value={page} onChange={e => setPage(Number(e.target.value))}>{Array.from({ length: pdf.numPages }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}</select> of {pdf.numPages}</label>
+        <label className="flex items-center gap-1 text-sm">Page <NativeSelect aria-label="Résumé page"  value={page} onChange={e => setPage(Number(e.target.value))}>{Array.from({ length: pdf.numPages }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}</NativeSelect> of {pdf.numPages}</label>
         <Button type="button" variant="ghost" size="icon" className="size-9" aria-label="Next page" disabled={page >= pdf.numPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="size-4" aria-hidden="true" /></Button>
         </>}
-        <label className="flex items-center gap-1 text-sm">Zoom <select aria-label="Résumé zoom" className="rounded border bg-background p-1" value={zoom} onChange={e => setZoom(Number(e.target.value))}>{[0.5, 0.75, 1, 1.25, 1.5, 2].map(z => <option key={z} value={z}>{z * 100}%</option>)}</select></label>
+        <label className="flex items-center gap-1 text-sm">Zoom <NativeSelect aria-label="Résumé zoom"  value={zoom} onChange={e => setZoom(Number(e.target.value))}>{[0.5, 0.75, 1, 1.25, 1.5, 2].map(z => <option key={z} value={z}>{z * 100}%</option>)}</NativeSelect></label>
       </>}
       <Button type="button" variant="ghost" size="sm" className="ml-auto h-9 px-2" aria-label="General résumé notes" aria-controls="resume-comments" aria-expanded={desktop ? notesOpen : mobileTab === "comments"} onClick={() => { if (desktop) setNotesOpen(v => !v); else { setMobileTab("comments"); setNotesOpen(true); } }}><StickyNote className="size-4" aria-hidden="true" /><span className="hidden sm:inline">General résumé notes</span></Button>
     </div>
-    <div role="group" aria-label="Résumé view" className="flex gap-2 lg:hidden"><Button type="button" variant={mobileTab === "document" ? "default" : "outline"} size="sm" aria-pressed={mobileTab === "document"} onClick={() => setMobileTab("document")}>Document</Button><Button type="button" variant={mobileTab === "comments" ? "default" : "outline"} size="sm" aria-pressed={mobileTab === "comments"} onClick={() => { setMobileTab("comments"); setNotesOpen(true); }}>Panel comments ({currentAccess ? annotations.length : 0})</Button></div>
+    <div className="lg:hidden"><SegmentedControl label="Résumé view" value={mobileTab} onChange={tab => { setMobileTab(tab); if (tab === "comments") setNotesOpen(true); }} options={[{ value: "document", label: "Document" }, { value: "comments", label: `Panel comments (${currentAccess ? annotations.length : 0})` }]} /></div>
     <p className="text-xs text-muted-foreground" role="status" aria-live="polite">{status}</p>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {!currentAccess ? <>{status.startsWith("Access could") ? <Button type="button" variant="outline" size="sm" onClick={() => void refresh()}>Retry access</Button> : <div className="min-h-0 overflow-auto"><InterviewResumePlaceholder resource={resource} page={page} /></div>}</> : <div className={`grid min-h-0 flex-1 gap-4 overflow-auto ${notesOpen ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}>
@@ -273,11 +284,11 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
           <div className="flex gap-2"><Button type="button" size="sm" disabled={busy || conflict} onClick={save}>{busy ? "Saving…" : "Save comment"}</Button><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setDraft(null)}>Cancel comment</Button></div>
         </div>}
         {!annotations.length && <p className="text-sm text-muted-foreground">No shared comments yet.</p>}
-        <ul className="space-y-3">{annotations.map(a => <li key={a.id} ref={node => { if (node) annotationNodes.current.set(a.id, node); else annotationNodes.current.delete(a.id); }} tabIndex={-1} className={`space-y-2 rounded border p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${active === a.id ? "border-primary bg-accent/30" : ""}`}>
+        <ul className="space-y-3">{annotations.map(a => <li key={a.id} ref={node => { if (node) annotationNodes.current.set(a.id, node); else annotationNodes.current.delete(a.id); }} tabIndex={-1} className={`space-y-2 rounded border p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ${active === a.id ? "border-primary bg-accent/30" : ""}`}>
           <p className="text-sm font-medium">{a.authorName}</p>
           {a.anchor ? <Button type="button" variant="ghost" className="h-auto max-w-full justify-start whitespace-normal break-words px-0 text-left text-xs" onClick={() => { setPage(a.anchor!.page); setActive(a.id); setMobileTab("document"); }}>Page {a.anchor.page}: “{a.anchor.quote}”</Button> : <p className="text-xs text-muted-foreground">General résumé note</p>}
           <p className="whitespace-pre-wrap break-words text-sm">{a.comment}</p>
-          {a.canEdit && <div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => { if (!draft || window.confirm("Discard the unsaved résumé comment?")) { setDraft({ id: a.id, revision: a.revision, kind: a.kind, comment: a.comment, anchor: a.anchor }); setError(""); } }}>Edit</Button><Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void remove(a)}>Delete</Button></div>}
+          {a.canEdit && <div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={busy} onClick={async () => { if (!draft || await confirm({ title: "Discard the unsaved comment?", description: "Your unsaved résumé comment will be lost.", confirmLabel: "Discard comment", cancelLabel: "Keep editing", tone: "danger" })) { setDraft({ id: a.id, revision: a.revision, kind: a.kind, comment: a.comment, anchor: a.anchor }); setError(""); } }}>Edit</Button><Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void remove(a)}>Delete</Button></div>}
         </li>)}</ul>
       </aside>
     </div>}

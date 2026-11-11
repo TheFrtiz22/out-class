@@ -11,12 +11,16 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
   const browser = { location: { href: `https://outclass.test/club/club/workspace${search ? '?' + search : ''}` }, history: { replaceState(_state, _title, href) { changes.push(href); browser.location.href = href; search = new URL(href).search.slice(1) } } };
   const localStorage = { getItem: key => { if (blockedStorage) throw Error('Blocked'); return storage.get(key) ?? null }, setItem: (key, value) => { if (blockedStorage) throw Error('Blocked'); storage.set(key, value) } };
   const router = { replace: href => redirects.push(href) };
+  const bindings = { current: null };
   const mocks = {
+    // The persistent shell draws the rail; ClubWorkspace registers its callbacks with it.
+    '@/components/shell/workspace-shell-context': { useShellBindings: value => { bindings.current = value } },
     react: { useState: value => [value, () => {}], useRef: value => ({ current: value }), useEffect: effect => effects.push(effect) },
     'next/navigation': { useRouter: () => router, useSearchParams: () => new URLSearchParams(search) },
     'next/dynamic': { default: () => 'Dynamic' },
     '@/contexts/auth-context': { useAuth: () => auth },
     '@/contexts/demo-context': { useDemoMode: () => demo },
+    '@/hooks/use-revalidate': { useRevalidate() {} },
     '@/lib/workspace-api': { getClubWorkspaceOverview: async id => { reads.push(id); return { club: { id } } } },
     '@/lib/application-state': { ApplicationStateProvider: 'ApplicationStateProvider' },
   };
@@ -25,12 +29,19 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
     if (cache[file]) return cache[file];
     const mod = { exports: {} };
     const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
-    new Function('require', 'module', 'exports', 'window', 'localStorage', code)(name => mocks[name] || (name.startsWith('@/lib/') ? load(name.slice(2) + '.ts') : name.startsWith('@/') ? new Proxy({}, { get: (_target, key) => String(key) }) : require(name)), mod, mod.exports, browser, localStorage);
+    new Function('require', 'module', 'exports', 'window', 'localStorage', code)(name => mocks[name] || (name.startsWith('@/lib/') ? load(name.slice(2) + '.ts') : name === '@/components/ui/confirm-dialog' ? require('./helpers/confirm-stub.cjs') : name.startsWith('@/') ? new Proxy({}, { get: (_target, key) => String(key) }) : require(name)), mod, mod.exports, browser, localStorage);
     return cache[file] = mod.exports;
   }
   const preference = load('lib/club-workspace-preference.ts');
   const key = preference.clubWorkspacePreferenceKey('user', 'club', 'live');
   const Workspace = load('components/club-workspace.tsx').ClubWorkspace;
+  const { workspaceRoute } = load('components/shell/workspace-shell.tsx'), { activeNavItem } = load('lib/navigation.ts');
+  // What the persistent shell shows for the current URL, plus the callbacks this page registered.
+  const screen = tree => {
+    const url = new URL(browser.location.href), params = new URLSearchParams(search), route = workspaceRoute(url.pathname, params, auth.user.memberships, false);
+    return { type: tree.type === 'WorkspaceLoading' ? 'WorkspaceLoading' : 'ProductShell', props: { ...route, active: activeNavItem(url.pathname, params, { member: !route.manager }) ?? route.active, onModeSelect: bindings.current?.onModeSelect } };
+  };
+  current = { screen };
   return { auth, demo, storage, key, reads, changes, redirects, selections, preference, member,
     render: () => Workspace({ clubId: 'club' }),
     flush: () => { for (const effect of effects.splice(0)) effect() },
@@ -38,7 +49,8 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
     href: () => browser.location.href,
   };
 }
-const shell = tree => tree.props.children[1];
+let current;
+const shell = tree => current.screen(tree);
 
 test('first leader entry shows a neutral loader and selects Recruiting overview without a router redirect or Club data read', () => {
   const h = harness();
@@ -50,7 +62,9 @@ test('first leader entry shows a neutral loader and selects Recruiting overview 
   const screen = shell(h.render());
   assert.equal(screen.props.mode, 'recruiting');
   assert.equal(screen.props.active, 'overview');
-  assert.equal(screen.props.modes.find(mode => mode.id === 'club').href, '/club/club/workspace?section=overview');
+  // Recruiting and Club are rail sections; Club home opens the explicit overview.
+  assert.deepEqual(screen.props.sections.map(section => section.id), ['recruiting', 'club']);
+  assert.equal(screen.props.sections.find(section => section.id === 'club').items.find(item => item.id === 'club-home').href, '/club/club/workspace?section=overview');
 });
 
 test('only explicit mode choices persist and general entries restore either saved workspace', () => {
@@ -69,7 +83,7 @@ test('only explicit mode choices persist and general entries restore either save
 });
 
 test('specific Club and Recruiting links keep their page and query parameters despite a saved opposite preference', () => {
-  for (const search of ['section=overview', 'section=tasks&taskView=mine', 'section=settings', 'section=meetings&eventId=meeting', 'section=announcements', 'section=recruitment&tool=applicants&applicantId=app']) {
+  for (const search of ['section=overview', 'section=tasks&taskView=mine', 'section=settings', 'section=calendar&type=meetings&eventId=meeting', 'section=overview&focus=announcements', 'section=recruitment&tool=applicants&applicantId=app']) {
     const h = harness({ search });
     h.storage.set(h.key, search.includes('recruitment') ? 'club' : 'recruiting');
     const screen = shell(h.render());
@@ -87,7 +101,7 @@ test('permission-limited leaders fall back to Club even with a saved Recruiting 
   assert.equal(h.render().type, 'WorkspaceLoading'); h.flush();
   const screen = shell(h.render());
   assert.equal(screen.props.mode, 'club');
-  assert.deepEqual(screen.props.modes.map(mode => mode.id), ['club']);
+  assert.deepEqual(screen.props.sections.map(section => section.id), ['club']);
   const member = harness({ permissions: [] });
   assert.equal(shell(member.render()).props.mode, 'clubs'); member.flush();
   assert.deepEqual(member.changes, []);

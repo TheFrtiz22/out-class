@@ -1,56 +1,73 @@
-.oc-student-home { max-width: 1120px; container-type: inline-size; margin-inline: auto; color: var(--foreground); font-family: var(--oc-font-sans); }
-.oc-home-columns { display: grid; grid-template-columns: minmax(0,1.85fr) minmax(0,1fr); gap: 2rem var(--oc-editorial-gap); align-items: start; }
-.oc-home-columns > section { min-width: 0; }
-.oc-home-columns > .oc-home-next { grid-column: 1 / -1; }
-.oc-home-applications { grid-column: 1; }
-.oc-home-agenda { grid-column: 2; grid-row: 2 / span 2; padding: 1.5rem; background: var(--oc-surface-blue); border-radius: var(--oc-editorial-radius); }
-.oc-home-updates { grid-column: 1; }
-.oc-home-section-title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; padding-bottom: .75rem; margin-bottom: .25rem; border-bottom: 1px solid var(--border); }
-.oc-home-section-title h2 { font-family: var(--oc-font-display); font-size: var(--oc-editorial-section); font-weight: 400; line-height: 1.25; letter-spacing: -.025em; }
-.oc-home-section-title button { color: var(--brand-ink); font-size: .75rem; padding-inline: .25rem; }
-.oc-home-list { list-style: none; padding: 0; margin: 0; }
-.oc-home-list > li + li { border-top: 1px solid var(--border); }
-.oc-home-application { width: 100%; display: grid; grid-template-columns: 36px minmax(0,1fr) auto 16px; align-items: center; gap: .75rem; padding: 1.25rem .25rem; text-align: left; border-radius: var(--oc-radius-sm); }
-.oc-home-application > :first-child { width: 36px; height: 36px; border-radius: var(--oc-radius-md); }
-.oc-home-app-copy { min-width: 0; }
-.oc-home-app-copy strong { display: block; font-size: .9375rem; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
-.oc-home-app-copy > span { display: block; margin-top: .25rem; font-size: .8125rem; line-height: 1.5; color: var(--muted-foreground); }
-.oc-home-application [data-slot="badge"] { font-size: .6875rem; }
-.oc-home-row-arrow { color: var(--muted-foreground); }
-.oc-home-list-note { margin-top: .75rem; color: var(--muted-foreground); font-size: .75rem; }
-.oc-home-empty, .oc-home-agenda-empty { padding: 1.25rem 0 .5rem; }
-.oc-home-empty > svg, .oc-home-agenda-empty > svg { display: none; }
-.oc-home-empty h3, .oc-home-agenda-empty h3 { font-family: var(--oc-font-display); font-size: 1.375rem; font-weight: 400; }
-.oc-home-empty p, .oc-home-agenda-empty p { max-width: 38ch; margin-top: .5rem; color: var(--muted-foreground); font-size: .875rem; line-height: 1.6; }
-.oc-home-agenda-row { width: 100%; display: grid; grid-template-columns: 40px minmax(0,1fr) 14px; align-items: start; gap: .75rem; padding: 1rem 0; text-align: left; border-radius: var(--oc-radius-sm); }
-.oc-home-date { padding: .5rem .2rem; text-align: center; border-radius: var(--oc-radius-md); background: var(--card); }
-.oc-home-date > span { display: block; text-transform: uppercase; font-size: .625rem; color: var(--muted-foreground); }
-.oc-home-date strong { display: block; font-family: var(--oc-font-display); font-size: 1.5rem; font-weight: 400; font-variant-numeric: tabular-nums; }
-.oc-home-agenda-copy { min-width: 0; overflow-wrap: anywhere; }
-.oc-home-agenda-copy strong { display: block; font-size: .9375rem; line-height: 1.5; font-weight: 600; margin: .25rem 0; }
-.oc-home-event-type { font-size: .75rem; color: var(--muted-foreground); }
-.oc-home-agenda-copy > span:last-child:not(.oc-home-event-type) { display: flex; align-items: center; gap: .25rem; font-size: .75rem; color: var(--muted-foreground); }
-.oc-home-agenda-copy svg { flex-shrink: 0; }
-.oc-home-agenda-row > svg, .oc-home-update > svg { color: var(--muted-foreground); }
-.oc-home-update { display: grid; grid-template-columns: 16px minmax(0,1fr) 14px; width: 100%; gap: .75rem; padding: 1.1rem .25rem; text-align: left; border-radius: var(--oc-radius-sm); }
-.oc-home-update-indicator { color: var(--muted-foreground); margin-top: .2rem; }
+/* Personal Home: built from the shared dashboard pieces (components/product/dashboard/dashboard.css).
+   Only what is specific to it lives here. */
+.oc-student-home { display: grid; gap: var(--oc-content-gap); color: var(--foreground); font-family: var(--oc-font-sans); }
+.oc-home-hero .oc-page-header { margin-bottom: 0; }
+/* Compact greeting so "Needs you" sits close to the top: smaller title, and the subtitle reserves one
+   line (not the shared two) so a one-line subtitle leaves no empty band below it. */
+.oc-student-home .oc-home-hero h1 { font-size: clamp(1.75rem, 1.25rem + 1vw, 2.125rem); line-height: 1.15; }
+.oc-student-home .oc-home-hero .oc-page-description { min-block-size: 1lh; margin-top: .25rem; }
+.oc-home-loading { display: grid; gap: var(--oc-content-gap); }
+.oc-home-availability-slot:empty { display: none; }
+
+.oc-home-application > :first-child { width: 2.25rem; height: 2.25rem; border-radius: var(--oc-radius-md); }
+.oc-home-update-indicator { align-self: start; margin-top: .125rem; color: var(--muted-foreground); }
 .oc-home-update-indicator[data-unread="true"] { color: var(--brand-ink); }
-.oc-home-update > span:nth-child(2) > strong { display: block; font-size: .9375rem; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
-.oc-home-update > span:nth-child(2) > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: .375rem; font-size: .875rem; line-height: 1.6; color: var(--muted-foreground); }
-.oc-home-update small { display: block; margin-top: .5rem; font-size: .75rem; color: var(--muted-foreground); }
-.oc-student-home button { cursor: pointer; }
-.oc-student-home button:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
-.oc-home-application:hover, .oc-home-agenda-row:hover, .oc-home-update:hover { background: var(--muted); }
-@container (max-width: 850px) {
-  .oc-home-columns { grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 1.5rem; }
-  .oc-home-application { grid-template-columns: 32px minmax(0,1fr) 14px; }
-  .oc-home-application [data-slot="badge"] { grid-column: 2; justify-self: start; }
-  .oc-home-row-arrow { grid-column: 3; grid-row: 1; }
+
+/* Phones: applications, then what's coming up, then updates. */
+@media (max-width: 759px) {
+  .oc-home-applications { order: 1; }
+  .oc-home-agenda { order: 2; }
+  .oc-home-updates { order: 3; }
 }
-@container (max-width: 640px) {
-  .oc-home-columns { grid-template-columns: minmax(0,1fr); }
-  .oc-home-agenda { grid-column: 1; grid-row: auto; padding: 1.25rem; }
+
+/* Phones and tablets: the OutClass app's Home (components/views/student-dashboard-view.tsx `phone`).
+   The desktop dashboard below stays as it is at 1024px and wider. */
+.oc-home-phone { display: none; }
+@media (max-width: 1023px) {
+  .oc-student-home .oc-home-dashboard { display: none; }
+  .oc-home-phone { display: grid; gap: 1.125rem; }
+  .oc-home-phone .oc-dashboard-card { padding-block: .875rem 1rem; }
+  .oc-home-phone-heading { margin: 0 0 .5rem; color: var(--foreground); font-size: 1.0625rem; font-weight: var(--oc-weight-semibold); line-height: 1.3; }
+  .oc-home-phone-heading-row { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+
+  /* To-do: a checklist of what needs the student, each row with its own action. */
+  .oc-home-todo { display: grid; margin: 0; padding: 0; list-style: none; }
+  .oc-home-todo > li { display: flex; gap: .75rem; padding-block: .625rem; border-top: 1px solid var(--oc-content-edge, var(--border)); }
+  .oc-home-todo > li:first-child { border-top: 0; padding-top: .25rem; }
+  .oc-home-todo-box { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; margin-top: .125rem; border: 1.5px solid var(--muted-foreground); border-radius: var(--oc-radius-sm); opacity: .7; }
+  .oc-home-todo > li[data-urgent] .oc-home-todo-box { border-color: var(--brand-orange); opacity: 1; }
+  .oc-home-todo-copy { display: grid; gap: .125rem; min-width: 0; }
+  .oc-home-todo-copy > strong { font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); line-height: 1.35; }
+  .oc-home-todo-copy > small { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+  .oc-home-todo-copy > .oc-needs-action { min-height: 36px; margin-top: .125rem; }
+
+  /* Furthest along: navy glass status card, as on the app and the sign-in sample. */
+  .oc-home-furthest-card { position: relative; display: grid; width: 100%; padding: 1rem 1.125rem .5rem; border: 1px solid var(--oc-glass-navy-edge); border-radius: var(--oc-glass-card-radius, 1.375rem); background: var(--oc-glass-navy-material); box-shadow: var(--oc-glass-navy-depth); color: var(--oc-glass-cream); text-align: left; cursor: pointer; }
+  .oc-home-furthest-open { margin: 0; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+  .oc-home-furthest-open::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--oc-glass-card-radius, 1.375rem); }
+  .oc-home-furthest-open:focus-visible { outline: none; }
+  .oc-home-furthest-open:focus-visible::after { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .oc-home-furthest-card > small { color: color-mix(in srgb, var(--oc-glass-cream) 70%, transparent); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+  .oc-home-furthest-card > .oc-home-furthest-open { margin-top: .25rem; padding-bottom: .75rem; border-bottom: 1px solid color-mix(in srgb, var(--oc-glass-cream) 14%, transparent); font-family: var(--oc-font-display); font-size: 1.25rem; font-weight: 400; line-height: 1.2; }
+  .oc-home-furthest-card ol { margin: 0; padding: 0; list-style: none; }
+  .oc-home-furthest-card li { display: flex; align-items: center; gap: .75rem; min-height: 2.75rem; color: color-mix(in srgb, var(--oc-glass-cream) 72%, transparent); font-size: var(--oc-text-small); }
+  .oc-home-furthest-card li + li { border-top: 1px solid color-mix(in srgb, var(--oc-glass-cream) 10%, transparent); }
+  .oc-home-furthest-card li[data-state="current"] { color: var(--oc-glass-cream); font-weight: var(--oc-weight-semibold); }
+  .oc-home-furthest-card li[data-state="done"] svg { color: var(--oc-glass-cream); }
+  .oc-home-furthest-card li:not([data-state]) svg { opacity: .45; }
+  .oc-home-furthest-dot { display: inline-grid; place-items: center; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: var(--brand-orange); }
+  .oc-home-furthest-dot::after { content: ""; width: .4rem; height: .4rem; border-radius: 50%; background: var(--oc-glass-cream); }
+
+  /* My clubs: two-up tiles. */
+  .oc-home-club-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; margin: 0; padding: 0; list-style: none; }
+  .oc-home-club-tile { display: grid; gap: .125rem; height: 100%; padding: .875rem; border: 1px solid var(--oc-content-edge, var(--border)); border-radius: var(--oc-glass-card-radius, 1.375rem); background: var(--oc-content-surface, var(--card)); box-shadow: var(--oc-content-shadow, var(--oc-shadow-surface)); color: inherit; text-decoration: none; }
+  .oc-home-club-tile:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .oc-home-club-tile > :first-child { width: 2.25rem; height: 2.25rem; margin-bottom: .5rem; border-radius: var(--oc-radius-md); }
+  .oc-home-club-tile > strong { font-family: var(--oc-font-display); font-size: 1.0625rem; font-weight: 400; line-height: 1.25; }
+  .oc-home-club-tile > small { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .oc-home-application, .oc-home-agenda-row, .oc-home-update { transition: background var(--oc-duration-micro); }
+@media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+  .oc-home-furthest-card, .oc-home-club-tile { transition: transform var(--oc-glass-quick, 160ms) var(--oc-glass-ease, ease); }
+  .oc-home-furthest-card:active, .oc-home-club-tile:active { transform: scale(.985); }
 }
+@media (forced-colors: active) { .oc-home-furthest-card { border-color: CanvasText; } }

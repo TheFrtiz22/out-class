@@ -15,7 +15,7 @@ import {ApplicationForm} from '@/components/applications/application-form';
 import {PublicEventBoard} from '@/components/events/public-event-board';
 import {ClubEvents} from '@/components/events/club-events';
 import {AdminDirectory} from '@/components/admin/admin-directory';
-import {VotingSessionJoin} from '@/components/live-voting/session-join';
+import {LegacyVotingHistory} from '@/components/live-voting/legacy-voting-history';
 import {Dialog,DialogTrigger,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {Select,SelectTrigger,SelectValue,SelectContent,SelectItem} from '@/components/ui/select';
 import {Button} from '@/components/ui/button';
@@ -26,7 +26,7 @@ function Availability(){const [days,setDays]=useState(Array.from({length:7},()=>
 function Primitives(){return <><Dialog><DialogTrigger asChild><Button>Open test dialog</Button></DialogTrigger><DialogContent><DialogTitle>Review your work</DialogTitle><DialogDescription>Confirm or return to editing.</DialogDescription><label>Review note<input className="border p-2"/></label><Button>Confirm review</Button></DialogContent></Dialog><label id="fixture-select-label">Club category</label><Select><SelectTrigger aria-labelledby="fixture-select-label"><SelectValue placeholder="Choose category"/></SelectTrigger><SelectContent><SelectItem value="arts">Arts</SelectItem><SelectItem value="service">Service</SelectItem></SelectContent></Select></>}
 const application={id:'application1',clubId:'club1',answers:[],club:{name:'Accessibility Club',applicationOpen:true,testRequirement:'OPTIONAL',questions:[{id:'essay',prompt:'Why would you like to join?',type:'ESSAY',required:true,wordLimit:50},{id:'choice',prompt:'Which team interests you?',type:'MULTIPLE_CHOICE',required:true,options:['Arts','Service'],wordLimit:null},{id:'document',prompt:'Supporting document',type:'FILE_UPLOAD',required:false,wordLimit:null}]}};
 const key=new URLSearchParams(location.search).get('case')||'availability';
-const components={availability:<Availability/>,booking:<Booking/>,application:<ApplicationForm application={application} onSaved={()=>{}} onBusy={()=>{}} onDirty={()=>{}} onProfile={()=>{}}/>,primitives:<Primitives/>,events:<PublicEventBoard/>,leader:<ClubEvents clubId="club1" clubName="Accessibility Club" canSeeAttendees={false}/>,admin:<AdminDirectory resource="users"/>,voting:<VotingSessionJoin sessionId="session1" demoScoped={false}/>};
+const components={availability:<Availability/>,booking:<Booking/>,application:<ApplicationForm application={application} onSaved={()=>{}} onBusy={()=>{}} onDirty={()=>{}} onProfile={()=>{}}/>,primitives:<Primitives/>,events:<PublicEventBoard/>,leader:<ClubEvents clubId="club1" clubName="Accessibility Club" canSeeAttendees={false}/>,admin:<AdminDirectory resource="users"/>,voting:<LegacyVotingHistory clubId="00000000-0000-4000-8000-000000000001" sessionId="00000000-0000-4000-8000-000000000002" demoScoped={false}/>};
 createRoot(document.getElementById('root')).render(<><h1>{key} accessibility fixture</h1>{components[key]}</>);
 `, {
     '@/contexts/auth-context': `exports.useAuth=()=>({user:{id:'student1'},loading:false});`,
@@ -47,16 +47,15 @@ exports.getCampusEventRsvp=async()=>({status:null,going:false,canRsvp:true});
 exports.setCampusEventRsvp=async()=>({ok:true,going:true,count:1});
 exports.saveCampusEvent=async input=>({...window.fixtureEvent,...input,revision:1,status:'DRAFT'});
 exports.uploadEventFlyer=async()=>{throw Error('Fixture upload failure. Choose another file.')};
-exports.getVotingJoinInfo=async()=>({status:'READY',clubName:'Accessibility Club',clubId:'club1'});
-exports.joinVotingSession=async()=>{};
-exports.getJoinedVotingWorkspace=async()=>({memberId:'member1',canVote:true,summary:{target:10,passed:0,held:0,notPassed:0,remaining:1},session:{id:'session1',clubId:'club1',revision:1,state:'OPEN',currentPass:1,activeApplicationId:'candidate1',passes:[{number:1,state:'OPEN',candidates:[{applicationId:'candidate1',ballots:window.fixtureBallot?[{memberId:'member1',decision:window.fixtureBallot}]:[]}]}]}});
-exports.submitVotingBallot=async input=>{window.fixtureBallot=input.decision};
+exports.getVotingWorkspace=async()=>window.fixtureClosed?{...window.fixtureVoting,session:{...window.fixtureVoting.session,state:'COMPLETED',endedAt:new Date().toISOString(),revision:5}}:window.fixtureVoting;
+exports.commandVotingSession=async input=>{window.fixtureCommands=[...(window.fixtureCommands||[]),input.action];if(input.action==='FINISH')window.fixtureClosed=true;return{success:true,revision:input.revision+1}};
+window.fixtureVoting={memberId:'member1',canStart:true,canFinish:true,rounds:[{id:'round1',name:'Final review'}],candidateLabels:[{id:'candidate1',label:'Fictional Candidate'}],summary:{target:1,passed:0,held:0,notPassed:0,unresolved:1,outcomes:[{applicationId:'candidate1',passNumber:1,outcome:'UNRESOLVED',automatic:false}]},session:{id:'00000000-0000-4000-8000-000000000002',roundId:'round1',state:'OPEN',currentPass:1,revision:3,createdAt:'2026-10-01T15:00:00Z',endedAt:null,publishedAt:null,participants:[{memberId:'member1'}],passes:[{number:1,state:'OPEN',candidates:[{applicationId:'candidate1',override:null,ballotCount:1,ballots:[]}]}]}};
 `,
     '@/components/applicant-intelligence': `exports.ApplicantDisplayPanel=()=>require('react').createElement('section',{'aria-label':'Candidate details'},'Fictional candidate for isolated voting UI tests');`,
     '@/actions/platform-admin': `exports.readPlatformResource=async()=>[{id:'fictional-student',email:'student@example.test',status:'Active'}];exports.inspectPlatformRecord=async()=>({});exports.changePlatformResource=async()=>{};`,
     '@/actions/admin-workspace': `exports.inspectAdminStudent=exports.inspectAdminClub=async()=>({profile:'Fictional test record'});exports.setAdminClubSuspended=exports.resendAdminStudentInvitation=exports.resendAdminClubInvitation=async()=>{};`,
   });
-  const css = (await require('postcss')([require('@tailwindcss/postcss')()]).process('@import "../../app/globals.css";', { from: path.resolve('tests/accessibility/fixture.css') })).css + ['components/availability/availability.css','components/interviews/scheduling.css','components/events/events.css','components/live-voting/voting-mode.css'].map(f=>fs.readFileSync(f,'utf8')).join('\n');
+  const css = (await require('postcss')([require('@tailwindcss/postcss')()]).process('@import "../../app/globals.css";', { from: path.resolve('tests/accessibility/fixture.css') })).css + ['components/availability/availability.css','components/interviews/scheduling.css','components/events/events.css','components/live-voting/room.css'].map(f=>fs.readFileSync(f,'utf8')).join('\n');
   const server = http.createServer((req,res)=>{
     if (req.url==='/bundle.js') {res.setHeader('Content-Type','text/javascript');return res.end(script);}
     res.setHeader('Content-Type','text/html; charset=utf-8');

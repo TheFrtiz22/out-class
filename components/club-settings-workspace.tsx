@@ -13,11 +13,17 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { resolveSettingsTab, settingsSections } from "@/lib/club-settings";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
 import { canLeaveWorkspace } from "@/lib/product-navigation";
-import { hasPermission } from "@/lib/permissions";
+import { canOpenRecruitingSettings, recruitingSettingsSections, withRecruitingSettings } from "@/lib/recruiting-settings";
+import { hasPermission, permissionLabels } from "@/lib/permissions";
+import { organizationRoleLabels, organizationRolePermissions, organizationRoles } from "@/lib/organization-authorization";
 import { saveClubPreferences } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
+import { ProfileFieldSettings } from "@/components/profile-field-settings";
 
 import "@/components/clubs/club-settings.css";
+import { VotingRuleDefaults } from "@/components/live-voting/voting-rule-defaults";
+import { NativeSelect } from "@/components/ui/native-select"
+import { Button } from "@/components/ui/button"
 const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(
     (m) => m.ApplicationBuilderView,
@@ -31,10 +37,6 @@ const PipelineBuilder = dynamic(() =>
     "@/components/views/club-manager/interview-pipeline-builder-view"
   ).then((m) => m.InterviewPipelineBuilderView),
   { loading: () => <LoadingState label="Loading interview rounds…" layout="rows" rows={3} /> },
-);
-const Members = dynamic(() =>
-  import("@/components/club-members").then((m) => m.ClubMembers),
-  { loading: () => <LoadingState label="Loading club members…" layout="table" rows={4} /> },
 );
 const Interviews = dynamic(() =>
   import("@/components/interview-management-tabs").then(
@@ -101,9 +103,9 @@ export function ClubSettingsWorkspace({
     <div className="oc-settings-workspace">
       <aside className="oc-settings-menu">
       <label className="oc-settings-mobile-selector text-sm" htmlFor="organization-settings-section">Organization settings
-        <select id="organization-settings-section" aria-label="Organization settings" className="oc-settings-select" value={active ?? ""} onChange={event => selectSetting(event.target.value)}>
+        <NativeSelect id="organization-settings-section" aria-label="Organization settings" className="oc-settings-select" value={active ?? ""} onChange={event => selectSetting(event.target.value)}>
           {sections.map(section => <option key={section.id} value={section.id}>{section.label}</option>)}
-        </select>
+        </NativeSelect>
       </label>
       <nav
         className="oc-settings-navigation oc-settings-desktop-navigation"
@@ -125,7 +127,7 @@ export function ClubSettingsWorkspace({
           </Link>
         ))}
       </nav>
-      <Link href="/settings" className="oc-settings-personal-link" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={18} /></Link>
+      <Link href="/settings" className="oc-settings-personal-link" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={16} /></Link>
       </aside>
       <div className="oc-workspace-stack" data-saving={busy}>
         {error && (
@@ -165,11 +167,15 @@ export function ClubSettingsWorkspace({
         {visible("application") && (
           <div hidden={active !== "application"}>
             {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></div>}
-            {hasPermission(member, "recruitment.manage") && <details className="mb-5 border-b pb-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Review settings</summary><div className="flex flex-wrap gap-4 py-2 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rounds`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Anonymous review</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rules`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Screening rules</Link></div></details>}
+            {/* Recruiting: opens the Recruiting settings drawer in place (the same drawer as the Applicants gear). */}
+            {canOpenRecruitingSettings(member) && <section aria-labelledby="settings-recruiting-heading" className="mb-5 space-y-2 border-b pb-4"><h2 id="settings-recruiting-heading" className="oc-section-heading">Recruiting</h2><div className="flex flex-wrap gap-2">{recruitingSettingsSections.map(item => <Button key={item.id} type="button" variant="outline" size="sm" aria-haspopup="dialog" onClick={() => { if (canLeaveWorkspace()) router.push(`/club/${encodeURIComponent(clubId)}/workspace?${withRecruitingSettings(params.toString(), item.id)}`, { scroll: false }) }}>{item.label}</Button>)}</div></section>}
             <ApplicationBuilder clubId={clubId} />
+            {/* Voting defaults are configuration, so they live here; the Voting room links to this section. */}
+            {hasPermission(member, "applications.review") && hasPermission(member, "decisions.manage") && hasPermission(member, "decisions.start") && !demo.isDemoEnabled && <section id="voting-rules" aria-label="Default voting rules" className="mt-8 border-t pt-5"><VotingRuleDefaults clubId={clubId} /></section>}
           </div>
         )}
-        {visible("cycles") && <div hidden={active !== "cycles"}><Cycles clubId={clubId} /></div>}
+        {visible("profiles") && <div hidden={active !== "profiles"}><ProfileFieldSettings clubId={clubId} /></div>}
+        {visible("cycles") &&<div hidden={active !== "cycles"}><Cycles clubId={clubId} /></div>}
         {visible("pipeline") && (
           <div hidden={active !== "pipeline"}>
             <PipelineBuilder
@@ -178,25 +184,14 @@ export function ClubSettingsWorkspace({
             />
           </div>
         )}
-        {visible("interviews") && (
-          <div hidden={active !== "interviews"} className="space-y-5">
-            <h2 className="oc-section-heading">Interview configuration</h2>
-            <p className="text-sm text-muted-foreground">
-              Configure evaluation kits and interview access for your recruitment rounds. Manage rooms, panels, and upcoming bookings in Interview Scheduling.
-            </p>
-            {hasPermission(member, "members.manage") && <ActionWorkflow title="Interviewer eligibility" description="Configure eligible membership roles. Individual and round overrides remain in Members." trigger="Interviewer eligibility" presentation="sheet"><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></ActionWorkflow>}
-            <Interviews
-              key={`${pipelineRevision}:${params.get("interviewTab") || "kits"}:${params.get("roundId") || ""}`}
-              clubId={clubId}
-              settingsOnly
-              initialTab={params.get("interviewTab") || "kits"}
-              initialRoundId={params.get("roundId") || undefined}
-            />
-          </div>
-        )}
         {visible("members") && (
-          <div hidden={active !== "members"}>
-            <Members clubId={clubId} />
+          <div hidden={active !== "members"} className="space-y-5">
+            <section aria-labelledby="interviewer-eligibility-heading" className="space-y-3"><h2 id="interviewer-eligibility-heading" className="oc-section-heading">Interviewer eligibility</h2><p className="text-sm text-muted-foreground">Choose which roles can interview. Kits, panels and interviewer offices are in Interviews.</p><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></section>
+            <section aria-labelledby="role-permissions-heading" className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="role-permissions-heading" className="oc-section-heading">Roles and permissions</h2><Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=members`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage members</Link></div>
+              <p className="text-sm text-muted-foreground">Each member’s role sets what they can do. Change a member’s role, title or groups from Members.</p>
+              <dl className="divide-y rounded-lg border">{organizationRoles.map(role => <div key={role} className="grid gap-1 p-3 sm:grid-cols-[12rem_1fr]"><dt className="font-medium">{organizationRoleLabels[role]}</dt><dd className="text-sm text-muted-foreground">{role === "OWNER" || role === "ADMIN" ? "Every club permission" : organizationRolePermissions[role].length ? organizationRolePermissions[role].map(permission => permissionLabels[permission]).join(" · ") : "Member pages only (meetings, tasks, announcements)"}</dd></div>)}</dl>
+            </section>
           </div>
         )}
         {visible("notifications") && (

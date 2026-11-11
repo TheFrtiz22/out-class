@@ -2,7 +2,10 @@
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
-import { SortLabel } from "@/components/product/sort-label";
+import { DataTable, DataTableSecondary, type DataTableColumn } from "@/components/ui/data-table";
+import { joinFacts } from "@/lib/join-facts";
+import { SortControl } from "@/components/ui/sort-control";
+import { useListSort } from "@/hooks/use-list-sort";
 import { compareAcademicYears } from "@/lib/recruitment-profile";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
@@ -21,8 +24,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy, Plus } from "@/components/icons";
+import { MoreHorizontal, Copy, Plus, ChevronDown } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
+import { useRevalidate } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
 import {
   changeOrganizationMemberRole,
@@ -47,10 +51,8 @@ import { updateTaskMember } from "@/lib/workspace-api";
 import { ClubAccessEditor } from "@/components/club-access-editor";
 import { RosterCsvImporter } from "@/components/roster-csv-importer";
 import { Button } from "@/components/ui/button";
-import {
-  onboardingTable,
-  onboardingFocus,
-} from "@/lib/onboarding-presentation";
+import { ClubExportLink } from "@/components/club-export-link";
+import { onboardingFocus } from "@/lib/onboarding-presentation";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -58,6 +60,14 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { NativeSelect } from "@/components/ui/native-select"
+import { academicYear } from "@/lib/recruitment-profile"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { FilterPopover } from "@/components/ui/filter-popover"
+import { SearchField } from "@/components/ui/search-field"
+import { PillSelect } from "@/components/ui/pill-select"
+import { Toggle } from "@/components/ui/toggle"
+import { useConfirmOnce } from "@/components/ui/confirm-dialog"
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
 type Member = Directory["members"][number];
@@ -65,6 +75,11 @@ const memberName = (member: Member) =>
   member.user.studentProfile
     ? `${member.user.studentProfile.firstName} ${member.user.studentProfile.lastName}`
     : member.user.email;
+const memberSortKeys = ["name", "year", "role", "status"] as const;
+type MemberSort = (typeof memberSortKeys)[number];
+const memberSortOptions: { key: MemberSort; label: string }[] = [{ key: "name", label: "Name" }, { key: "year", label: "Year" }, { key: "role", label: "Role" }, { key: "status", label: "Status" }];
+/** Class year reads newest first; the rest alphabetically. */
+const memberSortsDescending = (key: MemberSort) => key === "year";
 const statusLabel = (status: string) =>
   status === "LEFT"
     ? "Removed"
@@ -74,6 +89,8 @@ const statusLabel = (status: string) =>
 export function OrganizationMemberManagement({ clubId, initialData = null, onData, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
   const { refreshUser } = useAuth();
   const [data, setData] = useState<Directory | null>(initialData);
+  // One confirm at a time here: a second click while one is open does nothing.
+  const confirm = useConfirmOnce();
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false),
@@ -85,13 +102,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const [dirty, setDirty] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
   const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
-  const [sort, setSort] = useState("Member"), [descending, setDescending] = useState(false);
+  const [addOpen, setAddOpen] = useState(false), [importOpen, setImportOpen] = useState(false), [groupsOpen, setGroupsOpen] = useState(false);
+  // Headers and the toolbar Sort share one state, kept in the URL (?sort=&order=).
+  const listSort = useListSort(memberSortKeys, "name", memberSortsDescending);
+  const { key: sort, descending } = listSort;
   const [groupFilter, setGroupFilter] = useState("");
-  function sortBy(label: string) {
-    if (sort === label) setDescending(value => !value);
-    else { setSort(label); setDescending(label === "Year"); }
-    setPage(0);
-  }
+  const sortBy = (key: string) => { listSort.toggle(key as MemberSort); setPage(0); };
+  const setSort = (key: MemberSort, descending: boolean) => { listSort.set(key, descending); setPage(0); };
   const [scheduledInviteId,setScheduledInviteId] = useState<string|null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]),
@@ -137,6 +154,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, busy]);
+  // No Refresh button: actions reload the directory; returning to the tab reloads it when nothing is in progress.
+  useRevalidate(() => setAttempt((value) => value + 1), { enabled: !!data && !busy && !dirty && !selection.length, scopes: ["members"] });
   const caps = organizationCapabilities(data?.actor);
   const active = data?.members.find((member) => member.id === selectedId);
   async function reload(refreshIdentity = false) {
@@ -173,7 +192,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       } catch {
         setData(null);
         setError(
-          "The change was saved, but the directory could not be refreshed. Reload members to check your current access.",
+          "The change was saved, but the directory could not be refreshed. Try again to check your current access.",
         );
       }
       return true;
@@ -187,6 +206,9 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     }
   }
   const needle = query.trim().toLowerCase();
+  // Class year is a profile field: members' years follow the club setting (cleared by the server when hidden).
+  // Invitations carry an admin-entered year, so that tab keeps the column.
+  const showYear = invitesOpen || data?.profileFields?.academicYear !== false;
   const rows = data
     ? [
         ...data.members.map((member) => ({
@@ -206,7 +228,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           .map((invitation) => ({
             id: invitation.id,
             name: invitation.invitedName || invitation.email,
-            year: invitation.invitedYear,
+            // Invitations record a graduation year; show it as the same class-year label members have.
+            year: invitation.invitedYear && /^\d{4}$/.test(invitation.invitedYear) ? academicYear({ gradYear: Number(invitation.invitedYear) }) : invitation.invitedYear,
             role: invitation.requestedRole,
             status:
               invitation.status === "PENDING"
@@ -226,11 +249,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           .includes(needle),
       ).sort((a, b) => {
         let compared = 0;
-        if (sort === "Year") {
+        if (sort === "year") {
           if (!a.year || !b.year) return a.year === b.year ? a.name.localeCompare(b.name) : !a.year ? 1 : -1;
           compared = compareAcademicYears(a.year, b.year);
-        } else if (sort === "Role") compared = organizationRoleLabels[a.role].localeCompare(organizationRoleLabels[b.role]);
-        else if (sort === "Status") compared = a.status.localeCompare(b.status);
+        } else if (sort === "role") compared = organizationRoleLabels[a.role].localeCompare(organizationRoleLabels[b.role]);
+        else if (sort === "status") compared = a.status.localeCompare(b.status);
         else compared = a.name.localeCompare(b.name);
         return (descending ? -compared : compared) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
       })
@@ -257,72 +280,72 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         : ids.filter((x) => x !== id),
     );
   }
-  function bulkMembers(action: "ROLE" | "PERMISSIONS" | "REMOVE") {
+  async function bulkMembers(action: "ROLE" | "PERMISSIONS" | "REMOVE") {
     if (!data || !selectedMembers.length) return;
-    if (
-      action === "REMOVE" &&
-      !window.confirm(
-        `Remove ${selectedMembers.length} selected members? Access is revoked; history is retained.`,
-      )
-    )
-      return;
-    if (
-      action === "ROLE" &&
-      !window.confirm(
-        `Change ${selectedMembers.length} members to ${organizationRoleLabels[bulkRole]}? This replaces custom capabilities with role defaults.`,
-      )
-    )
-      return;
-    const ids = new Set(selectedMembers.map((m) => m.id));
+    // Act on exactly what the dialog shows: the selection, role and permissions at click time.
+    const targets = selectedMembers.map((m) => ({ id: m.id, updatedAt: m.updatedAt }));
+    const role = bulkRole, permissions = bulkPermissions, base = data;
+    const count = targets.length;
+    const prompt =
+      action === "REMOVE"
+        ? { title: `Remove ${count} selected ${count === 1 ? "member" : "members"}?`, description: "Access is revoked; history is retained.", confirmLabel: "Remove members" }
+        : action === "ROLE"
+          ? { title: `Change ${count} ${count === 1 ? "member" : "members"} to ${organizationRoleLabels[role]}?`, description: "This replaces custom capabilities with role defaults.", confirmLabel: "Change role" }
+          : { title: `Replace custom permissions for ${count} selected ${count === 1 ? "member" : "members"}?`, confirmLabel: "Replace permissions" };
+    if (!(await confirm({ ...prompt, tone: "danger" }))) return;
+    const ids = new Set(targets.map((t) => t.id));
     const optimistic =
       action === "REMOVE"
         ? undefined
         : {
-            ...data,
-            members: data.members.map((m) =>
+            ...base,
+            members: base.members.map((m) =>
               !ids.has(m.id)
                 ? m
                 : action === "ROLE"
                   ? {
                       ...m,
-                      accessRole: bulkRole,
-                      isOwner: bulkRole === "OWNER",
-                      permissions: organizationRolePermissions[bulkRole],
+                      accessRole: role,
+                      isOwner: role === "OWNER",
+                      permissions: organizationRolePermissions[role],
                     }
-                  : { ...m, permissions: bulkPermissions },
+                  : { ...m, permissions },
             ),
           };
     void run(
       () =>
         bulkOrganizationMembers({
           clubId,
-          targets: selectedMembers.map((m) => ({
-            id: m.id,
-            updatedAt: m.updatedAt,
-          })),
+          targets,
           action,
           ...(action === "ROLE"
-            ? { role: bulkRole }
+            ? { role }
             : action === "PERMISSIONS"
-              ? { permissions: bulkPermissions }
+              ? { permissions }
               : {}),
         }),
-      `${selectedMembers.length} memberships updated.`,
+      `${count} memberships updated.`,
       optimistic,
-      ids.has(data.actor.id),
+      ids.has(base.actor.id),
     );
   }
-  function bulkInvites(action: "RESEND" | "REVOKE") {
+  async function bulkInvites(action: "RESEND" | "REVOKE") {
+    // Act on exactly the invitations counted in the dialog.
+    const invitationIds = selectedInvites.map((i) => i.id);
     if (
       action === "REVOKE" &&
-      !window.confirm(`Revoke ${selectedInvites.length} selected invitations?`)
+      !(await confirm({
+        title: `Revoke ${invitationIds.length} selected ${invitationIds.length === 1 ? "invitation" : "invitations"}?`,
+        confirmLabel: "Revoke invitations",
+        tone: "danger",
+      }))
     )
       return;
     void run(
       () =>
         bulkOrganizationInvitations({
           clubId,
-          invitationIds: selectedInvites.map((i) => i.id),
+          invitationIds,
           action,
         }),
       action === "RESEND"
@@ -332,302 +355,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       false,
     );
   }
-  const directory = data && <div className="space-y-5">            <div className="flex flex-wrap items-center gap-3">
-              <Input
-                type="search"
-                aria-label="Search members and invitations"
-                placeholder={invitesOpen ? "Search invitations…" : "Search members…"}
-                className="max-w-md"
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setPage(0);
-                  setSelection([]);
-                }}
-              />
-              <label className="text-sm"><span className="sr-only">Role</span><select aria-label="Filter members by role" className="min-h-11 rounded-md border bg-card px-3" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</select></label>
-              <label className="text-sm"><span className="sr-only">Year</span><select aria-label="Filter members by year" className="min-h-11 rounded-md border bg-card px-3" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear)].filter((year): year is string => !!year))].sort().map(year => <option key={year}>{year}</option>)}</select></label>
-              {invitesOpen && <>              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={history}
-                  onChange={(event) => {
-                    setHistory(event.target.checked);
-                    setPage(0);
-                  }}
-                />
-                Show invitation history
-              </label>
-</>}
-              <Button
-                variant="ghost"
-                disabled={busy}
-                onClick={() => setAttempt((value) => value + 1)}
-              >
-                Refresh members
-              </Button>
-            </div>
-            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} /><select aria-label="Filter members by group" className="min-h-11 rounded-md border bg-card px-3 text-sm" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</select></div>}
-            {selection.length > 0 && (
-              <div
-                role="toolbar"
-                aria-label="Bulk member actions"
-                className="flex flex-wrap items-center gap-3 rounded-md bg-muted p-3"
-              >
-                <span className="text-sm font-medium">
-                  {selection.length} selected
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => setSelection([])}
-                >
-                  Clear selection
-                </Button>
-                {selectedMembers.length > 0 && (
-                  <>
-                    {caps.canChangeRoles && (
-                      <>
-                        <select
-                          aria-label="Bulk organization role"
-                          value={bulkRole}
-                          disabled={busy}
-                          className="min-h-11 rounded-md border bg-background px-3 text-sm"
-                          onChange={(e) =>
-                            setBulkRole(e.target.value as Member["accessRole"])
-                          }
-                        >
-                          {organizationRoles
-                            .filter((role) =>
-                              selectedMembers.every((m) =>
-                                canChangeOrganizationRole(data.actor, m, role),
-                              ),
-                            )
-                            .map((role) => (
-                              <option value={role} key={role}>
-                                {organizationRoleLabels[role]}
-                              </option>
-                            ))}
-                        </select>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={
-                            busy ||
-                            !selectedMembers.every((m) =>
-                              canChangeOrganizationRole(
-                                data.actor,
-                                m,
-                                bulkRole,
-                              ),
-                            )
-                          }
-                          onClick={() => bulkMembers("ROLE")}
-                        >
-                          Change role
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={
-                            busy || selectedMembers.some((m) => m.isOwner)
-                          }
-                          onClick={() => {
-                            setBulkPermissions([]);
-                            setPermissionsOpen(true);
-                          }}
-                        >
-                          Modify permissions
-                        </Button>
-                      </>
-                    )}
-                    {caps.canManageMembers && <ActionWorkflow title="Interview eligibility" description="Update the selected members for this club or a specific round." trigger="Interview eligibility"><InterviewerEligibilityControls clubId={clubId} selectedIds={selectedMembers.map(m => m.id)} individual onSaved={() => reload()} /></ActionWorkflow>}
-                    {caps.canManageMembers && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={
-                          busy ||
-                          !selectedMembers.every((m) =>
-                            canRemoveOrganizationMember(data.actor, m),
-                          )
-                        }
-                        onClick={() => bulkMembers("REMOVE")}
-                      >
-                        Remove members
-                      </Button>
-                    )}
-                  </>
-                )}
-                {selectedInvites.length > 0 && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={
-                        busy ||
-                        !selectedInvites.every(
-                          (i) =>
-                            i.expiresAt > new Date() &&
-                            canManageOrganizationInvitation(data.actor, i),
-                        )
-                      }
-                      onClick={() => bulkInvites("RESEND")}
-                    >
-                      Resend invitations
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={
-                        busy ||
-                        !selectedInvites.every((i) =>
-                          canManageOrganizationInvitation(data.actor, i),
-                        )
-                      }
-                      onClick={() => bulkInvites("REVOKE")}
-                    >
-                      Revoke invitations
-                    </Button>
-                  </>
-                )}
-                <span className="text-xs text-muted-foreground">
-                  Select up to 100. Actions apply to selected members or
-                  invitations.
-                </span>
-              </div>
-            )}
-            <div className="oc-data-surface">
-              <table className={onboardingTable.table}>
-                <caption className="sr-only">
-                  Organization members and invitations
-                </caption>
-                <thead className={onboardingTable.head}>
-                  <tr>
-                    <th className="p-3" scope="col">
-                      <input
-                        type="checkbox"
-                        aria-label="Select all members and invitations on this page"
-                        disabled={busy || !selectablePage.length}
-                        checked={
-                          selectablePage.length > 0 &&
-                          selectablePage.every((row) =>
-                            selection.includes(row.id),
-                          )
-                        }
-                        ref={(node) => {
-                          if (node)
-                            node.indeterminate =
-                              selectablePage.some((row) =>
-                                selection.includes(row.id),
-                              ) &&
-                              !selectablePage.every((row) =>
-                                selection.includes(row.id),
-                              );
-                        }}
-                        onChange={(e) =>
-                          setSelection((ids) =>
-                            e.target.checked
-                              ? [
-                                  ...new Set([
-                                    ...ids,
-                                    ...selectablePage.map((row) => row.id),
-                                  ]),
-                                ].slice(0, 100)
-                              : ids.filter(
-                                  (id) =>
-                                    !selectablePage.some(
-                                      (row) => row.id === id,
-                                    ),
-                                ),
-                          )
-                        }
-                      />
-                    </th>
-                    {["Member", "Year", "Role", "Status", ...(invitesOpen ? ["Actions"] : [])].map(
-                      (label) => (
-                        <th key={label} scope="col" className="px-3" aria-sort={label === "Actions" ? undefined : sort === label ? descending ? "descending" : "ascending" : "none"}>
-                          {label === "Actions" ? label : <SortLabel label={label} active={sort === label} descending={descending} onClick={() => sortBy(label)} />}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody className={onboardingTable.body}>
-                  {pageRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className={onboardingTable.row}
-                      data-selected={selection.includes(row.id)}
-                    >
-                      <td data-label="Select" className={onboardingTable.cell}>
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${row.name}`}
-                          checked={selection.includes(row.id)}
-                          disabled={
-                            busy ||
-                            !selectable(row) ||
-                            (selection.length >= 100 &&
-                              !selection.includes(row.id))
-                          }
-                          onChange={(e) => toggle(row.id, e.target.checked)}
-                        />
-                      </td>
-                      <td
-                        data-label="Member"
-                        className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
-                      >
-                        {row.member ? (
-                          <button
-                            type="button"
-                            className="text-left font-medium hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
-                            aria-label={`Member details · ${row.name}`}
-                            disabled={busy}
-                            onClick={(event) => {
-                              trigger.current = event.currentTarget;
-                              setSelectedId(row.member!.id);
-                              setDirty(false);
-                            }}
-                          >
-                            {row.name}
-                          </button>
-                        ) : (
-                          <span className="font-medium">{row.name}</span>
-                        )}
-                        <p className="mt-1 break-all text-xs text-muted-foreground">
-                          {row.detail}
-                        </p>
-                        {!!row.member?.groups.length && <p className="mt-1 text-xs text-muted-foreground">{row.member.groups.join(" · ")}</p>}
-                      </td>
-                      <td data-label="Year" className={onboardingTable.cell}>
-                        {row.year || "—"}
-                      </td>
-                      <td data-label="Role" className={onboardingTable.cell}>
-                        {organizationRoleLabels[row.role]}
-                      </td>
-                      <td
-                        data-label="Status"
-                        className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
-                      >
-                        {row.status}
-                        {row.invitation && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {row.invitation.deliveries[0]
-                              ? row.invitation.deliveries[0].failureCode ===
-                                "DELIVERY_UNCERTAIN"
-                                ? "Email delivery needs review"
-                                : `Email ${statusLabel(row.invitation.deliveries[0].status).toLowerCase()}`
-                              : "Email not requested"}
-                          </p>
-                        )}
-                      </td>
-                      {invitesOpen && (<td
-                        data-label="Actions"
-                        className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
-                      >
-                        {row.invitation &&
+  const resetPaging = () => { setPage(0); setSelection([]) }
+  const memberYears = data ? [...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear && /^\d{4}$/.test(i.invitedYear) ? academicYear({ gradYear: Number(i.invitedYear) }) : i.invitedYear)].filter((year): year is string => !!year))].sort(compareAcademicYears) : []
+  const memberGroups = data ? [...new Set(data.members.flatMap(member => member.groups))].sort() : []
+  const invitationDelivery = (invitation: NonNullable<(typeof rows)[number]["invitation"]>) => invitation.deliveries[0]
+    ? invitation.deliveries[0].failureCode === "DELIVERY_UNCERTAIN" ? "Email delivery needs review" : `Email ${statusLabel(invitation.deliveries[0].status).toLowerCase()}`
+    : "Email not requested";
+  const invitationActions = (row: (typeof rows)[number]) => data && (row.invitation &&
                           row.invitation.status === "PENDING" &&
                           canManageOrganizationInvitation(
                             data.actor,
@@ -654,7 +388,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                     )
                                 }
                               >
-                                <Copy size={15} />
+                                <Copy size={16} />
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -664,7 +398,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                     aria-label={`Invitation actions for ${row.name}`}
                                     disabled={busy}
                                   >
-                                    <MoreHorizontal size={18} />
+                                    <MoreHorizontal size={20} />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -698,11 +432,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     disabled={busy}
-                                    onSelect={() => {
+                                    onSelect={async () => {
                                       if (
-                                        window.confirm(
-                                          `Revoke the invitation for ${row.name}?`,
-                                        )
+                                        await confirm({
+                                          title: `Revoke the invitation for ${row.name}?`,
+                                          confirmLabel: "Revoke invitation",
+                                          tone: "danger",
+                                        })
                                       )
                                         void run(
                                           () =>
@@ -722,13 +458,207 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
-                          )}
-                      </td>)}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          ));
+  const directory = data && <div className="space-y-5">
+            {/* One line of pill filters; it scrolls sideways on narrow screens instead of wrapping. */}
+            <div className="oc-list-toolbar">
+            <div className="oc-filter-bar min-w-0 flex-1" role="toolbar" aria-label="Member filters">
+              <SearchField
+                aria-label="Search members and invitations"
+                placeholder={invitesOpen ? "Search invitations…" : "Search members…"}
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  resetPaging();
+                }}
+                onClear={() => { setQuery(""); resetPaging() }}
+              />
+              <FilterPopover label="Filter" title="Member filters" align="start" count={[roleFilter, showYear && yearFilter, !invitesOpen && groupFilter].filter(Boolean).length}
+                footer={<Button variant="ghost" size="sm" disabled={!roleFilter && !yearFilter && !groupFilter} onClick={() => { setRoleFilter(""); setYearFilter(""); setGroupFilter(""); resetPaging() }}>Clear filters</Button>}>
+                <div className="oc-filter-field"><span className="oc-filter-field-label">Role</span>
+                  <PillSelect label="Filter members by role" size="compact" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
+                </div>
+                {showYear && <div className="oc-filter-field"><span className="oc-filter-field-label">Year</span>
+                  <PillSelect label="Filter members by year" size="compact" allLabel="All years" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={memberYears.map(year => ({ value: year, label: year }))} />
+                </div>}
+                {!invitesOpen && caps.canManageMembers && <div className="oc-filter-field"><span className="oc-filter-field-label">Group</span>
+                  <PillSelect label="Filter members by group" size="compact" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />
+                </div>}
+              </FilterPopover>
+              {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
             </div>
+            <SortControl label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
+            </div>
+            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
+            {selection.length > 0 && (
+              <div
+                role="toolbar"
+                aria-label="Bulk member actions"
+                className="flex flex-wrap items-center gap-3 rounded-md bg-muted p-3"
+              >
+                <span className="text-sm font-medium">
+                  {selection.length} selected
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => setSelection([])}
+                >
+                  Clear selection
+                </Button>
+                {selectedMembers.length > 0 && (
+                  <>
+                    {caps.canChangeRoles && (
+                      <>
+                        <NativeSelect
+                          aria-label="Bulk organization role"
+                          value={bulkRole}
+                          disabled={busy}
+                          className="min-h-11"
+                          onChange={(e) =>
+                            setBulkRole(e.target.value as Member["accessRole"])
+                          }
+                        >
+                          {organizationRoles
+                            .filter((role) =>
+                              selectedMembers.every((m) =>
+                                canChangeOrganizationRole(data.actor, m, role),
+                              ),
+                            )
+                            .map((role) => (
+                              <option value={role} key={role}>
+                                {organizationRoleLabels[role]}
+                              </option>
+                            ))}
+                        </NativeSelect>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            busy ||
+                            !selectedMembers.every((m) =>
+                              canChangeOrganizationRole(
+                                data.actor,
+                                m,
+                                bulkRole,
+                              ),
+                            )
+                          }
+                          onClick={() => void bulkMembers("ROLE")}
+                        >
+                          Change role
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            busy || selectedMembers.some((m) => m.isOwner)
+                          }
+                          onClick={() => {
+                            setBulkPermissions([]);
+                            setPermissionsOpen(true);
+                          }}
+                        >
+                          Modify permissions
+                        </Button>
+                      </>
+                    )}
+                    {caps.canManageMembers && <ActionWorkflow title="Interviewers" description="Update the selected members for this club or a specific round." trigger="Interviewers"><InterviewerEligibilityControls clubId={clubId} selectedIds={selectedMembers.map(m => m.id)} individual onSaved={() => reload()} /></ActionWorkflow>}
+                    {caps.canManageMembers && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          busy ||
+                          !selectedMembers.every((m) =>
+                            canRemoveOrganizationMember(data.actor, m),
+                          )
+                        }
+                        onClick={() => void bulkMembers("REMOVE")}
+                      >
+                        Remove members
+                      </Button>
+                    )}
+                  </>
+                )}
+                {selectedInvites.length > 0 && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={
+                        busy ||
+                        !selectedInvites.every(
+                          (i) =>
+                            i.expiresAt > new Date() &&
+                            canManageOrganizationInvitation(data.actor, i),
+                        )
+                      }
+                      onClick={() => void bulkInvites("RESEND")}
+                    >
+                      Resend invitations
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={
+                        busy ||
+                        !selectedInvites.every((i) =>
+                          canManageOrganizationInvitation(data.actor, i),
+                        )
+                      }
+                      onClick={() => void bulkInvites("REVOKE")}
+                    >
+                      Revoke invitations
+                    </Button>
+                  </>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  Select up to 100. Actions apply to selected members or
+                  invitations.
+                </span>
+              </div>
+            )}
+            {rows.length > 0 && <DataTable
+              caption={invitesOpen ? "Club invitations" : "Club members"}
+              rows={pageRows}
+              rowKey={row => row.id}
+              rowState={row => selection.includes(row.id) ? "selected" : undefined}
+              disabled={busy}
+              sort={{ key: sort, descending, toggle: sortBy }}
+              isOpenable={row => !!row.member}
+              openLabel={row => `Member details · ${row.name}`}
+              onOpen={(row, origin) => { if (!row.member) return; trigger.current = origin; setSelectedId(row.member.id); setDirty(false) }}
+              selection={{
+                label: "Select",
+                rowLabel: row => `Select ${row.name}`,
+                isSelected: row => selection.includes(row.id),
+                toggle: row => toggle(row.id, !selection.includes(row.id)),
+                disabled: row => !selectable(row) || (selection.length >= 100 && !selection.includes(row.id)),
+                header: <label className="oc-dt-check"><input
+                  type="checkbox" className="oc-checkbox"
+                  aria-label="Select all members and invitations on this page"
+                  disabled={busy || !selectablePage.length}
+                  checked={selectablePage.length > 0 && selectablePage.every((row) => selection.includes(row.id))}
+                  ref={(node) => { if (node) node.indeterminate = selectablePage.some((row) => selection.includes(row.id)) && !selectablePage.every((row) => selection.includes(row.id)) }}
+                  onChange={(e) => setSelection((ids) => e.target.checked ? [...new Set([...ids, ...selectablePage.map((row) => row.id)])].slice(0, 100) : ids.filter((id) => !selectablePage.some((row) => row.id === id)))}
+                /></label>,
+              }}
+              columns={[
+                { id: "name", header: "Member", sortKey: "name", primary: true, cell: row => <span className="oc-dt-name">{row.name}</span>, secondary: row => <DataTableSecondary from="lg" title={row.member?.groups.length ? `Groups: ${row.member.groups.join(", ")}` : undefined}>{joinFacts(row.detail, row.member?.groups.join(" · "))}</DataTableSecondary> },
+                ...(showYear ? [{ id: "year", header: "Year", sortKey: "year", showFrom: "md" as const, cell: (row: (typeof rows)[number]) => row.year || "—" }] : []),
+                { id: "role", header: "Role", sortKey: "role", cell: row => organizationRoleLabels[row.role] },
+                { id: "status", header: "Status", sortKey: "status", cell: row => <>{row.status}{row.invitation && <span className="oc-dt-muted"> · {invitationDelivery(row.invitation)}</span>}</> },
+                ...(invitesOpen ? [{ id: "actions", header: <span className="sr-only">Actions</span>, align: "end" as const, cell: (row: (typeof rows)[number]) => invitationActions(row) }] : []),
+              ] satisfies DataTableColumn<(typeof rows)[number]>[]}
+              card={{
+                title: row => row.name,
+                meta: row => joinFacts(row.year, organizationRoleLabels[row.role], row.invitation && invitationDelivery(row.invitation)),
+                trailing: row => row.status === "Active" ? undefined : <span className="oc-dt-muted">{row.status}</span>,
+                actions: invitesOpen ? row => invitationActions(row) : undefined,
+              }}
+            />}
             {!rows.length && (
               <p
                 role="status"
@@ -764,7 +694,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
 </div>;
   return (
     <div
-      className="oc-member-directory min-w-0 max-w-5xl space-y-6"
+      className="oc-member-directory min-w-0 space-y-6"
       data-saving={busy}
       data-unsaved={dirty}
       aria-busy={busy}
@@ -785,7 +715,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             disabled={busy}
             onClick={() => setAttempt((value) => value + 1)}
           >
-            Reload members
+            Try again
           </Button>
         </div>
       )}
@@ -795,10 +725,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         data && (
           <>
             <div className="flex flex-wrap gap-2" aria-label="Member actions">
-              {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." trigger={<><Plus size={16} />Add member</>} variant="default">{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
-              <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger="Invite members" presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
+              {caps.canManageMembers && <div role="group" aria-label="Add members" className="inline-flex"><Button className="rounded-r-none" onClick={() => setAddOpen(true)}><Plus size={16} aria-hidden="true" />Add member</Button><DropdownMenu><DropdownMenuTrigger asChild><Button className="rounded-l-none border-l border-primary-foreground/30 px-2" aria-label="More ways to add members"><ChevronDown size={16} aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem className="min-h-11" onSelect={() => setInvitesOpen(true)}>Invite members</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setImportOpen(true)}>Import CSV</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setGroupsOpen(true)}>Create groups</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>}
+              {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." open={addOpen} onOpenChange={setAddOpen}>{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
+              <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger={caps.canManageMembers ? undefined : "Invite members"} presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
                 {invitesOpen && <div data-saving={busy} className="space-y-5">
-                  <div role="group" aria-label="Invitation workspace" className="flex flex-wrap gap-1 border-b pb-3">{[["pending", "Pending invitations"], ["new", "New invitation"], ["delivery", "Delivery & schedules"]].map(([id, label]) => <Button key={id} variant={inviteTab === id ? "secondary" : "ghost"} aria-pressed={inviteTab === id} onClick={() => { if (dirty && !window.confirm("Discard unsaved invitation changes?")) return; setDirty(false); setInviteTab(id) }}>{label}</Button>)}</div>
+                  <SegmentedControl label="Invitation workspace" value={inviteTab} onChange={async id => { if (dirty && !(await confirm({ title: "Discard invitation changes?", description: "Your unsaved invitation changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", tone: "danger" }))) return; setDirty(false); setInviteTab(id) }} options={[{ value: "pending", label: "Pending invitations" }, { value: "new", label: "New invitation" }, { value: "delivery", label: "Delivery & schedules" }]} />
                   {notice && <p role="status" className="text-sm">{notice}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                   {inviteTab === "pending" && <>{directory}{scheduledInviteId && <InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId} />}</>}
                   {inviteTab === "new" && <div data-unsaved={dirty} onChangeCapture={() => setDirty(true)}>              <p className="mt-3 text-sm text-muted-foreground">
@@ -814,7 +745,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               ) : (
                 <form
                   className="mt-4 grid gap-4 sm:grid-cols-2"
-                  onSubmit={(event) => {
+                  onSubmit={async (event) => {
                     event.preventDefault();
                     const form = new FormData(event.currentTarget);
                     const input = {
@@ -827,9 +758,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     };
                     if (
                       input.requestedRole === "OWNER" &&
-                      !window.confirm(
-                        "Invite an additional owner with full control of this organization?",
-                      )
+                      !(await confirm({
+                        title: "Invite an additional owner?",
+                        description: "Owners have full control of this organization.",
+                        confirmLabel: "Invite owner",
+                      }))
                     )
                       return;
                     void run(
@@ -845,28 +778,28 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       Year (optional)
-                      <select
+                      <NativeSelect
                         name="year"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-1 min-h-11 w-full"
                       >
                         <option value="">Not provided</option>
                         {[2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
                           <option key={year}>{year}</option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       School identifier type
-                      <select
+                      <NativeSelect
                         name="identifierType"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-1 min-h-11 w-full"
                       >
                         {data.identifierTypes.map((type) => (
                           <option key={type.id} value={type.id}>
                             {type.label}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       School identifier
@@ -880,10 +813,10 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     </label>
                     <label className="space-y-2 text-sm font-medium">
                       Organization role
-                      <select
+                      <NativeSelect
                         name="role"
                         defaultValue="MEMBER"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-1 min-h-11 w-full"
                       >
                         {organizationRoles
                           .filter((role) =>
@@ -894,7 +827,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                               {organizationRoleLabels[role]}
                             </option>
                           ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <Button className="self-end min-h-11">
                       Create invitation
@@ -906,8 +839,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   {inviteTab === "delivery" && <InvitationEmailControls clubId={clubId} onSent={reload} />}
                 </div>}
               </ActionWorkflow>
-              {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." trigger="Import CSV" presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} /></ActionWorkflow>}
-              {caps.canManageMembers && <ActionWorkflow title="Member settings" description="Configure club-wide interviewer eligibility. Edit individual roles and access from the member directory." trigger="Settings" presentation="sheet"><InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={[]} onSaved={() => reload()} /></ActionWorkflow>}
+              {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." open={importOpen} onOpenChange={setImportOpen} presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} /></ActionWorkflow>}
+              {caps.canManageMembers && <MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} open={groupsOpen} onOpenChange={setGroupsOpen} />}
             </div>
             {!invitesOpen && directory}
           </>
@@ -950,12 +883,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             <Button
               disabled={busy || !selectedMembers.length}
               onClick={() => {
-                if (
-                  window.confirm(
-                    `Replace custom permissions for ${selectedMembers.length} selected members?`,
-                  )
-                )
-                  bulkMembers("PERMISSIONS");
+                void bulkMembers("PERMISSIONS");
               }}
             >
               Save permissions
@@ -970,13 +898,22 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       </Sheet>
       <Sheet
         open={!!active}
-        onOpenChange={(open) => {
+        onOpenChange={async (open) => {
           if (
             !open &&
             !busy &&
             !document.querySelector('[data-saving="true"]')
           ) {
-            if (dirty && !window.confirm("Discard unsaved member changes?"))
+            if (
+              dirty &&
+              !(await confirm({
+                title: "Discard member changes?",
+                description: "Your unsaved member changes will be lost.",
+                confirmLabel: "Discard changes",
+                cancelLabel: "Keep editing",
+                tone: "danger",
+              }))
+            )
               return;
             setSelectedId(null);
             setDirty(false);
@@ -1015,8 +952,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     active.isOwner ? "OWNER" : active.accessRole
                   ]
                 }{" "}
-                · {statusLabel(active.status)} ·{" "}
-                {active.user.studentProfile?.academicYear || "Year not provided"}
+                · {statusLabel(active.status)}
+                {data?.profileFields?.academicYear !== false && <> · {active.user.studentProfile?.academicYear || "Year not provided"}</>}
               </p>
               <p className="text-sm text-muted-foreground">
                 {active.title || active.role.replaceAll("_", " ")} · Groups:{" "}
@@ -1035,15 +972,17 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <form
                     className="space-y-3 border-t pt-4"
                     key={`${active.id}:${active.accessRole}`}
-                    onSubmit={(event) => {
+                    onSubmit={async (event) => {
                       event.preventDefault();
                       const role = String(
                         new FormData(event.currentTarget).get("role"),
                       );
                       if (
-                        !window.confirm(
-                          `Change ${memberName(active)} to ${organizationRoleLabels[role as Member["accessRole"]]}? This replaces their custom capabilities with the role’s defaults.`,
-                        )
+                        !(await confirm({
+                          title: `Change ${memberName(active)} to ${organizationRoleLabels[role as Member["accessRole"]]}?`,
+                          description: "This replaces their custom capabilities with the role’s defaults.",
+                          confirmLabel: "Change role",
+                        }))
                       )
                         return;
                       void run(
@@ -1068,13 +1007,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   >
                     <label className="block text-sm">
                       Change role
-                      <select
+                      <NativeSelect
                         name="role"
                         defaultValue={
                           active.isOwner ? "OWNER" : active.accessRole
                         }
                         disabled={busy}
-                        className="mt-2 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-2 min-h-11 w-full"
                       >
                         {organizationRoles
                           .filter((role) =>
@@ -1085,7 +1024,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                               {organizationRoleLabels[role]}
                             </option>
                           ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                     <Button
                       disabled={
@@ -1151,11 +1090,14 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <Button
                     variant="outline"
                     disabled={busy}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        window.confirm(
-                          `Transfer your ownership to ${memberName(active)}? They become Owner and you become Admin. Other owners remain unchanged.`,
-                        )
+                        await confirm({
+                          title: `Transfer your ownership to ${memberName(active)}?`,
+                          description: "They become Owner and you become Admin. Other owners remain unchanged.",
+                          confirmLabel: "Transfer ownership",
+                          tone: "danger",
+                        })
                       )
                         void run(
                           () =>
@@ -1183,11 +1125,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <Button
                     variant="destructive"
                     disabled={busy}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        window.confirm(
-                          `Remove ${memberName(active)} from this organization?`,
-                        )
+                        await confirm({
+                          title: `Remove ${memberName(active)} from this organization?`,
+                          confirmLabel: "Remove member",
+                          tone: "danger",
+                        })
                       )
                         void run(
                           () =>

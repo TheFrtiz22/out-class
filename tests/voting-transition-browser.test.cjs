@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
-const {sessionId,apps}=require('./helpers/voting-room-harness.cjs');
+const {sessionId,apps,leaderId}=require('./helpers/voting-room-harness.cjs');
 test('decision slide, stationary controls, focus, guarded Undo, failure recovery and reduced motion',{timeout:120000},async()=>{
  const f=await fixture(),browser=await chromium.launch({headless:true});const output=process.env.VOTING_SCREENSHOT_DIR;const c=await browser.newContext({viewport:{width:1366,height:768},...(output?{recordVideo:{dir:output,size:{width:1366,height:768}}}:{})}),p=await c.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
  try{await f.h.create();await f.h.command('START');await f.h.command('OPEN_VOTING');await f.h.command('CLOSE_VOTING');await p.goto(`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=leader&actor=leader`);
@@ -10,6 +10,10 @@ test('decision slide, stationary controls, focus, guarded Undo, failure recovery
  await p.getByRole('textbox',{name:'Decision reason'}).fill('Hold for next pass');f.dropCommand();await p.getByRole('button',{name:'Hold',exact:true}).click();await p.getByRole('button',{name:'Retry command'}).waitFor();assert.equal(f.h.state().sessions[0].activeApplicationId,apps[1]);await p.getByRole('button',{name:'Retry command'}).click();await p.locator('.vr-slide-ready').waitFor();assert.equal(f.h.state().audit.filter(a=>a.action==='voting.room.decide_and_advance').length,2);
  await p.getByRole('button',{name:'Open voting',exact:true}).click();await p.getByRole('button',{name:'Undo',exact:true}).click();await p.getByText('Newer room activity prevents Undo.',{exact:false}).waitFor();assert.equal(f.h.state().sessions[0].activeApplicationId,apps[1]);assert.equal(await p.getByRole('heading',{name:'QA Applicant One',exact:true}).count(),0);
  await p.emulateMedia({reducedMotion:'reduce'});p.once('dialog',d=>d.accept());await p.getByRole('button',{name:'Close voting',exact:true}).click();await p.getByRole('textbox',{name:'Decision reason'}).fill('Reduced motion test');await p.getByRole('button',{name:'Do not pass',exact:true}).click();await p.getByText('Applicant 3 of 3. Voting closed or waiting.',{exact:true}).waitFor();await p.locator('.vr-slide-ready').waitFor();assert.equal(await p.locator('.vr-slide-in').evaluate(e=>getComputedStyle(e).animationName),'none');assert.equal(f.h.state().sessions[0].activeApplicationId,apps[2]);
+ // Undo for that decision stays only while the applicant after it is current; another leader tab moving on hides it.
+ assert.equal(await p.getByRole('button',{name:'Undo',exact:true}).count(),1);
+ f.h.as(leaderId);await f.h.command('OPEN_VOTING');await f.h.command('CLOSE_VOTING');await f.h.command('DECIDE_AND_ADVANCE',{applicationId:apps[2],passNumber:1,choice:'HOLD',reason:'Moved on in another tab'});
+ await p.evaluate(()=>window.dispatchEvent(new Event('focus')));await p.getByRole('region',{name:'Voting summary'}).first().waitFor();assert.equal(await p.getByRole('button',{name:'Undo',exact:true}).count(),0);
  await p.setViewportSize({width:390,height:844});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));if(output){fs.mkdirSync(output,{recursive:true});await p.screenshot({path:path.join(output,'transition-phone.png'),fullPage:true})}assert.deepEqual(errors,[]);
  }finally{await c.close();await browser.close();await f.close()}
 });

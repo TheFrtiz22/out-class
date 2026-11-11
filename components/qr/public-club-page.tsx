@@ -6,19 +6,20 @@ import { useAuth } from "@/contexts/auth-context"
 import { ApplicationTrackerView } from "@/components/views/application-tracker-view"
 import { CalendarView } from "@/components/views/calendar-view"
 import { Button } from "@/components/ui/button"
-import { PublicNavigation } from "@/components/landing/public-navigation"
-import "@/components/views/landing.css"
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
 import { getStudentDashboardData } from "@/lib/workspace-api"
+import { studentPath } from "@/lib/navigation"
 const emptyPrivateDashboard = { applications: [], attendances: [], meetings: [] }
 export function PublicClubPage({
   club,
   initialData,
   authenticated = false,
   embedded = false,
+  serverNow,
 }: {
   club: DirectoryClub
+  serverNow?: number
   initialData?: Awaited<ReturnType<typeof getStudentDashboardData>> | null
   authenticated?: boolean
   embedded?: boolean
@@ -41,19 +42,17 @@ export function PublicClubPage({
       window.location.href = `${next === "auth" ? "/login" : "/signup"}?next=${encodeURIComponent(returnTo)}`
       return
     }
-    if (embedded || ["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
+    if (embedded || ["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = studentPath(next); return }
     setView(next)
   }
-  const Content = embedded ? "div" : "main"
   return (
     <ApplicationStateProvider
       key={`${identity}:${dashboard ? "ready" : "initial"}`}
       initialData={dashboard ?? (authenticated ? emptyPrivateDashboard : null)}
       persistLocalState={!authenticated && dashboard == null}
     >
-      <div className={embedded ? undefined : "oc-landing oc-information"}>
-      {!embedded && <PublicNavigation />}
-      <Content className={embedded ? "min-w-0" : "min-h-svh bg-background px-5 py-8 font-sans sm:px-8 sm:py-12"}>
+      {/* Signed out, the route layout supplies the public header, page margins and footer. */}
+      <div className="min-w-0">
         {view !== "profile" && (
           <Button variant="ghost" className="mb-6" onClick={() => setView("profile")}>
             Back to club profile
@@ -66,14 +65,14 @@ export function PublicClubPage({
         ) : (
           <ClubProfileView
             club={club}
-            backLabel={embedded ? "Discover clubs" : "Back to OutClass"}
+            backLabel={embedded ? "Explore clubs" : "Back to OutClass"}
             onBack={() => {
-              window.location.href = embedded ? "/?workspace=student&view=explore" : "/"
+              window.location.href = embedded ? "/explore" : "/"
             }}
             onNavigate={navigate}
+            serverNow={serverNow}
           />
         )}
-      </Content>
       </div>
     </ApplicationStateProvider>
   )

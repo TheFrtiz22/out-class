@@ -11,20 +11,21 @@ import { prisma } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
-import { roomInputSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
+import { roomInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
 import { revalidatePath } from "next/cache"
 
 
 import { syncBookingPanel } from "@/utils/interview-scheduling-access"
 import { notifyInterviewBookingChange } from "@/utils/interview-assignment-notifications"
 import { interviewBookingCoverage } from "@/utils/interview-booking"
+import { boundedParse } from "@/lib/bounded-input"
 
 const uuid = z.string().uuid()
 const roomInclude = { slots: { include: { _count: { select: { bookings: true } } }, orderBy: { startTime: "asc" as const } } }
 type StoredRoom = Prisma.InterviewRoomGetPayload<{ include: typeof roomInclude }>
 function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
   return { id: room.id, clubId: room.clubId, roundId: room.roundId, name: room.name, location: room.location, kind: room.kind, timezone: room.timezone, duration: room.duration, buffer: room.buffer, isOpen: room.isOpen, panelMemberIds: applicant ? [] : room.panelMemberIds,
-    ...(!applicant ? { interviewersNeeded: room.interviewersNeeded, staffingRevision: room.staffingRevision, approvedPanelMemberIds: room.approvedPanelMemberIds } : {}),
+    ...(!applicant ? { externallyBookedAt: room.externallyBookedAt?.toISOString() ?? null, interviewersNeeded: room.interviewersNeeded, staffingRevision: room.staffingRevision, approvedPanelMemberIds: room.approvedPanelMemberIds } : {}),
     slots: room.slots.filter(s => !applicant || +s.startTime > Date.now() && (!s.panelScheduleVersionId || s.publishedPanelMemberIds.length>0)).map(s => ({ id: s.id, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), capacity: s.capacity, booked: s._count.bookings, ...(!applicant ? { interviewersNeeded: s.interviewersNeeded, staffingRevision: s.staffingRevision, publishedPanelMemberIds:s.publishedPanelMemberIds,panelScheduleVersionId:s.panelScheduleVersionId } : {}) })) }
 }
 async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshReads=false): Promise<T> {
@@ -39,7 +40,7 @@ async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshRead
     catch (error) {
       const code = error && typeof error === "object" && "code" in error ? error.code : ""
       if (code === "P2034" && attempt < 2) continue
-      if (code === "P2034" || code === "P2002") throw new Error("The schedule changed while saving. Refresh and try again.")
+      if (code === "P2034" || code === "P2002") throw new Error("The schedule changed while saving. Reload the page and try again.")
       if (isWriteContention(error)) throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
       throw error
     }
@@ -59,7 +60,7 @@ export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   return { clubName: club.name, cycles, rounds: rounds.map(r=>({id:r.id,name:r.name,type:r.type,configuration:r.configuration,booking:{...r,bookingPublishedAt:r.bookingPublishedAt?.toISOString()??null}})), members: members.map(m => ({ id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email })), rooms: rooms.map(r => presentRoom(r)), bookings: bookings.map(b => ({ id: b.id, slotId: b.slotId, roomId: b.slot.roomId!, roundId: b.roundId!, applicationId: b.applicationId, candidate: hasPermission(membership, "applicants.identify") && b.round?.anonymousReview === false && b.application.round.anonymousReview === false && b.application.student.studentProfile ? `${b.application.student.studentProfile.firstName} ${b.application.student.studentProfile.lastName}` : `Applicant ${b.applicationId.slice(-6)}`, startTime: b.slot.startTime.toISOString(), endTime: b.slot.endTime.toISOString(), location: b.slot.location })) }
 }
 export async function createInterviewRoom(raw: RoomInput) {
-  const input = roomInputSchema.parse(raw)
+  const input = boundedParse(roomInputSchema, raw)
   const { user } = await requireClubPermission(input.clubId, ["interviews.manage"])
   const slots = roomSlots(input)
   const result = await atomic(async tx => {
@@ -110,6 +111,44 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
   })
   revalidatePath(`/club/${room.clubId}/workspace`)
 }
+/** Rename only. Slots keep their stored location, so confirmed reservations are unchanged. */
+export async function renameInterviewRoom(raw: unknown) {
+  const input = roomRenameSchema.parse(raw)
+  const { user } = await requireAuth()
+  const result = await atomic(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    // Room names also identify a physical room in overlap checks; serialize with room creation.
+    await lockOperationalClub(tx, input.clubId)
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, include: { slots: true } })
+    if (!room) throw new Error("Room unavailable.")
+    if (room.name === input.name) return { name: room.name }
+    const others = await tx.interviewRoom.findMany({ where: { clubId: input.clubId, id: { not: room.id }, name: { equals: input.name, mode: "insensitive" }, OR: [{ isOpen: true }, { slots: { some: { bookings: { some: {} } } } }] }, include: { slots: true } })
+    if (others.some(other => other.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(room.buffer, other.buffer)))))) throw new Error("Another room with this name has overlapping interview times. Choose a different name.")
+    await tx.interviewRoom.update({ where: { id: room.id }, data: { name: input.name } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.rename" } })
+    return { name: input.name }
+  })
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
+}
+/** Tracking only: records that the leader reserved the room in the school's system (UVA: 25Live). */
+export async function setInterviewRoomExternallyBooked(raw: unknown) {
+  const input = roomExternalBookingSchema.parse(raw)
+  const { user } = await requireAuth()
+  const result = await atomic(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    await lockOperationalClub(tx, input.clubId)
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, select: { id: true, externallyBookedAt: true } })
+    if (!room) throw new Error("Room unavailable.")
+    if (!!room.externallyBookedAt === input.booked) return { externallyBookedAt: room.externallyBookedAt?.toISOString() ?? null }
+    const externallyBookedAt = input.booked ? new Date() : null
+    await tx.interviewRoom.update({ where: { id: room.id }, data: { externallyBookedAt } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: input.booked ? "interview.room.external_booking.mark" : "interview.room.external_booking.clear" } })
+    return { externallyBookedAt: externallyBookedAt?.toISOString() ?? null }
+  }, true)
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
+}
 export async function getApplicantSchedule(applicationId: string): Promise<ApplicantSchedule> {
   uuid.parse(applicationId)
   const { user } = await requireAuth()
@@ -123,7 +162,16 @@ export async function getApplicantSchedule(applicationId: string): Promise<Appli
     const coverage = publicationState === "PUBLISHED" ? await interviewBookingCoverage(tx, application.clubId, round.id, application) : []
     const available = new Set(coverage.filter(s => s.bookable).map(s => s.slotId))
     const rooms = publicationState === "PUBLISHED" ? await tx.interviewRoom.findMany({ where: { clubId: application.clubId, roundId: round.id, isOpen: true }, include: roomInclude, orderBy: { createdAt: "asc" } }) : []
-    return { applicationId, clubName: application.club.name, roundName: round.name, publicationState, allowCancellation: round.bookingAllowCancellation, allowRescheduling: round.bookingAllowRescheduling, rooms: rooms.map(r => presentRoom(r, true)).map(r => ({ ...r, slots: r.slots.filter(s => available.has(s.id) && isPublishedBookingSlot(round.bookingSlots, s, r)) })).filter(r => r.slots.length), booking: booking ? { id: booking.id, applicationId, slotId: booking.slotId, roomId: booking.slot.roomId!, roundId: booking.roundId!, candidate: "You", startTime: booking.slot.startTime.toISOString(), endTime: booking.slot.endTime.toISOString(), location: booking.slot.location } : null }
+    // The student's interviews with other clubs (or other rounds). reserveInterview refuses an
+    // overlapping time, so those times are left out up front instead of failing on submit.
+    const elsewhere = publicationState === "PUBLISHED" ? await tx.interviewBooking.findMany({ where: { application: { studentId: user.id }, ...(booking ? { id: { not: booking.id } } : {}), slot: { endTime: { gt: new Date() } } }, select: { slot: { select: { startTime: true, endTime: true } } } }) : []
+    let conflictingTimes = 0
+    const bookable = rooms.map(r => presentRoom(r, true)).map(r => ({ ...r, slots: r.slots.filter(s => {
+      if (!available.has(s.id) || !isPublishedBookingSlot(round.bookingSlots, s, r)) return false
+      if (elsewhere.some(other => overlaps(s, other.slot))) { conflictingTimes++; return false }
+      return true
+    }) })).filter(r => r.slots.length)
+    return { applicationId, clubName: application.club.name, roundName: round.name, publicationState, allowCancellation: round.bookingAllowCancellation, allowRescheduling: round.bookingAllowRescheduling, conflictingTimes, rooms: bookable, booking: booking ? { id: booking.id, applicationId, slotId: booking.slotId, roomId: booking.slot.roomId!, roundId: booking.roundId!, candidate: "You", startTime: booking.slot.startTime.toISOString(), endTime: booking.slot.endTime.toISOString(), location: booking.slot.location } : null }
   }, { timeout: 60000 })
 }
 export async function reserveInterview(raw: { applicationId: string; slotId: string }) {
@@ -157,7 +205,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     if (existing && +existing.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
     if (!slot.room.isOpen || +slot.startTime <= Date.now()) throw new Error("This slot is no longer available.")
     const round = await tx.pipelineRound.findUniqueOrThrow({ where: { id: application.roundId }, include: { bookingCycle: true } })
-    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Booking is not currently published for your invited round and recruitment cycle.")
+    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Interview times aren’t open for your round right now.")
     if (existing && !round.bookingAllowRescheduling) throw new Error("This club does not allow self-service rescheduling. Your original reservation is retained; contact the club.")
     const coverage = await interviewBookingCoverage(tx, application.clubId, round.id, application)
     if (!coverage.some(s => s.slotId === slot.id && s.bookable)) throw new Error("This time can no longer provide an approved, fully staffed interview. Your current reservation is retained. Choose another time or contact the club.")
@@ -165,7 +213,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     if (slot._count.bookings >= slot.capacity) throw new Error("That time was just booked. Choose another slot.")
     const others = await tx.interviewBooking.findMany({ where: { application: { studentId: user.id }, ...(existing ? { id: { not: existing.id } } : {}), slot: { endTime: { gt: new Date() } } }, include: { slot: true } })
     if (others.some(b => overlaps(slot, b.slot))) throw new Error("You already have an interview at that time.")
-    if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new Error("You already have a legacy booking with this club. Contact the club before booking another time.")
+    if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new Error("You already have an interview with this club. Contact the club before booking another time.")
     if (existing) {
       await notifyInterviewBookingChange(tx, existing)
       await tx.interviewBooking.delete({ where: { id: existing.id } })
@@ -175,7 +223,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     await tx.auditLog.create({ data: { actorId: user.id, clubId: application.clubId, targetId: result.id, action: existing ? "interview.booking.reschedule" : "interview.booking.create" } })
     return { id: result.id }
   },true)
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   return booking
 }
 export async function cancelRoomBooking(bookingId: string) {
@@ -183,12 +231,12 @@ export async function cancelRoomBooking(bookingId: string) {
   const { user } = await requireAuth()
   await atomic(async tx => {
     const initial = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } });
-    if (!initial) throw new Error("Booking not found.");
+    if (!initial) throw new Error("We couldn’t find that interview.");
     await lockOperationalClub(tx, initial.slot.clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${initial.applicationId} FOR UPDATE`;
     const booking = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } })
-    if (!booking) throw new Error("Booking not found.")
+    if (!booking) throw new Error("We couldn’t find that interview.")
     if (+booking.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
     const policy = booking.roundId ? await tx.pipelineRound.findUnique({ where: { id: booking.roundId } }) : null
     if (policy && !policy.bookingAllowCancellation) throw new Error("This club does not allow self-service cancellation. Contact the club; your reservation is retained.")
@@ -197,7 +245,7 @@ export async function cancelRoomBooking(bookingId: string) {
     if (booking.roundId) await syncBookingPanel(tx, booking.applicationId, booking.roundId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: booking.slot.clubId, targetId: bookingId, action: "interview.booking.cancel" } })
   })
-  revalidatePath("/")
+  revalidatePath("/", "layout")
 }
 export async function getBookingApplication(clubId: string, roundId: string) {
   if (!uuid.safeParse(clubId).success || !uuid.safeParse(roundId).success) return { status: "unavailable" as const }

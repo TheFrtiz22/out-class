@@ -1,13 +1,13 @@
 import { workspaceJsonResponse } from "@/lib/workspace-response"
 import { serverPhase, traceWorkspaceRequest } from "@/lib/server-phase-trace"
 import { UniversityVerificationError } from "@/utils/verified-email-policy"
-import { getVotingWorkspace, getVotingJoinInfo } from "@/actions/voting"
+import { getVotingWorkspace } from "@/actions/voting"
 import { genderValues } from "@/lib/student-profile"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
-import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection } from "@/actions/crm"
+import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection, getRankedReviewRound } from "@/actions/crm"
 import { pipelinePageQuery } from "@/lib/pipeline-page"
 import { getOrganizationMemberManagement } from "@/actions/organization-members"
 import { getOrganizationInvitations } from "@/actions/club-onboarding"
@@ -19,6 +19,7 @@ import { getApplicantDisplay } from "@/actions/applicant-intelligence"
 import { recruitmentAttendanceSummary } from "@/actions/meetings"
 import { getStudentDashboardData } from "@/actions/applications"
 import { encodeWorkspaceData } from "@/lib/workspace-wire"
+import { assertBoundedInput } from "@/lib/bounded-input"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -29,6 +30,10 @@ const noArgs = z.tuple([])
 // JSON serializes an explicit undefined optional argument as null.
 const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1 ? [args[0], null] : args,
   z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(value => value ?? undefined)]))
+
+// Every `case` below, so logs carry only a known constant, never a raw query value.
+const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rankedReviewRound", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "invitations", "tutorial", "applicantDisplay", "attendance"])
+const loggedReadKind = (kind: string | null) => kind && workspaceReadKinds.has(kind) ? kind : "unknown"
 
 // An explicit read allowlist. Each private loader still runs its original live
 // authentication/authorization; no client identity or arbitrary action dispatch.
@@ -41,6 +46,8 @@ export async function GET(request: Request) {
     if ((await cookies()).get(DEMO_COOKIE)?.value === "1") return Response.json({ error: "Live workspace reads are unavailable in Demo Mode" }, { status: 403, headers })
     const params = new URL(request.url).searchParams
     const args: unknown = JSON.parse(params.get("args") || "[]")
+    // Read arguments are at most a three-item tuple with small nested selections.
+    assertBoundedInput(args, { maxArrayLength: 100, maxTotalElements: 200, maxBytes: 64_000 })
     let data: unknown
     switch (params.get("kind")) {
       case "myAvailability": noArgs.parse(args); data = await (await import("@/actions/availability")).getMyAvailability(); break
@@ -58,12 +65,15 @@ export async function GET(request: Request) {
       case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
       case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
       case "dashboardReviews": data = await getDashboardReviewQueue(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
-      case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
+      // Optional view: "club" (Club home), "recruiting" (Recruiting Overview), "strip" (Club home's recruiting link).
+      case "overview": { const [clubId, view] = z.union([clubArgs, z.tuple([z.string().uuid(), z.enum(["all", "club", "recruiting", "strip"])])]).parse(args) as [string, ("all" | "club" | "recruiting" | "strip")?]; data = await getClubWorkspaceOverview(clubId, view); break }
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
       case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
       case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelinePage": data = await getClubPipelinePage(...z.tuple([z.string().uuid(), pipelinePageQuery]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "pipelineSelection": data = await getClubPipelineSelection(...z.tuple([z.string().uuid(), pipelinePageQuery.omit({ cursor: true })]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+      case "rankedReviewRound": data = await getRankedReviewRound(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
+      case "rankedReviewSettings": data = await (await import("@/actions/ranked-review")).getRankedReviewSettings(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
       case "pipelineSettings": data = await getPipelineSettings(...clubArgs.parse(args)); break
@@ -73,7 +83,6 @@ export async function GET(request: Request) {
       case "taskNotifications": noArgs.parse(args); data = await getTaskNotifications(); break
       case "studentDashboard": noArgs.parse(args); data = await getStudentDashboardData(); break
       case "voting": data = await getVotingWorkspace(...z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(v => v ?? undefined), pipelinePageQuery.omit({ cursor: true }).optional()]).parse(Array.isArray(args) && args.length < 3 ? [...args, ...Array(3 - args.length).fill(undefined)] : args)); break
-      case "votingJoin": data = await getVotingJoinInfo(...clubArgs.parse(args)); break
       case "invitations": data = await getOrganizationInvitations(...z.tuple([z.boolean()]).parse(args)); break
       case "tutorial": data = await getTutorial(...z.tuple([z.enum(["student", "leader"]), z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(args)); break
       case "applicantDisplay": data = await getApplicantDisplay(...z.tuple([z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: z.unknown().optional() }).strict()]).parse(args) as Parameters<typeof getApplicantDisplay>); break
@@ -85,6 +94,8 @@ export async function GET(request: Request) {
     if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
+    // Name the refused read kind (an allowlisted constant) so a recurring 403 can be traced; no arguments, ids or messages.
+    if (!redirect) console.warn(JSON.stringify({ event: "workspace.read.refused", kind: loggedReadKind(new URL(request.url).searchParams.get("kind")), status: invalid ? 400 : 403, error: error instanceof Error ? error.name : typeof error }))
     return Response.json({ error: invalid ? "Invalid workspace read" : "Workspace access unavailable" }, { status: invalid ? 400 : redirect ? 401 : 403, headers })
   }
   })

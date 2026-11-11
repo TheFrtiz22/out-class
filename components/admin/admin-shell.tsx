@@ -1,16 +1,14 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { ApplicationStateProvider } from "@/lib/application-state";
-import { ProductShell } from "@/components/shell/product-shell";
-import { adminNavigation } from "@/lib/admin-navigation";
+import { ShellState } from "@/components/shell/shell-state";
+
+/** Admin page content. The persistent shell (app/(workspace)/layout.tsx) draws the Admin rail from the URL;
+ * every platform page keeps its own requirePlatformAdmin check. */
 export function AdminShell({ children }: { children: ReactNode }) {
-  const path = usePathname(), router = useRouter();
-  if (path === "/platform/login") return children;
-  const active = path.split("/")[2] || "overview";
-  return <ApplicationStateProvider initialData={{ applications: [], events: [], memberships: [] }} persistLocalState={false}><ProductShell workspaceKind="admin" manager mode="platform" modes={[]} items={adminNavigation} active={active} title={adminNavigation.find(i => i.id === active)?.label || "Admin"} onSelect={id => router.push(adminNavigation.find(i => i.id === id)?.href || "/platform")} onNavigate={view => router.push(view === "student-profile" ? "/?workspace=student&view=student-profile" : view === "inbox" ? "/?workspace=student&view=inbox" : "/?workspace=student")}>
-    <div className="flex justify-end pb-3 text-sm"><Link href="/platform/login" className="text-muted-foreground underline underline-offset-4">Verify for sensitive actions</Link></div>
+  // Below the page, not above its title: every signed-in page starts 10px under the header.
+  return <ShellState>
     {children}
-  </ProductShell></ApplicationStateProvider>;
+    <p className="mt-8 text-sm"><Link href="/platform/login" className="text-muted-foreground underline underline-offset-4">Verify for sensitive actions</Link></p>
+  </ShellState>;
 }

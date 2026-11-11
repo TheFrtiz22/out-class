@@ -15,7 +15,7 @@ export const pipelinePageQuery = z.object({
   roundId: z.string().uuid().optional(),
   gender: z.enum(genderValues).optional(), genderCounts: z.boolean().default(false),
   mode: z.enum(["applicants", "decisions", "rejected"]).default("applicants"),
-  decisionGroup: z.enum(["pending", "accepted", "waitlisted", "rejected"]).default("pending"),
+  decisionGroup: z.enum(["all", "pending", "accepted", "waitlisted", "rejected"]).default("pending"),
   status: z.enum(["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"]).optional(),
   review: z.enum(["unreviewed", "mine"]).optional(),
   major: z.string().max(200).optional(), year: z.string().max(100).optional(),
@@ -27,7 +27,8 @@ export const pipelinePageQuery = z.object({
 }).strict()
 export type PipelinePageQuery = z.input<typeof pipelinePageQuery>
 export type PipelineCursor = z.infer<typeof cursorSchema>
-type List = ReturnType<typeof pipelineListProjection>
+// Paging observes already-restricted rows; the profile field choice travels beside the page.
+type List = Omit<ReturnType<typeof pipelineListProjection>, "profileFields">
 type Candidate = List["applications"][number]
 export type PipelineSelection = Pick<Candidate, "id" | "roundId" | "status"> & { canQuickReview: boolean }
 const applicantName = (app: Candidate) => app.student.studentProfile ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}` : app.student.email
@@ -47,7 +48,7 @@ function selectPipeline<T extends Candidate>(data: Omit<List, "applications"> & 
     const profile = app.student.studentProfile
     return `${applicantName(app)} ${app.student.email} ${profile?.major || ""}`.toLowerCase().includes(q.query.trim().toLowerCase()) &&
       (!q.roundId || app.roundId === q.roundId) && (!q.status || app.status === q.status) &&
-      (q.mode !== "decisions" || applicationDecisionGroup(app.status) === q.decisionGroup) &&
+      (q.mode !== "decisions" || q.decisionGroup === "all" || applicationDecisionGroup(app.status) === q.decisionGroup) &&
       (!q.major || profile?.major === q.major) && (!q.year || profile?.academicYear === q.year) &&
       (q.gpa === undefined || profile?.gpa != null && profile.gpa > q.gpa) &&
       (q.sat === undefined || profile?.satScore != null && profile.satScore > q.sat) &&

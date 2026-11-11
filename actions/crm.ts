@@ -4,6 +4,8 @@ import { createHash } from "node:crypto";
 import { readPipelinePage } from "@/lib/pipeline-page-read";
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
 import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-detail";
+import { rankedReviewSelect, rankedReviewProjection } from "@/lib/ranked-review-read";
+import { loadPriorApplications, mayShowPriorApplications, mayShowPriorOutcome, type PriorApplication } from "@/lib/prior-applications";
 import { readPipelineSelection } from "@/lib/pipeline-selection-read";
 import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
@@ -12,6 +14,7 @@ import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { assertRecruitmentRoundMove, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
 import { genderValues } from "@/lib/student-profile";
 import { genderVisibility } from "@/lib/recruitment-profile";
+import { normalizeProfileFieldVisibility, restrictApplicationProfile, type ProfileFieldVisibility } from "@/lib/profile-field-visibility";
 
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 
@@ -39,42 +42,67 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof 
 
 export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.parse(input);
-  const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds, roundPrivacy) => {
+  const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds, roundPrivacy, profileFields) => {
     // Scope binding only. Both ranking and bounded hydration share this fresh
     // guarded Repeatable Read snapshot; the cursor never grants authority.
     const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, [...roundPrivacy], pipelineSelectionKey(query)])).digest("hex");
-    return readPipelinePage(tx, where, membership, rounds, query, scope, ids => loadPipelineDetails(tx, { ...where, id: { in: ids } }, membership), roundPrivacy);
+    return readPipelinePage(tx, where, membership, rounds, query, scope, ids => loadPipelineDetails(tx, { ...where, id: { in: ids } }, membership, profileFields), roundPrivacy, profileFields);
   });
-  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts };
+  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts, profileFields: pipeline.profileFields };
+}
+
+/**
+ * Ranked review rows for one round: the same live authority, round scoping and
+ * identity/score projection as getClubPipeline, but only the fields the ranked
+ * list renders. Decided applicants are included, as in the full read.
+ */
+export async function getRankedReviewRound(clubId: string, roundId: string) {
+  z.string().uuid().parse(roundId);
+  const { pipeline } = await readPipeline(clubId, { roundId }, async (tx, where, membership, _rounds, _privacy, profileFields) => {
+    const applications = await tx.application.findMany({ where, select: rankedReviewSelect });
+    return applications.map(app => restrictApplicationProfile(rankedReviewProjection(app, membership), profileFields));
+  });
+  return { applications: pipeline.applications };
 }
 
 /** Explicit whole-selection read for quick review and voting, without identities. */
 export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
   const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false },
-    (tx, where, membership, rounds, roundPrivacy) => readPipelineSelection(tx, where, membership, query, rounds, roundPrivacy));
+    (tx, where, membership, rounds, roundPrivacy, profileFields) => readPipelineSelection(tx, where, membership, query, rounds, roundPrivacy, profileFields));
   return pipeline.applications;
 }
 
-async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership) {
+async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, profileFields: ProfileFieldVisibility) {
   const applications = await tx.application.findMany({ where, include: pipelineDetailInclude });
-  return applications.map(raw => pipelineDetailProjection(raw, membership));
+  // A member who stepped out of an applicant cannot evaluate them; the server also refuses.
+  // They also stop seeing other reviewers' scores, answers and history; the row and marker stay.
+  const recused = new Set((applications.length ? await tx.applicantRecusal.findMany({ where: { memberId: membership.id, liftedAt: null, applicationId: { in: applications.map(app => app.id) } }, select: { applicationId: true } }) : []).map(r => r.applicationId));
+  // History links two applications: one batched read, only for rows the viewer may see it on.
+  const clubId = applications[0]?.clubId;
+  const withHistory = applications.filter(raw => raw.clubId === clubId && mayShowPriorApplications(membership, raw, recused.has(raw.id)));
+  const prior = clubId && withHistory.length ? await loadPriorApplications(tx, clubId, withHistory, { outcome: mayShowPriorOutcome(membership) }) : new Map<string, PriorApplication[]>();
+  return applications.map(raw => {
+    // The club's profile field choice is applied on the server: hidden values never leave it.
+    const projected = restrictApplicationProfile(pipelineDetailProjection(raw, membership, prior.get(raw.id) ?? []), profileFields);
+    return recused.has(raw.id) ? { ...projected, evaluations: [], answers: [], roundScore: null, priorApplications: [], canEvaluate: false, recused: true } : projected;
+  });
 }
 
 async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>) {
-  return readPipeline(clubId, input, (tx, where, membership) => loadPipelineDetails(tx, where, membership));
+  return readPipeline(clubId, input, (tx, where, membership, _rounds, _privacy, profileFields) => loadPipelineDetails(tx, where, membership, profileFields));
 }
 
 async function readClubPipelineSummaries(clubId: string, input: z.infer<typeof pipelineFilter>) {
-  return readPipeline(clubId, input, async (tx, where, membership) => {
+  return readPipeline(clubId, input, async (tx, where, membership, _rounds, _privacy, profileFields) => {
     const applications = await tx.application.findMany({ where, select: pipelineSummarySelect });
-    return applications.map(app => pipelineSummaryProjection(app, membership));
+    return applications.map(app => restrictApplicationProfile(pipelineSummaryProjection(app, membership), profileFields));
   });
 }
 
 type PipelineMembership = Awaited<ReturnType<typeof requireClubPermission>>["membership"];
 async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFilter>,
-  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[], roundPrivacy: ReadonlyMap<string, boolean>) => Promise<T>) {
+  load: (tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, rounds: { id: string; name: string; order: number; type: string; anonymousReview: boolean; genderVisible: boolean }[], roundPrivacy: ReadonlyMap<string, boolean>, profileFields: ProfileFieldVisibility) => Promise<T>) {
   const filter = pipelineFilter.parse(input);
   // Only members can view the pipeline
   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
@@ -93,9 +121,12 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
     const allRounds = await tx.pipelineRound.findMany({
       where: { clubId },
       orderBy: { order: "asc" },
-      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true, archivedAt: true },
+      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true, archivedAt: true, club: { select: { profileFieldVisibility: true } } },
     });
     const rounds = allRounds.filter(r => r.archivedAt == null);
+    // The club's profile field choice rides on the same snapshot read (no extra round trip).
+    // A club without rounds has no applicants, so its defaults are never observable.
+    const profileFields = normalizeProfileFieldVisibility(allRounds[0]?.club?.profileFieldVisibility);
     const selectedRound = rounds.find(r => r.id === filter.roundId);
     if (filter.gender || filter.genderCounts) {
       if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new Error("Gender visibility must be explicitly enabled for this round.");
@@ -108,7 +139,7 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
       ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
     };
     const projectedRounds = rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) }));
-    const applications = await load(tx, applicationWhere, membership, projectedRounds, new Map(allRounds.map(r => [r.id, r.anonymousReview])));
+    const applications = await load(tx, applicationWhere, membership, projectedRounds, new Map(allRounds.map(r => [r.id, r.anonymousReview])), profileFields);
     phase = "counts";
     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
@@ -118,6 +149,7 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
       rounds: projectedRounds,
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
       applications,
+      profileFields,
     };
     return { pipeline, membership };
   }, { isolationLevel: "RepeatableRead" });
@@ -170,7 +202,7 @@ export async function moveApplicantRound(
       data: { roundId: parsed.newRoundId, ...(current.status === "INTERVIEWING" && !isInterviewRecruitmentRound(round.type) ? { status: "IN_REVIEW" as const } : {}) },
     });
     if (result.count !== 1)
-      throw new Error("Application changed or is not available for this club. Refresh before moving rounds.");
+      throw new Error("Application changed or is not available for this club. Reload the page and try again.");
     const updated = await tx.application.findFirst({
       where: { id: parsed.applicationId, clubId: parsed.clubId },
       include: { round: true },
@@ -190,7 +222,7 @@ export async function moveApplicantRound(
       : updated;
   });
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath(`/club-manager`);
 
   return { success: true, application };
@@ -251,7 +283,7 @@ export async function setApplicationStatus(
       : updated;
   });
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath(`/club-manager`);
 
   return { success: true, application };
@@ -270,6 +302,7 @@ export async function revealApplicantIdentity(
     const application = await tx.application.findFirst({
       where: { id: applicationId, clubId, status: { not: "DRAFTING" } },
       include: {
+        club: { select: { profileFieldVisibility: true } },
         round: true,
         student: {
           include: { studentProfile: { include: { experiences: true } } },
@@ -280,6 +313,7 @@ export async function revealApplicantIdentity(
       },
     });
     if (!application) throw new Error("Application unavailable.");
+    const { club, ...revealed } = application;
     await tx.auditLog.create({
       data: {
         actorId: user.id,
@@ -289,7 +323,8 @@ export async function revealApplicantIdentity(
         reason: justification,
       },
     });
-    return identifiedApplication({ ...application, evaluations: application.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, hasPermission(membership, "applications.review") && genderVisibility(application.round?.applicantDisplay));
+    // Revealing identity does not bypass the club's profile field choice.
+    return restrictApplicationProfile(identifiedApplication({ ...revealed, evaluations: revealed.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, hasPermission(membership, "applications.review") && genderVisibility(revealed.round?.applicantDisplay)), normalizeProfileFieldVisibility(club?.profileFieldVisibility));
   });
 }
 export async function setRoundAnonymousReview(
@@ -319,7 +354,7 @@ export async function setRoundAnonymousReview(
         details: { enabled },
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   });
 }
@@ -345,7 +380,7 @@ export async function setClubTestRequirement(
         details: { requirement: value },
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   });
 }
@@ -405,7 +440,7 @@ export async function saveAnonymousReviewContent(
         details: { cleared: !text },
       },
     });
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   });
 }

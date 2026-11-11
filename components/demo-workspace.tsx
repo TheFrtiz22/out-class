@@ -3,11 +3,13 @@ import { schedulingDateTime } from "@/lib/scheduling-config"
 import { academicYear } from "@/lib/recruitment-profile"
 import { useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
-import { demoStore } from "@/lib/demo/store"
+import { loadedDemoStore } from "@/lib/demo/loader"
 import { useApplicationState } from "@/lib/application-state"
 import { Button } from "@/components/ui/button"
+import { ArrowRight } from "@/components/icons"
 import { Progress } from "@/components/ui/progress"
 import type { ViewId } from "@/lib/views"
+import { NativeSelect } from "@/components/ui/native-select"
 
 export function DemoRoundTarget() {
   const { state, isDemoEnabled } = useDemoMode()
@@ -88,7 +90,7 @@ export function DemoClubSettings() {
       </section>
       <section>
         <h3 className="oc-card-heading mb-4">Recruitment rounds</h3>
-        <p className="text-sm leading-7">{club.rounds.map((r) => r.name).join(" → ")}</p>
+        <ol className="flex flex-wrap items-center gap-x-1 text-sm leading-7">{club.rounds.map((r, i) => <li key={r.id} className="inline-flex items-center gap-1">{i > 0 && <ArrowRight size={14} aria-hidden="true" />}{r.name}</li>)}</ol>
         <p className="mt-2 text-xs text-muted-foreground">
           Sample deadline: {club.deadline.toLocaleString()}
         </p>
@@ -131,7 +133,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
   )
   function assign(slotId: string, applicationId: string) {
     try {
-      demoStore.mutate((s) => {
+      loadedDemoStore().demoStore.mutate((s) => {
         const slot = s.slots.find((i) => i.id === slotId && i.clubId === clubId)!
         if (applicationId && !applications.some((a) => a.id === applicationId))
           throw new Error("Applicant unavailable")
@@ -189,9 +191,9 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
                 </div>
                 <label className="text-xs text-muted-foreground">
                   {student ? "Scheduled candidate" : "Open slot"}
-                  <select
+                  <NativeSelect
                     aria-label={`Candidate for ${slot.id}`}
-                    className="mt-1 min-h-11 w-full rounded-md border border-border bg-card px-2 text-sm text-foreground"
+                    className="mt-1 min-h-11 w-full text-foreground"
                     value={slot.applicationId || ""}
                     onChange={(e) => assign(slot.id, e.target.value)}
                   >
@@ -210,7 +212,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
                           </option>
                         )
                       })}
-                  </select>
+                  </NativeSelect>
                 </label>
                 <Button
                   variant="outline"

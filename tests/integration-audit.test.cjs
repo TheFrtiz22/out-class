@@ -38,6 +38,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
     user:{findUnique:async()=>null,upsert:async()=>({id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01',role:'CLUB_ADMIN'})},
     clubMember:{findUnique:async({where})=>where.userId_clubId.clubId===clubId?membership:null,findMany:async()=>[]},
     pipelineRound:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return [privateApp.round]}},
+    applicantRecusal:{findMany:async()=>[]},
     application:{findMany:async({where})=>{assert.equal(where.clubId,clubId);if(name==='anonymous reviewer')assert.deepEqual(where.round,{anonymousReview:true});return [privateApp]}},
     clubInvitation:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return []}},
     clubTask:{findMany:async({where,include})=>{assert.equal(where.clubId,clubId);if(!access?.permissions.includes('tasks.manage')) {assert.deepEqual(where.assignments,{some:{memberId:membership.id}});assert.deepEqual(include.assignments.where,{memberId:membership.id})}return []}},
@@ -47,7 +48,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
   const guardLoad=loader({
     '@/utils/prisma':{prisma},'./prisma':{prisma},
     './supabase/server':{createClient:async()=>({auth:{getSession:async()=>require('./helpers/auth-session.cjs').sessionFor(actorId),getUser:async()=>({data:{user:{id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01'}}})}})},
-    'next/headers':{cookies:async()=>({has:()=>false,get:key=>key===demoCookie&&mode==='demo'?{value:'1'}:undefined})},
+    'next/headers':{headers: async () => new Headers(), cookies:async()=>({has:()=>false,get:key=>key===demoCookie&&mode==='demo'?{value:'1'}:undefined})},
     'next/navigation':{redirect:()=>{throw Error('Authentication required')}},'next/cache':{revalidatePath(){}},
   })
   const auth=guardLoad('utils/auth.ts'), crm=guardLoad('actions/crm.ts'),tasks=guardLoad('actions/tasks.ts'),sharing=guardLoad('actions/club-access.ts')
@@ -81,13 +82,13 @@ test('account endpoint independently denies demo cookies',async()=>{
   const demoCookie=loader({})('lib/demo/access.ts').DEMO_COOKIE
   const viewCookie=loader({})('lib/platform-view-as.ts').PLATFORM_VIEW_COOKIE
   for(const cookie of [demoCookie]){
-    const load=loader({'next/headers':{cookies:async()=>({get:key=>key===cookie?{value:'1'}:undefined,has:key=>key===cookie})},'@/utils/supabase/server':{createClient:()=>{throw Error('Live auth must not be reached')}},'@/utils/prisma':{prisma:{}}})
+    const load=loader({'next/headers':{headers: async () => new Headers(), cookies:async()=>({get:key=>key===cookie?{value:'1'}:undefined,has:key=>key===cookie})},'@/utils/supabase/server':{createClient:()=>{throw Error('Live auth must not be reached')}},'@/utils/prisma':{prisma:{}}})
     assert.equal((await load('app/api/users/me/route.ts').GET()).status,403,cookie)
   }
 })
 
  test('OAuth callback ignores forged forwarded hosts and rejects external return paths',async()=>{
-  const load=loader({'next/headers':{cookies:async()=>({has:()=>false})},'@/utils/supabase/server':{createClient:async()=>({auth:{exchangeCodeForSession:async()=>({data:{user:{id:actorId,email:'ACTOR@virginia.edu'}}})}})},'@/utils/prisma':{prisma:{user:{findUnique:async()=>null,upsert:async query=>{assert.equal(query.update.email,'actor@virginia.edu')}}}}})
+  const load=loader({'next/headers':{headers: async () => new Headers(), cookies:async()=>({has:()=>false})},'@/utils/supabase/server':{createClient:async()=>({auth:{exchangeCodeForSession:async()=>({data:{user:{id:actorId,email:'ACTOR@virginia.edu'}}})}})},'@/utils/prisma':{prisma:{user:{findUnique:async()=>null,upsert:async query=>{assert.equal(query.update.email,'actor@virginia.edu')}}}}})
   const route=load('app/auth/callback/route.ts')
   for(const [next,expected] of [['/meetings','/meetings'],['//evil.example','/login'],['/\\evil.example','/login'],['https://evil.example','/login']]) {
     const result=await route.GET(new Request(`https://outclass.example/auth/callback?code=test&next=${encodeURIComponent(next)}`,{headers:{'x-forwarded-host':'evil.example'}}))
