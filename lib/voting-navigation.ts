@@ -3,7 +3,7 @@ import { z } from "zod";
 export const votingSelectionSchema = z.object({clubId:z.string().uuid(),applicationIds:z.array(z.string().uuid()).min(1).max(2000)}).strict();
 export const votingEligibleStatuses = ["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"] as const;
 export function legacyDecisionTab(tool:string|null){return tool==="voting"?"voting":tool==="letters"||tool==="decision-letters"?"letters":null;}
-export function decisionsHref(clubId:string, tab:"voting"|"letters"="voting", search="") {
+export function decisionsHref(clubId:string, tab:"overview"|"voting"|"letters"="voting", search="") {
   const source=new URLSearchParams(search),q=new URLSearchParams({section:"recruitment",tool:"decisions",decisionTab:tab});
   for(const key of ["cycleId","roundId","demo"])if(source.get(key))q.set(key,source.get(key)!);
   return `/club/${encodeURIComponent(clubId)}/workspace?${q}`;
