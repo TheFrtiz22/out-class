@@ -19,7 +19,7 @@ test("the retired preview views are gone and nothing imports them", () => {
   const modules = removed.map(file => file.replace(/\.tsx$/, ""))
   for (const file of sources) {
     const source = fs.readFileSync(file, "utf8")
-    for (const module of modules) assert.ok(!source.includes(module), `${file} still references ${module}`)
+    for (const modulePath of modules) assert.ok(!source.includes(modulePath), `${file} still references ${modulePath}`)
     assert.doesNotMatch(source, /ClubManagementPortalView|BroadcastMessagesView|LocalLeaderDashboard|SpeedReviewMode/, file)
   }
   const views = fs.readFileSync("lib/views.ts", "utf8")
