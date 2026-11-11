@@ -14,7 +14,7 @@ async function fixture(){
 test('browser: duration, custom end, all-day toggle, upload recovery and flyer-free saving on desktop/mobile',async()=>{
  const f=await fixture();let browser;
  try{browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const page=await browser.newPage();page.setDefaultTimeout(10000);page.on("pageerror",error=>console.error("Editor fixture:",error.message));
- await page.goto(f.url);await page.getByRole('button',{name:'+ Create Corkboard Event',exact:true}).click();
+ await page.goto(f.url);await page.getByRole('button',{name:'+ Create event',exact:true}).click();
  await page.getByLabel('Event name',{exact:true}).fill('Community night');await page.getByLabel('Start Date',{exact:true}).fill('2099-10-16');
  await page.getByLabel('Start Time',{exact:true}).selectOption('23:45');assert.equal(await page.getByLabel('Duration',{exact:true}).inputValue(),'60');
  await page.getByText(/Oct 17.*12:45 AM/).first().waitFor();
@@ -30,6 +30,6 @@ test('browser: duration, custom end, all-day toggle, upload recovery and flyer-f
  assert.equal(await page.getByText(/Eastern Time|EST|EDT|timezone/).count(),0);
  if(process.env.OUTCLASS_EVENT_EDITOR_SCREENSHOTS){fs.mkdirSync(process.env.OUTCLASS_EVENT_EDITOR_SCREENSHOTS,{recursive:true});await page.screenshot({path:process.env.OUTCLASS_EVENT_EDITOR_SCREENSHOTS+'/desktop.png',fullPage:true})}await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  await page.getByLabel('All-day event',{exact:true}).check();if(process.env.OUTCLASS_EVENT_EDITOR_SCREENSHOTS)await page.screenshot({path:process.env.OUTCLASS_EVENT_EDITOR_SCREENSHOTS+'/mobile.png',fullPage:true});await page.getByRole('button',{name:'Apply event changes',exact:true}).click();
- await page.getByRole('button',{name:'+ Create Corkboard Event',exact:true}).waitFor();const writes=await page.evaluate(()=>window.writes);assert.equal(writes.at(-1).allDay,true);assert.equal(writes.at(-1).useTemplate,true);assert.equal(new Date(writes.at(-1).endDate).toISOString(),'2099-10-20T04:00:00.000Z');
+ await page.getByRole('button',{name:'+ Create event',exact:true}).waitFor();const writes=await page.evaluate(()=>window.writes);assert.equal(writes.at(-1).allDay,true);assert.equal(writes.at(-1).useTemplate,true);assert.equal(new Date(writes.at(-1).endDate).toISOString(),'2099-10-20T04:00:00.000Z');
  }finally{await browser?.close();await f.close()}
 });
