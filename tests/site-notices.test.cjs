@@ -101,7 +101,7 @@ function writeHarness({ action = true, maintenance = true } = {}) {
     ...s.mocks,
     '@/utils/prisma': { prisma }, './prisma': { prisma },
     '@/utils/club-write-transaction': { clubWriteTransaction: fn => prisma.$transaction(fn) },
-    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }), headers: async () => new Headers(action ? { 'next-action': 'abc123' } : {}) },
     './supabase/server': { createClient: async () => ({ auth: { getSession: async () => sessionFor(signedIn), getUser: async () => ({ data: { user: { id: signedIn, email: `${signedIn}@virginia.edu`, email_confirmed_at: '2026-01-01' } } }) } }) },

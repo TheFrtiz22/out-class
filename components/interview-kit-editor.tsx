@@ -2,6 +2,7 @@
 import { useAutosave } from "@/hooks/use-autosave";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
+import { useDemoMode } from "@/contexts/demo-context";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import { canDiscoverInterviewSetup, interviewSetupHref, type InterviewSetupRounds } from "@/lib/interview-setup";
@@ -39,7 +40,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
 }) {
   const [open, setOpen] = useState(initiallyOpen);
   useEffect(() => { if (initiallyOpen) setOpen(true); }, [initiallyOpen]);
-  const { user } = useAuth();
+  const { user } = useAuth(), demo = useDemoMode();
   const confirm = useConfirm();
   const version = useRef(0);
   // IDs the server has accepted. A newly added question stays a local draft until it
@@ -75,7 +76,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
     };
   }, [clubId, round, retry, canReadKit]);
   const autosave = useAutosave({
-    identity: `${user?.id}:kit:${clubId}:${round}`,
+    identity: `${user?.id}:kit:${clubId}:${round}`, owner: demo.isDemoEnabled ? null : user?.id,
     value: questions, restore: setQuestions, enabled: loaded && canEdit && canReadKit,
     save: async value => {
       const ready = value.filter(q => q.prompt.trim() || savedIds.current.has(q.id));
@@ -102,7 +103,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
       <div id={'kit-panel-' + round} hidden={!open} aria-labelledby={'kit-heading-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
-          <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
+          <h4 className="oc-kit-builder-label"><ListChecks size={20} aria-hidden="true" />Question builder</h4>
         <fieldset disabled={!loaded || !canEdit || autosave.recovery != null} className="space-y-5">
           {questions.map((q, i) => (
             <section key={q.id} className="oc-kit-question space-y-2">

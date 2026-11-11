@@ -237,7 +237,7 @@ export function PublicEventBoard() {
             setOpen(value);
           }}
         >
-          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
+          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Event board" : "Event list"}>
             {!loading && !events.length ? (
               (() => { const empty = eventBoardEmpty(filters); return <div className="oc-events-empty">
                 <h2>{empty.title}</h2>
@@ -460,15 +460,19 @@ export function RsvpControls({
     };
   }, [event.id, identity, retry]);
   async function change(next: boolean) {
+    // Optimistic: show the new RSVP at once; the server's answer (capacity, deadline) confirms or restores it.
+    const previous = going;
+    setGoing(next);
     setBusy(true);
     setError("");
     try {
       const r = await setCampusEventRsvp({ eventId: event.id, going: next });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { setGoing(previous); setError(r.error); return; }
       setGoing(r.going);
       onChanged(r.count);
       window.dispatchEvent(new Event("outclass-event-rsvp"));
     } catch (e) {
+      setGoing(previous);
       setError(e instanceof Error ? e.message : "Could not update RSVP.");
     } finally {
       setBusy(false);
@@ -581,16 +585,20 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     setBusy(true);
     setError("");
     setNotice("");
+    // Optimistic: the row leaves at once and returns to its place if the server refuses.
+    const index = rows.findIndex((e) => e.eventId === id), removed = rows[index];
+    const restore = () => { if (removed) setRows((r) => r.some((e) => e.eventId === id) ? r : [...r.slice(0, index), removed, ...r.slice(index)]); };
+    setRows((r) => r.filter((e) => e.eventId !== id));
     try {
       const r = await setCampusEventRsvp({ eventId: id, going: false });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { restore(); setError(r.error); return; }
       ++readVersion.current;
       setLoading(false);
       setError("");
       setNotice("Your RSVP was cancelled.");
-      setRows((r) => r.filter((e) => e.eventId !== id));
       onCancelled(id);
     } catch {
+      restore();
       setError("Could not cancel. Please try again.");
     } finally {
       setBusy(false);

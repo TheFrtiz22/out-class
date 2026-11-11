@@ -78,13 +78,22 @@ export async function viewerHighlightFilter(tx:AppTransactionClient,scope:{clubI
   });
 }
 
-/** Called inside START/NEXT_PASS after the pass rows exist and before any
- * applicant in it is presented. Applicants without saved highlights get no lock. */
+/** Copies the saved preparation for applicants about to be presented in a pass.
+ * Applicants without saved highlights get no lock. */
 export async function lockPreparedSlides(tx:AppTransactionClient,sessionId:string,passNumber:number,applicationIds:string[]){
   if(!applicationIds.length)return;
   const rows=await tx.votingSlidePreparation.findMany({where:{sessionId,applicationId:{in:applicationIds}}});
   const data=rows.filter(r=>storedHighlights(r.highlights).length>0).map(r=>({sessionId,passNumber,applicationId:r.applicationId,highlights:r.highlights as object,preparationRevision:r.revision}));
   if(data.length)await tx.votingSlideLock.createMany({data});
+}
+
+/** Called in the transaction that makes an applicant the presented one of a pass
+ * (START, NEXT_PASS and every forward advance), before anyone sees it. Locking per
+ * applicant rather than per pass means highlights saved after a pass starts still
+ * reach every applicant who has not come up yet; an existing lock never changes. */
+export async function lockPresentedSlide(tx:AppTransactionClient,sessionId:string,passNumber:number,applicationId:string){
+  if(await tx.votingSlideLock.findUnique({where:{sessionId_passNumber_applicationId:{sessionId,passNumber,applicationId}}}))return;
+  await lockPreparedSlides(tx,sessionId,passNumber,[applicationId]);
 }
 
 /** Highlights for one presentation read: the working copy before voting starts

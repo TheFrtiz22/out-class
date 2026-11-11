@@ -10,6 +10,7 @@ import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { authTurnstile, captchaFailed, turnstileMessage, turnstileRemoteIp } from "@/lib/turnstile";
 import { authRedirectOrigin } from "@/lib/site-origin";
+import { passwordIssue } from "@/lib/password-policy";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
         error:
           input.action === "request"
             ? "Enter a valid UVA email address."
-            : "Use matching passwords of 8–128 characters and a valid reset link.",
+            : (passwordIssue(input.password) ?? "Use matching passwords and a valid reset link."),
       },
       400,
     );
