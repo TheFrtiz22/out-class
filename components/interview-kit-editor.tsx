@@ -102,7 +102,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
       <div id={'kit-panel-' + round} hidden={!open} aria-labelledby={'kit-heading-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
-          <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
+          <h4 className="oc-kit-builder-label"><ListChecks size={20} aria-hidden="true" />Question builder</h4>
         <fieldset disabled={!loaded || !canEdit || autosave.recovery != null} className="space-y-5">
           {questions.map((q, i) => (
             <section key={q.id} className="oc-kit-question space-y-2">
