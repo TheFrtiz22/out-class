@@ -72,6 +72,8 @@ test('middleware passes /api/health through with no session refresh, even with d
     '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false },
     // The real CSP helpers (#278): the health path must stay a plain pass-through with them in place.
     '@/lib/csp': load('lib/csp.ts'),
+    // The real rate limiter (#279): /api/health must pass through before any limit applies.
+    '@/lib/rate-limit-core': load('lib/rate-limit-core.ts'),
   })
   for (const cookie of ['', 'outclass-demo-session=1', 'outclass-platform-view=x; sb-abc-auth-token=y']) {
     for (const method of ['GET', 'HEAD']) {
