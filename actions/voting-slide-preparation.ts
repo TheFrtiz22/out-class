@@ -10,6 +10,7 @@ import {meetingDetails} from "@/lib/voting-session-setup";
 import {getApplicantDisplay} from "@/actions/applicant-intelligence";
 import {gatherSlideSources,preparationProfileConfig} from "@/utils/voting-slide-preparation";
 import {buildSlideHighlights,preparationGap,saveSlidePreparationSchema,slideHighlightStatus,slidePreparationScope,storedHighlights,type SlideSource} from "@/lib/voting-slide-preparation";
+import { boundedParse } from "@/lib/bounded-input";
 
 const permissions=["applications.review","decisions.manage","decisions.start"] as const;
 const applicantScope=slidePreparationScope.extend({applicationId:z.string().uuid()}).strict();
@@ -79,7 +80,7 @@ export async function getVotingSlidePreparationApplicant(input:unknown){
  * the same key is rejected. A stale revision returns a conflict and the
  * client keeps its unsaved input. Never changes the voting room revision. */
 export async function saveVotingSlidePreparation(input:unknown){
-  const d=saveSlidePreparationSchema.parse(input),{user}=await requireClubPermission(d.clubId,[...permissions]);
+  const d=boundedParse(saveSlidePreparationSchema, input),{user}=await requireClubPermission(d.clubId,[...permissions]);
   const display=await profileDisplay(d.clubId,d.applicationId);
   return clubWriteTransaction(async tx=>{
     const {s,round,editable}=await leaderRoom(tx,d.clubId,d.sessionId,user.id,true);

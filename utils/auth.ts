@@ -9,7 +9,7 @@ import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
 import { createClient } from "./supabase/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -82,6 +82,15 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
     // Edge case: Trigger failed or user was deleted from Prisma but not Supabase
     if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_AUTH_REQUIRED", "Sign-in required.");
     redirect("/");
+  }
+
+  // Maintenance mode: every authenticated Server Action (the product's write path) is refused
+  // for non-admins. Page renders and GET reads are unaffected; product routes show the
+  // maintenance page instead. Admin entry points (adminDiagnostics) verify admin authority
+  // themselves, and support sessions above already belong to a verified platform admin.
+  if (!options.adminDiagnostics && (await headers()).has("next-action")) {
+    const { assertSiteWritable } = await import("@/utils/site-settings");
+    await assertSiteWritable(prismaUser.id);
   }
 
   return { supabaseUser: user, user: prismaUser, impersonation: null };

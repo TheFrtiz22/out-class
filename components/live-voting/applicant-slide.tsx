@@ -1,5 +1,5 @@
 "use client";
-import {useRef,useState} from "react";
+import {useRef,useState,useSyncExternalStore} from "react";
 import {ApplicantIdentity} from "@/components/applicant-identity";
 import type {getLiveVotingPresentation,StalePresentation} from "@/actions/voting-room";
 import {fieldLabels} from "@/lib/applicant-display";
@@ -9,7 +9,7 @@ import {formatAverage,scoredEvaluationsLabel} from "@/lib/interview-review-summa
 import {NO_INTERVIEW_SCORES} from "@/lib/interview-feedback";
 import {highlightAttribution} from "@/lib/voting-slide-preparation";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
-import {SLIDE_FACT_MAX,SLIDE_NOTE_CHARS,slideExcerpt,feedbackExcerpt} from "@/lib/voting-slide-excerpt";
+import {SLIDE_FACT_MAX,SLIDE_NOTE_CHARS,SLIDE_SHORT_QUERY,slideExcerpt,evidenceExcerpt,feedbackExcerpt} from "@/lib/voting-slide-excerpt";
 import {Button} from "@/components/ui/button";
 import {InterviewFeedbackSection,EarlierFeedbackRounds} from "@/components/interview-feedback-section";
 
@@ -36,11 +36,16 @@ function SlideText({text}:{text:string}){
   return <div className="vr-text">{blocks.map((b,i)=>b.kind==="p"?<p key={i}>{b.lines.join("\n")}</p>:b.kind==="ul"?<ul key={i}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ul>:<ol key={i} start={b.start}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ol>)}</div>;
 }
 const renderSlideText=(text:string)=><SlideText text={text}/>;
+/** Short projectors (1280×720 up to 767px tall) get smaller excerpt budgets, matching room.css. The server
+ *  snapshot is the normal budget; the viewport decides after hydration. Cut text always keeps "Read full …". */
+const subscribeShort=(onChange:()=>void)=>{const m=window.matchMedia(SLIDE_SHORT_QUERY);m.addEventListener("change",onChange);return()=>m.removeEventListener("change",onChange);};
+const useShortProjector=()=>useSyncExternalStore(subscribeShort,()=>window.matchMedia(SLIDE_SHORT_QUERY).matches,()=>false);
 
 /** One renderer for setup, leader, audience and member views. Only the
  * server-projected fields enter this component, including its details dialog. */
 export function ApplicantSlide({data}:{data:VotingSlideData}){
-  const [details,setDetails]=useState(false),origin=useRef<HTMLButtonElement|null>(null);
+  const [details,setDetails]=useState(false),origin=useRef<HTMLButtonElement|null>(null),short=useShortProjector();
+  const clipFeedback=(text:string,entries:number)=>feedbackExcerpt(text,entries,short);
   const open=(e:React.MouseEvent<HTMLButtonElement>)=>{origin.current=e.currentTarget;setDetails(true);};
   const name=data.sections.find(s=>s.field==="name")?.items[0]??(data.anonymous?anonymousApplicantLabel(data.applicationId):"Applicant");
   const fields=data.sections.filter(s=>s.field!=="name").map(s=>({field:s.field as string,label:fieldLabels[s.field],full:s.items.join(" · ")||"Not provided",preview:s.items.join(" · ")||"Not provided",note:""}));
@@ -87,11 +92,11 @@ export function ApplicantSlide({data}:{data:VotingSlideData}){
   // Facts strip: the score is always a fact (a number), and so is any short single-line value, in liveRoomFields order.
   const facts=fields.filter(f=>f.field==="interviewScore"||isFact(f.preview)&&f.full===f.preview);
   const evidence:{key:string;weight:number;node:React.ReactNode}[]=fields.filter(f=>!facts.includes(f)).map(f=>{
-    const shown=slideExcerpt(f.preview),cut=shown!==f.preview||f.full!==f.preview||f.note.length>SLIDE_NOTE_CHARS;
+    const shown=evidenceExcerpt(f.preview,short),cut=shown!==f.preview||f.full!==f.preview||f.note.length>SLIDE_NOTE_CHARS;
     return {key:f.field,weight:weigh(shown),node:<section className="vr-field" data-slide-field={f.field}><h3>{f.label}</h3><SlideText text={shown}/>{f.note&&<p className="vr-field-meta">{slideExcerpt(f.note,SLIDE_NOTE_CHARS,1)}</p>}{cut&&readFull(f.label)}</section>};
   });
-  if(feedback)evidence.push({key:"interviewFeedback",weight:feedback.entries.reduce((n,e)=>n+30+(e.summary?weigh(feedbackExcerpt(e.summary,feedback.entries.length)):30),0),
-    node:<div className="vr-field vr-field-feedback" data-slide-field="interviewFeedback"><InterviewFeedbackSection compact feedback={feedback} onReadFull={open} excerpt={feedbackExcerpt} renderText={renderSlideText}/></div>});
+  if(feedback)evidence.push({key:"interviewFeedback",weight:feedback.entries.reduce((n,e)=>n+30+(e.summary?weigh(clipFeedback(e.summary,feedback.entries.length)):30),0),
+    node:<div className="vr-field vr-field-feedback" data-slide-field="interviewFeedback"><InterviewFeedbackSection compact feedback={feedback} onReadFull={open} excerpt={clipFeedback} renderText={renderSlideText}/></div>});
   if(earlierLine&&!earlierInScore)evidence.push({key:"earlierRounds",weight:30*(earlier.length+1),node:<div className="vr-field vr-field-feedback" data-slide-field="earlierRounds"><EarlierFeedbackRounds compact rounds={earlier} onReadFull={open}/></div>});
   // Most text first and widest (visual order = reading and focus order); ties keep liveRoomFields order.
   evidence.sort((a,b)=>b.weight-a.weight||order(a.key==="interviewFeedback"?"finalInterviewThoughts":a.key)-order(b.key==="interviewFeedback"?"finalInterviewThoughts":b.key));

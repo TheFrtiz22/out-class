@@ -33,7 +33,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
    const response=await visitor.request(route);assert.equal(response.status,200);
    const html=await response.text();
    assert.match(html,/<a[^>]+href="\/signup"[^>]*>Get Started<\/a>/);
-   assert.match(html,/<a[^>]+href="\/login"[^>]*>Log In<\/a>/);
+   assert.match(html,/<a[^>]+href="\/login"[^>]*>Sign in<\/a>/);
    assert.ok(!/<a[^>]+href="\/platform/.test(html));
   }
   const signup=await visitor.request('/signup'),signupHtml=await signup.text();assert.equal(signup.status,200);

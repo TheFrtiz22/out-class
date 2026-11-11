@@ -3,7 +3,7 @@
 import { AccountAvatar } from "@/components/account-avatar"
 import { useEffect, useRef, useState } from "react"
 import { countShellStart } from "@/lib/shell-metrics"
-import { ArrowUpRight, Building2, FileText, Layers, UserRound } from "@/components/icons"
+import { ArrowDown, ArrowUp, ArrowUpRight, Building2, FileText, Layers, UserRound } from "@/components/icons"
 import {
   Dialog,
   DialogContent,
@@ -269,7 +269,7 @@ export function NavigationSearch({
                 ? "Searching your workspace"
                 : pluralize(pages.length + results.length, "result")}
           </span>
-          <span>↑ ↓ to browse · Enter to open · Esc to close</span>
+          <span className="inline-flex items-center gap-1"><ArrowUp size={14} aria-hidden="true" /><span className="sr-only">Up arrow</span><ArrowDown size={14} aria-hidden="true" /><span className="sr-only">Down arrow</span> to browse · Enter to open · Esc to close</span>
         </footer>
       </DialogContent>
     </Dialog>

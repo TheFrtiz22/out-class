@@ -53,7 +53,7 @@ function workspaceHarness({ demo = true, allowed = true, providerError = false, 
   let liveReads = 0, providerReads = 0;
   function Workspace() {} function Boundary() {} function SharedLayout() {}
   const mocks = {
-    'next/headers': { cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
     '@/utils/auth': { getSessionUser: async () => { providerReads++; return { data: { user: { email: 'presenter@virginia.edu' } }, error: providerError ? Error('expired') : null }; } },
     '@/lib/demo/access': { DEMO_COOKIE: 'outclass-demo-session', canAccessDemo: email => allowed && email === 'presenter@virginia.edu' },
     '@/utils/current-user': { getCurrentUser: async () => { liveReads++; if (liveDenied) throw Error('Live authorization denied'); return { memberships: [{ clubId, club: { name: 'Club', suspendedAt: suspended ? new Date() : null } }] }; } },
@@ -122,7 +122,7 @@ function invitationHarness(patch = {}) {
   const load = loader({
     '@/utils/prisma': { prisma }, '@/utils/supabase/server': { createClient: async () => provider },
     '@/utils/platform-view-as': { platformViewSession: async () => ({ targetUserId: actorId }) },
-    'next/headers': { cookies: async () => ({ has: key => key === 'outclass-platform-view' && state.impersonating, get: key => key === 'outclass-admin-elevation' && state.elevated ? { value: token } : undefined }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === 'outclass-platform-view' && state.impersonating, get: key => key === 'outclass-admin-elevation' && state.elevated ? { value: token } : undefined }) },
     'next/navigation': { redirect: () => { throw Error('Authentication required'); } },
     '@/utils/email': { invitationEmailConfig() {}, sendInvitationEmail: async message => { sent.push(message); return { messageId: 'local' }; } },
     '@/utils/invitation-background': { scheduleInvitationDelivery: id => scheduled.push(id) },

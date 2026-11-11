@@ -9,6 +9,7 @@ import {
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { captchaFailed, captchaOption, turnstileMessage } from "@/lib/turnstile";
+import { authRedirectOrigin } from "@/lib/site-origin";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -70,10 +71,20 @@ export async function POST(request: NextRequest) {
     },
   });
   if (input.action === "request" && email.success) {
+    // Reset links always point at the configured site URL, never the request's Host.
+    const siteOrigin = authRedirectOrigin(request.nextUrl.origin);
+    if (!siteOrigin)
+      return reply(
+        {
+          error:
+            "Password recovery is temporarily unavailable. Please try again later.",
+        },
+        503,
+      );
     try {
       // Only requests send email; Supabase Bot and Abuse Protection verifies the token when enabled.
       const { error } = await client.auth.resetPasswordForEmail(email.data, {
-        redirectTo: `${request.nextUrl.origin}/reset-password`,
+        redirectTo: `${siteOrigin}/reset-password`,
         ...captchaOption(input.turnstileToken),
       });
       // A failed security check says nothing about whether the account exists.

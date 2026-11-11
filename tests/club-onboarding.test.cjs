@@ -176,6 +176,44 @@ test('roster audit guards uploads and records every raw input row idempotently',
   await assert.rejects(h.api.recordRosterImport({...input,rows:[]}),/another upload/);
 });
 
+test('accepting from another school or another account is denied without any write', async () => {
+  // Another school's verified email derives only that school's identity, never the invited one.
+  let h=setup();
+  h.tx.schoolIdentifierType.findMany=async({where})=>{assert.equal(where.emailDomain,'virginia.edu');return[{id:'other-computing',schoolId:'school-other',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];};
+  h.tx.schoolIdentity.upsert=async args=>{h.state.queries.push(['identity',args]);return{id:'other-identity'};};
+  h.tx.schoolIdentity.findUniqueOrThrow=async()=>({id:'other-identity',userId:h.state.actorId});
+  h.state.identityIds=['other-identity'];
+  for (const accept of [h.api.acceptIdentityClubInvitation, h.api.declineIdentityClubInvitation]) await assert.rejects(accept(inviteId),/unavailable/);
+  assert.equal(h.state.writes.length,0); assert.equal(h.state.invitation.status,'PENDING');
+  // A second account at the same school cannot take over the invited identity.
+  h=setup(); h.state.actorId='intruder';
+  h.tx.schoolIdentity.findUniqueOrThrow=async()=>({id:'identity',userId:'recipient'});
+  await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/manual review/);
+  assert.equal(h.state.writes.length,0); assert.equal(h.state.audits.length,0);
+});
+
+test('read-only identity preview never writes, includes an unbound match, and fails closed on another account', async () => {
+  const h=setup(), helper=h.load('utils/school-identity.ts'), seen=[];
+  const account={user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at:'2026-09-01',email_confirmed_at:'2026-10-01'}};
+  let rows=[{id:'identity',userId:null,verifiedAt:null}];
+  const db={
+    user:{findUnique:async()=>({email:'recipient@virginia.edu',disabledAt:null})},
+    schoolIdentifierType:{findMany:async()=>[{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}]},
+    schoolIdentity:{findMany:async({where})=>{seen.push(where);return rows;}},
+  };
+  assert.deepEqual((await helper.previewVerifiedSchoolIdentities(db,account)).map(i=>i.id),['identity']);
+  assert.deepEqual(seen[0].OR,[{schoolId:'school-uva',identifierTypeId:'computing',normalizedIdentifier:'recipient'}]);
+  assert.deepEqual(seen[0].school,{active:true});
+  rows=[{id:'identity',userId:'someone-else',verifiedAt:new Date()}];
+  await assert.rejects(helper.previewVerifiedSchoolIdentities(db,account),/manual review/);
+  rows=[{id:'identity',userId:'recipient',verifiedAt:null}];
+  assert.deepEqual(await helper.previewVerifiedSchoolIdentities(db,account),[]);
+  db.user.findUnique=async()=>({email:'recipient@virginia.edu',disabledAt:new Date()});
+  await assert.rejects(helper.previewVerifiedSchoolIdentities(db,account),/account unavailable/);
+  await assert.rejects(helper.previewVerifiedSchoolIdentities(db,{...account,supabaseUser:{...account.supabaseUser,email_confirmed_at:null}}),/./);
+  assert.equal(h.state.writes.length,0); assert.equal(h.state.audits.length,0);
+});
+
 test('verified identity binding never moves a university identifier between accounts', async () => {
   const h=setup();
   h.tx.schoolIdentifierType.findMany=async()=>[{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];

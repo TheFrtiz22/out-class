@@ -43,7 +43,7 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
               <div className="oc-footer-group">
                 <h2>Account</h2>
                 <a href="/signup">Get Started</a>
-                <a href="/login">Log In</a>
+                <a href="/login">Sign in</a>
               </div>
               {LEGAL_PAGES_PUBLIC && <div className="oc-footer-group">
                 <h2>Legal</h2>
