@@ -1,6 +1,7 @@
 import Image from "next/image"
 import type { LandingPerspective } from "./journey-content"
-import { decisionMoment, featureGrid, recruitmentSeason } from "./landing-sections-content"
+import { StatusMark } from "@/components/ui/status-pill"
+import { decisionMoment, featureGrid, recruitmentSeason, type FeatureSpecimen } from "./landing-sections-content"
 import "./landing-moments.css"
 
 const percent = (part: number, whole: number) => `${Math.round((part / whole) * 100)}%`
@@ -46,7 +47,26 @@ function OfferIllustration() {
   )
 }
 
-/** The navy decision moment, "A season on Grounds" and the feature grid (docs/public-site/redesign/Main.mockup.html). */
+/** A static fragment of product UI (sample data) paired with each feature. role="img" with a full text
+ *  description stands in for a screenshot's alt text; nothing inside is focusable. */
+function Specimen({ specimen }: { specimen: FeatureSpecimen }) {
+  const description = `Sample screen, ${specimen.label}, ${specimen.sub}: ${specimen.rows.map(row => `${row.name}, ${row.meta}, ${row.status}`).join("; ")}.`
+  return (
+    <div className="oc-ledger-specimen" role="img" aria-label={description}>
+      <div className="oc-ledger-specimen-header"><p>{specimen.label}</p><p>{specimen.sub}</p></div>
+      <ul>
+        {specimen.rows.map(row => (
+          <li key={row.name}>
+            <div><p className="oc-ledger-specimen-name">{row.name}</p><p className="oc-ledger-specimen-meta">{row.meta}</p></div>
+            <StatusMark label={row.status} tone={row.tone} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/** The navy decision moment, "A season on Grounds" and the feature ledger (docs/public-site/redesign/Main.mockup.html). */
 export function LandingMoments({ perspective }: { perspective: LandingPerspective }) {
   const moment = decisionMoment[perspective]
   const features = featureGrid[perspective]
@@ -75,7 +95,7 @@ export function LandingMoments({ perspective }: { perspective: LandingPerspectiv
         </div>
         <ol className="oc-season" aria-describedby="season-caption">
           {recruitmentSeason.steps.map(step => (
-            <li key={step.numeral} className="oc-season-step oc-public-glass">
+            <li key={step.numeral} className="oc-season-step">
               <span className="oc-season-numeral" aria-hidden="true">{step.numeral}</span>
               <span className="oc-season-title">{step.title}</span>
               <span className="oc-season-body">{step.body}</span>
@@ -91,14 +111,20 @@ export function LandingMoments({ perspective }: { perspective: LandingPerspectiv
             <h2 id="features-title">{features.title}</h2>
           </div>
         </div>
-        <ul className="oc-features">
-          {features.features.map(feature => (
-            <li key={feature.title} className="oc-feature oc-public-glass">
-              <h3>{feature.title}</h3>
-              <p>{feature.body}</p>
+        {/* An editorial ledger, not a card grid: each feature is a ruled row pairing its copy with a fragment of
+            the product, alternating sides on wide screens (stacked below 820px). */}
+        <ol className="oc-ledger">
+          {features.features.map((feature, i) => (
+            <li key={feature.title} className="oc-ledger-row">
+              <div className="oc-ledger-copy">
+                <span className="oc-ledger-numeral" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <h3>{feature.title}</h3>
+                <p>{feature.body}</p>
+              </div>
+              <Specimen specimen={feature.specimen} />
             </li>
           ))}
-        </ul>
+        </ol>
       </section>
     </>
   )
