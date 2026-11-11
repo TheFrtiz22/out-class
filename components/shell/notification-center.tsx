@@ -4,6 +4,7 @@ import Link from "next/link"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { Bell, CheckCheck, Check, Mail, Archive, MoreHorizontal, ArrowLeft, ArrowUpRight, CalendarDays, FileText, Megaphone, ListChecks, Users2 } from "@/components/icons"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -18,6 +19,7 @@ import type { Notification } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 import "./notification-center.css"
 import { TERMS } from "@/lib/copy/terms"
+import { notificationSettingsHref } from "@/lib/settings-navigation"
 
 const icons = { Announcement: Megaphone, "Interview Invite": CalendarDays, "Application Update": FileText, "Club Invitation": Users2, Task: ListChecks, "Decision Available": FileText, "Offer Confirmation": CheckCheck, "OutClass Update": Bell, "Private Message": Mail }
 
@@ -36,19 +38,14 @@ export function NotificationCenter({ unread, pendingInvitations, loadState, onRe
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<{ retry: () => void } | null>(null)
-  const [now, setNow] = useState(() => Date.now())
+  // Relative times show only in the open panel; the shared minute clock runs for it only then.
+  const now = useServerAnchoredNow(undefined, open)
   const working = useRef(false), navigated = useRef(false), outside = useRef(false)
   const bell = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null), selectedHeading = useRef<HTMLHeadingElement>(null)
   const filterButton = useRef<HTMLButtonElement>(null)
   const feed = notificationFeed(state.notifications, filter === "unread")
   const selected = state.notifications.find(item => item.id === selectedId)
   const count = unread + pendingInvitations
-  useEffect(() => {
-    if (!open) return
-    setNow(Date.now())
-    const timer = window.setInterval(() => setNow(Date.now()), 60000)
-    return () => window.clearInterval(timer)
-  }, [open])
   const selectedKey = selected?.id
   useEffect(() => { if (selectedKey) selectedHeading.current?.focus({ preventScroll: true }) }, [selectedKey])
 
@@ -117,7 +114,7 @@ export function NotificationCenter({ unread, pendingInvitations, loadState, onRe
               <DropdownMenu><DropdownMenuTrigger asChild><button tabIndex={0} type="button" className="oc-notification-more" aria-label={`Actions for ${item.title}`} disabled={busy}><MoreHorizontal size={18} aria-hidden="true" /></button></DropdownMenuTrigger><DropdownMenuContent className="oc-notification-item-menu" align="end" collisionPadding={12} onCloseAutoFocus={event => { if (!panel.current?.querySelector(`[data-notification-id="${CSS.escape(item.id)}"]`)) { event.preventDefault(); filterButton.current?.focus({ preventScroll: true }) } }}><DropdownMenuItem onSelect={() => void run(() => state.setNotificationsRead([item.id], !item.read))}>{item.read ? <Mail /> : <Check />}{item.read ? "Mark unread" : "Mark read"}</DropdownMenuItem>{item.durableId && <DropdownMenuItem onSelect={() => void run(() => state.deleteNotifications([item.id]))}><Archive />Dismiss</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
             </div></li>
           })}</ul>
-          {!feed.length && !invitations.invitations.length && !loadState.loading && !invitations.loading && !loadState.failed && !invitations.failed && <div className="oc-notification-empty"><CheckCheck size={24} aria-hidden="true" /><p>You’re all caught up</p><span>{filter === "unread" ? "You’ve read every update." : "Nothing has been sent to you yet."}</span>{filter === "unread" ? <button type="button" className="oc-notification-empty-action" onClick={() => setFilter("all")}>Show all updates</button> : <Link className="oc-notification-empty-action" href="/settings/notifications" onClick={() => setOpen(false)}>Choose email updates</Link>}</div>}
+          {!feed.length && !invitations.invitations.length && !loadState.loading && !invitations.loading && !loadState.failed && !invitations.failed && <div className="oc-notification-empty"><CheckCheck size={24} aria-hidden="true" /><p>You’re all caught up</p><span>{filter === "unread" ? "You’ve read every update." : "Nothing has been sent to you yet."}</span>{filter === "unread" ? <button type="button" className="oc-notification-empty-action" onClick={() => setFilter("all")}>Show all updates</button> : <Link className="oc-notification-empty-action" href={notificationSettingsHref} onClick={() => setOpen(false)}>Choose email updates</Link>}</div>}
         </>}
       </div>
       <footer><button tabIndex={0} type="button" onClick={expand}>{TERMS.openInbox}<ArrowUpRight size={15} aria-hidden="true" /></button></footer>

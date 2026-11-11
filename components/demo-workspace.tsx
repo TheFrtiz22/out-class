@@ -6,6 +6,7 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { loadedDemoStore } from "@/lib/demo/loader"
 import { useApplicationState } from "@/lib/application-state"
 import { Button } from "@/components/ui/button"
+import { ArrowRight } from "@/components/icons"
 import { Progress } from "@/components/ui/progress"
 import type { ViewId } from "@/lib/views"
 import { NativeSelect } from "@/components/ui/native-select"
@@ -89,7 +90,7 @@ export function DemoClubSettings() {
       </section>
       <section>
         <h3 className="oc-card-heading mb-4">Recruitment rounds</h3>
-        <p className="text-sm leading-7">{club.rounds.map((r) => r.name).join(" → ")}</p>
+        <ol className="flex flex-wrap items-center gap-x-1 text-sm leading-7">{club.rounds.map((r, i) => <li key={r.id} className="inline-flex items-center gap-1">{i > 0 && <ArrowRight size={14} aria-hidden="true" />}{r.name}</li>)}</ol>
         <p className="mt-2 text-xs text-muted-foreground">
           Sample deadline: {club.deadline.toLocaleString()}
         </p>

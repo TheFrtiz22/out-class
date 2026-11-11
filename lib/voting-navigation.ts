@@ -8,14 +8,17 @@ export function decisionsHref(clubId:string, tab:"voting"|"letters"="voting", se
   for(const key of ["cycleId","roundId","demo"])if(source.get(key))q.set(key,source.get(key)!);
   return `/club/${encodeURIComponent(clubId)}/workspace?${q}`;
 }
-/** The one link into a voting session. LIVE rooms open the room; board (LEGACY) sessions open the ballot in the Voting room. */
+/** The one link into a voting session. LIVE rooms open the room; retired board (LEGACY) sessions open their read-only history. */
 export function votingSessionHref(clubId:string,session:{id:string;mode?:string|null;cycleId?:string|null;roundId?:string|null},view:"leader"|"present"|"member"="member",demo=false){
   if(session.mode==="LIVE"){
     const q=new URLSearchParams({clubId,view});if(demo)q.set("demo","1");if(session.cycleId)q.set("cycleId",session.cycleId);if(session.roundId)q.set("roundId",session.roundId);
     return `/voting/rooms/${encodeURIComponent(session.id)}?${q}`;
   }
-  const q=new URLSearchParams({section:"recruitment",tool:"decisions",decisionTab:"voting",sessionId:session.id});if(demo)q.set("demo","1");
-  return `/club/${encodeURIComponent(clubId)}/workspace?${q}`;
+  return legacyVotingHistoryHref(clubId,session.id,demo);
+}
+export function legacyVotingHistoryHref(clubId:string,sessionId:string,demo=false){
+  const q=new URLSearchParams({clubId});if(demo)q.set("demo","1");
+  return `/voting/rooms/${encodeURIComponent(sessionId)}/history?${q}`;
 }
 /** Readable state for a voting session: Draft, Open, Paused or Closed. */
 export function votingStateLabel(state:string){return state==="OPEN"?"Open":state==="PAUSED"?"Paused":state==="COMPLETED"||state==="COMPLETE"?"Closed":"Draft";}

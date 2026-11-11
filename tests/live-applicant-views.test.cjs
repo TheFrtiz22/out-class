@@ -35,7 +35,7 @@ function harness(permissions = ['applications.review','applicants.identify','dec
   return {calls,api,lookups,revalidation:()=>revalidation,notifyEpoch(){currentEpoch={}},commitEpoch(){auth.readAuthority=currentEpoch},setViewer(id){auth.user={id};membership.id=id;membership.userId=id},replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
 }
 // List/Kanban and the decision groups are SegmentedControl options: return an onClick that chooses the option.
-const segment = (tree,group,match) => { const control=nodes(tree).find(n=>n.type==='SegmentedControl'&&n.props.label===group); const option=control?.props.options.find(o=>match(text(o.label))); return option && {props:{onClick:()=>control.props.onChange(option.value)}} }
+const segment = (tree,group,match) => { const control=nodes(tree).find(n=>n.type==='SegmentedControl'&&n.props.label===group); const option=control?.props.options.find(o=>match(o.ariaLabel??text(o.label))); return option && {props:{onClick:()=>control.props.onChange(option.value)}} }
 const button = (tree,label) => label==='List'||label==='Kanban' ? segment(tree,'Applicant view',t=>t===label) : nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 // Dossier actions behind the ⋯ menu are DropdownMenuItems; Move round opens its own dialog.
 const menuItem = (tree,label) => nodes(tree).find(n=>n.type==='DropdownMenuItem'&&text(n)===label)
@@ -43,7 +43,7 @@ const roundSelect = (h,tree) => { if(!nodes(tree).some(n=>n.props?.id==='move-ro
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
 test('complete-selection reads reject a notified obsolete authority before dispatch',async()=>{
   const h=harness();h.render();await flush();const tree=h.render();
-  const before=h.calls.length;h.notifyEpoch();await button(tree,'Quick review').props.onClick();
+  const before=h.calls.length;h.notifyEpoch();await button(tree,'Quick decisions').props.onClick();
   assert.equal(h.calls.length,before);assert.equal(view(h.render()),undefined);
 })
 test('complete-selection reads reject results during the authority notification-to-commit gap',async()=>{
@@ -51,7 +51,7 @@ test('complete-selection reads reject results during the authority notification-
   for(let i=0;i<101;i++)h.addCandidate({id:id(i)});
   h.render();await flush();let settle;
   h.api.getClubPipelineSelection=()=>new Promise(resolve=>settle=resolve);
-  const pending=button(h.render(),'Quick review').props.onClick();h.notifyEpoch();settle({applications:[{id:'obsolete',canQuickReview:true}]});await pending;
+  const pending=button(h.render(),'Quick decisions').props.onClick();h.notifyEpoch();settle({applications:[{id:'obsolete',canQuickReview:true}]});await pending;
   assert.equal(nodes(h.render()).some(n=>n.type==='Sheet'&&n.props.open),false);
 })
 test('List/Kanban toggle preserves the same filtered server data and does not mutate or reload it', async () => {
@@ -174,7 +174,7 @@ test('recruitment review actions sit in one header row before the toolbar, witho
  const h=harness();h.render();await flush();const tree=h.render(),all=nodes(tree);
  const actions=all.find(n=>n.props?.['aria-label']==='Recruitment review');
  assert.equal(actions.type,'div');assert.equal(actions.props.role,'group');assert.match(actions.props.className,/justify-end/);
- assert.ok(nodes(actions).some(n=>n.type==='Button'&&text(n)==='Quick review'));assert.equal(nodes(actions).some(n=>n.type==='BoardDecisionMode'),false,'the ballot opens from the Voting room');assert.doesNotMatch(text(actions),/Review decisions|Voting history/);
+ assert.ok(nodes(actions).some(n=>n.type==='Button'&&text(n)==='Quick decisions'));assert.equal(nodes(actions).some(n=>n.type==='BoardDecisionMode'),false,'the ballot opens from the Voting room');assert.doesNotMatch(text(actions),/Review decisions|Voting history/);
  assert.doesNotMatch(text(tree),/Review together or work through candidates/);assert.equal(all.some(n=>n.type==='section'&&n.props?.['aria-label']==='Recruitment review'),false);
  assert.equal(button(tree,'Refresh'),undefined);
  assert.ok(all.indexOf(actions)<all.findIndex(n=>n.type==='SegmentedControl'&&n.props.label==='Applicant view'));
@@ -183,15 +183,15 @@ test('recruitment review actions sit in one header row before the toolbar, witho
 });
 test('quick review saves expected-status decisions and advances only after success', async () => {
  const h=harness();h.addCandidate({id:'second',studentId:'student-two',student:{email:'second@demo.invalid',studentProfile:null}});h.render();await flush();let tree=h.render();
- button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/decisions publish immediately/i);
+ button(tree,'Quick decisions').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/decisions publish immediately/i);
  button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
- button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
+ button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick decisions complete/);
 });
 test('quick review preserves the candidate after a rejected stale write and skips without publishing',async()=>{
- const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
+ const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick decisions').props.onClick();await flush();tree=h.render();await flush();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
 });
 test('review-only users cannot start quick review or move board candidates',async()=>{
- const h=harness(['applications.review']);h.render();await flush();let tree=h.render();assert.equal(button(tree,'Quick review'),undefined);button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;for(const lane of ['review','interview','decision','closed'])assert.equal(props.canMove(props.applicants[0],lane),false);
+ const h=harness(['applications.review']);h.render();await flush();let tree=h.render();assert.equal(button(tree,'Quick decisions'),undefined);button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;for(const lane of ['review','interview','decision','closed'])assert.equal(props.canMove(props.applicants[0],lane),false);
 });
 test('board drops require an explicit outcome and preserve expected status',async()=>{
  const h=harness();h.render();await flush();let tree=h.render();button(tree,'Kanban').props.onClick();tree=h.render();const props=view(tree).props;
@@ -257,7 +257,7 @@ test('a background read that started before a write never lands after it, and re
  h.setServerStatus('WAITLISTED');h.api.getClubPipelinePage=async(club,q)=>{const page=await original(club,q);await new Promise(resolve=>release=resolve);return page};
  const pending=h.revalidation().reload();await flush();
  h.api.getClubPipelinePage=original;h.setServerStatus('IN_REVIEW');
- await button(tree,'Quick review').props.onClick();release();await pending;await flush();tree=h.render();
+ await button(tree,'Quick decisions').props.onClick();release();await pending;await flush();tree=h.render();
  assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW','the stale pre-write page is dropped');
  const older=harness();older.render();await flush();tree=older.render();const base=older.api.getClubPipelinePage;let first;
  older.setServerStatus('WAITLISTED');older.api.getClubPipelinePage=async(club,q)=>{const page=await base(club,q);await new Promise(resolve=>first=resolve);return page};
@@ -280,7 +280,7 @@ test('header actions re-resolve a remounted page-header slot instead of portalin
 });
 test('Filters shows its active count, and the voting bar follows the list and pager with clearance below them',async()=>{
  const h=harness(['applications.review','applicants.identify','decisions.manage','decisions.start']);h.render();await flush();let tree=h.render();
- const panel=t=>nodes(t).find(n=>n.type==='FilterPopover');const round=t=>nodes(t).find(n=>n.type==='PillGroup'&&n.props.label==='Filter round');
+ const panel=t=>nodes(t).find(n=>n.type==='FilterPopover');const round=t=>nodes(t).find(n=>n.type==='PillSelect'&&n.props.label==='Filter round');
  assert.equal(panel(tree).props.count,0);assert.ok(nodes(panel(tree)).includes(round(tree)),'round filter sits inside Filters');
  round(tree).props.onChange('round');tree=h.render();
  assert.equal(panel(tree).props.count,1,'the Filters pill counts active menu filters');
@@ -292,13 +292,13 @@ test('Filters shows its active count, and the voting bar follows the list and pa
  const css=fs.readFileSync('components/product/operational-dashboard.css','utf8');assert.match(css,/body:has\(\.oc-voting-bar\) \[data-sonner-toaster\]/,'toasts rise above the bar');
 });
 
-test('Pending stage pills replace the Status dropdown: they filter by stage and clear when the decision group has no stages',async()=>{
+test('Stage sits inside Filters: it filters by stage, counts as a filter, and clears when the decision group has no stages',async()=>{
  const h=harness();h.render();await flush();let tree=h.render();
- const stage=t=>nodes(t).find(n=>n.type==='SegmentedControl'&&n.props.label==='Pending stage');
+ const stage=t=>nodes(t).find(n=>n.type==='PillSelect'&&n.props.label==='Filter stage');const panel=t=>nodes(t).find(n=>n.type==='FilterPopover');
  assert.equal(nodes(tree).find(n=>n.props?.['aria-label']==='Filter status'),undefined,'no duplicate Status dropdown');
- assert.deepEqual(stage(tree).props.options.map(o=>o.value),['','SUBMITTED','IN_REVIEW','INTERVIEWING']);
+ assert.ok(nodes(panel(tree)).includes(stage(tree)),'stage sits inside Filters');assert.equal(stage(tree).props.allLabel,'All stages');assert.deepEqual(stage(tree).props.options.map(o=>o.value),['SUBMITTED','IN_REVIEW','INTERVIEWING']);
  stage(tree).props.onChange('INTERVIEWING');tree=h.render();await flush();tree=h.render();
- assert.equal(stage(tree).props.value,'INTERVIEWING');assert.ok(!view(tree)||view(tree).props.applicants.length===0,'the IN_REVIEW candidate is filtered out by the Interview stage');
+ assert.equal(stage(tree).props.value,'INTERVIEWING');assert.equal(panel(tree).props.count,1,'stage counts as an active filter');assert.ok(!view(tree)||view(tree).props.applicants.length===0,'the IN_REVIEW candidate is filtered out by the Interview stage');
  stage(tree).props.onChange('IN_REVIEW');tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants.length,1,'In review keeps it');
  segment(tree,'Decision',t=>t.startsWith('Pending')).props.onClick();tree=h.render();assert.equal(stage(tree).props.value,'IN_REVIEW','Pending keeps its stage');
  segment(tree,'Decision',t=>t.startsWith('Accepted')).props.onClick();tree=h.render();assert.equal(stage(tree),undefined,'Accepted has no stages');

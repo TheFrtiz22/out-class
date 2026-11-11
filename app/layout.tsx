@@ -10,6 +10,12 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { RouteContent } from "@/components/route-content"
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
+import { PWA_THEME_COLOR } from "@/lib/pwa"
+import { SiteNotices } from "@/components/site-notices"
+import { getSiteNotices } from "@/utils/site-settings"
+import { DEFAULT_MAINTENANCE_NOTICE } from "@/lib/site-settings"
+import { campusNoticeDismissKey } from "@/lib/campus-notice-dismiss"
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots, socialDefaults } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
@@ -38,7 +44,7 @@ const sourceSans = localFont({
   fallback: ["Arial", "sans-serif"],
 })
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content" }
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content", themeColor: PWA_THEME_COLOR }
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -51,6 +57,9 @@ export const metadata: Metadata = {
   // Public pages opt in explicitly; new product routes stay out of search by default.
   robots: privateRobots,
   manifest: "/manifest.webmanifest",
+  // Home-screen launch on iOS. The apple-touch-icon link comes from app/apple-icon.tsx (180x180 PNG).
+  appleWebApp: { capable: true, title: "OutClass", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
     other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
@@ -74,6 +83,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Cached (60 s + Admin-save tag); started first so it overlaps the identity reads below.
+  const noticesRead = getSiteNotices()
   const cookieStore = await cookies()
   const viewSession = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await platformViewSession().catch(() => null) : null
   const { data: { user }, error: authError } = await getSessionUser()
@@ -90,6 +101,11 @@ export default async function RootLayout({
     } catch { /* Demo stays available with its bundled fictional dataset. */ }
   }
 
+  const notices = await noticesRead
+  const maintenanceNotice = notices.maintenanceNotice || (notices.maintenanceMode ? DEFAULT_MAINTENANCE_NOTICE : "")
+  // A campus notice dismissed this browser session (session cookie) is skipped here, so it never flashes.
+  const campusNotice = notices.campusNotice && cookieStore.get(campusNoticeDismissKey(notices.campusNotice))?.value !== "1" ? notices.campusNotice : ""
+
   return (
     <html lang="en" className={`${libreCaslonText.variable} ${sourceSans.variable}`}>
       <body className="font-sans antialiased">
@@ -99,12 +115,19 @@ export default async function RootLayout({
           <AuthProvider initialUser={initialUser} isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={!!initialUser || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
             <CorkboardProvider>
+              {/* Site-wide notices sit in flow above every page. Only a verified support session (already
+                  under the fixed view-as banner) omits them; a bare or stale view-as cookie does not. */}
+              {!viewSession && <SiteNotices notices={{ campusNotice, maintenanceNotice }} offsetForSupportBanner={cookieStore.has(PLATFORM_VIEW_COOKIE)} />}
               <RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>
             </CorkboardProvider>
             </OrganizationInvitationsProvider>
           </AuthProvider>
           <Toaster />
           {process.env.VERCEL && <><Analytics /><SpeedInsights /></>}
+          {/* Kill switch (docs/service-worker.md): OUTCLASS_SERVICE_WORKER=off unregisters instead of registering. */}
+          {process.env.NODE_ENV === "production" && (process.env.OUTCLASS_SERVICE_WORKER === "off"
+            ? <ServiceWorkerRegistration disabled />
+            : !demoEnabled && !cookieStore.has(PLATFORM_VIEW_COOKIE) && <ServiceWorkerRegistration />)}
         </DemoDataProvider>
       </body>
     </html>

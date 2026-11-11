@@ -57,17 +57,21 @@ fieldset { min-inline-size: 0; }
 [data-button][data-loading="true"] { opacity: 1; }
 [data-button] > .oc-button-loading { position: absolute; inset: 0; margin: auto; }
 
-/* StatusPill: one application-state pill, colored from semantic tokens only. */
-.oc-status-pill { --pill-bg: var(--muted); --pill-fg: var(--muted-foreground); display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; width: fit-content; padding: .1875rem .625rem; border-radius: var(--oc-radius-full); background: var(--oc-glass-tint-sheen), var(--pill-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill-fg) 16%, transparent), var(--oc-glass-tint-highlight); color: var(--pill-fg); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); line-height: 1.35; white-space: nowrap; }
-.oc-status-pill::before { content: ""; width: .375rem; height: .375rem; border-radius: var(--oc-radius-full); background: currentColor; }
-.oc-status-pill[data-status="DRAFTING"] { --pill-bg: transparent; box-shadow: inset 0 0 0 1px var(--border); }
-.oc-status-pill[data-status="SUBMITTED"] { --pill-bg: var(--secondary); --pill-fg: var(--secondary-foreground); }
-.oc-status-pill[data-status="IN_REVIEW"] { --pill-bg: var(--info-subtle); --pill-fg: var(--info); }
-.oc-status-pill[data-status="INTERVIEWING"] { --pill-bg: var(--interview-subtle); --pill-fg: var(--interview); }
-.oc-status-pill[data-status="ACCEPTED"] { --pill-bg: var(--success-subtle); --pill-fg: var(--success); }
-.oc-status-pill[data-status="REJECTED"] { --pill-bg: var(--error-subtle); --pill-fg: var(--destructive); }
-.oc-status-pill[data-status="WAITLISTED"] { --pill-bg: var(--warning-subtle); --pill-fg: var(--warning); }
-@media (forced-colors: active) { .oc-status-pill { border: 1px solid CanvasText; } }
+/* StatusPill / StatusMark: a status is a tinted Phosphor icon and plain text, never a colored capsule.
+   The icon carries the semantic color (tokens only); the words keep the surrounding text color. */
+.oc-status-pill { --pill-fg: var(--muted-foreground); display: inline-flex; flex-shrink: 0; align-items: center; gap: .3125rem; width: fit-content; color: inherit; font-size: var(--oc-text-caption); font-weight: var(--oc-weight-medium); line-height: 1.35; white-space: nowrap; }
+.oc-status-pill > .oc-icon { flex-shrink: 0; color: var(--pill-fg); }
+.oc-status-pill[data-status="DRAFTING"] { --pill-fg: var(--muted-foreground); }
+.oc-status-pill[data-status="SUBMITTED"] { --pill-fg: var(--secondary-foreground); }
+.oc-status-pill[data-status="IN_REVIEW"] { --pill-fg: var(--info); }
+.oc-status-pill[data-status="INTERVIEWING"] { --pill-fg: var(--interview); }
+.oc-status-pill[data-status="ACCEPTED"] { --pill-fg: var(--success); }
+.oc-status-pill[data-status="REJECTED"] { --pill-fg: var(--destructive); }
+.oc-status-pill[data-status="WAITLISTED"] { --pill-fg: var(--warning); }
+.oc-status-pill[data-tone="active"] { --pill-fg: var(--info); }
+.oc-status-pill[data-tone="done"] { --pill-fg: var(--success); }
+.oc-status-pill[data-tone="strong"] { --pill-fg: var(--primary); }
+@media (forced-colors: active) { .oc-status-pill > .oc-icon { color: CanvasText; } }
 
 /* DatePicker: field-like trigger and a month grid, tokens only. */
 .oc-date-picker-trigger { display: inline-flex; min-height: var(--oc-control-height); align-items: center; gap: .5rem; padding: 0 .75rem; border: 1px solid var(--input); border-radius: var(--oc-content-radius-small); background: var(--card); box-shadow: var(--oc-glass-field-depth); color: var(--foreground); font-size: var(--oc-text-small); white-space: nowrap; }
@@ -314,4 +318,8 @@ fieldset { min-inline-size: 0; }
   [data-slot="switch"], [data-slot="checkbox"], [data-slot="command"] { border: 1px solid CanvasText; }
   :is([data-slot="switch-thumb"], [data-slot="checkbox"])[data-state="checked"] { background: Highlight; forced-color-adjust: none; }
   :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"], [data-slot="switch"], [data-slot="checkbox"]):focus-visible { outline: 2px solid Highlight; }
+}
+/* QR presenter (components/qr/qr-presenter-dialog.tsx): no enter/exit fade or zoom on its overlay or surface. */
+@media (prefers-reduced-motion: reduce) {
+  .oc-qr-presenter, .oc-qr-presenter-overlay { animation: none !important; transition: none !important; }
 }

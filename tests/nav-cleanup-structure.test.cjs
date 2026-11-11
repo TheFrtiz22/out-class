@@ -15,11 +15,11 @@ function load(file) {
 const nav = load("lib/navigation.ts")
 const club = "club"
 
-test("the club phone bar is one fixed set on every page: Home · Recruiting · Meetings · Members", () => {
+test("the club phone bar is one fixed set on every page: Home · Recruiting · Calendar · Members", () => {
   const owner = nav.leaderRailSections({ isOwner: true }, club)
   const bar = nav.bottomBarItems(owner, "leader", "applicants")
-  assert.deepEqual(bar.map(item => item.label), ["Club home", "Recruiting", "Meetings", "Members"])
-  for (const active of ["club-home", "applicants", "interviews", "decisions", "meetings", "tasks", "settings", "announcements"])
+  assert.deepEqual(bar.map(item => item.label), ["Home", "Recruiting", "Calendar", "Members"])
+  for (const active of ["club-home", "applicants", "interviews", "decisions", "calendar", "tasks", "settings"])
     assert.deepEqual(nav.bottomBarItems(owner, "leader", active).map(item => item.id), bar.map(item => item.id), active)
   const recruiting = bar.find(item => item.id === "recruiting")
   assert.match(recruiting.href, /section=recruitment&tool=overview/)
@@ -28,9 +28,9 @@ test("the club phone bar is one fixed set on every page: Home · Recruiting · M
 
 test("members without a destination get the next club page instead", () => {
   const reviewer = nav.leaderRailSections({ permissions: ["applications.review", "meetings.manage"] }, club)
-  assert.deepEqual(nav.bottomBarItems(reviewer, "leader", "applicants").map(item => item.label), ["Club home", "Recruiting", "Meetings", "Tasks"])
+  assert.deepEqual(nav.bottomBarItems(reviewer, "leader", "applicants").map(item => item.label), ["Home", "Recruiting", "Calendar", "Tasks"])
   const meetingsOnly = nav.leaderRailSections({ permissions: ["meetings.manage"] }, club)
-  assert.deepEqual(nav.bottomBarItems(meetingsOnly, "leader", "club-home").map(item => item.label), ["Club home", "Meetings", "Tasks", "Announcements"])
+  assert.deepEqual(nav.bottomBarItems(meetingsOnly, "leader", "club-home").map(item => item.label), ["Home", "Calendar", "Tasks"])
 })
 
 test("every phone bar link has an accessible name and the bar marks Recruiting active for its pages", () => {
@@ -40,8 +40,8 @@ test("every phone bar link has an accessible name and the bar marks Recruiting a
   assert.match(source, /aria-label="More sections"/)
 })
 
-test("one SectionTabs look for Decisions, phone Recruiting tabs and Interviews", () => {
-  assert.match(fs.readFileSync("components/live-voting/decisions-navigation.tsx", "utf8"), /<SectionTabs label="Decisions navigation"/)
+test("one segmented look for Decide's steps, phone Recruiting tabs and Interviews", () => {
+  assert.match(fs.readFileSync("components/live-voting/decide-page.tsx", "utf8"), /<TabsList variant="segmented" aria-label="Decide steps"/)
   assert.match(fs.readFileSync("components/club-workspace.tsx", "utf8"), /<SectionTabs label="Recruiting sections"/)
   assert.match(fs.readFileSync("components/interview-management-tabs.tsx", "utf8"), /<TabsList variant="segmented" aria-label="Interview management">/, "Interviews tabs use the same segmented pill track")
 })
@@ -66,7 +66,8 @@ test("Club home creates directly: New announcement opens the composer, New meeti
 
 test("⌘K offers every rail destination once and no removed page", () => {
   const shell = fs.readFileSync("components/shell/product-shell.tsx", "utf8")
-  assert.match(shell, /links=\{\[\.\.\.railItems\(railSections\)\.filter\(item => item\.href\)/)
+  assert.match(shell, /const railLinks = railItems\(railSections\)\.filter\(item => item\.href\)/)
+  assert.match(shell, /links=\{\[\.\.\.railLinks,/)
   assert.match(shell, /item\.id === "leader-dashboard"\) return false/)
   const search = fs.readFileSync("components/shell/navigation-search.tsx", "utf8")
   assert.match(search, /links\.filter\(link => !items\.some\(item => item\.title === link\.title\)/)

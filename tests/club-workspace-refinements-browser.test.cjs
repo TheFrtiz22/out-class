@@ -29,7 +29,7 @@ async function fixture() {
     '@/actions/organization-members': api, '@/actions/recipient-groups': api, '@/actions/communications': api, '@/actions/organization-onboarding': api,
     '@/actions/club-access': empty, '@/actions/invitation-emails': empty, '@/actions/recusals': empty,
   }
-  for (const name of ['recruitment-cycles','decision-schedules','recruitment-attendance-summary','reveal-applicant','live-voting/board-decision-mode','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
+  for (const name of ['recruitment-cycles','decision-schedules','recruitment-attendance-summary','reveal-applicant','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
   const overview = { operations:{offers:[],team:null,asOf:new Date(),intake:null,cycles:[],rounds:[],queue:[],meetings:[],announcements:[],tasks:{assigned:0,completed:0,overdue:0,awaitingReview:0},reviewWork:[],bookings:[],votes:[],scheduled:[],teamTasks:[]}, club: { id: 'club', name: 'Sample Club' }, membership: owner, meeting: null, work: [], awaitingReview: 0, recruitment: [{ status: 'IN_REVIEW', count: 2 }] }
   const entry = `import React,{useState}from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';import{OrganizationMemberManagement}from'@/components/organization-member-management';import{OrganizationSetupChecklist}from'@/components/organization-setup-checklist';import{ManagerOverview}from'@/components/manager-overview';import{AudienceEditor}from'@/components/recipient-audiences';import{MeetingGroupInvitation}from'@/components/meeting-group-invitation';
   const catalog={groups:[],rosterLabels:['Boys','Girls'],gradYears:[2027,2030],cohorts:[],cycles:[],rounds:[],events:[]};
@@ -81,7 +81,7 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   for(const label of ['Applicant','Year','Round','GPA','SAT','ACT','Rating','Status'])assert.equal(await page.getByRole('button',{name:new RegExp(`^Sort by ${label.replace('/','\\/')}`)}).count(),1,`${label} header sorts`)
   assert.equal(await page.getByRole('button',{name:'Refresh',exact:true}).count(),0)
   assert.equal(await page.getByRole('combobox',{name:'Sort applicants by'}).isVisible(),true,'the toolbar Sort is visible at every width');assert.match(await page.getByRole('combobox',{name:'Sort applicants by'}).innerText(),/SAT/,'headers and the toolbar share one sort');assert.match(page.url(),/sort=sat&order=desc/,'the sort lives in the URL')
-  const narrow=await browser.newPage({viewport:{width:390,height:844}});await narrow.goto(f.base);await narrow.getByRole('button',{name:'Quick review',exact:true}).waitFor();assert.ok(await narrow.getByRole('combobox',{name:'Sort applicants by'}).isVisible(),'Sort stays visible on phones')
+  const narrow=await browser.newPage({viewport:{width:390,height:844}});await narrow.goto(f.base);await narrow.getByRole('button',{name:'Quick decisions',exact:true}).waitFor();assert.ok(await narrow.getByRole('combobox',{name:'Sort applicants by'}).isVisible(),'Sort stays visible on phones')
   assert.ok(await narrow.evaluate(()=>document.documentElement.scrollWidth<=390),'applicants page does not overflow at 390px');await narrow.close()
   const resumeResponse=page.waitForResponse(response=>response.url().includes('/api/recruiting-resumes?')&&response.status()===200)
   await page.locator('tbody tr').first().locator('td').nth(2).click()
@@ -99,10 +99,10 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await observations.getByText('0 / 50 words',{exact:true}).waitFor()
   await observations.getByRole('button',{name:'Cancel',exact:true}).click()
   await page.waitForFunction(()=>document.activeElement?.textContent==='Add observation')
-  // Status is one StatusPill: a filled, rounded token pill, not the old thin left bar.
+  // Status is one StatusPill: a tinted icon and plain text, with no capsule fill and no left bar.
   const status=page.locator('[data-slot="status-pill"]').first()
-  const pill=await status.evaluate(element=>({radius:getComputedStyle(element).borderRadius,border:getComputedStyle(element).borderInlineStartWidth,code:element.dataset.status}))
-  assert.equal(pill.radius,'999px');assert.equal(pill.border,'0px');assert.ok(pill.code)
+  const pill=await status.evaluate(element=>({background:getComputedStyle(element).backgroundColor,border:getComputedStyle(element).borderInlineStartWidth,icon:!!element.querySelector('svg[data-icon-pack="phosphor"]'),code:element.dataset.status}))
+  assert.equal(pill.background,'rgba(0, 0, 0, 0)');assert.equal(pill.border,'0px');assert.ok(pill.icon);assert.ok(pill.code)
   await resumeResponse
   await page.getByRole('dialog').evaluate(element=>Promise.all(element.getAnimations().map(animation=>animation.finished.catch(()=>{}))))
   assert.ok((await page.getByRole('dialog').boundingBox()).x<1440*.1)
@@ -113,8 +113,8 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('button',{name:'Confirm move',exact:true}).click()
   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'))
   assert.equal(f.state().writes.at(-1).status,'INTERVIEWING')
-  await page.getByRole('button',{name:'Quick review',exact:true}).click()
-  const footer=page.getByRole('group',{name:'Quick review decisions'})
+  await page.getByRole('button',{name:'Quick decisions',exact:true}).click()
+  const footer=page.getByRole('group',{name:'Quick decisions'})
   await footer.waitFor()
   const footerBox=await page.locator('.oc-quick-footer').boundingBox(),scrollBox=await page.locator('.oc-applicant-drawer-scroll').boundingBox()
   assert.ok(scrollBox.y+scrollBox.height<=footerBox.y+1)
@@ -124,7 +124,7 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('button',{name:'Accept & next',exact:true}).click()
   await page.getByRole('heading',{name:'Alpha Example',exact:true}).waitFor()
   await page.getByRole('button',{name:'Deny & next',exact:true}).click()
-  await page.getByText('Quick review complete.',{exact:true}).waitFor()
+  await page.getByText('Quick decisions complete.',{exact:true}).waitFor()
   assert.equal(f.state().writes.filter(write=>write.status==='ACCEPTED'||write.status==='REJECTED').length,2)
   f.reset();await page.goto(f.base+'/?tab=members')
   await page.getByRole('button',{name:'Sort by Year',exact:true}).click()
@@ -169,15 +169,15 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await creator.waitFor({state:'hidden'})
   await page.setViewportSize({width:1440,height:1000})
   await page.goto(f.base+'/?tab=audiences')
-  await page.getByRole('button',{name:'By year',exact:true}).click()
+  await page.getByRole('combobox',{name:'Send to',exact:true}).click();await page.getByRole('option',{name:'By year',exact:true}).click()
   assert.match(await page.getByLabel('Selected audience').innerText(),/PEOPLE/)
   await page.getByRole('button',{name:'Fourth Year · 2027',exact:true}).click()
   assert.match(await page.getByLabel('Selected audience').innerText(),/2027/)
-  await page.getByRole('button',{name:'Boys',exact:true}).click()
+  await page.getByRole('combobox',{name:'Send to',exact:true}).click();await page.getByRole('option',{name:'Boys',exact:true}).click()
   assert.match(await page.getByLabel('Selected audience').innerText(),/Boys/)
   await page.getByRole('button',{name:'Invite people',exact:true}).click()
   const dialog=page.getByRole('dialog')
-  await dialog.getByRole('button',{name:'Girls',exact:true}).click()
+  await dialog.getByRole('combobox',{name:'Send to',exact:true}).click();await page.getByRole('option',{name:'Girls',exact:true}).click()
   await dialog.getByRole('button',{name:'Preview recipients',exact:true}).click()
   await dialog.getByRole('button',{name:'Send meeting announcement · 1',exact:true}).click()
   await dialog.waitFor({state:'hidden'})

@@ -69,9 +69,9 @@ test('authenticated PDF uploads retain private owner keys and canonical MIME; re
 test('headshots use the existing owner storage flow and return a private owner reference',async()=>{
   const h=uploads();const result=await h.api.uploadProfileFile(form(Uint8Array.from([137,80,78,71,13,10,26,10]),'headshot','image/png'));assert.match(result.reference,new RegExp(`^${owner}/`));assert.match(h.writes[0].path,new RegExp(`^${owner}/`));assert.equal(h.writes[0].opts.contentType,'image/png');
 });
-test('interview uses a narrow panel while voting retains the shared image fallback; profile overview excludes retired sections',()=>{
+test('interview uses a narrow panel while the leader workspace retains the shared image fallback; profile overview excludes retired sections',()=>{
   const panel=fs.readFileSync('components/applicant-intelligence.tsx','utf8');assert.match(panel,/AvatarFallback/);assert.match(panel,/AvatarImage/);assert.match(panel,/!data.anonymous/);assert.match(panel,/size-24/);
-  assert.match(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);
+  assert.match(fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);
   const overview=fs.readFileSync('components/views/unified-student-profile-view.tsx','utf8');assert.doesNotMatch(overview,/profile\.bio|actEnglish|actMath|Campus involvement|TestScoreDetail/);assert.match(overview,/size-24/);
 });
 

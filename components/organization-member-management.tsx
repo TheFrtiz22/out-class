@@ -62,7 +62,8 @@ import {
 } from "@/components/ui/sheet";
 import { NativeSelect } from "@/components/ui/native-select"
 import { academicYear } from "@/lib/recruitment-profile"
-import { PillGroup, SegmentedControl } from "@/components/ui/segmented-control"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { FilterPopover } from "@/components/ui/filter-popover"
 import { SearchField } from "@/components/ui/search-field"
 import { PillSelect } from "@/components/ui/pill-select"
 import { Toggle } from "@/components/ui/toggle"
@@ -467,9 +468,18 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 }}
                 onClear={() => { setQuery(""); resetPaging() }}
               />
-              <PillSelect label="Filter members by role" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
-              {showYear && <PillGroup label="Filter members by year" size="compact" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={[{ value: "", label: "All years" }, ...memberYears.map(year => ({ value: year, label: year }))]} />}
-              {!invitesOpen && caps.canManageMembers && <PillSelect label="Filter members by group" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />}
+              <FilterPopover label="Filter" title="Member filters" align="start" count={[roleFilter, showYear && yearFilter, !invitesOpen && groupFilter].filter(Boolean).length}
+                footer={<Button variant="ghost" size="sm" disabled={!roleFilter && !yearFilter && !groupFilter} onClick={() => { setRoleFilter(""); setYearFilter(""); setGroupFilter(""); resetPaging() }}>Clear filters</Button>}>
+                <div className="oc-filter-field"><span className="oc-filter-field-label">Role</span>
+                  <PillSelect label="Filter members by role" size="compact" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
+                </div>
+                {showYear && <div className="oc-filter-field"><span className="oc-filter-field-label">Year</span>
+                  <PillSelect label="Filter members by year" size="compact" allLabel="All years" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={memberYears.map(year => ({ value: year, label: year }))} />
+                </div>}
+                {!invitesOpen && caps.canManageMembers && <div className="oc-filter-field"><span className="oc-filter-field-label">Group</span>
+                  <PillSelect label="Filter members by group" size="compact" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />
+                </div>}
+              </FilterPopover>
               {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
             </div>
             <SortControl label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />

@@ -30,6 +30,7 @@ import {
   type TaskInput,
 } from "@/lib/tasks";
 import { taskNotifications } from "@/lib/task-notifications";
+import { boundedParse } from "@/lib/bounded-input";
 const uuid = z.string().uuid();
 const memberSelect = {
   id: true,
@@ -170,7 +171,7 @@ async function recipientsFor(tx: AppTransactionClient, clubId: string, audience:
   return resolveTaskRecipients(members, audience, excluded);
 }
 export async function previewTaskAudience(input: { clubId: string; audience: TaskInput["audience"] }) {
-  const data = z.object({ clubId: uuid, audience: taskAudienceSchema }).parse(input);
+  const data = boundedParse(z.object({ clubId: uuid, audience: taskAudienceSchema }), input);
   const { user } = await requireClubPermission(data.clubId, ["tasks.manage"]);
   return prisma.$transaction(async tx => {
     await currentMember(tx, data.clubId, user.id, true);
@@ -178,7 +179,7 @@ export async function previewTaskAudience(input: { clubId: string; audience: Tas
   });
 }
 export async function saveTask(input: TaskInput) {
-  const data = taskInputSchema.parse(input);
+  const data = boundedParse(taskInputSchema, input);
   const { user } = await requireClubPermission(data.clubId, ["tasks.manage"]);
   return prisma.$transaction(async tx => {
     await currentMember(tx, data.clubId, user.id, true);
@@ -213,7 +214,7 @@ export async function saveTask(input: TaskInput) {
   });
 }
 export async function bulkUpdateTasks(input: z.input<typeof bulkTaskSchema>) {
-  const data = bulkTaskSchema.parse(input);
+  const data = boundedParse(bulkTaskSchema, input);
   const {user} = await requireClubPermission(data.clubId,["tasks.manage"]);
   return prisma.$transaction(async tx => {
     await currentMember(tx,data.clubId,user.id,true);
@@ -227,7 +228,7 @@ export async function bulkUpdateTasks(input: z.input<typeof bulkTaskSchema>) {
   });
 }
 export async function addTaskRecipients(input: {clubId:string;taskId:string;revision:number;audience:TaskInput["audience"];expectedRecipients:string[]}) {
-  const data=z.object({clubId:uuid,taskId:uuid,revision:z.number().int().nonnegative(),audience:taskAudienceSchema,expectedRecipients:z.array(uuid).max(1000)}).parse(input);
+  const data=boundedParse(z.object({clubId:uuid,taskId:uuid,revision:z.number().int().nonnegative(),audience:taskAudienceSchema,expectedRecipients:z.array(uuid).max(1000)}), input);
   const {user}=await requireClubPermission(data.clubId,["tasks.manage"]);
   return prisma.$transaction(async tx=>{
     await currentMember(tx,data.clubId,user.id,true);
@@ -244,7 +245,7 @@ export async function addTaskRecipients(input: {clubId:string;taskId:string;revi
   });
 }
 export async function bulkApproveTaskSubmissions(input: z.input<typeof bulkReviewSchema>) {
-  const data=bulkReviewSchema.parse(input);
+  const data=boundedParse(bulkReviewSchema, input);
   const {user}=await requireClubPermission(data.clubId,["tasks.manage"]);
   return prisma.$transaction(async tx=>{
     await currentMember(tx,data.clubId,user.id,true);
@@ -263,14 +264,13 @@ export async function updateTaskMember(input: {
   groups: string[];
   cohort: string | null;
 }) {
-  const data = z
+  const data = boundedParse(z
     .object({
       clubId: uuid,
       memberId: uuid,
       groups: z.array(z.string().trim().min(1).max(80)).max(20),
       cohort: z.string().trim().min(1).max(80).nullable(),
-    })
-    .parse(input);
+    }), input);
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, data.clubId);
@@ -304,7 +304,7 @@ export async function viewTask(assignmentId: string) {
   return { success: true };
 }
 export async function submitTask(input: z.infer<typeof submissionSchema>) {
-  const data = submissionSchema.parse(input);
+  const data = boundedParse(submissionSchema, input);
   const { user, assignment } = await ownedAssignment(data.assignmentId);
   validateTaskSubmission(assignment.task.requirements, data);
   const files = await prisma.taskFile.findMany({

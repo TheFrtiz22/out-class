@@ -1,7 +1,8 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
 // The phone sheet renders its links through WorkspaceNavigation's renderItem (stubbed here).
-const sheetLinks=shell=>nodes(shell).filter(n=>n.type==='WorkspaceNavigation').flatMap(n=>n.props.items.map(n.props.renderItem));
+// The More sheet renders each destination directly (no grouped WorkspaceNavigation since the nav reorganization).
+const sheetLinks=shell=>nodes(shell).filter(n=>typeof n.props?.['data-tour']==='string'&&n.props['data-tour'].startsWith('nav-')&&!n.props['data-dock-item']);
 const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function load(file,mocks={}) {
  mocks={ ...require('./helpers/shell-stubs.cjs'), '@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})}, '@/lib/autosave-navigation':{flushEditors:async()=>{}}, '@/actions/communications':{}, ...mocks };
@@ -55,7 +56,7 @@ function trackerHarness(records,scope='status',params='') {
  const h=hooks(),calls=[],navigation=[];const auth={user:{id:'student'},loading:false,refreshUser:async()=>{}};
  const shared={focusApplicationClubId:null,clearApplicationFocus(){shared.focusApplicationClubId=null},focusApplication:id=>calls.push(['focus',id]),syncApplications:items=>calls.push(['applications',items]),syncApplicationBookings:items=>calls.push(['bookings',items])};
  let server=records,fail=false,query=params;const revalidation={};
- const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
+ const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-server-now':{useServerAnchoredNow:()=>Date.now()},'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
  return {...h,calls,auth,navigation,revalidation,render:()=>h.render(()=>C({scope,onNavigate:view=>navigation.push(view)})),setRecords:records=>server=records,fail:()=>fail=true,query:value=>query=value,shared};
 }
 const cards=tree=>nodes(tree).filter(node=>node.type==='ApplicationStatusCard');

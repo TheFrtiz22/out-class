@@ -132,6 +132,7 @@ function notificationClickHarness({ read = false, result = true, allowed = true,
   const item = notification('assignment', { href, type: 'Interview Invite', read })
   const { NotificationCenter } = load(process.env.OUTCLASS_NOTIFICATION_SOURCE || 'components/shell/notification-center.tsx', {
     react, 'next/link': 'Link', 'next/navigation': { useRouter: () => ({ push: url => events.push(['router', url]) }) },
+    '@/hooks/use-server-now': { useServerAnchoredNow: () => Date.now() },
     '@/lib/application-state': { useApplicationState: () => ({ notifications: [item], trackedApps: [], markNotificationRead: async id => { events.push(['read', id]); if (result instanceof Error) throw result; return result } }) },
     '@/contexts/organization-invitations-context': { useOrganizationInvitations: () => ({ invitations: [] }) },
     '@/lib/product-navigation': { canLeaveWorkspace: () => allowed },

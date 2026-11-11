@@ -51,7 +51,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
         },
       }),
     },
-    "next/headers": { cookies: async () => ({ has: () => false, get: () => (demo ? { value: "1" } : undefined) }) },
+    "next/headers": { headers: async () => new Headers(), cookies: async () => ({ has: () => false, get: () => (demo ? { value: "1" } : undefined) }) },
     "./prisma": {
       prisma: {
         $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{live:true}] : [],
@@ -92,7 +92,7 @@ test("platform access requires independent server allowlist, database grant, and
         },
       }),
     },
-    "next/headers": { cookies: async () => ({ has: () => false }) },
+    "next/headers": { headers: async () => new Headers(), cookies: async () => ({ has: () => false }) },
   })
   try {
     delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS

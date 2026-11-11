@@ -18,7 +18,7 @@ function loadFrame() {
 const moved = {
   "/live-voting": "live-voting/page.tsx", "/vote": "vote/page.tsx", "/check-in": "check-in/page.tsx",
   "/voting/x/join": "voting/[sessionId]/join/page.tsx", "/voting/rooms/new": "voting/rooms/new/page.tsx",
-  "/voting/rooms/x": "voting/rooms/[sessionId]/page.tsx", "/voting/rooms/x/prepare": "voting/rooms/[sessionId]/prepare/page.tsx",
+  "/voting/rooms/x": "voting/rooms/[sessionId]/page.tsx", "/voting/rooms/x/prepare": "voting/rooms/[sessionId]/prepare/page.tsx", "/voting/rooms/x/history": "voting/rooms/[sessionId]/history/page.tsx",
   "/interviews/book": "interviews/book/page.tsx", "/applications/x/decision": "applications/[applicationId]/decision/page.tsx",
   "/q/x": "q/[code]/page.tsx", "/auth/student-claim": "auth/student-claim/page.tsx", "/platform/login": "platform/login/page.tsx",
   "/club/x/interview": "club/[clubId]/interview/page.tsx",
@@ -47,9 +47,9 @@ test("Exit only returns to same-site product pages", () => {
 })
 
 test("the frame owns <main>; moved screens drop their full-screen wrappers", () => {
-  const screens = [...Object.values(moved).map(file => path.join("app/(focus)", file)), "components/live-voting/room-view.tsx", "components/live-voting/room-setup.tsx", "components/live-voting/slide-preparation.tsx", "components/live-voting/session-join.tsx", "components/qr/meeting-check-in.tsx", "components/communications/decision-letter.tsx", "components/interviews/booking-link-page.tsx", "components/views/interview-workspace-view.tsx", "components/interviews/club-interview-room.tsx"]
+  const screens = [...Object.values(moved).map(file => path.join("app/(focus)", file)), "components/live-voting/room-view.tsx", "components/live-voting/room-setup.tsx", "components/live-voting/slide-preparation.tsx", "components/live-voting/legacy-voting-history.tsx", "components/live-voting/voting-link-moved.tsx", "components/qr/meeting-check-in.tsx", "components/communications/decision-letter.tsx", "components/interviews/booking-link-page.tsx", "components/views/interview-workspace-view.tsx", "components/interviews/club-interview-room.tsx"]
   for (const file of screens) assert.doesNotMatch(fs.readFileSync(file, "utf8"), /<main\b|min-h-(svh|dvh|screen)/, file)
-  for (const file of ["components/views/leader-dashboard/speed-review-mode.tsx", "components/live-voting/proctor-presentation-view.tsx"]) {
+  for (const file of ["components/views/leader-dashboard/speed-review-mode.tsx"]) {
     const source = fs.readFileSync(file, "utf8")
     assert.doesNotMatch(source, /fixed inset-0/, `${file} renders in a FocusFrame instead`)
     assert.match(source, /<FocusFrame [^>]*onExit=/, file)

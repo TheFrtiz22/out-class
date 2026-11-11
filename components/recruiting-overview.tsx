@@ -1,11 +1,11 @@
 "use client"
 import type { ReactNode } from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { handleClubLink } from "@/lib/workspace-navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
-import { getDashboardReviewQueue, type getClubWorkspaceOverview } from "@/lib/workspace-api"
+import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { hasPermission } from "@/lib/permissions"
 import { memberDate } from "@/components/member-overview"
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,6 @@ import { welcomeDeadline } from "@/lib/welcome"
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import type { ClubAccess } from "@/lib/permissions"
 import "@/components/club-home/club-home.css"
-import { SegmentedControl } from "@/components/ui/segmented-control"
 import { TERMS } from "@/lib/copy/terms"
 import { votingStateLabel } from "@/lib/voting-navigation"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
@@ -62,25 +61,15 @@ const RecruitingInsightsCards = dynamic(() => import("@/components/recruiting-in
 
 export function RecruitingOverview({ data, refreshing = false, onChanged = () => {} }: { data: Overview; refreshing?: boolean; onChanged?: () => void }) {
   const { club, membership, operations: op } = data
-  const [round, setRound] = useState(""), [applicant, setApplicant] = useState<string | null>(null), [booking, setBooking] = useState<Overview["operations"]["bookings"][number] | null>(null)
+  const [applicant, setApplicant] = useState<string | null>(null), [booking, setBooking] = useState<Overview["operations"]["bookings"][number] | null>(null)
   const [reviewContext, setReviewContext] = useState(false)
-  const [filteredQueue, setFilteredQueue] = useState<{ key: string; rows: Overview["operations"]["queue"]; error?: string } | null>(null), [retry, setRetry] = useState(0)
-  const queueKey = `${round}:${+new Date(op.asOf)}:${retry}`
-  useEffect(() => {
-    if (!round) return
-    let current = true
-    getDashboardReviewQueue(club.id, round).then(rows => { if (current) setFilteredQueue({ key: queueKey, rows }) }).catch(() => { if (current) setFilteredQueue({ key: queueKey, rows: [], error: "This round’s review queue could not load." }) })
-    return () => { current = false }
-  }, [club.id, round, queueKey])
   const hrefs = railHrefs(membership as ClubAccess, club.id)
-  const queue = round ? filteredQueue?.key === queueKey ? filteredQueue.rows : [] : op.queue, pending = op.rounds.reduce((n, r) => n + r.pending, 0)
+  const queue = op.queue, pending = op.rounds.reduce((n, r) => n + r.pending, 0)
   const base = `/club/${encodeURIComponent(club.id)}/workspace?section=recruitment`
   const outcomes = data.recruitment?.filter(r => ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(r.status)) ?? []
   const hasOutcomes = outcomes.some(r => r.count > 0)
   const canSchedule = hasPermission(membership, "interviews.manage")
   const openReview = (id: string) => { setReviewContext(true); setApplicant(id) }
-  const roundName = round ? op.rounds.find(r => r.id === round)?.name : "All rounds"
-  const roundPending = round ? op.rounds.find(r => r.id === round)?.pending ?? 0 : pending
   const empty = (copy: ReactNode, action?: ReactNode) => <div className="oc-dashboard-state"><DashboardQuiet>{copy}</DashboardQuiet>{action}</div>
   const statuses = pipeline(data.recruitment)
   const total = op.rounds.reduce((n, r) => n + r.count, 0), reviewed = op.rounds.reduce((n, r) => n + r.reviewed, 0)
@@ -102,25 +91,19 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
     <DashboardGrid main={<>
       <DashboardCard id="dashboard-pipeline" title="Pipeline by round" index={cards.length + 1} className="oc-pipeline-section">
         {op.rounds.length > 0 ? <>
-          <SegmentedControl label="Filter review queue by round" className="oc-command-pipeline" size="compact" value={round}
-            onChange={value => setRound(value === round ? "" : value)}
-            options={[{ value: "", label: "All rounds" }, ...op.rounds.map(r => ({ value: r.id, label: r.name }))]} />
-          <PipelineBars stages={op.rounds.map((r, i) => ({ id: r.id, label: `${String(i + 1).padStart(2, "0")} · ${r.name}`, count: r.count, tone: r.id === round ? "interview" : undefined }))} />
+          <PipelineBars stages={op.rounds.map((r, i) => ({ id: r.id, label: `${String(i + 1).padStart(2, "0")} · ${r.name}`, count: r.count }))} />
           <DashboardFoot>{[`${total} active ${total === 1 ? "applicant" : "applicants"}`, ...(statuses ? statuses.stages.slice(1).map(stage => `${stage.count} ${stage.label.toLowerCase()}`) : []), `${pending} ${pending === 1 ? "review" : "reviews"} left for you`].join(" · ")}</DashboardFoot>
         </> : empty(hasPermission(membership, "recruitment.manage") ? "No recruiting rounds yet." : "No rounds are available with your current review access.",
           hasPermission(membership, "recruitment.manage") ? <DashboardMore href={`/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=cycles`}>Set up rounds</DashboardMore> : undefined)}
       </DashboardCard>
-      <DashboardCard id="dashboard-reviews" headingTabIndex={-1} index={cards.length + 2} className="oc-review-console" aside={roundName}
-        title={<>Review queue <span className="oc-section-count oc-dashboard-count" aria-hidden="true">{roundPending}</span></>}
+      <DashboardCard id="dashboard-reviews" headingTabIndex={-1} index={cards.length + 2} className="oc-review-console"
+        title={<>Review queue <span className="oc-section-count oc-dashboard-count" aria-hidden="true">{pending}</span></>}
         more={{ href: `${base}&tool=applicants`, label: "All applicants", prefetch: false, onClick: event => handleClubLink(event as React.MouseEvent<HTMLAnchorElement>, `${base}&tool=applicants`) }}>
         <p className="oc-command-footnote oc-dashboard-note">Applicants waiting on your review</p>
-        {round && filteredQueue?.key !== queueKey ? <LoadingState variant="glass" label="Loading this round’s reviews…" layout="rows" rows={3} />
-          : round && filteredQueue?.error ? <div role="alert" className="oc-dashboard-state"><p>{filteredQueue.error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry reviews</Button></div>
-          : queue.length ? <GlassRowList className="oc-review-records">{queue.map((a, index) => <li key={a.id}><GlassRow data-applicant-id={a.id} onClick={() => openReview(a.id)}
+        {queue.length ? <GlassRowList className="oc-review-records">{queue.map((a, index) => <li key={a.id}><GlassRow data-applicant-id={a.id} onClick={() => openReview(a.id)}
             lead={<span className="oc-record-number oc-dashboard-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>} title={a.label} detail={`${a.round} · ${a.anonymous ? "Anonymous review" : "Current panel assignment"}`} trailing={<span className="oc-dashboard-row-end">Review</span>} /></li>)}</GlassRowList>
-          : empty(round ? "You have no reviews waiting in this round." : "You have no reviews waiting. You’re caught up on your assigned applicants.",
-            round ? <DashboardMore onClick={() => setRound("")}>Show all rounds</DashboardMore> : undefined)}
-        {!round && pending > op.queue.length && <DashboardFoot>Showing the oldest {op.queue.length} of {pending} reviews. Saving a review brings the next candidate into this preview.</DashboardFoot>}
+          : empty("You have no reviews waiting. You’re caught up on your assigned applicants.")}
+        {pending > op.queue.length && <DashboardFoot>Showing the oldest {op.queue.length} of {pending} reviews. Saving a review brings the next candidate into this preview.</DashboardFoot>}
       </DashboardCard>
       {(op.bookings.length > 0 || canSchedule && op.rounds.some(r => r.needsBooking > 0))
         ? <InterviewsCard data={data} hrefs={hrefs} index={cards.length + 3} onOpen={setBooking} />

@@ -102,9 +102,12 @@ export function isLeaderWorkspaceView(view: string | null | undefined): view is 
   return LEADER_WORKSPACE_VIEWS.includes(view as LeaderWorkspaceView)
 }
 export function leaderWorkspaceHref(view: LeaderWorkspaceView, clubId: string, focus: { applicantId?: string | null; roundId?: string | null } = {}) {
-  const section = view === "club-manager" || view === "club-management-portal" ? "settings" : view === "broadcast-messages" ? "announcements" : "recruitment"
+  // Announcements live on Home; screening rules are the Recruiting settings drawer on Applicants.
+  const section = view === "club-manager" || view === "club-management-portal" ? "settings" : view === "broadcast-messages" ? "overview" : "recruitment"
   const query = new URLSearchParams({ section })
-  if (section === "recruitment") query.set("tool", view === "interview-scheduler" ? "interviews" : view === "screening-dashboard" ? "rules" : "applicants")
+  if (view === "broadcast-messages") query.set("focus", "announcements")
+  if (section === "recruitment") query.set("tool", view === "interview-scheduler" ? "interviews" : "applicants")
+  if (view === "screening-dashboard") query.set("recruitingSettings", "rules")
   if (focus.applicantId) query.set("applicantId", focus.applicantId)
   if (focus.roundId) query.set("roundId", focus.roundId)
   return `/club/${encodeURIComponent(clubId)}/workspace?${query}`

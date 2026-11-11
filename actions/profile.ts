@@ -10,6 +10,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { boundedParse, boundedSafeParse } from "@/lib/bounded-input";
 
 const profileSchema = z.object({
   ...profileEducationFields,
@@ -47,7 +48,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   const { user } = await requireAuth();
   
   // Validate input
-  const parsed = profileSchema.parse(data);
+  const parsed = boundedParse(profileSchema, data);
   // Identity comes from the authenticated account, never a client-supplied ID.
   parsed.computingId = user.email.split("@")[0];
 
@@ -111,7 +112,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
 // Editing education must never clear a résumé or replace experience records.
 export async function updateStudentProfileSection(input: unknown, expected?: string) {
   const { user } = await requireAuth();
-  const parsed = profileSectionSchema.safeParse(input);
+  const parsed = boundedSafeParse(profileSectionSchema, input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check your entries." };
   if (parsed.data.section === "identity" && parsed.data.headshotUrl && !parsed.data.headshotUrl.startsWith(`${user.id}/`)) return { error: "You can only save your own photo." };
   const { section, ...fields } = parsed.data;

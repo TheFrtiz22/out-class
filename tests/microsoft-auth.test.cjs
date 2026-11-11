@@ -54,7 +54,7 @@ test('enabled server initiation retains Azure configuration, cookie-backed clien
         return { data: { url: 'https://auth.example/authorize?provider=azure' }, error: null }
       } } }
     } },
-  }, { NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'true' })
+  }, { NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'true', OUTCLASS_SITE_URL: 'https://outclass.test' })
   for (const [next, expected] of [['/signup?next=%2Finvitations%2Fa', '/signup?next=%2Finvitations%2Fa'], ['/club-claims/a', '/club-claims/a'], ['//evil.test', '/login'], ['https://evil.test', '/login']]) {
     const response = await route.GET(new Request(`https://outclass.test/auth/microsoft?next=${encodeURIComponent(next)}`, { headers: { 'x-forwarded-host': 'evil.test' } }))
     assert.equal(response.status, 307)
@@ -98,4 +98,77 @@ test('disabled Microsoft callbacks are rejected before code exchange and leave e
   const response = await route.GET(new Request('https://outclass.test/auth/callback?provider=azure&code=valid&next=%2Fsignup'))
   assert.equal(response.status, 403)
   assert.equal(response.headers.get('set-cookie'), null)
+})
+
+function initiation(env) {
+  const calls = []
+  const route = load('app/auth/microsoft/route.ts', {
+    'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
+    '@/utils/supabase/server': { createClient: async () => ({ auth: { signInWithOAuth: async payload => {
+      calls.push(payload)
+      return { data: { url: 'https://auth.example/authorize?provider=azure' }, error: null }
+    } } }) },
+  }, { NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'true', ...env })
+  return { calls, start: (url, headers = {}) => route.GET(new Request(url, { headers })) }
+}
+
+test('Microsoft callbacks always return to the configured site URL; request Host headers never change it', async () => {
+  const h = initiation({ NODE_ENV: 'production', VERCEL_ENV: 'production', OUTCLASS_SITE_URL: 'https://www.out-class.net' })
+  for (const [url, headers] of [
+    ['https://www.out-class.net/auth/microsoft', {}],
+    ['https://www.out-class.net/auth/microsoft', { host: 'elsewhere.test', 'x-forwarded-host': 'elsewhere.test' }],
+    ['https://elsewhere.test/auth/microsoft', { host: 'elsewhere.test', 'x-forwarded-host': 'elsewhere.test', 'x-forwarded-proto': 'http' }],
+    ['http://preview-elsewhere.vercel.app/auth/microsoft', { 'x-forwarded-host': 'preview-elsewhere.vercel.app' }],
+  ]) {
+    const response = await h.start(url, headers)
+    assert.equal(response.status, 307)
+  }
+  assert.equal(h.calls.length, 4)
+  for (const call of h.calls) assert.equal(new URL(call.options.redirectTo).origin, 'https://www.out-class.net')
+})
+
+test('Microsoft sign-in is unavailable in production without a configured site URL, before any provider call', async () => {
+  for (const env of [{ NODE_ENV: 'production', VERCEL_ENV: 'production' }, { NODE_ENV: 'production' }, { NODE_ENV: 'production', VERCEL_ENV: 'production', OUTCLASS_SITE_URL: 'http://www.out-class.net' }]) {
+    const h = initiation(env)
+    const response = await h.start('https://www.out-class.net/auth/microsoft', { 'x-forwarded-host': 'www.out-class.net' })
+    assert.equal(response.status, 503)
+    assert.equal(response.headers.get('location'), null)
+    assert.equal(h.calls.length, 0)
+  }
+})
+
+test('without a configured site URL, previews and development return to their own allowed origin only', async () => {
+  const preview = initiation({ NODE_ENV: 'production', VERCEL_ENV: 'preview', VERCEL_URL: 'out-class-abc123.vercel.app' })
+  assert.equal((await preview.start('https://out-class-abc123.vercel.app/auth/microsoft')).status, 307)
+  assert.equal(new URL(preview.calls[0].options.redirectTo).origin, 'https://out-class-abc123.vercel.app')
+  assert.equal((await preview.start('https://elsewhere.vercel.app/auth/microsoft')).status, 503)
+  const development = initiation({ NODE_ENV: 'development' })
+  assert.equal((await development.start('http://localhost:3000/auth/microsoft')).status, 307)
+  assert.equal(new URL(development.calls[0].options.redirectTo).origin, 'http://localhost:3000')
+  assert.equal((await development.start('https://elsewhere.test/auth/microsoft')).status, 503)
+  assert.equal(development.calls.length, 1)
+})
+
+test('auth redirect origin: configured site URL first, then only this deployment in development or preview', () => {
+  const { authRedirectOrigin } = load('lib/site-origin.ts')
+  const table = [
+    ['https://elsewhere.test', { OUTCLASS_SITE_URL: 'https://www.out-class.net/x' }, 'https://www.out-class.net'],
+    ['https://elsewhere.test', { OUTCLASS_SITE_URL: ' http://127.0.0.1:3107 ' }, 'http://127.0.0.1:3107'],
+    ['https://www.out-class.net', { OUTCLASS_SITE_URL: 'https://user:pass@www.out-class.net' }, null],
+    ['https://www.out-class.net', { OUTCLASS_SITE_URL: 'not a url' }, null],
+    ['https://www.out-class.net', { VERCEL_ENV: 'production', NODE_ENV: 'production' }, null],
+    ['https://www.out-class.net', {}, null],
+    ['https://uva.out-class.net', { VERCEL_ENV: 'preview' }, 'https://uva.out-class.net'],
+    ['http://uva.out-class.net', { VERCEL_ENV: 'preview' }, null],
+    ['https://out-class.net.elsewhere.test', { VERCEL_ENV: 'preview' }, null],
+    ['https://notout-class.net', { VERCEL_ENV: 'preview' }, null],
+    ['https://out-class-git-x.vercel.app', { VERCEL_ENV: 'preview', VERCEL_BRANCH_URL: 'out-class-git-x.vercel.app' }, 'https://out-class-git-x.vercel.app'],
+    ['https://other.vercel.app', { VERCEL_ENV: 'preview', VERCEL_URL: 'out-class-abc.vercel.app' }, null],
+    ['http://localhost:3000', { VERCEL_ENV: 'preview' }, null],
+    ['http://localhost:3000', { VERCEL_ENV: 'development' }, 'http://localhost:3000'],
+    ['http://127.0.0.1:3107', { NODE_ENV: 'development' }, 'http://127.0.0.1:3107'],
+    ['http://user@localhost:3000', { NODE_ENV: 'development' }, null],
+    ['http://localhost:3000', { NODE_ENV: 'test' }, null],
+  ]
+  for (const [origin, env, expected] of table) assert.equal(authRedirectOrigin(origin, env), expected, `${origin} ${JSON.stringify(env)}`)
 })
