@@ -20,6 +20,8 @@ const expected = [
   "scheduler-polling-native", "scheduler-release-native",
   "session-revocation-e2e", "settings-navigation-e2e", "signup-privacy-e2e",
   "student-claim-e2e", "share-card-production-e2e", "clock-skew-hydration-e2e",
+  "application-submit-race-native", "invitation-accept-race-native",
+  "meeting-check-in-race-native", "club-claim-race-native",
 ];
 const runners = {
   "scripts/run-onboarding-e2e.cjs": [
@@ -32,6 +34,8 @@ const runners = {
     "interview-collaboration-native", "interview-native-concurrency",
     "mock-recruiting-cycle-native", "onboarding-concurrency",
     "recruitment-cycle-start-native",
+    "application-submit-race-native", "invitation-accept-race-native",
+    "meeting-check-in-race-native", "club-claim-race-native",
   ],
   "scripts/test-decision-publication-local.cjs": [
     "availability-schedules-native", "communication-schedules-native",
@@ -50,8 +54,8 @@ const runners = {
   ],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 39, "The inventory must track all 39 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 39-test inventory");
+assert.equal(expected.length, 43, "The inventory must track all 43 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 43-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");
