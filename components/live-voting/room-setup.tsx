@@ -79,7 +79,11 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  function validate(at:number){if(at>=1){if(!cycle||!round)throw Error('Choose a recruitment cycle and round.');resolveVotingMeeting(meetingInput());}if(at>=2){if(!applicants.length)throw Error('Select at least one applicant.');if(!voters.length)throw Error('Select at least one voter.');if(target!==''&&(!/^\d+$/.test(target)||Number(target)<1||Number(target)>2000))throw Error('Target number to pass must be a positive whole number, up to 2000.');{const rr=rulesFromDraft(ruleDraft??leaderDraft);if('error'in rr)throw Error(rr.error);}if(applicants.some(id=>!data?.applicants.some(a=>a.id===id))||voters.some(id=>!data?.voters.some(v=>v.id===id)))throw Error('Some saved selections are no longer eligible. Review applicants and voters before continuing.');}}
  async function saveDraft(){if(lock.current)return;lock.current=true;setBusy(true);setPhase('draft');setSavedDraft(false);setTouched(true);try{await new Promise(r=>setTimeout(r));await draft.flush();setSavedDraft(true);}catch(e){setError(e instanceof Error?e.message:'Draft could not be saved. Retry; your input is retained.');}finally{lock.current=false;setBusy(false);setPhase('');}}
  // An update retry always replays the original request against the revision this form was loaded from, so it can never overwrite a newer save.
- const sendUpdate=()=>{updateSent.current=true;return updateVotingSessionSetup({...pending.current!,revision:planRevision!,requestId:updateRequestId});};
+ // The highlights this leader agreed to discard, and the request ID once a refused save has been renewed (state lags inside an async save).
+ const confirmedDiscard=useRef<string[]>([]),requestRef=useRef('');
+ function renewRequest(){const id=crypto.randomUUID();requestRef.current=id;setUpdateRequestId(id);}
+ const sendUpdate=()=>{updateSent.current=true;return updateVotingSessionSetup({...pending.current!,revision:planRevision!,requestId:requestRef.current||updateRequestId,...(confirmedDiscard.current.length?{confirmDiscard:confirmedDiscard.current}:{})});};
+ const askDiscard=(count:number)=>confirm({title:'Discard prepared highlights?',description:`Removing ${pluralize(count,'applicant')} will discard their prepared slide highlights.`,confirmLabel:'Remove and save',cancelLabel:'Keep editing',tone:'danger',key:'voting-setup-discard-highlights'});
  async function finish(result:{sessionId:string}){
   if(details.timing==='NOW'){const room=await getLiveVotingRoom({clubId,sessionId:result.sessionId});if(room.status==='DRAFT'){const started=await commandLiveVotingRoom({clubId,sessionId:result.sessionId,revision:room.revision,requestId:startRequestId,action:'START'});if(!started.ok)throw Error(started.message);}else if(room.status!=='OPEN')throw Error('Session changed. Open its details to review the current state.');}
   await draft.clear();navigating.current=true;router.push(liveRoomPath(clubId,result.sessionId,'leader',demoScoped)+`&cycleId=${encodeURIComponent(cycle)}&roundId=${encodeURIComponent(round)}`);
@@ -90,28 +94,36 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
   let latest:SavedSession;try{latest=await getVotingSessionSetup({clubId,sessionId});}catch{return false;}
   if(latest.revision===planRevision)return false;
   // A lost response to this tab's own committed update replays to its receipt instead of reporting a conflict.
-  if(updateSent.current){let replay:{sessionId:string}|null=null;try{replay=await sendUpdate();}catch{}if(replay){try{await finish(replay);}catch(e){setError(e instanceof Error?e.message:'Session could not be confirmed. Open its details to review.');}return true;}}
+  if(updateSent.current){let replay:{sessionId:string}|null=null;try{const r=await sendUpdate();if(!('code'in r))replay=r;}catch{}if(replay){try{await finish(replay);}catch(e){setError(e instanceof Error?e.message:'Session could not be confirmed. Open its details to review.');}return true;}}
   pending.current=null;updateSent.current=false;
   if(latest.status!=='DRAFT')setError('Session already started or ended. Setup is locked.');else setEditConflict({latest,unsaved:true});
   return true;
  }
  async function prepare(){
   if(lock.current||!data)return;
-  if(!pending.current&&planRevision!==null){const dropped=preparedIds.filter(id=>!applicants.includes(id)).length;
-   if(dropped&&!(await confirm({title:'Discard prepared highlights?',description:`Removing ${pluralize(dropped,'applicant')} will discard their prepared slide highlights.`,confirmLabel:'Remove and save',cancelLabel:'Keep editing',tone:'danger',key:'voting-setup-discard-highlights'})))return;
-   if(lock.current)return;}
+  if(!pending.current&&planRevision!==null){const dropped=preparedIds.filter(id=>!applicants.includes(id));
+   if(dropped.length&&!(await askDiscard(dropped.length)))return;
+   if(lock.current)return;confirmedDiscard.current=dropped;}
   lock.current=true;setBusy(true);setError('');setPhase(draft.saving||draft.dirty?'queued':'commit');
   try{
    if(!pending.current){validate(2);const meeting=resolveVotingMeeting(meetingInput());updateSent.current=false;pending.current=createRoomSchema.parse({clubId,sessionId,cycleId:cycle,roundId:round,leaderMemberIds:leaderMemberIds.length?leaderMemberIds:[data.memberId],participantIds:voters,applicationIds:applicants,targetSize:target===''?null:Number(target),displayConfig:roomDisplayConfig(fields),presentationOptions:{fields,highlights:Object.fromEntries(Object.entries(highlights).filter(([id,v])=>applicants.includes(id)&&!!v)),meeting,...(ruleRules?.mode==='THRESHOLD'?{rules:ruleRules}:{})},notifyVoters:(details.timing==='LATER'||planRevision!==null)&&details.notify});}
    // A click while the draft autosaves waits for that save, then continues; the button shows which step is running.
    await draft.flush();setPhase('commit');
-   await finish(planRevision!==null?await sendUpdate():await createLiveVotingRoom(pending.current));
+   let result=planRevision!==null?await sendUpdate():await createLiveVotingRoom(pending.current);
+   // Another leader may have prepared highlights since this page loaded: confirm the server's current list, then save as a new request.
+   for(let attempt=0;'code'in result&&attempt<3;attempt++){
+    const ids=result.applicationIds;setPreparedIds(old=>[...new Set([...old,...ids])]);renewRequest();
+    if(!(await askDiscard(ids.length))){pending.current=null;updateSent.current=false;confirmedDiscard.current=[];return;}
+    confirmedDiscard.current=ids;result=await sendUpdate();
+   }
+   if('code'in result)throw Error('Prepared highlights keep changing. Review the applicants and save again.');
+   await finish(result);
   }catch(e){if(!await resolveEditFailure())setError(e instanceof Error?e.message:'Session could not be confirmed. Retry uses the same request and preserves your setup.');}finally{if(!navigating.current){lock.current=false;setBusy(false);setPhase('');}}
  }
  async function loadLatest(){
   if(!editConflict)return;
   if(editConflict.unsaved&&!window.confirm('Discard your unsaved changes and load the latest saved session?'))return;
-  applySavedSession(editConflict.latest);setEditConflict(null);setError('');pending.current=null;updateSent.current=false;setUpdateRequestId(crypto.randomUUID());setTouched(true);
+  applySavedSession(editConflict.latest);setEditConflict(null);setError('');pending.current=null;updateSent.current=false;renewRequest();confirmedDiscard.current=[];setTouched(true);
   // The working copy now follows the latest saved session, so later autosaves supersede the other tab's copy instead of conflicting forever.
   await draft.rebase().catch(()=>{});
  }

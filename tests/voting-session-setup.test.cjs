@@ -65,11 +65,14 @@ test('editing a scheduled session with prepared slides is a diff: kept highlight
  // Add.
  await edit([apps[1],apps[2],apps[0]]);assert.deepEqual(order().map(c=>c.slice(0,2)),[[apps[1],0],[apps[2],1],[apps[0],2]]);assert.equal(prepared().length,2);
  assert.equal(h.state().audit.filter(a=>a.action==='voting.slides.discarded').length,0);
- // Remove a prepared applicant: only their highlights are discarded, and audited with IDs and counts only.
- const removal={...d,applicationIds:[apps[2],apps[0]],requestId:uuid(1150),revision};const r=await api.updateVotingSessionSetup(removal);revision=r.revision;
+ // Removing a prepared applicant without confirming it is refused with the current list and writes nothing.
+ const unconfirmed=await api.updateVotingSessionSetup({...d,applicationIds:[apps[2],apps[0]],requestId:uuid(1149),revision});
+ assert.deepEqual(unconfirmed,{ok:false,code:'HIGHLIGHTS_CHANGED',applicationIds:[apps[1]]});assert.equal(h.state().sessions[0].revision,revision);assert.equal(prepared().length,2);assert.equal(h.state().receipts.filter(x=>x.requestId===uuid(1149)).length,0);
+ // Confirmed: only their highlights are discarded, and audited with IDs, revisions and authors only.
+ const removal={...d,applicationIds:[apps[2],apps[0]],requestId:uuid(1150),revision,confirmDiscard:[apps[1]]};const r=await api.updateVotingSessionSetup(removal);revision=r.revision;
  assert.deepEqual(order().map(c=>c.slice(0,2)),[[apps[2],0],[apps[0],1]]);assert.deepEqual(prepared(),[[apps[0],apps[0],2]]);
  const discarded=h.state().audit.filter(a=>a.action==='voting.slides.discarded');
- assert.equal(discarded.length,1);assert.deepEqual(discarded[0].details,{revision:r.revision,count:1,applicationIds:[apps[1]]});assert.equal(discarded[0].targetId,sessionId);assert.equal(discarded[0].clubId,clubId);
+ assert.equal(discarded.length,1);assert.deepEqual(discarded[0].details,{revision:r.revision,count:1,applicationIds:[apps[1]],preparations:[{applicationId:apps[1],revision:2,updatedBy:leaderId}]});assert.doesNotMatch(JSON.stringify(discarded[0].details),/highlights/);assert.equal(discarded[0].targetId,sessionId);assert.equal(discarded[0].clubId,clubId);
  // Request-ID replay returns the receipt without writing again.
  assert.deepEqual(await api.updateVotingSessionSetup(removal),r);assert.equal(h.state().audit.filter(a=>a.action==='voting.slides.discarded').length,1);
  // Stale revision, and two concurrent edits from the same revision: one wins, the other is refused with nothing lost.
@@ -81,4 +84,26 @@ test('editing a scheduled session with prepared slides is a diff: kept highlight
  await h.command('START',{confirmed:true});assert.equal(h.state().sessions[0].passes.length,1);
  await assert.rejects(api.updateVotingSessionSetup({...d,applicationIds:[apps[2]],requestId:uuid(1180),revision:h.state().sessions[0].revision}),/locked/);
  assert.deepEqual(prepared(),[[apps[0],apps[0],2]]);assert.deepEqual(order().map(c=>c[0]),[apps[0],apps[2]]);
+});
+test('a stale page cannot silently discard highlights another leader saved after it loaded; the refreshed list is confirmed under a new request',async()=>{
+ const h=harness(),d={...body(),applicationIds:apps};await h.api.createLiveVotingRoom(d);
+ const api=load('actions/voting-session-setup.ts',h.mocks),otherLeader=uuid(77);
+ // Leader A loads setup: nothing prepared yet.
+ assert.deepEqual((await api.getVotingSessionSetup({clubId,sessionId})).preparedApplicationIds,[]);
+ // Leader B then saves highlights for applicant X (preparation saves do not bump the session revision); an empty preparation exists for another.
+ h.state().preparations.push({sessionId,applicationId:apps[1],highlights:[{id:'quote'}],revision:3,updatedBy:otherLeader},{sessionId,applicationId:apps[2],highlights:[],revision:2,updatedBy:otherLeader});
+ assert.deepEqual((await api.getVotingSessionSetup({clubId,sessionId})).preparedApplicationIds,[apps[1]],'only non-empty preparations are reported');
+ // A's page still believes nothing is prepared and removes X (and the applicant with an empty preparation).
+ const stale=await api.updateVotingSessionSetup({...d,applicationIds:[apps[0]],requestId:uuid(1300),revision:0,confirmDiscard:[]});
+ assert.deepEqual(stale,{ok:false,code:'HIGHLIGHTS_CHANGED',applicationIds:[apps[1]]});
+ assert.equal(h.state().sessions[0].revision,0);assert.equal(h.state().sessions[0].candidates.length,3);assert.equal(h.state().preparations.length,2);
+ assert.equal(h.state().audit.filter(a=>a.action==='voting.slides.discarded').length,0);
+ // Confirming a different applicant is not enough.
+ assert.equal((await api.updateVotingSessionSetup({...d,applicationIds:[apps[0]],requestId:uuid(1301),revision:0,confirmDiscard:[apps[2]]})).code,'HIGHLIGHTS_CHANGED');
+ // A confirms the refreshed list and retries under a new request ID.
+ const saved=await api.updateVotingSessionSetup({...d,applicationIds:[apps[0]],requestId:uuid(1302),revision:0,confirmDiscard:[apps[1]]});
+ assert.equal(saved.revision,1);assert.deepEqual(h.state().sessions[0].candidates.map(c=>c.applicationId),[apps[0]]);assert.equal(h.state().preparations.length,0);
+ const [audit]=h.state().audit.filter(a=>a.action==='voting.slides.discarded');
+ assert.deepEqual(audit.details,{revision:1,count:2,applicationIds:[apps[1],apps[2]].sort(),preparations:[{applicationId:apps[1],revision:3,updatedBy:otherLeader},{applicationId:apps[2],revision:2,updatedBy:otherLeader}].sort((a,b)=>a.applicationId.localeCompare(b.applicationId))});
+ await assert.rejects(api.updateVotingSessionSetup({...d,applicationIds:[apps[0]],requestId:uuid(1303),revision:0,confirmDiscard:new Array(2001).fill(apps[1])}));
 });
