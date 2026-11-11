@@ -46,6 +46,9 @@ import { TERMS } from "@/lib/copy/terms"
 import { countShellStart } from "@/lib/shell-metrics"
 import { notificationSettingsHref } from "@/lib/settings-navigation"
 import { RouteChildren } from "@/components/route-content"
+import { prepareSignOut, sealAutosaveDraftsForSignOut } from "@/lib/autosave-store"
+import { flushEditors } from "@/lib/autosave-navigation"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 
 /**
  * Rail icons. Club workspace items each get a distinct glyph: Overview (gauge) vs Home (house), Applicants
@@ -81,6 +84,19 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications, syncTaskNotifications, syncDurableNotifications, durableUnread } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
+  const confirmSignOut = useConfirm()
+  async function signOut() {
+    // Try to save unsaved edits first; only a confirmed discard clears this device's copies.
+    const outcome = await prepareSignOut({ flush: flushEditors, confirm: () => confirmSignOut({ title: "Sign out and discard unsaved changes?", description: "Some changes have not reached OutClass yet. Signing out removes them from this device.", confirmLabel: "Discard and sign out", tone: "danger" }) })
+    if (outcome === "cancel" || (outcome !== "discard" && !canLeaveWorkspace())) return
+    setSigningOut(true)
+    try {
+      await import("@/lib/push-device").then(async ({ unsubscribeOnSignOut }) => unsubscribeOnSignOut((await import("@/actions/push-subscriptions")).removePushSubscription)).catch(() => {})
+      const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out.")
+      const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error
+      sealAutosaveDraftsForSignOut(); window.location.assign("/")
+    } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) }
+  }
   const current = (pathname ? activeNavItem(pathname, new URLSearchParams(params?.toString()), { member: !manager && !!clubId }) : null) ?? active
   const contextKey = `${clubId}:${mode}:${current}`
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
@@ -211,7 +227,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
             setTaskLoad({ loading: true, failed: false }); setDurableLoad({ loading: true, failed: false })
             window.dispatchEvent(new Event("outclass:tasks-changed")); window.dispatchEvent(new Event("outclass:communications-changed"))
           }} onNavigate={onNavigate} />
-          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{/* The account menu switches workspace at every width; the header pill is an extra shortcut on wider screens. */}{workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-[length:var(--oc-size-11)] text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { await import("@/lib/push-device").then(async ({ unsubscribeOnSignOut }) => unsubscribeOnSignOut((await import("@/actions/push-subscriptions")).removePushSubscription)).catch(() => {}); const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out."); const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{/* The account menu switches workspace at every width; the header pill is an extra shortcut on wider screens. */}{workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-[length:var(--oc-size-11)] text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={() => void signOut()}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>
     </header>

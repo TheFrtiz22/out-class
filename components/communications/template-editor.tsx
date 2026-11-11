@@ -3,6 +3,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { useAutosave } from "@/hooks/use-autosave";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
+import { useDemoMode } from "@/contexts/demo-context";
 import { useEffect,useRef,useState } from 'react';
 import { getDecisionTemplates,saveDecisionTemplates,setFormalDecisionLetters } from '@/lib/workspace-api';
 import { defaultLetters,decisionTypes,letterVariables,resolveLetter,type LetterDecision,type LetterTemplate,letterTemplatesSchema,celebrationKinds,celebrationLabels,defaultCelebration } from '@/lib/decision-letters';
@@ -17,12 +18,12 @@ import { Toggle } from "@/components/ui/toggle"
 /** Decide → Send groups letters by outcome, in this order and with these names. */
 const outcomeLabels={ACCEPTED:'Accepted',REJECTED:'Not accepted',WAITLISTED:'Waitlisted'} as const;
 export function DecisionTemplateEditor({clubId,inline=false}:{clubId:string;inline?:boolean}){
- const {user}=useAuth(),expected=useRef("{}");
+ const {user}=useAuth(),demo=useDemoMode(),expected=useRef("{}");
  const [club,setClub]=useState<Awaited<ReturnType<typeof getDecisionTemplates>>|null>(null),[templates,setTemplates]=useState<Partial<Record<LetterDecision,LetterTemplate>>>({}),[selected,setSelected]=useState<LetterDecision>('ACCEPTED'),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[preview,setPreview]=useState(false),[loadAttempt,setLoadAttempt]=useState(0);
  useEffect(()=>{let active=true;setMessage('');getDecisionTemplates(clubId).then(value=>{if(active){setClub(value);setTemplates(value.templates);expected.current=JSON.stringify(value.templates)}}).catch(()=>{if(active)setMessage('Decision letter settings could not load.')});return()=>{active=false}},[clubId,loadAttempt]);
  const template=templates[selected]??defaultLetters[selected];
  const celebration=useCelebration(),celebrationKind=selected==='ACCEPTED'?template.celebration??defaultCelebration:'none';
- const autosave=useAutosave({identity:`${user?.id}:decision-templates:${clubId}`,value:templates,restore:setTemplates,enabled:!!club,save:async value=>{
+ const autosave=useAutosave({identity:`${user?.id}:decision-templates:${clubId}`,owner:demo.isDemoEnabled?null:user?.id,value:templates,restore:setTemplates,enabled:!!club,save:async value=>{
   const parsed=letterTemplatesSchema.parse(value);
   await saveDecisionTemplates(clubId,parsed,expected.current);
   expected.current=JSON.stringify(parsed);

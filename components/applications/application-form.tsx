@@ -60,7 +60,7 @@ export function ApplicationForm({
     response: responses[question.id] || "",
   }))
   const autosave = useAutosave({
-    identity: `${demo.isDemoEnabled ? "demo:" : ""}${user?.id}:application:${application.id}`,
+    identity: `${demo.isDemoEnabled ? "demo:" : ""}${user?.id}:application:${application.id}`, owner: demo.isDemoEnabled ? null : user?.id,
     value: responses, restore: setResponses,
     save: async snapshot => {
       const savedAnswers = questions.map(q => ({ questionId: q.id, response: snapshot[q.id] || "" }))
