@@ -2,6 +2,7 @@
    fictional data (state.jsx). Local only; no sessions, server actions or production data. */
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 import { ProductShell } from '@/components/shell/product-shell'
 import { ExploreView } from '@/components/views/explore-view'
 import { ClubProfileView } from '@/components/views/club-profile-view'
@@ -25,4 +26,4 @@ function Screens() {
   const [active, title, body] = screens[page] || screens.explore
   return <ProductShell sections={personalRailSections()} mode="explore" active={active} title={title} onSelect={() => {}} onNavigate={() => {}}>{body}</ProductShell>
 }
-createRoot(document.getElementById('root')).render(<FixtureBoundary><Screens /></FixtureBoundary>)
+createRoot(document.getElementById('root')).render(<FixtureBoundary><ConfirmProvider><Screens /></ConfirmProvider></FixtureBoundary>)

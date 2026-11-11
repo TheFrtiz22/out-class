@@ -24,13 +24,14 @@ const button = (tree, label) => nodes(tree).find(n => n.type === 'Button' && tex
 const deferred = () => { let resolve, reject; const promise = new Promise((res, rej) => { resolve = res; reject = rej }); return { promise, resolve, reject } }
 test('club search selection honors unsaved and in-flight guards before leaving the page', async () => {
   const h = hooks(), assigned = [], closed = []; let saving = false, consent = false, prompts = 0
-  const C = load('components/shell/navigation-search.tsx', { react: h.react, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'student' } }) }, '@/lib/application-state': { useApplicationState: () => ({}) }, '@/lib/demo/store': { demoStore: { active: () => false } }, '@/lib/demo/loader': { isDemoActive: () => false }, '@/lib/workspace-api': { searchWorkspace: async () => [{ kind: 'club', id: 'club', clubId: 'club', title: 'Club', detail: '' }] } }, { window: { setTimeout: fn => { fn(); return 1 }, clearTimeout() {}, confirm: () => { prompts++; return consent }, location: { assign: path => assigned.push(path) } }, document: { querySelector: selector => selector.includes('saving') ? saving : true } }).NavigationSearch
+  const C = load('components/shell/navigation-search.tsx', { react: h.react, '@/components/ui/confirm-dialog': { useConfirm: () => async () => { prompts++; return consent } }, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'student' } }) }, '@/lib/application-state': { useApplicationState: () => ({}) }, '@/lib/demo/store': { demoStore: { active: () => false } }, '@/lib/demo/loader': { isDemoActive: () => false }, '@/lib/workspace-api': { searchWorkspace: async () => [{ kind: 'club', id: 'club', clubId: 'club', title: 'Club', detail: '' }] } }, { window: { setTimeout: fn => { fn(); return 1 }, clearTimeout() {}, location: { assign: path => assigned.push(path) } }, document: { querySelector: selector => selector.includes('saving') ? saving : true } }).NavigationSearch
   const render = () => h.render(() => C({ open: true, items: [], onOpenChange: v => closed.push(v), onNavigate() {} }))
   nodes(render()).find(n => n.type === 'CommandInput').props.onValueChange('club'); render(); await h.flush()
-  const select = () => nodes(render()).find(n => n.type === 'CommandItem').props.onSelect()
-  select(); assert.equal(prompts, 1); assert.deepEqual(assigned, []); assert.deepEqual(closed, [])
-  saving = true; consent = true; select(); assert.deepEqual(assigned, []); assert.equal(prompts, 1)
-  saving = false; select(); assert.deepEqual(assigned, ['/club/club']); assert.deepEqual(closed, [false])
+  // Selection awaits the shared confirm dialog; let its microtasks settle.
+  const select = async () => { nodes(render()).find(n => n.type === 'CommandItem').props.onSelect(); for (let i = 0; i < 10; i++) await Promise.resolve() }
+  await select(); assert.equal(prompts, 1); assert.deepEqual(assigned, []); assert.deepEqual(closed, [])
+  saving = true; consent = true; await select(); assert.deepEqual(assigned, []); assert.equal(prompts, 1)
+  saving = false; await select(); assert.deepEqual(assigned, ['/club/club']); assert.deepEqual(closed, [false])
 })
 function boardHarness(api, id = '00000000-0000-4000-8000-000000000001') {
   const h = hooks(); let currentId = id
