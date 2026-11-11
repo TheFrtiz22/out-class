@@ -199,6 +199,8 @@ test("exports: ten recent exports by this account answer 429 before any transact
     "@/utils/auth": { requireClubPermission: async () => ({ user: { id: "u1" } }) },
     "@/utils/support-audit": { auditSupportAction: async () => {} },
     "@/lib/club-transaction-authorization": { authorizeClubTransaction: async () => ({}) },
+    // The csvExport switch is checked inside the transaction, which the limit never reaches.
+    "@/utils/club-features": { clubHasFeature: async () => true },
   })
   const res = await GET(new Request(`https://out-class.net/api/club-exports?clubId=${clubId}&kind=roster`))
   assert.equal(res.status, 429)
