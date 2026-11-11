@@ -30,7 +30,7 @@ export async function createInterviewRoom(raw: RoomInput) {
   const slots = roomSlots(input)
   if (!s.clubs[0].rounds.some(r => r.id === input.roundId)) throw new Error("Choose a round from this club.")
   if (input.panelMemberIds.some(id => !s.memberships.some(m => m.id === id && m.clubId === input.clubId))) throw new Error("Choose interviewers from this club.")
-  if ((s.interviewRooms ?? []).some(r => r.clubId === input.clubId && (r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && (r.name.toLowerCase() === input.name.toLowerCase() || r.location.toLowerCase() === input.location.toLowerCase() || r.panelMemberIds.some(id => input.panelMemberIds.includes(id))) && r.slots.some(a => slots.some(b => overlaps(a, b, Math.max(r.buffer, input.buffer)))))) throw new Error("This room or panel already has an overlapping schedule.")
+  if ((s.interviewRooms ?? []).some(r => r.clubId === input.clubId && (r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && (r.location.toLowerCase() === input.location.toLowerCase() || r.panelMemberIds.some(id => input.panelMemberIds.includes(id))) && r.slots.some(a => slots.some(b => overlaps(a, b, Math.max(r.buffer, input.buffer)))))) throw new Error("This room or panel already has an overlapping schedule.")
   const id = crypto.randomUUID()
   demoStore.mutate(s => { s.interviewRooms ??= []; s.roomBookings ??= []; s.interviewRooms.push({ ...input, id, isOpen: true, slots: slots.map(slot => ({ ...slot, id: crypto.randomUUID(), startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), booked: 0 })) }) })
   return { id, count: slots.length }
@@ -39,7 +39,7 @@ export async function setInterviewRoomOpen({ roomId, open }: { roomId: string; o
   const room = demoStore.get().interviewRooms?.find(r => r.id === roomId)
   if (!room) throw new Error("Room not found.")
   const s = manager(room.clubId)
-  if (open && s.interviewRooms.some(r => r.id !== roomId && (r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && (r.location.toLowerCase() === room.location.toLowerCase() || r.name.toLowerCase() === room.name.toLowerCase() || r.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && r.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(r.buffer, room.buffer)))))) throw new Error("Another room now overlaps this schedule.")
+  if (open && s.interviewRooms.some(r => r.id !== roomId && (r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && (r.location.toLowerCase() === room.location.toLowerCase() || r.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && r.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(r.buffer, room.buffer)))))) throw new Error("Another room now overlaps this schedule.")
   demoStore.mutate(s => { const r=s.interviewRooms.find(r => r.id === roomId)!;r.isOpen = open;if(!open){r.approvedPanelMemberIds=[];r.panelApprovedBy=null;r.panelApprovalRevision=(r.panelApprovalRevision||0)+1;} })
   for(const b of demoStore.get().roomBookings.filter(b=>b.roomId===roomId))syncDemoBookingPanel(b.applicationId,b.roundId);
 }
@@ -48,7 +48,6 @@ export async function renameInterviewRoom(raw: unknown) {
   const room = s.interviewRooms?.find(r => r.id === input.roomId && r.clubId === input.clubId)
   if (!room) throw new Error("Room unavailable.")
   if (room.name === input.name) return { name: room.name }
-  if (s.interviewRooms.some(r => r.id !== room.id && r.clubId === input.clubId && (r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && r.name.toLowerCase() === input.name.toLowerCase() && r.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(r.buffer, room.buffer)))))) throw new Error("Another room with this name has overlapping interview times. Choose a different name.")
   demoStore.mutate(s => { s.interviewRooms.find(r => r.id === input.roomId)!.name = input.name })
   return { name: input.name }
 }
