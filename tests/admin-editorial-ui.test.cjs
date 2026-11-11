@@ -115,20 +115,62 @@ test('onboarding forms use searchable club and invitation pickers instead of raw
   assert.match(text(invitation.props.children), /Old Lead · old@virginia\.edu/)
 })
 
-test('pending owner invitation read requires fresh platform admin and returns only replaceable invitations', async () => {
-  let query, checked
-  const mod = { exports: {} }
-  new Function('require', 'module', 'exports', ts.transpileModule(read('actions/admin-workspace.ts'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => ({
-    'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/prisma': { prisma: { clubInvitation: { findMany: async q => { query = q; return [] } } } },
-    '@/utils/platform-admin': { requirePlatformAdmin: async o => { checked = o; if (!o?.fresh) throw Error('not fresh'); return { id: 'actor' } } },
-  })[name] ?? (name.startsWith('@/') ? {} : require(name)), mod, mod.exports)
-  const api = mod.exports
+const CLUB = '00000000-0000-4000-8000-000000000009'
+/** actions/admin-workspace.ts with a stub prisma; `platformAdmin` replaces utils/platform-admin when given. */
+function workspaceActions(prisma, platformAdmin) {
+  const load = (file, mocks) => { const m = { exports: {} }; new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in mocks ? mocks[name] : name.startsWith('@/lib/') ? load(name.slice(2) + '.ts', mocks) : name.startsWith('@/') ? {} : require(name), m, m.exports); return m.exports }
+  return load('actions/admin-workspace.ts', { 'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/prisma': { prisma }, '@/utils/platform-admin': platformAdmin })
+}
+function invitationDb(club = { suspendedAt: null }) {
+  const calls = { findMany: [], audits: [] }
+  return { calls, prisma: { club: { findUnique: async () => club }, clubInvitation: { findMany: async q => { calls.findMany.push(q); return [{ id: 'inv-1' }] } }, auditLog: { create: async ({ data }) => { calls.audits.push(data) } } } }
+}
+
+test('pending owner invitation read requires fresh platform admin, returns only replaceable invitations and audits the read', async () => {
+  let checked
+  const { calls, prisma } = invitationDb()
+  const api = workspaceActions(prisma, { requirePlatformAdmin: async o => { checked = o; if (!o?.fresh) throw Error('not fresh'); return { id: 'actor' } } })
   await assert.rejects(api.listAdminPendingOwnerInvitations('not-a-uuid'))
-  assert.equal(query, undefined)
-  await api.listAdminPendingOwnerInvitations('00000000-0000-4000-8000-000000000009')
+  assert.equal(calls.findMany.length, 0)
+  assert.deepEqual(await api.listAdminPendingOwnerInvitations(CLUB), [{ id: 'inv-1' }])
   assert.equal(checked.fresh, true)
-  assert.deepEqual(query.where, { clubId: '00000000-0000-4000-8000-000000000009', status: 'PENDING', requestedRole: 'OWNER', authoritySource: 'PLATFORM_ADMIN' })
-  assert.deepEqual(Object.keys(query.select).sort(), ['email', 'expiresAt', 'id', 'invitedName'])
+  assert.deepEqual(calls.findMany[0].where, { clubId: CLUB, status: 'PENDING', requestedRole: 'OWNER', authoritySource: 'PLATFORM_ADMIN' })
+  assert.deepEqual(Object.keys(calls.findMany[0].select).sort(), ['email', 'expiresAt', 'id', 'invitedName'])
+  assert.equal(calls.audits.length, 1)
+  assert.deepEqual(calls.audits[0], { actorId: 'actor', action: 'platform.club.owner-invitations.read', targetId: CLUB, clubId: CLUB, details: { result: 'success' } })
+})
+
+test('pending owner invitation read returns nothing for a suspended or missing club', async () => {
+  for (const club of [{ suspendedAt: new Date() }, null]) {
+    const { calls, prisma } = invitationDb(club)
+    const api = workspaceActions(prisma, { requirePlatformAdmin: async () => ({ id: 'actor' }) })
+    assert.deepEqual(await api.listAdminPendingOwnerInvitations(CLUB), [])
+    assert.equal(calls.findMany.length, 0)
+    assert.equal(calls.audits.length, 0)
+  }
+})
+
+test('pending owner invitation read is refused during a view-as support session before any query', async () => {
+  const load = (file, mocks) => { const m = { exports: {} }; new Function('require', 'module', 'exports', ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in mocks ? mocks[name] : name.startsWith('@/lib/') ? load(name.slice(2) + '.ts', mocks) : require(name), m, m.exports); return m.exports }
+  const { PLATFORM_VIEW_COOKIE } = load('lib/platform-view-as.ts', {})
+  const previous = process.env.OUTCLASS_PLATFORM_ADMIN_IDS; process.env.OUTCLASS_PLATFORM_ADMIN_IDS = 'admin-user'
+  try {
+    let elevationChecked = false
+    // The real utils/platform-admin guard, with an eligible, MFA-verified admin whose browser carries the view-as cookie.
+    const guard = load('utils/platform-admin.ts', {
+      '@/utils/auth': { requireAuth: async () => ({ user: { id: 'admin-user' } }) },
+      '@/utils/prisma': { prisma: { platformAdmin: { findUnique: async () => ({ active: true }) } } },
+      '@/utils/supabase/server': { createClient: async () => ({ auth: { mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: 'aal2' }, error: null }) } } }) },
+      '@/utils/admin-elevation': { requireAdminElevation: async () => { elevationChecked = true; return { passwordVerifiedAt: new Date(), mfaVerifiedAt: new Date() } } },
+      'next/headers': { cookies: async () => ({ has: name => name === PLATFORM_VIEW_COOKIE }) },
+    })
+    const { calls, prisma } = invitationDb()
+    const api = workspaceActions(prisma, guard)
+    await assert.rejects(api.listAdminPendingOwnerInvitations(CLUB), err => err.code === 'ADMIN_SUPPORT_SESSION_CONFLICT' || /Exit impersonation/.test(err.message))
+    assert.equal(calls.findMany.length, 0)
+    assert.equal(calls.audits.length, 0)
+    assert.equal(elevationChecked, false)
+  } finally { if (previous === undefined) delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS; else process.env.OUTCLASS_PLATFORM_ADMIN_IDS = previous }
 })
 
 test('saveAdminClub (the import action) rejects a school outside the admin scope before writing', async () => {
