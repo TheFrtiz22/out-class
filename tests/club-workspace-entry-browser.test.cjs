@@ -15,6 +15,8 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
     }
   }
   delete mocks['@/components/shell/product-shell'];
+  // The shared confirm dialog is real, as the root layout mounts it.
+  delete mocks['@/components/ui/confirm-dialog'];
   // The persistent shell (as app/(workspace)/layout.tsx mounts it) wraps the workspace page.
   for (const real of ['workspace-shell', 'workspace-shell-context', 'shell-state']) delete mocks['@/components/shell/' + real];
   delete mocks['@/components/auth-session-boundary'];

@@ -95,6 +95,7 @@ import { PillGroup } from "@/components/ui/segmented-control"
 import { RangeSlider } from "@/components/ui/range-slider"
 import { Toggle } from "@/components/ui/toggle"
 import { pluralize } from "@/lib/copy/terms"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -172,6 +173,7 @@ export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChang
 
 function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
   const router=useRouter();
+  const confirm=useConfirm();
   const [votingSelection,setVotingSelection]=useState<string[]>([]);
   const previewId = preview?.applicationId
   const demo = useDemoMode()
@@ -917,9 +919,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                       {canManageRecruitment && <DropdownMenuItem onSelect={() => { setTargetRound(active.roundId); setPanel("round") }}>Move round…</DropdownMenuItem>}
                       {canManageRecruitment && !activeRound?.anonymousReview && <DropdownMenuItem onSelect={() => setPanel("cycle")}>Recruitment cycle assignment…</DropdownMenuItem>}
                       {active.status === "REJECTED" && canDecide && <DropdownMenuItem onSelect={() => setPanel("reconsider")}>Reconsider application…</DropdownMenuItem>}
-                      {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && canDecide && <DropdownMenuItem disabled={busy || dirty} onSelect={async () => { if (!window.confirm("Rescind this pending offer? Accepted memberships are managed in member management.")) return; setBusy(true); try { await revokeRecruitmentOffer(membership.clubId, active.id); setRevision(v => v + 1); setMessage("Pending offer rescinded."); preview?.onChanged() } catch { setMessage("Only pending offers can be rescinded. Manage existing members through member management.") } finally { setBusy(false) } }}>Rescind pending offer</DropdownMenuItem>}
+                      {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && canDecide && <DropdownMenuItem disabled={busy || dirty} onSelect={async () => { if (!(await confirm({ title: "Rescind this pending offer?", description: "Accepted memberships are managed in member management.", confirmLabel: "Rescind offer", tone: "danger" }))) return; setBusy(true); try { await revokeRecruitmentOffer(membership.clubId, active.id); setRevision(v => v + 1); setMessage("Pending offer rescinded."); preview?.onChanged() } catch { setMessage("Only pending offers can be rescinded. Manage existing members through member management.") } finally { setBusy(false) } }}>Rescind pending offer</DropdownMenuItem>}
                       {interviewLinks.map(item => <DropdownMenuItem key={item.tool} disabled={busy || dirty} asChild><Link href={interviewHref(item.tool)} onClick={e => { if (busy || dirty || !canLeaveWorkspace()) e.preventDefault() }}>{item.label}</Link></DropdownMenuItem>)}
-                      <DropdownMenuItem disabled={busy} onSelect={() => { if (dirty && !window.confirm("Discard your unsaved review and reload applicant data?")) return; setActiveId(null); setDecision(""); setRevision(v => v + 1) }}>Reload applicant data</DropdownMenuItem>
+                      <DropdownMenuItem disabled={busy} onSelect={async () => { if (dirty && !(await confirm({ title: "Discard review and reload?", description: "Your unsaved review will be lost.", confirmLabel: "Discard and reload", tone: "danger" }))) return; setActiveId(null); setDecision(""); setRevision(v => v + 1) }}>Reload applicant data</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
