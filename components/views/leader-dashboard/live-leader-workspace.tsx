@@ -89,6 +89,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { NativeSelect } from "@/components/ui/native-select"
 import { SearchField } from "@/components/ui/search-field"
+import { readApplicantView, writeApplicantView, type ApplicantView } from "@/lib/applicant-view"
 import { FilterPopover } from "@/components/ui/filter-popover"
 import { PillSelect } from "@/components/ui/pill-select"
 import { PillGroup } from "@/components/ui/segmented-control"
@@ -212,7 +213,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [rating, setRating] = useState("")
   const clearApplicantFilters = () => { setQuery(""); setRound(""); setStatus(""); setReview(""); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
   const [compact, setCompact] = useState(false)
-  const [view, setView] = useState<"list" | "kanban" | "ranked">("list")
+  // The layout lives in the URL (`applicantView=`) like the decision filter; Decide's list has no layout choice.
+  const [view, setViewState] = useState<ApplicantView>(() => decisionsOnly ? "list" : readApplicantView(initialParams.current))
+  const setView = useCallback((value: ApplicantView) => {
+    setViewState(value)
+    if (preview || decisionsOnly || typeof window === "undefined" || !window.location?.href || !window.history) return
+    window.history.replaceState(window.history.state, "", writeApplicantView(new URL(window.location.href), value))
+  }, [preview, decisionsOnly])
   // Ranked review opens the same masked single-applicant review (with finalized interviewer feedback).
   const [rankedOpen, setRankedOpen] = useState<string | null>(null)
   const [rankedChanged, setRankedChanged] = useState(0)
