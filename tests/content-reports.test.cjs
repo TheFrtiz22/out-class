@@ -123,7 +123,10 @@ test('the admin Reports list shows a new content report with target link, reason
     '@/actions/platform-organization-onboarding': {}, '@/actions/club-onboarding': {}, '@/actions/platform-admin': {}, '@/utils/club-onboarding': {}, '@/utils/email': {}, '@/utils/invitation-delivery': {}, '@/utils/invitation-background': {},
   })
   const rows = await server.listAdminReports({})
-  assert.deepEqual(where.where.kind, { not: 'SUPPORT' })
+  // Support requests (and, once account deletion lands, deletion requests) stay out of the Reports list.
+  const kind = where.where.kind
+  assert.ok(kind.not === 'SUPPORT' || (kind.notIn || []).includes('SUPPORT'), JSON.stringify(kind))
+  assert.notEqual(kind, 'SUPPORT')
   assert.equal(rows[0].target.label, 'Club announcement · Chess: Dues'); assert.equal(rows[0].target.href, '/platform/clubs?clubId=club-1')
   assert.deepEqual(rows[0].reporter, { id: 'reporter', email: 'r@virginia.edu', name: 'Rae Lee' })
   assert.match(rows[0].summary, /Harassment/)
