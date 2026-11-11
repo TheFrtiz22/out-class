@@ -3,7 +3,7 @@ import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import Link from "next/link"
 import { eventScheduleLabel, eventDateLabel, eventTimeLabel } from "@/lib/campus-events"
 import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, ArrowUpRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -32,6 +32,7 @@ export function ClubProfileView({
   onNavigate,
   preview = false,
   backLabel = "Back to Explore",
+  breadcrumbs,
   serverNow,
 }: {
   club: DirectoryClub
@@ -39,6 +40,8 @@ export function ClubProfileView({
   onNavigate: (view: ViewId) => void
   preview?: boolean
   backLabel?: string
+  /** On the club's own page, breadcrumbs take the place of the back button. */
+  breadcrumbs?: ReactNode
   /** The server's render time, when this view is server-rendered: deadline state follows the server. */
   serverNow?: number
 }) {
@@ -192,10 +195,10 @@ export function ClubProfileView({
   const recruitmentSection = !!deadlineText || recruitment.expired || !!application || showRequirements || readMarketing(publicProfile.marketing).sections.some(section => section.visible && section.kind === "recruitment")
   return (
     <article className="oc-club-profile">
-      <Button variant="ghost" className="oc-club-back" onClick={onBack} disabled={preview}>
+      {breadcrumbs ?? <Button variant="ghost" className="oc-club-back" onClick={onBack} disabled={preview}>
         <ArrowLeft size={16} aria-hidden="true" />
         {backLabel}
-      </Button>
+      </Button>}
       {!real && (
         <p className="oc-club-preview-note">
           {preview ? "Club profile preview" : "Sample club profile"} ·{" "}

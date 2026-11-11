@@ -79,6 +79,8 @@ test("an indexable live club gets escaped Organization JSON-LD from its shown fi
   assert.equal(org.url, "https://www.out-class.net/club/c1")
   assert.deepEqual(org.sameAs, ["https://club.example"])
   assert.equal(org.logo, undefined, "uploaded or inline images are not published as logo URLs")
+  const crumbs = data["@graph"].find(node => node["@type"] === "BreadcrumbList")
+  assert.deepEqual(crumbs.itemListElement.map(item => item.name), ["OutClass", "UVA", "Club <One>"])
   p = page({ club, seo: { id: "c1", name: "Club", description, claimedAt: null } }); p.settle()
   assert.equal(children(await p.run).some(child => child.type === "script"), false, "not indexable, no JSON-LD")
   p = page({ club: null }); p.settle(); await assert.rejects(p.run)

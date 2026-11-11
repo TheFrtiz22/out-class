@@ -323,3 +323,13 @@ fieldset { min-inline-size: 0; }
 @media (prefers-reduced-motion: reduce) {
   .oc-qr-presenter, .oc-qr-presenter-overlay { animation: none !important; transition: none !important; }
 }
+
+/* Breadcrumbs: quiet, one line on wide screens, wrapping on phones. */
+.oc-breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin: 0; padding: 0; list-style: none; font-size: var(--oc-text-small); color: var(--muted-foreground); }
+.oc-breadcrumbs li { display: inline-flex; align-items: center; gap: .25rem; min-width: 0; }
+.oc-breadcrumbs a { display: inline-flex; align-items: center; min-height: 2.75rem; color: inherit; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: color var(--oc-duration-micro, 120ms), text-decoration-color var(--oc-duration-micro, 120ms); }
+.oc-breadcrumbs a:hover { color: var(--foreground); text-decoration-color: currentColor; }
+.oc-breadcrumbs a:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }
+.oc-breadcrumbs [aria-current="page"] { color: var(--foreground); font-weight: 500; overflow-wrap: anywhere; }
+.oc-breadcrumbs-separator { flex-shrink: 0; opacity: .6; }
+@media (prefers-reduced-motion: reduce) { .oc-breadcrumbs a { transition: none; } }

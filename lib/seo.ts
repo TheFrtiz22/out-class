@@ -74,6 +74,16 @@ export function serializeJsonLd(data: unknown): string {
 
 export type ClubStructuredDataInput = { id: string; name: string; description: string; logoUrl?: string | null; sameAs?: (string | null | undefined)[] }
 
+/**
+ * The trail above a club's own page. Signed out (what crawlers see) it follows the public pages and
+ * matches the BreadcrumbList JSON-LD; signed in it starts at Explore.
+ */
+export function clubBreadcrumbs(clubName: string, { signedIn = false }: { signedIn?: boolean } = {}) {
+  return signedIn
+    ? [{ label: "Explore", href: "/explore" }, { label: clubName }]
+    : [{ label: "OutClass", href: "/" }, { label: "UVA", href: "/uva" }, { label: clubName }]
+}
+
 /** Organization data for an indexable public club page, from fields the page already shows. */
 export function clubStructuredData(club: ClubStructuredDataInput) {
   const url = new URL(`/club/${encodeURIComponent(club.id)}`, SITE_URL).toString()
@@ -91,6 +101,16 @@ export function clubStructuredData(club: ClubStructuredDataInput) {
         url,
         ...(logo ? { logo } : {}),
         ...(sameAs.length ? { sameAs } : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: clubBreadcrumbs(club.name).map((crumb, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: crumb.label,
+          item: crumb.href ? new URL(crumb.href, SITE_URL).toString() : url,
+        })),
       },
     ],
   }
