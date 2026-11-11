@@ -6,7 +6,7 @@ import { ApplicationStatusDetail } from "@/components/applications/application-s
 import { useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/ui/page-header"
 import { MetricStrip } from "@/components/product/metric-strip"
-import { SegmentedControl } from "@/components/product/segmented-control"
+import { UnderlineTabs } from "@/components/ui/underline-tabs"
 import { EmptyState } from "@/components/ui/empty-state"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
@@ -339,7 +339,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
         <EmptyState icon={<FilePenLine />} title="No applications yet." description="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button onClick={() => onNavigate?.("explore")}>Explore clubs</Button>} />
       ) : (
         <>
-          <SegmentedControl animated label="Application stage" value={stage} onChange={choose} options={applicationStages.map(item => ({ value: item.id, label: `${item.label} (${counts[item.id]})` }))} />
+          <UnderlineTabs label="Application stage" value={stage} onChange={choose} items={applicationStages.map(item => ({ id: item.id, label: item.label, count: counts[item.id] }))} />
           {stage !== "drafts" && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
           <p role="status" className="sr-only">{pluralize(visible.length, "application")} shown</p>
           {syncNote && <p role="status" className="text-xs text-muted-foreground">{syncNote}</p>}

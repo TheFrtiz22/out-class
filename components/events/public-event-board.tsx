@@ -173,16 +173,6 @@ export function PublicEventBoard() {
       {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
       {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
       <div className="oc-event-toolbar">
-        <SegmentedControl
-          label="Event date range"
-          className="oc-event-periods"
-          value={filters.period ?? "All"}
-          onChange={(period) => filter({ period })}
-          options={(["All", "Today", "This Week", "Weekend"] as const).map((period) => ({
-            value: period,
-            label: period === "All" ? "All Events" : period,
-          }))}
-        />
         <div className="oc-event-toolbar-actions">
         <SearchField
           aria-label="Search events"
@@ -192,6 +182,9 @@ export function PublicEventBoard() {
           onClear={() => filter({ query: "" })}
           containerClassName="oc-event-search"
         />
+        <PillSelect label="When" prefix="When" size="compact" className="oc-event-when" active={(filters.period ?? "All") !== "All"}
+          value={filters.period ?? "All"} onChange={(period) => filter({ period: period as EventFilters["period"] })}
+          options={(["All", "Today", "This Week", "Weekend"] as const).map((period) => ({ value: period, label: period === "All" ? "Any time" : period === "This Week" ? "This week" : period }))} />
         <FilterPopover count={menuFilters} label="Filter" title="Event filters"
           footer={<Button type="button" variant="ghost" size="sm" onClick={() => setFilters(initialFilters)}>Reset filters</Button>}>
             {identity && <Toggle label="Saved events" checked={!!filters.savedOnly} onCheckedChange={(savedOnly) => filter({ savedOnly })} />}

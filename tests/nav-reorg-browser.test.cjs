@@ -1,6 +1,6 @@
 // Nav reorganization in a real browser: the real shell and ClubWorkspace on Demo Mode data (leader-screens fixture).
 // Old links land on their new homes; Decide's round picker, steps and counts; the Recruiting settings drawer from
-// both entry points; the Calendar filter; Review applicants with ←/→.
+// both entry points; the Calendar sections; Review applicants with ←/→.
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -8,7 +8,7 @@ const { chromium } = require('playwright')
 const { expect } = require('playwright/test')
 const { startLeaderScreens } = require('./helpers/leader-screens-fixture.cjs')
 
-test('browser: old links, Decide, Recruiting settings drawer, Calendar filter and Review applicants', { timeout: 300000 }, async t => {
+test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar sections and Review applicants', { timeout: 300000 }, async t => {
   const fixture = await startLeaderScreens(); t.after(() => fixture.close(), { timeout: 30000 })
   const browser = await chromium.launch({ headless: true, ...(!fs.existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) }); t.after(() => browser.close(), { timeout: 30000 })
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } }); t.after(() => context.close())
@@ -59,39 +59,50 @@ test('browser: old links, Decide, Recruiting settings drawer, Calendar filter an
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' })
   await expect(recruiting.getByRole('button', { name: 'Auto-reject rules', exact: true })).toBeFocused()
 
-  // Decide: round picker, Review/Vote/Send as real tabs with per-round counts, the round kept in the URL.
+  // Decide: Review → Vote → Send as a stepper with counts as badges, the round dropdown in the header row, both in the URL.
   await open('section=recruitment&tool=decisions')
   await expect(page.locator('main h1').first()).toHaveText('Decide')
-  const steps = page.getByRole('tablist', { name: 'Decide steps', exact: true })
-  await expect(steps.getByRole('tab')).toHaveCount(3)
-  const reviewStep = steps.getByRole('tab', { name: /^Step 1: Review/ }), vote = steps.getByRole('tab', { name: /^Step 2: Vote/ }), send = steps.getByRole('tab', { name: /^Step 3: Send/ })
-  await expect(reviewStep).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('tabpanel').getByRole('button', { name: 'Review applicants needing a decision', exact: true })).toBeVisible()
-  await expect(reviewStep).toHaveText(/^1Review$/); await expect(vote).toHaveText(/^2Vote · \d+$/); await expect(send).toHaveText(/^3Send · \d+$/)
-  await vote.click(); await expect(vote).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('tabpanel')).toBeVisible()
-  const picker = page.getByRole('group', { name: 'Round', exact: true })
-  await expect(picker.getByRole('button', { name: 'All rounds', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  const round = picker.getByRole('button').nth(1), roundName = await round.textContent()
+  const steps = page.getByRole('navigation', { name: 'Decide steps', exact: true })
+  await expect(steps.getByRole('button')).toHaveCount(3)
+  const reviewStep = steps.getByRole('button', { name: /^Review/ }), vote = steps.getByRole('button', { name: /^Vote/ }), send = steps.getByRole('button', { name: /^Send/ })
+  await expect(reviewStep).toHaveAttribute('aria-current', 'step')
+  await expect(page.getByRole('button', { name: 'Review applicants needing a decision', exact: true })).toBeVisible()
+  await expect(reviewStep).toHaveText(/^1Review$/); await expect(vote).toHaveText(/^2Vote, \d+ sessions? to run\d+$/); await expect(send).toHaveText(/^3Send, \d+ applicants? ready to send\d+$/)
+  await expect(vote.locator('.oc-stepper-badge')).toHaveText(/^\d+$/); await expect(send.locator('.oc-stepper-badge')).toHaveText(/^\d+$/)
+  await expect(page.locator('.oc-decide-steps li:first-child')).toHaveCSS('display', 'flex')
+  await page.getByRole('button', { name: 'Next: Vote', exact: true }).click()
+  await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting' }))
+  await expect(vote).toHaveAttribute('aria-current', 'step')
+  const picker = page.getByRole('combobox', { name: 'Round', exact: true })
+  await expect(picker).toHaveText(/Round:?\s*All/)
+  const header = await page.locator('.oc-decide-header').boundingBox(), pickerBox = await picker.boundingBox()
+  assert.ok(pickerBox.y >= header.y && pickerBox.y + pickerBox.height <= header.y + header.height + 1, 'the round dropdown sits in the header row')
+  await picker.click(); const round = page.getByRole('option').nth(1), roundName = (await round.textContent()).trim()
   await round.click(); await expect.poll(params).toEqual(expect.objectContaining({ roundId: expect.any(String) }))
-  await expect(picker.getByRole('button', { name: roundName, exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(picker).toContainText(roundName)
   await send.click(); await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'letters', roundId: expect.any(String) }))
-  await expect(send).toHaveAttribute('aria-selected', 'true')
+  await expect(send).toHaveAttribute('aria-current', 'step')
   await page.getByRole('heading', { name: 'Decision letters', exact: true }).waitFor()
   await expect(page.getByRole('group', { name: 'Letter outcome' }).getByRole('button')).toHaveText(['Accepted', 'Not accepted', 'Waitlisted'])
-  // Arrow keys move between the steps (tab semantics).
-  await send.focus(); await page.keyboard.press('ArrowLeft'); await expect(vote).toBeFocused()
+  await expect(page.getByRole('button', { name: /^Next:/ })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Back to Vote', exact: true }).click()
+  await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting' }))
+  await page.goBack(); await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'letters' }))
 
-  // Calendar: All / Meetings / Events, kept in the URL.
+  // Calendar: no All / Meetings / Events switcher; both sections show with "Jump to" links; old type= links still work.
   await open('section=calendar')
-  const filter = page.getByRole('group', { name: 'Show', exact: true })
-  await expect(filter.getByRole('button')).toHaveText(['All', 'Meetings', 'Events'])
-  await expect(filter.getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await filter.getByRole('button', { name: 'Events', exact: true }).click()
-  await expect.poll(params).toEqual(expect.objectContaining({ section: 'calendar', type: 'events' }))
+  await expect(page.getByRole('group', { name: 'Show', exact: true })).toHaveCount(0)
+  const jump = page.getByRole('navigation', { name: 'Calendar sections', exact: true })
+  await expect(jump.getByRole('link')).toHaveText(['Meetings', 'Events'])
+  await expect(page.getByRole('heading', { name: 'Meetings', exact: true })).toBeVisible()
   await expect(page.getByText(/Event management is not available in Demo/)).toBeVisible()
-  await filter.getByRole('button', { name: 'Meetings', exact: true }).click()
-  await expect.poll(params).toEqual(expect.objectContaining({ type: 'meetings' }))
+  await jump.getByRole('link', { name: 'Events', exact: true }).click()
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#calendar-events')
+  await expect(page.getByRole('switch', { name: 'Show past', exact: true })).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByRole('combobox', { name: 'Audience', exact: true })).toHaveText(/Audience:?\s*All/)
+  await open('section=calendar&type=events')
+  await expect(page.getByRole('heading', { name: 'Meetings', exact: true })).toBeAttached()
+  await expect(page.getByText(/Event management is not available in Demo/)).toBeInViewport()
 
   // Review applicants opens the full-screen review on Pending; ←/→ move between applicants ("X of N").
   await open('section=recruitment&tool=applicants')

@@ -47,5 +47,6 @@
   @keyframes oc-nav-collapse { from { height: var(--radix-collapsible-content-height); opacity: 1; } to { height: 0; opacity: 0; } }
 }
 
-/* Decide: Review, Vote and Send read as ordered steps (1, 2, 3) inside the segmented tabs. */
-.oc-decide-step-number { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; margin-right: .375rem; border-radius: var(--oc-radius-full); border: 1px solid currentColor; font-size: var(--oc-size-11, 11px); font-variant-numeric: tabular-nums; opacity: .8; }
+/* Decide: the Review → Vote → Send stepper and the round dropdown share the header row. */
+.oc-decide-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; }
+.oc-decide-header .oc-decide-steps { flex: 1 1 22rem; min-width: 0; max-width: 34rem; }

@@ -28,10 +28,14 @@ const dateLabel=taskDate
 function relativeDue(value:Date|string|null,now:number) { if(!value)return "No due date";const due=new Date(value),today=new Date(now),tomorrow=new Date(now);tomorrow.setDate(tomorrow.getDate()+1);const time=due.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});return due.toDateString()===today.toDateString()?`Today ${time}`:due.toDateString()===tomorrow.toDateString()?`Tomorrow ${time}`:taskDate(value) }
 function isMissing(task:Task,assignment:Assignment,now:number){return task.status!=="DONE"&&!assignment.reviewedAt&&(!assignment.submittedAt||!!assignment.revisionRequestedAt)&&!!task.dueAt&&+new Date(task.dueAt)<now}
 function resources(task:Task){return taskInputSchema.shape.resources.safeParse(task.resources).data??[]}
+const initialTaskFilter:Record<string,string>={week:"due",overdue:"overdue",all:"all"}
+
 export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnly=false,initialData}:{clubId:string;initialData?:Workspace;embedded?:boolean;personalOnly?:boolean;initialScope?:string}) {
   const {user,loading}=useAuth(),demo=useDemoMode(),membership=user?.memberships.find(member=>member.clubId===clubId)
   const confirm=useConfirm()
-  const [workspaceData,setWorkspace]=useState<Workspace|null>(initialData??null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[refresh,setRefresh]=useState(0),[loaded,setLoaded]=useState(!!initialData),[scope,setScope]=useState(initialScope),[filter,setFilter]=useState("open"),[query,setQuery]=useState(""),[activeId,setActive]=useState<string|null>(null),[dirty,setDirty]=useState(false)
+  // Club home's count tiles open Tasks with `taskStatus=week|overdue|all` applied.
+  const taskStatusParam=useSearchParams().get("taskStatus")
+  const [workspaceData,setWorkspace]=useState<Workspace|null>(initialData??null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[refresh,setRefresh]=useState(0),[loaded,setLoaded]=useState(!!initialData),[scope,setScope]=useState(initialScope),[filter,setFilter]=useState(initialTaskFilter[taskStatusParam??""]??"open"),[query,setQuery]=useState(""),[activeId,setActive]=useState<string|null>(null),[dirty,setDirty]=useState(false)
   const firstRead=useRef(!!initialData)
   const taskTrigger=useRef<HTMLElement|null>(null),consumedFocus=useRef<string|null>(null),focusedTask=useSearchParams().get("taskId"),now=Date.now()
   const workspace=workspaceData?.clubId===clubId?workspaceData:null,manager=!personalOnly&&!!workspace?.manage&&scope==="team",active=workspace?.tasks.find(task=>task.id===activeId)
@@ -53,7 +57,7 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
     return filter==="all"||filter==="projects"&&task.kind==="PROJECT"||filter==="completed"&&(task.status==="DONE"||own.reviewedAt)||task.kind==="TASK"&&(filter==="submitted"&&submitted||filter==="overdue"&&isMissing(task,own,now)||filter==="due"&&outstanding&&!isMissing(task,own,now)||filter==="open"&&outstanding)
   })
   const staleNote=stale&&loaded&&workspace&&!error?<p role="status" className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">Couldn’t update tasks. Showing the last loaded list.<Button variant="ghost" size="sm" disabled={busy} onClick={()=>setRefresh(value=>value+1)}>Try again</Button></p>:null
-  if(manager&&workspace)return <div>{!embedded&&<PageHeader eyebrow={membership?.club.name??"Club workspace"} title="Tasks"/>}{demo.isDemoEnabled&&<p className="mb-4 text-xs text-muted-foreground">Fictional demo work · files stay on this device.</p>}{staleNote}<TaskManagerWorkspace workspace={workspace} run={run} busy={busy} error={error} onPersonal={()=>{setScope("mine");setFilter("open")}} onDirty={setDirty}/></div>
+  if(manager&&workspace)return <div>{!embedded&&<PageHeader eyebrow={membership?.club.name??"Club workspace"} title="Tasks"/>}{demo.isDemoEnabled&&<p className="mb-4 text-xs text-muted-foreground">Fictional demo work · files stay on this device.</p>}{staleNote}<TaskManagerWorkspace initialStatus={taskStatusParam} workspace={workspace} run={run} busy={busy} error={error} onPersonal={()=>{setScope("mine");setFilter("open")}} onDirty={setDirty}/></div>
   return <div className="oc-personal-tasks space-y-4" data-unsaved={dirty} data-saving={busy}>
     {!embedded&&<><nav aria-label="Club workspace" className="mb-3 flex flex-wrap gap-3 text-sm"><Link className="underline" href={`/club/${clubId}/workspace`}>Club workspace</Link></nav><PageHeader eyebrow={membership?.club.name??"Your club"} title="Tasks"/></>}
     {demo.isDemoEnabled&&<p className="text-xs text-muted-foreground">Fictional demo work. File uploads are disabled in Demo Mode.</p>}

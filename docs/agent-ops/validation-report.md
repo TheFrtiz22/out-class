@@ -231,3 +231,9 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
 - 2b437ea rebuild without a DSN: shared first-load JS 105 kB (= main 00840ee); /home 186 kB, /login 209 kB vs 208 kB on main. tests/sentry-scrub 6/6, typecheck ok after the change.
 - First-load deltas vs main on the other branches (no keys set): security/turnstile /login +1 kB, /signup +1 kB, /platform/login +1 kB, /request-school +1 kB; scheduling/outlook-busy /settings/availability +2 kB.
+## 2026-11-11 UI-CONTROLS-1 ui/control-cleanup (stacked on applicants/review-flow, #281)
+- typecheck ok. lint 0 errors / 18 warnings (unchanged from #281). ui-controls OK (allowlist note about outclass-qr-code is pre-existing).
+- Unit (378 files, non-browser): 2174 tests, 2137 pass, 4 fail, 33 skipped. The 4 failing files (anonymous-review, integration-audit, interview-collaboration, performance-regressions) fail only because this container has no Prisma query engine binary; same on the base branch.
+- Browser (70 *-browser.test.cjs): all pass except interview-enter (fails on main and #281 too). Updated: nav-reorg, club-workspace-refinements, interview-round-workflow, interview-tab-retention, interview-date-sections, interview-entry, round-scoped-review, task-cleanup, scheduling-simplification.
+- Screenshots: 12 pages × desktop 1440 and 375, before (#281) and after; document scrollWidth equals viewport width on every page at 375.
+- Not run: pnpm build, DB e2e suites, test:migrations (no schema change).

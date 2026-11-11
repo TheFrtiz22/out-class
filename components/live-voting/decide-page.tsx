@@ -13,8 +13,8 @@ import { getWorkspaceRounds } from "@/lib/workspace-api";
 import { liveRoomPath } from "@/lib/voting-room";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
 import { pluralize } from "@/lib/copy/terms";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Stepper, StepperNav } from "@/components/ui/stepper";
+import { RoundSelect } from "@/components/ui/round-select";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -76,19 +76,22 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
     const count = counts?.[step];
     return count == null ? undefined : step === "voting" ? `${pluralize(count, "session")} to run` : `${pluralize(count, "applicant")} ready to send`;
   };
+  const steps = decideSteps.filter(step => decideTab(step.id, access) === step.id);
+  const index = steps.findIndex(step => step.id === tab);
+  const open = (step: DecideTab) => go(decisionsHref(clubId, step, search));
   return <div className="oc-decide space-y-5">
-    {rounds.length > 0 && <SegmentedControl label="Round" className="oc-command-pipeline" size="compact" value={rounds.some(r => r.id === roundId) ? roundId : ""}
-      onChange={setRound} options={[{ value: "", label: "All rounds" }, ...rounds.map(r => ({ value: r.id, label: r.name }))]} />}
-    <Tabs value={tab} onValueChange={value => go(decisionsHref(clubId, value as DecideTab, search))}>
-      <TabsList variant="segmented" aria-label="Decide steps" className="oc-decide-steps">
-        {decideSteps.filter(step => decideTab(step.id, access) === step.id).map((step, index) => <TabsTrigger key={step.id} value={step.id} aria-label={[`Step ${index + 1}: ${step.label}`, label(step.id)].filter(Boolean).join(", ")}>
-          <span className="oc-decide-step-number" aria-hidden="true">{index + 1}</span>{step.label}{counts?.[step.id] != null && <span className="oc-segment-count" aria-hidden="true">{" · "}{counts[step.id]}</span>}
-        </TabsTrigger>)}
-      </TabsList>
-      {access.canDecide && <TabsContent value="review" className="mt-5">{tab === "review" && <DecideReview key={roundId} scoped decisionsOnly initialDecision="pending" />}</TabsContent>}
-      {access.canVote && <TabsContent value="voting" className="mt-5">{tab === "voting" && <VotingRoomLanding clubId={clubId} />}</TabsContent>}
-      {access.canSend && <TabsContent value="letters" className="mt-5 space-y-6">{tab === "letters" && access.canDecide && <StagedDecisionsPanel clubId={clubId} roundId={roundId || undefined} />}{tab === "letters" && <SendStep clubId={clubId} member={member} rows={rows} failed={!!rooms?.failed && rooms.identity === identity} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} />}</TabsContent>}
-    </Tabs>
+    <div className="oc-decide-header">
+      <Stepper label="Decide steps" className="oc-decide-steps" current={tab} onSelect={open}
+        steps={steps.map(step => ({ id: step.id, label: <>{step.label}{label(step.id) && <span className="sr-only">, {label(step.id)}</span>}</>, badge: counts?.[step.id] ?? undefined }))} />
+      {rounds.length > 0 && <RoundSelect rounds={rounds} value={rounds.some(r => r.id === roundId) ? roundId : ""} onChange={setRound} className="oc-decide-round" />}
+    </div>
+    <section aria-label={steps[index]?.label} className="space-y-6">
+      {tab === "review" && access.canDecide && <DecideReview key={roundId} scoped decisionsOnly initialDecision="pending" />}
+      {tab === "voting" && access.canVote && <VotingRoomLanding clubId={clubId} />}
+      {tab === "letters" && access.canSend && <>{access.canDecide && <StagedDecisionsPanel clubId={clubId} roundId={roundId || undefined} />}<SendStep clubId={clubId} member={member} rows={rows} failed={!!rooms?.failed && rooms.identity === identity} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} /></>}
+    </section>
+    <StepperNav onBack={index > 0 ? () => open(steps[index - 1].id) : undefined} backLabel={index > 0 ? `Back to ${steps[index - 1].label}` : undefined}
+      onNext={index >= 0 && index < steps.length - 1 ? () => open(steps[index + 1].id) : undefined} nextLabel={index < steps.length - 1 ? `Next: ${steps[index + 1]?.label}` : undefined} />
   </div>;
 }
 

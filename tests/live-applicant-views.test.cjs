@@ -72,21 +72,22 @@ test('grading: any number of categories on their own scales, averaged out of 10;
   assert.equal(rubric.rubricScoresSchema.safeParse({ categories: [{ ...cat, score: 11 }], overall: 7, overridden: true }).success, false)
 })
 
-test('one toolbar: view · status tabs · search · sort · filters · ⋯ (Export CSV and settings); one Review applicants button', () => {
+test('one toolbar: view · status dropdown · search · sort · filters · ⋯ (Export CSV and settings); one Review applicants button', () => {
   const src = read('components/views/leader-dashboard/live-leader-workspace.tsx')
-  const order = ['label="Applicant view"', '{statusTabs}', 'containerClassName="oc-toolbar-search"', 'oc-toolbar-sort', '<FilterPopover', 'aria-label="More applicant tools"']
+  const order = ['label="Applicant view"', '{statusSelect}', 'containerClassName="oc-toolbar-search"', 'oc-toolbar-sort', '<FilterPopover', 'aria-label="More applicant tools"']
   const at = order.map(token => src.indexOf(token))
   assert.ok(at.every(i => i > 0), JSON.stringify(at))
   assert.deepEqual([...at].sort((a, b) => a - b), at)
   const toolbar = src.slice(src.indexOf('oc-applicants-toolbar"'), src.indexOf('aria-label="More applicant tools"') + 1200)
   assert.match(toolbar, /Export CSV/); assert.match(toolbar, /Recruiting settings/); assert.match(toolbar, /Grading categories/)
-  assert.match(src, /label="Decision" size="compact" className="oc-status-tabs"/)
-  assert.match(src, /url\.searchParams\.set\("decision", value\)/, 'tabs keep ?decision=')
+  assert.match(src, /<PillSelect label="Decision" prefix="Status" size="compact" className="oc-status-select"/, 'status is one "Status: All ▾" dropdown with counts')
+  assert.match(src, /label: `\$\{group\.label\} \(\$\{/)
+  assert.match(src, /url\.searchParams\.set\("decision", value\)/, 'the status dropdown keeps ?decision=')
   assert.equal((src.match(/: "Review applicants"}/g) || []).length, 1)
   assert.doesNotMatch(src, /Start quick review|Quick decisions|quickQueue|<Sheet|Accept & next/)
   assert.ok(!fs.existsSync('lib/quick-review-queue.ts'))
   const css = read('components/applicant-review/applicant-review.css')
-  assert.match(css, /container-type: inline-size/); assert.match(css, /\.oc-status-tabs \{[^}]*overflow-x: auto/)
+  assert.match(css, /container-type: inline-size/); assert.match(css, /\.oc-status-select \{ flex: none; \}/)
 })
 
 test('the review flow is the one decision UI: shared by Applicants, the board, Ranked, the dashboard and Decide', () => {

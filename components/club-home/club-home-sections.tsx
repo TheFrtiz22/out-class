@@ -1,10 +1,8 @@
 "use client"
 import Link from "next/link"
-import { useState } from "react"
 import { handleClubLink } from "@/lib/workspace-navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { ArrowRight, UserRound } from "@/components/icons"
-import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardCard, DashboardFoot, DashboardQuiet, DateChip, DateChipList, GlassRow, GlassRowList, MetricTiles, PipelineBars, type MetricTile } from "@/components/product/dashboard/dashboard"
@@ -110,32 +108,39 @@ export function NextMeetingCard({ data, hrefs, index, onOpen }: { data: Overview
 }
 
 type TaskTab = "week" | "overdue" | "feedback" | "all"
-/** Due this week · Overdue · Awaiting feedback. Task managers see the team (per task); everyone else sees their own. */
-export function TasksCard({ data, hrefs, index, onTask }: { data: Overview; hrefs: RailHrefs; index: number; onTask: (taskId: string, assignmentId: string | undefined, title: string, review?: boolean) => void }) {
+/** Due this week · Overdue · Awaiting feedback as three count tiles; each opens Tasks with that filter applied
+ * (`taskStatus=`). Task managers see the team (per task); everyone else sees their own work. */
+export function TasksCard({ data, hrefs, index }: { data: Overview; hrefs: RailHrefs; index: number; onTask?: (taskId: string, assignmentId: string | undefined, title: string, review?: boolean) => void }) {
   const op = data.operations, now = +new Date(op.asOf), team = hasPermission(data.membership, "tasks.manage")
   const week = (at: Date | string | null | undefined) => !!at && +new Date(at) >= now && +new Date(at) <= now + 7 * 86_400_000
-  const rows: Record<TaskTab, { id: string; title: string; detail: string; open: () => void }[]> = team ? {
-    week: op.teamTasks.filter(t => week(t.dueAt)).map(t => ({ id: t.id, title: t.title, detail: `Due ${memberDate(t.dueAt)} · ${t.outstanding} open`, open: () => onTask(t.id, undefined, t.title) })),
-    overdue: op.teamTasks.filter(t => isOverdue(t.dueAt, now)).map(t => ({ id: t.id, title: t.title, detail: `Overdue since ${memberDate(t.dueAt)} · ${t.outstanding} open`, open: () => onTask(t.id, undefined, t.title) })),
-    feedback: op.reviewWork.map(r => ({ id: r.id, title: r.task.title, detail: r.submittedAt ? `Submitted ${memberDate(r.submittedAt)}` : "Submitted", open: () => onTask(r.task.id, r.id, r.task.title, true) })),
-    all: [],
+  const counts: Record<TaskTab, number> = team ? {
+    week: op.teamTasks.filter(t => week(t.dueAt)).length,
+    overdue: op.teamTasks.filter(t => isOverdue(t.dueAt, now)).length,
+    feedback: op.reviewWork.length,
+    all: 0,
   } : {
-    week: data.work.filter(w => week(w.task.dueAt)).map(w => ({ id: w.id, title: w.task.title, detail: `Due ${memberDate(w.task.dueAt!)}`, open: () => onTask(w.task.id, w.id, w.task.title) })),
-    overdue: data.work.filter(w => isOverdue(w.task.dueAt, now)).map(w => ({ id: w.id, title: w.task.title, detail: `Overdue · due ${memberDate(w.task.dueAt!)}`, open: () => onTask(w.task.id, w.id, w.task.title) })),
-    feedback: [],
+    week: data.work.filter(w => week(w.task.dueAt)).length,
+    overdue: data.work.filter(w => isOverdue(w.task.dueAt, now)).length,
+    feedback: 0,
     // Members see all their own work here (there is no separate "Your tasks" card for them).
-    all: data.work.map(w => ({ id: w.id, title: w.task.title, detail: w.task.dueAt ? `${isOverdue(w.task.dueAt, now) ? "Overdue · " : "Due "}${memberDate(w.task.dueAt)}` : "No deadline", open: () => onTask(w.task.id, w.id, w.task.title) })),
+    all: data.work.length,
   }
   const tabs: TaskTab[] = team ? ["week", "overdue", "feedback"] : ["week", "overdue", "all"]
-  const [tab, setTab] = useState<TaskTab>(() => tabs.find(id => rows[id].length) ?? "week")
-  const label = { week: "Due this week", overdue: "Overdue", feedback: "Awaiting feedback", all: "All" }
-  const empty = { week: "Nothing due this week.", overdue: "Nothing overdue.", feedback: "No submissions waiting for feedback.", all: "No tasks right now." }
+  const label = { week: "Due this week", overdue: "Overdue", feedback: "Awaiting feedback", all: "All tasks" }
+  const status = { week: "week", overdue: "overdue", feedback: "review", all: "all" }
+  const base = hrefs.tasks ? `${hrefs.tasks}&taskView=${team ? "team" : "mine"}` : null
   return <DashboardCard id="club-home-tasks" title={team ? TERMS.teamTasks : "Tasks"} index={index} className="oc-club-home-card oc-club-home-tasks" moreAt="foot"
-    more={hrefs.tasks ? { href: `${hrefs.tasks}&taskView=${team ? "team" : "mine"}`, label: team ? "Manage tasks" : "All tasks" } : undefined}>
-    <SegmentedControl label={team ? TERMS.teamTasks : TERMS.yourTasks} value={tab} onChange={setTab}
-      options={tabs.map(id => ({ value: id, label: rows[id].length ? `${label[id]} · ${rows[id].length}` : label[id] }))} />
-    {rows[tab].length ? <GlassRowList>{rows[tab].map(row => <li key={row.id}><GlassRow onClick={row.open} lead={<span className="oc-dashboard-dot" data-urgent={tab === "overdue" || undefined} aria-hidden="true" />} title={row.title} detail={row.detail} /></li>)}</GlassRowList>
-      : <DashboardQuiet>{empty[tab]}</DashboardQuiet>}
+    more={base ? { href: base, label: team ? "Manage tasks" : "All tasks" } : undefined}>
+    <ul className="oc-count-tiles" aria-label={team ? TERMS.teamTasks : TERMS.yourTasks}>
+      {tabs.map(id => {
+        const content = <><span className="oc-count-tile-value">{counts[id]}</span><span className="oc-count-tile-label">{label[id]}</span></>
+        const href = base ? `${base}&taskStatus=${status[id]}` : null
+        return <li key={id}>{href
+          ? <Link href={href} className="oc-count-tile" data-tone={id === "overdue" && counts[id] > 0 ? "warning" : undefined} aria-label={`${counts[id]} ${label[id].toLowerCase()}, open tasks`}
+            onClick={event => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }}>{content}</Link>
+          : <div className="oc-count-tile" data-tone={id === "overdue" && counts[id] > 0 ? "warning" : undefined}>{content}</div>}</li>
+      })}
+    </ul>
   </DashboardCard>
 }
 

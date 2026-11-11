@@ -1,5 +1,5 @@
 "use client"
-import { PillGroup } from "@/components/ui/segmented-control"
+import { RoundSelect } from "@/components/ui/round-select"
 import { PillSelect } from "@/components/ui/pill-select"
 import { DateField } from "@/components/ui/date-picker"
 
@@ -69,7 +69,7 @@ export function AdminAvailabilityOverview({ clubId, roundId: controlledRound, we
   if (demo.isDemoEnabled) return <p className="text-sm text-muted-foreground">Availability management is available in your signed-in workspace.</p>
   return <section className="oc-availability space-y-4" aria-label="Team availability" aria-busy={busy}>
     <div className="flex flex-wrap items-end gap-3">
-      {controlledRound === undefined && <div className="text-sm"><span className="block">Interview round</span><PillGroup label="Interview round" size="compact" className="mt-1" value={roundId} onChange={setRoundId} options={[{ value: "", label: "Global declarations" }, ...rounds.map(round => ({ value: round.id, label: round.name }))]} /></div>}
+      {controlledRound === undefined && <RoundSelect label="Interview round" allLabel="Global declarations" value={roundId} onChange={setRoundId} rounds={rounds} />}
       <div className="text-sm"><span className="block">Member role</span><PillSelect label="Member role" allLabel="All roles" className="mt-1" value={role} onChange={value => { setRole(value); setChecked([]) }} options={organizationRoles.map(value => ({ value, label: organizationRoleLabels[value] }))} /></div>
       <div className="text-sm"><span className="block">Week of</span><DateField label="Week of" className="mt-1" value={week} onChange={value => { if (value) { const next = monday(value); onWeekChange ? onWeekChange(next) : setWeek(next) } }} /></div><p className="text-xs text-muted-foreground">{SCHEDULING_TIMEZONE_LABEL} · 8:00 AM–9:00 PM</p>
     </div>
