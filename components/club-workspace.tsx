@@ -287,10 +287,6 @@ function RecruitmentWorkspace({
       <div className={initialTool ? "hidden" : "flex flex-wrap items-end justify-between gap-4"}>
         <div>
           <h2 className="oc-section-heading ">Recruitment</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Applicants, rounds, and interviews in one workspace. Decisions
-            remain in the applicant workflow.
-          </p>
         </div>
         <PillSelect label="Recruitment tool" prefix="Tool" active={false} value={active}
             onChange={(value) => value === "interviews" ? onInterview() : setTool(value as typeof tool)}
