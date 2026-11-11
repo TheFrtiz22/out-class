@@ -3,7 +3,7 @@
 .oc-dashboard-drawer { gap: .5rem; }
 .oc-dashboard-drawer > [data-slot=sheet-title] { padding-bottom: .35rem; }
 .oc-dashboard-drawer > [data-slot=sheet-description] { padding-bottom: 1.25rem; border-bottom: 1px solid var(--oc-surface-glass-edge); line-height: 1.6; }
-.oc-dashboard-detail { font-size: .9375rem; line-height: 1.65; }
+.oc-dashboard-detail { font-size: var(--oc-text-body); line-height: 1.65; }
 .oc-dashboard-detail > [role=alert] { padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--destructive) 22%, transparent); border-radius: var(--oc-content-radius-small); background: var(--oc-glass-tint-sheen), var(--error-subtle); }
 .oc-dashboard-detail > [role=status]:not(:empty), .oc-applicant-drawer p[role=status]:not(:empty) { padding: .65rem .85rem; border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-surface-glass); }
 .oc-dashboard-detail > [data-confirmed=true] { color: var(--success); background: var(--oc-glass-tint-sheen), var(--success-subtle); border-color: color-mix(in srgb, var(--success) 25%, transparent); }
@@ -11,7 +11,7 @@
 .oc-panel-validation { padding: 1rem; background: var(--oc-surface-glass); border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius-small); box-shadow: var(--oc-surface-glass-depth); }
 .oc-panel-validation[data-ready=false] { border-color: color-mix(in srgb, var(--brand-ink) 40%, transparent); }
 .oc-dashboard-drawer .oc-review-heading, .oc-dashboard-drawer .oc-review-submission, .oc-dashboard-drawer .oc-task-resources { border-radius: var(--oc-radius-md); box-shadow: none; }
-.oc-dashboard-drawer .oc-announcement-detail > p:first-child { color: var(--muted-foreground); font-size: .8125rem; }
+.oc-dashboard-drawer .oc-announcement-detail > p:first-child { color: var(--muted-foreground); font-size: var(--oc-size-13); }
 .oc-applicant-drawer [data-slot=sheet-header] { padding-bottom: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
 .oc-applicant-drawer form[data-autosave-editor] { padding: 1rem; border: 1px solid var(--border); border-top: 2px solid var(--primary); border-radius: var(--oc-radius-md); background: var(--card); }
 .oc-applicant-drawer .oc-applicant-resume { border-radius: var(--oc-radius-md); }
@@ -38,8 +38,8 @@
 .oc-dossier-document { overflow-wrap: anywhere; }
 .oc-dossier-document .oc-card-heading { font-family: var(--oc-font-display); font-size: var(--oc-editorial-section); font-weight: 400; }
 .oc-dossier-answer { padding: 1.25rem 1.5rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
-.oc-dossier-answer h4 { margin-top: .65rem; font-family: var(--oc-font-display); font-size: 1.25rem; line-height: 1.5; font-weight: 400; }
-.oc-dossier-answer > p:last-child { font-size: .9375rem; line-height: 1.85; color: var(--foreground); }
+.oc-dossier-answer h4 { margin-top: .65rem; font-family: var(--oc-font-display); font-size: var(--oc-size-20); line-height: 1.5; font-weight: 400; }
+.oc-dossier-answer > p:last-child { font-size: var(--oc-text-body); line-height: 1.85; color: var(--foreground); }
 .oc-applicant-assessment :is(input,textarea,select) { --muted-foreground: var(--oc-field-muted); --border: var(--oc-field-rule); color: var(--foreground); background: var(--card); }
 .oc-applicant-assessment [data-slot="button"] { white-space: normal; height: auto; min-height: 40px; }
 .oc-applicant-drawer .oc-applicant-assessment form[data-autosave-editor] { padding: 0; border: 0; background: transparent; }
@@ -65,7 +65,7 @@ body:has(.oc-voting-bar) [data-sonner-toaster][data-y-position="bottom"] { --off
 .oc-quick-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .375rem .875rem; padding: 0 2.25rem .875rem 0; border-bottom: 1px solid var(--border); }
 .oc-quick-identity { min-width: 0; }
 .oc-quick-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .625rem; }
-:root .oc-applicant-drawer .oc-quick-name { font-family: var(--oc-font-display); font-size: 1.375rem; font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }
+:root .oc-applicant-drawer .oc-quick-name { font-family: var(--oc-font-display); font-size: var(--oc-text-modal); font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }
 .oc-quick-name:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }
 .oc-quick-facts { margin-top: .125rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: 1.45; }
 .oc-quick-fact { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
