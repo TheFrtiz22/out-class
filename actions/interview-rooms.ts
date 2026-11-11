@@ -1,7 +1,7 @@
 "use server"
 
 import { lockSchedulingPeople } from "@/utils/panel-publication"
-import { isWriteContention, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
+import { isWriteContention, logContentionExhausted, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts"
 import { lockOperationalClub, assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -40,8 +40,12 @@ async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshRead
   }
   catch (error) {
     const code = error && typeof error === "object" && "code" in error ? error.code : ""
+    if (error instanceof TransactionConflictError) logContentionExhausted("interview.rooms", error)
     if (error instanceof TransactionConflictError || code === "P2002") throw new Error("The schedule changed while saving. Reload the page and try again.")
-    if (isWriteContention(error)) throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
+    if (isWriteContention(error)) {
+      logContentionExhausted("interview.rooms", error, "timeout")
+      throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
+    }
     throw error
   }
 }

@@ -183,3 +183,23 @@ test('group creation is atomic on stale versions and audit failures, and rejects
  const denied=harness('MEMBER');await assert.rejects(denied.api.createOrganizationMemberGroups({clubId,name:'Welcome',targets:groupTargets(denied),split:null}),/denied/);
  const h=harness();await assert.rejects(h.api.createOrganizationMemberGroups({clubId,name:'Welcome',targets:groupTargets(h),split:{mode:'COUNT',amount:3,seed:clubId}}),/at least one member/);assert.equal(h.state.audits.length,0);
 });
+
+test('panel grant: exhausted deadlock retries and timeouts return distinct calm results and log path and code only',async t=>{
+ const warnings=[];const original=console.warn;console.warn=(...a)=>warnings.push(a.join(' '));t.after(()=>{console.warn=original;});
+ const scope={clubId,applicationId:'00000000-0000-4000-8000-000000000006',roundId:'00000000-0000-4000-8000-000000000007',memberId,assigned:true};
+ const cases=[
+  [Object.assign(new Error('Raw query failed. Code: `40P01`. deadlock detected on User row'),{code:'P2010',meta:{code:'40P01'}}),3,'conflict','40P01',/Someone else just changed this/],
+  [Object.assign(new Error('canceling statement due to lock timeout'),{code:'P2010',meta:{code:'55P03'}}),1,'timeout','55P03',/taking longer than usual/],
+  [{code:'P2028',message:'Transaction already closed'},1,'timeout','P2028',/taking longer than usual/],
+ ];
+ for(const [error,attempts,kind,code,wording] of cases){
+  let calls=0;
+  const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma:{$transaction:async()=>{calls++;throw error;}}},'@/actions/club-onboarding':{}});
+  const result=await api.setInterviewPanelAssignment(scope);
+  assert.equal(calls,attempts);
+  assert.equal(result.ok,false);assert.equal(result.contention,kind);assert.match(result.error,wording);
+  assert.doesNotMatch(result.error,/40P01|55P03|P20|deadlock|lock timeout|Transaction/);
+  assert.deepEqual(JSON.parse(warnings.at(-1)),{event:'write.contention.exhausted',path:'interview.panel.assignment',kind,code});
+ }
+ assert.equal(warnings.length,3);
+});

@@ -1,6 +1,6 @@
 const { test } = require('node:test'), assert = require('node:assert/strict');
 const { loader } = require('./helpers/communications-loader.cjs');
-const { isWriteContention, isTransactionConflict, retryTransactionConflict, TransactionConflictError, TRANSACTION_CONFLICT_MESSAGE } = loader({ '@/utils/prisma': {}, '@/utils/support-audit': {}, '@/utils/admin-elevation': {} })('utils/club-write-transaction.ts');
+const { isWriteContention, isTransactionConflict, retryTransactionConflict, TransactionConflictError, TRANSACTION_CONFLICT_MESSAGE, WRITE_TIMEOUT_MESSAGE, contentionResult, contentionCode } = loader({ '@/utils/prisma': {}, '@/utils/support-audit': {}, '@/utils/admin-elevation': {} })('utils/club-write-transaction.ts');
 
 test('lock waits, transaction timeouts and serialization conflicts are retryable contention', () => {
   for (const error of [
@@ -10,6 +10,8 @@ test('lock waits, transaction timeouts and serialization conflicts are retryable
     { code: 'P2010', meta: { code: '40001' }, message: 'Raw query failed' },
     { code: 'P2010', meta: { code: '40P01' }, message: 'Raw query failed' },
     new Error('canceling statement due to lock timeout'),
+    new Error('deadlock detected'),
+    new Error('Raw query failed. Code: `40P01`. Message: `ERROR: deadlock detected`'),
   ]) assert.equal(isWriteContention(error), true, JSON.stringify(error.message ?? error));
 });
 
@@ -73,4 +75,57 @@ test('default backoff really waits a short, jittered time between attempts', asy
   assert.equal(calls, 3);
   const elapsed = Date.now() - started;
   assert.ok(elapsed >= 70 && elapsed < 1000, `elapsed ${elapsed}ms`);
+});
+
+const { unwrapContention, isContentionFailure } = require('./helpers/communications-loader.cjs').loader({})('lib/write-contention.ts');
+function captureWarnings(t) {
+  const lines = []; const original = console.warn;
+  console.warn = (...args) => { lines.push(args.join(' ')); };
+  t.after(() => { console.warn = original; });
+  return lines;
+}
+
+test('exhausted conflicts return the conflict wording and log path and code only', async t => {
+  const lines = captureWarnings(t);
+  const result = await contentionResult('interview.panel.assignment', () => retryTransactionConflict(async () => { throw deadlock; }, fast([])));
+  assert.deepEqual(result, { ok: false, contention: 'conflict', error: TRANSACTION_CONFLICT_MESSAGE });
+  assert.equal(lines.length, 1);
+  assert.deepEqual(JSON.parse(lines[0]), { event: 'write.contention.exhausted', path: 'interview.panel.assignment', kind: 'conflict', code: '40P01' });
+  assert.doesNotMatch(lines[0], /deadlock detected|Raw query/);
+});
+
+test('timeouts are not retried, get distinct wording, and are logged as timeouts', async t => {
+  for (const [error, code] of [[lockTimeout, '55P03'], [{ code: 'P2028', message: 'Transaction already closed: timeout for user 1234' }, 'P2028']]) {
+    const lines = captureWarnings(t); let calls = 0;
+    const result = await contentionResult('interview.room.panel.approve', () => retryTransactionConflict(async () => { calls++; throw error; }, fast([])));
+    assert.equal(calls, 1);
+    assert.deepEqual(result, { ok: false, contention: 'timeout', error: WRITE_TIMEOUT_MESSAGE });
+    assert.notEqual(WRITE_TIMEOUT_MESSAGE, TRANSACTION_CONFLICT_MESSAGE);
+    assert.doesNotMatch(WRITE_TIMEOUT_MESSAGE, /someone else/i);
+    assert.deepEqual(JSON.parse(lines.at(-1)), { event: 'write.contention.exhausted', path: 'interview.room.panel.approve', kind: 'timeout', code });
+    assert.doesNotMatch(lines.at(-1), /1234/);
+  }
+});
+
+test('success and ordinary errors pass through contentionResult without logging', async t => {
+  const lines = captureWarnings(t);
+  assert.deepEqual(await contentionResult('p', async () => ({ assigned: true })), { assigned: true });
+  const denied = new Error('Only an active owner can grant panel access.');
+  await assert.rejects(contentionResult('p', async () => { throw denied; }), thrown => thrown === denied);
+  assert.deepEqual(lines, []);
+});
+
+test('logged codes are restricted to Prisma or SQLSTATE codes', () => {
+  assert.equal(contentionCode(new TransactionConflictError(serialization)), '40001');
+  assert.equal(contentionCode({ code: 'P2034' }), 'P2034');
+  assert.equal(contentionCode({ code: 'user@virginia.edu' }), 'unknown');
+  assert.equal(contentionCode(new Error('deadlock detected')), 'unknown');
+});
+
+test('the client turns a typed contention failure back into an error with its real wording', () => {
+  assert.equal(isContentionFailure({ ok: false, contention: 'timeout', error: WRITE_TIMEOUT_MESSAGE }), true);
+  assert.equal(isContentionFailure({ assigned: true }), false);
+  assert.equal(isContentionFailure({ ok: false, error: 'other' }), false);
+  assert.deepEqual(unwrapContention({ unresolved: 0 }), { unresolved: 0 });
+  assert.throws(() => unwrapContention({ ok: false, contention: 'conflict', error: TRANSACTION_CONFLICT_MESSAGE }), { message: TRANSACTION_CONFLICT_MESSAGE });
 });

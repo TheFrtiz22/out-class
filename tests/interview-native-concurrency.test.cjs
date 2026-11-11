@@ -151,6 +151,8 @@ test('native PostgreSQL: two owners granting each other panel access across club
  const {prisma,slow,conflicts,x,y}=await crossClubOwners(t);
  const results=await Promise.allSettled([x,y].map(side=>actions(slow,side.owner.id).members.setInterviewPanelAssignment({...side.scope,memberId:side.peerMember.id,assigned:true})));
  assert.deepEqual(results.map(r=>r.status),['fulfilled','fulfilled'],JSON.stringify(results.map(r=>r.reason?.message)));
+ // Exhausted retries come back as a typed failure, not a rejection; neither side may get one.
+ assert.deepEqual(results.map(r=>r.value?.ok),[undefined,undefined],JSON.stringify(results.map(r=>r.value)));
  // The cycle really formed and was resolved by re-running the victim, not avoided by timing.
  assert.ok(conflicts.length>=1,'expected PostgreSQL to abort one grant as a deadlock victim');
  for(const side of [x,y]){
@@ -167,6 +169,8 @@ test('native PostgreSQL: two owners approving room panels that include each othe
  for(const side of [x,y])side.room=await prisma.interviewRoom.create({data:{clubId:side.club.id,roundId:side.round.id,name:'Cross approval room',location:'Synthetic',kind:'IN_PERSON',timezone:'UTC',duration:20,isOpen:true,panelMemberIds:[side.peerMember.id]}});
  const results=await Promise.allSettled([x,y].map(side=>actions(slow,side.owner.id).setup.approveInterviewRoomPanel({clubId:side.club.id,roomId:side.room.id,revision:0,panelMemberIds:[side.peerMember.id],confirm:true})));
  assert.deepEqual(results.map(r=>r.status),['fulfilled','fulfilled'],JSON.stringify(results.map(r=>r.reason?.message)));
+ // Exhausted retries come back as a typed failure, not a rejection; neither side may get one.
+ assert.deepEqual(results.map(r=>r.value?.ok),[undefined,undefined],JSON.stringify(results.map(r=>r.value)));
  assert.ok(conflicts.length>=1,'expected PostgreSQL to abort one approval as a deadlock victim');
  for(const side of [x,y]){
   const room=await prisma.interviewRoom.findUniqueOrThrow({where:{id:side.room.id}});

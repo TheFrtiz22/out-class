@@ -10,7 +10,7 @@ import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { activePanelPublication, assertCurrentPanelDocument, assertPanelBookingSafety, publicationDocument, lockSchedulingPeople, PanelPublicationError, draftApprovalReset } from "@/utils/panel-publication"
 import { syncBookingPanel,type BookingPanelBatch } from "@/utils/interview-scheduling-access"
 import { panelScheduleNotificationPrefix } from "@/utils/official-panel-schedule"
-import { retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
+import { logContentionExhausted, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
 const draftScope=panelScopeSchema.extend({proposalId:z.string().uuid(),revision:z.number().int().positive()}).strict()
 type Result<T>={ok:true;value:T}|{ok:false;error:string}
 async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:(tx:AppTransactionClient,actorId:string)=>Promise<T>):Promise<Result<T>>{
@@ -24,7 +24,7 @@ async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:
    return work(tx,user.id)
   },{isolationLevel:publishing?"ReadCommitted":"Serializable",timeout:60000,maxWait:15000}))
   return{ok:true,value}
- }catch(error){return{ok:false,error:error instanceof PanelPublicationError||error instanceof TransactionConflictError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
+ }catch(error){if(error instanceof TransactionConflictError)logContentionExhausted("panel.publication",error);return{ok:false,error:error instanceof PanelPublicationError||error instanceof TransactionConflictError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
 }
 async function draftFor(tx:AppTransactionClient,input:z.infer<typeof draftScope>){
  const row=await tx.interviewPanelProposal.findFirst({where:{id:input.proposalId,clubId:input.clubId,roundId:input.roundId}})
