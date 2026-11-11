@@ -30,7 +30,7 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
         <Button variant="ghost" className="shadow-none hover:bg-muted" aria-pressed={crm.activeView === "all"} onClick={() => update(p => ({ ...p, crm: { ...p.crm, activeView: "all", filters: emptyFilters } }))}>All applicants</Button>
         {crm.views.map(view => <div key={view.id} className="flex items-center rounded-xl border border-border">
           <Button variant="ghost" className="shadow-none hover:bg-muted" aria-pressed={crm.activeView === view.id} onClick={() => update(p => ({ ...p, crm: { ...p.crm, activeView: view.id, filters: structuredClone(view.filters) } }))}>{view.name}{crm.activeView === view.id && JSON.stringify(crm.filters) !== JSON.stringify(view.filters) ? " (edited)" : ""}</Button>
-          <Button size="icon" variant="ghost" aria-label={`Delete view ${view.name}`} onClick={() => update(p => ({ ...p, crm: { ...p.crm, views: p.crm.views.filter(v => v.id !== view.id), activeView: p.crm.activeView === view.id ? "all" : p.crm.activeView, filters: p.crm.activeView === view.id ? emptyFilters : p.crm.filters } }))}><X className="size-3" /></Button>
+          <Button size="icon" variant="ghost" aria-label={`Delete view ${view.name}`} onClick={() => update(p => ({ ...p, crm: { ...p.crm, views: p.crm.views.filter(v => v.id !== view.id), activeView: p.crm.activeView === view.id ? "all" : p.crm.activeView, filters: p.crm.activeView === view.id ? emptyFilters : p.crm.filters } }))}><X className="size-3.5" /></Button>
         </div>)}
       </div>
       <div className="ml-auto flex flex-wrap gap-2">
