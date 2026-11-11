@@ -64,7 +64,7 @@ const GRAD_YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
 // does not shift or flash.
 const loadVerificationCodeInput = () => import("@/components/onboarding/verification-code-input")
 const loadGraduationYearSelect = () => import("@/components/onboarding/graduation-year-select")
-const VerificationCodeInput = dynamic(() => loadVerificationCodeInput().then(module => module.VerificationCodeInput), { loading: () => <div aria-hidden="true" className="h-12" /> })
+const VerificationCodeInput = dynamic(() => loadVerificationCodeInput().then(module => module.VerificationCodeInput), { loading: () => <div aria-hidden="true" className="h-12 w-[calc(6*clamp(28px,8vw,48px))]" /> })
 const GraduationYearSelect = dynamic(() => loadGraduationYearSelect().then(module => module.GraduationYearSelect), { loading: () => <div aria-hidden="true" className="h-11 w-full rounded-md border border-border" /> })
 const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10 MB
 

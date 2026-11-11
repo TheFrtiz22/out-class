@@ -136,7 +136,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
   // Five chips fit one row at a glance; the long tail of one-club categories lives under More.
   const categoryCount = (category: string) => clubs.filter((club) => club.category === category).length
   const selectedCategory = filters.category === "all" ? "all" : categories.find((category) => category.toLowerCase() === filters.category.toLowerCase()) ?? filters.category
-  const rankedCategories = [...categories].sort((a, b) => categoryCount(b) - categoryCount(a) || a.localeCompare(b))
+  const rankedCategories = [...categories].sort((a, b) => categoryCount(b) - categoryCount(a) || a.localeCompare(b, "en-US"))
   const primaryCategories = rankedCategories.slice(0, PRIMARY_CATEGORIES)
   if (selectedCategory !== "all" && categories.includes(selectedCategory) && !primaryCategories.includes(selectedCategory)) primaryCategories.push(selectedCategory)
   const moreCategories = rankedCategories.filter((category) => !primaryCategories.includes(category))

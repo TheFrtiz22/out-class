@@ -15,7 +15,11 @@ test('the wizard has no static input-otp or select import; both widgets are next
     assert.doesNotMatch(declaration[1], /ssr:\s*false/, `${name} still server-renders when its step is visible`);
   }
   assert.match(wizard, /useEffect\(\(\) => \{ void loadVerificationCodeInput\(\); void loadGraduationYearSelect\(\) \}, \[\]\)/, 'chunks are warmed after mount');
-  assert.match(wizard, /loading: \(\) => <div aria-hidden="true" className="h-12" \/>/, 'code placeholder keeps the slot height');
+  // Six adjacent slots (the group has no gap), each w-[clamp(28px,8vw,48px)] h-12.
+  assert.match(wizard, /loading: \(\) => <div aria-hidden="true" className="h-12 w-\[calc\(6\*clamp\(28px,8vw,48px\)\)\]" \/>/, 'code placeholder keeps the six slots\' height and width');
+  const slot = fs.readFileSync('components/onboarding/verification-code-input.tsx', 'utf8');
+  assert.match(slot, /\[0, 1, 2, 3, 4, 5\]\.map/); assert.match(slot, /className="h-12 w-\[clamp\(28px,8vw,48px\)\]/);
+  assert.match(fs.readFileSync('components/ui/input-otp.tsx', 'utf8'), /data-slot="input-otp-group"\s*className=\{cn\('flex items-center', className\)\}/, 'group has no gap, so width is exactly six slots');
   assert.match(wizard, /loading: \(\) => <div aria-hidden="true" className="h-11 w-full rounded-md border border-border" \/>/, 'select placeholder keeps the trigger size');
 });
 
