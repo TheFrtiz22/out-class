@@ -13,6 +13,7 @@ import {
 } from "@/lib/club-settings";
 import { normalizeProfileFieldVisibility, sameProfileFieldVisibility, saveProfileFieldVisibilityInput } from "@/lib/profile-field-visibility";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { boundedParse } from "@/lib/bounded-input";
 async function authorize(
   tx: AppTransactionClient,
   clubId: string,
@@ -60,7 +61,7 @@ export async function getApplicationSettings(clubId: string) {
   });
 }
 export async function saveApplicationSettings(input: unknown) {
-  const data = applicationSettingsSchema.parse(input);
+  const data = boundedParse(applicationSettingsSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "application.manage",
   ]);
@@ -198,7 +199,7 @@ export async function getPipelineSettings(clubId: string) {
   });
 }
 export async function savePipelineSettings(input: unknown) {
-  const data = pipelineSettingsSchema.parse(input);
+  const data = boundedParse(pipelineSettingsSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "recruitment.manage",
   ]);

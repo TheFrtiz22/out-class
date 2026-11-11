@@ -19,6 +19,7 @@ import { getApplicantDisplay } from "@/actions/applicant-intelligence"
 import { recruitmentAttendanceSummary } from "@/actions/meetings"
 import { getStudentDashboardData } from "@/actions/applications"
 import { encodeWorkspaceData } from "@/lib/workspace-wire"
+import { assertBoundedInput } from "@/lib/bounded-input"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -45,6 +46,8 @@ export async function GET(request: Request) {
     if ((await cookies()).get(DEMO_COOKIE)?.value === "1") return Response.json({ error: "Live workspace reads are unavailable in Demo Mode" }, { status: 403, headers })
     const params = new URL(request.url).searchParams
     const args: unknown = JSON.parse(params.get("args") || "[]")
+    // Read arguments are at most a three-item tuple with small nested selections.
+    assertBoundedInput(args, { maxArrayLength: 100, maxTotalElements: 200, maxBytes: 64_000 })
     let data: unknown
     switch (params.get("kind")) {
       case "myAvailability": noArgs.parse(args); data = await (await import("@/actions/availability")).getMyAvailability(); break

@@ -21,10 +21,10 @@ type SpeedReviewModeProps = {
 }
 
 const SHORTCUTS = [
-  { key: "←", label: "Previous" },
+  { key: <><ArrowLeft size={14} aria-hidden="true" /><span className="sr-only">Left arrow</span></>, label: "Previous" },
   { key: "R", label: "Reject" },
   { key: "A", label: "Advance" },
-  { key: "→", label: "Skip" },
+  { key: <><ArrowRight size={14} aria-hidden="true" /><span className="sr-only">Right arrow</span></>, label: "Skip" },
 ]
 
 export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewModeProps) {
@@ -88,7 +88,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
         <div className="hidden items-center gap-3 sm:flex">
           {SHORTCUTS.map((s) => (
             <span key={s.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <kbd className="rounded border border-border bg-white px-1.5 py-0.5 tabular-nums text-[length:var(--oc-size-10)] font-medium text-foreground">
+              <kbd className="inline-flex items-center rounded border border-border bg-white px-1.5 py-0.5 tabular-nums text-[length:var(--oc-size-10)] font-medium text-foreground">
                 {s.key}
               </kbd>
               {s.label}

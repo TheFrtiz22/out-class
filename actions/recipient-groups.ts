@@ -7,6 +7,7 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
 import { recipientAudienceSchema, audienceKey, audienceCapabilities } from "@/lib/recipient-audience";
 import { resolveRecipientAudience } from "@/utils/recipient-audience";
+import { assertBoundedInput, boundedParse, inputLimitsFor } from "@/lib/bounded-input";
 const uuid = z.string().uuid();
 const saveInput = z.object({ clubId: uuid, id: uuid, revision: z.number().int().nonnegative().nullable(), name: z.string().trim().min(1).max(100),
   kind: z.enum(["MANUAL", "RULES"]), userIds: z.array(uuid).max(1000).default([]), rules: recipientAudienceSchema.optional(),
@@ -15,6 +16,7 @@ const saveInput = z.object({ clubId: uuid, id: uuid, revision: z.number().int().
 });
 export async function previewRecipientAudience(clubId: string, input: unknown) {
   uuid.parse(clubId);
+  assertBoundedInput(input, inputLimitsFor(recipientAudienceSchema));
   const { user } = await requireClubPermission(clubId, ["meetings.manage"]);
   return clubWriteTransaction(async tx => {
     const ids = await resolveRecipientAudience(tx, clubId, user.id, input);
@@ -43,7 +45,7 @@ export async function getRecipientGroups(clubId: string) {
   });
 }
 export async function saveRecipientGroup(input: unknown) {
-  const d = saveInput.parse(input);
+  const d = boundedParse(saveInput, input);
   const { user } = await requireClubPermission(d.clubId, ["meetings.manage", "members.manage"]);
   return clubWriteTransaction(async tx => {
     await authorizeClubTransaction(tx, d.clubId, user.id, ["meetings.manage", "members.manage"]);

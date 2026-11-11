@@ -78,6 +78,7 @@ function harness(overrides = {}) {
 }
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
 process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "public-test-key";
+process.env.OUTCLASS_SITE_URL = "https://outclass.example";
 const reset = {
   action: "reset",
   tokenHash: "a".repeat(64),
@@ -265,3 +266,54 @@ test('missing provider configuration fails safely without attempting authenticat
     assert.equal(h.calls.length, 0)
   } finally { process.env.NEXT_PUBLIC_SUPABASE_URL = previous }
 })
+
+async function withEnv(values, run) {
+  const saved = Object.fromEntries(Object.keys(values).map((k) => [k, process.env[k]]));
+  for (const [k, v] of Object.entries(values))
+    v === undefined ? delete process.env[k] : (process.env[k] = v);
+  try {
+    await run();
+  } finally {
+    for (const [k, v] of Object.entries(saved))
+      v === undefined ? delete process.env[k] : (process.env[k] = v);
+  }
+}
+const requestFrom = (h, origin, headers = {}) =>
+  h.send({ action: "request", email: "student@virginia.edu" }, { origin, ...headers });
+test("reset links always point at the configured site URL; Host and X-Forwarded-Host never change them in production", async () => {
+  await withEnv(
+    { NODE_ENV: "production", VERCEL_ENV: "production", OUTCLASS_SITE_URL: "https://www.out-class.net/some/path" },
+    async () => {
+      const h = harness();
+      for (const headers of [
+        {},
+        { host: "elsewhere.test" },
+        { "x-forwarded-host": "elsewhere.test", "x-forwarded-proto": "http" },
+        { host: "elsewhere.test", "x-forwarded-host": "elsewhere.test" },
+      ])
+        assert.equal((await requestFrom(h, "https://outclass.example", headers)).status, 200);
+      assert.equal(h.calls.length, 4);
+      for (const call of h.calls)
+        assert.deepEqual(call[2], { redirectTo: "https://www.out-class.net/reset-password" });
+    },
+  );
+});
+test("without a configured site URL, production refuses to send reset links and previews use only their own deployment", async () => {
+  await withEnv({ NODE_ENV: "production", VERCEL_ENV: "production", OUTCLASS_SITE_URL: undefined }, async () => {
+    const h = harness();
+    const response = await requestFrom(h, "https://outclass.example");
+    assert.equal(response.status, 503);
+    assert.equal(h.calls.length, 0);
+  });
+  await withEnv(
+    { NODE_ENV: "production", VERCEL_ENV: "preview", OUTCLASS_SITE_URL: undefined, VERCEL_URL: "outclass.example", VERCEL_BRANCH_URL: undefined },
+    async () => {
+      const h = harness();
+      assert.equal((await requestFrom(h, "https://outclass.example")).status, 200);
+      assert.deepEqual(h.calls[0][2], { redirectTo: "https://outclass.example/reset-password" });
+      process.env.VERCEL_URL = "another-deployment.vercel.app";
+      assert.equal((await requestFrom(h, "https://outclass.example")).status, 503);
+      assert.equal(h.calls.length, 1);
+    },
+  );
+});

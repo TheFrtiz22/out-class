@@ -14,6 +14,7 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { assertNotRecused } from "@/lib/recusal";
 import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
 import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
+import { boundedParse } from "@/lib/bounded-input";
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
 // refuseRecused: Pros/Cons feed voting, so a member who stepped out of this applicant can't read or write them.
 // The live voting room's shared presentation (sessionId) keeps its own room rules.
@@ -30,7 +31,7 @@ async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>
   return { app: { ...app, evaluations: app.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, member };
 }
 export async function getApplicantDisplay(input: z.infer<typeof scope>) {
-  const data = scope.parse(input);
+  const data = boundedParse(scope, input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
     let { app, member: reviewer } = await authorized(tx, data, membership.id, !data.sessionId);
@@ -83,7 +84,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   }, { isolationLevel: "RepeatableRead", ...(data.sessionId ? votingReadLimits : {}) });
 }
 export async function saveApplicantObservation(input: unknown) {
-  const data = scope.extend({ id: z.string().uuid().optional(), kind: z.enum(["PRO", "CON"]), body: z.string().trim().min(1).max(3000) }).strict().parse(input);
+  const data = boundedParse(scope.extend({ id: z.string().uuid().optional(), kind: z.enum(["PRO", "CON"]), body: z.string().trim().min(1).max(3000) }).strict(), input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
     await lockOperationalClub(tx, data.clubId);
@@ -102,7 +103,7 @@ export async function saveApplicantObservation(input: unknown) {
   });
 }
 export async function deleteApplicantObservation(input: unknown) {
-  const data = scope.extend({ id: z.string().uuid() }).strict().parse(input);
+  const data = boundedParse(scope.extend({ id: z.string().uuid() }).strict(), input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
     await lockOperationalClub(tx, data.clubId);
@@ -123,7 +124,7 @@ export async function getApplicantDisplayConfiguration(clubId: string, roundId: 
   return { config: readDisplayConfig(round.applicantDisplay), version: round.displayVersion };
 }
 export async function saveApplicantDisplayConfiguration(input: unknown) {
-  const data = z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), version: z.number().int().min(0), config: displayConfigSchema }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), version: z.number().int().min(0), config: displayConfigSchema }).strict(), input);
   const { user } = await requireClubPermission(data.clubId, ["interviews.manage"]);
   return prisma.$transaction(async tx => {
     await lockOperationalClub(tx, data.clubId);

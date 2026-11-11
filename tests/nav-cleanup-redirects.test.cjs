@@ -124,5 +124,7 @@ test("personal pages folded into others redirect on the server", () => {
   assert.match(page("app/(workspace)/clubs/meetings/page.tsx"), /redirect\(movedStudentHref\("\/clubs\/meetings", params\)!\)/)
   assert.match(page("app/(workspace)/settings/profile/page.tsx"), /redirect\(`\/profile/)
   assert.match(page("app/(workspace)/settings/organizations/page.tsx"), /redirect\(`\/clubs/)
-  assert.match(page("app/(workspace)/inbox/page.tsx"), /tab === "preferences"\) redirect\("\/settings\/notifications"\)/)
+  // Notification settings moved into the Inbox: the old Settings page redirects there, and the Inbox no longer redirects away.
+  assert.match(page("app/(workspace)/settings/notifications/page.tsx"), /redirect\(notificationSettingsHref\)/)
+  assert.doesNotMatch(page("app/(workspace)/inbox/page.tsx"), /redirect\(/)
 })

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { CalendarClock, CheckCircle2, Circle, Clock, Eye, FilePenLine, Send, XCircle } from "@/components/icons"
 import type { IconComponent } from "@/components/icons/factory"
 import { cn } from "@/lib/utils"
@@ -29,9 +30,9 @@ const toneIcons: Record<StatusTone, IconComponent> = { neutral: Circle, active: 
  * application state ("Interview", "In review") renders exactly as StatusPill; anything else takes
  * its glyph and color from `tone`.
  */
-export function StatusMark({ label, tone = "neutral", className }: { label: string; tone?: StatusTone; className?: string }) {
+export function StatusMark({ label, tone = "neutral", icon, className, title, children }: { label: string; tone?: StatusTone; icon?: IconComponent; className?: string; title?: string; children?: ReactNode }) {
   const code = applicationStatusCode(label)
   if (applicationStatusLabels[code]) return <StatusPill status={code} className={className} />
-  const Icon = toneIcons[tone]
-  return <span data-slot="status-pill" data-tone={tone} className={cn("oc-status-pill", className)}><Icon size={15} weight={tone === "strong" ? "fill" : "regular"} />{label}</span>
+  const Icon = icon ?? toneIcons[tone]
+  return <span data-slot="status-pill" data-tone={tone} className={cn("oc-status-pill", className)} title={title}><Icon size={15} weight={tone === "strong" ? "fill" : "regular"} />{label}{children}</span>
 }

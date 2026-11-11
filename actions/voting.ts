@@ -14,6 +14,7 @@ import { requireClubPermission } from "@/utils/auth"
 import { hasPermission, type ClubPermission } from "@/lib/permissions"
 import { summarizeVoting, projectLegacyVoting, votingCommandSchema } from "@/lib/voting-engine"
 import { readVotingDisplay } from "@/lib/voting-presentation"
+import { boundedParse } from "@/lib/bounded-input"
 const include = { participants: true, candidates: { orderBy: { position: "asc" as const } }, passes: { orderBy: { number: "asc" as const }, include: { candidates: { orderBy: { position: "asc" as const }, include: { ballots: true } } } } }
 async function session(tx: AppTransactionClient, clubId: string, id: string) {
   await tx.$queryRaw`SELECT id FROM "VotingSession" WHERE id=${id} FOR UPDATE`
@@ -74,7 +75,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
  */
 const closeActions = ["COMPLETE_PASS", "FINISH"] as const
 export async function commandVotingSession(input: unknown) {
-  const d=votingCommandSchema.parse(input)
+  const d=boundedParse(votingCommandSchema, input)
   if(!(closeActions as readonly string[]).includes(d.action)) throw Error("Board voting sessions are read-only. Use a voting room.")
   const capability: ClubPermission = d.action === "FINISH" ? "decisions.finish" : "decisions.start"
   const caps:ClubPermission[]=["applications.review",capability]

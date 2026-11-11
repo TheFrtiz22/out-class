@@ -61,8 +61,15 @@ test('automatic slide layout: short facts as chips, longest evidence leads, list
   assert.ok(await fits(page),'projector fits 1366×768');
   assert.deepEqual((await new AxeBuilder({page}).include('.vr-applicant').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations.map(v=>v.id),[]);
   const large=await open('present',1920,1080);assert.ok(await fits(large),'projector fits 1920×1080');
-  // Known gap (tracked as FE-VS-2): at 1280×720, the smallest projector target in
-  // docs/voting-room-implementation.md, this ten-field slide currently scrolls. Assert it once the layout is fixed.
+  // 1280×720 is the smallest projector target in docs/voting-room-implementation.md (FE-VS-2): the same ten fields
+  // fit without scrolling, with 18px evidence text, a shorter excerpt and every "Read full …" control kept.
+  const small=await open('present',1280,720);assert.ok(await fits(small),'projector fits 1280×720');
+  assert.deepEqual(await fields(small,'.vr-facts>[data-slide-field]'),['major','academicYear','gpa','sat','act','interviewScore']);
+  assert.deepEqual((await fields(small,'.vr-evidence [data-slide-field]')).sort(),['interviewFeedback','resumeHighlight']);
+  assert.equal(await small.locator('.vr-highlight').count(),3);
+  for(const label of ['average interview score','interview feedback','leader-selected résumé excerpt'])await small.getByRole('button',{name:`Read full ${label}`}).waitFor();
+  const shortResume=await small.locator('[data-slide-field="resumeHighlight"] .vr-text').innerText();assert.ok(shortResume.length<=320&&shortResume.endsWith('…'),`shorter résumé excerpt at 1280×720 (${shortResume.length})`);
+  assert.equal(await small.locator('[data-slide-field="resumeHighlight"] .vr-text p').evaluate(e=>getComputedStyle(e).fontSize),'18px','evidence text stays readable from the back of the room');
   const leader=await open('leader',1366,768);assert.equal(await leader.locator('[data-slide-field="interviewFeedback"] .vr-text li').count()>=1,true);assert.ok(await leader.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 
   // Phones: the facts strip wraps above the evidence, without horizontal scroll.

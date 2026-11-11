@@ -13,9 +13,10 @@ import {supportContext} from "@/utils/support-audit";
 import {clubWriteTransaction} from "@/utils/club-write-transaction";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {roundPublicationKey} from "@/utils/decision-scheduling";
+import { boundedParse } from "@/lib/bounded-input";
 const uuid=z.string().uuid();
 export async function scheduleDecisionPublication(input:unknown){
- const d=decisionScheduleInput.parse(input),scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence);
+ const d=boundedParse(decisionScheduleInput, input),scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence);
  const caps=d.selection.kind==="VOTING"?["applications.review","decisions.publish","applicants.identify"] as const:["decisions.manage","applicants.identify"] as const;
  const {user}=await requireClubPermission(d.clubId,[...caps]);
  if(await supportContext())throw Error("Exit temporary support impersonation before scheduling decisions.");

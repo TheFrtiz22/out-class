@@ -28,7 +28,9 @@ import {
 } from "@/lib/workspace-api";
 import { meetingInputSchema, resourceSchema } from "@/lib/meetings";
 import { OutClassQRCode } from "@/components/qr/outclass-qr-code";
+import { QrPresentButton, QrPresenterDialog } from "@/components/qr/qr-presenter-dialog";
 import { Button } from "@/components/ui/button";
+import { ClubExportLink } from "@/components/club-export-link";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -428,7 +430,7 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
         )}
       </section>
       {hasPermission(member, "meetings.attendance") && (
-        <MeetingAttendance meeting={meeting} />
+        <MeetingAttendance meeting={meeting} member={member} />
       )}
       {hasPermission(member, "meetings.manage") && (
         <ActionWorkflow showCloseAction={false} title="Edit meeting" description="Update the meeting details, agenda, recap, or shared resources." trigger="Edit meeting">{done => <MeetingEditor key={meeting.revision} clubId={meeting.clubId} meeting={meeting} onCancel={done} onSaved={() => { done(); setRefresh(v => v + 1); onUpdated?.() }} />}</ActionWorkflow>
@@ -436,7 +438,7 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
     </article>
   );
 }
-function MeetingAttendance({ meeting }: { meeting: Meeting }) {
+function MeetingAttendance({ meeting, member }: { meeting: Meeting; member: Parameters<typeof hasPermission>[0] }) {
   const demo = useDemoMode();
   const [attendanceLoading, setAttendanceLoading] = useState(true);
   const [open, setOpen] = useState(false),
@@ -448,7 +450,10 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       [],
     ),
     [now, setNow] = useState(Date.now()),
-    [refresh, setRefresh] = useState(0);
+    [refresh, setRefresh] = useState(0),
+    [presenting, setPresenting] = useState(false),
+    [issueError, setIssueError] = useState(""),
+    [issueAttempt, setIssueAttempt] = useState(0);
   useEffect(() => {
     let current = true;
     setRows([]);
@@ -474,12 +479,14 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
         if (current) {
           setCode(value);
           setError("");
+          setIssueError("");
         }
       } catch (e) {
-        if (current)
-          setError(
-            e instanceof Error ? e.message : "Could not refresh QR code.",
-          );
+        if (current) {
+          const message = e instanceof Error ? e.message : "Could not refresh QR code.";
+          setError(message);
+          setIssueError(message);
+        }
       }
     };
     void issue();
@@ -490,8 +497,11 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       clearInterval(timer);
       clearInterval(clock);
     };
-  }, [open, meeting.clubId, meeting.id]);
+  }, [open, meeting.clubId, meeting.id, issueAttempt]);
   const valid = code && new Date(code.expiresAt).getTime() > now;
+  // Same link as before the presenter dialog: the rotating /q short link, or the direct fallback.
+  const checkInUrl = valid ? (code.shortUrl ? `${window.location.origin}${code.shortUrl}` : `${window.location.origin}/check-in?meetingId=${meeting.id}#token=${code.token}`) : "";
+  const checkInFilename = open ? `check-in-${meeting.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "";
   return (
     <section className="space-y-4 border-t pt-5">
       <h2 className="oc-section-heading ">Attendance</h2>
@@ -511,6 +521,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
         onClick={async () => {
           if (open) {
             setOpen(false);
+            setPresenting(false);
             setCode(null);
             try {
               await closeMeetingCheckIn(meeting.clubId, meeting.id);
@@ -530,16 +541,16 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       {open && valid && (
         <div className="space-y-4">
           <OutClassQRCode
-            value={code.shortUrl ? `${window.location.origin}${code.shortUrl}` : `${window.location.origin}/check-in?meetingId=${meeting.id}#token=${code.token}`}
+            value={checkInUrl}
             size={220}
             variant="default"
             showLogo={true}
             downloadable={true}
-            presenterMode={true}
             title={meeting.title}
-            description="Scan with your smartphone camera to confirm attendance."
-            filename={`check-in-${meeting.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+            description="Scan with your phone camera to check in."
+            filename={checkInFilename}
             ariaLabel={`Check in to ${meeting.title}`}
+            actions={<QrPresentButton onClick={() => setPresenting(true)} />}
           />
           <p role="status" className="text-sm text-muted-foreground">
             Current code expires in{" "}
@@ -555,12 +566,30 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
         </div>
       )}
       {open && !valid && <p role="status">Waiting for a current code…</p>}
+      {/* Stays mounted while check-in is open, so a projector keeps its dialog
+          through a failed refresh or an expired code and recovers on the next one. */}
+      {open && (
+        <QrPresenterDialog
+          value={checkInUrl}
+          title={meeting.title}
+          description="Scan with your phone camera to check in."
+          filename={checkInFilename}
+          ariaLabel={`Check in to ${meeting.title}`}
+          trigger={false}
+          open={presenting}
+          onOpenChange={setPresenting}
+          refreshing={!valid}
+          error={issueError}
+          onRetry={() => { setNow(Date.now()); setIssueAttempt((v) => v + 1); }}
+        />
+      )}
       {error && <p role="alert">{error}</p>}
       <div className="flex items-center gap-4">
         <h3 className="oc-card-heading ">Attendance history{!attendanceLoading && !error ? ` · ${rows.length}` : ""}</h3>
         <Button variant="ghost" onClick={() => setRefresh((v) => v + 1)}>
           Refresh
         </Button>
+        <ClubExportLink clubId={meeting.clubId} kind="attendance" membership={member} filter={meeting.id} label="Export CSV" />
       </div>
       <ul className="divide-y">
         {rows.map((row) => (
