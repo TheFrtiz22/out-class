@@ -13,6 +13,7 @@ import { interviewCapabilities } from "@/lib/interview-access";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { overlaps } from "@/lib/interview-rooms";
 import { boundedParse } from "@/lib/bounded-input";
+import { isWriteContention, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction";
 const id=z.string().uuid();
 export async function getInterviewAccessSetup(clubId: string) {
   id.parse(clubId); const { user }=await requireAuth({verifyEmail:true});
@@ -27,7 +28,9 @@ export async function getInterviewAccessSetup(clubId: string) {
 }
 export async function approveInterviewRoomPanel(input: unknown) {
   const data=boundedParse(roomPanelApprovalSchema, input);const {user}=await requireAuth({verifyEmail:true});
-  return prisma.$transaction(async tx=>{
+  // Holds the owner's User row, then locks the panel's people: owners of two clubs approving
+  // panels that include each other can deadlock. The victim is rolled back and re-run whole.
+  return retryTransactionConflict(()=>prisma.$transaction(async tx=>{
     await lockOperationalClub(tx, data.clubId);
     const {caps}=await interviewActor(tx,data.clubId,user.id);if(!caps.manageGrants)throw Error("Only an owner can approve panel access.");
     const room=await tx.interviewRoom.findFirst({where:{id:data.roomId,clubId:data.clubId},include:{round:true,slots:{include:{bookings:true}}}});
@@ -47,7 +50,7 @@ export async function approveInterviewRoomPanel(input: unknown) {
       await syncBookingPanel(tx,app.id,room.roundId,user.id);
     }
     await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,targetId:room.id,action:"interview.room.panel.approve",details:{members:room.panelMemberIds,revision:data.revision,unresolved}}});return{unresolved};
-  },{isolationLevel:"ReadCommitted"});
+  },{isolationLevel:"ReadCommitted"})).catch(error=>{throw isWriteContention(error)?new TransactionConflictError(error):error;});
 }
 export async function changeInterviewRoomPanel(input: unknown) {
   const data=boundedParse(roomPanelChangeSchema, input);const {user}=await requireAuth();

@@ -1,6 +1,7 @@
 "use server";
 
 import { lockSchedulingPeople } from "@/utils/panel-publication";
+import { isTransactionConflict } from "@/utils/club-write-transaction";
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { Prisma } from "@prisma/client";
 import { assertClubOperational } from "@/lib/club-suspension";
@@ -93,7 +94,8 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
       }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
       break;
     } catch (error) {
-      if (error && typeof error === "object" && "code" in error && error.code === "P2034") {
+      // Deadlock (40P01) or serialization failure (40001): the transaction was rolled back whole.
+      if (isTransactionConflict(error)) {
         if (attempt < 2) continue;
         throw new Error("That time changed. Reload the page and try again.");
       }

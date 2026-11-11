@@ -61,17 +61,43 @@ export function isWriteContention(error: unknown) {
   return typeof e.message === "string" && /lock timeout|could not obtain lock|could not serialize access/i.test(e.message);
 }
 
-/** PostgreSQL aborted this transaction to break a lock cycle; it was rolled back in full. */
-export function isDeadlock(error: unknown) {
-  const e = error as { code?: unknown; meta?: { code?: unknown }; message?: unknown } | null;
-  if (!e || typeof e !== "object") return false;
-  return e.code === "P2034" || e.meta?.code === "40P01" || (typeof e.message === "string" && /deadlock detected/i.test(e.message));
+/** Shown when a write keeps losing to concurrent writers. Never carries database detail. */
+export const TRANSACTION_CONFLICT_MESSAGE = "Someone else just changed this. Try again.";
+
+/** Retries ran out. The database error stays on `cause` for server logs only. */
+export class TransactionConflictError extends Error {
+  constructor(cause?: unknown) {
+    super(TRANSACTION_CONFLICT_MESSAGE, { cause });
+    this.name = "TransactionConflictError";
+  }
 }
 
-/** Re-runs a whole transaction that lost a deadlock. Lock timeouts are not retried. */
-export async function retryOnDeadlock<T>(run: () => Promise<T>, attempts = 3): Promise<T> {
+/** PostgreSQL aborted the whole transaction (deadlock 40P01 or serialization
+ * failure 40001) and rolled it back, so re-running it from the start is safe.
+ * Lock and statement timeouts (55P03, 57014) and Prisma's transaction timeout
+ * (P2028) are deliberately excluded: they signal sustained load, not a race. */
+export function isTransactionConflict(error: unknown) {
+  const e = error as { code?: unknown; meta?: { code?: unknown }; message?: unknown } | null;
+  if (!e || typeof e !== "object") return false;
+  if (e.code === "P2034" || e.meta?.code === "40P01" || e.meta?.code === "40001") return true;
+  return typeof e.message === "string" && /deadlock detected|could not serialize access/i.test(e.message);
+}
+
+type ConflictRetryOptions = { attempts?: number; baseDelayMs?: number; sleep?: (ms: number) => Promise<void>; random?: () => number };
+
+/** Re-runs a whole transaction that PostgreSQL aborted as a deadlock or
+ * serialization victim, at most `attempts` times with a short jittered backoff.
+ * `run` must start a fresh transaction each call. Any other error is rethrown
+ * unchanged; exhausted retries throw TransactionConflictError. */
+export async function retryTransactionConflict<T>(run: () => Promise<T>, options: ConflictRetryOptions = {}): Promise<T> {
+  const { attempts = 3, baseDelayMs = 25, sleep = ms => new Promise<void>(resolve => setTimeout(resolve, ms)), random = Math.random } = options;
   for (let attempt = 1; ; attempt++) {
     try { return await run(); }
-    catch (error) { if (attempt >= attempts || !isDeadlock(error)) throw error; }
+    catch (error) {
+      if (!isTransactionConflict(error)) throw error;
+      if (attempt >= attempts) throw new TransactionConflictError(error);
+      // Exponential base plus jitter so the two victims of a cycle do not collide again in step.
+      await sleep(baseDelayMs * 2 ** (attempt - 1) + Math.floor(random() * baseDelayMs));
+    }
   }
 }

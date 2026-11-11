@@ -1,7 +1,7 @@
 "use server"
 
 import { lockSchedulingPeople } from "@/utils/panel-publication"
-import { isWriteContention } from "@/utils/club-write-transaction"
+import { isWriteContention, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts"
 import { lockOperationalClub, assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -29,21 +29,20 @@ function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
     slots: room.slots.filter(s => !applicant || +s.startTime > Date.now() && (!s.panelScheduleVersionId || s.publishedPanelMemberIds.length>0)).map(s => ({ id: s.id, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), capacity: s.capacity, booked: s._count.bookings, ...(!applicant ? { interviewersNeeded: s.interviewersNeeded, staffingRevision: s.staffingRevision, publishedPanelMemberIds:s.publishedPanelMemberIds,panelScheduleVersionId:s.panelScheduleVersionId } : {}) })) }
 }
 async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshReads=false): Promise<T> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await prisma.$transaction(async tx => {
-        // Fail fast under a burst instead of holding a pooled connection for a minute.
-        await tx.$queryRaw`SELECT set_config('lock_timeout', '8000', true)`
-        return fn(tx)
-      }, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable, timeout: 20000, maxWait: 10000 })
-    }
-    catch (error) {
-      const code = error && typeof error === "object" && "code" in error ? error.code : ""
-      if (code === "P2034" && attempt < 2) continue
-      if (code === "P2034" || code === "P2002") throw new Error("The schedule changed while saving. Reload the page and try again.")
-      if (isWriteContention(error)) throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
-      throw error
-    }
+  try {
+    // A deadlock (e.g. with a manual panel grant locking the same people in another order)
+    // or a serialization failure rolls the whole transaction back; it is re-run from the start.
+    return await retryTransactionConflict(() => prisma.$transaction(async tx => {
+      // Fail fast under a burst instead of holding a pooled connection for a minute.
+      await tx.$queryRaw`SELECT set_config('lock_timeout', '8000', true)`
+      return fn(tx)
+    }, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable, timeout: 20000, maxWait: 10000 }))
+  }
+  catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? error.code : ""
+    if (error instanceof TransactionConflictError || code === "P2002") throw new Error("The schedule changed while saving. Reload the page and try again.")
+    if (isWriteContention(error)) throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
+    throw error
   }
 }
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
