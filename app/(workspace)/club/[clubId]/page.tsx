@@ -8,7 +8,7 @@ import { getSessionUser } from "@/utils/auth"
 import { cookies } from "next/headers"
 import type { Metadata } from "next"
 import { getPublicClubSeo, isIndexableClub } from "@/lib/public-club-seo"
-import { publicPageMetadata, privateRobots } from "@/lib/seo"
+import { publicPageMetadata, privateRobots, clubStructuredData, serializeJsonLd } from "@/lib/seo"
 import { getClubShareProfile } from "@/lib/club-share-profile"
 import { clubShareMetadata } from "@/lib/club-share-text"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
@@ -38,7 +38,7 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
     if (canAccessDemo(authError || !user?.email_confirmed_at ? undefined : user.email)) redirect(`/preview?demoClub=${encodeURIComponent(clubId)}`)
   }
   // Past the Demo redirect, the public profile and the (per-request cached) session are independent.
-  const [result, { data: { user } }] = await Promise.all([getPublicClub(clubId), getSessionUser()])
+  const [result, { data: { user } }, seo] = await Promise.all([getPublicClub(clubId), getSessionUser(), getPublicClubSeo(clubId)])
   const sample = publicClubs.find((club) => club.id === clubId)
   const found = result.club || (sample ? { ...sample, source: "preview" as const } : null)
   // The client receives the public view of the marketing JSON only: research notes,
@@ -57,5 +57,12 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
       )
     notFound()
   }
-  return <AuthenticatedPageLayout optional><PublicClubPage club={club} authenticated={!!user} embedded={!!user} serverNow={Date.now()} /></AuthenticatedPageLayout>
+  // Structured data only for a live club that is indexable, and only from fields the page shows.
+  const structuredData = result.club && seo && isIndexableClub(seo)
+    ? clubStructuredData({ id: seo.id, name: seo.name, description: seo.description, logoUrl: club.logoUrl, sameAs: [club.marketing.website, club.marketing.linkedin, club.marketing.instagram] })
+    : null
+  return <AuthenticatedPageLayout optional>
+    {structuredData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />}
+    <PublicClubPage club={club} authenticated={!!user} embedded={!!user} serverNow={Date.now()} />
+  </AuthenticatedPageLayout>
 }
