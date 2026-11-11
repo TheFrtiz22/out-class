@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useRef, useState } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
@@ -100,12 +101,12 @@ export function RecipientGroups({ clubId }: { clubId: string }) {
  const [catalog,setCatalog]=useState<Catalog|null>(null),[error,setError]=useState(""),[open,setOpen]=useState(false),[busy,setBusy]=useState(false);
  const [editing,setEditing]=useState<Catalog["groups"][number]|null>(null),[name,setName]=useState(""),[kind,setKind]=useState<"MANUAL"|"RULES">("MANUAL"),[spec,setSpec]=useState(initial),[preview,setPreview]=useState<Preview|null>(null),[selected,setSelected]=useState<string[]>([]);
  const [reload,setReload]=useState(0);
- useEffect(()=>{if(demo.isDemoEnabled)return;let alive=true;getRecipientGroups(clubId).then(c=>{if(alive)setCatalog(c);}).catch(e=>{if(alive)setError(e instanceof Error?e.message:"Groups unavailable.");});return()=>{alive=false;};},[clubId,demo.isDemoEnabled,reload]);
+ useEffect(()=>{if(demo.isDemoEnabled)return;let alive=true;getRecipientGroups(clubId).then(c=>{if(alive)setCatalog(c);}).catch(e=>{if(alive)setError(userMessage(e, "Groups unavailable."));});return()=>{alive=false;};},[clubId,demo.isDemoEnabled,reload]);
  // No Refresh button: saves reload the list directly; returning to the tab reloads it when nothing is being edited.
  useRevalidate(()=>setReload(n=>n+1),{enabled:!demo.isDemoEnabled&&!open&&!busy,scopes:["recipient-groups"]});
  useEffect(()=>{if(!open||!dirty&&!busy)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=""};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);},[open,dirty,busy]);
  if(demo.isDemoEnabled)return <p>Recipient groups use your live club workspace. Demo never calls live group actions.</p>;
- async function work(fn:()=>Promise<void>){setBusy(true);setError("");try{await fn();}catch(e){setError(e instanceof Error?e.message:"Group operation failed.");}finally{setBusy(false);}}
+ async function work(fn:()=>Promise<void>){setBusy(true);setError("");try{await fn();}catch(e){setError(userMessage(e, "Group operation failed."));}finally{setBusy(false);}}
  async function edit(group: Catalog["groups"][number]|null){setDirty(false);draftId.current=group?.id||crypto.randomUUID();setEditing(group);setName(group?.name||"");setKind(group?.kind==="RULES"?"RULES":"MANUAL");setSpec(group?.kind==="RULES"?recipientAudienceSchema.parse(group.rules):initial());setPreview(null);setSelected([]);if(group?.kind==="MANUAL"){const p=await previewRecipientAudience(clubId,{include:[{source:"GROUP",groupId:group.id}]});setPreview(p);setSelected(p.recipients.map(r=>r.id));}setOpen(true);}
  return <section className="space-y-4 rounded-xl border p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold">Recipient groups</h3><p className="text-sm text-muted-foreground">Consulting, Finance, teams, committees, or reusable audience rules.</p></div>{catalog?.canEdit&&<Button disabled={busy} variant="outline" onClick={()=>void work(()=>edit(null))}>New group</Button>}</div>{error&&<p role="alert" className="text-sm text-destructive">{error}{!catalog&&<> <Button size="sm" variant="outline" onClick={()=>{setError("");setReload(n=>n+1);}}>Try again</Button></>}</p>}
   {!catalog&&!error&&<LoadingState label="Loading recipient groups…" layout="rows" rows={3} />}{catalog&&!catalog.groups.length&&<p className="text-sm text-muted-foreground">No recipient groups yet. Create a group to reuse a selection or audience rule.</p>}

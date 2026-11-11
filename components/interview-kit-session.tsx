@@ -1,4 +1,6 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery";
@@ -315,7 +317,7 @@ export function InterviewKitSession({
       .catch((e) => {
         if (current)
           setError(
-            e instanceof Error ? e.message : "Could not open interview.",
+            userMessage(e, "Could not open interview."),
           );
       });
     return () => {
@@ -403,7 +405,7 @@ export function InterviewKitSession({
   async function flushLatest() {
     if (pendingSave.current) await pendingSave.current;
     while (!finishingRef.current && sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
-      if (!(await persist())) throw Error("Your private notes are retained. Retry before leaving.");
+      if (!(await persist())) throw new UserFacingError("Your private notes are retained. Retry before leaving.");
     }
   }
   const recovery = useAutosaveRecovery({ identity: `interview:${session?.id}`, value: draft, baseline: saved, dirty, enabled: !!session && !session.completedAt, restore: setDraft, flush: flushLatest });

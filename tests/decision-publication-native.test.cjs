@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const guard = require("./helpers/communications-loader.cjs").loader({})("lib/decision-publication-guard.ts").decisionPublicationGuard;
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{AsyncLocalStorage}=require('node:async_hooks');
 const {loader}=require('./helpers/communications-loader.cjs');
@@ -16,7 +17,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
  const member=await db.clubMember.create({data:{clubId:club.id,userId:leader.id,isOwner:true}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Review',order:0,type:'CUSTOM'}});
  let acting=leader,support=null;
  const load=loader({'@/utils/prisma':{prisma:db},'@/utils/auth':{requireClubPermission:async()=>({user:acting,membership:member}),requireAuth:async()=>({user:acting})},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()},'@/utils/admin-elevation':{requireAdminElevation:async()=>{throw Error('Unexpected elevation')}},'next/cache':{revalidatePath(){}}});
- const schedules=load('actions/decision-schedules.ts'),worker=load('utils/scheduled-communications.ts'),management=load('actions/recruitment-management.ts'),communications=load('actions/communications.ts'),offers=load('utils/recruitment-offers.ts');
+ const schedules=unwrapActions(load('actions/decision-schedules.ts')),worker=load('utils/scheduled-communications.ts'),management=load('actions/recruitment-management.ts'),communications=load('actions/communications.ts'),offers=load('utils/recruitment-offers.ts');
  async function application(){const user=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}});return db.application.create({data:{studentId:user.id,clubId:club.id,roundId:round.id,status:'IN_REVIEW',submittedAt:new Date()}})}
  const input=(app,status='WAITLISTED')=>({id:randomUUID(),clubId:club.id,localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER',selection:{kind:'DIRECT',applicationId:app.id,expectedGuard:guard(app),status}});
  const due=id=>db.scheduledCommunication.update({where:{id},data:{scheduledAt:new Date(Date.now()-1000)}});
@@ -49,7 +50,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
  });
  await t.test('revoked sender and cross-club application remain denied',async()=>{
   const app=await application(),d=input(app);await schedules.scheduleDecisionPublication(d);await db.clubMember.create({data:{clubId:club.id,userId:student.id,isOwner:true}});await db.clubMember.update({where:{id:member.id},data:{status:'LEFT',isOwner:false}});await due(d.id);assert.equal((await worker.processScheduledCommunications()).failed,1);assert.equal(await db.decisionLetter.count({where:{applicationId:app.id}}),0);await db.clubMember.update({where:{id:member.id},data:{status:'ACTIVE',isOwner:true}});
-  const other=await db.club.create({data:{slug:randomUUID(),name:'Other',tagline:'',description:'',category:'Other',color:'#142d45'}}),otherRound=await db.pipelineRound.create({data:{clubId:other.id,name:'Other',order:0}}),foreign=await db.application.create({data:{clubId:other.id,studentId:student.id,roundId:otherRound.id,status:'IN_REVIEW'}});await assert.rejects(schedules.scheduleDecisionPublication(input(foreign)));
+  const other=await db.club.create({data:{slug:randomUUID(),name:'Other',tagline:'',description:'',category:'Other',color:'#142d45'}}),otherRound=await db.pipelineRound.create({data:{clubId:other.id,name:'Other',order:0}}),foreign=await db.application.create({data:{clubId:other.id,studentId:student.id,roundId:otherRound.id,status:'IN_REVIEW'}});await refused(schedules.scheduleDecisionPublication(input(foreign)));
  });
  await t.test('audit failure rolls back all domain writes and leaves an explicit failed intent',async()=>{
   const app=await application(),d=input(app,'ACCEPTED');await schedules.scheduleDecisionPublication(d);await due(d.id);failAudit=true;const result=await worker.processScheduledCommunications();failAudit=false;assert.equal(result.failed,1);assert.equal((await db.application.findUniqueOrThrow({where:{id:app.id}})).status,'IN_REVIEW');assert.equal(await db.decisionLetter.count({where:{applicationId:app.id}}),0);assert.equal(await db.clubInvitation.count({where:{applicationId:app.id}}),0);assert.equal(await db.userNotification.count({where:{userId:app.studentId,type:'DECISION'}}),0);
@@ -66,7 +67,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
   for(const role of ['anon','authenticated']){const [p]=await op.$queryRawUnsafe(`SELECT has_table_privilege('${role}','public."RecruitmentCycle"','SELECT,INSERT,UPDATE,DELETE') allowed`);assert.equal(p.allowed,false)}
   const [r]=await op.$queryRaw`SELECT pg_get_userbyid(relowner) owner,relrowsecurity rls,relforcerowsecurity force FROM pg_class WHERE oid='public."RecruitmentCycle"'::regclass`;assert.deepEqual(r,{owner:'outclass_production_app',rls:true,force:false});
  });
- await t.test('temporary support sessions cannot schedule authority beyond their lifetime',async()=>{support={id:randomUUID()};await assert.rejects(schedules.scheduleDecisionPublication(input(await application())),/support impersonation/);support=null;});
+ await t.test('temporary support sessions cannot schedule authority beyond their lifetime',async()=>{support={id:randomUUID()};await refused(schedules.scheduleDecisionPublication(input(await application())),/support impersonation/);support=null;});
  await t.test('crashed claims recover once, disabled recipients stop publication, and voting revisions fence outcomes',async()=>{
   const app=await application(),d=input(app);await schedules.scheduleDecisionPublication(d);await due(d.id);await op.scheduledCommunication.update({where:{id:d.id},data:{status:'PROCESSING',revision:1,updatedAt:new Date(Date.now()-180000)}});assert.equal((await worker.processScheduledCommunications()).published,1);assert.equal(await db.decisionLetter.count({where:{applicationId:app.id}}),1);
   const disabled=await application(),off=input(disabled);await schedules.scheduleDecisionPublication(off);await db.user.update({where:{id:disabled.studentId},data:{disabledAt:new Date()}});await due(off.id);assert.equal((await worker.processScheduledCommunications()).failed,1);assert.equal(await db.decisionLetter.count({where:{applicationId:disabled.id}}),0);
@@ -79,7 +80,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
  });
  await t.test('anonymous state guards support scheduling/reconsideration without exposing identity or versions',async()=>{
   const anonymous=await db.pipelineRound.create({data:{clubId:club.id,name:'Anonymous review',type:'CUSTOM',order:1,anonymousReview:true}}),app=await application();await db.application.update({where:{id:app.id},data:{roundId:anonymous.id}});await publish(app,'REJECTED');
-  const crm=load('actions/crm.ts'),pipeline=await crm.getClubPipeline(club.id),projected=pipeline.applications.find(a=>a.id===app.id);assert.equal(projected.student.email,'');assert.equal(projected.decisionVersion,0);assert.equal(projected.decisionStateRevision,0);assert.match(projected.publicationGuard,/^[a-f0-9]{64}$/);
+  const crm=unwrapActions(load('actions/crm.ts')),pipeline=await crm.getClubPipeline(club.id),projected=pipeline.applications.find(a=>a.id===app.id);assert.equal(projected.student.email,'');assert.equal(projected.decisionVersion,0);assert.equal(projected.decisionStateRevision,0);assert.match(projected.publicationGuard,/^[a-f0-9]{64}$/);
   const d={...input(await db.application.findUniqueOrThrow({where:{id:app.id}}),'WAITLISTED'),selection:{kind:'DIRECT',applicationId:app.id,expectedGuard:projected.publicationGuard,status:'WAITLISTED'}};await schedules.scheduleDecisionPublication(d);await schedules.cancelDecisionSchedule(club.id,d.id,0);await management.reconsiderRejectedApplication({clubId:club.id,applicationId:app.id,expectedGuard:projected.publicationGuard,reason:'Anonymous additional review authorized'});assert.equal((await db.application.findUniqueOrThrow({where:{id:app.id}})).status,'IN_REVIEW');
  });
  await t.test('closed application deadline blocks new submissions but not authorized scheduled decisions or reconsideration',async()=>{
@@ -87,8 +88,8 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
   await schedules.scheduleDecisionPublication(d);
   await db.club.update({where:{id:club.id},data:{applicationOpen:false,applicationDeadline:new Date(Date.now()-1000)}});
   try{
-   const applications=load('actions/applications.ts');
-   await assert.rejects(applications.submitApplication({clubId:club.id,answers:[]}),/Applications are closed/);
+   const applications=unwrapActions(load('actions/applications.ts'));
+   await refused(applications.submitApplication({clubId:club.id,answers:[]}),/Applications are closed/);
    assert.equal((await db.application.findUniqueOrThrow({where:{id:app.id}})).status,'IN_REVIEW');
    assert.equal(await db.decisionLetter.count({where:{applicationId:app.id}}),0);
    await due(d.id);assert.equal((await worker.processScheduledCommunications()).published,1);

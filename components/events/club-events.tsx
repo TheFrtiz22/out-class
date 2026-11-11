@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 
@@ -186,7 +187,7 @@ function EventEditor({
       else setNotice("Draft saved. You can now upload a flyer.");
       return result;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save the event.");
+      setError(userMessage(e, "Could not save the event."));
       return null;
     } finally {
       if (!nested) { operation.current = false; setBusy(false); }
@@ -222,7 +223,7 @@ function EventEditor({
       setUseTemplate(false);
       setNotice("Flyer uploaded privately. Apply event changes when ready.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Flyer upload failed.");
+      setError(userMessage(e, "Flyer upload failed."));
     } finally {
       operation.current = false; setBusy(false); setUploading(false);
     }

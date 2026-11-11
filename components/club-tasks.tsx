@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -38,12 +40,12 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
   // Every read takes a ticket; a response lands only if no newer read (including run()'s post-mutation read) started since.
   const readTicket=useRef(0),shown=useRef(workspace);shown.current=workspace
   const [stale,setStale]=useState(false)
-  useEffect(()=>{if(!demo.ready||loading)return;if(firstRead.current){firstRead.current=false;return;}let current=true;const ticket=++readTicket.current,background=!!shown.current;if(!background)setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current&&ticket===readTicket.current){setWorkspace(data);setStale(false);setError("")}}).catch(error=>{if(!current||ticket!==readTicket.current)return;if(background)setStale(true);else{setWorkspace(null);setError(error instanceof Error?error.message:"Could not load tasks.")}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
+  useEffect(()=>{if(!demo.ready||loading)return;if(firstRead.current){firstRead.current=false;return;}let current=true;const ticket=++readTicket.current,background=!!shown.current;if(!background)setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current&&ticket===readTicket.current){setWorkspace(data);setStale(false);setError("")}}).catch(error=>{if(!current||ticket!==readTicket.current)return;if(background)setStale(true);else{setWorkspace(null);setError(userMessage(error, "Could not load tasks."))}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
   // No Refresh button: mutations here reload in run(); returning to the tab or a "tasks" change reloads too.
   useRevalidate(()=>setRefresh(value=>value+1),{scopes:["tasks"],enabled:!busy&&!dirty})
   useEffect(()=>{if(!dirty&&!busy)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=""};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn)},[dirty,busy])
   useEffect(()=>{if(manager||!focusedTask||focusedTask===consumedFocus.current||!workspace)return;const task=workspace.tasks.find(task=>task.id===focusedTask),own=task?.assignments.find(assignment=>assignment.memberId===workspace.memberId);if(own){consumedFocus.current=focusedTask;setActive(task!.id);if(!own.viewedAt)void viewTask(own.id).catch(()=>{})}},[focusedTask,workspace,manager])
-  async function run(fn:()=>Promise<unknown>){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){setError(error instanceof Error?error.message:"Could not save. Please try again.");return false}finally{setBusy(false)}}
+  async function run(fn:()=>Promise<unknown>){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){setError(userMessage(error, "Could not save. Please try again."));return false}finally{setBusy(false)}}
   async function closeTask(){if(busy||document.querySelector('[data-task-uploading="true"]'))return;if(dirty&&!(await confirm({title:"Close task?",description:"Unsaved changes will be lost.",confirmLabel:"Close task",cancelLabel:"Keep editing",tone:"danger"})))return;setActive(null);setDirty(false)}
   async function open(task:Task,event?:React.MouseEvent<HTMLElement>){const trigger=event?.currentTarget??document.activeElement as HTMLElement;if(dirty&&!(await confirm({title:"Open another task?",description:"Unsaved changes will be lost.",confirmLabel:"Open task",cancelLabel:"Keep editing",tone:"danger"})))return;taskTrigger.current=trigger;setActive(task.id);setDirty(false);const own=task.assignments.find(assignment=>assignment.memberId===workspace?.memberId);if(own&&!own.viewedAt)void viewTask(own.id).catch(()=>{})}
   const personal=workspace?.tasks.filter(task=>task.status!=="DRAFT"&&task.assignments.some(assignment=>assignment.memberId===workspace.memberId))??[]
@@ -178,7 +180,7 @@ function Submission({
                       window.location.assign(url);
                     } catch (e) {
                       setError(
-                        e instanceof Error ? e.message : "Download failed.",
+                        userMessage(e, "Download failed."),
                       );
                     }
                   }}
@@ -237,14 +239,14 @@ function Submission({
                     body: file,
                   });
                   if (!response.ok)
-                    throw new Error("Upload failed. Please try again.");
+                    throw new UserFacingError("Upload failed. Please try again.");
                   setFiles((current) => [
                     ...current,
                     { id: upload.id, name: file.name, size: file.size },
                   ]);
                 }
               } catch (e) {
-                setError(e instanceof Error ? e.message : "Upload failed.");
+                setError(userMessage(e, "Upload failed."));
               } finally {
                 setUploading(false);
               }

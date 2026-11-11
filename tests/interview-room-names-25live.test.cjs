@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require("node:test")
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
@@ -94,7 +95,7 @@ function actionHarness() {
     new Function("require", "module", "exports", code)(n => n in mocks ? mocks[n] : n.startsWith("@/") ? load(n.slice(2) + ".ts") : n.startsWith(".") ? load(path.resolve(path.dirname(absolute), n) + ".ts") : require(n), mod, mod.exports)
     return mod.exports
   }
-  return { state, clubA, clubB, api: load("actions/interview-rooms.ts") }
+  return { state, clubA, clubB, api: unwrapActions(load("actions/interview-rooms.ts")) }
 }
 
 test("renameInterviewRoom: manager-only, club-scoped, trims, allows duplicate names, audits", async () => {
@@ -142,7 +143,7 @@ test("the 25Live flag reaches managers but never applicants", async () => {
   const mocks = { "@/utils/auth": { requireAuth: async () => ({ user: { id: id(6) } }), requireClubPermission: async () => ({ membership: { status: "ACTIVE", permissions: ["interviews.manage"] } }) }, "@/utils/prisma": { prisma }, "@/utils/applicant-booking-notifications": { notifyApplicantBooking: async () => {} }, "@/utils/interview-booking": { interviewBookingCoverage: async () => [{ slotId: id(4), bookable: true }] }, "next/cache": { revalidatePath() {} } }
   const cache = {}
   const load = file => { const absolute = path.resolve(file); if (cache[absolute]) return cache[absolute].exports; const mod = { exports: {} }; cache[absolute] = mod; new Function("require", "module", "exports", ts.transpileModule(fs.readFileSync(absolute, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith("@/") ? load(n.slice(2) + ".ts") : n.startsWith(".") ? load(path.resolve(path.dirname(absolute), n) + ".ts") : require(n), mod, mod.exports); return mod.exports }
-  const api = load("actions/interview-rooms.ts")
+  const api = unwrapActions(load("actions/interview-rooms.ts"))
   const manager = await api.getRoomWorkspace(id(1))
   assert.equal(manager.rooms[0].externallyBookedAt, "2099-01-01T00:00:00.000Z")
   const applicant = await api.getApplicantSchedule(id(5))

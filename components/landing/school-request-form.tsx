@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Check } from "@/components/icons"
@@ -50,10 +52,10 @@ export function SchoolRequestForm() {
     try {
       const response = await fetch("/api/school-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...input.data, ...(turnstileToken ? { turnstileToken } : {}) }) })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || "Your request could not be saved.")
+      if (!response.ok) throw new UserFacingError(data.error || "Your request could not be saved.")
       setSubmitted({ university: input.data.university, email: input.data.email })
       setConfirmation(data.message)
-    } catch (e) { setError(e instanceof Error ? e.message : "Unable to submit. Please try again.") }
+    } catch (e) { setError(userMessage(e, "Unable to submit. Please try again.")) }
     finally { setBusy(false); setTurnstileReset(value => value + 1) }
   }
   if (confirmation) return <div ref={success} tabIndex={-1} className="oc-request-success oc-public-glass" aria-labelledby="request-success-title">
