@@ -6,7 +6,7 @@ The normal \`pnpm test\` suite intentionally does not boot Auth, Storage, Next.j
 
 This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on every pull request, Mondays at 05:17 UTC, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
 
-**A successful static coverage report does not imply all 43 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
+**A successful static coverage report does not imply all 44 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
 
 ## Run locally
 
@@ -14,7 +14,7 @@ Requirements: Node 22, pnpm 10, Docker with Linux containers, OpenSSL (for onboa
 
 | Runner | Command | Bound disposable environment |
 | --- | --- | --- |
-| Auth, MFA, settings, navigation, PDF import | \`node scripts/run-onboarding-e2e.cjs --club-integration\` | Dedicated local Supabase Auth/Postgres/Mailpit, Next server 3107 |
+| Auth, MFA, settings, navigation, PDF import, attacker pass | \`node scripts/run-onboarding-e2e.cjs --club-integration\` | Dedicated local Supabase Auth/Postgres/Mailpit, Next server 3107 |
 | Native security/concurrency, two-request races (application submit, legacy invitation accept, meeting check-in, club claim), and starting the next recruitment cycle | \`node scripts/run-disposable-postgres.cjs security\` | DB \`outclass_security_test\` on loopback 58454 |
 | Native mock recruiting cycle (50 synthetic applicants: apply, anonymous review, interviews, live voting, decisions, offers, roster export; logs per-stage timings) | \`node scripts/run-disposable-postgres.cjs security\` (runs \`tests/mock-recruiting-cycle-native.test.cjs\`) | DB \`outclass_security_test\` on loopback 58454 |
 | Native Events and browser Events | \`node scripts/run-disposable-postgres.cjs events\` | DB \`postgres\` on loopback 55442 |
@@ -27,6 +27,23 @@ Requirements: Node 22, pnpm 10, Docker with Linux containers, OpenSSL (for onboa
 Install Chromium before browser suites: \`pnpm exec playwright install --with-deps chromium\` (Linux) or \`pnpm exec playwright install chromium\` on other platforms.
 
 Do **not** run concurrent local suites that share the 58453 port. CI gives each matrix job a separate machine.
+
+## Attacker pass
+
+\`tests/attacker-pass-e2e.test.cjs\` runs last in the onboarding runner's \`--club-integration\` list (CI job "Local Auth, settings and navigation"). It refuses to start unless the app, Supabase and database URLs are loopback, and uses only the runner's disposable config. Four accounts are seeded: students A and B, leader L (owner of club X) and leader M (owner of club Y).
+
+| Case | Checks |
+| --- | --- |
+| IDOR | B against A's workspace reads, decision letter, résumé, headshot, attachment and interview-résumé routes; M against X's workspace reads, notes, \`/api/club-exports\`, voting reads and cross-club id binding; random calendar-feed tokens return 404. Every response is scanned for seeded A/X names, emails, ids, paths, notes and tokens (\`tests/helpers/attacker-pass.cjs\`, unit-tested in \`tests/attacker-pass-helpers.test.cjs\`). |
+| Logout | A's captured cookies, replayed after \`/api/auth/logout\`, get a redirect to \`/login\` or 401. |
+| Public key | Publishable (and legacy anon) key against PostgREST for every Prisma table, and Storage list/download/sign for every private bucket. |
+| Headers | frame-ancestors / X-Frame-Options on HTML; \`/.git/*\` and \`/.env*\` 404; no \`.map\` files; middleware CSP (skipped while middleware sets none). |
+| Enumeration | Login, forgot-password and signup answer known and unknown emails alike; direct \`/auth/v1/otp\` is recorded as informational. |
+| Open redirect | \`next\` payloads on \`/login\`, \`/signup\` and \`/auth/callback\` never leave the origin, signed out and signed in. |
+| Rate limits | Bursts against \`/q/<code>\` and password recovery expect 429, only when \`lib/rate-limit\` exists; skipped otherwise. |
+| Uploads | HTML/SVG/JS named \`.png\` is rejected as a headshot; a PNG+HTML polyglot is recorded as informational. |
+
+The summary is written to \`test-results/attacker-pass.json\` (case, result, notes) and uploaded as the \`attacker-pass\` artifact. A \`partial\` result means a probe was malformed (HTTP 400) or a provider rate limit made a comparison inconclusive; read its notes.
 
 ## Isolation and cleanup
 

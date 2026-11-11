@@ -35,16 +35,20 @@ test('export permissions require every listed capability', () => {
   assert.equal(canExport(null, 'attendance'), false)
 })
 
-function route({ deny = false, denyInTx = false } = {}) {
-  const state = { audits: [], checks: [] }
+// The real server switch reader, with the server-only marker stubbed.
+const clubFeatures = () => load('utils/club-features.ts', { 'server-only': {} })
+const on = { csvExport: true }
+function route({ deny = false, denyInTx = false, features = on } = {}) {
+  const state = { audits: [], checks: [], featureReads: [] }
   const member = { id: 'm1', userId: 'u1', isOwner: true, status: 'ACTIVE' }
   const tx = {
-    club: { findUniqueOrThrow: async () => ({ name: 'Test Club' }) },
+    club: { findUniqueOrThrow: async () => ({ name: 'Test Club' }), findUnique: async q => { state.featureReads.push(q); return { features } } },
     clubMember: { findMany: async q => { assert.deepEqual(q.where, { clubId, status: 'ACTIVE' }); return [{ title: '=evil', cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', gradYear: 2028, computingId: 'al1x' }, applications: [] } }] } },
     eventAttendance: { findMany: async q => { assert.deepEqual(q.where, { event: { clubId } }); return [] } },
     auditLog: { create: async q => { state.audits.push(q.data) } },
   }
   const mod = load('app/api/club-exports/route.ts', {
+    '@/utils/club-features': clubFeatures(),
     '@/utils/support-audit': { auditSupportAction: async () => {} },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     '@/utils/auth': { requireClubPermission: async (id, perms) => { state.checks.push(['request', id, perms]); if (deny) throw new Error('denied'); return { user: { id: 'u1' }, membership: member } } },
@@ -110,13 +114,13 @@ const otherClub = '00000000-0000-4000-8000-000000000009'
 const roundA = '00000000-0000-4000-8000-0000000000a1'
 const eventA = '00000000-0000-4000-8000-0000000000e1'
 const { hasPermission } = load('lib/permissions.ts')
-function harness(memberships, data = {}, { support = null, profileFieldVisibility = null } = {}) {
+function harness(memberships, data = {}, { support = null, profileFieldVisibility = null, features = on, suspendedAt = null } = {}) {
   const state = { audits: [], supportAudits: [], queries: {} }
   const access = id => { const m = memberships[id]; return m ? { id: 'm1', userId: 'u1', status: 'ACTIVE', ...m } : null }
   const check = (id, perms) => { const m = access(id); if (!m || !perms.every(p => hasPermission(m, p))) throw new Error('You do not have permission for this club action.'); return m }
   const record = (name, rows) => async q => { state.queries[name] = q; return rows }
   const tx = {
-    club: { findUniqueOrThrow: async () => ({ name: 'Test Club', profileFieldVisibility }) },
+    club: { findUniqueOrThrow: async () => ({ name: 'Test Club', profileFieldVisibility, suspendedAt }), findUnique: async ({ where }) => where.id === clubId ? { features } : null },
     applicantRecusal: { findMany: async q => { state.queries.applicantRecusal = q; return (data.recusals || []).filter(id => q.where.applicationId.in.includes(id)).map(applicationId => ({ applicationId })) } },
     application: { findMany: record('application', data.applications || []) },
     pipelineRound: { findMany: record('pipelineRound', data.rounds || []) },
@@ -132,10 +136,11 @@ function harness(memberships, data = {}, { support = null, profileFieldVisibilit
     '@/utils/prisma': { prisma: { auditLog: { create: async q => { state.supportAudits.push(q.data) } } } },
   })
   const mod = load('app/api/club-exports/route.ts', {
+    '@/utils/club-features': clubFeatures(),
     '@/utils/support-audit': supportAudit,
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
-    '@/utils/auth': { requireClubPermission: async (id, perms) => { check(id, perms); return { user: { id: 'u1' } } } },
-    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, _user, perms) => check(id, perms) },
+    '@/utils/auth': { requireClubPermission: async (id, perms, opts) => { state.requestOpts = opts; check(id, perms); return { user: { id: 'u1' } } } },
+    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, _user, perms, opts) => { state.txOpts = opts; return check(id, perms) } },
   })
   state.get = q => mod.GET(new Request(`https://out-class.net/api/club-exports?${q}`))
   return state
@@ -322,4 +327,107 @@ test('support view-as export writes a support audit with admin actor, target use
   const plain = harness({ [clubId]: { isOwner: true } }, { members: [] })
   await plain.get(`clubId=${clubId}&kind=roster`)
   assert.deepEqual(plain.supportAudits, [])
+})
+
+// ---- csvExport pilot switch (PR #273 registry; default off) ----
+const kinds = [['applicants', { permissions: ['recruitment.manage', 'applicants.identify'] }], ['roster', { permissions: ['members.manage'] }], ['attendance', { permissions: ['meetings.attendance'] }], ['rsvps', { permissions: ['meetings.attendance'] }]]
+const sample = { rounds: [{ id: roundA, name: 'R1' }], applications: [application('x1')],
+  members: [{ title: null, cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { email: 'f@virginia.edu', studentProfile: { firstName: 'F', lastName: 'L', gradYear: 2027, computingId: 'fl1' }, applications: [] } }],
+  attendance: [{ checkedInAt: new Date(), event: { title: 'GBM', date: new Date() }, student: person('Ada', 'Lee', 'ada@virginia.edu') }],
+  rsvps: [{ createdAt: new Date(), event: { title: 'E', date: new Date() }, user: person('Ada', 'Lee', 'ada@virginia.edu') }] }
+
+test('csvExport off (NULL, {}, false, malformed): every kind refused with a plain 403, no rows read, no audit', async () => {
+  for (const [kind, access] of kinds) for (const features of [null, {}, { csvExport: false }, '{"csvExport":true}', { csvExport: 'true' }]) {
+    const s = harness({ [clubId]: access }, sample, { features })
+    const res = await s.get(`clubId=${clubId}&kind=${kind}`)
+    assert.equal(res.status, 403, `${kind} ${JSON.stringify(features)}`)
+    assert.equal(res.headers.get('cache-control'), 'private, no-store')
+    assert.equal(res.headers.get('content-disposition'), null)
+    assert.equal(await res.text(), 'CSV export is not enabled for this club.')
+    assert.deepEqual(Object.keys(s.queries), [], 'no export query ran')
+    assert.equal(s.audits.length, 0)
+    assert.deepEqual(s.supportAudits, [])
+  }
+})
+
+test('csvExport on: every kind exports, with exactly one audit row', async () => {
+  for (const [kind, access] of kinds) {
+    const s = harness({ [clubId]: access }, sample)
+    const res = await s.get(`clubId=${clubId}&kind=${kind}`)
+    assert.equal(res.status, 200, kind)
+    assert.match(res.headers.get('content-type'), /^text\/csv/)
+    assert.deepEqual(s.audits.map(a => a.action), [`club.export.${kind}`])
+  }
+})
+
+test('the switch is checked after both capability checks: outsiders get the generic refusal either way', async () => {
+  for (const features of [null, on]) {
+    const outsider = harness({ [otherClub]: { isOwner: true } }, sample, { features })
+    const res = await outsider.get(`clubId=${clubId}&kind=roster`)
+    assert.equal(res.status, 403)
+    assert.equal(await res.text(), 'Export unavailable')
+  }
+  const r = route({ features: null })
+  assert.equal((await r.get(`clubId=${clubId}&kind=roster`)).status, 403)
+  assert.deepEqual(r.checks.map(c => c[0]), ['request', 'tx'], 'auth ran first')
+  assert.deepEqual(r.featureReads, [{ where: { id: clubId }, select: { features: true } }], 'read on the server via clubHasFeature')
+  const denied = route({ deny: true, features: null })
+  assert.equal(await (await denied.get(`clubId=${clubId}&kind=roster`)).text(), 'Export unavailable')
+  assert.deepEqual(denied.featureReads, [], 'switch never read for a denied caller')
+})
+
+test('support view-as: may export when on (both audits written); refused when off with no audits', async () => {
+  const support = { id: 'support-session-2', actorId: 'admin-1', targetUserId: 'u1', reason: 'Pilot support ticket' }
+  const onRun = harness({ [clubId]: { isOwner: true } }, sample, { support })
+  assert.equal((await onRun.get(`clubId=${clubId}&kind=roster`)).status, 200)
+  assert.deepEqual(onRun.audits.map(a => a.action), ['club.export.roster'])
+  assert.deepEqual(onRun.supportAudits.map(a => [a.action, a.actorId, a.supportSessionId]), [['platform.impersonation.club-export.roster', 'admin-1', 'support-session-2']])
+  const offRun = harness({ [clubId]: { isOwner: true } }, sample, { support, features: null })
+  assert.equal((await offRun.get(`clubId=${clubId}&kind=roster`)).status, 403)
+  assert.equal(offRun.audits.length + offRun.supportAudits.length, 0)
+})
+
+test('suspended club with csvExport on keeps exporting (suspended-read allowed at both checks)', async () => {
+  for (const [kind, access] of kinds) {
+    const s = harness({ [clubId]: access }, sample, { suspendedAt: new Date('2026-11-01T00:00:00Z') })
+    assert.equal((await s.get(`clubId=${clubId}&kind=${kind}`)).status, 200, kind)
+    assert.deepEqual(s.requestOpts, { allowSuspendedRead: true })
+    assert.deepEqual(s.txOpts, { readOnly: true, allowSuspendedRead: true })
+    assert.equal(s.audits.length, 1)
+  }
+})
+
+// UI: the real ClubExportLink rendered with stubbed auth/demo hooks.
+function renderLink({ features, demo = false, membership = { isOwner: true }, kind = 'roster', showNotice, user = true } = {}) {
+  const React = require('react')
+  const Button = ({ children, asChild, variant, size, ...rest }) => asChild ? children : React.createElement('button', rest, children)
+  const { ClubExportLink } = load('components/club-export-link.tsx', {
+    '@/components/icons': { Download: () => null },
+    '@/components/ui/button': { Button },
+    '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: demo }) },
+    '@/contexts/auth-context': { useAuth: () => ({ user: user ? { memberships: [{ clubId, club: { id: clubId, features } }, { clubId: otherClub, club: { id: otherClub, features: on } }] } : null }) },
+  })
+  return require('react-dom/server').renderToStaticMarkup(React.createElement(ClubExportLink, { clubId, kind, membership, label: 'Export CSV', showNotice }))
+}
+
+test('UI: export link shown only when the club switch is on; off shows one short note instead', () => {
+  assert.match(renderLink({ features: on }), /<a href="\/api\/club-exports\?clubId=[^"]+&amp;kind=roster" download="">Export CSV<\/a>/)
+  for (const features of [undefined, null, {}, { csvExport: false }]) {
+    const html = renderLink({ features })
+    assert.doesNotMatch(html, /<a |Export CSV/, JSON.stringify(features))
+    assert.match(html, /CSV export isn&#x27;t turned on for this club yet\./)
+  }
+  assert.equal(renderLink({ features: null, showNotice: false }), '', 'second link beside the first adds no duplicate note')
+  assert.equal(renderLink({ features: on, membership: { permissions: [] } }), '', 'no capability: nothing, not even the note')
+  assert.equal(renderLink({ features: null, membership: { permissions: [] } }), '')
+  assert.equal(renderLink({ features: on, demo: true }), '', 'demo stays hidden')
+  assert.equal(renderLink({ features: on, user: false }), '', 'no account loaded yet: nothing')
+  assert.match(fs.readFileSync('components/organization-member-management.tsx', 'utf8'), /kind="attendance" membership=\{data\.actor\} label="Export attendance" showNotice=\{false\}/)
+})
+
+test('switch state reaches the UI only through the account\'s own memberships, not application clubs', () => {
+  const src = fs.readFileSync('lib/account-data.ts', 'utf8')
+  assert.doesNotMatch(src.slice(src.indexOf('export const accountClubSelect'), src.indexOf('} as const')), /features/)
+  assert.match(src, /memberships: \{\n    where: \{ status: "ACTIVE" \},\n    include: \{ club: \{ select: accountMembershipClubSelect \} \}/)
+  assert.match(src, /applications: \{\n    omit: \{ anonymousReviewText: true \},\n    include: \{ club: \{ select: accountClubSelect \} \}/)
 })
