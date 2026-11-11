@@ -7,6 +7,6 @@ export default async function AccountSettingsPage() {
   const { user, supabaseUser, impersonation } = await requireAuth({ verifyEmail: true })
   const providers = supabaseUser.app_metadata?.providers
   const passwordAccount = Array.isArray(providers) ? providers.includes("email") : supabaseUser.app_metadata?.provider === "email"
-  const deletionRequest = impersonation ? null : await getAccountDeletionRequest()
-  return <AccountSettings email={user.email} passwordAccount={passwordAccount} impersonating={!!impersonation} deletionRequest={deletionRequest} />
+  const deletion = impersonation ? null : await getAccountDeletionRequest()
+  return <AccountSettings email={user.email} passwordAccount={passwordAccount} impersonating={!!impersonation} deletionRequest={deletion?.pending ?? null} deletionWarnings={deletion?.warnings ?? []} />
 }

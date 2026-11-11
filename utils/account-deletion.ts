@@ -55,16 +55,30 @@ export type AccountDeletionResult = {
   anonymizedApplications: number
   deletedMemberships: number
   anonymizedMemberships: number
+  /** Published decision letters and interview résumé snapshots are immutable by DB trigger; a migration is needed to scrub them. */
+  retainedDecisionLetters: number
+  retainedResumeSnapshots: number
+  authDeleted: boolean
 }
+
+export const OWNER_GUARD_MESSAGE = "This person is still the only active owner of a club. Transfer ownership, then complete the deletion."
+/** The DB owner guards (outclass_owner_account_guard, membership guard) raise these. */
+export function ownerGuardError(error: unknown) {
+  const text = error instanceof Error ? error.message : String(error)
+  return /Assign another active owner/.test(text)
+}
+
+const AUTH_DELETE_ATTEMPTS = 3
 
 /**
  * Deletes a person's account data. Idempotent: every step tolerates an earlier
  * partial run, so an interrupted deletion is completed by running it again.
  *
- * Order: disable sign-in (DB owner guard refuses sole active owners), remove
- * Storage objects, delete/anonymize rows in one transaction, delete the Auth
- * user, then resolve the request and audit. The User row stays as the
- * anonymized tombstone that retained club records reference.
+ * Order: disable sign-in (requireAuth then never rewrites the email; the DB
+ * owner guard refuses sole active owners), delete/anonymize rows in one
+ * transaction, then remove Storage objects (so a rolled-back transaction never
+ * leaves files missing), delete the Auth user with retries, then resolve the
+ * request and audit. The User row stays as the anonymized tombstone.
  */
 export async function performAccountDeletion(
   db: Db,
@@ -78,19 +92,18 @@ export async function performAccountDeletion(
   if (admin?.active) throw Error("Remove platform administrator access before deleting this account.")
   if (!user.disabledAt) await db.user.update({ where: { id: userId }, data: { disabledAt: new Date() } })
 
-  // Storage first: rows below hold the only references to task files.
-  let storageObjects = 0
-  for (const bucket of PERSONAL_BUCKETS) {
-    const paths = await services.listObjects(bucket, userId)
-    if (paths.length) await services.removeObjects(bucket, paths)
-    storageObjects += paths.length
-  }
-  const taskFiles = (await db.taskFile.findMany({ where: { assignment: { userId } }, select: { path: true } })).map(file => file.path)
-  if (taskFiles.length) await services.removeObjects("task-submissions", taskFiles)
-  storageObjects += taskFiles.length
+  // Task-file paths live only in rows deleted below; capture them and keep a
+  // durable copy (no personal data: assignment-id paths) so a re-run can finish removal.
+  const earlier = await db.auditLog.findMany({ where: { targetId: userId, action: accountDeletionAudit.storagePending }, select: { details: true } })
+  const taskFiles = new Set<string>(earlier.flatMap(row => {
+    const paths = (row.details as { taskFiles?: unknown } | null)?.taskFiles
+    return Array.isArray(paths) ? paths.filter((p): p is string => typeof p === "string") : []
+  }))
+  for (const file of await db.taskFile.findMany({ where: { assignment: { userId } }, select: { path: true } })) taskFiles.add(file.path)
 
   const counts = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`
+    if (taskFiles.size) await tx.auditLog.create({ data: { actorId: context.actorId, action: accountDeletionAudit.storagePending, targetId: userId, details: { taskFiles: [...taskFiles] } } })
     await tx.studentProfile.deleteMany({ where: { userId } })
     await tx.eventRsvp.deleteMany({ where: { userId } })
     await tx.savedCampusEvent.deleteMany({ where: { userId } })
@@ -114,6 +127,8 @@ export async function performAccountDeletion(
     await tx.rosterImportRow.updateMany({ where: { matchedUserId: userId }, data: { matchedUserId: null } })
 
     // Applications: withdraw in-progress ones nothing depends on; anonymize the rest.
+    // Kept rows keep the club's own evaluations, interview records and observations
+    // (written by leaders); they reach the person only through studentId = tombstone.
     const applications = await tx.application.findMany({
       where: { studentId: userId },
       select: { id: true, status: true, recruitmentOffer: { select: { id: true } }, _count: { select: {
@@ -123,11 +138,12 @@ export async function performAccountDeletion(
     })
     const removable = applications.filter(app => (pendingApplicationStatuses as readonly string[]).includes(app.status)
       && !app.recruitmentOffer && Object.values(app._count).every(count => count === 0)).map(app => app.id)
-    const retained = applications.map(app => app.id).filter(id => !removable.includes(id))
+    const retained = applications.filter(app => !removable.includes(app.id))
     if (removable.length) await tx.application.deleteMany({ where: { id: { in: removable } } })
     if (retained.length) {
-      await tx.applicationAnswer.deleteMany({ where: { applicationId: { in: retained } } })
-      await tx.application.updateMany({ where: { id: { in: retained } }, data: { anonymousReviewText: null } })
+      const ids = retained.map(app => app.id)
+      await tx.applicationAnswer.deleteMany({ where: { applicationId: { in: ids } } })
+      await tx.application.updateMany({ where: { id: { in: ids } }, data: { anonymousReviewText: null } })
     }
 
     // Memberships: evaluations, interview records and ballots are immutable club records.
@@ -144,18 +160,36 @@ export async function performAccountDeletion(
     } })
 
     await tx.user.update({ where: { id: userId }, data: { email: tombstoneEmail(userId), role: "STUDENT" } })
-    return { deletedApplications: removable.length, anonymizedApplications: retained.length, deletedMemberships: freeMemberships.length, anonymizedMemberships: keptMemberships.length }
+    return {
+      deletedApplications: removable.length, anonymizedApplications: retained.length,
+      deletedMemberships: freeMemberships.length, anonymizedMemberships: keptMemberships.length,
+      retainedDecisionLetters: retained.reduce((sum, app) => sum + app._count.decisionLetters, 0),
+      retainedResumeSnapshots: retained.reduce((sum, app) => sum + app._count.resumeDocuments, 0),
+    }
   }, { timeout: 30_000 })
 
-  await services.deleteAuthUser(userId)
+  // Storage only after the transaction commits.
+  let storageObjects = 0
+  for (const bucket of PERSONAL_BUCKETS) {
+    const paths = await services.listObjects(bucket, userId)
+    if (paths.length) await services.removeObjects(bucket, paths)
+    storageObjects += paths.length
+  }
+  if (taskFiles.size) await services.removeObjects("task-submissions", [...taskFiles])
+  storageObjects += taskFiles.size
 
-  const result = { userId, storageObjects, ...counts }
+  let authDeleted = false
+  for (let attempt = 0; attempt < AUTH_DELETE_ATTEMPTS && !authDeleted; attempt++) {
+    try { await services.deleteAuthUser(userId); authDeleted = true } catch { /* retried; recorded below */ }
+  }
+
+  const result: AccountDeletionResult = { userId, storageObjects, ...counts, authDeleted }
   await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    if (context.reportId) await tx.platformReport.updateMany({
+    if (authDeleted && context.reportId) await tx.platformReport.updateMany({
       where: { id: context.reportId, kind: ACCOUNT_DELETION_REPORT_KIND, status: { in: ["OPEN", "INVESTIGATING"] } },
       data: { status: "RESOLVED", resolution: context.reason, resolvedAt: new Date(), resolvedBy: context.actorId, revision: { increment: 1 } },
     })
-    await tx.auditLog.create({ data: { actorId: context.actorId, action: accountDeletionAudit.completed, targetId: userId, reason: context.reason, details: { ...result, reportId: context.reportId ?? null, result: "success" } } })
+    await tx.auditLog.create({ data: { actorId: context.actorId, action: authDeleted ? accountDeletionAudit.completed : accountDeletionAudit.incomplete, targetId: userId, reason: context.reason, details: { ...result, reportId: context.reportId ?? null, result: authDeleted ? "success" : "auth-delete-failed" } } })
   })
   return result
 }

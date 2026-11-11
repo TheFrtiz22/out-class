@@ -6,7 +6,7 @@ export function accountDeletionEmail(input: { scheduledFor: Date; siteUrl: strin
   const link = new URL('/settings/account', origin).href;
   const date = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'America/New_York' }).format(input.scheduledFor);
   const intro = `We received a request to delete your OutClass account. It is scheduled for deletion on ${date}.`;
-  const what = 'Your profile, résumé, headshot and applications will be deleted. Club records others rely on, like decisions, attendance and audit history, keep a minimal anonymized reference.';
+  const what = 'Your profile, résumé, headshot, files and in-progress applications will be deleted. For decided applications, the club keeps its own review notes and the decision, linked to an anonymized placeholder, and your answers are removed. Decision letters and interview copies of your résumé that a club already holds stay with that club’s records.';
   const cancel = 'Changed your mind? Sign in and cancel from Settings → Account before that date.';
   const footer = 'If you didn’t request this, sign in and cancel the request, then change your password.';
   return {

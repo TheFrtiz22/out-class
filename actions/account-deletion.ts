@@ -1,5 +1,6 @@
 "use server"
-import { cookies } from "next/headers"
+import { createHash } from "node:crypto"
+import { cookies, headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
@@ -8,12 +9,14 @@ import { requirePlatformAdmin } from "@/utils/platform-admin"
 import { createClient } from "@/utils/supabase/server"
 import { freshAuthClient } from "@/utils/admin-elevation"
 import { sendAccountDeletionEmail } from "@/utils/email"
-import { performAccountDeletion } from "@/utils/account-deletion"
+import { OWNER_GUARD_MESSAGE, ownerGuardError, performAccountDeletion } from "@/utils/account-deletion"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { providerAuthFailure } from "@/lib/admin-failure"
-import { captchaFailed, turnstileMessage, withCaptcha } from "@/lib/turnstile"
+import { captchaFailed, turnstileMessage, turnstileRemoteIp, withCaptcha } from "@/lib/turnstile"
+import { hasPermission } from "@/lib/permissions"
 import {
+  ACCOUNT_DELETION_IP_ATTEMPTS,
   ACCOUNT_DELETION_PASSWORD_ATTEMPTS,
   ACCOUNT_DELETION_REPORT_KIND,
   accountDeletionAudit,
@@ -41,28 +44,67 @@ async function requireAccountHolder() {
   return auth
 }
 
+/** Same rule as the Settings page: an "email" identity means the account has a password. */
+function hasPassword(supabaseUser: { app_metadata?: Record<string, unknown> }) {
+  const meta = supabaseUser.app_metadata || {}
+  return Array.isArray(meta.providers) ? meta.providers.includes("email") : meta.provider === "email"
+}
+
+async function emailStatus(reportIds: string[]) {
+  if (!reportIds.length) return new Map<string, boolean>()
+  const rows = await prisma.auditLog.findMany({ where: { action: accountDeletionAudit.emailed, targetId: { in: reportIds } }, orderBy: { createdAt: "asc" }, select: { targetId: true, details: true } })
+  return new Map(rows.map(row => [row.targetId, (row.details as { result?: string } | null)?.result === "sent"]))
+}
+
+/** Clubs where leaving would remove the only holder of a key role. Never blocks the request. */
+async function leadershipWarnings(userId: string) {
+  const mine = await prisma.clubMember.findMany({ where: { userId, status: "ACTIVE" }, select: { clubId: true, role: true, isOwner: true, permissions: true, status: true, club: { select: { name: true } } } })
+  const warnings: string[] = []
+  for (const member of mine) {
+    const holds = { decisions: hasPermission(member, "decisions.start"), president: member.role === "PRESIDENT", lead: member.role === "RECRUITMENT_LEAD" }
+    if (!holds.decisions && !holds.president && !holds.lead) continue
+    const others = await prisma.clubMember.findMany({ where: { clubId: member.clubId, userId: { not: userId }, status: "ACTIVE", user: { disabledAt: null } }, select: { role: true, isOwner: true, permissions: true, status: true } })
+    const lost = [
+      holds.decisions && !others.some(o => hasPermission(o, "decisions.start")) && "starting decisions",
+      holds.president && !others.some(o => o.role === "PRESIDENT") && "president",
+      holds.lead && !others.some(o => o.role === "RECRUITMENT_LEAD") && "recruitment lead",
+    ].filter(Boolean)
+    if (lost.length) warnings.push(`You’re the only ${lost.join(", ")} in ${member.club.name}. Hand that off so the club isn’t stuck.`)
+  }
+  return warnings
+}
+
 function openRequest(userId: string) {
   return prisma.platformReport.findFirst({ where: { kind: ACCOUNT_DELETION_REPORT_KIND, targetId: userId, status: { in: OPEN } }, orderBy: { createdAt: "desc" } })
 }
 
-/** The signed-in person's pending request, if any. */
+/** The signed-in person's pending request (with email status) and non-blocking leadership warnings. */
 export async function getAccountDeletionRequest() {
   const { user } = await requireAccountHolder()
   const row = await openRequest(user.id)
-  return row ? { requestedAt: row.createdAt.toISOString(), scheduledFor: accountDeletionDueAt(row.createdAt).toISOString() } : null
+  const warnings = await leadershipWarnings(user.id)
+  if (!row) return { pending: null, warnings }
+  const sent = (await emailStatus([row.id])).get(row.id)
+  return { pending: { requestedAt: row.createdAt.toISOString(), scheduledFor: accountDeletionDueAt(row.createdAt).toISOString(), emailSent: sent !== false }, warnings }
 }
 
 /**
- * Fresh authentication: the password (verified on a throwaway Auth client, the
- * same pattern as the Admin password re-check) or a sign-in in the last 10 minutes.
+ * Accounts with a password always re-enter it (verified on a throwaway Auth client,
+ * as in the Admin password re-check). University sign-in only accounts have no
+ * password, so they need a sign-in in the last 10 minutes.
  */
-async function verifyFreshAuthentication(user: { id: string; email: string }, password: string | undefined, turnstileToken: string | undefined) {
-  if (password) {
+async function verifyFreshAuthentication(user: { id: string; email: string }, passwordAccount: boolean, password: string | undefined, turnstileToken: string | undefined) {
+  if (passwordAccount) {
+    if (!password) throw Error("Enter your current password.")
     const since = new Date(Date.now() - 15 * 60_000)
+    const ip = turnstileRemoteIp((await headers()).get("x-forwarded-for"))
+    // Only a hash is stored; it serves the per-IP limit and nothing else.
+    const ipHash = ip ? createHash("sha256").update("outclass-account-deletion\0" + ip).digest("hex") : null
     await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`
       if (await tx.auditLog.count({ where: { actorId: user.id, action: accountDeletionAudit.passwordAttempt, createdAt: { gte: since } } }) >= ACCOUNT_DELETION_PASSWORD_ATTEMPTS) throw Error("Too many attempts. Try again in 15 minutes.")
-      await tx.auditLog.create({ data: { actorId: user.id, action: accountDeletionAudit.passwordAttempt, targetId: user.id, details: { result: "attempt" } } })
+      if (ipHash && await tx.auditLog.count({ where: { action: accountDeletionAudit.passwordAttempt, createdAt: { gte: since }, details: { path: ["ipHash"], equals: ipHash } } }) >= ACCOUNT_DELETION_IP_ATTEMPTS) throw Error("Too many attempts from this network. Try again in 15 minutes.")
+      await tx.auditLog.create({ data: { actorId: user.id, action: accountDeletionAudit.passwordAttempt, targetId: user.id, details: { result: "attempt", ipHash } } })
     })
     const client = freshAuthClient()
     const signed = await client.auth.signInWithPassword(withCaptcha({ email: user.email, password }, turnstileToken))
@@ -79,18 +121,25 @@ async function verifyFreshAuthentication(user: { id: string; email: string }, pa
   return "recent-sign-in"
 }
 
+/** Refuse when the person is a club's sole active owner, or every other owner is also leaving. */
+async function assertOwnershipCovered(userId: string) {
+  const owned = await prisma.clubMember.findMany({ where: { userId, isOwner: true, status: "ACTIVE" }, select: { clubId: true, club: { select: { name: true } } } })
+  for (const membership of owned) {
+    const others = await prisma.clubMember.findMany({ where: { clubId: membership.clubId, userId: { not: userId }, isOwner: true, status: "ACTIVE", user: { disabledAt: null } }, select: { userId: true } })
+    if (!others.length) throw Error(`Transfer ownership of ${membership.club.name} before deleting your account.`)
+    const leaving = await prisma.platformReport.count({ where: { kind: ACCOUNT_DELETION_REPORT_KIND, status: { in: OPEN }, targetId: { in: others.map(o => o.userId) } } })
+    if (leaving >= others.length) throw Error(`The other owner of ${membership.club.name} has also asked to delete their account. Add another owner before deleting yours.`)
+  }
+}
+
 export async function requestAccountDeletion(input: unknown) {
-  const { user } = await requireAccountHolder()
+  const { user, supabaseUser } = await requireAccountHolder()
   const d = requestSchema.parse(input)
   if (!accountDeletionConfirmationMatches(d.confirmation, user.email)) throw Error("Type your university email or DELETE to confirm.")
   const admin = await prisma.platformAdmin.findUnique({ where: { userId: user.id } })
   if (admin?.active) throw Error("Platform administrators must hand off administrator access before deleting their account.")
-  const owned = await prisma.clubMember.findMany({ where: { userId: user.id, isOwner: true, status: "ACTIVE" }, select: { clubId: true, club: { select: { name: true } } } })
-  for (const membership of owned) {
-    const others = await prisma.clubMember.count({ where: { clubId: membership.clubId, userId: { not: user.id }, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } })
-    if (!others) throw Error(`Transfer ownership of ${membership.club.name} before deleting your account.`)
-  }
-  const method = await verifyFreshAuthentication(user, d.password, d.turnstileToken)
+  await assertOwnershipCovered(user.id)
+  const method = await verifyFreshAuthentication(user, hasPassword(supabaseUser as { app_metadata?: Record<string, unknown> }), d.password, d.turnstileToken)
 
   const request = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`
@@ -103,7 +152,7 @@ export async function requestAccountDeletion(input: unknown) {
     return { row, created: true }
   })
   const scheduledFor = accountDeletionDueAt(request.row.createdAt)
-  let emailSent = !request.created
+  let emailSent: boolean
   if (request.created) {
     try {
       await sendAccountDeletionEmail({ recipient: user.email, scheduledFor, requestId: request.row.id })
@@ -112,11 +161,17 @@ export async function requestAccountDeletion(input: unknown) {
       emailSent = false
     }
     await prisma.auditLog.create({ data: { actorId: user.id, action: accountDeletionAudit.emailed, targetId: request.row.id, details: { result: emailSent ? "sent" : "failed" } } }).catch(() => undefined)
+  } else {
+    emailSent = (await emailStatus([request.row.id])).get(request.row.id) !== false
   }
   revalidatePath("/settings/account")
-  return { requestedAt: request.row.createdAt.toISOString(), scheduledFor: scheduledFor.toISOString(), emailSent }
+  return { requestedAt: request.row.createdAt.toISOString(), scheduledFor: scheduledFor.toISOString(), emailSent, warnings: await leadershipWarnings(user.id) }
 }
 
+/**
+ * Signed-in only, no re-authentication: cancelling restores the status quo, so a
+ * stolen session gains nothing by it (docs/account-deletion.md).
+ */
 export async function cancelAccountDeletion() {
   const { user } = await requireAccountHolder()
   await prisma.$transaction(async tx => {
@@ -132,13 +187,14 @@ export async function cancelAccountDeletion() {
   return { cancelled: true }
 }
 
-/** Platform admin queue: pending requests with their due dates. */
+/** Platform admin queue: pending requests with their due dates and confirmation-email status. */
 export async function listAccountDeletionRequests() {
   const actor = await requirePlatformAdmin()
   const rows = await prisma.platformReport.findMany({ where: { kind: ACCOUNT_DELETION_REPORT_KIND, status: { in: OPEN } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: 100, select: { id: true, targetId: true, revision: true, createdAt: true, status: true } })
+  const sent = await emailStatus(rows.map(row => row.id))
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.account-deletions.read", targetId: "account-deletions", details: { result: "success", count: rows.length } } })
   const now = new Date()
-  return rows.map(row => ({ id: row.id, userId: row.targetId, revision: row.revision, requestedAt: row.createdAt.toISOString(), dueAt: accountDeletionDueAt(row.createdAt).toISOString(), due: accountDeletionDue(row.createdAt, now) }))
+  return rows.map(row => ({ id: row.id, userId: row.targetId, revision: row.revision, status: row.status, requestedAt: row.createdAt.toISOString(), dueAt: accountDeletionDueAt(row.createdAt).toISOString(), due: accountDeletionDue(row.createdAt, now), emailSent: sent.get(row.id) ?? null }))
 }
 
 const completeSchema = z.object({ id: z.string().uuid(), revision: z.number().int().min(0), reason: z.string().trim().min(10).max(1000) }).strict()
@@ -157,6 +213,13 @@ export async function completeAccountDeletion(input: unknown) {
     await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.account-deletion.start", targetId: found.targetId, reason: d.reason, details: { reportId: found.id, result: "started" } } })
     return found
   })
-  const result = await performAccountDeletion(prisma, row.targetId, { actorId: actor.id, reportId: row.id, reason: d.reason })
+  let result
+  try {
+    result = await performAccountDeletion(prisma, row.targetId, { actorId: actor.id, reportId: row.id, reason: d.reason })
+  } catch (error) {
+    if (ownerGuardError(error)) throw Error(OWNER_GUARD_MESSAGE)
+    throw error
+  }
+  if (!result.authDeleted) throw Error("Personal data was deleted, but the sign-in account couldn’t be. Run Complete deletion again.")
   return result
 }

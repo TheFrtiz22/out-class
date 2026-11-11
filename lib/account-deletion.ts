@@ -13,6 +13,8 @@ const DAY = 24 * 60 * 60 * 1000
 /** A sign-in this recent counts as fresh authentication for deletion. */
 export const ACCOUNT_DELETION_FRESH_AUTH_WINDOW = 10 * 60 * 1000
 export const ACCOUNT_DELETION_PASSWORD_ATTEMPTS = 5
+/** Per network, across accounts. Held without Turnstile too (it is off until configured). */
+export const ACCOUNT_DELETION_IP_ATTEMPTS = 20
 export const ACCOUNT_DELETION_CONFIRM_WORD = "DELETE"
 
 export const accountDeletionAudit = {
@@ -21,6 +23,8 @@ export const accountDeletionAudit = {
   cancelled: "account.deletion.cancelled",
   emailed: "account.deletion.email",
   completed: "account.deletion.completed",
+  incomplete: "account.deletion.incomplete",
+  storagePending: "account.deletion.storage-pending",
 } as const
 
 export function accountDeletionDueAt(requestedAt: Date) {
@@ -77,7 +81,7 @@ export type DeletionTreatment =
  */
 export const userRelationDeletionPlan: Record<string, { model: string; onDelete: "Cascade" | "Restrict" | "SetNull"; treatment: DeletionTreatment; note: string }> = {
   studentProfile: { model: "StudentProfile", onDelete: "Cascade", treatment: "delete", note: "Profile, experiences (cascade); résumé and headshot objects removed from Storage." },
-  applications: { model: "Application", onDelete: "Cascade", treatment: "anonymize", note: "In-progress applications without club records are deleted; others keep the row, drop answers and review text." },
+  applications: { model: "Application", onDelete: "Cascade", treatment: "anonymize", note: "In-progress applications without club records are deleted; others keep the row and the club's own notes, drop answers and review text. Published DecisionLetter content and InterviewResumeDocument snapshots are trigger-immutable (needs migration)." },
   memberships: { model: "ClubMember", onDelete: "Cascade", treatment: "anonymize", note: "Deleted when nothing depends on it; otherwise LEFT with roles, titles and groups cleared (evaluations, ballots, interview records are immutable)." },
   attendances: { model: "EventAttendance", onDelete: "Cascade", treatment: "retain", note: "Attendance counts stay; rows hold no personal fields beyond the tombstone link." },
   eventRsvps: { model: "EventRsvp", onDelete: "Cascade", treatment: "delete", note: "Personal RSVPs." },

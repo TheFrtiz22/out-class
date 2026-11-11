@@ -10,13 +10,13 @@ import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 import { cancelAccountDeletion, requestAccountDeletion } from "@/actions/account-deletion"
 import { accountDeletionConfirmationMatches } from "@/lib/account-deletion"
 
-export type PendingAccountDeletion = { requestedAt: string; scheduledFor: string } | null
+export type PendingAccountDeletion = { requestedAt: string; scheduledFor: string; emailSent: boolean } | null
 
 const longDate = (iso: string) => new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "America/New_York" }).format(new Date(iso))
 
-export function AccountDeletion({ email, passwordAccount, pending: initial }: { email: string; passwordAccount: boolean; pending: PendingAccountDeletion }) {
+export function AccountDeletion({ email, passwordAccount, pending: initial, warnings: initialWarnings = [] }: { email: string; passwordAccount: boolean; pending: PendingAccountDeletion; warnings?: string[] }) {
   const confirm = useConfirm(), router = useRouter()
-  const [pending, setPending] = useState(initial)
+  const [pending, setPending] = useState(initial), [warnings, setWarnings] = useState(initialWarnings)
   const [typed, setTyped] = useState(""), [password, setPassword] = useState("")
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("")
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
@@ -35,9 +35,10 @@ export function AccountDeletion({ email, passwordAccount, pending: initial }: { 
     setBusy(true)
     try {
       const result = await requestAccountDeletion({ confirmation: typed, ...(passwordAccount ? { password, turnstileToken: turnstileToken ?? undefined } : {}) })
-      setPending({ requestedAt: result.requestedAt, scheduledFor: result.scheduledFor })
+      setPending({ requestedAt: result.requestedAt, scheduledFor: result.scheduledFor, emailSent: result.emailSent })
+      setWarnings(result.warnings)
       setTyped(""); setPassword("")
-      setMessage(result.emailSent ? "Request received. We sent a confirmation to your university email." : "Request received. We couldn’t send the confirmation email, but your request is saved.")
+      setMessage(result.emailSent ? "Request received. We sent a confirmation to your university email." : "")
       router.refresh()
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not request deletion.") }
     finally { setBusy(false); setTurnstileReset(value => value + 1) }
@@ -58,11 +59,14 @@ export function AccountDeletion({ email, passwordAccount, pending: initial }: { 
     <h2 id="delete-account-heading" className="oc-section-heading">Delete account</h2>
     {pending ? <>
       <p className="text-sm leading-6">Your account is scheduled for deletion on <strong>{longDate(pending.scheduledFor)}</strong>.</p>
+      {!pending.emailSent && <p role="status" className="text-sm">We couldn’t send the confirmation email. Your request is saved, and you can cancel here until that date.</p>}
       <Button variant="outline" disabled={busy} onClick={() => void cancel()}>{busy ? "Cancelling…" : "Cancel deletion"}</Button>
     </> : <>
       <ul className="list-disc space-y-1 pl-5 text-sm leading-6 text-muted-foreground">
-        <li>Your profile, résumé, headshot and applications are deleted.</li>
-        <li>Club records others rely on, like decisions, attendance and audit history, keep a minimal anonymized reference.</li>
+        <li>Your profile, résumé, headshot, files and in-progress applications are deleted.</li>
+        <li>For decided applications, the club keeps its own review notes and the decision, linked to an anonymized placeholder. Your answers are removed.</li>
+        <li>Decision letters and interview copies of your résumé that a club already holds stay with that club’s records.</li>
+        <li>Attendance and audit history keep only the anonymized placeholder.</li>
         <li>You can cancel within 14 days.</li>
       </ul>
       <div className="space-y-1.5">
@@ -76,6 +80,7 @@ export function AccountDeletion({ email, passwordAccount, pending: initial }: { 
       </div> : <p className="text-sm text-muted-foreground">If you signed in more than 10 minutes ago, sign out and back in first.</p>}
       <Button variant="destructive" disabled={busy || !ready} onClick={() => void submit()}>{busy ? "Requesting…" : "Delete account"}</Button>
     </>}
+    {warnings.map(warning => <p key={warning} className="text-sm text-muted-foreground">{warning}</p>)}
     {message && <p role="status" className="text-sm">{message}</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </section>

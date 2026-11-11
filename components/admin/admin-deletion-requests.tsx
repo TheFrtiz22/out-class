@@ -21,7 +21,7 @@ export function AdminDeletionRequests() {
     setBusy(true); setError(""); setNotice("");
     try {
       const result = await completeAccountDeletion({ id: row.id, revision: row.revision, reason });
-      setNotice(`Deleted. ${result.storageObjects} files removed; ${result.anonymizedApplications} applications and ${result.anonymizedMemberships} memberships anonymized.`);
+      setNotice(`Deleted. ${result.storageObjects} files removed; ${result.anonymizedApplications} applications and ${result.anonymizedMemberships} memberships anonymized.${result.retainedDecisionLetters || result.retainedResumeSnapshots ? ` ${result.retainedDecisionLetters} decision letters and ${result.retainedResumeSnapshots} résumé snapshots remain (immutable until a migration).` : ""}`);
       setRetry(r => r + 1);
     } catch (e) { setError(e instanceof Error ? e.message : "Deletion failed."); setRetry(r => r + 1); }
     finally { setBusy(false); }
@@ -34,6 +34,7 @@ export function AdminDeletionRequests() {
       <p className="text-xs font-semibold uppercase text-muted-foreground">{row.due ? "Due" : "In cancellation window"}</p>
       <p className="break-all text-sm">Account: {row.userId}</p>
       <p className="text-sm">Requested {day(row.requestedAt)} · Due {day(row.dueAt)}</p>
+      <p className="text-sm">{row.emailSent === false ? "Confirmation email failed to send" : row.emailSent ? "Confirmation email sent" : "Confirmation email status unknown"}{row.status === "INVESTIGATING" ? " · A previous run didn’t finish; run it again" : ""}</p>
       <Button variant="destructive" disabled={busy || !row.due || reason.trim().length < 10} onClick={() => void complete(row)}>Complete deletion</Button>
     </Panel>) : !error && <p className="text-sm text-muted-foreground">No pending deletion requests.</p>}
   </section>;
