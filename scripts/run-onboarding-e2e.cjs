@@ -12,6 +12,9 @@ const releaseRepair=process.argv.includes('--pipeline-release-repair');
 const shellSuite=process.argv.includes('--shell');
 const selectedNavigation=process.argv.includes('--selected-navigation')||releaseRepair;
 if(selectedNavigation&&(writing||!process.argv.includes('--club-integration')))throw Error('--selected-navigation requires --club-integration on the onboarding fixture.');
+// --active-interviews: four reviewers in owner-attested Interview Rooms, concurrent reads and immediate grant revocation.
+const activeInterviews=process.argv.includes('--active-interviews');
+if(activeInterviews&&!selectedNavigation)throw Error('--active-interviews requires --selected-navigation on the onboarding fixture.');
 if(!/^[1-5]\d{2}$|^6[0-4]\d$/.test(portPrefix))throw Error('A disposable port prefix must reserve a valid three-digit local range.');
 const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),projectId);
 const keep=process.argv.includes('--keep');let app,stackTouched=false;
@@ -156,6 +159,14 @@ async function ready(url,headers={}){
    const repairResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/pipeline-release-e2e.test.cjs','tests/navigation-phase5-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
    if(repairResult.status!==0)throw Error('Pipeline release integration failed; inspect the disposable test log.');
   }finally{fs.copyFileSync(path.join(root,'pipeline-release-100.json'),fixture);}
+ }
+ // After release repair, which asserts the template club's untouched 61-member baseline; the
+ // active fixture then adds three reviewers, three rooms and 24 bookings to that same club.
+ if(activeInterviews){
+  const seedResult=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--active-rooms','--seed'],{cwd:repo,env,stdio:'inherit'});
+  if(seedResult.status!==0)throw Error('Active Interview Rooms fixture seeding failed; inspect the disposable test log.');
+  const activeResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/active-interview-navigation-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+  if(activeResult.status!==0)throw Error('Active Interview Rooms reviewer and revocation integration failed; inspect the disposable test log.');
  }
  if(keep){app.unref();console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{

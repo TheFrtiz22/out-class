@@ -23,7 +23,11 @@ const suites = {
       "tests/meeting-check-in-race-native.test.cjs",
       "tests/club-claim-race-native.test.cjs",
       "tests/mock-recruiting-cycle-native.test.cjs",
+      // Last: its bursts create their own clubs and users; earlier suites never see them.
+      "tests/interview-booking-contention-native.test.cjs",
     ],
+    // The booking contention suite keeps its own gate; it accepts this reserved database too.
+    extraGates: ["OUTCLASS_CONTENTION_TEST_DATABASE_URL"],
   },
   events: {
     container: "outclass-integration-events",
@@ -71,10 +75,12 @@ const env = { ...process.env, DATABASE_URL: url, POSTGRES_PRISMA_URL: url,
   OUTCLASS_SECURITY_TEST_DATABASE_URL: "", OUTCLASS_EVENTS_TEST_DATABASE_URL: "",
   OUTCLASS_RECRUITMENT_TEST_DATABASE_URL: "", OUTCLASS_AUDIENCE_TEST_DATABASE_URL: "",
   OUTCLASS_TRANSACTION_TEST_DATABASE_URL: "", OUTCLASS_DECISION_RUNTIME_TEST_DATABASE_URL: "",
+  OUTCLASS_CONTENTION_TEST_DATABASE_URL: "",
   SUPABASE_SECRET_KEY: "", SUPABASE_SERVICE_ROLE_KEY: "", RESEND_API_KEY: "",
   SMTP_HOST: "", SMTP_USER: "", SMTP_PASSWORD: "", COMMUNICATIONS_EMAIL_ENABLED: "false",
   OUTCLASS_SITE_URL: "http://127.0.0.1:3107", VERCEL: "", VERCEL_ENV: "" };
 env[suite.gate] = url;
+for (const gate of suite.extraGates || []) env[gate] = url;
 let created = false, proxyCreated = false;
 function cleanup() {
   if (proxyCreated) {

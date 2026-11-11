@@ -6,7 +6,7 @@ The normal \`pnpm test\` suite intentionally does not boot Auth, Storage, Next.j
 
 This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on every pull request, Mondays at 05:17 UTC, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
 
-**A successful static coverage report does not imply all 43 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
+**A successful static coverage report does not imply all 45 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
 
 ## Run locally
 
@@ -17,6 +17,8 @@ Requirements: Node 22, pnpm 10, Docker with Linux containers, OpenSSL (for onboa
 | Auth, MFA, settings, navigation, PDF import | \`node scripts/run-onboarding-e2e.cjs --club-integration\` | Dedicated local Supabase Auth/Postgres/Mailpit, Next server 3107 |
 | Native security/concurrency, two-request races (application submit, legacy invitation accept, meeting check-in, club claim), and starting the next recruitment cycle | \`node scripts/run-disposable-postgres.cjs security\` | DB \`outclass_security_test\` on loopback 58454 |
 | Native mock recruiting cycle (50 synthetic applicants: apply, anonymous review, interviews, live voting, decisions, offers, roster export; logs per-stage timings) | \`node scripts/run-disposable-postgres.cjs security\` (runs \`tests/mock-recruiting-cycle-native.test.cjs\`) | DB \`outclass_security_test\` on loopback 58454 |
+| Active Interview Rooms: four separately signed-in reviewers get distinct authorized reads, and revoking one booking grant takes effect on the next request (CI job "Local Auth, settings and navigation"; runs after the release-repair suites on the same stack) | \`node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair --active-interviews\` (runs \`tests/active-interview-navigation-e2e.test.cjs\`) | Same onboarding stack, Next server 3107 |
+| Native interview self-booking contention: simultaneous bookings under 0/2 ms simulated latency, last-seat race and one student's overlapping cross-club bookings each book exactly once | \`node scripts/run-disposable-postgres.cjs security\` (runs \`tests/interview-booking-contention-native.test.cjs\` last); the full benchmark still runs on its own fixture with \`node scripts/run-contention-benchmark.cjs\` | DB \`outclass_security_test\` on loopback 58454 |
 | Native Events and browser Events | \`node scripts/run-disposable-postgres.cjs events\` | DB \`postgres\` on loopback 55442 |
 | Native announcements, recipient audiences, invitations and decision publication | \`node scripts/test-decision-publication-local.cjs\` | DB \`outclass_audiences_test\` on 58453 |
 | Native decision transactions, offers, recruitment races, leader CSV exports | \`node scripts/test-decision-transactions-local.cjs\` | DB \`outclass_recruitment_test\` on 58452 |

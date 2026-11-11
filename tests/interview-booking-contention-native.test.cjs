@@ -47,7 +47,10 @@ const percentile = (values, p) => {
 
 test('interview self-booking bursts under simulated latency', { skip: !databaseUrl, timeout: 1800000 }, async t => {
   const url = new URL(databaseUrl);
-  assert.equal(url.hostname, '127.0.0.1'); assert.equal(url.port, '58455'); assert.equal(url.pathname, '/outclass_contention_test');
+  // Only the two reserved loopback fixtures: the contention benchmark's own database
+  // (scripts/run-contention-benchmark.cjs) or the CI security suite's (scripts/run-disposable-postgres.cjs security).
+  const reserved = { 58455: '/outclass_contention_test', 58454: '/outclass_security_test' };
+  assert.equal(url.hostname, '127.0.0.1'); assert.equal(url.pathname, reserved[url.port], 'reserved disposable fixture only');
   const operator = new PrismaClient({ datasourceUrl: databaseUrl });
   const base = new PrismaClient({ datasourceUrl: databaseUrl.replace('fixture_superuser@', 'outclass_production_app@') });
   t.after(async () => { await base.$disconnect(); await operator.$disconnect(); });
