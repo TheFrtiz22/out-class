@@ -19,7 +19,7 @@ export function RecruitmentTimeline({ status, compact = false, rounds, roundId }
             aria-current={index === current ? "step" : undefined}
             data-complete={index < current}
           >
-            <span aria-hidden="true">{index < current ? <Check size={13} /> : index + 1}</span>
+            <span aria-hidden="true">{index < current ? <Check size={14} /> : index + 1}</span>
             <strong>{label}</strong>
           </li>
         ))}

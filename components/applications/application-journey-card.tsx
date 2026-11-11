@@ -20,6 +20,6 @@ export function ApplicationJourneyCard({ id, club, status, round, nextStep, show
       <StatusPill status={status} className="oc-application-status" />
     </div>
     <div className="oc-application-progress"><RecruitmentTimeline status={status} compact /></div>
-    <div className="oc-application-next" data-has-icon={showIcon}>{showIcon && <Icon className="oc-application-next-icon" size={20} aria-hidden="true" />}<p>{nextStep}</p><span aria-hidden="true">{draft ? "Continue draft" : "View details"}<ArrowRight size={15} /></span></div>
+    <div className="oc-application-next" data-has-icon={showIcon}>{showIcon && <Icon className="oc-application-next-icon" size={20} aria-hidden="true" />}<p>{nextStep}</p><span aria-hidden="true">{draft ? "Continue draft" : "View details"}<ArrowRight size={16} /></span></div>
   </article>
 }

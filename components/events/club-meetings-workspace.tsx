@@ -31,7 +31,7 @@ export function ClubCalendar({ clubId, clubName, canManage, canSeeAttendees, mem
   if (!canManage) return <MeetingList clubId={clubId} embedded personalOnly={personalOnly} initialAudience="MEMBERS" />;
   const meetings = <MeetingList clubId={clubId} embedded initialAudience="ALL" openCreate={params.get("new") === "1"} />;
   const events = isDemoEnabled
-    ? <Panel as="section"><h2 className="oc-section-heading">Corkboard Events</h2><p className="mt-3 text-sm text-muted-foreground">Corkboard event management is not available in Demo yet. Switch out of Demo to manage your club’s events.</p></Panel>
+    ? <Panel as="section"><h2 className="oc-section-heading">Events</h2><p className="mt-3 text-sm text-muted-foreground">Event management is not available in Demo yet. Switch out of Demo to manage your club’s events.</p></Panel>
     : <ClubEvents clubId={clubId} clubName={clubName} canSeeAttendees={canSeeAttendees} membership={membership} />;
   return <div className="oc-workspace-stack">
     <PillGroup label="Show" size="compact" value={type} onChange={setType} options={calendarTypes.map(item => ({ value: item.id, label: item.label }))} />
