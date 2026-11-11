@@ -7,9 +7,10 @@ import { authorizeAdminTransaction } from "@/utils/admin-transaction";
 import { adminPageLoad, logAdminFailure } from "@/utils/admin-page";
 import { AdminAccessError } from "@/lib/admin-failure";
 import { redirect } from "next/navigation";
-import { assertClubImageAssignment } from "@/utils/club-asset-storage";
+import { assertClubImageAssignment, releaseReplacedClubImages } from "@/utils/club-asset-storage";
 import { adminClubInput, adminClubFilters } from "@/lib/admin-clubs";
 import { profileDraft } from "@/lib/club-marketing";
+import { normalizeClubFeatures, setClubFeatureInput } from "@/lib/club-features";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { boundedSafeParse } from "@/lib/bounded-input";
@@ -30,7 +31,9 @@ export async function getAdminClub(id: string) {
   return adminPageLoad('/platform/clubs', async () => {
     await requirePlatformAdmin(); z.string().uuid().parse(id);
     const club = await prisma.club.findUniqueOrThrow({ where: { id }, select: editable });
-    return { id: club.id, slug: club.slug, schoolId: club.schoolId, campusKey: club.campusKey, isDiscoverable: club.isDiscoverable, applicationOpen: club.applicationOpen, applicationDeadline: club.applicationDeadline?.toISOString() || null, suspendedAt: club.suspendedAt?.toISOString() || null, profile: profileDraft(club), version: version(club) };
+    // Read separately from `editable` so a switch change never invalidates a pending profile edit.
+    const switches = await prisma.club.findUniqueOrThrow({ where: { id }, select: { features: true } });
+    return { features: normalizeClubFeatures(switches.features), id: club.id, slug: club.slug, schoolId: club.schoolId, campusKey: club.campusKey, isDiscoverable: club.isDiscoverable, applicationOpen: club.applicationOpen, applicationDeadline: club.applicationDeadline?.toISOString() || null, suspendedAt: club.suspendedAt?.toISOString() || null, profile: profileDraft(club), version: version(club) };
   }, 'ADMIN_CLUB_LOAD_FAILED');
 }
 export async function saveAdminClub(input: unknown): Promise<{ id?: string; error?: string; supportCode?: string }> {
@@ -39,6 +42,7 @@ export async function saveAdminClub(input: unknown): Promise<{ id?: string; erro
   const d = parsed.data;
   try {
     const actor = await requirePlatformAdmin({ fresh: true });
+    let images = null as { clubId: string; previous: Parameters<typeof releaseReplacedClubImages>[1] } | null;
     const result = await prisma.$transaction(async tx => {
       if (d.id) await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.id} FOR UPDATE`;
       await authorizeAdminTransaction(tx, actor.id);
@@ -51,8 +55,11 @@ export async function saveAdminClub(input: unknown): Promise<{ id?: string; erro
       const fields = { ...d.profile, slug: d.slug, schoolId: school.id, campusKey: school.key, isDiscoverable: d.isDiscoverable, applicationOpen: d.applicationOpen, applicationDeadline: d.applicationDeadline ? new Date(d.applicationDeadline) : null };
       const club = previous ? await tx.club.update({ where: { id: previous.id }, data: { ...fields, applicationVersion: { increment: previous.applicationOpen !== fields.applicationOpen || previous.applicationDeadline?.toISOString() !== fields.applicationDeadline?.toISOString() ? 1 : 0 } } }) : await tx.club.create({ data: fields });
       await tx.auditLog.create({ data: { actorId: actor.id, action: previous ? 'platform.club.profile.update' : 'platform.club.create', targetId: club.id, clubId: club.id, details: { reason: d.reason } } });
+      if (previous) images = { clubId: previous.id, previous };
       return { id: club.id };
     }, { timeout: 20000 });
+    // After commit: delete images this save replaced (best effort, logged on failure).
+    if (images) await releaseReplacedClubImages(images.clubId, images.previous, d.profile);
     revalidateTag('club-directory'); revalidatePath('/platform/clubs'); if (result.id) revalidatePath(`/club/${result.id}`);
     return result;
   } catch (error) {
@@ -60,5 +67,33 @@ export async function saveAdminClub(input: unknown): Promise<{ id?: string; erro
     const supportCode = logAdminFailure('/platform/clubs', error, 'ADMIN_CLUB_SAVE_FAILED');
     if (error instanceof AdminAccessError) redirect('/platform/login');
     return { error: 'Club could not be saved. Your edits are still here.', supportCode };
+  }
+}
+/** Platform admins only: turn one pilot feature on or off for one club. The server owns the switch state. */
+export async function setAdminClubFeature(input: unknown): Promise<{ features?: ReturnType<typeof normalizeClubFeatures>; error?: string; supportCode?: string }> {
+  const parsed = setClubFeatureInput.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const d = parsed.data;
+  try {
+    const actor = await requirePlatformAdmin({ fresh: true });
+    const result = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.clubId} FOR UPDATE`;
+      await authorizeAdminTransaction(tx, actor.id);
+      const club = await tx.club.findUnique({ where: { id: d.clubId }, select: { features: true } });
+      if (!club) return { error: 'Club not found.' };
+      const current = normalizeClubFeatures(club.features);
+      if (current[d.key] !== d.expected) return { error: 'Feature changed. Reload before saving.', features: current };
+      if (current[d.key] === d.enabled) return { features: current };
+      const features = { ...current, [d.key]: d.enabled };
+      await tx.club.update({ where: { id: d.clubId }, data: { features } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: 'platform.club.feature', targetId: d.clubId, clubId: d.clubId, reason: d.reason, details: { key: d.key, enabled: d.enabled, previous: current[d.key], result: 'success' } } });
+      return { features };
+    }, { timeout: 20000 });
+    revalidatePath('/platform/clubs');
+    return result;
+  } catch (error) {
+    const supportCode = logAdminFailure('/platform/clubs', error, 'ADMIN_CLUB_FEATURE_FAILED');
+    if (error instanceof AdminAccessError) redirect('/platform/login');
+    return { error: 'Feature could not be changed.', supportCode };
   }
 }

@@ -22,9 +22,12 @@ test('locked highlights render consistently across applicants, keep full sources
  f.h.tx.interviewRecord.findMany=async({where})=>where.applicationId===apps[0]?[{id:uuid(888),applicationId:apps[0],roundId,interviewerId:leaderId,draft:{finalInterviewThoughts:answer,additionalNotes:'PRIVATE MISC'},evaluation:{applicationId:apps[0],roundId,interviewerId:leaderId,submittedAt:new Date()},interviewer:{clubId:f.clubId,user:{studentProfile:{firstName:'QA',lastName:'Reviewer'}}}}]:[];
  try{
   await f.h.create({presentationOptions:{fields:['finalInterviewThoughts','act','interviewScore','sat','gpa','academicYear','major','name','photo','resumeHighlight'],highlights:{}}});await f.h.command('START');
-  assert.equal(locks.length,2,'pass one locks both prepared applicants at START');
+  assert.deepEqual(locks.map(l=>l.applicationId),[apps[0]],'START locks the first presented applicant only');
   // Editing the working copy after START must not change what this pass presents.
   preparations[0].highlights[2]={...preparations[0].highlights[2],text:'Changed after start'};preparations[0].revision=3;
+  // Saved after START (QA: "1 of 3" never reached the slide): applicant two has not come up yet, so it still shows.
+  const scoreText='8.5 / 10 · 1 submitted evaluation',scoreSource={type:'INTERVIEW_SCORE',id:`score:${roundId}`,version:hash(scoreText),revision:null,label:'Interview score · 1–10',author:null,roundId,roundName:'Interview',text:scoreText};
+  preparations[1].highlights=[{id:uuid(610),mode:'QUOTE',text:scoreText,source:scoreSource,writtenBy:null},quote(5,'profile:major:0','Economics','Major')];preparations[1].revision=2;
   const base=`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=present&actor=leader`;
   await page.goto(base);await page.getByRole('heading',{name:'QA Applicant One',exact:true}).waitFor();
   const band=page.getByRole('region',{name:'Leader-selected highlights'});await band.waitFor();
@@ -41,7 +44,10 @@ test('locked highlights render consistently across applicants, keep full sources
   // Same structure for the next applicant, with fewer highlights.
   await f.h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{confirmed:true,reason:'Fixture advance',applicationId:apps[0],passNumber:1});
   await page.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor({timeout:20000});
-  assert.equal(await page.getByRole('region',{name:'Leader-selected highlights'}).getByRole('listitem').count(),1);
+  const second=page.getByRole('region',{name:'Leader-selected highlights'});
+  assert.equal(await second.getByRole('listitem').count(),2,'highlights saved after START appear when the applicant comes up');
+  assert.ok(await second.getByText('Interview score · Interview').count(),'interview-score quotation is on the slide');
+  assert.equal(locks.length,2);assert.equal(locks[1].preparationRevision,2);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1));
   // Phone reflow: no horizontal overflow.
   const phone=await browser.newContext({viewport:{width:390,height:844}}),p2=await phone.newPage();await p2.goto(base);await p2.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor();
