@@ -23,7 +23,7 @@ const controlSchema = interviewScopeSchema.extend({
  * A stale revision is not an error: the caller gets the current timer back. */
 export async function controlInterviewTimer(input: z.infer<typeof controlSchema>): Promise<TimerControlResult> {
   const data = controlSchema.parse(input); const { user } = await requireAuth();
-  return prisma.$transaction(async tx => {
+  return prisma.$transaction(async (tx): Promise<TimerControlResult> => {
     const { member, session, round, booking, app } = await collaborationSession(tx, data, user.id);
     if (round.archivedAt || app.roundId !== round.id) throw Error("Only active interviews can use the shared timer.");
     const timing = interviewTiming(data, round.configuration, booking);
