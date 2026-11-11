@@ -59,7 +59,7 @@ function exportRoute(profileFieldVisibility) {
     '@/utils/support-audit': { auditSupportAction: async () => {} },
     // csvExport pilot switch on; its gate is covered in club-exports.test.
     '@/utils/club-features': { clubHasFeature: async (_db, id, key) => id === clubId && key === 'csvExport' },
-    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx), auditLog: { findMany: async () => [] } } },
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'u1' }, membership: member }) },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => member },
   })

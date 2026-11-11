@@ -83,7 +83,7 @@ test('Supabase captcha helpers: only well-formed tokens are passed, and captcha 
 function loadWith(file, mocks) {
   const m = { exports: {} }
   const code = ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), m, m.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === '@/lib/rate-limit-action' ? { limitAction: async () => ({ ok: true }) } : name.startsWith('@/lib/rate-limit') ? loadWith(name.slice(2) + '.ts', {}) : require(name), m, m.exports)
   return m.exports
 }
 
