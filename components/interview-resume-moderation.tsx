@@ -16,7 +16,7 @@ export function InterviewResumeModeration({ clubId, filters = {}, initialDocumen
   const { isDemoEnabled } = useDemoMode();
   const [selected, setSelected] = useState<Row | null>(null);
   // Filters are applied by the server on every page; changing one resets paging.
-  const list = useInterviewListPages<Row>(cursor => getInterviewResumeModerationPage(clubId, { applicationId, roundId, cycleId }, cursor), row => row.documentId, [clubId, applicationId, roundId, cycleId], "Résumé moderation unavailable. Check your current office assignment and access.", rowDomId);
+  const list = useInterviewListPages<Row>((cursor, limit) => getInterviewResumeModerationPage(clubId, { applicationId, roundId, cycleId }, cursor, limit), row => row.documentId, [clubId, applicationId, roundId, cycleId], "Résumé moderation unavailable. Check your current office assignment and access.", rowDomId, initialDocumentId);
   const { rows, error, loading } = list;
   const trigger = useRef<HTMLButtonElement | null>(null), heading = useRef<HTMLHeadingElement>(null);
   const scope = useMemo(() => selected ? ({ clubId, applicationId: selected.applicationId, roundId: selected.roundId }) : null, [selected, clubId]);
@@ -27,6 +27,7 @@ export function InterviewResumeModeration({ clubId, filters = {}, initialDocumen
     {loading && <LoadingState label="Loading saved interview documents…" layout="rows" rows={3} />}{error && <p role="alert" className="text-destructive">{error} <Button type="button" variant="outline" size="sm" onClick={list.retry}>Try again</Button></p>}
     {!loading && !error && !rows.length && <p role="status">No saved interview documents are available. Documents are preserved when an authorized interviewer first opens the résumé.</p>}
     <ul className="space-y-2">{rows.map(row => <li key={row.documentId}><Button id={rowDomId(row.documentId)} type="button" variant="outline" className="h-auto whitespace-normal text-left" onClick={e => { trigger.current = e.currentTarget; setSelected(row); }}>{row.applicantName} · {row.roundName} · Review résumé</Button></li>)}</ul>
+    {!error && list.seekMissing && initialDocumentId && !rows.some(r => r.documentId === initialDocumentId) && <p role="status" className="text-xs text-muted-foreground">{list.nextCursor ? "The linked document isn’t in the newest documents shown. Load more to find this document." : "The linked document isn’t available with your current access."}</p>}
     {!error && <InterviewListMore shown={rows.length} total={list.total} hasMore={!!list.nextCursor} state={list.more} announcement={list.announcement} label="documents" onMore={() => void list.loadMore()} />}
     <Dialog open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onCloseAutoFocus={e => { e.preventDefault(); (trigger.current?.isConnected ? trigger.current : heading.current)?.focus(); }}>
       <DialogHeader className="pr-10"><DialogTitle>{selected?.applicantName} · Résumé</DialogTitle><DialogDescription>The document preserved for {selected?.roundName}. Moderated changes are audited.</DialogDescription></DialogHeader>

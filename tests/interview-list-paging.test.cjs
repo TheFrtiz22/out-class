@@ -98,3 +98,13 @@ test('earlier array reads stay compatible and return the first page',{timeout:30
  assert.ok(Array.isArray(legacy));assert.deepEqual(legacy,page.items);
  const docs=await resumes.getInterviewResumeModerationQueue(h.ids.club);assert.deepEqual(docs,(await resumes.getInterviewResumeModerationPage(h.ids.club)).items);
 });
+
+test('a refresh read returns the loaded depth from the top in one request, capped at 500',{timeout:300000},async()=>{
+ h.as(h.ids.owner);
+ for(const list of lists()){
+  const deep=await list.page(h.ids.club,{},null,120);
+  assert.deepEqual(deep.items.map(list.id),seed.expected(list.key).slice(0,120),list.name);assert.equal(deep.total,N);
+  const rest=await list.page(h.ids.club,{},deep.nextCursor);assert.deepEqual(rest.items.map(list.id),seed.expected(list.key).slice(120,170),'cursor after a deep read continues');
+  for(const bad of [0,501,1.5,'50'])await assert.rejects(list.page(h.ids.club,{},null,bad),undefined,list.name+' limit '+bad);
+ }
+});

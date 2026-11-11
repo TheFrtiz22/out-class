@@ -16,11 +16,12 @@ export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewI
   const { applicationId, roundId, cycleId } = filters;
   const [selected, setSelected] = useState<Row | null>(null), [review, setReview] = useState<Review | null>(null);
   // Filters are applied by the server on every page; changing one resets paging.
-  const list = useInterviewListPages<Row>(cursor => getSubmittedInterviewReviewPage(clubId, { applicationId, roundId, cycleId }, cursor), row => row.id, [clubId, applicationId, roundId, cycleId], "Submitted reviews unavailable. Check your current leadership access.", rowDomId);
+  const linked = initialReviewId || new URLSearchParams(typeof window !== "undefined" ? window.location?.search || "" : "").get("reviewId") || null;
+  const list = useInterviewListPages<Row>((cursor, limit) => getSubmittedInterviewReviewPage(clubId, { applicationId, roundId, cycleId }, cursor, limit), row => row.id, [clubId, applicationId, roundId, cycleId], "Submitted reviews unavailable. Check your current leadership access.", rowDomId, linked);
   const { rows, error, loading } = list;
   useEffect(() => {
-    setSelected(value => value ? rows.find(r => r.id === value.id) || null : rows.find(r => r.id === (initialReviewId || new URLSearchParams(typeof window !== "undefined" ? window.location?.search || "" : "").get("reviewId"))) || null);
-  }, [rows, initialReviewId]);
+    setSelected(value => value ? rows.find(r => r.id === value.id) || null : rows.find(r => r.id === linked) || null);
+  }, [rows, linked]);
   useEffect(() => {
     setReview(null);
     if (!selected) return;
@@ -42,6 +43,7 @@ export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewI
     {loading && <LoadingState label="Loading reviews…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button type="button" variant="outline" size="sm" onClick={list.retry}>Try again</Button></p>}
     {!loading && !error && !rows.length && <p role="status">No submitted reviews available.</p>}
     <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button id={rowDomId(row.id)} type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto min-h-11 whitespace-normal py-2 text-left" aria-pressed={selected?.id === row.id} aria-label={`${row.applicantName} · ${row.roundName} · Open review`} onClick={() => { setReview(null); setSelected(row); if (window.location?.href && window.history) { const url = new URL(window.location.href); url.searchParams.set("reviewId", row.id); window.history.replaceState(null, "", url.pathname + url.search); } }}><ApplicantIdentity name={row.applicantName} photo={row.photo} anonymous={row.anonymous}><span className="text-xs font-normal text-muted-foreground">{row.roundName} · Open review</span></ApplicantIdentity></Button></li>)}</ul>
+    {!error && list.seekMissing && linked && !rows.some(r => r.id === linked) && <p role="status" className="text-xs text-muted-foreground">{list.nextCursor ? "The linked review isn’t in the newest reviews shown. Load more to find this review." : "The linked review isn’t available with your current access."}</p>}
     {!error && <InterviewListMore shown={rows.length} total={list.total} hasMore={!!list.nextCursor} state={list.more} announcement={list.announcement} label="reviews" onMore={() => void list.loadMore()} />}
     {selected && <Panel as="section" aria-label="Read-only closing review" className="space-y-4">
       <ApplicantIdentity size="lg" name={selected.applicantName} photo={selected.photo} anonymous={selected.anonymous} heading={<h3 className="font-medium">{selected.applicantName}</h3>}><span className="text-sm text-muted-foreground">{selected.roundName}</span></ApplicantIdentity>

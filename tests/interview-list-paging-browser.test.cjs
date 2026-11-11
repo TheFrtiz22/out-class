@@ -36,6 +36,18 @@ test('browser: Load more pages leadership lists by keyboard, moves focus to the 
    assert.equal(await page.evaluate(n=>window.fixture.pages.slice(n).every(c=>c===null),before),true,'filter change restarts from the first page');
    assert.equal(await page.evaluate(()=>window.fixture.requests.at(-1).roundId),'round-b','filter is applied by the server read');
   }
+  // Deep links past page 1 load quietly until the item is found (review-99 / app-99 are on page 3).
+  await page.goto(`${f.base}/club/club/workspace?section=recruitment&tool=reviews&fixtureRows=118&reviewId=review-99`);
+  await page.getByRole('region',{name:'Read-only closing review',exact:true}).waitFor();
+  assert.equal(await page.getByRole('heading',{name:'Sample Applicant 99',exact:true}).count(),1);
+  await page.getByText('Showing 120 of 120',{exact:true}).waitFor();
+  await page.goto(`${f.base}/club/club/workspace?section=recruitment&tool=resumes&fixtureRows=118&documentId=doc-app-99`);
+  await page.getByText('Preserved synthetic document app-99 doc-app-99',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Close résumé',exact:true}).click();
+  // Not found within the cap: a calm notice instead of silent failure.
+  await page.goto(`${f.base}/club/club/workspace?section=recruitment&tool=reviews&fixtureRows=400&reviewId=review-missing`);
+  await page.getByRole('status').filter({hasText:'Load more to find this review.'}).waitFor();
+  await page.getByText('Showing 250 of 402',{exact:true}).waitFor();
   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll on mobile');
   assert.deepEqual(errors,[]);
  }finally{await browser?.close();await new Promise(r=>f.server.close(r));}

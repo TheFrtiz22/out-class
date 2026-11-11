@@ -14,7 +14,7 @@ import { profilePhotoSource } from "@/lib/profile-photo";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord, Prisma } from "@prisma/client";
 import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
-import { INTERVIEW_LIST_PAGE_SIZE, STALE_INTERVIEW_LIST_CURSOR, decodeInterviewListCursor, interviewListFiltersSchema, interviewListPage, interviewListScope } from "@/lib/interview-list-page";
+import { STALE_INTERVIEW_LIST_CURSOR, decodeInterviewListCursor, interviewListFiltersSchema, interviewListLimitSchema, interviewListPage, interviewListScope } from "@/lib/interview-list-page";
 import { approvedBookingPanel, collaborationAccess } from "@/utils/interview-collaboration";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview-score-history";
@@ -189,12 +189,12 @@ export async function getInterviewRounds(clubId: string): Promise<InterviewSetup
 }
 /** Closing projection deliberately never includes questions or private draft notes. */
 /** Leadership discovery returns metadata only; opening a review reauthorizes its scope. */
-async function readSubmittedInterviewReviews(clubId: string, filters: ApplicantInterviewFilters, cursor: unknown, withTotal: boolean) {
+async function readSubmittedInterviewReviews(clubId: string, filters: ApplicantInterviewFilters, cursor: unknown, withTotal: boolean, limit?: unknown) {
   z.string().uuid().parse(clubId);
-  const selected = interviewListFiltersSchema.parse(filters);
+  const { user } = await requireAuth();
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit);
   const listScope = interviewListScope(clubId, selected);
   const position = decodeInterviewListCursor(cursor, "reviews", listScope);
-  const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     // Every page re-checks live leadership access before reading anything.
     const { caps, member } = await interviewActor(tx, clubId, user.id);
@@ -211,17 +211,18 @@ async function readSubmittedInterviewReviews(clubId: string, filters: ApplicantI
     }
     const records = await tx.interviewRecord.findMany({
       where: page,
-      orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: INTERVIEW_LIST_PAGE_SIZE + 1,
+      orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: take + 1,
       select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true, headshotUrl: true } } } } } } },
     });
     const total = withTotal ? await tx.interviewRecord.count({ where }) : 0;
     const rows = records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", photo: anonymous || !identify ? null : profilePhotoSource(r.application.student.studentProfile?.headshotUrl, { clubId, applicationId: r.applicationId, mode: "crm" }) ?? null }; });
-    return interviewListPage(rows, r => r.id, "reviews", listScope, total);
+    return interviewListPage(rows, r => r.id, "reviews", listScope, total, take);
   }, interviewTransactionOptions);
 }
-/** One page (50) of submitted reviews, newest first. `cursor` is the previous page's `nextCursor`. */
-export async function getSubmittedInterviewReviewPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null) {
-  return readSubmittedInterviewReviews(clubId, filters, cursor, true);
+/** One page (50) of submitted reviews, newest first. `cursor` is the previous page's `nextCursor`;
+ * `limit` (up to 500) lets a refresh re-read everything already loaded in one request. */
+export async function getSubmittedInterviewReviewPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  return readSubmittedInterviewReviews(clubId, filters, cursor, true, limit);
 }
 /** Earlier array contract: the first page only. The leadership UI pages with getSubmittedInterviewReviewPage. */
 export async function getSubmittedInterviewReviews(clubId: string, filters: ApplicantInterviewFilters = {}) {

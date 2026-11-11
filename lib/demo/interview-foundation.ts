@@ -13,7 +13,7 @@ import { demoAssignmentNotice } from "./interview-improvements";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
 import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
-import { decodeInterviewListCursor, interviewListFiltersSchema, interviewListScope, pageSortedInterviewList } from "@/lib/interview-list-page";
+import { decodeInterviewListCursor, interviewListFiltersSchema, interviewListLimitSchema, interviewListScope, pageSortedInterviewList } from "@/lib/interview-list-page";
 
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
@@ -134,8 +134,8 @@ function demoApplicantPhoto(anonymous: boolean, value: string | null | undefined
   return source && !source.startsWith("/api/") ? source : null;
 }
 /** Same contract as the server page: re-checks access and filters on every page; a cursor is only a position. */
-export function getSubmittedInterviewReviewPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null) {
-  const selected = interviewListFiltersSchema.parse(filters), listScope = interviewListScope(clubId, selected);
+export function getSubmittedInterviewReviewPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit), listScope = interviewListScope(clubId, selected);
   const position = decodeInterviewListCursor(cursor, "reviews", listScope);
   demoStore.refresh();
   const { s, caps } = actor(clubId);
@@ -146,7 +146,7 @@ export function getSubmittedInterviewReviewPage(clubId: string, filters: Applica
     if (selected.applicationId && r.applicationId !== selected.applicationId || selected.roundId && r.roundId !== selected.roundId || selected.cycleId) return false;
     try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closingReview"); return true; } catch { return false; }
   }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0));
-  const page = pageSortedInterviewList(records, r => r.id, position, "reviews", listScope);
+  const page = pageSortedInterviewList(records, r => r.id, position, "reviews", listScope, take);
   return { ...page, items: page.items.map(r => {
     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
     const club = s.clubs.find(c => c.id === clubId)!; const round = club.rounds.find(round => round.id === r.roundId)!; const anonymous = !!(r.anonymousReview || round.anonymousReview || club.rounds.find(round => round.id === app.roundId)?.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : round.name, applicantName: anonymous ? anonymousApplicantLabel(app.id) : profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided", photo: demoApplicantPhoto(anonymous, profile?.headshotUrl) };
@@ -237,8 +237,8 @@ export function getInterviewApplicantPanel(input: InterviewScope) {
   return { profile: { firstName: p.firstName, lastName: p.lastName, headshotUrl: p.headshotUrl, scholarStatus: p.scholarStatus }, document: s.interviewFoundation.documents.find(d => d.applicationId === app.id && d.roundId === input.roundId) || null };
 }
 /** Same contract as the server page: re-checks access and filters on every page; a cursor is only a position. */
-export function getInterviewResumeModerationPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null) {
-  const selected = interviewListFiltersSchema.parse(filters), listScope = interviewListScope(clubId, selected);
+export function getInterviewResumeModerationPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit), listScope = interviewListScope(clubId, selected);
   const position = decodeInterviewListCursor(cursor, "resumes", listScope);
   demoStore.refresh(); const { s, member, caps } = actor(clubId);
   if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
@@ -253,7 +253,7 @@ export function getInterviewResumeModerationPage(clubId: string, filters: Applic
     const profile = s.students.find(p => p.id === app.studentId)?.profile;
     return [{ documentId: document.id, clubId, applicationId: app.id, roundId: round.id, roundName: round.name, applicantName: profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" }];
   });
-  return pageSortedInterviewList(rows, r => r.documentId, position, "resumes", listScope);
+  return pageSortedInterviewList(rows, r => r.documentId, position, "resumes", listScope, take);
 }
 export function getInterviewResumeModerationQueue(clubId: string, filters: ApplicantInterviewFilters = {}) {
   return getInterviewResumeModerationPage(clubId, filters).items;

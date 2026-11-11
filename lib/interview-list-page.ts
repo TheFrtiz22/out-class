@@ -9,6 +9,9 @@ import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-naviga
  * anchor's sort key again under the full authorized filter, so anonymous reviews never expose
  * their withheld submission time and a cursor outside the caller's scope resolves to nothing. */
 export const INTERVIEW_LIST_PAGE_SIZE = 50;
+/** A refresh re-reads everything already loaded, from the top, up to this many rows. */
+export const INTERVIEW_LIST_REFRESH_LIMIT = 500;
+export const interviewListLimitSchema = z.number().int().min(1).max(INTERVIEW_LIST_REFRESH_LIMIT).default(INTERVIEW_LIST_PAGE_SIZE);
 export type InterviewListKind = "reviews" | "resumes";
 export type InterviewListPage<T> = { items: T[]; nextCursor: string | null; total: number };
 export const INVALID_INTERVIEW_LIST_CURSOR = "Invalid list position. Reload the list.";
@@ -42,19 +45,19 @@ export function decodeInterviewListCursor(cursor: unknown, kind: InterviewListKi
   return { id: payload.data.i };
 }
 
-/** Builds a page from up to PAGE_SIZE + 1 rows already ordered newest first, ties by id desc. */
-export function interviewListPage<T>(rows: T[], idOf: (row: T) => string, kind: InterviewListKind, scope: string, total: number): InterviewListPage<T> {
-  const items = rows.slice(0, INTERVIEW_LIST_PAGE_SIZE);
-  return { items, nextCursor: rows.length > INTERVIEW_LIST_PAGE_SIZE && items.length ? encodeInterviewListCursor(kind, scope, idOf(items[items.length - 1])) : null, total };
+/** Builds a page from up to limit + 1 rows already ordered newest first, ties by id desc. */
+export function interviewListPage<T>(rows: T[], idOf: (row: T) => string, kind: InterviewListKind, scope: string, total: number, limit = INTERVIEW_LIST_PAGE_SIZE): InterviewListPage<T> {
+  const items = rows.slice(0, limit);
+  return { items, nextCursor: rows.length > limit && items.length ? encodeInterviewListCursor(kind, scope, idOf(items[items.length - 1])) : null, total };
 }
 
 /** In-memory equivalent for Demo Mode: `sorted` is the full filtered list in display order. */
-export function pageSortedInterviewList<T>(sorted: T[], idOf: (row: T) => string, position: { id: string } | null, kind: InterviewListKind, scope: string): InterviewListPage<T> {
+export function pageSortedInterviewList<T>(sorted: T[], idOf: (row: T) => string, position: { id: string } | null, kind: InterviewListKind, scope: string, limit = INTERVIEW_LIST_PAGE_SIZE): InterviewListPage<T> {
   let start = 0;
   if (position) {
     const anchor = sorted.findIndex(row => idOf(row) === position.id);
     if (anchor < 0) throw new Error(STALE_INTERVIEW_LIST_CURSOR);
     start = anchor + 1;
   }
-  return interviewListPage(sorted.slice(start, start + INTERVIEW_LIST_PAGE_SIZE + 1), idOf, kind, scope, sorted.length);
+  return interviewListPage(sorted.slice(start, start + limit + 1), idOf, kind, scope, sorted.length, limit);
 }
