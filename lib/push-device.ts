@@ -7,6 +7,24 @@ export async function activePushRegistration() {
   return registration?.active ? registration : null
 }
 
+/** Decodes a base64url VAPID public key into the bytes PushManager.subscribe expects. */
+export function vapidKeyBytes(base64url: string) {
+  const padded = (base64url + "=".repeat((4 - base64url.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/")
+  return Uint8Array.from(atob(padded), char => char.charCodeAt(0))
+}
+
+/**
+ * Whether a browser subscription was made with the current VAPID public key. After a key
+ * rotation the old subscription can no longer receive pushes and must be replaced. A browser
+ * that does not report the key (null) is assumed to match, so it is never churned.
+ */
+export function subscriptionMatchesKey(subscription: { options?: { applicationServerKey?: ArrayBuffer | null } | null }, publicKey: string) {
+  const current = subscription.options?.applicationServerKey
+  if (!current) return true
+  const stored = new Uint8Array(current), expected = vapidKeyBytes(publicKey)
+  return stored.length === expected.length && stored.every((byte, i) => byte === expected[i])
+}
+
 /**
  * Removes this device's subscription on the server, then in the browser. Throws when either
  * step fails, so the caller can say so. `remove` is the server action (injected to keep this

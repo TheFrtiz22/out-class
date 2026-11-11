@@ -278,7 +278,7 @@ function emailWorld(t, { pushThrows }) {
       update: async ({ data }) => Object.assign(outbox, data),
       updateMany: async ({ data }) => { Object.assign(outbox, data); events.push(`outbox:${data.status}`); return { count: 1 } },
     },
-    notificationEmailDelivery: { create: async ({ data }) => { events.push('delivery'); return { id: 'd1', ...data } }, findMany: async () => [] },
+    notificationEmailDelivery: { create: async ({ data }) => { events.push('delivery'); return { id: 'd1', ...data } }, findMany: async () => { events.push('send-phase'); db.onSendPhase?.(); return [] } },
   })
   const createMany = db.webPushDelivery.createMany
   db.webPushDelivery.createMany = async args => { events.push(inTransaction ? 'push:inside' : 'push:after'); return createMany(args) }
@@ -292,16 +292,36 @@ test('a push-table failure never stops instant email: the delivery is still crea
   const result = await worker.processNotificationEmails(10)
   assert.equal(result.failed, 0, 'the email worker returns normally')
   assert.equal(outbox.status, 'ASSIGNED'); assert.equal(outbox.deliveryId, 'd1')
-  assert.deepEqual(events, ['delivery', 'outbox:ASSIGNED', 'commit'])
+  assert.deepEqual(events, ['delivery', 'outbox:ASSIGNED', 'commit', 'send-phase'])
   assert.equal(db.deliveries.length, 0)
   assert.ok(errors.some(([message]) => message === 'notification-push enqueue failed'), 'the push failure is logged')
 })
 
-test('pushes are queued only after the email transaction commits', async t => {
+test('pushes are queued only after the email transaction commits and after the email send phase', async t => {
   const { db, events, worker } = emailWorld(t, { pushThrows: false })
   await worker.processNotificationEmails(10)
-  assert.deepEqual(events, ['delivery', 'outbox:ASSIGNED', 'commit', 'push:after'])
+  assert.deepEqual(events, ['delivery', 'outbox:ASSIGNED', 'commit', 'send-phase', 'push:after'])
   assert.equal(db.deliveries.length, 1)
+})
+
+test('push enqueueing never runs into the email deadline: a late run skips it and logs', async t => {
+  const { db, events, outbox, worker } = emailWorld(t, { pushThrows: false })
+  const errors = []; const realError = console.error; console.error = (...args) => errors.push(args); t.after(() => { console.error = realError })
+  const realNow = Date.now; let offset = 0; Date.now = () => realNow() + offset; t.after(() => { Date.now = realNow })
+  db.onSendPhase = () => { offset = 45000 } // the email sends used the whole budget
+  const result = await worker.processNotificationEmails(10)
+  assert.equal(result.failed, 0); assert.equal(outbox.status, 'ASSIGNED')
+  assert.deepEqual(events, ['delivery', 'outbox:ASSIGNED', 'commit', 'send-phase'], 'no push-table work after the deadline')
+  assert.equal(db.deliveries.length, 0)
+  assert.deepEqual(errors.find(([message]) => message === 'notification-push enqueue skipped at deadline')?.[1], { count: 1 })
+})
+
+test('a slow push table cannot delay the email send phase', async t => {
+  const { db, events, worker } = emailWorld(t, { pushThrows: false })
+  const realFind = db.webPushSubscription.findMany
+  db.webPushSubscription.findMany = async args => { events.push('push:lookup'); await new Promise(resolve => setTimeout(resolve, 50)); return realFind(args) }
+  await worker.processNotificationEmails(10)
+  assert.ok(events.indexOf('send-phase') < events.indexOf('push:lookup'), 'emails are claimed and sent before any push-table query')
 })
 
 test('a removed subscription (FK 23503 between read and insert) is skipped and logged', async t => {
@@ -337,6 +357,14 @@ test('no push once the email was suppressed, the category is off, or the stored 
   db.users.set('alice', { disabledAt: null, notificationPreferences: { emailFrequency: 'INSTANT', emailAnnouncements: false } })
   await worker.enqueueNotificationPushes('alice', [notify()])
   assert.equal((await worker.processNotificationPushes(50, { sender: sender() })).skipped, 1, 'announcements turned off since queueing')
+  for (const emailFrequency of ['DAILY', 'OFF']) {
+    db.users.set('alice', { disabledAt: null, notificationPreferences: { emailFrequency, emailAnnouncements: true } })
+    await worker.enqueueNotificationPushes('alice', [notify({ emailStatus: 'QUEUED' })])
+    sent.length = 0
+    const switched = await worker.processNotificationPushes(50, { sender: sender() })
+    assert.deepEqual([switched.sent, switched.skipped, sent.length], [0, 1, 0], `switched Instant -> ${emailFrequency} after queueing: no push`)
+    assert.equal(db.deliveries.at(-1).status, 'SKIPPED')
+  }
   db.users.set('alice', { disabledAt: null })
   db.subs[0].endpoint = 'https://attacker.example/hook'
   await worker.enqueueNotificationPushes('alice', [notify()])
@@ -416,4 +444,22 @@ test('sign-out unsubscribes this device first, best effort and bounded', async t
   await device.unsubscribeOnSignOut(async () => { throw new Error('offline') })
   subscription.unsubscribe = async () => false
   await assert.rejects(device.unsubscribeThisDevice(async () => {}), /kept the push subscription/, 'turn-off surfaces a failed browser unsubscribe')
+})
+
+test('a browser subscription made with a rotated-out VAPID key is detected and replaced', () => {
+  const device = loader({})('lib/push-device.ts')
+  const key = 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM'
+  const rotated = 'BOtherKeyAfterRotationOtherKeyAfterRotationOtherKeyAfterRotationOtherKeyAfterRotation1'
+  const sub = k => ({ options: { applicationServerKey: device.vapidKeyBytes(k).buffer } })
+  assert.equal(device.subscriptionMatchesKey(sub(key), key), true)
+  assert.equal(device.subscriptionMatchesKey(sub(rotated), key), false)
+  assert.equal(device.subscriptionMatchesKey({ options: { applicationServerKey: new Uint8Array(65).buffer } }, key), false, 'same length, different bytes')
+  assert.equal(device.subscriptionMatchesKey({ options: { applicationServerKey: null } }, key), true, 'a browser that does not report its key is not churned')
+  assert.equal(device.subscriptionMatchesKey({}, key), true)
+  const toggle = fs.readFileSync(path.join(root, 'components/inbox/push-notifications-toggle.tsx'), 'utf8')
+  const turnOn = toggle.slice(toggle.indexOf('async function turnOn'), toggle.indexOf('async function toggle'))
+  assert.ok(turnOn.indexOf('subscriptionMatchesKey(existing, publicKey)') < turnOn.indexOf('existing.unsubscribe()'))
+  assert.ok(turnOn.indexOf('existing.unsubscribe()') < turnOn.indexOf('pushManager.subscribe('), 'the stale subscription is dropped before subscribing anew')
+  assert.match(turnOn, /removePushSubscription\(\{ endpoint: existing\.endpoint \}\)/, 'the stale server row is removed')
+  assert.match(turnOn, /savePushSubscription\(subscription\.toJSON\(\)\)/)
 })

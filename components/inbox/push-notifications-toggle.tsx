@@ -3,18 +3,13 @@
 import { useEffect, useId, useState } from "react"
 import { getPushSettings, removePushSubscription, savePushSubscription } from "@/actions/push-subscriptions"
 import { Switch } from "@/components/ui/switch"
-import { activePushRegistration, unsubscribeThisDevice } from "@/lib/push-device"
+import { activePushRegistration, subscriptionMatchesKey, unsubscribeThisDevice, vapidKeyBytes } from "@/lib/push-device"
 
 type State = "loading" | "hidden" | "unsupported" | "blocked" | "off" | "on"
 const BLOCKED = "Notifications are blocked in your browser settings."
 
 function pushApiAvailable() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
-}
-
-function applicationServerKey(base64url: string) {
-  const padded = (base64url + "=".repeat((4 - base64url.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/")
-  return Uint8Array.from(atob(padded), char => char.charCodeAt(0))
 }
 
 /**
@@ -42,7 +37,9 @@ export function PushNotificationsToggle() {
       if (!settings.enabled || !registration) { setState("hidden"); return }
       setPublicKey(settings.publicKey)
       if (Notification.permission === "denied") { setState("blocked"); return }
-      setState(subscription && settings.subscribed && Notification.permission === "granted" ? "on" : "off")
+      // A subscription bound to a rotated-out VAPID key cannot receive pushes: show it as off.
+      const current = !!subscription && subscriptionMatchesKey(subscription, settings.publicKey)
+      setState(current && settings.subscribed && Notification.permission === "granted" ? "on" : "off")
     })().catch(() => { if (active) setState("hidden") })
     return () => { active = false }
   }, [])
@@ -53,7 +50,14 @@ export function PushNotificationsToggle() {
     if (permission !== "granted") { setState(permission === "denied" ? "blocked" : "off"); setMessage(BLOCKED); return }
     const registration = await activePushRegistration()
     if (!registration || !publicKey) throw new Error("unavailable")
-    const subscription = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey(publicKey) })
+    let existing = await registration.pushManager.getSubscription()
+    if (existing && !subscriptionMatchesKey(existing, publicKey)) {
+      // Made with an old VAPID key (rotation): drop it here and on the server, then subscribe anew.
+      await removePushSubscription({ endpoint: existing.endpoint }).catch(() => {})
+      if (!await existing.unsubscribe()) throw new Error("stale subscription")
+      existing = null
+    }
+    const subscription = existing ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKeyBytes(publicKey) })
     try { await savePushSubscription(subscription.toJSON()) }
     catch (cause) { await subscription.unsubscribe().catch(() => {}); throw cause }
     setState("on")

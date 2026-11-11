@@ -96,6 +96,8 @@ export async function processNotificationPushes(limit = 50, { startedAt, now = D
     if (!emailLive || subscription.userId !== notification.userId || notification.archivedAt || notification.readAt || notification.user.disabledAt
       || notification.club?.suspendedAt || now() - +notification.createdAt >= PUSH_MAX_AGE_MS || subscription.failureCount >= PUSH_MAX_FAILURES
       || !optionalEmailAllowed(notification.user.notificationPreferences, notification.type)
+      // Push is Instant-only: a switch to Daily (or Off) after queueing skips it at send time.
+      || (notification.user.notificationPreferences?.emailFrequency ?? "INSTANT") !== "INSTANT"
       || !await prisma.$transaction(tx => notificationStillCurrent(tx, notification, notification.userId, URL_BASE, { panel: true }))) {
       await skip(); continue;
     }
