@@ -22,9 +22,9 @@ export async function middleware(request: NextRequest) {
       return response
     }
   }
-  // Privacy and Terms are not public until the owner turns them on: serve the real 404 page (an
-  // unmatched path), not a streamed 200, and never their titles.
-  if (!LEGAL_PAGES_PUBLIC && (path === "/privacy" || path === "/terms")) {
+  // Privacy, Terms, Cookies and Legal are not public until the owner turns them on: serve the real
+  // 404 page (an unmatched path), not a streamed 200, and never their titles.
+  if (!LEGAL_PAGES_PUBLIC && (path === "/privacy" || path === "/terms" || path === "/cookies" || path === "/legal")) {
     return NextResponse.rewrite(new URL("/__not-public", request.url), { headers: { "X-Robots-Tag": "noindex, nofollow" } })
   }
   if (path === "/preview" || path.startsWith("/preview/") || path === "/demo" || path.startsWith("/demo/")) {
