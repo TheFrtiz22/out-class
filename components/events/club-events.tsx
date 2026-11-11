@@ -58,7 +58,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
     </div>;
   }
   return <section aria-label="Events" className="min-w-0 space-y-5">
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Events</h2><p className="mt-2 text-sm text-muted-foreground">Public events, approval, and RSVP intent. Check-in attendance stays in Meetings.</p></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create event</Button></header>
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Events</h2></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create event</Button></header>
     {notice && <p role="status" className="rounded-lg border p-3 text-sm">{notice}</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}{!rows.length && !loading && <> <Button variant="outline" size="sm" disabled={busy} onClick={() => setRetry(n => n + 1)}>Try again</Button></>}</p>}
     {event ? <div className="oc-event-management-detail">
@@ -83,7 +83,7 @@ function RsvpDashboard({ event, membership }: { event: ManagedCampusEvent; membe
   const [data, setData] = useState<Awaited<ReturnType<typeof getCampusEventRsvpDashboard>> | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(false), [open, setOpen] = useState(false), [revision, setRevision] = useState(0);
   useEffect(() => { if (!open) return; let active = true; setLoading(true); setError(""); getCampusEventRsvpDashboard(event.clubId, event.id).then(value => { if (active) setData(value) }).catch(() => { if (active) { setData(null); setError("RSVPs could not be loaded.") } }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [open, event.clubId, event.id, revision]);
   useRevalidate(() => setRevision(n => n + 1), { enabled: open, scopes: ["events"] });
-  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><p className="text-xs text-muted-foreground">RSVP intent is separate from recorded check-in attendance.</p><div className="flex flex-wrap items-center gap-2">{!open && <Button variant="outline" onClick={() => setOpen(true)}>View RSVPs</Button>}<ClubExportLink clubId={event.clubId} kind="rsvps" membership={membership} filter={event.id} label="Export CSV" /></div>{open && loading && !data && <LoadingState label="Loading RSVPs…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setRevision(n => n + 1)}>Try again</Button></p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
+  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><div className="flex flex-wrap items-center gap-2">{!open && <Button variant="outline" onClick={() => setOpen(true)}>View RSVPs</Button>}<ClubExportLink clubId={event.clubId} kind="rsvps" membership={membership} filter={event.id} label="Export CSV" /></div>{open && loading && !data && <LoadingState label="Loading RSVPs…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setRevision(n => n + 1)}>Try again</Button></p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
 }
 function EventEditor({
   clubId,
@@ -238,7 +238,7 @@ function EventEditor({
         </Button>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        Your private draft saves automatically. Submit when ready for approval.
+        Your private draft saves automatically.
       </p>
       {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-foreground">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
       <AutosaveStatus save={draftSave} />
@@ -279,7 +279,7 @@ function EventEditor({
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
-          <p id="event-description-help" className="text-xs leading-relaxed text-muted-foreground">Include all important flyer information here, including access details and any instructions shown only in the image. Students can read this description in the event details without viewing the flyer.</p>
+          <p id="event-description-help" className="text-xs leading-relaxed text-muted-foreground">Include every flyer detail here, including anything shown only in the image.</p>
           <div className="oc-event-editor-pair">
             <label>
               Category
