@@ -168,6 +168,15 @@ function code(text) {
   return "`" + String(text).replace(/`/g, "'") + "`"
 }
 
+// A client authenticated with the workflow's own GITHUB_TOKEN, so approval comments are
+// authored by github-actions[bot]. actions/github-script@v7 does not expose getOctokit to
+// scripts, so build one from the injected client's class.
+function actionsClient({ github, getOctokit, token }) {
+  if (!token) throw new Error("ACTIONS_TOKEN is not set")
+  if (typeof getOctokit === "function") return getOctokit(token)
+  return new github.constructor({ auth: token })
+}
+
 async function run({ github, context, core, getOctokit }) {
   const { owner, repo } = context.repo
   const repoFullName = `${owner}/${repo}`
@@ -177,7 +186,7 @@ async function run({ github, context, core, getOctokit }) {
     .filter(Boolean)
   // Approval comments are always written with the workflow's own token so
   // their author is github-actions[bot], which no person or agent can post as.
-  const actions = getOctokit(process.env.ACTIONS_TOKEN)
+  const actions = actionsClient({ github, getOctokit, token: process.env.ACTIONS_TOKEN })
 
   // Record or revoke approval on the triggering PR event.
   if (context.eventName === "pull_request_target") {
@@ -285,6 +294,7 @@ async function run({ github, context, core, getOctokit }) {
 
 module.exports = {
   run,
+  actionsClient,
   evaluate,
   protectedFiles,
   requiredChecksStatus,

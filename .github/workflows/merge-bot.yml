@@ -52,4 +52,4 @@ jobs:
           github-token: ${{ secrets.MERGE_BOT_TOKEN || github.token }}
           script: |
             const bot = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/merge-bot.cjs`)
-            await bot.run({ github, context, core, getOctokit })
+            await bot.run({ github, context, core })

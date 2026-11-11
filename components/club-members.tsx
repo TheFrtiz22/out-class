@@ -76,7 +76,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
   if (!canAccess && !canMembers) return <p role="alert">Member management is not available with your current access.</p>
   if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} validatedInitialData={validatedInitialData} />
   return <div className="oc-workspace-stack" data-unsaved={dirty} data-saving={busy}>
-    <p className="text-sm leading-7 text-muted-foreground">Club roles describe responsibilities. Management access is granted separately, capability by capability.</p>
+    <p className="text-sm leading-7 text-muted-foreground">Roles describe responsibilities; access is granted separately.</p>
     {demo.isDemoEnabled && <p className="text-sm text-muted-foreground">Fictional demo directory. Membership and access changes are available outside Demo Mode.</p>}
     {!demo.isDemoEnabled && canMembers && <RosterCsvImporter key={clubId} clubId={clubId} />}
     <div className="oc-list-toolbar"><SearchField aria-label="Search members" placeholder="Search name, role, year, or group" value={query} onChange={e=>setQuery(e.target.value)} onClear={()=>setQuery("")} containerClassName="min-w-0 max-w-md flex-1 basis-60" /><SortControl label="Sort members" options={sortOptions} value={listSort.key} descending={listSort.descending} descendingByDefault={sortsDescending} onChange={listSort.set} /></div>

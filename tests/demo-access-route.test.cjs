@@ -66,6 +66,7 @@ test('demo cookie blocks live identity reads and mutations without granting a se
     '@/lib/navigation': require('./helpers/navigation-module.cjs'),
     '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
     '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false },
+    '@/lib/csp': load('lib/csp.ts'),
   })
   for (const [path, method] of [['/api/users/me', 'GET'], ['/', 'POST']]) {
     const res = await middleware(new NextRequest(`https://demo.example${path}`, { method, headers: { cookie: `${access.DEMO_COOKIE}=1` } }))
