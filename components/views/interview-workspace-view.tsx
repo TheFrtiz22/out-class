@@ -18,12 +18,14 @@ import { interviewQueue } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
 
 type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
 export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: () => void; scoped?: boolean }) {
   const { user, loading, activeClubId, selectClub } = useAuth()
+  const confirm = useConfirm()
   const { leaderFocus } = useApplicationState()
   const memberships = (user?.memberships || []).filter(m => hasPermission(m, "applications.review"))
   const clubId = activeClubId
@@ -38,9 +40,9 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
     setLocked(value)
     setSaving(pending)
   }, [])
-  function exit() {
+  async function exit() {
     if (saving) return
-    if (!locked || window.confirm("Leave interview mode? Unsaved evaluation changes will be lost."))
+    if (!locked || await confirm({ title: "Leave interview mode?", description: "Unsaved evaluation changes will be lost.", confirmLabel: "Leave interview mode", cancelLabel: "Stay", tone: "danger" }))
       onExit?.()
   }
   // The focus frame's Exit goes through the same unsaved-work check.
@@ -83,6 +85,7 @@ function InterviewSession({
   clubSelector?: ReactNode
 }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
+  const confirm = useConfirm()
   const [data, setData] = useState<Pipeline | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -220,12 +223,12 @@ function InterviewSession({
   }, [dirty, busy])
   useEffect(() => {
     if (!new URLSearchParams(window.location.search).has("applicationId") && leaderFocus?.clubId === membership.clubId && leaderFocus.applicantId && queue.some(a => a.id === leaderFocus.applicantId)) {
-      choose(leaderFocus.applicantId, true)
+      void choose(leaderFocus.applicantId, true)
       clearLeaderFocus()
     }
   }, [data, roundId, leaderFocus, membership.clubId, clearLeaderFocus])
-  function choose(id: string, discard = false) {
-    if (busy || (!discard && dirty && !window.confirm("Discard your unsaved evaluation changes?")))
+  async function choose(id: string, discard = false) {
+    if (busy || (!discard && dirty && !(await confirm({ title: "Discard evaluation changes?", description: "Your unsaved evaluation changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", tone: "danger" }))))
       return
     const url = new URL(window.location.href); url.searchParams.set("applicationId", id); url.searchParams.set("roundId", roundId);
     for (const key of ["bookingId", "slotId", "roomId"]) url.searchParams.delete(key);
@@ -239,8 +242,8 @@ function InterviewSession({
     setFailed(false)
     requestAnimationFrame(() => heading.current?.focus())
   }
-  function returnToList() {
-    if (busy || (dirty && !window.confirm("Return to interviews? Unsaved changes will be lost."))) return
+  async function returnToList() {
+    if (busy || (dirty && !(await confirm({ title: "Return to interviews?", description: "Unsaved changes will be lost.", confirmLabel: "Return to interviews", cancelLabel: "Stay", tone: "danger" })))) return
     try { sessionStorage.removeItem(recoveryKey) } catch { /* Selection stays local if storage is unavailable. */ }
     onExit()
   }
@@ -302,15 +305,15 @@ function InterviewSession({
           {clubSelector}
           <div className="space-y-2">
             <span className="text-sm font-medium">Round</span>
-            <PillGroup id="interview-round" label="Round" size="compact" value={roundId} onChange={(value) => {
+            <PillGroup id="interview-round" label="Round" size="compact" value={roundId} onChange={async (value) => {
                 if (busy) return
-                if (!dirty || window.confirm("Discard your unsaved evaluation changes?")) setRoundId(value)
+                if (!dirty || await confirm({ title: "Discard evaluation changes?", description: "Your unsaved evaluation changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", tone: "danger" })) setRoundId(value)
               }} options={data.rounds.map((item) => ({ value: item.id, label: item.name, disabled: busy }))} />
           </div>
           <div className="space-y-2">
             <span className="text-sm font-medium">Candidate</span>
             <PillSelect id="interview-candidate" label="Candidate" className="w-full sm:w-64" disabled={busy || !queue.length} active={false} value={activeId} placeholder="Choose a candidate"
-              onChange={(value) => choose(value)} options={queue.map((app) => ({ value: app.id, label: app.name }))} />
+              onChange={(value) => void choose(value)} options={queue.map((app) => ({ value: app.id, label: app.name }))} />
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -336,7 +339,7 @@ function InterviewSession({
               : "No current panel assignments are available in this round. Ask your club owner to confirm your assignment."}
           </p>
           {queue.length > 0 && (
-            <Button onClick={() => choose(queue[0].id)}>
+            <Button onClick={() => void choose(queue[0].id)}>
               Open first candidate
               <ArrowRight className="size-4" />
             </Button>
@@ -346,7 +349,7 @@ function InterviewSession({
         <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList}
 
-toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={returnToList}><ArrowLeft className="size-4" />Interviews</Button></>}
+toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button></>}
 context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} />}
             onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)

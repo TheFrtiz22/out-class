@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { isDemoActive } from "@/lib/demo/loader"
 import { useAuth } from "@/contexts/auth-context"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import { useApplicationState } from "@/lib/application-state"
 import { searchWorkspace, type WorkspaceSearchResult } from "@/lib/workspace-api"
 import type { NavItem, ViewId } from "@/lib/views"
@@ -58,6 +59,7 @@ export function NavigationSearch({
 }) {
   const { user } = useAuth()
   const { focusApplication, focusLeader } = useApplicationState()
+  const confirm = useConfirm()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<WorkspaceSearchResult[]>([])
   const [pending, setPending] = useState(false)
@@ -102,26 +104,26 @@ export function NavigationSearch({
     setResults([])
     onOpenChange(false)
   }
-  function prepare() {
+  async function prepare() {
     if (document.querySelector('[data-saving="true"]')) return false
     if (
       document.querySelector('[data-unsaved="true"]') &&
-      !window.confirm("Leave this page? Your unsaved changes will be lost.")
+      !(await confirm({ title: "Leave this page?", description: "Your unsaved changes will be lost.", confirmLabel: "Leave page", cancelLabel: "Stay", tone: "danger" }))
     )
       return false
     close()
     return true
   }
-  function navigate(view: ViewId) {
-    if (prepare()) onNavigate(view)
+  async function navigate(view: ViewId) {
+    if (await prepare()) onNavigate(view)
   }
-  function choose(item: WorkspaceSearchResult) {
+  async function choose(item: WorkspaceSearchResult) {
     if (item.kind === "club") {
-      if (!prepare()) return
+      if (!(await prepare())) return
       window.location.assign(isDemoActive() ? `/preview?demoClub=${encodeURIComponent(item.clubId)}` : `/club/${encodeURIComponent(item.clubId)}`)
       return
     }
-    if (!prepare()) return
+    if (!(await prepare())) return
     if (clubId && (item.kind === "applicant" || item.kind === "round")) {
       window.location.assign(`/club/${encodeURIComponent(item.clubId)}/workspace?section=recruitment&tool=applicants&${item.kind === "applicant" ? "applicantId" : "roundId"}=${encodeURIComponent(item.id)}`)
       return
@@ -192,7 +194,7 @@ export function NavigationSearch({
                   <CommandItem
                     key={id}
                     value={`page-${id}`}
-                    onSelect={() => navigate(id)}
+                    onSelect={() => void navigate(id)}
                     className="min-h-11"
                   >
                     {id === "student-profile" ? <AccountAvatar user={user} className="size-5" /> : <Icon className="size-4" />}
@@ -201,7 +203,7 @@ export function NavigationSearch({
                   </CommandItem>
                 ))}
                 {linkPages.map(link => (
-                  <CommandItem key={`link-${link.id}`} value={`link-${link.id}-${link.title}`} onSelect={() => { if (prepare()) window.location.assign(link.href) }} className="min-h-11">
+                  <CommandItem key={`link-${link.id}`} value={`link-${link.id}-${link.title}`} onSelect={async () => { if (await prepare()) window.location.assign(link.href) }} className="min-h-11">
                     <ArrowUpRight className="size-4" aria-hidden="true" />
                     <span className="flex-1">{link.title}</span>
                   </CommandItem>
@@ -218,7 +220,7 @@ export function NavigationSearch({
                       <CommandItem
                         key={`${kind}-${item.id}`}
                         value={`${kind}-${item.id}`}
-                        onSelect={() => choose(item)}
+                        onSelect={() => void choose(item)}
                         className="min-h-12"
                       >
                         <Icon className="size-4 shrink-0" />
