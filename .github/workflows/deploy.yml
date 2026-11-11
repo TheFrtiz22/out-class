@@ -29,6 +29,19 @@ jobs:
       - run: pnpm validate
       # Vercel's Git integration deploys the authenticated App Router application.
       # Never publish the obsolete static out/ directory to GitHub Pages.
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # Runs `pnpm audit --audit-level=high --prod` against the lockfile (no install needed).
+      # Fails on any high or critical advisory not documented in .github/audit-allowlist.json,
+      # and on an expired exception. Moderate advisories are listed but do not fail.
+      - run: node scripts/check-dependency-audit.cjs
   accessibility:
     runs-on: ubuntu-latest
     timeout-minutes: 20
