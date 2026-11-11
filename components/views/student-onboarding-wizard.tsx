@@ -188,7 +188,7 @@ function ResumeDropZone({
       }`}
     >
       <Upload
-        className={`size-8 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
+        className={`size-6 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
       />
       <p className="text-sm font-medium text-foreground">
         Drag & drop your resume here

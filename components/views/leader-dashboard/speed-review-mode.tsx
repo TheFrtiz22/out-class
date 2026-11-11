@@ -145,7 +145,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                         key={link.url}
                         className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-1 text-xs text-muted-foreground"
                       >
-                        <LinkIcon className="size-3" />
+                        <LinkIcon className="size-3.5" />
                         {link.label}
                       </span>
                     ))}

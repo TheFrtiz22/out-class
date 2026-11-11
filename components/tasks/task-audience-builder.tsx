@@ -36,7 +36,7 @@ export function TaskAudienceBuilder({workspace,value,onChange,mode:initialMode,o
   let recipients:{member:TaskMember;groupLabel:string|null}[]=[],previewError=""
   try{recipients=resolveTaskRecipients(members,value,excluded)}catch(error){previewError=error instanceof Error?error.message:"Check your selection."}
   return <div className="oc-audience-builder">
-    <SegmentedControl label="Who should receive this?" value={mode} onChange={choose} options={choices.map(choice=>({value:choice.id,label:<span className="inline-flex items-center gap-2"><choice.icon size={17} aria-hidden="true"/>{choice.label}</span>}))}/>
+    <SegmentedControl label="Who should receive this?" value={mode} onChange={choose} options={choices.map(choice=>({value:choice.id,label:<span className="inline-flex items-center gap-2"><choice.icon size={16} aria-hidden="true"/>{choice.label}</span>}))}/>
     {mode==="everyone" && <p className="text-sm text-muted-foreground">Everyone on the current club roster. Each person receives their own copy of the task.</p>}
     {(mode==="boys" || mode==="girls") && <p className="text-sm text-muted-foreground">Members assigned to the “{mode === "boys" ? "Boys" : "Girls"}” group in Members.</p>}
     {mode==="members" && <TaskMemberList members={members} selected={value.members} onChange={ids=>patch({members:ids})}/>}

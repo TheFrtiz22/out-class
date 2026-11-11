@@ -271,7 +271,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           />
         ) : (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-y py-4"><p className="text-sm text-muted-foreground">Your responses are saved and read-only after submission.</p><Button variant="outline" onClick={() => openRelated("status")}>View status<ArrowRight size={15} /></Button></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-y py-4"><p className="text-sm text-muted-foreground">Your responses are saved and read-only after submission.</p><Button variant="outline" onClick={() => openRelated("status")}>View status<ArrowRight size={16} /></Button></div>
             <section className="space-y-6" aria-label="Submitted responses">
               <div>
                 <h2 className="oc-section-heading ">Your submitted responses</h2>

@@ -35,7 +35,7 @@ function Review({ app }: { app: Candidate; average?: Props["average"] }) {
 /** The rating on one line: the average (or the submitted count) with the detail in a tooltip and for screen readers. */
 function Rating({ app }: { app: Candidate }) {
   const summary = app.roundScore
-  if (!summary) return <span className="oc-applicant-review-hidden oc-dt-muted" title="Hidden until you review"><Lock aria-hidden="true" size={13} />Hidden<span className="sr-only"> until you review</span></span>
+  if (!summary) return <span className="oc-applicant-review-hidden oc-dt-muted" title="Hidden until you review"><Lock aria-hidden="true" size={14} />Hidden<span className="sr-only"> until you review</span></span>
   const detail = `${summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}${summary.provisional ? " · Provisional" : ""}`
   return <span title={detail}>{summary.average === null ? <span className="oc-dt-muted">{summary.submitted}/{summary.required} reviews</span> : <><strong className="font-semibold">{formatAverage(summary.average)}</strong><span className="oc-dt-muted"> /10{summary.provisional ? "*" : ""}</span></>}<span className="sr-only"> · {detail}</span></span>
 }

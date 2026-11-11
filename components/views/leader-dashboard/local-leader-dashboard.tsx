@@ -447,7 +447,7 @@ export default function LocalLeaderDashboardView() {
                         className={cn("w-full select-none justify-start gap-1 px-1 text-left text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-foreground")}>
                         {column.label}
                         <span className="inline-flex size-3 shrink-0" aria-hidden="true">
-                          {sortConfig.key === column.key && (sortConfig.direction === "ascending" ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />)}
+                          {sortConfig.key === column.key && (sortConfig.direction === "ascending" ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />)}
                         </span>
                       </Button>
                     </TableHead>
@@ -640,7 +640,7 @@ export default function LocalLeaderDashboardView() {
                             key={link.url}
                             className="inline-flex items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
                           >
-                            <LinkIcon className="size-3" />
+                            <LinkIcon className="size-3.5" />
                             {link.label} — {link.url}
                           </span>
                         ))}
@@ -651,7 +651,7 @@ export default function LocalLeaderDashboardView() {
                   <div>
                     <h3 className="oc-card-heading mb-2">Resume</h3>
                     <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-lg border bg-muted/30 text-muted-foreground">
-                      <FileText className="size-8" />
+                      <FileText className="size-6" />
                       <p className="text-xs font-medium">{active.resumeFileName}</p>
                       <p className="text-[length:var(--oc-size-11)]">Embedded PDF preview</p>
                     </div>
@@ -729,7 +729,7 @@ export default function LocalLeaderDashboardView() {
                                     : "border-foreground bg-foreground text-white",
                                 )}
                               >
-                                {stage.locked ? <Lock className="size-3" /> : i + 1}
+                                {stage.locked ? <Lock className="size-3.5" /> : i + 1}
                               </div>
                               {i < stages.length - 1 && (
                                 <div className={cn("mt-1 w-px flex-1", stage.locked ? "bg-secondary" : "bg-foreground/20")} />

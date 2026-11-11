@@ -298,7 +298,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
             ))}
             {!filtered.length && (
               <div className="space-y-3 p-10 text-center">
-                <Bell className="mx-auto size-7 text-muted-foreground" />
+                <Bell className="mx-auto size-6 text-muted-foreground" />
                 <p className="text-sm font-medium">
                   {items.length ? "No matching notifications" : "No notifications yet"}
                 </p>
@@ -320,7 +320,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
         >
           {!selected ? (
             <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-              <Bell className="size-8 text-muted-foreground" />
+              <Bell className="size-6 text-muted-foreground" />
               <p className="text-sm">Choose a notification to read the full update.</p>
             </div>
           ) : (

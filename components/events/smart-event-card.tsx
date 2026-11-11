@@ -27,8 +27,8 @@ export function SmartEventCard({ event, save, onOpen }: { event: CampusEvent; sa
       <div className="oc-smart-event-meta"><span className="oc-smart-event-host">{event.clubName}</span>{event.category && <span className="oc-smart-event-category">{event.category}</span>}</div>
       <h2><a href={`/corkboard?event=${event.id}`} onClick={open} className="oc-smart-event-link">{event.title}</a></h2>
       <dl className="oc-smart-event-facts">
-        <div><dt><Clock size={17} aria-hidden="true" /><span className="sr-only">Date and time</span></dt><dd>{eventScheduleLabel(event)}</dd></div>
-        <div><dt><MapPin size={17} aria-hidden="true" /><span className="sr-only">Location</span></dt><dd>{event.location}</dd></div>
+        <div><dt><Clock size={16} aria-hidden="true" /><span className="sr-only">Date and time</span></dt><dd>{eventScheduleLabel(event)}</dd></div>
+        <div><dt><MapPin size={16} aria-hidden="true" /><span className="sr-only">Location</span></dt><dd>{event.location}</dd></div>
       </dl>
       <p className="oc-smart-event-description">{event.description}</p>
       <div className="oc-smart-event-footer">

@@ -157,7 +157,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         setDraggedId(null); setDragOverColumn(null)
                       }}
                       onPointerCancel={() => { setDraggedId(null); setDragOverColumn(null) }}
-                    ><GripVertical className="size-3" />Drag to move</Button>
+                    ><GripVertical className="size-3.5" />Drag to move</Button>
                     <div className="flex items-start gap-2 pr-9">
                       <Avatar className="size-7 shrink-0">
                         <AvatarFallback

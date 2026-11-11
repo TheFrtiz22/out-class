@@ -139,7 +139,7 @@ export function BroadcastMessagesView() {
                         onClick={() => toggleAudience(a)}
                         className="h-auto min-h-11 w-full justify-start px-2 text-left font-normal"
                       >
-                        <span aria-hidden="true" className="flex size-4 items-center justify-center rounded border border-input">{audiences.has(a) ? <Check className="size-3" aria-hidden="true" /> : null}</span>
+                        <span aria-hidden="true" className="flex size-4 items-center justify-center rounded border border-input">{audiences.has(a) ? <Check className="size-3.5" aria-hidden="true" /> : null}</span>
                         <span className="flex-1">{a}</span>
                         <span className="text-xs text-muted-foreground">
                           {a === "Subscribed Followers" && "Public"}

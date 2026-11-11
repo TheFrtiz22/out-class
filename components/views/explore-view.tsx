@@ -202,7 +202,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           containerClassName="oc-directory-search-field"
         />
         <IconButton className="oc-directory-filter-toggle" aria-label={phoneActive ? `Filter clubs (${phoneActive} active)` : "Filter clubs"} aria-expanded={phoneFilters} aria-controls="directory-tools" onClick={() => setPhoneFilters(open => !open)}>
-          <SlidersHorizontal size={18} aria-hidden="true" />{phoneActive > 0 && <span className="oc-directory-filter-count" aria-hidden="true">{phoneActive}</span>}
+          <SlidersHorizontal size={20} aria-hidden="true" />{phoneActive > 0 && <span className="oc-directory-filter-count" aria-hidden="true">{phoneActive}</span>}
         </IconButton>
       </div>
       <div id="directory-tools" className="oc-directory-tools oc-toolbar" data-phone-open={phoneFilters || undefined}>
@@ -263,7 +263,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
               }
             >
               {key === "query" ? `“${value}”` : key === "recruitment" ? value === "open" ? "Applications open" : value === "closed" ? "Not currently open" : "Closing in 7 days" : `${key}: ${value}`}
-              <X size={12} />
+              <X size={14} />
             </Button>
           ))}
           <Button type="button" variant="link" size="sm" className="min-h-11" onClick={() => { updateFilters(emptyDirectoryFilters) }}>Clear all</Button>
@@ -308,7 +308,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           )}
           {!active.length && available.length > 0 && <details className="oc-explore-available group"><summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden"><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Applications open · {available.length} clubs</summary>
             <p>An A–Z selection of clubs accepting applications. Check their profiles for requirements.</p>
-            <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Applications open</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
+            <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Applications open</small></span><ArrowRight size={16} aria-hidden="true" /></button></li>)}</ul>
           </details>}
           <p id="directory-availability-note" className={filters.recruitment === "all" ? "sr-only" : "oc-explore-directory-note"}>Availability reflects applications on OutClass. Check each club’s website for external recruitment.</p>
           <section aria-labelledby="directory-results-title">

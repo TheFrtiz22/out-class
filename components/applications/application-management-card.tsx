@@ -21,6 +21,6 @@ export function ApplicationManagementCard({ application: app, deadline, sample =
       {draft && <><p>{due ? `${sample ? "Sample deadline" : "Deadline"} · ${recruitmentDate(due)}` : "Deadline not published"}{closed && <strong className="font-medium"> · Applications closed</strong>}</p><Progress value={progress.percent} className="oc-draft-progress" aria-label={`Required responses ready for ${app.club.name}`} /><p>{closed ? "Applications are closed, so this draft can’t be submitted. You can still view or save it." : progress.ready ? "Required responses ready. Review your profile before submitting." : "Your draft is saved; nothing has been submitted."}</p></>}</div>
     <StatusPill status={app.status} className="oc-management-state" />
     {/* A closed club cannot take a submission, so continuing is not the primary action. */}
-    <Button variant={draft && !closed ? "default" : "outline"} data-application-id={app.id} onClick={onOpen}>{draft ? closed ? "View draft" : "Continue draft" : "View responses"}<ArrowRight size={15} aria-hidden="true" /></Button>
+    <Button variant={draft && !closed ? "default" : "outline"} data-application-id={app.id} onClick={onOpen}>{draft ? closed ? "View draft" : "Continue draft" : "View responses"}<ArrowRight size={16} aria-hidden="true" /></Button>
   </article>
 }
