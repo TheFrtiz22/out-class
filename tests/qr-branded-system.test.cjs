@@ -351,9 +351,9 @@ test("14. Authentication and authorization are strictly preserved during check-i
   authenticatedUser = { id: "outsider-student" };
   const outsider = await refused(
     meetingsAction.checkInMeeting(meetingId, "a".repeat(64)),
-    /members only/,
+    /Meeting unavailable/,
   );
-  assert.equal(outsider.code, "FORBIDDEN");
+  assert.equal(outsider.code, "NOT_FOUND");
 });
 
 test("15. Duplicate attendance scans do not duplicate credits or change timestamps", async () => {

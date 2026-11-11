@@ -168,19 +168,24 @@ async function checkInMeetingCommand(
       "Invalid check-in code. Scan the current QR code at the meeting.",
     );
   const { user } = await requireAuth();
+  // Callers who may not check in to this meeting get the same result as for a
+  // meeting that does not exist; club state is reported only to eligible callers.
+  const unavailable = () =>
+    new ActionError("Meeting unavailable. Scan the current QR code at the meeting.", "NOT_FOUND");
   return prisma.$transaction(async (tx) => {
     const scope = await tx.meeting.findUnique({ where: { id: meetingId }, select: { clubId: true } });
-    if (!scope) throw new ActionError("Meeting unavailable. Scan the current QR code at the meeting.", "NOT_FOUND");
-    await assertClubOperational(tx, scope.clubId);
+    if (!scope) throw unavailable();
+    // Same lock order as before (club share lock, then the meeting row); the
+    // suspension state is read after eligibility is known.
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
     await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
     const meeting = await tx.meeting.findUnique({ where: { id: meetingId }, include: { publication: true } });
-    if (!meeting) throw new ActionError("Meeting unavailable. Scan the current QR code at the meeting.", "NOT_FOUND");
-    await assertClubOperational(tx, meeting.clubId);
+    if (!meeting) throw unavailable();
     const membership = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: meeting.clubId } },
     });
-    if (!canReadMeeting(meeting, membership))
-      throw new ActionError("This meeting is available to club members only.", "FORBIDDEN");
+    if (!canReadMeeting(meeting, membership)) throw unavailable();
+    await assertClubOperational(tx, meeting.clubId);
     const access = await tx.meetingCheckInToken.findFirst({
       where: {
         meetingId,

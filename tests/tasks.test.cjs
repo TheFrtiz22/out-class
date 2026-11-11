@@ -35,7 +35,7 @@ const clubId = uuid(1),
   memberId = uuid(4),
   fileId = uuid(5);
 const rules = load("lib/tasks.ts");
-function setup() {
+function setup({ refusal = null } = {}) {
   let actor = "student",
     current = true,
     manager = false,
@@ -214,7 +214,7 @@ function setup() {
       return { membership: { ...member, isOwner: manager } };
     },
     requireClubPermission: async (id, permissions) => {
-      if (id !== clubId || !current || !manager) throw Error("Denied");
+      if (id !== clubId || !current || !manager) throw refusal ? refusal() : Error("Denied");
       return { user: { id: actor }, membership: { ...member, isOwner: true } };
     },
   };
@@ -559,4 +559,16 @@ test('legacy cohort audiences project academic labels without changing stored ta
  const preview=await h.api.previewTaskAudience({clubId,audience:projected});assert.equal(preview.length,2);assert.ok(!JSON.stringify(preview).includes('gradYear'));
  await h.api.saveTask({clubId,id:taskId,title:'Preserve legacy targeting',kind:'TASK',status:'OPEN',revision:h.task.revision,audience:projected});assert.deepEqual(h.task.audience.years,[2028]);assert.deepEqual(h.task.audience.academicYears,[]);
  await refused(h.api.saveTask({clubId,id:taskId,title:'Changed targeting',status:'OPEN',revision:h.task.revision,audience:{everyone:true}}),/fixed/);
+});
+test("review refuses an assignment in a club without permission exactly like a missing one", async () => {
+  const { ActionError } = load("lib/action-result.ts");
+  const h = setup({ refusal: () => new ActionError("You do not have permission for this club action.", "FORBIDDEN") });
+  h.task.kind = "EVENT";
+  const base = { revision: 0, feedback: "Add sources.", reopen: true, requestChanges: true };
+  const real = await refused(h.api.reviewTask({ ...base, assignmentId }));
+  const missing = await refused(h.api.reviewTask({ ...base, assignmentId: uuid(99) }));
+  assert.deepEqual(real, missing);
+  assert.equal(real.code, "NOT_FOUND");
+  h.manager();
+  await refused(h.api.reviewTask({ ...base, assignmentId }), /Revision requests apply/);
 });

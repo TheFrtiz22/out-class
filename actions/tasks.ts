@@ -1,5 +1,5 @@
 "use server";
-import { ActionError, actionResult } from "@/lib/action-result";
+import { ActionError, actionResult, isActionError } from "@/lib/action-result";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
@@ -387,11 +387,17 @@ async function reviewTaskCommand(input: {
     where: { id: data.assignmentId },
     select: { task: { select: { clubId: true, kind: true } } },
   });
-  if (!assignment) throw new ActionError("Assignment unavailable. Reload your tasks to see the current list.", "NOT_FOUND");
-  if (data.requestChanges && assignment.task.kind !== "TASK") throw new ActionError("Revision requests apply to submitted tasks.");
+  // A missing assignment and one in a club where the caller cannot manage tasks
+  // return the same result; kind-specific messages come only after authorization.
+  const unavailable = () =>
+    new ActionError("Assignment unavailable. Reload your tasks to see the current list.", "NOT_FOUND");
+  if (!assignment) throw unavailable();
   const { user } = await requireClubPermission(assignment.task.clubId, [
     "tasks.manage",
-  ]);
+  ]).catch((error: unknown) => {
+    throw isActionError(error) && error.code === "FORBIDDEN" ? unavailable() : error;
+  });
+  if (data.requestChanges && assignment.task.kind !== "TASK") throw new ActionError("Revision requests apply to submitted tasks.");
   return prisma.$transaction(async (tx) => {
     await currentMember(tx, assignment.task.clubId, user.id, true);
     const updated = await tx.taskAssignment.updateMany({

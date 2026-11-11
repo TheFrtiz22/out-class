@@ -16,8 +16,8 @@ async function saveAvailabilityScheduleCommand(input:unknown){
  if(await supportContext())throw new ActionError("Exit support impersonation before scheduling future communications.", "FORBIDDEN");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"]);
-  const old=await tx.scheduledCommunication.findUnique({where:{id:d.id}}),body=JSON.stringify(d);
-  if(old){if(old.clubId===clubId&&old.senderId===user.id&&old.kind==="AVAILABILITY_REQUEST"&&old.body===body)return {id:old.id,status:old.status};throw new ActionError("This schedule was already saved with different details. Reload and schedule it again.", "STALE");}
+  const old=await tx.scheduledCommunication.findFirst({where:{id:d.id,clubId}}),body=JSON.stringify(d);
+  if(old){if(old.senderId===user.id&&old.kind==="AVAILABILITY_REQUEST"&&old.body===body)return {id:old.id,status:old.status};throw new ActionError("This schedule was already saved with different details. Reload and schedule it again.", "STALE");}
   requireFutureSchedule(scheduledAt);
   if(await tx.scheduledCommunication.count({where:{clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100)throw new ActionError("This club has too many pending schedules. Cancel unused scheduled work first.");
   await activeAvailabilityRound(tx,clubId,roundId);const pool=await loadInterviewerPool(tx,clubId,roundId,d.scope.memberIds);
