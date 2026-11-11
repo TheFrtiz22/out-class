@@ -6,6 +6,7 @@ import { panelScheduleNotificationPrefix,currentPanelScheduleNotification } from
 import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/availability-request-notifications";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
+import { enqueueNotificationPushes } from "@/utils/notification-push";
 
 // Retry the exact persisted payload inside Resend's 24-hour deduplication window.
 // A crash outside that window requires receipt reconciliation, never a blind resend.
@@ -83,6 +84,8 @@ export async function processNotificationEmails(limit = 10) {
         const payload = built.data;
         const delivery = await tx.notificationEmailDelivery.create({ data: { userId, payload } });
         await tx.notificationEmailOutbox.updateMany({ where: { notificationId: { in: group.map(row => row.notificationId) }, status: "PENDING" }, data: { status: "ASSIGNED", deliveryId: delivery.id } });
+        // Web Push rides on the same instant-delivery decision (no-op unless VAPID is configured).
+        if (!digest) await enqueueNotificationPushes(tx, userId, group.map(row => row.notification));
       }
     }, { timeout: 15000 }); } catch (error) {
       failed++;

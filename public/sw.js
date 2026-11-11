@@ -75,3 +75,32 @@ async function trim(cache) {
   const keys = await cache.keys()
   await Promise.all(keys.slice(0, Math.max(0, keys.length - STATIC_LIMIT)).map(key => cache.delete(key)))
 }
+
+// Web Push (S1-8). The payload is only { title, body, url } (no applicant details; see
+// lib/web-push.ts). Clicking opens or focuses a same-origin URL only; anything else falls back
+// to the Inbox. Caching rules above are unchanged.
+const PUSH_ICON = "/brand/pwa/icon-192.png"
+
+function samePath(value) {
+  try {
+    const url = new URL(typeof value === "string" ? value : "/inbox", self.location.origin)
+    return url.origin === self.location.origin ? url.href : new URL("/inbox", self.location.origin).href
+  } catch { return new URL("/inbox", self.location.origin).href }
+}
+
+self.addEventListener("push", event => {
+  let data = {}
+  try { data = event.data ? event.data.json() : {} } catch { data = {} }
+  const title = typeof data.title === "string" && data.title ? data.title.slice(0, 80) : "OutClass"
+  const body = typeof data.body === "string" ? data.body.slice(0, 160) : ""
+  event.waitUntil(self.registration.showNotification(title, { body, icon: PUSH_ICON, data: { url: samePath(data.url) } }))
+})
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close()
+  const target = samePath(event.notification.data && event.notification.data.url)
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(windows => {
+    const open = windows.find(client => client.url === target && "focus" in client)
+    return open ? open.focus() : self.clients.openWindow(target)
+  }))
+})

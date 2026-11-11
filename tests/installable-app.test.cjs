@@ -84,13 +84,15 @@ function runWorker({ script = 'public/sw.js', fetchError = null, onLine = true, 
   const origin = 'https://www.out-class.net'
   const network = []
   const unregistered = []
+  const shown = []
+  const opened = []
   const self = {
     location: { origin },
     navigator: { onLine },
     addEventListener: (type, fn) => { listeners[type] = fn },
     skipWaiting: async () => {},
-    clients: { claim: async () => {}, matchAll: async () => windows },
-    registration: { unregister: async () => { unregistered.push(true); return true } },
+    clients: { claim: async () => {}, matchAll: async () => windows, openWindow: async url => { opened.push(url); return null } },
+    registration: { unregister: async () => { unregistered.push(true); return true }, showNotification: async (title, options) => { shown.push({ title, options }) } },
   }
   const context = vm.createContext({
     self, URL, Promise, Math,
@@ -129,7 +131,13 @@ function runWorker({ script = 'public/sw.js', fetchError = null, onLine = true, 
       await wait
     }
   }
-  return { request, lifecycle, puts, stores, network, unregistered }
+  // Dispatches a push or notificationclick event and waits for its waitUntil promise.
+  async function dispatch(type, event) {
+    let wait
+    listeners[type]({ ...event, waitUntil: promise => { wait = promise } })
+    await wait
+  }
+  return { request, lifecycle, dispatch, puts, stores, network, unregistered, shown, opened }
 }
 
 test('service worker caches hashed /_next/static assets cache-first and nothing else', async () => {
@@ -210,7 +218,7 @@ test('sw.js source: versioned caches, old ones deleted, skipWaiting + clients.cl
   assert.equal((source.match(/cache\.put\(/g) || []).length, 1, 'one cache write, inside cacheFirst')
   assert.match(source, /response\.status === 200/)
   assert.match(source, /url\.pathname\.startsWith\("\/_next\/static\/"\)/)
-  assert.doesNotMatch(source, /addEventListener\("push"|pushManager|PushSubscription/, "push is S1-8")
+  assert.doesNotMatch(source, /pushManager|PushSubscription/, "the worker shows pushes; it never subscribes (tests/web-push.test.cjs)")
   const config = read('next.config.mjs')
   assert.match(config, /source: "\/sw\.js", headers: \[\{ key: "Cache-Control", value: "no-cache" \}/)
   for (const header of ['X-Content-Type-Options', 'Referrer-Policy', 'Content-Security-Policy', 'X-Frame-Options']) assert.match(config, new RegExp(header))
@@ -280,4 +288,35 @@ test('sw-kill.js template: skips waiting, deletes outclass-* caches, unregisters
   assert.match(source, /skipWaiting\(\)/)
   assert.doesNotMatch(source, /addEventListener\("fetch"/, 'the kill worker intercepts nothing')
   assert.match(read('docs/service-worker.md'), /OUTCLASS_SERVICE_WORKER=off/)
+})
+
+test('push (S1-8): shows only title, body and a same-origin URL; tolerates a bad payload', async () => {
+  const worker = runWorker()
+  const pushData = value => ({ data: { json: () => typeof value === 'string' ? JSON.parse(value) : value } })
+  await worker.dispatch('push', pushData({ title: 'Interview update', body: 'Open OutClass for details.', url: '/inbox?x=1', applicant: 'Jane Doe' }))
+  assert.deepEqual(JSON.parse(JSON.stringify(worker.shown[0])), { title: 'Interview update', options: { body: 'Open OutClass for details.', icon: '/brand/pwa/icon-192.png', data: { url: 'https://www.out-class.net/inbox?x=1' } } })
+  await worker.dispatch('push', pushData({ title: 'X', url: 'https://evil.example/phish' }))
+  assert.equal(worker.shown[1].options.data.url, 'https://www.out-class.net/inbox', 'a cross-origin URL falls back to the Inbox')
+  await worker.dispatch('push', pushData('{not json'))
+  assert.equal(worker.shown[2].title, 'OutClass', 'an unreadable payload still shows a generic notification')
+  await worker.dispatch('push', { data: null })
+  assert.equal(worker.shown.length, 4)
+  assert.deepEqual(worker.puts, [], 'push never touches the caches')
+})
+
+test('notificationclick (S1-8): focuses an open tab at the URL, otherwise opens it; same origin only', async () => {
+  const focused = []
+  const windows = [{ url: 'https://www.out-class.net/inbox', focus: async () => { focused.push('inbox') } }]
+  const worker = runWorker({ windows })
+  const click = url => { const closed = []; return { closed, event: { notification: { data: { url }, close: () => closed.push(true) } } } }
+  const first = click('https://www.out-class.net/inbox')
+  await worker.dispatch('notificationclick', first.event)
+  assert.deepEqual([first.closed.length, focused, worker.opened], [1, ['inbox'], []])
+  await worker.dispatch('notificationclick', click('/club/abc?tab=events').event)
+  assert.deepEqual(worker.opened, ['https://www.out-class.net/club/abc?tab=events'])
+  await worker.dispatch('notificationclick', click('https://evil.example/').event)
+  await worker.dispatch('notificationclick', click('javascript:alert(1)').event)
+  await worker.dispatch('notificationclick', { notification: { data: null, close() {} } })
+  assert.deepEqual(worker.opened.slice(1), [], 'the Inbox tab is already open, so it is focused instead')
+  assert.equal(focused.length, 4)
 })
