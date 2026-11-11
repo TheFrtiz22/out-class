@@ -237,30 +237,6 @@ export type RosterMember = {
 
 export const rosterMembers: RosterMember[]  = []
 
-export type ClubExecutive = {
-  id: string
-  name: string
-  initials: string
-  title: string
-}
-
-export const clubExecutives: ClubExecutive[]  = []
-
-export type ClubPublicPageDetails = {
-  name: string
-  tagline: string
-  aboutUs: string
-  logoUrl: string | null
-}
-
-export const initialClubPublicPageDetails: ClubPublicPageDetails = {
-  name: "Virginia Venture Fund",
-  tagline: "UVA's student-run venture capital fund",
-  aboutUs:
-    "The Virginia Venture Fund is a student-managed venture capital fund investing real capital in early-stage startups founded by UVA students and alumni. Members conduct diligence, source deals, and sit alongside experienced venture partners to evaluate founders and markets.",
-  logoUrl: null,
-}
-
 export type BuilderQuestionType = "essay" | "file-upload" | "multiple-choice"
 
 export type BuilderQuestion = {
@@ -469,80 +445,6 @@ export type PipelineRound = {
   questions: PipelineQuestion[]
 }
 
-
-export type BroadcastAudience = "Subscribed Followers" | "Active Applicants" | "Accepted Members"
-
-export const BROADCAST_AUDIENCES: BroadcastAudience[] = [
-  "Subscribed Followers",
-  "Active Applicants",
-  "Accepted Members",
-]
-
-export type BroadcastType = "General Announcement" | "Location/Time Change" | "Urgent Deadline Alert"
-
-export const BROADCAST_TYPES: BroadcastType[] = [
-  "General Announcement",
-  "Location/Time Change",
-  "Urgent Deadline Alert",
-]
-
-export type SentBroadcast = {
-  id: string
-  dateSent: string
-  audiences: BroadcastAudience[]
-  subject: string
-  type: BroadcastType
-  deliveredPercent: number
-  recipients: number
-}
-
-export const sentBroadcasts: SentBroadcast[] = [
-  {
-    id: "bc-1",
-    dateSent: "Sep 15, 2026 · 4:12 PM",
-    audiences: ["Active Applicants"],
-    subject: "Round 2 Interview Location Changed",
-    type: "Location/Time Change",
-    deliveredPercent: 98,
-    recipients: 142,
-  },
-  {
-    id: "bc-2",
-    dateSent: "Sep 12, 2026 · 9:00 AM",
-    audiences: ["Subscribed Followers", "Active Applicants"],
-    subject: "Info Session Reminder — Tonight at 7 PM",
-    type: "General Announcement",
-    deliveredPercent: 100,
-    recipients: 486,
-  },
-  {
-    id: "bc-3",
-    dateSent: "Sep 9, 2026 · 6:30 PM",
-    audiences: ["Active Applicants"],
-    subject: "Final Application Deadline is Friday",
-    type: "Urgent Deadline Alert",
-    deliveredPercent: 96,
-    recipients: 231,
-  },
-  {
-    id: "bc-4",
-    dateSent: "Sep 3, 2026 · 11:45 AM",
-    audiences: ["Accepted Members"],
-    subject: "Welcome to the Fund — Onboarding Details",
-    type: "General Announcement",
-    deliveredPercent: 100,
-    recipients: 42,
-  },
-  {
-    id: "bc-5",
-    dateSent: "Aug 29, 2026 · 3:20 PM",
-    audiences: ["Subscribed Followers"],
-    subject: "Applications Open for Fall Recruitment",
-    type: "General Announcement",
-    deliveredPercent: 99,
-    recipients: 612,
-  },
-]
 
 export type EventScope = "Public" | "Members Only"
 

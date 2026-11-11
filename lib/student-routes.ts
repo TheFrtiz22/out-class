@@ -95,6 +95,7 @@ export function applicantStatusHref(input = new URLSearchParams()) {
 /**
  * Leader views that used to render on the homepage (`/?view=leader-dashboard`, …) live in the
  * club workspace. Same mapping the client used (DashboardLayout); `applicantId`/`roundId` carry over.
+ * `club-management-portal` is a legacy URL only: its local preview view was retired (FE-28).
  */
 export const LEADER_WORKSPACE_VIEWS = ["leader-dashboard", "interview-scheduler", "club-manager", "broadcast-messages", "screening-dashboard", "club-management-portal"] as const
 export type LeaderWorkspaceView = typeof LEADER_WORKSPACE_VIEWS[number]
