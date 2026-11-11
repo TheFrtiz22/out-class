@@ -59,7 +59,7 @@
 .oc-task-manager-toolbar, .oc-task-bulk-bar, .oc-review-top, .oc-review-navigation { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; }
 .oc-manager-task-metrics { display:flex; flex-wrap:wrap; gap:.25rem; }
 .oc-manager-task-metrics:empty { display:none; }
-.oc-manager-task-metrics button { display:flex; align-items:center; gap:.4rem; min-height:2.75rem; padding:.5rem .75rem; border:1px solid var(--border); border-radius:var(--oc-radius-md); font-size:var(--oc-text-caption); color:var(--muted-foreground); }
+.oc-manager-task-metrics button { display:flex; align-items:center; gap:.4rem; min-height:2.75rem; padding:.5rem .75rem; border:1px solid var(--border); border-radius:var(--oc-radius-md); font-size: var(--oc-size-13); color:var(--muted-foreground); }
 
 .oc-manager-task-metrics strong { font-size:1rem; font-weight:600; color:var(--foreground); font-variant-numeric:tabular-nums; }
 .oc-task-view-tabs button span { padding:.1rem .4rem; border-radius:var(--oc-radius-sm); background:var(--brand-subtle); color:var(--brand-ink); font-size:var(--oc-text-caption); }
@@ -135,4 +135,4 @@
 @media(max-width:900px) { .oc-manager-task-row { grid-template-columns:1rem minmax(0,1fr); }.oc-manager-task-next { grid-column:2; justify-items:start; }.oc-review-filters { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:639px) { .oc-task-manager-toolbar { align-items:start; }.oc-task-manager-toolbar > div:last-child { width:100%; }.oc-task-manager-toolbar > div:last-child > button:last-child { flex:1; }.oc-manager-task-metrics { gap:.5rem; }.oc-task-manager-drawer { padding:1.25rem 1rem; }.oc-review-queue-card { padding:1rem; }.oc-review-queue-card li { flex-wrap:wrap; }.oc-review-queue-card li > button { margin-left:4.25rem; }.oc-review-actions > button,.oc-builder-actions > button { flex:1; }.oc-review-submission { padding:1rem; }.oc-manager-task-row { padding:1rem; }.oc-task-member-labels { grid-template-columns:1fr; } }
 /* At least 16px on phones so iOS does not zoom into the focused field. */
-@media (max-width: 767px) { .oc-task-select { font-size: 16px; } }
+@media (max-width: 767px) { .oc-task-select { font-size: var(--oc-size-16); } }

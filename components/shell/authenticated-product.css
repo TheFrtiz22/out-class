@@ -6,8 +6,8 @@
 .oc-rail-brand { padding: 0 .75rem 1.25rem; text-align: left; }
 .oc-rail-brand img { height: 2.75rem; width: auto; }
 .oc-context-sidebar > p { color: var(--oc-rail-muted); font-size: var(--oc-text-caption); letter-spacing: normal; }
-.oc-context-sidebar label { color: var(--oc-rail-muted); font-size: var(--oc-text-caption); letter-spacing: normal; }
-.oc-context-sidebar select { color: var(--oc-rail-text); border: 1px solid #526675; background: var(--oc-rail-selected); text-transform: none; letter-spacing: normal; font-size: var(--oc-text-caption); border-radius: var(--oc-radius-md); padding: .75rem; }
+.oc-context-sidebar label { color: var(--oc-rail-muted); font-size: var(--oc-size-13); letter-spacing: normal; }
+.oc-context-sidebar select { color: var(--oc-rail-text); border: 1px solid #526675; background: var(--oc-rail-selected); text-transform: none; letter-spacing: normal; font-size: var(--oc-size-13); border-radius: var(--oc-radius-md); padding: .75rem; }
 .oc-context-sidebar option { background: var(--oc-rail); color: var(--oc-rail-text); }
 .oc-context-sidebar nav :is(a,button) { position: relative; gap: .85rem; padding: .6rem .95rem; min-height: 2.75rem; border-radius: var(--oc-radius-md); color: var(--oc-rail-muted); font-size: var(--oc-text-small); font-weight: 500; transition: background var(--oc-duration-micro), color var(--oc-duration-micro); }
 .oc-context-sidebar nav :is(a,button):hover { background: var(--oc-rail-selected); color: var(--oc-rail-text); }
@@ -26,13 +26,15 @@
   [data-product-shell] > div:has(> aside) { margin-left: 0; }
   .oc-workspace-content { padding: .625rem var(--oc-shell-gutter, var(--oc-space-page)) calc(var(--oc-shell-mobile-height) + 1.5rem + env(safe-area-inset-bottom)); }
   .oc-mobile-navigation { display: flex; justify-content: space-around; position: fixed; z-index: 35; inset: auto 12px max(8px, env(safe-area-inset-bottom)); padding: .5rem; border-radius: 26px; background: var(--oc-glass-navy-material); -webkit-backdrop-filter: var(--oc-glass-navy-filter); backdrop-filter: var(--oc-glass-navy-filter); border: 1px solid var(--oc-glass-navy-edge); box-shadow: var(--oc-glass-navy-depth); }
-  .oc-mobile-destination { display: flex; flex: 1; min-width: 0; min-height: 3.25rem; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; border-radius: 18px; color: #c5d5e2; font-size: var(--oc-size-10); font-weight: 500; transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), color var(--oc-glass-quick) var(--oc-glass-ease); }
+  .oc-mobile-destination { display: flex; flex: 1; min-width: 0; min-height: 3.25rem; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; border-radius: 18px; color: #c5d5e2; font-size: var(--oc-size-12); font-weight: 500; transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), color var(--oc-glass-quick) var(--oc-glass-ease); }
   .oc-mobile-destination[aria-current="page"] { color: #fff9f1; background: rgb(210 231 250 / 12%); box-shadow: inset 0 1px 0 rgb(232 243 255 / 15%); }
   /* As in the OutClass app: the selected tab fills its icon in ivory under a short orange marker. */
   .oc-mobile-destination { position: relative; }
   .oc-mobile-destination[aria-current="page"] svg { color: var(--oc-glass-cream); }
   .oc-mobile-destination[aria-current="page"]::before { content: ""; position: absolute; top: 3px; left: 50%; width: 1rem; height: 3px; margin-left: -.5rem; border-radius: 2px; background: var(--brand-orange); }
   .oc-mobile-destination[aria-current="page"] span { font-weight: 600; }
+  /* 12px labels keep one line; the link's aria-label carries the full name. */
+  .oc-mobile-destination > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .oc-mobile-destination:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
   body:has([data-product-shell]) { --oc-toast-offset: calc(6rem + env(safe-area-inset-bottom)); }
 }
@@ -42,8 +44,8 @@
 .oc-workspace-switcher-trigger { display: flex; align-items: center; gap: .65rem; width: 100%; padding: .8rem .65rem; text-align: left; border-radius: var(--oc-radius-md); background: var(--oc-rail-selected); border: 1px solid #526675; color: var(--oc-rail-text); }
 .oc-workspace-switcher-trigger > :first-child { width: 2rem; height: 2rem; flex-shrink: 0; }
 .oc-workspace-switcher-trigger > span:nth-child(2) { min-width: 0; flex: 1; }
-.oc-workspace-switcher-trigger strong { display: block; font-size: var(--oc-text-caption); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.oc-workspace-switcher-trigger small { display: block; margin-top: .2rem; color: var(--oc-rail-muted); font-size: var(--oc-size-10); }
+.oc-workspace-switcher-trigger strong { display: block; font-size: var(--oc-size-13); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc-workspace-switcher-trigger small { display: block; margin-top: .2rem; color: var(--oc-rail-muted); font-size: var(--oc-size-12); }
 .oc-workspace-personal-icon { display: grid; place-items: center; background: var(--oc-rail); border-radius: var(--oc-radius-sm); }
 .oc-workspace-menu [data-slot="dropdown-menu-item"] { min-height: var(--oc-control-height); padding: .75rem; }
 .oc-workspace-menu [data-slot="dropdown-menu-item"] > :first-child:not(svg) { width: 2rem; height: 2rem; }
@@ -60,4 +62,4 @@
 [data-product-shell][data-shell-chrome="hidden"] > div:has(> aside) { margin-left: 0; }
 [data-product-shell][data-shell-chrome="hidden"] main.oc-workspace-content { max-width: none; padding: 0; }
 /* At least 16px on phones so iOS does not zoom into the focused field. */
-@media (max-width: 767px) { .oc-context-sidebar select { font-size: 16px; } }
+@media (max-width: 767px) { .oc-context-sidebar select { font-size: var(--oc-size-16); } }

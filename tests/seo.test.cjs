@@ -85,7 +85,7 @@ test('structured data identifies only the established organization and website',
   }
   for (const item of data['@graph']) for (const key of ['aggregateRating', 'review', 'sameAs', 'address', 'offers']) assert.equal(item[key], undefined)
 })
-test('public information pages render factual content, consistent entity references, and matching visible FAQs', () => {
+test('public information pages render factual content, consistent entity references, and matching visible FAQs', async () => {
   const { renderToStaticMarkup } = require('react-dom/server')
   const React = require('react')
   const PublicInformationPage = ({ title, introduction, children }) => React.createElement('main', null, React.createElement('h1', null, title), React.createElement('p', null, introduction), children)
@@ -99,6 +99,7 @@ test('public information pages render factual content, consistent entity referen
     '@/components/ui/button': { Button: ({ children }) => children },
     'next/image': { __esModule: true, default: ({ priority, ...props }) => React.createElement('img', props) },
     'next/link': { __esModule: true, default: ({ prefetch, ...props }) => React.createElement('a', props) },
+    '@/utils/csp-nonce': { cspNonce: async () => 'test-nonce' },
   }
   for (const path of ['/uva', '/about']) {
     const page = load(`app${path}/page.tsx`, { '@/lib/seo': seo, ...common })
@@ -109,13 +110,13 @@ test('public information pages render factual content, consistent entity referen
     assert.equal(meta.openGraph.images[0].url, `${seo.SITE_URL}/og/outclass.png`)
     assert.equal(meta.robots.index, true)
     assert.equal(meta.robots.follow, true)
-    const html = renderToStaticMarkup(React.createElement(page.default))
+    const html = renderToStaticMarkup(await page.default())
     assert.equal((html.match(/<h1/g) || []).length, 1)
     assert.match(html, /University of Virginia/)
     assert.match(html, /not an official University of Virginia service/)
     assert.match(html, /not owned, sponsored, or endorsed/)
     assert.match(html, /href="\/(uva|about)"/)
-    const data = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])
+    const data = JSON.parse(html.match(/<script type="application\/ld\+json" nonce="test-nonce">([\s\S]*?)<\/script>/)[1])
     const graph = data['@graph'] || [data]
     const webpage = graph.find(item => ['WebPage', 'AboutPage'].includes(item['@type']))
     assert.equal(webpage.url, meta.alternates.canonical)

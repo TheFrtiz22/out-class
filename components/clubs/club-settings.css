@@ -18,7 +18,7 @@
   padding: 0.6rem 0.75rem;
   border-radius: var(--oc-radius-md, 6px);
   color: var(--muted-foreground);
-  font-size: var(--oc-text-small, 14px);
+  font-size: var(--oc-text-small, 0.875rem);
 }
 .oc-settings-navigation a:hover {
   background: var(--muted);
