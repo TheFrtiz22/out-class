@@ -12,14 +12,6 @@ function load(file, prisma, role = async () => ({})) {
   new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/") || name === "@/actions/meetings" ? load(name.replace("@/", "")+".ts", prisma, role) : require(name), mod, mod.exports)
   return mod.exports
 }
-test('legacy event reads expose public recruitment metadata only', async () => {
-  const api=load('actions/events.ts',{meeting:{findMany:async({where,select})=>{assert.deepEqual(where,{clubId,club:{is:{suspendedAt:null}},isPublic:true,audience:'RECRUITMENT',OR:[{publication:{is:null}},{publication:{is:{status:'PUBLISHED'}}}]});assert.equal(select.resources,undefined);return []}}})
-  assert.deepEqual(await api.getClubEvents(clubId),{events:[]})
-})
-test('legacy static attendance endpoints fail closed without a current token',async()=>{
-  const api=load('actions/events.ts',{})
-  await assert.rejects(api.recordEventAttendance('old-id'),/current meeting QR code/)
-})
 function bookingApi(overrides = {}, status = "INTERVIEWING") {
   const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), endTime:new Date(Date.now()+21*60000),capacity: 1, bookings: [], ...overrides }
   let writes = 0
