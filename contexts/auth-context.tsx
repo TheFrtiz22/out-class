@@ -5,6 +5,7 @@ import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
 import type { AccountClub } from '@/lib/account-data';
+import { adoptAutosaveOwner } from "@/lib/autosave-store";
 
 export type ExtendedApplication = Omit<Application, "anonymousReviewText"> & { club: AccountClub };
 // `features` (pilot switches) is present on live account memberships; demo data omits it.
@@ -53,6 +54,8 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     void import("@/utils/supabase/client").then(({ createClient }) => {
     if (cancelled) return;
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
+      // A passive SIGNED_OUT (expiry, revocation, another tab) keeps unsaved copies: they are owner-keyed,
+      // and adoptAutosaveOwner clears them if a different account signs in here.
       const next = session?.access_token ?? "";
       if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
         // Publish the fence before scheduling React's context update. A newly
@@ -111,6 +114,9 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
 
   const identity = isDemoEnabled && state && demoIdentity ? demoIdentity as unknown as PopulatedUser : !hasSession ? null : bootstrapChanged ? initialUser : user;
   const workspaces = identity?.memberships.filter(hasWorkspace) || [];
+  // Impersonation flips the owner too, so the admin's and the impersonated account's copies never mix.
+  const ownerId = !isDemoEnabled ? identity?.id : undefined;
+  useEffect(() => { if (ownerId) adoptAutosaveOwner(ownerId); }, [ownerId]);
   const activeClubId = workspaces.find(m => m.clubId === (isDemoEnabled ? state?.perspective.clubId : selectedClubId))?.clubId || workspaces[0]?.clubId || "";
   const selectClub = (clubId: string) => {
     if (!workspaces.some(m => m.clubId === clubId)) return;
