@@ -1,4 +1,16 @@
 # Live voting room - Parts 1-3 handoff
+## One voting system — November 10, 2026
+
+**Branch `voting/one-voting-system`; no migration, no data change; not yet released.**
+
+Voting rooms (`actions/voting-room.ts`, `/voting/rooms/...`) are the only way to run voting. Retired: the board (`BoardDecisionMode`, its setup, projector, QR and member join page) and the browser-local preview (`/vote`, `/live-voting`, `lib/use-live-voting.ts`, `lib/live-voting.ts`).
+
+- **Board (LEGACY) sessions stay visible** at `/voting/rooms/<id>/history?clubId=…`, a read-only list of outcomes and ballot counts. It uses the board's existing read (`getVotingWorkspace`) and its rules: leaders with `decisions.view` or `decisions.manage` see every session; voters see sessions they took part in; only the viewer's own ballot leaves the server. Names appear only when the round identifies applicants, the viewer has `applicants.identify` and the session's display showed names; otherwise the anonymous label.
+- **Unfinished sessions can be closed.** `commandVotingSession` now accepts only `COMPLETE_PASS` (`decisions.start`) and `FINISH` (`decisions.finish`), with the same locks, revision check and audit actions as before. *Close session* runs both. Ballots are kept and application statuses do not change. Every other board command is refused.
+- **Links.** Every link into a board session (Voting room list, Recruiting overview, Home) opens its history. `/vote?session=…`, `/live-voting?session=…` and `/voting/<id>/join` (printed QR codes and short links) send a verified active member to the live room or the board session's history; anyone else, and every Demo join link, gets one generic page with sign-in, so the link reveals nothing.
+- **Removed server actions:** `createVotingSession`, `submitVotingBallot`, `joinVotingSession`, `getVotingJoinInfo` and the board's publish, override, reopen, configure and pass commands. Demo mirrors this.
+- **Not changed:** draft board sessions (never started) stay as they are; `decision-schedules` and `utils/voting-publication.ts` still accept an already-completed, unpublished board session.
+
 ## Discussion: "Something to add" — November 6, 2026
 
 **Implemented on branch `feature/voting-hand-raise`; requires migration `20261106120000_voting_hand_raise` (owner approval before production); not yet released.**

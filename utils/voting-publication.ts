@@ -2,13 +2,9 @@ import type { Prisma } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
 import type { FrozenLetterSettings } from "@/lib/decision-schedule";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
-import { summarizeVoting } from "@/lib/voting-engine";
+import type { summarizeVoting } from "@/lib/voting-engine";
 export const votingPublicationInclude={participants:true,candidates:{orderBy:{position:"asc" as const}},passes:{orderBy:{number:"asc" as const},include:{candidates:{orderBy:{position:"asc" as const},include:{ballots:true}}}}};
 type Session=Prisma.VotingSessionGetPayload<{include:typeof votingPublicationInclude}>;
-/** Caller holds Club then VotingSession locks and live publication authority. */
-export async function publishVotingCandidates(tx:AppTransactionClient,s:Session,applicationIds:string[],actorId:string,settings?:FrozenLetterSettings){
- return publishReviewedVotingCandidates(tx,s,applicationIds,summarizeVoting(s).outcomes,actorId,settings);
-}
 /** Frozen outcomes are valid only while the caller verifies the session revision. */
 export async function publishReviewedVotingCandidates(tx:AppTransactionClient,s:Pick<Session,"id"|"clubId"|"roundId"|"state"|"publishedAt"|"candidates"> & {mode?:string},applicationIds:string[],outcomes:ReturnType<typeof summarizeVoting>["outcomes"],actorId:string,settings?:FrozenLetterSettings,names?:Record<string,{firstName:string;fullName:string}>){
  if(s.mode==="LIVE")throw Error("Live room finalization does not publish decisions or send notifications.");

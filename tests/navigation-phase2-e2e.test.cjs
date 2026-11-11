@@ -6,7 +6,9 @@ const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
 const cases=[['members','members','Members','Audit Student 000'],['pipeline','applicants','Applicants','Audit Student 000'],['tasks','tasks','Tasks','Audit Task']];
 // Announcements is a section of Home since the nav reorganization (#235), not a rail tab, so it has no case here.
 async function fixture(){const config=readConfig(configFile),root=path.dirname(configFile),data=JSON.parse(fs.readFileSync(path.join(root,'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor};}
-async function context(browser,f,options={}){return browser.newContext({viewport:{width:1440,height:1000},...options,storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}});}
+// The production build registers public/sw.js, which serves /_next/static chunks itself; Playwright's page.route
+// never sees requests a service worker handles, so the chunk gates below need the worker blocked.
+async function context(browser,f,options={}){return browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block',...options,storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}});}
 async function open(page,f,recruiting=false){await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section='+(recruiting?'recruitment&tool=overview':'overview'));await page.locator(recruiting?'.oc-command-recruiting':'.oc-club-home').filter({visible:true}).first().waitFor();// The browser Auth client can fence read authority just after first paint; let it settle so a
 // selection measures code loading, not a legitimate post-sign-in re-read.
 await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});}

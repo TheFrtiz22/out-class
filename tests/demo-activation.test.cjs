@@ -173,13 +173,12 @@ test("live (non-demo) calls never load the demo store, seed or implementations",
       api.getStudentProfile(),
       api.getClubPipelinePage("club", {}),
       api.saveMeeting({}),
-      api.joinVotingSession("session"),
-      api.getJoinedVotingWorkspace("session"),
+      api.getVotingWorkspace("club", "session"),
+      api.commandVotingSession({}),
       rooms.getLiveVotingRoom({ sessionId: "s" }),
       observations.getAdditionalObservations({ clubId: "c" }),
     ]
     for (const call of live) await call.catch(() => {})
-    await assert.rejects(api.seedVotingDemo("club"), /only in Demo Mode/)
     assert.ok(h.calls() >= 5, "live calls reached the live actions")
     assert.ok(files.includes(path.join("lib", "workspace-api.ts")) && files.includes(path.join("lib", "demo", "loader.ts")), "the spy sees the modules the harness loads")
     const demo = files.filter((file) => file.startsWith(path.join("lib", "demo")) && !/lib[\\/]demo[\\/](loader|activation)\.ts$/.test(file))

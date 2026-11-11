@@ -47,8 +47,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const legacyDestination = legacyStudentRedirect(legacyQuery)
   if (legacyDestination) redirect(legacyDestination)
   const next = safeReturnPath(typeof params.next === "string" ? params.next : undefined)
-  const cookieStore = await cookies()
-  const { data: { user: login }, error: authError } = await getSessionUser()
+  // Independent request reads: the cookie jar and the (per-request cached) session lookup.
+  const [cookieStore, { data: { user: login }, error: authError }] = await Promise.all([cookies(), getSessionUser()])
   const user = cookieStore.has(PLATFORM_VIEW_COOKIE) ? (await requireAuth()).user : !authError && login?.email_confirmed_at && login.email && isUvaEmail(login.email) ? login : null
 
   if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) return <HomeEntry initialLandingAudience={initialLandingAudience(params.audience, cookieStore.get(LANDING_AUDIENCE_PREFERENCE)?.value)} launchClubs={await getCachedLaunchClubs()} initialView="landing" />
@@ -63,7 +63,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     redirect(`/login?next=${encodeURIComponent(`/?${query}`)}`)
   }
 
-  let initialData = null
   let hasProfile = false
   if (user) {
     const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
@@ -89,14 +88,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     // stay here so onboarding runs, then continue to `next`; redirecting would loop. Leader and
     // demo entry URLs keep their own handling; old student URLs were already redirected.
     if (!["workspace", "view", "demoClub", "error"].some(key => params[key] !== undefined) && (hasProfile || next === "/")) redirect(next !== "/" ? next : STUDENT_HOME)
-    try {
-      initialData = await getStudentDashboardData()
-    } catch (e) {
-      console.error(e)
-    }
   }
 
-  const launchClubs = await getCachedLaunchClubs()
+  // After every auth, disabled-account and redirect check: the dashboard and the public launch-club
+  // list do not depend on each other, so read them together. A dashboard failure still renders the page.
+  const [initialData, launchClubs] = await Promise.all([
+    user ? getStudentDashboardData().catch(e => { console.error(e); return null }) : null,
+    getCachedLaunchClubs(),
+  ])
   const landingAudience = initialLandingAudience(params.audience, cookieStore.get(LANDING_AUDIENCE_PREFERENCE)?.value)
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />

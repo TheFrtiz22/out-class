@@ -103,7 +103,7 @@ test('the leader dossier, list, filters and sorts follow the club setting', () =
   assert.match(src, /const linkedinUrl = anonymousActive \|\| !profileFields\.linkedin \? undefined/)
   assert.match(src, /\{resumeUrl && <aside className="oc-applicant-resume"/)
   assert.match(src, /\{profileFields\.photo && <Avatar/)
-  for (const [field, control] of [['major', '<PillSelect label="Filter major"'], ['academicYear', '<PillGroup label="Filter academic year"'], ['gpa', '<RangeSlider label="GPA greater than"'], ['sat', '<RangeSlider label="SAT greater than"'], ['act', '<RangeSlider label="ACT greater than"']])
+  for (const [field, control] of [['major', '<PillSelect label="Filter major"'], ['academicYear', '<PillSelect label="Filter academic year"'], ['gpa', '<RangeSlider label="GPA greater than"'], ['sat', '<RangeSlider label="SAT greater than"'], ['act', '<RangeSlider label="ACT greater than"']])
     assert.ok(src.includes(`{profileFields.${field} && ${control}`), `${field} filter follows the setting`)
   assert.match(src, /applicantSortOptions\.filter\(option => sortableByProfile\(option\.key, profileFields\)\)/)
   assert.doesNotMatch(src, /` · GPA \$\{active/)
