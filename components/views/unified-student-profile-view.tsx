@@ -147,12 +147,12 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                 <DropdownMenuContent align="start">
                   {safeProfileUrl(profile.linkedinUrl) && <DropdownMenuItem asChild>
                     <a href={safeProfileUrl(profile.linkedinUrl)} target="_blank" rel="noopener noreferrer">
-                      <Linkedin className="size-4" />LinkedIn<ArrowUpRight className="ml-auto size-3" /><span className="sr-only"> (opens in a new tab)</span>
+                      <Linkedin className="size-4" />LinkedIn<ArrowUpRight className="ml-auto size-3.5" /><span className="sr-only"> (opens in a new tab)</span>
                     </a>
                   </DropdownMenuItem>}
                   {resolveResumeUrl(profile.resumeUrl) && <DropdownMenuItem asChild>
                     <a href={resolveResumeUrl(profile.resumeUrl)} target="_blank" rel="noopener noreferrer">
-                      <FileText className="size-4" />View résumé<ArrowUpRight className="ml-auto size-3" /><span className="sr-only"> (opens in a new tab)</span>
+                      <FileText className="size-4" />View résumé<ArrowUpRight className="ml-auto size-3.5" /><span className="sr-only"> (opens in a new tab)</span>
                     </a>
                   </DropdownMenuItem>}
                 </DropdownMenuContent>
@@ -226,7 +226,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                 <span
                   className={`flex size-4 items-center justify-center rounded-full ${item.complete ? "bg-secondary text-primary" : "border border-border"}`}
                 >
-                  {item.complete && <Check className="size-3" />}
+                  {item.complete && <Check className="size-3.5" />}
                 </span>
                 {item.label}
                 <span className="sr-only">{item.complete ? " added" : " not yet added"}</span>

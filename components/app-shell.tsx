@@ -17,40 +17,60 @@ import type { ReactNode } from "react"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 import { WorkspaceLoading } from "@/components/workspace-loading"
-import { LandingPageView } from "@/components/views/landing-page-view"
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
 import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
-import { FocusFrame } from "@/components/shell/focus-frame"
 import { Button } from "@/components/ui/button"
 import type { ExploreDirectory } from "@/components/views/explore-view"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
+// Never on a student route's first paint (reached only through setView("landing") or the legacy interview
+// view), so they stay out of those routes' first-load JS. DashboardLayout wraps every student view: static.
+const LandingPageView = dynamic(() => import("@/components/views/landing-page-view").then(module => module.LandingPageView), { loading: renderDestinationLoading })
+const FocusFrame = dynamic(() => import("@/components/shell/focus-frame").then(module => module.FocusFrame), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" /> })
 const OrganizationOwnershipRequests = dynamic(() => import("@/components/organization-ownership-requests").then(module => module.OrganizationOwnershipRequests), { loading: () => <WorkspaceLoading label="Checking organization invitations…" layout="feed" rows={2} /> })
 const PersonalClubs = dynamic(() => import("@/components/personal-clubs").then(module => module.PersonalClubs), { loading: () => <WorkspaceLoading label="Loading your clubs…" layout="cards" /> })
 const DemoClubSettings = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoClubSettings), { loading: () => <WorkspaceLoading label="Loading club settings…" layout="form" /> })
 const DemoInterviewSchedule = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoInterviewSchedule), { loading: () => <WorkspaceLoading label="Loading interview schedule…" layout="calendar" /> })
 const ClubWorkspaceSettings = dynamic(() => import("@/components/club-workspace-settings").then(module => module.ClubWorkspaceSettings), { loading: () => <WorkspaceLoading label="Loading club settings…" layout="form" /> })
 const AuthView = dynamic(() => import("@/components/views/auth-view").then(module => module.AuthView), { loading: renderDestinationLoading })
-const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView), { loading: () => <WorkspaceLoading label="Loading your dashboard…" layout="workspace" /> })
+const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView), { loading: () => <WorkspaceLoading label="Loading your dashboard…" layout="home" /> })
 const UnifiedStudentProfileView = dynamic(() => import("@/components/views/unified-student-profile-view").then(module => module.UnifiedStudentProfileView), { loading: () => <WorkspaceLoading label="Loading your profile…" layout="form" /> })
 const InboxView = dynamic(() => import("@/components/views/inbox-view").then(module => module.InboxView), { loading: () => <WorkspaceLoading label="Loading your inbox…" layout="feed" /> })
-const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView), { loading: () => <WorkspaceLoading label="Loading clubs…" layout="cards" /> })
-const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView), { loading: () => <WorkspaceLoading label="Loading Corkboard…" layout="cards" /> })
+const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView), { loading: () => <WorkspaceLoading label="Loading clubs…" layout="explore" /> })
+const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView), { loading: () => <WorkspaceLoading label="Loading events…" layout="cards" /> })
 const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: () => <WorkspaceLoading label="Preparing your applications…" layout="applications" /> })
 const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: () => <WorkspaceLoading label="Loading your schedule…" layout="schedule" /> })
 const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView), { loading: () => <WorkspaceLoading label="Loading recruitment workspace…" layout="applicants" /> })
-const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView), { loading: () => <WorkspaceLoading label="Loading club management…" layout="workspace" /> })
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" /> })
 const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView), { loading: () => <WorkspaceLoading label="Loading interview schedule…" layout="calendar" /> })
 const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" /> })
-const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" /> })
 const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: renderDestinationLoading })
+
+/** The lazy student views. A student route replaces its own first view with a static import (`views`). */
+const lazyStudentViews = { OrganizationOwnershipRequests, PersonalClubs, StudentDashboardView, UnifiedStudentProfileView, InboxView, ExploreView, CorkboardView, ApplicationTrackerView, CalendarView }
+
+/**
+ * Student views a route imports statically (app/(workspace)/<path>/page.tsx). The view its server HTML
+ * shows then hydrates in place: a next/dynamic view sits behind its own Suspense boundary, and any update
+ * that reaches that boundary before its chunk arrives (auth refresh, notification sync) makes React 19
+ * discard the server HTML for the loading fallback. Views opened later in the session stay lazy.
+ */
+export type StudentViews = Partial<{
+  OrganizationOwnershipRequests: typeof import("@/components/organization-ownership-requests").OrganizationOwnershipRequests
+  PersonalClubs: typeof import("@/components/personal-clubs").PersonalClubs
+  StudentDashboardView: typeof import("@/components/views/student-dashboard-view").StudentDashboardView
+  UnifiedStudentProfileView: typeof import("@/components/views/unified-student-profile-view").UnifiedStudentProfileView
+  InboxView: typeof import("@/components/views/inbox-view").InboxView
+  ExploreView: typeof import("@/components/views/explore-view").ExploreView
+  CorkboardView: typeof import("@/components/views/corkboard-view").CorkboardView
+  ApplicationTrackerView: typeof import("@/components/views/application-tracker-view").ApplicationTrackerView
+  CalendarView: typeof import("@/components/views/calendar-view").CalendarView
+}>
 
 const adminViewIds: ViewId[] = [
   "leader-dashboard",
   "club-manager",
-  "club-management-portal",
   "screening-dashboard",
   "interview-scheduler",
   "interview-workspace",
@@ -63,10 +83,11 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
 }
 
-export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader"; initialDirectory?: ExploreDirectory; serverNow?: number }
+export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader"; initialDirectory?: ExploreDirectory; serverNow?: number; views?: StudentViews }
 
-export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false, initialAuthRole, initialDirectory, serverNow }: AppShellProps) {
+export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false, initialAuthRole, initialDirectory, serverNow, views }: AppShellProps) {
   const demo = useDemoMode()
+  const View = { ...lazyStudentViews, ...views }
   // The server-read directory seeds only the first Explore mount; later visits read it fresh.
   const [directorySeed, setDirectorySeed] = useState(initialDirectory)
   const router = useRouter()
@@ -210,21 +231,19 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   return (
     <StudentState serverData={initialData} initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
       {view === "interview-workspace" ? <FocusFrame task="Interview" width="full"><AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary></FocusFrame> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
-            {view === "student-dashboard" && <><OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
-            {view === "student-profile" && <UnifiedStudentProfileView />}
-            {view === "inbox" && <InboxView onNavigate={navigate} />}
-            {view === "my-clubs" && <PersonalClubs section={personalSection} />}
-            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} initialDirectory={demo.isDemoEnabled ? undefined : directorySeed} serverNow={serverNow} onInitialDirectoryUsed={() => setDirectorySeed(undefined)} />}
-            {view === "corkboard" && <CorkboardView onNavigate={navigate} />}
+            {view === "student-dashboard" && <><View.OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><View.StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
+            {view === "student-profile" && <View.UnifiedStudentProfileView />}
+            {view === "inbox" && <View.InboxView onNavigate={navigate} />}
+            {view === "my-clubs" && <View.PersonalClubs section={personalSection} />}
+            {view === "explore" && <View.ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} initialDirectory={demo.isDemoEnabled ? undefined : directorySeed} serverNow={serverNow} onInitialDirectoryUsed={() => setDirectorySeed(undefined)} />}
+            {view === "corkboard" && <View.CorkboardView onNavigate={navigate} />}
             {/* One instance for both scopes: its stage control slides instead of remounting. */}
-            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} serverNow={serverNow} />}
-            {view === "calendar" && <CalendarView onNavigate={navigate} serverNow={serverNow} />}
+            {(view === "tracker" || view === "status") && <View.ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} serverNow={serverNow} />}
+            {view === "calendar" && <View.CalendarView onNavigate={navigate} serverNow={serverNow} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
             {view === "interview-scheduler" && (demo.isDemoEnabled ? <DemoInterviewSchedule onNavigate={navigate} /> : <InterviewSchedulerView onNavigate={navigate} />)}
-            {view === "broadcast-messages" && <BroadcastMessagesView />}
             {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubWorkspaceSettings />)}
-            {view === "club-management-portal" && <ClubManagementPortalView />}
       </DashboardLayout>}
     </StudentState>
   )

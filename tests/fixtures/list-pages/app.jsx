@@ -2,6 +2,7 @@
    Mode replaces, inside the real shell on fictional records. Server actions are stubbed to throw. Local only. */
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 import { ProductShell } from '@/components/shell/product-shell'
 import { PageHeader } from '@/components/ui/page-header'
 import { OrganizationMemberManagement } from '@/components/organization-member-management'
@@ -19,4 +20,4 @@ function Page() {
     {page === 'members' ? <OrganizationMemberManagement clubId={clubId} initialData={directory()} validatedInitialData /> : <ClubAnnouncements clubId={clubId} initialItems={announcements()} />}
   </ProductShell>
 }
-createRoot(document.getElementById('root')).render(<FixtureBoundary><Page /></FixtureBoundary>)
+createRoot(document.getElementById('root')).render(<FixtureBoundary><ConfirmProvider><Page /></ConfirmProvider></FixtureBoundary>)

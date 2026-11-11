@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  calendarFeedToken CalendarFeedToken?
   interviewAvailabilityOverrides InterviewAvailabilityOverride[]
   editorDrafts EditorDraft[]
   scheduledCommunications ScheduledCommunication[]
@@ -126,6 +127,7 @@ model Club {
   pipelineVersion Int @default(0)
   isDiscoverable Boolean @default(true)
   invitationEmailEnabled Boolean @default(true)
+  features Json? // Pilot feature switches set by platform admins; NULL or unknown keys read as off. See lib/club-features.ts.
   profileFieldVisibility Json? // Leader-facing applicant profile fields; NULL uses defaults (GPA and LinkedIn off). See lib/profile-field-visibility.ts.
   corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
@@ -1764,4 +1766,14 @@ model ApplicantRecusal {
 
   @@unique([applicationId, memberId])
   @@index([clubId, memberId])
+}
+
+// Private calendar subscription (webcal). Only a SHA-256 hash of the secret is
+// stored; creating a new link replaces it, so old links stop working.
+model CalendarFeedToken {
+  userId     String    @id
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 }

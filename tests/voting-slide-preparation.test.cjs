@@ -142,3 +142,52 @@ test('profile highlights follow the round applicant display configuration',async
  const tx={pipelineRound:{findFirst:async()=>({applicantDisplay:{version:1,fields:['name','major']}})}};
  assert.deepEqual((await util.viewerHighlightFilter(tx,{clubId,applicationId:appId,roundId},voterId,stored)).map(x=>x.source.id),['profile:major:0']);
 });
+
+// Production QA: a highlight saved in Prepare slides (an original quotation of "Interview score · Round 1")
+// showed "1 of 3" but never reached the slide. Locks were taken for the whole pass at START, so anything
+// saved after a session started (including every "Start now" session) waited for a Hold pass. Each
+// applicant now locks as it comes up; real evidence and résumé authorization run (only access is mocked).
+test('highlights saved after a pass starts reach each applicant who has not come up yet, with ceiling and round scoping',async()=>{
+ const lead=uuid(80),appA=uuid(81),appB=uuid(82),round1=uuid(83),denied=uuid(84),votingRound=uuid(85),annotation=uuid(86);
+ let resumeVisible=true;const prep=new Map(),locks=[];
+ const access={authorizeInterview:async(_tx,scope)=>{if(scope.roundId===denied)throw Error('Current panel assignment or explicit leadership permission required');return{anonymous:false,member:{id:uuid(87)},caps:{readClosing:true},app:{roundId:votingRound}};}};
+ const util=load('utils/voting-slide-preparation.ts',{'@/utils/interview-access':access,'@/utils/additional-observations':observationMock({observationUsers:[],observations:[]})});
+ const tx={$queryRaw:async()=>[],
+  pipelineRound:{findFirst:async()=>({applicantDisplay:{},club:{profileFieldVisibility:{}}}),findMany:async()=>[{id:round1,name:'Round 1',order:0},{id:denied,name:'Private round',order:1}]},
+  evaluation:{findUnique:async()=>null,findMany:async()=>[{id:uuid(88),interviewerId:uuid(89),roundId:round1,score:8,submittedAt:new Date(),interviewer:{user:{studentProfile:{firstName:'Avery',lastName:'Panel'}}}}]},
+  interviewPanelAssignment:{findUnique:async()=>null,findMany:async()=>[]},interviewRecord:{findMany:async()=>[]},
+  interviewResumeAnnotation:{findMany:async()=>[{id:annotation,anchor:{page:1,quote:'Treasurer, Economics Society, 2025'},document:{id:uuid(90),roundId:round1,round:{club:{profileFieldVisibility:{resume:resumeVisible}}}}}]},
+  votingSlidePreparation:{findMany:async({where})=>[...prep.values()].filter(r=>where.applicationId.in.includes(r.applicationId)),findUnique:async({where})=>prep.get(where.sessionId_applicationId.applicationId)??null},
+  votingSlideLock:{findUnique:async({where})=>{const k=where.sessionId_passNumber_applicationId;return locks.find(l=>l.passNumber===k.passNumber&&l.applicationId===k.applicationId)??null},createMany:async({data})=>{locks.push(...structuredClone(data));return{count:data.length}}}};
+ const scope={clubId,applicationId:appB,roundId:votingRound};
+ const sources=await util.gatherSlideSources(tx,scope,lead,{anonymous:false,sections:[{field:'major',items:['Economics']}]});
+ const score=sources.find(s=>s.type==='INTERVIEW_SCORE'),resume=sources.find(s=>s.type==='RESUME'),major=sources.find(s=>s.type==='PROFILE');
+ assert.equal(score.roundName,'Round 1');assert.equal(score.id,'score:'+round1);assert.ok(resume&&major);
+ assert.ok(!sources.some(s=>s.roundId===denied),'an unauthorized round is never offered');
+ // START: pass one exists and applicant A is presented. B has nothing saved yet, so nothing locks.
+ const room={id:sessionId,clubId,roundId:votingRound,currentPass:1,activeApplicationId:appA,passes:[{number:1,state:'OPEN',candidates:[{applicationId:appA,ballotState:'PENDING'},{applicationId:appB,ballotState:'PENDING'}]}]};
+ await util.lockPresentedSlide(tx,sessionId,1,appA);assert.equal(locks.length,0);
+ // The leader saves B's highlights while A is being discussed.
+ const highlights=lib.buildSlideHighlights([score,resume,major].map((s,i)=>({id:uuid(91+i),mode:'QUOTE',text:s.type==='INTERVIEW_SCORE'?s.text:s.text.slice(0,9),source:{type:s.type,id:s.id,version:s.version}})),sources,'Lee Leader');
+ prep.set(appB,{sessionId,applicationId:appB,highlights,revision:1});
+ assert.equal(lib.slideTiming(room,appB,false),'WHEN_PRESENTED');assert.match(lib.slideTimingLabels.WHEN_PRESENTED,/Not yet on slides/);
+ assert.deepEqual(await util.presentedSlideHighlights(tx,room,appB,lead,false),{},'nothing shows for B before it comes up');
+ // ADVANCE to B locks its saved preparation before it is shown; a repeat never adds a second lock.
+ room.activeApplicationId=appB;room.passes[0].candidates[0].ballotState='CONFIRMED';
+ await util.lockPresentedSlide(tx,sessionId,1,appB);await util.lockPresentedSlide(tx,sessionId,1,appB);
+ assert.equal(locks.length,1);assert.equal(lib.slideTiming(room,appB,true),'ON_SLIDE');
+ let shown=(await util.presentedSlideHighlights(tx,room,appB,lead,false)).preparedHighlights;
+ assert.deepEqual(shown.map(h=>h.source.type),['INTERVIEW_SCORE','RESUME','PROFILE']);
+ assert.equal(lib.highlightAttribution(shown[0]),'Interview score · Round 1');
+ // Edits after B is presented change the working copy only.
+ prep.set(appB,{...prep.get(appB),highlights:highlights.slice(2),revision:2});
+ assert.equal((await util.presentedSlideHighlights(tx,room,appB,lead,false)).preparedHighlights.length,3);
+ assert.equal(lib.slideTiming(room,appA,false),'NEXT_PASS','an applicant already presented shows changes in the next Hold pass');
+ // Club ceiling: a résumé source is withheld only when the club turns résumés off; interview and application sources stay.
+ resumeVisible=false;shown=(await util.presentedSlideHighlights(tx,room,appB,lead,false)).preparedHighlights;
+ assert.deepEqual(shown.map(h=>h.source.type),['INTERVIEW_SCORE','PROFILE']);
+ // Round scoping: a score highlight from a round this viewer cannot read is never shown.
+ const deniedScore=src('INTERVIEW_SCORE','score:'+denied,'7 / 10',{roundId:denied,roundName:'Private round'});
+ const hidden=lib.buildSlideHighlights([{id:uuid(95),mode:'QUOTE',text:'7 / 10',source:{type:deniedScore.type,id:deniedScore.id,version:deniedScore.version}}],[deniedScore],'Lee');
+ assert.deepEqual(await util.viewerHighlightFilter(tx,scope,lead,hidden),[]);
+});

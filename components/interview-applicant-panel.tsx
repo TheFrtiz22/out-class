@@ -67,12 +67,12 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
     <div className="oc-candidate-content">
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
       <div className="oc-applicant-identity">
-        {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={120} height={128} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-9" aria-hidden="true" /></div>}
+        {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={120} height={128} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-6" aria-hidden="true" /></div>}
         <div className="min-w-0"><h1>{name}</h1>{!!scholarships.length && <ul aria-label="Scholar status" className="oc-applicant-scholars">{scholarships.map((s,i) => <li key={`${s}-${i}`}>{s}</li>)}</ul>}</div>
       </div>
       <div className="oc-resume-document">
       {warm && resource && <div hidden aria-hidden="true"><InterviewResumeViewer preloadOnly scope={scope} documentId={documentId} isDemo={isDemoEnabled} resource={resource} onAccessLost={() => {}} /></div>}
-      {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-10 text-muted-foreground" aria-hidden="true" />}
+      {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-6 text-muted-foreground" aria-hidden="true" />}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="ghost" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>
           <Maximize2 className="size-4" aria-hidden="true" />

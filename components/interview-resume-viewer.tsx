@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { flushSync } from "react-dom";
 import { resumeCommentInput } from "@/lib/resume-comment-input";
 import { composerEnter } from "@/lib/composer-enter";
@@ -126,6 +127,7 @@ export default function InterviewResumeViewer(props: ViewerProps) {
 }
 function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resource: sharedResource, initialPage = 1 }: ViewerProps) {
   const { user } = useAuth();
+  const confirm = useConfirm();
   const request = useMemo(() => ({ ...scope, documentId }), [scope, documentId]);
   const [demoSource, setDemoSource] = useState("/demo/sample-resume.pdf");
   const path = isDemo ? demoSource : `/api/interview-resumes?${new URLSearchParams(request)}`;
@@ -200,7 +202,14 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
 
   function begin(anchor: ResumeAnchor | null, initialText = "") {
     if (writing.current || !currentAccess) return false;
-    if (draft && !window.confirm("Discard the unsaved résumé comment?")) return false;
+    if (draft) {
+      // Ask first; the composer opens only after the reader chooses to discard.
+      void confirm({ title: "Discard the unsaved comment?", description: "Your unsaved résumé comment will be lost.", confirmLabel: "Discard comment", cancelLabel: "Keep editing", tone: "danger" }).then(ok => { if (ok && !writing.current) startDraft(anchor, initialText); });
+      return false;
+    }
+    return startDraft(anchor, initialText);
+  }
+  function startDraft(anchor: ResumeAnchor | null, initialText: string) {
     // Focus must exist before the browser's next input/composition event. The
     // first printable key is seeded once rather than replaying synthetic keys.
     flushSync(() => { setDraft({ id: crypto.randomUUID(), kind: anchor ? "TEXT_HIGHLIGHT" : "GENERAL_NOTE", comment: initialText, anchor }); setNotesOpen(true); setMobileTab("comments"); setError(""); });
@@ -219,7 +228,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     } finally { writing.current = false; if (mounted.current) setBusy(false); }
   }
   async function remove(a: Annotation) {
-    if (writing.current || !window.confirm(`Delete this résumé comment by ${a.authorName}? Moderation history is retained.`)) return;
+    if (writing.current || !(await confirm({ title: `Delete this comment by ${a.authorName}?`, description: "Moderation history is retained.", confirmLabel: "Delete comment", tone: "danger" })) || writing.current) return;
     writing.current = true; ++serial.current; setBusy(true); setError("");
     try { await deleteInterviewResumeAnnotation({ ...request, id: a.id, revision: a.revision }); if (draft?.id === a.id) setDraft(null); await refresh(true); }
     catch { setError("Comment was not deleted. Refresh and review its latest version before retrying."); await refresh(true); }
@@ -279,7 +288,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
           <p className="text-sm font-medium">{a.authorName}</p>
           {a.anchor ? <Button type="button" variant="ghost" className="h-auto max-w-full justify-start whitespace-normal break-words px-0 text-left text-xs" onClick={() => { setPage(a.anchor!.page); setActive(a.id); setMobileTab("document"); }}>Page {a.anchor.page}: “{a.anchor.quote}”</Button> : <p className="text-xs text-muted-foreground">General résumé note</p>}
           <p className="whitespace-pre-wrap break-words text-sm">{a.comment}</p>
-          {a.canEdit && <div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => { if (!draft || window.confirm("Discard the unsaved résumé comment?")) { setDraft({ id: a.id, revision: a.revision, kind: a.kind, comment: a.comment, anchor: a.anchor }); setError(""); } }}>Edit</Button><Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void remove(a)}>Delete</Button></div>}
+          {a.canEdit && <div className="flex gap-2"><Button type="button" variant="outline" size="sm" disabled={busy} onClick={async () => { if (!draft || await confirm({ title: "Discard the unsaved comment?", description: "Your unsaved résumé comment will be lost.", confirmLabel: "Discard comment", cancelLabel: "Keep editing", tone: "danger" })) { setDraft({ id: a.id, revision: a.revision, kind: a.kind, comment: a.comment, anchor: a.anchor }); setError(""); } }}>Edit</Button><Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void remove(a)}>Delete</Button></div>}
         </li>)}</ul>
       </aside>
     </div>}

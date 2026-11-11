@@ -2,6 +2,7 @@
    fictional data (state.jsx, ../club-home/data.cjs). Local only; no sessions, server actions or production data. */
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 import { ProductShell } from '@/components/shell/product-shell'
 import { StudentDashboardView } from '@/components/views/student-dashboard-view'
 import { RecruitingOverview } from '@/components/recruiting-overview'
@@ -35,4 +36,4 @@ function Dashboards() {
     <StudentDashboardView authenticated initialData={params().get('scenario') === 'error' ? null : { applications: [] }} onNavigate={view => { window.fixtureNavigations = [...(window.fixtureNavigations || []), view] }} />
   </ProductShell>
 }
-createRoot(document.getElementById('root')).render(<FixtureBoundary><Dashboards /></FixtureBoundary>)
+createRoot(document.getElementById('root')).render(<FixtureBoundary><ConfirmProvider><Dashboards /></ConfirmProvider></FixtureBoundary>)
