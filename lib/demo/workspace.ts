@@ -546,6 +546,7 @@ export const setFormalDecisionLetters: Demo<"setFormalDecisionLetters"> = async(
 export const getRecruitmentCycles: Demo<"getRecruitmentCycles"> = async()=>{throw Error("Recruitment management is unavailable in Demo.")}
 export const saveRecruitmentCycle: Demo<"saveRecruitmentCycle"> = async()=>{throw Error("Recruitment management is unavailable in Demo.")}
 export const assignApplicationCycle: Demo<"assignApplicationCycle"> = async()=>{throw Error("Recruitment management is unavailable in Demo.")}
+export const startRecruitmentCycleFromPrevious: Demo<"startRecruitmentCycleFromPrevious"> = async()=>{throw Error("Recruitment management is unavailable in Demo.")}
 export const reconsiderRejectedApplication: Demo<"reconsiderRejectedApplication"> = async()=>{throw Error("Recruitment management is unavailable in Demo.")}
 export const scheduleDecisionPublication: Demo<"scheduleDecisionPublication"> = async()=>{throw Error("Decision scheduling is unavailable in Demo.")}
 export const getDecisionSchedules: Demo<"getDecisionSchedules"> = async()=>{throw Error("Decision scheduling is unavailable in Demo.")}
