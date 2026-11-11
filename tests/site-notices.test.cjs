@@ -233,6 +233,7 @@ test('route handlers: every app/api write handler is guarded by the maintenance 
     'app/api/internal/scheduled-communications/route.ts': 'cron, bearer secret',
     'app/api/internal/notification-delivery/route.ts': 'cron, bearer secret',
     'app/api/internal/invitation-delivery/route.ts': 'cron, bearer secret',
+    'app/api/csp-report/route.ts': 'browser CSP reports; logs a bounded summary, writes no data',
   }
   const routes = []
   const walk = dir => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = `${dir}/${e.name}`; if (e.isDirectory()) walk(f); else if (/^route\.tsx?$/.test(e.name)) routes.push(f) } }

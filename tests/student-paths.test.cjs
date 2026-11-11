@@ -163,7 +163,7 @@ test("authz: a confirmed UVA student gets their own workspace view; onboarding i
 // Mocks for the homepage server component (app/page.tsx).
 function pageMocks(opts = {}) {
   return {
-    "next/headers": { cookies: async () => ({ has: name => name in (opts.cookies || {}), get: name => name in (opts.cookies || {}) ? { value: opts.cookies[name] } : undefined, getAll: () => [] }) },
+    "next/headers": { cookies: async () => ({ has: name => name in (opts.cookies || {}), get: name => name in (opts.cookies || {}) ? { value: opts.cookies[name] } : undefined, getAll: () => [] }), headers: async () => new Headers() },
     "next/navigation": { redirect: destination => { throw Object.assign(Error("redirect"), { destination }) } },
     "next/cache": { unstable_cache: fn => fn }, next: {},
     "@/utils/auth": { getSessionUser: async () => ({ data: { user: opts.session ?? null }, error: null }), requireAuth: async () => ({ user: opts.platformUser }) },

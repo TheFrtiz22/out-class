@@ -231,3 +231,8 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
 - 2b437ea rebuild without a DSN: shared first-load JS 105 kB (= main 00840ee); /home 186 kB, /login 209 kB vs 208 kB on main. tests/sentry-scrub 6/6, typecheck ok after the change.
 - First-load deltas vs main on the other branches (no keys set): security/turnstile /login +1 kB, /signup +1 kB, /platform/login +1 kB, /request-school +1 kB; scheduling/outlook-busy /settings/availability +2 kB.
+## 2026-11-11 SEC-CSP-1 security/csp-nonce
+- tests/csp.test.cjs 8/8. Related suites (51 files touching middleware, pages, next.config or app/api): 391 tests, 378 pass, 11 fail, 2 skipped; all 11 failures are `Cannot find module '.prisma/client/default'` (no generated Prisma client in this worktree), none from this change.
+- typecheck: no errors in changed files; the remaining errors are all from the missing generated Prisma client. eslint on changed files: 0 problems. check-ui-controls ok.
+- Real Chrome (Playwright, /usr/bin/google-chrome) with the generated policy on a synthetic page: 0 violations in Report-Only and enforce mode. An un-nonced control script was reported or blocked, and its report reached the endpoint in the application/csp-report format.
+- Not run: full `pnpm run test`, test:migrations or build (no Prisma client), Next.js page render, or a deployed check with Supabase Realtime, Sentry, Analytics, Turnstile and the résumé viewer.
