@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { acceptCurrentTerms } from "@/actions/terms"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/ui/page-header"
 import { TermsClickwrap, clickwrapAnswer } from "@/components/legal/terms-clickwrap"
 import { TERMS_REQUIRED_MESSAGE, termsGateExempt } from "@/lib/legal-versions"
 import { CONTACT_EMAIL, CONTACT_HREF } from "@/lib/legal-content"
@@ -40,8 +41,7 @@ export function TermsAcceptanceScreen({ children }: { children: ReactNode }) {
   }
 
   return <main id="terms-acceptance" className="mx-auto flex min-h-[60dvh] w-full max-w-[var(--oc-reading-width)] flex-col justify-center gap-5 px-4 py-16 sm:px-6" aria-labelledby="terms-acceptance-title">
-    <h1 id="terms-acceptance-title" className="font-display text-2xl font-semibold">Before you continue</h1>
-    <p className="text-muted-foreground">Please review and accept the OutClass Terms of Service and Privacy Policy to keep using your account.</p>
+    <PageHeader title="Before you continue" titleId="terms-acceptance-title" description="Please review and accept the OutClass Terms of Service and Privacy Policy to keep using your account." />
     <TermsClickwrap id="terms-acceptance-check" checked={checked} disabled={busy} onCheckedChange={value => { setChecked(value); if (value) setError("") }} />
     {error && <p role="alert" className="oc-feedback">{error}</p>}
     <div className="flex flex-wrap items-center gap-3">

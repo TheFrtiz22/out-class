@@ -12,14 +12,14 @@ import { createClient as providerClient } from "@supabase/supabase-js";
 import { turnstileMessage, turnstileRemoteIp, verifyTurnstile } from "@/lib/turnstile";
 import { checkClickwrap, TERMS_ACCEPTANCE_REQUIRED } from "@/lib/legal-versions";
 import { recordTermsAcceptance } from "@/utils/terms-acceptance";
-const schema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), tokenHash: z.string().regex(/^[a-f0-9]{56,64}$/), password: z.string().min(12).max(72) }).strict();
+const schema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), tokenHash: z.string().regex(/^[a-f0-9]{56,64}$/), password: z.string().min(12).max(72), acceptTerms: z.boolean().optional(), termsVersion: z.string().max(40).optional(), privacyVersion: z.string().max(40).optional() }).strict();
 export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   let body: unknown;
   try { body = await request.json(); } catch { body = null; }
   // The bot check runs before any account lookup, so its answer never depends on the address.
   // verifyOtp/updateUser are not captcha-aware in Supabase Auth, so OutClass verifies here.
-  const { turnstileToken, acceptTerms, termsVersion, privacyVersion, ...fields } = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {} as Record<string, unknown>;
+  const { turnstileToken, ...fields } = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {} as Record<string, unknown>;
   const check = await verifyTurnstile(turnstileToken, { action: "student-claim", remoteIp: turnstileRemoteIp(request.headers.get("x-forwarded-for")) });
   if (!check.ok) return NextResponse.json({ error: turnstileMessage(check.reason) }, { status: check.reason === "unavailable" ? 503 : 400, headers: { "Cache-Control": "no-store" } });
   try {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const d = schema.parse(fields);
     // Claiming creates the user's sign-in: refuse it before consuming the one-use link unless the
     // clickwrap box was ticked for the current Terms and Privacy versions.
-    const clickwrap = checkClickwrap({ acceptTerms, termsVersion, privacyVersion });
+    const clickwrap = checkClickwrap(d);
     if (!clickwrap.ok) throw Error(clickwrap.error);
     const normal = await createClient(jar), current = await normal.auth.getUser();
     if (current.data.user && current.data.user.email?.toLowerCase() !== d.email) throw Error("Sign out of the other account before claiming this invitation.");
