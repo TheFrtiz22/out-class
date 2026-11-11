@@ -31,4 +31,4 @@ export async function loadVotingRoom(tx: AppTransactionClient, clubId: string, s
   if (!round || !cycle || (write && (round.archivedAt || cycle.archivedAt))) throw Error("Voting scope unavailable or archived.");
   return { s, round };
 }
-export { roomAuthority,requireRoomLeader,projectVotingRoom } from "@/lib/voting-room-projection";
+export { roomAuthority,requireRoomLeader,projectVotingRoom,undoableDecision } from "@/lib/voting-room-projection";
