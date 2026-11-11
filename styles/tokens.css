@@ -151,6 +151,8 @@
   --oc-size-10: 0.625rem;
   --oc-size-11: 0.6875rem;
   --oc-size-12: 0.75rem;
+  /* 13px secondary text (form labels, row meta, fact lists) sits between caption and small; ~50 literals used it. */
+  --oc-size-13: 0.8125rem;
   --oc-size-14: 0.875rem;
   --oc-size-16: 1rem;
   --oc-size-18: 1.125rem;

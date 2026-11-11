@@ -17,17 +17,12 @@ test('real Auth, RSC, PostgreSQL, private Storage and shared email-provider deci
   const letter=await student.action('actions/communications.ts','getDecisionLetter',[application.id]);assert.equal(letter.letter.decision,decision);assert.equal(await foreign.action('actions/communications.ts','getDecisionLetter',[application.id]),null);assert.equal(await db.decisionLetter.count({where:{applicationId:application.id}}),1);assert.equal(await db.userNotification.count({where:{eventKey:`decision:${application.id}:1`}}),1);
   fixtures.push({clubId:club.id,applicationId:application.id,letterId:letter.letter.id,decision});
  }
- // A real voting publication shares the exact same producer.
- const vote=fixtures[1],u=await db.user.findUniqueOrThrow({where:{id:c.identities.outsider.id}}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:vote.clubId}}),application=await db.application.create({data:{clubId:vote.clubId,studentId:u.id,roundId:round.id,status:'IN_REVIEW'}}),member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:c.identities.leader.id,clubId:vote.clubId}}});
- const sessionId=await leader.action('actions/voting.ts','createVotingSession',[{clubId:vote.clubId,roundId:round.id,applicationIds:[application.id],participantIds:[member.id],targetSize:1}]);
- const command=async(action)=>leader.action('actions/voting.ts','commandVotingSession',[{clubId:vote.clubId,sessionId,revision:(await db.votingSession.findUniqueOrThrow({where:{id:sessionId}})).revision,action,...(action==='PUBLISH'?{applicationIds:[application.id]}:{})}]);
- await command('START_PASS');await leader.action('actions/voting.ts','submitVotingBallot',[{clubId:vote.clubId,sessionId,passNumber:1,applicationId:application.id,decision:'PASS'}]);await command('COMPLETE_PASS');await command('FINISH');await command('PUBLISH');await command('PUBLISH');assert.equal(await db.decisionLetter.count({where:{applicationId:application.id}}),1);
 
  const n=(await student.action('actions/communications.ts','getDurableNotifications',[])).items.find(n=>n.href.includes(fixtures[0].applicationId));await student.action('actions/communications.ts','setDurableNotificationsRead',[[n.id],true]);assert.ok((await student.action('actions/communications.ts','getDurableNotifications',[])).items.find(r=>r.id===n.id).readAt);
  const secondSession=new Actor(c);await secondSession.signIn(c.identities.student.email,c.identities.student.password);
  assert.ok((await secondSession.action('actions/communications.ts','getDurableNotifications',[])).items.find(r=>r.id===n.id).readAt);
  assert.equal((await secondSession.action('actions/communications.ts','getDecisionLetter',[fixtures[0].applicationId])).letter.id,fixtures[0].letterId);
- const notifications=await db.userNotification.findMany({where:{clubId:{in:fixtures.map(f=>f.clubId)},type:'DECISION'}});assert.equal(notifications.length,4);
+ const notifications=await db.userNotification.findMany({where:{clubId:{in:fixtures.map(f=>f.clubId)},type:'DECISION'}});assert.equal(notifications.length,3);
  assert.equal(await db.userNotification.count({where:{clubId:{in:fixtures.map(f=>f.clubId)},type:'INVITATION'}}),0);
  assert.equal(await db.notificationEmailOutbox.count({where:{notificationId:{in:notifications.map(n=>n.id)}}}),4);
  // Shared current-main provider path, intercepted locally: no hosted provider calls.

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { NativeSelect } from "@/components/ui/native-select"
 import { SegmentedControl } from "@/components/ui/segmented-control"
+import { PillSelect } from "@/components/ui/pill-select"
 
 type Catalog = Awaited<ReturnType<typeof getRecipientGroups>>;
 type Preview = Awaited<ReturnType<typeof previewRecipientAudience>>;
@@ -78,7 +79,7 @@ export function AudienceEditor({ value, onChange, catalog, disabled = false }: {
  const set = (fields: object) => emit(recipientAudienceSchema.parse({ include: Object.values(fields).length && Object.values(fields).every(value => Array.isArray(value) && !value.length) ? [{ source: "PEOPLE", userIds: [] }] : [{ source: "MEMBERS", ...fields }] }));
  function choose(next: string) { setChosen(next); if (next === "everyone") set({}); else if (["Boys", "Girls"].includes(next)) set({ labels: [next] }); else if (next !== "custom") emit(recipientAudienceSchema.parse({ include: [{ source: "PEOPLE", userIds: [] }] })); }
  return <fieldset disabled={disabled} className="min-w-0 space-y-4"><legend className="mb-2 text-sm font-medium">Who is this for?</legend>
-  <SegmentedControl label="Audience shortcuts" value={mode} onChange={choose} options={[["everyone", "Everyone"], ["Boys", "Boys"], ["Girls", "Girls"], ["year", "By year"], ["role", "By role"], ["groups", "Groups"], ["custom", "Custom"]].map(([id, label]) => ({ value: id, label }))} />
+  <PillSelect label="Send to" prefix="Send to" active={false} value={mode} onChange={choose} options={[["everyone", "Everyone"], ["Boys", "Boys"], ["Girls", "Girls"], ["year", "By year"], ["role", "By role"], ["groups", "Groups"], ["custom", "Custom"]].map(([id, label]) => ({ value: id, label }))} />
   {mode === "everyone" && <p className="text-sm text-muted-foreground">All active club members.</p>}
   {["Boys", "Girls"].includes(mode) && <p className="text-sm text-muted-foreground">Members assigned to the “{mode}” group in Members.</p>}
   {mode === "year" && (catalog?.gradYears?.length ? <SegmentedControl multiple label="Audience class years" value={(memberRule?.gradYears ?? []).map(String)} onChange={years => set({ gradYears: years.map(Number) })} options={catalog.gradYears.map(year => ({ value: String(year), label: `${academicYear({ gradYear: year })} · ${year}` }))} /> : <p className="text-sm text-muted-foreground">No class years are recorded yet.</p>)}

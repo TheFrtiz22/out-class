@@ -11,7 +11,7 @@ import { createClient } from "@/utils/supabase/server";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { authSessionId, freshAuthClient, elevationHash, encryptChallenge, decryptChallenge } from "@/utils/admin-elevation";
 import { ADMIN_CHALLENGE_COOKIE, ADMIN_ELEVATION_COOKIE, ADMIN_CHALLENGE_LIFETIME, adminCookieOptions } from "@/lib/admin-elevation";
-import { captchaFailed, turnstileMessage, withCaptcha } from "@/lib/turnstile";
+import { captchaFailed, turnstileMessage, turnstileTokenPresent, withCaptcha } from "@/lib/turnstile";
 const inputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("password"), password: z.string().min(1).max(200), turnstileToken: z.string().max(2048).optional() }).strict(),
   z.object({ action: z.literal("verify"), code: z.string().regex(/^\d{6}$/) }).strict(),
@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
     if (input.action === "password") {
+      // Refuse a missing bot-check token before recording an attempt or calling Supabase.
+      if (!turnstileTokenPresent(input.turnstileToken)) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", turnstileMessage("missing"));
       const since = new Date(Date.now() - 15 * 60000);
       // Durable attempts, recorded before provider calls, serialize concurrent password attempts.
       await prisma.$transaction(async tx => {

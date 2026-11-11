@@ -100,7 +100,7 @@ test("Settings: Notifications is never the active Settings page, and Demo Mode h
   assert.equal(nav.personalSettingsSectionFor("/settings/availability").id, "availability")
   assert.equal(nav.personalSettingsSectionFor("/inbox"), undefined)
   assert.equal(nav.personalSettingsSectionFor("/settings/notifications"), undefined)
-  assert.deepEqual(nav.visiblePersonalSettingsSections(false).map(item => item.id), ["account", "notifications", "availability"])
+  assert.deepEqual(nav.visiblePersonalSettingsSections(false).map(item => item.id), ["account", "notifications", "availability", "interviews"])
   assert.deepEqual(nav.visiblePersonalSettingsSections(true).map(item => item.id), ["account", "availability"])
   assert.match(read("components/settings/personal-settings-layout.tsx"), /visiblePersonalSettingsSections\(demo\.isDemoEnabled\)/)
   assert.match(read("components/settings/personal-settings-overview.tsx"), /visiblePersonalSettingsSections\(demo\.isDemoEnabled\)/)

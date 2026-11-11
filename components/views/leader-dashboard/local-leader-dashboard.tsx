@@ -1,10 +1,9 @@
 "use client"
 
 import { LeadsTable } from "@/components/qr/leads-table"
-import { LiveVotingLauncher } from "@/components/live-voting/live-voting-launcher"
 import { useAttendance, eventsAttended } from "@/lib/attendance"
 import { useApplicationState } from "@/lib/application-state"
-import { currentStudent, experienceItems } from "@/lib/data"
+import { currentStudent } from "@/lib/data"
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import { CRMViewManager } from "@/components/customization/crm-view-manager"
 import { crmColumns, emptyFilters, matchesCRMFilters, useClubCustomization, type CRMFilters, type ColumnId } from "@/lib/club-customization"
@@ -393,11 +392,6 @@ export default function LocalLeaderDashboardView() {
           </Button>
         )}
 
-        <LiveVotingLauncher applicants={(viewMode === "pipeline" ? pipelineFiltered : sortedApplicants).map(applicant => ({
-          ...applicant,
-          cumulativeScore: averageScore(applicant.id, applicant.score),
-          resumeHighlight: applicant.resumeHighlight ?? (applicant.email === currentStudent.email && experienceItems[0] ? `${experienceItems[0].title} — ${experienceItems[0].subtitle}` : undefined),
-        }))} />
         <Button
           size="sm"
           className="h-8 bg-primary text-xs text-white hover:bg-primary/90"

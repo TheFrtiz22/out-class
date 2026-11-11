@@ -1,6 +1,7 @@
 import { interviewCapabilities } from "@/lib/interview-access"
 import { availableSettings } from "@/lib/club-settings"
-import { hasPermission, type ClubAccess } from "@/lib/permissions"
+import { hasPermission, isActiveMembership, type ClubAccess } from "@/lib/permissions"
+import { clubCalendarHref } from "@/lib/club-calendar"
 import { decisionsHref } from "@/lib/voting-navigation"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
@@ -55,6 +56,20 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
     item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
     ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
+}
+
+/**
+ * Cmd-K entries for a club's Meetings, Events and Members, with the gates their pages use: Meetings is the Calendar's
+ * meetings filter (every active member), Events needs meetings.manage (ClubCalendar shows members only meetings), and
+ * Members uses managerNavigation's own gate. A former member gets none.
+ */
+export function clubSearchLinks(member: ClubAccess | null | undefined, clubId: string): { id: string; title: string; href: string }[] {
+  if (!clubId || !isActiveMembership(member)) return []
+  return [
+    { id: "club-search-meetings", title: "Meetings", href: clubCalendarHref(clubId, "meetings") },
+    ...(hasPermission(member, "meetings.manage") ? [{ id: "club-search-events", title: "Events", href: clubCalendarHref(clubId, "events") }] : []),
+    ...managerNavigation(member!, clubId, "club").filter(item => item.id === "members").map(item => ({ id: "club-search-members", title: item.label, href: item.href! })),
+  ]
 }
 
 /** Who can open Decide and which of its steps. Unchanged from the old Decisions + Scheduled Decisions gates. */

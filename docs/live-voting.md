@@ -1,5 +1,7 @@
 # Local voting preview
 
+> **Retired November 2026.** The browser-local preview (`/vote`, `/live-voting`, `lib/use-live-voting.ts`) was removed when voting rooms became the one voting system. Old links now redirect: see "One voting system" in [voting-room-implementation.md](voting-room-implementation.md). The text below is historical.
+
 For the persisted production recruitment voting workflow, see [voting-mode.md](voting-mode.md) and [voting-backend.md](voting-backend.md). The transport described below is an isolated local preview and never determines production outcomes.
 
 In the local preview CRM, select **Voting preview**. The session snapshots the current

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useSyncExternalStore } from "react"
+import { minuteClock } from "@/lib/minute-clock"
 
 // Offset from this device's clock to the server's, measured when a server-rendered view hydrates. It
 // includes the render-to-hydration delay (seconds), which is fine for minute-level deadline display.
@@ -13,8 +14,11 @@ const subscribeNever = () => () => {}
  * device clock is off. Later renders and later mounts (e.g. returning to the profile from another view)
  * use the device clock plus the offset measured at that hydration, never the stale render time.
  * Without a hydration anchor it is the device clock.
+ *
+ * Every caller shares the one minute clock in `@/lib/minute-clock` (no per-view timers). `enabled`
+ * false (e.g. a closed panel) stops the minute re-renders; turning it on reads the time at once.
  */
-export function useServerAnchoredNow(serverNow?: number, tickMs = 60_000) {
+export function useServerAnchoredNow(serverNow?: number, enabled = true) {
   const hydrating = useSyncExternalStore(subscribeNever, () => false, () => true)
   const [now, setNow] = useState(() => {
     if (serverNow === undefined || !hydrating) return Date.now() + measuredOffset
@@ -22,8 +26,8 @@ export function useServerAnchoredNow(serverNow?: number, tickMs = 60_000) {
     return serverNow
   })
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now() + measuredOffset), tickMs)
-    return () => clearInterval(timer)
-  }, [tickMs])
+    if (!enabled) return
+    return minuteClock.subscribe(() => setNow(Date.now() + measuredOffset))
+  }, [enabled])
   return now
 }
