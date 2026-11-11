@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { ClubLogo } from "@/components/club-logo"
 import { clubAssetSource } from "@/lib/club-assets"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import type { ReactNode } from "react"
 import { Globe, Instagram, Linkedin, Mail, ExternalLink, Check, Play } from "@/components/icons"
 import "@/components/clubs/profile-presentation.css"
@@ -80,7 +81,8 @@ function ProfileSection({ section, assetPreview, parent }: { section: ClubMarket
 }
 
 /** What members do: programs, people and impact sections, projects, destinations, accolades, photos. */
-export function MembersSection({ profile, assetPreview = false }: SectionProps) {
+/** `reportClubId` (live public profile only) adds a Report control to each gallery image. */
+export function MembersSection({ profile, assetPreview = false, reportClubId }: SectionProps & { reportClubId?: string }) {
   const m = publicMarketing(profile.marketing)
   const sections = m.sections.filter(s => s.visible && ["programs", "people", "impact"].includes(s.kind))
   const accolades = m.accolades.filter(Boolean)
@@ -92,7 +94,7 @@ export function MembersSection({ profile, assetPreview = false }: SectionProps) 
     {m.features.length > 0 && <div className="oc-club-subsection"><h3>Projects and highlights</h3><ul className="oc-club-feature-list">{m.features.map((f, i) => <li key={i}><h4>{f.title}</h4>{f.description && <p>{f.description}</p>}{f.url && <a className="oc-tap-link" href={f.url} target="_blank" rel="noopener noreferrer">Learn more about {f.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={13} aria-hidden="true" /></a>}</li>)}</ul></div>}
     <MemberOutcomes profile={profile} />
     {accolades.length > 0 && <div className="oc-club-subsection"><h3>Recognition</h3><ul className="oc-club-check-list">{accolades.map((a, i) => <li key={i}><Check size={16} aria-hidden="true" />{a}</li>)}</ul></div>}
-    {gallery.length > 0 && <div className="oc-club-subsection"><h3>A look inside</h3><div className="mt-4 grid grid-cols-2 gap-3">{gallery.map((g, i) => <figure key={i}><img src={clubAssetSource(g.url, assetPreview)} alt={g.caption || "Club activity"} className="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />{g.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{g.caption}</figcaption>}</figure>)}</div></div>}
+    {gallery.length > 0 && <div className="oc-club-subsection"><h3>A look inside</h3><div className="mt-4 grid grid-cols-2 gap-3">{gallery.map((g, i) => <figure key={i}><img src={clubAssetSource(g.url, assetPreview)} alt={g.caption || "Club activity"} className="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />{g.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{g.caption}</figcaption>}{reportClubId && <ReportContentButton target={{ type: "club-image", clubId: reportClubId, index: i }} label={`Report image ${i + 1}`} ownerClubId={reportClubId} className="mt-1" />}</figure>)}</div></div>}
   </section>
 }
 

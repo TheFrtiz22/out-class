@@ -277,6 +277,9 @@ export type NotificationType = "Announcement" | "Interview Invite" | "Applicatio
 
 export type Notification = {
   applicationId?: string
+  /** Durable club announcement this inbox item delivers; recipients may report it. */
+  announcementId?: string
+  ownAnnouncement?: boolean
   durableId?: string
   href?: string
   taskHref?: string

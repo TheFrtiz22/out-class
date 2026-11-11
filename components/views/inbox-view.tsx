@@ -3,6 +3,7 @@ import { schedulingDateTime } from "@/lib/scheduling-config"
 
 import Link from "next/link"
 import { useDemoMode } from "@/contexts/demo-context"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { CommunicationsInbox } from "@/components/communications-inbox"
 import { useEffect, useMemo, useState, useRef } from "react"
@@ -393,6 +394,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     <Trash2 className="size-4" />
                     Delete
                   </Button>
+                  {selected.announcementId && <ReportContentButton target={{ type: "announcement", id: selected.announcementId }} label="Report announcement" hidden={selected.ownAnnouncement} className="self-center" />}
                 </div>
               </div>
               <div className="space-y-5 p-5 sm:p-6">

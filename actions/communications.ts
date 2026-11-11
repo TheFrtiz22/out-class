@@ -56,7 +56,7 @@ export async function getDurableNotifications(cursor?: string) {
     where: { userId: user.id, archivedAt: null, ...(boundary ? { OR: [{ createdAt: { lt: boundary.createdAt } }, { createdAt: boundary.createdAt, id: { lt: boundary.id } }] } : {}) },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: 51,
-    include: { club: { select: { name: true, color: true, logoUrl: true, marketing: true } } },
+    include: { club: { select: { name: true, color: true, logoUrl: true, marketing: true } }, announcement: { select: { authorId: true } } },
   });
   const unread = await prisma.userNotification.count({ where: { userId: user.id, archivedAt: null, readAt: null } });
   const items = await prisma.$transaction(async tx => {
@@ -76,7 +76,8 @@ export async function getDurableNotifications(cursor?: string) {
     return { ...row, ...(context || { title: "Interview assignment changed", body: "This assignment is no longer available. Check your current interview list.", href: `/club/${row.clubId}/workspace?section=recruitment&tool=interviews` }) };
     }));
   }, { maxWait: 10000, timeout: 20000 });
-  return { items, nextCursor: rows.length > 50 ? rows[49].id : null, unread };
+  // Recipients learn only whether they wrote an announcement (to hide Report on it), never its author.
+  return { items: items.map(({ announcement, ...item }) => ({ ...item, ownAnnouncement: !!announcement && announcement.authorId === user.id })), nextCursor: rows.length > 50 ? rows[49].id : null, unread };
 }
 
 export async function setDurableNotificationsRead(ids: string[], read: boolean) {
