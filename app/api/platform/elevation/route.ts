@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { existingPasswordSchema } from "@/lib/password-policy";
 import { requirePlatformAdminEligibility } from "@/utils/platform-admin";
 import { prisma } from "@/utils/prisma";
 import { createClient } from "@/utils/supabase/server";
@@ -13,7 +14,7 @@ import { authSessionId, freshAuthClient, elevationHash, encryptChallenge, decryp
 import { ADMIN_CHALLENGE_COOKIE, ADMIN_ELEVATION_COOKIE, ADMIN_CHALLENGE_LIFETIME, adminCookieOptions } from "@/lib/admin-elevation";
 import { captchaFailed, turnstileMessage, turnstileTokenPresent, withCaptcha } from "@/lib/turnstile";
 const inputSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("password"), password: z.string().min(1).max(200), turnstileToken: z.string().max(2048).optional() }).strict(),
+  z.object({ action: z.literal("password"), password: existingPasswordSchema, turnstileToken: z.string().max(2048).optional() }).strict(),
   z.object({ action: z.literal("verify"), code: z.string().regex(/^\d{6}$/) }).strict(),
   z.object({ action: z.literal("end") }).strict(),
 ]);

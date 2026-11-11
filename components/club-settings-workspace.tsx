@@ -186,10 +186,9 @@ export function ClubSettingsWorkspace({
         )}
         {visible("members") && (
           <div hidden={active !== "members"} className="space-y-5">
-            <section aria-labelledby="interviewer-eligibility-heading" className="space-y-3"><h2 id="interviewer-eligibility-heading" className="oc-section-heading">Interviewer eligibility</h2><p className="text-sm text-muted-foreground">Choose which roles can interview. Kits, panels and interviewer offices are in Interviews.</p><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></section>
+            <section aria-labelledby="interviewer-eligibility-heading" className="space-y-3"><h2 id="interviewer-eligibility-heading" className="oc-section-heading">Interviewer eligibility</h2><p className="text-sm text-muted-foreground">Kits, panels and interviewer offices are in Interviews.</p><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></section>
             <section aria-labelledby="role-permissions-heading" className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="role-permissions-heading" className="oc-section-heading">Roles and permissions</h2><Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=members`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage members</Link></div>
-              <p className="text-sm text-muted-foreground">Each member’s role sets what they can do. Change a member’s role, title or groups from Members.</p>
               <dl className="divide-y rounded-lg border">{organizationRoles.map(role => <div key={role} className="grid gap-1 p-3 sm:grid-cols-[12rem_1fr]"><dt className="font-medium">{organizationRoleLabels[role]}</dt><dd className="text-sm text-muted-foreground">{role === "OWNER" || role === "ADMIN" ? "Every club permission" : organizationRolePermissions[role].length ? organizationRolePermissions[role].map(permission => permissionLabels[permission]).join(" · ") : "Member pages only (meetings, tasks, announcements)"}</dd></div>)}</dl>
             </section>
           </div>
@@ -198,9 +197,7 @@ export function ClubSettingsWorkspace({
           <div hidden={active !== "notifications"} className="space-y-5">
             <h2 className="oc-section-heading">Communications</h2>
             <p className="text-sm text-muted-foreground">
-              Invitation emails are requested explicitly and delivered in the
-              background. Application review and decision changes are saved
-              without sending automatic emails.
+              Review and decision changes don’t send automatic emails.
             </p>
             {!demo.isDemoEnabled && (
               <>
@@ -234,9 +231,7 @@ export function ClubSettingsWorkspace({
                 : "This club has not yet completed its ownership claim."}
             </p>
             <p className="text-sm text-muted-foreground">
-              Owners control all settings. Ownership transfer is available in a
-              current member’s details and retains membership history. The last
-              active owner is protected.
+              Transfer ownership from a member’s details; the last active owner is protected.
             </p>
             {member.isOwner && (
               <Link
