@@ -4,7 +4,7 @@ import Link from "next/link"
 import { eventScheduleLabel, eventDateLabel, eventTimeLabel } from "@/lib/campus-events"
 import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
 import { useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check, ArrowUpRight } from "@/components/icons"
+import { ArrowLeft, ArrowRight, CalendarDays, MapPin, ArrowUpRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -225,8 +225,8 @@ export function ClubProfileView({
           {club.timeCommitment && <p className="oc-club-prose">Time commitment: {club.timeCommitment} hours per week.</p>}
           {!!club.requirements?.length && <>
             <h4 className="oc-club-minor-heading">Required club questions</h4>
-            <ul className="oc-club-check-list">
-              {club.requirements.map((requirement, index) => <li key={index}><Check size={16} aria-hidden="true" />{requirement}</li>)}
+            <ul className="oc-club-list">
+              {club.requirements.map((requirement, index) => <li key={index}>{requirement}</li>)}
             </ul>
           </>}
         </div>}
