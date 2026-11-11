@@ -7,6 +7,7 @@ import { clubExportFilter, clubExportKinds, clubExportPermissions } from "@/lib/
 import { csvFilename, toCsv } from "@/lib/csv"
 import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { auditSupportAction } from "@/utils/support-audit"
+import { RATE_LIMITS, rateLimitedResponse, limitRequest } from "@/lib/rate-limit"
 
 const query = z.object({ clubId: z.string().uuid(), kind: z.enum(clubExportKinds), roundId: z.string().uuid().optional(), eventId: z.string().uuid().optional() }).strict()
   // A filter is accepted only for the kind it narrows (round → applicants, event → attendance/RSVPs).
@@ -21,6 +22,14 @@ export async function GET(request: Request) {
   const { clubId, kind, roundId, eventId } = input.data
   try {
     const { user } = await requireClubPermission(clubId, clubExportPermissions[kind], { allowSuspendedRead: true })
+    const limited = limitRequest(request, RATE_LIMITS.clubExports, { userId: user.id })
+    if (limited) return limited
+    // Coarse check across instances: every export writes one audit row, so count this account's recent ones
+    // ([actorId, createdAt] index) before opening the long snapshot transaction.
+    const { limit, windowMs } = RATE_LIMITS.clubExports
+    const recent = await prisma.auditLog.findMany({ where: { actorId: user.id, action: { startsWith: "club.export." }, createdAt: { gte: new Date(Date.now() - windowMs) } },
+      select: { createdAt: true }, orderBy: { createdAt: "desc" }, take: limit })
+    if (recent.length >= limit) return rateLimitedResponse(Math.max(1, Math.ceil((+recent[limit - 1].createdAt + windowMs - Date.now()) / 1000)))
     const { table, clubName } = await prisma.$transaction(async tx => {
       // Re-check inside the snapshot so a revoked leader cannot export.
       const member = await authorizeClubTransaction(tx, clubId, user.id, clubExportPermissions[kind], { readOnly: true, allowSuspendedRead: true })

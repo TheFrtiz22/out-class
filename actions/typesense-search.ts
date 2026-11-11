@@ -1,5 +1,8 @@
 "use server"
 
+import { RATE_LIMITS } from "@/lib/rate-limit"
+import { limitAction } from "@/lib/rate-limit-action"
+
 const collection = "outclass_public_clubs_v1"
 
 /** Only public directory IDs are returned. Private records are never indexed or queried here. */
@@ -10,6 +13,8 @@ export async function searchPublicClubIds(input: string): Promise<string[] | nul
   const key = process.env.TYPESENSE_SEARCH_KEY
   // Unconfigured or unhealthy Typesense should not break current Discover search.
   if (!host || !key) return null
+  // Over the limit, Discover falls back to its local directory filter, as when Typesense is down.
+  if (!(await limitAction(RATE_LIMITS.search)).ok) return null
   try {
     const url = new URL(host)
     if (url.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && url.hostname === "localhost" && url.protocol === "http:")) return null

@@ -46,7 +46,7 @@ function route({ deny = false, denyInTx = false } = {}) {
   }
   const mod = load('app/api/club-exports/route.ts', {
     '@/utils/support-audit': { auditSupportAction: async () => {} },
-    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx), auditLog: { findMany: async () => [] } } },
     '@/utils/auth': { requireClubPermission: async (id, perms) => { state.checks.push(['request', id, perms]); if (deny) throw new Error('denied'); return { user: { id: 'u1' }, membership: member } } },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, user, perms, opts) => { state.checks.push(['tx', id, user, perms, opts]); if (denyInTx) throw new Error('changed'); return member } },
   })
@@ -133,7 +133,7 @@ function harness(memberships, data = {}, { support = null, profileFieldVisibilit
   })
   const mod = load('app/api/club-exports/route.ts', {
     '@/utils/support-audit': supportAudit,
-    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx), auditLog: { findMany: async () => [] } } },
     '@/utils/auth': { requireClubPermission: async (id, perms) => { check(id, perms); return { user: { id: 'u1' } } } },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, _user, perms) => check(id, perms) },
   })

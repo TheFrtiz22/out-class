@@ -11,6 +11,7 @@ import { createClient } from "@/utils/supabase/server";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { authSessionId, freshAuthClient, elevationHash, encryptChallenge, decryptChallenge } from "@/utils/admin-elevation";
 import { ADMIN_CHALLENGE_COOKIE, ADMIN_ELEVATION_COOKIE, ADMIN_CHALLENGE_LIFETIME, adminCookieOptions } from "@/lib/admin-elevation";
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
 import { captchaFailed, turnstileMessage, turnstileTokenPresent, withCaptcha } from "@/lib/turnstile";
 const inputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("password"), password: z.string().min(1).max(200), turnstileToken: z.string().max(2048).optional() }).strict(),
@@ -19,6 +20,8 @@ const inputSchema = z.discriminatedUnion("action", [
 ]);
 export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
+  const limited = limitRequest(request, RATE_LIMITS.adminElevation);
+  if (limited) return limited;
   let actorId: string | undefined;
   try {
     const jar = await cookies();

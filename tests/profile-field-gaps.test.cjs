@@ -57,7 +57,7 @@ function exportRoute(profileFieldVisibility) {
   }
   const mod = load('app/api/club-exports/route.ts', {
     '@/utils/support-audit': { auditSupportAction: async () => {} },
-    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx), auditLog: { findMany: async () => [] } } },
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'u1' }, membership: member }) },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => member },
   })
