@@ -304,3 +304,14 @@ test('Pending stage pills replace the Status dropdown: they filter by stage and 
  segment(tree,'Decision',t=>t.startsWith('Accepted')).props.onClick();tree=h.render();assert.equal(stage(tree),undefined,'Accepted has no stages');
  segment(tree,'Decision',t=>t.startsWith('All')).props.onClick();tree=h.render();assert.equal(stage(tree).props.value,'','leaving Pending cleared the stage');
 });
+
+// QA saw a column headed only "Test". It is the narrow-width combination of SAT and ACT (hidden from 880px,
+// where SAT and ACT get their own columns), so it is labelled as test scores and never shown beside them.
+test('applicant list labels the combined SAT/ACT column "Test scores" and swaps it with SAT and ACT at the same width', () => {
+  const { LiveApplicantList } = compile('components/views/leader-dashboard/live-applicant-views.tsx', { '@/components/ui/data-table': { DataTable: 'DataTable', DataTableSecondary: 'DataTableSecondary' } })
+  const columns = LiveApplicantList({ applicants: [], rounds: [], open() {}, name: () => 'Applicant' }).props.columns
+  const scores = columns.find(c => c.id === 'test'), sat = columns.find(c => c.id === 'sat'), act = columns.find(c => c.id === 'act')
+  assert.equal(scores.header, 'Test scores')
+  assert.equal(scores.hideFrom, 'lg'); assert.equal(sat.showFrom, 'lg'); assert.equal(act.showFrom, 'lg')
+  assert.equal(columns.filter(c => c.header === 'Test').length, 0)
+})
