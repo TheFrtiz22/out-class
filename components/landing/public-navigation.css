@@ -111,7 +111,7 @@
   .oc-public-nav[data-hero="true"] .oc-public-primary:hover { background: white; box-shadow: var(--oc-glass-lift); }
 }
 .oc-public-menu-toggle { display: none; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; color: inherit; background: var(--nav-hover); border: 1px solid var(--nav-border); border-radius: 50%; cursor: pointer; }
-.oc-public-menu-icon { position: relative; width: 18px; height: 18px; }
+.oc-public-menu-icon { position: relative; width: 16px; height: 16px; }
 .oc-public-menu-icon > svg { position: absolute; inset: 0; transition: opacity var(--oc-glass-quick) var(--nav-ease), transform var(--nav-duration) var(--nav-ease); }
 .oc-public-menu-icon > svg + svg { opacity: 0; transform: rotate(-45deg) scale(.8); }
 .oc-public-nav[data-open="true"] .oc-public-menu-icon > svg:first-child { opacity: 0; transform: rotate(45deg) scale(.8); }

@@ -8,7 +8,7 @@ import { getSiteNotices, isMaintenanceExempt } from "@/utils/site-settings"
 export function MaintenancePage() {
   return (
     <main id="maintenance-content" className="mx-auto flex min-h-[60dvh] w-full max-w-[var(--oc-reading-width)] flex-col justify-center gap-4 px-4 py-16 sm:px-6">
-      <TriangleAlert className="size-7 text-warning" />
+      <TriangleAlert className="size-6 text-warning" />
       <h1 className="font-display text-2xl font-semibold">OutClass is undergoing maintenance</h1>
       <p className="text-muted-foreground">Your clubs, applications and messages are safe. Changes are paused until maintenance finishes. Please check back shortly.</p>
     </main>

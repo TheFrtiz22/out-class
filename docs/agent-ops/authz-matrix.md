@@ -137,3 +137,12 @@ Resource: the requester's own Microsoft calendar (start, end, showAs, isCancelle
 | Attacker page / other origin | cannot receive results: postMessage targets the site origin; editor accepts only its own popup, nonce and week | attacker code cannot be injected: state and PKCE verifier are in the victim's httpOnly cookie | `outlook-busy.test` (popup escaping, widget checks) |
 | Account in another Microsoft tenant | refused by Microsoft: single required tenant | n/a | `outlook-busy.test` (config refuses common/organizations) |
 | Unconfigured deployment | 404 popup message; button hidden | 404 | `outlook-busy.test` (config) |
+## 2026-11-10 · S1-1 · Per-club pilot feature switches (branch `feature/club-feature-switches`)
+Resource: `Club.features` (JSON switches). Written only by `setAdminClubFeature` in `actions/admin-clubs.ts`; read on the server by `clubHasFeature` (`utils/club-features.ts`). No client-supplied switch state is trusted; NULL, malformed and unknown keys read as off.
+| Actor | Read switches (admin editor) | Change a switch | Test |
+|---|---|---|---|
+| Platform admin, MFA aal2, fresh elevation, live session | allow | allow, under `FOR UPDATE` + `authorizeAdminTransaction`, compare-and-set on `expected`, audit `platform.club.feature` with reason | `club-features.test` |
+| Platform admin in view-as (impersonation) session | deny (`requirePlatformAdmin`) | deny, nothing written | `club-features.test` (real guard, view cookie) |
+| Signed-in non-admin, club leader of the club, student | deny | deny, nothing written | `club-features.test` (guard throws AdminAccessError) |
+| Logged-out visitor / expired session | deny (`requireAuth`) | deny | existing `platform-admin.test` |
+| Feature code at request time | reads via `clubHasFeature` only | n/a | `club-features.test` |
