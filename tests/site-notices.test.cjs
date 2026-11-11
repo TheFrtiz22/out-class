@@ -18,7 +18,7 @@ function requestCache() {
   const scopes = []
   return { cache: fn => { const memo = new Map(); scopes.push(memo); return (...args) => { const key = JSON.stringify(args); if (!memo.has(key)) memo.set(key, fn(...args)); return memo.get(key) } }, newRequest: () => scopes.forEach(s => s.clear()) }
 }
-const Icon = name => props => React.createElement('svg', { 'data-icon': name, 'aria-hidden': true, className: props.className })
+const Icon = name => Object.assign(props => React.createElement('svg', { 'data-icon': name, 'aria-hidden': true, className: props.className }), { displayName: name })
 const uiMocks = {
   '@/components/icons': { TriangleAlert: Icon('TriangleAlert'), Megaphone: Icon('Megaphone'), X: Icon('X') },
   '@/components/ui/icon-button': { IconButton: ({ children, ...p }) => React.createElement('button', { type: 'button', 'aria-label': p['aria-label'] }, children) },
