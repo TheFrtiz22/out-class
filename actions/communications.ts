@@ -14,6 +14,7 @@ import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/a
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
 import { boundedParse } from "@/lib/bounded-input";
+import { writeNotificationPreferences } from "@/utils/notification-preferences";
 
 const uuid = z.string().uuid();
 const publishInput = z.object({
@@ -41,10 +42,9 @@ export async function getNotificationPreferences() {
 export async function saveNotificationPreferences(input: unknown) {
   const { user } = await requireAuth();
   const values = preferenceInput.parse(input);
-  return prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
-    return tx.userNotificationPreference.upsert({ where: { userId: user.id }, create: { userId: user.id, ...values }, update: values });
-  });
+  const saved = await writeNotificationPreferences(user.id, values);
+  if (!saved) throw new Error("Your account is unavailable.");
+  return saved;
 }
 
 export async function getDurableNotifications(cursor?: string) {

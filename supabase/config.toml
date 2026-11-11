@@ -416,7 +416,7 @@ enabled = true
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
 [auth.email.template.confirmation]
-subject = "Verify your UVA email — OutClass"
+subject = "Verify your UVA email for OutClass"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.magic_link]
