@@ -8,6 +8,8 @@ import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 export async function middleware(request: NextRequest) {
   // Protect both the presenter route and its sample assets before static-file shortcuts.
   let path = request.nextUrl.pathname
+  // The uptime probe needs no session, cookies or redirects, and nothing here may rate-limit it.
+  if (path === "/api/health" && ["GET", "HEAD"].includes(request.method)) return NextResponse.next()
   try { path = decodeURIComponent(path) } catch { return new NextResponse(null, { status: 400 }) }
   // Student workspace views moved from `/?workspace=student&view=…` to real paths. Old URLs live
   // on in stored notifications and sent email, so this redirect stays (307 until the paths are
