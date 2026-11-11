@@ -11,7 +11,6 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, ChevronDown, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
-import { PillGroup } from "@/components/ui/segmented-control"
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
@@ -153,8 +152,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   // Only the fields inside the Refine search panel; the row's own selects show their value.
   const timeOptions = ["1-3", "3-5", "5+"].filter((time) => clubs.some((club) => club.timeCommitment === time))
   const acceptanceReported = clubs.filter((club) => club.acceptanceRate != null).length >= 3
-  const refined = [filters.time !== emptyDirectoryFilters.time, filters.acceptance !== emptyDirectoryFilters.acceptance].filter(Boolean).length
-  const phoneActive = refined + Number(filters.recruitment !== emptyDirectoryFilters.recruitment) + Number(filters.sort !== emptyDirectoryFilters.sort)
+  const refined = [filters.recruitment !== emptyDirectoryFilters.recruitment, filters.time !== emptyDirectoryFilters.time, filters.acceptance !== emptyDirectoryFilters.acceptance].filter(Boolean).length
+  const phoneActive = refined + Number(filters.sort !== emptyDirectoryFilters.sort)
   const recruitmentCounts = useMemo(() => {
     const matches = filterDirectory(clubs, { ...filters, recruitment: "all" }, now)
     return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closed: matches.filter(club => !clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length }
@@ -207,18 +206,21 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       </div>
       <div id="directory-tools" className="oc-directory-tools oc-toolbar" data-phone-open={phoneFilters || undefined}>
         {/* Filters with fewer than two real options are hidden; acceptance needs at least three clubs reporting a rate. */}
-        {(timeOptions.length >= 2 || acceptanceReported) && <FilterPopover label="Refine search" title="Refine search" count={refined} align="start">
+        <FilterPopover label="Filter" title="Filter clubs" count={refined} align="start">
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Availability</span>
+              <PillSelect label="Availability" size="compact" active={filters.recruitment !== emptyDirectoryFilters.recruitment} describedBy="directory-availability-note" value={filters.recruitment} onChange={(value) => change("recruitment", value)}
+                options={recruitmentOptions.map(option => ({ value: option.value, label: `${option.label} (${recruitmentCounts[option.value]})` }))} />
+            </div>
+            {/* Filters with fewer than two real options are hidden; acceptance needs at least three clubs reporting a rate. */}
             {timeOptions.length >= 2 && <div className="oc-filter-field"><span className="oc-filter-field-label">Time commitment</span>
-              <PillGroup label="Time commitment" size="compact" value={filters.time} onChange={(value) => change("time", value)}
+              <PillSelect label="Time commitment" size="compact" active={filters.time !== emptyDirectoryFilters.time} value={filters.time} onChange={(value) => change("time", value)}
                 options={[{ value: "all", label: "Any commitment" }, ...timeOptions.map((time) => ({ value: time, label: `${time} hours / week` }))]} />
             </div>}
             {acceptanceReported && <div className="oc-filter-field"><span className="oc-filter-field-label">Club-reported acceptance</span>
-              <PillGroup label="Club-reported acceptance" size="compact" value={filters.acceptance} onChange={(value) => change("acceptance", value)}
+              <PillSelect label="Club-reported acceptance" size="compact" active={filters.acceptance !== emptyDirectoryFilters.acceptance} value={filters.acceptance} onChange={(value) => change("acceptance", value)}
                 options={[{ value: "all", label: "Any / not reported" }, ...[5, 10, 25, 50, 100].map((value) => ({ value: String(value), label: `Up to ${value}%` }))]} />
             </div>}
-        </FilterPopover>}
-        <PillSelect label="Availability" prefix="Availability" active={filters.recruitment !== emptyDirectoryFilters.recruitment} describedBy="directory-availability-note" className="oc-directory-sort" value={filters.recruitment} onChange={(value) => change("recruitment", value)}
-          options={recruitmentOptions.map(option => ({ value: option.value, label: `${option.label} (${recruitmentCounts[option.value]})` }))} />
+        </FilterPopover>
         <PillSelect label="Sort" prefix="Sort" active={filters.sort !== emptyDirectoryFilters.sort} className="oc-directory-sort" value={filters.sort} onChange={(value) => change("sort", value)}
           options={[{ value: "name", label: "Name A–Z" }, { value: "deadline", label: "Next deadline" }, ...(acceptanceReported ? [{ value: "acceptance", label: "Reported acceptance rate" }] : [])]} />
       </div>
