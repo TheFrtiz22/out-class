@@ -12,7 +12,7 @@ import { isUvaEmail, loginReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
-import { authEmailError, confirmedEmailSession, isNoAccountCodeError, signInCodeNotice } from "@/lib/auth-email"
+import { authEmailError, confirmedEmailSession, confirmEmailCode, isNoAccountCodeError, signInCodeNotice } from "@/lib/auth-email"
 import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 
 export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student", initialError = "" }: {
@@ -104,14 +104,13 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     setLoading(true)
     setError("")
     try {
-      const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
-        email: email.trim().toLowerCase(),
-        token: code,
-        type: "email",
-      })
-      if (verifyError) { setError(authEmailError(verifyError, "verify")); return }
+      // A password typed on this screen is used only while the account's password is not yet recorded as set.
+      const confirmed = await confirmEmailCode(email, code, password || undefined)
+      setPassword("")
+      if (!confirmed.ok) { setError(confirmed.error); return }
       const { data: current, error: identityError } = await supabase.auth.getUser()
-      if (identityError || !confirmedEmailSession({ session: verified.session, user: current.user }, email)) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (identityError || !confirmedEmailSession({ session, user: current.user }, email)) {
         await supabase.auth.signOut()
         setError("Unable to confirm your sign-in. Please try again.")
         return
