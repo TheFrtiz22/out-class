@@ -1,6 +1,14 @@
-export type AutosaveState = "idle" | "pending" | "saving" | "saved" | "error"
+import { browserOnline, isNetworkError, offlineMessage, type DraftWriteResult } from "@/lib/autosave-store"
 
-/** Shared successor to AvailabilitySaveQueue: one writer, immutable snapshots, latest edit wins. */
+export type AutosaveState = "idle" | "pending" | "saving" | "saved" | "offline" | "error"
+/** Rejection used when a flush is skipped because the browser reports no connection. */
+export class OfflineError extends Error { name = "OfflineError" }
+
+/**
+ * Shared successor to AvailabilitySaveQueue: one writer, immutable snapshots, latest edit wins.
+ * `recover` stores the unsaved copy and reports where it landed, so the offline status is accurate.
+ * Offline (navigator.onLine false, or a network failure) keeps the edit and waits for `online`/Retry.
+ */
 export class AutosaveQueue<T> {
   value: T
   state: AutosaveState = "idle"
@@ -10,7 +18,8 @@ export class AutosaveQueue<T> {
   private flight: Promise<void> | null = null
   private timer: ReturnType<typeof setTimeout> | null = null
   private active = true
-  constructor(initial: T, private save: (value: T) => Promise<void>, private notify: () => void, private recover: (value: T | null) => void = () => {}, private delay = 850) { this.value = structuredClone(initial) }
+  private stored: DraftWriteResult | undefined
+  constructor(initial: T, private save: (value: T) => Promise<void>, private notify: () => void, private recover: (value: T | null) => DraftWriteResult | void = () => {}, private delay = 850, private online: () => boolean = browserOnline) { this.value = structuredClone(initial) }
   get dirty() { return this.generation !== this.persisted }
   get saving() { return this.flight !== null }
   activate() { this.active = true }
@@ -19,9 +28,10 @@ export class AutosaveQueue<T> {
     const statusChanged = this.state !== "pending"
     this.value = structuredClone(value)
     this.generation++
-    this.recover(this.value)
-    this.state = "pending"; this.error = ""
-    if (statusChanged) this.notify()
+    this.stored = this.recover(this.value) || false
+    if (this.online()) { this.state = "pending"; this.error = "" }
+    else { const changed = this.state !== "offline"; this.offline(); if (changed) this.notify() }
+    if (statusChanged && this.state === "pending") this.notify()
     if (this.timer) clearTimeout(this.timer)
     this.timer = setTimeout(() => { this.timer = null; void this.flush().catch(() => {}) }, this.delay)
   }
@@ -37,6 +47,7 @@ export class AutosaveQueue<T> {
     this.timer = null
     if (this.flight) return this.flight
     if (!this.dirty) return Promise.resolve()
+    if (!this.online()) { this.offline(); if (this.active) this.notify(); return Promise.reject(new OfflineError(this.error)) }
     let resolve!: () => void, reject!: (error: unknown) => void
     const flight = new Promise<void>((yes, no) => { resolve = yes; reject = no })
     this.flight = flight
@@ -50,6 +61,7 @@ export class AutosaveQueue<T> {
         }
         this.state = "saved"; this.error = ""; this.recover(null)
       } catch (error) {
+        if (isNetworkError(error, this.online())) { this.offline(); throw new OfflineError(this.error) }
         this.state = "error"
         this.error = error instanceof Error && !("digest" in error) ? error.message : "Your changes are still here. Reconnect and retry."
         throw error
@@ -58,5 +70,8 @@ export class AutosaveQueue<T> {
     void run().then(resolve, reject)
     return flight
   }
+  /** The browser reported loss of connection: show it now rather than after the next failed save. */
+  markOffline() { if (this.dirty && !this.flight && this.state !== "offline") { this.offline(); if (this.active) this.notify() } }
+  private offline() { this.state = "offline"; this.error = offlineMessage(this.stored) }
   dispose() { this.active = false; if (this.timer) clearTimeout(this.timer); this.timer = null }
 }

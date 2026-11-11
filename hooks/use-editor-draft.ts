@@ -6,6 +6,8 @@ import { getEditorDraft, saveEditorDraft } from "@/actions/editor-drafts"
 import { editorDraftKey, type EditorScope } from "@/lib/editor-drafts"
 import { useAutosave } from "@/hooks/use-autosave"
 import { editorValue, sameEditorBase } from "@/lib/editor-value"
+/** Drafts that hold private data about other students stay in memory and this tab only. */
+const TAB_ONLY_KINDS: ReadonlySet<EditorScope["kind"]> = new Set(["review", "voting-setup", "task-feedback"])
 type DemoDraftPersistence={read:(scope:EditorScope)=>Promise<{revision:number;mutationId:string;base:string;content:unknown}|null>;write:(input:unknown)=>Promise<{revision:number}|{error:string;message:string}>}
 
 /** Stage private working copies. Calling this hook can never invoke a domain commit action. */
@@ -39,6 +41,8 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
     return () => { active = false }
   }, [identity, enabled, demo.isDemoEnabled, userId, retry, session, hasDemoPersistence])
   const autosave = useAutosave({ identity, value, enabled: ready && recovery === null, restore,
+    // Demo drafts never reach device storage; the server EditorDraft row is the cross-device copy.
+    owner: demo.isDemoEnabled ? null : userId, persistence: TAB_ONLY_KINDS.has(scope.kind) ? "tab" : "device",
     save: async content => {
       if (demo.isDemoEnabled && !hasDemoPersistence) return
       const text = JSON.stringify(content)
@@ -76,7 +80,7 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
       session.revision = current?.revision ?? 0; session.mutation = null
       await autosave.flush().catch(() => {})
     },
-    recovery: recovery ?? autosave.recovery, restoreRecovery: () => { if (recovery !== null) restore(recovery); else autosave.restoreRecovery?.(); setRecovery(null) },
+    recovery: recovery ?? autosave.recovery, recoveryKind: recovery !== null ? "conflict" as const : autosave.recoveryKind, restoreRecovery: () => { if (recovery !== null) restore(recovery); else autosave.restoreRecovery?.(); setRecovery(null) },
     discardRecovery: async () => { if (recovery !== null) await clear(); else await autosave.discardRecovery?.(); setRecovery(null) },
   }
 }
