@@ -705,8 +705,9 @@
 .oc-event-toolbar-actions .oc-event-search { margin-left: auto; max-width: none; min-width: min(100%, 10rem); }
 .oc-event-toolbar-actions > [data-slot="button"] { min-height: 44px; }
 @media (max-width: 700px) {
-  .oc-event-toolbar-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; flex-basis: 100%; }
-  .oc-event-toolbar-actions .oc-event-search { margin: 0; min-width: 0; width: 100%; }
+  .oc-event-toolbar-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; flex-basis: 100%; }
+  /* Search gets its own full-width row; Filter and the icon view switch share the row below. */
+  .oc-event-toolbar-actions .oc-event-search { grid-column: 1 / -1; margin: 0; min-width: 0; width: 100%; }
   .oc-event-toolbar-actions .oc-event-view-switch { width: auto; min-width: 0; }
   .oc-event-toolbar-actions > [data-slot="button"] { width: 100%; }
 }
