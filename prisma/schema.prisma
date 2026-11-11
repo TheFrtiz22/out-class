@@ -1792,5 +1792,4 @@ model TermsAcceptance {
   acceptedAt     DateTime @default(now())
 
   @@unique([userId, termsVersion, privacyVersion])
-  @@index([userId, acceptedAt])
 }

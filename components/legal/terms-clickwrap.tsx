@@ -7,6 +7,16 @@ import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal-versions"
 /** The answer a clickwrap sends to the server; the versions are the ones this page showed. */
 export const clickwrapAnswer = (accepted: boolean) => ({ acceptTerms: accepted, termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION })
 
+export const TERMS_SAVE_FAILED = "We couldn't save your agreement. Please try again."
+
+/** Sends a ticked clickwrap; resolves to an error message to show, or null once it is stored. */
+export async function saveClickwrapAcceptance(accept: (answer: ReturnType<typeof clickwrapAnswer>) => Promise<{ accepted?: boolean; error?: string }>) {
+  try {
+    const result = await accept(clickwrapAnswer(true))
+    return result && "error" in result && result.error ? result.error : null
+  } catch { return TERMS_SAVE_FAILED }
+}
+
 /**
  * Unticked "I agree" box with links to the Terms and Privacy Policy (opened in a new tab so a
  * half-filled form is kept). Render it only while TERMS_ACCEPTANCE_REQUIRED, when the pages are public.

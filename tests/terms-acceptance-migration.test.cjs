@@ -1,5 +1,6 @@
 // Terms acceptance migration on PGlite: shape, one row per user and version pair, evidence that
-// the runtime role can append but not rewrite, browser roles locked out, cascade on account deletion.
+// the runtime role (under SET ROLE) can append but not rewrite or delete, browser roles locked out,
+// cascade on account deletion. Rehearsed on a disposable PostgreSQL 16 as well (see the PR notes).
 const { test } = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), { PGlite } = require('@electric-sql/pglite')
 
 test('terms acceptance migration: versions stored per user, append-only for the runtime role, server-only access', { timeout: 240000 }, async () => {
@@ -32,19 +33,27 @@ test('terms acceptance migration: versions stored per user, append-only for the 
       assert.equal(await can(role, p), false, `${role} ${p} despite default grants`)
     await db.exec('CREATE TABLE default_grant_probe(id int)')
     assert.equal((await db.query(`SELECT has_table_privilege('anon','default_grant_probe','SELECT') ok`)).rows[0].ok, true, 'the default grant is in effect for a table that does not revoke it')
-    for (const p of ['SELECT', 'INSERT', 'DELETE']) assert.equal(await can('outclass_production_app', p), true, `runtime ${p}`)
-    assert.equal(await can('outclass_production_app', 'UPDATE'), false, 'evidence rows are never rewritten by the app')
+    for (const p of ['SELECT', 'INSERT']) assert.equal(await can('outclass_production_app', p), true, `runtime ${p}`)
+    for (const p of ['UPDATE', 'DELETE']) assert.equal(await can('outclass_production_app', p), false, `evidence rows are never rewritten or removed by the app (${p})`)
+    assert.deepEqual((await db.query(`SELECT polname, polcmd FROM pg_policy WHERE polrelid='"TermsAcceptance"'::regclass ORDER BY 1`)).rows,
+      [{ polname: 'terms_acceptance_runtime_insert', polcmd: 'a' }, { polname: 'terms_acceptance_runtime_read', polcmd: 'r' }])
+    assert.deepEqual((await db.query(`SELECT indexname FROM pg_indexes WHERE tablename='TermsAcceptance' ORDER BY 1`)).rows.map(r => r.indexname),
+      ['TermsAcceptance_pkey', 'TermsAcceptance_userId_termsVersion_privacyVersion_key'], 'the unique index serves lookups; no extra index')
 
     // The runtime role, under RLS, reads and appends (ON CONFLICT DO NOTHING needs no UPDATE).
     await db.exec(`SET ROLE outclass_production_app`)
+    assert.equal((await db.query(`SELECT current_user u`)).rows[0].u, 'outclass_production_app')
     await db.exec(`INSERT INTO "TermsAcceptance"(id,"userId","termsVersion","privacyVersion",source) VALUES('t7','bob','2026-11-30','2026-11-30','CLAIM') ON CONFLICT DO NOTHING`)
     await db.exec(`INSERT INTO "TermsAcceptance"(id,"userId","termsVersion","privacyVersion",source) VALUES('t8','bob','2026-11-30','2026-11-30','PROMPT') ON CONFLICT DO NOTHING`)
     assert.equal((await db.query(`SELECT count(*)::int n FROM "TermsAcceptance" WHERE "userId"='bob'`)).rows[0].n, 1)
     await assert.rejects(db.exec(`UPDATE "TermsAcceptance" SET "acceptedAt"=now() WHERE id='t7'`), /permission denied/)
+    await assert.rejects(db.exec(`DELETE FROM "TermsAcceptance" WHERE id='t7'`), /permission denied/)
     await db.exec(`RESET ROLE`)
+    assert.equal((await db.query(`SELECT count(*)::int n FROM "TermsAcceptance"`)).rows[0].n, 3, 'denied writes changed nothing')
 
-    // Account deletion removes the user's acceptance rows.
+    // Account deletion (by the table owner) cascades to the acceptance rows without a runtime DELETE grant.
     await db.exec(`DELETE FROM "User" WHERE id='alice'`)
     assert.equal((await db.query(`SELECT count(*)::int n FROM "TermsAcceptance" WHERE "userId"='alice'`)).rows[0].n, 0)
+    assert.equal((await db.query(`SELECT count(*)::int n FROM "TermsAcceptance" WHERE "userId"='bob'`)).rows[0].n, 1, 'other users keep theirs')
   } finally { await db.close() }
 })

@@ -22,7 +22,7 @@ export function TermsAcceptanceScreen({ children }: { children: ReactNode }) {
     if (!checked) { setError(TERMS_REQUIRED_MESSAGE); return }
     setBusy(true); setError("")
     try {
-      const result = await acceptCurrentTerms({ ...clickwrapAnswer(true), source: "PROMPT" })
+      const result = await acceptCurrentTerms(clickwrapAnswer(true))
       if ("error" in result && result.error) { setError(result.error); setBusy(false); return }
       setDone(true)
       router.refresh()

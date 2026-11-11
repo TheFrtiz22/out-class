@@ -31,7 +31,7 @@ import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
 import { acceptCurrentTerms } from "@/actions/terms"
-import { TermsClickwrap, clickwrapAnswer } from "@/components/legal/terms-clickwrap"
+import { TermsClickwrap, clickwrapAnswer, saveClickwrapAcceptance, TERMS_SAVE_FAILED } from "@/components/legal/terms-clickwrap"
 import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
@@ -222,6 +222,8 @@ export function StudentOnboardingWizard({
   // Clickwrap: unticked until the person ticks it; asked once, on the account step.
   const askTerms = TERMS_ACCEPTANCE_REQUIRED && !termsAccepted
   const [acceptTerms, setAcceptTerms] = useState(false)
+  // Set when the post-verification save failed: step 3 shows the box again and saves before moving on.
+  const [termsUnsaved, setTermsUnsaved] = useState(false)
   const [step, setStep] = useState(1)
   // Warm the later steps' chunks while the visitor fills in step 1.
   useEffect(() => { void loadVerificationCodeInput(); void loadGraduationYearSelect() }, [])
@@ -270,9 +272,9 @@ export function StudentOnboardingWizard({
       if (askTerms) {
         setLoading(true)
         try {
-          const accepted = await acceptCurrentTerms({ ...clickwrapAnswer(true), source: "SIGNUP" })
-          if ("error" in accepted && accepted.error) { setGlobalError(accepted.error); return }
-        } catch { setGlobalError("Unable to save your agreement. Please try again."); return } finally { setLoading(false) }
+          const failed = await saveClickwrapAcceptance(acceptCurrentTerms)
+          if (failed) { setGlobalError(failed); return }
+        } finally { setLoading(false) }
       }
       setStep(3); return
     }
@@ -328,8 +330,11 @@ export function StudentOnboardingWizard({
       pendingPassword.current = undefined
       setConfirmNotice(password.saved ? "" : passwordNotSavedNotice)
       // The box was ticked on step 1 (registerStudent refused the account otherwise); now that the
-      // account holder has a session, store it. If this fails, the one-time screen asks again later.
-      if (askTerms && acceptTerms) await acceptCurrentTerms({ ...clickwrapAnswer(true), source: "SIGNUP" }).catch(() => undefined)
+      // account holder has a session, store it. If that fails, step 3 shows the box again and retries,
+      // since the profile cannot be created without a stored acceptance.
+      if (askTerms && acceptTerms && await saveClickwrapAcceptance(acceptCurrentTerms)) {
+        setTermsUnsaved(true); setAcceptTerms(false); setGlobalError(TERMS_SAVE_FAILED)
+      }
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
@@ -375,8 +380,19 @@ export function StudentOnboardingWizard({
     }
   }
 
-  function onStep3Submit(data: AcademicProfileData) {
+  async function onStep3Submit(data: AcademicProfileData) {
     setConfirmNotice("")
+    if (loading) return
+    if (termsUnsaved) {
+      if (!acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
+      setLoading(true); setGlobalError("")
+      try {
+        const failed = await saveClickwrapAcceptance(acceptCurrentTerms)
+        if (failed) { setGlobalError(failed); return }
+        setTermsUnsaved(false)
+      } finally { setLoading(false) }
+    }
+    setGlobalError("")
     wizardData.current.academic = data
     setStep(4)
   }
@@ -754,8 +770,11 @@ export function StudentOnboardingWizard({
                   </div>
                 </div>
 
+                {termsUnsaved && <TermsClickwrap id="accept-terms-retry" checked={acceptTerms} onCheckedChange={value => { setAcceptTerms(value); if (value && (globalError === TERMS_REQUIRED_MESSAGE || globalError === TERMS_SAVE_FAILED)) setGlobalError("") }} disabled={loading} />}
+
                 <Button
                   type="submit"
+                  disabled={loading}
                   className="mt-2 h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
                   Continue

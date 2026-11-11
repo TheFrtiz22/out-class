@@ -26,9 +26,10 @@ function loader(mocks) {
 const PUBLIC = { '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: true } }
 const DRAFT = { '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false } }
 
-function fakeDb(rows = []) {
+function fakeDb(rows = [], profiles = []) {
   const db = {
     rows, writes: 0,
+    studentProfile: { findUnique: async ({ where }) => profiles.includes(where.userId) ? { id: `p-${where.userId}` } : null },
     termsAcceptance: {
       findFirst: async ({ where }) => rows.find(r => r.userId === where.userId && r.termsVersion === where.termsVersion && r.privacyVersion === where.privacyVersion) ?? null,
       createMany: async ({ data, skipDuplicates }) => {
@@ -126,6 +127,51 @@ test('student claim: refused without the clickwrap before the one-use link is to
   assert.ok(route.indexOf('recordTermsAcceptance(prisma, user.id, "CLAIM")') > route.indexOf('updateUser('), 'stored once the claim succeeded, for the verified user')
 })
 
+test('student claim: a failed acceptance write after a successful claim still signs the student in', async () => {
+  const calls = [], logged = []
+  const json = (body, init = {}) => ({ body, status: init.status ?? 200 })
+  const tokenHash = 'b'.repeat(56), email = 'jav1x@virginia.edu'
+  const { studentInvitationFingerprint } = loader({})('lib/student-invitation.ts')
+  const session = { access_token: 'x', refresh_token: 'y' }
+  const prisma = {
+    user: { findFirst: async () => ({ id: 'u1', email, disabledAt: null }) },
+    auditLog: {
+      findFirst: async ({ where }) => where.details.equals === studentInvitationFingerprint(tokenHash) ? { id: 'a1' } : null,
+      create: async () => { calls.push('audit') },
+    },
+    termsAcceptance: { createMany: async () => { calls.push('terms'); throw Object.assign(new Error('relation "TermsAcceptance" does not exist for jav1x@virginia.edu'), { name: 'PrismaClientKnownRequestError' }) } },
+  }
+  const load = loader(common(jar(), {
+    'next/server': { NextResponse: { json } },
+    '@/lib/request-origin': { sameOriginRequest: () => true },
+    '@/lib/turnstile': { verifyTurnstile: async () => ({ ok: true }), turnstileMessage: r => r, turnstileRemoteIp: () => null },
+    '@/utils/admin-elevation': { freshAuthClient: () => ({ auth: {
+      verifyOtp: async () => ({ data: { session, user: { id: 'u1', email } }, error: null }),
+      updateUser: async () => { calls.push('password'); return { error: null } },
+    } }) },
+    '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: null } }), setSession: async s => { calls.push(s === session ? 'session' : 'wrong-session'); return { error: null } } } }) },
+    '@/utils/prisma': { prisma },
+    '@supabase/supabase-js': { createClient: () => ({ auth: { admin: { getUserById: async () => ({ data: { user: { id: 'u1', email, invited_at: '2026-11-01', email_confirmed_at: null } }, error: null }) } } }) },
+  }))
+  const { POST } = load('app/api/auth/student-claim/route.ts')
+  const v = load('lib/legal-versions.ts')
+  const savedEnv = { url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.SUPABASE_SECRET_KEY }
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'; process.env.SUPABASE_SECRET_KEY = 'test-only'
+  const savedError = console.error; console.error = (...args) => { logged.push(args) }
+  try {
+    const response = await POST({ json: async () => ({ email, tokenHash, password: 'a-long-enough-password', acceptTerms: true, termsVersion: v.TERMS_VERSION, privacyVersion: v.PRIVACY_VERSION }), headers: new Map() })
+    assert.equal(response.status, 200)
+    assert.deepEqual(response.body, { success: true })
+    assert.deepEqual(calls, ['password', 'audit', 'terms', 'session'], 'the session is attached after the failed write')
+    assert.equal(logged.length, 1)
+    assert.deepEqual(logged[0].slice(1), ['PrismaClientKnownRequestError'], 'only the error name is logged')
+    assert.doesNotMatch(JSON.stringify(logged), /virginia\.edu|does not exist/, 'no message, address or SQL detail in the log')
+  } finally {
+    console.error = savedError
+    for (const [k, name] of [['url', 'NEXT_PUBLIC_SUPABASE_URL'], ['key', 'SUPABASE_SECRET_KEY']]) if (savedEnv[k] === undefined) delete process.env[name]; else process.env[name] = savedEnv[k]
+  }
+})
+
 function acceptAction({ cookies = jar(), auth = { user: { id: 'u1' }, impersonation: null }, db = fakeDb(), extra = {} } = {}) {
   let authCalls = 0
   const load = loader(common(cookies, {
@@ -139,16 +185,22 @@ function acceptAction({ cookies = jar(), auth = { user: { id: 'u1' }, impersonat
 test('acceptance is stored server-side with the user id, both versions and the source', async () => {
   const a = acceptAction()
   const answer = { acceptTerms: true, termsVersion: a.v.TERMS_VERSION, privacyVersion: a.v.PRIVACY_VERSION }
-  assert.deepEqual(await a.acceptCurrentTerms({ ...answer, source: 'SIGNUP' }), { accepted: true })
+  assert.deepEqual(await a.acceptCurrentTerms({ ...answer, source: 'PROMPT' }), { accepted: true })
   assert.equal(a.db.rows.length, 1)
   assert.deepEqual({ ...a.db.rows[0], id: undefined, acceptedAt: undefined }, { userId: 'u1', termsVersion: a.v.TERMS_VERSION, privacyVersion: a.v.PRIVACY_VERSION, source: 'SIGNUP', id: undefined, acceptedAt: undefined })
   assert.ok(a.db.rows[0].acceptedAt instanceof Date)
-  // Repeat: the first row and its time are kept. Unknown sources are recorded as PROMPT.
+  // Repeat: the first row and its time are kept.
   await a.acceptCurrentTerms({ ...answer, source: 'ADMIN' })
   assert.equal(a.db.rows.length, 1)
-  const b = acceptAction()
-  await b.acceptCurrentTerms({ ...answer, source: 'ADMIN' })
-  assert.equal(b.db.rows[0].source, 'PROMPT')
+  // The source is derived on the server (profile exists: PROMPT; none yet: SIGNUP); a client value is ignored.
+  for (const sent of [undefined, 'SIGNUP', 'CLAIM', 'ADMIN']) {
+    const b = acceptAction({ db: fakeDb([], ['u1']) })
+    await b.acceptCurrentTerms({ ...answer, source: sent })
+    assert.equal(b.db.rows[0].source, 'PROMPT', `profile exists, client sent ${sent}`)
+    const c = acceptAction({ db: fakeDb([], []) })
+    await c.acceptCurrentTerms({ ...answer, source: sent ?? 'PROMPT' })
+    assert.equal(c.db.rows[0].source, 'SIGNUP', `no profile yet, client sent ${sent ?? 'PROMPT'}`)
+  }
   // Not ticked or stale: nothing stored.
   const c = acceptAction()
   assert.deepEqual(await c.acceptCurrentTerms({ ...answer, acceptTerms: false }), { error: c.v.TERMS_REQUIRED_MESSAGE })
@@ -221,12 +273,33 @@ test('wiring: every account-creation path and both signed-in route groups use th
   const wizard = read('components/views/student-onboarding-wizard.tsx')
   assert.match(wizard, /registerStudent\(values, turnstileToken, clickwrapAnswer\(acceptTerms\)\)/)
   assert.match(wizard, /const \[acceptTerms, setAcceptTerms\] = useState\(false\)/, 'unticked by default')
-  assert.match(wizard, /acceptCurrentTerms\(\{ \.\.\.clickwrapAnswer\(true\), source: "SIGNUP" \}\)/)
+  assert.match(wizard, /saveClickwrapAcceptance\(acceptCurrentTerms\)/)
+  assert.doesNotMatch(wizard + read('components/legal/terms-acceptance-screen.tsx'), /source:/, 'the client never sends a source')
   assert.match(read('app/(focus)/auth/student-claim/page.tsx'), /<TermsClickwrap/)
   assert.match(read('actions/profile.ts'), /TERMS_ACCEPTANCE_REQUIRED && !await prisma\.studentProfile\.findUnique[\s\S]*hasCurrentTermsAcceptance\(prisma, user\.id\)[\s\S]*throw new Error\(TERMS_REQUIRED_MESSAGE\)/, 'a new profile needs acceptance (Microsoft first sign-in)')
   const clickwrap = read('components/legal/terms-clickwrap.tsx')
   assert.match(clickwrap, /href="\/terms"/); assert.match(clickwrap, /href="\/privacy"/)
   assert.doesNotMatch(clickwrap, /defaultChecked/)
   const screen = read('components/legal/terms-acceptance-screen.tsx')
-  assert.match(screen, /termsGateExempt\(pathname\)/); assert.match(screen, /Sign out/); assert.match(screen, /source: "PROMPT"/)
+  assert.match(screen, /termsGateExempt\(pathname\)/); assert.match(screen, /Sign out/)
+})
+
+test('sign-up wizard: a failed save after email verification shows the box again on step 3 and retries before moving on', async () => {
+  const load = loader({ ...PUBLIC, 'next/link': () => null, '@/components/ui/checkbox': { Checkbox: () => null } })
+  const { saveClickwrapAcceptance, TERMS_SAVE_FAILED, clickwrapAnswer } = load('components/legal/terms-clickwrap.tsx')
+  const sent = []
+  assert.equal(await saveClickwrapAcceptance(async answer => { sent.push(answer); return { accepted: true } }), null)
+  assert.deepEqual(sent, [clickwrapAnswer(true)], 'the ticked answer for the shown versions, no source')
+  assert.equal(await saveClickwrapAcceptance(async () => { throw new Error('network') }), TERMS_SAVE_FAILED)
+  assert.equal(await saveClickwrapAcceptance(async () => ({ error: 'Exit Demo Mode to accept the Terms.' })), 'Exit Demo Mode to accept the Terms.')
+
+  const wizard = read('components/views/student-onboarding-wizard.tsx')
+  const verify = wizard.slice(wizard.indexOf('async function onStep2Submit'), wizard.indexOf('async function resendCode'))
+  assert.match(verify, /if \(askTerms && acceptTerms && await saveClickwrapAcceptance\(acceptCurrentTerms\)\) \{\s*setTermsUnsaved\(true\); setAcceptTerms\(false\); setGlobalError\(TERMS_SAVE_FAILED\)/, 'failure re-arms the box with a recoverable message')
+  assert.ok(verify.indexOf('setTermsUnsaved(true)') < verify.indexOf('setStep(3)'), 'the student still reaches step 3')
+  const step3 = wizard.slice(wizard.indexOf('async function onStep3Submit'), wizard.indexOf('// ── Step 4'))
+  assert.match(step3, /if \(termsUnsaved\) \{[\s\S]*if \(!acceptTerms\) \{ setGlobalError\(TERMS_REQUIRED_MESSAGE\); return \}[\s\S]*saveClickwrapAcceptance\(acceptCurrentTerms\)[\s\S]*if \(failed\) \{ setGlobalError\(failed\); return \}[\s\S]*setTermsUnsaved\(false\)/)
+  assert.ok(step3.indexOf('setTermsUnsaved(false)') < step3.indexOf('setStep(4)'), 'step 4 (which creates the profile) only after the acceptance is stored')
+  const render3 = wizard.slice(wizard.indexOf('{step === 3 && ('), wizard.indexOf('{step === 4 && ('))
+  assert.match(render3, /\{termsUnsaved && <TermsClickwrap id="accept-terms-retry" checked=\{acceptTerms\}/, 'the agree box is shown again on step 3')
 })

@@ -9,8 +9,8 @@ import { prisma } from "@/utils/prisma"
 import { recordTermsAcceptance } from "@/utils/terms-acceptance"
 
 /**
- * The signed-in account holder accepts the current Terms and Privacy Policy: right after sign-up
- * (source SIGNUP, the box ticked on the sign-up form) or on the one-time screen (PROMPT).
+ * The signed-in account holder accepts the current Terms and Privacy Policy: during sign-up, before
+ * a student profile exists (source SIGNUP), or on the one-time screen afterwards (PROMPT).
  * A support (view-as) session can never accept for the user, and Demo Mode never writes.
  */
 export async function acceptCurrentTerms(input: unknown) {
@@ -20,9 +20,11 @@ export async function acceptCurrentTerms(input: unknown) {
   if (!TERMS_ACCEPTANCE_REQUIRED) return { accepted: true }
   const check = checkClickwrap(input)
   if (!check.ok) return { error: check.error }
-  const source = (input as { source?: unknown }).source === "SIGNUP" ? "SIGNUP" : "PROMPT"
   const { user, impersonation } = await requireAuth()
   if (impersonation) return { error: "Only the account holder can accept the Terms. Exit impersonation first." }
-  await recordTermsAcceptance(prisma, user.id, source)
+  // The source is derived here, never taken from the client: before the profile exists this is the
+  // sign-up flow; afterwards it is the one-time screen.
+  const profile = await prisma.studentProfile.findUnique({ where: { userId: user.id }, select: { id: true } })
+  await recordTermsAcceptance(prisma, user.id, profile ? "PROMPT" : "SIGNUP")
   return { accepted: true }
 }
