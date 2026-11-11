@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isUvaEmail } from "@/lib/auth";
+import { newPasswordSchema } from "@/lib/password-policy";
 
 export const recoveryEmail = z
   .string()
@@ -8,10 +9,7 @@ export const recoveryEmail = z
   .max(254)
   .email()
   .refine(isUvaEmail);
-export const newPassword = z
-  .string()
-  .min(8, "Use at least 8 characters.")
-  .max(128, "Use no more than 128 characters.");
+export const newPassword = newPasswordSchema;
 export const passwordReset = z
   .object({
     tokenHash: z

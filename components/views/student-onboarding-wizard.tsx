@@ -5,6 +5,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
 import { passwordNotSavedNotice, setPasswordAfterConfirmation } from "@/lib/signup-password"
+import { PASSWORD_HINT } from "@/lib/password-policy"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
@@ -535,7 +536,7 @@ export function StudentOnboardingWizard({
                 {!accountCreated && <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" autoComplete="new-password" {...step1Form.register("password")} />
-                  <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
+                  <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
                   {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
                 {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}

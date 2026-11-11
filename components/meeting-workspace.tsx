@@ -75,7 +75,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
-    <div className="flex flex-wrap items-start justify-between gap-4"><p className="max-w-xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance for your club.</p>
+    <div className="flex flex-wrap items-start justify-between gap-4">
       {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} initialOpen={openCreate} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
@@ -265,8 +265,7 @@ function MeetingEditor({
         <section hidden={tab !== "resources"} className="space-y-3">
           <h3 className="oc-card-heading ">Slides, files, and links</h3>
           <p className="text-xs text-muted-foreground">
-            Attach links to resources. For member-only documents, also restrict
-            sharing with your file provider.
+            For member-only files, also restrict sharing with your file provider.
           </p>
           {resources.map((r, i) => (
             <div key={r.id} className="space-y-2 border-l pl-3">
@@ -509,14 +508,11 @@ function MeetingAttendance({ meeting, member }: { meeting: Meeting; member: Para
       <h2 className="oc-section-heading ">Attendance</h2>
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
-          Demo QR check-in works in this browser only. It does not simulate a
-          shared cross-device database.
+          Demo check-in works in this browser only.
         </p>
       )}
       <p className="text-sm text-muted-foreground">
-        Codes refresh every minute and expire after 90 seconds. Attendees must
-        sign in. Closing revokes all current codes; leaving this page lets them
-        expire.
+        Attendees must sign in. Closing revokes all current codes.
       </p>
       <Button
         variant="outline"

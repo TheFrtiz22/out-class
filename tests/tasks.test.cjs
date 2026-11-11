@@ -45,6 +45,8 @@ function setup({ refusal = null } = {}) {
     downloadCalls = 0,
     privateBucket = true,
     validObject = true,
+    storedHead = Buffer.from("%PDF-1.7\n"),
+    removed = [],
     files = [];
   const member = {
     id: memberId,
@@ -197,8 +199,14 @@ function setup({ refusal = null } = {}) {
         error: null,
       };
     },
+    remove: async (paths) => {
+      removed.push(...paths);
+      return { data: [], error: null };
+    },
     createSignedUrl: async (path, ttl, options) => {
       assert.equal(ttl, 60);
+      // Submit-time content check: an undownloadable signed URL for the range read.
+      if (!options) return { data: { signedUrl: `https://storage.test/head/${path}` }, error: null };
       assert.equal(options.download, "work.pdf");
       downloadCalls++;
       return {
@@ -218,7 +226,16 @@ function setup({ refusal = null } = {}) {
       return { user: { id: actor }, membership: { ...member, isOwner: true } };
     },
   };
+  const fetchStub = async (url, init) => {
+    assert.match(url, /^https:\/\/storage\.test\/head\//);
+    assert.equal(init.headers.Range, "bytes=0-4095");
+    return new Response(storedHead, { status: 206 });
+  };
   const api = unwrapActions(load("actions/tasks.ts", {
+    "@/lib/task-file-content": (() => {
+      const real = load("lib/task-file-content.ts");
+      return { ...real, checkStoredTaskFile: (bucket, file) => real.checkStoredTaskFile(bucket, file, fetchStub) };
+    })(),
     "@/utils/prisma": { prisma: { ...tx, $transaction: async (fn) => fn(tx) } },
     "@/utils/auth": auth,
     "@supabase/supabase-js": {
@@ -260,6 +277,10 @@ function setup({ refusal = null } = {}) {
     validObject: (b) => {
       validObject = b;
     },
+    storedHead: (b) => {
+      storedHead = b;
+    },
+    removed: () => removed,
     lastQuery: () => lastQuery,
     downloads: () => downloadCalls,
   };
@@ -480,6 +501,16 @@ test("private uploads validate ownership, file size/type/name, storage metadata,
     );
     await refused(h.api.downloadTaskFile(fileId), /unavailable/);
     h.validObject(true);
+    // Declared PDF whose stored bytes are HTML: the object is deleted and the submission refused.
+    h.storedHead(Buffer.from("<html><script>alert(1)</script>"));
+    await assert.rejects(
+      h.api.submitTask({ assignmentId, revision: 0, text: "Work", link: "", fileIds: [fileId] }),
+      /doesn’t match its file type/,
+    );
+    assert.deepEqual(h.removed(), [h.files()[0].path]);
+    assert.equal(h.assignment.submittedAt ?? null, null);
+    assert.equal(h.audits.filter((a) => a.action === "club.task.submit").length, 0);
+    h.storedHead(Buffer.from("%PDF-1.7\n"));
     await h.api.submitTask({
       assignmentId,
       revision: 0,

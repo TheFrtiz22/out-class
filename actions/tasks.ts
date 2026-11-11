@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/utils/prisma";
+import { checkStoredTaskFile, taskFileCheckMessage } from "@/lib/task-file-content";
 import {
   requireAuth,
   requireClubMembership,
@@ -313,21 +314,11 @@ async function submitTaskCommand(input: z.infer<typeof submissionSchema>) {
   });
   if (files.length !== new Set(data.fileIds).size)
     throw new ActionError("A file is unavailable. Upload it again.");
-  for (const file of files) {
-    const { data: objects, error } = await (
-      await storage()
-    ).list(file.path.slice(0, file.path.lastIndexOf("/")), {
-      search: file.path.split("/").pop()!,
-      limit: 10,
-    });
-    const object = objects?.find((o) => o.name === file.path.split("/").pop());
-    if (
-      error ||
-      !object ||
-      Number(object.metadata?.size) !== file.size ||
-      object.metadata?.mimetype !== file.mime
-    )
-      throw new ActionError("File upload is incomplete or invalid. Upload it again.");
+  if (files.length) {
+    // The bytes went straight to Storage; check each stored object and its signature in parallel.
+    const bucket = await storage();
+    const message = taskFileCheckMessage(await Promise.all(files.map((file) => checkStoredTaskFile(bucket, file))));
+    if (message) throw new ActionError(message);
   }
   return prisma.$transaction(async (tx) => {
     await currentMember(tx, assignment.task.clubId, user.id);

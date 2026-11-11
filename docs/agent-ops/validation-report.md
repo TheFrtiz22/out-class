@@ -244,3 +244,7 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - typecheck: errors in changed files identical to the base snapshot (176, Prisma client not generated). eslint on changed files: 0 errors, 1 pre-existing warning.
 - Not run: full `pnpm run test`, test:migrations, build, native/E2E/browser suites (their refusal assertions were converted by reading the code paths, not by running them).
 
+## 2026-11-11 ROOM-25LIVE-GAPS-1 interviews/room-25live-gaps
+- tests/interview-room-names-25live.test.cjs + tests/room-names-25live-browser.test.cjs: 8 pass, 0 fail, 0 skipped (browser run in isolated Demo fixture, desktop 1280 and mobile 390 screenshots checked).
+- eslint on changed files: 0 errors. Local typecheck not usable (stale generated Prisma client on this machine also fails untouched main code); CI typecheck/build is the gate.
+- Not run: full pnpm run test locally (machine shared with a concurrent Codex session), authenticated check on a deployed site (no QA login available).

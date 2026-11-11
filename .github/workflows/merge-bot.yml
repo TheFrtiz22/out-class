@@ -1,0 +1,55 @@
+name: Merge bot
+
+# Merges PRs labelled `merge-when-green` by an allowed account once every check
+# required on main has passed on the head commit. See .github/scripts/merge-bot.cjs
+# for the rules and docs/agent-ops/decision-log.md (2026-11-11) for the decision.
+#
+# Off until the repository variable MERGE_BOT_ENABLED is set to `true`.
+# The checkout below is always the default branch (never PR code), so
+# pull_request_target is safe here.
+
+on:
+  pull_request_target:
+    types: [labeled, synchronize, ready_for_review]
+  workflow_run:
+    workflows: ["Validate Next.js production build", "Disposable integration verification"]
+    types: [completed]
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: read
+  actions: read
+
+concurrency:
+  group: merge-bot
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: vars.MERGE_BOT_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/github-script@v7
+        env:
+          MERGE_BOT_ALLOWED_LABELERS: ${{ vars.MERGE_BOT_ALLOWED_LABELERS }}
+          # Approval comments always use this token (author github-actions[bot]).
+          ACTIONS_TOKEN: ${{ github.token }}
+        with:
+          # A token other than GITHUB_TOKEN lets the merge trigger the push
+          # workflows on main; without one, Vercel still deploys but the
+          # "push to main" validation run is skipped.
+          github-token: ${{ secrets.MERGE_BOT_TOKEN || github.token }}
+          script: |
+            const bot = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/merge-bot.cjs`)
+            await bot.run({ github, context, core })

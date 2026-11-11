@@ -101,7 +101,7 @@ function writeHarness({ action = true, maintenance = true } = {}) {
     ...s.mocks,
     '@/utils/prisma': { prisma }, './prisma': { prisma },
     '@/utils/club-write-transaction': { clubWriteTransaction: fn => prisma.$transaction(fn) },
-    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }), headers: async () => new Headers(action ? { 'next-action': 'abc123' } : {}) },
     './supabase/server': { createClient: async () => ({ auth: { getSession: async () => sessionFor(signedIn), getUser: async () => ({ data: { user: { id: signedIn, email: `${signedIn}@virginia.edu`, email_confirmed_at: '2026-01-01' } } }) } }) },
@@ -233,6 +233,7 @@ test('route handlers: every app/api write handler is guarded by the maintenance 
     'app/api/internal/scheduled-communications/route.ts': 'cron, bearer secret',
     'app/api/internal/notification-delivery/route.ts': 'cron, bearer secret',
     'app/api/internal/invitation-delivery/route.ts': 'cron, bearer secret',
+    'app/api/csp-report/route.ts': 'browser CSP reports; logs a bounded summary, writes no data',
   }
   const routes = []
   const walk = dir => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = `${dir}/${e.name}`; if (e.isDirectory()) walk(f); else if (/^route\.tsx?$/.test(e.name)) routes.push(f) } }
