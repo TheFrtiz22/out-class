@@ -3,7 +3,7 @@ import type {AppTransactionClient} from "@/utils/prisma";
 import type {ApplicantDisplay} from "@/lib/applicant-display";
 import {fieldLabels,readDisplayConfig,defaultDisplayConfig} from "@/lib/applicant-display";
 import {formatAverage} from "@/lib/interview-review-summary";
-import {votingInterviewEvidence,votingHighlightChoices} from "@/utils/voting-room-presentation";
+import {votingInterviewEvidence,resumeAnnotationChoices} from "@/utils/voting-room-presentation";
 import {authorizeObservation,listObservations} from "@/utils/additional-observations";
 import {storedHighlights,type SlideSource,type StoredSlideHighlight} from "@/lib/voting-slide-preparation";
 import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
@@ -43,8 +43,12 @@ export async function gatherSlideSources(tx:AppTransactionClient,scope:{clubId:s
     for(const o of await listObservations(tx,{clubId:scope.clubId,applicationId:scope.applicationId},userId))
       sources.push(source({type:"OBSERVATION",id:`observation:${o.id}`,revision:o.revision,label:o.interactionContext?`Additional observation · ${o.interactionContext}`:"Additional observation",author:o.author,roundId:o.roundId,roundName:o.roundName,text:o.body}));
   }catch(e){if(!denied(e))throw e;}
-  for(const h of await votingHighlightChoices(tx,scope.clubId,scope.applicationId,userId))
+  const resume=await resumeAnnotationChoices(tx,scope.clubId,scope.applicationId,userId);
+  for(const h of resume.text)
     sources.push(source({type:"RESUME",id:`resume:${h.id}`,revision:null,label:`Résumé · page ${h.page}`,author:null,roundId:null,roundName:null,text:h.quote}));
+  // The text is the interviewer's note about a region; summary-only (see quotableSource).
+  for(const a of resume.areas)
+    sources.push(source({type:"RESUME_AREA",id:`resume-area:${a.id}`,revision:null,label:`Area highlight · Page ${a.page}`,author:a.author,roundId:null,roundName:null,text:a.note}));
   return sources;
 }
 
@@ -65,7 +69,10 @@ export async function viewerHighlightFilter(tx:AppTransactionClient,scope:{clubI
       for(const r of rows)observationIds.add(`observation:${r.id}`);
     }catch(e){if(!denied(e))throw e;}
   }
-  if(types.has("RESUME"))resumeIds=new Set((await votingHighlightChoices(tx,scope.clubId,scope.applicationId,userId)).map(h=>`resume:${h.id}`));
+  if(types.has("RESUME")||types.has("RESUME_AREA")){
+    const resume=await resumeAnnotationChoices(tx,scope.clubId,scope.applicationId,userId);
+    resumeIds=new Set([...resume.text.map(h=>`resume:${h.id}`),...resume.areas.map(a=>`resume-area:${a.id}`)]);
+  }
   return highlights.filter(h=>{
     switch(h.source.type){
       // Caller has already authorized identified applicant display; the field must also be one the round displays.
@@ -74,6 +81,7 @@ export async function viewerHighlightFilter(tx:AppTransactionClient,scope:{clubI
       case "INTERVIEW_THOUGHT":return !!interview?.thoughtIds.has(h.source.id)&&!!h.source.roundId&&interview.roundIds.includes(h.source.roundId);
       case "OBSERVATION":return !!observationIds?.has(h.source.id);
       case "RESUME":return !!resumeIds?.has(h.source.id);
+      case "RESUME_AREA":return h.mode==="SUMMARY"&&!!resumeIds?.has(h.source.id);
     }
   });
 }
