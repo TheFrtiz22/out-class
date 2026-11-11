@@ -80,12 +80,17 @@ export function unwrapped<A extends unknown[], R>(action: (...args: A) => Promis
  * becomes a failure result carrying its safe message; every other error,
  * including `redirect()`/`notFound()` and Prisma or Supabase failures, is
  * rethrown so the client shows its own fallback.
+ *
+ * Returned refusals no longer reach Next's error reporting, so each one is
+ * logged at info level with only the action name and code. The message is not
+ * logged: it can name people, clubs or applicants.
  */
-export async function actionResult<T>(work: () => Promise<T>): Promise<ActionResult<T>> {
+export async function actionResult<T>(work: () => Promise<T>, action: string): Promise<ActionResult<T>> {
   try {
     return actionSuccess(await work())
   } catch (error) {
-    if (isActionError(error)) return actionFailure(error.message, error.code)
-    throw error
+    if (!isActionError(error)) throw error
+    console.info(JSON.stringify({ event: "action.refused", action, code: error.code }))
+    return actionFailure(error.message, error.code)
   }
 }

@@ -19,7 +19,6 @@ const allowlist = new Map([
   ['components/tasks/task-audience-builder.tsx', 'resolveTaskRecipients preview validation'],
   ['components/profile-photo-crop.tsx', 'photoCropRect image validation'],
   ['lib/resume-pdf.ts', 'worker-thread PDF parsing, not rendered directly'],
-  ['lib/action-result.ts', 'actionResult returns only ActionError messages, which are safe by construction'],
 ]);
 
 const patterns = [

@@ -58,7 +58,7 @@ async function acceptIdentityClubInvitationCommand(invitationId: string) {
 }
 
 /** Dismissal is reversible and never changes invitation status or membership. */
-export async function setOrganizationInvitationDismissed(invitationId: string, dismissed: boolean) {
+async function setOrganizationInvitationDismissedCommand(invitationId: string, dismissed: boolean) {
   id.parse(invitationId); z.boolean().parse(dismissed);
   const account = await requireAuth({ verifyEmail: true });
   await prepareVerifiedSchoolAccount(account);
@@ -80,7 +80,7 @@ async function declineIdentityClubInvitationCommand(invitationId: string) {
   });
 }
 
-export async function revokeIdentityClubInvitation(invitationId: string, platformOperation = false) {
+async function revokeIdentityClubInvitationCommand(invitationId: string, platformOperation = false) {
   id.parse(invitationId); z.boolean().parse(platformOperation);
   const user = platformOperation ? await requirePlatformAdmin({ fresh: true }) : (await requireAuth()).user;
   return prisma.$transaction(async tx => {
@@ -99,7 +99,7 @@ export async function revokeIdentityClubInvitation(invitationId: string, platfor
 }
 
 /** Audit foundation only: CSV parsing/confirmation and invitation processing come later. */
-export async function recordRosterImport(input: unknown) {
+async function recordRosterImportCommand(input: unknown) {
   const data = boundedParse(z.object({
     clubId: id, filename: z.string().trim().min(1).max(255), idempotencyKey: z.string().min(1).max(100),
     rows: z.array(z.record(z.string().max(2000))).max(10000),
@@ -142,9 +142,21 @@ export async function getRosterImport(importId: string) {
 }
 
 export async function acceptIdentityClubInvitation(...args: Parameters<typeof acceptIdentityClubInvitationCommand>) {
-  return actionResult(() => acceptIdentityClubInvitationCommand(...args))
+  return actionResult(() => acceptIdentityClubInvitationCommand(...args), "acceptIdentityClubInvitation")
 }
 
 export async function declineIdentityClubInvitation(...args: Parameters<typeof declineIdentityClubInvitationCommand>) {
-  return actionResult(() => declineIdentityClubInvitationCommand(...args))
+  return actionResult(() => declineIdentityClubInvitationCommand(...args), "declineIdentityClubInvitation")
+}
+
+export async function revokeIdentityClubInvitation(...args: Parameters<typeof revokeIdentityClubInvitationCommand>) {
+  return actionResult(() => revokeIdentityClubInvitationCommand(...args), "revokeIdentityClubInvitation")
+}
+
+export async function recordRosterImport(...args: Parameters<typeof recordRosterImportCommand>) {
+  return actionResult(() => recordRosterImportCommand(...args), "recordRosterImport")
+}
+
+export async function setOrganizationInvitationDismissed(...args: Parameters<typeof setOrganizationInvitationDismissedCommand>) {
+  return actionResult(() => setOrganizationInvitationDismissedCommand(...args), "setOrganizationInvitationDismissed")
 }

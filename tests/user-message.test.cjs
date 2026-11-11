@@ -35,6 +35,14 @@ test('messages our own code marked user-facing are kept', () => {
   assert.equal(userMessage(actionFailure('Applications are closed for this club. Your saved draft is retained.'), fallback), 'Applications are closed for this club. Your saved draft is retained.');
   // Structured-clone or cross-realm copies keep the brand, not the prototype.
   assert.equal(userMessage({ userFacing: true, message: 'Choose a slot for your invited club and round.' }, fallback), 'Choose a slot for your invited club and round.');
+  // Ordinary sentences that mention words found in internal errors stay visible.
+  for (const message of [
+    'Your digest email setting was saved, but delivery is paused.',
+    'This interview starts at 3 PM (Eastern). Choose another slot.',
+    'This violates the club’s attendance policy. Contact a leader.',
+    'Column headings and relation labels are hidden for anonymous rounds.',
+    'Schedule this event at Rotunda: 10:30 is already booked.',
+  ]) assert.equal(userMessage(new UserFacingError(message), fallback), message);
   // A server-side ActionError that was thrown (not returned) never reaches the browser intact.
   assert.equal(userMessage(new ActionError('Applicant access denied.'), fallback), fallback);
 });

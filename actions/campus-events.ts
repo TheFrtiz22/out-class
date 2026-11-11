@@ -206,7 +206,7 @@ export async function getSavedCampusEventIds() {
 }
 
 /** Explicit, idempotent saves. Never accept a user ID from the browser. */
-export async function setSavedCampusEvent(input: unknown) {
+async function setSavedCampusEventCommand(input: unknown) {
   const { eventId, saved } = z.object({ eventId: z.string().uuid(), saved: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth();
   if (!saved) {
@@ -632,13 +632,17 @@ export async function listAdminCampusEvents(input: unknown) {
 }
 
 export async function saveCampusEvent(...args: Parameters<typeof saveCampusEventCommand>) {
-  return actionResult(() => saveCampusEventCommand(...args))
+  return actionResult(() => saveCampusEventCommand(...args), "saveCampusEvent")
 }
 
 export async function commandCampusEvent(...args: Parameters<typeof commandCampusEventCommand>) {
-  return actionResult(() => commandCampusEventCommand(...args))
+  return actionResult(() => commandCampusEventCommand(...args), "commandCampusEvent")
 }
 
 export async function reviewCampusEvent(...args: Parameters<typeof reviewCampusEventCommand>) {
-  return actionResult(() => reviewCampusEventCommand(...args))
+  return actionResult(() => reviewCampusEventCommand(...args), "reviewCampusEvent")
+}
+
+export async function setSavedCampusEvent(...args: Parameters<typeof setSavedCampusEventCommand>) {
+  return actionResult(() => setSavedCampusEventCommand(...args), "setSavedCampusEvent")
 }

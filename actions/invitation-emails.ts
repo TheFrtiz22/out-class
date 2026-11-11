@@ -66,9 +66,9 @@ async function requestInvitationDeliveryCommand(clubId: string) {
 }
 
 export async function sendRosterInvitations(...args: Parameters<typeof sendRosterInvitationsCommand>) {
-  return actionResult(() => sendRosterInvitationsCommand(...args))
+  return actionResult(() => sendRosterInvitationsCommand(...args), "sendRosterInvitations")
 }
 
 export async function requestInvitationDelivery(...args: Parameters<typeof requestInvitationDeliveryCommand>) {
-  return actionResult(() => requestInvitationDeliveryCommand(...args))
+  return actionResult(() => requestInvitationDeliveryCommand(...args), "requestInvitationDelivery")
 }

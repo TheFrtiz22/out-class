@@ -96,10 +96,10 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
 }
 
 export async function submitApplication(data: z.infer<typeof applicationInputSchema>) {
-  return actionResult(() => persistApplication(data, true))
+  return actionResult(() => persistApplication(data, true), "submitApplication")
 }
 export async function saveApplicationDraft(data: z.infer<typeof applicationInputSchema>) {
-  return actionResult(() => persistApplication(data, false))
+  return actionResult(() => persistApplication(data, false), "saveApplicationDraft")
 }
 
 export async function getStudentApplications() {

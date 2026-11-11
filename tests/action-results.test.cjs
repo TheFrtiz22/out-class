@@ -91,3 +91,14 @@ test('decision guards return safe failures for stale offers and suspended clubs'
   assert.equal(result.error, suspension.CLUB_SUSPENDED_MESSAGE);
   assert.equal(result.code, 'CLUB_SUSPENDED');
 });
+
+test('returned refusals are logged at info with only the action name and code', async () => {
+  const logged = [], info = console.info;
+  console.info = line => logged.push(line);
+  try {
+    const result = await applications({ applicationOpen: false }).submitApplication(input);
+    assert.equal(result.ok, false);
+  } finally { console.info = info; }
+  assert.deepEqual(logged.map(line => JSON.parse(line)), [{ event: 'action.refused', action: 'submitApplication', code: 'ACTION_REFUSED' }]);
+  assert.ok(!logged.join('').includes('closed'), 'the refusal message is not logged');
+});

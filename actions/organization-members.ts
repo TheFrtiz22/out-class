@@ -29,7 +29,7 @@ import { ActionError, actionResult } from "@/lib/action-result";
 const id = z.string().uuid();
 
 /** Group labels are targeting metadata, never an access-role or permission grant. */
-export async function assignOrganizationMemberGroups(input: unknown) {
+async function assignOrganizationMemberGroupsCommand(input: unknown) {
   const data = boundedParse(z.object({
     clubId: id,
     targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100),
@@ -80,7 +80,7 @@ async function createOrganizationMemberGroupsCommand(input: unknown) {
 }
 
 /** Explicit attestation by an active owner, never inferred from an access-role template. */
-export async function setMemberInterviewOffices(input: unknown) {
+async function setMemberInterviewOfficesCommand(input: unknown) {
   const data = boundedParse(z.object({ clubId: id, memberId: id, offices: interviewOfficesSchema }).strict(), input);
   const { user } = await requireAuth({ verifyEmail: true });
   return prisma.$transaction(async tx => {
@@ -94,7 +94,7 @@ export async function setMemberInterviewOffices(input: unknown) {
   });
 }
 
-export async function setInterviewPanelAssignment(input: unknown) {
+async function setInterviewPanelAssignmentCommand(input: unknown) {
   const data = interviewScopeSchema.extend({ memberId: id, assigned: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth({ verifyEmail: true });
   return prisma.$transaction(async tx => {
@@ -277,33 +277,45 @@ async function bulkOrganizationInvitationsCommand(input: unknown) {
 }
 
 export async function changeOrganizationMemberRole(...args: Parameters<typeof changeOrganizationMemberRoleCommand>) {
-  return actionResult(() => changeOrganizationMemberRoleCommand(...args))
+  return actionResult(() => changeOrganizationMemberRoleCommand(...args), "changeOrganizationMemberRole")
 }
 
 export async function removeOrganizationMember(...args: Parameters<typeof removeOrganizationMemberCommand>) {
-  return actionResult(() => removeOrganizationMemberCommand(...args))
+  return actionResult(() => removeOrganizationMemberCommand(...args), "removeOrganizationMember")
 }
 
 export async function transferOrganizationOwnership(...args: Parameters<typeof transferOrganizationOwnershipCommand>) {
-  return actionResult(() => transferOrganizationOwnershipCommand(...args))
+  return actionResult(() => transferOrganizationOwnershipCommand(...args), "transferOrganizationOwnership")
 }
 
 export async function inviteOrganizationMember(...args: Parameters<typeof inviteOrganizationMemberCommand>) {
-  return actionResult(() => inviteOrganizationMemberCommand(...args))
+  return actionResult(() => inviteOrganizationMemberCommand(...args), "inviteOrganizationMember")
 }
 
 export async function manageOrganizationInvitation(...args: Parameters<typeof manageOrganizationInvitationCommand>) {
-  return actionResult(() => manageOrganizationInvitationCommand(...args))
+  return actionResult(() => manageOrganizationInvitationCommand(...args), "manageOrganizationInvitation")
 }
 
 export async function bulkOrganizationMembers(...args: Parameters<typeof bulkOrganizationMembersCommand>) {
-  return actionResult(() => bulkOrganizationMembersCommand(...args))
+  return actionResult(() => bulkOrganizationMembersCommand(...args), "bulkOrganizationMembers")
 }
 
 export async function bulkOrganizationInvitations(...args: Parameters<typeof bulkOrganizationInvitationsCommand>) {
-  return actionResult(() => bulkOrganizationInvitationsCommand(...args))
+  return actionResult(() => bulkOrganizationInvitationsCommand(...args), "bulkOrganizationInvitations")
 }
 
 export async function createOrganizationMemberGroups(...args: Parameters<typeof createOrganizationMemberGroupsCommand>) {
-  return actionResult(() => createOrganizationMemberGroupsCommand(...args))
+  return actionResult(() => createOrganizationMemberGroupsCommand(...args), "createOrganizationMemberGroups")
+}
+
+export async function assignOrganizationMemberGroups(...args: Parameters<typeof assignOrganizationMemberGroupsCommand>) {
+  return actionResult(() => assignOrganizationMemberGroupsCommand(...args), "assignOrganizationMemberGroups")
+}
+
+export async function setMemberInterviewOffices(...args: Parameters<typeof setMemberInterviewOfficesCommand>) {
+  return actionResult(() => setMemberInterviewOfficesCommand(...args), "setMemberInterviewOffices")
+}
+
+export async function setInterviewPanelAssignment(...args: Parameters<typeof setInterviewPanelAssignmentCommand>) {
+  return actionResult(() => setInterviewPanelAssignmentCommand(...args), "setInterviewPanelAssignment")
 }

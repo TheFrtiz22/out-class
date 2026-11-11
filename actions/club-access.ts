@@ -50,7 +50,7 @@ export async function getClubAccess(clubId: string) {
   };
 }
 
-export async function inviteClubManager(
+async function inviteClubManagerCommand(
   input: z.infer<typeof invitationSchema>,
 ) {
   const data = boundedParse(invitationSchema, input);
@@ -88,7 +88,7 @@ export async function inviteClubManager(
   });
 }
 
-export async function acceptClubInvitation(invitationId: string) {
+async function acceptClubInvitationCommand(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
   const { user } = account;
@@ -241,7 +241,7 @@ async function updateClubAccessCommand(input: {
   });
 }
 
-export async function revokeClubInvitation(
+async function revokeClubInvitationCommand(
   clubId: string,
   invitationId: string,
 ) {
@@ -345,7 +345,7 @@ async function removeClubMemberCommand(clubId: string, memberId: string) {
   });
 }
 
-export async function declineClubInvitation(invitationId: string) {
+async function declineClubInvitationCommand(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
   const { user } = account;
@@ -389,13 +389,29 @@ export async function declineClubInvitation(invitationId: string) {
 }
 
 export async function addClubMember(...args: Parameters<typeof addClubMemberCommand>) {
-  return actionResult(() => addClubMemberCommand(...args))
+  return actionResult(() => addClubMemberCommand(...args), "addClubMember")
 }
 
 export async function removeClubMember(...args: Parameters<typeof removeClubMemberCommand>) {
-  return actionResult(() => removeClubMemberCommand(...args))
+  return actionResult(() => removeClubMemberCommand(...args), "removeClubMember")
 }
 
 export async function updateClubAccess(...args: Parameters<typeof updateClubAccessCommand>) {
-  return actionResult(() => updateClubAccessCommand(...args))
+  return actionResult(() => updateClubAccessCommand(...args), "updateClubAccess")
+}
+
+export async function acceptClubInvitation(...args: Parameters<typeof acceptClubInvitationCommand>) {
+  return actionResult(() => acceptClubInvitationCommand(...args), "acceptClubInvitation")
+}
+
+export async function declineClubInvitation(...args: Parameters<typeof declineClubInvitationCommand>) {
+  return actionResult(() => declineClubInvitationCommand(...args), "declineClubInvitation")
+}
+
+export async function inviteClubManager(...args: Parameters<typeof inviteClubManagerCommand>) {
+  return actionResult(() => inviteClubManagerCommand(...args), "inviteClubManager")
+}
+
+export async function revokeClubInvitation(...args: Parameters<typeof revokeClubInvitationCommand>) {
+  return actionResult(() => revokeClubInvitationCommand(...args), "revokeClubInvitation")
 }

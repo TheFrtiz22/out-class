@@ -2,15 +2,19 @@ import { isActionResult } from "@/lib/action-result"
 
 // Text that must never reach a person, even inside a message marked safe.
 const internal = [
+  // Next's production replacement text (the digest itself is checked as a property below).
   /server components render/i,
   /omitted in production/i,
-  /\bdigest\b/i,
-  /NEXT_[A-Z_]+/,
-  /prisma|\bP[1-5]\d{3}\b|invalid `|\binvocation\b/i,
-  /supabase|PGRST\d*|postgres|\bSQLSTATE\b|duplicate key|violates|relation "|column "/i,
-  /\b(?:TypeError|ReferenceError|SyntaxError|RangeError)\b|undefined is not|cannot read propert/i,
-  /\bat \S+ \(|\bat (?:async )?\S+:\d+:\d+|\n\s+at /,
-  /fetch failed|ECONN[A-Z]+|ETIMEDOUT|ENOTFOUND|socket hang up/i,
+  /\bNEXT_[A-Z_]{3,}/,
+  // Prisma: client error classes, error codes and query invocations.
+  /\bPrisma(?:Client)?[A-Z]\w*Error\b|\bP[1-5]\d{3}\b|[Ii]nvalid `prisma\.|`prisma\.\w+\.\w+\(\)`/,
+  // Supabase/PostgREST/Postgres internals.
+  /\bPGRST\d+\b|\bSQLSTATE\b|duplicate key value|violates (?:unique|foreign key|check|not-null|exclusion) constraint|\b(?:relation|column) "[^"]+" does not exist|\bJWT expired\b|\bsupabase(?:\.co|-js)\b|storage upload failed/i,
+  // JavaScript runtime errors and stack frames.
+  /\b(?:TypeError|ReferenceError|SyntaxError|RangeError):|undefined is not|cannot read properties of/i,
+  /\n\s+at |\bat (?:async )?\S*[\\/]\S+:\d+:\d+/,
+  // Network internals.
+  /^fetch failed$|\bECONN[A-Z]+\b|\bETIMEDOUT\b|\bENOTFOUND\b|socket hang up/i,
 ]
 
 function safe(message: unknown): message is string {

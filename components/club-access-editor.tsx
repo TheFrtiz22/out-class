@@ -4,9 +4,9 @@ import "@/components/shell/responsive-workspace.css"
 import { useState } from "react"
 import {
   getClubAccess,
-  inviteClubManager,
+  inviteClubManager as inviteClubManagerAction,
   updateClubAccess as updateClubAccessAction,
-  revokeClubInvitation,
+  revokeClubInvitation as revokeClubInvitationAction,
 } from "@/actions/club-access"
 import { useAuth } from "@/contexts/auth-context"
 import { clubPermissions, permissionTemplates, permissionLabels, hasPermission, type ClubPermission } from "@/lib/permissions"
@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/ui/native-select"
 import { unwrapped } from "@/lib/action-result"
 const updateClubAccess = unwrapped(updateClubAccessAction)
+const inviteClubManager = unwrapped(inviteClubManagerAction)
+const revokeClubInvitation = unwrapped(revokeClubInvitationAction)
 export function ClubAccessEditor({
   clubId,
   initial,

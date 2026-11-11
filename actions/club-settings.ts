@@ -413,17 +413,17 @@ async function saveProfileFieldVisibilityCommand(input: unknown) {
 }
 
 export async function saveClubPreferences(...args: Parameters<typeof saveClubPreferencesCommand>) {
-  return actionResult(() => saveClubPreferencesCommand(...args))
+  return actionResult(() => saveClubPreferencesCommand(...args), "saveClubPreferences")
 }
 
 export async function saveApplicationSettings(...args: Parameters<typeof saveApplicationSettingsCommand>) {
-  return actionResult(() => saveApplicationSettingsCommand(...args))
+  return actionResult(() => saveApplicationSettingsCommand(...args), "saveApplicationSettings")
 }
 
 export async function savePipelineSettings(...args: Parameters<typeof savePipelineSettingsCommand>) {
-  return actionResult(() => savePipelineSettingsCommand(...args))
+  return actionResult(() => savePipelineSettingsCommand(...args), "savePipelineSettings")
 }
 
 export async function saveProfileFieldVisibility(...args: Parameters<typeof saveProfileFieldVisibilityCommand>) {
-  return actionResult(() => saveProfileFieldVisibilityCommand(...args))
+  return actionResult(() => saveProfileFieldVisibilityCommand(...args), "saveProfileFieldVisibility")
 }

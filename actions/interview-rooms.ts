@@ -280,29 +280,29 @@ async function setInterviewStaffingRequirementCommand(raw: unknown) {
 }
 
 export async function reserveInterview(...args: Parameters<typeof reserveInterviewCommand>) {
-  return actionResult(() => reserveInterviewCommand(...args))
+  return actionResult(() => reserveInterviewCommand(...args), "reserveInterview")
 }
 
 export async function cancelRoomBooking(...args: Parameters<typeof cancelRoomBookingCommand>) {
-  return actionResult(() => cancelRoomBookingCommand(...args))
+  return actionResult(() => cancelRoomBookingCommand(...args), "cancelRoomBooking")
 }
 
 export async function createInterviewRoom(...args: Parameters<typeof createInterviewRoomCommand>) {
-  return actionResult(() => createInterviewRoomCommand(...args))
+  return actionResult(() => createInterviewRoomCommand(...args), "createInterviewRoom")
 }
 
 export async function setInterviewRoomOpen(...args: Parameters<typeof setInterviewRoomOpenCommand>) {
-  return actionResult(() => setInterviewRoomOpenCommand(...args))
+  return actionResult(() => setInterviewRoomOpenCommand(...args), "setInterviewRoomOpen")
 }
 
 export async function renameInterviewRoom(...args: Parameters<typeof renameInterviewRoomCommand>) {
-  return actionResult(() => renameInterviewRoomCommand(...args))
+  return actionResult(() => renameInterviewRoomCommand(...args), "renameInterviewRoom")
 }
 
 export async function setInterviewRoomExternallyBooked(...args: Parameters<typeof setInterviewRoomExternallyBookedCommand>) {
-  return actionResult(() => setInterviewRoomExternallyBookedCommand(...args))
+  return actionResult(() => setInterviewRoomExternallyBookedCommand(...args), "setInterviewRoomExternallyBooked")
 }
 
 export async function setInterviewStaffingRequirement(...args: Parameters<typeof setInterviewStaffingRequirementCommand>) {
-  return actionResult(() => setInterviewStaffingRequirementCommand(...args))
+  return actionResult(() => setInterviewStaffingRequirementCommand(...args), "setInterviewStaffingRequirement")
 }

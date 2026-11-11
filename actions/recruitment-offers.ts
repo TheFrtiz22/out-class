@@ -28,9 +28,9 @@ async function revokeRecruitmentOfferCommand(clubId: string, applicationId: stri
 }
 
 export async function respondToOffer(...args: Parameters<typeof respondToOfferCommand>) {
-  return actionResult(() => respondToOfferCommand(...args))
+  return actionResult(() => respondToOfferCommand(...args), "respondToOffer")
 }
 
 export async function revokeRecruitmentOffer(...args: Parameters<typeof revokeRecruitmentOfferCommand>) {
-  return actionResult(() => revokeRecruitmentOfferCommand(...args))
+  return actionResult(() => revokeRecruitmentOfferCommand(...args), "revokeRecruitmentOffer")
 }

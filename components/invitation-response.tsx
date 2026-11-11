@@ -2,14 +2,16 @@
 import { userMessage } from "@/lib/user-message"
 import { useRef, useState } from "react";
 import {
-  acceptClubInvitation,
-  declineClubInvitation,
+  acceptClubInvitation as acceptClubInvitationAction,
+  declineClubInvitation as declineClubInvitationAction,
 } from "@/actions/club-access";
 import { acceptIdentityClubInvitation as acceptIdentityClubInvitationAction } from "@/actions/club-onboarding";
 import { clubWorkspaceHref } from "@/lib/club-workspace";
 import { Button } from "@/components/ui/button";
 import { unwrapped } from "@/lib/action-result"
 const acceptIdentityClubInvitation = unwrapped(acceptIdentityClubInvitationAction)
+const acceptClubInvitation = unwrapped(acceptClubInvitationAction)
+const declineClubInvitation = unwrapped(declineClubInvitationAction)
 export function InvitationResponse({ id, owner = false }: { id: string; owner?: boolean }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");

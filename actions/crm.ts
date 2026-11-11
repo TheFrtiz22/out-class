@@ -328,7 +328,7 @@ async function revealApplicantIdentityCommand(
     return restrictApplicationProfile(identifiedApplication({ ...revealed, evaluations: revealed.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, hasPermission(membership, "applications.review") && genderVisibility(revealed.round?.applicantDisplay)), normalizeProfileFieldVisibility(club?.profileFieldVisibility));
   });
 }
-export async function setRoundAnonymousReview(
+async function setRoundAnonymousReviewCommand(
   clubId: string,
   roundId: string,
   enabled: boolean,
@@ -386,7 +386,7 @@ export async function setClubTestRequirement(
   });
 }
 
-export async function saveAnonymousReviewContent(
+async function saveAnonymousReviewContentCommand(
   clubId: string,
   applicationId: string,
   content: string,
@@ -447,13 +447,21 @@ export async function saveAnonymousReviewContent(
 }
 
 export async function setApplicationStatus(...args: Parameters<typeof setApplicationStatusCommand>) {
-  return actionResult(() => setApplicationStatusCommand(...args))
+  return actionResult(() => setApplicationStatusCommand(...args), "setApplicationStatus")
 }
 
 export async function moveApplicantRound(...args: Parameters<typeof moveApplicantRoundCommand>) {
-  return actionResult(() => moveApplicantRoundCommand(...args))
+  return actionResult(() => moveApplicantRoundCommand(...args), "moveApplicantRound")
 }
 
 export async function revealApplicantIdentity(...args: Parameters<typeof revealApplicantIdentityCommand>) {
-  return actionResult(() => revealApplicantIdentityCommand(...args))
+  return actionResult(() => revealApplicantIdentityCommand(...args), "revealApplicantIdentity")
+}
+
+export async function setRoundAnonymousReview(...args: Parameters<typeof setRoundAnonymousReviewCommand>) {
+  return actionResult(() => setRoundAnonymousReviewCommand(...args), "setRoundAnonymousReview")
+}
+
+export async function saveAnonymousReviewContent(...args: Parameters<typeof saveAnonymousReviewContentCommand>) {
+  return actionResult(() => saveAnonymousReviewContentCommand(...args), "saveAnonymousReviewContent")
 }
