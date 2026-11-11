@@ -1,8 +1,8 @@
 /* Signed-out link card: light glass surface, serif headline, navy and light glass pills. */
 .oc-sign-in-card { max-width: 34rem; margin: 0 auto; padding: clamp(24px, 5vw, 40px); border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-overlay-radius); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
-.oc-sign-in-card-eyebrow { margin-bottom: 12px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.oc-sign-in-card-eyebrow { margin-bottom: 12px; font-size: var(--oc-size-13); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
 .oc-sign-in-card h1 { font-family: var(--oc-font-display); font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); line-height: 1.15; font-weight: 500; letter-spacing: -.02em; text-wrap: balance; }
-.oc-sign-in-card-body { margin-top: 16px; display: grid; gap: 12px; font-size: 16px; line-height: 1.65; color: var(--muted-foreground); }
+.oc-sign-in-card-body { margin-top: 16px; display: grid; gap: 12px; font-size: var(--oc-size-16); line-height: 1.65; color: var(--muted-foreground); }
 .oc-sign-in-card-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .oc-sign-in-card-actions a { min-height: 48px; padding-inline: 22px; }
 @media (max-width: 479px) { .oc-sign-in-card-actions a { flex: 1 1 100%; justify-content: center; } }

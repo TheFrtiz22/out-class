@@ -281,7 +281,7 @@ function EventEditor({
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
-          <p id="event-description-help" className="text-xs leading-relaxed text-muted-foreground">Include every flyer detail here, including anything shown only in the image.</p>
+          <p id="event-description-help" className="text-control leading-relaxed text-muted-foreground">Include every flyer detail here, including anything shown only in the image.</p>
           <div className="oc-event-editor-pair">
             <label>
               Category
