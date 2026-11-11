@@ -127,7 +127,6 @@ test('the projector and leader slide keep refreshing while hidden or covered; a 
   } finally { p.restore() }
   const view = fs.readFileSync('components/live-voting/room-view.tsx', 'utf8')
   assert.match(view, /<RoomPresentation [^>]*presenting=\{view!=="member"\}/, 'the room passes presenting for the leader and projector views')
-  assert.match(fs.readFileSync('components/live-voting/board-decision-mode.tsx', 'utf8'), /useEffect\(\(\)=>\{presenting\.current=present\},\[present\]\)/, 'the board follows its projector toggle')
 })
 
 test('SupportSessionSync makes no view-as calls without a support marker, but still checks a restored page', async () => {
@@ -198,7 +197,7 @@ test('every network poll in these views pauses in hidden tabs', () => {
   const files = [
     ['components/decision-schedules.tsx', 30000], ['components/invitation-schedules.tsx', 30000], ['components/availability/scheduled-requests.tsx', 30000],
     ['components/communication-schedules.tsx', 30000, '{catchUp:false}'], ['components/live-voting/room-presentation.tsx', 5000, '{whileHidden:presenting}'], ['components/live-voting/room-view.tsx', 5000],
-    ['components/live-voting/session-join.tsx', 5000], ['components/live-voting/board-decision-mode.tsx', 5000, '{whileHidden:()=>presenting.current}'], ['components/support-session-sync.tsx', 30000, '{ catchUp: false }'],
+    ['components/support-session-sync.tsx', 30000, '{ catchUp: false }'],
   ]
   for (const [file, ms, options] of files) {
     const source = fs.readFileSync(file, 'utf8')

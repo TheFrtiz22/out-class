@@ -67,10 +67,10 @@ test('configuration updates reject unknown fields, duplicate fields, stale versi
  await assert.rejects(h.api.saveApplicantDisplayConfiguration({clubId:roundId,roundId,version:1,config:defaultDisplayConfig}),/Denied/);
  h.member.permissions=['applications.review'];await assert.rejects(h.api.getApplicantDisplayConfiguration(clubId,roundId),/Denied/);
 });
-test('Interview uses a narrow panel and Voting retains its server-filtered panel; legacy voting transport never receives production data',()=>{
- assert.match(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);assert.doesNotMatch(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/getClubPipeline|ApplicantDisplayPanel/);
+test('Interview uses a narrow panel and the leader workspace keeps the server-filtered panel; no browser-local voting transport remains',()=>{
+ assert.match(fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);assert.doesNotMatch(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/getClubPipeline|ApplicantDisplayPanel/);
  assert.match(fs.readFileSync('components/applicant-intelligence.tsx','utf8'),/getApplicantDisplay\(\{ clubId, applicationId, sessionId, previewConfig:/);
- assert.doesNotMatch(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/useProctorSession|localStorage|BroadcastChannel/);
+ for(const gone of ['components/live-voting/board-decision-mode.tsx','lib/use-live-voting.ts'])assert.equal(fs.existsSync(gone),false,gone);
 });
 test('migration preserves historical feedback and links canonical evaluations, constraints and browser isolation',async()=>{
  const {PGlite}=require('@electric-sql/pglite');const db=new PGlite();

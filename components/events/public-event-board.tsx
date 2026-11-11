@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { z } from "zod";
+import { isUuid } from "@/lib/uuid";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Check, ChevronDown } from "@/components/icons";
+import { Check, ChevronDown, Rows3, StickyNote } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getPublicCorkboard,
@@ -39,9 +39,7 @@ import "./events.css";
 import { eventBoardEmpty } from "@/lib/event-board-empty";
 import { SearchField } from "@/components/ui/search-field"
 import { FilterPopover } from "@/components/ui/filter-popover"
-import { FilterChips } from "@/components/ui/filter-chips"
 import { PillSelect } from "@/components/ui/pill-select"
-import { PillGroup } from "@/components/ui/segmented-control"
 import { Toggle } from "@/components/ui/toggle"
 import { DateField } from "@/components/ui/date-picker"
 const initialFilters: EventFilters = {
@@ -135,7 +133,7 @@ export function PublicEventBoard() {
     setSelected(null);
     setLinkedLoading(!!eventId);
     if (!eventId) return;
-    if (!z.string().uuid().safeParse(eventId).success) {
+    if (!isUuid(eventId)) {
       setLinkedLoading(false);
       setLinkedMissing(true);
       return;
@@ -198,11 +196,11 @@ export function PublicEventBoard() {
           footer={<Button type="button" variant="ghost" size="sm" onClick={() => setFilters(initialFilters)}>Reset filters</Button>}>
             {identity && <Toggle label="Saved events" checked={!!filters.savedOnly} onCheckedChange={(savedOnly) => filter({ savedOnly })} />}
             <div className="oc-filter-field"><span className="oc-filter-field-label">Category</span>
-              <FilterChips label="Category" visible={5} moreLabel={(n) => `+${n} more categories`} value={filters.category || ""} onChange={(category) => filter({ category: category as EventFilters["category"] })}
-                options={[{ value: "", label: "All categories" }, ...eventCategories.map((c) => ({ value: c, label: c }))]} />
+              <PillSelect label="Category" size="compact" allLabel="All categories" value={filters.category || ""} onChange={(category) => filter({ category: category as EventFilters["category"] })}
+                options={eventCategories.map((c) => ({ value: c, label: c }))} />
             </div>
             <div className="oc-filter-field"><span className="oc-filter-field-label">Club</span>
-              <PillSelect label="Club" allLabel="All clubs" value={filters.clubId || ""} onChange={(clubId) => filter({ clubId })}
+              <PillSelect label="Club" size="compact" allLabel="All clubs" value={filters.clubId || ""} onChange={(clubId) => filter({ clubId })}
                 options={clubs.map((c) => ({ value: c.id, label: c.name }))} />
             </div>
             <div className="oc-filter-field"><span className="oc-filter-field-label">Date (Eastern Time)</span>
@@ -212,12 +210,12 @@ export function PublicEventBoard() {
               <Input className="oc-pill-input" value={filters.location} onChange={(e) => filter({ location: e.target.value })} />
             </label>
             <div className="oc-filter-field"><span className="oc-filter-field-label">Sort</span>
-              <PillGroup label="Sort" size="compact" value={filters.sort ?? "soonest"} onChange={(sort) => filter({ sort })}
+              <PillSelect label="Sort" size="compact" active={(filters.sort ?? "soonest") !== "soonest"} value={filters.sort ?? "soonest"} onChange={(sort) => filter({ sort: sort as EventFilters["sort"] })}
                 options={[{ value: "soonest", label: "Soonest" }, { value: "latest", label: "Latest" }, { value: "name", label: "Name A–Z" }]} />
             </div>
             <Toggle label="RSVP required" checked={filters.required || false} onCheckedChange={(required) => filter({ required })} />
         </FilterPopover>
-        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Board" }, { value: "list", label: "List" }]} />
+        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch oc-view-switch" size="compact" options={[{ value: "corkboard", label: null, ariaLabel: "Board", icon: <StickyNote /> }, { value: "list", label: null, ariaLabel: "List", icon: <Rows3 /> }]} />
         </div>
       </div>
       {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}

@@ -1,7 +1,7 @@
 import { workspaceJsonResponse } from "@/lib/workspace-response"
 import { serverPhase, traceWorkspaceRequest } from "@/lib/server-phase-trace"
 import { UniversityVerificationError } from "@/utils/verified-email-policy"
-import { getVotingWorkspace, getVotingJoinInfo } from "@/actions/voting"
+import { getVotingWorkspace } from "@/actions/voting"
 import { genderValues } from "@/lib/student-profile"
 import { z } from "zod"
 import { cookies } from "next/headers"
@@ -19,6 +19,7 @@ import { getApplicantDisplay } from "@/actions/applicant-intelligence"
 import { recruitmentAttendanceSummary } from "@/actions/meetings"
 import { getStudentDashboardData } from "@/actions/applications"
 import { encodeWorkspaceData } from "@/lib/workspace-wire"
+import { assertBoundedInput } from "@/lib/bounded-input"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -31,7 +32,7 @@ const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1
   z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(value => value ?? undefined)]))
 
 // Every `case` below, so logs carry only a known constant, never a raw query value.
-const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rankedReviewRound", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "votingJoin", "invitations", "tutorial", "applicantDisplay", "attendance"])
+const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rankedReviewRound", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "invitations", "tutorial", "applicantDisplay", "attendance"])
 const loggedReadKind = (kind: string | null) => kind && workspaceReadKinds.has(kind) ? kind : "unknown"
 
 // An explicit read allowlist. Each private loader still runs its original live
@@ -45,6 +46,8 @@ export async function GET(request: Request) {
     if ((await cookies()).get(DEMO_COOKIE)?.value === "1") return Response.json({ error: "Live workspace reads are unavailable in Demo Mode" }, { status: 403, headers })
     const params = new URL(request.url).searchParams
     const args: unknown = JSON.parse(params.get("args") || "[]")
+    // Read arguments are at most a three-item tuple with small nested selections.
+    assertBoundedInput(args, { maxArrayLength: 100, maxTotalElements: 200, maxBytes: 64_000 })
     let data: unknown
     switch (params.get("kind")) {
       case "myAvailability": noArgs.parse(args); data = await (await import("@/actions/availability")).getMyAvailability(); break
@@ -80,7 +83,6 @@ export async function GET(request: Request) {
       case "taskNotifications": noArgs.parse(args); data = await getTaskNotifications(); break
       case "studentDashboard": noArgs.parse(args); data = await getStudentDashboardData(); break
       case "voting": data = await getVotingWorkspace(...z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(v => v ?? undefined), pipelinePageQuery.omit({ cursor: true }).optional()]).parse(Array.isArray(args) && args.length < 3 ? [...args, ...Array(3 - args.length).fill(undefined)] : args)); break
-      case "votingJoin": data = await getVotingJoinInfo(...clubArgs.parse(args)); break
       case "invitations": data = await getOrganizationInvitations(...z.tuple([z.boolean()]).parse(args)); break
       case "tutorial": data = await getTutorial(...z.tuple([z.enum(["student", "leader"]), z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(args)); break
       case "applicantDisplay": data = await getApplicantDisplay(...z.tuple([z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: z.unknown().optional() }).strict()]).parse(args) as Parameters<typeof getApplicantDisplay>); break

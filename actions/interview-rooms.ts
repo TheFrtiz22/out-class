@@ -18,6 +18,7 @@ import { revalidatePath } from "next/cache"
 import { syncBookingPanel } from "@/utils/interview-scheduling-access"
 import { notifyInterviewBookingChange } from "@/utils/interview-assignment-notifications"
 import { interviewBookingCoverage } from "@/utils/interview-booking"
+import { boundedParse } from "@/lib/bounded-input"
 
 const uuid = z.string().uuid()
 const roomInclude = { slots: { include: { _count: { select: { bookings: true } } }, orderBy: { startTime: "asc" as const } } }
@@ -59,7 +60,7 @@ export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   return { clubName: club.name, cycles, rounds: rounds.map(r=>({id:r.id,name:r.name,type:r.type,configuration:r.configuration,booking:{...r,bookingPublishedAt:r.bookingPublishedAt?.toISOString()??null}})), members: members.map(m => ({ id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email })), rooms: rooms.map(r => presentRoom(r)), bookings: bookings.map(b => ({ id: b.id, slotId: b.slotId, roomId: b.slot.roomId!, roundId: b.roundId!, applicationId: b.applicationId, candidate: hasPermission(membership, "applicants.identify") && b.round?.anonymousReview === false && b.application.round.anonymousReview === false && b.application.student.studentProfile ? `${b.application.student.studentProfile.firstName} ${b.application.student.studentProfile.lastName}` : `Applicant ${b.applicationId.slice(-6)}`, startTime: b.slot.startTime.toISOString(), endTime: b.slot.endTime.toISOString(), location: b.slot.location })) }
 }
 export async function createInterviewRoom(raw: RoomInput) {
-  const input = roomInputSchema.parse(raw)
+  const input = boundedParse(roomInputSchema, raw)
   const { user } = await requireClubPermission(input.clubId, ["interviews.manage"])
   const slots = roomSlots(input)
   const result = await atomic(async tx => {

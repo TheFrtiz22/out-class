@@ -39,7 +39,7 @@ test('browser: leader pages at 390px use the app switch, grouped lists and the f
 
   const applicants = await open('section=recruitment&tool=applicants')
   const bar = applicants.locator('.oc-mobile-destination')
-  assert.deepEqual(await bar.evaluateAll(items => items.map(item => item.getAttribute('aria-label'))), ['Club home', 'Recruiting', 'Meetings', 'Members', 'More sections'])
+  assert.deepEqual(await bar.evaluateAll(items => items.map(item => item.getAttribute('aria-label'))), ['Home', 'Recruiting', 'Calendar', 'Members', 'More sections'])
   assert.equal(await applicants.locator('.oc-mobile-destination[aria-current="page"]').getAttribute('aria-label'), 'Recruiting')
   const sw = applicants.locator('.oc-recruiting-switch')
   assert.equal(await sw.evaluate(el => getComputedStyle(el).display), 'grid', 'recruiting sections are the pill switch')

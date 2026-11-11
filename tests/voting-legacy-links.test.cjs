@@ -9,7 +9,7 @@ function resolver({user=memberUser,email='member@virginia.edu',confirmed=true,de
  const reads=[];
  const db={
   user:{findUnique:async({where})=>accounts[where.id]??null},
-  votingSession:{findFirst:async({where,select})=>{reads.push({where,select});const s=sessions[where.id];const m=where.club.members.some;if(!s||s.mode!==where.mode||clubs[s.clubId].suspendedAt!==where.club.suspendedAt)return null;return memberships.some(r=>r.clubId===s.clubId&&r.userId===m.userId&&r.status===m.status)?{clubId:s.clubId}:null}},
+  votingSession:{findFirst:async({where,select})=>{reads.push({where,select});const s=sessions[where.id];const m=where.club.members.some;if(!s||where.mode||clubs[s.clubId].suspendedAt!==where.club.suspendedAt)return null;return memberships.some(r=>r.clubId===s.clubId&&r.userId===m.userId&&r.status===m.status)?{clubId:s.clubId,mode:s.mode}:null}},
  };
  const mocks={
   'server-only':{},
@@ -23,14 +23,14 @@ function resolver({user=memberUser,email='member@virginia.edu',confirmed=true,de
  return {href:mod.liveRoomHrefForLegacyLink,reads};
 }
 
-test('old links open a real live room only for a verified ACTIVE member of its operational club',async()=>{
+test('old links open a live room, or a board session\'s read-only history, only for a verified ACTIVE member of its operational club',async()=>{
  const r=resolver();
  assert.equal(await r.href(liveId),`/voting/rooms/${liveId}?clubId=${clubId}`);
- assert.equal(await r.href(boardId),null,'board-mode sessions keep their join flow');
+ assert.equal(await r.href(boardId),`/voting/rooms/${boardId}/history?clubId=${clubId}`,'board sessions open their read-only history');
  assert.equal(await r.href(uuid(4)),null,'unknown sessions keep the existing page');
  assert.equal(await r.href(suspendedLiveId),null,'a suspended club keeps the existing page');
  for(const bad of [undefined,null,'','demo-session-1','../x',`${liveId}?x`])assert.equal(await r.href(bad),null,String(bad));
- assert.ok(r.reads.every(q=>JSON.stringify(q.select)===JSON.stringify({clubId:true})),'only the club id is read, and only after membership matches');
+ assert.ok(r.reads.every(q=>JSON.stringify(q.select)===JSON.stringify({clubId:true,mode:true})),'only the club id is read, and only after membership matches');
 });
 
 test('outsiders, disabled, unconfirmed, non-school, former, signed-out, Demo, support-view and degraded viewers learn nothing',async()=>{
@@ -47,8 +47,8 @@ test('outsiders, disabled, unconfirmed, non-school, former, signed-out, Demo, su
 
 test('legacy voting pages redirect only through the shared resolver and keep Demo join links isolated',()=>{
  const live=fs.readFileSync('app/(focus)/live-voting/page.tsx','utf8'),join=fs.readFileSync('app/(focus)/voting/[sessionId]/join/page.tsx','utf8');
- assert.doesNotMatch(live,/^"use client"/);assert.match(live,/liveRoomHrefForLegacyLink\(/);assert.match(live,/redirect\(href\)/);assert.match(live,/<LegacyVotingPage \/>/);
+ assert.doesNotMatch(live,/^"use client"/);assert.match(live,/liveRoomHrefForLegacyLink\(/);assert.match(live,/redirect\(href\)/);assert.match(live,/<VotingLinkMoved /);
  assert.equal(fs.readFileSync('app/(focus)/vote/page.tsx','utf8').trim(),'export { default } from "@/app/(focus)/live-voting/page"');
- assert.match(join,/query\.demo==="1"\?null:await liveRoomHrefForLegacyLink\(sessionId\)/);
- assert.doesNotMatch(fs.readFileSync('components/live-voting/legacy-voting-page.tsx','utf8'),/from ["']@\/lib\/demo\//);
+ assert.match(join,/query\.demo === "1" \? null : await liveRoomHrefForLegacyLink\(sessionId\)/);
+ assert.doesNotMatch(fs.readFileSync('components/live-voting/voting-link-moved.tsx','utf8'),/from ["']@\/lib\/demo\/|"use client"/);
 });

@@ -1,24 +1,24 @@
-// FE-12 (owner decision 2026-11-05): club events are one click from the leader nav; old links redirect.
+// Meetings and Events are one Calendar rail item with a type filter (nav reorganization, superseding FE-12's
+// separate Events entry). Old Meetings/Events links land on Calendar filtered to that type.
 const { test } = require('node:test'), assert = require('node:assert/strict')
 const { harness: demoHarness } = require('./helpers/demo-harness.cjs')
 
-test('Events sits after Meetings for members who manage meetings, links to section=events, and reaches phones', () => {
+test('Calendar replaces Meetings and Events in the club nav for every member, reaches phones, and old links redirect', () => {
   const h = demoHarness(), { createDemoSeed } = h.load('lib/demo/seed.ts'), seed = createDemoSeed('2026-10-18')
   const nav = h.load('lib/product-navigation.ts'), routes = h.load('lib/workspace-routes.ts')
   const owner = seed.memberships.find(m => m.isOwner)
   const items = nav.managerNavigation(owner, owner.clubId, 'club')
   const ids = items.map(i => i.id)
-  assert.equal(ids[ids.indexOf('meetings') + 1], 'events', `owner nav: ${ids.join(', ')}`)
-  const events = items.find(i => i.id === 'events')
-  assert.equal(events.label, 'Events')
-  assert.equal(new URL(events.href, 'https://out-class.net').searchParams.get('section'), 'events')
-  assert.ok(nav.mobileDestinations(items).some(i => i.id === 'events'), 'phones list Events too')
+  assert.deepEqual(ids.filter(id => ['meetings', 'events', 'calendar'].includes(id)), ['calendar'], `owner nav: ${ids.join(', ')}`)
+  const calendar = items.find(i => i.id === 'calendar')
+  assert.equal(calendar.label, 'Calendar')
+  assert.equal(new URL(calendar.href, 'https://out-class.net').searchParams.get('section'), 'calendar')
+  assert.ok(nav.mobileDestinations(items).some(i => i.id === 'calendar'), 'phones list Calendar too')
   const as = permissions => ({ ...owner, isOwner: false, accessRole: 'MEMBER', permissions })
-  const hasEvents = permissions => nav.managerNavigation(as(permissions), owner.clubId, 'club').some(i => i.id === 'events')
-  assert.equal(hasEvents([]), false, 'no permissions: no Events')
-  assert.equal(hasEvents(['meetings.attendance', 'members.manage', 'tasks.manage']), false, 'other leader permissions without meetings.manage: no Events')
-  assert.equal(hasEvents(['meetings.manage']), true, 'a non-owner who manages meetings sees Events')
-  assert.ok(!nav.managerNavigation(owner, owner.clubId, 'recruiting').some(i => i.id === 'events'), 'the recruiting nav does not list Events')
-  assert.equal(routes.clubWorkspaceTitle(new URLSearchParams('section=events')), 'Events')
-  assert.equal(routes.canonicalClubWorkspaceHref('club', new URLSearchParams('section=meetings&meetingTab=events')), '/club/club/workspace?section=events')
+  assert.ok(nav.managerNavigation(as([]), owner.clubId, 'club').some(i => i.id === 'calendar'), 'everyone has meetings')
+  assert.ok(!nav.managerNavigation(owner, owner.clubId, 'recruiting').some(i => i.id === 'calendar'), 'the recruiting nav does not list Calendar')
+  assert.equal(routes.clubWorkspaceTitle(new URLSearchParams('section=calendar')), 'Calendar')
+  assert.equal(routes.canonicalClubWorkspaceHref('club', new URLSearchParams('section=meetings&meetingTab=events')), '/club/club/workspace?section=calendar&type=events')
+  assert.equal(routes.canonicalClubWorkspaceHref('club', new URLSearchParams('section=events')), '/club/club/workspace?section=calendar&type=events')
+  assert.equal(routes.canonicalClubWorkspaceHref('club', new URLSearchParams('section=meetings')), '/club/club/workspace?section=calendar&type=meetings')
 })

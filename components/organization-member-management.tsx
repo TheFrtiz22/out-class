@@ -62,10 +62,12 @@ import {
 } from "@/components/ui/sheet";
 import { NativeSelect } from "@/components/ui/native-select"
 import { academicYear } from "@/lib/recruitment-profile"
-import { PillGroup, SegmentedControl } from "@/components/ui/segmented-control"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { FilterPopover } from "@/components/ui/filter-popover"
 import { SearchField } from "@/components/ui/search-field"
 import { PillSelect } from "@/components/ui/pill-select"
 import { Toggle } from "@/components/ui/toggle"
+import { useConfirmOnce } from "@/components/ui/confirm-dialog"
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
 type Member = Directory["members"][number];
@@ -87,6 +89,8 @@ const statusLabel = (status: string) =>
 export function OrganizationMemberManagement({ clubId, initialData = null, onData, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
   const { refreshUser } = useAuth();
   const [data, setData] = useState<Directory | null>(initialData);
+  // One confirm at a time here: a second click while one is open does nothing.
+  const confirm = useConfirmOnce();
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false),
@@ -276,72 +280,72 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         : ids.filter((x) => x !== id),
     );
   }
-  function bulkMembers(action: "ROLE" | "PERMISSIONS" | "REMOVE") {
+  async function bulkMembers(action: "ROLE" | "PERMISSIONS" | "REMOVE") {
     if (!data || !selectedMembers.length) return;
-    if (
-      action === "REMOVE" &&
-      !window.confirm(
-        `Remove ${selectedMembers.length} selected members? Access is revoked; history is retained.`,
-      )
-    )
-      return;
-    if (
-      action === "ROLE" &&
-      !window.confirm(
-        `Change ${selectedMembers.length} members to ${organizationRoleLabels[bulkRole]}? This replaces custom capabilities with role defaults.`,
-      )
-    )
-      return;
-    const ids = new Set(selectedMembers.map((m) => m.id));
+    // Act on exactly what the dialog shows: the selection, role and permissions at click time.
+    const targets = selectedMembers.map((m) => ({ id: m.id, updatedAt: m.updatedAt }));
+    const role = bulkRole, permissions = bulkPermissions, base = data;
+    const count = targets.length;
+    const prompt =
+      action === "REMOVE"
+        ? { title: `Remove ${count} selected ${count === 1 ? "member" : "members"}?`, description: "Access is revoked; history is retained.", confirmLabel: "Remove members" }
+        : action === "ROLE"
+          ? { title: `Change ${count} ${count === 1 ? "member" : "members"} to ${organizationRoleLabels[role]}?`, description: "This replaces custom capabilities with role defaults.", confirmLabel: "Change role" }
+          : { title: `Replace custom permissions for ${count} selected ${count === 1 ? "member" : "members"}?`, confirmLabel: "Replace permissions" };
+    if (!(await confirm({ ...prompt, tone: "danger" }))) return;
+    const ids = new Set(targets.map((t) => t.id));
     const optimistic =
       action === "REMOVE"
         ? undefined
         : {
-            ...data,
-            members: data.members.map((m) =>
+            ...base,
+            members: base.members.map((m) =>
               !ids.has(m.id)
                 ? m
                 : action === "ROLE"
                   ? {
                       ...m,
-                      accessRole: bulkRole,
-                      isOwner: bulkRole === "OWNER",
-                      permissions: organizationRolePermissions[bulkRole],
+                      accessRole: role,
+                      isOwner: role === "OWNER",
+                      permissions: organizationRolePermissions[role],
                     }
-                  : { ...m, permissions: bulkPermissions },
+                  : { ...m, permissions },
             ),
           };
     void run(
       () =>
         bulkOrganizationMembers({
           clubId,
-          targets: selectedMembers.map((m) => ({
-            id: m.id,
-            updatedAt: m.updatedAt,
-          })),
+          targets,
           action,
           ...(action === "ROLE"
-            ? { role: bulkRole }
+            ? { role }
             : action === "PERMISSIONS"
-              ? { permissions: bulkPermissions }
+              ? { permissions }
               : {}),
         }),
-      `${selectedMembers.length} memberships updated.`,
+      `${count} memberships updated.`,
       optimistic,
-      ids.has(data.actor.id),
+      ids.has(base.actor.id),
     );
   }
-  function bulkInvites(action: "RESEND" | "REVOKE") {
+  async function bulkInvites(action: "RESEND" | "REVOKE") {
+    // Act on exactly the invitations counted in the dialog.
+    const invitationIds = selectedInvites.map((i) => i.id);
     if (
       action === "REVOKE" &&
-      !window.confirm(`Revoke ${selectedInvites.length} selected invitations?`)
+      !(await confirm({
+        title: `Revoke ${invitationIds.length} selected ${invitationIds.length === 1 ? "invitation" : "invitations"}?`,
+        confirmLabel: "Revoke invitations",
+        tone: "danger",
+      }))
     )
       return;
     void run(
       () =>
         bulkOrganizationInvitations({
           clubId,
-          invitationIds: selectedInvites.map((i) => i.id),
+          invitationIds,
           action,
         }),
       action === "RESEND"
@@ -428,11 +432,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     disabled={busy}
-                                    onSelect={() => {
+                                    onSelect={async () => {
                                       if (
-                                        window.confirm(
-                                          `Revoke the invitation for ${row.name}?`,
-                                        )
+                                        await confirm({
+                                          title: `Revoke the invitation for ${row.name}?`,
+                                          confirmLabel: "Revoke invitation",
+                                          tone: "danger",
+                                        })
                                       )
                                         void run(
                                           () =>
@@ -467,9 +473,18 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 }}
                 onClear={() => { setQuery(""); resetPaging() }}
               />
-              <PillSelect label="Filter members by role" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
-              {showYear && <PillGroup label="Filter members by year" size="compact" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={[{ value: "", label: "All years" }, ...memberYears.map(year => ({ value: year, label: year }))]} />}
-              {!invitesOpen && caps.canManageMembers && <PillSelect label="Filter members by group" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />}
+              <FilterPopover label="Filter" title="Member filters" align="start" count={[roleFilter, showYear && yearFilter, !invitesOpen && groupFilter].filter(Boolean).length}
+                footer={<Button variant="ghost" size="sm" disabled={!roleFilter && !yearFilter && !groupFilter} onClick={() => { setRoleFilter(""); setYearFilter(""); setGroupFilter(""); resetPaging() }}>Clear filters</Button>}>
+                <div className="oc-filter-field"><span className="oc-filter-field-label">Role</span>
+                  <PillSelect label="Filter members by role" size="compact" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
+                </div>
+                {showYear && <div className="oc-filter-field"><span className="oc-filter-field-label">Year</span>
+                  <PillSelect label="Filter members by year" size="compact" allLabel="All years" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={memberYears.map(year => ({ value: year, label: year }))} />
+                </div>}
+                {!invitesOpen && caps.canManageMembers && <div className="oc-filter-field"><span className="oc-filter-field-label">Group</span>
+                  <PillSelect label="Filter members by group" size="compact" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />
+                </div>}
+              </FilterPopover>
               {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
             </div>
             <SortControl label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
@@ -530,7 +545,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                               ),
                             )
                           }
-                          onClick={() => bulkMembers("ROLE")}
+                          onClick={() => void bulkMembers("ROLE")}
                         >
                           Change role
                         </Button>
@@ -560,7 +575,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                             canRemoveOrganizationMember(data.actor, m),
                           )
                         }
-                        onClick={() => bulkMembers("REMOVE")}
+                        onClick={() => void bulkMembers("REMOVE")}
                       >
                         Remove members
                       </Button>
@@ -580,7 +595,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                             canManageOrganizationInvitation(data.actor, i),
                         )
                       }
-                      onClick={() => bulkInvites("RESEND")}
+                      onClick={() => void bulkInvites("RESEND")}
                     >
                       Resend invitations
                     </Button>
@@ -593,7 +608,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                           canManageOrganizationInvitation(data.actor, i),
                         )
                       }
-                      onClick={() => bulkInvites("REVOKE")}
+                      onClick={() => void bulkInvites("REVOKE")}
                     >
                       Revoke invitations
                     </Button>
@@ -714,7 +729,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." open={addOpen} onOpenChange={setAddOpen}>{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
               <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger={caps.canManageMembers ? undefined : "Invite members"} presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
                 {invitesOpen && <div data-saving={busy} className="space-y-5">
-                  <SegmentedControl label="Invitation workspace" value={inviteTab} onChange={id => { if (dirty && !window.confirm("Discard unsaved invitation changes?")) return; setDirty(false); setInviteTab(id) }} options={[{ value: "pending", label: "Pending invitations" }, { value: "new", label: "New invitation" }, { value: "delivery", label: "Delivery & schedules" }]} />
+                  <SegmentedControl label="Invitation workspace" value={inviteTab} onChange={async id => { if (dirty && !(await confirm({ title: "Discard invitation changes?", description: "Your unsaved invitation changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", tone: "danger" }))) return; setDirty(false); setInviteTab(id) }} options={[{ value: "pending", label: "Pending invitations" }, { value: "new", label: "New invitation" }, { value: "delivery", label: "Delivery & schedules" }]} />
                   {notice && <p role="status" className="text-sm">{notice}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                   {inviteTab === "pending" && <>{directory}{scheduledInviteId && <InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId} />}</>}
                   {inviteTab === "new" && <div data-unsaved={dirty} onChangeCapture={() => setDirty(true)}>              <p className="mt-3 text-sm text-muted-foreground">
@@ -730,7 +745,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               ) : (
                 <form
                   className="mt-4 grid gap-4 sm:grid-cols-2"
-                  onSubmit={(event) => {
+                  onSubmit={async (event) => {
                     event.preventDefault();
                     const form = new FormData(event.currentTarget);
                     const input = {
@@ -743,9 +758,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     };
                     if (
                       input.requestedRole === "OWNER" &&
-                      !window.confirm(
-                        "Invite an additional owner with full control of this organization?",
-                      )
+                      !(await confirm({
+                        title: "Invite an additional owner?",
+                        description: "Owners have full control of this organization.",
+                        confirmLabel: "Invite owner",
+                      }))
                     )
                       return;
                     void run(
@@ -866,12 +883,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             <Button
               disabled={busy || !selectedMembers.length}
               onClick={() => {
-                if (
-                  window.confirm(
-                    `Replace custom permissions for ${selectedMembers.length} selected members?`,
-                  )
-                )
-                  bulkMembers("PERMISSIONS");
+                void bulkMembers("PERMISSIONS");
               }}
             >
               Save permissions
@@ -886,13 +898,22 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       </Sheet>
       <Sheet
         open={!!active}
-        onOpenChange={(open) => {
+        onOpenChange={async (open) => {
           if (
             !open &&
             !busy &&
             !document.querySelector('[data-saving="true"]')
           ) {
-            if (dirty && !window.confirm("Discard unsaved member changes?"))
+            if (
+              dirty &&
+              !(await confirm({
+                title: "Discard member changes?",
+                description: "Your unsaved member changes will be lost.",
+                confirmLabel: "Discard changes",
+                cancelLabel: "Keep editing",
+                tone: "danger",
+              }))
+            )
               return;
             setSelectedId(null);
             setDirty(false);
@@ -951,15 +972,17 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <form
                     className="space-y-3 border-t pt-4"
                     key={`${active.id}:${active.accessRole}`}
-                    onSubmit={(event) => {
+                    onSubmit={async (event) => {
                       event.preventDefault();
                       const role = String(
                         new FormData(event.currentTarget).get("role"),
                       );
                       if (
-                        !window.confirm(
-                          `Change ${memberName(active)} to ${organizationRoleLabels[role as Member["accessRole"]]}? This replaces their custom capabilities with the role’s defaults.`,
-                        )
+                        !(await confirm({
+                          title: `Change ${memberName(active)} to ${organizationRoleLabels[role as Member["accessRole"]]}?`,
+                          description: "This replaces their custom capabilities with the role’s defaults.",
+                          confirmLabel: "Change role",
+                        }))
                       )
                         return;
                       void run(
@@ -1067,11 +1090,14 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <Button
                     variant="outline"
                     disabled={busy}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        window.confirm(
-                          `Transfer your ownership to ${memberName(active)}? They become Owner and you become Admin. Other owners remain unchanged.`,
-                        )
+                        await confirm({
+                          title: `Transfer your ownership to ${memberName(active)}?`,
+                          description: "They become Owner and you become Admin. Other owners remain unchanged.",
+                          confirmLabel: "Transfer ownership",
+                          tone: "danger",
+                        })
                       )
                         void run(
                           () =>
@@ -1099,11 +1125,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <Button
                     variant="destructive"
                     disabled={busy}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        window.confirm(
-                          `Remove ${memberName(active)} from this organization?`,
-                        )
+                        await confirm({
+                          title: `Remove ${memberName(active)} from this organization?`,
+                          confirmLabel: "Remove member",
+                          tone: "danger",
+                        })
                       )
                         void run(
                           () =>

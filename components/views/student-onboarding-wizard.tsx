@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { authEmailError, confirmedEmailSession, confirmEmailCode } from "@/lib/auth-email"
 import { passwordNotSavedNotice } from "@/lib/signup-password"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
@@ -26,18 +27,6 @@ import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
@@ -69,6 +58,14 @@ const STEPS = [
 ] as const
 
 const GRAD_YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
+
+// Steps 2 and 3 widgets load in their own chunks (server-rendered when visible). The wizard starts
+// both downloads after mount, and each placeholder matches the control's height, so a later step
+// does not shift or flash.
+const loadVerificationCodeInput = () => import("@/components/onboarding/verification-code-input")
+const loadGraduationYearSelect = () => import("@/components/onboarding/graduation-year-select")
+const VerificationCodeInput = dynamic(() => loadVerificationCodeInput().then(module => module.VerificationCodeInput), { loading: () => <div aria-hidden="true" className="h-12 w-[calc(6*clamp(28px,8vw,48px))]" /> })
+const GraduationYearSelect = dynamic(() => loadGraduationYearSelect().then(module => module.GraduationYearSelect), { loading: () => <div aria-hidden="true" className="h-11 w-full rounded-md border border-border" /> })
 const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10 MB
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -218,6 +215,8 @@ export function StudentOnboardingWizard({
 }) {
   const { isImpersonating } = useAuth()
   const [step, setStep] = useState(1)
+  // Warm the later steps' chunks while the visitor fills in step 1.
+  useEffect(() => { void loadVerificationCodeInput(); void loadGraduationYearSelect() }, [])
   const [globalError, setGlobalError] = useState("")
   const [loading, setLoading] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null), [turnstileReset, setTurnstileReset] = useState(0)
@@ -567,29 +566,14 @@ export function StudentOnboardingWizard({
                 className="space-y-5"
               >
                 <div className="flex justify-center">
-                  <InputOTP
-                    maxLength={6}
-                    pattern="[0-9]*"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    aria-label="Six-digit verification code"
+                  <VerificationCodeInput
                     value={step2Form.watch("code")}
                     onChange={(value) =>
                       step2Form.setValue("code", value, {
                         shouldValidate: true,
                       })
                     }
-                  >
-                    <InputOTPGroup>
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <InputOTPSlot
-                          key={i}
-                          index={i}
-                          className="h-12 w-[clamp(28px,8vw,48px)] text-lg shadow-none"
-                        />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
+                  />
                 </div>
                 {step2Form.formState.errors.code && (
                   <p className="text-center text-xs text-red-600">
@@ -662,25 +646,15 @@ export function StudentOnboardingWizard({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="onboarding-grad-year">Graduation year</Label>
-                    <Select
+                    <GraduationYearSelect
+                      years={GRAD_YEARS}
                       value={step3Form.watch("gradYear")}
                       onValueChange={(v) =>
                         step3Form.setValue("gradYear", v, {
                           shouldValidate: true,
                         })
                       }
-                    >
-                      <SelectTrigger id="onboarding-grad-year" className="h-11 w-full rounded-md border-border shadow-none">
-                        <SelectValue placeholder="Year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GRAD_YEARS.map((y) => (
-                          <SelectItem key={y} value={y}>
-                            {y}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                     {step3Form.formState.errors.gradYear && (
                       <p className="text-xs text-red-600">
                         {step3Form.formState.errors.gradYear.message}

@@ -95,6 +95,7 @@ export function applicantStatusHref(input = new URLSearchParams()) {
 /**
  * Leader views that used to render on the homepage (`/?view=leader-dashboard`, …) live in the
  * club workspace. Same mapping the client used (DashboardLayout); `applicantId`/`roundId` carry over.
+ * `club-management-portal` is a legacy URL only: its local preview view was retired (FE-28).
  */
 export const LEADER_WORKSPACE_VIEWS = ["leader-dashboard", "interview-scheduler", "club-manager", "broadcast-messages", "screening-dashboard", "club-management-portal"] as const
 export type LeaderWorkspaceView = typeof LEADER_WORKSPACE_VIEWS[number]
@@ -102,9 +103,12 @@ export function isLeaderWorkspaceView(view: string | null | undefined): view is 
   return LEADER_WORKSPACE_VIEWS.includes(view as LeaderWorkspaceView)
 }
 export function leaderWorkspaceHref(view: LeaderWorkspaceView, clubId: string, focus: { applicantId?: string | null; roundId?: string | null } = {}) {
-  const section = view === "club-manager" || view === "club-management-portal" ? "settings" : view === "broadcast-messages" ? "announcements" : "recruitment"
+  // Announcements live on Home; screening rules are the Recruiting settings drawer on Applicants.
+  const section = view === "club-manager" || view === "club-management-portal" ? "settings" : view === "broadcast-messages" ? "overview" : "recruitment"
   const query = new URLSearchParams({ section })
-  if (section === "recruitment") query.set("tool", view === "interview-scheduler" ? "interviews" : view === "screening-dashboard" ? "rules" : "applicants")
+  if (view === "broadcast-messages") query.set("focus", "announcements")
+  if (section === "recruitment") query.set("tool", view === "interview-scheduler" ? "interviews" : "applicants")
+  if (view === "screening-dashboard") query.set("recruitingSettings", "rules")
   if (focus.applicantId) query.set("applicantId", focus.applicantId)
   if (focus.roundId) query.set("roundId", focus.roundId)
   return `/club/${encodeURIComponent(clubId)}/workspace?${query}`

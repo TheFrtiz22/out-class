@@ -8,6 +8,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { boundedParse } from "@/lib/bounded-input";
 
 const createSlotsSchema = z.object({
   clubId: z.string().uuid(),
@@ -20,7 +21,7 @@ const createSlotsSchema = z.object({
 });
 
 export async function createInterviewSlots(data: z.infer<typeof createSlotsSchema>) {
-  const parsed = createSlotsSchema.parse(data);
+  const parsed = boundedParse(createSlotsSchema, data);
 
   // Must be an admin to define interview blocks
   await requireClubPermission(parsed.clubId, ["interviews.manage"]);

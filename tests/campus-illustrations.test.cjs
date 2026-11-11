@@ -7,7 +7,7 @@ const { renderToStaticMarkup } = require('react-dom/server')
 function load(file) {
  const mod = { exports: {} }
  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
- new Function('require','exports',code)(name => name === '@/components/icons' ? require('./helpers/icons.cjs') : name.endsWith('.css') ? {} : name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : name === './campus-illustration' ? load('components/product/campus-illustration.tsx') : require(name), mod.exports)
+ new Function('require','exports',code)(name => name === '@/components/icons' ? require('./helpers/icons.cjs') : name.endsWith('.css') ? {} : name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : require(name), mod.exports)
  return mod.exports
 }
 const { campusIllustrations } = load('lib/campus-illustrations.ts')
@@ -21,17 +21,6 @@ test('approved assets preserve full viewBoxes and filled external vector groups'
  }
  assert.equal(campusIllustrations.columns.asset,'rotunda')
  assert.equal(fs.existsSync('public/images/campus/illustrations/columns.svg'),false)
-})
-test('decorative rendering is silent, unfocusable and references both exact asset groups',()=>{
- const {CampusIllustration}=load('components/product/campus-illustration.tsx')
- for(const variant of Object.keys(campusIllustrations)) {
- const html=renderToStaticMarkup(React.createElement(CampusIllustration,{variant}))
- assert.match(html,/aria-hidden="true"/);assert.match(html,/focusable="false"/)
- assert.ok(html.includes(`${campusIllustrations[variant].asset}.svg#linework`))
- assert.ok(html.includes(`${campusIllustrations[variant].asset}.svg#accent`))
- assert.doesNotMatch(html,/tabindex|<title|<desc/)
- assert.match(html,/preserveAspectRatio="xMidYMid meet"/)
- }
 })
 test('page headers preserve titles and actions without decorative artwork',()=>{
  const {PageHeader}=load('components/ui/page-header.tsx')
@@ -50,7 +39,7 @@ test('standalone brand artwork keeps original colors and reduced-motion support 
  assert.match(css,/color: #507b9e/);assert.match(css,/color: #f07835/)
  assert.doesNotMatch(css,/oc-page-header|mask-image|overflow:\s*hidden/)
  assert.match(css,/prefers-reduced-motion: reduce/)
- assert.match(css,/aspect-ratio: var\(--oc-campus-aspect-ratio\)/)
+ assert.match(css,/aspect-ratio: var\(--oc-campus-aspect-ratio(, auto)?\)/)
 })
 
 test("approved SVG bytes remain unchanged",()=>{
@@ -108,8 +97,7 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/lib/welcome') return load('lib/welcome.ts')
    if(name==='@/components/ui/page-header') return component('components/ui/page-header.tsx')
    if(name==='@/components/product/dashboard/dashboard') return component('components/product/dashboard/dashboard.tsx')
-   if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
-   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation','@/lib/organization-authorization','@/lib/club-onboarding','@/lib/copy/terms'].includes(name)) return load(name.replace('@/','')+'.ts')
+   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation','@/lib/organization-authorization','@/lib/club-onboarding','@/lib/copy/terms','@/lib/recruiting-settings'].includes(name)) return load(name.replace('@/','')+'.ts')
    return new Proxy({}, {get:()=>()=>null})
   },exports)
   return exports

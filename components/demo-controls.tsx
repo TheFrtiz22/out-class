@@ -2,19 +2,27 @@
 
 import { useDemoMode } from "@/contexts/demo-context"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 export function DemoMenuItems() {
   const demo = useDemoMode()
+  const confirm = useConfirm()
   if (!demo.allowed) return null
-  const safe = () =>
+  const safe = async () =>
     !document.querySelector('[data-saving="true"]') &&
     (!document.querySelector('[data-unsaved="true"]') ||
-      window.confirm("Discard unsaved changes and switch demo context?"))
+      (await confirm({
+        title: "Discard unsaved changes?",
+        description: "Switching demo context loses your unsaved changes.",
+        confirmLabel: "Discard and switch",
+        cancelLabel: "Keep editing",
+        tone: "danger",
+      })))
   return (
     <>
       <DropdownMenuSeparator />
       <DropdownMenuItem
-        onSelect={() => {
-          if (safe()) void demo.toggleDemo()
+        onSelect={async () => {
+          if (await safe()) void demo.toggleDemo()
         }}
       >
         Demo Mode: {demo.isDemoEnabled ? "On — exit demo" : "Off — enable demo"}
@@ -22,12 +30,15 @@ export function DemoMenuItems() {
       {demo.isDemoEnabled && (
         <>
           <DropdownMenuItem
-            onSelect={() => {
+            onSelect={async () => {
               if (
-                safe() &&
-                window.confirm(
-                  "Reset all demo changes to the original sample season? Real data is unaffected.",
-                )
+                (await safe()) &&
+                (await confirm({
+                  title: "Reset demo changes?",
+                  description: "The original sample season is restored. Real data is unaffected.",
+                  confirmLabel: "Reset demo",
+                  tone: "danger",
+                }))
               )
                 demo.resetDemo()
             }}

@@ -17,7 +17,7 @@ export * from "@/lib/student-routes"
  * highlighted item always matches the page being shown.
  */
 /** `label` is a visible heading; `name` labels an unheaded group for assistive technology. */
-export type RailSection = { id: string; label?: string; name?: string; tour?: string; items: ProductNavItem[] }
+export type RailSection = { id: string; label?: string; name?: string; tour?: string; items: ProductNavItem[]; /** Sits at the bottom of the rail (Settings). */ pinned?: boolean }
 export type WorkspaceKind = "personal" | "leader" | "admin"
 export type WorkspaceOption = { id: WorkspaceKind; clubId?: string; label: string; shortLabel?: string; href: string }
 
@@ -61,9 +61,10 @@ export function personalRailSections(options: { settings?: boolean } = {}): Rail
 /** A member (non-leader) club page: personal sections plus that club's own pages. */
 export function memberRailSections(clubId: string, clubName: string | undefined, options: { settings?: boolean } = {}): RailSection[] {
   const root = `/club/${encodeURIComponent(clubId)}/workspace`
+  // Members only see meetings, so their Calendar entry keeps the Meetings name (the personal rail already has a Calendar).
   const club: RailSection = { id: "member-club", label: clubName || "Club", items: [
     { id: "club-home", label: "Club home", href: `${root}?section=overview` },
-    { id: "club-meetings", label: "Meetings", href: `${root}?section=meetings` },
+    { id: "club-meetings", label: "Meetings", href: `${root}?section=calendar&type=meetings` },
     { id: "club-tasks", label: "Tasks", href: `${root}?section=tasks` },
   ] }
   const sections = personalRailSections(options)
@@ -71,18 +72,22 @@ export function memberRailSections(clubId: string, clubName: string | undefined,
 }
 
 /**
- * Club workspace sections. Recruiting and Club used to be separate pill modes;
- * both now live in the rail. Announcements and Settings appear once, under Club.
+ * Club workspace rail: Recruiting (Overview · Applicants · Interviews · Decide), Club (Home · Calendar · Tasks ·
+ * Members), then Settings pinned at the bottom. Pages without a rail entry (`hidden`) are left out here but stay
+ * reachable, and allowed, through managerNavigation.
  */
 export function leaderRailSections(member: ClubAccess, clubId: string, search = ""): RailSection[] {
-  const shared = new Set(["announcements", "settings"])
-  const recruiting = managerNavigation(member, clubId, "recruiting", search).filter(item => !shared.has(item.id))
-  const club = managerNavigation(member, clubId, "club", search).map(item => item.id === "overview" ? { ...item, id: "club-home", label: "Club home" } : item)
+  const visible = (item: ProductNavItem) => !item.hidden && item.id !== "settings"
+  const recruiting = managerNavigation(member, clubId, "recruiting", search).filter(visible)
+  const clubItems = managerNavigation(member, clubId, "club", search)
+  const club = clubItems.filter(visible).map(item => item.id === "overview" ? { ...item, id: "club-home" } : item)
+  const settings = clubItems.find(item => item.id === "settings")
   // Only Overview means the member has no recruiting tools; the overview alone is not a section.
   const hasRecruiting = recruiting.some(item => item.id !== "overview")
   return [
     ...(hasRecruiting ? [{ id: "recruiting", label: "Recruiting", tour: "mode-recruiting", items: recruiting.map(item => ({ ...item, mode: "recruiting" as const })) }] : []),
     { id: "club", label: "Club", tour: "mode-club", items: club.map(item => ({ ...item, mode: "club" as const })) },
+    ...(settings ? [{ id: "pinned", name: "Settings", pinned: true, items: [{ ...settings, mode: "club" as const }] }] : []),
   ]
 }
 
@@ -142,10 +147,11 @@ export function activeNavItem(pathname: string, params: URLSearchParams = new UR
   if (pathname.startsWith("/settings") || pathname.startsWith("/club-claims") || pathname.startsWith("/invitations") || pathname.startsWith("/club-access/")) return "settings"
   if (/^\/club\/[^/]+\/workspace$/.test(pathname)) {
     const section = params.get("section") || "overview", tool = params.get("tool")
-    // Same mapping the club workspace uses to pick its content.
-    if (section === "recruitment") return tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants"
-    if (section === "overview") return "club-home"
-    return options.member && (section === "meetings" || section === "tasks") ? `club-${section}` : section
+    // Same mapping the club workspace uses to pick its content. Pages without a rail entry light their parent.
+    if (section === "recruitment") return !tool || ["applicants", "rejected", "resumes", "reviews", "rounds", "rules"].includes(tool) ? "applicants" : tool === "scheduled-decisions" || tool === "voting" || tool === "letters" ? "decisions" : tool
+    if (section === "overview" || section === "announcements") return "club-home"
+    if (section === "meetings" || section === "events") return options.member ? "club-meetings" : "calendar"
+    return options.member && (section === "calendar" || section === "tasks") ? (section === "calendar" ? "club-meetings" : "club-tasks") : section
   }
   const platform = pathname.match(/^\/platform(?:\/([^/?]+))?/)
   if (platform) return platform[1] || "overview"
@@ -176,15 +182,24 @@ export function bottomBarItems(sections: RailSection[], kind: WorkspaceKind | "p
 }
 
 /**
- * Club workspace phone bar: one fixed set whatever the page — Home · Recruiting · Meetings · Members
- * (then More). Recruiting opens the recruiting dashboard; its sub-pages show as in-page tabs.
- * A member without a destination gets the next club page instead (Tasks, Announcements, Settings).
+ * Club workspace phone bar: one fixed set whatever the page — Home · Recruiting · Calendar · Members (then More).
+ * Recruiting opens the recruiting dashboard; its pages show as in-page tabs. A member without a destination gets
+ * the next club page instead (Tasks, Settings).
  */
 function leaderBottomBar(sections: RailSection[]): ProductNavItem[] {
   const items = railItems(sections), find = (id: string) => items.find(item => item.id === id && item.mode !== "recruiting")
   const recruiting = sections.find(section => section.id === "recruiting")
-  const recruitingItem: ProductNavItem | undefined = recruiting && recruiting.items.length ? { id: "recruiting", label: "Recruiting", href: (recruiting.items.find(item => item.id === "overview") ?? recruiting.items[0]).href, mode: "recruiting", matches: recruiting.items.map(item => item.id) } : undefined
-  const fixed = [find("club-home"), recruitingItem, find("meetings"), find("members")].filter((item): item is ProductNavItem => !!item)
-  const fallback = ["tasks", "announcements", "settings"].map(find).filter((item): item is ProductNavItem => !!item)
+  const recruitingItem: ProductNavItem | undefined = recruiting && recruiting.items.length ? { id: "recruiting", label: "Recruiting", href: (recruiting.items.find(item => item.id === "overview") ?? recruiting.items[0]).href, mode: "recruiting", matches: recruiting.items.flatMap(item => [item.id, ...(item.matches ?? [])]) } : undefined
+  const fixed = [find("club-home"), recruitingItem, find("calendar"), find("members")].filter((item): item is ProductNavItem => !!item)
+  const fallback = ["tasks", "settings"].map(find).filter((item): item is ProductNavItem => !!item)
   return [...fixed, ...fallback].slice(0, 4)
+}
+
+/**
+ * The phone More sheet for a club workspace: every rail item the bar doesn't show directly, in rail order and with
+ * rail labels. Recruiting's bar item only opens Overview, so all of Recruiting stays listed.
+ */
+export function moreSections(sections: RailSection[], bar: ProductNavItem[]): RailSection[] {
+  const direct = new Set(bar.filter(item => item.id !== "recruiting").map(item => item.id))
+  return sections.map(section => ({ ...section, items: section.items.filter(item => !item.hidden && !direct.has(item.id)) })).filter(section => section.items.length)
 }

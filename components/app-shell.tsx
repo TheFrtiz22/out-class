@@ -22,6 +22,7 @@ import { resolveStudentView, sectionForStudentView, canonicalStudentParams } fro
 import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
 import { FocusFrame } from "@/components/shell/focus-frame"
 import { Button } from "@/components/ui/button"
+import type { ExploreDirectory } from "@/components/views/explore-view"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
@@ -39,17 +40,14 @@ const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").
 const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: () => <WorkspaceLoading label="Preparing your applications…" layout="applications" /> })
 const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: () => <WorkspaceLoading label="Loading your schedule…" layout="schedule" /> })
 const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView), { loading: () => <WorkspaceLoading label="Loading recruitment workspace…" layout="applicants" /> })
-const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView), { loading: () => <WorkspaceLoading label="Loading club management…" layout="workspace" /> })
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" /> })
 const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView), { loading: () => <WorkspaceLoading label="Loading interview schedule…" layout="calendar" /> })
 const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" /> })
-const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" /> })
 const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: renderDestinationLoading })
 
 const adminViewIds: ViewId[] = [
   "leader-dashboard",
   "club-manager",
-  "club-management-portal",
   "screening-dashboard",
   "interview-scheduler",
   "interview-workspace",
@@ -63,10 +61,12 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "email-code-required": EMAIL_CODE_REQUIRED_MESSAGE,
 }
 
-export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader" }
+export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader"; initialDirectory?: ExploreDirectory; serverNow?: number }
 
-export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false, initialAuthRole }: AppShellProps) {
+export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false, initialAuthRole, initialDirectory, serverNow }: AppShellProps) {
   const demo = useDemoMode()
+  // The server-read directory seeds only the first Explore mount; later visits read it fresh.
+  const [directorySeed, setDirectorySeed] = useState(initialDirectory)
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -212,17 +212,15 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
             {view === "my-clubs" && <PersonalClubs section={personalSection} />}
-            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} />}
+            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} initialDirectory={demo.isDemoEnabled ? undefined : directorySeed} serverNow={serverNow} onInitialDirectoryUsed={() => setDirectorySeed(undefined)} />}
             {view === "corkboard" && <CorkboardView onNavigate={navigate} />}
             {/* One instance for both scopes: its stage control slides instead of remounting. */}
-            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} />}
-            {view === "calendar" && <CalendarView onNavigate={navigate} />}
+            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} serverNow={serverNow} />}
+            {view === "calendar" && <CalendarView onNavigate={navigate} serverNow={serverNow} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
             {view === "interview-scheduler" && (demo.isDemoEnabled ? <DemoInterviewSchedule onNavigate={navigate} /> : <InterviewSchedulerView onNavigate={navigate} />)}
-            {view === "broadcast-messages" && <BroadcastMessagesView />}
             {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubWorkspaceSettings />)}
-            {view === "club-management-portal" && <ClubManagementPortalView />}
       </DashboardLayout>}
     </StudentState>
   )

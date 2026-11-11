@@ -32,13 +32,13 @@ export async function generateMetadata({ params }: { params: Promise<{ clubId: s
   }
 }
 export default async function ClubPage({ params }: { params: Promise<{ clubId: string }> }) {
-  const { clubId } = await params
-  const jar = await cookies()
+  const [{ clubId }, jar] = await Promise.all([params, cookies()])
   if (jar.get(DEMO_COOKIE)?.value === "1") {
     const { data: { user }, error: authError } = await getSessionUser()
     if (canAccessDemo(authError || !user?.email_confirmed_at ? undefined : user.email)) redirect(`/preview?demoClub=${encodeURIComponent(clubId)}`)
   }
-  const result = await getPublicClub(clubId)
+  // Past the Demo redirect, the public profile and the (per-request cached) session are independent.
+  const [result, { data: { user } }] = await Promise.all([getPublicClub(clubId), getSessionUser()])
   const sample = publicClubs.find((club) => club.id === clubId)
   const found = result.club || (sample ? { ...sample, source: "preview" as const } : null)
   // The client receives the public view of the marketing JSON only: research notes,
@@ -57,8 +57,5 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
       )
     notFound()
   }
-  const {
-    data: { user },
-  } = await getSessionUser()
   return <AuthenticatedPageLayout optional><PublicClubPage club={club} authenticated={!!user} embedded={!!user} serverNow={Date.now()} /></AuthenticatedPageLayout>
 }

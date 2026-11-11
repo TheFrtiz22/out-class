@@ -43,14 +43,14 @@ test("one role label for My Clubs and Settings", () => {
 
 test("club workspace pages have their own title, not the club name", () => {
   const cases = {
-    "section=overview": "Club home",
-    "": "Club home",
+    "section=overview": "Home",
+    "": "Home",
     "section=recruitment&tool=overview": "Recruiting",
     "section=recruitment&tool=applicants": "Applicants",
     "section=recruitment&tool=interviews": "Interviews",
-    "section=recruitment&tool=decisions&decisionTab=voting": "Voting room",
-    "section=recruitment&tool=decisions&decisionTab=letters": "Decision letters",
-    "section=announcements": "Announcements",
+    "section=recruitment&tool=decisions&decisionTab=voting": "Decide",
+    "section=recruitment&tool=decisions&decisionTab=letters": "Decide",
+    "section=calendar": "Calendar",
     "section=settings&setting=general": "Settings",
   }
   for (const [query, title] of Object.entries(cases)) assert.equal(routes.clubWorkspaceTitle(new URLSearchParams(query)), title, query)

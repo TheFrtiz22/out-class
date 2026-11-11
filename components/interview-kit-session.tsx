@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { composerEnter } from "@/lib/composer-enter";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, Plus } from "@/components/icons";
+import { ArrowRight, CheckCircle2, Plus } from "@/components/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useInterviewWorkspace } from "@/hooks/use-interview-workspace";
 import type { KitQuestion } from "@/lib/interview-kits";
@@ -608,7 +608,7 @@ export function InterviewKitSession({
           {!session.completedAt ? <div className="flex flex-wrap gap-2"><Button type="button" disabled={completing || ending || draft.score === null || interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT} onClick={() => void persist(true)}>{completing ? "Submitting…" : "End post-interview"}</Button><Button type="button" variant="ghost" disabled={ending || completing} onClick={() => { setExpandedQuestions([]); setClosing(false); }}>Keep interviewing</Button></div> : <div className="space-y-3">
             {nextError && <p role="alert" className="text-sm text-destructive">{nextError}</p>}
             {noMoreApplicants && <p role="status" className="font-medium">No more applicants</p>}
-            {onNextApplicant && <Button type="button" disabled={nextBusy} onClick={() => void nextApplicant()}>{nextBusy ? "Loading next candidate…" : noMoreApplicants ? "Check for new assignments" : "Next candidate →"}</Button>}
+            {onNextApplicant && <Button type="button" disabled={nextBusy} onClick={() => void nextApplicant()}>{nextBusy ? "Loading next candidate…" : noMoreApplicants ? "Check for new assignments" : <>Next candidate<ArrowRight size={16} aria-hidden="true" /></>}</Button>}
             {onReturnToList && <Button type="button" variant="outline" disabled={nextBusy} onClick={onReturnToList}>Return to interview list</Button>}
           </div>}
         </section>}
