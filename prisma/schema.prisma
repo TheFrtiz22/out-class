@@ -35,6 +35,7 @@ model User {
   claimedInvitations ClubInvitation[] @relation("ClaimedInvitation")
   invitationDeliveries InvitationDelivery[]
   matchedRosterRows RosterImportRow[]
+  termsAcceptances TermsAcceptance[]
   disabledAt DateTime? @db.Timestamptz(3)
   id         String    @id @default(uuid())
   email      String    @unique // MUST be @virginia.edu
@@ -1776,4 +1777,20 @@ model CalendarFeedToken {
   tokenHash  String    @unique
   createdAt  DateTime  @default(now())
   lastUsedAt DateTime?
+}
+
+/// Clickwrap acceptance of the Terms of Service and Privacy Policy (lib/legal-versions.ts).
+/// Append-only evidence: one row per user and version pair. Server-only (RLS on, no browser roles).
+model TermsAcceptance {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  termsVersion   String
+  privacyVersion String
+  /// SIGNUP (sign-up form), CLAIM (invitation claim) or PROMPT (returning-user screen).
+  source         String
+  acceptedAt     DateTime @default(now())
+
+  @@unique([userId, termsVersion, privacyVersion])
+  @@index([userId, acceptedAt])
 }

@@ -30,6 +30,9 @@ import { Label } from "@/components/ui/label"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
+import { acceptCurrentTerms } from "@/actions/terms"
+import { TermsClickwrap, clickwrapAnswer } from "@/components/legal/terms-clickwrap"
+import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
@@ -205,15 +208,20 @@ function ResumeDropZone({
 // ─── Main Wizard ──────────────────────────────────────────────────────────────
 
 export function StudentOnboardingWizard({
-  onComplete, embedded = false, initialUser, onBack, onSignIn,
+  onComplete, embedded = false, initialUser, onBack, onSignIn, termsAccepted = false,
 }: {
   onComplete: () => void
   embedded?: boolean
   initialUser?: { email?: string; email_confirmed_at?: string | null; user_metadata?: Record<string, any> } | null
   onBack?: () => void
   onSignIn?: () => void
+  /** The signed-in account already accepted the current Terms and Privacy versions (server check). */
+  termsAccepted?: boolean
 }) {
   const { isImpersonating } = useAuth()
+  // Clickwrap: unticked until the person ticks it; asked once, on the account step.
+  const askTerms = TERMS_ACCEPTANCE_REQUIRED && !termsAccepted
+  const [acceptTerms, setAcceptTerms] = useState(false)
   const [step, setStep] = useState(1)
   // Warm the later steps' chunks while the visitor fills in step 1.
   useEffect(() => { void loadVerificationCodeInput(); void loadGraduationYearSelect() }, [])
@@ -255,13 +263,24 @@ export function StudentOnboardingWizard({
   async function onStep1Submit(data: AccountBasicsData) {
     if (isImpersonating || loading) return
     setGlobalError("")
+    if (askTerms && !acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
     wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
-    if (accountCreated) { setStep(3); return }
+    if (accountCreated) {
+      // Signed in already (Microsoft or a confirmed email link): record the acceptance now.
+      if (askTerms) {
+        setLoading(true)
+        try {
+          const accepted = await acceptCurrentTerms({ ...clickwrapAnswer(true), source: "SIGNUP" })
+          if ("error" in accepted && accepted.error) { setGlobalError(accepted.error); return }
+        } catch { setGlobalError("Unable to save your agreement. Please try again."); return } finally { setLoading(false) }
+      }
+      setStep(3); return
+    }
     if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     try {
       const values = step1Form.getValues()
-      const result = await registerStudent(values, turnstileToken)
+      const result = await registerStudent(values, turnstileToken, clickwrapAnswer(acceptTerms))
       if (result.error) { setGlobalError(result.error); return }
       pendingPassword.current = values.password
       setCodeSent(true)
@@ -308,6 +327,9 @@ export function StudentOnboardingWizard({
       const password = await setPasswordAfterConfirmation(supabase, pendingPassword.current)
       pendingPassword.current = undefined
       setConfirmNotice(password.saved ? "" : passwordNotSavedNotice)
+      // The box was ticked on step 1 (registerStudent refused the account otherwise); now that the
+      // account holder has a session, store it. If this fails, the one-time screen asks again later.
+      if (askTerms && acceptTerms) await acceptCurrentTerms({ ...clickwrapAnswer(true), source: "SIGNUP" }).catch(() => undefined)
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
@@ -537,6 +559,7 @@ export function StudentOnboardingWizard({
                   <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
                   {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
+                {askTerms && <TermsClickwrap checked={acceptTerms} onCheckedChange={value => { setAcceptTerms(value); if (value && globalError === TERMS_REQUIRED_MESSAGE) setGlobalError("") }} disabled={loading} />}
                 {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button
                   type="submit"

@@ -8,11 +8,13 @@ import { LoginBrandPanel } from "./login-brand-panel"
 import { Button } from "@/components/ui/button"
 import { authEntryHref, signupReturnPath } from "@/lib/auth"
 import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
+import { TERMS_ACCEPTANCE_REQUIRED } from "@/lib/legal-versions"
+import Link from "next/link"
 import type { User } from "@supabase/supabase-js"
 import "./login.css"
 import { PublicPageFrame } from "@/components/landing/public-page-frame"
 
-export function SignupPageView({ initialUser, initialError = "" }: { initialUser: User | null; initialError?: string }) {
+export function SignupPageView({ initialUser, initialError = "", termsAccepted = false }: { initialUser: User | null; initialError?: string; termsAccepted?: boolean }) {
   const { isImpersonating } = useAuth()
   const demo = useDemoMode()
   const [busy, setBusy] = useState(false)
@@ -39,9 +41,9 @@ export function SignupPageView({ initialUser, initialError = "" }: { initialUser
       <div className="oc-signup-content oc-login-auth-content">
         <h1 id="signup-title" className="oc-auth-title">Create your profile</h1>
         <p className="oc-login-auth-description">Use your UVA email. Leading a club? Sign up first, then accept your club’s invitation or claim its page.</p>
-        {MICROSOFT_AUTH_ENABLED && !initialUser && <><Button className="oc-login-uva" disabled={busy} onClick={() => void continueWithUva()}>{busy ? "Redirecting…" : "Continue with UVA"}</Button><p className="oc-login-auth-description">Or create an account with your UVA email below.</p></>}
+        {MICROSOFT_AUTH_ENABLED && !initialUser && <><Button className="oc-login-uva" disabled={busy} onClick={() => void continueWithUva()}>{busy ? "Redirecting…" : "Continue with UVA"}</Button>{TERMS_ACCEPTANCE_REQUIRED && <p className="oc-login-auth-description">You’ll agree to the <Link href="/terms" target="_blank" rel="noopener" className="underline underline-offset-2">Terms</Link> and <Link href="/privacy" target="_blank" rel="noopener" className="underline underline-offset-2">Privacy Policy</Link> before your profile is created.</p>}<p className="oc-login-auth-description">Or create an account with your UVA email below.</p></>}
         {error && <p role="alert" className="oc-login-error">{error}</p>}
-        <fieldset disabled={busy}><StudentOnboardingWizard embedded initialUser={initialUser}
+        <fieldset disabled={busy}><StudentOnboardingWizard embedded initialUser={initialUser} termsAccepted={termsAccepted}
           onSignIn={() => { window.location.href = authEntryHref("/login", window.location.search) }}
           onComplete={() => {
             const next = signupReturnPath(new URLSearchParams(window.location.search).get("next"))
