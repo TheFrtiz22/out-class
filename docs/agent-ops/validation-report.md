@@ -2,6 +2,13 @@
 
 Appended by `outclass-release-check`. Newest first.
 
+## 2026-11-11 OPS-HEALTH-README ops/readme-health-audit (base main b2476112)
+- tests/health-route.test.cjs 6/6 (200 with DB; 503 on error and on 2 s timeout with mocked timers; no host/error text in body, headers or log; middleware bypass for GET/HEAD with demo, support and auth cookies; deploy.yml parses with js-yaml; audit gate classification and allowlist expiry). Negative control: with main's middleware.ts the bypass test fails.
+- Related suites (middleware, nodemailer, workflow, package.json, installable app): 107 tests, 106 pass, 1 fail (performance-regressions: `.prisma/client` not generated in this worktree's shared node_modules; environmental, unrelated).
+- `node scripts/check-dependency-audit.cjs`: pass. zod GHSA-mrhx-c7xc-m3w5 (high) allowlisted until 2027-02-01 (no patched 3.x; zod 4 is a separate migration); nodemailer advisories cleared by 10.2.1; moderate glob/minimatch via @sentry/nextjs reported, not blocking.
+- Lockfile: `pnpm install --lockfile-only --offline` resolved nodemailer 10.2.1 from the local cache; `--frozen-lockfile` check passes. Shared node_modules still holds 10.0.13 (not reinstalled); email tests mock the transport.
+- Not run here: full `pnpm run test`, typecheck, build (Prisma client not generated in the shared node_modules; tsc reports 1,579 pre-existing errors, none in changed files; eslint on changed files clean). CI must confirm.
+
 ## 2026-11-10 OPS-OVERNIGHT-1 overnight release run (main c2c6efa9 → see merge SHAs)
 - Scope: owner-approved unattended run. GitHub merges through the PR API only; Supabase and Vercel read-only; no migration applied, no env var, DNS, email or data write.
 - Gate per PR: the 5 required checks (validate, Integration infrastructure coverage, Native PostgreSQL / security, Native PostgreSQL / transactions, Applicant workflow / application-writing) green on the head; local typecheck, lint, test:migrations and the PR's changed unit tests on the exact merge result (the container cannot download Prisma engines, so the full unit suite, build, browser and E2E suites ran only in CI and the Vercel preview/production builds); Vercel production deployment READY for the merge SHA; `get_runtime_errors` since the run started: none.
