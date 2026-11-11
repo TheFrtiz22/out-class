@@ -1,4 +1,5 @@
 import { MeetingList } from "@/components/meeting-workspace";
+export const metadata = { title: "Meetings", robots: { index: false, follow: false } }
 export default async function Page({
   searchParams,
 }: {

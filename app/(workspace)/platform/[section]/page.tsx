@@ -11,6 +11,11 @@ import { AdminReports } from "@/components/admin/admin-reports";
 import { AdminSettings } from "@/components/admin/admin-settings";
 import { AdminPermissions } from "@/components/admin/admin-permissions";
 import type { PlatformResource } from "@/actions/platform-admin";
+export async function generateMetadata({ params }: { params: Promise<{ section: string }> }) {
+  const { section } = await params
+  const label = adminNavigation.find(i => i.id === section)?.label ?? "Administration"
+  return { title: `${label} · Admin`, robots: { index: false, follow: false } }
+}
 export default async function AdminSection({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const result = await adminPageLoad("/platform/[section]", requirePlatformAdmin);
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
