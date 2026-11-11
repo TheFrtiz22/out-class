@@ -174,37 +174,37 @@ test("reduced motion removes pull and overlay animation; Escape and focus trappi
   assert.match(dialog, /@radix-ui\/react-dialog/);
 });
 
-test("leader Meetings and Events are separate sections; Demo still isolates unavailable events (FE-12)", () => {
-  let params = new URLSearchParams('section=meetings'), demo = false;
-  const { ClubMeetingsWorkspace } = load('components/events/club-meetings-workspace.tsx', {
-    'next/navigation': { useSearchParams: () => params },
+test("Calendar shows meetings and events with an All / Meetings / Events filter; Demo still isolates events", () => {
+  let params = new URLSearchParams('section=calendar'), demo = false;
+  const { ClubCalendar } = load('components/events/club-meetings-workspace.tsx', {
+    'next/navigation': { useSearchParams: () => params, useRouter: () => ({ replace() {} }) },
     '@/contexts/demo-context': { useDemoMode: () => ({isDemoEnabled: demo}) },
   });
-  const props={clubId:'club',clubName:'Club',canSeeAttendees:true};
-  let tree=ClubMeetingsWorkspace(props);
-  const list=all(tree).find(n=>n.type==='MeetingList');
-  assert.equal(list.props.initialAudience,'ALL');
-  assert.equal(list.props.toolbarStart,undefined,'no Meetings/Events switch: Events has its own nav entry');
-  assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
-  params=new URLSearchParams('section=meetings&new=1');tree=ClubMeetingsWorkspace(props);
+  const props={clubId:'club',clubName:'Club',canManage:true,canSeeAttendees:true};
+  let tree=ClubCalendar(props);
+  const filter=all(tree).find(n=>n.type==='PillGroup');
+  assert.deepEqual(filter.props.options.map(o=>o.label),['All','Meetings','Events']);
+  assert.equal(filter.props.value,'all');
+  assert.equal(all(tree).find(n=>n.type==='MeetingList').props.initialAudience,'ALL');
+  assert.ok(all(tree).some(n=>n.type==='ClubEvents'),'All shows events too');
+  params=new URLSearchParams('section=calendar&type=meetings&new=1');tree=ClubCalendar(props);
   assert.equal(all(tree).find(n=>n.type==='MeetingList').props.openCreate,true);
-  params=new URLSearchParams('section=events');tree=ClubMeetingsWorkspace({...props,events:true});
+  assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
+  params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar(props);
   assert.ok(all(tree).some(n=>n.type==='ClubEvents'));
   assert.ok(!all(tree).some(n=>n.type==='MeetingList'));
-  demo=true;tree=ClubMeetingsWorkspace({...props,events:true});
+  demo=true;tree=ClubCalendar(props);
   assert.match(title(tree),/not available in Demo yet/);
   assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
+  // Without meetings.manage: meetings only, no filter, even on an Events link.
+  demo=false;params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar({...props,canManage:false,personalOnly:true});
+  assert.equal(tree.type,'MeetingList');assert.equal(tree.props.personalOnly,true);
 });
 
-test("the workspace renders the Events section for meeting managers (FE-12)", () => {
+test("the workspace renders Calendar for every member; events stay behind meetings.manage", () => {
   const workspace=fs.readFileSync('components/club-workspace.tsx','utf8');
-  assert.match(workspace,/section === "events" && hasPermission\(membership, "meetings\.manage"\) && <ClubMeetingsWorkspace [^>]*\bevents \/>/);
-  // Members without meetings.manage who follow an old Events link land on Meetings, never a "not available" page
-  // (verified in a production build: both old link forms -> ?section=meetings, title Meetings, no alert).
-  assert.match(workspace,/const eventsFallback = section === "events" && membership && !hasPermission\(membership, "meetings\.manage"\)/);
-  assert.match(workspace,/next\.set\("section", "meetings"\); next\.delete\("meetingTab"\)/);
-  assert.match(workspace,/\|\| eventsFallback\) return <WorkspaceLoading/);
-  assert.doesNotMatch(workspace,/legacyEvents/);
+  assert.match(workspace,/section === "calendar" && <ClubCalendar [^>]*canManage=\{hasPermission\(membership, "meetings\.manage"\)\}/);
+  assert.doesNotMatch(workspace,/eventsFallback|section === "events"|section === "meetings"/);
 });
 
 test("leader removal requires confirmation and returns keyboard focus to its origin", async () => {

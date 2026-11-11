@@ -1,5 +1,5 @@
 /* The rail reserves its own width: icons only from 1024px, icon + label from 1280px.
-   Nothing overlays the page; only the Applicants/Decisions menus open beside it. */
+   Nothing overlays the page. Settings is pinned to the bottom of the rail. */
 @media (min-width: 1024px) {
   [data-product-shell] { --oc-shell-rail-width: 108px; }
   [data-product-shell] > div > aside.oc-expanding-dock {
@@ -36,9 +36,10 @@
   .oc-dock-brand-art .oc-dock-letter-c { fill: #f26522; transform: translate(-153px,20px); transition: transform var(--oc-glass-move) var(--oc-floating-ease); }
   .oc-dock-letter-out, .oc-dock-letter-class { opacity: 0; transform: translateX(-12px); transition: opacity 120ms ease, transform 260ms var(--oc-floating-ease); }
   .oc-dock-brand-art .oc-dock-letter-class { fill: #f26522; }
-  .oc-dock-navigation { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  .oc-dock-navigation { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
   .oc-dock-navigation::-webkit-scrollbar { display: none; }
-  .oc-dock-navigation-content { position: relative; isolation: isolate; padding-block: 2px; }
+  .oc-dock-navigation-content { position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100%; padding-block: 2px; }
+  .oc-dock-section[data-pinned] { margin-top: auto; }
   .oc-dock-section { border-top: 1px solid rgb(255 255 255 / 13%); margin-top: 8px; padding-top: 6px; }
   .oc-dock-section-heading { display: flex; align-items: center; height: 25px; margin: 0; padding-left: 19px; color: var(--oc-rail-muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
   .oc-dock-section nav { display: flex; flex-direction: column; gap: 4px; }
@@ -57,15 +58,13 @@
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"]) .oc-dock-icon > svg { color: var(--brand-orange); }
   .oc-dock-item-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .oc-dock-preview { margin-inline: auto 10px; }
-  .oc-dock-chevron { margin-left: auto; margin-right: 14px; flex-shrink: 0; transition: transform 220ms var(--oc-floating-ease); }
-  .oc-dock-group-trigger[aria-expanded="true"] .oc-dock-chevron { transform: translateX(3px); color: var(--oc-rail-text); }
   .oc-dock-rail nav :is(a,button):hover { background: rgb(212 232 252 / 9%); }
   .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
 }
 /* Icon-only rail: labels stay in the accessibility tree (clipped, not hidden) and show as tooltips. */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .oc-dock-rail :is(.oc-dock-item-label,.oc-dock-section-heading) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .oc-dock-rail :is(.oc-dock-preview,.oc-dock-chevron) { display: none; }
+  .oc-dock-rail .oc-dock-preview { display: none; }
 }
 /* Labelled rail: the full wordmark and section headings, always visible. */
 @media (min-width: 1280px) {
@@ -79,31 +78,13 @@
   .oc-dock-brand-art svg { width: 200px; height: 47px; }
   .oc-dock-section-heading { padding-left: 19px; }
 }
-/* Portaled above the header, below dialogs. No dependency on a scroll container or shell ancestry. */
-.oc-dock-flyout {
-  z-index: 45; width: 256px; max-width: calc(100vw - 24px); max-height: var(--radix-popover-content-available-height);
-  overflow: visible; padding: 8px; color: var(--oc-rail-text); background: var(--oc-glass-navy-frosted-material); border: 1px solid var(--oc-glass-navy-edge); border-radius: 20px;
-  box-shadow: var(--oc-glass-navy-depth);
-  -webkit-backdrop-filter: var(--oc-glass-navy-filter); backdrop-filter: var(--oc-glass-navy-filter);
-  animation: oc-dock-flyout-in var(--oc-glass-quick) var(--oc-glass-ease);
-}
-.oc-dock-flyout[data-state="closed"] { animation: none; pointer-events: none; }
-.oc-dock-flyout::before { content: ""; position: absolute; top: -8px; bottom: -8px; left: -22px; width: 24px; }
-.oc-dock-flyout[data-side="left"]::before { left: auto; right: -22px; }
-.oc-dock-flyout-heading { padding: 7px 12px 10px; color: var(--oc-rail-muted); font-size: 12px; }
-.oc-dock-flyout nav { display: flex; flex-direction: column; gap: 3px; max-height: calc(var(--radix-popover-content-available-height) - 65px); overflow-y: auto; }
-.oc-dock-flyout nav :is(a,button) { position: relative; display: flex; align-items: center; width: 100%; min-height: 44px; padding: 10px 12px; gap: 10px; border-radius: 10px; color: var(--oc-rail-text); background: transparent; font-size: 14px; text-align: left; text-decoration: none; }
-.oc-dock-flyout nav :is(a,button):is(:hover,:focus-visible) { background: var(--oc-rail-selected); outline: 2px solid transparent; outline-offset: -2px; }
-.oc-dock-flyout nav [aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 15px; bottom: 15px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
-.oc-dock-flyout nav :is(a,button):focus-visible { outline-color: var(--ring); outline-offset: 2px; box-shadow: var(--focus-halo-outset) }
-@keyframes oc-dock-flyout-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) {
-  [data-product-shell] > div > aside.oc-expanding-dock, .oc-expanding-dock *, .oc-dock-flyout, .oc-dock-flyout * { transition: none !important; animation: none !important; }
+  [data-product-shell] > div > aside.oc-expanding-dock, .oc-expanding-dock * { transition: none !important; animation: none !important; }
 }
 @media (forced-colors: active) {
-  .oc-dock-rail, .oc-dock-flyout { border: 1px solid CanvasText; }
-  .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before, .oc-dock-flyout nav [aria-current="page"]::before { background: Highlight; forced-color-adjust: none; }
-  .oc-expanding-dock :is(a,button):focus-visible, .oc-dock-flyout nav :is(a,button):focus-visible { outline-color: Highlight; }
+  .oc-dock-rail { border: 1px solid CanvasText; }
+  .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before { background: Highlight; forced-color-adjust: none; }
+  .oc-expanding-dock :is(a,button):focus-visible { outline-color: Highlight; }
 }
 /* One sliding active marker (navigation-rail.tsx useRailMarker); per-item markers are the unmeasured fallback. */
 @media (min-width: 1024px) {

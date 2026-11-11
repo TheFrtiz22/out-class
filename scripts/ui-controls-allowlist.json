@@ -147,12 +147,6 @@
   },
   {
    "rule": "raw-button",
-   "file": "components/shell/workspace-navigation.tsx",
-   "max": 1,
-   "reason": "Navigation is fixed for this redesign (owner rule)."
-  },
-  {
-   "rule": "raw-button",
    "file": "components/views/calendar-view.tsx",
    "max": 5,
    "reason": "Calendar cells, agenda rows, event chips and booking cards are whole-surface targets; navy focus outline."

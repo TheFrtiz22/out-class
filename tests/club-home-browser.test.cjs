@@ -61,8 +61,8 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   // Club home has no interview room entry any more; interviews live on the Recruiting Overview.
   assert.equal(links.filter(href => href.startsWith('/club/fixture-mii/interview?')).length, 0)
   for (const href of links) assert.ok(rail.some(r => href === r || href.startsWith(`${r}&`)), `${href} is a rail destination`)
-  assert.equal(await page.locator('aside nav [aria-current="page"]').textContent(), 'Club home')
-  console.log('PASS dashboard links resolve to rail destinations; Club home stays selected')
+  assert.equal(await page.locator('aside nav [aria-current="page"]').textContent(), 'Home')
+  console.log('PASS dashboard links resolve to rail destinations; Home stays selected')
 
   // Blur budget: six on desktop, and nothing on this page blurs.
   const blurred = await page.evaluate(blurredSurfaces)

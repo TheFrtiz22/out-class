@@ -6,9 +6,8 @@ test('leader landing, selected setup, dedicated room, return/resume and member e
  for(const page of [leader,member])page.on('pageerror',e=>errors.push(e.message));
  try{
   await leader.goto(f.url+'/landing?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:'Start voting session',exact:true}).waitFor();await leader.getByText('No voting sessions available.',{exact:true}).waitFor();
-  await leader.evaluate(()=>{const form=document.createElement('form');form.id='pending-letter';form.dataset.saving='true';document.body.append(form)});
-  await leader.getByRole('link',{name:'Decision letters',exact:true}).click();assert.equal(new URL(leader.url()).searchParams.get('decisionTab'),'voting');
-  await leader.evaluate(()=>document.getElementById('pending-letter').remove());
+  // The Decisions tab row this step used to click is gone: Decide's Vote/Send steps (components/live-voting/decide-page)
+  // switch through the same canLeaveWorkspace() guard. This fixture renders the Voting room alone.
   assert.equal(f.h.state().sessions.length,0);
   await leader.evaluate(({clubId,ids})=>sessionStorage.setItem('outclass:voting-selection:selection-fixture',JSON.stringify({userId:window.initial.user.id,clubId,demo:false,applicationIds:ids})),{clubId:f.clubId,ids:[apps[1]]});
   await leader.goto(f.url+'/voting/rooms/new?actor=leader&selection=selection-fixture');
