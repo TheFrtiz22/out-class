@@ -94,7 +94,7 @@ test('signup hands the token to Supabase Auth and reports a failed check without
   const { registerStudent } = loadWith('actions/onboarding.ts', {
     'next/headers': { cookies: async () => ({ has: () => false }) },
     '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
-    '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
+    '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
     '@/lib/auth-email': { authEmailError: () => 'email error' },
     '@/lib/turnstile': t,
     '@/utils/supabase/server': { createClient: async () => ({ auth: { signUp: async input => { calls.push(input); return result }, signOut: async () => {} } }) },
@@ -221,7 +221,7 @@ test('flag unset: registerStudent runs siteverify first and never reaches signUp
     const { registerStudent } = loadWith('actions/onboarding.ts', {
       'next/headers': { cookies: async () => ({ has: () => false }) },
       '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
-      '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
+      '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
       '@/lib/auth-email': { authEmailError: () => 'email error' },
       '@/lib/turnstile': t,
       '@/utils/supabase/server': { createClient: async () => ({ auth: { signUp: async () => { signUps++; return {} }, signOut: async () => {} } }) },
@@ -259,7 +259,7 @@ test('student claims verify with siteverify before any account lookup; the token
   const verify = claim.indexOf('action: "student-claim"')
   assert.ok(verify > 0 && verify < claim.indexOf('prisma.user.findFirst') && verify < claim.indexOf('await cookies()'))
   assert.match(claim, /const \{ turnstileToken, \.\.\.fields \} =/)
-  assert.match(claim, /schema\.parse\(fields\)/)
+  assert.match(claim, /schema\.safeParse\(fields\)/)
   const page = read('app/(focus)/auth/student-claim/page.tsx')
   assert.match(page, /<TurnstileWidget[^>]*action="student-claim"/)
   assert.match(page, /setTurnstileReset\(/)
