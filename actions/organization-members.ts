@@ -23,17 +23,18 @@ import { requireAuth } from "@/utils/auth";
 import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOrganizationInvitation, organizationCapabilities, organizationRoles, organizationRolePermissions } from "@/lib/organization-authorization";
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
+import { boundedParse } from "@/lib/bounded-input";
 
 const id = z.string().uuid();
 
 /** Group labels are targeting metadata, never an access-role or permission grant. */
 export async function assignOrganizationMemberGroups(input: unknown) {
-  const data = z.object({
+  const data = boundedParse(z.object({
     clubId: id,
     targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100),
     group: z.string().trim().min(1).max(80),
     operation: z.enum(["ADD", "REMOVE"]),
-  }).strict().parse(input);
+  }).strict(), input);
   if (new Set(data.targets.map(target => target.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
@@ -55,7 +56,7 @@ export async function assignOrganizationMemberGroups(input: unknown) {
 
 /** Save a previewed group or partition as roster labels, without changing access or other groups. */
 export async function createOrganizationMemberGroups(input: unknown) {
-  const data = z.object({ clubId: id, name: z.string().trim().min(1).max(64), targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(500), split: memberGroupSplitSchema.nullable() }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, name: z.string().trim().min(1).max(64), targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(500), split: memberGroupSplitSchema.nullable() }).strict(), input);
   if (new Set(data.targets.map(target => target.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
   const plan = planMemberGroups(data.targets.map(target => target.id), data.name, data.split);
   const { user } = await requireAuth();
@@ -79,7 +80,7 @@ export async function createOrganizationMemberGroups(input: unknown) {
 
 /** Explicit attestation by an active owner, never inferred from an access-role template. */
 export async function setMemberInterviewOffices(input: unknown) {
-  const data = z.object({ clubId: id, memberId: id, offices: interviewOfficesSchema }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, memberId: id, offices: interviewOfficesSchema }).strict(), input);
   const { user } = await requireAuth({ verifyEmail: true });
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
@@ -229,7 +230,7 @@ export async function manageOrganizationInvitation(input: unknown) {
 
 /** One atomic mutation: authorization and sole-owner checks cover the complete selection. */
 export async function bulkOrganizationMembers(input: unknown) {
-  const data = z.object({ clubId: id, targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100), action: z.enum(["ROLE", "PERMISSIONS", "REMOVE"]), role: z.enum(organizationRoles).optional(), permissions: z.array(z.enum(clubPermissions)).max(clubPermissions.length).optional() }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100), action: z.enum(["ROLE", "PERMISSIONS", "REMOVE"]), role: z.enum(organizationRoles).optional(), permissions: z.array(z.enum(clubPermissions)).max(clubPermissions.length).optional() }).strict(), input);
   if (new Set(data.targets.map(t => t.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
@@ -251,7 +252,7 @@ export async function bulkOrganizationMembers(input: unknown) {
   });
 }
 export async function bulkOrganizationInvitations(input: unknown) {
-  const data = z.object({ clubId: id, invitationIds: z.array(id).min(1).max(100), action: z.enum(["REVOKE", "RESEND"]) }).strict().parse(input);
+  const data = boundedParse(z.object({ clubId: id, invitationIds: z.array(id).min(1).max(100), action: z.enum(["REVOKE", "RESEND"]) }).strict(), input);
   if (new Set(data.invitationIds).size !== data.invitationIds.length) throw new Error("Duplicate invitations in selection.");
   const { user } = await requireAuth();
   if (data.action === "RESEND") invitationEmailConfig();

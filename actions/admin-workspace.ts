@@ -15,7 +15,9 @@ import { randomUUID } from "node:crypto";
 import { studentInvitationFingerprint } from "@/lib/student-invitation";
 import { enqueueInvitationEmail } from "@/utils/invitation-delivery";
 import { scheduleInvitationDelivery } from "@/utils/invitation-background";
+import { PLATFORM_SETTINGS_KEY, SITE_SETTINGS_TAG, platformSettingsSchema } from "@/lib/site-settings";
 import { createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
+import { boundedParse } from "@/lib/bounded-input";
 const reasonSchema = z.string().trim().min(10).max(1000);
 const uuid = z.string().uuid();
 const statuses = z.enum(["OPEN", "INVESTIGATING", "RESOLVED", "DISMISSED"]);
@@ -95,19 +97,22 @@ export async function setAdminClubSuspended(clubId: string, suspended: boolean, 
   revalidatePath(`/club/${clubId}/workspace`);
   revalidatePath("/corkboard");
 }
-const settingsSchema = z.object({ supportEmail: z.union([z.string().email().max(254), z.literal("")]).default(""), campusNotice: z.string().trim().max(500).default(""), maintenanceNotice: z.string().trim().max(500).default("") }).strict();
+// One schema for Admin and the site-wide notice reader; stored as JSON, so new fields need no migration.
+const settingsSchema = platformSettingsSchema;
 export async function getAdminSettings() {
   const actor = await requirePlatformAdmin();
-  const row = await prisma.platformContent.findUnique({ where: { key: "platform:settings" } });
+  const row = await prisma.platformContent.findUnique({ where: { key: PLATFORM_SETTINGS_KEY } });
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.settings.read", targetId: "platform:settings", details: { result: "success" } } });
   return settingsSchema.parse(row?.value || {});
 }
 export async function saveAdminSettings(input: unknown, reason: string) {
   const actor = await requirePlatformAdmin({ fresh: true }), value = settingsSchema.parse(input); reasonSchema.parse(reason);
   await prisma.$transaction(async tx => {
-    await tx.platformContent.upsert({ where: { key: "platform:settings" }, create: { key: "platform:settings", value }, update: { value } });
-    await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.settings.change", targetId: "platform:settings", reason, details: { result: "success", fields: Object.keys(value) } } });
+    await tx.platformContent.upsert({ where: { key: PLATFORM_SETTINGS_KEY }, create: { key: PLATFORM_SETTINGS_KEY, value }, update: { value } });
+    await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.settings.change", targetId: PLATFORM_SETTINGS_KEY, reason, details: { result: "success", fields: Object.keys(value), maintenanceMode: value.maintenanceMode } } });
   });
+  // Site-wide banners and maintenance mode pick the change up on the next request.
+  revalidateTag(SITE_SETTINGS_TAG);
 }
 const studentSchema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), firstName: z.string().trim().min(1).max(100), lastName: z.string().trim().min(1).max(100), major: z.string().trim().max(120).optional(), gradYear: z.number().int().min(2000).max(2100).optional(), clubId: uuid.optional(), reason: reasonSchema }).strict();
 export async function createAdminStudent(input: unknown) {
@@ -153,7 +158,7 @@ export async function resendAdminStudentInvitation(userId: string, reason: strin
 }
 export async function createAdminClub(input: unknown) {
   await requirePlatformAdmin({ fresh: true });
-  const d = z.object({ organization: z.object({ requestId: uuid, identifierTypeId: z.string().min(1), organizationName: z.string(), presidentName: z.string(), presidentIdentifier: z.string(), presidentYear: z.string(), reason: reasonSchema }), leaderEmail: z.string().trim().toLowerCase().email(), description: z.string().trim().max(2000), category: z.string().trim().min(1).max(100), organizationInfo: z.string().trim().max(2000).default(""), additionalLeaders: z.array(z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().min(1).max(200) })).max(10).default([]) }).strict().parse(input);
+  const d = boundedParse(z.object({ organization: z.object({ requestId: uuid, identifierTypeId: z.string().min(1), organizationName: z.string(), presidentName: z.string(), presidentIdentifier: z.string(), presidentYear: z.string(), reason: reasonSchema }), leaderEmail: z.string().trim().toLowerCase().email(), description: z.string().trim().max(2000), category: z.string().trim().min(1).max(100), organizationInfo: z.string().trim().max(2000).default(""), additionalLeaders: z.array(z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().min(1).max(200) })).max(10).default([]) }).strict(), input);
   invitationEmailConfig();
   const mapping = await prisma.schoolIdentifierType.findUniqueOrThrow({ where: { id: d.organization.identifierTypeId } });
   const addresses = [d.leaderEmail, ...d.additionalLeaders.map(l => l.email)];

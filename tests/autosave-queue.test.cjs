@@ -42,3 +42,14 @@ test('typing within the same pending state does not cause redundant status rende
   let notices=0;const queue=new AutosaveQueue('',async()=>{},()=>notices++)
   queue.change('a');queue.change('ab');queue.change('abc');assert.equal(notices,1);queue.dispose()
 })
+test('a save the server always rejects keeps the edit and stops at an error state without retrying', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const calls = [], recovery = []
+  const queue = new AutosaveQueue({ ids: [] }, async value => { calls.push(value); throw Error('Array must contain at most 100 element(s)') }, () => {}, value => recovery.push(value))
+  const edit = { ids: Array(101).fill('a') }
+  queue.change(edit); t.mock.timers.tick(850); await tick()
+  assert.equal(calls.length, 1); assert.equal(queue.state, 'error'); assert.equal(queue.error, 'Array must contain at most 100 element(s)')
+  assert.deepEqual(queue.value, edit); assert.equal(queue.dirty, true); assert.deepEqual(recovery.at(-1), edit)
+  t.mock.timers.tick(60000); await tick()
+  assert.equal(calls.length, 1); assert.equal(queue.saving, false)
+})

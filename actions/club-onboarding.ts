@@ -12,6 +12,7 @@ import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/
 import { canGrantOnboardingRole } from "@/lib/club-onboarding";
 import { acceptIdentityInvitationInTransaction, recipientInvitation, createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
+import { boundedParse } from "@/lib/bounded-input";
 
 const id = z.string().uuid();
 const invitationInput = z.object({
@@ -98,10 +99,10 @@ export async function revokeIdentityClubInvitation(invitationId: string, platfor
 
 /** Audit foundation only: CSV parsing/confirmation and invitation processing come later. */
 export async function recordRosterImport(input: unknown) {
-  const data = z.object({
+  const data = boundedParse(z.object({
     clubId: id, filename: z.string().trim().min(1).max(255), idempotencyKey: z.string().min(1).max(100),
     rows: z.array(z.record(z.string().max(2000))).max(10000),
-  }).strict().parse(input);
+  }).strict(), input);
   const serialized = JSON.stringify(data.rows);
   if (Buffer.byteLength(serialized) > 1024 * 1024) throw new Error("Roster audit payload exceeds 1 MB.");
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);

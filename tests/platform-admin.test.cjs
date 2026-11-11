@@ -449,3 +449,111 @@ test("context synchronization reports only a marker and session ID, never tokens
   h.revoke();
   assert.deepEqual(await (await h.api.GET()).json(), { marker: true, sessionId: null });
 });
+
+// The (workspace)/platform layout checks platform administration on the server before rendering the
+// admin shell. It runs the real requireAuth and requirePlatformAdmin with mocked providers.
+function platformLayoutHarness({ user = null, adminIds = actor, grant = true, aal = "aal2", viewCookie = false, grantError = false } = {}) {
+  const React = require("react"), path = require("node:path"), cache = {};
+  const elevationToken = "a".repeat(64);
+  const jar = {
+    has: (name) => (name === cookie ? viewCookie : name === "outclass-admin-elevation"),
+    get: (name) => (name === cookie ? (viewCookie ? { value: "b".repeat(64) } : undefined) : name === "outclass-admin-elevation" ? { value: elevationToken } : undefined),
+  };
+  const session = user ? { access_token: "token" } : null;
+  const prisma = {
+    $queryRaw: async () => [{ live: true, id: "session" }],
+    user: { findUnique: async () => (user ? { id: user, email: "admin@virginia.edu", disabledAt: null } : null) },
+    platformAdmin: { findUnique: async () => { if (grantError) throw Error("private database details"); return grant ? { active: true } : null; } },
+    adminElevation: { findUnique: async () => ({ actorId: user }) },
+  };
+  const mocks = {
+    "next/headers": { cookies: async () => jar },
+    "next/navigation": { unstable_rethrow: require("next/dist/client/components/unstable-rethrow.server").unstable_rethrow, redirect: (url) => { throw Object.assign(Error("NEXT_REDIRECT"), { url }); } },
+    "@/utils/prisma": { prisma },
+    "./prisma": { prisma },
+    "@/lib/auth-session": { sessionIdFromVerifiedToken: () => "session" },
+    "@/lib/admin-elevation": { ADMIN_ELEVATION_COOKIE: "outclass-admin-elevation", validAdminElevation: (row, id) => !!row && row.actorId === id, freshAdminVerification: () => true },
+    "@/utils/supabase/server": { createClient: async () => ({ auth: {
+      getSession: async () => ({ data: { session }, error: null }),
+      getUser: async () => ({ data: { user: user ? { id: user, email: "admin@virginia.edu", email_confirmed_at: "2026-10-01" } : null }, error: null }),
+      getClaims: async () => ({ data: { claims: { session_id: "session" } }, error: null }),
+      mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: aal }, error: null }) },
+    } }) },
+    "@/components/admin/admin-shell": { AdminShell: ({ children }) => React.createElement("admin-shell", null, children) },
+    "@/components/ui/page-header": { PageHeader: ({ title }) => React.createElement("h1", null, title) },
+  };
+  mocks["./supabase/server"] = mocks["@/utils/supabase/server"];
+  function load(file) {
+    if (cache[file]) return cache[file].exports;
+    const mod = { exports: {} }; cache[file] = mod;
+    new Function("require", "module", "exports", "console", ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText)(
+      (n) => {
+        if (n in mocks) return mocks[n];
+        if (n.startsWith("@/") || n.startsWith("./")) {
+          const base = n.startsWith("@/") ? path.resolve(n.slice(2)) : path.resolve(path.dirname(file), n);
+          const found = [".ts", ".tsx"].map((e) => base + e).find((f) => fs.existsSync(f));
+          if (found) return load(found);
+        }
+        return require(n);
+      }, mod, mod.exports, { error: () => {}, log: () => {}, warn: () => {} });
+    return mod.exports;
+  }
+  const previous = process.env.OUTCLASS_PLATFORM_ADMIN_IDS;
+  const Layout = load(path.resolve("app/(workspace)/platform/layout.tsx")).default;
+  const render = async () => {
+    process.env.OUTCLASS_PLATFORM_ADMIN_IDS = adminIds;
+    try { return require("react-dom/server").renderToStaticMarkup(await Layout({ children: React.createElement("p", null, "protected admin content") })); }
+    finally { if (previous === undefined) delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS; else process.env.OUTCLASS_PLATFORM_ADMIN_IDS = previous; }
+  };
+  return { render };
+}
+
+test("platform layout renders the admin shell only after the server-side admin check", async () => {
+  const html = await platformLayoutHarness({ user: actor }).render();
+  assert.match(html, /<admin-shell><p>protected admin content<\/p><\/admin-shell>/);
+});
+
+test("platform layout redirects anonymous visitors and signed-in non-admins to /platform/login without rendering children", async () => {
+  for (const options of [{}, { user: target }, { user: actor, grant: false }, { user: actor, aal: "aal1" }]) {
+    await assert.rejects(platformLayoutHarness(options).render(), (e) => e.url === "/platform/login", JSON.stringify(options));
+  }
+});
+
+test("platform layout explains a failed support session instead of redirecting to the blocked login route", async () => {
+  const html = await platformLayoutHarness({ user: target, viewCookie: true }).render();
+  assert.match(html, /This support session is unavailable/);
+  assert.doesNotMatch(html, /protected admin content/);
+});
+
+test("/platform/login sits outside the guarded platform layout and stays reachable for step-up", () => {
+  assert.ok(fs.existsSync("app/(focus)/platform/login/page.tsx"));
+  assert.equal(fs.existsSync("app/(workspace)/platform/login"), false);
+  for (const layout of ["app/(focus)/layout.tsx", "app/layout.tsx", "app/(focus)/platform/layout.tsx", "app/(focus)/platform/login/layout.tsx"]) {
+    if (fs.existsSync(layout)) assert.doesNotMatch(fs.readFileSync(layout, "utf8"), /requirePlatformAdmin|platform-admin/, layout);
+  }
+  assert.match(fs.readFileSync("app/(workspace)/platform/layout.tsx", "utf8"), /requirePlatformAdmin\(\{ allowViewAs: true \}\)/);
+});
+
+test("platform layout shows recovery, not admin content or a login redirect, when the check fails operationally", async () => {
+  const html = await platformLayoutHarness({ user: actor, grantError: true }).render();
+  assert.match(html, /Admin temporarily unavailable/); assert.match(html, /ADMIN_ACCESS_CHECK_FAILED:/);
+  assert.doesNotMatch(html, /protected admin content|private database details/);
+});
+
+test("platform error boundary keeps failures inside the admin shell with retry and an overview link, and reports them", () => {
+  const React = require("react"), path = require("node:path"), reported = [];
+  const file = path.resolve("app/(workspace)/platform/error.tsx");
+  const mod = { exports: {} };
+  new Function("require", "module", "exports", ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText)(
+    (n) => n === "@/lib/report-client-error" ? { reportClientError: (e) => reported.push(e) }
+      : n === "@/components/ui/page-header" ? { PageHeader: ({ title }) => React.createElement("h1", null, title) }
+      : n === "@/components/ui/button" ? { Button: ({ children, asChild, onClick, ...props }) => asChild ? children : React.createElement("button", { ...props, "data-reset": String(!!onClick) }, children) }
+      : require(n), mod, mod.exports);
+  const html = require("react-dom/server").renderToStaticMarkup(React.createElement(mod.exports.default, { error: Object.assign(Error("private stack details"), { digest: "d" }), reset: () => {} }));
+  assert.match(html, /role="alert"/); assert.match(html, /data-reset="true"[^>]*>Try again/); assert.match(html, /href="\/platform"/);
+  assert.doesNotMatch(html, /private stack details|\/platform\/login/);
+  assert.match(fs.readFileSync(file, "utf8"), /useEffect\(\(\) => reportClientError\(error\), \[error\]\)/);
+  // A platform/loading.tsx would turn /platform/view-as's redirect into a second document; loaders stay per page.
+  assert.equal(fs.existsSync("app/(workspace)/platform/loading.tsx"), false);
+  assert.equal(fs.existsSync("app/(workspace)/platform/global-error.tsx"), false);
+});
