@@ -27,6 +27,7 @@ import type { ViewId } from "@/lib/views"
 import { isDemoActive, loadedDemoStore } from "@/lib/demo/loader"
 import { useDemoMode } from "@/contexts/demo-context"
 import { clubRecruitment } from "@/lib/recruitment-presentation"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
 
@@ -51,10 +52,21 @@ function categoryIcon(category: string) {
   return Users
 }
 
-export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (view: ViewId) => void; section?: "explore" | "categories" }) {
-  const [clubs, setClubs] = useState<DirectoryClub[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+export type ExploreDirectory = { clubs: DirectoryClub[]; error?: string }
+
+export function ExploreView({ onNavigate, section = "explore", initialDirectory, serverNow, onInitialDirectoryUsed }: {
+  onNavigate: (view: ViewId) => void
+  section?: "explore" | "categories"
+  /** The public directory read on the server for a direct /explore load; later mounts read it here. */
+  initialDirectory?: ExploreDirectory
+  /** Server render time for the seeded list, so recruitment state matches the server HTML. */
+  serverNow?: number
+  onInitialDirectoryUsed?: () => void
+}) {
+  const [clubs, setClubs] = useState<DirectoryClub[]>(() => initialDirectory?.clubs ?? [])
+  const [loading, setLoading] = useState(!initialDirectory)
+  const [error, setError] = useState(initialDirectory?.error ?? "")
+  const seeded = useRef(!!initialDirectory)
   const [retry, setRetry] = useState(0)
   const searchParams = useSearchParams()
   const filterQuery = searchParams.toString()
@@ -65,10 +77,9 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     if (url.searchParams.has("aum")) { url.searchParams.delete("aum"); window.history.replaceState(null, "", url.pathname + url.search + url.hash) }
   }, [filterQuery])
   const [searchMatches, setSearchMatches] = useState<{ query: string; ids: string[] } | null>(null)
-  const [now, setNow] = useState(Date.now())
+  const now = useServerAnchoredNow(serverNow)
   // Phones, as in the app: Availability, Sort and Refine sit behind a Filter button beside search.
   const [phoneFilters, setPhoneFilters] = useState(false)
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
   const [selected, setSelected] = useState<DirectoryClub | null>(() => isDemoActive() ? loadedDemoStore().demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
   // The directory list carries summary data; the full profile loads on open.
   const [profile, setProfile] = useState<{ id: string; club: DirectoryClub | null } | null>(null)
@@ -85,6 +96,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const { isDemoEnabled } = useDemoMode()
 
   useEffect(() => {
+    // A server-seeded first mount skips one identical read; retry and Demo changes still read live.
+    if (seeded.current) { seeded.current = false; onInitialDirectoryUsed?.(); return }
     let active = true
     setLoading(true)
     getClubDirectory()
@@ -104,6 +117,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     return () => {
       active = false
     }
+    // onInitialDirectoryUsed is a seed hand-off, not a reason to read again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retry, isDemoEnabled])
   useEffect(() => {
     if (!selected && lastClub.current) {
@@ -120,7 +135,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   // Five chips fit one row at a glance; the long tail of one-club categories lives under More.
   const categoryCount = (category: string) => clubs.filter((club) => club.category === category).length
   const selectedCategory = filters.category === "all" ? "all" : categories.find((category) => category.toLowerCase() === filters.category.toLowerCase()) ?? filters.category
-  const rankedCategories = [...categories].sort((a, b) => categoryCount(b) - categoryCount(a) || a.localeCompare(b))
+  const rankedCategories = [...categories].sort((a, b) => categoryCount(b) - categoryCount(a) || a.localeCompare(b, "en-US"))
   const primaryCategories = rankedCategories.slice(0, PRIMARY_CATEGORIES)
   if (selectedCategory !== "all" && categories.includes(selectedCategory) && !primaryCategories.includes(selectedCategory)) primaryCategories.push(selectedCategory)
   const moreCategories = rankedCategories.filter((category) => !primaryCategories.includes(category))
@@ -170,7 +185,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     setSelected(club)
   }
   const featured = clubs.filter(club => club.recommended).slice(0, 3)
-  const available = filterDirectory(clubs, emptyDirectoryFilters).filter(club => clubRecruitment(club, now).available)
+  const available = filterDirectory(clubs, emptyDirectoryFilters, now).filter(club => clubRecruitment(club, now).available)
   function card(club: DirectoryClub, section: string) {
     const entry = `${section}-${club.id}`
     return <DiscoveryCard key={club.id} club={club} now={now} entry={entry} onOpen={() => open(club, entry)} action={<CorkboardButton club={club} onNavigate={onNavigate} />} />
