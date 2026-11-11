@@ -40,7 +40,7 @@ import { canLeaveWorkspace } from "@/lib/product-navigation"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, FileText, Linkedin, MoreHorizontal, Settings as SettingsIcon } from "@/components/icons"
+import { ChevronLeft, ChevronRight, FileText, Kanban, Linkedin, MoreHorizontal, Rows3, Settings as SettingsIcon, Trophy } from "@/components/icons"
 import { IconButton } from "@/components/ui/icon-button"
 import { canOpenRecruitingSettings, withRecruitingSettings } from "@/lib/recruiting-settings"
 import { navigateWithinClub } from "@/lib/workspace-navigation"
@@ -315,8 +315,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   roundsForReview.current = data?.rounds
   const heading = useRef<HTMLHeadingElement>(null)
   // Everything inside the Filters menu, so its summary can show how many apply.
-  const menuFilters = [round, review, gender, major, year, gpa, sat, act, rating].filter(Boolean).length
-  const clearMenuFilters = () => { setRound(""); setReview(""); setGender(""); setShowGenderCounts(false); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
+  const menuFilters = [round, status, review, gender, major, year, gpa, sat, act, rating].filter(Boolean).length
+  const clearMenuFilters = () => { setRound(""); setStatus(""); setReview(""); setGender(""); setShowGenderCounts(false); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
   const search = useRef<HTMLInputElement>(null)
   useEffect(() => { setError(""); setRevalidateFailures(0) }, [authority, revision, pageQuery])
   const selectionRequestKey = JSON.stringify([selectionKey, revision])
@@ -662,8 +662,6 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       <div hidden={!!preview} className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
       {!preview && view !== "ranked" && <SegmentedControl label="Decision" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: group.label, count: group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0 }))} />}
-      {!preview && view !== "ranked" && !decisionsOnly && (decisionGroup === "all" || decisionGroup === "pending") && <SegmentedControl label="Pending stage" size="compact" value={status} onChange={setStatus}
-        options={[{ value: "", label: decisionGroup === "pending" ? "All pending" : "All stages" }, ...pendingStatuses.map(key => ({ value: key, label: applicationStatusLabels[key] }))]} />}
 {!rejectedOnly && !preview && actionSlot !== undefined && (() => {
         const actions = <div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">
           {!decisionsOnly && hasPermission(membership, "applications.review") && <Button variant="outline" disabled={busy || !filtered.length} onClick={() => void startReview()}>Start quick review</Button>}
@@ -673,7 +671,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         return actionSlot ? createPortal(actions, actionSlot) : actions
       })()}
       <div className="oc-toolbar">
-        {!decisionsOnly && <SegmentedControl label="Applicant view" value={view} onChange={setView} options={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban" }, { value: "ranked", label: "Ranked" }]} />}
+        {!decisionsOnly && <SegmentedControl label="Applicant view" size="compact" className="oc-view-switch" value={view} onChange={setView} options={[
+          { value: "list", label: null, ariaLabel: "List", icon: <Rows3 /> },
+          { value: "kanban", label: null, ariaLabel: "Kanban", icon: <Kanban /> },
+          { value: "ranked", label: null, ariaLabel: "Ranked", icon: <Trophy /> },
+        ]} />}
         {!decisionsOnly && <ClubExportLink clubId={membership.clubId} kind="applicants" membership={membership} filter={round || null} label="Export CSV" />}
         {/* Recruiting settings (Anonymous review, Auto-reject rules): the drawer opens from the URL, so Back closes it. */}
         {!decisionsOnly && !preview && canOpenRecruitingSettings(membership) && <IconButton variant="outline" aria-label="Recruiting settings" title="Recruiting settings" aria-haspopup="dialog" onClick={() => {
@@ -697,9 +699,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <FilterPopover count={menuFilters} title="Applicant filters"
           footer={<><Button variant="ghost" size="sm" disabled={!menuFilters} onClick={clearMenuFilters}>Clear filters</Button>{view === "list" && <Button size="sm" variant="ghost" aria-pressed={compact} onClick={() => setCompact((value) => !value)}>Compact rows</Button>}</>}>
         <div className="oc-filter-field"><span className="oc-filter-field-label">Round</span>
-          <PillGroup label="Filter round" size="compact" value={round} onChange={value => { setRound(value); setGender(""); setShowGenderCounts(false) }}
-            options={[{ value: "", label: "All rounds" }, ...data.rounds.map(item => ({ value: item.id, label: item.name }))]} />
+          <PillSelect label="Filter round" size="compact" allLabel="All rounds" value={round} onChange={value => { setRound(value); setGender(""); setShowGenderCounts(false) }}
+            options={data.rounds.map(item => ({ value: item.id, label: item.name }))} />
         </div>
+        {!decisionsOnly && (decisionGroup === "all" || decisionGroup === "pending") && <div className="oc-filter-field"><span className="oc-filter-field-label">Stage</span>
+          <PillSelect label="Filter stage" size="compact" allLabel={decisionGroup === "pending" ? "All pending" : "All stages"} value={status} onChange={setStatus}
+            options={pendingStatuses.map(key => ({ value: key, label: applicationStatusLabels[key] }))} />
+        </div>}
         {!decisionsOnly && <div className="oc-filter-field"><span className="oc-filter-field-label">Review state</span>
           <PillGroup label="Filter review state" size="compact" value={review} onChange={setReview}
             options={[{ value: "", label: "All review states" }, { value: "unreviewed", label: "No evaluations" }, { value: "mine", label: "Reviewed by me" }]} />
@@ -711,8 +717,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>}
       {!decisionsOnly && <section className="oc-filter-field" aria-labelledby="leader-academic-filters"><h3 id="leader-academic-filters" className="oc-filter-field-label">Academic & review filters</h3>
           {profileFields.major && <PillSelect label="Filter major" allLabel="All majors" value={major} onChange={setMajor} options={(listData?.facets.majors ?? []).map(value => ({ value, label: value }))} />}
-          {profileFields.academicYear && <PillGroup label="Filter academic year" size="compact" value={year} onChange={setYear}
-            options={[{ value: "", label: "All years" }, ...(listData?.facets.years ?? []).map(value => ({ value, label: value }))]} />}
+          {profileFields.academicYear && <PillSelect label="Filter academic year" size="compact" allLabel="All years" value={year} onChange={setYear}
+            options={(listData?.facets.years ?? []).map(value => ({ value, label: value }))} />}
           {profileFields.gpa && <RangeSlider label="GPA greater than" min={0} max={4} step={0.01} value={numberFilter(gpa)} onChange={value => setGpa(filterText(value))} />}
           {profileFields.sat && <RangeSlider label="SAT greater than" min={400} max={1600} step={10} value={numberFilter(sat)} onChange={value => setSat(filterText(value))} />}
           {profileFields.act && <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />}
