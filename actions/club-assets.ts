@@ -8,6 +8,7 @@ import { authorizeAdminTransaction } from "@/utils/admin-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { privateClubAssetStorage } from "@/utils/club-asset-storage";
 import { prepareClubImage } from "@/lib/club-image";
+import { UPLOAD_QUOTA_MESSAGES, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
 
 export async function uploadClubAsset(input: FormData) {
   const keys = ['clubId', 'file', 'admin'];
@@ -32,6 +33,13 @@ export async function uploadClubAsset(input: FormData) {
       if (admin) await authorizeAdminTransaction(tx, actor.id);
       else await authorizeClubTransaction(tx, clubId, actor.id, ['club.settings']);
       if (!await tx.club.findUnique({ where: { id: clubId }, select: { id: true } })) throw Error("Club unavailable.");
+      const since = uploadWindowStart();
+      const userRecent = await tx.auditLog.count({ where: { actorId: actor.id, action: 'club.asset.upload', createdAt: { gte: since } } });
+      const clubRecent = await tx.auditLog.count({ where: { clubId, action: 'club.asset.upload', createdAt: { gte: since } } });
+      // Replaced club images stay in Storage, so the stored total is the sum of this club's objects.
+      const [stored] = await tx.$queryRaw<{ bytes: bigint | number | null }[]>`SELECT COALESCE(SUM((metadata->>'size')::bigint), 0) AS bytes FROM storage.objects WHERE bucket_id='club-assets' AND name LIKE ${clubId + '/%'}`;
+      const quota = uploadQuotaError({ userRecent, clubRecent, clubBytes: Number(stored?.bytes ?? 0), incomingBytes: image.bytes.length }, UPLOAD_QUOTAS.clubAsset, UPLOAD_QUOTA_MESSAGES.clubAssetStorage);
+      if (quota) throw Error(quota);
       const { error } = await storage.upload(path, image.bytes, { contentType: image.contentType, upsert: false, cacheControl: '0' });
       if (error) throw Error("Image upload failed. Your saved profile has not changed.");
       uploaded = true;
