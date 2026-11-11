@@ -380,7 +380,7 @@ export function ApplicationBuilderView({
                               })
                             }
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={16} />
                           </Button>
                         </div>
                       ))}

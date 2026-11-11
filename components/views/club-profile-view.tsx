@@ -241,7 +241,7 @@ export function ClubProfileView({
           <ul>
             {publicEvents.map((event) => (
               <li key={event.id}>
-                <CalendarDays size={18} aria-hidden="true" />
+                <CalendarDays size={16} aria-hidden="true" />
                 <div>
                   <h3><a className="oc-tap-link" href={`/corkboard?event=${event.id}`}>{event.title}</a></h3>
                   <time dateTime={event.date}>
@@ -257,7 +257,7 @@ export function ClubProfileView({
           <ul>
             {upcoming.map((event) => (
               <li key={event.id}>
-                <CalendarDays size={18} aria-hidden="true" />
+                <CalendarDays size={16} aria-hidden="true" />
                 <div>
                   <h3><a className="oc-tap-link" href={`/corkboard?event=${event.id}`}>{event.title}</a></h3>
                   <p>{event.date} · {event.time}</p>

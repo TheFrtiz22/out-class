@@ -33,6 +33,15 @@
   /* Quiet hover tint for transparent controls, on light and navy glass. */
   --oc-glass-hover-tint: color-mix(in srgb, var(--school-primary) 6%, transparent);
   --oc-glass-navy-hover-tint: rgb(255 255 255 / 10%);
+  /* Pressed tone (styles/pressed-states.css), painted as a full inset shadow over the control's own fill so
+     fills, tones and call-site backgrounds stay intact: light controls take the ink, navy and solid fills
+     deepen, transparent controls on navy glass brighten. */
+  --oc-glass-press-tint: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --oc-glass-navy-press-tint: rgb(4 15 29 / 22%);
+  --oc-glass-on-navy-press-tint: rgb(255 255 255 / 16%);
+  --oc-glass-press-shade: inset 0 0 0 100vmax var(--oc-glass-press-tint);
+  --oc-glass-navy-press-shade: inset 0 0 0 100vmax var(--oc-glass-navy-press-tint);
+  --oc-glass-on-navy-press-shade: inset 0 0 0 100vmax var(--oc-glass-on-navy-press-tint);
   /* Sheen and highlight over semantic tints (Badge, StatusPill, chips). */
   --oc-glass-tint-sheen: linear-gradient(172deg, rgb(255 255 255 / 55%), transparent 62%);
   --oc-glass-tint-highlight: inset 0 1px 0 rgb(255 255 255 / 60%);

@@ -915,7 +915,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     <Button variant={value === "ACCEPTED" ? "default" : "outline"} size="sm" disabled={busy || dirty} onClick={() => setDecision(value)}>{decisionActionLabels[value]}</Button>
                   </DisabledReason>)}
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="More applicant actions"><MoreHorizontal size={18} /></Button></DropdownMenuTrigger>
+                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="More applicant actions"><MoreHorizontal size={20} /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-56">
                       {canManageRecruitment && <DropdownMenuItem onSelect={() => { setTargetRound(active.roundId); setPanel("round") }}>Move round…</DropdownMenuItem>}
                       {canManageRecruitment && !activeRound?.anonymousReview && <DropdownMenuItem onSelect={() => setPanel("cycle")}>Recruitment cycle assignment…</DropdownMenuItem>}
