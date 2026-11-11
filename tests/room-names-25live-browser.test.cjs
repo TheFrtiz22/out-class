@@ -19,6 +19,8 @@ test('browser: 25Live notice, post-save reminder, inline rename (Enter/Escape/bl
   await dialog.getByRole('button',{name:'Save times & continue',exact:true}).click()
   const reminder=page.getByRole('status').filter({hasText:'Saved in OutClass. Don’t forget to book this room on 25Live.'});await reminder.waitFor()
   assert.equal(await reminder.getByRole('link',{name:/Book on 25Live/}).getAttribute('href'),'https://25live.collegenet.com/pro/virginia#!/home/dash')
+  // Saving lands on Confirm interviewers; the Heads up notice stays visible there too.
+  assert.ok(await note.isVisible(),'notice persists on Confirm interviewers')
 
   const roomId=f.state().interviewRooms.find(r=>r.name==='Synthetic Hall A').id,room=()=>f.state().interviewRooms.find(r=>r.id===roomId)
   await page.getByRole('navigation',{name:'Scheduling workflow'}).getByRole('button',{name:/Set interview times/}).click()
@@ -43,19 +45,28 @@ test('browser: 25Live notice, post-save reminder, inline rename (Enter/Escape/bl
   assert.equal(room().name,'Clark Library Study Room B')
   assert.equal(room().location,'Synthetic Hall A','renaming never changes the location')
 
-  // A rejected rename (same name as another open room with overlapping times) keeps the typed name and the editor open.
+  // Duplicate names are allowed; a virtual room gets the same 25Live tracking.
   f.asLeader();const first=room().slots[0],day=new Date(first.startTime).toLocaleDateString('en-CA',{timeZone:'America/New_York'}),hm=v=>new Date(v).toLocaleTimeString('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit'})
-  await f.api.createInterviewRoom({clubId:f.scope.clubId,roundId:f.scope.roundId,name:'Overflow room',location:'Overflow room',kind:'IN_PERSON',timezone:'America/New_York',dates:[day],start:hm(first.startTime),end:hm(first.endTime),duration:room().duration,buffer:0,capacity:1,interviewersNeeded:1,panelMemberIds:[]})
+  await f.api.createInterviewRoom({clubId:f.scope.clubId,roundId:f.scope.roundId,name:'Overflow room',location:'https://zoom.us/j/123456',kind:'VIRTUAL',timezone:'America/New_York',dates:[day],start:hm(first.startTime),end:hm(first.endTime),duration:room().duration,buffer:0,capacity:1,interviewersNeeded:1,panelMemberIds:[]})
   await page.reload();await page.getByRole('button',{name:'Overflow room (rename)',exact:true}).click()
   await input.fill('clark library study room b');await input.press('Enter')
-  await page.getByRole('alert').filter({hasText:'overlapping interview times'}).waitFor()
-  assert.equal(await input.inputValue(),'clark library study room b');assert.equal(f.state().interviewRooms.find(r=>r.name==='Overflow room')?.name,'Overflow room')
-  await input.press('Escape');await page.getByRole('button',{name:'Overflow room (rename)',exact:true}).waitFor()
+  await page.getByRole('button',{name:'clark library study room b (rename)',exact:true}).waitFor()
+  const overflowId=f.state().interviewRooms.find(r=>r.location==='https://zoom.us/j/123456').id
+  assert.equal(f.state().interviewRooms.find(r=>r.id===overflowId).name,'clark library study room b')
+  await page.locator('#room-25live-'+overflowId).waitFor()
   // The pencil is a pointer shortcut; keyboard users get one tab stop per name.
-  assert.equal(await page.getByRole('button',{name:'Edit name of Overflow room',exact:true}).getAttribute('tabindex'),'-1')
+  assert.equal(await page.getByRole('button',{name:'Edit name of clark library study room b',exact:true}).getAttribute('tabindex'),'-1')
+  // Rename from the Manage room sheet heading.
+  await page.locator('article',{has:page.getByRole('button',{name:'clark library study room b (rename)',exact:true})}).getByRole('button',{name:'Manage room',exact:true}).click()
+  const sheet=page.getByRole('dialog');await sheet.getByRole('button',{name:'clark library study room b (rename)',exact:true}).click()
+  await sheet.getByRole('textbox',{name:'Room name',exact:true}).fill('Zoom backup');await sheet.getByRole('textbox',{name:'Room name',exact:true}).press('Enter')
+  await sheet.getByRole('button',{name:'Zoom backup (rename)',exact:true}).waitFor();assert.equal(f.state().interviewRooms.find(r=>r.id===overflowId).name,'Zoom backup')
+  await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'})
+  await page.getByRole('button',{name:'Zoom backup (rename)',exact:true}).waitFor()
   await page.locator('#room-25live-'+roomId).click()
   await page.waitForFunction(id=>document.getElementById(id)?.checked===true,'room-25live-'+roomId)
   assert.ok(room().externallyBookedAt)
+  assert.equal(await page.locator('label[for="room-25live-'+roomId+'"] svg').count(),1,'checked rooms show the check mark')
   await shot(page,'room-25live-booked-desktop')
   await page.setViewportSize({width:390,height:844});await shot(page,'room-25live-mobile')
   assert.deepEqual(errors,[]);assert.equal(f.liveCalls(),0)

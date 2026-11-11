@@ -72,7 +72,8 @@ export async function createInterviewRoom(raw: RoomInput) {
     if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } }) !== panelIds.length) throw new Error("Choose interviewers who belong to this club.")
     const existing = await tx.interviewSlot.findMany({ where: { clubId: input.clubId, startTime: { lt: new Date(+slots[slots.length - 1].endTime + 3600000) }, endTime: { gt: new Date(+slots[0].startTime - 3600000) }, OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }, include: { room: true } })
     for (const slot of slots) for (const other of existing) {
-      const sameRoom = other.location.trim().toLowerCase() === input.location.toLowerCase() || other.room?.name.trim().toLowerCase() === input.name.toLowerCase()
+      // Names are free-text labels; the location identifies the physical room.
+      const sameRoom = other.location.trim().toLowerCase() === input.location.toLowerCase()
       const sharedPanel = other.room?.panelMemberIds.some(id => panelIds.includes(id))
       if ((sameRoom || sharedPanel) && overlaps(slot, other, Math.max(input.buffer, other.room?.buffer ?? 0))) throw new Error(sharedPanel ? "An interviewer already has an overlapping room schedule." : "This room or location already has overlapping interview slots.")
     }
@@ -99,7 +100,7 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
       await lockSchedulingPeople(tx,{exclusive:members.map(m=>m.userId)})
       await assertOfficialPanelConflicts(tx,members.map(m=>m.userId),slots.map(s=>({id:s.id,startTime:s.startTime.toISOString(),endTime:s.endTime.toISOString(),buffer:room.buffer,userIds:members.filter(m=>(s.panelScheduleVersionId?s.publishedPanelMemberIds:room.approvedPanelMemberIds).includes(m.id)).map(m=>m.userId)})))
       const others = await tx.interviewSlot.findMany({ where: { clubId: room.clubId, AND: [{ OR: [{ roomId: null }, { roomId: { not: room.id } }] }, { OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }] }, include: { room: true } })
-      if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.name.toLowerCase() === room.name.toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new Error("Another room now overlaps this schedule. Create a new time window instead.")
+      if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new Error("Another room now overlaps this schedule. Create a new time window instead.")
     }
     await tx.interviewRoom.update({ where: { id: room.id }, data: { isOpen: input.open } })
     const bookings = await tx.interviewBooking.findMany({ where: { slot: { roomId: room.id }, roundId: room.roundId } });
@@ -117,13 +118,11 @@ export async function renameInterviewRoom(raw: unknown) {
   const { user } = await requireAuth()
   const result = await atomic(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
-    // Room names also identify a physical room in overlap checks; serialize with room creation.
+    // Names are free-text labels (duplicates allowed); overlap checks use location and panel, not name.
     await lockOperationalClub(tx, input.clubId)
-    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, include: { slots: true } })
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, select: { id: true, name: true } })
     if (!room) throw new Error("Room unavailable.")
     if (room.name === input.name) return { name: room.name }
-    const others = await tx.interviewRoom.findMany({ where: { clubId: input.clubId, id: { not: room.id }, name: { equals: input.name, mode: "insensitive" }, OR: [{ isOpen: true }, { slots: { some: { bookings: { some: {} } } } }] }, include: { slots: true } })
-    if (others.some(other => other.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(room.buffer, other.buffer)))))) throw new Error("Another room with this name has overlapping interview times. Choose a different name.")
     await tx.interviewRoom.update({ where: { id: room.id }, data: { name: input.name } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.rename" } })
     return { name: input.name }

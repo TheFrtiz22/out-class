@@ -31,8 +31,8 @@ test("demo rename and 25Live tracking persist through the client boundary withou
   assert.ok(!a.externallyBookedAt)
 
   assert.deepEqual(await api.renameInterviewRoom({ clubId, roomId: a.id, name: "  Rice Hall 340 " }), { name: "Rice Hall 340" })
-  // Another open room with overlapping times cannot take the same name (names identify physical rooms).
-  await assert.rejects(api.renameInterviewRoom({ clubId, roomId: b.id, name: "rice hall 340" }), /overlapping/)
+  // Names are free-text labels: another room with overlapping times may share the name.
+  assert.deepEqual(await api.renameInterviewRoom({ clubId, roomId: b.id, name: "rice hall 340" }), { name: "rice hall 340" })
   await assert.rejects(api.renameInterviewRoom({ clubId, roomId: b.id, name: " " }), /Name your room/)
 
   const marked = await api.setInterviewRoomExternallyBooked({ clubId, roomId: a.id, booked: true })
@@ -73,10 +73,7 @@ function actionHarness() {
     clubMember: { findUnique: async ({ where }) => where.userId_clubId.userId === id(6) ? state.members[where.userId_clubId.clubId] ?? null : null },
     interviewRoom: {
       findFirst: async ({ where }) => { const r = state.rooms.find(r => r.id === where.id && r.clubId === where.clubId); return r ? room(r) : null },
-      findMany: async ({ where }) => {
-        assert.equal(where.name.mode, "insensitive")
-        return state.rooms.filter(r => r.clubId === where.clubId && r.id !== where.id.not && r.name.toLowerCase() === where.name.equals.toLowerCase() && (r.isOpen || r.booked)).map(room)
-      },
+      findMany: async () => { throw Error("rename must not compare names with other rooms") },
       update: async ({ where, data }) => { state.updates.push({ id: where.id, data }); Object.assign(state.rooms.find(r => r.id === where.id), data) },
     },
     auditLog: { create: async ({ data }) => state.audit.push(data) },
@@ -100,19 +97,16 @@ function actionHarness() {
   return { state, clubA, clubB, api: load("actions/interview-rooms.ts") }
 }
 
-test("renameInterviewRoom: manager-only, club-scoped, trims, rejects overlapping same-name rooms, audits", async () => {
+test("renameInterviewRoom: manager-only, club-scoped, trims, allows duplicate names, audits", async () => {
   const { state, clubA, clubB, api } = actionHarness()
   assert.deepEqual(await api.renameInterviewRoom({ clubId: clubA, roomId: id(3), name: "  Rice Hall 340 " }), { name: "Rice Hall 340" })
   assert.equal(state.rooms[0].name, "Rice Hall 340"); assert.equal(state.rooms[0].location, "Hall A", "location (and slot locations) unchanged")
   assert.deepEqual(state.audit.map(a => [a.action, a.targetId, a.clubId]), [["interview.room.rename", id(3), clubA]])
   // Unchanged name: no write, no audit.
   await api.renameInterviewRoom({ clubId: clubA, roomId: id(3), name: "Rice Hall 340" }); assert.equal(state.updates.length, 1); assert.equal(state.audit.length, 1)
-  // Same name (any case) as another open room with overlapping times is refused; a closed, unbooked room is not a conflict.
-  await assert.rejects(api.renameInterviewRoom({ clubId: clubA, roomId: id(4), name: "rice HALL 340" }), /overlapping interview times/)
-  assert.equal(state.rooms[1].name, "Hall B")
-  await api.renameInterviewRoom({ clubId: clubA, roomId: id(4), name: "Hall C" }); assert.equal(state.rooms[1].name, "Hall C")
-  state.rooms[2].booked = true
-  await assert.rejects(api.renameInterviewRoom({ clubId: clubA, roomId: id(3), name: "Hall C" }), /overlapping/)
+  // Names are free-text labels: the same name (any case) as another open room with overlapping times is allowed.
+  assert.deepEqual(await api.renameInterviewRoom({ clubId: clubA, roomId: id(4), name: "rice HALL 340" }), { name: "rice HALL 340" })
+  assert.equal(state.rooms[1].name, "rice HALL 340"); assert.equal(state.rooms[1].location, "Hall B")
   // Cross-club room id under a club the actor manages: same "unavailable" answer, nothing written.
   await assert.rejects(api.renameInterviewRoom({ clubId: clubA, roomId: id(12), name: "Mine" }), /Room unavailable/)
   // Member of the room's club without interviews.manage, non-member, suspended club: denied before any write.
@@ -170,7 +164,11 @@ test("room manager shows the 25Live notice, link, post-create reminder and per-r
   assert.match(ui, /Not booked on 25Live yet/)
   assert.match(ui, /event\.key === "Enter"/); assert.match(ui, /event\.key === "Escape"/); assert.match(ui, /onBlur=/)
   const manager = fs.readFileSync("components/interviews/room-manager.tsx", "utf8")
-  assert.match(manager, /<RoomBookingNotice \/>/)
-  assert.match(manager, /setRoomReminder\(created\.kind === "IN_PERSON"\)/)
-  assert.match(manager, /<EditableRoomName room=\{room\}/)
+  // The notice stays on every scheduling step, and every room kind gets the reminder and tracking.
+  assert.match(manager, /<RoomBookingNotice \/>/); assert.doesNotMatch(manager, /&& <RoomBookingNotice/)
+  assert.match(manager, /setRoomReminder\(true\)/); assert.doesNotMatch(manager, /inPerson|kind === "IN_PERSON"/)
+  // Rename from the room card, the Manage room sheet heading and the bookings list, through one handler.
+  assert.equal(manager.match(/<EditableRoomName /g).length, 3)
+  assert.equal(manager.match(/renameInterviewRoom\(/g).length, 1)
+  assert.match(ui, /Booked on 25Live\{room\.externallyBookedAt && <Check /)
 })

@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
-import { ExternalLink, Info, Pencil } from "@/components/icons"
+import { Check, ExternalLink, Info, Pencil } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { Input } from "@/components/ui/input"
@@ -64,7 +64,7 @@ export function ExternalBookingToggle({ room, disabled, onChange }: { room: Pick
   const id = `room-25live-${room.id}`
   return <label htmlFor={id} className="inline-flex min-h-9 items-center gap-2 text-xs">
     <input id={id} type="checkbox" checked={!!room.externallyBookedAt} disabled={disabled} onChange={e => onChange(e.target.checked)} />
-    Booked on 25Live
+    Booked on 25Live{room.externallyBookedAt && <Check size={14} weight="bold" aria-hidden className="text-emerald-700" />}
   </label>
 }
 
