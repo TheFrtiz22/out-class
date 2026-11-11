@@ -54,6 +54,11 @@ export function applyTimerCommand(state: SharedTimerState, command: TimerCommand
       const elapsed = timerElapsedMs(state, now), floor = phase === "ready" ? TIMER_ADJUST_STEP_MS : 0;
       const remaining = Math.max(floor, timerRemainingMs(state, now) + command.deltaMs);
       const durationMs = Math.min(TIMER_MAX_DURATION_MS, elapsed + remaining);
+      if (elapsed + remaining > TIMER_MAX_DURATION_MS && phase !== "ready") {
+        // Long past expiry (or a very long session): count again from now, so the
+        // new remaining time shows and the cap applies to what is left, not to time already spent.
+        return { ...state, startedAt: now, pausedAt: phase === "paused" ? now : null, pausedMs: 0, durationMs: Math.min(TIMER_MAX_DURATION_MS, remaining) };
+      }
       return durationMs === state.durationMs ? null : { ...state, durationMs };
     }
   }

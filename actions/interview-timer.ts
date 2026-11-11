@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { interviewScopeSchema } from "@/lib/interview-access";
+import { interviewDraftSchema } from "@/lib/interview-kits";
 import { collaborationSession } from "@/utils/interview-collaboration";
 import { interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewTiming } from "@/lib/interview-session-timing";
@@ -24,8 +25,9 @@ const controlSchema = interviewScopeSchema.extend({
 export async function controlInterviewTimer(input: z.infer<typeof controlSchema>): Promise<TimerControlResult> {
   const data = controlSchema.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async (tx): Promise<TimerControlResult> => {
-    const { member, session, round, booking, app } = await collaborationSession(tx, data, user.id);
-    if (round.archivedAt || app.roundId !== round.id) throw Error("Only active interviews can use the shared timer.");
+    const { member, session, round, booking, app, record } = await collaborationSession(tx, data, user.id);
+    // Same rule as selectSharedInterviewQuestion: a submitted or closing reviewer no longer drives the room.
+    if (record.completedAt || interviewDraftSchema.parse(record.draft).postInterview || round.archivedAt || app.roundId !== round.id) throw Error("Only active interviews can use the shared timer.");
     const timing = interviewTiming(data, round.configuration, booking);
     const row = await tx.interviewTimer.findUnique({ where: { sessionId: session.id } });
     const now = Date.now();

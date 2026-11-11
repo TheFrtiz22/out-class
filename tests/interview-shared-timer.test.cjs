@@ -74,7 +74,8 @@ test('only current panel members of this club, round and room can read or change
  const control=(userId,scope=h.scope)=>{h.as(userId);return h.timer.controlInterviewTimer({...scope,revision:1,requestId:randomUUID(),command:{type:'pause'}});};
  const read=(userId,scope=h.scope)=>{h.as(userId);return h.rooms.getInterviewCollaboration({...scope,clientId:randomUUID()});};
  // The applicant (even if they knew every ID) and members without a panel assignment are refused.
- for(const user of [h.ids.student,h.ids.scheduler,h.ids.owner]){await assert.rejects(control(user));await assert.rejects(read(user));}
+ await assert.rejects(control(h.ids.student),/Interview access unavailable/);await assert.rejects(read(h.ids.student),/Interview access unavailable/);
+ for(const user of [h.ids.scheduler,h.ids.owner]){await assert.rejects(control(user),/Current panel assignment or explicit leadership permission required/);await assert.rejects(read(user),/Current panel assignment or explicit leadership permission required/);}
  // Another club's scope and another round's scope are refused.
  const otherRound=randomUUID();await h.db.query('INSERT INTO "PipelineRound"(id,"clubId",name,"order",configuration) VALUES ($1,$2,\'Final\',2,\'{"duration":30}\')',[otherRound,h.ids.club]);
  await assert.rejects(control(h.ids.panel,{...h.scope,roundId:otherRound}));await assert.rejects(read(h.ids.panel,{...h.scope,roundId:otherRound}));
@@ -104,5 +105,9 @@ test('timer math: offsets cancel device clock error, adjust clamps, long pauses 
  const paused=lib.applyTimerCommand(s,{type:'pause'},t0+MIN,timing),longResume=lib.applyTimerCommand(paused,{type:'resume'},t0+30*86400000,timing);
  assert.equal(longResume.pausedMs,0);assert.equal(lib.timerRemainingMs(longResume,t0+30*86400000),19*MIN);
  assert.equal(lib.timerCommandSchema.safeParse({type:'adjust',deltaMs:0}).success,false);assert.equal(lib.timerCommandSchema.safeParse({type:'adjust',deltaMs:500}).success,false);
+ // +1 min more than 4 hours after expiry: counts again from now (01:00 left), cap applies to what is left.
+ const late=t0+5*60*MIN,again=lib.applyTimerCommand(s,{type:'adjust',deltaMs:MIN},late,timing);assert.equal(lib.timerRemainingMs(again,late),MIN);assert.equal(lib.timerRemainingMs(again,late+30000),30000);assert.equal(lib.timerPhase(again),'running');
+ const latePaused=lib.applyTimerCommand(s,{type:'pause'},late,timing),againPaused=lib.applyTimerCommand(latePaused,{type:'adjust',deltaMs:MIN},late+MIN,timing);assert.equal(lib.timerPhase(againPaused),'paused');assert.equal(lib.timerRemainingMs(againPaused,late+10*MIN),MIN);
+ const near=lib.applyTimerCommand({...s,durationMs:lib.TIMER_MAX_DURATION_MS},{type:'adjust',deltaMs:60*MIN},t0+MIN,timing);assert.equal(lib.timerRemainingMs(near,t0+MIN),lib.TIMER_MAX_DURATION_MS,'remaining is capped at 4 hours');assert.ok(near.durationMs<=lib.TIMER_MAX_DURATION_MS);
  const newer={...s,revision:3,serverNow:5},older={...s,revision:2,serverNow:9};assert.equal(lib.newerTimer(newer,older),newer);assert.equal(lib.newerTimer(older,newer),newer);
 });

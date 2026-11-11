@@ -37,3 +37,35 @@ test('shared timer migration: additive, LF, one row per room, revision-ordered, 
  assert.equal((await db.query(`SELECT count(*)::int n FROM "InterviewTimer"`)).rows[0].n,0,'removed with the room');
  }finally{await db.close();}
 });
+test('shared timer migration under production-like ownership: the runtime role can insert and advance a timer; the guard still refuses bad writes',{timeout:240000},async()=>{
+ const name='20261111180000_interview_shared_timer',dir='prisma/migrations';
+ const names=fs.readdirSync(dir).filter(n=>fs.existsSync(path.join(dir,n,'migration.sql'))).sort();
+ const db=new PGlite();try{
+ // Same role shape as tests/production-communications-runtime-migration.test.cjs: a bounded, non-bypassing runtime
+ // role that owns the existing application tables, and a non-superuser migration operator.
+ await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE outclass_production_app NOLOGIN NOSUPERUSER NOBYPASSRLS; CREATE ROLE migration_operator NOLOGIN NOSUPERUSER NOBYPASSRLS; GRANT outclass_production_app TO migration_operator; ALTER SCHEMA public OWNER TO migration_operator; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated`);
+ for(const n of names.filter(n=>n<name))await db.exec(fs.readFileSync(path.join(dir,n,'migration.sql'),'utf8'));
+ for(const {tablename} of (await db.query(`SELECT tablename FROM pg_tables WHERE schemaname='public'`)).rows)await db.exec(`ALTER TABLE public."${tablename}" OWNER TO outclass_production_app`);
+ await db.exec(`INSERT INTO "User"(id,email) VALUES('owner','o@virginia.edu'),('rev','r@virginia.edu'),('s1','s1@virginia.edu'),('other','x@virginia.edu');
+ INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES('club','club','QA','','','#142d45','Other'),('club2','club2','QB','','','#142d45','Other');
+ INSERT INTO "ClubMember"(id,"clubId","userId",role) VALUES('lead','club','owner','PRESIDENT'),('mem','club','rev','GENERAL_MEMBER'),('foreign','club2','other','GENERAL_MEMBER');
+ INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('round','club','QA',0);
+ INSERT INTO "Application"(id,"clubId","studentId","roundId",status) VALUES('a1','club','s1','round','INTERVIEWING');
+ INSERT INTO "InterviewCollaboration"(id,"clubId","applicationId","roundId","roomKey",questions) VALUES('room','club','a1','round','panel:a1','[]');`);
+ await db.exec('SET ROLE migration_operator');await db.exec(fs.readFileSync(path.join(dir,name,'migration.sql'),'utf8'));await db.exec('RESET ROLE');
+ assert.equal((await db.query(`SELECT tableowner FROM pg_tables WHERE tablename='InterviewTimer'`)).rows[0].tableowner,'migration_operator');
+ await db.exec('SET ROLE outclass_production_app');
+ try{
+  assert.equal((await db.query('SELECT current_user u')).rows[0].u,'outclass_production_app');
+  // The guard's EXISTS over InterviewCollaboration and ClubMember runs as this role, under RLS on InterviewTimer.
+  await db.exec(`INSERT INTO "InterviewTimer"("sessionId","durationMs","contextKey","updatedBy") VALUES('room',1200000,'round:club:round:20','mem')`);
+  const updated=await db.query(`UPDATE "InterviewTimer" SET revision=revision+1,"startedAt"=NOW(),"updatedBy"='lead' WHERE "sessionId"='room' AND revision=1 RETURNING revision`);
+  assert.deepEqual(updated.rows,[{revision:2}]);
+  assert.deepEqual((await db.query(`SELECT revision,"updatedBy" FROM "InterviewTimer"`)).rows,[{revision:2,updatedBy:'lead'}]);
+  await assert.rejects(db.exec(`UPDATE "InterviewTimer" SET revision=revision+2 WHERE "sessionId"='room'`),/identity\/revision mismatch/);
+  await assert.rejects(db.exec(`UPDATE "InterviewTimer" SET revision=revision+1,"updatedBy"='foreign' WHERE "sessionId"='room'`),/member scope mismatch/);
+  await assert.rejects(db.exec(`DELETE FROM "InterviewTimer"`),/permission denied/);
+ }finally{await db.exec('RESET ROLE');}
+ assert.deepEqual((await db.query(`SELECT revision,"updatedBy" FROM "InterviewTimer"`)).rows,[{revision:2,updatedBy:'lead'}]);
+ }finally{await db.close();}
+});

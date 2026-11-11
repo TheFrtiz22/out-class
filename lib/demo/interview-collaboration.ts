@@ -48,7 +48,8 @@ function demoTimer(r: DemoCollaboration["rooms"][number], timing: ReturnType<typ
 }
 /** Demo counterpart of controlInterviewTimer: same transitions and revision check, demo store only. */
 export function controlInterviewTimer(input: InterviewScope & { revision: number; requestId: string; command: TimerCommand }): TimerControlResult {
-  return withRoom(input, r => {
+  return withRoom(input, (r, own) => {
+    if (own.completedAt || own.draft.postInterview) throw Error("Only active interviews can use the shared timer.");
     const timing = demoInterviewTiming(input), now = Date.now();
     if (!timing) return { status: "conflict" as const, timer: demoTimer(r, timing) };
     if (r.timer?.lastRequestId === input.requestId) return { status: "ok" as const, timer: demoTimer(r, timing) };

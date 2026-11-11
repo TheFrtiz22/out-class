@@ -6,7 +6,7 @@ The normal \`pnpm test\` suite intentionally does not boot Auth, Storage, Next.j
 
 This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on every pull request, Mondays at 05:17 UTC, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
 
-**A successful static coverage report does not imply all 43 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
+**A successful static coverage report does not imply all 44 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
 
 ## Run locally
 
