@@ -52,7 +52,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     label: "Account",
     items: [
       { id: "landing", title: "Landing Page", icon: Globe },
-      { id: "auth", title: "Login & Sign Up", icon: LogIn },
+      { id: "auth", title: "Sign in & sign up", icon: LogIn },
       { id: "student-onboarding", title: "Student Onboarding", icon: UserRound },
     ],
   },

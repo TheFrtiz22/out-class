@@ -16,6 +16,7 @@ import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission, type ClubPermission } from "@/lib/permissions"
 import { ballotOutcome, summarizeVoting, projectLegacyVoting, createVotingSchema, votingScope, votingCommandSchema, decisionSchema } from "@/lib/voting-engine"
 import { readVotingDisplay } from "@/lib/voting-presentation"
+import { boundedParse } from "@/lib/bounded-input"
 const include = { participants: true, candidates: { orderBy: { position: "asc" as const } }, passes: { orderBy: { number: "asc" as const }, include: { candidates: { orderBy: { position: "asc" as const }, include: { ballots: true } } } } }
 async function member(tx: AppTransactionClient, clubId: string, id: string, caps: ClubPermission[]) {
   await assertClubOperational(tx, clubId);
@@ -72,7 +73,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
   return result;
 }
 export async function createVotingSession(input: unknown) {
-  const d=createVotingSchema.parse(input)
+  const d=boundedParse(createVotingSchema, input)
   if(new Set(d.applicationIds).size!==d.applicationIds.length || new Set(d.participantIds).size!==d.participantIds.length) throw Error("Duplicate selection.")
   const {user,membership}=await requireClubPermission(d.clubId,["applications.review","decisions.manage"])
   return clubWriteTransaction(async tx=>{
@@ -114,7 +115,7 @@ export async function submitVotingBallot(input: unknown) {
   }, votingWriteLimits)
 }
 export async function commandVotingSession(input: unknown) {
-  const d=votingCommandSchema.parse(input)
+  const d=boundedParse(votingCommandSchema, input)
   const capability: ClubPermission = d.action === "PUBLISH" ? "decisions.publish" : d.action === "REOPEN" ? "decisions.reopen" : d.action === "FINISH" ? "decisions.finish" : ["OPEN_JOIN", "SET_CANDIDATE", "START_PASS", "COMPLETE_PASS", "PAUSE", "RESUME"].includes(d.action) ? "decisions.start" : "decisions.manage"
   const caps:ClubPermission[]=["applications.review",capability]
   if(d.action==="PUBLISH") caps.push("applicants.identify")

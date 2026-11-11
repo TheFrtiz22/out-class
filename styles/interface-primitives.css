@@ -319,3 +319,7 @@ fieldset { min-inline-size: 0; }
   :is([data-slot="switch-thumb"], [data-slot="checkbox"])[data-state="checked"] { background: Highlight; forced-color-adjust: none; }
   :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"], [data-slot="switch"], [data-slot="checkbox"]):focus-visible { outline: 2px solid Highlight; }
 }
+/* QR presenter (components/qr/qr-presenter-dialog.tsx): no enter/exit fade or zoom on its overlay or surface. */
+@media (prefers-reduced-motion: reduce) {
+  .oc-qr-presenter, .oc-qr-presenter-overlay { animation: none !important; transition: none !important; }
+}
