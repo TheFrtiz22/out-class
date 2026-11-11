@@ -109,7 +109,7 @@ export function saveInterviewSession(input: InterviewScope & { revision: number;
       const old = target.evaluations.find(e => e.interviewerId === member.id && e.roundId === round.id);
       if (old?.submittedAt) throw new Error("Submitted evaluation is immutable.");
       if (target.evaluations.some(e => e.interviewerId === member.id && !e.roundId)) throw new Error("Historical evaluation requires reconciliation.");
-      evaluation = { id: old?.id || crypto.randomUUID(), applicationId: app.id, interviewerId: member.id, roundId: round.id, round: round.name, score, notes: draft.additionalNotes ?? draft.overallReview, applicantQuestions: draft.applicantQuestions || "", submittedAt: new Date(), createdAt: old?.createdAt || new Date() };
+      evaluation = { id: old?.id || crypto.randomUUID(), applicationId: app.id, interviewerId: member.id, roundId: round.id, round: round.name, score, notes: draft.additionalNotes ?? draft.overallReview, applicantQuestions: draft.applicantQuestions || "", submittedAt: new Date(), createdAt: old?.createdAt || new Date(), ...(draft.rubricScores ? { rubricScores: draft.rubricScores } : {}) };
       target.evaluations = [...target.evaluations.filter(e => e.id !== evaluation!.id), evaluation];
     }
     if (input.complete) record.submittedQuestions = snapshotSubmittedQuestions(record.questions, draft);
@@ -117,14 +117,14 @@ export function saveInterviewSession(input: InterviewScope & { revision: number;
     return { session: structuredClone(record), evaluation };
   });
 }
-export function submitEvaluation(input: { clubId: string; applicationId: string; roundId?: string; roundName: string; score: number; notes?: string }) {
+export function submitEvaluation(input: { clubId: string; applicationId: string; roundId?: string; roundName: string; score: number; notes?: string; rubricScores?: import("@/lib/review-rubric").RubricScores }) {
   const app = actor(input.clubId).s.applications.find(a => a.id === input.applicationId && a.clubId === input.clubId);
   if (!app) throw new Error("Application unavailable.");
   const scope = { ...input, roundId: input.roundId || app.roundId }; const { round } = access(scope);
   if (!input.roundId && round.name !== input.roundName) throw new Error("Provide stable round ID.");
   const record = openInterviewSession(scope);
   if (record.completedAt) throw new Error("Submitted evaluation is immutable.");
-  return { success: true, evaluation: saveInterviewSession({ ...scope, revision: record.revision, draft: { ...record.draft, score: input.score, additionalNotes: input.notes ?? record.draft.overallReview }, complete: true }).evaluation! };
+  return { success: true, evaluation: saveInterviewSession({ ...scope, revision: record.revision, draft: { ...record.draft, score: input.score, ...(input.rubricScores ? { rubricScores: input.rubricScores } : {}), additionalNotes: input.notes ?? record.draft.overallReview }, complete: true }).evaluation! };
 }
 /** Demo shows only bundled fictional headshots, never an authenticated storage URL. */
 function demoApplicantPhoto(anonymous: boolean, value: string | null | undefined) {

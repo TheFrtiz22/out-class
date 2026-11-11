@@ -60,20 +60,19 @@ test('browser: every list keeps a visible sort, one-line rows or two-line cards,
     await context.close()
   }
 
-  // Quick review at 1126×764: the applicant's responses and the decision footer fit without scrolling,
-  // ←/→ move between applicants, typing in the note does not, and Esc closes.
+  // The applicant review at 1126×764: responses lead, Advance / Hold / Reject are on screen without scrolling,
+  // ←/→ move between applicants, typing does not, and Esc closes.
   const page = await browser.newPage({ viewport: { width: 1126, height: 764 } })
   await page.goto(fixtures.leader.url('section=recruitment&tool=applicants&sort=name&order=asc')); await page.locator('main h1').first().waitFor()
   await page.getByRole('button', { name: 'Open Amara Merritt' }).first().click()
   const dialog = page.getByRole('dialog'); await dialog.waitFor()
+  await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).waitFor()
   assert.ok(await page.locator('.oc-quick-answer').count() >= 1, 'responses are the main content')
-  const fit = await page.locator('.oc-applicant-drawer-scroll').evaluate(el => el.scrollHeight - el.clientHeight)
-  assert.ok(fit <= 0, `the quick review fits without scrolling (${fit}px over)`)
-  await page.locator('.oc-quick-footer').evaluate(el => { const r = el.getBoundingClientRect(); if (r.bottom > innerHeight + 1 || r.top < 0) throw Error('footer off screen') })
+  await page.locator('.oc-review-decision-buttons').evaluate(el => { const r = el.getBoundingClientRect(); if (r.bottom > innerHeight + 1 || r.top < 0) throw Error('decisions off screen') })
   assert.equal(await dialog.getByText(/Read thoughtfully|Applicant dossier|Jump to review workspace|not a score/).count(), 0, 'no editorial clutter')
-  await page.locator('body').press('ArrowRight'); await page.getByRole('heading', { name: 'Amara Solano', exact: true }).waitFor()
-  await page.locator('body').press('ArrowLeft'); await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).waitFor()
-  await page.getByRole('textbox', { name: 'Overall evaluation feedback' }).focus(); await page.keyboard.press('ArrowRight')
+  await page.locator('#review-applicant-name').press('ArrowRight'); await page.getByRole('heading', { name: 'Amara Solano', exact: true }).waitFor()
+  await page.locator('#review-applicant-name').press('ArrowLeft'); await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).waitFor()
+  await page.getByRole('textbox', { name: 'Comment (optional)' }).focus(); await page.keyboard.press('ArrowRight')
   await page.waitForTimeout(300); assert.equal(await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).count(), 1, 'arrows are ignored while typing')
   await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' })
   // The sort chosen in the URL is still applied after a reload.

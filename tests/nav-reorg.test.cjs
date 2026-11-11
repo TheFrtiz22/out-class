@@ -60,8 +60,9 @@ test("permissions are unchanged: Decide, Members, Settings and the drawer gates"
   assert.ok(!product.managerNavigation(reviewer, club, "recruiting").some(item => item.id === "decisions"))
   assert.ok(product.managerNavigation({ permissions: ["applications.review", "decisions.vote"] }, club, "recruiting").some(item => item.id === "decisions"))
   assert.ok(product.managerNavigation({ permissions: ["recruitment.manage"] }, club, "recruiting").some(item => item.id === "decisions"))
-  assert.deepEqual(product.decideAccess({ permissions: ["applications.review", "decisions.vote"] }), { canVote: true, canLetters: false, canScheduled: false, canSend: false })
-  assert.deepEqual(product.decideAccess({ permissions: ["decisions.publish", "applicants.identify"] }), { canVote: false, canLetters: false, canScheduled: true, canSend: true })
+  assert.deepEqual(product.decideAccess({ permissions: ["applications.review", "decisions.vote"] }), { canVote: true, canLetters: false, canScheduled: false, canDecide: false, canSend: false })
+  assert.deepEqual(product.decideAccess({ permissions: ["decisions.publish", "applicants.identify"] }), { canVote: false, canLetters: false, canScheduled: true, canDecide: false, canSend: true })
+  assert.deepEqual(product.decideAccess({ permissions: ["decisions.manage", "applicants.identify"] }), { canVote: false, canLetters: true, canScheduled: true, canDecide: true, canSend: true })
   assert.ok(!product.managerNavigation({ permissions: ["meetings.manage"] }, club, "club").some(item => item.id === "members"))
   const settings = load("lib/recruiting-settings.ts")
   assert.equal(settings.canOpenRecruitingSettings({ permissions: ["applications.review"] }), false)
@@ -133,10 +134,13 @@ test("Decide: tab choice respects access; counts are per round", () => {
   assert.deepEqual(decide.roundsFromRooms(rooms), [{ id: "a", name: "A" }, { id: "b", name: "B" }])
 })
 
-test("Overview review card opens Applicants on the busiest round with quick review", () => {
-  const href = home.quickReviewHref("/club/c/workspace?section=recruitment&tool=applicants", [{ id: "r1", pending: 2 }, { id: "r2", pending: 5 }, { id: "r3", pending: 5 }])
-  assert.equal(href, "/club/c/workspace?section=recruitment&tool=applicants&roundId=r2&quickReview=1")
-  assert.match(fs.readFileSync("components/views/leader-dashboard/live-leader-workspace.tsx", "utf8"), />Start quick review<\/Button>/)
+test("Overview review card opens Applicants on the busiest round with the review open", () => {
+  const href = home.reviewApplicantsHref("/club/c/workspace?section=recruitment&tool=applicants", [{ id: "r1", pending: 2 }, { id: "r2", pending: 5 }, { id: "r3", pending: 5 }])
+  assert.equal(href, "/club/c/workspace?section=recruitment&tool=applicants&roundId=r2&review=1")
+  const src = fs.readFileSync("components/views/leader-dashboard/live-leader-workspace.tsx", "utf8")
+  assert.match(src, /"Review applicants"/)
+  assert.match(src, /get\("review"\) === "1"/)
+  assert.doesNotMatch(src, /Start quick review|Quick decisions/)
 })
 
 test("tutorial steps only point at rail items that still exist", () => {

@@ -123,8 +123,8 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
       // Unknown historical rounds need reconciliation, never name-based matching or duplicates.
       if (await tx.evaluation.findFirst({ where: { applicationId: app.id, interviewerId: member.id, roundId: null } })) throw new Error("Historical evaluation needs explicit round reconciliation before submission.");
       evaluation = await tx.evaluation.upsert({ where: { applicationId_interviewerId_roundId: key },
-        create: { ...key, round: round.name, score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt },
-        update: { score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt } });
+        create: { ...key, round: round.name, score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt, ...(data.draft.rubricScores ? { rubricScores: data.draft.rubricScores } : {}) },
+        update: { score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt, ...(data.draft.rubricScores ? { rubricScores: data.draft.rubricScores } : {}) } });
     }
     const changed = await tx.interviewRecord.updateMany({ where: { id: record.id, revision: data.revision, completedAt: null }, data: { draft: data.draft, revision: { increment: 1 }, completedAt: submittedAt, ...(evaluation ? { evaluationId: evaluation.id, submittedQuestions: snapshotSubmittedQuestions(kitSchema.parse(record.questions), data.draft) } : {}) } });
     if (changed.count !== 1) throw new Error("A newer draft exists. Reload before saving.");

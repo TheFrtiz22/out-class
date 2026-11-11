@@ -71,7 +71,7 @@ test('headshots use the existing owner storage flow and return a private owner r
 });
 test('interview uses a narrow panel while the leader workspace retains the shared image fallback; profile overview excludes retired sections',()=>{
   const panel=fs.readFileSync('components/applicant-intelligence.tsx','utf8');assert.match(panel,/AvatarFallback/);assert.match(panel,/AvatarImage/);assert.match(panel,/!data.anonymous/);assert.match(panel,/size-24/);
-  assert.match(fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);
+  assert.match(fs.readFileSync('components/applicant-review/applicant-review-flow.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);
   const overview=fs.readFileSync('components/views/unified-student-profile-view.tsx','utf8');assert.doesNotMatch(overview,/profile\.bio|actEnglish|actMath|Campus involvement|TestScoreDetail/);assert.match(overview,/size-24/);
 });
 

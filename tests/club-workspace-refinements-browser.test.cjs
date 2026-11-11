@@ -10,9 +10,9 @@ async function fixture() {
   const owner = { ...member('owner', 'Owner', 'Fourth Year', 'OWNER'), club: { name: 'Sample Club' } }
   const app = (id, firstName, gpa, sat, score) => ({ id, studentId: id, roundId: 'round', recruitmentCycleId: 'cycle', status: 'IN_REVIEW', canEvaluate: false, publicationGuard: 'fixture', student: { email: `${id}@example.invalid`, studentProfile: { firstName, lastName: 'Example', academicYear: 'Second Year', major: 'Economics', gpa, satScore: sat, actScore: 33, resumeUrl: `12345678-1234-4123-8123-123456789abc/12345678-1234-4123-8123-123456789abc.pdf`, experiences: [] } }, evaluations: [], answers: [], bookings: [], roundScore: { average: score, submitted: 2, required: 2, provisional: false } })
   const initial = () => ({ pipeline: { rounds: [{ id: 'round', name: 'Interview round', order: 0, type: 'INTERVIEW', anonymousReview: false }], applications: [app('alpha', 'Alpha', 3.7, 1450, 8), app('beta', 'Beta', 3.9, 1550, 9)], // A club that shows GPA and LinkedIn (hidden by default).
-    profileFields: { name: true, photo: true, email: true, major: true, academicYear: true, gpa: true, sat: true, act: true, experiences: true, resume: true, linkedin: true } }, directory: { actor: owner, members: [member('junior', 'Zoe', 'Third Year', 'MEMBER', ['Girls']), member('senior', 'Adam', 'Fourth Year', 'MEMBER', ['Boys']), member('freshman', 'Maya', 'First Year', 'MEMBER')], invitations: [], identifierTypes: [] }, writes: [] })
+    profileFields: { name: true, photo: true, email: true, major: true, academicYear: true, gpa: true, sat: true, act: true, experiences: true, resume: true, linkedin: true } }, directory: { actor: owner, members: [member('junior', 'Zoe', 'Third Year', 'MEMBER', ['Girls']), member('senior', 'Adam', 'Fourth Year', 'MEMBER', ['Boys']), member('freshman', 'Maya', 'First Year', 'MEMBER')], invitations: [], identifierTypes: [] }, writes: [], staged: [] })
   let state = initial()
-  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>{const data=await call('pipeline');return {...require('@/lib/pipeline-page').pagePipeline(data,q,'owner','owner','fixture'),profileFields:data.profileFields}};exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.getInterviewFeedback=async()=>({status:'unavailable'});exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');exports.getClubWorkspaceOverview=()=>call('overview');`
+  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>{const data=await call('pipeline');return {...require('@/lib/pipeline-page').pagePipeline(data,q,'owner','owner','fixture'),profileFields:data.profileFields}};exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.listStagedDecisions=()=>call('staged');exports.stageDecision=input=>call('stage',input);exports.clearStagedDecision=input=>call('unstage',input);exports.submitEvaluation=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.getInterviewFeedback=async()=>({status:'unavailable'});exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');exports.getClubWorkspaceOverview=()=>call('overview');`
   const empty = 'module.exports=new Proxy({},{get:()=>()=>null});'
   const mocks = {
     // Short-link writes are outside this directory/profile fixture.
@@ -36,7 +36,7 @@ async function fixture() {
   function App(){const[value,setValue]=useState({include:[{source:'MEMBERS',gradYears:[],accessRoles:[],cohorts:[],labels:[]}],exclude:[]});const tab=new URLSearchParams(location.search).get('tab');return <div data-product-shell className="p-6"><main id="workspace-content">{tab==='members'?<OrganizationMemberManagement clubId="club"/>:tab==='overview'?<><ManagerOverview data={${JSON.stringify(overview)}} showRecaps={false}/></>:tab==='audiences'?<><AudienceEditor catalog={catalog} value={value} onChange={setValue}/><output aria-label="Selected audience">{JSON.stringify(value)}</output><MeetingGroupInvitation meeting={{id:'meeting',clubId:'club',title:'Group meeting',date:'2026-10-25T12:00:00Z',location:'Room 1'}}/></>:<LiveLeaderWorkspace scoped/>}</main></div>};createRoot(document.getElementById('root')).render(<App/>);`
   const js = bundle(entry, mocks); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'outclass-workspace-ui-'))
   cp.execFileSync(process.execPath, [path.join(__dirname, 'helpers/interview-browser-css.cjs'), path.join(tmp, 'style.css')])
-  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/product/operational-dashboard.css','components/club-home/club-home.css','styles/navigation-glass.css','components/product/dashboard/dashboard.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + '@font-face{font-family:SourceSans;src:url(/source-sans.woff2);font-weight:200 900}@font-face{font-family:Caslon;src:url(/caslon.woff2);font-weight:400 700}:root{--font-source-sans-3:SourceSans;--font-libre-caslon-text:Caslon}body{font-family:SourceSans,sans-serif}'
+  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/product/operational-dashboard.css','components/applicant-review/applicant-review.css','components/club-home/club-home.css','styles/navigation-glass.css','components/product/dashboard/dashboard.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + '@font-face{font-family:SourceSans;src:url(/source-sans.woff2);font-weight:200 900}@font-face{font-family:Caslon;src:url(/caslon.woff2);font-weight:400 700}:root{--font-source-sans-3:SourceSans;--font-libre-caslon-text:Caslon}body{font-family:SourceSans,sans-serif}'
   const server = http.createServer(async (req, res) => {
     try {
       if(req.url==='/source-sans.woff2'||req.url==='/caslon.woff2'){res.setHeader('content-type','font/woff2');res.end(fs.readFileSync(req.url==='/source-sans.woff2'?'app/fonts/source-sans-3/source-sans-3-upright.woff2':'app/fonts/libre-caslon-text/libre-caslon-text-variable.woff2'));return}
@@ -47,6 +47,9 @@ async function fixture() {
         let result
         if (route === 'pipeline') result = state.pipeline
         else if (route === 'directory') result = state.directory
+        else if (route === 'staged') result = state.staged
+        else if (route === 'stage') { const target = state.pipeline.applications.find(app=>app.id===input.applicationId); if(target.status!==input.expectedStatus)throw Error('stale'); const t=input.outcome==='REJECT'?'REJECTED':input.outcome==='HOLD'?'IN_REVIEW':'ACCEPTED'; const row={id:'staged-'+target.id,applicationId:target.id,outcome:input.outcome,targetStatus:t,targetRoundId:null,expectedStatus:target.status,expectedRoundId:target.roundId,stagedBy:'You',stagedByMe:true,createdAt:new Date().toISOString(),applicant:target.student.studentProfile.firstName+' Example',roundName:'Interview round',targetRoundName:null}; state.staged=state.staged.filter(r=>r.applicationId!==target.id).concat(row); result=row }
+        else if (route === 'unstage') { state.staged=state.staged.filter(r=>r.applicationId!==input.applicationId); result={cleared:1} }
         else if (route === 'status') { const target = state.pipeline.applications.find(app=>app.id===input.applicationId); if(target.status!==input.expectedStatus)throw Error('stale');target.status=input.status;state.writes.push(input);result={success:true} }
         else if (route === 'groups') { for(const target of input.targets){const member=state.directory.members.find(m=>m.id===target.id);member.groups=[...new Set([...member.groups,input.group])]}state.writes.push(input);result={updated:input.targets.length} }
         else if(route==='create-groups'){const plan=planMemberGroups(input.targets.map(t=>t.id),input.name,input.split);for(const target of input.targets){const member=state.directory.members.find(m=>m.id===target.id);member.groups=[...new Set([...member.groups,input.name,plan.find(g=>g.memberIds.includes(target.id)).name])]}state.writes.push(input);result={groups:plan,members:input.targets.length}}
@@ -67,7 +70,7 @@ async function fixture() {
   return { server, base:`http://127.0.0.1:${server.address().port}`, state:()=>state, reset(){state=initial()} }
 }
 
-test('browser: sortable lists, wide applicant profile, drag/drop, quick decisions, groups and overview', {timeout:120000}, async t=>{
+test('browser: sortable lists, the applicant review, board drag/drop, staged decisions, groups and overview', {timeout:120000}, async t=>{
   const f=await fixture();t.after(()=>f.server.close())
   const browser=await chromium.launch({headless:true});t.after(()=>browser.close())
   const page=await browser.newPage({viewport:{width:1440,height:1000}}), errors=[]
@@ -81,19 +84,21 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   for(const label of ['Applicant','Year','Round','GPA','SAT','ACT','Rating','Status'])assert.equal(await page.getByRole('button',{name:new RegExp(`^Sort by ${label.replace('/','\\/')}`)}).count(),1,`${label} header sorts`)
   assert.equal(await page.getByRole('button',{name:'Refresh',exact:true}).count(),0)
   assert.equal(await page.getByRole('combobox',{name:'Sort applicants by'}).isVisible(),true,'the toolbar Sort is visible at every width');assert.match(await page.getByRole('combobox',{name:'Sort applicants by'}).innerText(),/SAT/,'headers and the toolbar share one sort');assert.match(page.url(),/sort=sat&order=desc/,'the sort lives in the URL')
-  const narrow=await browser.newPage({viewport:{width:390,height:844}});await narrow.goto(f.base);await narrow.getByRole('button',{name:'Quick decisions',exact:true}).waitFor();assert.ok(await narrow.getByRole('combobox',{name:'Sort applicants by'}).isVisible(),'Sort stays visible on phones')
+  const narrow=await browser.newPage({viewport:{width:390,height:844}});await narrow.goto(f.base);await narrow.getByRole('button',{name:'Review applicants',exact:true}).waitFor();assert.ok(await narrow.getByRole('combobox',{name:'Sort applicants by'}).isVisible(),'Sort stays visible on phones')
   assert.ok(await narrow.evaluate(()=>document.documentElement.scrollWidth<=390),'applicants page does not overflow at 390px');await narrow.close()
   const resumeResponse=page.waitForResponse(response=>response.url().includes('/api/recruiting-resumes?')&&response.status()===200)
   await page.locator('tbody tr').first().locator('td').nth(2).click()
   await page.getByRole('dialog').waitFor()
-  assert.ok((await page.getByRole('dialog').boundingBox()).width<=760,'the quick review is one narrow column')
-  await page.getByRole('button',{name:'Full profile',exact:true}).click()
-  assert.ok((await page.getByRole('dialog').boundingBox()).width>=1440*.9,'Full profile keeps the wide layout')
+  assert.ok((await page.getByRole('dialog').boundingBox()).width>=1440*.9,'the review uses the full screen')
+  await page.getByRole('button',{name:'Résumé preview',exact:true}).click()
   await page.getByTitle('Résumé for Beta Example').waitFor()
+  await page.getByRole('button',{name:'Pros/cons',exact:true}).click()
   await page.getByRole('heading',{name:'Pros & cons',exact:true}).waitFor()
-  assert.ok((await page.locator('.oc-review-observations').boundingBox()).height<350)
-  assert.equal(await page.locator('.oc-review-observations textarea').count(),0)
-  const observations=page.getByRole('region',{name:'Additional observations',exact:true})
+  const prosCons=page.getByRole('region',{name:'review applicant information'})
+  assert.ok((await prosCons.boundingBox()).height<350)
+  assert.equal(await prosCons.locator('textarea').count(),0)
+  await page.getByRole('button',{name:'Additional observations',exact:true}).click()
+  const observations=page.getByRole('region',{name:'Additional observations',exact:true}).last()
   await observations.getByRole('button',{name:'Add observation',exact:true}).click()
   await observations.getByRole('textbox',{name:'Observation',exact:true}).waitFor()
   await observations.getByText('0 / 50 words',{exact:true}).waitFor()
@@ -107,25 +112,31 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('dialog').evaluate(element=>Promise.all(element.getAnimations().map(animation=>animation.finished.catch(()=>{}))))
   assert.ok((await page.getByRole('dialog').boundingBox()).x<1440*.1)
   await page.screenshot({path:'/tmp/outclass-applicant-profile-desktop.png',animations:'disabled'})
-  await page.getByRole('button',{name:'Close',exact:true}).click()
+  await page.getByRole('button',{name:'Close review',exact:true}).click()
+  // Board: dragging stages the decision (nothing is published) and the card moves at once.
   await page.getByRole('button',{name:'Kanban',exact:true}).click()
-  await page.getByRole('button',{name:/Alpha Example.*Review & actions/}).dragTo(page.getByRole('region',{name:'Interview applicants',exact:true}))
-  await page.getByRole('button',{name:'Confirm move',exact:true}).click()
+  const card=await page.getByRole('button',{name:/^Alpha Example\./}).boundingBox(),target=await page.getByRole('listitem',{name:/^Rejected, /}).boundingBox()
+  await page.mouse.move(card.x+40,card.y+card.height/2);await page.mouse.down();await page.mouse.move(card.x+60,card.y+card.height/2,{steps:4});await page.mouse.move(target.x+target.width/2,target.y+80,{steps:12});await page.mouse.up()
+  await page.getByRole('listitem',{name:/^Rejected, 1/}).getByText('Alpha Example').waitFor()
   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'))
-  assert.equal(f.state().writes.at(-1).status,'INTERVIEWING')
-  await page.getByRole('button',{name:'Quick decisions',exact:true}).click()
-  const footer=page.getByRole('group',{name:'Quick decisions'})
-  await footer.waitFor()
-  const footerBox=await page.locator('.oc-quick-footer').boundingBox(),scrollBox=await page.locator('.oc-applicant-drawer-scroll').boundingBox()
-  assert.ok(scrollBox.y+scrollBox.height<=footerBox.y+1)
-  assert.ok(Math.abs(footerBox.y+footerBox.height-1000)<2)
-  await page.locator('.oc-applicant-drawer-scroll').evaluate(element=>element.scrollTop=element.scrollHeight)
-  await page.screenshot({path:'/tmp/outclass-quick-review-footer.png',animations:'disabled'})
-  await page.getByRole('button',{name:'Accept & next',exact:true}).click()
+  assert.deepEqual(f.state().staged.map(row=>[row.applicationId,row.targetStatus]),[['alpha','REJECTED']])
+  assert.equal(f.state().writes.length,0,'staging publishes nothing')
+  // Review applicants: one applicant at a time; A advances, R rejects, each saved for Decide › Send.
+  await page.getByRole('button',{name:'Review applicants',exact:true}).click()
+  const decide=page.getByRole('group',{name:'Decide'})
+  await decide.waitFor()
+  await decide.evaluate(el=>{const r=el.getBoundingClientRect();if(r.bottom>innerHeight+1||r.top<0)throw Error('decisions off screen')})
+  await page.screenshot({path:'/tmp/outclass-review-flow.png',animations:'disabled'})
+  // The list is sorted by SAT (descending), and the review follows the same order: Beta, then Alpha.
+  await page.getByRole('heading',{name:'Beta Example',exact:true}).waitFor()
+  assert.equal(await page.locator('#review-flow-progress').textContent(),'1 of 2')
+  await page.locator('#review-applicant-name').press('a')
   await page.getByRole('heading',{name:'Alpha Example',exact:true}).waitFor()
-  await page.getByRole('button',{name:'Deny & next',exact:true}).click()
-  await page.getByText('Quick decisions complete.',{exact:true}).waitFor()
-  assert.equal(f.state().writes.filter(write=>write.status==='ACCEPTED'||write.status==='REJECTED').length,2)
+  await page.locator('#review-applicant-name').press('r')
+  await page.getByText('You’ve reached the end of this set',{exact:true}).waitFor()
+  assert.deepEqual(f.state().staged.map(row=>[row.applicationId,row.targetStatus]).sort(),[['alpha','REJECTED'],['beta','ACCEPTED']])
+  assert.equal(f.state().writes.length,0)
+  await page.getByRole('button',{name:'Close review',exact:true}).first().click()
   f.reset();await page.goto(f.base+'/?tab=members')
   await page.getByRole('button',{name:'Sort by Year',exact:true}).click()
   assert.match(await page.locator('tbody tr').first().innerText(),/Adam Example/)

@@ -46,6 +46,7 @@ import { canonicalClubWorkspaceHref } from "@/lib/workspace-routes";
 import { decisionFilter } from "@/lib/application-decisions";
 import { TERMS } from "@/lib/copy/terms";
 import { DecidePage } from "@/components/live-voting/decide-page";
+import { ReviewRubricSettings } from "@/components/applicant-review/review-rubric-settings";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -241,7 +242,7 @@ export function ClubWorkspace({
 }
 /**
  * Recruiting settings: the two drawers that used to be rail items (Anonymous Review, Auto-Reject Rules), now one
- * drawer with a section per tool. Contents are the same components as before; only the way in changed.
+ * drawer with a section per tool, plus Grading (applicant review categories). Contents are the same components as before; only the way in changed.
  * The sheet traps focus and closes on Escape; focus returns to the control that opened it.
  */
 function RecruitingSettingsDrawer({ open, section, clubId, canIdentify, onSection, onClose, onPrivacyChanged, onReview, returnFocus }: {
@@ -259,6 +260,7 @@ function RecruitingSettingsDrawer({ open, section, clubId, canIdentify, onSectio
         </TabsList>
         <TabsContent value="anonymous" className="mt-5">{open && section === "anonymous" && <RoundSettings key={clubId} clubId={clubId} embedded canIdentify={canIdentify} onChanged={onPrivacyChanged} />}</TabsContent>
         <TabsContent value="rules" className="mt-5">{open && section === "rules" && <ScreeningDashboardView key={clubId} clubId={clubId} onReview={onReview} />}</TabsContent>
+        <TabsContent value="grading" className="mt-5">{open && section === "grading" && <ReviewRubricSettings key={clubId} clubId={clubId} />}</TabsContent>
       </Tabs>
     </SheetContent>
   </Sheet>;

@@ -15,6 +15,7 @@ import { assertRecruitmentRoundMove, isInterviewRecruitmentRound } from "@/lib/r
 import { genderValues } from "@/lib/student-profile";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import { normalizeProfileFieldVisibility, restrictApplicationProfile, type ProfileFieldVisibility } from "@/lib/profile-field-visibility";
+import { normalizeReviewRubric } from "@/lib/review-rubric";
 
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 
@@ -48,7 +49,7 @@ export async function getClubPipelinePage(clubId: string, input: PipelinePageQue
     const scope = createHash("sha256").update(JSON.stringify([clubId, membership, rounds, [...roundPrivacy], pipelineSelectionKey(query)])).digest("hex");
     return readPipelinePage(tx, where, membership, rounds, query, scope, ids => loadPipelineDetails(tx, { ...where, id: { in: ids } }, membership, profileFields), roundPrivacy, profileFields);
   });
-  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts, profileFields: pipeline.profileFields };
+  return { ...pipeline.applications, rounds: pipeline.rounds, genderCounts: pipeline.genderCounts, profileFields: pipeline.profileFields, rubric: pipeline.rubric };
 }
 
 /**
@@ -65,7 +66,7 @@ export async function getRankedReviewRound(clubId: string, roundId: string) {
   return { applications: pipeline.applications };
 }
 
-/** Explicit whole-selection read for quick review and voting, without identities. */
+/** Explicit whole-selection read for the review queue, board counts and voting, without identities. */
 export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
   const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
   const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false },
@@ -121,12 +122,14 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
     const allRounds = await tx.pipelineRound.findMany({
       where: { clubId },
       orderBy: { order: "asc" },
-      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true, archivedAt: true, club: { select: { profileFieldVisibility: true } } },
+      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true, archivedAt: true, club: { select: { profileFieldVisibility: true, reviewRubric: true } } },
     });
     const rounds = allRounds.filter(r => r.archivedAt == null);
     // The club's profile field choice rides on the same snapshot read (no extra round trip).
     // A club without rounds has no applicants, so its defaults are never observable.
     const profileFields = normalizeProfileFieldVisibility(allRounds[0]?.club?.profileFieldVisibility);
+    // Grading categories ride on the same read; NULL means the single Overall /10 score.
+    const rubric = normalizeReviewRubric(allRounds[0]?.club?.reviewRubric);
     const selectedRound = rounds.find(r => r.id === filter.roundId);
     if (filter.gender || filter.genderCounts) {
       if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new Error("Gender visibility must be explicitly enabled for this round.");
@@ -150,6 +153,7 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
       applications,
       profileFields,
+      rubric,
     };
     return { pipeline, membership };
   }, { isolationLevel: "RepeatableRead" });

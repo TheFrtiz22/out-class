@@ -4,7 +4,6 @@ import { APPLICANT_PAGE_SIZE } from "@/lib/applicant-pagination"
 import { compareApplicants } from "@/lib/live-applicant-sorting"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { applicationDecisionGroup, decisionGroups } from "@/lib/application-decisions"
-import { applicantLane, applicantLanes } from "@/lib/applicant-board"
 import { genderValues } from "@/lib/student-profile"
 
 // Cursor scope is an equality check, never authorization. Every page and full
@@ -28,9 +27,9 @@ export const pipelinePageQuery = z.object({
 export type PipelinePageQuery = z.input<typeof pipelinePageQuery>
 export type PipelineCursor = z.infer<typeof cursorSchema>
 // Paging observes already-restricted rows; the profile field choice travels beside the page.
-type List = Omit<ReturnType<typeof pipelineListProjection>, "profileFields">
+type List = Omit<ReturnType<typeof pipelineListProjection>, "profileFields" | "rubric">
 type Candidate = List["applications"][number]
-export type PipelineSelection = Pick<Candidate, "id" | "roundId" | "status"> & { canQuickReview: boolean }
+export type PipelineSelection = Pick<Candidate, "id" | "roundId" | "status">
 const applicantName = (app: Candidate) => app.student.studentProfile ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}` : app.student.email
 
 export function pipelineSelectionKey(input: PipelinePageQuery) {
@@ -41,7 +40,7 @@ export function pipelineSelectionKey(input: PipelinePageQuery) {
 /** Filtering observes only fields already released by the canonical projector.
  * Raw identity, unsubmitted evaluations and hidden ratings cannot affect matches.
  * This scan remains O(N); the wire response and rendered page are bounded. */
-function selectPipeline<T extends Candidate>(data: Omit<List, "applications"> & { applications: T[] }, input: PipelinePageQuery, reviewerId: string, userId: string) {
+function selectPipeline<T extends Candidate>(data: Omit<List, "applications"> & { applications: T[] }, input: PipelinePageQuery, reviewerId: string) {
   const q = pipelinePageQuery.parse(input)
   const base = data.applications.filter(a => q.mode === "rejected" ? a.status === "REJECTED" : q.mode === "decisions" || a.status !== "REJECTED")
   const filtered = base.filter(app => {
@@ -56,17 +55,17 @@ function selectPipeline<T extends Candidate>(data: Omit<List, "applications"> & 
       (q.rating === undefined || app.roundScore?.average != null && app.roundScore.average >= q.rating) &&
       (!q.review || (q.review === "unreviewed" ? app.evaluations.length === 0 : app.evaluations.some(e => e.interviewerId === reviewerId)))
   }).sort((a, b) => compareApplicants(a, b, q.sort, q.descending, data.rounds))
-  const canQuickReview = (app: Candidate) => !["ACCEPTED", "REJECTED", "WAITLISTED", "DRAFTING"].includes(app.status) && !app.studentId.startsWith("anonymous-") && app.studentId !== userId
-  return { q, base, filtered, canQuickReview }
+  return { q, base, filtered }
 }
 
-export function completePipelineSelection(data: List, input: PipelinePageQuery, reviewerId: string, userId: string): { applications: PipelineSelection[] } {
-  const { filtered, canQuickReview } = selectPipeline(data, input, reviewerId, userId)
-  return { applications: filtered.map(app => ({ id: app.id, roundId: app.roundId, status: app.status, canQuickReview: canQuickReview(app) })) }
+/** The whole ordered selection without identities: the review queue, board counts and voting candidates. `_userId` is kept for callers. */
+export function completePipelineSelection(data: List, input: PipelinePageQuery, reviewerId: string, _userId?: string): { applications: PipelineSelection[] } {
+  const { filtered } = selectPipeline(data, input, reviewerId)
+  return { applications: filtered.map(app => ({ id: app.id, roundId: app.roundId, status: app.status })) }
 }
 
-export function pagePipeline<T extends Candidate>(data: Omit<List, "applications"> & { applications: T[] }, input: PipelinePageQuery, reviewerId: string, userId: string, scope: string) {
-  const { q, base, filtered, canQuickReview } = selectPipeline(data, input, reviewerId, userId)
+export function pagePipeline<T extends Candidate>(data: Omit<List, "applications"> & { applications: T[] }, input: PipelinePageQuery, reviewerId: string, _userId: string, scope: string) {
+  const { q, base, filtered } = selectPipeline(data, input, reviewerId)
   if (q.cursor && q.cursor.scope !== scope) throw new z.ZodError([{ code: "custom", path: ["cursor"], message: "Applicant selection changed. Restart pagination." }])
   const anchor = q.cursor ? filtered.findIndex(a => a.id === q.cursor!.id) : -1
   const reset = !!q.cursor && anchor < 0
@@ -82,8 +81,6 @@ export function pagePipeline<T extends Candidate>(data: Omit<List, "applications
       majors: [...new Set(base.map(a => a.student.studentProfile?.major).filter((v): v is string => !!v))].sort(),
       years: [...new Set(base.flatMap(a => a.student.studentProfile ? [a.student.studentProfile.academicYear] : []))].sort(compareAcademicYears),
       decisions: Object.fromEntries(decisionGroups.map(g => [g.id, base.filter(a => applicationDecisionGroup(a.status) === g.id).length])),
-      lanes: Object.fromEntries(applicantLanes.map(l => [l.id, filtered.filter(a => applicantLane(a.status) === l.id).length])),
-      quickReview: filtered.filter(canQuickReview).length,
     },
   }
 }

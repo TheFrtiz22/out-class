@@ -77,7 +77,9 @@ export function decideAccess(member: ClubAccess | null | undefined) {
   const canVote = hasPermission(member, "applications.review") && (["decisions.start", "decisions.vote", "decisions.view"] as const).some(p => hasPermission(member, p))
   const canLetters = hasPermission(member, "recruitment.manage") || hasPermission(member, "decisions.manage")
   const canScheduled = (hasPermission(member, "decisions.manage") || hasPermission(member, "decisions.publish")) && hasPermission(member, "applicants.identify")
-  return { canVote, canLetters, canScheduled, canSend: canLetters || canScheduled }
+  // Review and saved decisions: the same capability as an individual decision.
+  const canDecide = hasPermission(member, "decisions.manage") && hasPermission(member, "applicants.identify")
+  return { canVote, canLetters, canScheduled, canDecide, canSend: canLetters || canScheduled || canDecide }
 }
 
 /** Shared by links, buttons and workspace selects; domain forms retain their own guards. */

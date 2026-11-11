@@ -1,55 +1,25 @@
-/* Dashboard drawers and the applicant review drawer. The drawer is the frosted sheet (styles/product-components.css);
+/* Dashboard drawers. The drawer is the frosted sheet (styles/product-components.css);
    panels inside it use the glass material without blur. Dashboard cards live in components/product/dashboard. */
 .oc-dashboard-drawer { gap: .5rem; }
 .oc-dashboard-drawer > [data-slot=sheet-title] { padding-bottom: .35rem; }
 .oc-dashboard-drawer > [data-slot=sheet-description] { padding-bottom: 1.25rem; border-bottom: 1px solid var(--oc-surface-glass-edge); line-height: 1.6; }
 .oc-dashboard-detail { font-size: var(--oc-text-body); line-height: 1.65; }
 .oc-dashboard-detail > [role=alert] { padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--destructive) 22%, transparent); border-radius: var(--oc-content-radius-small); background: var(--oc-glass-tint-sheen), var(--error-subtle); }
-.oc-dashboard-detail > [role=status]:not(:empty), .oc-applicant-drawer p[role=status]:not(:empty) { padding: .65rem .85rem; border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-surface-glass); }
+.oc-dashboard-detail > [role=status]:not(:empty) { padding: .65rem .85rem; border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-surface-glass); }
 .oc-dashboard-detail > [data-confirmed=true] { color: var(--success); background: var(--oc-glass-tint-sheen), var(--success-subtle); border-color: color-mix(in srgb, var(--success) 25%, transparent); }
 .oc-preparation-context { display: grid; gap: .25rem; padding: 1rem 1.125rem; border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius-small); background: var(--oc-surface-glass); box-shadow: var(--oc-surface-glass-depth); }
 .oc-panel-validation { padding: 1rem; background: var(--oc-surface-glass); border: 1px solid var(--oc-surface-glass-edge); border-radius: var(--oc-content-radius-small); box-shadow: var(--oc-surface-glass-depth); }
 .oc-panel-validation[data-ready=false] { border-color: color-mix(in srgb, var(--brand-ink) 40%, transparent); }
 .oc-dashboard-drawer .oc-review-heading, .oc-dashboard-drawer .oc-review-submission, .oc-dashboard-drawer .oc-task-resources { border-radius: var(--oc-radius-md); box-shadow: none; }
 .oc-dashboard-drawer .oc-announcement-detail > p:first-child { color: var(--muted-foreground); font-size: var(--oc-size-13); }
-.oc-applicant-drawer [data-slot=sheet-header] { padding-bottom: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
-.oc-applicant-drawer form[data-autosave-editor] { padding: 1rem; border: 1px solid var(--border); border-top: 2px solid var(--primary); border-radius: var(--oc-radius-md); background: var(--card); }
-.oc-applicant-drawer .oc-applicant-resume { border-radius: var(--oc-radius-md); }
 @media (prefers-reduced-motion: no-preference) {
-  .oc-dashboard-drawer, .oc-applicant-drawer { animation-duration: 220ms; transition-duration: 220ms; }
+  .oc-dashboard-drawer { animation-duration: 220ms; transition-duration: 220ms; }
   .oc-dashboard-detail > [data-confirmed=true] { animation: oc-dashboard-confirmed 200ms ease-out; }
   @keyframes oc-dashboard-confirmed { from { opacity: .5; } to { opacity: 1; } }
 }
 @media (prefers-reduced-motion: reduce) {
-  .oc-dashboard-drawer, .oc-dashboard-drawer *, .oc-applicant-drawer, .oc-applicant-drawer * { scroll-behavior: auto; animation: none !important; transition: none !important; }
+  .oc-dashboard-drawer, .oc-dashboard-drawer * { scroll-behavior: auto; animation: none !important; transition: none !important; }
 }
-
-/* Refinement pass 2: avoid calendar row allocation stretching the personal task area. */
-.oc-applicant-profile-layout:has(.oc-applicant-assessment) > .oc-applicant-resume { position: static; }
-.oc-applicant-assessment { padding: 1.5rem; border: 0; border-radius: var(--oc-editorial-radius); background: var(--oc-rail); color: var(--oc-rail-text); --muted-foreground: var(--oc-rail-muted); --border: var(--oc-rail-rule); }
-.oc-applicant-assessment > section:last-of-type { border-bottom: 0; }
-@media (min-width: 1024px) {
-  .oc-applicant-profile-layout:has(.oc-applicant-assessment) { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: var(--oc-editorial-gap); align-items: start; }
-  .oc-applicant-profile-layout > .oc-applicant-assessment { grid-column: 2; grid-row: 1 / span 2; }
-  .oc-applicant-profile-layout:has(.oc-applicant-assessment) > .oc-applicant-resume { grid-column: 1; }
-}
-
-/* Review dossier: permission-filtered document on the left, working review on the right. */
-.oc-dossier-document { overflow-wrap: anywhere; }
-.oc-dossier-document .oc-card-heading { font-family: var(--oc-font-display); font-size: var(--oc-editorial-section); font-weight: 400; }
-.oc-dossier-answer { padding: 1.25rem 1.5rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
-.oc-dossier-answer h4 { margin-top: .65rem; font-family: var(--oc-font-display); font-size: var(--oc-size-20); line-height: 1.5; font-weight: 400; }
-.oc-dossier-answer > p:last-child { font-size: var(--oc-text-body); line-height: 1.85; color: var(--foreground); }
-.oc-applicant-assessment :is(input,textarea,select) { --muted-foreground: var(--oc-field-muted); --border: var(--oc-field-rule); color: var(--foreground); background: var(--card); }
-.oc-applicant-assessment [data-slot="button"] { white-space: normal; height: auto; min-height: 40px; }
-.oc-applicant-drawer .oc-applicant-assessment form[data-autosave-editor] { padding: 0; border: 0; background: transparent; }
-.oc-applicant-assessment form [type="submit"] { background: var(--brand-subtle); color: var(--brand-ink); }
-@media (max-width: 700px) {
-  .oc-applicant-assessment, .oc-dossier-answer { padding: 1.25rem; }
-}
-
-
-#dossier-evaluation:focus { outline: 2px solid var(--ring); outline-offset: 6px; border-radius: var(--oc-radius-sm); }
 
 /* Operational details stay beside their refresh action, above the pipeline. */
 
@@ -58,26 +28,10 @@
 .oc-voting-bar-clearance { padding-bottom: calc(var(--oc-voting-bar-height, 5rem) + var(--oc-toast-offset, 1.5rem) + 1.5rem); }
 body:has(.oc-voting-bar) [data-sonner-toaster][data-y-position="bottom"] { --offset-bottom: calc(var(--oc-toast-offset, 24px) + var(--oc-voting-bar-height, 4.5rem) + 0.75rem) !important; --mobile-offset-bottom: calc(var(--oc-toast-offset, 24px) + var(--oc-voting-bar-height, 10.5rem) + 0.75rem) !important; }
 
-/* Applicant quick review: one column that fits a typical applicant on one laptop screen. Header, responses,
-   collapsed sections with counts, and a footer that stays on screen for the score, note and decision. */
-.oc-workspace-drawer.oc-applicant-drawer[data-layout="quick"] { width: min(100vw, 46rem); max-width: 100vw; }
-.oc-applicant-drawer > .oc-applicant-drawer-scroll { padding: 1.125rem 1.5rem 1rem; }
-.oc-quick-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .375rem .875rem; padding: 0 2.25rem .875rem 0; border-bottom: 1px solid var(--border); }
-.oc-quick-identity { min-width: 0; }
-.oc-quick-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .625rem; }
-:root .oc-applicant-drawer .oc-quick-name { font-family: var(--oc-font-display); font-size: var(--oc-text-modal); font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }
-.oc-quick-name:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }
-.oc-quick-facts { margin-top: .125rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: 1.45; }
-.oc-quick-fact { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
-.oc-quick-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .25rem; }
+/* Applicant review (components/applicant-review): icon actions, responses and collapsed sections with counts. */
 .oc-quick-icon-action { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: var(--oc-radius-sm); color: var(--muted-foreground); }
 .oc-quick-icon-action:hover { background: var(--oc-content-soft); color: var(--foreground); }
 .oc-quick-icon-action:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
-.oc-quick-pager { display: flex; align-items: center; gap: .125rem; }
-.oc-quick-pager [data-slot="button"] { width: 2.25rem; height: 2.25rem; }
-.oc-quick-layout-toggle { padding-inline: .5rem; }
-.oc-quick-body { display: grid; gap: 1.25rem; padding-top: 1rem; }
-.oc-quick-responses { display: grid; gap: 1rem; }
 .oc-quick-answer h3 { font-size: var(--oc-text-body); font-weight: var(--oc-weight-semibold); line-height: 1.45; }
 .oc-quick-answer p { margin-top: .25rem; font-size: var(--oc-text-body); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .oc-quick-sections { border-top: 1px solid var(--border); }
@@ -89,21 +43,6 @@ body:has(.oc-voting-bar) [data-sonner-toaster][data-y-position="bottom"] { --off
 .oc-review-section-chevron { flex: none; transform: rotate(-90deg); transition: transform 120ms ease-out; }
 .oc-review-section[data-open] .oc-review-section-chevron { transform: none; }
 .oc-review-section-body { padding: 0 0 1rem 1.375rem; }
-.oc-applicant-review-footer.oc-quick-footer { display: grid; gap: .5rem; padding-block: .75rem calc(.75rem + env(safe-area-inset-bottom)); }
-.oc-quick-evaluation { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-.oc-quick-evaluation .oc-quick-score { width: 5.5rem; }
-.oc-quick-evaluation .oc-quick-note { flex: 1 1 14rem; width: auto; max-height: 6rem; }
-.oc-quick-save-state { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); }
-.oc-quick-actions .oc-quick-publishes { order: -1; }
-.oc-quick-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; }
-.oc-applicant-drawer p.oc-quick-message[role=status]:not(:empty) { padding: .375rem .625rem; font-size: var(--oc-text-small); }
-.oc-applicant-drawer [data-blocked] { opacity: .55; cursor: not-allowed; }
-@media (max-width: 639px) {
-  .oc-quick-header { grid-template-columns: auto minmax(0, 1fr); padding-right: 2.25rem; }
-  .oc-quick-tools { grid-column: 1 / -1; justify-content: flex-start; }
-  .oc-applicant-drawer > .oc-applicant-drawer-scroll { padding-inline: 1rem; }
-}
 @media (prefers-reduced-motion: reduce) { .oc-review-section-chevron { transition: none; } }
-.oc-applicant-drawer form.oc-quick-evaluation[data-autosave-editor] { padding: 0; border: 0; border-radius: 0; background: transparent; }
-/* Panels inside a titled quick-review section keep their own headings small. */
+/* Panels inside a titled review section keep their own headings small. */
 .oc-review-section-body .oc-card-heading { font-family: inherit; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }

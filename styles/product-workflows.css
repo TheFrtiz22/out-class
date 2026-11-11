@@ -1,11 +1,5 @@
 /* Dense operational views share the campus foundations without losing precision. */
 [data-product-shell] .oc-live-pipeline { padding: 0; border: 0; background: transparent; border-radius: 0; }
-[data-product-shell] .oc-applicant-board { gap: 1rem; align-items: start; }
-[data-product-shell] .oc-applicant-board > section { border: 0; border-radius: var(--oc-radius-lg); background: var(--oc-content-soft); padding: .875rem; min-height: 10rem; }
-[data-product-shell] .oc-applicant-board header h3 { font-size: var(--oc-text-small); }
-[data-product-shell] .oc-applicant-board header h3 > span { min-width: 1.5rem; padding: .2rem; border-radius: var(--oc-radius-sm); text-align: center; background: var(--card); }
-[data-product-shell] .oc-applicant-board button[data-applicant-id] { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-micro), box-shadow var(--oc-duration-ui); }
-[data-product-shell] .oc-applicant-board button[data-applicant-id]:hover { box-shadow: var(--oc-content-shadow-hover); }
 [data-product-shell] .ir-overview { display: flex; flex-wrap: wrap; gap: 1.25rem; padding-block: .75rem; border-block: 1px solid var(--border); }
 [data-product-shell] .ir-overview > div { padding: 0; border: 0; background: transparent; }
 [data-product-shell] .ir-room-card { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
@@ -44,8 +38,6 @@
 @media (max-width: 639px) {
   .oc-interview-room .oc-focused-interview > header { padding: 1rem; }
   .oc-interview-room .oc-focused-interview .oc-active-question, .oc-voting-stage .oc-voting-candidate { padding: 1.25rem; }
-  [data-product-shell] .oc-applicant-board { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 88%; overflow-x: auto; padding: .25rem .25rem 1rem; scroll-snap-type: x mandatory; }
-  [data-product-shell] .oc-applicant-board > section { scroll-snap-align: start; }
 }
 [data-product-shell] .oc-interview-slot { border: 0; border-left: 3px solid var(--success); background: var(--oc-surface-sage); border-radius: var(--oc-radius-md); }
 [data-product-shell] .oc-interview-slot[data-slot-status="partial"] { background: var(--oc-surface-blue); border-color: var(--info); }

@@ -29,7 +29,7 @@ test('all four cohorts retain complete canonical counts, filters, ranking, detai
    assert.equal(seen.length,size);assert.equal(new Set(seen).size,size);
    const response=await actor.request('/api/workspace?'+new URLSearchParams({kind:'voting',args:JSON.stringify([club,null,{}])}));assert.equal(response.status,200);
    const voting=decodeWorkspaceData(await response.json());assert.deepEqual(voting.candidateSelection,completePipelineSelection(full,{},member.id,member.userId));
-   assert.ok(voting.candidateSelection.applications.every(a=>Object.keys(a).sort().join(',')==='canQuickReview,id,roundId,status'));
+   assert.ok(voting.candidateSelection.applications.every(a=>Object.keys(a).sort().join(',')==='id,roundId,status'));
   }finally{if(moved)await db.application.update({where:{id:moved.id},data:{roundId:moved.roundId}});await db.$disconnect();await actor.client.auth.signOut({scope:'local'});}
  });
 });
