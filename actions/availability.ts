@@ -12,6 +12,7 @@ import { sessionsOverlap, panelWindowSchema } from "@/lib/panel-proposals"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
 import { availabilityResponse, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, validateAvailabilityEdit, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability";
+import { boundedParse } from "@/lib/bounded-input";
 
 const id = z.string().uuid()
 const scopeSchema = z.object({ clubId: id, roundId: id }).strict()
@@ -46,7 +47,7 @@ export async function getMyAvailability(): Promise<{ document: AvailabilityDocum
   return { document: document(saved, user.id), rounds }
 }
 export async function saveMyAvailability(raw: unknown): Promise<AvailabilityDocument> {
-  const input = availabilitySaveSchema.parse(raw), { user } = await requireAuth()
+  const input = boundedParse(availabilitySaveSchema, raw), { user } = await requireAuth()
   if (input.accountId && input.accountId !== user.id) throw new Error("Account changed. Reload your availability before saving.")
   return prisma.$transaction(async tx => {
     await accountLock(tx, user.id)
@@ -71,7 +72,7 @@ export async function getMyRoundAvailability(raw: unknown) {
   })
 }
 export async function saveMyRoundAvailability(raw: unknown) {
-  const input = availabilitySaveSchema.extend({ clubId: id, roundId: id, confirm: z.boolean() }).parse(raw), { user } = await requireAuth()
+  const input = boundedParse(availabilitySaveSchema.extend({ clubId: id, roundId: id, confirm: z.boolean() }), raw), { user } = await requireAuth()
   if (input.accountId && input.accountId !== user.id) throw new Error("Account changed. Reload your availability before saving.")
   return prisma.$transaction(async tx => {
     const member = await authorizeClubTransaction(tx, input.clubId, user.id, [])
@@ -105,7 +106,7 @@ export async function getInterviewerEligibility(clubId: string) {
 }
 /** One atomic bulk operation. Scheduling eligibility never changes permissions. */
 export async function setInterviewerEligibility(raw: unknown) {
-  const input = z.object({ clubId: id, revision: z.number().int().nonnegative(), roles: z.array(z.enum(organizationRoles)).max(5).optional(), roundId: id.optional(), targets: z.array(z.object({ memberId: id, eligible: z.boolean().nullable() }).strict()).max(1000).default([]) }).strict().parse(raw)
+  const input = boundedParse(z.object({ clubId: id, revision: z.number().int().nonnegative(), roles: z.array(z.enum(organizationRoles)).max(5).optional(), roundId: id.optional(), targets: z.array(z.object({ memberId: id, eligible: z.boolean().nullable() }).strict()).max(1000).default([]) }).strict(), raw)
   if (new Set(input.targets.map(t => t.memberId)).size !== input.targets.length || (input.roundId && input.roles)) throw new Error("Choose each member once, and one place it applies.")
   const { user } = await requireAuth()
   return prisma.$transaction(async tx => {
@@ -186,7 +187,7 @@ export async function getEligibleInterviewerPool(raw: unknown) {
 
 /** Collection changes never write proposals, official panels or applicant bookings. */
 export async function requestRoundAvailability(raw: unknown) {
-  const input = scopeSchema.extend({ memberIds: z.array(id).min(1).max(1000), reminder: z.boolean().default(false) }).parse(raw)
+  const input = boundedParse(scopeSchema.extend({ memberIds: z.array(id).min(1).max(1000), reminder: z.boolean().default(false) }), raw)
   const { user } = await requireAuth()
   return clubWriteTransaction(tx=>publishAvailabilityRequest(tx,input,user.id),{maxWait:5000,timeout:20000})
 }

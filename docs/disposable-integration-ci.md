@@ -6,7 +6,7 @@ The normal \`pnpm test\` suite intentionally does not boot Auth, Storage, Next.j
 
 This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on every pull request, Mondays at 05:17 UTC, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
 
-**A successful static coverage report does not imply all 34 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
+**A successful static coverage report does not imply all 39 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
 
 ## Run locally
 
@@ -16,9 +16,10 @@ Requirements: Node 22, pnpm 10, Docker with Linux containers, OpenSSL (for onboa
 | --- | --- | --- |
 | Auth, MFA, settings, navigation, PDF import | \`node scripts/run-onboarding-e2e.cjs --club-integration\` | Dedicated local Supabase Auth/Postgres/Mailpit, Next server 3107 |
 | Native security/concurrency, starting the next recruitment cycle | \`node scripts/run-disposable-postgres.cjs security\` | DB \`outclass_security_test\` on loopback 58454 |
+| Native mock recruiting cycle (50 synthetic applicants: apply, anonymous review, interviews, live voting, decisions, offers, roster export; logs per-stage timings) | \`node scripts/run-disposable-postgres.cjs security\` (runs \`tests/mock-recruiting-cycle-native.test.cjs\`) | DB \`outclass_security_test\` on loopback 58454 |
 | Native Events and browser Events | \`node scripts/run-disposable-postgres.cjs events\` | DB \`postgres\` on loopback 55442 |
 | Native announcements, recipient audiences, invitations and decision publication | \`node scripts/test-decision-publication-local.cjs\` | DB \`outclass_audiences_test\` on 58453 |
-| Native decision transactions, offers, recruitment races | \`node scripts/test-decision-transactions-local.cjs\` | DB \`outclass_recruitment_test\` on 58452 |
+| Native decision transactions, offers, recruitment races, leader CSV exports | \`node scripts/test-decision-transactions-local.cjs\` | DB \`outclass_recruitment_test\` on 58452 |
 | Native scheduler/voting polling and release | \`node scripts/test-scheduler-polling-local.cjs\` | DB \`outclass_audiences_test\` on 58453 |
 | Real Storage + native PostgreSQL event flyers | \`node scripts/run-availability-e2e.cjs --event-storage\` | Dedicated local Supabase on 57321/57322 |
 | Coverage inventory | \`node scripts/check-disposable-integration-coverage.cjs\` | No external services |

@@ -3,7 +3,6 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { accountInitials } from "@/lib/profile-photo"
 import { AccountAvatar } from "@/components/account-avatar"
 import { DemoMenuItems } from "@/components/demo-controls"
-import { WorkspaceNavigation } from "@/components/shell/workspace-navigation"
 import { NavigationRail } from "@/components/shell/navigation-rail"
 import "./responsive-workspace.css"
 import "./authenticated-product.css"
@@ -18,7 +17,7 @@ import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react"
-import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw } from "@/components/icons"
+import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, Gauge, Gavel, IdCard } from "@/components/icons"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { WorkspaceSelector, useWorkspaceOptions } from "@/components/shell/workspace-selector"
@@ -38,15 +37,20 @@ import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { studentNav, adminNav, type ViewId } from "@/lib/views"
 import { canLeaveWorkspace, type ProductNavItem } from "@/lib/product-navigation"
-import { activeNavItem, bottomBarItems, railItems, workspaceOptionName, type RailSection } from "@/lib/navigation"
+import { activeNavItem, bottomBarItems, moreSections, railItems, workspaceOptionName, type RailSection } from "@/lib/navigation"
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 import { handleClubLink } from "@/lib/workspace-navigation"
 import { TERMS } from "@/lib/copy/terms"
 import { countShellStart } from "@/lib/shell-metrics"
+import { notificationSettingsHref } from "@/lib/settings-navigation"
 import { RouteChildren } from "@/components/route-content"
 
-const navigationIcons: Record<string, typeof Home> = { rejected: Users2, resumes: FileText, reviews: FileText, "scheduled-decisions": CheckCircle2, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw }
+/**
+ * Rail icons. Club workspace items each get a distinct glyph: Overview (gauge) vs Home (house), Applicants
+ * (ID card) vs Members (people), one Calendar, and Decide (gavel). Exported for the phone bar.
+ */
+export const navigationIcons: Record<string, typeof Home> = { rejected: IdCard, resumes: FileText, reviews: FileText, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: Gavel, clubs: Users2, overview: Gauge, meetings: CalendarDays, tasks: ListChecks, applicants: IdCard, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw, recruiting: FileText }
 
 /**
  * One shell for every workspace. `sections` come from lib/navigation; the highlighted
@@ -64,11 +68,10 @@ function usePhoneLayout() {
   return useSyncExternalStore(subscribePhone, () => window.matchMedia(PHONE_QUERY).matches, () => false)
 }
 
-export function ProductShell({ children, mode, sections, active, title, clubId = "", clubName, manager = false, workspaceKind, chrome = true, onSelect, onNavigate, onReviewTool, onModeSelect }: {
+export function ProductShell({ children, mode, sections, active, title, clubId = "", clubName, manager = false, workspaceKind, chrome = true, onSelect, onNavigate, onModeSelect }: {
   workspaceKind?: "admin";
   /** False hides the header, rail and bottom bar with CSS; the tree (and every running job) stays mounted. */
   chrome?: boolean;
-  onReviewTool?: (id: string) => void;
   /** Remembers whether a leader last used Recruiting or Club, for the next workspace entry. */
   onModeSelect?: (id: "recruiting" | "club") => void;
   children: ReactNode; mode: string; sections: RailSection[]; active: string; title: string;
@@ -77,7 +80,6 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications, syncTaskNotifications, syncDurableNotifications, durableUnread } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
-  const items = railItems(sections)
   const current = (pathname ? activeNavItem(pathname, new URLSearchParams(params?.toString()), { member: !manager && !!clubId }) : null) ?? active
   const contextKey = `${clubId}:${mode}:${current}`
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
@@ -158,7 +160,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   }, [])
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !document.querySelector('[role="dialog"][data-state="open"]:not(.oc-notification-panel):not(.oc-dock-flyout)')) { e.preventDefault(); searchOrigin.current = document.activeElement as HTMLElement; setSearch(true) }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !document.querySelector('[role="dialog"][data-state="open"]:not(.oc-notification-panel)')) { e.preventDefault(); searchOrigin.current = document.activeElement as HTMLElement; setSearch(true) }
     }
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
@@ -174,18 +176,20 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     const selected = item.id === current
     const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left", selected ? "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const NavIcon = navigationIcons[item.id] ?? FileText
-    const content = <>{(dock ? <span className="oc-dock-icon">{<NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" size={22} />}</span> : !item.navGroup && <NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" className="size-[18px] shrink-0" />)}<span className="oc-dock-item-label">{item.label}</span>{item.preview && <span className="oc-dock-preview ml-auto text-[length:var(--oc-size-10)] font-normal text-muted-foreground">Preview</span>}</>
-    const element = item.quiet && onReviewTool ? <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} type="button" aria-haspopup="dialog" className={className} onClick={() => { if (!canLeaveWorkspace()) return; setMobile(false); onReviewTool(item.id) }}>{content}</button> : item.href ? <Link key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (item.mode && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.mode); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
+    const content = <>{(dock ? <span className="oc-dock-icon">{<NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" size={22} />}</span> : <NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" className="size-[18px] shrink-0" />)}<span className="oc-dock-item-label">{item.label}</span>{item.preview && <span className="oc-dock-preview ml-auto text-[length:var(--oc-size-10)] font-normal text-muted-foreground">Preview</span>}</>
+    const element = item.href ? <Link key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (item.mode && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.mode); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
     return element
   }
   // Account settings need a live session; the demo and signed-out preview hide them.
   const railSections = !allowed ? [] : sections.map(section => ({ ...section, items: section.items.filter(item => item.href !== "/settings" || !!user && !demo.isDemoEnabled) })).filter(section => section.items.length)
-  /** Phone "More" sheet: every rail section. Workspace switching lives in the account menu. */
+  const bar = allowed ? bottomBarItems(railSections, mode === "preview" ? "preview" : workspace, current) : []
+  /** Phone "More" sheet: a club workspace lists every rail item the bar doesn't show directly; elsewhere, every rail section. */
+  const sheetSections = workspace === "leader" && mode !== "preview" ? moreSections(railSections, bar) : railSections
   function sidebar() { return <div className="oc-context-sidebar flex h-full flex-col overflow-y-auto px-4 py-6">
     <button type="button" className="oc-rail-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo variant="dark" /></button>
-    {railSections.map(section => <div key={section.id} className="oc-sheet-section mb-5" data-tour={section.tour}>
+    {sheetSections.map(section => <div key={section.id} className="oc-sheet-section mb-5" data-tour={section.tour}>
       {section.label && <p className="mb-2 px-3 text-[length:var(--oc-size-11)] text-muted-foreground">{section.label}</p>}
-      <nav aria-label={section.label ?? section.name} className="space-y-1"><WorkspaceNavigation items={section.items.filter(i => !i.quiet)} active={current} renderItem={item => navLink(item)} /></nav>
+      <nav aria-label={section.label ?? section.name} className="space-y-1">{section.items.filter(i => !i.hidden).map(item => navLink(item))}</nav>
     </div>)}
   </div> }
   const otherClubs = manager && !platform ? access.clubs.filter(club => club.clubId !== clubId) : []
@@ -210,7 +214,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     <div><NavigationRail sections={railSections} active={current} renderItem={(item, surface) => navLink(item, surface === "rail")} onHome={() => navigate("student-dashboard")} /><main data-tour="workspace" id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="oc-workspace-content w-full min-w-0 max-w-[var(--oc-content-width)] outline-none">
       {!allowed ? <LoadingState label="Checking workspace access…" layout="inline" rows={3} /> : <>{demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}<RouteChildren>{children}</RouteChildren></>}
     </main></div>
-    <MobileNavigation items={allowed ? bottomBarItems(railSections, mode === "preview" ? "preview" : workspace, current) : []} groups={allowed ? items : []} active={current} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />
+    <MobileNavigation items={bar} active={current} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />
     {/* No key: the walkthrough stays mounted across navigation and reloads only when its experience or club changes. */}
     {user && !platform && allowed && <TutorialWalkthrough experience={manager ? "leader" : "student"} clubId={manager ? clubId : undefined} preview={user.impersonating} onOpenStep={step => {
       if (!canLeaveWorkspace()) return
@@ -221,6 +225,6 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railItems(railSections).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! })), ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }])]} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railItems(railSections).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! })), ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])]} onNavigate={onNavigate} />
   </div>
 }

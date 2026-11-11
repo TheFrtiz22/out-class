@@ -48,12 +48,15 @@ function exportRoute(profileFieldVisibility) {
   const member = { id: 'm1', userId: 'u1', isOwner: true, status: 'ACTIVE' }
   const tx = {
     club: { findUniqueOrThrow: async () => ({ name: 'Test Club', profileFieldVisibility }) },
-    application: { findMany: async () => [{ id: id(10), roundId, status: 'IN_REVIEW', studentId: id(11), submittedAt: new Date('2026-10-01T00:00:00Z'), recruitmentCycle: { name: 'Fall' }, round: { anonymousReview: false }, student: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', major: 'Mathematics', gradYear: 2028, transferStudent: false, gpa: 3.9, satScore: 1500, actScore: 34 } }, evaluations: [], interviewAssignments: [] }] },
+    application: { findMany: async () => [{ id: id(10), roundId, status: 'IN_REVIEW', studentId: id(11), submittedAt: new Date('2026-10-01T00:00:00Z'), recruitmentCycle: { name: 'Fall' }, round: { anonymousReview: false }, student: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', computingId: 'al9x', major: 'Mathematics', gradYear: 2028, transferStudent: false, gpa: 3.9, satScore: 1500, actScore: 34 } }, evaluations: [], interviewAssignments: [] }] },
+    applicantRecusal: { findMany: async () => [] },
     pipelineRound: { findMany: async () => [{ id: roundId, name: 'Review' }] },
-    clubMember: { findMany: async () => [{ title: null, status: 'ACTIVE', joinedAt: new Date('2026-09-01T00:00:00Z'), cohort: null, isOwner: false, accessRole: 'MEMBER', user: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', gradYear: 2028 } } }] },
+    // Roster read, or the applicant export's member lookup (where.userId); Ada is not a member there.
+    clubMember: { findMany: async q => q.where.userId ? [] : [{ title: null, cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', gradYear: 2028, computingId: 'al9x' }, applications: [] } }] },
     auditLog: { create: async () => {} },
   }
   const mod = load('app/api/club-exports/route.ts', {
+    '@/utils/support-audit': { auditSupportAction: async () => {} },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'u1' }, membership: member }) },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => member },
@@ -63,19 +66,23 @@ function exportRoute(profileFieldVisibility) {
 
 test('applicant CSV leaves out the columns for fields the club hides, on the server', async () => {
   const shown = await exportRoute(null)('applicants')
-  assert.match(shown.split('\n')[0], /^First name,Last name,Email,Major,Year,Status,/)
-  assert.match(shown, /Mathematics/)
+  assert.match(shown.split('\n')[0], /^\uFEFF?First name,Last name,Grad year,Role within org,Exec,Recruitment cycle,Email,Computing ID,Status,/)
+  assert.match(shown, /Ada,Lee,2028,/)
   const hidden = await exportRoute({ major: false, academicYear: false })('applicants')
-  assert.match(hidden.split('\n')[0], /^First name,Last name,Email,Status,Round,Cycle,Submitted,Average score,Reviews submitted\r?$/)
-  assert.doesNotMatch(hidden, /Mathematics|Year/)
+  assert.match(hidden.split('\n')[0], /^\uFEFF?First name,Last name,Role within org,Exec,Recruitment cycle,Email,Computing ID,Status,Round,Submitted,Average score,Reviews submitted\r?$/)
+  // The applicant export never carries a Major column; class year is dropped when hidden.
+  for (const csv of [shown, hidden]) assert.doesNotMatch(csv, /Mathematics|Major/)
+  assert.doesNotMatch(hidden, /Grad year|2028/)
   for (const csv of [shown, hidden]) assert.doesNotMatch(csv, /GPA|3\.9|1500|SAT|ACT|LinkedIn|linkedin|resume/i, 'no GPA, test score, LinkedIn or résumé columns at all')
 })
 
 test('roster CSV leaves out graduation year when the club hides class year', async () => {
-  assert.match((await exportRoute(null)('roster')).split('\n')[0], /Graduation year/)
+  const shown = await exportRoute(null)('roster')
+  assert.match(shown.split('\n')[0], /Grad year/)
+  assert.match(shown, /Ada,Lee,2028,Member,false,,ada@virginia\.edu,al9x/)
   const hidden = await exportRoute({ academicYear: false })('roster')
-  assert.doesNotMatch(hidden, /Graduation year|2028/)
-  assert.match(hidden, /Ada,Lee,ada@virginia\.edu,,MEMBER|Ada,Lee,ada@virginia\.edu/)
+  assert.doesNotMatch(hidden, /Grad year|2028/)
+  assert.match(hidden, /Ada,Lee,Member,false,,ada@virginia\.edu,al9x/)
 })
 
 // ---- Voting setup ------------------------------------------------------------
