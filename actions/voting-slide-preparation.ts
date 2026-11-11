@@ -9,7 +9,7 @@ import {loadVotingRoom,requireRoomLeader,roomFingerprint} from "@/utils/voting-r
 import {meetingDetails} from "@/lib/voting-session-setup";
 import {getApplicantDisplay} from "@/actions/applicant-intelligence";
 import {gatherSlideSources,preparationProfileConfig} from "@/utils/voting-slide-preparation";
-import {buildSlideHighlights,preparationGap,saveSlidePreparationSchema,slideHighlightStatus,slidePreparationScope,storedHighlights,type SlideSource} from "@/lib/voting-slide-preparation";
+import {buildSlideHighlights,preparationGap,saveSlidePreparationSchema,slideHighlightStatus,slidePreparationScope,slideTiming,storedHighlights,type SlideSource} from "@/lib/voting-slide-preparation";
 import { boundedParse } from "@/lib/bounded-input";
 
 const permissions=["applications.review","decisions.manage","decisions.start"] as const;
@@ -27,7 +27,11 @@ async function leaderRoom(tx:AppTransactionClient,clubId:string,sessionId:string
   return {...room,member:m,editable:!room.s.finalizedAt&&!cancelled&&!room.round.anonymousReview,cancelled};
 }
 function appliesTo(s:Room["s"]){
-  return s.currentPass===0?"the first voting pass":"the next Hold pass";
+  return s.currentPass===0?"Saved highlights appear on each applicant’s slide when voting starts.":"Saved highlights appear on an applicant’s slide when they come up. Applicants already presented in this pass show changes in the next Hold pass.";
+}
+async function lockedNow(tx:AppTransactionClient,s:Room["s"]){
+  if(s.currentPass===0)return new Set<string>();
+  return new Set((await tx.votingSlideLock.findMany({where:{sessionId:s.id,passNumber:s.currentPass},select:{applicationId:true}})).map(l=>l.applicationId));
 }
 async function profileDisplay(clubId:string,applicationId:string){
   return getApplicantDisplay({clubId,applicationId,previewConfig:preparationProfileConfig});
@@ -40,13 +44,14 @@ export async function getVotingSlidePreparation(input:unknown){
     const name=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting)?.name??round.name;
     if(round.anonymousReview)return {sessionId:s.id,name,available:false as const,reason:"Slide preparation is unavailable in anonymous review rounds, so identifying material stays private."};
     const ids=s.candidates.map(c=>c.applicationId);
-    const [apps,rows]=await Promise.all([
+    const [apps,rows,locked]=await Promise.all([
       tx.application.findMany({where:{id:{in:ids},clubId:d.clubId},select:{id:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}),
       tx.votingSlidePreparation.findMany({where:{sessionId:s.id},select:{applicationId:true,highlights:true,revision:true,updatedAt:true}}),
+      lockedNow(tx,s),
     ]);
     const applicants=[...s.candidates].sort((a,b)=>a.position-b.position).map(c=>{
       const p=apps.find(a=>a.id===c.applicationId)?.student.studentProfile,row=rows.find(r=>r.applicationId===c.applicationId);
-      return {applicationId:c.applicationId,name:p?`${p.firstName} ${p.lastName}`:"Applicant",highlightCount:storedHighlights(row?.highlights).length,updatedAt:row?.updatedAt.toISOString()??null};
+      return {applicationId:c.applicationId,name:p?`${p.firstName} ${p.lastName}`:"Applicant",highlightCount:storedHighlights(row?.highlights).length,updatedAt:row?.updatedAt.toISOString()??null,timing:slideTiming(s,c.applicationId,locked.has(c.applicationId))};
     });
     return {sessionId:s.id,name,available:true as const,editable,cancelled,finalized:!!s.finalizedAt,appliesTo:appliesTo(s),currentPass:s.currentPass,roundId:s.roundId,cycleId:s.cycleId,applicants};
   },votingReadLimits);
@@ -72,7 +77,7 @@ export async function getVotingSlidePreparationApplicant(input:unknown){
     if(round.anonymousReview||display.anonymous||!s.candidates.some(c=>c.applicationId===d.applicationId))throw Error("This applicant is not part of the session's identified review.");
     const sources=await gatherSlideSources(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,display);
     const row=await tx.votingSlidePreparation.findUnique({where:{sessionId_applicationId:{sessionId:s.id,applicationId:d.applicationId}}});
-    return {applicationId:d.applicationId,editable,appliesTo:appliesTo(s),...applicantView(sources,row)};
+    return {applicationId:d.applicationId,editable,appliesTo:appliesTo(s),timing:slideTiming(s,d.applicationId,(await lockedNow(tx,s)).has(d.applicationId)),...applicantView(sources,row)};
   },votingReadLimits);
 }
 
@@ -88,7 +93,7 @@ export async function saveVotingSlidePreparation(input:unknown){
     const receipt=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
     const current=async()=>{const sources=await gatherSlideSources(tx,{clubId:d.clubId,applicationId:d.applicationId,roundId:s.roundId},user.id,display);
       const row=await tx.votingSlidePreparation.findUnique({where:{sessionId_applicationId:{sessionId:s.id,applicationId:d.applicationId}}});
-      return {applicationId:d.applicationId,editable,appliesTo:appliesTo(s),...applicantView(sources,row)};};
+      return {applicationId:d.applicationId,editable,appliesTo:appliesTo(s),timing:slideTiming(s,d.applicationId,(await lockedNow(tx,s)).has(d.applicationId)),...applicantView(sources,row)};};
     if(receipt){if(receipt.actorId!==user.id||receipt.fingerprint!==fingerprint)throw Error("Save request already used.");return {ok:true as const,...await current()};}
     if(!editable)throw Error(s.finalizedAt?"Decisions are finalized. Slide preparation is read only.":"Slide preparation is unavailable for this session.");
     if(round.anonymousReview||display.anonymous||!s.candidates.some(c=>c.applicationId===d.applicationId))throw Error("This applicant is not part of the session's identified review.");
