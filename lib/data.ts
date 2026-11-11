@@ -477,10 +477,10 @@ export type AgendaDocument = {
 
 /** Downloadable meeting agendas, visible to members inside their Member Portal. */
 export const agendaDocuments: AgendaDocument[] = [
-  { id: "ag-1", clubId: "vvf", title: "Portfolio Review — Sep 16 Agenda", date: "Sep 16", fileName: "VVF_Agenda_Sep16.pdf" },
-  { id: "ag-2", clubId: "vvf", title: "Portfolio Review — Sep 9 Agenda", date: "Sep 9", fileName: "VVF_Agenda_Sep9.pdf" },
-  { id: "ag-3", clubId: "meridian", title: "Fund Meeting — Sep 17 Agenda", date: "Sep 17", fileName: "Meridian_Agenda_Sep17.pdf" },
-  { id: "ag-4", clubId: "helix", title: "Sprint Kickoff — Sep 15 Agenda", date: "Sep 15", fileName: "Helix_Agenda_Sep15.pdf" },
+  { id: "ag-1", clubId: "vvf", title: "Portfolio Review · Sep 16 Agenda", date: "Sep 16", fileName: "VVF_Agenda_Sep16.pdf" },
+  { id: "ag-2", clubId: "vvf", title: "Portfolio Review · Sep 9 Agenda", date: "Sep 9", fileName: "VVF_Agenda_Sep9.pdf" },
+  { id: "ag-3", clubId: "meridian", title: "Fund Meeting · Sep 17 Agenda", date: "Sep 17", fileName: "Meridian_Agenda_Sep17.pdf" },
+  { id: "ag-4", clubId: "helix", title: "Sprint Kickoff · Sep 15 Agenda", date: "Sep 15", fileName: "Helix_Agenda_Sep15.pdf" },
 ]
 
 export type MemberAnnouncement = {
@@ -497,7 +497,7 @@ export const memberAnnouncements: MemberAnnouncement[] = [
     id: "ma-1",
     clubId: "vvf",
     title: "New due-diligence template live",
-    body: "Use the updated diligence memo template for all Q4 deal reviews — linked in the shared drive.",
+    body: "Use the updated diligence memo template for all Q4 deal reviews. It is linked in the shared drive.",
     date: "Sep 14",
   },
   {
