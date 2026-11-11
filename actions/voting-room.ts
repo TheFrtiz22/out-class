@@ -20,7 +20,7 @@ import {lockVotingObservations,votingObservations} from '@/utils/additional-obse
 import {votingDiscussion} from '@/utils/voting-discussion';
 import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
-import {lockPreparedSlides,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
+import {lockPresentedSlide,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -243,8 +243,9 @@ export async function commandLiveVotingRoom(input:unknown) {
         if(!ids.length)throw new RoomConflict("EMPTY_QUEUE","No held or unreviewed applicants remain. End the session when ready.");
         if(d.action==='START'&&!round.anonymousReview&&roomPresentationSchema.safeParse(s.presentationOptions).data?.fields.includes('additionalObservations'))await lockVotingObservations(tx,s,user.id);
         await tx.votingPass.create({data:{sessionId:s.id,number:s.currentPass+1,candidates:{create:ids.map((applicationId,position)=>({applicationId,position}))}}});
-        // Freeze prepared highlights for this pass before any applicant in it is presented.
-        if(!round.anonymousReview)await lockPreparedSlides(tx,s.id,s.currentPass+1,ids);
+        // Freeze the first applicant's prepared highlights before it is presented; later
+        // applicants lock as each comes up, so preparation saved meanwhile still reaches them.
+        if(!round.anonymousReview)await lockPresentedSlide(tx,s.id,s.currentPass+1,ids[0]);
         Object.assign(patch,{currentPass:s.currentPass+1,activeApplicationId:ids[0],state:"OPEN",endedAt:null,startedAt:s.startedAt??new Date(),joinOpenedAt:s.joinOpenedAt??new Date()});break;
       }
       case "OPEN_VOTING": {
@@ -372,6 +373,9 @@ export async function commandLiveVotingRoom(input:unknown) {
       if(!next){await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"COMPLETED",completedAt:new Date()}});patch.state="PAUSED";}
       decision={requestId:d.requestId,applicationId:current!.applicationId,passNumber:s.currentPass,choice:d.action==="PASS_WITHOUT_VOTE_AND_ADVANCE"?"ACCEPT":d.choice!,nextApplicationId:next?.applicationId??null,withoutVote:["PASS_WITHOUT_VOTE_AND_ADVANCE","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)};
     }
+    // Moving forward to the next applicant of this pass freezes its prepared highlights before it is shown.
+    // Undo returns to an applicant already presented, so it never creates a lock.
+    if((advancing||d.action==="ADVANCE")&&!round.anonymousReview&&typeof patch.activeApplicationId==="string")await lockPresentedSlide(tx,s.id,s.currentPass,patch.activeApplicationId);
     // Discussion requests belong to the applicant being discussed; they clear when the room moves on.
     if(current&&(("activeApplicationId"in patch&&patch.activeApplicationId!==current.applicationId)||d.action==="END"))
       await tx.votingHandRaise.updateMany({where:{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,clearedAt:null,withdrawnAt:null},data:{clearedAt:new Date(),clearedBy:user.id,updatedAt:new Date()}});
