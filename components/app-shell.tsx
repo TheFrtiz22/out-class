@@ -22,6 +22,7 @@ import { resolveStudentView, sectionForStudentView, canonicalStudentParams } fro
 import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
 import { FocusFrame } from "@/components/shell/focus-frame"
 import { Button } from "@/components/ui/button"
+import type { ExploreDirectory } from "@/components/views/explore-view"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
@@ -59,10 +60,12 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
 }
 
-export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader" }
+export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader"; initialDirectory?: ExploreDirectory; serverNow?: number }
 
-export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false, initialAuthRole }: AppShellProps) {
+export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false, initialAuthRole, initialDirectory, serverNow }: AppShellProps) {
   const demo = useDemoMode()
+  // The server-read directory seeds only the first Explore mount; later visits read it fresh.
+  const [directorySeed, setDirectorySeed] = useState(initialDirectory)
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -208,11 +211,11 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
             {view === "my-clubs" && <PersonalClubs section={personalSection} />}
-            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} />}
+            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} initialDirectory={demo.isDemoEnabled ? undefined : directorySeed} serverNow={serverNow} onInitialDirectoryUsed={() => setDirectorySeed(undefined)} />}
             {view === "corkboard" && <CorkboardView onNavigate={navigate} />}
             {/* One instance for both scopes: its stage control slides instead of remounting. */}
-            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} />}
-            {view === "calendar" && <CalendarView onNavigate={navigate} />}
+            {(view === "tracker" || view === "status") && <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} serverNow={serverNow} />}
+            {view === "calendar" && <CalendarView onNavigate={navigate} serverNow={serverNow} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
             {view === "interview-scheduler" && (demo.isDemoEnabled ? <DemoInterviewSchedule onNavigate={navigate} /> : <InterviewSchedulerView onNavigate={navigate} />)}

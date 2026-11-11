@@ -135,12 +135,6 @@
   },
   {
    "rule": "raw-button",
-   "file": "components/live-voting/member-voting-pad.tsx",
-   "max": 2,
-   "reason": "Pass / No Pass vote tiles on the solid voting pad; whole-surface choice targets."
-  },
-  {
-   "rule": "raw-button",
    "file": "components/meeting-workspace.tsx",
    "max": 1,
    "reason": "Whole meeting card is the target (oc-content-panel); navy focus outline."
