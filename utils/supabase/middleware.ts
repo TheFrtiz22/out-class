@@ -1,16 +1,24 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access";
-import { allowedWhileSecondFactorPending, secondFactorPending, twoStepChallengeHref, TWO_STEP_REQUIRED_MESSAGE, userMfaEnabled } from "@/lib/user-mfa";
+import { allowedWhileSecondFactorPending, RETURN_PATH_HEADER, secondFactorPending, twoStepChallengeHref, TWO_STEP_REQUIRED_MESSAGE, userMfaEnabled } from "@/lib/user-mfa";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder";
 
 export const createClient = async (request: NextRequest, options: { demoOnly?: boolean } = {}) => {
+  // With two-step sign-in on, forward the requested path (overwriting any client value) so a
+  // server-side challenge redirect can return to it; requireAuth still passes it through safeReturnPath.
+  const forwarded = () => {
+    if (!userMfaEnabled()) return request.headers;
+    const headers = new Headers(request.headers);
+    headers.set(RETURN_PATH_HEADER, request.nextUrl.pathname + request.nextUrl.search);
+    return headers;
+  };
   // Create an unmodified response
   let supabaseResponse = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: forwarded(),
     },
   });
 
@@ -25,7 +33,7 @@ export const createClient = async (request: NextRequest, options: { demoOnly?: b
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
-            request,
+            request: { headers: forwarded() },
           })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)

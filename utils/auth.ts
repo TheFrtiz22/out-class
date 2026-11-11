@@ -6,9 +6,9 @@ import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
 import { DEMO_COOKIE } from "@/lib/demo/access";
-import { isUvaEmail } from "@/lib/auth";
+import { isUvaEmail, safeReturnPath } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
-import { secondFactorPending, TWO_STEP_REQUIRED_MESSAGE, twoStepChallengeHref } from "@/lib/user-mfa";
+import { RETURN_PATH_HEADER, secondFactorPending, TWO_STEP_REQUIRED_MESSAGE, twoStepChallengeHref } from "@/lib/user-mfa";
 import { createClient } from "./supabase/server";
 import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
@@ -73,8 +73,9 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
   if (state.secondFactorPending) {
     if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_MFA_REQUIRED", TWO_STEP_REQUIRED_MESSAGE);
     // Server Actions are refused outright; page renders go to the code challenge.
-    if ((await headers()).has("next-action")) throw new Error(TWO_STEP_REQUIRED_MESSAGE);
-    redirect(twoStepChallengeHref("/"));
+    const requestHeaders = await headers();
+    if (requestHeaders.has("next-action")) throw new Error(TWO_STEP_REQUIRED_MESSAGE);
+    redirect(twoStepChallengeHref(safeReturnPath(requestHeaders.get(RETURN_PATH_HEADER))));
   }
   const { data: { user }, error } = state.identity;
 

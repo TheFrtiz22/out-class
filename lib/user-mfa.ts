@@ -37,10 +37,13 @@ export function secondFactorPending(
   return tokenAssurance(token) !== "aal2"
 }
 
-/** Paths an enrolled, not-yet-verified session may still reach: the challenge, sign-out and recovery. */
+/** Paths an enrolled, not-yet-verified session may still reach: the challenge, sign-out and recovery.
+ * The demo-mode switch is included so a leftover demo cookie can be cleared from the challenge page
+ * (it only sets or clears that cookie; demo content is synthetic and never reads live data). */
 const PENDING_ALLOWED = new Set([
   TWO_STEP_CHALLENGE_PATH,
   "/api/auth/two-step",
+  "/api/demo",
   "/api/auth/logout",
   "/api/auth/password-recovery",
   "/auth/callback",
@@ -56,6 +59,26 @@ export function twoStepChallengeHref(pathname: string, search = ""): string {
   const next = pathname + search
   const safe = next.startsWith("/") && !next.startsWith("//") && pathname !== TWO_STEP_CHALLENGE_PATH ? next : "/"
   return `${TWO_STEP_CHALLENGE_PATH}?next=${encodeURIComponent(safe)}`
+}
+
+/** Set by middleware so a server-side challenge redirect can return to the requested page. */
+export const RETURN_PATH_HEADER = "x-outclass-return-path"
+
+/** Failed code (or password re-check) attempts allowed per account in TWO_STEP_ATTEMPT_WINDOW. */
+export const TWO_STEP_ATTEMPT_LIMIT = 5
+export const TWO_STEP_ATTEMPT_WINDOW = 15 * 60 * 1000
+/** University sign-in accounts have no password to re-enter; a sign-in this recent counts instead. */
+export const TWO_STEP_FRESH_SIGN_IN_WINDOW = 10 * 60 * 1000
+
+type AmrEntry = { method?: unknown; timestamp?: unknown } | string
+/** Supabase's `amr` claim records when this session last authenticated (seconds). Same rule as the
+ * account-deletion re-authentication; read it only from claims Auth has verified. */
+export function recentlyAuthenticated(amr: unknown, now = Date.now(), window = TWO_STEP_FRESH_SIGN_IN_WINDOW): boolean {
+  if (!Array.isArray(amr)) return false
+  const times = (amr as AmrEntry[]).map(entry => typeof entry === "object" && entry && typeof entry.timestamp === "number" ? entry.timestamp * 1000 : NaN).filter(Number.isFinite)
+  if (!times.length) return false
+  const latest = Math.max(...times)
+  return latest <= now + 60_000 && now - latest <= window
 }
 
 export const TWO_STEP_REQUIRED_MESSAGE = "Enter the code from your authenticator app to continue."

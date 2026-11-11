@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { z } from 'zod';
 import { invitationEmail } from '@/lib/invitation-email';
 import { studentClaimEmail } from '@/lib/student-claim-email';
+import { twoStepNoticeEmail } from '@/lib/two-step-email';
 
 /** Resend's SMTP 250 response carries its dashboard ID; Message-ID is a separate header. */
 function providerReceipt(info: { messageId: string; response?: string }, host: string) {
@@ -40,6 +41,18 @@ export async function sendStudentClaimEmail(input: { recipient: string; name: st
   try {
     const info = await transport.sendMail({ from: { name: 'OutClass', address: config.from }, to: z.string().email().parse(input.recipient), ...message, messageId: `<${input.deliveryId}@${new URL(config.siteUrl).hostname}>` });
     if (!info.accepted?.length) throw Error('The invitation email was not accepted. The account exists; resend from Users.');
+    return providerReceipt(info, config.host);
+  } finally { transport.close(); }
+}
+
+/** Account-security notice on the same SMTP account as invitations and Supabase Auth. */
+export async function sendTwoStepNoticeEmail(input: { recipient: string; enabled: boolean; eventId: string }) {
+  const config = invitationEmailConfig();
+  const message = twoStepNoticeEmail({ enabled: input.enabled, siteUrl: config.siteUrl });
+  const transport = nodemailer.createTransport({ host: config.host, port: config.port, secure: config.port === 465, requireTLS: config.port !== 465, auth: { user: config.user, pass: config.password }, connectionTimeout: 5000, greetingTimeout: 5000, socketTimeout: 10000, disableFileAccess: true, disableUrlAccess: true });
+  try {
+    const info = await transport.sendMail({ from: { name: 'OutClass', address: config.from }, to: z.string().email().parse(input.recipient), ...message, messageId: `<two-step-${input.eventId}@${new URL(config.siteUrl).hostname}>` });
+    if (!info.accepted?.length) throw Error('The security notice was not accepted.');
     return providerReceipt(info, config.host);
   } finally { transport.close(); }
 }
