@@ -19,7 +19,7 @@ test('admin drawer cannot change owner role, remove owners or transfer ownership
 });
 
 test('ownership transfer requires an intentional confirmation and passes only scoped trusted input',async()=>{
- const restore=setupWindow();try{const directory=fixture();let calls=0,payload;const h=harness({getOrganizationMemberManagement:async()=>directory,transferOrganizationOwnership:async data=>{calls++;payload=data;}});h.render();await h.flush();nodes(h.render()).filter(node=>['button','Button'].includes(node.type)&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{},stopPropagation(){}});global.window.confirm=()=>false;button(h.render(),'Transfer my ownership').props.onClick();assert.equal(calls,0);global.window.confirm=()=>true;const transfer=button(h.render(),'Transfer my ownership');transfer.props.onClick();transfer.props.onClick();await h.flush();assert.equal(calls,1);assert.deepEqual(payload,{clubId:'club',memberId:'student',confirm:true});}finally{restore();}
+ const restore=setupWindow();try{const directory=fixture();let calls=0,payload;const h=harness({getOrganizationMemberManagement:async()=>directory,transferOrganizationOwnership:async data=>{calls++;payload=data;}});h.render();await h.flush();nodes(h.render()).filter(node=>['button','Button'].includes(node.type)&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{},stopPropagation(){}});global.window.confirm=()=>false;await button(h.render(),'Transfer my ownership').props.onClick();assert.equal(calls,0);global.window.confirm=()=>true;const transfer=button(h.render(),'Transfer my ownership');transfer.props.onClick();transfer.props.onClick();await h.flush();assert.equal(calls,1);assert.deepEqual(payload,{clubId:'club',memberId:'student',confirm:true});}finally{restore();}
 });
 
 test('revocation confirms, resend is explicitly queued and duplicate queued delivery is disabled',async()=>{
@@ -87,4 +87,26 @@ test('roster Year column, filter and detail follow the club profile setting; ide
   const text=JSON.stringify(hidden);
   for(const kept of ['owner@virginia.edu','Role','Status','Owner'])assert.ok(text.includes(kept),kept);
  }finally{restore();}
+});
+
+// The real confirm queue behind the harness stub: count the dialogs actually shown.
+function liveConfirm(){const stub=require('./helpers/confirm-stub.cjs');const {createConfirmController}=require('./helpers/component-module.cjs').loadComponent(require('node:path').resolve('components/ui/confirm-dialog.tsx'));const shown=[];const controller=createConfirmController(p=>{if(p)shown.push(p)});stub.use(controller.request);return {shown,answer:ok=>controller.settle(shown.at(-1).id,ok),restore:()=>stub.use()};}
+
+test('two quick clicks on Remove member show one dialog and remove once',async()=>{
+ const restore=setupWindow(),live=liveConfirm();try{const directory=fixture();const calls=[];const h=harness({getOrganizationMemberManagement:async()=>directory,removeOrganizationMember:async data=>{calls.push(data);}});h.render();await h.flush();
+ nodes(h.render()).filter(node=>['button','Button'].includes(node.type)&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{},stopPropagation(){}});
+ const remove=button(h.render(),'Remove member');remove.props.onClick();remove.props.onClick();
+ assert.equal(live.shown.length,1,'one dialog');live.answer(true);await h.flush();
+ assert.equal(calls.length,1,'one removal');assert.equal(calls[0].memberId,'student');}finally{live.restore();restore();}
+});
+
+test('bulk removal sends the members counted in the dialog even if the selection changes while it is open',async()=>{
+ const restore=setupWindow(),live=liveConfirm();try{const directory=fixture();directory.members.push(member('third','MEMBER'));const calls=[];const h=harness({getOrganizationMemberManagement:async()=>directory,bulkOrganizationMembers:async data=>{calls.push(data);return {updated:data.targets.length};}});h.render();await h.flush();
+ const table=()=>nodes(h.render()).find(n=>n.props?.selection?.toggle);const row=id=>table().props.rows.find(r=>r.id===id);
+ table().props.selection.toggle(row('student'));
+ button(h.render(),'Remove members').props.onClick();
+ assert.equal(live.shown.length,1);assert.equal(live.shown[0].options.title,'Remove 1 selected member?');assert.equal(live.shown[0].options.tone,'danger');
+ table().props.selection.toggle(row('third'));table().props.selection.toggle(row('student'));
+ live.answer(true);await h.flush();
+ assert.deepEqual(calls.map(c=>c.targets.map(t=>t.id)),[['student']],'the confirmed selection, not the current one');}finally{live.restore();restore();}
 });

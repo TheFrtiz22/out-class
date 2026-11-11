@@ -66,7 +66,7 @@ import { PillGroup, SegmentedControl } from "@/components/ui/segmented-control"
 import { SearchField } from "@/components/ui/search-field"
 import { PillSelect } from "@/components/ui/pill-select"
 import { Toggle } from "@/components/ui/toggle"
-import { useConfirm } from "@/components/ui/confirm-dialog"
+import { useConfirmOnce } from "@/components/ui/confirm-dialog"
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
 type Member = Directory["members"][number];
@@ -88,7 +88,8 @@ const statusLabel = (status: string) =>
 export function OrganizationMemberManagement({ clubId, initialData = null, onData, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
   const { refreshUser } = useAuth();
   const [data, setData] = useState<Directory | null>(initialData);
-  const confirm = useConfirm();
+  // One confirm at a time here: a second click while one is open does nothing.
+  const confirm = useConfirmOnce();
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false),
@@ -280,69 +281,60 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   }
   async function bulkMembers(action: "ROLE" | "PERMISSIONS" | "REMOVE") {
     if (!data || !selectedMembers.length) return;
-    if (
-      action === "REMOVE" &&
-      !(await confirm({
-        title: `Remove ${selectedMembers.length} selected members?`,
-        description: "Access is revoked; history is retained.",
-        confirmLabel: "Remove members",
-        tone: "danger",
-      }))
-    )
-      return;
-    if (
-      action === "ROLE" &&
-      !(await confirm({
-        title: `Change ${selectedMembers.length} members to ${organizationRoleLabels[bulkRole]}?`,
-        description: "This replaces custom capabilities with role defaults.",
-        confirmLabel: "Change role",
-      }))
-    )
-      return;
-    const ids = new Set(selectedMembers.map((m) => m.id));
+    // Act on exactly what the dialog shows: the selection, role and permissions at click time.
+    const targets = selectedMembers.map((m) => ({ id: m.id, updatedAt: m.updatedAt }));
+    const role = bulkRole, permissions = bulkPermissions, base = data;
+    const count = targets.length;
+    const prompt =
+      action === "REMOVE"
+        ? { title: `Remove ${count} selected ${count === 1 ? "member" : "members"}?`, description: "Access is revoked; history is retained.", confirmLabel: "Remove members" }
+        : action === "ROLE"
+          ? { title: `Change ${count} ${count === 1 ? "member" : "members"} to ${organizationRoleLabels[role]}?`, description: "This replaces custom capabilities with role defaults.", confirmLabel: "Change role" }
+          : { title: `Replace custom permissions for ${count} selected ${count === 1 ? "member" : "members"}?`, confirmLabel: "Replace permissions" };
+    if (!(await confirm({ ...prompt, tone: "danger" }))) return;
+    const ids = new Set(targets.map((t) => t.id));
     const optimistic =
       action === "REMOVE"
         ? undefined
         : {
-            ...data,
-            members: data.members.map((m) =>
+            ...base,
+            members: base.members.map((m) =>
               !ids.has(m.id)
                 ? m
                 : action === "ROLE"
                   ? {
                       ...m,
-                      accessRole: bulkRole,
-                      isOwner: bulkRole === "OWNER",
-                      permissions: organizationRolePermissions[bulkRole],
+                      accessRole: role,
+                      isOwner: role === "OWNER",
+                      permissions: organizationRolePermissions[role],
                     }
-                  : { ...m, permissions: bulkPermissions },
+                  : { ...m, permissions },
             ),
           };
     void run(
       () =>
         bulkOrganizationMembers({
           clubId,
-          targets: selectedMembers.map((m) => ({
-            id: m.id,
-            updatedAt: m.updatedAt,
-          })),
+          targets,
           action,
           ...(action === "ROLE"
-            ? { role: bulkRole }
+            ? { role }
             : action === "PERMISSIONS"
-              ? { permissions: bulkPermissions }
+              ? { permissions }
               : {}),
         }),
-      `${selectedMembers.length} memberships updated.`,
+      `${count} memberships updated.`,
       optimistic,
-      ids.has(data.actor.id),
+      ids.has(base.actor.id),
     );
   }
   async function bulkInvites(action: "RESEND" | "REVOKE") {
+    // Act on exactly the invitations counted in the dialog.
+    const invitationIds = selectedInvites.map((i) => i.id);
     if (
       action === "REVOKE" &&
       !(await confirm({
-        title: `Revoke ${selectedInvites.length} selected invitations?`,
+        title: `Revoke ${invitationIds.length} selected ${invitationIds.length === 1 ? "invitation" : "invitations"}?`,
         confirmLabel: "Revoke invitations",
         tone: "danger",
       }))
@@ -352,7 +344,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       () =>
         bulkOrganizationInvitations({
           clubId,
-          invitationIds: selectedInvites.map((i) => i.id),
+          invitationIds,
           action,
         }),
       action === "RESEND"
@@ -880,14 +872,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               ))}
             <Button
               disabled={busy || !selectedMembers.length}
-              onClick={async () => {
-                if (
-                  await confirm({
-                    title: `Replace custom permissions for ${selectedMembers.length} selected members?`,
-                    confirmLabel: "Replace permissions",
-                  })
-                )
-                  void bulkMembers("PERMISSIONS");
+              onClick={() => {
+                void bulkMembers("PERMISSIONS");
               }}
             >
               Save permissions

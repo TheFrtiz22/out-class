@@ -5,7 +5,7 @@ import { useRevalidate } from "@/hooks/use-revalidate";
 import { academicYear } from "@/lib/recruitment-profile";
 import { organizationRoleLabels } from "@/lib/organization-authorization";
 import { useDemoMode } from "@/contexts/demo-context";
-import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useConfirmOnce } from "@/components/ui/confirm-dialog";
 import { getRecipientGroups, previewRecipientAudience, saveRecipientGroup, deleteRecipientGroup } from "@/actions/recipient-groups";
 import { recipientAudienceSchema, type AudienceRule, type RecipientAudience } from "@/lib/recipient-audience";
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,7 @@ export function AudiencePreview({ preview }: { preview: Preview | null }) {
 }
 export function RecipientGroups({ clubId }: { clubId: string }) {
  const demo=useDemoMode();
- const confirm=useConfirm();
+ const confirm=useConfirmOnce(); // a second click while one is open does nothing
  const draftId=useRef<string|null>(null);
  const [dirty,setDirty]=useState(false);
  const [catalog,setCatalog]=useState<Catalog|null>(null),[error,setError]=useState(""),[open,setOpen]=useState(false),[busy,setBusy]=useState(false);

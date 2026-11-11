@@ -88,3 +88,33 @@ test('the provider server-renders its children without opening a dialog', () => 
   const html = renderToString(React.createElement(ConfirmProvider, null, React.createElement('p', null, 'page')))
   assert.equal(html, '<p>page</p>')
 })
+
+test('a repeated request (same title and action, or same key) shares one dialog and one answer', async () => {
+  const h = harness()
+  const options = { title: 'Delete group Fund?', confirmLabel: 'Delete group', tone: 'danger' }
+  const first = h.controller.request(options)
+  const second = h.controller.request({ ...options })
+  assert.equal(first, second, 'the same promise')
+  const keyed = h.controller.request({ title: 'Other wording?', confirmLabel: 'Delete', key: 'delete-fund' })
+  assert.equal(h.controller.request({ title: 'Different?', confirmLabel: 'Different', key: 'delete-fund' }), keyed)
+  assert.equal(h.shown.filter(Boolean).length, 1, 'one dialog shown; the keyed one waits')
+  h.controller.settle(h.current().id, true)
+  assert.deepEqual(await Promise.all([first, second]), [true, true])
+  assert.equal(h.current().options.key, 'delete-fund')
+  h.controller.settle(h.current().id, false)
+  assert.equal(await keyed, false)
+  // Once answered, the same request opens a fresh dialog.
+  const again = h.controller.request(options)
+  assert.notEqual(again, first)
+  h.controller.settle(h.current().id, false)
+  assert.equal(await again, false)
+})
+
+test('returnFocus accepts an element or a ref and wins over the requesting element', () => {
+  const { confirmReturnTarget } = loadComponent(path.resolve('components/ui/confirm-dialog.tsx'))
+  const trigger = { id: 'menu-trigger' }
+  assert.equal(confirmReturnTarget(null, trigger), trigger)
+  assert.equal(confirmReturnTarget(null, { current: trigger }), trigger)
+  assert.equal(confirmReturnTarget(null, { current: null }), null)
+  assert.equal(confirmReturnTarget(null), null)
+})

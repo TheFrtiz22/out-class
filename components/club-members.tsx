@@ -1,6 +1,6 @@
 "use client"
 import { SearchField } from "@/components/ui/search-field"
-import { useConfirm } from "@/components/ui/confirm-dialog"
+import { useConfirmOnce } from "@/components/ui/confirm-dialog"
 import { memberAcademicProfile } from "@/lib/recruitment-profile"
 import { normalizeProfileFieldVisibility, restrictProfileFields } from "@/lib/profile-field-visibility"
 import { organizationCapabilities } from "@/lib/organization-authorization"
@@ -33,7 +33,7 @@ const sortsDescending = (key: MemberSort) => key === "year"
 type Directory = Awaited<ReturnType<typeof import("@/actions/organization-members").getOrganizationMemberManagement>>
 export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialDirectory?: Directory | null; onDirectory?: (data: Directory | null) => void }) {
   const { user, refreshUser } = useAuth(), demo = useDemoMode()
-  const confirm = useConfirm()
+  const confirm = useConfirmOnce() // a second click while one is open does nothing
   const actor = user?.memberships.find(m => m.clubId === clubId)
   const { canChangeRoles: canAccess, canManageMembers: canMembers } = organizationCapabilities(actor)
   const [data, setData] = useState<{ clubId: string; members: Member[]; access: Awaited<ReturnType<typeof getClubAccess>> | null } | null>(null)
