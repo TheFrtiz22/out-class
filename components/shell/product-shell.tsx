@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils"
 import { handleClubLink } from "@/lib/workspace-navigation"
 import { TERMS } from "@/lib/copy/terms"
 import { countShellStart } from "@/lib/shell-metrics"
+import { notificationSettingsHref } from "@/lib/settings-navigation"
 import { RouteChildren } from "@/components/route-content"
 
 /**
@@ -224,6 +225,6 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railItems(railSections).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! })), ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }])]} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railItems(railSections).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! })), ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])]} onNavigate={onNavigate} />
   </div>
 }
