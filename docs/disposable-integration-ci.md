@@ -19,7 +19,7 @@ Requirements: Node 22, pnpm 10, Docker with Linux containers, OpenSSL (for onboa
 | Native mock recruiting cycle (50 synthetic applicants: apply, anonymous review, interviews, live voting, decisions, offers, roster export; logs per-stage timings) | \`node scripts/run-disposable-postgres.cjs security\` (runs \`tests/mock-recruiting-cycle-native.test.cjs\`) | DB \`outclass_security_test\` on loopback 58454 |
 | Native Events and browser Events | \`node scripts/run-disposable-postgres.cjs events\` | DB \`postgres\` on loopback 55442 |
 | Native announcements, recipient audiences, invitations and decision publication | \`node scripts/test-decision-publication-local.cjs\` | DB \`outclass_audiences_test\` on 58453 |
-| Native decision transactions, offers, recruitment races | \`node scripts/test-decision-transactions-local.cjs\` | DB \`outclass_recruitment_test\` on 58452 |
+| Native decision transactions, offers, recruitment races, leader CSV exports | \`node scripts/test-decision-transactions-local.cjs\` | DB \`outclass_recruitment_test\` on 58452 |
 | Native scheduler/voting polling and release | \`node scripts/test-scheduler-polling-local.cjs\` | DB \`outclass_audiences_test\` on 58453 |
 | Real Storage + native PostgreSQL event flyers | \`node scripts/run-availability-e2e.cjs --event-storage\` | Dedicated local Supabase on 57321/57322 |
 | Coverage inventory | \`node scripts/check-disposable-integration-coverage.cjs\` | No external services |

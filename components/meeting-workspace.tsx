@@ -30,6 +30,7 @@ import { meetingInputSchema, resourceSchema } from "@/lib/meetings";
 import { OutClassQRCode } from "@/components/qr/outclass-qr-code";
 import { QrPresentButton, QrPresenterDialog } from "@/components/qr/qr-presenter-dialog";
 import { Button } from "@/components/ui/button";
+import { ClubExportLink } from "@/components/club-export-link";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -429,7 +430,7 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
         )}
       </section>
       {hasPermission(member, "meetings.attendance") && (
-        <MeetingAttendance meeting={meeting} />
+        <MeetingAttendance meeting={meeting} member={member} />
       )}
       {hasPermission(member, "meetings.manage") && (
         <ActionWorkflow showCloseAction={false} title="Edit meeting" description="Update the meeting details, agenda, recap, or shared resources." trigger="Edit meeting">{done => <MeetingEditor key={meeting.revision} clubId={meeting.clubId} meeting={meeting} onCancel={done} onSaved={() => { done(); setRefresh(v => v + 1); onUpdated?.() }} />}</ActionWorkflow>
@@ -437,7 +438,7 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
     </article>
   );
 }
-function MeetingAttendance({ meeting }: { meeting: Meeting }) {
+function MeetingAttendance({ meeting, member }: { meeting: Meeting; member: Parameters<typeof hasPermission>[0] }) {
   const demo = useDemoMode();
   const [attendanceLoading, setAttendanceLoading] = useState(true);
   const [open, setOpen] = useState(false),
@@ -588,6 +589,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
         <Button variant="ghost" onClick={() => setRefresh((v) => v + 1)}>
           Refresh
         </Button>
+        <ClubExportLink clubId={meeting.clubId} kind="attendance" membership={member} filter={meeting.id} label="Export CSV" />
       </div>
       <ul className="divide-y">
         {rows.map((row) => (
