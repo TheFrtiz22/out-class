@@ -70,7 +70,7 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     await operator.clubMember.create({ data: { userId: leader.id, clubId: club.id, isOwner: true, accessRole: 'OWNER' } });
     await operator.clubMember.create({ data: { userId: reviewer.id, clubId: club.id, permissions: ['applications.review', 'applicants.identify'] } });
     await operator.votingRuleDefault.create({ data: { clubId: club.id, rules: { threshold: 0.5 }, updatedBy: leader.id } });
-    const app = await operator.application.create({ data: { studentId: student.id, clubId: club.id, roundId: applied.id, recruitmentCycleId: fall.id, status: 'ACCEPTED', submittedAt: past } });
+    const app = await operator.application.create({ data: { studentId: student.id, clubId: club.id, roundId: applied.id, recruitmentCycleId: fall.id, status: 'ACCEPTED', decisionVersion: 1, submittedAt: past } });
     await operator.applicationAnswer.create({ data: { applicationId: app.id, questionId: question.id, response: 'Fall answer' } });
     if (letter) await operator.decisionLetter.create({ data: { applicationId: app.id, clubId: club.id, version: 1, decision: 'ACCEPTED', content: { body: 'Welcome' } } });
     return { club, other, fall, otherFall, leader, reviewer, student, app, round: applied };
