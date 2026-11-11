@@ -33,7 +33,7 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
   // Unsaved edits survive a reload or browser restart on this device; the server copy stays authoritative.
   const storeRef = useRef<ReturnType<typeof createDraftStore<AvailabilitySchedule>> | null>(null)
   if (!storeRef.current && validDraftOwner(owner)) storeRef.current = createDraftStore<AvailabilitySchedule>({ owner, identity: `availability:${scope ? `${scope.clubId}:${scope.roundId}` : "global"}`, persistence: "device" })
-  const writer = useRef(""), [recovery, setRecovery] = useState<{ schedule: AvailabilitySchedule; conflict: boolean } | null>(null)
+  const writer = useRef(""), [recovery, setRecovery] = useState<{ schedule: AvailabilitySchedule; conflict: boolean } | null>(null), [reviewing, setReviewing] = useState(false)
   const queueRef = useRef<AvailabilitySaveQueue | null>(null)
   if (!queueRef.current) queueRef.current = new AvailabilitySaveQueue(initial, async payload => {
     const saved = await saveAvailabilityWithRecovery(payload,
@@ -61,8 +61,10 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
     queue.activate()
     const unload = (event: BeforeUnloadEvent) => { if (queue.dirty || queue.saving) { event.preventDefault(); event.returnValue = "" } }
     const online = () => { void queue.flush().catch(() => {}) }, offline = () => queue.markOffline()
-    window.addEventListener("beforeunload", unload); window.addEventListener("online", online); window.addEventListener("offline", offline)
-    return () => { window.removeEventListener("beforeunload", unload); window.removeEventListener("online", online); window.removeEventListener("offline", offline); queue.dispose() }
+    // Shell navigation and explicit sign-out collect pending writes through this event.
+    const collect = (event: Event) => { if (queue.dirty) (event as CustomEvent<Promise<void>[]>).detail.push(queue.flush()) }
+    window.addEventListener("beforeunload", unload); window.addEventListener("online", online); window.addEventListener("offline", offline); window.addEventListener("outclass:flush-editors", collect)
+    return () => { window.removeEventListener("beforeunload", unload); window.removeEventListener("online", online); window.removeEventListener("offline", offline); window.removeEventListener("outclass:flush-editors", collect); queue.dispose() }
   }, [queue])
   const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(week, i)), [week])
   const days = useMemo(() => availabilityEditorDays(schedule, week, mode === "recurring"), [week, mode, schedule])
@@ -83,7 +85,7 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
     editDays(previous, indices)
   }
   return <Panel as="section" className="oc-availability space-y-5 sm:p-6" data-unsaved={queue.dirty} data-saving={queue.saving || queue.state === "saving" || confirming} aria-busy={confirming}>
-    <header className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="oc-section-heading">{title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{scope ? "Your global schedule is prefilled. Adjust specific dates here and confirm your participation for this club and round." : "Enter your usual free time once. Your schedule follows local clock time, including daylight saving changes."}</p></div><p role="status" aria-live="polite" className={`text-xs font-medium ${queue.state === "error" ? "text-destructive" : "text-muted-foreground"}`}>{queue.state === "saving" ? "Saving…" : queue.state === "offline" ? queue.error : queue.state === "unsaved" ? "Unsaved changes" : queue.state === "error" ? "Save failed · edits retained" : queue.document.revision === 0 ? "No schedule saved" : "All changes saved"}</p></header>
+    <header className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="oc-section-heading">{title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{scope ? "Your global schedule is prefilled. Adjust specific dates here and confirm your participation for this club and round." : "Enter your usual free time once. Your schedule follows local clock time, including daylight saving changes."}</p></div><p role="status" aria-live="polite" className={`text-xs font-medium ${queue.state === "error" ? "text-destructive" : "text-muted-foreground"}`}>{queue.state === "saving" ? "Saving…" : queue.state === "offline" || queue.state === "unreachable" ? queue.error : queue.state === "unsaved" ? "Unsaved changes" : queue.state === "error" ? "Save failed · edits retained" : queue.document.revision === 0 ? "No schedule saved" : "All changes saved"}</p></header>
     <fieldset disabled={confirming || !!recovery} className="min-w-0 space-y-5">
       <p className="text-xs text-muted-foreground">8:00 AM–9:00 PM · {SCHEDULING_TIMEZONE_LABEL}. Daylight saving changes are automatic. Previously saved hours outside this window are retained.</p>
       {!scope && schedule.timezone === SCHEDULING_TIMEZONE && <SegmentedControl label="Availability editing mode" value={mode} onChange={setMode} options={[{ value: "recurring", label: <span className="inline-flex items-center gap-2"><CalendarDays className="size-4" aria-hidden="true" />Recurring week</span> }, { value: "week", label: "Specific dates" }]} />}
@@ -120,7 +122,12 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
 
     </fieldset>
     {notice && <p role="status" className="text-sm">{notice}</p>}
-    {recovery && <div role="status" className="flex flex-wrap items-center gap-2 text-sm"><span>{recovery.conflict ? "Your availability changed elsewhere after these unsaved edits were made on this device." : "Unsaved availability from this device is available."}</span><Button variant="outline" size="sm" onClick={() => { const value = recovery.schedule; setRecovery(null); change(value) }}>{recovery.conflict ? "Use these edits" : "Restore edits"}</Button><Button variant="ghost" size="sm" onClick={() => { setRecovery(null); storeRef.current?.clear() }}>{recovery.conflict ? "Keep saved version" : "Discard"}</Button></div>}
+    {recovery && (recovery.conflict
+      // The server moved on since these edits: keep the newer version or read them; they are never saved.
+      ? <div role="status" className="space-y-3 text-sm"><div className="flex flex-wrap items-center gap-2"><span>This device has changes from before a newer version was saved elsewhere.</span><Button variant="outline" size="sm" onClick={() => { setRecovery(null); setReviewing(false); storeRef.current?.clear() }}>Keep newer version</Button>{!reviewing && <Button variant="ghost" size="sm" onClick={() => setReviewing(true)}>Review my copy</Button>}</div>
+        {reviewing && <fieldset disabled aria-label="Your earlier availability (read-only)" className="min-w-0 opacity-80"><WeeklyCalendar knownDays={mode === "recurring" ? Array(7).fill(recovery.schedule.weeklySubmitted) as boolean[] : availabilityEditorKnownDays(recovery.schedule, week)} days={availabilityEditorDays(recovery.schedule, week, mode === "recurring")} dates={mode === "week" ? dates : undefined} onChange={() => {}} /></fieldset>}</div>
+      : <div role="status" className="flex flex-wrap items-center gap-2 text-sm"><span>Unsaved availability from this device is available.</span><Button variant="outline" size="sm" onClick={() => { const value = recovery.schedule; setRecovery(null); change(value) }}>Restore edits</Button><Button variant="ghost" size="sm" onClick={() => { setRecovery(null); storeRef.current?.clear() }}>Discard</Button></div>)}
+    {(queue.state === "offline" || queue.state === "unreachable") && <div role="status" className="flex flex-wrap items-center gap-2 text-sm"><span>{queue.error}</span><Button variant="outline" size="sm" onClick={() => void queue.flush().catch(() => {})}>Retry save</Button></div>}
     {queue.state === "error" && queue.error && <div className="space-y-3"><p role="alert" className="text-sm text-destructive">{queue.error}</p><div className="flex gap-2"><Button variant="outline" onClick={() => void queue.flush().catch(() => {})}>Retry save</Button><Button variant="outline" onClick={() => { if (canLeaveWorkspace()) window.location.reload() }}>Reload saved version</Button></div></div>}
   </Panel>
 }

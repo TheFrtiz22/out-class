@@ -17,7 +17,7 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
   const [loaded, setLoaded] = useState("")
   const [loadError, setLoadError] = useState("")
   const [retry, setRetry] = useState(0)
-  const [recovery, setRecovery] = useState<T | null>(null)
+  const [recovery, setRecovery] = useState<T | null>(null), [reviewing, setReviewing] = useState(false)
   const session = useMemo(() => ({ identity, revision: 0, mutation: null as { text: string; id: string } | null }), [identity])
   const latest = useRef({ scope, value, restore, base,demoPersistence }); latest.current = { scope, value, restore, base,demoPersistence }
   const userId = user?.id,hasDemoPersistence=!!demoPersistence
@@ -25,7 +25,7 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
   useEffect(() => {
     if (!enabled || !userId) return
     let active = true
-    setLoaded(""); setLoadError(""); setRecovery(null)
+    setLoaded(""); setLoadError(""); setRecovery(null); setReviewing(false)
     if (demo.isDemoEnabled && !hasDemoPersistence) { session.revision = 0; setLoaded(identity); return }
     (demo.isDemoEnabled?latest.current.demoPersistence!.read(latest.current.scope):getEditorDraft(latest.current.scope)).then(saved => {
       if (!active) return
@@ -80,7 +80,13 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
       session.revision = current?.revision ?? 0; session.mutation = null
       await autosave.flush().catch(() => {})
     },
-    recovery: recovery ?? autosave.recovery, recoveryKind: recovery !== null ? "conflict" as const : autosave.recoveryKind, restoreRecovery: () => { if (recovery !== null) restore(recovery); else autosave.restoreRecovery?.(); setRecovery(null) },
-    discardRecovery: async () => { if (recovery !== null) await clear(); else await autosave.discardRecovery?.(); setRecovery(null) },
+    recovery: recovery ?? autosave.recovery, // "draft": the user's own server-saved working copy (EditorDraft, revision-checked) from an earlier base.
+    // Restoring it only refills the form; the domain commit keeps its own revision check. Local device
+    // copies the server has moved past come through autosave as "conflict" and are never restored.
+    recoveryKind: recovery !== null ? "draft" as const : autosave.recoveryKind,
+    restoreRecovery: () => { if (recovery !== null) { restore(recovery); setRecovery(null); setReviewing(false) } else autosave.restoreRecovery?.() },
+    reviewRecovery: () => { if (recovery !== null) setReviewing(true); else autosave.reviewRecovery?.() },
+    reviewing: recovery !== null ? reviewing : autosave.reviewing,
+    discardRecovery: async () => { if (recovery !== null) await clear(); else await autosave.discardRecovery?.(); setRecovery(null); setReviewing(false) },
   }
 }

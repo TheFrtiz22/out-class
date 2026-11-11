@@ -4,7 +4,7 @@ import { registerAutosaveNavigation } from "@/lib/autosave-navigation"
 import { AutosaveQueue, type AutosaveState } from "@/lib/autosave-queue"
 import { createDraftStore, recoveryDecision, validDraftOwner, type DraftPersistence } from "@/lib/autosave-store"
 
-export type AutosaveHandle = { state: AutosaveState; error: string; dirty: boolean; saving: boolean; flush: () => Promise<void>; reset: () => Promise<void>; onBlur: () => void; recovery?: unknown; restoreRecovery?: () => void; discardRecovery?: () => Promise<void>; recoveryKind?: RecoveryKind }
+export type AutosaveHandle = { state: AutosaveState; error: string; dirty: boolean; saving: boolean; flush: () => Promise<void>; reset: () => Promise<void>; onBlur: () => void; recovery?: unknown; restoreRecovery?: () => void; discardRecovery?: () => Promise<void>; recoveryKind?: RecoveryKind; reviewRecovery?: () => void; reviewing?: boolean }
 /** "local": an unsaved copy from this device, newer than the server's version. "conflict": the server moved on since the copy was made. */
 export type RecoveryKind = "local" | "conflict"
 /**
@@ -12,12 +12,14 @@ export type RecoveryKind = "local" | "conflict"
  * With a signed-in `owner`, unsaved edits also survive a browser restart on this device
  * (localStorage); `persistence: "tab"` keeps screens with private data about other students
  * in memory and sessionStorage only. A copy is never applied over newer server data: it is
- * offered, and a copy whose baseline no longer matches is shown as a conflict.
+ * offered, and a copy whose baseline no longer matches is shown as a conflict that can only be
+ * dismissed ("Keep newer version") or read ("Review my copy"); it is never restored or saved.
+ * While a copy is offered or reviewed, the queue is held and edits snap back, so nothing overwrites it.
  */
 export function useAutosave<T>({ identity, value, save, enabled = true, restore, owner, persistence = "device" }: { identity: string; value: T; save: (value: T) => Promise<void>; enabled?: boolean; restore?: (value: T) => void; owner?: string | null; persistence?: DraftPersistence }): AutosaveHandle {
   const [, render] = useState(0)
   const latest = useRef({ identity, value, save, restore }); latest.current = { identity, value, save, restore }
-  const holder = useRef<{ identity: string; queue: AutosaveQueue<T>; recovery: { value: T; kind: RecoveryKind } | null; ignore?: string; discard: () => void } | null>(null)
+  const holder = useRef<{ identity: string; queue: AutosaveQueue<T>; recovery: { value: T; kind: RecoveryKind } | null; reviewing?: boolean; ignore?: string; discard: () => void } | null>(null)
   const signedIn = validDraftOwner(owner), storeOwner = signedIn ? owner : "tab", storeMode: DraftPersistence = signedIn ? persistence : "tab"
   useEffect(() => {
     if (!enabled) return
@@ -43,6 +45,7 @@ export function useAutosave<T>({ identity, value, save, enabled = true, restore,
         else if (decision === "apply") { original.restore(stored.value); queue.change(stored.value); entry.ignore = originalValue }
         else if (decision === "offer") entry.recovery = { value: stored.value, kind: "local" }
       } else if (stored) store.clear()
+      if (entry.recovery) queue.hold()
     } catch { /* Corrupt recovery never prevents editing. */ }
     render(n => n + 1)
     const flush = () => { void queue.flush().catch(() => {}) }
@@ -70,10 +73,11 @@ export function useAutosave<T>({ identity, value, save, enabled = true, restore,
   const serialized = JSON.stringify(value)
   useEffect(() => {
     const entry = holder.current
-    if (enabled && entry?.identity === identity && !entry.recovery) {
-      if (entry.ignore === serialized) { entry.ignore = undefined; return }
-      entry.queue.change(latest.current.value)
-    }
+    if (!enabled || entry?.identity !== identity) return
+    // Editing is blocked until the offered copy is restored or dismissed: revert to the loaded value.
+    if (entry.recovery) { if (serialized !== JSON.stringify(entry.queue.value)) latest.current.restore?.(structuredClone(entry.queue.value)); return }
+    if (entry.ignore === serialized) { entry.ignore = undefined; return }
+    entry.queue.change(latest.current.value)
   }, [serialized, enabled, identity])
   const entry = holder.current?.identity === identity ? holder.current : null, queue = entry?.queue
   async function flush() {
@@ -84,7 +88,10 @@ export function useAutosave<T>({ identity, value, save, enabled = true, restore,
     state: queue?.state ?? "idle", error: queue?.error ?? "", dirty: queue?.dirty ?? false, saving: queue?.saving ?? false,
     flush, reset: async () => { await flush(); queue?.reset(latest.current.value) },
     onBlur: () => { void flush().catch(() => {}) }, recovery: entry?.recovery?.value, recoveryKind: entry?.recovery?.kind,
-    restoreRecovery: () => { if (!entry?.recovery) return; const content = entry.recovery.value; entry.recovery = null; latest.current.restore?.(content); queue?.change(content); render(n => n + 1) },
-    discardRecovery: async () => { if (entry) { entry.recovery = null; entry.discard() } queue?.reset(latest.current.value); render(n => n + 1) },
+    reviewing: entry?.reviewing ?? false,
+    // Only a copy that is newer than the server's version can be restored; a conflict copy never is.
+    restoreRecovery: () => { if (entry?.recovery?.kind !== "local") return; const content = entry.recovery.value; entry.recovery = null; entry.reviewing = false; queue?.release(); latest.current.restore?.(content); queue?.change(content); render(n => n + 1) },
+    reviewRecovery: () => { if (!entry?.recovery) return; entry.reviewing = true; render(n => n + 1) },
+    discardRecovery: async () => { if (entry) { entry.recovery = null; entry.reviewing = false; entry.discard() } queue?.release(); queue?.reset(latest.current.value); render(n => n + 1) },
   }
 }

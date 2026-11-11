@@ -5,7 +5,7 @@ import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
 import type { AccountClub } from '@/lib/account-data';
-import { adoptAutosaveOwner, clearAutosaveDrafts } from "@/lib/autosave-store";
+import { adoptAutosaveOwner } from "@/lib/autosave-store";
 
 export type ExtendedApplication = Omit<Application, "anonymousReviewText"> & { club: AccountClub };
 export type ExtendedMembership = ClubMember & { club: AccountClub };
@@ -53,8 +53,8 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     void import("@/utils/supabase/client").then(({ createClient }) => {
     if (cancelled) return;
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
-      // Unsaved recovery copies belong to the account that typed them.
-      if (event === "SIGNED_OUT") clearAutosaveDrafts();
+      // A passive SIGNED_OUT (expiry, revocation, another tab) keeps unsaved copies: they are owner-keyed,
+      // and adoptAutosaveOwner clears them if a different account signs in here.
       const next = session?.access_token ?? "";
       if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
         // Publish the fence before scheduling React's context update. A newly

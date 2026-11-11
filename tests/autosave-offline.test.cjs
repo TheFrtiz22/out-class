@@ -10,9 +10,9 @@ class MemoryStorage {
   removeItem(k) { this.map.delete(k) }
   clear() { this.map.clear() }
 }
-beforeEach(() => { globalThis.localStorage = new MemoryStorage(); globalThis.sessionStorage = new MemoryStorage() })
 const load = loader({})
 const store = load('lib/autosave-store.ts'), { AutosaveQueue, OfflineError } = load('lib/autosave-queue.ts'), { AvailabilitySaveQueue } = load('lib/availability-save-queue.ts')
+beforeEach(() => { globalThis.localStorage = new MemoryStorage(); globalThis.sessionStorage = new MemoryStorage(); store.resetAutosaveSealForTests() })
 const tick = () => new Promise(resolve => setImmediate(resolve))
 const failedFetch = () => Object.assign(new TypeError('Failed to fetch'))
 function deviceQueue(owner, identity, save, online, persistence = 'device') {
@@ -34,24 +34,26 @@ test('offline: edits stay on this device, no request is sent, and the status say
   assert.equal(localStorage.getItem(drafts.key), null); assert.equal(sessionStorage.getItem(drafts.key), null)
 })
 
-test('a network failure while navigator.onLine is true is shown as offline, not as an error, and does not loop', async t => {
+test('a fetch failure while navigator.onLine is true says OutClass could not be reached (not "Offline"), keeps Retry semantics and does not loop', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   let calls = 0
   const { queue } = deviceQueue('user-a', 'kit:1', async () => { calls++; throw failedFetch() }, () => true)
   queue.change('draft'); t.mock.timers.tick(850); await tick()
-  assert.equal(queue.state, 'offline'); assert.equal(queue.error, 'Offline — changes saved on this device'); assert.equal(calls, 1)
+  assert.equal(queue.state, 'unreachable'); assert.equal(queue.error, 'Couldn’t reach OutClass — changes saved on this device'); assert.equal(calls, 1)
   t.mock.timers.tick(60000); await tick(); assert.equal(calls, 1)
   // A server rejection is still an error with its own message.
   const rejected = new AutosaveQueue('', async () => { throw Error('Draft is too large.') }, () => {}, () => 'device', 850, () => true)
   rejected.change('x'); await assert.rejects(rejected.flush(), /too large/); assert.equal(rejected.state, 'error')
-  assert.equal(store.isNetworkError(new TypeError('Load failed'), true), true); assert.equal(store.isNetworkError(Error('Failed to fetch'), true), false); assert.equal(store.isNetworkError(Error('x'), false), true)
+  assert.equal(store.connectionProblem(new TypeError('Load failed'), true), 'unreachable'); assert.equal(store.connectionProblem(new TypeError('Failed to fetch'), true), 'unreachable')
+  assert.equal(store.connectionProblem(Error('Failed to fetch'), true), null); assert.equal(store.connectionProblem(Error('x'), false), 'offline'); assert.equal(store.connectionProblem(new TypeError('Failed to fetch'), false), 'offline')
+  assert.equal(store.connectionMessage('offline', 'device'), 'Offline — changes saved on this device'); assert.equal(store.connectionMessage('unreachable', 'tab'), 'Couldn’t reach OutClass — changes kept in this tab')
 })
 
 test('tab-only screens never touch localStorage and say where the copy is', () => {
   const { queue, drafts } = deviceQueue('user-a', 'review:club:app', async () => {}, () => false, 'tab')
   queue.change('private notes about an applicant')
   assert.equal(localStorage.length, 0); assert.ok(sessionStorage.getItem(drafts.key))
-  assert.equal(queue.error, 'Offline — changes kept in this tab until you reconnect')
+  assert.equal(queue.error, 'Offline — changes kept in this tab')
   const unstored = new AutosaveQueue('', async () => {}, () => {}, () => false, 850, () => false)
   unstored.change('x'); assert.equal(unstored.error, 'Offline — keep this page open; changes save when you reconnect')
   queue.markOffline(); assert.equal(queue.state, 'offline')
@@ -127,6 +129,73 @@ test('availability queue: offline status, device copy, and cleanup after the rec
   await assert.rejects(queue.flush(), OfflineError); assert.equal(writes.length, 0)
   online = true; await queue.flush(); assert.equal(queue.state, 'saved'); assert.equal(queue.document.revision, 4); assert.equal(records.at(-1), null)
   const failing = new AvailabilitySaveQueue({ schedule: { weekly: [] }, revision: 1 }, async () => { throw failedFetch() }, () => {}, 10000, { online: () => true, recover: () => 'device' })
-  failing.change({ weekly: [[2]] }); await assert.rejects(failing.flush(), OfflineError); assert.equal(failing.state, 'offline'); assert.equal(failing.dirty, true)
+  failing.change({ weekly: [[2]] }); await assert.rejects(failing.flush(), OfflineError); assert.equal(failing.state, 'unreachable'); assert.equal(failing.error, 'Couldn’t reach OutClass — changes saved on this device'); assert.equal(failing.dirty, true)
   failing.dispose(); queue.dispose()
+})
+
+test('a passive SIGNED_OUT keeps unsaved copies; only another account signing in clears them', () => {
+  const fs = require('node:fs'), auth = fs.readFileSync('contexts/auth-context.tsx', 'utf8')
+  assert.doesNotMatch(auth, /clearAutosaveDrafts|sealAutosaveDrafts/, 'auth state changes must not clear copies')
+  store.adoptAutosaveOwner('user-a')
+  const a = store.createDraftStore({ owner: 'user-a', identity: 'application:1', persistence: 'device' })
+  a.write({ value: 'typed before the session expired', baseline: '""', writer: 'w', at: Date.now() })
+  store.adoptAutosaveOwner('user-a') // the same account signs back in
+  assert.equal(a.read().value, 'typed before the session expired')
+})
+
+test('explicit sign-out: flushes first, asks before discarding, and clears only after confirmation', async t => {
+  const confirms = []
+  assert.equal(await store.prepareSignOut({ flush: async () => {}, confirm: async () => { confirms.push(1); return true } }), 'clean'); assert.equal(confirms.length, 0)
+  const a = store.createDraftStore({ owner: 'user-a', identity: 'profile:about', persistence: 'device' })
+  const write = () => a.write({ value: 'unsaved', baseline: '""', writer: 'w', at: Date.now() })
+  write(); assert.equal(await store.prepareSignOut({ flush: async () => a.clear(), confirm: async () => { confirms.push(1); return true } }), 'flushed'); assert.equal(confirms.length, 0)
+  write(); assert.equal(await store.prepareSignOut({ flush: async () => { throw new TypeError('Failed to fetch') }, confirm: async () => { confirms.push('no'); return false } }), 'cancel')
+  assert.deepEqual(confirms, ['no']); assert.equal(a.read().value, 'unsaved', 'cancelling keeps the copy')
+  // A flush that never settles is bounded by the timeout, then the user is asked.
+  assert.equal(await store.prepareSignOut({ flush: () => new Promise(() => {}), confirm: async () => true, timeoutMs: 5 }), 'discard')
+  assert.equal(a.read().value, 'unsaved', 'confirmation alone does not clear; the sign-out path does after it succeeds')
+  store.sealAutosaveDraftsForSignOut(); assert.equal(a.read(), null); assert.equal(store.hasUnsavedAutosaveCopies(), false)
+})
+
+test('after the sign-out clear, beforeunload recover() and later change() calls cannot rewrite a copy', () => {
+  const { queue, drafts } = deviceQueue('user-a', 'application:1', async () => {}, () => false)
+  queue.change('before sign-out'); assert.ok(drafts.read())
+  store.sealAutosaveDraftsForSignOut()
+  queue.change('late keystroke'); assert.equal(drafts.write({ value: 'beforeunload', baseline: '""', writer: 'w', at: Date.now() }), false)
+  assert.equal(drafts.read(), null); assert.equal(localStorage.length + sessionStorage.length, 0)
+  assert.equal(queue.error, 'Offline — keep this page open; changes save when you reconnect', 'status no longer claims a device copy')
+})
+
+test('an offered copy survives change() and is never saved while held', async () => {
+  const drafts = store.createDraftStore({ owner: 'user-a', identity: 'kit:1', persistence: 'device' })
+  drafts.write({ value: 'offered copy', baseline: '""', writer: 'old', at: Date.now() }); sessionStorage.clear()
+  const saves = []
+  const queue = new AutosaveQueue('', async v => { saves.push(v) }, () => {}, v => v === null ? drafts.clear('new') : drafts.write({ value: v, baseline: '""', writer: 'new', at: Date.now() }), 850, () => true)
+  assert.equal(store.recoveryDecision(drafts.read(), '""'), 'offer')
+  queue.hold(); queue.change('typing while the prompt is open'); await queue.flush()
+  assert.equal(queue.value, ''); assert.equal(queue.dirty, false); assert.deepEqual(saves, []); assert.equal(drafts.read().value, 'offered copy')
+  queue.release(); queue.change('offered copy'); await queue.flush(); assert.deepEqual(saves, ['offered copy'])
+})
+
+test('a stale-baseline copy is shown as a conflict, offers only Keep newer version / Review my copy, and is never saved', async () => {
+  const fs = require('node:fs'), path = require('node:path'), ts = require('typescript'), React = require('react'), { renderToStaticMarkup } = require('react-dom/server')
+  const file = path.resolve('components/ui/autosave-status.tsx'), mod = { exports: {} }
+  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
+  new Function('require', 'module', 'exports', code)(n => n === '@/lib/autosave-store' ? store : n === '@/components/ui/loading-indicator' ? { LoadingIndicator: () => null } : require(n), mod, mod.exports)
+  const { AutosaveStatus } = mod.exports, html = save => renderToStaticMarkup(React.createElement(AutosaveStatus, { save: { state: 'idle', error: '', flush: async () => {}, ...save } }))
+  const drafts = store.createDraftStore({ owner: 'user-a', identity: 'application:9', persistence: 'device' })
+  drafts.write({ value: { answer: 'my offline answer' }, baseline: JSON.stringify({ answer: 'v1' }), writer: 'w', at: Date.now() })
+  const stored = drafts.read(), decision = store.recoveryDecision(stored, JSON.stringify({ answer: 'v2 saved elsewhere' }))
+  assert.equal(decision, 'conflict')
+  const shown = html({ recovery: stored.value, recoveryKind: 'conflict' })
+  assert.match(shown, /This device has changes from before a newer version was saved elsewhere\./); assert.match(shown, /Keep newer version/); assert.match(shown, /Review my copy/)
+  assert.doesNotMatch(shown, /Restore/); assert.doesNotMatch(shown, /my offline answer/)
+  const reviewing = html({ recovery: stored.value, recoveryKind: 'conflict', reviewing: true })
+  assert.match(reviewing, /<textarea readOnly="" aria-label="Your earlier copy \(read-only\)"[^>]*>my offline answer<\/textarea>/); assert.doesNotMatch(reviewing, /Review my copy/)
+  // The editor's queue is held for the whole conflict: nothing is saved on its own, even with timers and flushes.
+  const saves = [], queue = new AutosaveQueue({ answer: 'v2 saved elsewhere' }, async v => { saves.push(v) }, () => {}, () => 'device', 1, () => true)
+  queue.hold(); queue.change(stored.value); await new Promise(r => setTimeout(r, 5)); await queue.flush()
+  assert.deepEqual(saves, []); assert.deepEqual(drafts.read().value, { answer: 'my offline answer' })
+  // Offline and unreachable get the same Retry control as the error state.
+  for (const state of ['offline', 'unreachable', 'error']) assert.match(html({ state, error: 'x' }), />Retry</)
 })

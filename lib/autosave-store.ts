@@ -51,6 +51,8 @@ export function createDraftStore<T>({ owner, identity, persistence }: { owner: s
       return deviceRecord ? { ...deviceRecord, source: "device" } : null
     },
     write(record: Omit<DraftRecord<T>, "v" | "owner">): DraftWriteResult {
+      // After an explicit sign-out cleared the copies, late writes (beforeunload, a last keystroke) are dropped.
+      if (sealed) return false
       const { tab, device } = stores(), text = JSON.stringify({ ...record, v: 2, owner })
       let result: DraftWriteResult = false
       try { tab?.setItem(key, text); if (tab) result = "tab" } catch { /* Quota or blocked storage. */ }
@@ -72,15 +74,45 @@ export function createDraftStore<T>({ owner, identity, persistence }: { owner: s
 }
 
 const OWNER_MARKER = `${AUTOSAVE_PREFIX}owner`
+let sealed = false
 
-/** Sign-out: remove every recovery copy (both storages, every account) and the owner marker. */
+function autosaveKeys(store: Storage) {
+  const keys: string[] = []
+  for (let i = 0; i < store.length; i++) { const key = store.key(i); if (key?.startsWith(AUTOSAVE_PREFIX)) keys.push(key) }
+  return keys
+}
+/** True while any unsaved recovery copy exists in this browser (any editor, any record). */
+export function hasUnsavedAutosaveCopies() {
+  for (const store of [storage("localStorage"), storage("sessionStorage")]) {
+    try { if (store && autosaveKeys(store).some(key => key !== OWNER_MARKER)) return true } catch { /* Ignore. */ }
+  }
+  return false
+}
+/**
+ * Explicit sign-out from this tab. Copies are kept on a passive SIGNED_OUT (expiry, revocation,
+ * another tab): they are owner-keyed, and adoptAutosaveOwner clears them if another account signs in.
+ * "clean": nothing unsaved. "flushed": everything saved within the timeout. "discard": the user
+ * confirmed discarding. "cancel": keep the session and the copies.
+ */
+export async function prepareSignOut({ flush, confirm, timeoutMs = 3000 }: { flush: () => Promise<void>; confirm: () => Promise<boolean>; timeoutMs?: number }): Promise<"clean" | "flushed" | "discard" | "cancel"> {
+  if (!hasUnsavedAutosaveCopies()) return "clean"
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try { await Promise.race([flush().catch(() => {}), new Promise<void>(resolve => { timer = setTimeout(resolve, timeoutMs) })]) }
+  finally { if (timer) clearTimeout(timer) }
+  if (!hasUnsavedAutosaveCopies()) return "flushed"
+  return (await confirm()) ? "discard" : "cancel"
+}
+/** Clear every copy after a confirmed explicit sign-out, and refuse further writes from this page. */
+export function sealAutosaveDraftsForSignOut() { sealed = true; clearAutosaveDrafts() }
+/** Test hook: a fresh page load starts unsealed. */
+export function resetAutosaveSealForTests() { sealed = false }
+
+/** Remove every recovery copy (both storages, every account) and the owner marker. */
 export function clearAutosaveDrafts() {
   for (const store of [storage("localStorage"), storage("sessionStorage")]) {
     try {
       if (!store) continue
-      const keys: string[] = []
-      for (let i = 0; i < store.length; i++) { const key = store.key(i); if (key?.startsWith(AUTOSAVE_PREFIX)) keys.push(key) }
-      for (const key of keys) store.removeItem(key)
+      for (const key of autosaveKeys(store)) store.removeItem(key)
     } catch { /* Storage can be blocked; nothing was stored there either. */ }
   }
 }
@@ -108,16 +140,31 @@ export function adoptAutosaveOwner(owner: string) {
 export function browserOnline() {
   try { return typeof navigator === "undefined" || navigator.onLine !== false } catch { return true }
 }
-/** fetch() and Next server actions reject with a TypeError when the request never reached the server. */
-export function isNetworkError(error: unknown, online = browserOnline()) {
-  if (!online) return true
-  if (!(error instanceof Error)) return false
-  return error.name === "TypeError" && /failed to fetch|networkerror|network request failed|load failed|network connection was lost|internet connection appears to be offline/i.test(error.message)
+export type ConnectionProblem = "offline" | "unreachable"
+/**
+ * "offline": the browser reports no connection. "unreachable": online, but fetch()/a server action
+ * rejected with a TypeError before reaching OutClass. null: a real server answer (an error state).
+ */
+export function connectionProblem(error: unknown, online = browserOnline()): ConnectionProblem | null {
+  if (!online) return "offline"
+  if (!(error instanceof Error)) return null
+  return error.name === "TypeError" && /failed to fetch|networkerror|network request failed|load failed|network connection was lost|internet connection appears to be offline/i.test(error.message) ? "unreachable" : null
 }
-export function offlineMessage(stored: DraftWriteResult | undefined) {
-  return stored === "device" ? "Offline — changes saved on this device"
-    : stored === "tab" ? "Offline — changes kept in this tab until you reconnect"
-    : "Offline — keep this page open; changes save when you reconnect"
+export function isNetworkError(error: unknown, online = browserOnline()) { return connectionProblem(error, online) !== null }
+/** Status text from the problem and where the unsaved copy is (DraftWriteResult). */
+export function connectionMessage(problem: ConnectionProblem, stored: DraftWriteResult | undefined) {
+  const lead = problem === "offline" ? "Offline" : "Couldn’t reach OutClass"
+  return stored === "device" ? `${lead} — changes saved on this device`
+    : stored === "tab" ? `${lead} — changes kept in this tab`
+    : problem === "offline" ? `${lead} — keep this page open; changes save when you reconnect` : `${lead} — keep this page open and retry`
+}
+export function offlineMessage(stored: DraftWriteResult | undefined) { return connectionMessage("offline", stored) }
+/** Readable, read-only text of a stored copy: its string fields in order (never applied or saved). */
+export function recoveryText(value: unknown): string {
+  const parts: string[] = []
+  const walk = (v: unknown) => { if (typeof v === "string") { if (v.trim() && !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(v)) parts.push(v) } else if (typeof v === "number") parts.push(String(v)); else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") Object.values(v).forEach(walk) }
+  walk(value)
+  return parts.join("\n\n")
 }
 
 /**
