@@ -15,6 +15,7 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { PageHeader } from "@/components/ui/page-header"
 import { presentPublicMarketing } from "@/lib/public-club-content"
 import { readMarketing } from "@/lib/club-marketing"
+import { cspNonce } from "@/utils/csp-nonce"
 
 export async function generateMetadata({ params }: { params: Promise<{ clubId: string }> }): Promise<Metadata> {
   const { clubId } = await params
@@ -61,8 +62,9 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
   const structuredData = result.club && seo && isIndexableClub(seo)
     ? clubStructuredData({ id: seo.id, name: seo.name, description: seo.description, logoUrl: club.logoUrl, sameAs: [club.marketing.website, club.marketing.linkedin, club.marketing.instagram] })
     : null
+  const nonce = structuredData ? await cspNonce() : undefined
   return <AuthenticatedPageLayout optional>
-    {structuredData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />}
+    {structuredData && <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />}
     <PublicClubPage club={club} authenticated={!!user} embedded={!!user} serverNow={Date.now()} />
   </AuthenticatedPageLayout>
 }

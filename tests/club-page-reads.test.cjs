@@ -29,6 +29,7 @@ function page({ demo = false, demoAllowed = false, user = null, club = { id: "c1
     "@/lib/club-marketing": { readMarketing: value => value },
     "@/lib/public-club-seo": { getPublicClubSeo: async () => seo, isIndexableClub: value => !!value?.claimedAt },
     "@/lib/seo": seoLib,
+    "@/utils/csp-nonce": { cspNonce: async () => "test-nonce" },
   }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(FILE, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
