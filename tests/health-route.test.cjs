@@ -70,6 +70,7 @@ test('middleware passes /api/health through with no session refresh, even with d
     '@/utils/supabase/middleware': { createClient: async () => { refreshed++; return new Response('refreshed') } },
     '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
     '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false },
+    '@/lib/csp': load('lib/csp.ts'),
   })
   for (const cookie of ['', 'outclass-demo-session=1', 'outclass-platform-view=x; sb-abc-auth-token=y']) {
     for (const method of ['GET', 'HEAD']) {
