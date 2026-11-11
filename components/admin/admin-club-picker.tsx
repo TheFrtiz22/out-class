@@ -34,7 +34,7 @@ export function AdminClubPicker({ label, value, onChange, disabled = false }: { 
     <Input id={id} type="search" autoComplete="off" placeholder="Search by name or slug" value={query} disabled={disabled} aria-describedby={`${id}-status`} onChange={e => setQuery(e.target.value)} />
     <p id={`${id}-status`} role="status" className="text-xs font-normal text-muted-foreground">{error || (loading ? "Searching…" : query.trim() && !rows.length ? "No active clubs match." : "")}</p>
     {rows.length > 0 && <ul aria-label={`${label} results`} className="divide-y rounded-md border bg-card">{rows.map(c => <li key={c.id}>
-      <button type="button" className="w-full px-3 py-2 text-left text-sm font-normal hover:bg-muted focus-visible:bg-muted focus-visible:outline-none" onClick={() => onChange(c)}>{c.name}<small className="block text-muted-foreground">{c.schoolName}</small></button>
+      <Button type="button" variant="ghost" className="h-auto w-full flex-col items-start gap-0 whitespace-normal rounded-none px-3 py-2 text-left text-sm font-normal" onClick={() => onChange(c)}>{c.name}<small className="block text-muted-foreground">{c.schoolName}</small></Button>
     </li>)}</ul>}
   </div>
 }
