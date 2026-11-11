@@ -22,3 +22,5 @@
 }
 
 .oc-av-cell.is-unknown { background: repeating-linear-gradient(135deg, var(--card), var(--card) 5px, var(--muted) 5px, var(--muted) 7px); }
+/* At least 16px on phones so iOS does not zoom into the focused field. */
+@media (max-width: 767px) { .oc-av-select { font-size: var(--oc-size-16); } }

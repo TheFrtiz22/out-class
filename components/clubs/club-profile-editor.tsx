@@ -3,7 +3,7 @@ import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { BarChart3, Eye, IdCard, Link2, Palette, Plus, RotateCcw, Sparkles, Users, X } from "@/components/icons"
+import { BarChart3, Eye, IdCard, Link2, Palette, Plus, RotateCcw, ImageIcon, Users, X } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -23,7 +23,7 @@ function Lines({ label, value, onChange, max }: { label: string; value: string[]
 function Records<T extends Record<string, string>>({ title, value, onChange, empty, max, onUpload }: { onUpload?: (file: File) => Promise<string>; title: string; value: T[]; onChange: (v: T[]) => void; empty: T; max: number }) {
   return <div className="space-y-3"><h3 className="oc-card-heading ">{title}</h3>{value.map((row, i) => <div key={i} className="space-y-3 rounded-lg border bg-muted/20 p-3">{Object.keys(empty).map(key => key === "image" ? <ProfileImageInput key={key} label={`${title} image ${i + 1}`} value={row[key]} onUpload={onUpload} onChange={v => onChange(value.map((r, j) => i === j ? { ...r, [key]: v ?? "" } : r))} /> : <Field key={key} label={`${key[0].toUpperCase()}${key.slice(1)}`}>{["answer", "description"].includes(key) ? <Textarea value={row[key]} onChange={e => onChange(value.map((r, j) => i === j ? { ...r, [key]: e.target.value } : r))} /> : <Input value={row[key]} onChange={e => onChange(value.map((r, j) => i === j ? { ...r, [key]: e.target.value } : r))} placeholder={key === "url" ? "https://…" : ""} />}</Field>)}<Button type="button" variant="ghost" size="sm" onClick={() => onChange(value.filter((_, j) => j !== i))}><X size={14} />Remove {title.toLowerCase()} {i + 1}</Button></div>)}<Button type="button" variant="outline" size="sm" disabled={value.length >= max} onClick={() => onChange([...value, { ...empty }])}><Plus size={14} />Add {title.toLowerCase()}</Button></div>
 }
-const sections = [{ id: "identity", title: "Identity & media", icon: IdCard }, { id: "theme", title: "Brand & theme", icon: Palette }, { id: "metrics", title: "Stats & achievements", icon: BarChart3 }, { id: "membership", title: "Member experience", icon: Users }, { id: "showcase", title: "Showcase & FAQs", icon: Sparkles }, { id: "links", title: "Socials & links", icon: Link2 }]
+const sections = [{ id: "identity", title: "Identity & media", icon: IdCard }, { id: "theme", title: "Brand & theme", icon: Palette }, { id: "metrics", title: "Stats & achievements", icon: BarChart3 }, { id: "membership", title: "Member experience", icon: Users }, { id: "showcase", title: "Showcase & FAQs", icon: ImageIcon }, { id: "links", title: "Socials & links", icon: Link2 }]
 
 export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, externalDirty = false, clubId, rosterCount = null }: { rosterCount?: number | null; clubId?: string; initial: ClubProfileDraft; onSave: (profile: ClubProfileDraft, expected?: ClubProfileDraft) => Promise<void>; demo?: boolean; onUpload?: (file: File) => Promise<string>; externalDirty?: boolean }) {
   const [draft, setDraft] = useState(initial), [saved, setSaved] = useState(initial)

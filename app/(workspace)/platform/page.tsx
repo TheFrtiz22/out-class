@@ -5,6 +5,7 @@ import { AdminRecovery } from "@/components/admin/admin-recovery";
 import { getAdminOverview } from "@/actions/admin-workspace";
 import { PageHeader } from "@/components/ui/page-header";
 import { Dashboard, DashboardCard, DashboardHero, GlassRow, GlassRowList, MetricTiles, NeedsAction, NeedsYouRow } from "@/components/product/dashboard/dashboard";
+export const metadata = { title: "Overview · Admin", robots: { index: false, follow: false } }
 
 // The placeholder streams from each page, not platform/loading.tsx, so /platform/view-as stays a real 307.
 export default function PlatformPage() {
