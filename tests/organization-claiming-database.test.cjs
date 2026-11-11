@@ -40,7 +40,10 @@ test('first-login discovery and atomic ownership acceptance run against all repo
       upsert:async({where})=>{const key=where.schoolId_identifierTypeId_normalizedIdentifier;return one('SELECT * FROM "SchoolIdentity" WHERE "schoolId"=$1 AND "identifierTypeId"=$2 AND "normalizedIdentifier"=$3',[key.schoolId,key.identifierTypeId,key.normalizedIdentifier]);},
       findUniqueOrThrow:byId('SchoolIdentity'),
       update:async({where,data})=>update('SchoolIdentity',where.id,data),
-      findMany:async({where})=>(await db.query('SELECT * FROM "SchoolIdentity" WHERE "userId"=$1 AND "verifiedAt" IS NOT NULL',[where.userId])).rows,
+      findMany:async({where})=>where.OR
+        // Read-only preview: the derived identifiers at active schools, bound or not.
+        ? (await db.query('SELECT i.* FROM "SchoolIdentity" i JOIN "School" s ON s.id=i."schoolId" AND s.active WHERE ("schoolId","identifierTypeId","normalizedIdentifier") IN (SELECT * FROM unnest($1::text[],$2::text[],$3::text[]))',[where.OR.map(o=>o.schoolId),where.OR.map(o=>o.identifierTypeId),where.OR.map(o=>o.normalizedIdentifier)])).rows
+        : (await db.query('SELECT * FROM "SchoolIdentity" WHERE "userId"=$1 AND "verifiedAt" IS NOT NULL',[where.userId])).rows,
     },
     club:{update:async({where,data})=>update('Club',where.id,data)},
     clubMember:{
@@ -55,7 +58,7 @@ test('first-login discovery and atomic ownership acceptance run against all repo
     },
     auditLog:{create:async({data})=>{if(failAudit&&data.action==='club.invite.accept')throw Error('Audit failure');return one('INSERT INTO "AuditLog" (id,"actorId",action,"targetId","clubId",details) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',[randomUUID(),data.actorId,data.action,data.targetId,data.clubId??null,JSON.stringify(data.details??null)]);}},
   };
-  let tail=Promise.resolve();const prisma={$transaction:fn=>{const result=tail.then(async()=>{await db.exec('BEGIN');try{const value=await fn(tx);await db.exec('COMMIT');return value;}catch(error){await db.exec('ROLLBACK');throw error;}});tail=result.catch(()=>{});return result;}};
+  let tail=Promise.resolve();const prisma={...tx,$transaction:fn=>{const result=tail.then(async()=>{await db.exec('BEGIN');try{const value=await fn(tx);await db.exec('COMMIT');return value;}catch(error){await db.exec('ROLLBACK');throw error;}});tail=result.catch(()=>{});return result;}};
   const cache={};function load(file) {
     file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;
     const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
@@ -63,13 +66,17 @@ test('first-login discovery and atomic ownership acceptance run against all repo
   }
   const api=unwrapActions(load('actions/club-onboarding.ts'));
   const pending=await api.getOrganizationInvitations();assert.equal(pending.length,1);assert.equal(pending[0].invitedName,'John Smith');
-  assert.equal((await one('SELECT * FROM "SchoolIdentity" WHERE id=$1',[identity])).userId,john);
+  // Listing writes nothing: the identity stays unbound and no audit row exists until an explicit action.
+  assert.equal((await one('SELECT * FROM "SchoolIdentity" WHERE id=$1',[identity])).userId,null);
+  assert.equal((await one('SELECT count(*)::int AS n FROM "AuditLog"')).n,0);
   failAudit=true;await assert.rejects(api.acceptIdentityClubInvitation(invitation),/Audit failure/);failAudit=false;
   assert.equal((await one('SELECT * FROM "ClubInvitation" WHERE id=$1',[invitation])).status,'PENDING');
   assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember"')).n,0);
   assert.equal((await one('SELECT * FROM "Club" WHERE id=$1',[club])).claimedAt,null);
   const results=await Promise.allSettled([api.acceptIdentityClubInvitation(invitation),api.acceptIdentityClubInvitation(invitation)]);
   assert.equal(results.filter(result=>result.status==='fulfilled').length,2);assert.equal(results.filter(result=>result.status==='rejected').length,0);
+  assert.equal((await one('SELECT * FROM "SchoolIdentity" WHERE id=$1',[identity])).userId,john);
+  assert.equal((await one('SELECT count(*)::int AS n FROM "AuditLog" WHERE action=$1 AND "targetId"=$2',['school.identity.verify',identity])).n,1);
   const claimed=await one('SELECT * FROM "ClubInvitation" WHERE id=$1',[invitation]);assert.equal(claimed.status,'ACCEPTED');assert.equal(claimed.claimedUserId,john);assert.ok(claimed.claimedAt);
   const membership=await one('SELECT * FROM "ClubMember" WHERE "userId"=$1',[john]);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.isOwner,true);assert.equal(membership.status,'ACTIVE');
   assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember"')).n,1);assert.deepEqual(await api.getOrganizationInvitations(),[]);

@@ -130,7 +130,7 @@ export function ClubSettingsWorkspace({
           </Link>
         ))}
       </nav>
-      <Link href="/settings" className="oc-settings-personal-link" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={18} /></Link>
+      <Link href="/settings" className="oc-settings-personal-link" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={16} /></Link>
       </aside>
       <div className="oc-workspace-stack" data-saving={busy}>
         {error && (

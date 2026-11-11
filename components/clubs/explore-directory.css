@@ -42,7 +42,7 @@
 .oc-explore-recruitment :is(time,small) { font-size: var(--oc-text-caption); line-height: 1.6; overflow-wrap: anywhere; }
 .oc-explore-card-footer [data-available="true"] { width: fit-content; color: var(--success); background: var(--success-subtle); padding: .25rem .5rem; border-radius: var(--oc-radius-sm); }
 .oc-explore-open { position: relative; z-index: 1; display: grid; place-items: center; flex: 0 0 2.75rem; width: 2.75rem; height: 2.75rem; padding: 0; border-radius: 50%; background: var(--oc-content-soft); color: var(--foreground); }
-.oc-explore-open svg { width: 1.125rem; height: 1.125rem; }
+.oc-explore-open svg { width: 1.25rem; height: 1.25rem; }
 .oc-explore-card:hover .oc-explore-open { background: var(--brand-subtle); color: var(--brand-ink); }
 .oc-explore-available { padding-block: .5rem; border-block: 1px solid var(--border); margin-bottom: var(--oc-content-gap); }
 .oc-explore-available p { color: var(--muted-foreground); font-size: var(--oc-text-small); }
