@@ -50,3 +50,35 @@ test('setup drafts accept saved rule-editor state and bound its size',()=>{
  assert.equal(setupDraftSchema.safeParse({...draft,rules:{mode:'THRESHOLD',list:Array(1000).fill('x')}}).success,false);
  assert.equal(setupDraftSchema.safeParse({...draft,rules:Object.fromEntries(Array.from({length:17},(_,i)=>['k'+i,'']))}).success,false);
 });
+test('editing a scheduled session with prepared slides is a diff: kept highlights stay, reorder/add work, removed highlights are discarded and audited, stale or started edits are refused',async()=>{
+ const h=harness(),d={...body(),applicationIds:apps.slice(0,2)};await h.api.createLiveVotingRoom(d);
+ const api=load('actions/voting-session-setup.ts',h.mocks),prep=a=>({sessionId,applicationId:a,highlights:[{id:a}],revision:2,updatedBy:leaderId});
+ h.state().preparations.push(prep(apps[0]),prep(apps[1]));
+ let revision=0,n=0;const edit=async(applicationIds,extra={})=>{const r=await api.updateVotingSessionSetup({...d,applicationIds,requestId:uuid(1100+n++),revision,...extra});revision=r.revision;return r;};
+ const order=()=>h.state().sessions[0].candidates.slice().sort((a,b)=>a.position-b.position).map(c=>[c.applicationId,c.position,c.expectedStatus]);
+ const prepared=()=>h.state().preparations.map(p=>[p.applicationId,p.highlights[0].id,p.revision]).sort();
+ // Same applicants: succeeds, highlights untouched; a changed application status is re-snapshotted in place.
+ h.state().apps[0].status='WAITLISTED';
+ await edit(apps.slice(0,2));assert.deepEqual(order(),[[apps[0],0,'WAITLISTED'],[apps[1],1,'IN_REVIEW']]);assert.deepEqual(prepared(),[[apps[0],apps[0],2],[apps[1],apps[1],2]]);
+ // Reorder.
+ await edit([apps[1],apps[0]]);assert.deepEqual(order().map(c=>c.slice(0,2)),[[apps[1],0],[apps[0],1]]);assert.equal(prepared().length,2);
+ // Add.
+ await edit([apps[1],apps[2],apps[0]]);assert.deepEqual(order().map(c=>c.slice(0,2)),[[apps[1],0],[apps[2],1],[apps[0],2]]);assert.equal(prepared().length,2);
+ assert.equal(h.state().audit.filter(a=>a.action==='voting.slides.discarded').length,0);
+ // Remove a prepared applicant: only their highlights are discarded, and audited with IDs and counts only.
+ const removal={...d,applicationIds:[apps[2],apps[0]],requestId:uuid(1150),revision};const r=await api.updateVotingSessionSetup(removal);revision=r.revision;
+ assert.deepEqual(order().map(c=>c.slice(0,2)),[[apps[2],0],[apps[0],1]]);assert.deepEqual(prepared(),[[apps[0],apps[0],2]]);
+ const discarded=h.state().audit.filter(a=>a.action==='voting.slides.discarded');
+ assert.equal(discarded.length,1);assert.deepEqual(discarded[0].details,{revision:r.revision,count:1,applicationIds:[apps[1]]});assert.equal(discarded[0].targetId,sessionId);assert.equal(discarded[0].clubId,clubId);
+ // Request-ID replay returns the receipt without writing again.
+ assert.deepEqual(await api.updateVotingSessionSetup(removal),r);assert.equal(h.state().audit.filter(a=>a.action==='voting.slides.discarded').length,1);
+ // Stale revision, and two concurrent edits from the same revision: one wins, the other is refused with nothing lost.
+ await assert.rejects(api.updateVotingSessionSetup({...d,applicationIds:[apps[0]],requestId:uuid(1160),revision:revision-1}),/changed in another tab/);
+ const results=await Promise.allSettled([[apps[0],apps[2]],[apps[0]]].map((ids,i)=>api.updateVotingSessionSetup({...d,applicationIds:ids,requestId:uuid(1170+i),revision})));
+ assert.deepEqual(results.map(x=>x.status),['fulfilled','rejected']);assert.match(results[1].reason.message,/changed in another tab/);revision=results[0].value.revision;
+ assert.deepEqual(order().map(c=>c[0]),[apps[0],apps[2]]);assert.deepEqual(prepared(),[[apps[0],apps[0],2]]);
+ // Started: setup stays locked and preparation history is retained.
+ await h.command('START',{confirmed:true});assert.equal(h.state().sessions[0].passes.length,1);
+ await assert.rejects(api.updateVotingSessionSetup({...d,applicationIds:[apps[2]],requestId:uuid(1180),revision:h.state().sessions[0].revision}),/locked/);
+ assert.deepEqual(prepared(),[[apps[0],apps[0],2]]);assert.deepEqual(order().map(c=>c[0]),[apps[0],apps[2]]);
+});

@@ -1,9 +1,9 @@
 "use server";
 import {z} from "zod";
-import {Prisma} from "@prisma/client";
+import {Prisma,type AppStatus} from "@prisma/client";
 import {randomUUID} from "node:crypto";
 import {editorDraftKey,editorScopeSchema} from "@/lib/editor-drafts";
-import {prisma} from "@/utils/prisma";
+import {prisma,type AppTransactionClient} from "@/utils/prisma";
 import {requireClubPermission} from "@/utils/auth";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {clubWriteTransaction,votingWriteLimits} from "@/utils/club-write-transaction";
@@ -69,17 +69,42 @@ export async function updateVotingSessionSetup(input:unknown){
   if(s.state!=='DRAFT'||s.startedAt||s.joinOpenedAt||s.finalizedAt)throw Error('Voting has started or ended. Setup is locked; ballots and outcomes are unchanged.');
   if(d.roundId!==s.roundId||d.cycleId!==s.cycleId||JSON.stringify(d.leaderMemberIds)!==JSON.stringify(s.leaderMemberIds))throw Error('The saved recruitment scope and leaders cannot be changed.');
   const {members,apps}=await validateVotingSetup(tx,d,user,{rejectHiddenProfileFields:true}),old=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),meeting=resolveVotingMeeting(d.presentationOptions?.meeting,{announcedUserIds:old?.announcedUserIds??[]});
-  // Delete/recreate only before any pass exists, under the same session/club lock.
+  // Edit only before any pass exists, under the same session/club lock and the confirmed setup-edit flag the database guards require.
   if(s.passes.length)throw Error('A voting pass already exists. Setup is locked.');
   await tx.$queryRaw`SELECT set_config('outclass.voting_setup_edit','confirmed',true)`;
-  await tx.votingCandidate.deleteMany({where:{sessionId:s.id}});await tx.votingParticipant.deleteMany({where:{sessionId:s.id}});
-  await tx.votingCandidate.createMany({data:d.applicationIds.map((applicationId,position)=>({sessionId:s.id,applicationId,position,expectedStatus:apps.find(a=>a.id===applicationId)!.status}))});
+  const discarded=await applyCandidateDiff(tx,s,d.applicationIds,id=>apps.find(a=>a.id===id)!.status);
+  await tx.votingParticipant.deleteMany({where:{sessionId:s.id}});
   await tx.votingParticipant.createMany({data:d.participantIds.map(memberId=>({sessionId:s.id,memberId,joinedAt:s.participants.find(p=>p.memberId===memberId)?.joinedAt??null}))});
   const recipients=d.notifyVoters?[...new Set([...meeting.announcedUserIds,...members.filter(v=>d.participantIds.includes(v.id)).map(v=>v.userId)])]:[];
   const row=await tx.votingSession.update({where:{id:s.id},data:{presentationOptions:{...d.presentationOptions!,meeting:{...meeting,announcedUserIds:[...new Set([...meeting.announcedUserIds,...recipients])]}},displayConfig:roomDisplayConfig(d.presentationOptions!.fields),targetSize:d.targetSize??1,targetUnset:d.targetSize==null,revision:{increment:1}}});
   if(d.notifyVoters)await notifyVotingVoters(tx,d.clubId,s.id,d.requestId,recipients,'updated',meeting.name);
-  const result={sessionId:s.id,revision:row.revision};await tx.votingRoomCommand.create({data:{sessionId:s.id,requestId:d.requestId,actorId:user.id,fingerprint,result}});await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.session.setup_updated',details:{revision:row.revision,applicantCount:d.applicationIds.length,voterCount:d.participantIds.length,notified:recipients.length}}});return result;
+  const result={sessionId:s.id,revision:row.revision};await tx.votingRoomCommand.create({data:{sessionId:s.id,requestId:d.requestId,actorId:user.id,fingerprint,result}});await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.session.setup_updated',details:{revision:row.revision,applicantCount:d.applicationIds.length,voterCount:d.participantIds.length,notified:recipients.length}}});
+  if(discarded.length)await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.slides.discarded',details:{revision:row.revision,count:discarded.length,applicationIds:discarded}}});
+  return result;
  },votingWriteLimits);
+}
+/**
+ * Applies the new applicant list as a diff. Kept applicants keep their candidate row and prepared
+ * highlights (only position and expected status change); added applicants are inserted; removed
+ * applicants' slide preparations are deleted first (the foreign key is RESTRICT), then their rows.
+ * Returns the application IDs whose preparations were discarded, for the audit log.
+ */
+async function applyCandidateDiff(tx:AppTransactionClient,s:{id:string;candidates:{applicationId:string;position:number;expectedStatus:AppStatus}[]},applicationIds:string[],status:(id:string)=>AppStatus){
+ const next=new Set(applicationIds),current=new Map(s.candidates.map(c=>[c.applicationId,c]));
+ const removed=s.candidates.filter(c=>!next.has(c.applicationId)).map(c=>c.applicationId);
+ const discarded=removed.length?(await tx.votingSlidePreparation.findMany({where:{sessionId:s.id,applicationId:{in:removed}},select:{applicationId:true},orderBy:{applicationId:'asc'}})).map(p=>p.applicationId):[];
+ if(discarded.length)await tx.votingSlidePreparation.deleteMany({where:{sessionId:s.id,applicationId:{in:discarded}}});
+ if(removed.length)await tx.votingCandidate.deleteMany({where:{sessionId:s.id,applicationId:{in:removed}}});
+ const changed=applicationIds.flatMap((applicationId,position)=>{const c=current.get(applicationId),expectedStatus=status(applicationId);return c&&(c.position!==position||c.expectedStatus!==expectedStatus)?[{applicationId,position,expectedStatus}]:[];});
+ if(changed.length){
+  // (sessionId, position) is unique and checked per row: park changed rows above every current and final position, then set final values in one statement.
+  const offset=Math.max(applicationIds.length,...s.candidates.map(c=>c.position+1));
+  await tx.votingCandidate.updateMany({where:{sessionId:s.id,applicationId:{in:changed.map(c=>c.applicationId)}},data:{position:{increment:offset}}});
+  await tx.$executeRaw(Prisma.sql`UPDATE "VotingCandidate" AS c SET position=v.position,"expectedStatus"=CAST(v.status AS "AppStatus") FROM (VALUES ${Prisma.join(changed.map(c=>Prisma.sql`(${c.applicationId},${c.position}::int,${c.expectedStatus})`))}) AS v("applicationId",position,status) WHERE c."sessionId"=${s.id} AND c."applicationId"=v."applicationId"`);
+ }
+ const added=applicationIds.flatMap((applicationId,position)=>current.has(applicationId)?[]:[{sessionId:s.id,applicationId,position,expectedStatus:status(applicationId)}]);
+ if(added.length)await tx.votingCandidate.createMany({data:added});
+ return discarded;
 }
 export async function cancelVotingSession(input:unknown){
  const d=roomScope.extend({revision:z.number().int().nonnegative(),requestId:z.string().uuid(),notify:z.boolean().default(false)}).strict().parse(input),{user}=await requireClubPermission(d.clubId,[...permissions]);
