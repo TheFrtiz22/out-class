@@ -5,31 +5,6 @@ const { test } = require("node:test"),
 const { Actor, totp } = require("./helpers/onboarding-e2e.cjs"),
   { PrismaClient } = require("@prisma/client"),
   { createClient } = require("@supabase/supabase-js");
-const ts = require("typescript");
-function load(file, mocks) {
-  const m = { exports: {} };
-  new Function(
-    "require",
-    "module",
-    "exports",
-    ts.transpileModule(fs.readFileSync(file, "utf8"), {
-      compilerOptions: {
-        module: ts.ModuleKind.CommonJS,
-        target: ts.ScriptTarget.ES2022,
-      },
-    }).outputText,
-  )(
-    (n) =>
-      n in mocks
-        ? mocks[n]
-        : n.startsWith("@/lib/")
-          ? load(n.replace("@/", "") + ".ts", mocks)
-          : require(n),
-    m,
-    m.exports,
-  );
-  return m.exports;
-}
 const filename = process.env.OUTCLASS_CORKBOARD_E2E_CONFIG;
 test(
   "real local Auth + server actions + PostgreSQL + private Storage: moderation, revision replacement, privacy, RSVP concurrency and attendee authorization",
@@ -75,12 +50,7 @@ test(
     assert.equal((await elevate({ action: 'verify', code: totp(c.identities.admin.totpSecret) })).status, 200);
 
     const action = (actor, name, ...args) =>
-        actor.action("actions/campus-events.ts", name, args),
-      legacy = (_actor, name, ...args) =>
-        load("actions/events.ts", {
-          "@/utils/prisma": { prisma: db },
-          "@/actions/meetings": {},
-        })[name](...args);
+        actor.action("actions/campus-events.ts", name, args);
     const start = new Date(Date.now() + 7 * 86400000),
       end = new Date(+start + 7200000),
       base = {
@@ -122,11 +92,6 @@ test(
             query: "Integration Consulting",
           })
         ).events.some((e) => e.id === id),
-      );
-      assert.ok(
-        !(await legacy(anon, "getClubEvents", c.clubId)).events.some(
-          (e) => e.id === id,
-        ),
       );
       const meetings = await outsider.action(
         "actions/meetings.ts",

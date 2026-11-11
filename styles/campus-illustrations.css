@@ -1,5 +1,5 @@
 /* Standalone brand assets only. Authenticated page headers do not use artwork. */
-.oc-campus-illustration { display: block; width: min(100%, 20rem); min-width: 0; aspect-ratio: var(--oc-campus-aspect-ratio); pointer-events: none; user-select: none; color: #507b9e; }
+.oc-campus-illustration { display: block; width: min(100%, 20rem); min-width: 0; aspect-ratio: var(--oc-campus-aspect-ratio, auto); pointer-events: none; user-select: none; color: #507b9e; }
 .oc-campus-illustration svg { display: block; width: 100%; height: 100%; }
 .oc-campus-illustration-accent { color: #f07835; }
 .oc-campus-illustration[data-treatment="quiet"] { opacity: .85; }

@@ -3,6 +3,7 @@
    Fictional content only; no sessions or data. */
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 import { ProductShell } from '@/components/shell/product-shell'
 import { PageHeader } from '@/components/ui/page-header'
 import { Panel } from '@/components/ui/panel'
@@ -33,4 +34,4 @@ function SpacingFixture() {
     </div>
   </ProductShell>
 }
-createRoot(document.getElementById('root')).render(<FixtureBoundary><SpacingFixture /></FixtureBoundary>)
+createRoot(document.getElementById('root')).render(<FixtureBoundary><ConfirmProvider><SpacingFixture /></ConfirmProvider></FixtureBoundary>)

@@ -17,6 +17,7 @@ const routes: [RegExp, () => FocusRoute][] = [
   [new RegExp(`^/voting/${segment}/join$`), () => ({ task: "Join voting", width: "content" })],
   [/^\/voting\/rooms\/new$/, () => ({ task: "Set up voting", width: "content" })],
   [new RegExp(`^/voting/rooms/${segment}/prepare$`), () => ({ task: "Prepare slides", width: "content" })],
+  [new RegExp(`^/voting/rooms/${segment}/history$`), () => ({ task: "Voting history", width: "content" })],
   [new RegExp(`^/voting/rooms/${segment}$`), () => ({ task: "Live voting", width: "reading" })],
   [/^\/check-in$/, () => ({ task: "Meeting check-in", width: "reading" })],
   [/^\/interviews\/book$/, () => ({ task: "Book your interview", width: "content" })],

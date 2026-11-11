@@ -19,7 +19,6 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
   '@/components/reveal-applicant':`exports.RevealApplicant=()=>null;`,
   '@/components/recruitment-cycles':`exports.ApplicationCycleAssignment=()=>null;`,
   '@/components/decision-schedules':`exports.ScheduleDecision=()=>null;`,
-  '@/components/live-voting/board-decision-mode':`exports.BoardDecisionMode=()=>null;`,
   '@/components/demo-workspace':`exports.DemoRoundTarget=()=>null;`,
  };
  const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace,ApplicantReviewPreview}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main>{new URLSearchParams(location.search).has("preview")?<ApplicantReviewPreview clubId="${club}" applicationId="${app}" onClose={()=>{}} onChanged={()=>{}}/>:<LiveLeaderWorkspace scoped/>}</main>);`,mocks);

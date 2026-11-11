@@ -18,8 +18,10 @@ test('Applicants submenu and mobile grouping retain explicit office permissions,
  for(const offices of [[],['BOARD'],['PRESIDENT'],['VICE_PRESIDENT']]){
   const m={...member,interviewOffices:offices},items=nav.managerNavigation(m,member.clubId,'recruiting','roundId='+id(3));
   assert.equal(items.some(i=>i.id==='reviews'),offices.length>0);assert.equal(items.some(i=>i.id==='resumes'),offices.includes('PRESIDENT')||offices.includes('VICE_PRESIDENT'));
-  for(const entry of items.filter(i=>['resumes','reviews'].includes(i.id))){assert.equal(entry.navGroup,'applicants');assert.match(entry.href,/roundId=/);}
-  assert.equal(nav.mobileDestinations(items).find(i=>i.navGroup==='applicants').id,'applicants');
+  // Interview records are Applicants pages with no rail entry: hidden, still routed and gated, and lighting Applicants.
+  for(const entry of items.filter(i=>['resumes','reviews'].includes(i.id))){assert.equal(entry.hidden,true);assert.match(entry.href,/roundId=/);}
+  assert.deepEqual(items.find(i=>i.id==='applicants').matches,['resumes','reviews']);
+  assert.ok(!nav.mobileDestinations(items).some(i=>['resumes','reviews'].includes(i.id)));
  }
  const tabs=fs.readFileSync('components/interview-management-tabs.tsx','utf8');assert.doesNotMatch(tabs,/Résumé moderation|Submitted reviews|InterviewResumeModeration|InterviewSubmittedReviews/);
  assert.match(fs.readFileSync('components/club-workspace.tsx','utf8'),/legacyApplicantInterviewHref/);assert.match(fs.readFileSync('app/(workspace)/club/[clubId]/workspace/page.tsx','utf8'),/if \(moved\) redirect\(moved\)/);

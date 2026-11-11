@@ -29,7 +29,7 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
     if (cache[file]) return cache[file];
     const mod = { exports: {} };
     const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
-    new Function('require', 'module', 'exports', 'window', 'localStorage', code)(name => mocks[name] || (name.startsWith('@/lib/') ? load(name.slice(2) + '.ts') : name.startsWith('@/') ? new Proxy({}, { get: (_target, key) => String(key) }) : require(name)), mod, mod.exports, browser, localStorage);
+    new Function('require', 'module', 'exports', 'window', 'localStorage', code)(name => mocks[name] || (name.startsWith('@/lib/') ? load(name.slice(2) + '.ts') : name === '@/components/ui/confirm-dialog' ? require('./helpers/confirm-stub.cjs') : name.startsWith('@/') ? new Proxy({}, { get: (_target, key) => String(key) }) : require(name)), mod, mod.exports, browser, localStorage);
     return cache[file] = mod.exports;
   }
   const preference = load('lib/club-workspace-preference.ts');
@@ -83,7 +83,7 @@ test('only explicit mode choices persist and general entries restore either save
 });
 
 test('specific Club and Recruiting links keep their page and query parameters despite a saved opposite preference', () => {
-  for (const search of ['section=overview', 'section=tasks&taskView=mine', 'section=settings', 'section=meetings&eventId=meeting', 'section=announcements', 'section=recruitment&tool=applicants&applicantId=app']) {
+  for (const search of ['section=overview', 'section=tasks&taskView=mine', 'section=settings', 'section=calendar&type=meetings&eventId=meeting', 'section=overview&focus=announcements', 'section=recruitment&tool=applicants&applicantId=app']) {
     const h = harness({ search });
     h.storage.set(h.key, search.includes('recruitment') ? 'club' : 'recruiting');
     const screen = shell(h.render());

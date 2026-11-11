@@ -14,6 +14,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/components/shell/workspace-shell-context':{useShellBindings(){}},
   '@/lib/permissions':{hasWorkspace:()=>true,hasPermission:(m,p)=>m.permissions.includes(p)},
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`,recruitmentTools:()=>[{id:'interviews'}]},
+  '@/lib/recruiting-settings':{RECRUITING_SETTINGS_PARAM:'recruitingSettings',recruitingSettingsSection:()=>null,canOpenRecruitingSettings:()=>false,recruitingSettingsSections:[],withRecruitingSettings:q=>new URLSearchParams(q)},
   '@/lib/club-workspace-preference':{clubWorkspacePreferenceKey:()=> 'test-preference'},
   '@/lib/product-navigation':{mobileDestinations:items=>items,canLeaveWorkspace:()=>true,managerNavigation:()=>[{id:'interviews',label:'Interviews'}]},
   '@/lib/navigation':{leaderRailSections:()=>[{id:'recruiting',items:[{id:'interviews',label:'Interviews'}]}],memberRailSections:()=>[],studentPath:()=>'/home'},
@@ -28,7 +29,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
  };
- const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
+ const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
  const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree;
  const nodes=[];function collect(node){if(!node||typeof node!=='object')return;if(Array.isArray(node)){node.forEach(collect);return}nodes.push(node);collect(node.props?.children)}collect(screen);
  return {screen,nodes,changes,redirects};
@@ -54,7 +55,7 @@ function room(search,{permission=true,selected=true,loading=false,suspendedAt=nu
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/components/shell/focus-frame-context':{useFocusFrame:details=>frames.push(details)},
  };
- const mod={exports:{}};new Function('require','module','exports',compile('components/interviews/club-interview-room.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
+ const mod={exports:{}};new Function('require','module','exports',compile('components/interviews/club-interview-room.tsx'))(name=>mocks[name]||(name==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
  const tree=mod.exports.ClubInterviewRoom({clubId:'club'});
  const nodes=[];function collect(node){if(!node||typeof node!=='object')return;if(Array.isArray(node)){node.forEach(collect);return}nodes.push(node);collect(node.props?.children)}collect(tree);
  return {tree,nodes,pushes,frames};

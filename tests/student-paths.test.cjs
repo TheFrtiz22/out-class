@@ -96,6 +96,7 @@ function entryHarness({ session = null, authError = null, cookies = {}, account 
     "@/lib/demo/access": { DEMO_COOKIE: "demo", canAccessDemo: () => demoAllowed },
     "@/lib/launch-clubs": { getLaunchClubs: async () => [] },
     "@/actions/applications": { getStudentDashboardData: async () => { calls.dashboard++; return { applications: ["private"] } } },
+    "@/actions/club-directory": { getClubDirectory: async () => { calls.directory = (calls.directory ?? 0) + 1; return { clubs: [{ id: "public-club" }] } } },
     "@/utils/prisma": { prisma: {
       user: { findUnique: async () => { calls.prisma++; return { disabledAt: account.disabledAt ?? null } } },
       studentProfile: { findUnique: async () => { calls.prisma++; return account.profile === false ? null : { id: "profile" } } },
@@ -211,8 +212,8 @@ test("old leader views on / open the matching club workspace section for the lea
   const cases = [
     [{ view: "leader-dashboard" }, "/club/club-x/workspace?section=recruitment&tool=applicants"],
     [{ view: "interview-scheduler", applicantId: "a", roundId: "r" }, "/club/club-x/workspace?section=recruitment&tool=interviews&applicantId=a&roundId=r"],
-    [{ view: "screening-dashboard" }, "/club/club-x/workspace?section=recruitment&tool=rules"],
-    [{ view: "broadcast-messages" }, "/club/club-x/workspace?section=announcements"],
+    [{ view: "screening-dashboard" }, "/club/club-x/workspace?section=recruitment&tool=applicants&recruitingSettings=rules"],
+    [{ view: "broadcast-messages" }, "/club/club-x/workspace?section=overview&focus=announcements"],
     [{ view: "club-manager" }, "/club/club-x/workspace?section=settings"],
     [{ view: "club-management-portal" }, "/club/club-x/workspace?section=settings"],
   ]
@@ -222,7 +223,7 @@ test("old leader views on / open the matching club workspace section for the lea
   // Signed out: sign in first, then come back to the same URL.
   assert.equal(await pageFor({}, { view: "leader-dashboard" }), "/login?next=" + encodeURIComponent("/?view=leader-dashboard"))
   // Library helper and the client redirect share one mapping.
-  assert.equal(nav.leaderWorkspaceHref("broadcast-messages", "c 1"), "/club/c%201/workspace?section=announcements")
+  assert.equal(nav.leaderWorkspaceHref("broadcast-messages", "c 1"), "/club/c%201/workspace?section=overview&focus=announcements")
 })
 
 test("old URLs: middleware 307s on real hosts; loopback IPs fall through to the homepage redirect", async () => {
@@ -264,4 +265,52 @@ test("old URLs: middleware 307s on real hosts; loopback IPs fall through to the 
   const page = params => load("app/page.tsx", pageMocks({})).default({ searchParams: Promise.resolve(params) })
   await deniedTo(page({ workspace: "student", view: "tracker", applicationClubId: "fund" }), "/applications?applicationClubId=fund")
   await deniedTo(page({ workspace: "student", view: "calendar", section: "tasks" }), "/calendar?section=tasks")
+})
+
+test("FE-4: / reads the session with the cookie jar, and the dashboard with the launch clubs, in parallel after the auth gates", async () => {
+  const source = fs.readFileSync("app/page.tsx", "utf8")
+  assert.match(source, /Promise\.all\(\[cookies\(\), getSessionUser\(\)\]\)/)
+  assert.match(source, /Promise\.all\(\[\s*user \? getStudentDashboardData\(\)\.catch\(/)
+  assert.ok(source.indexOf("disabledAt") < source.indexOf("getStudentDashboardData()"), "disabled-account check precedes the dashboard read")
+  assert.ok(source.lastIndexOf("redirect(next !== \"/\"") < source.indexOf("getStudentDashboardData()"), "signed-in redirect precedes the dashboard read")
+  // Behaviour: a dashboard failure still renders Home with no dashboard; signed-out visitors never read it.
+  const nodes = node => !node || typeof node !== "object" ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)]
+  let reads = 0
+  const mocks = opts => ({ ...pageMocks(opts), "@/actions/applications": { getStudentDashboardData: async () => { reads++; throw Error("db down") } } })
+  const realError = console.error; console.error = () => {}
+  try {
+    const failed = nodes(await load("app/page.tsx", mocks({ session: confirmed })).default({ searchParams: Promise.resolve({ workspace: "leader" }) })).find(node => node.type === "HomeEntry")
+    assert.equal(failed.props.initialData, null); assert.equal(reads, 1)
+    await load("app/page.tsx", mocks({})).default({ searchParams: Promise.resolve({}) })
+    assert.equal(reads, 1, "signed-out visitors do not read the dashboard")
+  } finally { console.error = realError }
+})
+
+test("FE-4: a direct /explore load seeds Explore with the public directory after the gates; other paths do not read it", async () => {
+  const h = entryHarness({ session: confirmed })
+  const page = await h.render("/explore")
+  assert.deepEqual(page.props.initialDirectory, { clubs: [{ id: "public-club" }] })
+  assert.equal(typeof page.props.serverNow, "number")
+  const home = await h.render("/home")
+  assert.equal(home.props.initialDirectory, undefined); assert.equal(typeof home.props.serverNow, "number")
+  assert.equal(h.calls.directory, 1)
+  const disabled = entryHarness({ session: confirmed, account: { disabledAt: new Date() } })
+  assert.equal((await disabled.render("/explore")).type, "main"); assert.equal(disabled.calls.directory, undefined)
+  const demo = entryHarness({ session: confirmed, cookies: { demo: "1" }, demoAllowed: true })
+  assert.equal((await demo.render("/explore")).props.initialDirectory, undefined); assert.equal(demo.calls.directory, undefined)
+  const source = fs.readFileSync("components/student-workspace-page.tsx", "utf8")
+  assert.match(source, /Promise\.all\(\[cookies\(\), getSessionUser\(\)\]\)/)
+  assert.ok(source.indexOf("disabledAt") < source.indexOf("await Promise.all([\n    getStudentDashboardData()"), "reads start after the disabled-account gate")
+})
+
+test("FE-4: Explore renders the server seed on first mount, still reads live on later mounts, retry and Demo", () => {
+  const view = fs.readFileSync("components/views/explore-view.tsx", "utf8")
+  assert.match(view, /useState<DirectoryClub\[\]>\(\(\) => initialDirectory\?\.clubs \?\? \[\]\)/)
+  assert.match(view, /useState\(!initialDirectory\)/)
+  assert.match(view, /if \(seeded\.current\) \{ seeded\.current = false; onInitialDirectoryUsed\?\.\(\); return \}/)
+  assert.match(view, /\}, \[retry, isDemoEnabled\]\)/)
+  assert.match(view, /useServerAnchoredNow\(serverNow\)/, "seeded recruitment state uses the server render time while hydrating")
+  const shell = fs.readFileSync("components/app-shell.tsx", "utf8")
+  assert.match(shell, /initialDirectory=\{demo\.isDemoEnabled \? undefined : directorySeed\}/)
+  assert.match(shell, /onInitialDirectoryUsed=\{\(\) => setDirectorySeed\(undefined\)\}/)
 })

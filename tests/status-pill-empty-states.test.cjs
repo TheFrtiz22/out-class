@@ -63,7 +63,7 @@ test("empty states say why and offer one different next step", () => {
     ["components/views/application-tracker-view.tsx", /onClick=\{\(\) => onNavigate\?\.\("explore"\)\}>Explore clubs/],
     ["components/views/explore-view.tsx", /onNavigate\("corkboard"\)\}>See campus events/],
     ["components/views/calendar-view.tsx", /function CalendarEmptyAction/],
-    ["components/views/inbox-view.tsx", /href="\/settings\/notifications">Email preferences/],
+    ["components/views/inbox-view.tsx", /href=\{notificationSettingsHref\} scroll=\{false\}>Notification settings/],
     ["components/interviews/interview-rooms-list.tsx", />Show all dates</],
     ["components/shell/notification-center.tsx", /Show all updates/],
     ["components/views/leader-dashboard/live-leader-workspace.tsx", /onClick=\{clearApplicantFilters\}>Clear filters/],

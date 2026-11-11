@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#232d4b">
+<title>Offline · OutClass</title>
+<style>
+  :root { color-scheme: light; --navy: #232d4b; --canvas: #f6f5f1; --muted: #4a5568; --ring: #c86400; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; padding: 24px 16px; background: var(--canvas); color: var(--navy);
+    font-family: "Source Sans 3", Arial, sans-serif; text-align: center; }
+  main { max-width: 26rem; }
+  img { width: 72px; height: 72px; }
+  h1 { margin: 20px 0 8px; font-family: "Libre Caslon Text", Georgia, serif; font-size: 1.75rem; font-weight: 600; }
+  p { margin: 0 0 24px; color: var(--muted); line-height: 1.5; }
+  button { min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--navy); color: #fff;
+    font: inherit; font-weight: 600; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: 0 0 0 2px #fffefa; }
+</style>
+</head>
+<body>
+<main>
+  <img src="/brand/pwa/icon-192.png" alt="" width="72" height="72">
+  <h1>You're offline</h1>
+  <p>OutClass needs a connection to load this page. Check your network and try again.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { hasPermission } from "@/lib/permissions";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import "@/components/clubs/club-settings.css";
 export function InterviewPipelineBuilderView({
   clubId: provided,
@@ -36,6 +37,7 @@ export function InterviewPipelineBuilderView({
   const { activeClubId, user } = useAuth(),
     demo = useDemoMode(),
     clubId = provided || activeClubId;
+  const confirm = useConfirm();
   const [rounds, setRounds] = useState<RoundDraft[]>([]),
     [archived, setArchived] = useState<string[]>([]),
     [version, setVersion] = useState(0),
@@ -147,13 +149,13 @@ export function InterviewPipelineBuilderView({
       <Button disabled={!loaded || busy || dirty || rounds.length >= 50} onClick={() => { setEditing(null); setEditorOpen(true) }}><Plus size={16} />New round</Button>
     </header>
     <AutosaveStatus save={draftSave} />
-    {error && <div role="alert" className="space-y-2 text-sm text-destructive"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => { if (!dirty || window.confirm("Discard unsaved pipeline changes and reload?")) setRetry(n => n + 1) }}>Reload pipeline</Button></div>}
+    {error && <div role="alert" className="space-y-2 text-sm text-destructive"><p>{error}</p><Button variant="outline" disabled={busy} onClick={async () => { if (!dirty || await confirm({ title: "Discard changes and reload?", description: "Your unsaved pipeline changes will be lost.", confirmLabel: "Discard and reload", tone: "danger" })) setRetry(n => n + 1) }}>Reload pipeline</Button></div>}
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {setupError && <p role="alert">Could not check interview setup. <Button variant="ghost" onClick={() => setSetupRetry(n => n + 1)}>Retry setup status</Button></p>}
     {!loaded ? !error && <LoadingState label="Loading interview rounds…" layout="rows" rows={3} /> : <>
       <ol className="divide-y border-y">{rounds.map((round, index) => <li key={round.id} className="space-y-3 py-5">
         <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs text-muted-foreground">Round {index + 1} · {roundTypeLabels[round.type]}</p><h3 className="mt-1 font-medium">{round.name}</h3>{["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) && <p className="mt-1 text-xs text-muted-foreground">{round.configuration.duration} minute interviews</p>}</div>
-          <div className="flex flex-wrap gap-1"><Button variant="outline" disabled={busy || dirty} onClick={() => { setEditing(round); setEditorOpen(true) }}>Manage round<span className="sr-only"> {round.name}</span></Button><Button size="icon" variant="ghost" aria-label={`Move ${round.name} up`} disabled={busy || index === 0} onClick={() => move(index, -1)}><ArrowUp size={16}/></Button><Button size="icon" variant="ghost" aria-label={`Move ${round.name} down`} disabled={busy || index === rounds.length - 1} onClick={() => move(index, 1)}><ArrowDown size={16}/></Button><Button size="icon" variant="ghost" aria-label={`Remove ${round.name}`} disabled={busy || rounds.length === 1} onClick={() => { if (window.confirm(`Remove ${round.name}? Active applicants and dependent rooms or voting sessions must be moved first. Historical records are retained.`)) setRounds(items => items.filter(item => item.id !== round.id)) }}><Trash2 size={16}/></Button></div>
+          <div className="flex flex-wrap gap-1"><Button variant="outline" disabled={busy || dirty} onClick={() => { setEditing(round); setEditorOpen(true) }}>Manage round<span className="sr-only"> {round.name}</span></Button><Button size="icon" variant="ghost" aria-label={`Move ${round.name} up`} disabled={busy || index === 0} onClick={() => move(index, -1)}><ArrowUp size={16}/></Button><Button size="icon" variant="ghost" aria-label={`Move ${round.name} down`} disabled={busy || index === rounds.length - 1} onClick={() => move(index, 1)}><ArrowDown size={16}/></Button><Button size="icon" variant="ghost" aria-label={`Remove ${round.name}`} disabled={busy || rounds.length === 1} onClick={async () => { if (await confirm({ title: `Remove ${round.name}?`, description: "Move active applicants and dependent rooms or voting sessions first. Historical records are retained.", confirmLabel: "Remove round", tone: "danger" })) setRounds(items => items.filter(item => item.id !== round.id)) }}><Trash2 size={16}/></Button></div>
         </div>
         {round.configuration.instructions && <p className="line-clamp-2 whitespace-pre-wrap text-sm text-muted-foreground">{round.configuration.instructions}</p>}
         {["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) && <PipelineInterviewStatus clubId={clubId} roundId={round.id} status={setup.find(item => item.roundId === round.id)} disabled={dirty || busy} />}

@@ -7,6 +7,7 @@ import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { isUvaEmail } from "@/lib/auth"
 import { getLaunchClubs } from "@/lib/launch-clubs"
 import { getStudentDashboardData } from "@/actions/applications"
+import { getClubDirectory } from "@/actions/club-directory"
 import { prisma } from "@/utils/prisma"
 import { HomeEntry } from "@/components/home-entry"
 import { studentRouteForPath } from "@/lib/navigation"
@@ -29,8 +30,7 @@ export async function StudentWorkspacePage({ path, searchParams }: { path: strin
   const params = query(await searchParams)
   const route = studentRouteForPath(path, params)
   if (!route) throw Error(`Not a student workspace path: ${path}`)
-  const jar = await cookies()
-  const { data: { user: login }, error: authError } = await getSessionUser()
+  const [jar, { data: { user: login }, error: authError }] = await Promise.all([cookies(), getSessionUser()])
   const user = jar.has(PLATFORM_VIEW_COOKIE) ? (await requireAuth()).user : !authError && login?.email_confirmed_at && login.email && isUvaEmail(login.email) ? login : null
 
   // Demo runs entirely in the browser with fictional data, as it does on the homepage.
@@ -41,8 +41,13 @@ export async function StudentWorkspacePage({ path, searchParams }: { path: strin
 
   const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
   if (account?.disabledAt) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
-  let initialData = null
-  try { initialData = await getStudentDashboardData() } catch (e) { console.error(e) }
-  const profile = await prisma.studentProfile.findUnique({ where: { userId: user.id }, select: { id: true } })
-  return <HomeEntry launchClubs={await getCachedLaunchClubs()} initialView={route.view} initialSession={user} initialData={initialData} hasProfile={!!profile} />
+  // After the identity and disabled-account gates these reads are independent. Explore also gets the
+  // public directory (the same loader /api/workspace serves) so its first paint is not an empty list.
+  const [initialData, profile, launchClubs, initialDirectory] = await Promise.all([
+    getStudentDashboardData().catch(e => { console.error(e); return null }),
+    prisma.studentProfile.findUnique({ where: { userId: user.id }, select: { id: true } }),
+    getCachedLaunchClubs(),
+    route.view === "explore" ? getClubDirectory() : undefined,
+  ])
+  return <HomeEntry launchClubs={launchClubs} initialView={route.view} initialSession={user} initialData={initialData} hasProfile={!!profile} initialDirectory={initialDirectory} serverNow={Date.now()} />
 }

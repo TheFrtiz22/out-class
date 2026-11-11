@@ -18,13 +18,13 @@ const route = (path, search = '', memberships = [leader, member, suspended], dem
 
 test('the shell resolves each workspace from the URL', () => {
   assert.equal(route('/home').kind, 'personal')
-  assert.equal(route('/settings/notifications').title, 'Notifications')
+  assert.equal(route('/settings/account').title, 'Account & Security')
   const admin = route('/platform/users')
   assert.deepEqual([admin.kind, admin.active, admin.mode], ['admin', 'users', 'platform'])
   const club = route('/club/club-a/workspace', 'section=recruitment&tool=overview')
   assert.deepEqual([club.kind, club.manager, club.mode, club.clubId], ['club', true, 'recruiting', 'club-a'])
-  assert.deepEqual(club.sections.map(section => section.id), ['recruiting', 'club'])
-  assert.equal(route('/club/club-a/workspace', 'section=meetings').mode, 'club')
+  assert.deepEqual(club.sections.map(section => section.id), ['recruiting', 'club', 'pinned'])
+  assert.equal(route('/club/club-a/workspace', 'section=calendar').mode, 'club')
   const plain = route('/club/club-b/workspace')
   assert.deepEqual([plain.manager, plain.mode], [false, 'clubs'])
   assert.ok(plain.sections.some(section => section.id === 'member-club'))

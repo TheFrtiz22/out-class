@@ -33,9 +33,11 @@ export function LandingPageView({
 }: LandingPageViewProps) {
   const { perspective, selected, switchPerspective } = useLandingPerspective(initialAudience)
   const journeyNavigation = useJourneyNavigation()
+  // Leaders and students share one signup (there is no separate leader path in the
+  // onboarding wizard); leaders then accept their club's invitation or claim its page.
   const createProfile = () => { window.location.href = "/signup" }
-  const enterLeader = () => { window.location.href = "/signup?intent=leader" }
-  const start = () => perspective === "student" ? createProfile() : enterLeader()
+  const enterLeader = createProfile
+  const start = createProfile
   return (
     <ScrollMotion className="oc-landing" id="top" data-landing-audience={perspective}>
       <LandingNavigation />

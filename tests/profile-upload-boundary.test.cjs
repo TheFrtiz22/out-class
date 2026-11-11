@@ -28,7 +28,7 @@ function harness({ account = 'active', signingError = false, uploadError = false
   const mocks = {
     '@supabase/supabase-js': { createClient: () => ({storage: {getBucket: async () => ({data:{public:false}})}}) },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
-    'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/navigation': { redirect: () => { throw Error('Authentication required'); } },
     'next/cache': { revalidatePath() {} },
     '@/utils/support-audit': { auditSupportAction: async () => calls.push({ step: 'audit' }) },

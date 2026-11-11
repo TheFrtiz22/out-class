@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { OutClassQRCode } from "./outclass-qr-code";
+import { QrPresenterDialog } from "./qr-presenter-dialog";
 import { downloadQrPng, downloadQrSvg } from "@/lib/qr/export";
 import { createShortLink } from "@/actions/short-links";
 
@@ -53,11 +54,19 @@ export function QrCodeCard({
       variant="default"
       showLogo={true}
       downloadable={downloadable}
-      presenterMode={true}
       title={title}
       description={description}
       filename={filename}
       ariaLabel={`QR code for ${title}`}
+      actions={
+        <QrPresenterDialog
+          value={activeUrl}
+          title={title}
+          description={description}
+          filename={filename}
+          ariaLabel={`QR code for ${title}`}
+        />
+      }
     />
   );
 }

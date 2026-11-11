@@ -1,11 +1,13 @@
 "use client"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, minuteLabel } from "@/lib/scheduling-config"
 import { AvailabilityButton } from "@/components/availability/availability-button"
+import { CalendarSubscribe } from "@/components/calendar-subscribe"
 import { localParts } from "@/lib/availability"
 import Link from "next/link";
 
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { useEffect, useMemo, useState } from "react"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { SearchField } from "@/components/ui/search-field"
@@ -42,7 +44,7 @@ const eventStyle = {
 const MEETINGS_FILTER = "club-meetings"
 function readSearchParam(key: string) { return typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(key) }
 
-export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
+export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: ViewId) => void; serverNow?: number }) {
   const {
     events,
     trackedApps,
@@ -71,11 +73,8 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [booking, setBooking] = useState(false)
   const [bookingDate, setBookingDate] = useState("")
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60000)
-    return () => window.clearInterval(timer)
-  }, [])
+  const nowMs = useServerAnchoredNow(serverNow)
+  const now = useMemo(() => new Date(nowMs), [nowMs])
   const today = localParts(now, SCHEDULING_TIMEZONE).date
   useEffect(() => {
     if (!focusEventId) return
@@ -179,7 +178,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
             Times shown in {SCHEDULING_TIMEZONE_LABEL}.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" />{bookingDates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" /><CalendarSubscribe />{bookingDates.length > 0 && (
           <Button variant="outline" onClick={() => setBooking(true)}>
             Book / change interview
           </Button>

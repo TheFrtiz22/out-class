@@ -154,3 +154,9 @@
 [data-slot="input"].oc-pill-input { min-height: 46px; padding-inline: 1.125rem; border-color: var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
 [data-slot="input"].oc-pill-input:focus-visible { border-color: var(--primary); outline: 2px solid var(--ring); outline-offset: 2px; }
 @media (forced-colors: active) { [data-slot="input"].oc-pill-input { border: 1px solid CanvasText; } }
+
+/* Icon-only view switch (List / Kanban / Ranked): square segments, never stretched to full width. */
+.oc-segmented-control.oc-view-switch button { min-width: 44px; padding-inline: .625rem; }
+.oc-segmented-control.oc-view-switch .oc-segment-icon { margin-inline-end: 0; }
+.oc-segmented-control.oc-view-switch .oc-segment-icon svg { width: 1.125rem; height: 1.125rem; }
+@media (max-width: 767px) { .oc-segmented-control.oc-view-switch { width: fit-content; } }

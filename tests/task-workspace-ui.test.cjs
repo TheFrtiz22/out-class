@@ -3,7 +3,7 @@ const assert=require('node:assert/strict')
 const fs=require('node:fs')
 const ts=require('typescript')
 const flush=()=>new Promise(resolve=>setImmediate(resolve))
-function compile(file,mocks={}){const mod={exports:{}};new Function('require','module','exports','window','document',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(n=>mocks[n]||(n.startsWith('@/lib/')?compile(n.replace('@/','')+'.ts'):n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n)),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm(){return true}},{querySelector(){return null}});return mod.exports}
+function compile(file,mocks={}){const mod={exports:{}};new Function('require','module','exports','window','document',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(n=>mocks[n]||(n.startsWith('@/lib/')?compile(n.replace('@/','')+'.ts'):n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n)),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm(){return true}},{querySelector(){return null}});return mod.exports}
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)]
 const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):''
 function harness(manage=true,personalOnly=false){

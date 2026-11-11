@@ -1,6 +1,7 @@
 'use client';
 import { LoadingState } from "@/components/ui/loading-state"
 import { useCallback,useEffect,useId,useRef,useState } from 'react';
+import { useServerAnchoredNow } from '@/hooks/use-server-now';
 import Link from 'next/link';
 import { ClubLogo } from '@/components/club-logo';
 import { useSearchParams } from 'next/navigation';
@@ -8,7 +9,7 @@ import { getDecisionLetter,respondToOffer,setDecisionNotificationsRead } from '@
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { letterCelebration,type CelebrationKind,type LetterContent } from '@/lib/decision-letters';
-import { PartyPopper,RotateCcw } from '@/components/icons';
+import { ArrowRight,PartyPopper,RotateCcw } from '@/components/icons';
 import { Celebration,prefersReducedMotion,useCelebration } from './decision-celebration';
 import './decision-letter.css';
 import { useFocusFrame } from '@/components/shell/focus-frame-context';
@@ -85,7 +86,8 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
   finally{if(version===requestVersion.current)setLoading(false);}
  },[applicationId,letterId]);
  useEffect(()=>{setData(null);setLoading(true);void load();const version=requestVersion.current;return()=>{if(requestVersion.current===version)requestVersion.current=version+1}},[load,recipientId]);
- useEffect(()=>{if(!data)return;const timer=setInterval(()=>setData({...data}),60000);return()=>clearInterval(timer)},[data]);
+ // Offer expiry below reads the time on render; the shared minute clock re-renders while a letter is shown.
+ useServerAnchoredNow(undefined,!!data);
  const kind:CelebrationKind=data?.letter?letterCelebration(data.letter.decision,data.letter.content):'none';
  // Celebrate only a current, live acceptance: never a historical, declined, revoked or expired offer.
  const celebratory=!!data?.letter&&data.letter.decision==='ACCEPTED'&&data.isCurrent&&data.currentStatus==='ACCEPTED'&&!data.suspended&&!['DECLINED','REVOKED','EXPIRED'].includes(data.offer?.status??'')&&!(data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)<=new Date());
@@ -121,7 +123,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
    {!data.isCurrent&&<p>This is a historical letter. Your current decision is {data.currentStatus.toLowerCase()}. Offer controls reflect your current record.</p>}
    {data.suspended&&<p>This club is suspended. Offer responses are currently unavailable.</p>}
    {(!data.letter||data.letter.decision==='ACCEPTED')&&(active?<><h2>Your invitation</h2><p>Please respond by {new Date(offer!.expiresAt).toLocaleDateString()}.</p><div className="flex flex-wrap gap-3"><Button disabled={busy} onClick={()=>void respond('ACCEPT')}>Accept Offer</Button><Button disabled={busy} variant="outline" onClick={()=>void respond('DECLINE')}>Decline Offer</Button></div></>:<p>{offer?.status==='ACCEPTED'?'Your offer was accepted. Your membership is recorded. Current access is managed by the club.':offer?.status==='DECLINED'?'You declined this offer. Your letter remains available.':offer?.status==='REVOKED'?'This offer is no longer active. Contact the club with questions.':offer&&(offer.status==='EXPIRED'||new Date(offer.expiresAt)<=new Date())?'This offer has expired.':'There is no active offer associated with this decision.'}</p>)}
-   {offer?.status==='ACCEPTED'&&<Link href="/clubs">Open My Clubs →</Link>}
+   {offer?.status==='ACCEPTED'&&<Link href="/clubs" className="inline-flex items-center gap-1">Open My Clubs<ArrowRight size={16} aria-hidden="true"/></Link>}
    {error&&<p role="alert">{error}</p>}
   </section>}</div>;
 }

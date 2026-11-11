@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  calendarFeedToken CalendarFeedToken?
   interviewAvailabilityOverrides InterviewAvailabilityOverride[]
   editorDrafts EditorDraft[]
   scheduledCommunications ScheduledCommunication[]
@@ -1765,4 +1766,14 @@ model ApplicantRecusal {
 
   @@unique([applicationId, memberId])
   @@index([clubId, memberId])
+}
+
+// Private calendar subscription (webcal). Only a SHA-256 hash of the secret is
+// stored; creating a new link replaces it, so old links stop working.
+model CalendarFeedToken {
+  userId     String    @id
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 }

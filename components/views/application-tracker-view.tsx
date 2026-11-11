@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { ArrowLeft, ArrowRight, FilePenLine } from "@/components/icons"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { getStudentApplications } from "@/lib/workspace-api"
@@ -51,11 +52,10 @@ const date = (value: Date | string) =>
     hour: "numeric",
     minute: "2-digit",
   })
-export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNavigate?: (view: ViewId) => void; scope?: "all" | "status" }) {
+export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }: { onNavigate?: (view: ViewId) => void; scope?: "all" | "status"; serverNow?: number }) {
   const statusView = scope === "status"
   const applicationId = useSearchParams().get("applicationId")
-  const [now, setNow] = useState(Date.now())
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
+  const now = useServerAnchoredNow(serverNow)
   const demo = useDemoMode()
   useEffect(() => { setActiveId(null); setFilter("All"); setDirty(false) }, [scope])
   const demoDeadline = (clubId: string) => demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === clubId)?.deadline : undefined
