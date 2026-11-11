@@ -115,4 +115,20 @@ test('server: staging needs decision access, refuses self and recused reviewers,
   assert.match(read('actions/evaluations.ts'), /validateRubricScores\(value, normalizeReviewRubric\(club\.reviewRubric\)\)/)
   const sql = read('prisma/migrations/20261111150000_review_rubric_staged_decisions/migration.sql')
   assert.match(sql, /ENABLE ROW LEVEL SECURITY/); assert.match(sql, /REVOKE ALL ON "StagedDecision" FROM %I',r\)/)
+
+})
+// QA saw a column headed only "Test". It is the narrow-width combination of SAT and ACT (hidden from 880px,
+// where SAT and ACT get their own columns), so it is labelled as test scores and never shown beside them.
+test('applicant list labels the combined SAT/ACT column "Test scores" and swaps it with SAT and ACT at the same width', () => {
+  const mod = { exports: {} }
+  const code = ts.transpileModule(fs.readFileSync('components/views/leader-dashboard/live-applicant-views.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
+  const mocks = { '@/components/ui/data-table': { DataTable: 'DataTable', DataTableSecondary: 'DataTableSecondary' }, 'react/jsx-runtime': { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }), Fragment: 'Fragment' } }
+  const stub = new Proxy({}, { get: (_, key) => key === '__esModule' ? false : typeof key === 'string' && /^[a-z]/.test(key) ? () => ({}) : String(key) })
+  new Function('require', 'module', 'exports', code)(name => mocks[name] || (name.startsWith('@/') || name.startsWith('./') ? stub : require(name)), mod, mod.exports)
+  const { LiveApplicantList } = mod.exports
+  const columns = LiveApplicantList({ applicants: [], rounds: [], open() {}, name: () => 'Applicant', profileFields: new Proxy({}, { get: () => true }) }).props.columns
+  const scores = columns.find(c => c.id === 'test'), sat = columns.find(c => c.id === 'sat'), act = columns.find(c => c.id === 'act')
+  assert.equal(scores.header, 'Test scores')
+  assert.equal(scores.hideFrom, 'lg'); assert.equal(sat.showFrom, 'lg'); assert.equal(act.showFrom, 'lg')
+  assert.equal(columns.filter(c => c.header === 'Test').length, 0)
 })

@@ -44,7 +44,7 @@ test("Applications, Home and the leader Applicants table all show StatusPill; th
 test("leader scores hidden before your own review show a lock and a short label", () => {
   const leader = read("components/views/leader-dashboard/live-applicant-views.tsx")
   assert.doesNotMatch(leader, /Submit your own review to see round scores/)
-  assert.match(leader, /<Lock aria-hidden="true" size=\{13\} \/>Hidden<span className="sr-only"> until you review<\/span>/)
+  assert.match(leader, /<Lock aria-hidden="true" size=\{14\} \/>Hidden<span className="sr-only"> until you review<\/span>/)
 })
 
 test("Corkboard empty state never offers 'show all' when everything is already shown", () => {
