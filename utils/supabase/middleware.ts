@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access";
+import { allowedWhileSecondFactorPending, secondFactorPending, twoStepChallengeHref, TWO_STEP_REQUIRED_MESSAGE, userMfaEnabled } from "@/lib/user-mfa";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder";
@@ -46,6 +47,22 @@ export const createClient = async (request: NextRequest, options: { demoOnly?: b
     }
     supabaseResponse.headers.set("Cache-Control", "private, no-store");
     supabaseResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
+
+  // Optional two-step sign-in (flag-gated). A fast first gate only: getSessionUser/requireAuth
+  // enforce the same rule for Server Actions and every server loader.
+  if (!options.demoOnly && userMfaEnabled() && user && !error && !allowedWhileSecondFactorPending(request.nextUrl.pathname)) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (secondFactorPending(user, session?.access_token)) {
+      const blocked = request.method === "GET" || request.method === "HEAD"
+        ? !request.nextUrl.pathname.startsWith("/api/")
+          ? NextResponse.redirect(new URL(twoStepChallengeHref(request.nextUrl.pathname, request.nextUrl.search), request.url))
+          : NextResponse.json({ error: TWO_STEP_REQUIRED_MESSAGE }, { status: 401 })
+        : NextResponse.json({ error: TWO_STEP_REQUIRED_MESSAGE }, { status: 401 });
+      supabaseResponse.cookies.getAll().forEach(cookie => blocked.cookies.set(cookie));
+      blocked.headers.set("Cache-Control", "private, no-store");
+      return blocked;
+    }
   }
 
   return supabaseResponse;
