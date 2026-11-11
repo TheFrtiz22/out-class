@@ -40,17 +40,14 @@ const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").
 const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: () => <WorkspaceLoading label="Preparing your applications…" layout="applications" /> })
 const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: () => <WorkspaceLoading label="Loading your schedule…" layout="schedule" /> })
 const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView), { loading: () => <WorkspaceLoading label="Loading recruitment workspace…" layout="applicants" /> })
-const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView), { loading: () => <WorkspaceLoading label="Loading club management…" layout="workspace" /> })
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" /> })
 const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView), { loading: () => <WorkspaceLoading label="Loading interview schedule…" layout="calendar" /> })
 const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView), { loading: () => <WorkspaceLoading label="Preparing interview workspace…" layout="interview" /> })
-const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView), { loading: () => <WorkspaceLoading label="Loading announcements…" layout="feed" /> })
 const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: renderDestinationLoading })
 
 const adminViewIds: ViewId[] = [
   "leader-dashboard",
   "club-manager",
-  "club-management-portal",
   "screening-dashboard",
   "interview-scheduler",
   "interview-workspace",
@@ -222,9 +219,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
             {view === "interview-scheduler" && (demo.isDemoEnabled ? <DemoInterviewSchedule onNavigate={navigate} /> : <InterviewSchedulerView onNavigate={navigate} />)}
-            {view === "broadcast-messages" && <BroadcastMessagesView />}
             {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubWorkspaceSettings />)}
-            {view === "club-management-portal" && <ClubManagementPortalView />}
       </DashboardLayout>}
     </StudentState>
   )

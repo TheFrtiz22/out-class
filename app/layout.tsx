@@ -8,6 +8,7 @@ import localFont from "next/font/local"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
+import { ConfirmProvider } from "@/components/ui/confirm-dialog"
 import "./globals.css"
 import { RouteContent } from "@/components/route-content"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
@@ -118,7 +119,9 @@ export default async function RootLayout({
               {/* Site-wide notices sit in flow above every page. Only a verified support session (already
                   under the fixed view-as banner) omits them; a bare or stale view-as cookie does not. */}
               {!viewSession && <SiteNotices notices={{ campusNotice, maintenanceNotice }} offsetForSupportBanner={cookieStore.has(PLATFORM_VIEW_COOKIE)} />}
+              <ConfirmProvider>
               <RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>
+              </ConfirmProvider>
             </CorkboardProvider>
             </OrganizationInvitationsProvider>
           </AuthProvider>

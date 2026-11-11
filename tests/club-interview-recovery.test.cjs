@@ -29,7 +29,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
  };
- const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
+ const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
  const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree;
  const nodes=[];function collect(node){if(!node||typeof node!=='object')return;if(Array.isArray(node)){node.forEach(collect);return}nodes.push(node);collect(node.props?.children)}collect(screen);
  return {screen,nodes,changes,redirects};
@@ -55,7 +55,7 @@ function room(search,{permission=true,selected=true,loading=false,suspendedAt=nu
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/components/shell/focus-frame-context':{useFocusFrame:details=>frames.push(details)},
  };
- const mod={exports:{}};new Function('require','module','exports',compile('components/interviews/club-interview-room.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
+ const mod={exports:{}};new Function('require','module','exports',compile('components/interviews/club-interview-room.tsx'))(name=>mocks[name]||(name==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
  const tree=mod.exports.ClubInterviewRoom({clubId:'club'});
  const nodes=[];function collect(node){if(!node||typeof node!=='object')return;if(Array.isArray(node)){node.forEach(collect);return}nodes.push(node);collect(node.props?.children)}collect(tree);
  return {tree,nodes,pushes,frames};

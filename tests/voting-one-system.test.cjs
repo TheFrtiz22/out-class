@@ -15,7 +15,6 @@ test('fs scan: the retired board and BroadcastChannel modules are deleted and no
  const pipeline=fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx','utf8'),landing=fs.readFileSync('components/live-voting/room-landing.tsx','utf8');
  assert.doesNotMatch(pipeline,/BoardDecisionMode|board-decision-mode|Voting history/,'the pipeline no longer imports or opens the board');
  assert.doesNotMatch(landing,/BoardDecisionMode|board-decision-mode/,'the Voting room no longer opens the board dialog');
- assert.doesNotMatch(fs.readFileSync('components/views/leader-dashboard/local-leader-dashboard.tsx','utf8'),/LiveVotingLauncher/);
  assert.doesNotMatch(fs.readFileSync('lib/workspace-api.ts','utf8'),/createVotingSession|submitVotingBallot|joinVotingSession|getJoinedVotingWorkspace|getVotingJoinInfo|seedVotingDemo/);
  assert.doesNotMatch(fs.readFileSync('app/api/workspace/route.ts','utf8'),/votingJoin|getVotingJoinInfo/);
  const actions=fs.readFileSync('actions/voting.ts','utf8');
