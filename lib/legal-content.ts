@@ -124,7 +124,7 @@ export const privacyPolicy: LegalDocument = {
       "Correction: you can edit your profile in the Services, or ask us to correct information you cannot edit yourself.",
       `Deletion: you can ask us to delete your account and personal information by emailing ${CONTACT_EMAIL}. Deleting your account does not remove copies of application materials that a Club has exported into its own records outside the Services.`,
       `Export: you can ask for a copy of your profile and application information in a commonly used, machine-readable format by emailing ${CONTACT_EMAIL}.`,
-      "Email choices: you can turn off optional email, such as announcements and daily digests, in your email preferences or with the unsubscribe link in those emails. We will still send emails needed to operate your account, such as sign-in codes and security notices.",
+      "Email choices: you can turn off optional email, such as Club announcements, task reminders and daily digests, in your email preferences or with the unsubscribe link in those emails. Unsubscribing does not stop email about your applications, decisions and interviews, which you can manage separately in your preferences, or emails needed to operate your account, such as sign-in codes and security notices.",
     ] },
     { heading: "11. How we handle requests", paragraphs: [
       "We may need to verify your identity before acting on a request, usually by confirming control of your university email address. We respond within the time required by applicable law, and in any case within 45 days. We will not discriminate against you for exercising your rights.",

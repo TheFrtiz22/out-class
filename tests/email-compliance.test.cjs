@@ -91,48 +91,138 @@ test('sendNotificationEmail forwards List-Unsubscribe headers to Resend', async 
   });
 });
 
-test('unsubscribe tokens are signed, scoped and tamper-evident', () => {
-  withEnv({ EMAIL_UNSUBSCRIBE_SECRET: SECRET }, () => {
+test('unsubscribe tokens are versioned, keyed, scoped and tamper-evident; rotation invalidates old tokens', () => {
+  withEnv({ EMAIL_UNSUBSCRIBE_SECRET: SECRET, EMAIL_UNSUBSCRIBE_SECRET_PREVIOUS: undefined }, () => {
     const u = loader({})('lib/email-unsubscribe.ts');
     const token = u.signUnsubscribeToken(uuid(1), 'digest');
+    assert.match(token, /^v1\.[0-9a-f]{8}\.[\w-]+\.[\w-]+$/);
     assert.deepEqual(u.verifyUnsubscribeToken(token), { userId: uuid(1), scope: 'digest' });
-    const [body, sig] = token.split('.');
-    const swapped = Buffer.from(`${uuid(2)}.digest`).toString('base64url') + '.' + sig;
-    assert.equal(u.verifyUnsubscribeToken(swapped), null, 'another user id with the same signature');
-    assert.equal(u.verifyUnsubscribeToken(Buffer.from(`${uuid(1)}.announcements`).toString('base64url') + '.' + sig), null, 'another scope');
-    assert.equal(u.verifyUnsubscribeToken(body + '.' + sig.slice(0, -2)), null);
-    for (const bad of [null, '', 'a.b.c', 'x'.repeat(400), body]) assert.equal(u.verifyUnsubscribeToken(bad), null);
+    const [version, keyId, body, sig] = token.split('.');
+    const rebuild = parts => parts.join('.');
+    assert.equal(u.verifyUnsubscribeToken(rebuild([version, keyId, Buffer.from(`${uuid(2)}.digest`).toString('base64url'), sig])), null, 'another user id with the same signature');
+    assert.equal(u.verifyUnsubscribeToken(rebuild([version, keyId, Buffer.from(`${uuid(1)}.announcements`).toString('base64url'), sig])), null, 'another scope');
+    assert.equal(u.verifyUnsubscribeToken(rebuild(['v2', keyId, body, sig])), null, 'unknown version');
+    assert.equal(u.verifyUnsubscribeToken(rebuild([version, '00000000', body, sig])), null, 'unknown key id');
+    assert.equal(u.verifyUnsubscribeToken(rebuild([version, keyId, body, sig.slice(0, -2)])), null);
+    for (const bad of [null, '', 'a.b.c', 'x'.repeat(400), body, `${body}.${sig}`]) assert.equal(u.verifyUnsubscribeToken(bad), null);
     assert.throws(() => u.signUnsubscribeToken('not-a-uuid', 'digest'));
-    withEnv({ EMAIL_UNSUBSCRIBE_SECRET: 'another-secret-0123456789abcdefghijkl' }, () => assert.equal(u.verifyUnsubscribeToken(token), null));
+    const ROTATED = 'rotated-unsubscribe-secret-0123456789abcdef';
+    // Rotation without a grace period: the old token is rejected.
+    withEnv({ EMAIL_UNSUBSCRIBE_SECRET: ROTATED }, () => {
+      assert.equal(u.verifyUnsubscribeToken(token), null);
+      const fresh = u.signUnsubscribeToken(uuid(1), 'digest');
+      assert.notEqual(fresh.split('.')[1], keyId, 'key id follows the secret');
+      assert.ok(u.verifyUnsubscribeToken(fresh));
+    });
+    // Grace period: the previous secret still verifies (never signs); removing it ends the grace.
+    withEnv({ EMAIL_UNSUBSCRIBE_SECRET: ROTATED, EMAIL_UNSUBSCRIBE_SECRET_PREVIOUS: SECRET }, () => {
+      assert.deepEqual(u.verifyUnsubscribeToken(token), { userId: uuid(1), scope: 'digest' });
+      assert.notEqual(u.signUnsubscribeToken(uuid(1), 'digest').split('.')[1], keyId);
+    });
     withEnv({ EMAIL_UNSUBSCRIBE_SECRET: 'short' }, () => { assert.equal(u.signUnsubscribeToken(uuid(1), 'digest'), null); assert.equal(u.verifyUnsubscribeToken(token), null); });
   });
 });
 
-test('one-click route: GET never writes, POST turns off only the signed category, bad tokens change nothing', async () => {
+test('digest unsubscribe never turns off application, decision or interview email', () => {
+  const load = loader({}), u = load('lib/email-unsubscribe.ts'), policy = load('lib/communications-policy.ts');
+  for (const frequency of ['DAILY', 'INSTANT']) {
+    const before = { ...policy.notificationDefaults, emailFrequency: frequency };
+    const after = { ...before, ...u.unsubscribeChanges('digest', before) };
+    assert.notEqual(after.emailFrequency, 'OFF'); assert.equal(after.emailFrequency, 'INSTANT', 'the digest itself stops');
+    for (const type of ['DECISION', 'OFFER_RESPONSE', 'APPLICATION', 'INTERVIEW', 'MESSAGE', 'INVITATION']) assert.equal(policy.optionalEmailAllowed(after, type), true, `${frequency}: ${type} still sent`);
+    for (const type of ['ANNOUNCEMENT', 'TASK', 'PLATFORM']) assert.equal(policy.optionalEmailAllowed(after, type), false, `${frequency}: ${type} stopped`);
+  }
+  assert.equal(u.unsubscribeChanges('digest', { emailFrequency: 'OFF' }).emailFrequency, undefined, 'never turns email back on');
+  assert.deepEqual(u.unsubscribeChanges('announcements', { emailFrequency: 'DAILY' }), { emailAnnouncements: false });
+  for (const scope of u.unsubscribeScopes) for (const current of [null, { emailFrequency: 'DAILY' }]) {
+    const changes = u.unsubscribeChanges(scope, current);
+    for (const key of ['emailApplications', 'emailInterviews', 'emailMessages', 'emailInvitations']) assert.equal(key in changes, false, `${scope}: ${key}`);
+    assert.notEqual(changes.emailFrequency, 'OFF');
+  }
+});
+
+// A small in-memory stand-in for the Prisma calls the unsubscribe writer and the email worker make.
+function fakeDb(userId, prefs) {
+  const state = { prefs, outbox: [], audit: [], deliveries: [] };
+  const tx = {
+    $queryRaw: async () => [{ id: userId }],
+    user: { findUnique: async () => ({ id: userId, email: 'student@virginia.edu', disabledAt: null, notificationPreferences: state.prefs }) },
+    userNotificationPreference: {
+      findUnique: async () => state.prefs && { emailFrequency: state.prefs.emailFrequency },
+      upsert: async ({ create, update }) => (state.prefs = state.prefs ? { ...state.prefs, ...update } : { ...create }),
+    },
+    auditLog: { create: async ({ data }) => { state.audit.push(data); return data; } },
+    notificationEmailOutbox: {
+      findMany: async () => state.outbox.filter(row => row.status === 'PENDING'),
+      update: async ({ where, data }) => Object.assign(state.outbox.find(row => row.notificationId === where.notificationId), data),
+      updateMany: async ({ where, data }) => { for (const row of state.outbox) if (where.notificationId.in.includes(row.notificationId) && row.status === where.status) Object.assign(row, data); },
+    },
+    notificationEmailDelivery: { create: async ({ data }) => { const row = { id: uuid(900 + state.deliveries.length), ...data }; state.deliveries.push(row); return row; } },
+  };
+  const prisma = { ...tx, $transaction: async fn => fn(tx), $queryRaw: async () => state.outbox.some(row => row.status === 'PENDING') ? [{ userId }] : [], notificationEmailDelivery: { findMany: async () => [] } };
+  return { state, prisma };
+}
+
+test('DAILY user: one-click digest unsubscribe, then a DECISION email is still assigned for sending, not suppressed', async () => {
+  const userId = uuid(1), { state, prisma } = fakeDb(userId, { userId, emailAnnouncements: true, emailMessages: true, emailApplications: true, emailInterviews: true, emailInvitations: true, emailTasks: true, emailPlatform: false, emailFrequency: 'DAILY' });
+  const prefix = { panelScheduleNotificationPrefix: 'panel:', currentPanelScheduleNotification: async () => null, availabilityRequestPrefix: 'avail:', currentAvailabilityRequest: async () => null, assignmentNotificationPrefix: 'assign:', currentAssignmentNotification: async () => null, applicantBookingNotificationPrefix: 'booking:', currentApplicantBookingNotification: async () => null };
+  const load = loader({ '@/utils/prisma': { prisma }, '@/utils/official-panel-schedule': prefix, '@/utils/availability-request-notifications': prefix, '@/utils/interview-assignment-notifications': prefix, '@/utils/applicant-booking-notifications': prefix });
+  await withEnv({ EMAIL_UNSUBSCRIBE_SECRET: SECRET, COMMUNICATIONS_EMAIL_ENABLED: 'true', RESEND_API_KEY: 'test-key', RESEND_FROM_EMAIL: 'updates@out-class.net', OUTCLASS_SITE_URL: site }, async () => {
+    const route = load('app/api/email/unsubscribe/route.ts'), u = load('lib/email-unsubscribe.ts');
+    const token = u.signUnsubscribeToken(userId, 'digest');
+    const response = await route.POST(new Request(`${site}/api/email/unsubscribe?token=${encodeURIComponent(token)}`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'List-Unsubscribe=One-Click' }));
+    assert.equal(response.status, 200);
+    const page = await response.text();
+    assert.match(page, /applications, decisions and interviews/); assert.match(page, /will continue/);
+    assert.notEqual(state.prefs.emailFrequency, 'OFF'); assert.equal(state.prefs.emailApplications, true); assert.equal(state.prefs.emailInterviews, true);
+    // The opt-out is audited: actor is the user, scope recorded, token never stored.
+    assert.equal(state.audit.length, 1);
+    assert.deepEqual({ actorId: state.audit[0].actorId, targetId: state.audit[0].targetId, action: state.audit[0].action, scope: state.audit[0].details.scope, method: state.audit[0].details.method }, { actorId: userId, targetId: userId, action: 'email.unsubscribe', scope: 'digest', method: 'one-click' });
+    assert.ok(!JSON.stringify(state.audit).includes(token) && !JSON.stringify(state.audit).includes(token.split('.')[3]));
+    // Enqueue a decision (created now, which on DAILY would have waited for tomorrow's digest).
+    state.outbox.push({ notificationId: uuid(10), status: 'PENDING', createdAt: new Date(), notification: { id: uuid(10), userId, type: 'DECISION', title: 'ACCEPTED', eventKey: 'decision:x', archivedAt: null, href: `/applications/${uuid(11)}/decision`, club: { name: 'Club', suspendedAt: null } } });
+    const result = await load('utils/notification-delivery.ts').processNotificationEmails(5);
+    assert.equal(state.outbox[0].status, 'ASSIGNED', JSON.stringify(result)); assert.equal(result.suppressed, 0);
+    assert.equal(state.deliveries.length, 1); assert.deepEqual(state.deliveries[0].payload.categories, ['DECISION']);
+    assert.equal(state.deliveries[0].payload.headers, undefined, 'a decision email is transactional');
+  });
+});
+
+test('one-click route: GET never writes, POST accepts the RFC 8058 body or the form, bad tokens change nothing', async () => {
   await withEnv({ EMAIL_UNSUBSCRIBE_SECRET: SECRET }, async () => {
     const writes = [];
-    const load = loader({ '@/utils/notification-preferences': { writeNotificationPreferences: async (userId, values) => { writes.push({ userId, values }); return {}; } } });
+    const load = loader({ '@/utils/notification-preferences': { applyEmailUnsubscribe: async (userId, scope, oneClick) => { writes.push({ userId, scope, oneClick }); return {}; } } });
     const route = load('app/api/email/unsubscribe/route.ts'), u = load('lib/email-unsubscribe.ts');
     const url = scope => `${site}/api/email/unsubscribe?token=${encodeURIComponent(u.signUnsubscribeToken(uuid(1), scope))}`;
     const get = await route.GET(new Request(url('digest')));
-    assert.equal(get.status, 200); assert.match(await get.text(), /<form method="post"/); assert.equal(writes.length, 0);
-    assert.equal((await route.POST(new Request(url('digest'), { method: 'POST', body: 'List-Unsubscribe=One-Click' }))).status, 200);
-    assert.equal((await route.POST(new Request(url('announcements'), { method: 'POST', body: 'List-Unsubscribe=One-Click' }))).status, 200);
-    assert.deepEqual(writes, [{ userId: uuid(1), values: { emailFrequency: 'OFF' } }, { userId: uuid(1), values: { emailAnnouncements: false } }]);
+    const getPage = await get.text();
+    assert.equal(get.status, 200); assert.match(getPage, /<form method="post"/); assert.match(getPage, /decisions and interviews/); assert.equal(writes.length, 0);
+    const form = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    assert.equal((await route.POST(new Request(url('digest'), { method: 'POST', headers: form, body: 'List-Unsubscribe=One-Click' }))).status, 200);
+    assert.equal((await route.POST(new Request(url('announcements'), { method: 'POST', headers: form, body: 'source=page' }))).status, 200);
+    assert.equal((await route.POST(new Request(url('announcements'), { method: 'POST' }))).status, 200);
+    assert.deepEqual(writes, [{ userId: uuid(1), scope: 'digest', oneClick: true }, { userId: uuid(1), scope: 'announcements', oneClick: false }, { userId: uuid(1), scope: 'announcements', oneClick: false }]);
     for (const bad of [`${site}/api/email/unsubscribe`, `${site}/api/email/unsubscribe?token=forged.token`]) {
-      assert.equal((await route.POST(new Request(bad, { method: 'POST' }))).status, 400);
+      assert.equal((await route.POST(new Request(bad, { method: 'POST', body: 'List-Unsubscribe=One-Click' }))).status, 400);
       assert.equal((await route.GET(new Request(bad))).status, 400);
     }
-    assert.equal(writes.length, 2);
+    assert.equal(writes.length, 3);
     const response = await route.POST(new Request(url('digest'), { method: 'POST' }));
     assert.equal(response.headers.get('cache-control'), 'private, no-store');
     assert.equal(response.headers.get('set-cookie'), null, 'never signs anyone in');
   });
-  // The route only ever lowers email; the shared writer is the same one the settings action uses.
   const route = fs.readFileSync('app/api/email/unsubscribe/route.ts', 'utf8');
   assert.doesNotMatch(route, /createClient|requireAuth|supabase|cookies\(/);
   assert.match(fs.readFileSync('actions/communications.ts', 'utf8'), /const saved = await writeNotificationPreferences\(user\.id, values\)/);
   assert.match(fs.readFileSync('utils/notification-preferences.ts', 'utf8'), /SELECT id FROM "User" WHERE id=\$\{userId\} FOR UPDATE/);
+});
+
+test('email footer school name comes from the caller when given, UVA by default', () => {
+  const t = loader({})('lib/transactional-email.ts');
+  const base = { title: 'T', preview: 'P', body: '', siteUrl: site, footer: 'F' };
+  assert.ok(t.transactionalEmailHtml(base).includes('University of Virginia &nbsp;'));
+  const other = t.transactionalEmailHtml({ ...base, schoolName: 'Example <State>' });
+  assert.ok(other.includes('Example &lt;State&gt; &nbsp;')); assert.ok(!other.includes('University of Virginia'));
 });
 
 test('email subjects and sender names carry no em or en dashes', () => {

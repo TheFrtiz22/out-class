@@ -35,5 +35,12 @@ Also confirm `hello@out-class.net` is monitored: it is the contact for privacy r
 
 - Set `OUTCLASS_POSTAL_ADDRESS` (Vercel, Production). Then regenerate the Auth email templates (`node scripts/email-audit.cjs build` with the variable set) and upload them to Supabase Auth, so sign-in emails carry the address too.
 - Set `EMAIL_UNSUBSCRIBE_SECRET` (32+ random characters, server-only) to enable one-click unsubscribe. Without it, `List-Unsubscribe` points to the preferences page only.
+
+## One-click unsubscribe: what it changes, audit and key rotation
+
+- **What stops.** A digest unsubscribe stops the daily digest (DAILY becomes INSTANT) and turns off the optional categories: Club announcements, task reminders and OutClass platform news. An announcement unsubscribe turns off announcement email only. Neither ever turns off application, decision, offer or interview email, messages from Clubs or invitations, and neither ever sets email frequency to OFF (which would block every category). The schema already has per-category toggles, so no migration was needed. The confirmation page says what stops and that decision and interview emails continue.
+- **Audit.** Each unsubscribe writes an `AuditLog` row: action `email.unsubscribe`, actor and target = the user, `details.scope`, `details.method` (`one-click` for an RFC 8058 provider POST, `confirmation-page` for the button) and the fields changed. The token is never stored.
+- **Tokens.** Format `v1.<keyId>.<payload>.<HMAC>`; `keyId` is the first 8 hex characters of SHA-256 of the secret, so it changes whenever the secret does. Tokens are signed with `EMAIL_UNSUBSCRIBE_SECRET` only.
+- **Rotation.** Replace `EMAIL_UNSUBSCRIBE_SECRET`. Every link in email already sent stops working at once (the page says the link is invalid and points to preferences). For a grace period, set `EMAIL_UNSUBSCRIBE_SECRET_PREVIOUS` to the old value: links signed with it keep working, and new email uses the new key. Remove `EMAIL_UNSUBSCRIBE_SECRET_PREVIOUS` to end the grace period. Rotate immediately if the secret may have leaked; a leaked secret lets someone stop another user's optional email, never read data or sign in.
 - In the hosted Supabase Auth settings, change the confirmation email subject to "Verify your UVA email for OutClass" (the repo copy in `supabase/config.toml` is updated; the hosted setting is not changed by this branch).
 - After counsel signs off: fill every placeholder above, set `LEGAL_EFFECTIVE_DATE`, and flip `LEGAL_PAGES_PUBLIC`.
