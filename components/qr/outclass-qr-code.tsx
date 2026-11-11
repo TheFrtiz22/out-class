@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Download, Copy, Check } from "@/components/icons";
@@ -102,7 +103,7 @@ export function OutClassQRCode({
         await downloadQrPng(svgContent, filename, 2048);
       }
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Download failed. Please retry.");
+      setMessage(userMessage(err, "Download failed. Please retry."));
     } finally {
       setDownloadBusy(false);
     }

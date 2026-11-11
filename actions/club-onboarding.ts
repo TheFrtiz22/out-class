@@ -13,6 +13,7 @@ import { canGrantOnboardingRole } from "@/lib/club-onboarding";
 import { acceptIdentityInvitationInTransaction, recipientInvitation, createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
 import { boundedParse } from "@/lib/bounded-input";
+import { ActionError, actionResult } from "@/lib/action-result";
 
 const id = z.string().uuid();
 const invitationInput = z.object({
@@ -49,7 +50,7 @@ export async function getOrganizationInvitations(includeDismissed = false) {
   });
 }
 
-export async function acceptIdentityClubInvitation(invitationId: string) {
+async function acceptIdentityClubInvitationCommand(invitationId: string) {
   id.parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
   await prepareVerifiedSchoolAccount(account);
@@ -68,7 +69,7 @@ export async function setOrganizationInvitationDismissed(invitationId: string, d
   });
 }
 
-export async function declineIdentityClubInvitation(invitationId: string) {
+async function declineIdentityClubInvitationCommand(invitationId: string) {
   id.parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
   await prepareVerifiedSchoolAccount(account);
@@ -84,14 +85,14 @@ export async function revokeIdentityClubInvitation(invitationId: string, platfor
   const user = platformOperation ? await requirePlatformAdmin({ fresh: true }) : (await requireAuth()).user;
   return prisma.$transaction(async tx => {
     const hint = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
-    if (!hint) throw new Error("Invitation unavailable.");
+    if (!hint) throw new ActionError("Invitation unavailable.");
     await lockOperationalClub(tx, hint.clubId);
     const invitation = await tx.clubInvitation.findUniqueOrThrow({ where: { id: invitationId } });
     const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: invitation.clubId } } });
     if (!platformOperation && (!canGrantOnboardingRole(member, invitation.requestedRole) || invitation.permissions.some(p => !hasPermission(member, p as ClubPermission)))) {
-      throw new Error("You cannot revoke this invitation's grant.");
+      throw new ActionError("You cannot revoke this invitation's grant.");
     }
-    if (!invitation.schoolIdentityId || invitation.status !== "PENDING") throw new Error("Invitation unavailable.");
+    if (!invitation.schoolIdentityId || invitation.status !== "PENDING") throw new ActionError("Invitation unavailable.");
     await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "REVOKED", revokedAt: new Date() } });
     await tx.auditLog.create({ data: { actorId: user.id, action: "club.invite.revoke", targetId: invitation.id, clubId: invitation.clubId } });
   });
@@ -104,16 +105,16 @@ export async function recordRosterImport(input: unknown) {
     rows: z.array(z.record(z.string().max(2000))).max(10000),
   }).strict(), input);
   const serialized = JSON.stringify(data.rows);
-  if (Buffer.byteLength(serialized) > 1024 * 1024) throw new Error("Roster audit payload exceeds 1 MB.");
+  if (Buffer.byteLength(serialized) > 1024 * 1024) throw new ActionError("Roster audit payload exceeds 1 MB.");
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
   return prisma.$transaction(async tx => {
     await lockOperationalClub(tx, data.clubId);
     const manager = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: data.clubId } } });
-    if (!hasPermission(manager, "members.manage")) throw new Error("Roster upload access denied.");
+    if (!hasPermission(manager, "members.manage")) throw new ActionError("Roster upload access denied.");
     const fileHash = createHash("sha256").update(serialized).digest("hex");
     const existing = await tx.rosterImport.findUnique({ where: { clubId_idempotencyKey: { clubId: data.clubId, idempotencyKey: data.idempotencyKey } } });
     if (existing) {
-      if (existing.fileHash !== fileHash || existing.filename !== data.filename) throw new Error("Import key was already used for another upload.");
+      if (existing.fileHash !== fileHash || existing.filename !== data.filename) throw new ActionError("Import key was already used for another upload.");
       return { id: existing.id, reused: true };
     }
     const record = await tx.rosterImport.create({ data: {
@@ -135,7 +136,15 @@ export async function getRosterImport(importId: string) {
     const hint = await tx.rosterImport.findUniqueOrThrow({ where: { id: importId } });
     await lockOperationalClub(tx, hint.clubId);
     const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: hint.clubId } } });
-    if (!hasPermission(member, "members.manage")) throw new Error("Roster access denied.");
+    if (!hasPermission(member, "members.manage")) throw new ActionError("Roster access denied.");
     return tx.rosterImport.findUniqueOrThrow({ where: { id: importId }, include: { rows: { orderBy: { rowNumber: "asc" } } } });
   });
+}
+
+export async function acceptIdentityClubInvitation(...args: Parameters<typeof acceptIdentityClubInvitationCommand>) {
+  return actionResult(() => acceptIdentityClubInvitationCommand(...args))
+}
+
+export async function declineIdentityClubInvitation(...args: Parameters<typeof declineIdentityClubInvitationCommand>) {
+  return actionResult(() => declineIdentityClubInvitationCommand(...args))
 }

@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 
 import { useEffect, useState } from "react";
 import { getProfileFieldVisibility, saveProfileFieldVisibility } from "@/lib/workspace-api";
@@ -29,7 +30,7 @@ export function ProfileFieldSettings({ clubId }: { clubId: string }) {
       setFields(saved.fields);
       setNotice(`${profileFieldLabels[key]} ${on ? "shown" : "hidden"}.`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn’t save this field.");
+      setError(userMessage(e, "Couldn’t save this field."));
     } finally {
       setBusy(null);
     }

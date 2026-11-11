@@ -1,12 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { acceptIdentityClubInvitation, declineIdentityClubInvitation, setOrganizationInvitationDismissed, type getOrganizationInvitations } from "@/actions/club-onboarding";
+import { acceptIdentityClubInvitation as acceptIdentityClubInvitationAction, declineIdentityClubInvitation as declineIdentityClubInvitationAction, setOrganizationInvitationDismissed, type getOrganizationInvitations } from "@/actions/club-onboarding";
 import { ClubLogo } from "@/components/club-logo";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { clubWorkspaceHref } from "@/lib/club-workspace";
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
+import { unwrapped } from "@/lib/action-result"
+const acceptIdentityClubInvitation = unwrapped(acceptIdentityClubInvitationAction)
+const declineIdentityClubInvitation = unwrapped(declineIdentityClubInvitationAction)
 
 export type OrganizationInvitation = Awaited<ReturnType<typeof getOrganizationInvitations>>[number];
 export type InvitationChange = { id: string; kind: "accepted" | "dismissed" | "restored" | "declined"; clubName: string };

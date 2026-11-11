@@ -231,3 +231,8 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
 - 2b437ea rebuild without a DSN: shared first-load JS 105 kB (= main 00840ee); /home 186 kB, /login 209 kB vs 208 kB on main. tests/sentry-scrub 6/6, typecheck ok after the change.
 - First-load deltas vs main on the other branches (no keys set): security/turnstile /login +1 kB, /signup +1 kB, /platform/login +1 kB, /request-school +1 kB; scheduling/outlook-busy /settings/availability +2 kB.
+
+## 2026-11-11 UI-FRIENDLY-ERRORS-1 ui/friendly-errors
+- Targeted unit run (1522 tests in files touching the changed actions, components, hooks and libs): 1384 pass, 137 fail, 1 skipped. Every failure is `Cannot find module '.prisma/client/default'` (no generated Prisma client in this worktree). New: tests/user-message 3/3, tests/user-message-guard 3/3, tests/action-results 3/3.
+- typecheck: no new errors versus main in this worktree (main itself reports ~1540 errors here because the Prisma client is not generated, so action return types are partly `any`; the real CI typecheck is the authority). eslint on changed files: 0 errors, 6 pre-existing warnings.
+- Not run: full `pnpm run test`, test:migrations, build, E2E/native/browser suites, or a production build check that a returned failure renders its message.

@@ -21,6 +21,7 @@ import {
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { ActionError, actionResult } from "@/lib/action-result";
 const eventSelect = {
   id: true,
   clubId: true,
@@ -101,7 +102,7 @@ async function locked(
   if (!e?.publication || (clubId && e.clubId !== clubId))
     throw new EventUnavailable();
   if (revision !== undefined && e.revision !== revision)
-    throw Error("Event changed. Reload before continuing.");
+    throw new ActionError("Event changed. Reload before continuing.");
   return e;
 }
 export async function getPublicCorkboard(input: EventFilters = {}) {
@@ -215,7 +216,7 @@ export async function setSavedCampusEvent(input: unknown) {
   }
   return prisma.$transaction(async tx => {
     const event = await locked(tx, eventId);
-    if (!eventIsPublished(event)) throw Error("This event is no longer available.");
+    if (!eventIsPublished(event)) throw new ActionError("This event is no longer available.");
     await tx.savedCampusEvent.upsert({
       where: { userId_eventId: { userId: user.id, eventId } },
       create: { userId: user.id, eventId }, update: {},
@@ -236,7 +237,7 @@ export async function listClubCampusEvents(clubId: string) {
   ).map(managed);
   });
 }
-export async function saveCampusEvent(input: unknown) {
+async function saveCampusEventCommand(input: unknown) {
   const d = eventEditorSchema.parse(input),
     { user } = await requireClubPermission(d.clubId, ["meetings.manage"]);
   const result = await prisma.$transaction(async (tx) => {
@@ -255,11 +256,11 @@ export async function saveCampusEvent(input: unknown) {
     if (id) {
       const e = await locked(tx, id, d.clubId, d.revision);
       if (["CANCELLED", "ARCHIVED"].includes(e.publication!.status))
-        throw Error(
+        throw new ActionError(
           "Create a new event instead of editing a cancelled or archived event.",
         );
       if (d.capacity !== null && d.capacity < e._count.rsvps)
-        throw Error("Capacity cannot be lower than existing RSVPs.");
+        throw new ActionError("Capacity cannot be lower than existing RSVPs.");
       await tx.meeting.update({
         where: { id },
         data: { ...content, revision: { increment: 1 } },
@@ -306,7 +307,7 @@ export async function saveCampusEvent(input: unknown) {
   await import("@/utils/event-flyer-cleanup").then(m => m.cleanupEventFlyers()).catch(() => {});
   return result;
 }
-export async function commandCampusEvent(input: unknown) {
+async function commandCampusEventCommand(input: unknown) {
   const d = eventCommandSchema.parse(input),
     { user } = await requireClubPermission(d.clubId, ["meetings.manage"]);
   const result = await prisma.$transaction(async (tx) => {
@@ -315,12 +316,12 @@ export async function commandCampusEvent(input: unknown) {
       p = e.publication!;
     if (d.command === "SUBMIT") {
       if (!["DRAFT", "REJECTED"].includes(p.status))
-        throw Error("Only draft or rejected events can be submitted.");
+        throw new ActionError("Only draft or rejected events can be submitted.");
       if (e.date <= new Date())
-        throw Error("Choose a future event start before submitting.");
+        throw new ActionError("Choose a future event start before submitting.");
       // The template is a complete flyer without an upload. Structured fields are canonical.
       if (!e.description?.trim() || !e.endDate)
-        throw Error("Complete the event details before submitting.");
+        throw new ActionError("Complete the event details before submitting.");
       await tx.auditLog.create({
         data: {
           actorId: user.id,
@@ -331,7 +332,7 @@ export async function commandCampusEvent(input: unknown) {
         },
       });
     } else if (["CANCELLED", "ARCHIVED"].includes(p.status))
-      throw Error("This event is already closed.");
+      throw new ActionError("This event is already closed.");
     const status =
       d.command === "SUBMIT"
         ? "PENDING"
@@ -397,14 +398,14 @@ export async function listEventApprovals(status = "PENDING") {
   });
   return { events: rows.map(managed), pendingCount };
 }
-export async function reviewCampusEvent(input: unknown) {
+async function reviewCampusEventCommand(input: unknown) {
   const d = eventReviewSchema.parse(input),
     actor = await requirePlatformAdmin({ fresh: true });
   const result = await prisma.$transaction(async (tx) => {
     const e = await locked(tx, d.eventId, undefined, d.revision),
       p = e.publication!;
     if (p.status !== "PENDING")
-      throw Error("This submission is no longer pending.");
+      throw new ActionError("This submission is no longer pending.");
     const membership = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: actor.id, clubId: e.clubId } },
     });
@@ -440,11 +441,11 @@ export async function reviewCampusEvent(input: unknown) {
       hasPermission(membership, "meetings.manage") ||
       authored
     )
-      throw Error(
+      throw new ActionError(
         "You cannot approve or reject your own club's event. Another administrator must review it.",
       );
     if (d.approved && e.date <= new Date())
-      throw Error(
+      throw new ActionError(
         "The event has already started. Return it for updated dates.",
       );
     await tx.eventPublication.update({
@@ -552,7 +553,7 @@ export async function getCampusEventRsvpDashboard(clubId: string, eventId: strin
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, clubId, user.id, ["meetings.attendance"], { readOnly: true });
     const event = await tx.meeting.findFirst({ where: { id: eventId, clubId, publication: { isNot: null } }, select: { id: true, publication: { select: { capacity: true } } } });
-    if (!event?.publication) throw Error("Event unavailable.");
+    if (!event?.publication) throw new ActionError("Event unavailable.");
   const rows = await tx.eventRsvp.findMany({
     where: { eventId },
     select: {
@@ -628,4 +629,16 @@ export async function listAdminCampusEvents(input: unknown) {
   const events = await prisma.meeting.findMany({ where: { publication: { is: f.status ? { status: f.status } : {} }, ...(f.query ? { OR: [{ title: { contains: f.query, mode: "insensitive" } }, { club: { name: { contains: f.query, mode: "insensitive" } } }] } : {}) }, select: eventSelect, orderBy: [{ date: "desc" }, { id: "asc" }], take: 100 });
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.corkboard.read", targetId: "events", details: { result: "success", status: f.status } } });
   return events.map(managed);
+}
+
+export async function saveCampusEvent(...args: Parameters<typeof saveCampusEventCommand>) {
+  return actionResult(() => saveCampusEventCommand(...args))
+}
+
+export async function commandCampusEvent(...args: Parameters<typeof commandCampusEventCommand>) {
+  return actionResult(() => commandCampusEventCommand(...args))
+}
+
+export async function reviewCampusEvent(...args: Parameters<typeof reviewCampusEventCommand>) {
+  return actionResult(() => reviewCampusEventCommand(...args))
 }

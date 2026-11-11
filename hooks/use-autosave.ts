@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import { useEffect, useRef, useState } from "react"
 import { registerAutosaveNavigation } from "@/lib/autosave-navigation"
 import { AutosaveQueue, type AutosaveState } from "@/lib/autosave-queue"
@@ -69,7 +70,7 @@ export function useAutosave<T>({ identity, value, save, enabled = true, restore 
   }, [serialized, enabled, identity])
   const entry = holder.current?.identity === identity ? holder.current : null, queue = entry?.queue
   async function flush() {
-    if (entry?.recovery) throw Error("Resolve the recovered draft before continuing.")
+    if (entry?.recovery) throw new UserFacingError("Resolve the recovered draft before continuing.")
     await queue?.flush()
   }
   return {

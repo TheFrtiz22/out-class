@@ -1,10 +1,11 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import "@/components/shell/responsive-workspace.css"
 import { useState } from "react"
 import {
   getClubAccess,
   inviteClubManager,
-  updateClubAccess,
+  updateClubAccess as updateClubAccessAction,
   revokeClubInvitation,
 } from "@/actions/club-access"
 import { useAuth } from "@/contexts/auth-context"
@@ -12,6 +13,8 @@ import { clubPermissions, permissionTemplates, permissionLabels, hasPermission, 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/ui/native-select"
+import { unwrapped } from "@/lib/action-result"
+const updateClubAccess = unwrapped(updateClubAccessAction)
 export function ClubAccessEditor({
   clubId,
   initial,
@@ -53,7 +56,7 @@ export function ClubAccessEditor({
       }
       setMessage("Access updated.")
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not save.")
+      setMessage(userMessage(e, "Could not save."))
     } finally {
       // Refresh self-access even when a successful revocation prevents the subsequent access read.
       if (!ownerRefreshed) try { await refreshUser() } catch { /* The next server action still rechecks access. */ }

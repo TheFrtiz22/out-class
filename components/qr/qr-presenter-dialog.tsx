@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Check, Copy, Download, Maximize2, Minimize2 } from "@/components/icons";
@@ -198,7 +199,7 @@ export function QrPresenterDialog({
       if (format === "svg") downloadQrSvg(svgContent, filename);
       else await downloadQrPng(svgContent, filename, 2048);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Download failed. Please retry.");
+      setMessage(userMessage(err, "Download failed. Please retry."));
     } finally {
       setBusy(false);
     }

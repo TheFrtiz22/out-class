@@ -1,3 +1,4 @@
+import { userMessage } from "@/lib/user-message"
 import type { AvailabilityDocument, AvailabilitySchedule } from "@/lib/availability"
 
 export type SaveState = "saved" | "unsaved" | "saving" | "error"
@@ -38,7 +39,7 @@ export class AvailabilitySaveQueue {
         }
         this.state = "saved"; this.error = ""
       } catch (error) {
-        this.state = "error"; this.error = error instanceof Error ? error.message : "Could not save availability. Retry when connected."
+        this.state = "error"; this.error = userMessage(error, "Could not save availability. Retry when connected.")
         throw error
       } finally {
         this.flight = null; if (!this.disposed) this.notify()

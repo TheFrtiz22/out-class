@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 // The club profile field setting also governs the member roster, applicant CSV export and voting setup.
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
@@ -26,10 +27,10 @@ test('roster reads clear hidden academic fields on the server and keep identity,
 test('getClubMembers and getClubAccess read the setting with the members and return filtered profiles', async () => {
   let query
   const rows = [{ id: 'm1', clubId, club: { profileFieldVisibility: { major: false } }, user: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', major: 'Math', gradYear: 2028, transferStudent: false } } }]
-  const actions = load('actions/club-access.ts', {
+  const actions = unwrapActions(load('actions/club-access.ts', {
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'u' } }), requireAuth: async () => ({ user: { id: 'u' } }) },
     '@/utils/prisma': { prisma: { clubMember: { findMany: async q => { query = q; return structuredClone(rows) } }, clubInvitation: { findMany: async () => [] } } },
-  })
+  }))
   const [member] = await actions.getClubMembers(clubId)
   assert.deepEqual(query.include.club, { select: { profileFieldVisibility: true } })
   assert.equal(member.user.studentProfile.major, '')

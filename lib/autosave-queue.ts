@@ -1,3 +1,4 @@
+import { userMessage } from "@/lib/user-message"
 export type AutosaveState = "idle" | "pending" | "saving" | "saved" | "error"
 
 /** Shared successor to AvailabilitySaveQueue: one writer, immutable snapshots, latest edit wins. */
@@ -51,7 +52,7 @@ export class AutosaveQueue<T> {
         this.state = "saved"; this.error = ""; this.recover(null)
       } catch (error) {
         this.state = "error"
-        this.error = error instanceof Error && !("digest" in error) ? error.message : "Your changes are still here. Reconnect and retry."
+        this.error = userMessage(error, "Your changes are still here. Reconnect and retry.")
         throw error
       } finally { this.flight = null; if (this.active) this.notify() }
     }

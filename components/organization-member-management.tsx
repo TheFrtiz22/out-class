@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
@@ -10,7 +11,7 @@ import { compareAcademicYears } from "@/lib/recruitment-profile";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
 import { ActionWorkflow } from "@/components/product/action-workflow";
-import { addClubMember } from "@/actions/club-access";
+import { addClubMember as addClubMemberAction } from "@/actions/club-access";
 import {InvitationScheduleComposer} from "@/components/invitation-schedules";
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import {
@@ -29,13 +30,13 @@ import { useEffect, useRef, useState } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  changeOrganizationMemberRole,
-  removeOrganizationMember,
-  transferOrganizationOwnership,
-  inviteOrganizationMember,
-  manageOrganizationInvitation,
-  bulkOrganizationMembers,
-  bulkOrganizationInvitations,
+  changeOrganizationMemberRole as changeOrganizationMemberRoleAction,
+  removeOrganizationMember as removeOrganizationMemberAction,
+  transferOrganizationOwnership as transferOrganizationOwnershipAction,
+  inviteOrganizationMember as inviteOrganizationMemberAction,
+  manageOrganizationInvitation as manageOrganizationInvitationAction,
+  bulkOrganizationMembers as bulkOrganizationMembersAction,
+  bulkOrganizationInvitations as bulkOrganizationInvitationsAction,
 } from "@/actions/organization-members";
 import {
   canChangeOrganizationRole,
@@ -68,6 +69,15 @@ import { SearchField } from "@/components/ui/search-field"
 import { PillSelect } from "@/components/ui/pill-select"
 import { Toggle } from "@/components/ui/toggle"
 import { useConfirmOnce } from "@/components/ui/confirm-dialog"
+import { unwrapped } from "@/lib/action-result"
+const changeOrganizationMemberRole = unwrapped(changeOrganizationMemberRoleAction)
+const removeOrganizationMember = unwrapped(removeOrganizationMemberAction)
+const transferOrganizationOwnership = unwrapped(transferOrganizationOwnershipAction)
+const inviteOrganizationMember = unwrapped(inviteOrganizationMemberAction)
+const manageOrganizationInvitation = unwrapped(manageOrganizationInvitationAction)
+const bulkOrganizationMembers = unwrapped(bulkOrganizationMembersAction)
+const bulkOrganizationInvitations = unwrapped(bulkOrganizationInvitationsAction)
+const addClubMember = unwrapped(addClubMemberAction)
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
 type Member = Directory["members"][number];
@@ -198,7 +208,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       return true;
     } catch (e) {
       if (optimistic) setData(previous);
-      setError(e instanceof Error ? e.message : "Could not save. Try again.");
+      setError(userMessage(e, "Could not save. Try again."));
       return false;
     } finally {
       working.current = false;

@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -46,11 +47,11 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
         // An earlier request may have committed even though its response was lost.
         const current = await (demo.isDemoEnabled?latest.current.demoPersistence!.read(scope):getEditorDraft(scope))
         if (current?.mutationId === session.mutation.id) session.revision = current.revision
-        else if ((current?.revision ?? 0) !== session.revision) throw Error("This draft changed in another tab. Your text is retained. Reopen to compare.")
+        else if ((current?.revision ?? 0) !== session.revision) throw new UserFacingError("This draft changed in another tab. Your text is retained. Reopen to compare.")
       }
       if (session.mutation?.text !== text) session.mutation = { text, id: crypto.randomUUID() }
       const result = await (demo.isDemoEnabled?latest.current.demoPersistence!.write:saveEditorDraft)({ scope, revision: session.revision, mutationId: session.mutation.id, base, content })
-      if ("error" in result) throw Error(result.message)
+      if ("error" in result) throw new UserFacingError(result.message)
       session.revision = result.revision; session.mutation = null
     },
   })
@@ -67,7 +68,7 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
     await autosave.reset()
   }
   return { ...autosave, ready, error: loadError || autosave.error, state: loadError ? "error" as const : autosave.state,
-    flush: async () => { if (!ready || recovery !== null) throw Error("Resolve draft recovery before continuing."); await autosave.flush() },
+    flush: async () => { if (!ready || recovery !== null) throw new UserFacingError("Resolve draft recovery before continuing."); await autosave.flush() },
     retry: () => { if (loadError) setRetry(n => n + 1); else void autosave.flush().catch(() => {}) }, clear,
     /** After the caller explicitly replaced its form with authoritative saved state, adopt the stored revision so this tab's copy supersedes the other tab's. */
     rebase: async () => {

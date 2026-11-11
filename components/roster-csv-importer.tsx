@@ -1,4 +1,6 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import { useRef, useState } from "react";
@@ -25,13 +27,13 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
     working.current = true; setBusy(true); setError(""); setPreview(null); setResult(null); setPage(0);
     try {
       if (upload.current?.file !== file) upload.current = { file, requestId: crypto.randomUUID() };
-      if (!/\.csv$/i.test(file.name)) throw new Error("Choose a comma-separated CSV file.");
-      if (file.size > ROSTER_MAX_BYTES) throw new Error("CSV must be 1 MB or smaller.");
+      if (!/\.csv$/i.test(file.name)) throw new UserFacingError("Choose a comma-separated CSV file.");
+      if (file.size > ROSTER_MAX_BYTES) throw new UserFacingError("CSV must be 1 MB or smaller.");
       const csv = await file.text();
       parseRosterCsv(csv); // Immediate structural feedback; server independently parses and validates.
       const data = await previewRosterImport({ clubId, filename: file.name, csv, requestId: upload.current.requestId });
       setPreview(data);
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not validate CSV. Try again."); }
+    } catch (e) { setError(userMessage(e, "Could not validate CSV. Try again.")); }
     finally { working.current = false; setBusy(false); }
   }
   async function confirm() {
@@ -46,11 +48,11 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
           try { await onImported?.(); } catch { announceDataChanged("members"); setError("Import completed. The member list will update in a moment."); }
           break;
         }
-        if (outcome.processed <= previousProcessed) throw new Error("Import paused. Retry to resume processing.");
+        if (outcome.processed <= previousProcessed) throw new UserFacingError("Import paused. Retry to resume processing.");
         previousProcessed = outcome.processed;
       }
     }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not confirm import. Try again."); }
+    catch (e) { setError(userMessage(e, "Could not confirm import. Try again.")); }
     finally { working.current = false; setBusy(false); }
   }
   return <section className="space-y-4 rounded-xl border p-4 sm:p-6" aria-label="CSV member roster import" aria-busy={busy} data-saving={busy} data-unsaved={!!preview && !result?.completed}>

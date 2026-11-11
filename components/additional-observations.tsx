@@ -1,4 +1,5 @@
 'use client';
+import { userMessage } from "@/lib/user-message"
 import {useEffect,useId,useRef,useState} from 'react';
 import {getAdditionalObservations,saveAdditionalObservation} from '@/lib/additional-observations-api';
 import {observationWordCount,type AdditionalObservation} from '@/lib/additional-observations';
@@ -11,7 +12,7 @@ export function AdditionalObservations({clubId,applicationId,onSaved,embedded=fa
  const [rows,setRows]=useState<AdditionalObservation[]|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[open,setOpen]=useState(false),[body,setBody]=useState(''),[context,setContext]=useState(''),[reason,setReason]=useState(''),[editing,setEditing]=useState<AdditionalObservation|null>(null),[refresh,setRefresh]=useState(0);
  const pending=useRef<Parameters<typeof saveAdditionalObservation>[0]|null>(null),lock=useRef(false),origin=useRef<HTMLButtonElement|null>(null),addControl=useRef<HTMLButtonElement|null>(null),form=useRef<HTMLTextAreaElement|null>(null),id=useId();
  useEffect(()=>{setRows(null);setOpen(false);setEditing(null);setBody('');setContext('');setReason('');pending.current=null;},[clubId,applicationId,identity]);
- useEffect(()=>{let current=true;getAdditionalObservations({clubId,applicationId}).then(v=>{if(current){setRows(v);setError('');}}).catch(e=>{if(current){setRows(null);setError(e instanceof Error?e.message:'Observations unavailable.');}});return()=>{current=false;};},[clubId,applicationId,identity,refresh]);
+ useEffect(()=>{let current=true;getAdditionalObservations({clubId,applicationId}).then(v=>{if(current){setRows(v);setError('');}}).catch(e=>{if(current){setRows(null);setError(userMessage(e, 'Observations unavailable.'));}});return()=>{current=false;};},[clubId,applicationId,identity,refresh]);
  const count=observationWordCount(body),moderating=!!editing&&(!editing.canEdit||editing.locked);
  const report=useRef(onCount);report.current=onCount;
  useEffect(()=>{report.current?.(rows?rows.length:null);},[rows]);
@@ -24,7 +25,7 @@ export function AdditionalObservations({clubId,applicationId,onSaved,embedded=fa
   const content={clubId,applicationId,id:editing?.id??pending.current?.id??crypto.randomUUID(),revision:editing?.revision??null,body,interactionContext:context,reason,remove};
   const previous=pending.current;const same=previous&&Object.entries(content).every(([k,v])=>previous[k as keyof typeof previous]===v);
   const command={...content,requestId:same?previous.requestId:crypto.randomUUID()};pending.current=command;
-  try{await saveAdditionalObservation(command);close();setRefresh(v=>v+1);onSaved?.();}catch(e){setError(e instanceof Error?e.message:'Could not share. Your text is retained; retry.');}finally{setBusy(false);lock.current=false;}
+  try{await saveAdditionalObservation(command);close();setRefresh(v=>v+1);onSaved?.();}catch(e){setError(userMessage(e, 'Could not share. Your text is retained; retry.'));}finally{setBusy(false);lock.current=false;}
  }
  return <section aria-label="Additional observations" className={embedded?"space-y-3":"space-y-3 border-t pt-3"}>
   <header className={`flex items-center gap-2 ${embedded?"justify-end":"justify-between"}`}>{!embedded&&<h3 className="text-sm font-medium">Additional observations</h3>}{rows&&!open&&<Button ref={addControl} size="sm" variant="ghost" onClick={e=>edit(null,e.currentTarget)}>Add observation</Button>}</header>

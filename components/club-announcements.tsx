@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { AutosaveStatus } from "@/components/ui/autosave-status"
@@ -49,7 +50,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
  const firstRead = useRef(initialItems !== undefined);
  const [busy, setBusy] = useState(false);
  const [compose, setCompose] = useState(false);
- const openComposer=()=>{setCompose(true);setEditing(null);setSendMode("NOW");setPreview(null);setError("");setSuccess("");void getRecipientGroups(clubId).then(setCatalog).catch(e=>setError(e instanceof Error?e.message:"Audiences unavailable."));};
+ const openComposer=()=>{setCompose(true);setEditing(null);setSendMode("NOW");setPreview(null);setError("");setSuccess("");void getRecipientGroups(clubId).then(setCatalog).catch(e=>setError(userMessage(e, "Audiences unavailable.")));};
  // Club home "New announcement" links here with `compose=1` to open the composer directly.
  const composeRequested=useSearchParams()?.get("compose")==="1";
  const composeOpened=useRef(false);
@@ -67,7 +68,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
  const reload = useCallback(async () => {
   if (demo.isDemoEnabled) return;
   try { setItems(await getClubAnnouncements(clubId)); }
-  catch (e) { setError(e instanceof Error ? e.message : "Could not load announcements."); }
+  catch (e) { setError(userMessage(e, "Could not load announcements.")); }
  }, [clubId, demo.isDemoEnabled]);
  useEffect(() => { if (firstRead.current) { firstRead.current = false; return; } void reload(); }, [reload]);
  const draftSave = useEditorDraft({
@@ -95,7 +96,7 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
    await draftSave.clear();
    requestKey.current=null;setEditing(null);
    setTitle(""); setBody(""); setConfirmPublish(false); setCompose(false); await reload();
-  } catch (e) { setError(e instanceof Error ? e.message : "Publishing failed."); }
+  } catch (e) { setError(userMessage(e, "Publishing failed.")); }
   finally { publishing.current = false; setBusy(false); }
  }
  if (demo.isDemoEnabled) return <p className="rounded-lg border p-6 text-sm text-muted-foreground">Announcement publishing is available when signed into your live OutClass account.</p>;
@@ -129,14 +130,14 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
   <Sheet open={compose} onOpenChange={open=>{if(busy) return;if(!open){void draftSave.flush().then(()=>setCompose(false)).catch(()=>{});return;}setCompose(open);}}>
    <SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-xl"><SheetTitle>{editing?"Edit scheduled announcement":"New announcement"}</SheetTitle><SheetDescription>Choose the audience and publish a permanent in-app update.</SheetDescription>
    <AutosaveStatus save={draftSave} />
-   <form data-autosave-editor="true" onBlur={draftSave.onBlur} className="mt-7 space-y-6" data-unsaved={draftSave.dirty} onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError("");try{setPreview(await previewRecipientAudience(clubId,audience==="CUSTOM"?audienceSpec:{include:[{source:audience}]}));setConfirmPublish(true)}catch(e){setError(e instanceof Error?e.message:"Could not preview recipients.")}finally{setBusy(false)}}}>
+   <form data-autosave-editor="true" onBlur={draftSave.onBlur} className="mt-7 space-y-6" data-unsaved={draftSave.dirty} onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError("");try{setPreview(await previewRecipientAudience(clubId,audience==="CUSTOM"?audienceSpec:{include:[{source:audience}]}));setConfirmPublish(true)}catch(e){setError(userMessage(e, "Could not preview recipients."))}finally{setBusy(false)}}}>
     <label className="block space-y-2 text-sm font-medium">Title<Input required disabled={busy || !draftSave.ready || draftSave.recovery != null} maxLength={200} value={title} onChange={e=>{setTitle(e.target.value);requestKey.current=null;}} /></label>
     <label className="block space-y-2 text-sm font-medium">Announcement<Textarea required disabled={busy || !draftSave.ready || draftSave.recovery != null} maxLength={10000} className="min-h-56" value={body} onChange={e=>{setBody(e.target.value);requestKey.current=null;}} /></label>
     <label className="block space-y-2 text-sm font-medium">Publication<NativeSelect disabled={busy||!!editing} className="w-full" value={sendMode} onChange={e=>{setSendMode(e.target.value as "NOW"|"SCHEDULE");requestKey.current=null;}}><option value="NOW">Publish now</option><option value="SCHEDULE">Schedule</option></NativeSelect></label>
     {sendMode==="SCHEDULE"&&<ScheduleFields value={timing} disabled={busy || !draftSave.ready || draftSave.recovery != null} onChange={v=>{setTiming(v);requestKey.current=null;}}/>}
     <div role="group" aria-label="Recipient type" className="flex flex-wrap gap-2"><Button type="button" variant={audience !== "APPLICANTS" ? "secondary" : "outline"} disabled={busy || !draftSave.ready || draftSave.recovery != null} onClick={() => { setAudience("MEMBERS"); setAudienceSpec(recipientAudienceSchema.parse({ include: [{ source: "MEMBERS" }] })); setPreview(null); requestKey.current = null; }}>Members & groups</Button><Button type="button" variant={audience === "APPLICANTS" ? "secondary" : "outline"} disabled={busy || !draftSave.ready || draftSave.recovery != null} onClick={() => { setAudience("APPLICANTS"); setPreview(null); requestKey.current = null; }}>Active applicants</Button></div>
     {audience !== "APPLICANTS" && <AudienceEditor disabled={busy || !draftSave.ready || draftSave.recovery != null} catalog={catalog} value={audienceSpec} onChange={value => { setAudience("CUSTOM"); setAudienceSpec(value); setPreview(null); requestKey.current = null; }} />}
-    <Button type="button" variant="outline" disabled={busy || !draftSave.ready || draftSave.recovery != null} onClick={async()=>{setBusy(true);setError("");try{setPreview(await previewRecipientAudience(clubId,audience==="CUSTOM"?audienceSpec:{include:[{source:audience}]}));}catch(e){setError(e instanceof Error?e.message:"Preview failed.");}finally{setBusy(false);}}}>Preview recipients and count</Button>
+    <Button type="button" variant="outline" disabled={busy || !draftSave.ready || draftSave.recovery != null} onClick={async()=>{setBusy(true);setError("");try{setPreview(await previewRecipientAudience(clubId,audience==="CUSTOM"?audienceSpec:{include:[{source:audience}]}));}catch(e){setError(userMessage(e, "Preview failed."));}finally{setBusy(false);}}}>Preview recipients and count</Button>
     <AudiencePreview preview={preview} />
 
     {error && <p role="alert" className="oc-feedback">{error}</p>}

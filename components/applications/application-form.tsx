@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useAutosave } from "@/hooks/use-autosave"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { useAuth } from "@/contexts/auth-context"
@@ -117,12 +118,7 @@ export function ApplicationForm({
       setMessage(final ? "Application submitted." : "Draft saved to your account.")
       onSaved(final, answers)
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : ""
-      setError(
-        /already|profile|pipeline|questions|words|response|URL|closed|option/.test(message)
-          ? message
-          : "We couldn’t save your application. Your responses are still here. Please try again.",
-      )
+      setError(userMessage(cause, "We couldn’t save your application. Your responses are still here. Please try again."))
       setConfirm(false)
     } finally {
       setBusy(false)

@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 
 import Link from "next/link"
 import dynamic from "next/dynamic"
@@ -421,8 +422,8 @@ export function StudentOnboardingWizard({
 
       // Navigate to the dashboard
       onComplete()
-    } catch (err: any) {
-      setGlobalError(err?.message ?? "Failed to save your profile")
+    } catch (err) {
+      setGlobalError(userMessage(err, "Couldn’t save your profile. Your answers are still here. Try again."))
     } finally {
       setLoading(false)
     }

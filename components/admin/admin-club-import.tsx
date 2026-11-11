@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { useState } from "react"
 import { getAdminClub, getAdminClubs, saveAdminClub } from "@/actions/admin-clubs"
 import { uploadClubAsset } from "@/actions/club-assets"
@@ -17,21 +19,21 @@ export function AdminClubImport({ schoolId, onComplete }: { schoolId: string; on
     setError(''); setPlan([]); if (!file) return
     setBusy(true)
     try {
-      if (file.size > 2 * 1024 * 1024) throw Error('Choose a profile JSON package up to 2 MB.')
+      if (file.size > 2 * 1024 * 1024) throw new UserFacingError('Choose a profile JSON package up to 2 MB.')
       const parsed = clubProfileImportSchema.parse(JSON.parse(await file.text()))
       const next: Planned[] = []
       for (const row of parsed.profiles) {
         const matches = await getAdminClubs({ query: row.slug })
         const match = matches.rows.find(c => c.slug === row.slug)
-        if (row.existingId && match?.id !== row.existingId) throw Error(`Existing club mismatch: ${row.profile.name}.`)
+        if (row.existingId && match?.id !== row.existingId) throw new UserFacingError(`Existing club mismatch: ${row.profile.name}.`)
         const loaded = match ? await getAdminClub(match.id) : null
-        if (loaded && !loaded.value) throw Error('Could not load an existing club. Refresh and try again.')
+        if (loaded && !loaded.value) throw new UserFacingError('Could not load an existing club. Refresh and try again.')
         const current = loaded?.value ?? null
-        if (current && (current.schoolId !== schoolId || current.suspendedAt || current.profile.name !== row.profile.name)) throw Error(`Review the existing club separately: ${row.profile.name}.`)
+        if (current && (current.schoolId !== schoolId || current.suspendedAt || current.profile.name !== row.profile.name)) throw new UserFacingError(`Review the existing club separately: ${row.profile.name}.`)
         next.push({ row, current })
       }
       setPlan(next); setMessage('Review every create/update below. New clubs start with applications closed. Existing recruitment settings are preserved; no invitations are sent.')
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not review this package.') }
+    } catch (e) { setError(userMessage(e, 'Could not review this package.')) }
     finally { setBusy(false) }
   }
   const missing = [...new Set(plan.flatMap(({ row }) => importImageNames(row)))].filter(name => !images.some(f => f.name === name))
@@ -48,7 +50,7 @@ export function AdminClubImport({ schoolId, onComplete }: { schoolId: string; on
         progress: name => setMessage(`Importing ${name}…`),
       })
       setPlan([]); setMessage('All reviewed profiles published. No leadership granted or invitations sent.'); onComplete()
-    } catch (e) { setPlan([]); setError(`${e instanceof Error ? e.message : 'Import stopped.'} Earlier completed clubs are preserved. Select the package again to review current state before retrying.`) }
+    } catch (e) { setPlan([]); setError(`${userMessage(e, 'Import stopped.')} Earlier completed clubs are preserved. Select the package again to review current state before retrying.`) }
     finally { setBusy(false) }
   }
   return <details className="oc-content-panel"><summary className="cursor-pointer font-semibold">Import researched club profiles</summary><div className="mt-5 space-y-4">

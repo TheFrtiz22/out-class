@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 import { serverPhase } from "@/lib/server-phase-trace";
 import { AdminAccessError, providerAuthFailure } from "@/lib/admin-failure";
 import { assertClubOperational } from "@/lib/club-suspension";
@@ -101,7 +102,7 @@ export async function requireClubPermission(clubId: string, permissions: ClubPer
   const { user } = await requireAuth();
   const membership = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
   if (!membership || !isActiveMembership(membership) || !permissions.every(permission => hasPermission(membership, permission))) {
-    throw new Error("You do not have permission for this club action.");
+    throw new ActionError("You do not have permission for this club action.", "FORBIDDEN");
   }
   if (!options.allowSuspendedRead) await assertClubOperational(prisma, clubId);
   return { user, membership };

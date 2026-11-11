@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { PillSelect } from "@/components/ui/pill-select"
 import { DateField } from "@/components/ui/date-picker"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -71,22 +72,22 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
         try { await queue.flush(); const saved = await saveAvailabilityWithRecovery(queue.document,
           async () => (await saveMyRoundAvailability({ ...queue.document, ...scope, confirm: true })).document,
           async () => { const current = await getMyRoundAvailability(scope); return { document: current.document, responseMatches: current.confirmed && !current.declined } }); queue.document = saved; setConfirmed(true); setDeclined(false); onStatus?.(true, false); window.dispatchEvent(new Event("outclass:availability-changed")); render(v => v + 1) }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not confirm participation.") }
+        catch (error) { setNotice(userMessage(error, "Could not confirm participation.")) }
         finally { setConfirming(false) }
       }}><Check className="size-4" />{confirmed ? "Update submitted availability" : "Submit round availability"}</Button><Button variant="outline" onClick={async () => {
         setConfirming(true)
         try { const latest = await getMyRoundAvailability(scope); if (JSON.stringify(latest.global) === JSON.stringify(queue.document.schedule)) setNotice("Already using your current global schedule. Your response is unchanged."); else { setConfirmed(false); setDeclined(false); onStatus?.(false, false); queue.change(structuredClone(latest.global)) } }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not refresh the global schedule.") }
+        catch (error) { setNotice(userMessage(error, "Could not refresh the global schedule.")) }
         finally { setConfirming(false) }
       }}>Use current global schedule</Button><Button variant="outline" disabled={!confirmed} onClick={async () => {
         setConfirming(true)
         try { await queue.flush(); const result = await saveMyRoundAvailability({ ...queue.document, ...scope, confirm: false }); queue.document = result.document; setConfirmed(false); onStatus?.(false, false); window.dispatchEvent(new Event("outclass:availability-changed")) }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not withdraw confirmation.") }
+        catch (error) { setNotice(userMessage(error, "Could not withdraw confirmation.")) }
         finally { setConfirming(false) }
       }}>Withdraw confirmation</Button><Button variant="ghost" disabled={confirming || declined} onClick={async () => {
         setConfirming(true); setNotice("")
         try { await queue.flush(); const result = await declineRoundParticipation({ ...scope, revision: queue.document.revision, accountId: queue.document.accountId }); queue.document = { ...queue.document, revision: result.revision }; setDeclined(true); setConfirmed(false); onStatus?.(false, true); window.dispatchEvent(new Event("outclass:availability-changed")) }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not decline participation.") }
+        catch (error) { setNotice(userMessage(error, "Could not decline participation.")) }
         finally { setConfirming(false) }
       }}>Decline participation</Button>{!schedule.weeklySubmitted && !Object.keys(schedule.exceptions).length && <Button variant="outline" onClick={() => change({ ...schedule, weeklySubmitted: true })}>Declare no availability</Button>}</div></div>}
       <WeeklyCalendar knownDays={knownDays} days={days} dates={mode === "week" ? dates : undefined} onChange={editDays} />
@@ -126,7 +127,7 @@ function RoundEditor({ round, onStatus }: { round: AvailabilityRound; onStatus: 
   const [data, setData] = useState<Awaited<ReturnType<typeof getMyRoundAvailability>> | null>(null), [error, setError] = useState(""), [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let active = true
-    getMyRoundAvailability({ clubId: round.clubId, roundId: round.id }).then(value => { if (active) setData(value) }).catch(error => { if (active) setError(error instanceof Error ? error.message : "Could not load this round.") })
+    getMyRoundAvailability({ clubId: round.clubId, roundId: round.id }).then(value => { if (active) setData(value) }).catch(error => { if (active) setError(userMessage(error, "Could not load this round.")) })
     return () => { active = false }
   }, [round.clubId, round.id, attempt])
   if (error) return <div role="alert" className="space-y-3 text-sm text-destructive">{error}<Button variant="outline" onClick={() => { setError(""); setAttempt(v => v + 1) }}>Retry loading round</Button></div>

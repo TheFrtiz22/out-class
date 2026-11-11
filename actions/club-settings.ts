@@ -14,6 +14,7 @@ import {
 import { normalizeProfileFieldVisibility, sameProfileFieldVisibility, saveProfileFieldVisibilityInput } from "@/lib/profile-field-visibility";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { boundedParse } from "@/lib/bounded-input";
+import { ActionError, actionResult } from "@/lib/action-result";
 async function authorize(
   tx: AppTransactionClient,
   clubId: string,
@@ -26,7 +27,7 @@ async function authorize(
     tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } }),
   ]);
   if (!user || user.disabledAt || !hasPermission(member, permission))
-    throw new Error("Settings access changed. Reload before editing.");
+    throw new ActionError("Settings access changed. Reload before editing.");
 }
 function invalidate(clubId: string) {
   revalidateTag("club-directory");
@@ -60,7 +61,7 @@ export async function getApplicationSettings(clubId: string) {
     },
   });
 }
-export async function saveApplicationSettings(input: unknown) {
+async function saveApplicationSettingsCommand(input: unknown) {
   const data = boundedParse(applicationSettingsSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "application.manage",
@@ -72,7 +73,7 @@ export async function saveApplicationSettings(input: unknown) {
         where: { id: data.clubId },
       });
       if (club.applicationVersion !== data.version)
-        throw new Error(
+        throw new ActionError(
           "Application configuration changed. Reload before saving.",
         );
       const current = await tx.applicationQuestion.findMany({
@@ -90,7 +91,7 @@ export async function saveApplicationSettings(input: unknown) {
               saved.options.length === 0,
           )
         )
-          throw new Error(
+          throw new ActionError(
             "New multiple-choice questions need at least two distinct options.",
           );
       }
@@ -121,7 +122,7 @@ export async function saveApplicationSettings(input: unknown) {
             (saved.type !== q.type ||
               JSON.stringify(saved.options) !== JSON.stringify(fields.options))
           )
-            throw new Error(
+            throw new ActionError(
               "A question with saved answers cannot change type or choices. Add a replacement question instead.",
             );
           if (
@@ -198,7 +199,7 @@ export async function getPipelineSettings(clubId: string) {
     },
   });
 }
-export async function savePipelineSettings(input: unknown) {
+async function savePipelineSettingsCommand(input: unknown) {
   const data = boundedParse(pipelineSettingsSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "recruitment.manage",
@@ -210,7 +211,7 @@ export async function savePipelineSettings(input: unknown) {
         where: { id: data.clubId },
       });
       if (club.pipelineVersion !== data.version)
-        throw new Error("Recruiting pipeline changed. Reload before saving.");
+        throw new ActionError("Recruiting pipeline changed. Reload before saving.");
       const current = await tx.pipelineRound.findMany({
         where: { clubId: data.clubId },
         include: {
@@ -246,7 +247,7 @@ export async function savePipelineSettings(input: unknown) {
           (e.roundId ? e.roundId !== proposed.id : named?.id !== proposed.id),
         );
         if ((named && named.id !== proposed.id) || historyConflict)
-          throw new Error(
+          throw new ActionError(
             "That round name belongs to existing review history. Choose a new name.",
           );
       }
@@ -260,7 +261,7 @@ export async function savePipelineSettings(input: unknown) {
             },
           })
         )
-          throw new Error(
+          throw new ActionError(
             `Move active applicants out of ${r.name} before removing this round.`,
           );
         if (
@@ -271,7 +272,7 @@ export async function savePipelineSettings(input: unknown) {
             where: { roundId: r.id, state: { not: "COMPLETED" } },
           }))
         )
-          throw new Error(
+          throw new ActionError(
             `Close interview rooms and finish voting sessions before archiving ${r.name}.`,
           );
         if (
@@ -290,7 +291,7 @@ export async function savePipelineSettings(input: unknown) {
       for (const [order, r] of data.rounds.entries()) {
         const saved = current.find((x) => x.id === r.id);
         if (saved?.archivedAt)
-          throw new Error("Archived rounds cannot be reused. Add a new round.");
+          throw new ActionError("Archived rounds cannot be reused. Add a new round.");
         const fields = {
           name: r.name,
           type: r.type,
@@ -299,7 +300,7 @@ export async function savePipelineSettings(input: unknown) {
         };
         if (saved) {
           if (!isInterviewRecruitmentRound(r.type) && saved.type !== r.type && await tx.application.count({ where: { roundId: r.id, status: "INTERVIEWING" } }))
-            throw Error("Move interview applicants to a compatible round before changing this round type.");
+            throw new ActionError("Move interview applicants to a compatible round before changing this round type.");
           if (
             saved.type !== r.type &&
             (saved._count.interviewRooms ||
@@ -309,7 +310,7 @@ export async function savePipelineSettings(input: unknown) {
               saved.bookingPublishedAt ||
               saved._count.votingSessions)
           )
-            throw new Error(
+            throw new ActionError(
               `The type of ${saved.name} is protected by its interview or voting history.`,
             );
           // roundId is canonical. Evaluation.round is immutable historical evidence,
@@ -356,7 +357,7 @@ export async function savePipelineSettings(input: unknown) {
   invalidate(data.clubId);
   return result;
 }
-export async function saveClubPreferences(input: unknown) {
+async function saveClubPreferencesCommand(input: unknown) {
   const data = z
     .object({
       clubId: z.string().uuid(),
@@ -391,7 +392,7 @@ export async function getProfileFieldVisibility(clubId: string) {
   return { fields: normalizeProfileFieldVisibility(club.profileFieldVisibility) };
 }
 
-export async function saveProfileFieldVisibility(input: unknown) {
+async function saveProfileFieldVisibilityCommand(input: unknown) {
   const data = saveProfileFieldVisibilityInput.parse(input);
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
   const fields = normalizeProfileFieldVisibility(data.fields);
@@ -401,7 +402,7 @@ export async function saveProfileFieldVisibility(input: unknown) {
     const current = normalizeProfileFieldVisibility(club.profileFieldVisibility);
     // An identical retry is accepted; a change made by another leader since loading is not.
     if (!sameProfileFieldVisibility(current, normalizeProfileFieldVisibility(data.expected)) && !sameProfileFieldVisibility(current, fields))
-      throw new Error("Profile field settings changed. Reload before editing.");
+      throw new ActionError("Profile field settings changed. Reload before editing.");
     await tx.club.update({ where: { id: data.clubId }, data: { profileFieldVisibility: fields } });
     await tx.auditLog.create({
       data: { actorId: user.id, action: "club.profile_fields.configure", targetId: data.clubId, clubId: data.clubId, details: fields },
@@ -409,4 +410,20 @@ export async function saveProfileFieldVisibility(input: unknown) {
   });
   invalidate(data.clubId);
   return { fields };
+}
+
+export async function saveClubPreferences(...args: Parameters<typeof saveClubPreferencesCommand>) {
+  return actionResult(() => saveClubPreferencesCommand(...args))
+}
+
+export async function saveApplicationSettings(...args: Parameters<typeof saveApplicationSettingsCommand>) {
+  return actionResult(() => saveApplicationSettingsCommand(...args))
+}
+
+export async function savePipelineSettings(...args: Parameters<typeof savePipelineSettingsCommand>) {
+  return actionResult(() => savePipelineSettingsCommand(...args))
+}
+
+export async function saveProfileFieldVisibility(...args: Parameters<typeof saveProfileFieldVisibilityCommand>) {
+  return actionResult(() => saveProfileFieldVisibilityCommand(...args))
 }

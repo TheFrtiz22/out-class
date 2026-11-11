@@ -41,16 +41,20 @@ import * as rankedReview from "@/actions/ranked-review"
 import * as interviewFeedbackApi from "@/actions/interview-feedback"
 import * as votingTargetSummary from "@/actions/voting-target-summary"
 import { demoGate, loadDemoWorkspace, type DemoWorkspaceModule } from "@/lib/demo/loader"
+import { unwrapAction, type Unwrapped } from "@/lib/action-result"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 // The sole client data boundary: demo operations never invoke a server action,
 // and demo implementations load only while Demo Mode is active.
 type DemoKey = keyof DemoWorkspaceModule
-function adapt<F extends (...args: never[]) => Promise<unknown>>(real: F, key: DemoKey): F {
+// Actions that return an `actionResult` envelope are unwrapped here: callers get
+// the data, or a `UserFacingError` whose message survives production builds.
+type Adapted<F extends (...args: never[]) => Promise<unknown>> = (...args: Parameters<F>) => Promise<Unwrapped<Awaited<ReturnType<F>>>>
+function adapt<F extends (...args: never[]) => Promise<unknown>>(real: F, key: DemoKey): Adapted<F> {
   return (async (...args: Parameters<F>) => {
-    if (!(await demoGate())) return real(...args)
+    if (!(await demoGate())) return unwrapAction(await real(...args))
     const demo = (await loadDemoWorkspace())[key] as unknown as (...args: Parameters<F>) => unknown
-    return demo(...args)
-  }) as F
+    return unwrapAction(await demo(...args))
+  }) as Adapted<F>
 }
 export const getPanelProposalWorkspace = adapt((scope: Parameters<typeof panelApi.getPanelProposalWorkspace>[0]) => readWorkspace<Awaited<ReturnType<typeof panelApi.getPanelProposalWorkspace>>>("panelWorkspace", [scope]), "getPanelProposalWorkspace")
 export const generatePanelProposal = adapt(panelApi.generatePanelProposal, "generatePanelProposal")

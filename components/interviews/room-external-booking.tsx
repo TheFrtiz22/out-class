@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { ExternalLink, Info, Pencil } from "@/components/icons"
 import { Button } from "@/components/ui/button"
@@ -44,7 +45,7 @@ export function EditableRoomName({ room, disabled, onRename, className = "text-s
     setSaving(true); setError("")
     try { await onRename(name); finish(refocus) }
     // Keep the editor open with the typed name so the user can fix it, retry, or press Escape.
-    catch (e) { setError(e instanceof Error ? e.message : "Could not rename room."); settled.current = false; requestAnimationFrame(() => input.current?.focus()) }
+    catch (e) { setError(userMessage(e, "Could not rename room.")); settled.current = false; requestAnimationFrame(() => input.current?.focus()) }
     finally { setSaving(false) }
   }
   function key(event: KeyboardEvent<HTMLInputElement>) {
