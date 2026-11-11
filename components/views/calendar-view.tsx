@@ -359,7 +359,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                                "block w-full rounded p-1.5 text-left text-control leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}

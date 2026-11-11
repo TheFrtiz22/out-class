@@ -201,7 +201,7 @@ export function ApplicationForm({
               <QuestionField question={question} value={responses[question.id] || ""} onChange={value => change(question.id, value)} invalid={!!errors[question.id]} />
               {question.type === "FILE_UPLOAD" && (
                 <div className="space-y-2">
-                  <Label htmlFor={`upload-${question.id}`} className="text-xs">
+                  <Label htmlFor={`upload-${question.id}`} className="text-control">
                     Or upload a PDF (up to 10 MB)
                   </Label>
                   <Input
@@ -219,7 +219,7 @@ export function ApplicationForm({
               )}
               <div
                 id={`help-${question.id}`}
-                className="text-xs leading-relaxed text-muted-foreground"
+                className="text-control leading-relaxed text-muted-foreground"
               >
                 {question.type === "ESSAY"
                   ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`

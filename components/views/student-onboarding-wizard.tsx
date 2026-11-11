@@ -488,7 +488,7 @@ export function StudentOnboardingWizard({
                       {...step1Form.register("firstName")}
                     />
                     {step1Form.formState.errors.firstName && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step1Form.formState.errors.firstName.message}
                       </p>
                     )}
@@ -503,7 +503,7 @@ export function StudentOnboardingWizard({
                       {...step1Form.register("lastName")}
                     />
                     {step1Form.formState.errors.lastName && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step1Form.formState.errors.lastName.message}
                       </p>
                     )}
@@ -527,7 +527,7 @@ export function StudentOnboardingWizard({
                     {accountCreated ? "Your sign-in email is kept with your account. Invitations are matched using your verified university identity." : "Only @virginia.edu addresses are accepted."}
                   </p>
                   {step1Form.formState.errors.email && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-control text-red-600">
                       {step1Form.formState.errors.email.message}
                     </p>
                   )}
@@ -537,7 +537,7 @@ export function StudentOnboardingWizard({
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" autoComplete="new-password" {...step1Form.register("password")} />
                   <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
-                  {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
+                  {step1Form.formState.errors.password && <p className="text-control text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
                 {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button
@@ -582,7 +582,7 @@ export function StudentOnboardingWizard({
                   />
                 </div>
                 {step2Form.formState.errors.code && (
-                  <p className="text-center text-xs text-red-600">
+                  <p className="text-center text-control text-red-600">
                     {step2Form.formState.errors.code.message}
                   </p>
                 )}
@@ -662,7 +662,7 @@ export function StudentOnboardingWizard({
                       }
                     />
                     {step3Form.formState.errors.gradYear && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.gradYear.message}
                       </p>
                     )}
@@ -677,7 +677,7 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("major")}
                     />
                     {step3Form.formState.errors.major && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.major.message}
                       </p>
                     )}
@@ -701,7 +701,7 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("gpa")}
                     />
                     {step3Form.formState.errors.gpa && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.gpa.message}
                       </p>
                     )}
@@ -710,7 +710,7 @@ export function StudentOnboardingWizard({
                   <div className="space-y-1.5">
                     <Label htmlFor="actScore">ACT composite (optional)</Label>
                     <Input id="actScore" type="number" min={1} max={36} step={1} {...step3Form.register("actScore")} />
-                    {step3Form.formState.errors.actScore && <p role="alert" className="text-xs text-red-600">{step3Form.formState.errors.actScore.message}</p>}
+                    {step3Form.formState.errors.actScore && <p role="alert" className="text-control text-red-600">{step3Form.formState.errors.actScore.message}</p>}
                     <Label htmlFor="satScore">
                       SAT score{" "}
                       <span className="font-normal text-muted-foreground">
@@ -726,7 +726,7 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("satScore")}
                     />
                     {step3Form.formState.errors.satScore && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.satScore.message}
                       </p>
                     )}
@@ -768,7 +768,7 @@ export function StudentOnboardingWizard({
                     <Input aria-label={`Experience ${index + 1} role`} placeholder="Role or title" {...step4Form.register(`experiences.${index}.title`)} />
                     <Input aria-label={`Experience ${index + 1} organization`} placeholder="Club, employer, or organization" {...step4Form.register(`experiences.${index}.subtitle`)} />
                     <Input aria-label={`Experience ${index + 1} dates`} placeholder="e.g. 2025–present" {...step4Form.register(`experiences.${index}.period`)} />
-                    {step4Form.formState.errors.experiences?.[index] && <p className="text-xs text-red-600">Add a title, organization, and dates, or remove this experience.</p>}
+                    {step4Form.formState.errors.experiences?.[index] && <p className="text-control text-red-600">Add a title, organization, and dates, or remove this experience.</p>}
                     <Button type="button" variant="ghost" onClick={() => experienceFields.remove(index)}>Remove experience</Button>
                   </div>)}
                   <Button type="button" variant="outline" disabled={experienceFields.fields.length >= 20} onClick={() => experienceFields.append({ title: "", subtitle: "", period: "" })}>Add experience</Button>
@@ -788,7 +788,7 @@ export function StudentOnboardingWizard({
                     {...step4Form.register("linkedinUrl")}
                   />
                   {step4Form.formState.errors.linkedinUrl && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-control text-red-600">
                       {step4Form.formState.errors.linkedinUrl.message}
                     </p>
                   )}

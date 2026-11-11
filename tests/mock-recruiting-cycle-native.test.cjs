@@ -108,7 +108,7 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
   });
 
   // Club, cycle, two rounds (anonymous application review, identified interview) and staff.
-  const club = await operator.club.create({ data: { name: 'Mock Recruiting Cycle Club', slug: `mock-cycle-${randomUUID()}`, tagline: '', description: '', color: '#142d45', category: 'Other', applicationOpen: true } });
+  const club = await operator.club.create({ data: { name: 'Mock Recruiting Cycle Club', slug: `mock-cycle-${randomUUID()}`, tagline: '', description: '', color: '#142d45', category: 'Other', applicationOpen: true, features: { csvExport: true } } });
   const cycle = await operator.recruitmentCycle.create({ data: { clubId: club.id, name: 'Mock cycle' } });
   const reviewRound = await operator.pipelineRound.create({ data: { clubId: club.id, name: 'Application review', type: 'APPLICATION_REVIEW', order: 0, anonymousReview: true } });
   const interviewRound = await operator.pipelineRound.create({ data: { clubId: club.id, name: 'Interview', type: 'INTERVIEW', order: 1, anonymousReview: false } });
