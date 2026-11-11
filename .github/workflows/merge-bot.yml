@@ -23,6 +23,7 @@ permissions:
   pull-requests: write
   issues: write
   checks: read
+  actions: read
 
 concurrency:
   group: merge-bot
@@ -42,6 +43,8 @@ jobs:
       - uses: actions/github-script@v7
         env:
           MERGE_BOT_ALLOWED_LABELERS: ${{ vars.MERGE_BOT_ALLOWED_LABELERS }}
+          # Approval comments always use this token (author github-actions[bot]).
+          ACTIONS_TOKEN: ${{ github.token }}
         with:
           # A token other than GITHUB_TOKEN lets the merge trigger the push
           # workflows on main; without one, Vercel still deploys but the
@@ -49,4 +52,4 @@ jobs:
           github-token: ${{ secrets.MERGE_BOT_TOKEN || github.token }}
           script: |
             const bot = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/merge-bot.cjs`)
-            await bot.run({ github, context, core })
+            await bot.run({ github, context, core, getOctokit })
