@@ -3,10 +3,12 @@
 import { useEffect, useId, useState } from "react"
 import { getPushSettings, removePushSubscription, savePushSubscription } from "@/actions/push-subscriptions"
 import { Switch } from "@/components/ui/switch"
+import { activePushRegistration, unsubscribeThisDevice } from "@/lib/push-device"
 
 type State = "loading" | "hidden" | "unsupported" | "blocked" | "off" | "on"
+const BLOCKED = "Notifications are blocked in your browser settings."
 
-function pushSupported() {
+function pushApiAvailable() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
 }
 
@@ -17,33 +19,39 @@ function applicationServerKey(base64url: string) {
 
 /**
  * Web Push opt-in for this device (S1-8), in the Inbox notification settings sheet. Browser permission is
- * requested only from the switch's click, never on load. Hidden when the server has no VAPID keys; the sheet
- * itself is hidden in Demo Mode, and the server actions refuse Demo and support sessions.
+ * requested only from the switch's click, never on load. On/off comes from the server row for this browser's
+ * endpoint. Hidden when the server has no VAPID keys or no service worker is active (OUTCLASS_SERVICE_WORKER=off,
+ * development); the sheet itself is hidden in Demo Mode, and the server actions refuse Demo and support sessions.
  */
 export function PushNotificationsToggle() {
-  const [state, setState] = useState<State>("loading"), [busy, setBusy] = useState(false), [error, setError] = useState("")
+  const [state, setState] = useState<State>("loading"), [busy, setBusy] = useState(false), [message, setMessage] = useState("")
   const [publicKey, setPublicKey] = useState<string | null>(null)
   const id = useId()
   useEffect(() => {
     let active = true
-    getPushSettings().then(async settings => {
-      if (!active) return
-      if (!settings.enabled) { setState("hidden"); return }
-      setPublicKey(settings.publicKey)
-      if (!pushSupported()) { setState("unsupported"); return }
-      if (Notification.permission === "denied") { setState("blocked"); return }
-      const registration = await navigator.serviceWorker.getRegistration("/")
+    ;(async () => {
+      if (!pushApiAvailable()) {
+        const settings = await getPushSettings()
+        if (active) setState(settings.enabled ? "unsupported" : "hidden")
+        return
+      }
+      const registration = await activePushRegistration()
       const subscription = await registration?.pushManager.getSubscription()
-      if (active) setState(subscription && Notification.permission === "granted" ? "on" : "off")
-    }).catch(() => { if (active) setState("hidden") })
+      const settings = await getPushSettings(subscription?.endpoint)
+      if (!active) return
+      if (!settings.enabled || !registration) { setState("hidden"); return }
+      setPublicKey(settings.publicKey)
+      if (Notification.permission === "denied") { setState("blocked"); return }
+      setState(subscription && settings.subscribed && Notification.permission === "granted" ? "on" : "off")
+    })().catch(() => { if (active) setState("hidden") })
     return () => { active = false }
   }, [])
 
   async function turnOn() {
     // Asked here, inside the click, and nowhere else.
     const permission = await Notification.requestPermission()
-    if (permission !== "granted") { setState(permission === "denied" ? "blocked" : "off"); return }
-    const registration = await navigator.serviceWorker.getRegistration("/")
+    if (permission !== "granted") { setState(permission === "denied" ? "blocked" : "off"); setMessage(BLOCKED); return }
+    const registration = await activePushRegistration()
     if (!registration || !publicKey) throw new Error("unavailable")
     const subscription = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey(publicKey) })
     try { await savePushSubscription(subscription.toJSON()) }
@@ -51,20 +59,10 @@ export function PushNotificationsToggle() {
     setState("on")
   }
 
-  async function turnOff() {
-    const registration = await navigator.serviceWorker.getRegistration("/")
-    const subscription = await registration?.pushManager.getSubscription()
-    if (subscription) {
-      await removePushSubscription({ endpoint: subscription.endpoint })
-      await subscription.unsubscribe().catch(() => {})
-    }
-    setState("off")
-  }
-
   async function toggle(next: boolean) {
-    setBusy(true); setError("")
-    try { await (next ? turnOn() : turnOff()) }
-    catch { setError(next ? "Could not turn on push notifications." : "Could not turn off push notifications.") }
+    setBusy(true); setMessage("")
+    try { if (next) await turnOn(); else { await unsubscribeThisDevice(removePushSubscription); setState("off") } }
+    catch { setMessage(next ? "Could not turn on push notifications." : "Could not turn off push notifications on this device.") }
     finally { setBusy(false) }
   }
 
@@ -77,7 +75,6 @@ export function PushNotificationsToggle() {
         <Switch id={id} checked={state === "on"} disabled={busy || state === "blocked"} onCheckedChange={value => void toggle(value)} />
       </div>}
     {state !== "unsupported" && <p className="text-xs text-muted-foreground">Sent for the updates you get by instant email.</p>}
-    {state === "blocked" && <p className="text-sm text-muted-foreground">Notifications are blocked for OutClass in this browser&apos;s settings.</p>}
-    {error && <p role="alert" className="text-sm">{error}</p>}
+    {(message || state === "blocked") && <p role={message && message !== BLOCKED ? "alert" : "status"} className="text-sm">{message || BLOCKED}</p>}
   </section>
 }

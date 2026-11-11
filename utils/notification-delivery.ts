@@ -7,6 +7,7 @@ import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/a
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
 import { enqueueNotificationPushes } from "@/utils/notification-push";
+import { notificationStillCurrent } from "@/utils/notification-currency";
 
 // Retry the exact persisted payload inside Resend's 24-hour deduplication window.
 // A crash outside that window requires receipt reconciliation, never a blind resend.
@@ -28,7 +29,11 @@ export async function processNotificationEmails(limit = 10) {
   // Each recipient is isolated: one user's failure must not stop everyone else's
   // email (the same user would otherwise head the queue on every run).
   for (const userId of users) {
+    // Web Push is queued only after this transaction commits, outside it, so a push-table
+    // error or lock wait can never roll back or delay the email assignment.
+    let instant: { id: string; createdAt: Date }[] = [];
     try { await prisma.$transaction(async tx => {
+      instant = [];
       await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`;
       const user = await tx.user.findUnique({ where: { id: userId }, include: { notificationPreferences: true } });
       if (!user) return;
@@ -85,12 +90,14 @@ export async function processNotificationEmails(limit = 10) {
         const delivery = await tx.notificationEmailDelivery.create({ data: { userId, payload } });
         await tx.notificationEmailOutbox.updateMany({ where: { notificationId: { in: group.map(row => row.notificationId) }, status: "PENDING" }, data: { status: "ASSIGNED", deliveryId: delivery.id } });
         // Web Push rides on the same instant-delivery decision (no-op unless VAPID is configured).
-        if (!digest) await enqueueNotificationPushes(tx, userId, group.map(row => row.notification));
+        if (!digest) instant.push(...group.map(row => ({ id: row.notification.id, createdAt: row.notification.createdAt })));
       }
     }, { timeout: 15000 }); } catch (error) {
       failed++;
       console.error("notification-email grouping failed", { userId, code: error instanceof Error ? error.name : "UNKNOWN" });
+      continue;
     }
+    if (instant.length) await enqueueNotificationPushes(userId, instant);
   }
   const now = new Date();
   const candidates = await prisma.notificationEmailDelivery.findMany({ where: { OR: [{ status: "QUEUED", nextAttemptAt: { lte: now } }, { status: "SENDING", leaseUntil: { lt: now } }] }, select: { id: true }, orderBy: { createdAt: "asc" }, take: batchSize });
@@ -107,21 +114,10 @@ export async function processNotificationEmails(limit = 10) {
       }
       const payload = parsedPayload.data;
       let inaccessibleMessage = false;
-      for (const item of row.items.filter(item => item.notification.eventKey.startsWith(applicantBookingNotificationPrefix))) {
-        if (!await currentApplicantBookingNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
-      }
-      for (const item of row.items.filter(item => item.notification.eventKey?.startsWith(assignmentNotificationPrefix) && item.notification.eventKey.includes(":assigned:"))) {
-        if (!await currentAssignmentNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
-      }
-      for (const item of row.items.filter(item => item.notification.eventKey.startsWith(availabilityRequestPrefix))) {
-        if (!await currentAvailabilityRequest(tx, item.notification, row.userId)) inaccessibleMessage = true;
+      for (const item of row.items) {
+        if (!await notificationStillCurrent(tx, item.notification, row.userId, config.siteUrl)) inaccessibleMessage = true;
       }
       for(const snapshot of payload.panelSchedules??[]){const item=row.items.find(item=>item.notificationId===snapshot.notificationId);const context=item?await currentPanelScheduleNotification(tx,item.notification,row.userId):null;if(!context||context.panelSchedule.signature!==snapshot.signature)inaccessibleMessage=true}
-      for (const item of row.items.filter(item => item.notification.type === "MESSAGE")) {
-        const conversationId = new URL(item.notification.href, config.siteUrl).searchParams.get("conversation");
-        const conversation = conversationId ? await tx.clubConversation.findUnique({ where: { id: conversationId }, select: { clubId: true, studentId: true } }) : null;
-        if (!conversation || !await requireCommunicationAccess(tx, conversation.clubId, conversation.studentId, row.userId).catch(() => null)) inaccessibleMessage = true;
-      }
       if (inaccessibleMessage || row.user.disabledAt || row.user.email !== payload.to || payload.categories.some(type => !optionalEmailAllowed(row.user.notificationPreferences, type)) || row.items.some(item => item.notification.archivedAt)) {
         await tx.notificationEmailDelivery.update({ where: { id: row.id }, data: { status: "SUPPRESSED", failureCode: "PREFERENCE_OR_ACCOUNT_CHANGED", leaseToken: null, leaseUntil: null } }); suppressed++; return null;
       }

@@ -33,6 +33,7 @@ function withEnv(t, env) {
 function fakeDb() {
   const subs = [], deliveries = [], notifications = new Map(), users = new Map(), clubs = new Map()
   const match = (row, where = {}) => Object.entries(where).every(([key, cond]) => {
+    if (key === 'OR') return cond.some(sub => match(row, sub))
     if (cond && typeof cond === 'object' && !(cond instanceof Date)) {
       if ('not' in cond) return row[key] !== cond.not
       if ('lt' in cond) return row[key] < cond.lt
@@ -49,9 +50,11 @@ function fakeDb() {
     $queryRaw: async () => [],
     $transaction: async fn => fn(db),
     webPushSubscription: {
-      findMany: async ({ where, orderBy, select } = {}) => sortBy(subs.filter(r => match(r, where)), orderBy).map(r => pick(r, select)),
+      findMany: async ({ where, orderBy, select } = {}) => { if (db.failSubscriptions) throw Object.assign(new Error('relation "WebPushSubscription" does not exist'), { code: 'P2021' }); return sortBy(subs.filter(r => match(r, where)), orderBy).map(r => pick(r, select)) },
+      findUnique: async ({ where, select }) => { const row = subs.find(r => r.endpoint === where.endpoint); return row ? pick(row, select) : null },
       deleteMany: async ({ where }) => removeSubs(where),
       upsert: async ({ where, create, update }) => {
+        if (db.raceOnUpsert) { db.raceOnUpsert(); db.raceOnUpsert = null; throw Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }) }
         const row = subs.find(r => r.endpoint === where.endpoint)
         if (row) { apply(row, update); return row }
         const created = { id: randomUUID(), createdAt: new Date(Date.now() + subs.length), lastSuccessAt: null, failureCount: 0, ...create }
@@ -63,12 +66,14 @@ function fakeDb() {
       createMany: async ({ data, skipDuplicates }) => {
         let count = 0
         for (const d of data) {
+          if (!subs.some(r => r.id === d.subscriptionId)) throw Object.assign(new Error('Foreign key constraint failed'), { code: 'P2003' })
           if (deliveries.some(r => r.notificationId === d.notificationId && r.subscriptionId === d.subscriptionId)) { if (!skipDuplicates) throw new Error('Unique constraint'); continue }
           deliveries.push({ status: 'PENDING', createdAt: new Date(), attemptedAt: null, ...d }); count++
         }
         return { count }
       },
       findMany: async ({ where, orderBy, take, select } = {}) => sortBy(deliveries.filter(r => match(r, where)), orderBy).slice(0, take).map(r => pick(r, select)),
+      deleteMany: async ({ where }) => { let count = 0; for (let i = deliveries.length - 1; i >= 0; i--) if (match(deliveries[i], where)) { deliveries.splice(i, 1); count++ } return { count } },
       updateMany: async ({ where, data }) => {
         await new Promise(resolve => setImmediate(resolve)) // let concurrent workers interleave
         const rows = deliveries.filter(r => match(r, where)); rows.forEach(r => apply(r, data)); return { count: rows.length }
@@ -77,7 +82,8 @@ function fakeDb() {
         const row = deliveries.find(r => r.notificationId === key.notificationId && r.subscriptionId === key.subscriptionId)
         if (!row) return null
         const n = notifications.get(row.notificationId)
-        return { ...row, subscription: { ...subs.find(s => s.id === row.subscriptionId) }, notification: { ...n, club: n.clubId ? clubs.get(n.clubId) : null, user: users.get(n.userId) } }
+        const emailOutbox = n.emailStatus === null ? null : { status: 'ASSIGNED', delivery: { status: n.emailStatus ?? 'SENT' } }
+        return { ...row, subscription: { ...subs.find(s => s.id === row.subscriptionId) }, notification: { ...n, emailOutbox, club: n.clubId ? clubs.get(n.clubId) : null, user: { notificationPreferences: null, ...users.get(n.userId) } } }
       },
     },
   }
@@ -126,10 +132,10 @@ test('subscriptions: support sessions, unknown push hosts and unconfigured push 
   }
   await assert.rejects(actions(db, 'alice').savePushSubscription({ endpoint: ENDPOINT, keys: { p256dh: '<script>', auth: 'x' } }), /not supported/)
   assert.equal(db.subs.length, 0)
-  assert.deepEqual(await actions(db, 'alice').getPushSettings(), { enabled: true, publicKey: VAPID.VAPID_PUBLIC_KEY })
+  assert.deepEqual(await actions(db, 'alice').getPushSettings(), { enabled: true, publicKey: VAPID.VAPID_PUBLIC_KEY, subscribed: false })
 
   withEnv(t, { VAPID_PUBLIC_KEY: 'x', VAPID_SUBJECT: 'mailto:a@b.c' })
-  assert.deepEqual(await actions(db, 'alice').getPushSettings(), { enabled: false, publicKey: null }, 'off without the private key')
+  assert.deepEqual(await actions(db, 'alice').getPushSettings(), { enabled: false, publicKey: null, subscribed: false }, 'off without the private key')
   await assert.rejects(actions(db, 'alice').savePushSubscription(subscriptionJson()), /not available/)
 })
 
@@ -158,7 +164,7 @@ function pushWorld(t) {
   withEnv(t, VAPID)
   const db = fakeDb()
   db.users.set('alice', { disabledAt: null })
-  const notify = (extra = {}) => { const n = { id: randomUUID(), userId: 'alice', clubId: null, type: 'ANNOUNCEMENT', title: 'Secret title', body: 'Secret body', href: '/inbox', readAt: null, archivedAt: null, createdAt: new Date(), ...extra }; db.notifications.set(n.id, n); return n }
+  const notify = (extra = {}) => { const n = { id: randomUUID(), userId: 'alice', clubId: null, type: 'ANNOUNCEMENT', eventKey: `announcement:${randomUUID()}`, title: 'Secret title', body: 'Secret body', href: '/inbox', readAt: null, archivedAt: null, createdAt: new Date(), ...extra }; db.notifications.set(n.id, n); return n }
   const subscribe = (endpoint = ENDPOINT) => { const s = { id: randomUUID(), userId: 'alice', endpoint, p256dh: 'p', auth: 'a', createdAt: new Date(), lastSuccessAt: null, failureCount: 0 }; db.subs.push(s); return s }
   const sent = []
   const sender = (status = 201) => ({ sendNotification: async (subscription, body, options) => {
@@ -175,66 +181,69 @@ test('the same notification is pushed once per subscription, across re-queues an
   const { db, notify, subscribe, sent, sender, worker } = pushWorld(t)
   const phone = subscribe(), laptop = subscribe('https://web.push.apple.com/QGuQyavXutnMcGu')
   const n = notify()
-  assert.equal(await worker.enqueueNotificationPushes(db, 'alice', [n]), 2)
-  assert.equal(await worker.enqueueNotificationPushes(db, 'alice', [n]), 0, 're-queueing is a no-op')
-  const [a, b] = await Promise.all([worker.processNotificationPushes(50, sender()), worker.processNotificationPushes(50, sender())])
+  assert.equal(await worker.enqueueNotificationPushes('alice', [n]), 2)
+  assert.equal(await worker.enqueueNotificationPushes('alice', [n]), 0, 're-queueing is a no-op')
+  const [a, b] = await Promise.all([worker.processNotificationPushes(50, { sender: sender() }), worker.processNotificationPushes(50, { sender: sender() })])
   assert.equal(a.sent + b.sent, 2, 'two overlapping cron runs send two pushes in total, not four')
   assert.deepEqual(sent.map(s => s.endpoint).sort(), [phone.endpoint, laptop.endpoint].sort())
-  assert.equal((await worker.processNotificationPushes(50, sender())).sent, 0, 'a later run sends nothing')
-  await worker.enqueueNotificationPushes(db, 'alice', [n])
-  assert.equal((await worker.processNotificationPushes(50, sender())).sent, 0, 'already-sent rows are never re-queued')
+  assert.equal((await worker.processNotificationPushes(50, { sender: sender() })).sent, 0, 'a later run sends nothing')
+  await worker.enqueueNotificationPushes('alice', [n])
+  assert.equal((await worker.processNotificationPushes(50, { sender: sender() })).sent, 0, 'already-sent rows are never re-queued')
   assert.ok(db.deliveries.every(d => d.status === 'SENT'))
   assert.ok(db.subs.every(s => s.lastSuccessAt instanceof Date && s.failureCount === 0))
   assert.equal(sent[0].options.vapidDetails.subject, VAPID.VAPID_SUBJECT)
   assert.ok(!JSON.stringify(sent).includes('Secret'), 'the stored title and body are never sent')
 })
 
-test('404/410 removes the subscription; other errors count up to 5 and then stop', async t => {
+test('404/410 removes the subscription; only permanent 4xx errors count up to 5 and then stop', async t => {
   const { db, notify, subscribe, sent, sender, worker } = pushWorld(t)
   const gone = subscribe()
-  await worker.enqueueNotificationPushes(db, 'alice', [notify()])
-  const result = await worker.processNotificationPushes(50, sender(410))
+  await worker.enqueueNotificationPushes('alice', [notify()])
+  const result = await worker.processNotificationPushes(50, { sender: sender(410) })
   assert.equal(result.removed, 1)
   assert.ok(!db.subs.some(s => s.id === gone.id), '410 deletes the subscription')
   assert.equal(db.deliveries.length, 0)
 
   const flaky = subscribe('https://updates.push.services.mozilla.com/wpush/v2/flaky')
   for (let i = 0; i < 5; i++) {
-    await worker.enqueueNotificationPushes(db, 'alice', [notify()])
-    assert.equal((await worker.processNotificationPushes(50, sender(500))).failed, 1)
+    await worker.enqueueNotificationPushes('alice', [notify()])
+    assert.equal((await worker.processNotificationPushes(50, { sender: sender(503) })).failed, 1)
+  }
+  assert.equal(flaky.failureCount, 0, 'five 503s (transient) do not count toward the cap')
+  for (const status of [429, 500]) {
+    await worker.enqueueNotificationPushes('alice', [notify()])
+    await worker.processNotificationPushes(50, { sender: sender(status) })
+  }
+  await worker.enqueueNotificationPushes('alice', [notify()])
+  await worker.processNotificationPushes(50, { sender: { sendNotification: async () => { throw new Error('socket timeout') } } })
+  assert.equal(flaky.failureCount, 0, '429, 500 and a timeout do not count either')
+  for (let i = 0; i < 5; i++) {
+    await worker.enqueueNotificationPushes('alice', [notify()])
+    assert.equal((await worker.processNotificationPushes(50, { sender: sender(400) })).failed, 1)
   }
   assert.equal(flaky.failureCount, 5)
   sent.length = 0
-  assert.equal(await worker.enqueueNotificationPushes(db, 'alice', [notify()]), 0, 'no new pushes after 5 failures')
-  assert.equal((await worker.processNotificationPushes(50, sender())).sent, 0)
+  assert.equal(await worker.enqueueNotificationPushes('alice', [notify()]), 0, 'no new pushes after 5 failures')
+  assert.equal((await worker.processNotificationPushes(50, { sender: sender() })).sent, 0)
   assert.equal(sent.length, 0)
 })
 
 test('nothing is queued or sent without VAPID keys; stale, read and foreign rows are skipped', async t => {
   const { db, notify, subscribe, sender, worker } = pushWorld(t)
   const sub = subscribe()
-  await worker.enqueueNotificationPushes(db, 'alice', [notify({ createdAt: new Date(Date.now() - 25 * 3600000) })])
+  await worker.enqueueNotificationPushes('alice', [notify({ createdAt: new Date(Date.now() - 25 * 3600000) })])
   assert.equal(db.deliveries.length, 0, 'a notification older than 24 hours is not queued')
   const read = notify(), foreign = notify({ userId: 'bob' })
-  await worker.enqueueNotificationPushes(db, 'alice', [read])
+  await worker.enqueueNotificationPushes('alice', [read])
   read.readAt = new Date()
   db.users.set('bob', { disabledAt: null })
   db.deliveries.push({ notificationId: foreign.id, subscriptionId: sub.id, status: 'PENDING', createdAt: new Date() })
-  const result = await worker.processNotificationPushes(50, sender())
+  const result = await worker.processNotificationPushes(50, { sender: sender() })
   assert.deepEqual([result.sent, result.skipped], [0, 2])
 
   withEnv(t, {})
-  assert.equal(await worker.enqueueNotificationPushes(db, 'alice', [notify()]), 0)
-  assert.equal((await worker.processNotificationPushes(50, sender())).enabled, false)
-})
-
-test('the email worker queues pushes only for instant deliveries, and the cron isolates push failures', () => {
-  const delivery = fs.readFileSync(path.join(root, 'utils/notification-delivery.ts'), 'utf8')
-  assert.match(delivery, /status: "ASSIGNED", deliveryId: delivery\.id \} \}\);\n.*\n\s+if \(!digest\) await enqueueNotificationPushes\(tx, userId, group\.map\(row => row\.notification\)\);/)
-  assert.equal((delivery.match(/enqueueNotificationPushes/g) || []).length, 2, 'one import, one call')
-  const route = fs.readFileSync(path.join(root, 'app/api/internal/notification-delivery/route.ts'), 'utf8')
-  assert.match(route, /catch \{ push = \{ enabled: true, error: "PUSH_UNAVAILABLE" \}; \}/)
-  assert.match(route, /\.\.\.result, push/)
+  assert.equal(await worker.enqueueNotificationPushes('alice', [notify()]), 0)
+  assert.equal((await worker.processNotificationPushes(50, { sender: sender() })).enabled, false)
 })
 
 test('settings sheet: permission is requested only from the switch, never on load', () => {
@@ -245,4 +254,166 @@ test('settings sheet: permission is requested only from the switch, never on loa
   assert.match(toggle, /iOS 16\.4/)
   assert.match(fs.readFileSync(path.join(root, 'components/inbox/inbox-notification-settings.tsx'), 'utf8'), /\{open && <PushNotificationsToggle \/>\}/)
   assert.match(fs.readFileSync(path.join(root, '.env.example'), 'utf8'), /^VAPID_PUBLIC_KEY=""\nVAPID_PRIVATE_KEY=""\nVAPID_SUBJECT=""$/m)
+})
+
+function emailWorld(t, { pushThrows }) {
+  withEnv(t, VAPID)
+  const env = { COMMUNICATIONS_EMAIL_ENABLED: 'true', RESEND_API_KEY: 'test-only', RESEND_FROM_EMAIL: 'updates@out-class.net', OUTCLASS_SITE_URL: 'https://out-class.net' }
+  const saved = Object.fromEntries(Object.keys(env).map(k => [k, process.env[k]]))
+  Object.assign(process.env, env)
+  t.after(() => { for (const [k, v] of Object.entries(saved)) if (v === undefined) delete process.env[k]; else process.env[k] = v })
+  const db = fakeDb(), events = []
+  const sub = { id: 'sub-1', userId: 'u1', endpoint: ENDPOINT, p256dh: 'p', auth: 'a', createdAt: new Date(), lastSuccessAt: null, failureCount: 0 }
+  db.subs.push(sub)
+  db.failSubscriptions = pushThrows
+  const notification = { id: randomUUID(), userId: 'u1', clubId: 'c1', eventKey: 'announcement:1', type: 'ANNOUNCEMENT', title: 'Update', body: 'Body', href: '/inbox', archivedAt: null, readAt: null, createdAt: new Date(), club: { name: 'Chess Club', suspendedAt: null } }
+  const outbox = { notificationId: notification.id, status: 'PENDING', deliveryId: null, createdAt: new Date(), notification }
+  let inTransaction = false
+  Object.assign(db, {
+    $queryRaw: async strings => strings.join('?').includes('GROUP BY') ? [{ userId: 'u1' }] : [],
+    $transaction: async fn => { inTransaction = true; try { const r = await fn(db); events.push('commit'); return r } finally { inTransaction = false } },
+    user: { findUnique: async () => ({ id: 'u1', email: 'u1@virginia.edu', disabledAt: null, notificationPreferences: null }) },
+    notificationEmailOutbox: {
+      findMany: async () => outbox.status === 'PENDING' ? [outbox] : [],
+      update: async ({ data }) => Object.assign(outbox, data),
+      updateMany: async ({ data }) => { Object.assign(outbox, data); events.push(`outbox:${data.status}`); return { count: 1 } },
+    },
+    notificationEmailDelivery: { create: async ({ data }) => { events.push('delivery'); return { id: 'd1', ...data } }, findMany: async () => [] },
+  })
+  const createMany = db.webPushDelivery.createMany
+  db.webPushDelivery.createMany = async args => { events.push(inTransaction ? 'push:inside' : 'push:after'); return createMany(args) }
+  const worker = loader({ '@/utils/prisma': { prisma: db } })('utils/notification-delivery.ts')
+  return { db, events, outbox, worker }
+}
+
+test('a push-table failure never stops instant email: the delivery is still created and ASSIGNED', async t => {
+  const { db, events, outbox, worker } = emailWorld(t, { pushThrows: true })
+  const errors = []; const realError = console.error; console.error = (...args) => errors.push(args); t.after(() => { console.error = realError })
+  const result = await worker.processNotificationEmails(10)
+  assert.equal(result.failed, 0, 'the email worker returns normally')
+  assert.equal(outbox.status, 'ASSIGNED'); assert.equal(outbox.deliveryId, 'd1')
+  assert.deepEqual(events, ['delivery', 'outbox:ASSIGNED', 'commit'])
+  assert.equal(db.deliveries.length, 0)
+  assert.ok(errors.some(([message]) => message === 'notification-push enqueue failed'), 'the push failure is logged')
+})
+
+test('pushes are queued only after the email transaction commits', async t => {
+  const { db, events, worker } = emailWorld(t, { pushThrows: false })
+  await worker.processNotificationEmails(10)
+  assert.deepEqual(events, ['delivery', 'outbox:ASSIGNED', 'commit', 'push:after'])
+  assert.equal(db.deliveries.length, 1)
+})
+
+test('a removed subscription (FK 23503 between read and insert) is skipped and logged', async t => {
+  const { db, notify, subscribe, worker } = pushWorld(t)
+  subscribe()
+  const realFind = db.webPushSubscription.findMany
+  db.webPushSubscription.findMany = async args => [{ id: 'deleted-meanwhile' }, ...await realFind(args)]
+  const errors = []; const realError = console.error; console.error = (...args) => errors.push(args); t.after(() => { console.error = realError })
+  assert.equal(await worker.enqueueNotificationPushes('alice', [notify()]), 1)
+  assert.ok(errors.some(([message]) => /removed subscription/.test(message)))
+})
+
+test('push respects the cron deadline: at 50 s nothing is claimed', async t => {
+  const { db, notify, subscribe, sent, sender, worker } = pushWorld(t)
+  subscribe()
+  await worker.enqueueNotificationPushes('alice', [notify()])
+  const result = await worker.processNotificationPushes(50, { startedAt: 1000, now: () => 51000, sender: sender() })
+  assert.equal(result.sent, 0); assert.equal(sent.length, 0)
+  assert.ok(db.deliveries.every(d => d.status === 'PENDING'), 'zero claims')
+  const late = await worker.processNotificationPushes(50, { startedAt: 1000, now: () => 1000 + 41000, sender: sender() })
+  assert.equal(late.sent, 0, 'past the 40 s budget too')
+  const timeouts = []
+  await worker.processNotificationPushes(50, { startedAt: Date.now() - 39000, sender: { sendNotification: async (s, b, options) => { timeouts.push(options.timeout); return {} } } })
+  assert.equal(timeouts.length, 1); assert.ok(timeouts[0] <= 9000 && timeouts[0] >= 8000, 'the send timeout is capped to stay under maxDuration')
+})
+
+test('no push once the email was suppressed, the category is off, or the stored endpoint is no longer valid', async t => {
+  const { db, notify, subscribe, sent, sender, worker } = pushWorld(t)
+  subscribe()
+  await worker.enqueueNotificationPushes('alice', [notify({ emailStatus: 'SUPPRESSED' }), notify({ emailStatus: null }), notify({ emailStatus: 'QUEUED' })])
+  const first = await worker.processNotificationPushes(50, { sender: sender() })
+  assert.deepEqual([first.sent, first.skipped], [1, 2], 'only the live (QUEUED) email gets a push')
+  db.users.set('alice', { disabledAt: null, notificationPreferences: { emailFrequency: 'INSTANT', emailAnnouncements: false } })
+  await worker.enqueueNotificationPushes('alice', [notify()])
+  assert.equal((await worker.processNotificationPushes(50, { sender: sender() })).skipped, 1, 'announcements turned off since queueing')
+  db.users.set('alice', { disabledAt: null })
+  db.subs[0].endpoint = 'https://attacker.example/hook'
+  await worker.enqueueNotificationPushes('alice', [notify()])
+  sent.length = 0
+  assert.equal((await worker.processNotificationPushes(50, { sender: sender() })).removed, 1)
+  assert.equal(sent.length, 0, 'an endpoint that fails validation is never contacted')
+  assert.equal(db.subs.length, 0)
+})
+
+test('delivery rows older than 7 days are pruned in bounded batches', async t => {
+  const { db, notify, subscribe, sender, worker } = pushWorld(t)
+  const sub = subscribe()
+  for (let i = 0; i < 3; i++) db.deliveries.push({ notificationId: `old-${i}`, subscriptionId: sub.id, status: 'SENT', createdAt: new Date(Date.now() - 8 * 24 * 3600000) })
+  await worker.enqueueNotificationPushes('alice', [notify()])
+  const result = await worker.processNotificationPushes(50, { sender: sender() })
+  assert.equal(result.pruned, 3)
+  assert.deepEqual(db.deliveries.map(d => d.status), ['SENT'])
+  assert.match(fs.readFileSync(path.join(root, 'utils/notification-push.ts'), 'utf8'), /take: RETENTION_BATCH/)
+})
+
+test('status comes from the server row: after Bob takes the endpoint over, Alice shows off', async t => {
+  withEnv(t, VAPID)
+  const db = fakeDb()
+  await actions(db, 'alice').savePushSubscription(subscriptionJson())
+  assert.equal((await actions(db, 'alice').getPushSettings(ENDPOINT)).subscribed, true)
+  await actions(db, 'bob').savePushSubscription(subscriptionJson())
+  assert.equal((await actions(db, 'alice').getPushSettings(ENDPOINT)).subscribed, false)
+  assert.equal((await actions(db, 'bob').getPushSettings(ENDPOINT)).subscribed, true)
+  db.subs[0].failureCount = 5
+  assert.equal((await actions(db, 'bob').getPushSettings(ENDPOINT)).subscribed, false, 'a disabled subscription reads as off')
+})
+
+test('a P2002 save race is success only when the endpoint now belongs to the current user', async t => {
+  withEnv(t, VAPID)
+  const db = fakeDb()
+  db.raceOnUpsert = () => db.subs.push({ id: 'raced', userId: 'alice', endpoint: ENDPOINT, p256dh: 'p', auth: 'a', createdAt: new Date(), failureCount: 0 })
+  assert.deepEqual(await actions(db, 'alice').savePushSubscription(subscriptionJson()), { subscribed: true })
+  const other = fakeDb()
+  other.raceOnUpsert = () => other.subs.push({ id: 'raced', userId: 'bob', endpoint: ENDPOINT, p256dh: 'p', auth: 'a', createdAt: new Date(), failureCount: 0 })
+  await assert.rejects(actions(other, 'alice').savePushSubscription(subscriptionJson()), /Unique constraint/)
+})
+
+test('cron: a push failure keeps the email result and 200, reports push.error and logs it', async t => {
+  const saved = process.env.CRON_SECRET; process.env.CRON_SECRET = 'cron-test'
+  t.after(() => { if (saved === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = saved })
+  const errors = []; const realError = console.error; console.error = (...args) => errors.push(args); t.after(() => { console.error = realError })
+  let startedAt
+  const route = loader({
+    '@/utils/notification-delivery': { processNotificationEmails: async () => ({ enabled: true, sent: 1, failed: 0, suppressed: 0, invalid: 0 }) },
+    '@/utils/notification-push': { processNotificationPushes: async (limit, options) => { startedAt = options.startedAt; throw Object.assign(new Error('lock timeout'), { code: 'P2034' }) } },
+  })('app/api/internal/notification-delivery/route.ts')
+  const response = await route.POST(new Request('http://localhost/api/internal/notification-delivery', { headers: { authorization: 'Bearer cron-test' } }))
+  assert.equal(response.status, 200)
+  const body = await response.json()
+  assert.equal(body.sent, 1)
+  assert.equal(body.push.error, 'PUSH_UNAVAILABLE')
+  assert.ok(Math.abs(startedAt - Date.now()) < 5000, 'the cron start time is shared with push')
+  assert.deepEqual(errors.find(([message]) => message === 'notification-push unavailable')?.[1], { code: 'P2034' })
+  assert.match(fs.readFileSync(path.join(root, 'app/api/internal/notification-delivery/route.ts'), 'utf8'), /Sentry\.captureException\(error/)
+})
+
+test('sign-out unsubscribes this device first, best effort and bounded', async t => {
+  const shell = fs.readFileSync(path.join(root, 'components/shell/product-shell.tsx'), 'utf8')
+  assert.ok(shell.indexOf('unsubscribeOnSignOut') > 0 && shell.indexOf('unsubscribeOnSignOut') < shell.indexOf('fetch("/api/auth/logout"'))
+  const device = loader({})('lib/push-device.ts')
+  const removed = [], unsubscribed = []
+  const subscription = { endpoint: ENDPOINT, unsubscribe: async () => { unsubscribed.push(true); return true } }
+  const savedWindow = globalThis.window, nav = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+  globalThis.window = { PushManager: {}, Notification: {} }
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { serviceWorker: { getRegistration: async () => ({ active: {}, pushManager: { getSubscription: async () => subscription } }) } } })
+  t.after(() => { if (savedWindow === undefined) delete globalThis.window; else globalThis.window = savedWindow; if (nav) Object.defineProperty(globalThis, 'navigator', nav); else delete globalThis.navigator })
+  await device.unsubscribeOnSignOut(async input => { removed.push(input.endpoint) })
+  assert.deepEqual([removed, unsubscribed.length], [[ENDPOINT], 1])
+  const started = Date.now()
+  await device.unsubscribeOnSignOut(() => new Promise(() => {}), 50)
+  assert.ok(Date.now() - started < 1000, 'a hung server call does not hold up sign-out')
+  await device.unsubscribeOnSignOut(async () => { throw new Error('offline') })
+  subscription.unsubscribe = async () => false
+  await assert.rejects(device.unsubscribeThisDevice(async () => {}), /kept the push subscription/, 'turn-off surfaces a failed browser unsubscribe')
 })

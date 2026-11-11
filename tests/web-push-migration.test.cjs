@@ -5,6 +5,8 @@ test('web push migration: unique endpoint, one delivery per notification and sub
   const db = new PGlite()
   try {
     await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE outclass_production_app;')
+    // Supabase grants browser roles everything on new public tables by default; the migration's REVOKE must win.
+    await db.exec('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;')
     const dir = 'prisma/migrations'
     const names = fs.readdirSync(dir).filter(n => fs.existsSync(path.join(dir, n, 'migration.sql'))).sort()
     for (const n of names) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
@@ -26,6 +28,10 @@ test('web push migration: unique endpoint, one delivery per notification and sub
     assert.equal((await claim()).affectedRows, 0, 'a second claim matches nothing')
     await assert.rejects(db.exec(`UPDATE "WebPushDelivery" SET status='RETRY'`), /WebPushDelivery_status/)
 
+    for (const table of ['WebPushSubscription', 'WebPushDelivery']) for (const role of ['anon', 'authenticated'])
+      assert.equal((await db.query(`SELECT has_table_privilege($1,$2,'SELECT') ok`, [role, `"${table}"`])).rows[0].ok, false, `${role} cannot SELECT ${table} despite default grants`)
+    await db.exec('CREATE TABLE default_grant_probe(id int)')
+    assert.equal((await db.query(`SELECT has_table_privilege('anon','default_grant_probe','SELECT') ok`)).rows[0].ok, true, 'the default grant is in effect for a table that does not revoke it')
     for (const table of ['WebPushSubscription', 'WebPushDelivery']) {
       assert.equal((await db.query(`SELECT relrowsecurity FROM pg_class WHERE relname=$1`, [table])).rows[0].relrowsecurity, true)
       for (const role of ['anon', 'authenticated']) for (const p of ['SELECT', 'INSERT', 'UPDATE', 'DELETE'])
