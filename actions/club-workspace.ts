@@ -20,7 +20,9 @@ export async function updateClubSettings(input: {
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
   const { clubId, expectedProfile, ...fields } = data;
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction");
-  const { assertClubImageAssignment } = await import("@/utils/club-asset-storage");
+  const { assertClubImageAssignment, releaseReplacedClubImages } = await import("@/utils/club-asset-storage");
+  // Set inside the transaction; the `as` keeps TypeScript from narrowing it to null.
+  let images = null as { previous: Parameters<typeof releaseReplacedClubImages>[1]; next: Parameters<typeof releaseReplacedClubImages>[2] } | null;
   const result = await clubWriteTransaction(async (tx) => {
     await authorizeClubTransaction(tx, data.clubId, user.id, ["club.settings"]);
     const previous = await tx.club.findUniqueOrThrow({ where: { id: clubId } });
@@ -39,6 +41,7 @@ export async function updateClubSettings(input: {
     }
     await assertClubImageAssignment(tx, clubId, fields, previous);
     await tx.club.update({ where: { id: clubId }, data: fields });
+    images = { previous, next: { ...previous, ...fields } };
     await tx.auditLog.create({
       data: {
         actorId: user.id,
@@ -49,6 +52,8 @@ export async function updateClubSettings(input: {
     });
     return { success: true };
   });
+  // After commit: delete images this save replaced (best effort, logged on failure).
+  if (images) await releaseReplacedClubImages(clubId, images.previous, images.next);
   revalidateTag("club-directory");
   revalidatePath(`/club/${clubId}`);
   return result;
