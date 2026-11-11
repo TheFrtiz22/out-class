@@ -237,7 +237,7 @@ export function PublicEventBoard() {
             setOpen(value);
           }}
         >
-          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
+          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Event board" : "Event list"}>
             {!loading && !events.length ? (
               (() => { const empty = eventBoardEmpty(filters); return <div className="oc-events-empty">
                 <h2>{empty.title}</h2>
