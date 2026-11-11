@@ -1,5 +1,5 @@
 import { createClient as createAdminClient } from "@supabase/supabase-js"
-import type { Prisma, PrismaClient } from "@prisma/client"
+import type { prisma } from "@/utils/prisma"
 import {
   ACCOUNT_DELETION_REPORT_KIND,
   accountDeletionAudit,
@@ -46,7 +46,8 @@ export function supabaseAccountDeletionServices(): AccountDeletionServices {
   }
 }
 
-type Db = Pick<PrismaClient, "$transaction" | "user" | "taskFile" | "platformAdmin" | "platformReport" | "auditLog">
+/** The application client (with its audit extension); a plain PrismaClient type does not accept it. */
+type Db = Pick<typeof prisma, "$transaction" | "user" | "taskFile" | "platformAdmin" | "platformReport" | "auditLog">
 
 export type AccountDeletionResult = {
   userId: string
@@ -101,7 +102,7 @@ export async function performAccountDeletion(
   }))
   for (const file of await db.taskFile.findMany({ where: { assignment: { userId } }, select: { path: true } })) taskFiles.add(file.path)
 
-  const counts = await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  const counts = await db.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`
     if (taskFiles.size) await tx.auditLog.create({ data: { actorId: context.actorId, action: accountDeletionAudit.storagePending, targetId: userId, details: { taskFiles: [...taskFiles] } } })
     await tx.studentProfile.deleteMany({ where: { userId } })
@@ -184,7 +185,7 @@ export async function performAccountDeletion(
   }
 
   const result: AccountDeletionResult = { userId, storageObjects, ...counts, authDeleted }
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  await db.$transaction(async tx => {
     if (authDeleted && context.reportId) await tx.platformReport.updateMany({
       where: { id: context.reportId, kind: ACCOUNT_DELETION_REPORT_KIND, status: { in: ["OPEN", "INVESTIGATING"] } },
       data: { status: "RESOLVED", resolution: context.reason, resolvedAt: new Date(), resolvedBy: context.actorId, revision: { increment: 1 } },
