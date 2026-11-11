@@ -4,6 +4,8 @@ async function fixture(){
  const script=bundle(`import React from 'react';import{createRoot}from'react-dom/client';import{ClubEvents}from'@/components/events/club-events';window.writes=[];window.uploads=0;createRoot(document.getElementById('root')).render(<ClubEvents clubId="00000000-0000-4000-8000-000000000001" clubName="Test Club" canSeeAttendees={false}/>);`,{
   '@/hooks/use-editor-draft':`exports.useEditorDraft=()=>({ready:true,recovery:null,dirty:false,state:'saved',flush:async()=>{},clear:async()=>{},onBlur:()=>{}});`,
   '@/components/ui/autosave-status':`exports.AutosaveStatus=()=>null;`,
+  // The CSV export link reads the signed-in session (Supabase client), which this fixture has no use for.
+  '@/components/club-export-link':`exports.ClubExportLink=()=>null;exports.csvExportOffNotice='';`,
   'next/image':`exports.__esModule=true;exports.default=({unoptimized,...p})=>require('react').createElement('img',p);`,
   '@/lib/workspace-api':`exports.listClubCampusEvents=async()=>[];exports.saveCampusEvent=async input=>{window.writes.push(input);return {...input,id:'00000000-0000-4000-8000-000000000002',clubName:'Test Club',revision:window.writes.length,status:'DRAFT',date:input.date.toISOString(),endDate:input.endDate.toISOString(),rsvpCount:0,flyerUrl:null}};exports.commandCampusEvent=async()=>{};exports.uploadEventFlyer=async()=>{window.uploads++;await new Promise(r=>setTimeout(r,100));throw Error('Upload failed. Retry your flyer.');};`
  });

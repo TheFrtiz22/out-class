@@ -67,6 +67,9 @@
   --text-display--letter-spacing: var(--oc-tracking-display);
   --text-title: var(--oc-text-title);
   --text-caption: var(--oc-text-caption);
+  /* 13px floor for control labels, form errors and helper text (text-control). */
+  --text-control: var(--oc-size-13);
+  --text-control--line-height: calc(1.125 / 0.8125);
   --text-body: var(--oc-text-body);
   --text-body--line-height: var(--oc-leading-body);
   --default-transition-duration: var(--oc-duration-micro);

@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
 import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
+import { RATE_LIMITS, RATE_LIMIT_MESSAGE, rateLimiter, rateLimitHeaders, rateLimitKey } from "@/lib/rate-limit-core"
 import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, CSP_NONCE_HEADER } from "@/lib/csp"
 
 /**
@@ -34,6 +35,11 @@ async function route(request: NextRequest): Promise<Response> {
   // The uptime probe needs no session, cookies or redirects, and nothing here may rate-limit it.
   if (path === "/api/health" && ["GET", "HEAD"].includes(request.method)) return NextResponse.next()
   try { path = decodeURIComponent(path) } catch { return new NextResponse(null, { status: 400 }) }
+  // Short-link resolution is a page, which cannot answer 429 itself, so the per-address limit lives here.
+  if (path.startsWith("/q/")) {
+    const limit = rateLimiter.check(RATE_LIMITS.shortLinks, rateLimitKey({ forwardedFor: request.headers.get("x-forwarded-for") }))
+    if (!limit.ok) return new NextResponse(RATE_LIMIT_MESSAGE, { status: 429, headers: { ...rateLimitHeaders(limit.retryAfterSeconds), "Content-Type": "text/plain; charset=utf-8" } })
+  }
   // Student workspace views moved from `/?workspace=student&view=…` to real paths. Old URLs live
   // on in stored notifications and sent email, so this redirect stays (307 until the paths are
   // proven in production; then 308). Next rewrites a 127.0.0.1/[::1] host to localhost in any

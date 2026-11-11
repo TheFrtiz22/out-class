@@ -62,4 +62,4 @@
 .oc-applicant-review-footer { flex: 0 0 auto; position: relative; z-index: 1; isolation: isolate; background: var(--oc-glass-frosted-material); border-top: 1px solid var(--border); padding: 1rem 1.5rem max(1rem, env(safe-area-inset-bottom)); }
 @media (max-width: 639px) { .oc-applicant-drawer > .oc-applicant-drawer-scroll { padding-inline: 1rem; } .oc-applicant-review-footer { padding-inline: 1rem; } }
 /* Decide: Vote and Send read as ordered steps (1, 2) inside the segmented tabs. */
-.oc-decide-step-number { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; margin-right: .375rem; border-radius: var(--oc-radius-full); border: 1px solid currentColor; font-size: var(--oc-size-11, 11px); font-variant-numeric: tabular-nums; opacity: .8; }
+.oc-decide-step-number { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; margin-right: .375rem; border-radius: var(--oc-radius-full); border: 1px solid currentColor; font-size: var(--oc-size-11, 0.6875rem); font-variant-numeric: tabular-nums; opacity: .8; }
