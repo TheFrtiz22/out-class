@@ -4,8 +4,9 @@ import { nextInterviewApplicant } from "@/lib/interview-queue";
 import type { InterviewScope } from "@/lib/interview-access";
 import type { CollaborationView } from "@/lib/interview-collaboration";
 import type { KitQuestion } from "@/lib/interview-kits";
+import { applyTimerCommand, freshTimerState, presentTimer, type SharedTimerState, type TimerCommand, type TimerControlResult } from "@/lib/interview-shared-timer";
 export type DemoCollaboration = {
-  rooms: { id: string; scope: InterviewScope; questions: KitQuestion[]; revision: number; selection: CollaborationView["selection"] }[];
+  rooms: { id: string; scope: InterviewScope; questions: KitQuestion[]; revision: number; selection: CollaborationView["selection"]; timer?: SharedTimerState & { revision: number; lastRequestId: string } }[];
   moves: { id: string; scope: InterviewScope; destination: InterviewScope; invited: boolean; confirmed: boolean }[];
   invites: { id: string; source: InterviewScope; destination: InterviewScope; expires: number; dismissed: boolean }[];
 };
@@ -29,7 +30,7 @@ export function getInterviewCollaboration(input: Input): CollaborationView {
   const s = demoStore.get(), member = demoMember();
   const invite = s.interviewFoundation.collaboration!.invites.find(i => i.source.applicationId === input.applicationId && i.source.roundId === input.roundId && !i.dismissed && i.expires > Date.now());
   const candidate = invite && getInterviewWorkspace(input.clubId).applications.find(a => a.id === invite.destination.applicationId && a.roundId === input.roundId && !a.completedRoundIds.includes(input.roundId));
-  return { sessionId: r.id, revision: r.revision, selection: r.selection, participants: [{ id: member.id, name: "You" }, { id: "simulated-alex", name: "Alex · simulated" }], invitation: invite && candidate ? { id: invite.id, sender: "Alex · simulated", candidate: candidate.name } : null, simulated: true, timing: demoInterviewTiming(input) };
+  return { sessionId: r.id, revision: r.revision, selection: r.selection, participants: [{ id: member.id, name: "You" }, { id: "simulated-alex", name: "Alex · simulated" }], invitation: invite && candidate ? { id: invite.id, sender: "Alex · simulated", candidate: candidate.name } : null, simulated: true, timing: demoInterviewTiming(input), timer: demoTimer(r, demoInterviewTiming(input)) };
   });
 }
 export function selectSharedInterviewQuestion(input: Input & { questionId: string }) {
@@ -40,6 +41,23 @@ export function selectSharedInterviewQuestion(input: Input & { questionId: strin
   const question = r.questions.find(q => q.id === input.questionId) || (added?.bankQuestion ? { id: added.id, prompt: added.question, guidance: added.bankQuestion.guidance } : kitQuestion) || (added ? { id: added.id, prompt: added.question, guidance: "" } : undefined) || getInterviewWorkspace(input.clubId) && demoStore.get().clubs.find(c => c.id === input.clubId)!.rounds.find(r => r.id === input.roundId)!.interviewKit.find(q => q.id === input.questionId);
   if (!question) throw Error("Select a bank question.");
   return demoStore.mutate(s => { const target = s.interviewFoundation.collaboration!.rooms.find(x => x.id === r.id)!; if (!target.questions.some(q => q.id === question.id)) target.questions.push(question); target.revision++; target.selection = { question, by: "You", memberId: demoMember().id }; return { revision: target.revision, question }; });
+  });
+}
+function demoTimer(r: DemoCollaboration["rooms"][number], timing: ReturnType<typeof demoInterviewTiming>) {
+  return presentTimer(r.timer ? { ...r.timer, startedAt: r.timer.startedAt === null ? null : new Date(r.timer.startedAt), pausedAt: r.timer.pausedAt === null ? null : new Date(r.timer.pausedAt) } : null, timing, Date.now());
+}
+/** Demo counterpart of controlInterviewTimer: same transitions and revision check, demo store only. */
+export function controlInterviewTimer(input: InterviewScope & { revision: number; requestId: string; command: TimerCommand }): TimerControlResult {
+  return withRoom(input, r => {
+    const timing = demoInterviewTiming(input), now = Date.now();
+    if (!timing) return { status: "conflict" as const, timer: demoTimer(r, timing) };
+    if (r.timer?.lastRequestId === input.requestId) return { status: "ok" as const, timer: demoTimer(r, timing) };
+    if ((r.timer?.revision ?? 0) !== input.revision) return { status: "conflict" as const, timer: demoTimer(r, timing) };
+    const next = applyTimerCommand(r.timer ?? freshTimerState(timing), input.command, now, timing);
+    if (!next) return { status: "conflict" as const, timer: demoTimer(r, timing) };
+    const timer = { durationMs: next.durationMs, contextKey: next.contextKey, startedAt: next.startedAt, pausedAt: next.pausedAt, pausedMs: next.pausedMs, revision: (r.timer?.revision ?? 0) + 1, lastRequestId: input.requestId };
+    demoStore.mutate(s => { s.interviewFoundation.collaboration!.rooms.find(x => x.id === r.id)!.timer = timer; });
+    return { status: "ok" as const, timer: demoTimer({ ...r, timer }, timing) };
   });
 }
 export function simulateDemoInterviewSelection(input: InterviewScope) {
