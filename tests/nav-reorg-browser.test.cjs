@@ -89,7 +89,7 @@ test('browser: old links, Decide, Recruiting settings drawer, Calendar filter an
   await expect(filter.getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await filter.getByRole('button', { name: 'Events', exact: true }).click()
   await expect.poll(params).toEqual(expect.objectContaining({ section: 'calendar', type: 'events' }))
-  await expect(page.getByText(/Corkboard event management is not available in Demo/)).toBeVisible()
+  await expect(page.getByText(/Event management is not available in Demo/)).toBeVisible()
   await filter.getByRole('button', { name: 'Meetings', exact: true }).click()
   await expect.poll(params).toEqual(expect.objectContaining({ type: 'meetings' }))
 
