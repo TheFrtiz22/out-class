@@ -47,6 +47,8 @@ const PROTECTED_PATHS = [
   /^(src\/)?middleware\.[cm]?[jt]s$/,
   // Auth, sessions, admin elevation and cron
   /^lib\/auth[^/]*$/,
+  /^contexts\/auth-context\.tsx$/,
+  /^lib\/(password-policy|password-recovery|rate-limit[^/]*)\.ts$/,
   /^lib\/admin-elevation\.ts$/,
   /^lib\/supabase\//,
   /^utils\/supabase\//,
