@@ -34,6 +34,8 @@ const loadMiddleware = (live = { calls: 0, forwarded: [] }) => load('middleware.
   '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
   '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: true },
   '@/lib/csp': csp,
+  // Harmless until middleware imports it (rate limits, #279); then these tests keep loading.
+  '@/lib/rate-limit-core': fs.existsSync('lib/rate-limit-core.ts') ? load('lib/rate-limit-core.ts') : {},
 })
 
 test('middleware sends a fresh nonce per page request and forwards the same nonce to rendering', async () => {
