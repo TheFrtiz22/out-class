@@ -59,3 +59,5 @@
 [data-product-shell][data-shell-chrome="hidden"] > :is(header, a[href="#workspace-content"], .oc-mobile-navigation), [data-product-shell][data-shell-chrome="hidden"] > div > aside { display: none; }
 [data-product-shell][data-shell-chrome="hidden"] > div:has(> aside) { margin-left: 0; }
 [data-product-shell][data-shell-chrome="hidden"] main.oc-workspace-content { max-width: none; padding: 0; }
+/* At least 16px on phones so iOS does not zoom into the focused field. */
+@media (max-width: 767px) { .oc-context-sidebar select { font-size: 16px; } }

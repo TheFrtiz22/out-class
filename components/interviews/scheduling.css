@@ -77,3 +77,5 @@
 .ir-panel-day-content[hidden] { display:none; }
 @media (max-width:639px) { .ir-panel-day-summary { flex-basis:100%; margin-left:24px; } }
 @media (prefers-reduced-motion:reduce) { .ir-panel-day-chevron { transition:none; } }
+/* At least 16px on phones so iOS does not zoom into the focused field. */
+@media (max-width: 767px) { .ir-select { font-size: 16px; } }

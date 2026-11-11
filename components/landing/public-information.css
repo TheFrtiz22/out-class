@@ -249,9 +249,11 @@
   .oc-request-introduction > p { max-width: 52ch !important; }
   .oc-request-form { scroll-margin-top: 96px; }
 }
+@media (max-width: 767px) {
+  .oc-request-field :is(input, textarea, select) { font-size: 16px; }
+}
 @media (max-width: 480px) {
   .oc-request-field-pair { grid-template-columns: 1fr; gap: 22px; }
-  .oc-request-field :is(input, textarea, select) { font-size: 16px; }
 }
 
 /* Shared public frame: header, normal page margins, footer (components/landing/public-page-frame.tsx). */

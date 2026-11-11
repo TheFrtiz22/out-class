@@ -24,7 +24,7 @@
 @media (max-width: 767px) {
   [data-slot="input"], [data-slot="textarea"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { font-size: max(1rem, var(--oc-text-small)); }
   [data-button][data-size], [data-slot="input"], [data-slot="native-select"][data-density], [data-slot="select-trigger"][data-size] { min-height: var(--oc-control-height-large); }
-  select:not([data-slot]) { min-height: var(--oc-control-height-large); font-size: 1rem; }
+  .oc-native-select, select:not([data-slot]) { min-height: var(--oc-control-height-large); font-size: 1rem; }
   [data-button][data-size^="icon"] { min-width: var(--oc-control-height-large); }
 }
 
