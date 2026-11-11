@@ -2,6 +2,7 @@
 import { useAutosave } from "@/hooks/use-autosave";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
+import { useDemoMode } from "@/contexts/demo-context";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import { canDiscoverInterviewSetup, interviewSetupHref, type InterviewSetupRounds } from "@/lib/interview-setup";
@@ -39,7 +40,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
 }) {
   const [open, setOpen] = useState(initiallyOpen);
   useEffect(() => { if (initiallyOpen) setOpen(true); }, [initiallyOpen]);
-  const { user } = useAuth();
+  const { user } = useAuth(), demo = useDemoMode();
   const confirm = useConfirm();
   const version = useRef(0);
   // IDs the server has accepted. A newly added question stays a local draft until it
@@ -75,7 +76,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
     };
   }, [clubId, round, retry, canReadKit]);
   const autosave = useAutosave({
-    identity: `${user?.id}:kit:${clubId}:${round}`,
+    identity: `${user?.id}:kit:${clubId}:${round}`, owner: demo.isDemoEnabled ? null : user?.id,
     value: questions, restore: setQuestions, enabled: loaded && canEdit && canReadKit,
     save: async value => {
       const ready = value.filter(q => q.prompt.trim() || savedIds.current.has(q.id));

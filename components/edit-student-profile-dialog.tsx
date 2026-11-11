@@ -9,6 +9,7 @@ import { Plus, Trash2 } from "@/components/icons"
 import { getStudentProfile, updateStudentProfileSection } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
+import { useDemoMode } from "@/contexts/demo-context"
 import { profileSectionSnapshot, gpaSchema, genderValues, pronounValues, type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
 import {
   Dialog,
@@ -49,7 +50,7 @@ export function EditStudentProfileDialog({
   extra?: ReactNode | ((sync: (profile: FullStudentProfile) => void) => ReactNode)
 }) {
   const [section, setSection] = useState<ProfileSection>(initialSection)
-  const { user } = useAuth()
+  const { user } = useAuth(), demo = useDemoMode()
   const expected = useRef("")
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<FullStudentProfile | null>(null)
@@ -114,7 +115,7 @@ export function EditStudentProfileDialog({
       onSaved?.(result.profile)
   }
   const autosave = useAutosave({
-    identity: `${user?.id}:profile:${section}`,
+    identity: `${user?.id}:profile:${section}`, owner: demo.isDemoEnabled ? null : user?.id,
     value: draft, restore: setDraft, enabled: open && !!draft,
     save: async snapshot => { if (snapshot) await persist(snapshot) },
   })
