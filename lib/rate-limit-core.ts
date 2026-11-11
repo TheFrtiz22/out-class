@@ -16,16 +16,21 @@ const minute = 60_000
 
 /** Per-route policies. Keep this table and docs/rate-limits.md in step. */
 export const RATE_LIMITS = {
-  search: { name: "search", limit: 60, windowMs: minute },
+  // Signed-in search is keyed by account, so one person cannot use up a shared campus address's budget.
+  searchUser: { name: "search-user", limit: 120, windowMs: minute },
+  searchAnonymous: { name: "search-anonymous", limit: 300, windowMs: minute },
   clubExports: { name: "club-exports", limit: 10, windowMs: 10 * minute },
-  // Generous: a large event can put many phones behind one campus network address.
-  shortLinks: { name: "short-links", limit: 120, windowMs: minute },
+  // Generous: a 200-person check-in can put every phone behind one campus network address.
+  shortLinks: { name: "short-links", limit: 600, windowMs: minute },
   clubAssets: { name: "club-assets", limit: 300, windowMs: minute },
   calendarFeed: { name: "calendar-feed", limit: 30, windowMs: 10 * minute },
+  // Checked before the token lookup, so guessing random tokens cannot skip it. Calendar services poll many
+  // people's feeds from shared addresses, so this stays well above a real fetcher's rate.
+  calendarFeedAddress: { name: "calendar-feed-address", limit: 300, windowMs: minute },
   schoolRequests: { name: "school-requests", limit: 10, windowMs: 60 * minute },
-  passwordRecovery: { name: "password-recovery", limit: 10, windowMs: 15 * minute },
-  studentClaim: { name: "student-claim", limit: 10, windowMs: 15 * minute },
-  signup: { name: "signup", limit: 20, windowMs: 60 * minute },
+  passwordRecovery: { name: "password-recovery", limit: 30, windowMs: 15 * minute },
+  studentClaim: { name: "student-claim", limit: 30, windowMs: 15 * minute },
+  signup: { name: "signup", limit: 60, windowMs: 60 * minute },
   adminElevation: { name: "admin-elevation", limit: 20, windowMs: 15 * minute },
   adminViewAs: { name: "admin-view-as", limit: 60, windowMs: 10 * minute },
   adminViewAsBlocked: { name: "admin-view-as-blocked", limit: 60, windowMs: minute },
@@ -34,26 +39,40 @@ export const RATE_LIMITS = {
 
 export const RATE_LIMIT_MESSAGE = "Too many requests. Please wait a moment and try again."
 
-/** Fixed-window counter keyed by policy and caller, bounded as an LRU so memory stays flat. */
+export const UNKNOWN_ADDRESS_KEY = "ip:unknown"
+
+/**
+ * Fixed-window counters keyed by caller. Each policy has its own LRU of at most `maxKeys` callers, so a
+ * flood against one policy can never evict another policy's counters, and memory stays flat.
+ */
 export function createRateLimiter({ maxKeys = 10_000, now = () => Date.now(), log = (message: string) => console.warn(message) } = {}) {
-  const entries = new Map<string, Entry>()
+  const policies = new Map<string, Map<string, Entry>>()
+  // Logging is best effort: a broken logger must never turn a counted request into a failure.
+  const note = (message: string) => { try { log(message) } catch { /* ignore */ } }
   function check(policy: RateLimitPolicy, key: string): RateLimitResult {
-    const id = `${policy.name}:${key}`, time = now()
-    let entry = entries.get(id)
-    if (entry) entries.delete(id)
-    if (!entry || entry.resetAt <= time) entry = { count: 0, resetAt: time + policy.windowMs, logged: false }
+    const time = now()
+    let entries = policies.get(policy.name)
+    if (!entries) policies.set(policy.name, entries = new Map())
+    let entry = entries.get(key)
+    if (entry) entries.delete(key)
+    if (!entry || entry.resetAt <= time) {
+      entry = { count: 0, resetAt: time + policy.windowMs, logged: false }
+      // A missing or invalid client address usually means a proxy or header problem, so say so once per window.
+      if (key === UNKNOWN_ADDRESS_KEY) note(`rate-limit: ${policy.name} request without a valid client address; using the shared bucket`)
+    }
     entry.count++
-    entries.set(id, entry)
+    entries.set(key, entry)
     while (entries.size > maxKeys) entries.delete(entries.keys().next().value as string)
     if (entry.count <= policy.limit) return { ok: true, remaining: policy.limit - entry.count }
     if (!entry.logged) {
       entry.logged = true
       // Logged once per key and window, without the key: addresses and account ids stay out of logs.
-      log(`rate-limit: ${policy.name} limit reached (${policy.limit} per ${Math.round(policy.windowMs / 1000)}s)`)
+      note(`rate-limit: ${policy.name} limit reached (${policy.limit} per ${Math.round(policy.windowMs / 1000)}s)`)
     }
     return { ok: false, retryAfterSeconds: Math.max(1, Math.ceil((entry.resetAt - time) / 1000)) }
   }
-  return { check, size: () => entries.size, reset: () => entries.clear() }
+  const size = (policyName?: string) => policyName ? policies.get(policyName)?.size ?? 0 : [...policies.values()].reduce((sum, entries) => sum + entries.size, 0)
+  return { check, size, reset: () => policies.clear() }
 }
 
 /** One limiter per instance, shared by every route that imports this module. */
@@ -85,7 +104,7 @@ export function clientIp(forwardedFor: string | null | undefined, isIp: (value: 
 export function rateLimitKey({ userId, forwardedFor, isIp }: { userId?: string | null; forwardedFor?: string | null; isIp?: (value: string) => boolean }) {
   if (userId) return `user:${userId}`
   const ip = clientIp(forwardedFor, isIp)
-  return ip ? `ip:${ip}` : "ip:unknown"
+  return ip ? `ip:${ip}` : UNKNOWN_ADDRESS_KEY
 }
 
 export function rateLimitHeaders(retryAfterSeconds: number) {

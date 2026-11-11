@@ -16,12 +16,15 @@ function remember(tokenHash: string, body: string) {
   const entry = { body, etag: `"${createHash("sha256").update(body).digest("base64url").slice(0, 27)}"`, builtAt: Date.now() }
   builtFeeds.delete(tokenHash)
   builtFeeds.set(tokenHash, entry)
-  while (builtFeeds.size > 500) builtFeeds.delete(builtFeeds.keys().next().value as string)
+  while (builtFeeds.size > 100) builtFeeds.delete(builtFeeds.keys().next().value as string)
   return entry
 }
 
 /** Calendar apps fetch this without cookies; the unguessable token is the credential. */
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
+  // Per address first, so a run of random tokens is limited before any lookup.
+  const byAddress = limitRequest(request, RATE_LIMITS.calendarFeedAddress)
+  if (byAddress) return byAddress
   const raw = (await params).token.replace(/\.ics$/, "")
   if (!isCalendarFeedToken(raw)) return new Response("Not found", { status: 404, headers: errorHeaders })
   const tokenHash = calendarFeedTokenHash(raw)
@@ -45,7 +48,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     const headers = { ...privateHeaders, ETag: built.etag, "Last-Modified": new Date(built.builtAt).toUTCString() }
     if (request.headers.get("if-none-match") === built.etag) return new Response(null, { status: 304, headers })
     return new Response(built.body, { headers: { ...headers, "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": 'inline; filename="outclass.ics"' } })
-  } catch {
+  } catch (error) {
+    // Sentry's server scrubbing applies; the token itself is never in scope here, only its hash.
+    console.error("calendar-feed: feed unavailable", error)
     return new Response("Calendar unavailable", { status: 503, headers: errorHeaders })
   }
 }

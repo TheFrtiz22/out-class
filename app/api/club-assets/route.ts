@@ -6,8 +6,8 @@ import { requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
 // Published, non-preview images are public by definition, so the CDN may hold them. Each upload gets
-// a new UUID reference, so a replaced image never reuses a cached URL; a suspension or unpublish clears within s-maxage.
-const publicImageCache = 'public, max-age=300, s-maxage=900, stale-while-revalidate=60';
+// a new UUID reference, so a replaced image never reuses a cached URL; an unpublished image or suspended club clears from the CDN within s-maxage (about 5 minutes).
+const publicImageCache = 'public, max-age=300, s-maxage=300, stale-while-revalidate=60';
 const missing = () => new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'private, no-store' } });
 export async function GET(request: NextRequest) {
   const limited = limitRequest(request, RATE_LIMITS.clubAssets);

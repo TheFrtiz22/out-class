@@ -39,7 +39,31 @@ test("keys and policies are independent, and the key table stays bounded", () =>
   assert.equal(limiter.check(policy, "ip:2.2.2.2").ok, true)
   assert.equal(limiter.check({ ...policy, name: "other" }, "ip:1.1.1.1").ok, true)
   for (let i = 0; i < 20; i++) limiter.check(policy, `ip:10.0.0.${i}`)
-  assert.equal(limiter.size(), 5)
+  assert.equal(limiter.size(policy.name), 5)
+})
+
+test("each policy has its own key table: a flood against one policy never evicts another's counters", () => {
+  const limiter = core.createRateLimiter({ maxKeys: 5, log: () => {} })
+  const strict = { name: "strict", limit: 1, windowMs: 60_000 }, noisy = { name: "noisy", limit: 1000, windowMs: 60_000 }
+  limiter.check(strict, "ip:1.1.1.1")
+  assert.equal(limiter.check(strict, "ip:1.1.1.1").ok, false)
+  for (let i = 0; i < 1000; i++) limiter.check(noisy, `ip:10.0.${i >> 8}.${i & 255}`)
+  assert.equal(limiter.size("noisy"), 5)
+  assert.equal(limiter.check(strict, "ip:1.1.1.1").ok, false, "the strict counter survived")
+  assert.equal(limiter.size(), 6)
+})
+
+test("requests without a valid client address log once per window that the shared bucket is in use", () => {
+  let now = 0
+  const logs = []
+  const limiter = core.createRateLimiter({ now: () => now, log: m => logs.push(m) })
+  for (let i = 0; i < 3; i++) limiter.check({ ...policy, limit: 100 }, core.UNKNOWN_ADDRESS_KEY)
+  limiter.check({ ...policy, limit: 100 }, "ip:1.2.3.4")
+  assert.equal(logs.length, 1)
+  assert.match(logs[0], /test request without a valid client address/)
+  now += policy.windowMs
+  limiter.check({ ...policy, limit: 100 }, core.UNKNOWN_ADDRESS_KEY)
+  assert.equal(logs.length, 2, "logged again in the next window")
 })
 
 test("keys: account id when signed in, else the validated first forwarded hop, else one shared bucket", () => {
@@ -112,7 +136,7 @@ test("every app/api route with a POST handler calls the shared limiter or is a r
 test("abusable GET routes, public actions and short links are limited", () => {
   for (const [file, name] of [["app/api/club-exports/route.ts", "clubExports"], ["app/api/club-assets/route.ts", "clubAssets"], ["app/api/calendar-feed/[token]/route.ts", "calendarFeed"]])
     assert.match(read(file), new RegExp(`limitRequest\\(request, RATE_LIMITS\\.${name}`), file)
-  assert.match(read("actions/typesense-search.ts"), /limitAction\(RATE_LIMITS\.search\)/)
+  assert.match(read("actions/typesense-search.ts"), /limitAction\(userId \? RATE_LIMITS\.searchUser : RATE_LIMITS\.searchAnonymous, \{ userId \}\)/)
   assert.match(read("actions/onboarding.ts"), /limitAction\(RATE_LIMITS\.signup\)\)\.ok\) return \{ error: RATE_LIMIT_MESSAGE \}/)
   assert.match(read("middleware.ts"), /path\.startsWith\("\/q\/"\)[\s\S]{0,200}RATE_LIMITS\.shortLinks/)
   // Exports also count this account's recent audit rows, which every instance shares.
@@ -132,8 +156,10 @@ test("short-link middleware answers 429 per address before resolving", async () 
   const { NextRequest } = require("next/server")
   const { middleware } = load("middleware.ts", { "@/utils/supabase/middleware": { createClient: async () => new Response(null) } })
   const request = () => new NextRequest("https://out-class.net/q/Ab12Cd", { headers: { "x-forwarded-for": "192.0.2.50" } })
+  // A 200-person check-in behind one campus address: the first 130 scans within a minute all pass.
+  for (let i = 0; i < 130; i++) assert.notEqual((await middleware(request())).status, 429, `scan ${i + 1}`)
   let last
-  for (let i = 0; i <= 120; i++) last = await middleware(request())
+  for (let i = 130; i <= 600; i++) last = await middleware(request())
   assert.equal(last.status, 429)
   assert.ok(Number(last.headers.get("retry-after")) >= 1)
   const other = await middleware(new NextRequest("https://out-class.net/q/Ab12Cd", { headers: { "x-forwarded-for": "192.0.2.51" } }))
@@ -176,4 +202,78 @@ test("exports: ten recent exports by this account answer 429 before any transact
   const retry = Number(res.headers.get("retry-after"))
   assert.ok(retry > 500 && retry <= 600, `retry after ${retry}s, when the oldest of the ten leaves the window`)
   assert.equal(transactions, 0)
+})
+
+test("calendar feed: random tokens from one address hit the per-address limit before any lookup", async () => {
+  let lookups = 0
+  const mod = load("app/api/calendar-feed/[token]/route.ts", {
+    "@/utils/prisma": { prisma: { calendarFeedToken: { findUnique: async () => { lookups++; return null } } } },
+    "@/utils/calendar-feed": { calendarFeedEvents: async () => [] },
+  })
+  const { newCalendarFeedToken } = load("lib/calendar-feed.ts")
+  const { RATE_LIMITS } = core
+  const get = ip => mod.GET(new Request("https://out-class.net/x", { headers: { "x-forwarded-for": ip } }), { params: Promise.resolve({ token: newCalendarFeedToken() }) })
+  const { limit } = RATE_LIMITS.calendarFeedAddress
+  const statuses = []
+  // Fill the address's window, then send 200 more random tokens: every one of those is refused unlooked-up.
+  for (let i = 0; i < limit + 200; i++) statuses.push((await get("203.0.113.77")).status)
+  assert.deepEqual([...new Set(statuses.slice(0, limit))], [404])
+  assert.deepEqual([...new Set(statuses.slice(limit))], [429])
+  assert.equal(lookups, limit, "no lookup once the address is over its limit")
+  assert.equal((await get("203.0.113.78")).status, 404, "another address is unaffected")
+})
+
+test("calendar feed: a failed build logs its cause and answers 503", async () => {
+  const errors = []
+  const original = console.error
+  console.error = (...args) => errors.push(args)
+  try {
+    const mod = load("app/api/calendar-feed/[token]/route.ts", {
+      "@/utils/prisma": { prisma: { calendarFeedToken: { findUnique: async () => ({ userId: "u1", lastUsedAt: new Date(), user: { disabledAt: null } }) }, $transaction: async () => { throw new Error("database timeout") } } },
+      "@/utils/calendar-feed": { calendarFeedEvents: async () => [] },
+    })
+    const { newCalendarFeedToken } = load("lib/calendar-feed.ts")
+    const res = await mod.GET(new Request("https://out-class.net/x"), { params: Promise.resolve({ token: newCalendarFeedToken() }) })
+    assert.equal(res.status, 503)
+    assert.equal(errors.length, 1)
+    assert.equal(errors[0][0], "calendar-feed: feed unavailable")
+    assert.match(errors[0][1].message, /database timeout/)
+  } finally { console.error = original }
+})
+
+test("search: one signed-in user at the limit does not null out other users on the same address", async () => {
+  const env = { ...process.env }
+  process.env.TYPESENSE_URL = "https://search.example.test"
+  process.env.TYPESENSE_SEARCH_KEY = "public-search-key"
+  const savedFetch = global.fetch
+  let fetches = 0
+  global.fetch = async () => { fetches++; return { ok: true, json: async () => ({ hits: [{ document: { id: "club-1" } }] }) } }
+  let current = "user-a"
+  try {
+    const { searchPublicClubIds } = load("actions/typesense-search.ts", {
+      "next/headers": {
+        cookies: async () => ({ getAll: () => current ? [{ name: "sb-project-auth-token", value: "x" }] : [] }),
+        headers: async () => new Headers({ "x-forwarded-for": "198.51.100.20" }),
+      },
+      "@/utils/supabase/server": { createClient: async () => ({ auth: { getClaims: async () => ({ data: { claims: { sub: current } }, error: null }) } }) },
+    })
+    const { RATE_LIMITS } = load("lib/rate-limit.ts")
+    for (let i = 0; i < RATE_LIMITS.searchUser.limit; i++) assert.deepEqual(await searchPublicClubIds("consulting"), ["club-1"])
+    assert.equal(await searchPublicClubIds("consulting"), null, "user A is over the per-account limit")
+    current = "user-b"
+    assert.deepEqual(await searchPublicClubIds("consulting"), ["club-1"], "user B on the same address still gets results")
+    current = null
+    assert.deepEqual(await searchPublicClubIds("consulting"), ["club-1"], "a signed-out visitor on that address uses the address bucket")
+    assert.equal(fetches, RATE_LIMITS.searchUser.limit + 2)
+  } finally {
+    global.fetch = savedFetch
+    process.env = env
+  }
+})
+
+test("a failing logger never breaks a request", () => {
+  const limiter = core.createRateLimiter({ log: () => { throw new Error("logger down") } })
+  const p = { name: "x", limit: 1, windowMs: 60_000 }
+  assert.equal(limiter.check(p, core.UNKNOWN_ADDRESS_KEY).ok, true)
+  assert.equal(limiter.check(p, core.UNKNOWN_ADDRESS_KEY).ok, false)
 })
