@@ -28,5 +28,6 @@ export function pipelineDetailProjection(raw: Prisma.ApplicationGetPayload<{ inc
         const anonymous = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview;
         const projected = anonymous ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
         const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
-        return { ...projected, canEvaluate, priorApplications: anonymous ? [] : [...priorApplications], publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
+        // Defense in depth: the caller already filtered with mayShowPriorApplications.
+        return { ...projected, canEvaluate, priorApplications: anonymous || raw.studentId === membership.userId ? [] : [...priorApplications], publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
 }

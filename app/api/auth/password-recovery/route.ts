@@ -9,6 +9,7 @@ import {
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { authTurnstile, captchaFailed, turnstileMessage, turnstileRemoteIp } from "@/lib/turnstile";
+import { authRedirectOrigin } from "@/lib/site-origin";
 
 const reply = (body: object, status = 200) =>
   NextResponse.json(body, {
@@ -51,7 +52,19 @@ export async function POST(request: NextRequest) {
       400,
     );
 
-  // Same response for every address: checked before any account or provider lookup.
+  // Same responses for every address: the reset-link origin and the bot check
+  // both run before any account or provider lookup. The origin is checked first
+  // so a guaranteed 503 never spends the visitor's single-use Turnstile token.
+  // Reset links always point at the configured site URL, never the request's Host.
+  const siteOrigin = input.action === "request" ? authRedirectOrigin(request.nextUrl.origin) : null;
+  if (input.action === "request" && !siteOrigin)
+    return reply(
+      {
+        error:
+          "Password recovery is temporarily unavailable. Please try again later.",
+      },
+      503,
+    );
   let captcha: { captchaToken?: string } = {};
   if (input.action === "request") {
     const check = await authTurnstile(input.turnstileToken, {
@@ -81,11 +94,11 @@ export async function POST(request: NextRequest) {
       detectSessionInUrl: false,
     },
   });
-  if (input.action === "request" && email.success) {
+  if (input.action === "request" && email.success && siteOrigin) {
     try {
       // Only requests send email. The token is forwarded only when Supabase verifies it.
       const { error } = await client.auth.resetPasswordForEmail(email.data, {
-        redirectTo: `${request.nextUrl.origin}/reset-password`,
+        redirectTo: `${siteOrigin}/reset-password`,
         ...captcha,
       });
       // A failed security check says nothing about whether the account exists.

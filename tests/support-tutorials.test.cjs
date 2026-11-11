@@ -41,7 +41,7 @@ function identityHarness() {
   const load = loader({
     "@/utils/admin-elevation": { requireAdminElevation: async () => ({}) },
     '@/utils/prisma': { prisma }, './prisma': { prisma },
-    'next/headers': { cookies: async () => ({ has: key => key === cookie && !!token, get: key => key === cookie && token ? { value: token } : undefined }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === cookie && !!token, get: key => key === cookie && token ? { value: token } : undefined }) },
     '@/utils/supabase/server': { createClient: async () => ({ auth: { getSession: async () => require('./helpers/auth-session.cjs').sessionFor(login), getUser: async () => ({ data: { user: { ...accounts[login], email_confirmed_at: '2026-01-01', app_metadata: { role: 'admin' } } } }), mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: aal } }) } } }) },
     './supabase/server': { createClient: async () => ({ auth: { getSession: async () => require('./helpers/auth-session.cjs').sessionFor(login), getUser: async () => ({ data: { user: { ...accounts[login], email_confirmed_at: '2026-01-01', app_metadata: { role: 'admin' } } } }) } }) },
     'next/navigation': { redirect: () => { throw Error('login required'); } },
@@ -172,7 +172,7 @@ test('support banner is a root-level fixed non-dismissable element and exit only
 test('async support resolution keeps simultaneous administrator sessions isolated and clears recursion scope', async () => {
   const request = new AsyncLocalStorage();
   const load = loader({
-    'next/headers': { cookies: async () => ({ has: () => !!request.getStore()?.token }) },
+    'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => !!request.getStore()?.token }) },
     '@/utils/platform-view-as': { platformViewSession: async () => { await new Promise(resolve => setImmediate(resolve)); return request.getStore()?.session; } },
   });
   const audit = load('utils/support-audit.ts');
@@ -269,7 +269,7 @@ test('support uploads sign only fresh effective-user paths and fail closed befor
   try {
     const api = loader({
       '@/utils/auth': { requireAuth: async () => ({ user: { id: target }, impersonation: { actorId: actor } }) },
-      'next/headers': { cookies: async () => ({}) },
+      'next/headers': { headers: async () => new Headers(), cookies: async () => ({}) },
       '@/utils/supabase/server': { createClient: async () => ({ storage: { from: () => { throw Error('Original admin Storage identity must not be used'); } } }) },
       '@supabase/supabase-js': { createClient: () => admin },
       '@/utils/support-audit': { auditSupportAction: async (action, id) => { assert.equal(id, target); if (auditFailure) throw Error('audit unavailable'); } },
@@ -288,7 +288,7 @@ test('verification-dependent actions read the target provider identity and rejec
   let provider = { id: target, email: 'target@virginia.edu', email_confirmed_at: '2026-09-01', app_metadata: { email_verification_skipped: false } };
   try {
     const auth = loader({
-      'next/headers': { cookies: async () => ({ has: () => true }) },
+      'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => true }) },
       '@/utils/platform-view-as': { platformViewSession: async () => ({ id: 'session', actorId: actor, targetUserId: target }) },
       './prisma': { prisma: { user: { findUnique: async () => ({ id: target, email: 'target@virginia.edu' }) } } },
       './supabase/server': {},
@@ -308,7 +308,7 @@ test('account API denies forged support context and returns 401 for an unauthent
   for (const support of [false, true]) {
     let reads = 0;
     const api = loader({
-      'next/headers': { cookies: async () => ({ has: () => support, get: () => undefined }) },
+      'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => support, get: () => undefined }) },
       '@/utils/auth': { requireAuth: async () => { throw support ? Error('invalid support session') : { digest: 'NEXT_REDIRECT;replace;/;307;' }; } },
       '@/utils/prisma': { prisma: { user: { findUnique: async () => { reads++; } } } },
     })('app/api/users/me/route.ts');

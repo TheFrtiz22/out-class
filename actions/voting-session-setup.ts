@@ -18,9 +18,10 @@ import {votingObservations} from '@/utils/additional-observations';
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import {votingSelectedHighlight,votingSelectedEvidence} from '@/utils/voting-room-presentation';
 import {getLiveVotingSetup} from '@/actions/voting-room-setup';
+import { boundedParse } from "@/lib/bounded-input";
 const permissions=["applications.review","decisions.manage","decisions.start"] as const;
 export async function previewVotingSetup(input:unknown){
- const d=z.object({clubId:z.string().uuid(),cycleId:z.string().uuid(),roundId:z.string().uuid(),applicationId:z.string().uuid(),options:roomPresentationSchema}).strict().parse(input);
+ const d=boundedParse(z.object({clubId:z.string().uuid(),cycleId:z.string().uuid(),roundId:z.string().uuid(),applicationId:z.string().uuid(),options:roomPresentationSchema}).strict(), input);
  const setup=await getLiveVotingSetup({clubId:d.clubId,cycleId:d.cycleId,roundId:d.roundId}),{user}=await requireClubPermission(d.clubId,[...permissions]);
  if(!setup.applicants.some(a=>a.id===d.applicationId)||d.options.fields.some(f=>!setup.allowedFields.includes(f)))throw Error('Presentation isn’t available with the current voter or field settings.');
  const display=await getApplicantDisplay({clubId:d.clubId,applicationId:d.applicationId,previewConfig:roomDisplayConfig(d.options.fields)});
@@ -59,7 +60,7 @@ export async function getVotingSessionSetup(input:unknown){
 }
 const editSchema=createRoomSchema.extend({requestId:z.string().uuid(),revision:z.number().int().nonnegative()}).strict();
 export async function updateVotingSessionSetup(input:unknown){
- const d=editSchema.parse(input),{user}=await requireClubPermission(d.clubId,[...permissions]);
+ const d=boundedParse(editSchema, input),{user}=await requireClubPermission(d.clubId,[...permissions]);
  return clubWriteTransaction(async tx=>{
   const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions]);const {s}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);requireRoomLeader(s,m,'decisions.manage');
   const fingerprint=roomFingerprint(d),receipt=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:{sessionId:s.id,requestId:d.requestId}}});

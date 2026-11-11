@@ -32,8 +32,8 @@ try {
     input: `DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`,
   });
   run(process.execPath, ['--test', 'tests/decision-transactions-native.test.cjs'], { env });
-  // Also rerun the existing native offer and canonical communications producers.
-  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/recruitment-native.test.cjs', 'tests/recruitment-offers-native.test.cjs', 'tests/communications-native.test.cjs'], {
+  // Also rerun the existing native offer and canonical communications producers, and leader CSV exports.
+  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/recruitment-native.test.cjs', 'tests/recruitment-offers-native.test.cjs', 'tests/communications-native.test.cjs', 'tests/club-exports-native.test.cjs'], {
     env: { ...env, OUTCLASS_RECRUITMENT_TEST_DATABASE_URL: databaseUrl.replace('fixture_superuser@', 'outclass_production_app@') },
   });
 } finally {

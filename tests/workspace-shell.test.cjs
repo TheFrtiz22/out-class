@@ -18,7 +18,7 @@ const route = (path, search = '', memberships = [leader, member, suspended], dem
 
 test('the shell resolves each workspace from the URL', () => {
   assert.equal(route('/home').kind, 'personal')
-  assert.equal(route('/settings/notifications').title, 'Notifications')
+  assert.equal(route('/settings/account').title, 'Account & Security')
   const admin = route('/platform/users')
   assert.deepEqual([admin.kind, admin.active, admin.mode], ['admin', 'users', 'platform'])
   const club = route('/club/club-a/workspace', 'section=recruitment&tool=overview')

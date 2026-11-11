@@ -24,6 +24,7 @@ const h1Exceptions = {
   "app/global-error.tsx": "root error fallback headline (renders its own <html>, no product shell or PageHeader)",
   "components/interview-applicant-panel.tsx": "candidate name inside the interview room",
   "components/communications/decision-letter.tsx": "the letter's own title on the printed page",
+  "components/maintenance-gate.tsx": "maintenance page headline (replaces the product shell and its PageHeader)",
 }
 test("every page title is PageHeader; raw <h1> appears only in the documented display/document headings", () => {
   const raw = tsx.filter(file => file !== "components/ui/page-header.tsx" && /<h1[\s>]/.test(fs.readFileSync(file, "utf8")))
