@@ -178,6 +178,10 @@
   --oc-duration-signature: 900ms;
   --oc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --oc-ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  /* Pressed feedback (styles/pressed-states.css): controls settle slightly; large cards settle less.
+     Reduced motion keeps only the tone (the glass press shades in styles/navigation-glass.css). */
+  --oc-press-scale: .98;
+  --oc-press-scale-large: .99;
   --sidebar: var(--card);
   --sidebar-foreground: var(--muted-foreground);
   --sidebar-primary: var(--primary);
