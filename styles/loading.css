@@ -168,6 +168,16 @@ body > .oc-loading-screen {
   min-width: 0; min-height: 13.5rem; padding: 1.25rem;
   border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card);
 }
+/* Personal Home (components/views/student-dashboard-view.tsx): greeting, then "Needs you" and the season panel,
+   the same blocks the view shows while its own data loads, so the shape holds from route to content. */
+.oc-loading-home { display: grid; gap: var(--oc-content-gap); }
+.oc-loading-home-greeting { min-height: 5.5rem; }
+/* Explore (components/clubs/explore-directory.css): heading, search pill, category chips, cover cards. */
+.oc-loading-explore-chips { flex-wrap: nowrap; overflow: hidden; margin-top: .75rem; }
+.oc-loading-explore-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--oc-content-gap); }
+.oc-loading-explore-card { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--oc-content-radius); background: var(--card); }
+.oc-loading-explore-body { padding: 2.5rem 1.25rem 1.25rem; }
+@media (min-width: 768px) and (max-width: 1100px) { .oc-loading-explore-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .oc-loading-kpis, .oc-loading-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1.125rem; }
 .oc-loading-kpis { min-height: 3.25rem; }
 .oc-loading-application {
@@ -202,7 +212,7 @@ body > .oc-loading-screen {
 .oc-loading-document-head { display: flex; gap: .875rem; align-items: center; margin-bottom: 1.25rem; }
 .oc-loading-document-paper { min-height: 20rem; border: 1px solid var(--border); border-top: 3px solid var(--primary); border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-content-shadow); padding: clamp(1.25rem, 4vw, 3rem); }
 @media (max-width: 767px) {
-  .oc-loading-cards { grid-template-columns: 1fr; }
+  .oc-loading-cards, .oc-loading-explore-grid { grid-template-columns: 1fr; }
   .oc-loading-workspace-columns { grid-template-columns: 1fr; }
   .oc-loading-application { padding: 1rem; gap: .75rem; }
   .oc-loading-form-fields { grid-template-columns: 1fr; }
