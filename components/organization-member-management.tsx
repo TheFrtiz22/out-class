@@ -699,7 +699,6 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       data-unsaved={dirty}
       aria-busy={busy}
     >
-      <p className="text-sm text-muted-foreground">Manage your club’s members and access.</p>
       {notice && (
         <p role="status" className="rounded-lg border bg-muted/40 p-4 text-sm">
           {notice}
@@ -733,9 +732,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   {notice && <p role="status" className="text-sm">{notice}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                   {inviteTab === "pending" && <>{directory}{scheduledInviteId && <InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId} />}</>}
                   {inviteTab === "new" && <div data-unsaved={dirty} onChangeCapture={() => setDirty(true)}>              <p className="mt-3 text-sm text-muted-foreground">
-                Create an invitation using the member’s school identity. They
-                must accept before becoming a member. No account or email is
-                created.
+                They must accept to join. No account or email is created.
               </p>
               {!data.identifierTypes.length ? (
                 <p className="mt-3 text-sm">
