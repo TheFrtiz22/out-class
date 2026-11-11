@@ -39,7 +39,7 @@ test('standalone brand artwork keeps original colors and reduced-motion support 
  assert.match(css,/color: #507b9e/);assert.match(css,/color: #f07835/)
  assert.doesNotMatch(css,/oc-page-header|mask-image|overflow:\s*hidden/)
  assert.match(css,/prefers-reduced-motion: reduce/)
- assert.match(css,/aspect-ratio: var\(--oc-campus-aspect-ratio\)/)
+ assert.match(css,/aspect-ratio: var\(--oc-campus-aspect-ratio(, auto)?\)/)
 })
 
 test("approved SVG bytes remain unchanged",()=>{
