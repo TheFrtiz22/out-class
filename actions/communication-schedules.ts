@@ -8,10 +8,11 @@ import { supportContext } from "@/utils/support-audit";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { captureRecipientAudience } from "@/utils/recipient-audience";
+import { boundedParse } from "@/lib/bounded-input";
 
 const uuid=z.string().uuid();
 export async function saveCommunicationSchedule(input: unknown) {
- const data=scheduleInput.parse(input);
+ const data=boundedParse(scheduleInput, input);
  const scheduledAt=resolveScheduleTime(data.localTime,data.timeZone,data.occurrence);
  const {user}=await requireClubPermission(data.clubId,["meetings.manage"]);
  // A temporary support session must not mint authority that outlives that session.

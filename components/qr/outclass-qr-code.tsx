@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Download, Copy, Maximize2, X, Check } from "@/components/icons";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { Download, Copy, Check } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { generateOutClassQRSVG, type QRCodeRenderOptions } from "@/lib/qr/renderer";
 import { downloadQrPng, downloadQrSvg } from "@/lib/qr/export";
@@ -18,8 +18,11 @@ export interface OutClassQRCodeProps {
   showLogo?: boolean;
   /** Whether to display PNG and SVG download actions (default false) */
   downloadable?: boolean;
-  /** Enable full-screen presentation mode for projectors and meeting displays */
-  presenterMode?: boolean;
+  /**
+   * Extra controls rendered in the default card's action row. Projector display
+   * goes through `QrPresenterDialog` (@/components/qr/qr-presenter-dialog).
+   */
+  actions?: ReactNode;
   /** Optional title displayed above or alongside the QR code */
   title?: string;
   /** Optional descriptive subtitle */
@@ -42,7 +45,7 @@ export function OutClassQRCode({
   variant = "default",
   showLogo = true,
   downloadable = false,
-  presenterMode = false,
+  actions,
   title,
   description,
   filename = "outclass-qr",
@@ -53,10 +56,8 @@ export function OutClassQRCode({
 }: OutClassQRCodeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
-  const [isPresenterOpen, setIsPresenterOpen] = useState(false);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const titleId = useId();
 
   const qrOptions: QRCodeRenderOptions = useMemo(
     () => ({
@@ -89,15 +90,6 @@ export function OutClassQRCode({
       setMessage("Could not copy link automatically. Please copy the URL below.");
     }
   };
-
-  useEffect(() => {
-    if (!isPresenterOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsPresenterOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPresenterOpen]);
 
   const handleDownload = async (format: "png" | "svg") => {
     if (!svgContent) return;
@@ -161,7 +153,7 @@ export function OutClassQRCode({
     );
   }
 
-  // Variant: Default (rich interactive card with downloads, copying, and presenter mode)
+  // Variant: Default (rich interactive card with downloads, copying, and caller actions)
   return (
     <section
       className={`rounded-2xl border border-border bg-white p-6 font-sans text-foreground shadow-none ${className}`}
@@ -223,17 +215,7 @@ export function OutClassQRCode({
               {copied ? "Copied" : "Copy link"}
             </Button>
 
-            {presenterMode && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsPresenterOpen(true)}
-                className="h-9 gap-1.5 border-border text-xs text-foreground shadow-none hover:bg-muted"
-              >
-                <Maximize2 className="size-3.5" />
-                Present
-              </Button>
-            )}
+            {actions}
           </div>
 
           {message && (
@@ -244,66 +226,6 @@ export function OutClassQRCode({
         </div>
       </div>
 
-      {/* Full-Screen Presenter Dialog */}
-      {isPresenterOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
-        >
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-label="Close dialog overlay"
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm cursor-default"
-            onClick={() => setIsPresenterOpen(false)}
-          />
-          <div
-            className="relative z-10 flex flex-col items-center justify-center rounded-3xl bg-white p-8 sm:p-12 text-center text-foreground shadow-2xl max-w-xl w-full"
-          >
-            <button
-              type="button"
-              onClick={() => setIsPresenterOpen(false)}
-              className="absolute right-5 top-5 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Close presentation view"
-            >
-              <X className="size-5" />
-            </button>
-
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-              OutClass Attendance
-            </span>
-
-            <h2 id={titleId} className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
-              {title || "Scan to Check In"}
-            </h2>
-
-            {description && (
-              <p className="text-sm text-muted-foreground max-w-sm mb-6">
-                {description}
-              </p>
-            )}
-
-            <div className="my-2 rounded-2xl border border-border bg-white p-4 shadow-md">
-              <div
-                className="size-[320px] sm:size-[400px] [&>svg]:size-full [&>svg]:block"
-                dangerouslySetInnerHTML={{ __html: svgContent }}
-              />
-            </div>
-
-            <p className="mt-6 text-sm font-medium text-foreground">
-              Point your phone’s camera at the QR code to confirm your presence.
-            </p>
-
-            {value && (
-              <p className="mt-2 font-mono text-xs text-muted-foreground break-all max-w-xs">
-                {value}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
     </section>
   );
 }

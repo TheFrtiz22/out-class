@@ -5,7 +5,7 @@ import { readPipelinePage } from "@/lib/pipeline-page-read";
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary";
 import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-detail";
 import { rankedReviewSelect, rankedReviewProjection } from "@/lib/ranked-review-read";
-import { loadPriorApplications } from "@/lib/prior-applications";
+import { loadPriorApplications, mayShowPriorApplications, mayShowPriorOutcome, type PriorApplication } from "@/lib/prior-applications";
 import { readPipelineSelection } from "@/lib/pipeline-selection-read";
 import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
@@ -75,16 +75,17 @@ export async function getClubPipelineSelection(clubId: string, input: PipelinePa
 
 async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.ApplicationWhereInput, membership: PipelineMembership, profileFields: ProfileFieldVisibility) {
   const applications = await tx.application.findMany({ where, include: pipelineDetailInclude });
-  // History links two applications, so it is read only for identified viewers.
-  const identified = applications.filter(raw => hasPermission(membership, "applicants.identify") && !raw.round.anonymousReview);
-  const prior = identified.length ? await loadPriorApplications(tx, identified[0].clubId, identified) : new Map();
   // A member who stepped out of an applicant cannot evaluate them; the server also refuses.
-  // They also stop seeing other reviewers' scores and the applicant's answers; the row and marker stay.
+  // They also stop seeing other reviewers' scores, answers and history; the row and marker stay.
   const recused = new Set((applications.length ? await tx.applicantRecusal.findMany({ where: { memberId: membership.id, liftedAt: null, applicationId: { in: applications.map(app => app.id) } }, select: { applicationId: true } }) : []).map(r => r.applicationId));
+  // History links two applications: one batched read, only for rows the viewer may see it on.
+  const clubId = applications[0]?.clubId;
+  const withHistory = applications.filter(raw => raw.clubId === clubId && mayShowPriorApplications(membership, raw, recused.has(raw.id)));
+  const prior = clubId && withHistory.length ? await loadPriorApplications(tx, clubId, withHistory, { outcome: mayShowPriorOutcome(membership) }) : new Map<string, PriorApplication[]>();
   return applications.map(raw => {
     // The club's profile field choice is applied on the server: hidden values never leave it.
     const projected = restrictApplicationProfile(pipelineDetailProjection(raw, membership, prior.get(raw.id) ?? []), profileFields);
-    return recused.has(raw.id) ? { ...projected, evaluations: [], answers: [], roundScore: null, canEvaluate: false, recused: true } : projected;
+    return recused.has(raw.id) ? { ...projected, evaluations: [], answers: [], roundScore: null, priorApplications: [], canEvaluate: false, recused: true } : projected;
   });
 }
 

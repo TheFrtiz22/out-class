@@ -14,6 +14,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/components/shell/workspace-shell-context':{useShellBindings(){}},
   '@/lib/permissions':{hasWorkspace:()=>true,hasPermission:(m,p)=>m.permissions.includes(p)},
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`,recruitmentTools:()=>[{id:'interviews'}]},
+  '@/lib/recruiting-settings':{RECRUITING_SETTINGS_PARAM:'recruitingSettings',recruitingSettingsSection:()=>null,canOpenRecruitingSettings:()=>false,recruitingSettingsSections:[],withRecruitingSettings:q=>new URLSearchParams(q)},
   '@/lib/club-workspace-preference':{clubWorkspacePreferenceKey:()=> 'test-preference'},
   '@/lib/product-navigation':{mobileDestinations:items=>items,canLeaveWorkspace:()=>true,managerNavigation:()=>[{id:'interviews',label:'Interviews'}]},
   '@/lib/navigation':{leaderRailSections:()=>[{id:'recruiting',items:[{id:'interviews',label:'Interviews'}]}],memberRailSections:()=>[],studentPath:()=>'/home'},

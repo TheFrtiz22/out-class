@@ -21,6 +21,7 @@ const suites = {
       "tests/invitation-accept-race-native.test.cjs",
       "tests/meeting-check-in-race-native.test.cjs",
       "tests/club-claim-race-native.test.cjs",
+      "tests/mock-recruiting-cycle-native.test.cjs",
     ],
   },
   events: {

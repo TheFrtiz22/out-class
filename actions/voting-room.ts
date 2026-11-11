@@ -21,6 +21,7 @@ import {votingDiscussion} from '@/utils/voting-discussion';
 import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 import {lockPreparedSlides,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
+import { boundedParse } from "@/lib/bounded-input";
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -69,7 +70,7 @@ export async function listLiveVotingRooms(input:unknown) {
     const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
       ...(!hasPermission(m,"applicants.identify")?{round:{anonymousReview:true}}:{}),
       ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}}]:[])]}:{}),
-    },select:{id:true,mode:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
+    },select:{id:true,mode:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,publishedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
     return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,presentationOptions,...room})=>({...room,meeting:(()=>{const m=meetingDetails((presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...visible}=m;return visible;})(),roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:participants?.length&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
@@ -79,7 +80,7 @@ export async function listLiveVotingRooms(input:unknown) {
 
 /** Caller-generated session UUID is also creation's idempotency key. */
 export async function createLiveVotingRoom(input:unknown) {
-  const d=createRoomSchema.parse(input); [d.applicationIds,d.participantIds,d.leaderMemberIds].forEach(uniqueSelection);
+  const d=boundedParse(createRoomSchema, input); [d.applicationIds,d.participantIds,d.leaderMemberIds].forEach(uniqueSelection);
   const {user}=await requireClubPermission(d.clubId,["applications.review","decisions.manage","decisions.start"]);
   return clubWriteTransaction(async tx=>{
     const actor=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.manage","decisions.start"]);

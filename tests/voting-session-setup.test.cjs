@@ -42,3 +42,11 @@ test('Discard draft tombstones only the caller own club-scoped setup draft, requ
  // An open editor still holding revision 1 cannot resurrect the discarded draft.
  assert.equal((await api.saveEditorDraft({scope:{kind:'voting-setup',clubId,resourceId:uuid(2101)},content:content(uuid(2101),'Stale tab'),base:'',revision:1,mutationId:uuid(3999)})).error,'conflict');
 });
+test('setup drafts accept saved rule-editor state and bound its size',()=>{
+ const {setupDraftSchema}=require('./helpers/communications-loader.cjs').loader({})('lib/voting-session-setup.ts');
+ const draft={version:1,step:2,cycle:'',round:'',name:'',timing:'NOW',localTime:'',timeZone:'America/New_York',occurrence:'EARLIER',duration:'',location:'',instructions:'',applicants:[],voters:[],target:'',fields:[],highlights:{},notify:false,initialized:false,sessionId:uuid(1),planRevision:null};
+ const rules={mode:'THRESHOLD',numerator:'2',denominator:'3',base:'BALLOTS_CAST',pNumerator:'1',pDenominator:'2',below:'HOLD',reviewed:false};
+ assert.deepEqual(setupDraftSchema.parse({...draft,rules}).rules,rules);assert.equal(setupDraftSchema.parse(draft).rules,undefined);
+ assert.equal(setupDraftSchema.safeParse({...draft,rules:{mode:'THRESHOLD',list:Array(1000).fill('x')}}).success,false);
+ assert.equal(setupDraftSchema.safeParse({...draft,rules:Object.fromEntries(Array.from({length:17},(_,i)=>['k'+i,'']))}).success,false);
+});

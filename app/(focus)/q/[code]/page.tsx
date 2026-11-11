@@ -21,19 +21,16 @@ export default async function ShortLinkRedirectPage({ params }: PageProps) {
     redirect(result.target);
   }
 
-  // Unknown codes are a real 404 (./not-found.tsx). Known but expired or closed codes explain why.
-  if (result.status !== "expired" && result.status !== "revoked") notFound();
-  const isExpired = result.status === "expired";
-  const title = isExpired ? "This check-in code has expired" : "Check-in is closed";
+  // Unknown and expired codes share one "link unavailable" 404 (./not-found.tsx).
+  // Only a check-in the host closed explains itself (docs/qr-attendance.md).
+  if (result.status !== "revoked") notFound();
+  const title = "Check-in is closed";
   const description =
-    result.message ||
-    (isExpired
-      ? "Check-in codes change regularly. Scan the code the meeting host is showing now."
-      : "The host closed this check-in, so attendance is no longer being recorded.");
+    result.message || "The host closed this check-in, so attendance is no longer being recorded.";
 
   return (
     <Panel as="section" className="space-y-6 text-center">
-      <Badge variant={isExpired ? "warning" : "destructive"}>{isExpired ? "Expired code" : "Closed"}</Badge>
+      <Badge variant="destructive">Closed</Badge>
       <PageHeader title={title} description={description} />
       <div className="flex flex-col gap-3">
         <Button asChild><Link href="/meetings">View club meetings</Link></Button>

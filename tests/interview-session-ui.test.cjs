@@ -50,7 +50,7 @@ test('Proceed never submits an unfinished review and Stay here leaves private co
 });
 test('fresh and legacy drafts stay in interview until explicit ending; saved phase belongs only to that personal record',async()=>{
  const h=harness();h.record.draft.score=8.5;h.record.draft.applicantQuestions='Legacy discussion';h.record.draft.additionalNotes='Keep legitimate notes';h.render();await flush();let t=h.render();
- assert.ok(button(t,'End current interview'));assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts'),undefined);assert.doesNotMatch(text(t),/Your previous five/);assert.equal(button(t,'Next candidate →'),undefined);
+ assert.ok(button(t,'End current interview'));assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts'),undefined);assert.doesNotMatch(text(t),/Your previous five/);assert.equal(button(t,'Next candidate'),undefined);
  const before=harness(structuredClone(h.record));before.render();await flush();assert.ok(button(before.render(),'End current interview'));
  button(t,'End current interview').props.onClick();await flush();t=h.render();assert.equal(h.record.draft.postInterview,true);assert.equal(h.record.completedAt,null);
  const resumed=harness(structuredClone(h.record));resumed.render();await flush();t=resumed.render();assert.ok(scoreInput(t));assert.equal(nodes(t).find(n=>n.props?.id==='final-interview-thoughts').props.value,'');assert.match(text(t),/Questions the applicant asked · HistoricalLegacy discussion/);
@@ -182,8 +182,8 @@ test('completion stays locked, next failures retry without duplicate requests, a
  const h=harness(undefined,{onNextApplicant:async()=>{attempts++;if(fail)throw Error('access');await new Promise(r=>release=r);return false;},onReturnToList(){}});
  h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();
  button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.match(text(t),/Interview complete/);assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.type==='fieldset').props.disabled,true);
- button(t,'Next candidate →').props.onClick();await flush();t=h.render();assert.match(text(t),/Could not load the next applicant/);assert.ok(h.record.completedAt);
- fail=false;const next=button(t,'Next candidate →');next.props.onClick();next.props.onClick();t=h.render();assert.ok(button(t,'Loading next candidate…').props.disabled);release();await flush();t=h.render();
+ button(t,'Next candidate').props.onClick();await flush();t=h.render();assert.match(text(t),/Could not load the next applicant/);assert.ok(h.record.completedAt);
+ fail=false;const next=button(t,'Next candidate');next.props.onClick();next.props.onClick();t=h.render();assert.ok(button(t,'Loading next candidate…').props.disabled);release();await flush();t=h.render();
  assert.equal(attempts,2);assert.match(text(t),/No more applicants/);assert.ok(button(t,'Return to interview list'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
 });
 
@@ -294,5 +294,5 @@ test('failed pending autosave cannot consume finish; failed submission retains i
 
 test('an unacknowledged submission never unlocks Next or reports completion',async()=>{
  const h=harness(undefined,{unacknowledged:true});h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();button(t,'End post-interview').props.onClick();await flush();t=h.render();
- assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);assert.equal(button(t,'Next candidate \u2192'),undefined);assert.equal(scoreInput(t).props.value,6.5);
+ assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);assert.equal(button(t,'Next candidate'),undefined);assert.equal(scoreInput(t).props.value,6.5);
 });

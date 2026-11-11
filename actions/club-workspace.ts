@@ -7,15 +7,16 @@ import { clubProfileSchema, profileDraft } from "@/lib/club-marketing";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
+import { boundedParse } from "@/lib/bounded-input";
 
 export async function updateClubSettings(input: {
   clubId: string; name: string; tagline: string; description: string; expectedProfile?: string;
 } & Partial<import("@/lib/club-marketing").ClubProfileDraft>) {
-  const data = clubProfileSchema.partial().extend({
+  const data = boundedParse(clubProfileSchema.partial().extend({
     expectedProfile: z.string().max(300000).optional(),
     clubId: z.string().uuid(), name: z.string().trim().min(1).max(150),
     tagline: z.string().max(300), description: z.string().max(10000),
-  }).parse(input);
+  }), input);
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
   const { clubId, expectedProfile, ...fields } = data;
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction");

@@ -33,9 +33,20 @@ test("club workspace: removed tools and tabs redirect, keeping other parameters"
     "section=recruitment&tool=letters": "section=recruitment&tool=decisions&decisionTab=letters",
     "section=recruitment&tool=decision-letters": "section=recruitment&tool=decisions&decisionTab=letters",
     "section=recruitment&tool=cycles": "section=settings&setting=cycles",
-    // Club events have their own section (FE-12); the old Meetings tab redirects there, keeping other parameters
-    "section=meetings&meetingTab=events": "section=events",
-    "section=meetings&meetingTab=events&new=1": "section=events&new=1",
+    // Meetings and Events are one Calendar with a type filter (nav reorganization), keeping other parameters
+    "section=meetings&meetingTab=events": "section=calendar&type=events",
+    "section=meetings&meetingTab=events&new=1": "section=calendar&new=1&type=events",
+    "section=meetings": "section=calendar&type=meetings",
+    "section=meetings&new=1": "section=calendar&new=1&type=meetings",
+    "section=meetings&meetingTab=members": "section=calendar&type=meetings",
+    "section=events": "section=calendar&type=events",
+    // Scheduled Decisions is Decide's Send step; Anonymous Review / Auto-Reject open the Recruiting settings drawer
+    "section=recruitment&tool=scheduled-decisions": "section=recruitment&tool=decisions&decisionTab=letters",
+    "section=recruitment&tool=rounds": "section=recruitment&tool=applicants&recruitingSettings=anonymous",
+    "section=recruitment&tool=rules&roundId=r1": "section=recruitment&tool=applicants&roundId=r1&recruitingSettings=rules",
+    // Announcements live on Home
+    "section=announcements": "section=overview&focus=announcements",
+    "section=announcements&mode=recruiting&compose=1": "section=overview&compose=1&focus=announcements",
     "section=settings&setting=interviews&interviewTab=rooms": "section=recruitment&interviewTab=rooms&tool=interviews",
     "section=settings&setting=interviews&interviewTab=availability": "section=recruitment&interviewTab=schedule&tool=interviews",
     // Settings → Interviews only repeated the Interviews tool
@@ -50,7 +61,8 @@ test("club workspace: canonical URLs are left alone", () => {
   for (const query of ["", "section=overview", "section=recruitment&tool=applicants", "section=recruitment&tool=applicants&decision=rejected",
     "section=recruitment&tool=decisions&decisionTab=voting", "section=recruitment&tool=decisions&decisionTab=voting&sessionId=s1",
     "section=recruitment&tool=decisions&decisionTab=letters", "section=recruitment&tool=interviews&interviewTab=schedule",
-    "section=events", "section=events&new=1", "section=meetings", "section=meetings&meetingTab=members",
+    "section=calendar", "section=calendar&type=events", "section=calendar&type=meetings&new=1",
+    "section=recruitment&tool=applicants&recruitingSettings=rules", "section=overview&focus=announcements",
     // meetingTab was only ever read inside Meetings, so it redirects only there
     "section=overview&meetingTab=events", "section=tasks&meetingTab=events"]) {
     assert.equal(workspace(query), null, query || "(empty)")
@@ -112,5 +124,7 @@ test("personal pages folded into others redirect on the server", () => {
   assert.match(page("app/(workspace)/clubs/meetings/page.tsx"), /redirect\(movedStudentHref\("\/clubs\/meetings", params\)!\)/)
   assert.match(page("app/(workspace)/settings/profile/page.tsx"), /redirect\(`\/profile/)
   assert.match(page("app/(workspace)/settings/organizations/page.tsx"), /redirect\(`\/clubs/)
-  assert.match(page("app/(workspace)/inbox/page.tsx"), /tab === "preferences"\) redirect\("\/settings\/notifications"\)/)
+  // Notification settings moved into the Inbox: the old Settings page redirects there, and the Inbox no longer redirects away.
+  assert.match(page("app/(workspace)/settings/notifications/page.tsx"), /redirect\(notificationSettingsHref\)/)
+  assert.doesNotMatch(page("app/(workspace)/inbox/page.tsx"), /redirect\(/)
 })

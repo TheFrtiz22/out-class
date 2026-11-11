@@ -2,11 +2,8 @@ import { permissionLabels, type ClubPermission } from "@/lib/permissions";
 import Link from "next/link";
 import { InvitationResponse } from "@/components/invitation-response";
 import { prisma } from "@/utils/prisma";
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
-import { requireAuth } from "@/utils/auth";
-import { clubWriteTransaction } from "@/utils/club-write-transaction";
-import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
+import { getSessionUser, requireAuth } from "@/utils/auth";
+import { previewVerifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { UniversityVerificationError } from "@/utils/verified-email-policy";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 import { PageHeader } from "@/components/ui/page-header";
@@ -20,10 +17,10 @@ export default async function Invitation({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const client = await createClient(await cookies());
+  // Request-cached: requireAuth below reuses this verification instead of a second Auth call.
   const {
     data: { user },
-  } = await client.auth.getUser();
+  } = await getSessionUser();
   if (!user) {
     // Signed out: say what this is and return here after sign-in. Acceptance below still
     // re-verifies the signed-in identity against the invitation; the link alone grants nothing.
@@ -43,10 +40,12 @@ export default async function Invitation({
   const person = account.user;
   await requireCompletedStudentProfile(person.id, `/invitations/${id}`);
   let verificationError: UniversityVerificationError | undefined;
+  // Rendering only reads. Identity binding and its audit entry happen in the
+  // accept/decline server actions (InvitationResponse) inside their own transaction.
   const identities = await (async () => {
     try {
       await prepareVerifiedSchoolAccount(account);
-      return await clubWriteTransaction(tx => verifiedSchoolIdentities(tx, account));
+      return await previewVerifiedSchoolIdentities(prisma, account);
     } catch (error) {
       if (!(error instanceof UniversityVerificationError)) throw error;
       verificationError = error;

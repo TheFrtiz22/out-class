@@ -5,15 +5,14 @@ const {startDockFixture}=require('./helpers/expanding-dock-browser.cjs')
 const engine=process.env.OUTCLASS_NAV_BROWSER==='webkit'?webkit:chromium
 const screenshotDir=process.env.OUTCLASS_DOCK_SCREENSHOTS
 
-test('browser: labelled rail without overlay, tooltips when compact, URL-driven active state, group menus, permissions, guards and phone bars',async()=>{
+test('browser: labelled rail without overlay, tooltips when compact, URL-driven active state, flat items in order, pinned Settings, permissions, guards and phone bars',async()=>{
  const fixture=await startDockFixture();let browser
  try{
   browser=await engine.launch({headless:true,...(engine===chromium&&!fs.existsSync(chromium.executablePath())?{channel:'chrome'}:{})})
   const context=await browser.newContext({viewport:{width:1440,height:900}}),page=await context.newPage(),errors=[]
   page.setDefaultTimeout(8000);page.on('pageerror',error=>errors.push(error.message))
   const route=(role='president',section='recruitment')=>`${fixture.base}/club/fixture-mii/workspace?section=${section}&role=${role}`
-  const rail=page.locator('aside.oc-expanding-dock'),applicants=rail.getByRole('button',{name:'Applicants',exact:true}),decisions=rail.getByRole('button',{name:'Decisions',exact:true})
-  const flyout=()=>page.getByRole('dialog',{name:'Applicants navigation',exact:true})
+  const rail=page.locator('aside.oc-expanding-dock'),applicants=rail.getByRole('link',{name:'Applicants',exact:true}),decide=rail.getByRole('link',{name:'Decide',exact:true})
   const width=()=>rail.evaluate(el=>el.getBoundingClientRect().width)
   const mainBounds=()=>page.locator('main').evaluate(el=>{const r=el.getBoundingClientRect();return[r.x,r.width]})
   const label=name=>rail.getByRole('link',{name,exact:true}).locator('.oc-dock-item-label')
@@ -25,7 +24,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await page.goto(route(),{waitUntil:'networkidle'})
   assert.equal(await width(),236);assert.equal(await rail.getAttribute('data-dock-expanded'),null)
   await expect(rail.getByRole('navigation',{name:'Recruiting',exact:true})).toBeVisible();await expect(rail.getByRole('navigation',{name:'Club',exact:true})).toBeVisible()
-  await expect(label('Club home')).toBeVisible();await expect(rail.locator('.oc-dock-section-heading',{hasText:'Recruiting'})).toBeVisible()
+  await expect(label('Home')).toBeVisible();await expect(rail.locator('.oc-dock-section-heading',{hasText:'Recruiting'})).toBeVisible()
   const brand=rail.getByRole('button',{name:'OutClass home',exact:true})
   assert.equal(await brand.locator('.oc-dock-letter-out').evaluate(el=>getComputedStyle(el).opacity),'1','the full wordmark shows with labels')
   assert.equal(await brand.locator('.oc-dock-letter-c').evaluate(el=>getComputedStyle(el).fill),'rgb(242, 101, 34)')
@@ -39,48 +38,40 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await expect(page.locator('header').getByRole('button',{name:/^Search OutClass/})).toBeVisible();await expect(page.locator('header').getByRole('button',{name:/^Notifications/})).toBeVisible()
   await capture('rail-labelled')
 
-  // Active item follows the URL: All Applicants is the default recruitment tool.
-  await expect(applicants).toHaveAttribute('data-active','true')
-  await applicants.click();await flyout().waitFor()
-  await expect(flyout().getByRole('link',{name:'All Applicants',exact:true})).toHaveAttribute('aria-current','page')
-  assert.equal(await flyout().evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(17, 39, 61, 0.97)')
+  // The club rail: eight destinations in order, every one a plain link (no flyout), Settings pinned at the bottom.
+  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Overview','Applicants','Interviews','Decide','Home','Calendar','Tasks','Members','Settings'])
+  assert.equal(await rail.locator('button[aria-controls],[aria-haspopup]').count(),0,'no rail item opens a menu')
+  const settingsBox=await rail.getByRole('link',{name:'Settings',exact:true}).boundingBox(),railBox=await rail.locator('.oc-dock-rail').boundingBox()
+  assert.ok(railBox.y+railBox.height-(settingsBox.y+settingsBox.height)<40,'Settings sits at the bottom of the rail')
+  const membersBox=await rail.getByRole('link',{name:'Members',exact:true}).boundingBox()
+  assert.ok(settingsBox.y-(membersBox.y+membersBox.height)>40,'Settings is separated from the Club items')
+  // Active item follows the URL: Applicants is the default recruitment tool and lights for its record pages.
+  await expect(applicants).toHaveAttribute('aria-current','page')
   // Destinations respect pending saves and unsaved changes.
   await page.evaluate(()=>{const guard=document.createElement('div');guard.id='guard';guard.dataset.saving='true';document.body.append(guard)})
-  const beforeGuard=page.url()
-  await flyout().getByRole('link',{name:'Résumé moderation',exact:true}).click();assert.equal(page.url(),beforeGuard)
+  const beforeGuard=page.url(),interviewsLink=rail.getByRole('link',{name:'Interviews',exact:true})
+  await interviewsLink.click();assert.equal(page.url(),beforeGuard)
   await page.evaluate(()=>{const guard=document.getElementById('guard');delete guard.dataset.saving;guard.dataset.unsaved='true'})
-  page.once('dialog',dialog=>dialog.dismiss());await flyout().getByRole('link',{name:'Résumé moderation',exact:true}).click();assert.equal(page.url(),beforeGuard)
-  page.once('dialog',dialog=>dialog.accept());await flyout().getByRole('link',{name:'Résumé moderation',exact:true}).click();await page.waitForURL('**tool=resumes*')
-  await expect(page.locator('main')).toBeFocused();await page.evaluate(()=>document.getElementById('guard').remove());await expect(flyout()).toHaveCount(0)
-  await page.goBack();await page.waitForURL('**role=president');await page.goForward();await page.waitForURL('**tool=resumes*')
-  await applicants.click();await expect(flyout().getByRole('link',{name:'Résumé moderation',exact:true})).toHaveAttribute('aria-current','page');await page.keyboard.press('Escape')
-  await rail.getByRole('link',{name:'Club home',exact:true}).click();await page.waitForURL('**section=overview*')
-  await expect(rail.getByRole('link',{name:'Club home',exact:true})).toHaveAttribute('aria-current','page');await expect(applicants).not.toHaveAttribute('data-active','true')
+  page.once('dialog',dialog=>dialog.dismiss());await interviewsLink.click();assert.equal(page.url(),beforeGuard)
+  page.once('dialog',dialog=>dialog.accept());await interviewsLink.click();await page.waitForURL('**tool=interviews*')
+  await expect(page.locator('main')).toBeFocused();await page.evaluate(()=>document.getElementById('guard').remove())
+  await page.goBack();await page.waitForURL('**role=president');await page.goForward();await page.waitForURL('**tool=interviews*')
+  await page.goto(`${route()}&tool=resumes`,{waitUntil:'networkidle'});await expect(applicants).toHaveAttribute('aria-current','page')
+  await page.goto(`${route()}&tool=scheduled-decisions`,{waitUntil:'networkidle'});await expect(decide).toHaveAttribute('aria-current','page')
+  await rail.getByRole('link',{name:'Home',exact:true}).click();await page.waitForURL('**section=overview*')
+  await expect(rail.getByRole('link',{name:'Home',exact:true})).toHaveAttribute('aria-current','page');await expect(applicants).not.toHaveAttribute('aria-current','page')
 
-  // Keyboard: arrows open the menu and move within it; Tab leaves at the end; Escape returns to the trigger.
+  // Keyboard: Tab walks the rail in order; activating a link lands focus in the page.
   await page.goto(route(),{waitUntil:'networkidle'})
-  await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor()
-  await expect(flyout().getByRole('link',{name:'All Applicants',exact:true})).toBeFocused()
-  await page.keyboard.press('ArrowDown');await expect(flyout().getByRole('link',{name:'Résumé moderation',exact:true})).toBeFocused()
-  await page.keyboard.press('End');await expect(flyout().getByRole('link',{name:'Submitted reviews',exact:true})).toBeFocused()
-  await page.keyboard.press('Home');await expect(flyout().getByRole('link',{name:'All Applicants',exact:true})).toBeFocused()
-  await page.keyboard.press('Escape');await expect(flyout()).toHaveCount(0);await expect(applicants).toBeFocused()
-  await page.keyboard.press('Enter');await expect(flyout().getByRole('link').first()).toBeFocused();await page.keyboard.press('ArrowLeft');await expect(applicants).toBeFocused();await expect(flyout()).toHaveCount(0)
-  await applicants.focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('End');await page.keyboard.press('Tab');await expect(flyout()).toHaveCount(0);await expect(rail.getByRole('link',{name:'Interviews',exact:true})).toBeFocused()
-
-  // Choosing a destination by keyboard lands focus in the page, not back on the rail.
-  await page.goto(route(),{waitUntil:'networkidle'});await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor()
-  await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForURL('**tool=resumes*');await expect(flyout()).toHaveCount(0);await expect(page.locator('main')).toBeFocused()
+  await applicants.focus();await page.keyboard.press('Tab');await expect(rail.getByRole('link',{name:'Interviews',exact:true})).toBeFocused()
+  await page.keyboard.press('Tab');await expect(decide).toBeFocused();await page.keyboard.press('Enter');await page.waitForURL('**tool=decisions*');await expect(page.locator('main')).toBeFocused()
   // Crossing 1280px never remounts or unfocuses a rail item.
   const interviews=rail.getByRole('link',{name:'Interviews',exact:true});await interviews.focus();await interviews.evaluate(el=>{el.dataset.mountProbe='kept'})
   await page.setViewportSize({width:1100,height:900});await expect.poll(width).toBe(80);await expect(interviews).toBeFocused();assert.equal(await interviews.getAttribute('data-mount-probe'),'kept')
   await page.setViewportSize({width:1440,height:900});await expect.poll(width).toBe(236);await expect(interviews).toBeFocused();await expect(page.getByRole('tooltip')).toHaveCount(0)
   // Permissions come from the same registry.
-  await page.goto(route('owner'),{waitUntil:'networkidle'});await applicants.click();await flyout().waitFor()
-  assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants'],'owner does not imply sensitive interview offices');await page.keyboard.press('Escape')
-  await page.goto(route('reviewer'),{waitUntil:'networkidle'});await applicants.click();await flyout().waitFor()
-  assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants']);await page.keyboard.press('Escape')
-  await page.goto(route('settings','overview'),{waitUntil:'networkidle'});assert.equal(await applicants.count(),0);assert.equal(await decisions.count(),0)
+  await page.goto(route('reviewer'),{waitUntil:'networkidle'});await expect(applicants).toBeVisible();assert.equal(await decide.count(),0,'review alone does not open Decide')
+  await page.goto(route('settings','overview'),{waitUntil:'networkidle'});assert.equal(await applicants.count(),0);assert.equal(await decide.count(),0)
   assert.equal(await rail.getByRole('navigation',{name:'Recruiting',exact:true}).count(),0,'no Recruiting section without recruiting tools')
 
   // Personal rail: every section, one name each, active item from the path.
@@ -112,9 +103,8 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
    await page.mouse.move(size-40,600)
   }
   await page.setViewportSize({width:1100,height:900})
-  await rail.getByRole('link',{name:'Club home',exact:true}).focus();await expect(page.getByRole('tooltip',{name:'Club home'})).toBeVisible()
-  await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor();await expect(flyout().getByRole('link').first()).toBeFocused()
-  assert.equal(await flyout().evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=80&&r.right<=innerWidth}),true);await page.keyboard.press('Escape')
+  await rail.getByRole('link',{name:'Home',exact:true}).focus();await expect(page.getByRole('tooltip',{name:'Home'})).toBeVisible()
+  await decide.focus();await expect(page.getByRole('tooltip',{name:'Decide'})).toBeVisible()
   // Audit the page at rest: focus on the content, no tooltip or menu open.
   await page.locator('main').focus();await expect(page.getByRole('tooltip')).toHaveCount(0)
   let axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','best-practice']).analyze()
@@ -123,8 +113,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await page.setViewportSize({width:1024,height:420});await rail.getByRole('link',{name:'Settings',exact:true}).scrollIntoViewIfNeeded();await expect(rail.getByRole('link',{name:'Settings',exact:true})).toBeInViewport()
 
   // Motion, contrast and forced colors at the labelled width.
-  await page.setViewportSize({width:1440,height:900});await page.emulateMedia({reducedMotion:'reduce'});await applicants.click();await flyout().waitFor()
-  assert.equal(await flyout().evaluate(el=>getComputedStyle(el).animationName),'none');await page.keyboard.press('Escape')
+  await page.setViewportSize({width:1440,height:900});await page.emulateMedia({reducedMotion:'reduce'})
   await page.emulateMedia({contrast:'more'})
   assert.equal(await rail.locator('.oc-dock-rail').evaluate(el=>getComputedStyle(el).backdropFilter),'none')
   assert.equal(await rail.locator('.oc-dock-rail').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(35, 45, 75)')
@@ -136,12 +125,12 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   // Phones and 200% zoom: the bottom bar is the only section nav; More opens every section, with no workspace pill.
   for(const size of [720,390,320]){
    await page.setViewportSize({width:size,height:844});await expect(rail).toBeHidden()
-   const bar=page.getByRole('navigation',{name:'Sections',exact:true});await expect(bar.getByRole('link')).toHaveText(['Club home','Recruiting','Meetings','Members'])
+   const bar=page.getByRole('navigation',{name:'Sections',exact:true});await expect(bar.getByRole('link')).toHaveText(['Home','Recruiting','Calendar','Members'])
    await bar.getByRole('button',{name:'More sections'}).click()
    const drawer=page.getByRole('dialog',{name:'Workspace navigation',exact:true});await drawer.waitFor()
    assert.equal(await drawer.getByRole('navigation',{name:'Workspaces'}).count(),0)
-   await drawer.getByRole('button',{name:'Applicants',exact:true}).click();await drawer.getByRole('link',{name:'All Applicants',exact:true}).waitFor()
-   await expect(drawer.getByRole('link',{name:'Club home',exact:true})).toBeVisible()
+   // More lists the rail items the bar doesn't show directly, in rail order and with rail labels.
+   assert.deepEqual(await drawer.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Overview','Applicants','Interviews','Decide','Tasks','Settings'])
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
    if(size===390){await page.waitForTimeout(220);await capture('rail-mobile');axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();assert.deepEqual(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[])}
    await page.keyboard.press('Escape');await drawer.waitFor({state:'hidden'})
@@ -157,8 +146,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   })
   const fallback=await fallbackContext.newPage();await fallback.goto(route(),{waitUntil:'networkidle'})
   assert.equal(await fallback.locator('.oc-dock-rail').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(35, 45, 75)')
-  await fallback.getByRole('button',{name:'Applicants',exact:true}).focus();await fallback.keyboard.press('ArrowRight')
-  await expect(fallback.getByRole('dialog',{name:'Applicants navigation'}).getByRole('link').first()).toBeFocused()
+  await fallback.getByRole('link',{name:'Applicants',exact:true}).focus();await expect(fallback.getByRole('link',{name:'Applicants',exact:true})).toBeFocused()
   await fallbackContext.close()
   assert.deepEqual(errors,[])
  }finally{await browser?.close();await fixture.close()}
