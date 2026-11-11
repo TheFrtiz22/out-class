@@ -24,7 +24,9 @@ test('a confirmed unstarted setup edit can renumber kept applicants and discard 
   const start=id=>db.exec(`INSERT INTO "VotingPass"("sessionId",number) VALUES('${id}',1); UPDATE "VotingSession" SET state='OPEN',"currentPass"=1,"startedAt"=NOW(),"joinOpenedAt"=NOW() WHERE id='${id}';`);
   const rejectsTx=async(body,re)=>{await assert.rejects(db.exec(`BEGIN; ${body}; COMMIT;`),re);await db.exec('ROLLBACK');};
   const reorder=(id,a)=>`UPDATE "VotingCandidate" SET position=position+100 WHERE "sessionId"='${id}'; UPDATE "VotingCandidate" SET position=0,"expectedStatus"='WAITLISTED' WHERE "sessionId"='${id}' AND "applicationId"='${a}'`;
-  const discard=(id,a)=>`DELETE FROM "VotingSlidePreparation" WHERE "sessionId"='${id}' AND "applicationId"='${a}'`;
+  // Each discard names its applicant in the removal list, so refusals below come from the flag or session state.
+  const removing=ids=>`SELECT set_config('outclass.voting_setup_discard','${ids.join(',')}',true);`;
+  const remove=(id,a)=>`DELETE FROM "VotingSlidePreparation" WHERE "sessionId"='${id}' AND "applicationId"='${a}'`,discard=(id,a)=>`${removing([a])} ${remove(id,a)}`;
   const candidates=async id=>(await db.query(`SELECT "applicationId",position,"expectedStatus" FROM "VotingCandidate" WHERE "sessionId"='${id}' ORDER BY position`)).rows;
   const prepared=async id=>(await db.query(`SELECT "applicationId",highlights,revision FROM "VotingSlidePreparation" WHERE "sessionId"='${id}' ORDER BY "applicationId"`)).rows;
 
@@ -89,7 +91,12 @@ test('a confirmed unstarted setup edit can renumber kept applicants and discard 
   await rejectsTx(`${flag} DELETE FROM "VotingCandidate" WHERE "sessionId"='edit' AND "applicationId"='${r[0]}'`,/foreign key/);
 
   // Without the flag both stay refused.
-  await assert.rejects(db.exec(discard('edit',r[0])),/history is retained/);
+  await rejectsTx(discard('edit',r[0]),/history is retained/);
+  // Under the flag, only applicants in the removal list: a kept applicant's preparation is refused, as is an empty or missing list.
+  await rejectsTx(`${flag} ${removing(['edit_new',r[1]])} ${remove('edit',r[0])}`,/history is retained/);
+  await rejectsTx(`${flag} ${removing([])} ${remove('edit',r[0])}`,/history is retained/);
+  await rejectsTx(`${flag} ${remove('edit',r[0])}`,/history is retained/);
+  await rejectsTx(`${flag} ${removing([`${r[0]}x`,`x${r[0]}`])} ${remove('edit',r[0])}`,/history is retained/);
   await assert.rejects(db.exec(reorder('edit',r[2])),/frozen/);
   await rejectsTx(`SELECT set_config('outclass.voting_setup_edit','yes',true); ${discard('edit',r[0])}`,/history is retained/);
 

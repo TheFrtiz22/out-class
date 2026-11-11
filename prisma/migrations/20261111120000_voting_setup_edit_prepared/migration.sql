@@ -9,7 +9,9 @@ SET LOCAL lock_timeout = '5s';
 -- flag that updateVotingSessionSetup already sets, while the LIVE session is
 -- unstarted (DRAFT, no startedAt/joinOpenedAt/finalizedAt, no VotingPass):
 --   1. a LIVE candidate row may change position and expectedStatus only;
---   2. that session's slide-preparation working copy may be deleted, unless a
+--   2. that session's slide-preparation working copy may be deleted for an
+--      applicant the edit removes (listed by the action in the transaction-local
+--      outclass.voting_setup_discard, comma-separated application IDs), unless a
 --      locked slide exists for it.
 -- Every other refusal is unchanged. Function bodies otherwise match the
 -- current definitions; SECURITY INVOKER and search_path=pg_catalog, public are
@@ -44,7 +46,8 @@ BEGIN
   -- Only a confirmed setup edit removing this applicant from a session that has
   -- never started may discard its working copy. Locked slides are separate rows
   -- and stay immutable.
-  IF current_setting('outclass.voting_setup_edit',true) IS NOT DISTINCT FROM 'confirmed' THEN
+  IF current_setting('outclass.voting_setup_edit',true) IS NOT DISTINCT FROM 'confirmed'
+   AND OLD."applicationId" = ANY(string_to_array(current_setting('outclass.voting_setup_discard',true),',')) THEN
    SELECT * INTO s FROM public."VotingSession" WHERE id=OLD."sessionId" FOR UPDATE;
    IF s.mode='LIVE' AND s.state='DRAFT' AND s."startedAt" IS NULL AND s."joinOpenedAt" IS NULL AND s."finalizedAt" IS NULL
     AND NOT EXISTS(SELECT 1 FROM public."VotingPass" WHERE "sessionId"=s.id)
