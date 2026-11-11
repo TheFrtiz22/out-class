@@ -189,7 +189,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
                     Interviewer: {interviewer?.profile.firstName} {interviewer?.profile.lastName}
                   </p>
                 </div>
-                <label className="text-xs text-muted-foreground">
+                <label className="text-control text-muted-foreground">
                   {student ? "Scheduled candidate" : "Open slot"}
                   <NativeSelect
                     aria-label={`Candidate for ${slot.id}`}

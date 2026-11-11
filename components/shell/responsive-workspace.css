@@ -48,4 +48,4 @@
 }
 
 /* Decide: Review, Vote and Send read as ordered steps (1, 2, 3) inside the segmented tabs. */
-.oc-decide-step-number { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; margin-right: .375rem; border-radius: var(--oc-radius-full); border: 1px solid currentColor; font-size: var(--oc-size-11, 11px); font-variant-numeric: tabular-nums; opacity: .8; }
+.oc-decide-step-number { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; margin-right: .375rem; border-radius: var(--oc-radius-full); border: 1px solid currentColor; font-size: var(--oc-size-11, 0.6875rem); font-variant-numeric: tabular-nums; opacity: .8; }

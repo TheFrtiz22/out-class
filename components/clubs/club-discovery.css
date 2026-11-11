@@ -24,7 +24,7 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   margin-bottom: 24px;
 }
 .oc-directory-active > span {
@@ -59,7 +59,7 @@
   border-bottom: 1px solid var(--border);
 }
 .oc-club-eyebrow {
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-12);
   letter-spacing: 0.055em;
   color: var(--muted-foreground);
   font-weight: var(--oc-weight-medium);
@@ -88,11 +88,11 @@
   gap: 16px;
   flex-wrap: wrap;
   margin-top: 12px;
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
 }
 .oc-club-directory-list > li > button {
-  font-size: var(--oc-size-12);
+  font-size: var(--oc-size-13);
   min-height: 44px;
 }
 .oc-directory-empty {
@@ -150,7 +150,7 @@
 }
 .oc-directory-curated small {
   display: block;
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   margin-top: 5px;
   color: var(--muted-foreground);
 }
@@ -158,7 +158,7 @@
   margin: 0 0 25px -12px;
 }
 .oc-club-preview-note {
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
   margin-bottom: 20px;
   padding-bottom: 12px;
@@ -190,7 +190,7 @@
   list-style: none;
   margin-bottom: 26px;
   flex-wrap: wrap;
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
 }
 .oc-club-profile-grid {
@@ -220,7 +220,7 @@
   border-top: 1px solid var(--border);
 }
 .oc-club-disclosure {
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
   margin-top: -8px;
 }
@@ -231,7 +231,7 @@
   margin-top: 23px;
 }
 .oc-club-facts dt {
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
 }
 .oc-club-facts dd {
@@ -299,7 +299,7 @@
   font-weight: var(--oc-weight-medium);
 }
 .oc-club-leadership span:not([data-slot]) {
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
 }
 .oc-club-recruitment {
@@ -340,7 +340,7 @@
 .oc-club-subscribe small {
   display: block;
   text-align: center;
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-12);
   line-height: var(--oc-leading-body);
   color: var(--muted-foreground);
   margin-top: 9px;
@@ -372,7 +372,7 @@
 .oc-club-requirements li {
   display: flex;
   gap: 7px;
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   line-height: var(--oc-leading-body);
   margin-top: 10px;
 }
@@ -384,7 +384,7 @@
   margin-top: 22px;
 }
 .oc-recruitment-timeline > p {
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
 }
 .oc-recruitment-timeline > p > strong {
@@ -425,7 +425,7 @@
   height: 27px;
   border: 1px solid var(--border);
   border-radius: 50%;
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
   transition:
     background-color 200ms,
@@ -441,14 +441,14 @@
   background: var(--success-subtle);
 }
 .oc-recruitment-timeline strong {
-  font-size: var(--oc-size-9);
+  font-size: var(--oc-size-12);
   font-weight: var(--oc-weight-regular);
 }
 .oc-recruitment-timeline li[aria-current="step"] strong {
   font-weight: var(--oc-weight-semibold);
 }
 .oc-recruitment-timeline small {
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-12);
   color: var(--muted-foreground);
 }
 .oc-discovery button,
@@ -607,11 +607,11 @@
 .oc-club-profile .oc-club-apply { width: auto; min-height: 48px; padding-inline: 24px; }
 .oc-club-profile .oc-club-follow, .oc-club-profile .oc-club-share { min-height: 48px; }
 .oc-club-action-note { flex: 1 1 100%; font-size: var(--oc-size-14); line-height: var(--oc-leading-body); color: var(--muted-foreground); }
-.oc-club-minor-heading { margin-top: 16px; font-size: 15px; font-weight: var(--oc-weight-semibold); }
+.oc-club-minor-heading { margin-top: 16px; font-size: 0.9375rem; font-weight: var(--oc-weight-semibold); }
 .oc-club-profile .oc-club-section h2 { margin-bottom: 16px; }
 .oc-club-profile .oc-club-events,
 .oc-club-profile .oc-club-leadership { margin-top: 0; padding-top: 28px; }
-.oc-club-profile .oc-club-events h3 { font-size: 17px; margin-bottom: 4px; }
+.oc-club-profile .oc-club-events h3 { font-size: 1.0625rem; margin-bottom: 4px; }
 .oc-club-profile .oc-club-events time,
 .oc-club-profile .oc-club-events li p { font-size: var(--oc-size-14); }
 .oc-club-profile .oc-club-leadership span:not([data-slot]) { font-size: var(--oc-size-14); }

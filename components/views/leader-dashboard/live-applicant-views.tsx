@@ -74,5 +74,5 @@ export function LiveDecisionList({ applicants, rounds, open, compact, name, sort
 }
 
 export function VotingSelection({app,name,selection}:{app:{id:string;status:string};name:string;selection:NonNullable<Props["votingSelection"]>}){
- return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-xs"><input aria-label={`Select ${name} for voting`} type="checkbox" className="oc-checkbox" checked={selection.ids.includes(app.id)} disabled={!votingEligible(app.status)} onChange={()=>selection.toggle(app.id)}/></label>;
+ return <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-2 text-control"><input aria-label={`Select ${name} for voting`} type="checkbox" className="oc-checkbox" checked={selection.ids.includes(app.id)} disabled={!votingEligible(app.status)} onChange={()=>selection.toggle(app.id)}/></label>;
 }
