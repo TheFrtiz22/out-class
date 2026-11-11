@@ -49,6 +49,7 @@ export function ShareSheet({ path, title, text, heading, subtitle, label = "Shar
   const [copied, setCopied] = useState(false)
   const [nativeShare, setNativeShare] = useState(false)
   const input = useRef<HTMLInputElement>(null)
+  const targets = useRef<HTMLUListElement>(null)
 
   useEffect(() => { setNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function") }, [])
   useEffect(() => {
@@ -98,14 +99,22 @@ export function ShareSheet({ path, title, text, heading, subtitle, label = "Shar
         <Share className="size-4" aria-hidden="true" />{!iconOnly && label}
       </Button>
     </DialogTrigger>
-    <DialogContent className="oc-share-sheet">
+    <DialogContent
+      className="oc-share-sheet"
+      onOpenAutoFocus={event => {
+        // Start on the first destination, not the link box: focusing the box would select the URL
+        // and, on phones, pop the keyboard over the sheet.
+        const first = targets.current?.querySelector<HTMLElement>(".oc-share-target")
+        if (first) { event.preventDefault(); first.focus() }
+      }}
+    >
       <div className="oc-share-head">
         <DialogTitle className="oc-share-title">{heading ?? `Share ${title}`}</DialogTitle>
         {subtitle
           ? <DialogDescription className="oc-share-subtitle">{subtitle}</DialogDescription>
           : <DialogDescription className="sr-only">Send a link to this page.</DialogDescription>}
       </div>
-      {url && <ul className="oc-share-targets" aria-label="Share to">
+      {url && <ul ref={targets} className="oc-share-targets" aria-label="Share to">
         {SHARE_CHANNELS.map(channel => {
           const Icon = CHANNEL_ICONS[channel]
           const name = SHARE_CHANNEL_LABELS[channel]

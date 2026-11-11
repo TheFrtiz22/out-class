@@ -31,6 +31,8 @@ test('clubs and published events use the one share sheet; demo and preview stay 
   assert.match(sheet,/typeof navigator\.share === "function"/)
   assert.match(sheet,/channel === "instagram"/)
   assert.match(sheet,/noopener noreferrer/)
+  // Opening focuses the first destination, never the link box (no selected URL, no phone keyboard).
+  assert.match(sheet,/onOpenAutoFocus[\s\S]*querySelector<HTMLElement>\(".oc-share-target"\)[\s\S]*first\.focus\(\)/)
   assert.match(fs.readFileSync('components/clubs/share-club-button.tsx','utf8'),/club\.source === "preview"\) return null[\s\S]*<ShareSheet/)
   assert.match(fs.readFileSync('components/share/event-share-button.tsx','utf8'),/isDemoEnabled\) return null/)
   assert.match(fs.readFileSync('components/events/public-event-board.tsx','utf8'),/<EventShareButton event=\{selected\}/)
