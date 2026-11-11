@@ -15,6 +15,7 @@ test('shared route layout authenticates protected pages and retains public pages
     '@/utils/auth': { getSessionUser: async () => ({ data: { user: null } }), requireAuth: async () => { checks++; throw Error('Sign in'); } },
     '@/components/shell/workspace-shell': { WorkspaceShell: 'Shell' },
     '@/components/landing/public-page-frame': { PublicPageFrame: 'PublicFrame' },
+    '@/components/maintenance-gate': { MaintenanceGate: 'MaintenanceGate' },
   };
   // The gate keeps each route's access rule and renders only the page; app/(workspace)/layout.tsx draws the frame once.
   const { AuthenticatedPageLayout } = load('components/shell/authenticated-page-layout.tsx', mocks);
@@ -33,7 +34,9 @@ test('shared route layout authenticates protected pages and retains public pages
   assert.equal((await AuthenticatedPageLayout({ children: 'account', optional: true })).props.children, 'account');
   assert.equal(checks, 2);
   mocks['@/components/shell/workspace-frame'] = load('components/shell/workspace-frame.ts', mocks);
-  assert.equal((await load('app/(workspace)/layout.tsx', mocks).default({ children: 'account' })).type, 'Shell');
+  // Signed-in product routes pass through the maintenance gate, which wraps the shell.
+  const shell = await load('app/(workspace)/layout.tsx', mocks).default({ children: 'account' });
+  assert.equal(shell.type, 'MaintenanceGate'); assert.equal(shell.props.children.type, 'Shell');
 });
 test('organization Settings includes only supported configuration and keeps operations reachable', () => {
   const { availableSettings } = load('lib/club-settings.ts');
@@ -68,6 +71,7 @@ test('demo-capable layouts require the verified allowlist and never bypass live 
     '@/lib/demo/access': { DEMO_COOKIE: 'demo', canAccessDemo: email => allowed && email === 'presenter@virginia.edu' },
     '@/components/shell/workspace-shell': { WorkspaceShell: 'Shell' },
     '@/components/landing/public-page-frame': { PublicPageFrame: 'PublicFrame' },
+    '@/components/maintenance-gate': { MaintenanceGate: 'MaintenanceGate' },
   };
   const { AuthenticatedPageLayout } = load('components/shell/authenticated-page-layout.tsx', mocks);
   assert.equal((await AuthenticatedPageLayout({ children: 'meeting', allowDemo: true })).props.children, 'meeting');
