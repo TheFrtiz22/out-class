@@ -34,7 +34,7 @@ test('clubs and published events use the one share sheet; demo and preview stay 
   // Opening focuses the first destination, never the link box (no selected URL, no phone keyboard).
   assert.match(sheet,/onOpenAutoFocus[\s\S]*querySelector<HTMLElement>\(".oc-share-target"\)[\s\S]*first\.focus\(\)/)
   assert.match(fs.readFileSync('components/clubs/share-club-button.tsx','utf8'),/club\.source === "preview"\) return null[\s\S]*<ShareSheet/)
-  assert.match(fs.readFileSync('components/share/event-share-button.tsx','utf8'),/isDemoEnabled\) return null/)
+  assert.match(fs.readFileSync('components/share/event-share-button.tsx','utf8'),/useContext\(DemoContext\)\?\.isDemoEnabled\) return null/)
   assert.match(fs.readFileSync('components/events/public-event-board.tsx','utf8'),/<EventShareButton event=\{selected\}/)
   assert.match(fs.readFileSync('components/events/club-events.tsx','utf8'),/e\.status === "PUBLISHED"[^\n]*<EventShareButton/)
   const page=fs.readFileSync('app/(workspace)/corkboard/page.tsx','utf8')
