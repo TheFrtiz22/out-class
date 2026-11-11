@@ -16,6 +16,14 @@ export async function prepareVerifiedSchoolAccount(account: VerifiedAccount) {
   prepared.add(account);
 }
 
+async function emailIdentifierTypes(db: Pick<AppTransactionClient, "schoolIdentifierType">, address: string) {
+  const [local, domain] = address.trim().toLowerCase().split("@");
+  const configs = await db.schoolIdentifierType.findMany({
+    where: { verification: "EMAIL_LOCAL_PART", emailDomain: domain, school: { active: true } },
+  });
+  return { local, configs };
+}
+
 /** Caller supplies requireAuth({verifyEmail:true}) output, never browser identity claims.
  * Prepare before acquisition; the compatibility fallback remains fail-closed.
  */
@@ -27,11 +35,7 @@ export async function verifiedSchoolIdentities(tx: AppTransactionClient, account
   await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR SHARE`;
   const currentAccount = await tx.user.findUnique({ where: { id: user.id }, select: { disabledAt: true, email: true } });
   if (!currentAccount || currentAccount.disabledAt || currentAccount.email.toLowerCase() !== user.email.toLowerCase()) throw new Error("University identity account unavailable.");
-  const email = supabaseUser.email!.trim().toLowerCase();
-  const [local, domain] = email.split("@");
-  const configs = await tx.schoolIdentifierType.findMany({
-    where: { verification: "EMAIL_LOCAL_PART", emailDomain: domain, school: { active: true } },
-  });
+  const { local, configs } = await emailIdentifierTypes(tx, supabaseUser.email!);
   const currentIdentityIds: string[] = [];
   for (const config of configs) {
     const normalized = normalizeSchoolIdentifier(local, config);
@@ -52,4 +56,27 @@ export async function verifiedSchoolIdentities(tx: AppTransactionClient, account
   // Historical email bindings are retained for audit, but are not proof of current
   // mailbox control after an Auth email change. Future SSO needs its own verifier.
   return tx.schoolIdentity.findMany({ where: { id: { in: currentIdentityIds }, userId: user.id, verifiedAt: { not: null }, school: { active: true } } });
+}
+
+/** Read-only counterpart for page renders: the identities verifiedSchoolIdentities
+ * would return, without creating, binding or auditing anything. A not-yet-bound
+ * identity derived from the verified email is included so the recipient can see the
+ * invitation; the explicit accept/decline actions bind it inside their own transaction.
+ */
+export async function previewVerifiedSchoolIdentities(db: Pick<AppTransactionClient, "user" | "schoolIdentifierType" | "schoolIdentity">, account: VerifiedAccount) {
+  if (!prepared.has(account)) await prepareVerifiedSchoolAccount(account);
+  if (!hasConfirmedUniversityEmail(account)) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_REQUIRED");
+  const { user, supabaseUser } = account;
+  const currentAccount = await db.user.findUnique({ where: { id: user.id }, select: { disabledAt: true, email: true } });
+  if (!currentAccount || currentAccount.disabledAt || currentAccount.email.toLowerCase() !== user.email.toLowerCase()) throw new Error("University identity account unavailable.");
+  const { local, configs } = await emailIdentifierTypes(db, supabaseUser.email!);
+  if (!configs.length) return [];
+  const identities = await db.schoolIdentity.findMany({
+    where: {
+      OR: configs.map(config => ({ schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: normalizeSchoolIdentifier(local, config) })),
+      school: { active: true },
+    },
+  });
+  if (identities.some(identity => identity.userId && identity.userId !== user.id)) throw new Error("University identity requires manual review.");
+  return identities.filter(identity => !identity.userId || identity.verifiedAt);
 }

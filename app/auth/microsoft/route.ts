@@ -4,6 +4,7 @@ import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 import { loginReturnPath } from "@/lib/auth"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from "@/lib/demo/access"
+import { authRedirectOrigin } from "@/lib/site-origin"
 import { createClient } from "@/utils/supabase/server"
 
 export const dynamic = "force-dynamic"
@@ -19,7 +20,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Exit impersonation or Demo Mode before changing authentication." }, { status: 403, headers })
   }
   const { origin, searchParams } = new URL(request.url)
-  const callback = new URL("/auth/callback", origin)
+  // The provider returns to the configured site URL, never the request's Host.
+  const siteOrigin = authRedirectOrigin(origin)
+  if (!siteOrigin) {
+    return NextResponse.json({ error: "Unable to start sign-in. Please try again." }, { status: 503, headers })
+  }
+  const callback = new URL("/auth/callback", siteOrigin)
   callback.searchParams.set("provider", "azure")
   callback.searchParams.set("next", loginReturnPath(searchParams.get("next")))
   const supabase = await createClient(cookieStore)

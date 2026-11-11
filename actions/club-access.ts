@@ -18,6 +18,7 @@ import { canControlOrganizationAccess, canManageOrganizationInvitation, organiza
 import { isUvaEmail } from "@/lib/auth";
 import { hasConfirmedUniversityEmail } from "@/utils/verified-email-policy";
 import { isActiveMembership } from "@/lib/permissions";
+import { boundedParse } from "@/lib/bounded-input";
 
 const permissionsSchema = z
   .array(z.enum(clubPermissions))
@@ -51,7 +52,7 @@ export async function getClubAccess(clubId: string) {
 export async function inviteClubManager(
   input: z.infer<typeof invitationSchema>,
 ) {
-  const data = invitationSchema.parse(input);
+  const data = boundedParse(invitationSchema, input);
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     // Serialize grants/revocations/ownership changes on the club, including last-owner checks.
@@ -166,14 +167,14 @@ export async function updateClubAccess(input: {
   permissions: string[];
   isOwner: boolean;
 }) {
-  const data = z
+  const data = boundedParse(z
     .object({
       clubId: z.string().uuid(),
       memberId: z.string().uuid(),
       permissions: permissionsSchema,
       isOwner: z.boolean(),
     })
-    .strict().parse(input);
+    .strict(), input);
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, data.clubId);

@@ -10,6 +10,7 @@ import { authorizeInterview, interviewActor, interviewTransactionOptions } from 
 import { interviewScopeSchema as scope, annotationContentSchema } from "@/lib/interview-access";
 import { isPrivateResume, validateProfileFile } from "@/lib/student-profile";
 import { validateResumeAnchor } from "@/lib/resume-anchor-validation";
+import { boundedParse } from "@/lib/bounded-input";
 
 const documentSelect = { id: true, contentHash: true, mimeType: true, createdAt: true } as const;
 /** Explicit moderation entry point includes only preserved documents, never private question drafts. */
@@ -81,7 +82,7 @@ export async function getInterviewResumeAnnotations(input: z.infer<typeof docume
   }, interviewTransactionOptions);
 }
 export async function saveInterviewResumeAnnotation(input: unknown) {
-  const data = documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0).optional(), content: annotationContentSchema }).strict().parse(input);
+  const data = boundedParse(documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0).optional(), content: annotationContentSchema }).strict(), input);
   const { user } = await requireAuth();
   if (data.content.anchor) {
     const bytes = await prisma.$transaction(async tx => {

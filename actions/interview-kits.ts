@@ -19,6 +19,7 @@ import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
+import { boundedParse } from "@/lib/bounded-input";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
   const draft = interviewDraftSchema.parse(record.draft);
@@ -53,7 +54,7 @@ export async function getInterviewWorkspace(clubId: string) {
 }
 export async function saveInterviewKit(clubId: string, roundId: string, version: number, questions: unknown) {
   z.string().uuid().parse(clubId); z.string().uuid().parse(roundId);
-  const parsed = kitSchema.parse(questions); z.number().int().min(0).parse(version);
+  const parsed = boundedParse(kitSchema, questions); z.number().int().min(0).parse(version);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     await authorizeQuestionBank(tx, clubId, roundId, user.id, true);
@@ -88,7 +89,7 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
   }, interviewTransactionOptions);
 }
 export async function saveInterviewSession(input: z.infer<typeof scope> & { revision: number; draft: unknown; complete?: boolean }) {
-  const data = scope.extend({ revision: z.number().int().min(0), draft: interviewDraftSchema, complete: z.boolean().default(false) }).parse(input);
+  const data = boundedParse(scope.extend({ revision: z.number().int().min(0), draft: interviewDraftSchema, complete: z.boolean().default(false) }), input);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { app, round, member } = await authorizeInterview(tx, data, user.id);
