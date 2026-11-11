@@ -490,8 +490,6 @@ export const deleteApplicantObservation: Demo<"deleteApplicantObservation"> = in
   });
 }
 export const getVotingWorkspace: Demo<"getVotingWorkspace"> = async (clubId, sessionId, selectionQuery) => ({ ...await demoVoting.getVotingWorkspace(clubId, sessionId), candidateSelection: selectionQuery ? await getClubPipelineSelection(clubId, selectionQuery) : null })
-export const createVotingSession: Demo<"createVotingSession"> = demoVoting.createVotingSession
-export const submitVotingBallot: Demo<"submitVotingBallot"> = demoVoting.submitVotingBallot
 export const commandVotingSession: Demo<"commandVotingSession"> = demoVoting.commandVotingSession
 export const getCorkboard: Demo<"getCorkboard"> = () => {
   const s = demoStore.get()
@@ -520,7 +518,6 @@ export const saveTutorial: Demo<"saveTutorial"> = input => {
     return s.tutorials[kind] = { status: data.action === "skip" ? "SKIPPED" : data.action === "complete" ? "COMPLETED" : "IN_PROGRESS", step: data.action === "restart" ? 0 : data.step, version: 1 }
   })
 }
-export const getVotingJoinInfo: Demo<"getVotingJoinInfo"> = demoVoting.getVotingJoinInfo
 export const prepareResumeImport: Demo<"prepareResumeImport"> = () => { throw new Error("PDF importing is disabled in Demo Mode.") }
 export const confirmResumeImport: Demo<"confirmResumeImport"> = () => { throw new Error("PDF importing is disabled in Demo Mode.") }
 export const getInterviewAccessSetup: Demo<"getInterviewAccessSetup"> = demoAccessSetup.getInterviewAccessSetup

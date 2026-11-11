@@ -126,6 +126,10 @@ test("Decide: tab choice respects access; counts are per round", () => {
     { roundId: "b", roundName: "B", state: "COMPLETED", publishedAt: "2026-11-01T00:00:00Z", applicantCount: 4 },
   ]
   assert.deepEqual(decide.decideCounts(rooms), { voting: 2, letters: 6 })
+  // Closed board sessions are read-only history, so they never count as waiting to be sent.
+  const closedBoard = { roundId: "b", roundName: "B", state: "COMPLETED", mode: "LEGACY", publishedAt: null, applicantCount: 5 }
+  assert.equal(decide.readyToSend(closedBoard), false)
+  assert.deepEqual(decide.decideCounts([...rooms, closedBoard]), { voting: 2, letters: 6 })
   assert.deepEqual(decide.roundsFromRooms(rooms), [{ id: "a", name: "A" }, { id: "b", name: "B" }])
 })
 

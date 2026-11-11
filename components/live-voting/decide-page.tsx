@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDemoMode } from "@/contexts/demo-context";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { canLeaveWorkspace, decideAccess } from "@/lib/product-navigation";
-import { decisionsHref } from "@/lib/voting-navigation";
+import { decisionsHref, legacyVotingHistoryHref } from "@/lib/voting-navigation";
 import { decideCounts, decideSteps, decideTab, readyToSend, roundsFromRooms, type DecideTab } from "@/lib/decide";
 import { listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getWorkspaceRounds } from "@/lib/workspace-api";
@@ -20,7 +20,6 @@ import { Panel } from "@/components/ui/panel";
 import { LoadingState } from "@/components/ui/loading-state";
 import { WorkspaceLoading } from "@/components/workspace-loading";
 import { DecisionSchedules } from "@/components/decision-schedules";
-import { BoardDecisionMode } from "./board-decision-mode";
 const VotingRoomLanding = dynamic(() => import("./room-landing").then(m => m.VotingRoomLanding), { loading: () => <WorkspaceLoading label="Loading voting sessions…" layout="rows" rows={3} /> });
 const DecisionTemplateEditor = dynamic(() => import("@/components/communications/template-editor").then(m => m.DecisionTemplateEditor), { loading: () => <WorkspaceLoading label="Loading decision letters…" layout="form" rows={3} /> });
 
@@ -28,9 +27,8 @@ type Rooms = Awaited<ReturnType<typeof listLiveVotingRooms>>;
 
 /**
  * Decide: pick a round, then Vote and Send as ordered steps. The round lives in the URL (`roundId`), as do the
- * step (`decisionTab`) and an open board ballot (`sessionId`). Each step reuses the existing screen: the Voting
- * room, the board ballot's "Review and publish" (counts per outcome before sending), the letter editor (preview
- * per outcome) and Scheduled decisions.
+ * step (`decisionTab`). Each step reuses the existing screen: the Voting room (counts per outcome before sending),
+ * the letter editor (preview per outcome) and Scheduled decisions. Board sessions are read-only history (FE-27).
  */
 export function DecidePage({ clubId, member }: { clubId: string; member: ClubAccess & { club?: { name?: string } } }) {
   const params = useSearchParams(), router = useRouter(), demo = useDemoMode();
@@ -69,7 +67,6 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
   const setRound = (value: string) => {
     const next = new URLSearchParams(search);
     if (value) next.set("roundId", value); else next.delete("roundId");
-    next.delete("sessionId");
     go(`/club/${encodeURIComponent(clubId)}/workspace?${next}`, true);
   };
   if (!tab) return <p role="alert">Decide is unavailable with your current access.</p>;
@@ -97,12 +94,8 @@ function SendStep({ clubId, member, rows, failed, onRetry, canVote, canScheduled
   clubId: string; member: ClubAccess & { club?: { name?: string } }; rows: Rooms | null; failed: boolean; onRetry: () => void
   canVote: boolean; canScheduled: boolean; roundId: string
 }) {
-  const params = useSearchParams(), router = useRouter(), demo = useDemoMode();
+  const demo = useDemoMode();
   const ready = rows?.filter(readyToSend) ?? [];
-  const sessionId = params.get("sessionId");
-  const ballotOpen = !!sessionId && !!rows && rows.some(r => r.id === sessionId && r.mode !== "LIVE");
-  const closeBallot = () => { const next = new URLSearchParams(params.toString()); next.delete("sessionId"); router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${next}`, { scroll: false }); onRetry() };
-  const sendHref = (id: string) => { const next = new URLSearchParams(params.toString()); next.set("sessionId", id); return `/club/${encodeURIComponent(clubId)}/workspace?${next}` };
   const canLetters = hasPermission(member, "recruitment.manage");
   const applicants = `/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants&decision=pending${roundId ? `&roundId=${encodeURIComponent(roundId)}` : ""}`;
   return <>
@@ -114,7 +107,7 @@ function SendStep({ clubId, member, rows, failed, onRetry, canVote, canScheduled
         : !ready.length ? <p className="text-sm text-muted-foreground">Nothing is waiting to send in this round.</p>
         : <ul className="divide-y border-y">{ready.map(r => <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
             <div><p className="font-medium">{r.meeting?.name ?? r.roundName}</p><p className="text-sm text-muted-foreground">{r.cycleName} · {r.roundName} · {pluralize(r.applicantCount, "applicant")}</p></div>
-            <Button asChild variant="outline" size="sm"><Link scroll={false} href={r.mode === "LIVE" ? `${liveRoomPath(clubId, r.id, r.view, demo.isDemoEnabled)}&cycleId=${encodeURIComponent(r.cycleId ?? "")}&roundId=${encodeURIComponent(r.roundId)}` : sendHref(r.id)}>Review and send<span className="sr-only"> · {r.meeting?.name ?? r.roundName}</span></Link></Button>
+            <Button asChild variant="outline" size="sm"><Link scroll={false} href={r.mode === "LIVE" ? `${liveRoomPath(clubId, r.id, r.view, demo.isDemoEnabled)}&cycleId=${encodeURIComponent(r.cycleId ?? "")}&roundId=${encodeURIComponent(r.roundId)}` : legacyVotingHistoryHref(clubId, r.id, demo.isDemoEnabled)}>{r.mode === "LIVE" ? "Review and send" : "View history"}<span className="sr-only"> · {r.meeting?.name ?? r.roundName}</span></Link></Button>
           </li>)}</ul>}
     </Panel>}
     <Panel as="section" aria-labelledby="decide-letters-heading" className="oc-workspace-stack">
@@ -123,6 +116,5 @@ function SendStep({ clubId, member, rows, failed, onRetry, canVote, canScheduled
       {canLetters ? <DecisionTemplateEditor clubId={clubId} inline /> : <p role="status" className="text-sm text-muted-foreground">Letter template editing requires recruitment management access.</p>}
     </Panel>
     {canScheduled && <DecisionSchedules clubId={clubId} />}
-    {member && <BoardDecisionMode open={ballotOpen} onOpenChange={value => { if (!value) closeBallot() }} sessionId={sessionId ?? undefined} clubId={clubId} clubName={member.club?.name ?? ""} canDecide={hasPermission(member, "decisions.manage") && hasPermission(member, "applicants.identify")} />}
   </>;
 }

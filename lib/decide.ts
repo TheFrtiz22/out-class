@@ -8,7 +8,7 @@
 export type DecideTab = "voting" | "letters"
 export const decideSteps: { id: DecideTab; label: string }[] = [{ id: "voting", label: "Vote" }, { id: "letters", label: "Send" }]
 
-export type DecideRoom = { roundId: string; roundName: string; state: string; publishedAt?: string | Date | null; applicantCount: number }
+export type DecideRoom = { roundId: string; roundName: string; state: string; mode?: string | null; publishedAt?: string | Date | null; applicantCount: number }
 
 /** The tab to show: the requested one when this member may open it, else the first one they can. */
 export function decideTab(requested: string | null | undefined, access: { canVote: boolean; canSend: boolean }): DecideTab | null {
@@ -17,9 +17,9 @@ export function decideTab(requested: string | null | undefined, access: { canVot
   return allowed[0] ?? null
 }
 
-/** A closed session whose outcomes have not been sent to applicants yet. */
+/** A closed voting room whose outcomes have not been sent to applicants yet. Board sessions are read-only history and are never sent from here. */
 export function readyToSend(room: DecideRoom) {
-  return room.state === "COMPLETED" && !room.publishedAt
+  return room.state === "COMPLETED" && !room.publishedAt && room.mode !== "LEGACY"
 }
 
 /**
