@@ -93,11 +93,13 @@ test('onboarding forms use searchable club and invitation pickers instead of raw
   const source = read('components/admin/admin-onboarding.tsx')
   assert.doesNotMatch(source, /Club ID|Pending invitation ID|clubId: ""|studentField\("clubId"/)
   assert.equal((source.match(/<AdminClubPicker /g) || []).length, 2)
-  const sent = [], clubs = []
+  const sent = [], clubs = [], asked = []
+  let answer = false
   const h = harness('components/admin/admin-onboarding.tsx', {
     '@/actions/admin-workspace': { createAdminStudent: async () => {}, createAdminClub: async () => {}, changeAdminDesignatedLeader: async d => { sent.push(d) }, listAdminPendingOwnerInvitations: async id => { clubs.push(id); return [{ id: 'inv-1', email: 'old@virginia.edu', invitedName: 'Old Lead', expiresAt: '2026-12-01T00:00:00Z' }] } },
     '@/actions/platform-organization-onboarding': { getOrganizationOnboardingSchools: async () => [{ identifierTypeId: 'school-uva-computing-id', schoolName: 'University of Virginia', identifierLabel: 'UVA Computing ID' }] },
     '@/actions/admin-clubs': { getAdminClubs: async () => ({ rows: [] }) },
+    '@/components/ui/confirm-dialog': { useConfirm: () => async options => { asked.push(options); return answer } },
   })
   globalThis.crypto ??= require('node:crypto').webcrypto
   const draw = () => nodes(h.render(h.exported.AdminOnboarding, {}))
@@ -113,6 +115,14 @@ test('onboarding forms use searchable club and invitation pickers instead of raw
   const invitation = tree.find(n => n.type === 'NativeSelect' && n.props.value === 'inv-1')
   assert.ok(invitation, 'the only pending owner invitation is preselected from the server read')
   assert.match(text(invitation.props.children), /Old Lead · old@virginia\.edu/)
+  const submit = async () => { let prevented = false; await draw().find(n => n.type === 'form').props.onSubmit({ preventDefault: () => { prevented = true } }); assert.ok(prevented, 'submit is prevented before the confirm is awaited'); await h.flush() }
+  await submit()
+  assert.equal(asked.length, 1)
+  assert.equal(asked[0].tone, 'danger')
+  assert.equal(sent.length, 0, 'declining the confirm changes nothing')
+  answer = true; await submit()
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].clubId, '00000000-0000-4000-8000-000000000009')
 })
 
 const CLUB = '00000000-0000-4000-8000-000000000009'
