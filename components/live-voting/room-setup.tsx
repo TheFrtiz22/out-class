@@ -32,6 +32,8 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  const auth=useAuth(),demo=useDemoMode(),router=useRouter(),[rawData,setData]=useState<Setup|null>(null),[dataScope,setDataScope]=useState(""),[cycle,setCycle]=useState(initialCycleId),[round,setRound]=useState(initialRoundId),[applicants,setApplicants]=useState<string[]>([]),[voters,setVoters]=useState<string[]>([]),[target,setTarget]=useState(""),[ruleDraft,setRuleDraft]=useState<RuleDraft|null>(null),[fields,setFields]=useState<LiveRoomField[]>(["name","photo","gpa"]),[highlights,setHighlights]=useState<Record<string,string>>({}),[preview,setPreview]=useState(""),[quotes,setQuotes]=useState<Awaited<ReturnType<typeof getVotingHighlightOptions>>>([]),[error,setError]=useState(""),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
  const [details,setDetails]=useState({name:'',timing:'NOW' as 'NOW'|'LATER',localTime:'',timeZone:'America/New_York',occurrence:'EARLIER' as 'EARLIER'|'LATER',duration:'',location:'',instructions:'',notify:false}),[step,setStep]=useState(1),[initialized,setInitialized]=useState(false),[sessionId,setSessionId]=useState(editSession||draftId),[planRevision,setPlanRevision]=useState<number|null>(null),[startRequestId,setStartRequestId]=useState(''),[updateRequestId,setUpdateRequestId]=useState(''),[leaderMemberIds,setLeaderMemberIds]=useState<string[]>([]),[appSearch,setAppSearch]=useState(''),[voterSearch,setVoterSearch]=useState(''),[savedDraft,setSavedDraft]=useState(false);
  const [observationRevision,setObservationRevision]=useState(0);
+ // What a busy action is waiting on, so a click during autosave is visibly queued, never silently ignored.
+ const [phase,setPhase]=useState<''|'draft'|'queued'|'commit'>('');
  const restoredScope=useRef(''),heading=useRef<HTMLHeadingElement>(null);
  // State, not a ref: the rounds load below must re-run once the saved session has been read, even when a restored working copy changes nothing else.
  const [editLoaded,setEditLoaded]=useState(''),[editConflict,setEditConflict]=useState<{latest:SavedSession;unsaved:boolean}|null>(null);
@@ -72,7 +74,7 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  function changeScope(nextCycle:string,nextRound:string){if(editSession||planRevision!==null)return;restoredScope.current='';setCycle(nextCycle);setRound(nextRound);setDetails(v=>({...v,name:''}));setInitialized(false);}
  function meetingInput(){const {notify,...meeting}=details;void notify;return {...meeting,version:1,duration:details.duration===''?null:Number(details.duration),status:details.timing==='LATER'?'SCHEDULED':'READY'};}
  function validate(at:number){if(at>=1){if(!cycle||!round)throw Error('Choose a recruitment cycle and round.');resolveVotingMeeting(meetingInput());}if(at>=2){if(!applicants.length)throw Error('Select at least one applicant.');if(!voters.length)throw Error('Select at least one voter.');if(target!==''&&(!/^\d+$/.test(target)||Number(target)<1||Number(target)>2000))throw Error('Target number to pass must be a positive whole number, up to 2000.');{const rr=rulesFromDraft(ruleDraft??leaderDraft);if('error'in rr)throw Error(rr.error);}if(applicants.some(id=>!data?.applicants.some(a=>a.id===id))||voters.some(id=>!data?.voters.some(v=>v.id===id)))throw Error('Some saved selections are no longer eligible. Review applicants and voters before continuing.');}}
- async function saveDraft(){if(lock.current)return;lock.current=true;setBusy(true);setSavedDraft(false);setTouched(true);try{await new Promise(r=>setTimeout(r));await draft.flush();setSavedDraft(true);}catch(e){setError(e instanceof Error?e.message:'Draft could not be saved. Retry; your input is retained.');}finally{lock.current=false;setBusy(false);}}
+ async function saveDraft(){if(lock.current)return;lock.current=true;setBusy(true);setPhase('draft');setSavedDraft(false);setTouched(true);try{await new Promise(r=>setTimeout(r));await draft.flush();setSavedDraft(true);}catch(e){setError(e instanceof Error?e.message:'Draft could not be saved. Retry; your input is retained.');}finally{lock.current=false;setBusy(false);setPhase('');}}
  // An update retry always replays the original request against the revision this form was loaded from, so it can never overwrite a newer save.
  const sendUpdate=()=>{updateSent.current=true;return updateVotingSessionSetup({...pending.current!,revision:planRevision!,requestId:updateRequestId});};
  async function finish(result:{sessionId:string}){
@@ -91,12 +93,13 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
   return true;
  }
  async function prepare(){
-  if(lock.current||!data)return;lock.current=true;setBusy(true);setError('');
+  if(lock.current||!data)return;lock.current=true;setBusy(true);setError('');setPhase(draft.saving||draft.dirty?'queued':'commit');
   try{
    if(!pending.current){validate(2);const meeting=resolveVotingMeeting(meetingInput());updateSent.current=false;pending.current=createRoomSchema.parse({clubId,sessionId,cycleId:cycle,roundId:round,leaderMemberIds:leaderMemberIds.length?leaderMemberIds:[data.memberId],participantIds:voters,applicationIds:applicants,targetSize:target===''?null:Number(target),displayConfig:roomDisplayConfig(fields),presentationOptions:{fields,highlights:Object.fromEntries(Object.entries(highlights).filter(([id,v])=>applicants.includes(id)&&!!v)),meeting,...(ruleRules?.mode==='THRESHOLD'?{rules:ruleRules}:{})},notifyVoters:(details.timing==='LATER'||planRevision!==null)&&details.notify});}
-   await draft.flush();
+   // A click while the draft autosaves waits for that save, then continues; the button shows which step is running.
+   await draft.flush();setPhase('commit');
    await finish(planRevision!==null?await sendUpdate():await createLiveVotingRoom(pending.current));
-  }catch(e){if(!await resolveEditFailure())setError(e instanceof Error?e.message:'Session could not be confirmed. Retry uses the same request and preserves your setup.');}finally{if(!navigating.current){lock.current=false;setBusy(false);}}
+  }catch(e){if(!await resolveEditFailure())setError(e instanceof Error?e.message:'Session could not be confirmed. Retry uses the same request and preserves your setup.');}finally{if(!navigating.current){lock.current=false;setBusy(false);setPhase('');}}
  }
  async function loadLatest(){
   if(!editConflict)return;
@@ -150,8 +153,8 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  {(details.timing==='LATER'||planRevision!==null)&&<div><label><input type="checkbox" checked={details.notify} onChange={e=>setDetails(v=>({...v,notify:e.target.checked}))}/> Notify selected voters</label><p className="text-sm text-muted-foreground">{voters.length} selected voters: {data.voters.filter(v=>voters.includes(v.id)).map(v=>v.label).join(', ')||'None'}. In-app notification; existing email delivery preferences apply. {demoScoped?'Demo sends no real messages.':''}{editSession?' Previously announced voters are also included when updating an announced session.':''}</p></div>}
  </div>
  </fieldset>
- <div className="vr-actions mt-5"><Button variant="outline" disabled={busy||!draft.ready} onClick={()=>void saveDraft()}>Save draft</Button>{step>1&&<Button variant="ghost" disabled={busy||!!pending.current} onClick={()=>move(step-1)}>Back</Button>}{step<3?<Button disabled={busy||!!pending.current} onClick={()=>{try{validate(step);move(step+1)}catch(e){setError(e instanceof Error?e.message:'Check this step.')}}}>Continue</Button>:<Button disabled={busy||!draft.ready||!!editConflict} onClick={()=>void prepare()}>{busy?'Saving…':pending.current?'Retry session':details.timing==='NOW'?'Start session':planRevision!==null?'Save session changes':'Schedule session'}</Button>}</div>
- <p role="status" className="text-sm text-muted-foreground">{savedDraft?'Draft saved':draft.state==='saving'?'Saving draft…':draft.dirty?'Unsaved changes':'All changes saved'}</p>
+ <div className="vr-actions mt-5"><Button variant="outline" disabled={busy||!draft.ready} onClick={()=>void saveDraft()}>Save draft</Button>{step>1&&<Button variant="ghost" disabled={busy||!!pending.current} onClick={()=>move(step-1)}>Back</Button>}{step<3?<Button disabled={busy||!!pending.current} onClick={()=>{try{validate(step);move(step+1)}catch(e){setError(e instanceof Error?e.message:'Check this step.')}}}>Continue</Button>:<Button aria-busy={busy||undefined} disabled={busy||!draft.ready||!!editConflict} onClick={()=>void prepare()}>{busy?(phase==='commit'?(details.timing==='NOW'?'Starting session…':'Saving session…'):'Saving draft…'):pending.current?'Retry session':details.timing==='NOW'?'Start session':planRevision!==null?'Save session changes':'Schedule session'}</Button>}</div>
+ <p role="status" className="text-sm text-muted-foreground">{phase==='queued'?(details.timing==='NOW'?'Saving draft… the session starts as soon as it is saved':'Saving draft… then saving the session'):savedDraft?'Draft saved':draft.state==='saving'?'Saving draft…':draft.dirty?'Unsaved changes':'All changes saved'}</p>
  </>}
  </div></div>;
 }
