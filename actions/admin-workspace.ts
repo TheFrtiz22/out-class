@@ -53,13 +53,12 @@ export async function listAdminReports(input: unknown) {
     return { ...row, target: title ? { ...target, label: `${target.label} · ${title}` } : target, reporter: { id: reporter.id, email: reporter.email, name } };
   });
 }
+// Support requests only. Reports about users, clubs, events and content go through
+// reportContent (actions/content-reports.ts), which checks the reporter can see the target.
 export async function submitPlatformReport(input: unknown) {
-  const { user } = await requireAuth();
-  const d = z.object({ kind: z.enum(["USER", "CLUB", "EVENT", "CONTENT", "SUPPORT"]), targetId: z.string().trim().min(1).max(200), summary: z.string().trim().min(10).max(2000) }).strict().parse(input);
-  if (d.kind !== "SUPPORT") {
-    const exists = d.kind === "USER" ? await prisma.user.findUnique({ where: { id: d.targetId }, select: { id: true } }) : d.kind === "CLUB" ? await prisma.club.findUnique({ where: { id: d.targetId }, select: { id: true } }) : d.kind === "EVENT" ? await prisma.meeting.findUnique({ where: { id: d.targetId }, select: { id: true } }) : await prisma.platformContent.findUnique({ where: { key: d.targetId }, select: { id: true } });
-    if (!exists) throw Error("Report target unavailable.");
-  }
+  const { user, impersonation } = await requireAuth();
+  if (impersonation) throw Error("Support sessions cannot file reports.");
+  const d = z.object({ kind: z.literal("SUPPORT"), targetId: z.string().trim().min(1).max(200), summary: z.string().trim().min(10).max(2000) }).strict().parse(input);
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
     if (await tx.platformReport.count({ where: { reporterId: user.id, createdAt: { gte: new Date(Date.now() - 3600000) } } }) >= 10) throw Error("Too many reports. Try again later.");

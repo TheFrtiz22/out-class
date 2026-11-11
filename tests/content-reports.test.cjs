@@ -154,3 +154,12 @@ test('Report appears on every listed surface with the shared control, and stays 
   for (const file of fs.readdirSync('components/live-voting')) if (/\.tsx?$/.test(file)) assert.doesNotMatch(fs.readFileSync(`components/live-voting/${file}`, 'utf8'), /ReportContentButton/)
   assert.doesNotMatch(fs.readFileSync('actions/content-reports.ts', 'utf8'), /notification-delivery|sendEmail|enqueue|userNotification\.create/)
 })
+
+test('the older platform report action only files support requests', () => {
+  const src = fs.readFileSync('actions/admin-workspace.ts', 'utf8')
+  const fn = src.slice(src.indexOf('export async function submitPlatformReport'), src.indexOf('export async function resolveAdminReport'))
+  // User, club, event and content reports must go through reportContent, which checks visibility.
+  assert.match(fn, /kind: z\.literal\("SUPPORT"\)/)
+  assert.doesNotMatch(fn, /findUnique/)
+  assert.match(fn, /if \(impersonation\) throw/)
+})
