@@ -77,7 +77,7 @@ export async function processNotificationEmails(limit = 10) {
       if (!eligible.length) return;
       const digest = user.notificationPreferences?.emailFrequency === "DAILY";
       const build = (group: { notification: Parameters<typeof buildNotificationEmail>[0]["items"][number] }[]) => notificationEmailPayload.safeParse((() => {
-        try { return buildNotificationEmail({ from: config.from, to: user.email, siteUrl: config.siteUrl, digest, items: group.map(row => row.notification) }); } catch { return null; }
+        try { return buildNotificationEmail({ from: config.from, to: user.email, userId: user.id, siteUrl: config.siteUrl, digest, items: group.map(row => row.notification) }); } catch { return null; }
       })());
       // A row that cannot produce a valid email (e.g. a non-canonical decision
       // link) is suppressed individually; the in-app notification remains.

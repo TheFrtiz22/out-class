@@ -31,3 +31,5 @@
 @media (prefers-reduced-motion: reduce) { .oc-interview-management *, .oc-kit-editor * { transition: none !important; animation: none !important; } }
 
 .oc-kit-builder fieldset { min-width: 0; }
+/* At least 16px on phones so iOS does not zoom into the focused field. */
+@media (max-width: 767px) { .oc-kit-question textarea { font-size: var(--oc-size-16); } }

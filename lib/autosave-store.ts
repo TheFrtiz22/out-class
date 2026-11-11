@@ -154,9 +154,9 @@ export function isNetworkError(error: unknown, online = browserOnline()) { retur
 /** Status text from the problem and where the unsaved copy is (DraftWriteResult). */
 export function connectionMessage(problem: ConnectionProblem, stored: DraftWriteResult | undefined) {
   const lead = problem === "offline" ? "Offline" : "Couldn’t reach OutClass"
-  return stored === "device" ? `${lead} — changes saved on this device`
-    : stored === "tab" ? `${lead} — changes kept in this tab`
-    : problem === "offline" ? `${lead} — keep this page open; changes save when you reconnect` : `${lead} — keep this page open and retry`
+  return stored === "device" ? `${lead}. Changes saved on this device`
+    : stored === "tab" ? `${lead}. Changes kept in this tab`
+    : problem === "offline" ? `${lead}. Keep this page open; changes save when you reconnect` : `${lead}. Keep this page open and retry`
 }
 export function offlineMessage(stored: DraftWriteResult | undefined) { return connectionMessage("offline", stored) }
 /** Readable, read-only text of a stored copy: its string fields in order (never applied or saved). */

@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -187,8 +188,8 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   await assert.rejects(call(existing,'roster-import','previewRosterImport',{clubId,requestId:randomUUID(),filename:'attack.csv',csv:'name,computing_id\nVictim,victimabc'}));
   await call(president,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'ADMIN'});
   await call(existing,'organization-members','getOrganizationMemberManagement',clubId);
-  await assert.rejects(call(existing,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'OWNER'}));
-  await assert.rejects(call(existing,'organization-members','transferOrganizationOwnership',{clubId,memberId:sarah.id,confirm:true}));
+  await refused(call(existing,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'OWNER'}));
+  await refused(call(existing,'organization-members','transferOrganizationOwnership',{clubId,memberId:sarah.id,confirm:true}));
   await call(president,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'MEMBER'});
   const session=await existing.client.auth.getSession();
   for(const table of ['SchoolIdentity','ClubInvitation','ClubMember','RosterImport','RosterImportRow','InvitationDelivery']){

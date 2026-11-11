@@ -1,3 +1,4 @@
+import { userMessage } from "@/lib/user-message"
 import { browserOnline, connectionMessage, connectionProblem, type ConnectionProblem, type DraftWriteResult } from "@/lib/autosave-store"
 
 /** "offline": navigator.onLine is false. "unreachable": online, but the request never reached OutClass. */
@@ -71,7 +72,7 @@ export class AutosaveQueue<T> {
         const problem = connectionProblem(error, this.online())
         if (problem) { this.connection(problem); throw new OfflineError(this.error) }
         this.state = "error"
-        this.error = error instanceof Error && !("digest" in error) ? error.message : "Your changes are still here. Reconnect and retry."
+        this.error = userMessage(error, "Your changes are still here. Reconnect and retry.")
         throw error
       } finally { this.flight = null; if (this.active) this.notify() }
     }

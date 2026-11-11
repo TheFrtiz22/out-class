@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 // Two simultaneous submits of the same application on isolated native PostgreSQL,
 // through the real submitApplication (club FOR SHARE, student row FOR UPDATE,
 // DRAFTING status predicate). Run: node scripts/run-disposable-postgres.cjs security
@@ -7,7 +8,7 @@ const { databaseUrl, raceFixture } = require('./helpers/race-native.cjs');
 
 test('two simultaneous submits create one application', { skip: !databaseUrl, timeout: 120000 }, async t => {
   const { operator, load, as, race, user, club } = await raceFixture(t);
-  const applications = load('actions/applications.ts');
+  const applications = unwrapActions(load('actions/applications.ts'));
 
   async function setup() {
     const c = await club({ applicationOpen: true });
@@ -21,6 +22,8 @@ test('two simultaneous submits create one application', { skip: !databaseUrl, ti
   async function assertOne(f, results) {
     assert.equal(results.filter(r => r.ok).length, 1, JSON.stringify(results));
     assert.match(results.find(r => !r.ok).error, /already been submitted/);
+    // The loser is a returned { ok: false, code } refusal, not a thrown error.
+    assert.equal(results.find(r => !r.ok).refused, true); assert.equal(results.find(r => !r.ok).code, 'ACTION_REFUSED');
     const rows = await operator.application.findMany({ where: { studentId: f.student.id, clubId: f.club.id }, include: { answers: true } });
     assert.equal(rows.length, 1);
     assert.equal(rows[0].status, 'SUBMITTED');

@@ -1,16 +1,19 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 
 import { useMemo, useRef, useState } from "react"
 import { ActionWorkflow } from "@/components/product/action-workflow"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { createOrganizationMemberGroups } from "@/actions/organization-members"
+import { createOrganizationMemberGroups as createOrganizationMemberGroupsAction } from "@/actions/organization-members"
 import type { getOrganizationMemberManagement } from "@/lib/workspace-read"
 import { organizationRoleLabels } from "@/lib/organization-authorization"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { planMemberGroups, selectGroupMembers, type MemberGroupCriteria, type MemberGroupSplit } from "@/lib/member-groups"
 import { NativeSelect } from "@/components/ui/native-select"
 import { SegmentedControl } from "@/components/ui/segmented-control"
+import { unwrapped } from "@/lib/action-result"
+const createOrganizationMemberGroups = unwrapped(createOrganizationMemberGroupsAction)
 
 type Member = Awaited<ReturnType<typeof getOrganizationMemberManagement>>["members"][number]
 const memberName = (member: Member) => member.user.studentProfile ? `${member.user.studentProfile.firstName} ${member.user.studentProfile.lastName}` : member.user.email
@@ -54,7 +57,7 @@ function GroupWizard({ clubId, members, onSaved, done }: { clubId: string; membe
       setSaved(true)
       try { await onSaved(); done() }
       catch { setError("Groups were created. Close this window and refresh members to see them.") }
-    } catch (error) { setError(error instanceof Error ? error.message : "Groups could not be saved. Check the member list and try again.") }
+    } catch (error) { setError(userMessage(error, "Groups could not be saved. Check the member list and try again.")) }
     finally { working.current = false; setBusy(false) }
   }
   return <form className="space-y-5" data-saving={busy} data-unsaved={!saved && (!!name || selected.length > 0)} onSubmit={event => { event.preventDefault(); if (step === 1 && name.trim()) setStep(2) }}>
