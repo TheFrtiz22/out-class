@@ -20,7 +20,7 @@ function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boo
 /** Status, plus the staged (unsent) decision when there is one. */
 function Status({ app, rounds, staged }: { app: Candidate; rounds: Pipeline["rounds"]; staged?: Props["staged"] }) {
   const pending = staged?.get(app.id)
-  return <span className="inline-flex flex-wrap items-center gap-1"><StatusPill status={app.status} />{pending && <span className="oc-staged-chip" title="Saved for Decide › Send. Not sent yet."><ArrowRight size={12} aria-hidden="true" />{stagedLabel(pending, rounds)}</span>}</span>
+  return <span className="inline-flex flex-wrap items-center gap-1"><StatusPill status={app.status} />{pending && <span className="oc-staged-chip" title="Saved for Decide › Send. Not sent yet."><ArrowRight size={14} aria-hidden="true" />{stagedLabel(pending, rounds)}</span>}</span>
 }
 /** The rating on one line: the average (or the submitted count) with the detail in a tooltip and for screen readers. */
 function Rating({ app }: { app: Candidate }) {

@@ -226,7 +226,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
             <div className="flex items-center justify-between gap-2">
               <h3 id="decide-heading" className="oc-review-panel-heading">Decision</h3>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="More applicant actions"><MoreHorizontal size={18} /></Button></DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="More applicant actions"><MoreHorizontal size={20} /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-56">
                   {staged && canStage(app.status) && app.status !== "WAITLISTED" && <DropdownMenuItem disabled={!!decideReason} onSelect={() => void decide("WAITLIST")}>Waitlist</DropdownMenuItem>}
                   {staged && canStage(app.status) && <DropdownMenuItem disabled={!!decideReason} onSelect={() => void decide("ACCEPT")}>Accept</DropdownMenuItem>}
@@ -247,7 +247,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
               <DisabledReason reason={decideReason || (app.status === "WAITLISTED" ? "Already on hold (waitlisted)." : "")}><Button variant="outline" className="oc-review-decision" data-outcome="hold" aria-keyshortcuts="H" data-selected={current?.outcome === "HOLD" || undefined} onClick={() => void decide("HOLD")}><Pause aria-hidden="true" />Hold<kbd>H</kbd></Button></DisabledReason>
               <DisabledReason reason={decideReason}><Button variant="outline" className="oc-review-decision" data-outcome="reject" aria-keyshortcuts="R" data-selected={current?.outcome === "REJECT" || undefined} onClick={() => void decide("REJECT")}><X aria-hidden="true" />Reject<kbd>R</kbd></Button></DisabledReason>
             </div>
-            <p className="oc-review-keys text-xs text-muted-foreground" aria-hidden="true"><kbd>A</kbd> advance · <kbd>H</kbd> hold · <kbd>R</kbd> reject · <kbd><ArrowLeft size={10} /></kbd><kbd><ArrowRight size={10} /></kbd> move · <kbd>Esc</kbd> close</p>
+            <p className="oc-review-keys text-xs text-muted-foreground" aria-hidden="true"><kbd>A</kbd> advance · <kbd>H</kbd> hold · <kbd>R</kbd> reject · <kbd><ArrowLeft size={14} /></kbd><kbd><ArrowRight size={14} /></kbd> move · <kbd>Esc</kbd> close</p>
             <p className="text-xs text-muted-foreground">Decisions are saved, not sent. Send them from Decide › Send.</p>
             {message && <p role="status" className="text-xs">{message}</p>}
           </section>
