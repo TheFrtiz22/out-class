@@ -9,7 +9,8 @@ import { requireAuth } from "@/utils/auth";
 import { authorizeInterview, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, annotationContentSchema } from "@/lib/interview-access";
 import { isPrivateResume, validateProfileFile } from "@/lib/student-profile";
-import { validateResumeAnchor } from "@/lib/resume-anchor-validation";
+import { validateResumeAnchor, validateResumeArea } from "@/lib/resume-anchor-validation";
+import { isAreaAnchor } from "@/lib/resume-anchors";
 import { boundedParse } from "@/lib/bounded-input";
 
 const documentSelect = { id: true, contentHash: true, mimeType: true, createdAt: true } as const;
@@ -92,7 +93,9 @@ export async function saveInterviewResumeAnnotation(input: unknown) {
       return document.content;
     });
     // PDF parsing holds no database locks; the write transaction reauthorizes afterward.
-    await validateResumeAnchor(bytes, data.content.anchor);
+    // An area highlight has no text to verify; its page must exist in the pinned document.
+    const anchor = data.content.anchor;
+    if (isAreaAnchor(anchor)) await validateResumeArea(bytes, anchor); else await validateResumeAnchor(bytes, anchor);
   }
   return prisma.$transaction(async tx => {
     const { member, caps } = await authorizeInterview(tx, data, user.id, "resume");
