@@ -30,7 +30,7 @@ export function ApplicationStatusCard({ application: app, now, onOpen }: { appli
     <div className="oc-status-next">
       <div>{!decision && interview && !interview.past ? <><p className="oc-status-interview"><CalendarDays size={16} aria-hidden="true" />Interview · {applicantDate(interview.booking.slot.startTime)}</p><p>{interview.booking.slot.location || "Location not provided"}</p></>
         : <><p className="oc-status-next-label">{applicationStatusLabels[app.status]}</p><p>{attention && decision ? "Accept or decline your club offer." : attention ? "You haven’t booked an interview for this round. Check available times and the club’s instructions." : !decision && interview?.past ? `Interview · ${applicantDate(interview.booking.slot.startTime)}. Check the club’s instructions for next steps.` : applicationNextStep(app.status)}</p></>}</div>
-      <Button variant={attention ? "default" : "outline"} data-application-id={app.id} onClick={onOpen}>{attention ? decision ? "Review offer" : "Review interview" : "View details"}<ArrowRight size={15} aria-hidden="true" /></Button>
+      <Button variant={attention ? "default" : "outline"} data-application-id={app.id} onClick={onOpen}>{attention ? decision ? "Review offer" : "Review interview" : "View details"}<ArrowRight size={16} aria-hidden="true" /></Button>
     </div>
   </article>
 }

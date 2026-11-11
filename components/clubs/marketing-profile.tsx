@@ -42,7 +42,7 @@ export function MarketingProfile({ profile, action, compact = false, assetPrevie
       <ProfileStatistics profile={profile} compact={compact} />
       {(links.length > 0 || action) && <div className="oc-club-hero-actions mt-6 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
         {action && <div className="oc-club-primary-action min-w-0 flex-1">{action}</div>}
-        {links.length > 0 && <ul className="flex gap-1" aria-label="Club links">{links.map(({ label, url, icon: Icon }) => <li key={label}><a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${profile.name} ${label}${label === "Email" ? "" : " (opens in a new tab)"}`} className="oc-tap-target inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-2"><Icon size={18} aria-hidden="true" /></a></li>)}</ul>}
+        {links.length > 0 && <ul className="flex gap-1" aria-label="Club links">{links.map(({ label, url, icon: Icon }) => <li key={label}><a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${profile.name} ${label}${label === "Email" ? "" : " (opens in a new tab)"}`} className="oc-tap-target inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-2"><Icon size={20} aria-hidden="true" /></a></li>)}</ul>}
       </div>}
     </div>
   </div>
@@ -89,7 +89,7 @@ export function MembersSection({ profile, assetPreview = false }: SectionProps) 
   return <section className={sectionClass} aria-labelledby="club-members">
     <h2 id="club-members">What members do</h2>
     {sections.map((s, i) => <ProfileSection key={i} section={s} assetPreview={assetPreview} parent="What members do" />)}
-    {m.features.length > 0 && <div className="oc-club-subsection"><h3>Projects and highlights</h3><ul className="oc-club-feature-list">{m.features.map((f, i) => <li key={i}><h4>{f.title}</h4>{f.description && <p>{f.description}</p>}{f.url && <a className="oc-tap-link" href={f.url} target="_blank" rel="noopener noreferrer">Learn more about {f.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={13} aria-hidden="true" /></a>}</li>)}</ul></div>}
+    {m.features.length > 0 && <div className="oc-club-subsection"><h3>Projects and highlights</h3><ul className="oc-club-feature-list">{m.features.map((f, i) => <li key={i}><h4>{f.title}</h4>{f.description && <p>{f.description}</p>}{f.url && <a className="oc-tap-link" href={f.url} target="_blank" rel="noopener noreferrer">Learn more about {f.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={14} aria-hidden="true" /></a>}</li>)}</ul></div>}
     <MemberOutcomes profile={profile} />
     {accolades.length > 0 && <div className="oc-club-subsection"><h3>Recognition</h3><ul className="oc-club-check-list">{accolades.map((a, i) => <li key={i}><Check size={16} aria-hidden="true" />{a}</li>)}</ul></div>}
     {gallery.length > 0 && <div className="oc-club-subsection"><h3>A look inside</h3><div className="mt-4 grid grid-cols-2 gap-3">{gallery.map((g, i) => <figure key={i}><img src={clubAssetSource(g.url, assetPreview)} alt={g.caption || "Club activity"} className="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />{g.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{g.caption}</figcaption>}</figure>)}</div></div>}

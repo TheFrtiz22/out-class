@@ -388,7 +388,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                     )
                                 }
                               >
-                                <Copy size={15} />
+                                <Copy size={16} />
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -398,7 +398,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                     aria-label={`Invitation actions for ${row.name}`}
                                     disabled={busy}
                                   >
-                                    <MoreHorizontal size={18} />
+                                    <MoreHorizontal size={20} />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
