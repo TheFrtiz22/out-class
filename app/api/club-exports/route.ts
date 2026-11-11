@@ -7,10 +7,13 @@ import { clubExportFilter, clubExportKinds, clubExportPermissions } from "@/lib/
 import { csvFilename, toCsv } from "@/lib/csv"
 import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { auditSupportAction } from "@/utils/support-audit"
+import { clubHasFeature } from "@/utils/club-features"
 
 const query = z.object({ clubId: z.string().uuid(), kind: z.enum(clubExportKinds), roundId: z.string().uuid().optional(), eventId: z.string().uuid().optional() }).strict()
   // A filter is accepted only for the kind it narrows (round → applicants, event → attendance/RSVPs).
   .refine(q => (["roundId", "eventId"] as const).every(key => q[key] === undefined || clubExportFilter[q.kind] === key))
+// Thrown only after both capability checks pass, so outsiders never learn the switch state.
+class ExportFeatureOff extends Error {}
 const privateHeaders = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" }
 
 export async function GET(request: Request) {
@@ -24,6 +27,8 @@ export async function GET(request: Request) {
     const { table, clubName } = await prisma.$transaction(async tx => {
       // Re-check inside the snapshot so a revoked leader cannot export.
       const member = await authorizeClubTransaction(tx, clubId, user.id, clubExportPermissions[kind], { readOnly: true, allowSuspendedRead: true })
+      // Pilot switch (default off), read on the server in the same snapshot; suspension does not affect it.
+      if (!(await clubHasFeature(tx, clubId, "csvExport"))) throw new ExportFeatureOff()
       const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true, profileFieldVisibility: true } })
       // The club's profile field choice decides which profile columns exist at all.
       const profileFields = normalizeProfileFieldVisibility(club.profileFieldVisibility)
@@ -41,6 +46,7 @@ export async function GET(request: Request) {
       "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${csvFilename(clubName, kind)}"` } })
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")) throw error
+    if (error instanceof ExportFeatureOff) return new Response("CSV export is not enabled for this club.", { status: 403, headers: privateHeaders })
     return new Response("Export unavailable", { status: 403, headers: privateHeaders })
   }
 }
