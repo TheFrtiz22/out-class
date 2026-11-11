@@ -21,7 +21,7 @@ import { InterviewFeedbackPanel } from "@/components/interview-feedback"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 import { applicationDecisionGroup, decisionFilters, type DecisionFilter } from "@/lib/application-decisions"
 import { type ApplicantSort } from "@/lib/live-applicant-sorting"
-import { applicantLane } from "@/lib/applicant-board"
+import { applicantLane, isOptimisticBoardMove, withApplicantStatus } from "@/lib/applicant-board"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, applicantSortOptions, type ApplicantLane } from "./live-applicant-views"
 import { useListSort } from "@/hooks/use-list-sort"
 import { SortControl } from "@/components/ui/sort-control"
@@ -256,6 +256,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [quickQueue, setQuickQueue] = useState<string[] | null>(null)
   const [boardMove, setBoardMove] = useState<{ id: string; lane: ApplicantLane } | null>(null)
   const [boardError, setBoardError] = useState("")
+  const [boardSaving, setBoardSaving] = useState<string | null>(null)
+  const [mutationKind, setMutationKind] = useState<"review" | "round" | "decision" | null>(null)
   const mutating = useRef(false)
   // Bumped whenever a write starts, so a background read that began earlier never lands after it.
   const mutationEpoch = useRef(0), revalidateTicket = useRef(0)
@@ -462,7 +464,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       return
     }
     mutating.current = true; mutationEpoch.current++
-    setBusy(true)
+    setBusy(true); setMutationKind(kind)
     setMessage("")
     try {
       if (kind === "review") {
@@ -519,7 +521,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       )
     } finally {
       mutating.current = false
-      setBusy(false)
+      setBusy(false); setMutationKind(null)
     }
   }
   const canDecide = hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")
@@ -528,8 +530,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (!canDecide || busy || !pendingCandidate(app) || applicantLane(app.status) === lane) return false
     return lane !== "interview" || isInterviewRecruitmentRound(data?.rounds.find(item => item.id === app.roundId)?.type || "")
   }
-  async function writeStatus(app: Candidate, status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED") {
+  async function writeStatus(app: Candidate, status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED", onSaved?: () => void) {
     await setApplicationStatus({ clubId: membership.clubId, applicationId: app.id, status, expectedStatus: app.status === "DRAFTING" ? undefined : app.status })
+    onSaved?.()
     try {
       if (!isCurrent()) throw new Error("Applicant scope changed")
       const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
@@ -546,9 +549,18 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     const app = applicants.find(candidate => candidate.id === boardMove?.id)
     if (!app || !boardMove || !canMove(app, boardMove.lane) || mutating.current) return
     mutating.current = true; mutationEpoch.current++; setBusy(true); setBoardError("")
-    try { await writeStatus(app, status); setBoardMove(null) }
-    catch { setBoardError("This move could not be saved. Check your current access, then try again.") }
-    finally { mutating.current = false; setBusy(false) }
+    // Review and interview moves publish nothing, so the card moves now. The write still carries
+    // expectedStatus (the revision check) and a refused or conflicting move puts the card back.
+    // Final decisions wait for the server inside the dialog.
+    const optimistic = isOptimisticBoardMove(status)
+    let saved = false
+    if (optimistic) { setData(page => withApplicantStatus(page, app.id, status)); setBoardMove(null) } else setBoardSaving(status)
+    try { await writeStatus(app, status, () => { saved = true }); setBoardMove(null) }
+    catch {
+      if (optimistic && !saved) setData(page => withApplicantStatus(page, app.id, app.status, status))
+      if (!optimistic || !saved) setBoardError("This move could not be saved. Check your current access, then try again.")
+    }
+    finally { mutating.current = false; setBusy(false); setBoardSaving(null) }
   }
   async function quickDecision(status: "ACCEPTED" | "REJECTED") {
     if (!active || !canDecide || !pendingCandidate(active) || mutating.current || !quickQueue) return
@@ -748,6 +760,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {decisionGroup==="rejected"&&<p className="text-sm text-muted-foreground">Rejected applications keep their reviews and decision history. Open one to reconsider it; that returns it to review and does not change the student’s account or membership.</p>}
+      {!boardMove && boardError && <p role="alert" className="text-sm text-destructive">{boardError}</p>}
       {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
@@ -935,7 +948,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     <NativeSelect id="move-round" className={selectStyle} disabled={busy} value={targetRound} onChange={(event) => setTargetRound(event.target.value)}>{data.rounds.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect>
                     <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button>
                       <DisabledReason reason={!busy && (finalStatus ? "Final decisions can’t move rounds. Reconsider a rejected application first; correct other decisions with the decision buttons." : dirty ? "Save your review before moving." : false)}>
-                        <Button disabled={busy || dirty || finalStatus || targetRound === active.roundId} onClick={() => { setMessage(""); void mutate("round") }}>Move round</Button>
+                        <Button disabled={busy || dirty || finalStatus || targetRound === active.roundId} loading={mutationKind === "round"} onClick={() => { setMessage(""); void mutate("round") }}>{mutationKind === "round" ? "Moving…" : "Move round"}</Button>
                       </DisabledReason></div>
                     {message && <p role="status" className="text-sm">{message}</p>}</>}
                   {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle assignment</DialogTitle><DialogDescription>{dossierName(active)}</DialogDescription></DialogHeader>
@@ -953,7 +966,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </Sheet>
       <Dialog open={!!boardMove} onOpenChange={value => { if (!value && !busy) setBoardMove(null) }}><DialogContent><DialogHeader><DialogTitle>{boardMove?.lane === "closed" ? "Choose the final decision" : "Move this candidate?"}</DialogTitle><DialogDescription>{applicants.find(app => app.id === boardMove?.id) && name(applicants.find(app => app.id === boardMove?.id)!)} · This updates the applicant’s status. Final decisions are visible to the applicant and publish their decision notification.</DialogDescription></DialogHeader>
         {boardError && <p role="alert" className="text-sm text-destructive">{boardError}</p>}
-        <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setBoardMove(null)}>Cancel move</Button>{boardMove?.lane === "closed" ? <><Button variant="outline" disabled={busy} onClick={() => void confirmBoardMove("REJECTED")}>Deny candidate</Button><Button disabled={busy} onClick={() => void confirmBoardMove("ACCEPTED")}>Accept candidate</Button></> : <Button disabled={busy} onClick={() => void confirmBoardMove(boardMove?.lane === "interview" ? "INTERVIEWING" : boardMove?.lane === "decision" ? "WAITLISTED" : "IN_REVIEW")}>Confirm move</Button>}</div>
+        <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setBoardMove(null)}>Cancel move</Button>{boardMove?.lane === "closed" ? <><Button variant="outline" disabled={busy} loading={boardSaving === "REJECTED"} onClick={() => void confirmBoardMove("REJECTED")}>{boardSaving === "REJECTED" ? "Saving…" : "Deny candidate"}</Button><Button disabled={busy} loading={boardSaving === "ACCEPTED"} onClick={() => void confirmBoardMove("ACCEPTED")}>{boardSaving === "ACCEPTED" ? "Saving…" : "Accept candidate"}</Button></> : <Button disabled={busy} loading={boardSaving === "WAITLISTED"} onClick={() => void confirmBoardMove(boardMove?.lane === "interview" ? "INTERVIEWING" : boardMove?.lane === "decision" ? "WAITLISTED" : "IN_REVIEW")}>{boardSaving ? "Saving…" : "Confirm move"}</Button>}</div>
       </DialogContent></Dialog>
       <Dialog
         open={!!decision}

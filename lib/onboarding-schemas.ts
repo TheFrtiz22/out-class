@@ -1,5 +1,6 @@
 import { gpaSchema, linkedinUrlSchema } from "@/lib/student-profile"
 import { z } from "zod"
+import { newPasswordSchema } from "@/lib/password-policy"
 
 // ─── Step 1: Account Basics ───────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ export const accountBasicsSchema = z.object({
 })
 
 export const registrationSchema = accountBasicsSchema.extend({
-  password: z.string().min(8, "Use at least 8 characters").max(72, "Use at most 72 characters"),
+  password: newPasswordSchema,
 })
 
 export type AccountBasicsData = z.infer<typeof accountBasicsSchema>

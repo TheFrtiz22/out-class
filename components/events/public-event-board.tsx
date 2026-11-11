@@ -461,15 +461,19 @@ export function RsvpControls({
     };
   }, [event.id, identity, retry]);
   async function change(next: boolean) {
+    // Optimistic: show the new RSVP at once; the server's answer (capacity, deadline) confirms or restores it.
+    const previous = going;
+    setGoing(next);
     setBusy(true);
     setError("");
     try {
       const r = await setCampusEventRsvp({ eventId: event.id, going: next });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { setGoing(previous); setError(r.error); return; }
       setGoing(r.going);
       onChanged(r.count);
       window.dispatchEvent(new Event("outclass-event-rsvp"));
     } catch (e) {
+      setGoing(previous);
       setError(userMessage(e, "Could not update RSVP."));
     } finally {
       setBusy(false);
@@ -582,16 +586,20 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     setBusy(true);
     setError("");
     setNotice("");
+    // Optimistic: the row leaves at once and returns to its place if the server refuses.
+    const index = rows.findIndex((e) => e.eventId === id), removed = rows[index];
+    const restore = () => { if (removed) setRows((r) => r.some((e) => e.eventId === id) ? r : [...r.slice(0, index), removed, ...r.slice(index)]); };
+    setRows((r) => r.filter((e) => e.eventId !== id));
     try {
       const r = await setCampusEventRsvp({ eventId: id, going: false });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { restore(); setError(r.error); return; }
       ++readVersion.current;
       setLoading(false);
       setError("");
       setNotice("Your RSVP was cancelled.");
-      setRows((r) => r.filter((e) => e.eventId !== id));
       onCancelled(id);
     } catch {
+      restore();
       setError("Could not cancel. Please try again.");
     } finally {
       setBusy(false);
