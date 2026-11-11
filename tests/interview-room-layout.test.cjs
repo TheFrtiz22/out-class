@@ -17,7 +17,7 @@ function harness(opts={}){
  const api={resolveInterviewRoomEntry:opts.resolveEntry||(async input=>input),getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
  api.prepareInterviewAdvance=async scope=>{if(denied)throw Error('revoked');const next=queue.nextInterviewApplicant(pipeline.applications,scope.roundId,scope.applicationId);return next?{moveId:'move',scope:{clubId:scope.clubId,roundId:scope.roundId,applicationId:next.id}}:null};
  api.confirmInterviewAdvance=async receipt=>{confirmations.push(receipt);if(confirmationDenied)throw Error('disconnected');return{confirmed:true}};
- new Function('require','module','exports','window','sessionStorage','requestAnimationFrame','setInterval','clearInterval',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/components/shell/focus-frame-context'?{useFocusFrame:details=>frames.push(details)}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{location,history,addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn(),()=>0,()=>{});
+ new Function('require','module','exports','window','sessionStorage','requestAnimationFrame','setInterval','clearInterval',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/components/shell/focus-frame-context'?{useFocusFrame:details=>frames.push(details)}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{location,history,addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn(),()=>0,()=>{});
  const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){exits++}};
  return{frames,storage,confirmations,exits:()=>exits,denyConfirmation:v=>confirmationDenied=v,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
 }
@@ -57,7 +57,7 @@ test('failed arrival confirmation retains only its receipt and resumes after ref
  assert.equal(kit(t).props.applicationId,'b');assert.deepEqual(restored.confirmations,[{moveId:'move',clientId:'tab'}]);assert.deepEqual(JSON.parse(restored.storage.get('outclass-interview:club:member')),{roundId:'r',applicationId:'b'});
 });
 
-test('frame Exit from the interview room asks before discarding unsaved evaluation work',()=>{
+test('frame Exit from the interview room asks before discarding unsaved evaluation work',async()=>{
  const frames=[],exits=[],confirms=[];let state=[];
  const react={useState:v=>{const value=state.length?state.shift():v;return[value,()=>{}]},useRef:v=>({current:v}),useCallback:fn=>fn,useEffect(){},useLayoutEffect(){}};
  const member={id:'m',clubId:'club',club:{name:'MII',color:'#123456'},permissions:['applications.review']};
@@ -65,13 +65,13 @@ test('frame Exit from the interview room asks before discarding unsaved evaluati
  const mod={exports:{}};
  const mocks={react,'@/components/shell/focus-frame-context':{useFocusFrame:d=>frames.push(d)},'@/contexts/auth-context':{useAuth:()=>({user:{id:'u',memberships:[member]},loading:false,activeClubId:'club',selectClub(){}})},'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null})},'@/lib/permissions':{hasPermission:(m,p)=>m.permissions.includes(p)}};
  const win={confirm:message=>{confirms.push(message);return win.answer}};
- new Function('require','module','exports','window',code)(n=>mocks[n]||(n.endsWith('.css')?{}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n)),mod,mod.exports,win);
+ new Function('require','module','exports','window',code)(n=>mocks[n]||(n.endsWith('.css')?{}:n==='@/components/ui/confirm-dialog'?{useConfirm:()=>async options=>win.confirm(options.title)}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n)),mod,mod.exports,win);
  const render=(locked,saving)=>{frames.length=0;state=[locked,saving];mod.exports.InterviewWorkspaceView({onExit:()=>exits.push('exit'),scoped:true});return frames[0]};
  assert.deepEqual(render(false,false).club,{name:'MII',color:'#123456'});
  render(false,false).onExit();assert.deepEqual(exits,['exit']);assert.deepEqual(confirms,[],'nothing unsaved: leave at once');
- win.answer=false;render(true,false).onExit();assert.deepEqual(exits,['exit'],'unsaved and declined: stay');assert.equal(confirms.length,1);
- win.answer=true;render(true,false).onExit();assert.deepEqual(exits,['exit','exit'],'unsaved and confirmed: leave');
- render(true,true).onExit();assert.equal(exits.length,2,'a save in flight blocks leaving');
+ win.answer=false;await render(true,false).onExit();assert.deepEqual(exits,['exit'],'unsaved and declined: stay');assert.equal(confirms.length,1);
+ win.answer=true;await render(true,false).onExit();assert.deepEqual(exits,['exit','exit'],'unsaved and confirmed: leave');
+ await render(true,true).onExit();assert.equal(exits.length,2,'a save in flight blocks leaving');
  assert.equal((frames.length=0,state=[false,false],mod.exports.InterviewWorkspaceView({scoped:true}),frames[0].onExit),undefined,'without an exit handler the frame keeps its Exit link');
 });
 test('an exact room link the server reports unavailable shows the cannot-open state and never opens a candidate',async()=>{

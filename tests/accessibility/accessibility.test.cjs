@@ -98,10 +98,12 @@ test('admin: named table, inspection dialog and keyboard dismissal using fiction
     await p.getByLabel('Investigation / support reason').fill('Accessibility fixture inspection');await p.getByRole('button',{name:'Inspect',exact:true}).click();await p.getByRole('dialog').waitFor();await scan(p,'admin-inspection');await p.keyboard.press('Escape');await p.getByRole('dialog').waitFor({state:'hidden'});
   }finally{await f.close();}
 });
-test('voting: joining, persistent candidate announcement and ballot result',async()=>{
+test('voting history: read-only outcomes and closing an unfinished board session',async()=>{
   const f=await pageFor(`${fixture.url}/?case=voting`);const p=f.page;try{
-    await p.getByRole('button',{name:'Join session',exact:true}).click();await p.getByRole('button',{name:'Pass',exact:true}).waitFor();assert.match(await p.getByRole('status').first().innerText(),/Candidate 1 of 1/);await scan(p,'voting-open');
-    await p.getByRole('button',{name:'Pass',exact:true}).click();await p.getByRole('status').filter({hasText:'Your ballot: Pass'}).waitFor();await scan(p,'voting-recorded');
+    await p.getByRole('heading',{name:'Voting history'}).waitFor();await scan(p,'voting-history');
+    await p.getByRole('button',{name:'Close session',exact:true}).click();await p.getByRole('alertdialog').waitFor();await scan(p,'voting-history-close');
+    await p.getByRole('alertdialog').getByRole('button',{name:'Close session',exact:true}).click();await p.getByText('This session was not closed').waitFor({state:'detached'});
+    assert.deepEqual(await p.evaluate(()=>window.fixtureCommands),['COMPLETE_PASS','FINISH']);
   }finally{await f.close();}
 });
 const publicRoutes=['/','/?audience=leader','/about','/uva','/request-school','/login','/signup','/forgot-password','/reset-password','/platform/login'];

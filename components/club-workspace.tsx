@@ -1,5 +1,6 @@
 "use client"
 import { PillSelect } from "@/components/ui/pill-select"
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ClubCalendar } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/ui/page-header"
@@ -72,6 +73,7 @@ export function ClubWorkspace({
 }) {
   const router = useRouter();
   const params = useSearchParams();
+  const confirm = useConfirm();
   // Old section/tool/tab values (bookmarks, notifications, email) move to their current home.
   const canonical = canonicalClubWorkspaceHref(clubId, params);
   useEffect(() => { if (canonical && !navigateWithinClub(canonical, true)) router.replace(canonical); }, [canonical, router]);
@@ -187,9 +189,9 @@ export function ClubWorkspace({
     // Opening adds a history entry, so Back closes the drawer; switching sections replaces it.
     if (settingsSection) router.replace(href, { scroll: false }); else router.push(href, { scroll: false });
   }
-  function closeRecruitingSettings() {
+  async function closeRecruitingSettings() {
     if (document.querySelector('[data-saving="true"]')) return;
-    if (document.querySelector('[data-rule-dirty="true"]') && !window.confirm("Discard unsaved rule changes?")) return;
+    if (document.querySelector('[data-rule-dirty="true"]') && !(await confirm({ title: "Discard rule changes?", description: "Your unsaved rule changes will be lost.", confirmLabel: "Discard changes", cancelLabel: "Keep editing", tone: "danger" }))) return;
     router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${withRecruitingSettings(params.toString(), null)}`, { scroll: false });
   }
   if (suspended) return <div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div>;

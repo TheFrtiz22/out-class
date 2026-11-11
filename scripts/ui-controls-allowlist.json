@@ -135,12 +135,6 @@
   },
   {
    "rule": "raw-button",
-   "file": "components/live-voting/member-voting-pad.tsx",
-   "max": 2,
-   "reason": "Pass / No Pass vote tiles on the solid voting pad; whole-surface choice targets."
-  },
-  {
-   "rule": "raw-button",
    "file": "components/meeting-workspace.tsx",
    "max": 1,
    "reason": "Whole meeting card is the target (oc-content-panel); navy focus outline."
@@ -159,21 +153,9 @@
   },
   {
    "rule": "raw-button",
-   "file": "components/views/club-management-portal-view.tsx",
-   "max": 1,
-   "reason": "Logo dropzone is a whole-surface upload target."
-  },
-  {
-   "rule": "raw-button",
    "file": "components/views/leader-dashboard/live-applicant-views.tsx",
    "max": 1,
    "reason": "Applicant table name cell, mobile card and kanban card are whole-row targets in the solid applicant table."
-  },
-  {
-   "rule": "raw-button",
-   "file": "components/views/leader-dashboard/pipeline-view.tsx",
-   "max": 1,
-   "reason": "Collapsed pipeline column is a whole-column target."
   },
   {
    "rule": "raw-toggle",
@@ -216,12 +198,6 @@
    "file": "components/live-voting/room-view.tsx",
    "max": 1,
    "reason": "Accept / Hold / Reject ballot grid on the solid voting surface (room.css .vr-votes). Listed as skipped."
-  },
-  {
-   "rule": "toggle-group",
-   "file": "components/views/club-manager/broadcast-messages-view.tsx",
-   "max": 1,
-   "reason": "Audience checklist inside a popover (multi-select list rows). Listed as skipped."
   }
  ]
 }

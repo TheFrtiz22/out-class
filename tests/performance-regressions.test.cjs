@@ -12,6 +12,7 @@ function loader(mocks = {}, globals = {}) {
     const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
     new Function('require', 'module', 'exports', ...Object.keys(globals), code)(name => {
       if (name in mocks) return mocks[name];
+      if (name === '@/components/ui/confirm-dialog') return require('./helpers/confirm-stub.cjs');
       if (name.startsWith('@/components/')) return new Proxy({}, { get: (_, key) => String(key) });
       if (name.endsWith('.css')) return {};
       if (name.startsWith('@/')) return load(name.slice(2) + '.ts');

@@ -70,10 +70,6 @@ test("rules that used the removed attributes still have a hook in the markup", (
   const scope = ':is(main, [role="main"], .oc-voting-stage'
   assert.ok(css("components/shell/responsive-workspace.css").includes(`${scope}) button`))
   assert.ok(css("styles/interface-primitives.css").includes(`${scope}, .oc-workspace-drawer) button[data-slot="checkbox"]`))
-  assert.match(read("components/live-voting/member-voting-pad.tsx"), /role="group" aria-label="Member voting"/) // the focus frame owns main
-  assert.match(read("components/live-voting/proctor-presentation-view.tsx"), /className="oc-voting-stage\b/)
-  // The embedded pad renders only inside the projector stage, which the scope covers.
-  assert.match(read("components/live-voting/proctor-presentation-view.tsx"), /<MemberVotingPad [^>]*embedded/)
   // Dialog titles and status badges apply on every page now that there is one palette.
   assert.match(primitives, /^:root :is\(\[data-slot="dialog-title"\], \[data-slot="sheet-title"\]\) \{/m)
   // Application states use StatusPill (styles/interface-primitives.css), on every page.

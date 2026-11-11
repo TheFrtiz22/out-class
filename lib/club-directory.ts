@@ -40,8 +40,9 @@ export const emptyDirectoryFilters: DirectoryFilters = {
   sort: "name",
   recruitment: "all",
 }
+// Explore server-renders this list, so matching and ordering pin the locale (server and browser agree).
 export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilters, now = Date.now()) {
-  const words = filters.query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
+  const words = filters.query.trim().toLocaleLowerCase("en-US").split(/\s+/).filter(Boolean)
   const deadlineOrder = (club: DirectoryClub) => {
     const recruitment = clubRecruitment(club, now)
     return recruitment.available && recruitment.deadline ? +recruitment.deadline : Infinity
@@ -50,7 +51,7 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
     .filter((club) => {
       const text = [club.name, club.category, club.pitch, club.description || "", ...club.tags, ...readMarketing(club.marketing).placements]
         .join(" ")
-        .toLocaleLowerCase()
+        .toLocaleLowerCase("en-US")
       if (!words.every((word) => text.includes(word))) return false
       if (filters.category !== "all" && club.category.toLowerCase() !== filters.category.toLowerCase()) return false
       const recruitment = clubRecruitment(club, now)
@@ -71,7 +72,7 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
           ? deadlineOrder(a) - deadlineOrder(b)
           : filters.sort === "acceptance"
           ? (a.acceptanceRate ?? Infinity) - (b.acceptanceRate ?? Infinity)
-          : 0) || a.name.localeCompare(b.name),
+          : 0) || a.name.localeCompare(b.name, "en-US"),
     )
 }
 export function recruitmentStage(status: string) {

@@ -122,15 +122,20 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
       {showFilters && <Panel className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <SegmentedControl label="Read status" size="compact" value={readFilter === "unread" ? "unread" : "all"} onChange={value => setReadFilter(value)} options={[{ value: "all", label: "All" }, { value: "unread", label: unread ? `Unread · ${unread}` : "Unread" }]} />
-          <PillSelect label="Filter by club" value={club} active={club !== "all"} onChange={setClub}
-            options={[{ value: "all", label: "All clubs" }, ...clubs.map((name) => ({ value: name, label: name })), ...(club !== "all" && !clubs.includes(club) ? [{ value: club, label: club }] : [])]} />
-          <FilterPopover label="Filter" title="Notification filters" align="start" count={[filter !== "All", readFilter === "read", sort !== "priority", !!query].filter(Boolean).length}>
-            <SearchField aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} />
-            <SegmentedControl label="Notification type" size="compact" value={filter} onChange={setFilter} options={filters.map((value) => ({ value, label: value }))} />
-            <SegmentedControl label="Filter by read status" size="compact" value={readFilter} onChange={setReadFilter} options={[{ value: "all", label: "All read statuses" }, { value: "unread", label: "Unread" }, { value: "read", label: "Read" }]} />
-            <PillSelect label="Sort notifications" prefix="Sort" value={sort} active={sort !== "priority"} onChange={setSort}
-              options={[{ value: "priority", label: "Recruiting priority" }, { value: "newest", label: "Newest first" }, { value: "oldest", label: "Oldest first" }, { value: "unread", label: "Unread first" }, { value: "urgent", label: "Urgent first" }, { value: "club", label: "Club A–Z" }]} />
+          <SearchField aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} containerClassName="min-w-0 flex-1 basis-60" />
+          <SegmentedControl label="Read status" size="compact" value={readFilter} onChange={setReadFilter} options={[{ value: "all", label: "All" }, { value: "unread", label: "Unread", count: unread || undefined }, { value: "read", label: "Read" }]} />
+          <FilterPopover label="Filter" title="Notification filters" align="end" count={[filter !== "All", club !== "all", sort !== "priority"].filter(Boolean).length}>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Type</span>
+              <SegmentedControl label="Notification type" size="compact" value={filter} onChange={setFilter} options={filters.map((value) => ({ value, label: value }))} />
+            </div>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Club</span>
+              <PillSelect label="Filter by club" size="compact" value={club} active={club !== "all"} onChange={setClub}
+                options={[{ value: "all", label: "All clubs" }, ...clubs.map((name) => ({ value: name, label: name })), ...(club !== "all" && !clubs.includes(club) ? [{ value: club, label: club }] : [])]} />
+            </div>
+            <div className="oc-filter-field"><span className="oc-filter-field-label">Sort</span>
+              <PillSelect label="Sort notifications" size="compact" value={sort} active={sort !== "priority"} onChange={setSort}
+                options={[{ value: "priority", label: "Recruiting priority" }, { value: "newest", label: "Newest first" }, { value: "oldest", label: "Oldest first" }, { value: "unread", label: "Unread first" }, { value: "urgent", label: "Urgent first" }, { value: "club", label: "Club A–Z" }]} />
+            </div>
           </FilterPopover>
           {filtering && (<Button variant="ghost" size="sm" onClick={() => { resetFilters(); setSort("priority") }}>Clear filters</Button>)}
         </div>

@@ -26,6 +26,7 @@ import { useWorkspaceAccess } from "@/components/shell/use-workspace-access"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
 import { NavigationSearch } from "@/components/shell/navigation-search"
+import { KeyboardShortcuts } from "@/components/shell/keyboard-shortcuts"
 import { IconButton } from "@/components/ui/icon-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
@@ -36,7 +37,7 @@ import { getDurableNotifications } from "@/lib/workspace-read"
 import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { studentNav, adminNav, type ViewId } from "@/lib/views"
-import { canLeaveWorkspace, type ProductNavItem } from "@/lib/product-navigation"
+import { canLeaveWorkspace, clubSearchLinks, type ProductNavItem } from "@/lib/product-navigation"
 import { activeNavItem, bottomBarItems, moreSections, railItems, workspaceOptionName, type RailSection } from "@/lib/navigation"
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
@@ -192,6 +193,9 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       <nav aria-label={section.label ?? section.name} className="space-y-1">{section.items.filter(i => !i.hidden).map(item => navLink(item))}</nav>
     </div>)}
   </div> }
+  const railLinks = railItems(railSections).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! }))
+  // Meetings, Events and Members of this club, each only when its page would open; one entry per address.
+  const clubLinks = allowed && !platform ? clubSearchLinks(member, clubId).filter(link => !railLinks.some(rail => rail.href === link.href)) : []
   const otherClubs = manager && !platform ? access.clubs.filter(club => club.clubId !== clubId) : []
   return <div className="min-h-dvh bg-background text-foreground" data-product-shell={platform ? "admin" : manager ? "manager" : "personal"} data-shell-chrome={chrome ? undefined : "hidden"} style={{ "--oc-club-accent": member?.club.color || "var(--brand-orange)" } as CSSProperties}>
     <a href="#workspace-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-card focus:p-3">Skip to content</a>
@@ -221,10 +225,11 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       if ("view" in step) navigate(step.view)
       else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)
     }} />}
+    <KeyboardShortcuts />
     <NavigationSearch clubId={manager ? clubId : undefined} leader={manager} open={search} onOpenChange={setSearch} onDismissAutoFocus={() => {
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railItems(railSections).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! })), ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])]} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])]} onNavigate={onNavigate} />
   </div>
 }

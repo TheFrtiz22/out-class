@@ -16,7 +16,7 @@ const expected = [
   "interview-native-concurrency", "invitation-schedules-e2e", "mock-recruiting-cycle-native",
   "invitation-schedules-native", "onboarding-concurrency", "onboarding-e2e",
   "recipient-audiences-e2e", "recipient-audiences-native",
-  "recruitment-native", "recruitment-offers-native", "resume-import-runtime",
+  "recruitment-cycle-start-native", "recruitment-native", "recruitment-offers-native", "resume-import-runtime",
   "scheduler-polling-native", "scheduler-release-native",
   "session-revocation-e2e", "settings-navigation-e2e", "signup-privacy-e2e",
   "student-claim-e2e", "share-card-production-e2e", "clock-skew-hydration-e2e",
@@ -33,6 +33,7 @@ const runners = {
     "campus-event-discovery-browser", "campus-event-discovery",
     "interview-collaboration-native", "interview-native-concurrency",
     "mock-recruiting-cycle-native", "onboarding-concurrency",
+    "recruitment-cycle-start-native",
     "application-submit-race-native", "invitation-accept-race-native",
     "meeting-check-in-race-native", "club-claim-race-native",
   ],
@@ -53,8 +54,8 @@ const runners = {
   ],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 42, "The inventory must track all 42 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 42-test inventory");
+assert.equal(expected.length, 43, "The inventory must track all 43 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 43-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");

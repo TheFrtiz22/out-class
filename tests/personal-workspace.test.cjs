@@ -10,7 +10,7 @@ function load(file,mocks={}) {
  if(mocks['next/navigation'])mocks['next/navigation']={usePathname:()=>'/',useSearchParams:()=>new URLSearchParams(),...mocks['next/navigation']};
  mocks={'@/components/shell/workspace-selector':{WorkspaceSelector:'WorkspaceSelector',useWorkspaceOptions:()=>[]},...mocks};
  const mod={exports:{}},code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
- new Function('require','module','exports','window','document','setInterval','clearInterval',code)(name=>mocks[name]||(name.endsWith('.css')?{}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>String(key)}):name.startsWith('@/')?load(path.resolve(name.slice(2)+'.ts'),mocks):require(name)),mod,mod.exports,mocks.window,{querySelector:()=>null},()=>1,()=>{});
+ new Function('require','module','exports','window','document','setInterval','clearInterval',code)(name=>mocks[name]||(name.endsWith('.css')?{}:name==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>String(key)}):name.startsWith('@/')?load(path.resolve(name.slice(2)+'.ts'),mocks):require(name)),mod,mod.exports,mocks.window,{querySelector:()=>null},()=>1,()=>{});
  return mod.exports;
 }
 function hooks() {
@@ -56,7 +56,7 @@ function trackerHarness(records,scope='status',params='') {
  const h=hooks(),calls=[],navigation=[];const auth={user:{id:'student'},loading:false,refreshUser:async()=>{}};
  const shared={focusApplicationClubId:null,clearApplicationFocus(){shared.focusApplicationClubId=null},focusApplication:id=>calls.push(['focus',id]),syncApplications:items=>calls.push(['applications',items]),syncApplicationBookings:items=>calls.push(['bookings',items])};
  let server=records,fail=false,query=params;const revalidation={};
- const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
+ const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-server-now':{useServerAnchoredNow:()=>Date.now()},'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
  return {...h,calls,auth,navigation,revalidation,render:()=>h.render(()=>C({scope,onNavigate:view=>navigation.push(view)})),setRecords:records=>server=records,fail:()=>fail=true,query:value=>query=value,shared};
 }
 const cards=tree=>nodes(tree).filter(node=>node.type==='ApplicationStatusCard');
@@ -147,14 +147,14 @@ test('signed-in account menu mounts the existing Demo entry; anonymous and suppo
  assert.equal(entry().length,1);auth.isImpersonating=true;assert.equal(entry().length,0);auth.isImpersonating=false;auth.user=null;assert.equal(entry().length,0);
 });
 
-test('Demo menu respects allowed access and existing saving/unsaved guards when enabling or exiting',()=>{
+test('Demo menu respects allowed access and existing saving/unsaved guards when enabling or exiting',async()=>{
  let calls=0,saving=false,unsaved=false,confirm=false;const demo={allowed:false,isDemoEnabled:false,toggleDemo:async()=>{calls++}},h=hooks();
  const mod={exports:{}},code=ts.transpileModule(fs.readFileSync('components/demo-controls.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
- new Function('require','module','exports','document','window',code)(name=>name==='react'?h.react:name==='@/contexts/demo-context'?{useDemoMode:()=>demo}:name==='@/components/ui/dropdown-menu'?{DropdownMenuItem:'Item',DropdownMenuSeparator:'Separator'}:require(name),mod,mod.exports,{querySelector:selector=>selector.includes('data-saving')?saving:unsaved},{confirm:()=>confirm});
+ new Function('require','module','exports','document','window',code)(name=>name==='react'?h.react:name==='@/contexts/demo-context'?{useDemoMode:()=>demo}:name==='@/components/ui/dropdown-menu'?{DropdownMenuItem:'Item',DropdownMenuSeparator:'Separator'}:name==='@/components/ui/confirm-dialog'?{useConfirm:()=>async()=>confirm}:require(name),mod,mod.exports,{querySelector:selector=>selector.includes('data-saving')?saving:unsaved},{confirm:()=>confirm});
  const render=()=>h.render(()=>mod.exports.DemoMenuItems());assert.equal(render(),null);demo.allowed=true;
- let item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/Off/);item.props.onSelect();assert.equal(calls,1);
- saving=true;item.props.onSelect();assert.equal(calls,1);saving=false;unsaved=true;item.props.onSelect();assert.equal(calls,1);confirm=true;item.props.onSelect();assert.equal(calls,2);
- demo.isDemoEnabled=true;item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/exit demo/);item.props.onSelect();assert.equal(calls,3);
+ let item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/Off/);await item.props.onSelect();assert.equal(calls,1);
+ saving=true;await item.props.onSelect();assert.equal(calls,1);saving=false;unsaved=true;await item.props.onSelect();assert.equal(calls,1);confirm=true;await item.props.onSelect();assert.equal(calls,2);
+ demo.isDemoEnabled=true;item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/exit demo/);await item.props.onSelect();assert.equal(calls,3);
 });
 
 test('authoritative booking synchronization replaces cancelled/rescheduled bookings while preserving other calendar events',()=>{

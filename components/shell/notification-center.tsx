@@ -4,6 +4,7 @@ import Link from "next/link"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { Bell, CheckCheck, Check, Mail, Archive, MoreHorizontal, ArrowLeft, ArrowUpRight, CalendarDays, FileText, Megaphone, ListChecks, Users2 } from "@/components/icons"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -37,19 +38,14 @@ export function NotificationCenter({ unread, pendingInvitations, loadState, onRe
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<{ retry: () => void } | null>(null)
-  const [now, setNow] = useState(() => Date.now())
+  // Relative times show only in the open panel; the shared minute clock runs for it only then.
+  const now = useServerAnchoredNow(undefined, open)
   const working = useRef(false), navigated = useRef(false), outside = useRef(false)
   const bell = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null), selectedHeading = useRef<HTMLHeadingElement>(null)
   const filterButton = useRef<HTMLButtonElement>(null)
   const feed = notificationFeed(state.notifications, filter === "unread")
   const selected = state.notifications.find(item => item.id === selectedId)
   const count = unread + pendingInvitations
-  useEffect(() => {
-    if (!open) return
-    setNow(Date.now())
-    const timer = window.setInterval(() => setNow(Date.now()), 60000)
-    return () => window.clearInterval(timer)
-  }, [open])
   const selectedKey = selected?.id
   useEffect(() => { if (selectedKey) selectedHeading.current?.focus({ preventScroll: true }) }, [selectedKey])
 

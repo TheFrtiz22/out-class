@@ -21,6 +21,7 @@ import { questionCondition, visibleQuestionIds } from "@/lib/student-application
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -46,6 +47,7 @@ export function ApplicationBuilderView({
   const { activeClubId } = useAuth(),
     demo = useDemoMode(),
     clubId = provided || activeClubId;
+  const confirm = useConfirm();
   const [questions, setQuestions] = useState<QuestionDraft[]>([]),
     [open, setOpen] = useState(true),
     [deadline, setDeadline] = useState("");
@@ -191,12 +193,15 @@ export function ApplicationBuilderView({
           <Button
             variant="outline"
             disabled={busy || !draftSave.ready || draftSave.recovery != null}
-            onClick={() => {
+            onClick={async () => {
               if (
                 !dirty ||
-                window.confirm(
-                  "Discard unsaved application changes and reload?",
-                )
+                (await confirm({
+                  title: "Discard changes and reload?",
+                  description: "Your unsaved application changes will be lost.",
+                  confirmLabel: "Discard and reload",
+                  tone: "danger",
+                }))
               )
                 setRetry((n) => n + 1);
             }}
@@ -267,11 +272,14 @@ export function ApplicationBuilderView({
                         size="icon"
                         variant="ghost"
                         aria-label={`Remove question ${index + 1}`}
-                        onClick={() => {
+                        onClick={async () => {
                           if (
-                            window.confirm(
-                              "Remove this question? Existing submitted answers will be retained.",
-                            )
+                            await confirm({
+                              title: "Remove this question?",
+                              description: "Existing submitted answers are retained.",
+                              confirmLabel: "Remove question",
+                              tone: "danger",
+                            })
                           )
                             setQuestions((items) =>
                               withValidConditions(items.filter((x) => x.id !== q.id)),

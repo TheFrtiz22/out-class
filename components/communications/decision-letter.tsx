@@ -1,6 +1,7 @@
 'use client';
 import { LoadingState } from "@/components/ui/loading-state"
 import { useCallback,useEffect,useId,useRef,useState } from 'react';
+import { useServerAnchoredNow } from '@/hooks/use-server-now';
 import Link from 'next/link';
 import { ClubLogo } from '@/components/club-logo';
 import { useSearchParams } from 'next/navigation';
@@ -85,7 +86,8 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
   finally{if(version===requestVersion.current)setLoading(false);}
  },[applicationId,letterId]);
  useEffect(()=>{setData(null);setLoading(true);void load();const version=requestVersion.current;return()=>{if(requestVersion.current===version)requestVersion.current=version+1}},[load,recipientId]);
- useEffect(()=>{if(!data)return;const timer=setInterval(()=>setData({...data}),60000);return()=>clearInterval(timer)},[data]);
+ // Offer expiry below reads the time on render; the shared minute clock re-renders while a letter is shown.
+ useServerAnchoredNow(undefined,!!data);
  const kind:CelebrationKind=data?.letter?letterCelebration(data.letter.decision,data.letter.content):'none';
  // Celebrate only a current, live acceptance: never a historical, declined, revoked or expired offer.
  const celebratory=!!data?.letter&&data.letter.decision==='ACCEPTED'&&data.isCurrent&&data.currentStatus==='ACCEPTED'&&!data.suspended&&!['DECLINED','REVOKED','EXPIRED'].includes(data.offer?.status??'')&&!(data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)<=new Date());

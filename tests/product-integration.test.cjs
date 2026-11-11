@@ -67,7 +67,7 @@ test('student profile → Explore filters → Corkboard → shared club → appl
   assert.equal((await h.api.getApplicantSchedule(invited.id)).booking, null)
   assert.equal(h.calls(), 0)
 })
-test('leader kits → configured applicant → Pros/Cons → interview → repeated voting → reopen → explicit publish reaches student', async () => {
+test('leader kits → configured applicant → Pros/Cons → interview → board voting history closes without changing statuses', async () => {
   const h = setup(), clubId = h.store.get().clubs[0].id
   h.store.mutate(s => { s.perspective = { role: 'leader', clubId } })
   const draftRecord = h.store.get().interviews.find(i => i.clubId === clubId && !i.completedAt), scope = { clubId, applicationId: draftRecord.applicationId, roundId: draftRecord.roundId }
@@ -91,27 +91,17 @@ test('leader kits → configured applicant → Pros/Cons → interview → repea
   await h.api.saveInterviewSession({ ...scope, revision: interview.revision, draft, complete: true })
   display = await h.api.getApplicantDisplay(scope)
   assert.ok(display.sections.find(s => s.field === 'feedback').items.some(v => v.includes('strong reasoning')))
+  // Board voting is read-only history now; the seeded open session can only be closed.
   let workspace = await h.api.getVotingWorkspace(clubId), sessionId = workspace.session.id
   const before = new Map(h.store.get().applications.map(a => [a.id, a.status]))
   const command = async (action, extra = {}) => { workspace = await h.api.getVotingWorkspace(clubId, sessionId); await h.api.commandVotingSession({ clubId, sessionId, revision: workspace.session.revision, action, ...extra }); workspace = await h.api.getVotingWorkspace(clubId, sessionId) }
-  assert.equal(workspace.summary.targetReached, true); assert.equal(workspace.session.state, 'OPEN')
-  const oldPass = JSON.stringify(workspace.session.passes[0])
-  const current = workspace.session.passes[1]
-  for (const c of current.candidates.filter(c => !c.ballots.length)) await h.api.submitVotingBallot({ clubId, sessionId, passNumber: 2, applicationId: c.applicationId, decision: 'PASS' })
-  await command('COMPLETE_PASS'); await command('START_PASS')
-  assert.equal(workspace.session.currentPass, 3)
-  for (const c of workspace.session.passes[2].candidates) await h.api.submitVotingBallot({ clubId, sessionId, passNumber: 3, applicationId: c.applicationId, decision: 'PASS' })
-  await command('COMPLETE_PASS'); await command('FINISH'); await command('REOPEN'); await command('FINISH')
-  assert.equal(JSON.stringify(workspace.session.passes[0]), oldPass)
-  assert.ok(h.store.get().applications.every(a => a.status === before.get(a.id)), 'all voting and finishing preserve application statuses')
-  const passHistory = JSON.stringify(workspace.session.passes)
-  await command('PUBLISH', { applicationIds: workspace.summary.outcomes.map(o => o.applicationId) })
-  assert.ok(workspace.session.publishedAt); assert.equal(JSON.stringify(workspace.session.passes), passHistory)
-  await assert.rejects(command('REOPEN'), /sealed/)
-  h.store.stop(); h.store.start()
-  h.store.mutate(s => { s.perspective.role = 'student' })
-  const own = (await h.api.getStudentApplications()).find(a => a.clubId === clubId)
-  assert.equal(own.status, 'ACCEPTED')
+  assert.equal(workspace.session.state, 'OPEN')
+  const passHistory = JSON.stringify(workspace.session.passes.map(p => p.candidates.map(c => [c.applicationId, c.ballotCount])))
+  for (const action of ['START_PASS', 'PUBLISH', 'REOPEN']) await assert.rejects(command(action, { applicationIds: workspace.summary.outcomes.map(o => o.applicationId) }), /read-only/)
+  await command('COMPLETE_PASS'); await command('FINISH')
+  assert.equal(workspace.session.state, 'COMPLETED')
+  assert.equal(JSON.stringify(workspace.session.passes.map(p => p.candidates.map(c => [c.applicationId, c.ballotCount]))), passHistory, 'closing keeps every pass and ballot')
+  assert.ok(h.store.get().applications.every(a => a.status === before.get(a.id)), 'closing preserves application statuses')
   assert.equal(h.calls(), 0)
 })
 test('demo tutorials persist independently, keep old indices, reset deterministically, and cannot access live actions', async () => {
@@ -159,24 +149,6 @@ test('older admin demo templates reset safely without restarting saved applicati
   assert.equal(h.calls(), 0)
 })
 
-test('demo publication enforces production conflict rules and atomically rejects duplicate or moved candidates', async () => {
-  const h = setup(), clubId = h.store.get().clubs[0].id
-  h.store.mutate(s => { s.perspective.role = 'leader' })
-  let view = await h.api.getVotingWorkspace(clubId), sessionId = view.session.id
-  const command = async (action, extra = {}) => { view = await h.api.getVotingWorkspace(clubId, sessionId); return h.api.commandVotingSession({ clubId, sessionId, revision: view.session.revision, action, ...extra }) }
-  await command('COMPLETE_PASS'); await command('FINISH')
-  view = await h.api.getVotingWorkspace(clubId, sessionId)
-  const ids = view.summary.outcomes.filter(o => o.outcome === 'PASS').map(o => o.applicationId), initial = JSON.stringify(h.store.get())
-  await assert.rejects(command('PUBLISH', { applicationIds: [ids[0], ids[0]] }), /Duplicate/)
-  assert.equal(JSON.stringify(h.store.get()), initial)
-  h.store.mutate(s => { s.applications.find(a => a.id === ids[1]).roundId = s.clubs[0].rounds[0].id })
-  const moved = JSON.stringify(h.store.get())
-  await assert.rejects(command('PUBLISH', { applicationIds: ids }), /changed/)
-  assert.equal(JSON.stringify(h.store.get()), moved)
-  assert.equal((await h.api.getVotingWorkspace(clubId, sessionId)).session.publishedAt, null)
-  assert.equal(h.calls(), 0)
-})
-
 test('Demo profile photos/PDF/LinkedIn survive reload and reset with no production uploads', async () => {
   const h=setup(), initial=structuredClone(h.store.get());
   assert.equal(initial.students[0].profile.resumeUrl,'/demo/sample-resume.pdf');
@@ -199,28 +171,4 @@ test('browser-origin Demo projection has one résumé link and a working photo U
   h.store.mutate(s=>{const round=s.clubs[0].rounds.find(r=>r.id===app.roundId);round.anonymousReview=false});
   const view=await h.api.getApplicantDisplay({clubId:app.clubId,applicationId:app.id});
   assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'/images/landing/jordan-avery.jpg');
-});
-
-test('Demo voting setup → QR-scoped member join → synchronized voting → multiple passes → publish → reset stays isolated',async()=>{
- const h=setup(),state=h.store.get(),clubId=state.clubs[0].id,leader=state.memberships.find(m=>m.clubId===clubId&&m.role==='PRESIDENT'),member=state.memberships.find(m=>m.clubId===clubId&&m.id!==leader.id);
- h.store.mutate(s=>{s.perspective.role='leader';s.profileFieldVisibility={...s.profileFieldVisibility,[clubId]:{...s.profileFieldVisibility?.[clubId],gpa:true}}});
- const pool=state.applications.filter(a=>a.clubId===clubId&&a.status==='INTERVIEWING'),roundId=pool[0].roundId,candidates=pool.filter(a=>a.roundId===roundId).slice(0,2);
- const initial=structuredClone(state),config={version:1,fields:['name','photo','gpa','act','resume']};
- const id=await h.api.createVotingSession({clubId,roundId,applicationIds:candidates.map(a=>a.id),participantIds:[leader.id],targetSize:1,displayConfig:config});
- const command=(action,extra={})=>h.api.commandVotingSession({clubId,sessionId:id,revision:h.store.get().votingSessions.find(s=>s.id===id).revision,action,...extra});
- assert.equal((await h.api.getVotingJoinInfo(id)).status,'NOT_JOINABLE');await command('OPEN_JOIN');await h.api.joinVotingSession(id,member.id);await h.api.joinVotingSession(id,leader.id);
- assert.equal((await h.api.joinVotingSession(id,member.id)).alreadyJoined,true);assert.equal(h.store.get().votingSessions.find(s=>s.id===id).participants.length,2);
- await assert.rejects(command('CONFIGURE',{displayConfig:{version:1,fields:['gpa']}}),/locked/);
- await command('START_PASS');let joined=await h.api.getJoinedVotingWorkspace(id,member.id);assert.equal(joined.canManage,false);assert.equal(joined.session.activeApplicationId,candidates[0].id);
- const round=state.clubs[0].rounds.find(r=>r.id===roundId);h.store.mutate(s=>{s.applicantDisplay[round.id].config={version:1,fields:[]}});
- const view=await h.api.getApplicantDisplay({clubId,applicationId:candidates[0].id,sessionId:id});assert.deepEqual(view.configured,config.fields);
- for(const [i,app]of candidates.entries()){
-  await command('SET_CANDIDATE',{applicationId:app.id});joined=await h.api.getJoinedVotingWorkspace(id,member.id);assert.equal(joined.session.activeApplicationId,app.id);
-  for(const demoMemberId of [leader.id,member.id])await h.api.submitVotingBallot({clubId,sessionId:id,passNumber:1,applicationId:app.id,decision:i?'HOLD':'PASS',demoMemberId});
- }
- assert.equal(h.store.get().applications.find(a=>a.id===candidates[0].id).status,'INTERVIEWING');await command('COMPLETE_PASS');await command('START_PASS');
- for(const demoMemberId of [leader.id,member.id])await h.api.submitVotingBallot({clubId,sessionId:id,passNumber:2,applicationId:candidates[1].id,decision:'PASS',demoMemberId});
- await command('COMPLETE_PASS');await command('FINISH');assert.equal((await h.api.getVotingJoinInfo(id)).status,'FINISHED');await command('REOPEN');await h.api.joinVotingSession(id,member.id);await command('FINISH');await command('PUBLISH',{applicationIds:candidates.map(a=>a.id)});
- assert.equal(h.store.get().votingSessions.find(s=>s.id===id).passes.length,2);assert.ok(candidates.every(a=>h.store.get().applications.find(v=>v.id===a.id).status==='ACCEPTED'));
- h.store.reset();h.store.mutate(s=>{s.perspective.role='leader'});assert.deepEqual(h.store.get().votingSessions,initial.votingSessions);assert.equal(h.calls(),0);
 });

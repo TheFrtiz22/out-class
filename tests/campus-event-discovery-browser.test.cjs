@@ -75,9 +75,8 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.getByRole('button', { name: 'Browse all events', exact: true }).click();
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
     await filterButton.click();
-    const categories = page.getByRole('group', { name: 'Category', exact: true });
-    if (!await categories.getByRole('button', { name: 'Sports', exact: true }).count()) await page.getByRole('button', { name: /^\+\d+ more categories$/ }).click();
-    await categories.getByRole('button', { name: 'Sports', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Category', exact: true }).click();
+    await page.getByRole('option', { name: 'Sports', exact: true }).click();
     await page.getByRole('heading', { name: 'No events match these filters.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Reset filters', exact: true }).click();
     await page.keyboard.press('Escape');

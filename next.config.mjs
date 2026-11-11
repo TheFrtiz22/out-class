@@ -4,6 +4,9 @@ const nextConfig = {
   distDir: process.env.OUTCLASS_PUBLISH_BUILD
     ? ".next-publish"
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
+  // Turnstile bot checks are completely off (no script, no widget) unless BOTH keys are
+  // set at build time. Only this on/off flag reaches the browser, never the secret.
+  env: { TURNSTILE_ENABLED: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY ? "1" : "" },
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   poweredByHeader: false,
   // Interface icons are one module each (components/icons/<Name>.tsx) behind the
@@ -17,7 +20,7 @@ const nextConfig = {
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
   // Native PDF workers resolve the package manifest at runtime, outside the bundle.
   // Link-preview cards read their fonts and artwork from disk at request time (lib/share-card.tsx).
-  outputFileTracingIncludes: { "/club/**": ["./app/fonts/libre-caslon-text/*-static.ttf", "./public/brand/premium-board/04_wordmark_no_sword.svg", "./public/images/campus/sunset-rotunda-1600.webp", "./public/logos/**"], "/og/**": ["./app/fonts/libre-caslon-text/*-static.ttf", "./public/brand/premium-board/04_wordmark_no_sword.svg", "./public/images/campus/sunset-rotunda-1600.webp"], "/*": ["./prisma/certs/supabase-root.crt", "./public/brand/premium-board/07_favicon.svg", "./public/apple-icon.png", "./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
+  outputFileTracingIncludes: { "/club/**": ["./app/fonts/libre-caslon-text/*-static.ttf", "./public/brand/premium-board/04_wordmark_no_sword.svg", "./public/images/campus/sunset-rotunda-1600.webp", "./public/logos/**"], "/og/**": ["./app/fonts/libre-caslon-text/*-static.ttf", "./public/brand/premium-board/04_wordmark_no_sword.svg", "./public/images/campus/sunset-rotunda-1600.webp"], "/*": ["./prisma/certs/supabase-root.crt", "./public/brand/premium-board/07_favicon.svg", "./public/apple-icon.png", "./public/brand/pwa/apple-touch-icon-180.png", "./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
   trailingSlash: false,
   htmlLimitedBots: /.*/,
   images: { formats: ["image/avif", "image/webp"] },
@@ -48,6 +51,9 @@ const nextConfig = {
       ] },
       ...privateRoutes.map(route => ({ source: `/${route}/:path*`, headers: noindex })),
       ...["workspace", "tasks"].map(route => ({ source: `/club/:clubId/${route}/:path*`, headers: noindex })),
+      // The service worker must be revalidated on every check so a new version ships with each deploy.
+      // It lives at the root, so its default scope is "/" and Service-Worker-Allowed is not needed.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }, { key: "Content-Type", value: "application/javascript; charset=utf-8" }] },
       ...["forgot-password", "reset-password", "auth/callback"].map(route => ({ source: `/${route}`, headers: [{ key: "Referrer-Policy", value: "no-referrer" }] })),
     ]
   },

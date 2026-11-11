@@ -1,5 +1,6 @@
 "use client"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 
 import { useEffect, useRef, useState } from "react"
 import { beginPanelScheduleRevision, revalidatePanelDraft, reviewPanelPublication, publishPanelSchedule, assignPanelAvailabilityOverride, revokePanelAvailabilityOverride, generatePanelProposal, savePanelProposalDraft, discardPanelProposal, getPanelProposalWorkspace } from "@/lib/workspace-api";
@@ -23,6 +24,7 @@ import { SchedulingOverflowMenu, useSchedulingTools, type SchedulingTool } from 
 import { addDays } from "@/lib/availability"
 
 export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoStart = false, autoRequest = autoStart ? 1 : 0, autoFillPublished = false, initialWindow, initialSession, initialDate, bookingSettings, onSummary, onGenerated, onRooms, onApproved }: { visible?: boolean; clubId: string; roundId: string; autoStart?: boolean; autoRequest?: number; autoFillPublished?: boolean; initialWindow?: { start: string; end: string }; initialSession?: string; initialDate?: string; bookingSettings?: Pick<BookingSettings, "bookingPublishedAt" | "bookingPaused">; onSummary?: (summary: { required: number; filled: number; state: string; hasDraft: boolean }) => void; onGenerated?: () => void; onRooms?: () => void; onApproved?: () => void }) {
+  const confirm = useConfirm()
   const [workspace, setWorkspace] = useState<PanelWorkspace | null>(null), [draft, setDraft] = useState<PanelProposalView | null>(null)
   const [busy, setBusy] = useState(true), [error, setError] = useState(""), [notice, setNotice] = useState(""), [dirty, setDirty] = useState(false)
   const [start, setStart] = useState(""), [end, setEnd] = useState(""), [selected, setSelected] = useState("")
@@ -195,7 +197,7 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
     { id: "rules", label: "Assignment rules", onSelect: () => setSettingsOpen(true), disabled: busy },
     ...(draft ? [
       { id: "regenerate", label: "Regenerate unlocked assignments", onSelect: () => generate("REGENERATE"), disabled: busy },
-      { id: "discard", label: "Discard draft", disabled: busy, onSelect: () => { if (window.confirm("Discard unapproved changes? Confirmed reservations and the published schedule are retained.")) void run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") }) } },
+      { id: "discard", label: "Discard draft", disabled: busy, onSelect: async () => { if (await confirm({ title: "Discard draft changes?", description: "Unapproved changes are discarded. Confirmed reservations and the published schedule are retained.", confirmLabel: "Discard draft", tone: "danger" })) void run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") }) } },
     ] : []),
   ]
   const registered = useSchedulingTools(stepTools)

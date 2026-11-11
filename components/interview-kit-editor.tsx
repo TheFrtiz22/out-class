@@ -2,6 +2,7 @@
 import { useAutosave } from "@/hooks/use-autosave";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import { canDiscoverInterviewSetup, interviewSetupHref, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { interviewCapabilities } from "@/lib/interview-access";
@@ -39,6 +40,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   const [open, setOpen] = useState(initiallyOpen);
   useEffect(() => { if (initiallyOpen) setOpen(true); }, [initiallyOpen]);
   const { user } = useAuth();
+  const confirm = useConfirm();
   const version = useRef(0);
   // IDs the server has accepted. A newly added question stays a local draft until it
   // has a prompt; an existing question cleared to blank still fails validation visibly.
@@ -188,7 +190,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
           variant="ghost"
           disabled={busy}
           onClick={async () => {
-            if (!dirty || window.confirm("Discard unsaved changes and reload?")) {
+            if (!dirty || await confirm({ title: "Discard changes and reload?", description: "Your unsaved interview kit changes will be lost.", confirmLabel: "Discard and reload", tone: "danger" })) {
               await autosave.discardRecovery?.();
               setRetry((v) => v + 1);
             }

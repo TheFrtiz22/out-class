@@ -68,10 +68,9 @@ test('confirmed Accept/Reject leave next-pass queue, Hold retains earlier instan
 });
 test('legacy entry points cannot mutate or disclose LIVE rooms or publish applicant notifications',async()=>{
  const h=harness();await begin(h);const legacy=load('actions/voting.ts',h.mocks);
- await assert.rejects(legacy.submitVotingBallot({...h.scope,passNumber:1,applicationId:apps[0],decision:'PASS'}),/Live rooms/);
  await assert.rejects(legacy.commandVotingSession({...h.scope,revision:h.state().sessions[0].revision,action:'COMPLETE_PASS'}),/Live rooms/);
  assert.equal((await legacy.getVotingWorkspace(clubId,sessionId)).session,null);
- assert.equal((await legacy.getVotingJoinInfo(sessionId)).status,'NOT_JOINABLE');
+ assert.equal(legacy.submitVotingBallot,undefined,'board ballots were retired');assert.equal(legacy.getVotingJoinInfo,undefined,'board joins were retired');
  const publication=load('utils/voting-publication.ts',h.mocks);await assert.rejects(publication.publishReviewedVotingCandidates(h.tx,h.state().sessions[0],apps,[],leaderId),/does not publish/);
 });
 test('End preserves unresolved applicants and the old seal command cannot bypass recruitment mapping preview',async()=>{
