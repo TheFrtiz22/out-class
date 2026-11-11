@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/utils/prisma";
+import { readStoredHead, taskFileContentMatches, TASK_FILE_MISMATCH } from "@/lib/task-file-content";
 import {
   requireAuth,
   requireClubMembership,
@@ -312,10 +313,9 @@ export async function submitTask(input: z.infer<typeof submissionSchema>) {
   });
   if (files.length !== new Set(data.fileIds).size)
     throw new Error("A file is unavailable. Upload it again.");
+  const bucket = files.length ? await storage() : null;
   for (const file of files) {
-    const { data: objects, error } = await (
-      await storage()
-    ).list(file.path.slice(0, file.path.lastIndexOf("/")), {
+    const { data: objects, error } = await bucket!.list(file.path.slice(0, file.path.lastIndexOf("/")), {
       search: file.path.split("/").pop()!,
       limit: 10,
     });
@@ -327,6 +327,14 @@ export async function submitTask(input: z.infer<typeof submissionSchema>) {
       object.metadata?.mimetype !== file.mime
     )
       throw new Error("File upload is incomplete or invalid. Upload it again.");
+    // The bytes went straight to Storage; check the stored signature before accepting them.
+    const head = await readStoredHead(bucket!, file.path);
+    if (!head) throw new Error("File upload is incomplete or invalid. Upload it again.");
+    if (!taskFileContentMatches(head, file.mime)) {
+      // The row stays (unsubmitted) so it still counts toward the daily upload limit.
+      await bucket!.remove([file.path]).catch(() => null);
+      throw new Error(TASK_FILE_MISMATCH);
+    }
   }
   return prisma.$transaction(async (tx) => {
     await currentMember(tx, assignment.task.clubId, user.id);
