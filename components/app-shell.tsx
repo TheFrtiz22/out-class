@@ -22,7 +22,11 @@ import { resolveStudentView, sectionForStudentView, canonicalStudentParams } fro
 import { STUDENT_HOME, studentPath, studentRouteForPath } from "@/lib/navigation"
 import { FocusFrame } from "@/components/shell/focus-frame"
 import { Button } from "@/components/ui/button"
-import type { ExploreDirectory } from "@/components/views/explore-view"
+// Explore is imported, not lazy-loaded: a direct /explore load is server-rendered with the club directory
+// (FE-4), and a lazy view would hydrate inside a Suspense boundary whose chunk is still downloading. Any
+// context or prop update that reaches that boundary first (saved clubs loading, Demo state, this shell
+// re-rendering) makes React drop the server HTML and show the "Loading clubs…" fallback over finished content.
+import { ExploreView, type ExploreDirectory } from "@/components/views/explore-view"
 
 const renderDestinationLoading = () => <OutClassLoadingScreen />
 
@@ -35,7 +39,6 @@ const AuthView = dynamic(() => import("@/components/views/auth-view").then(modul
 const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView), { loading: () => <WorkspaceLoading label="Loading your dashboard…" layout="workspace" /> })
 const UnifiedStudentProfileView = dynamic(() => import("@/components/views/unified-student-profile-view").then(module => module.UnifiedStudentProfileView), { loading: () => <WorkspaceLoading label="Loading your profile…" layout="form" /> })
 const InboxView = dynamic(() => import("@/components/views/inbox-view").then(module => module.InboxView), { loading: () => <WorkspaceLoading label="Loading your inbox…" layout="feed" /> })
-const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView), { loading: () => <WorkspaceLoading label="Loading clubs…" layout="cards" /> })
 const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView), { loading: () => <WorkspaceLoading label="Loading Corkboard…" layout="cards" /> })
 const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: () => <WorkspaceLoading label="Preparing your applications…" layout="applications" /> })
 const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: () => <WorkspaceLoading label="Loading your schedule…" layout="schedule" /> })
