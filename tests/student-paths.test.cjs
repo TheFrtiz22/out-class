@@ -101,7 +101,7 @@ function entryHarness({ session = null, authError = null, cookies = {}, account 
       user: { findUnique: async () => { calls.prisma++; return { disabledAt: account.disabledAt ?? null } } },
       studentProfile: { findUnique: async () => { calls.prisma++; return account.profile === false ? null : { id: "profile" } } },
     } },
-    "@/components/home-entry": { HomeEntry: "HomeEntry" },
+    "@/components/app-shell": { AppShell: "AppShell" },
     "@/lib/auth": load("lib/auth.ts"),
     "@/lib/navigation": nav, "@/lib/student-routes": nav,
   }
@@ -131,7 +131,7 @@ test("authz: demo renders fictional client data only, with no session, database 
   for (const session of [null, confirmed]) {
     const h = entryHarness({ session, cookies: { demo: "1" }, demoAllowed: true })
     const page = await h.render("/explore", { demoClub: "jis" })
-    assert.equal(page.type, "HomeEntry")
+    assert.equal(page.type, "AppShell")
     assert.equal(page.props.initialView, "explore")
     assert.equal(page.props.initialSession, undefined)
     assert.equal(page.props.initialData, undefined)
@@ -152,7 +152,7 @@ test("authz: platform view-as resolves identity through requireAuth, never the r
 test("authz: a confirmed UVA student gets their own workspace view; onboarding is preserved when there is no profile", async () => {
   const h = entryHarness({ session: confirmed })
   const page = await h.render("/clubs/meetings")
-  assert.equal(page.type, "HomeEntry")
+  assert.equal(page.type, "AppShell")
   assert.equal(page.props.initialView, "my-clubs")
   assert.equal(page.props.initialSession.id, "student-a")
   assert.equal(page.props.hasProfile, true)
