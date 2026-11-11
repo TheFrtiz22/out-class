@@ -46,7 +46,8 @@ function bucket(signed = { data: { signedUrl: 'https://storage.test/object' }, e
 test('the head is read with a range request and capped even when the range is ignored', async () => {
   const b = bucket(), seen = []
   const ranged = await c.readStoredHead(b, 'a/b', async (url, init) => { seen.push({ url, init }); return new Response(new Uint8Array(16).fill(65), { status: 206 }) }, 16)
-  assert.equal(ranged.length, 16)
+  assert.equal(ranged.ok, true)
+  assert.equal(ranged.head.length, 16)
   assert.deepEqual(b.calls, [{ path: 'a/b', ttl: 60 }])
   assert.equal(seen[0].url, 'https://storage.test/object')
   assert.equal(seen[0].init.headers.Range, 'bytes=0-15')
@@ -58,22 +59,87 @@ test('the head is read with a range request and capped even when the range is ig
     cancel() { cancelled = true },
   })
   const full = await c.readStoredHead(bucket(), 'a/b', async () => new Response(stream, { status: 200 }), 25)
-  assert.equal(full.length, 25)
+  assert.equal(full.head.length, 25)
   assert.ok(cancelled)
 })
 
-test('unreadable objects return null so callers report an incomplete upload, not a mismatch', async () => {
-  assert.equal(await c.readStoredHead(bucket({ data: null, error: { message: 'missing' } }), 'a/b', async () => { throw Error('not called') }), null)
-  assert.equal(await c.readStoredHead(bucket(), 'a/b', async () => new Response('missing', { status: 404 })), null)
-  assert.equal(await c.readStoredHead(bucket(), 'a/b', async () => { throw Error('network') }), null)
-  assert.equal(await c.readStoredHead(bucket(), 'a/b', async () => new Response(new Uint8Array(), { status: 206 })), null)
+test('unreadable objects report a reason instead of bytes', async () => {
+  assert.deepEqual(await c.readStoredHead(bucket({ data: null, error: { message: 'missing' } }), 'a/b', async () => { throw Error('not called') }), { ok: false, reason: 'sign' })
+  assert.deepEqual(await c.readStoredHead(bucket(), 'a/b', async () => new Response('missing', { status: 404 })), { ok: false, reason: 'status' })
+  assert.deepEqual(await c.readStoredHead(bucket(), 'a/b', async () => { throw Object.assign(Error('timeout'), { name: 'TimeoutError' }) }), { ok: false, reason: 'fetch' })
+  assert.deepEqual(await c.readStoredHead(bucket(), 'a/b', async () => new Response(new Uint8Array(), { status: 206 })), { ok: false, reason: 'empty' })
 })
 
-test('submitTask checks stored bytes before the submission transaction and deletes mismatches', () => {
+const file = { path: 'assignment/object', size: 9, mime: 'application/pdf' }
+function storage({ head = '%PDF-1.7\n', listError = null, removeResult = { data: [], error: null }, removeThrows = false, listed = [{ name: 'object', metadata: { size: 9, mimetype: 'application/pdf' } }] } = {}) {
+  const removed = []
+  const fetchImpl = async () => new Response(new TextEncoder().encode(head), { status: 206 })
+  return {
+    removed, fetchImpl,
+    bucket: {
+      createSignedUrl: async () => ({ data: { signedUrl: 'https://storage.test/object' }, error: null }),
+      list: async () => listError ? { data: null, error: listError } : { data: listed, error: null },
+      remove: async (paths) => { removed.push(...paths); if (removeThrows) throw Error('network'); return removeResult },
+    },
+  }
+}
+async function logged(fn) {
+  const original = console.error, lines = []
+  console.error = (...args) => lines.push(args)
+  try { return { result: await fn(), lines } } finally { console.error = original }
+}
+
+test('a matching stored file passes; a missing or resized object is incomplete', async () => {
+  const ok = storage()
+  assert.equal(await c.checkStoredTaskFile(ok.bucket, file, ok.fetchImpl), 'ok')
+  const missing = storage({ listed: [] })
+  assert.equal(await c.checkStoredTaskFile(missing.bucket, file, missing.fetchImpl), 'incomplete')
+  const resized = storage({ listed: [{ name: 'object', metadata: { size: 10, mimetype: 'application/pdf' } }] })
+  assert.equal(await c.checkStoredTaskFile(resized.bucket, file, resized.fetchImpl), 'incomplete')
+})
+
+test('a mismatch deletes the object; a remove error (returned or thrown) is logged with the path', async () => {
+  const clean = storage({ head: '<html>' })
+  const quiet = await logged(() => c.checkStoredTaskFile(clean.bucket, file, clean.fetchImpl))
+  assert.equal(quiet.result, 'mismatch')
+  assert.deepEqual(clean.removed, [file.path])
+  assert.equal(quiet.lines.length, 0)
+
+  const returned = storage({ head: '<html>', removeResult: { data: null, error: { name: 'StorageApiError', message: 'denied' } } })
+  const a = await logged(() => c.checkStoredTaskFile(returned.bucket, file, returned.fetchImpl))
+  assert.equal(a.result, 'mismatch')
+  assert.equal(a.lines[0][0], 'task.file.mismatch.remove.failure')
+  assert.deepEqual(a.lines[0][1], { path: file.path, code: 'StorageApiError' })
+
+  const thrown = storage({ head: '<html>', removeThrows: true })
+  const b = await logged(() => c.checkStoredTaskFile(thrown.bucket, file, thrown.fetchImpl))
+  assert.equal(b.result, 'mismatch')
+  assert.equal(b.lines[0][1].path, file.path)
+})
+
+test('a Storage outage or fetch timeout is logged and reported as a retryable check failure', async () => {
+  const outage = storage({ listError: { name: 'StorageUnknownError', message: 'down' } })
+  const a = await logged(() => c.checkStoredTaskFile(outage.bucket, file, outage.fetchImpl))
+  assert.equal(a.result, 'unavailable')
+  assert.deepEqual(a.lines[0], ['task.file.check.unavailable', { path: file.path, stage: 'list', code: 'StorageUnknownError' }])
+  assert.deepEqual(outage.removed, [])
+
+  const slow = storage()
+  const b = await logged(() => c.checkStoredTaskFile(slow.bucket, file, async () => { throw Object.assign(Error('timed out'), { name: 'TimeoutError' }) }))
+  assert.equal(b.result, 'unavailable')
+  assert.deepEqual(b.lines[0], ['task.file.check.unavailable', { path: file.path, stage: 'fetch' }])
+  assert.deepEqual(slow.removed, [])
+
+  assert.equal(c.taskFileCheckMessage(['ok', 'unavailable']), "We couldn’t check your file right now. Try again in a minute.")
+  assert.equal(c.taskFileCheckMessage(['unavailable', 'mismatch']), c.TASK_FILE_MISMATCH)
+  assert.equal(c.taskFileCheckMessage(['unavailable', 'incomplete']), c.TASK_FILE_INCOMPLETE)
+  assert.equal(c.taskFileCheckMessage(['ok', 'ok']), null)
+})
+
+test('submitTask checks every file in parallel before the submission transaction', () => {
   const source = fs.readFileSync('actions/tasks.ts', 'utf8')
   const submit = source.slice(source.indexOf('export async function submitTask'), source.indexOf('export async function reviewTask'))
-  const check = submit.indexOf('taskFileContentMatches('), tx = submit.indexOf('prisma.$transaction')
+  const check = submit.indexOf('Promise.all(files.map((file) => checkStoredTaskFile(bucket, file)))'), tx = submit.indexOf('prisma.$transaction')
   assert.ok(check > 0 && check < tx)
-  assert.match(submit, /readStoredHead\(bucket!, file\.path\)/)
-  assert.match(submit, /remove\(\[file\.path\]\)[\s\S]{0,80}throw new Error\(TASK_FILE_MISMATCH\)/)
+  assert.doesNotMatch(submit, /for \(const file of files\)/)
 })

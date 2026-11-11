@@ -7,7 +7,7 @@ import { authorizeAdminTransaction } from "@/utils/admin-transaction";
 import { adminPageLoad, logAdminFailure } from "@/utils/admin-page";
 import { AdminAccessError } from "@/lib/admin-failure";
 import { redirect } from "next/navigation";
-import { assertClubImageAssignment } from "@/utils/club-asset-storage";
+import { assertClubImageAssignment, releaseReplacedClubImages } from "@/utils/club-asset-storage";
 import { adminClubInput, adminClubFilters } from "@/lib/admin-clubs";
 import { profileDraft } from "@/lib/club-marketing";
 import { revalidatePath, revalidateTag } from "next/cache";
@@ -39,6 +39,7 @@ export async function saveAdminClub(input: unknown): Promise<{ id?: string; erro
   const d = parsed.data;
   try {
     const actor = await requirePlatformAdmin({ fresh: true });
+    let images = null as { clubId: string; previous: Parameters<typeof releaseReplacedClubImages>[1] } | null;
     const result = await prisma.$transaction(async tx => {
       if (d.id) await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.id} FOR UPDATE`;
       await authorizeAdminTransaction(tx, actor.id);
@@ -51,8 +52,11 @@ export async function saveAdminClub(input: unknown): Promise<{ id?: string; erro
       const fields = { ...d.profile, slug: d.slug, schoolId: school.id, campusKey: school.key, isDiscoverable: d.isDiscoverable, applicationOpen: d.applicationOpen, applicationDeadline: d.applicationDeadline ? new Date(d.applicationDeadline) : null };
       const club = previous ? await tx.club.update({ where: { id: previous.id }, data: { ...fields, applicationVersion: { increment: previous.applicationOpen !== fields.applicationOpen || previous.applicationDeadline?.toISOString() !== fields.applicationDeadline?.toISOString() ? 1 : 0 } } }) : await tx.club.create({ data: fields });
       await tx.auditLog.create({ data: { actorId: actor.id, action: previous ? 'platform.club.profile.update' : 'platform.club.create', targetId: club.id, clubId: club.id, details: { reason: d.reason } } });
+      if (previous) images = { clubId: previous.id, previous };
       return { id: club.id };
     }, { timeout: 20000 });
+    // After commit: delete images this save replaced (best effort, logged on failure).
+    if (images) await releaseReplacedClubImages(images.clubId, images.previous, d.profile);
     revalidateTag('club-directory'); revalidatePath('/platform/clubs'); if (result.id) revalidatePath(`/club/${result.id}`);
     return result;
   } catch (error) {

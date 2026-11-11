@@ -119,11 +119,107 @@ test('event flyers: per-user and per-club hourly limits and a per-club byte cap,
   }
 })
 
-test('club images count audit rows and stored object sizes before uploading', () => {
+const SIX_MB = 6 * 1024 * 1024
+function clubHarness({ failSum = false } = {}) {
+  const objects = new Map(), logs = [], removed = []
+  const club = { id: clubId, name: 'Club', tagline: '', description: '', logoUrl: null, bannerUrl: null, marketing: {} }
+  const bucket = {
+    upload: async (path) => { objects.set(path, SIX_MB); return { error: null } },
+    remove: async (paths) => { for (const p of paths) { removed.push(p); objects.delete(p) } return { data: [], error: null } },
+  }
+  const prisma = {
+    $queryRaw: async (strings, ...values) => {
+      const sql = strings.join('?')
+      if (sql.includes('pg_policies')) return [{ secured: true }]
+      if (sql.includes('SUM(')) {
+        if (failSum) throw Object.assign(Error('permission denied for schema storage'), { name: 'PrismaClientKnownRequestError' })
+        return [{ bytes: values[0].reduce((sum, path) => sum + (objects.get(path) || 0), 0) }]
+      }
+      throw Error('unexpected query: ' + sql)
+    },
+    club: { findUnique: async () => ({ ...club }) },
+  }
+  const tx = {
+    $queryRaw: async (strings, ...values) => {
+      const sql = strings.join('?')
+      if (sql.includes('SUM(')) throw Error('byte cap must not run inside the transaction')
+      if (sql.includes('SELECT name FROM storage.objects')) return objects.has(values[0]) ? [{ name: values[0] }] : []
+      return []
+    },
+    club: { findUnique: async () => ({ ...club }), findUniqueOrThrow: async () => ({ ...club }), update: async ({ data }) => Object.assign(club, data) },
+    auditLog: { count: async () => 0, create: async () => ({}) }, // hourly windows simulated as already elapsed
+  }
+  prisma.$transaction = async fn => fn(tx)
+  const storageModule = load('utils/club-asset-storage.ts', {
+    'server-only': {}, '@/utils/prisma': { prisma },
+    '@supabase/supabase-js': { createClient: () => ({ storage: { getBucket: async () => ({ data: { public: false }, error: null }), from: () => bucket } }) },
+  })
+  const common = {
+    '@/utils/prisma': { prisma }, '@/utils/club-asset-storage': storageModule,
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }), requireClubPermission: async () => ({ user: { id: owner } }) },
+    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
+  }
+  const assets = load('actions/club-assets.ts', { ...common,
+    '@/utils/platform-admin': { requirePlatformAdmin: async () => ({ id: owner }) },
+    '@/utils/admin-transaction': { authorizeAdminTransaction: async () => {} },
+    '@/lib/club-image': { prepareClubImage: async () => ({ bytes: new Uint8Array(SIX_MB), mime: 'image/png', contentType: 'image/webp' }) },
+  })
+  const workspace = load('actions/club-workspace.ts', { ...common,
+    '@/lib/club-suspension': { lockOperationalClub: async () => {} },
+    '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
+    'next/cache': { revalidatePath() {}, revalidateTag() {} },
+  })
+  const upload = () => { const f = new FormData(); f.set('clubId', clubId); f.set('admin', 'false'); f.set('file', new Blob([new Uint8Array(png)], { type: 'image/png' }), 'logo.png'); return assets.uploadClubAsset(f) }
+  const saveLogo = logoUrl => workspace.updateClubSettings({ clubId, name: 'Club', tagline: '', description: '', logoUrl })
+  return { upload, saveLogo, objects, removed, logs, club }
+}
+async function withLoggedErrors(fn) {
+  const original = console.error, lines = []
+  console.error = (...args) => lines.push(args)
+  try { return { result: await fn(), lines } } finally { console.error = original }
+}
+
+test('club images: a failing byte-cap read is logged and skipped, and the upload still succeeds', async () => {
+  const h = clubHarness({ failSum: true })
+  h.club.logoUrl = `club-assets/${clubId}/00000000-0000-4000-8000-000000000001.webp` // something referenced, so the SUM runs
+  const { result, lines } = await withLoggedErrors(() => h.upload())
+  assert.match(result.reference, new RegExp(`^club-assets/${clubId}/`))
+  assert.deepEqual(lines, [['club.asset.quota.bytes.failure', { clubId, code: 'PrismaClientKnownRequestError' }]])
+})
+
+test('club images: replacements delete the previous object, so the 22nd upload still fits under the cap', async () => {
+  const h = clubHarness()
+  let previous = null
+  for (let i = 0; i < 21; i++) {
+    const { reference } = await h.upload()
+    await h.saveLogo(reference)
+    if (previous) assert.ok(!h.objects.has(previous.slice('club-assets/'.length)), `replacement ${i} deleted its predecessor`)
+    previous = reference
+  }
+  assert.equal(h.removed.length, 20)
+  assert.equal(h.objects.size, 1) // 21 x 6 MB would be 126 MB without cleanup
+  const next = await h.upload()
+  assert.match(next.reference, /^club-assets\//)
+})
+
+test('club images: only referenced images count, and the cap message points to removing unused images', async () => {
+  const h = clubHarness()
+  for (let i = 0; i < 16; i++) { const { reference } = await h.upload(); h.club.marketing = { gallery: [...(h.club.marketing.gallery || []), { url: reference }] } }
+  // 16 x 6 MB = 96 MB referenced: one more 6 MB image would exceed 100 MB.
+  await assert.rejects(h.upload(), /Remove images the club no longer uses/)
+  h.club.marketing = { gallery: h.club.marketing.gallery.slice(0, 3) }
+  assert.match((await h.upload()).reference, /^club-assets\//)
+  assert.doesNotMatch(q.UPLOAD_QUOTA_MESSAGES.clubAssetStorage, /support/i)
+})
+
+test('club images: hourly counts stay in the transaction; the byte read and image release happen outside it', () => {
   const source = fs.readFileSync('actions/club-assets.ts', 'utf8')
-  const quota = source.indexOf('uploadQuotaError('), upload = source.indexOf('storage.upload(')
-  assert.ok(quota > 0 && quota < upload)
+  const bytes = source.indexOf('referencedClubAssetBytes(clubId)'), tx = source.indexOf('prisma.$transaction')
+  assert.ok(bytes > 0 && bytes < tx)
+  assert.doesNotMatch(source, /storage\.objects/)
   assert.match(source, /action: 'club\.asset\.upload', createdAt: \{ gte: since \}/)
-  assert.match(source, /FROM storage\.objects WHERE bucket_id='club-assets' AND name LIKE \$\{clubId \+ '\/%'\}/)
-  assert.match(source, /UPLOAD_QUOTAS\.clubAsset, UPLOAD_QUOTA_MESSAGES\.clubAssetStorage/)
+  for (const file of ['actions/club-workspace.ts', 'actions/admin-clubs.ts']) {
+    const save = fs.readFileSync(file, 'utf8')
+    assert.ok(save.lastIndexOf('releaseReplacedClubImages(') > save.indexOf('$transaction') || save.lastIndexOf('releaseReplacedClubImages(') > save.indexOf('clubWriteTransaction(async'), file)
+  }
 })

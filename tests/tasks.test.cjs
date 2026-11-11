@@ -233,7 +233,7 @@ function setup() {
   const api = load("actions/tasks.ts", {
     "@/lib/task-file-content": (() => {
       const real = load("lib/task-file-content.ts");
-      return { ...real, readStoredHead: (bucket, path) => real.readStoredHead(bucket, path, fetchStub) };
+      return { ...real, checkStoredTaskFile: (bucket, file) => real.checkStoredTaskFile(bucket, file, fetchStub) };
     })(),
     "@/utils/prisma": { prisma: { ...tx, $transaction: async (fn) => fn(tx) } },
     "@/utils/auth": auth,
