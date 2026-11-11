@@ -92,7 +92,7 @@ test('incomplete profiles resume existing onboarding and retain invitation/claim
 })
 test('disabled accounts cannot enter either flow and signup excludes platform destinations', async () => {
   const h = entry({ account: { disabledAt: new Date(), memberships: [] } })
-  for (const route of ['login', 'signup']) assert.equal((await h.page(route)).type, 'main')
+  for (const route of ['login', 'signup']) assert.equal((await h.page(route)).type, 'AccountUnavailable')
   for (const next of ['/platform', '/platform/login', '/%70latform', '//evil.invalid', '/a/../platform', '/signup']) {
     await destination(entry().page('signup', { next }), '/home')
   }
