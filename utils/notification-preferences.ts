@@ -1,9 +1,9 @@
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/utils/prisma";
+import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { unsubscribeChanges, type UnsubscribeScope } from "@/lib/email-unsubscribe";
 
 export type NotificationPreferenceValues = Omit<Prisma.UserNotificationPreferenceUncheckedCreateInput, "userId" | "updatedAt">;
-type Tx = Prisma.TransactionClient;
+type Tx = AppTransactionClient;
 
 // The user row lock serializes preference writes with the notification worker, which reads
 // preferences under the same lock.
