@@ -41,6 +41,7 @@ function provider({ hasSession = true, isImpersonating = false, demo = { isDemoE
   const { AuthProvider } = load("contexts/auth-context.tsx", {
     react,
     "@/lib/workspace-read-diagnostics": { recordWorkspaceRead() {} },
+    "@/lib/autosave-store": { adoptAutosaveOwner() {} },
     "@/utils/supabase/client": { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) },
     "@/lib/permissions": { hasWorkspace: member => member.isOwner === true },
     // The demo provider computes the sample identity; auth no longer imports the demo store.

@@ -204,6 +204,17 @@ export async function changeAdminDesignatedLeader(input: unknown) {
   await resendAdminClubInvitation(d.clubId, next.id, d.reason);
   return next;
 }
+/** Picker read for "Change designated leader": only the invitations that action can replace,
+ * with the fields Inspect club already shows. Same fresh check as the write it feeds. */
+export async function listAdminPendingOwnerInvitations(clubId: string) {
+  const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(clubId);
+  // Matches the picker's active-only club list: suspended clubs offer nothing to replace.
+  const club = await prisma.club.findUnique({ where: { id: clubId }, select: { suspendedAt: true } });
+  if (!club || club.suspendedAt) return [];
+  const invitations = await prisma.clubInvitation.findMany({ where: { clubId, status: "PENDING", requestedRole: "OWNER", authoritySource: "PLATFORM_ADMIN" }, select: { id: true, email: true, invitedName: true, expiresAt: true }, orderBy: { createdAt: "desc" }, take: 20 });
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.club.owner-invitations.read", targetId: clubId, clubId, details: { result: "success" } } });
+  return invitations;
+}
 
 export async function inspectAdminStudent(userId: string, reason: string) {
   await requirePlatformAdmin({ fresh: true }); uuid.parse(userId); reasonSchema.parse(reason);
