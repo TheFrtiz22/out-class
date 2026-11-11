@@ -41,7 +41,7 @@ import * as rankedReview from "@/actions/ranked-review"
 import * as interviewFeedbackApi from "@/actions/interview-feedback"
 import * as votingTargetSummary from "@/actions/voting-target-summary"
 import { demoGate, loadDemoWorkspace, type DemoWorkspaceModule } from "@/lib/demo/loader"
-import { browserRefusal, unwrapAction, type Unwrapped } from "@/lib/action-result"
+import { browserRefusal, unwrapAction, UserFacingError, type Unwrapped } from "@/lib/action-result"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 // The sole client data boundary: demo operations never invoke a server action,
 // and demo implementations load only while Demo Mode is active.
@@ -53,11 +53,26 @@ function adapt<F extends (...args: never[]) => Promise<unknown>>(real: F, key: D
   return (async (...args: Parameters<F>) => {
     if (!(await demoGate())) return unwrapAction(await real(...args))
     const demo = (await loadDemoWorkspace())[key] as unknown as (...args: Parameters<F>) => unknown
-    // Demo implementations run in the browser and share validation helpers that
-    // throw ActionError; their refusals are as safe to show as returned ones.
-    try { return unwrapAction(await demo(...args)) }
-    catch (error) { throw browserRefusal(error) }
+    let value: unknown
+    try {
+      value = await demo(...args)
+    } catch (error) {
+      throw demoRefusal(error)
+    }
+    return unwrapAction(value)
   }) as Adapted<F>
+}
+// Demo implementations run in the browser and refuse with plain `Error`s whose
+// messages are written for people (the Demo counterpart of `ActionError`). Mark
+// those user-facing so `userMessage` shows them; Zod, runtime and other typed
+// errors pass through unchanged and still get the caller's fallback.
+// Shared validators that throw ActionError (lib/tasks, lib/interview-kits and
+// others) are shown the same way through browserRefusal.
+function demoRefusal(error: unknown): unknown {
+  const refusal = browserRefusal(error)
+  if (refusal !== error) return refusal
+  if (!(error instanceof Error) || error.constructor !== Error || (error as { userFacing?: unknown }).userFacing === true) return error
+  return Object.assign(new UserFacingError(error.message, "DEMO_REFUSED"), { cause: error })
 }
 export const getPanelProposalWorkspace = adapt((scope: Parameters<typeof panelApi.getPanelProposalWorkspace>[0]) => readWorkspace<Awaited<ReturnType<typeof panelApi.getPanelProposalWorkspace>>>("panelWorkspace", [scope]), "getPanelProposalWorkspace")
 export const generatePanelProposal = adapt(panelApi.generatePanelProposal, "generatePanelProposal")
