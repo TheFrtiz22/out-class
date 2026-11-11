@@ -1,5 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{PGlite}=require('@electric-sql/pglite');
-const name='20261111180000_resume_area_highlights',file=path.join('prisma/migrations',name,'migration.sql');
+const name='20261111190000_resume_area_highlights',file=path.join('prisma/migrations',name,'migration.sql');
 
 test('area highlight migration source: additive, LF, bounded lock, no new grants or tables',()=>{
  const sql=fs.readFileSync(file,'utf8');
