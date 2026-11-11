@@ -5,7 +5,7 @@ import { registerAutosaveNavigation } from "@/lib/autosave-navigation"
 /** Lifecycle/recovery adapter for mature domain editors that already serialize their own saves. */
 export function useAutosaveRecovery<T>({ identity, value, baseline, dirty, enabled, restore, flush }: { identity: string; value: T; baseline: string; dirty: boolean; enabled: boolean; restore: (value: T) => void; flush: () => Promise<void> }) {
   const latest = useRef({ value, baseline, dirty, restore, flush }); latest.current = { value, baseline, dirty, restore, flush }
-  const [recovery, setRecovery] = useState<{ value: T } | null>(null)
+  const [recovery, setRecovery] = useState<{ value: T } | null>(null), [reviewing, setReviewing] = useState(false)
   const restored = useRef(false)
   const key = `outclass:autosave:v1:${identity}`
   useEffect(() => {
@@ -40,5 +40,6 @@ export function useAutosaveRecovery<T>({ identity, value, baseline, dirty, enabl
       else sessionStorage.removeItem(key)
     } catch { /* The unload guard remains available. */ }
   }, [key, serialized, baseline, dirty, enabled, recovery])
-  return { recovery: recovery?.value, restoreRecovery: () => { if (recovery) restore(recovery.value); setRecovery(null) }, discardRecovery: async () => { try { sessionStorage.removeItem(key) } catch {} setRecovery(null) }, onBlur: () => { if (!recovery) void flush().catch(() => {}) } }
+  // A copy whose baseline moved on is a conflict: it can be read or dismissed, never restored over the newer save.
+  return { recovery: recovery?.value, recoveryKind: "conflict" as const, reviewing, reviewRecovery: () => setReviewing(true), restoreRecovery: () => {}, discardRecovery: async () => { try { sessionStorage.removeItem(key) } catch {} setRecovery(null); setReviewing(false) }, onBlur: () => { if (!recovery) void flush().catch(() => {}) } }
 }
