@@ -179,7 +179,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                     />
                     <p
                       id="password-help"
-                      className="text-xs text-muted-foreground"
+                      className="text-control text-muted-foreground"
                     >
                       8–128 characters. Spaces and password managers are
                       welcome.
@@ -212,7 +212,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                       onChange={(e) => setAuthenticatorCode(e.target.value)}
                       aria-describedby="recovery-authenticator-help"
                     />
-                    <p id="recovery-authenticator-help" className="text-xs text-muted-foreground">
+                    <p id="recovery-authenticator-help" className="text-control text-muted-foreground">
                       If your account uses two-step verification, enter a fresh six-digit code from your authenticator app.
                     </p>
                   </div>

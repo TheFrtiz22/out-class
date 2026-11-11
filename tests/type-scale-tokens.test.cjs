@@ -30,5 +30,6 @@ test("every type token these files use is defined, including the 13px step", () 
 
 test("the allowlist stays small and explained", () => {
   const allowed = files.flatMap(file => fs.readFileSync(file, "utf8").match(/type-literal-ok: [^*]+/g) ?? [])
-  assert.ok(allowed.length <= 6, `${allowed.length} allowed literals`)
+  // 7: the flyer thumbnail title (10px inside an 84px preview) joined the thumbnail literals.
+  assert.ok(allowed.length <= 7, `${allowed.length} allowed literals`)
 })

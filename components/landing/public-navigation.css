@@ -68,9 +68,9 @@
   padding: 12px 14px;
   border-radius: var(--oc-radius-full);
   color: inherit;
-  font-size: 13px;
+  font-size: var(--oc-size-13);
   font-weight: 500;
-  line-height: 20px;
+  line-height: 1.5385;
   letter-spacing: -.01em;
 }
 .oc-public-nav .oc-public-link[aria-current] { background: var(--nav-hover); box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%), inset 0 -1px 0 color-mix(in srgb, var(--school-primary) 8%, transparent); }
@@ -84,9 +84,9 @@
   color: #fff7ec;
   background: linear-gradient(165deg, rgb(141 178 209 / 18%), transparent 65%), var(--primary);
   box-shadow: var(--oc-glass-pill-navy-depth);
-  font-size: 13px;
+  font-size: var(--oc-size-13);
   font-weight: 600;
-  line-height: 20px;
+  line-height: 1.5385;
 }
 .oc-landing .oc-public-nav :is(a, button) {
   transition: background-color 220ms var(--nav-ease), color 220ms var(--nav-ease), box-shadow 220ms var(--nav-ease), transform 220ms var(--nav-ease);
@@ -139,7 +139,7 @@
   .oc-public-mobile-clip { min-height: 0; overflow: hidden; }
   .oc-public-mobile-links { display: flex; flex-direction: column; gap: 6px; max-height: calc(100dvh - var(--support-banner-height, 0px) - 112px); overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 18px; }
   .oc-public-mobile-links::before { content: ""; height: 1px; background: color-mix(in srgb, var(--school-primary) 12%, transparent); margin: 0 10px 8px; flex-shrink: 0; }
-  .oc-public-mobile .oc-public-link { justify-content: flex-start; min-height: 48px; flex-shrink: 0; padding-inline: 16px; font-size: 15px; }
+  .oc-public-mobile .oc-public-link { justify-content: flex-start; min-height: 48px; flex-shrink: 0; padding-inline: 16px; font-size: 0.9375rem; }
   .oc-public-mobile .oc-public-link[aria-current]::after { bottom: calc(50% - 2px); left: auto; right: 18px; }
   .oc-public-mobile .oc-public-mobile-login { display: none; }
 }
@@ -178,7 +178,7 @@
 .oc-public-nav .oc-perspective-switcher[data-compact="true"] { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 3px; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-field-depth); }
 .oc-public-nav .oc-perspective-switcher .oc-perspective-indicator { position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transition: transform 420ms var(--oc-glass-ease); }
 .oc-public-nav .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
-.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: var(--oc-radius-full); background: transparent; color: var(--primary); font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
+.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: var(--oc-radius-full); background: transparent; color: var(--primary); font-size: var(--oc-size-13); font-weight: 600; line-height: 1.5385; white-space: nowrap; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 @media (hover: hover) and (pointer: fine) { .oc-public-nav .oc-perspective-switcher button[aria-pressed="false"]:hover { background: var(--oc-glass-hover-tint); } }
 .oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--oc-glass-cream); }
 .oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; box-shadow: var(--focus-halo-inset-5); }
@@ -188,7 +188,7 @@
 @media (max-width: 767px) {
   .oc-public-journey-desktop { display: none; }
   .oc-public-journey-mobile { display: block; margin: 0 10px 8px; }
-  .oc-public-nav .oc-public-journey-mobile .oc-perspective-switcher button { font-size: 14px; min-height: 48px; }
+  .oc-public-nav .oc-public-journey-mobile .oc-perspective-switcher button { font-size: var(--oc-size-14); min-height: 48px; }
   .oc-public-nav[data-journey="true"] .oc-public-menu-toggle::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; background: currentColor; border-radius: 50%; }
   .oc-public-menu-toggle { position: relative; }
 }
