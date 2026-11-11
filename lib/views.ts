@@ -15,7 +15,6 @@ export type ViewId =
   | "calendar"
   | "leader-dashboard"
   | "club-manager"
-  | "club-management-portal"
   | "screening-dashboard"
   | "interview-scheduler"
   | "interview-workspace"
@@ -52,7 +51,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     label: "Account",
     items: [
       { id: "landing", title: "Landing Page", icon: Globe },
-      { id: "auth", title: "Login & Sign Up", icon: LogIn },
+      { id: "auth", title: "Sign in & sign up", icon: LogIn },
       { id: "student-onboarding", title: "Student Onboarding", icon: UserRound },
     ],
   },
@@ -75,7 +74,6 @@ export const navSections: { label: string; items: NavItem[] }[] = [
       { id: "interview-scheduler", title: "Interview Scheduler", icon: CalendarClock },
       { id: "interview-workspace", title: "Interview room", icon: MessageSquareText },
       { id: "club-manager", title: "Settings", icon: Settings2 },
-      { id: "club-management-portal", title: "Management Portal", icon: Settings2 },
     ],
   },
 ]
@@ -98,10 +96,6 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
     title: "Settings",
     subtitle: "Manage roster permissions, application questions, and your public profile.",
   },
-  "club-management-portal": {
-    title: "Club Management Portal",
-    subtitle: "Edit your club's public page and manage your executive team.",
-  },
   "screening-dashboard": {
     title: "Screening & Auto-Filter",
     subtitle: "Preview saved recruiting thresholds and mark applicants for review.",
@@ -116,6 +110,6 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   },
   "broadcast-messages": {
     title: "Announcements",
-    subtitle: "Example message composer; send real announcements from a club workspace.",
+    subtitle: "Announcements for your club, sent from its workspace.",
   },
 } satisfies Record<ViewId, { title: string; subtitle: string }>

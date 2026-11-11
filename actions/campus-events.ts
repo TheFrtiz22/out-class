@@ -10,6 +10,8 @@ import {
   eventCommandSchema,
   eventReviewSchema,
   eventFiltersSchema,
+} from "@/lib/campus-event-schemas";
+import {
   eventDateWindow,
   eventIsPublished,
   type CampusEvent,

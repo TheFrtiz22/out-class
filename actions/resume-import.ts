@@ -6,6 +6,7 @@ import { extractPdfText } from "@/lib/resume-pdf"
 import { extractResumeProposal, confirmImportSchema, importBaseline } from "@/lib/resume-import"
 import { uploadProfileFile } from "@/actions/storage"
 import { revalidatePath } from "next/cache"
+import { boundedSafeParse } from "@/lib/bounded-input"
 
 const failure = (code: string, message: string) => ({ ok: false as const, code, message })
 
@@ -34,7 +35,7 @@ export async function prepareResumeImport(input: FormData) {
 }
 export async function confirmResumeImport(input: unknown) {
   const { user } = await requireAuth()
-  const parsed = confirmImportSchema.safeParse(input)
+  const parsed = boundedSafeParse(confirmImportSchema, input)
   if (!parsed.success) return failure("INVALID_PROFILE", "Check the selected profile values before saving.")
   const { patch, experiences, baseline, resumeReference } = parsed.data
   if (resumeReference && !resumeReference.startsWith(`${user.id}/`)) return failure("INVALID_ATTACHMENT", "You can only attach your own résumé.")

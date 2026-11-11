@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
 // The shared DataTable is a pure function component (no hooks): expand it so its rows are visible.
 const nodes=node=>!node||typeof node!=='object'?[]:Array.isArray(node)?node.flatMap(nodes):node.type?.name==='DataTable'?[node,...nodes(node.type(node.props))]:[node,...nodes(node.props?.children)];
-function load(file,mocks){const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(name=>name in mocks?mocks[name]:name.startsWith('@/lib/')?load(name.slice(2)+'.ts',mocks):name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):require(name),mod,mod.exports);return mod.exports;}
+function load(file,mocks){const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(name=>name in mocks?mocks[name]:name.startsWith('@/lib/')?load(name.slice(2)+'.ts',mocks):name==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):require(name),mod,mod.exports);return mod.exports;}
 const rules=load('lib/organization-authorization.ts',{});
 const member=(id,role)=>({id,userId:id,clubId:'club',status:'ACTIVE',accessRole:role,isOwner:role==='OWNER',permissions:rules.organizationRolePermissions[role],updatedAt:new Date(),groups:['Fund'],cohort:'2028',role:'GENERAL_MEMBER',title:null,user:{email:id+'@virginia.edu',disabledAt:null,studentProfile:{firstName:id,lastName:'Smith',gradYear:'2027',major:'Finance'}}});
 const fixture=(role='OWNER')=>({actor:member('actor',role),members:[member('owner','OWNER'),member('student','MEMBER')],invitations:[{id:'invite',requestedRole:'MEMBER',permissions:[],status:'PENDING',invitedName:'Michael Chen',invitedYear:'2029',email:'mc4de@virginia.edu',expiresAt:new Date(Date.now()+86400000),deliveries:[],schoolIdentity:{normalizedIdentifier:'mc4de'}}],identifierTypes:[{id:'uva-computing-id',label:'UVA computing ID'}]});
@@ -19,7 +19,7 @@ test('admin drawer cannot change owner role, remove owners or transfer ownership
 });
 
 test('ownership transfer requires an intentional confirmation and passes only scoped trusted input',async()=>{
- const restore=setupWindow();try{const directory=fixture();let calls=0,payload;const h=harness({getOrganizationMemberManagement:async()=>directory,transferOrganizationOwnership:async data=>{calls++;payload=data;}});h.render();await h.flush();nodes(h.render()).filter(node=>['button','Button'].includes(node.type)&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{},stopPropagation(){}});global.window.confirm=()=>false;button(h.render(),'Transfer my ownership').props.onClick();assert.equal(calls,0);global.window.confirm=()=>true;const transfer=button(h.render(),'Transfer my ownership');transfer.props.onClick();transfer.props.onClick();await h.flush();assert.equal(calls,1);assert.deepEqual(payload,{clubId:'club',memberId:'student',confirm:true});}finally{restore();}
+ const restore=setupWindow();try{const directory=fixture();let calls=0,payload;const h=harness({getOrganizationMemberManagement:async()=>directory,transferOrganizationOwnership:async data=>{calls++;payload=data;}});h.render();await h.flush();nodes(h.render()).filter(node=>['button','Button'].includes(node.type)&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{},stopPropagation(){}});global.window.confirm=()=>false;await button(h.render(),'Transfer my ownership').props.onClick();assert.equal(calls,0);global.window.confirm=()=>true;const transfer=button(h.render(),'Transfer my ownership');transfer.props.onClick();transfer.props.onClick();await h.flush();assert.equal(calls,1);assert.deepEqual(payload,{clubId:'club',memberId:'student',confirm:true});}finally{restore();}
 });
 
 test('revocation confirms, resend is explicitly queued and duplicate queued delivery is disabled',async()=>{
@@ -27,7 +27,7 @@ test('revocation confirms, resend is explicitly queued and duplicate queued deli
 });
 
 test('directory errors have retry states and drawer preserves unsaved-change confirmation',async()=>{
- const restore=setupWindow();try{let fail=true;const h=harness({getOrganizationMemberManagement:async()=>{if(fail)throw Error('Access denied');return fixture();}});h.render();await h.flush();assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));fail=false;button(h.render(),'Try again').props.onClick();h.render();await h.flush();button(h.render(),'Member details').props.onClick({currentTarget:{},stopPropagation(){}});const drawer=nodes(h.render()).find(node=>node.props?.onChangeCapture);drawer.props.onChangeCapture({target:{closest:selector=>selector==='form, fieldset'}});global.document={querySelector:()=>null};global.window.confirm=()=>false;nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.onOpenChange(false);assert.equal(nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.open,true);global.window.confirm=()=>true;nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.onOpenChange(false);assert.equal(nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.open,false);}finally{delete global.document;restore();}
+ const restore=setupWindow();try{let fail=true;const h=harness({getOrganizationMemberManagement:async()=>{if(fail)throw Error('Access denied');return fixture();}});h.render();await h.flush();assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));fail=false;button(h.render(),'Try again').props.onClick();h.render();await h.flush();button(h.render(),'Member details').props.onClick({currentTarget:{},stopPropagation(){}});const drawer=nodes(h.render()).find(node=>node.props?.onChangeCapture);drawer.props.onChangeCapture({target:{closest:selector=>selector==='form, fieldset'}});global.document={querySelector:()=>null};global.window.confirm=()=>false;await nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.onOpenChange(false);assert.equal(nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.open,true);global.window.confirm=()=>true;await nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.onOpenChange(false);assert.equal(nodes(h.render()).filter(node=>node.type==='Sheet').at(-1).props.open,false);}finally{delete global.document;restore();}
 });
 
 test('uncertain delivery is presented for review and cannot be resent automatically',async()=>{
@@ -44,7 +44,7 @@ test('an ordinary role label updates immediately and rolls back if the server re
   nodes(h.render()).filter(n=>['button','Button'].includes(n.type)&&(n.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{},stopPropagation(){}});
   const drawer=nodes(h.render()).filter(n=>n.type==='Sheet').at(-1);
   const form=nodes(drawer).find(n=>n.type==='form'&&nodes(n).some(c=>['select','NativeSelect'].includes(c.type?.name??c.type)&&c.props.name==='role'));
-  form.props.onSubmit({preventDefault(){},currentTarget:{}});
+  await form.props.onSubmit({preventDefault(){},currentTarget:{}});
   assert.equal(nodes(h.render()).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.name==='role').at(-1).props.defaultValue,'ADMIN');
   reject(Error('Grant changed'));await h.flush();
   assert.equal(nodes(h.render()).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.name==='role').at(-1).props.defaultValue,'MEMBER');
@@ -87,4 +87,26 @@ test('roster Year column, filter and detail follow the club profile setting; ide
   const text=JSON.stringify(hidden);
   for(const kept of ['owner@virginia.edu','Role','Status','Owner'])assert.ok(text.includes(kept),kept);
  }finally{restore();}
+});
+
+// The real confirm queue behind the harness stub: count the dialogs actually shown.
+function liveConfirm(){const stub=require('./helpers/confirm-stub.cjs');const {createConfirmController}=require('./helpers/component-module.cjs').loadComponent(require('node:path').resolve('components/ui/confirm-dialog.tsx'));const shown=[];const controller=createConfirmController(p=>{if(p)shown.push(p)});stub.use(controller.request);return {shown,answer:ok=>controller.settle(shown.at(-1).id,ok),restore:()=>stub.use()};}
+
+test('two quick clicks on Remove member show one dialog and remove once',async()=>{
+ const restore=setupWindow(),live=liveConfirm();try{const directory=fixture();const calls=[];const h=harness({getOrganizationMemberManagement:async()=>directory,removeOrganizationMember:async data=>{calls.push(data);}});h.render();await h.flush();
+ nodes(h.render()).filter(node=>['button','Button'].includes(node.type)&&(node.props['aria-label']||'').includes('Member details'))[1].props.onClick({currentTarget:{},stopPropagation(){}});
+ const remove=button(h.render(),'Remove member');remove.props.onClick();remove.props.onClick();
+ assert.equal(live.shown.length,1,'one dialog');live.answer(true);await h.flush();
+ assert.equal(calls.length,1,'one removal');assert.equal(calls[0].memberId,'student');}finally{live.restore();restore();}
+});
+
+test('bulk removal sends the members counted in the dialog even if the selection changes while it is open',async()=>{
+ const restore=setupWindow(),live=liveConfirm();try{const directory=fixture();directory.members.push(member('third','MEMBER'));const calls=[];const h=harness({getOrganizationMemberManagement:async()=>directory,bulkOrganizationMembers:async data=>{calls.push(data);return {updated:data.targets.length};}});h.render();await h.flush();
+ const table=()=>nodes(h.render()).find(n=>n.props?.selection?.toggle);const row=id=>table().props.rows.find(r=>r.id===id);
+ table().props.selection.toggle(row('student'));
+ button(h.render(),'Remove members').props.onClick();
+ assert.equal(live.shown.length,1);assert.equal(live.shown[0].options.title,'Remove 1 selected member?');assert.equal(live.shown[0].options.tone,'danger');
+ table().props.selection.toggle(row('third'));table().props.selection.toggle(row('student'));
+ live.answer(true);await h.flush();
+ assert.deepEqual(calls.map(c=>c.targets.map(t=>t.id)),[['student']],'the confirmed selection, not the current one');}finally{live.restore();restore();}
 });

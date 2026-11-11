@@ -27,7 +27,7 @@ function load(file, mocks = {}) {
   );
   return m.exports;
 }
-const lib = load("lib/campus-events.ts");
+const lib = { ...load("lib/campus-events.ts"), ...load("lib/campus-event-schemas.ts") };
 test("Eastern date windows respect midnight, week/weekend, DST gaps/folds and multi-day overlap", () => {
   const { newYorkInstant, eventDateWindow, nyDate, newYorkInput } = lib;
   assert.equal(nyDate(new Date("2026-10-06T03:59:59Z")), "2026-10-05");
@@ -314,4 +314,18 @@ test("complete migration chain enforces moderation, revision withdrawal, flyer o
     1,
   );
   await db.exec("RESET ROLE");
+});
+
+test("FE-4: event schemas are server-side; campus-events and the public board ship no zod", () => {
+  assert.doesNotMatch(fs.readFileSync("lib/campus-events.ts", "utf8"), /from "zod"/);
+  const board = fs.readFileSync("components/events/public-event-board.tsx", "utf8");
+  assert.doesNotMatch(board, /from "zod"/);
+  assert.match(board, /if \(!isUuid\(eventId\)\)/);
+  assert.match(fs.readFileSync("actions/campus-events.ts", "utf8"), /from "@\/lib\/campus-event-schemas"/);
+  // The light check accepts exactly what z.string().uuid() accepted.
+  const { z } = require("zod"), { isUuid } = load("lib/uuid.ts");
+  for (const value of ["123e4567-e89b-12d3-a456-426614174000", "123E4567-E89B-12D3-A456-426614174000", "00000000-0000-0000-0000-000000000000", "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "123e4567e89b12d3a456426614174000", "123e4567-e89b-12d3-a456-42661417400", "123e4567-e89b-12d3-a456-4266141740000", "g23e4567-e89b-12d3-a456-426614174000",
+    " 123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174000\n", "{123e4567-e89b-12d3-a456-426614174000}", "", "../events", "123e4567-e89b-12d3-a456_426614174000"])
+    assert.equal(isUuid(value), z.string().uuid().safeParse(value).success, JSON.stringify(value));
 });

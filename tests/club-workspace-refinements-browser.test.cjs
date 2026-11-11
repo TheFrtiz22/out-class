@@ -29,7 +29,7 @@ async function fixture() {
     '@/actions/organization-members': api, '@/actions/recipient-groups': api, '@/actions/communications': api, '@/actions/organization-onboarding': api,
     '@/actions/club-access': empty, '@/actions/invitation-emails': empty, '@/actions/recusals': empty,
   }
-  for (const name of ['recruitment-cycles','decision-schedules','recruitment-attendance-summary','reveal-applicant','live-voting/board-decision-mode','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
+  for (const name of ['recruitment-cycles','decision-schedules','recruitment-attendance-summary','reveal-applicant','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
   const overview = { operations:{offers:[],team:null,asOf:new Date(),intake:null,cycles:[],rounds:[],queue:[],meetings:[],announcements:[],tasks:{assigned:0,completed:0,overdue:0,awaitingReview:0},reviewWork:[],bookings:[],votes:[],scheduled:[],teamTasks:[]}, club: { id: 'club', name: 'Sample Club' }, membership: owner, meeting: null, work: [], awaitingReview: 0, recruitment: [{ status: 'IN_REVIEW', count: 2 }] }
   const entry = `import React,{useState}from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';import{OrganizationMemberManagement}from'@/components/organization-member-management';import{OrganizationSetupChecklist}from'@/components/organization-setup-checklist';import{ManagerOverview}from'@/components/manager-overview';import{AudienceEditor}from'@/components/recipient-audiences';import{MeetingGroupInvitation}from'@/components/meeting-group-invitation';
   const catalog={groups:[],rosterLabels:['Boys','Girls'],gradYears:[2027,2030],cohorts:[],cycles:[],rounds:[],events:[]};
@@ -169,15 +169,15 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await creator.waitFor({state:'hidden'})
   await page.setViewportSize({width:1440,height:1000})
   await page.goto(f.base+'/?tab=audiences')
-  await page.getByRole('button',{name:'By year',exact:true}).click()
+  await page.getByRole('combobox',{name:'Send to',exact:true}).click();await page.getByRole('option',{name:'By year',exact:true}).click()
   assert.match(await page.getByLabel('Selected audience').innerText(),/PEOPLE/)
   await page.getByRole('button',{name:'Fourth Year · 2027',exact:true}).click()
   assert.match(await page.getByLabel('Selected audience').innerText(),/2027/)
-  await page.getByRole('button',{name:'Boys',exact:true}).click()
+  await page.getByRole('combobox',{name:'Send to',exact:true}).click();await page.getByRole('option',{name:'Boys',exact:true}).click()
   assert.match(await page.getByLabel('Selected audience').innerText(),/Boys/)
   await page.getByRole('button',{name:'Invite people',exact:true}).click()
   const dialog=page.getByRole('dialog')
-  await dialog.getByRole('button',{name:'Girls',exact:true}).click()
+  await dialog.getByRole('combobox',{name:'Send to',exact:true}).click();await page.getByRole('option',{name:'Girls',exact:true}).click()
   await dialog.getByRole('button',{name:'Preview recipients',exact:true}).click()
   await dialog.getByRole('button',{name:'Send meeting announcement · 1',exact:true}).click()
   await dialog.waitFor({state:'hidden'})

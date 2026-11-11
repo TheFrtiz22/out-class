@@ -17,7 +17,8 @@ import * as campusEvents from "@/actions/campus-events"
 import * as eventFlyers from "@/actions/event-flyers"
 import * as resumeImport from "@/actions/resume-import"
 import * as tutorials from "@/actions/tutorials"
-import * as votingApi from "@/actions/voting"
+import type * as votingApi from "@/actions/voting"
+import { commandVotingSession as closeBoardSessionStep } from "@/actions/voting"
 import * as applicantIntelligence from "@/actions/applicant-intelligence"
 import * as accessSetup from "@/actions/interview-access-setup"
 import * as roomApi from "@/actions/interview-rooms"
@@ -178,13 +179,8 @@ export const deleteApplicantObservation = adapt(applicantIntelligence.deleteAppl
 
 // Persisted voting follows the same Demo Mode boundary as recruitment and applicant display.
 export const getVotingWorkspace = adapt((...args: Parameters<typeof votingApi.getVotingWorkspace>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingWorkspace>>>("voting", args), "getVotingWorkspace")
-export const createVotingSession = adapt(votingApi.createVotingSession, "createVotingSession")
-export const submitVotingBallot = adapt(votingApi.submitVotingBallot, "submitVotingBallot")
-export const commandVotingSession = adapt(votingApi.commandVotingSession, "commandVotingSession")
-export async function seedVotingDemo(clubId: string) {
-  if (!(await demoGate())) throw Error("Sample voting is available only in Demo Mode.")
-  return (await loadDemoWorkspace()).demoVoting.seedVotingDemo(clubId)
-}
+// Board (LEGACY) sessions are read-only history; the one remaining command closes an unfinished session.
+export const commandVotingSession = adapt(closeBoardSessionStep, "commandVotingSession")
 
 // One saved-item boundary. Demo saves reference the same deterministic demo directory.
 export const getCorkboard = adapt((...args: Parameters<typeof directory.getCorkboard>) => readWorkspace<Awaited<ReturnType<typeof directory.getCorkboard>>>("corkboard", args), "getCorkboard")
@@ -194,19 +190,6 @@ export const setCorkboardClub = adapt(directory.setCorkboardClub, "setCorkboardC
 export const getTutorial = adapt((...args: Parameters<typeof tutorials.getTutorial>) => readWorkspace<Awaited<ReturnType<typeof tutorials.getTutorial>>>("tutorial", args), "getTutorial")
 export const saveTutorial = adapt(tutorials.saveTutorial, "saveTutorial")
 
-export const getVotingJoinInfo = adapt((...args: Parameters<typeof votingApi.getVotingJoinInfo>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingJoinInfo>>>("votingJoin", args), "getVotingJoinInfo")
-export async function joinVotingSession(sessionId:string,demoMemberId?:string){
-  if(await demoGate())return (await loadDemoWorkspace()).demoVoting.joinVotingSession(sessionId,demoMemberId)
-  if(demoMemberId)throw Error("Demo identities are not valid in production.")
-  return votingApi.joinVotingSession(sessionId)
-}
-export async function getJoinedVotingWorkspace(sessionId:string,demoMemberId?:string){
-  if(await demoGate())return (await loadDemoWorkspace()).demoVoting.getJoinedVotingWorkspace(sessionId,demoMemberId)
-  if(demoMemberId)throw Error("Demo identities are not valid in production.")
-  const info=await getVotingJoinInfo(sessionId)
-  if(!("clubId" in info)||!info.clubId)throw Error(`Session ${info.status.toLowerCase().replaceAll("_"," ")}.`)
-  return getVotingWorkspace(info.clubId,sessionId)
-}
 
 export const prepareResumeImport = adapt(resumeImport.prepareResumeImport, "prepareResumeImport")
 export const confirmResumeImport = adapt(resumeImport.confirmResumeImport, "confirmResumeImport")
@@ -244,6 +227,7 @@ export const setFormalDecisionLetters = adapt(decisionCommunications.setFormalDe
 export const getRecruitmentCycles = adapt(recruitmentManagement.getRecruitmentCycles, "getRecruitmentCycles");
 export const saveRecruitmentCycle = adapt(recruitmentManagement.saveRecruitmentCycle, "saveRecruitmentCycle");
 export const assignApplicationCycle = adapt(recruitmentManagement.assignApplicationCycle, "assignApplicationCycle");
+export const startRecruitmentCycleFromPrevious = adapt(recruitmentManagement.startRecruitmentCycleFromPrevious, "startRecruitmentCycleFromPrevious");
 export const reconsiderRejectedApplication = adapt(recruitmentManagement.reconsiderRejectedApplication, "reconsiderRejectedApplication");
 
 export const scheduleDecisionPublication = adapt(decisionSchedules.scheduleDecisionPublication, "scheduleDecisionPublication");

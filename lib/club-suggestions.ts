@@ -64,5 +64,5 @@ export function suggestClubs(directory: readonly DirectoryClub[], { saved, major
     const reason = best.score >= majorScore && best.name ? `Similar to ${best.name}` : `Fits your ${majorLabel} major`
     results.push({ club, reason, score })
   }
-  return results.sort((a, b) => b.score - a.score || a.club.name.localeCompare(b.club.name)).slice(0, limit)
+  return results.sort((a, b) => b.score - a.score || a.club.name.localeCompare(b.club.name, "en-US")).slice(0, limit)
 }

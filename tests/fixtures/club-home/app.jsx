@@ -2,6 +2,7 @@
    No sessions, server actions, databases or production data. */
 import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 import { ProductShell } from '@/components/shell/product-shell'
 import { ClubHomeActions } from '@/components/club-home/club-home-actions'
 import { ClubOverviewHeader } from '@/components/product/welcome-header'
@@ -34,4 +35,4 @@ function ClubHomeFixture() {
     </section>
   </ProductShell>
 }
-createRoot(document.getElementById('root')).render(<FixtureBoundary><ClubHomeFixture /></FixtureBoundary>)
+createRoot(document.getElementById('root')).render(<FixtureBoundary><ConfirmProvider><ClubHomeFixture /></ConfirmProvider></FixtureBoundary>)

@@ -9,8 +9,9 @@ import {resolveScheduleTime,requireFutureSchedule} from "@/lib/communication-sch
 import {availabilityScheduleInput} from "@/lib/availability-schedule";
 import {loadInterviewerPool} from "@/utils/interviewer-pool";
 import {activeAvailabilityRound} from "@/utils/availability-publication";
+import { boundedParse } from "@/lib/bounded-input";
 export async function saveAvailabilitySchedule(input:unknown){
- const d=availabilityScheduleInput.parse(input),{clubId,roundId}=d.scope,scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence),{user}=await requireClubPermission(clubId,["interviews.manage"]);
+ const d=boundedParse(availabilityScheduleInput, input),{clubId,roundId}=d.scope,scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence),{user}=await requireClubPermission(clubId,["interviews.manage"]);
  if(await supportContext())throw Error("Exit support impersonation before scheduling future communications.");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"]);

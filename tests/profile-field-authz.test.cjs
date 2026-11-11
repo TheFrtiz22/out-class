@@ -43,7 +43,7 @@ test('voting selection: GPA, major and year filters and sorts cannot reveal hidd
 // ---- 2. Voting academic years ------------------------------------------------
 test('voting workspace returns no academic years when the club hides class year', async () => {
   const { harness } = require('./helpers/voting-harness.cjs')
-  const h = harness(); await h.create()
+  const h = harness(); h.seed()
   assert.ok((await h.read()).academicYears.length > 0, 'control: years are returned by default')
   h.tx.club.findUnique = async () => ({ suspendedAt: null, profileFieldVisibility: { academicYear: false } })
   assert.deepEqual((await h.read()).academicYears, [])

@@ -2,6 +2,7 @@
    fictional, in-browser data. Local only; no sessions, server actions, databases or production data. */
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 import { DemoDataProvider } from '@/contexts/demo-context'
 import { AuthProvider } from '@/contexts/auth-context'
 import { WorkspaceShell } from '@/components/shell/workspace-shell'
@@ -24,4 +25,4 @@ function Screen() {
   if (!seed.clubs.some(club => club.id === decodeURIComponent(clubId || ''))) { history.replaceState(null, '', `/club/${encodeURIComponent(seed.clubs[0].id)}/workspace${location.search}`); location.reload(); return null }
   return <WorkspaceShell><ClubWorkspace clubId={decodeURIComponent(clubId)} section="" /></WorkspaceShell>
 }
-createRoot(document.getElementById('root')).render(<FixtureBoundary><DemoDataProvider enabled allowed template={seed}><AuthProvider hasSession={false}><Screen /></AuthProvider></DemoDataProvider></FixtureBoundary>)
+createRoot(document.getElementById('root')).render(<FixtureBoundary><ConfirmProvider><DemoDataProvider enabled allowed template={seed}><AuthProvider hasSession={false}><Screen /></AuthProvider></DemoDataProvider></ConfirmProvider></FixtureBoundary>)

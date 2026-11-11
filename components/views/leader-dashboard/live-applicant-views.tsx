@@ -1,10 +1,11 @@
 "use client"
 import { useRef, useState } from "react"
 import { schedulingDateTime } from "@/lib/scheduling-config"
-import { Lock, ShieldCheck } from "@/components/icons"
+import { ArrowRight, Lock, ShieldCheck } from "@/components/icons"
 import { DataTable, DataTableSecondary, type DataTableColumn } from "@/components/ui/data-table"
 import { joinFacts } from "@/lib/join-facts"
 import { StatusPill } from "@/components/ui/status-pill"
+import { PreviouslyAppliedBadge } from "@/components/previously-applied-badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { ApplicantSort } from "@/lib/live-applicant-sorting"
@@ -47,7 +48,7 @@ const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gp
 /** Applicants: email drops first, then SAT and ACT combine into one "Test scores" column (below 880px, never beside them), then Year drops. Cards below 640px. */
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection, profileFields = defaultProfileFieldVisibility() }: Props) {
   const columns = ([
-    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <ApplicantIdentity label={name(app)} anonymous={anonymous(app)} />, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
+    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-applicant-person-row"><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><PreviouslyAppliedBadge priors={app.priorApplications} /></span>, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
     { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Not available" },
     { id: "gpa", header: "GPA", sortKey: "gpa", align: "end", cell: app => app.student.studentProfile?.gpa?.toFixed(2) ?? "—" },
@@ -62,7 +63,7 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
     sort={sortBy ? { key: sort, descending, toggle: key => sortBy(key as ApplicantSort) } : undefined}
     selection={votingSelection ? { label: "Select for voting", rowLabel: app => `Select ${name(app)} for voting`, isSelected: app => votingSelection.ids.includes(app.id), toggle: app => votingSelection.toggle(app.id), disabled: app => !votingEligible(app.status) } : undefined}
     card={{
-      title: app => <span className="oc-dt-name">{name(app)}</span>,
+      title: app => <span className="oc-dt-name">{name(app)} <PreviouslyAppliedBadge priors={app.priorApplications} /></span>,
       trailing: app => <StatusPill status={app.status} />,
       meta: app => joinFacts(profileFields.academicYear && app.student.studentProfile?.academicYear, roundName(rounds, app), profileFields.gpa && app.student.studentProfile?.gpa != null && `GPA ${app.student.studentProfile.gpa.toFixed(2)}`, testScores(app, profileFields), app.roundScore?.average != null && `Rating ${formatAverage(app.roundScore.average)}`),
     }} />
@@ -76,7 +77,7 @@ export function LiveApplicantKanban({ applicants, allApplicants = applicants, la
     const total = laneCounts?.[lane.id] ?? allApplicants.filter(app => applicantLane(app.status) === lane.id).length
     return <section key={lane.id} aria-label={`${lane.title} applicants`} data-drop-active={over === lane.id} className="min-w-0 rounded-lg border bg-muted/30 p-3 data-[drop-active=true]:border-primary data-[drop-active=true]:bg-secondary" onDragOver={event => { const app = applicants.find(candidate => candidate.id === dragging.current); if (!busy && app && canMove?.(app, lane.id)) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setOver(lane.id) } }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null) }} onDrop={event => { event.preventDefault(); const app = applicants.find(candidate => candidate.id === dragging.current); dragging.current = null; setOver(null); if (!busy && app && canMove?.(app, lane.id)) move?.(app, lane.id) }}><header className="mb-4"><h3 className="oc-card-heading flex items-center justify-between">{lane.title}<span className="text-xs font-normal text-muted-foreground">{total}</span></h3><p className="mt-1 text-xs text-muted-foreground">{lane.description}</p></header>
       <ul className="space-y-3">{cards.map(app => <li key={app.id} draggable={!busy && applicantLanes.some(target => canMove?.(app, target.id))} onDragStart={event => { dragging.current = app.id; event.dataTransfer.setData("text/plain", app.id); event.dataTransfer.effectAllowed = "move" }} onDragEnd={() => { dragging.current = null; setOver(null) }} className="rounded-md border bg-card hover:border-primary">
-        {votingSelection&&<VotingSelection app={app} name={name(app)} selection={votingSelection}/>}<button type="button" data-applicant-id={app.id} onClick={() => { if (!dragging.current) open(app) }} className="w-full space-y-3 rounded-md p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"}</span><StatusPill status={app.status} /><span className="block text-xs text-muted-foreground"><Review app={app} /></span><span className="block border-t pt-3 text-xs">Review & actions →</span></button>
+        {votingSelection&&<VotingSelection app={app} name={name(app)} selection={votingSelection}/>}<button type="button" data-applicant-id={app.id} onClick={() => { if (!dragging.current) open(app) }} className="w-full space-y-3 rounded-md p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><ApplicantIdentity label={name(app)} anonymous={app.studentId.startsWith("anonymous-")} /><span className="block text-xs text-muted-foreground">{rounds.find(round => round.id === app.roundId)?.name || "Round unavailable"}</span><StatusPill status={app.status} /><span className="block text-xs text-muted-foreground"><Review app={app} /></span><span className="flex items-center gap-1 border-t pt-3 text-xs">Review & actions<ArrowRight size={14} aria-hidden="true" /></span></button>
         {applicantLanes.some(target => canMove?.(app, target.id)) && <label className="flex items-center gap-2 border-t p-3 text-xs">Move to<NativeSelect aria-label={`Move ${name(app)} to lane`} disabled={busy} value="" className="min-h-11 min-w-0 flex-1" onChange={event => move?.(app, event.target.value as ApplicantLane)}><option value="">Choose lane</option>{applicantLanes.filter(target => canMove?.(app, target.id)).map(target => <option key={target.id} value={target.id}>{target.title}</option>)}</NativeSelect></label>}
       </li>)}</ul>
       {!cards.length && <p className="py-6 text-xs text-muted-foreground">{total ? "No applicants from this lane on this page." : "No applicants in this lane with the current filters."}</p>}

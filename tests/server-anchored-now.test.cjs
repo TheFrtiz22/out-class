@@ -10,13 +10,16 @@ function load() {
   const react = {
     useSyncExternalStore: (_subscribe, client, server) => state.hydrating ? server() : client(),
     useState(init) { const i = index++; if (!(i in slots)) slots[i] = typeof init === 'function' ? init() : init; return [slots[i], v => { slots[i] = v }] },
-    useEffect(fn) { fn() },
+    useEffect(fn) { withDevice(fn) },
   };
   const mod = { exports: {} };
   const realNow = Date.now;
+  const withDevice = fn => { const saved = Date.now; Date.now = () => state.device; try { return fn() } finally { Date.now = saved } };
   const withClock = fn => { Date.now = () => state.device; global.window = {}; try { return fn() } finally { Date.now = realNow; delete global.window } };
-  new Function('require', 'module', 'exports', 'setInterval', 'clearInterval', ts.transpileModule(fs.readFileSync('hooks/use-server-now.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(
-    name => name === 'react' ? react : require(name), mod, mod.exports, fn => state.timers.push(fn), () => {});
+  // The shared minute clock (FE-4): ticks reach every subscriber; a subscription reads the time at once.
+  const minuteClock = { subscribe(fn) { state.timers.push(fn); fn(); return () => { state.timers = state.timers.filter(t => t !== fn) } } };
+  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync('hooks/use-server-now.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(
+    name => name === 'react' ? react : name === '@/lib/minute-clock' ? { minuteClock } : require(name), mod, mod.exports);
   return {
     state,
     mount(serverNow) { slots = []; index = 0; state.timers = []; return withClock(() => mod.exports.useServerAnchoredNow(serverNow)) },
@@ -45,4 +48,11 @@ test('a view opened client-side without a hydration anchor uses the device clock
   const h = load(); h.state.hydrating = false; h.state.device = server;
   assert.equal(h.mount(undefined), server);
   assert.equal(h.mount(server), server, 'a client-only mount ignores serverNow');
+});
+
+test('FE-4: the hook subscribes to the shared minute clock instead of owning a timer, and can pause', () => {
+  const source = fs.readFileSync('hooks/use-server-now.ts', 'utf8');
+  assert.doesNotMatch(source, /setInterval|setTimeout/);
+  assert.match(source, /minuteClock\.subscribe\(/);
+  assert.match(source, /if \(!enabled\) return/);
 });

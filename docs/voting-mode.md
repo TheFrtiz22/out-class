@@ -1,5 +1,7 @@
 # Recruitment voting
 
+> **Retired November 2026.** The board ("Recruitment voting", `BoardDecisionMode`) was removed when voting rooms became the one voting system. Existing board sessions are read-only history at `/voting/rooms/<id>/history`; see "One voting system" in [voting-room-implementation.md](voting-room-implementation.md). The text below is historical.
+
 The production applicant workspace opens **Recruitment voting**, a focused board with one applicant at a time. It reuses Prompt 33's configured applicant presentation, including permitted profile, academics, experience, interview feedback, Pros/Cons and document/profile links.
 
 Leadership creates a draft for one recruitment round, chooses an authorized participant roster, target class size and optional explicit auto-advance rule. Voters record immutable Pass, Hold / Fringe or Do Not Pass ballots. Counts and history survive refresh and work across devices through five-second server polling. Reaching the target remains advisory.

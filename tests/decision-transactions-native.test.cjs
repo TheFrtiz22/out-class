@@ -162,9 +162,11 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
         t.diagnostic(`${status} support=${support}: three commands=${Date.now() - start}ms queries=${queryCount - q} PostgreSQL duration=${sqlMs - duration}ms provider resolutions=${providerCalls - before}`);
       }
     });
-    await t.test(`voting publication, concurrent retry and attribution (support=${support})`, async () => {
+    // FE-27: board (LEGACY) sessions are read-only history; room publication is covered by voting-room-native.
+    await t.test(`board session publication is refused without writes (support=${support})`, async () => {
       const f = await fixture(support), publish = await voteFixture(f);
-      await Promise.all([publish(), publish()]); await publish(); await assertPublished(f, 'ACCEPTED');
+      await assert.rejects(publish(), /read-only/); await assertRollback(f);
+      assert.equal((await base.votingSession.findFirstOrThrow({ where: { clubId: f.club.id } })).publishedAt, null);
     });
     await t.test(`no-email invitation creation and concurrent retry (support=${support})`, async () => {
       const f = await fixture(support), results = await Promise.all([invitation(f), invitation(f)]);
@@ -185,8 +187,8 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     }
     providerDelay = 0;
   });
-  await t.test('direct/voting/invitation audit failure rolls back all domain data; durable support attempts remain', async () => {
-    for (const kind of ['direct', 'voting', 'invitation']) {
+  await t.test('direct/invitation audit failure rolls back all domain data; durable support attempts remain', async () => {
+    for (const kind of ['direct', 'invitation']) {
       const f = await fixture(); const publish = kind === 'voting' ? await voteFixture(f) : null;
       state.failAction = kind === 'invitation' ? 'club.identity-invite.create' : 'recruitment.email.queued';
       await assert.rejects(kind === 'direct' ? direct(f) : kind === 'voting' ? publish() : invitation(f), /Injected audit failure/);
@@ -196,8 +198,8 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     }
     const f = await fixture(); state.failAudit = true; await assert.rejects(direct(f), /Injected audit failure/); state.failAudit = false; await assertRollback(f);
   });
-  await t.test('permission revoked after request authorization and while waiting on Club lock denies direct/voting/invitation', async () => {
-    for (const kind of ['direct', 'voting', 'invitation']) {
+  await t.test('permission revoked after request authorization and while waiting on Club lock denies direct/invitation', async () => {
+    for (const kind of ['direct', 'invitation']) {
       const f = await fixture(false); const publish = kind === 'voting' ? await voteFixture(f) : null;
       await operator.clubMember.create({ data: { clubId: f.club.id, userId: admin.id, isOwner: true } });
       let locked, release; const lockReady = new Promise(r => locked = r), gate = new Promise(r => release = r);
@@ -212,7 +214,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     const f = await fixture(false), other = await fixture(false); await voteFixture(other);
     const votingSession = await base.votingSession.findFirstOrThrow({ where: { clubId: other.club.id } });
     await assert.rejects(f.run(() => api('actions/crm.ts').setApplicationStatus({ clubId: f.club.id, applicationId: other.app.id, status: 'ACCEPTED' })), /Application changed/);
-    await assert.rejects(f.run(() => api('actions/voting.ts').commandVotingSession({ clubId: other.club.id, sessionId: votingSession.id, revision: 0, action: 'PUBLISH', applicationIds: [other.app.id] })), /Permission denied/);
+    await assert.rejects(f.run(() => api('actions/voting.ts').commandVotingSession({ clubId: other.club.id, sessionId: votingSession.id, revision: 0, action: 'PUBLISH', applicationIds: [other.app.id] })), /read-only|Permission denied/);
     await assert.rejects(other.run(() => api('actions/club-onboarding.ts').createClubIdentityInvitation({ clubId: f.club.id, identifierTypeId: 'school-uva-computing-id', identifier: 'outsider', requestedRole: 'MEMBER' })), /cannot grant/);
     await assertRollback(f); await assertRollback(other);
   });
@@ -313,29 +315,6 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
       const other = await fixture(false);
       await assert.rejects(profile(f, api, { logoUrl: `club-assets/${other.club.id}/${randomUUID()}.webp` }), /ownership mismatch/);
       await assert.rejects(f.run(() => api('actions/club-workspace.ts').updateClubSettings({ clubId: other.club.id, name: 'Forbidden', tagline: '', description: '' })), /Permission denied/);
-    });
-    await t.test(`persisted voting draft reload, joining, ballots, retries and publication (support=${support})`, async () => {
-      const f = await fixture(support), voting = api('actions/voting.ts');
-      const id = await f.run(() => voting.createVotingSession({ clubId: f.club.id, roundId: f.round.id, applicationIds: [f.app.id], participantIds: [f.member.id], targetSize: 1, displayConfig: { version: 1, fields: ['name'] } }));
-      let view = await f.run(() => voting.getVotingWorkspace(f.club.id));
-      assert.equal(view.session.id, id); assert.equal(view.session.state, 'DRAFT');
-      const command = async (action, extra = {}) => {
-        view = await f.run(() => voting.getVotingWorkspace(f.club.id, id));
-        return f.run(() => voting.commandVotingSession({ clubId: f.club.id, sessionId: id, revision: view.session.revision, action, ...extra }));
-      };
-      await command('OPEN_JOIN');
-      await Promise.all([f.run(() => voting.joinVotingSession(id)), f.run(() => voting.joinVotingSession(id))]);
-      await command('START_PASS');
-      const ballot = () => f.run(() => voting.submitVotingBallot({ clubId: f.club.id, sessionId: id, passNumber: 1, applicationId: f.app.id, decision: 'PASS' }));
-      const results = await Promise.allSettled([ballot(), ballot()]);
-      assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
-      assert.equal(await base.votingBallot.count({ where: { sessionId: id } }), 1);
-      await command('COMPLETE_PASS'); await command('FINISH'); await command('PUBLISH', { applicationIds: [f.app.id] });
-      await assertPublished(f, 'ACCEPTED');
-      await operator.clubMember.create({ data: { userId: admin.id, clubId: f.club.id, isOwner: true } });
-      await operator.clubMember.update({ where: { id: f.member.id }, data: { isOwner: false, permissions: [] } });
-      await assert.rejects(f.run(() => voting.getVotingWorkspace(f.club.id, id)), /Permission denied/);
-      await assert.rejects(ballot(), /Permission denied/);
     });
   }
   async function recipient(f, support) {
