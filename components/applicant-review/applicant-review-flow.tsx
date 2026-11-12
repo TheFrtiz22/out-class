@@ -43,6 +43,7 @@ import { defaultProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { defaultReviewRubric } from "@/lib/review-rubric"
 import { advanceLabel, canStage, stagedLabel, type StagedOutcome } from "@/lib/staged-decisions"
 import type { ExtendedMembership } from "@/contexts/auth-context"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 
 const decisionKeys: Record<string, StagedOutcome> = { a: "ADVANCE", h: "HOLD", r: "REJECT" }
 const typing = (target: EventTarget | null) => !!(target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable="true"], [role="menu"], [role="listbox"], [role="slider"], iframe')
@@ -177,6 +178,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
               {resumeUrl && <ResumeViewerDialog href={resumeUrl} name={displayName(app)} clubId={clubId} applicationId={app.id} trigger="Résumé" />}
               {linkedinUrl && <a className="oc-quick-icon-action" href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)" title="LinkedIn"><Linkedin size={16} aria-hidden="true" /></a>}
               {anonymous && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={app.id} clubId={clubId} applicationId={app.id} />}
+              <ReportContentButton target={{ type: "student", clubId, applicationId: app.id }} label="Report this profile" hidden={app.studentId === membership.userId || !canReview} ownerUserId={app.studentId} />
             </div>
           </header>
 

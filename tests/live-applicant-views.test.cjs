@@ -13,7 +13,7 @@ function compile(file, mocks = {}) {
 // recruitment-lifecycle throws ActionError (#292); action-result has no imports of its own.
 const actionResult = compile('lib/action-result.ts')
 const lifecycle = compile('lib/recruitment-lifecycle.ts', { '@prisma/client': {}, '@/lib/action-result': actionResult })
-const staged = compile('lib/staged-decisions.ts', { '@/lib/recruitment-lifecycle': lifecycle })
+const staged = compile('lib/staged-decisions.ts', { '@/lib/recruitment-lifecycle': lifecycle, '@/lib/action-result': actionResult })
 const board = compile('lib/applicant-board.ts')
 const zod = require('zod')
 const rubric = compile('lib/review-rubric.ts', { zod })
