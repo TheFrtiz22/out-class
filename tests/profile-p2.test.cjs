@@ -3,7 +3,7 @@ function load(file,mocks={}) {const m={exports:{}};new Function('require','modul
 const owner='123e4567-e89b-12d3-a456-426614174000',other='123e4567-e89b-12d3-a456-426614174001',clubId='123e4567-e89b-12d3-a456-426614174002',applicationId='123e4567-e89b-12d3-a456-426614174003',roundId='123e4567-e89b-12d3-a456-426614174004';
 const photo=load('lib/profile-photo.ts'),profile=load('lib/student-profile.ts');
 test('external, public, foreign and proxy references cannot be saved as owned photos',async()=>{
- const writes=[];const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:owner,email:'owner@virginia.edu'}})},'@/utils/prisma':{prisma:{studentProfile:{update:async q=>{writes.push(q);return q.data},upsert:async q=>{writes.push(q);return q.create}}}},'next/cache':{revalidatePath(){}}});
+ const writes=[];const api=load('actions/profile.ts',{'@/utils/terms-acceptance':{ hasCurrentTermsAcceptance:async () => { throw Error('Terms acceptance is not consulted while LEGAL_PAGES_PUBLIC is off') } },'@/utils/auth':{requireAuth:async()=>({user:{id:owner,email:'owner@virginia.edu'}})},'@/utils/prisma':{prisma:{studentProfile:{update:async q=>{writes.push(q);return q.data},upsert:async q=>{writes.push(q);return q.create}}}},'next/cache':{revalidatePath(){}}});
  for(const headshotUrl of ['https://external.invalid/photo.png',`https://local.invalid/storage/v1/object/public/headshots/${owner}/p.png`,`${other}/p.png`,photo.profilePhotoSource(`${owner}/p.png`)]) {
   assert.ok((await api.updateStudentProfileSection({section:'identity',firstName:'New',lastName:'Name',headshotUrl})).error);
   await assert.rejects(api.upsertStudentProfile({firstName:'New',lastName:'Name',computingId:'owner',major:'Math',gradYear:2028,headshotUrl}));
