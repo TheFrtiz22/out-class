@@ -13,7 +13,9 @@ import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilit
 import { hasPermission } from "@/lib/permissions";
 import { profilePhotoSource } from "@/lib/profile-photo";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
-import type { InterviewRecord } from "@prisma/client";
+import type { InterviewRecord, Prisma } from "@prisma/client";
+import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
+import { STALE_INTERVIEW_LIST_CURSOR, decodeInterviewListCursor, interviewListFiltersSchema, interviewListLimitSchema, interviewListPage, interviewListScope } from "@/lib/interview-list-page";
 import { approvedBookingPanel, collaborationAccess } from "@/utils/interview-collaboration";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview-score-history";
@@ -124,8 +126,8 @@ async function saveInterviewSessionCommand(input: z.infer<typeof scope> & { revi
       // Unknown historical rounds need reconciliation, never name-based matching or duplicates.
       if (await tx.evaluation.findFirst({ where: { applicationId: app.id, interviewerId: member.id, roundId: null } })) throw new ActionError("Historical evaluation needs explicit round reconciliation before submission.");
       evaluation = await tx.evaluation.upsert({ where: { applicationId_interviewerId_roundId: key },
-        create: { ...key, round: round.name, score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt },
-        update: { score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt } });
+        create: { ...key, round: round.name, score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt, ...(data.draft.rubricScores ? { rubricScores: data.draft.rubricScores } : {}) },
+        update: { score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt, ...(data.draft.rubricScores ? { rubricScores: data.draft.rubricScores } : {}) } });
     }
     const changed = await tx.interviewRecord.updateMany({ where: { id: record.id, revision: data.revision, completedAt: null }, data: { draft: data.draft, revision: { increment: 1 }, completedAt: submittedAt, ...(evaluation ? { evaluationId: evaluation.id, submittedQuestions: snapshotSubmittedQuestions(kitSchema.parse(record.questions), data.draft) } : {}) } });
     if (changed.count !== 1) throw new ActionError("A newer draft exists. Reload before saving.", "STALE");
@@ -188,22 +190,44 @@ export async function getInterviewRounds(clubId: string): Promise<InterviewSetup
 }
 /** Closing projection deliberately never includes questions or private draft notes. */
 /** Leadership discovery returns metadata only; opening a review reauthorizes its scope. */
-async function getSubmittedInterviewReviewsCommand(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+async function readSubmittedInterviewReviews(clubId: string, filters: ApplicantInterviewFilters, cursor: unknown, withTotal: boolean, limit?: unknown) {
   z.string().uuid().parse(clubId);
-  const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
   const { user } = await requireAuth();
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit);
+  const listScope = interviewListScope(clubId, selected);
+  const position = decodeInterviewListCursor(cursor, "reviews", listScope);
   return prisma.$transaction(async tx => {
+    // Every page re-checks live leadership access before reading anything.
     const { caps, member } = await interviewActor(tx, clubId, user.id);
     if (!caps.readClosing) throw new ActionError("Explicit leadership review access required.", "FORBIDDEN");
     // Photos follow the identified-CRM rule the photo route re-checks (applicants.identify, non-anonymous).
     const identify = hasPermission(member, "applicants.identify");
+    const where: Prisma.InterviewRecordWhereInput = { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), completedAt: { not: null }, round: { clubId }, application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } };
+    let page = where;
+    if (position) {
+      // The anchor must satisfy this request's own authorized filters; a cursor never widens scope.
+      const anchor = await tx.interviewRecord.findFirst({ where: { AND: [where, { id: position.id }] }, select: { completedAt: true } });
+      if (!anchor?.completedAt) throw new Error(STALE_INTERVIEW_LIST_CURSOR);
+      page = { AND: [where, { OR: [{ completedAt: { lt: anchor.completedAt } }, { completedAt: anchor.completedAt, id: { lt: position.id } }] }] };
+    }
     const records = await tx.interviewRecord.findMany({
-      where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), completedAt: { not: null }, round: { clubId }, application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } },
-      orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: 100,
+      where: page,
+      orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: take + 1,
       select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true, headshotUrl: true } } } } } } },
     });
-    return records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", photo: anonymous || !identify ? null : profilePhotoSource(r.application.student.studentProfile?.headshotUrl, { clubId, applicationId: r.applicationId, mode: "crm" }) ?? null }; });
+    const total = withTotal ? await tx.interviewRecord.count({ where }) : 0;
+    const rows = records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", photo: anonymous || !identify ? null : profilePhotoSource(r.application.student.studentProfile?.headshotUrl, { clubId, applicationId: r.applicationId, mode: "crm" }) ?? null }; });
+    return interviewListPage(rows, r => r.id, "reviews", listScope, total, take);
   }, interviewTransactionOptions);
+}
+/** One page (50) of submitted reviews, newest first. `cursor` is the previous page's `nextCursor`;
+ * `limit` (up to 500) lets a refresh re-read everything already loaded in one request. */
+async function getSubmittedInterviewReviewPageCommand(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  return readSubmittedInterviewReviews(clubId, filters, cursor, true, limit);
+}
+/** Earlier array contract: the first page only. The leadership UI pages with getSubmittedInterviewReviewPage. */
+async function getSubmittedInterviewReviewsCommand(clubId: string, filters: ApplicantInterviewFilters = {}) {
+  return (await readSubmittedInterviewReviews(clubId, filters, null, false)).items;
 }
 async function getSubmittedInterviewReviewCommand(input: z.infer<typeof scope> & { interviewerId: string }) {
   const data = scope.extend({ interviewerId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
@@ -276,6 +300,9 @@ export async function getInterviewRoundScore(...args: Parameters<typeof getInter
   return actionResult(() => getInterviewRoundScoreCommand(...args), "getInterviewRoundScore")
 }
 
+export async function getSubmittedInterviewReviewPage(...args: Parameters<typeof getSubmittedInterviewReviewPageCommand>) {
+  return actionResult(() => getSubmittedInterviewReviewPageCommand(...args), "getSubmittedInterviewReviewPage")
+}
 export async function getSubmittedInterviewReviews(...args: Parameters<typeof getSubmittedInterviewReviewsCommand>) {
   return actionResult(() => getSubmittedInterviewReviewsCommand(...args), "getSubmittedInterviewReviews")
 }

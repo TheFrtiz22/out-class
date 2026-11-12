@@ -194,3 +194,60 @@ test('sign-in intent overrides a saved demo perspective or existing session and 
     assert.equal(changes.includes('landing'), false)
   }
 })
+
+test('every page sets its own title through metadata or generateMetadata', () => {
+  const path = require('node:path')
+  // Pages that only redirect never render, so the browser never shows their title.
+  const redirectOnly = new Set(['app/decisions/page.tsx', 'app/interviews/page.tsx', 'app/(workspace)/club/[clubId]/tasks/page.tsx'])
+  const pages = []
+  const walk = dir => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const full = path.posix.join(dir, e.name); if (e.isDirectory()) walk(full); else if (e.name === 'page.tsx') pages.push(full) } }
+  walk('app')
+  const titled = (file, depth = 0) => {
+    const source = fs.readFileSync(file, 'utf8')
+    if (/export (async )?function generateMetadata[\s\S]*?(\btitle\b|publicPageMetadata\()/.test(source)) return true
+    const meta = source.match(/export const metadata\b[^=]*=\s*([^\n]+(?:\n\s+[^\n]+){0,2})/)
+    if (!meta) return false
+    if (/\btitle\b|publicPageMetadata\(/.test(meta[1])) return true
+    // A metadata alias of another page (the /vote alias of /live-voting).
+    const alias = meta[1].split('\n')[0].trim().match(/^(\w+)$/), from = alias && source.match(new RegExp(`metadata as ${alias[1]} \\} from "@/(.+?)"`))
+    return !!from && depth < 2 && titled(`${from[1]}.tsx`, depth + 1)
+  }
+  const missing = pages.filter(file => {
+    if (redirectOnly.has(file)) return !/redirect\(/.test(fs.readFileSync(file, 'utf8'))
+    if (titled(file)) return false
+    // A client page cannot export metadata; its own segment layout carries the title instead.
+    const layout = path.posix.join(path.posix.dirname(file), 'layout.tsx')
+    return !(/^["']use client["']/.test(fs.readFileSync(file, 'utf8').trim()) && fs.existsSync(layout) && titled(layout))
+  })
+  assert.deepEqual(missing, [])
+  assert.ok(pages.length > 50)
+})
+
+test('signed-in and admin titles are unique', () => {
+  const titles = new Map()
+  for (const file of require('node:child_process').execFileSync('git', ['ls-files', 'app/**/page.tsx', 'app/**/layout.tsx'], { encoding: 'utf8' }).trim().split('\n')) {
+    const source = fs.readFileSync(file, 'utf8')
+    // Old URLs that only redirect share their destination's title on purpose.
+    if (/redirect\(/.test(source) && !/(return|=>)\s*\(?\s*</.test(source)) continue
+    const m = source.match(/export const metadata\b[^=]*=\s*\{\s*title:\s*"([^"]+)"/)
+    if (m) titles.set(m[1], [...(titles.get(m[1]) || []), file])
+  }
+  const duplicates = [...titles].filter(([, files]) => files.length > 1)
+  assert.deepEqual(duplicates, [])
+})
+
+test('llms.txt lists only the public pages and indexable clubs, and robots lets AI crawlers read it', async () => {
+  const { GET, revalidate } = load('app/llms.txt/route.ts', { '@/lib/seo': seo, '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false }, '@/lib/public-club-seo': { getIndexableClubs: async () => [{ ...club, name: 'Real [Club]' }] } })
+  assert.equal(revalidate, 600)
+  const response = await GET()
+  assert.match(response.headers.get('content-type'), /^text\/plain/)
+  const text = await response.text()
+  assert.match(text, /^# OutClass\n\n> /)
+  for (const path of ['/', '/uva', '/about', '/request-school', '/club/real-club', '/sitemap.xml']) assert.ok(text.includes(`(https://www.out-class.net${path})`), path)
+  assert.match(text, /- \[Real Club\]\(https/, 'club names cannot break the link syntax')
+  assert.doesNotMatch(text, /\/privacy|\/terms|\/platform|\/settings|workspace|—/)
+  const robots = load('app/robots.ts', { '@/lib/seo': seo }).default()
+  assert.equal(robots.rules.userAgent, '*', 'one rule for every crawler, so GPTBot, ClaudeBot, CCBot and Google-Extended are not singled out')
+  assert.equal(robots.rules.disallow.some(rule => rule.startsWith('/llms')), false)
+  assert.match(fs.readFileSync('middleware.ts', 'utf8'), /"\/sitemap\.xml", "\/llms\.txt"/)
+})

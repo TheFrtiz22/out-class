@@ -63,7 +63,9 @@ test("every personal and settings page sets a server title; the template adds ' 
     .concat(["page", "account/page", "notifications/page", "organizations/page", "profile/page", "availability/page", "interviews/page"].map(p => `app/(workspace)/settings/${p}.tsx`))
   for (const file of pages) {
     const source = fs.readFileSync(file, "utf8")
-    assert.match(source, /metadata[^=]*=\s*\{\s*title:\s*"[^"|]+"/, file)
+    // Events titles a shared event link after the event and falls back to "Events".
+    if (file.endsWith("/corkboard/page.tsx")) assert.match(source, /generateMetadata[\s\S]*return \{ title: "Events" \}/, file)
+    else assert.match(source, /metadata[^=]*=\s*\{\s*title:\s*"[^"|]+"/, file)
     assert.doesNotMatch(source, /\| OutClass/, file)
   }
   assert.match(fs.readFileSync("app/(workspace)/inbox/page.tsx", "utf8"), /title: "Inbox"/)

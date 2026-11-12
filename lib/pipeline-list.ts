@@ -15,6 +15,7 @@ export function pipelineListProjection(data: Pipeline) {
     rounds: data.rounds,
     genderCounts: data.genderCounts,
     profileFields: data.profileFields,
+    rubric: data.rubric,
     applications: data.applications.map(app => {
       const profile = app.student.studentProfile
       return {

@@ -4,7 +4,7 @@ import { ChevronDown } from "@/components/icons"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 /**
- * One collapsed line in the applicant quick review: "Interview notes (2)". Content stays mounted while
+ * One collapsed line in the applicant review: "Interview notes (2)". Content stays mounted while
  * collapsed (so counts load) unless `lazy`, which renders it only once opened (the résumé viewer).
  * Callers hide the whole section when it is empty and the viewer cannot add to it.
  */

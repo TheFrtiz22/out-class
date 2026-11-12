@@ -113,7 +113,7 @@
   color: #0b2b47;
   border: 1px solid #fff8;
   box-shadow: inset 0 0 28px #b9985020;
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   line-height: 1.4;
 }
 .oc-event-paper h3 {
@@ -130,7 +130,7 @@
 }
 .oc-paper-club {
   font-family: var(--oc-font-display);
-  font-size: clamp(var(--oc-size-10), 6cqw, var(--oc-text-small));
+  font-size: clamp(var(--oc-size-12), 6cqw, var(--oc-text-small));
   font-weight: 400;
   line-height: 1.1;
 }
@@ -153,7 +153,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-12);
 }
 .oc-paper-art {
   height: 30%;
@@ -172,7 +172,7 @@
   display: block;
 }
 .oc-paper-category {
-  font-size: var(--oc-size-9);
+  font-size: var(--oc-size-12);
   margin-top: 5px;
 }
 .oc-event-paper[data-template="navy"] {
@@ -297,7 +297,7 @@
 }
 .oc-event-facts dt {
   color: var(--muted-foreground);
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   margin-bottom: 4px;
 }
 .oc-event-facts dd {
@@ -325,12 +325,6 @@
 .oc-youre-going {
   font-weight: 600;
   color: var(--success);
-}
-.oc-event-permalink {
-  display: inline-block;
-  font-size: var(--oc-text-caption);
-  text-decoration: underline;
-  margin-top: 14px;
 }
 .oc-event-pagination {
   display: flex;
@@ -389,7 +383,7 @@
   font-size: 6px; /* type-literal-ok: thumbnail of the flyer artwork */
 }
 .oc-managed-event .oc-event-paper h3 {
-  font-size: var(--oc-size-10);
+  font-size: var(--oc-size-10); /* type-literal-ok: thumbnail of the flyer artwork */
 }
 .oc-managed-event .oc-paper-description {
   font-size: 4px; /* type-literal-ok: thumbnail of the flyer artwork */
@@ -405,7 +399,7 @@
 }
 .oc-event-status {
   display: inline-block;
-  font-size: var(--oc-size-11);
+  font-size: var(--oc-size-12);
   padding: 3px 7px;
   background: var(--muted);
   border-radius: var(--oc-radius-sm);
@@ -476,7 +470,7 @@
     font-size: var(--oc-size-24);
   }
   .oc-pulled-flyer .oc-event-paper {
-    font-size: var(--oc-size-11);
+    font-size: var(--oc-size-12);
     padding: 20px 15px;
   }
   .oc-event-editor {
@@ -538,7 +532,7 @@
   min-height: 90px;
 }
 .oc-event-paper {
-  font-size: clamp(var(--oc-size-9), 5cqw, var(--oc-text-caption));
+  font-size: var(--oc-text-caption);
 }
 @media (min-width: 701px) and (max-width: 1100px) {
   .oc-flyer-grid {
@@ -628,7 +622,7 @@
 /* Shared discovery controls; the pinned flyers retain their original layout. */
 .oc-event-view-switch.oc-segmented-control { flex-shrink: 0; width: auto; }
 .oc-event-search { max-width: 300px; }
-.oc-event-pill { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 9px 15px; border-radius: var(--oc-radius-sm); font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; color: var(--primary); background: var(--muted); cursor: pointer; text-decoration: none; transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
+.oc-event-pill { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 9px 15px; border-radius: var(--oc-radius-sm); font-size: var(--oc-size-13); font-weight: 500; line-height: 1.4; color: var(--primary); background: var(--muted); cursor: pointer; text-decoration: none; transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
 .oc-event-pill:hover { background: var(--accent); }
 .oc-event-pill[aria-pressed="true"] { color: var(--brand-ink); background: var(--brand-subtle); }
 .oc-event-pill:disabled { opacity: .6; cursor: wait; }
@@ -650,14 +644,14 @@
 .oc-smart-event-media[data-template="orange"] { background-color: #f7d7c4; }
 .oc-smart-event-media[data-template="sage"] { background-color: #dfe8d8; }
 .oc-smart-event-fallback { display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 280px; gap: 15px; padding: 104px 30px 30px; background-image: url("/images/events/paper.svg"); }
-.oc-smart-event-fallback > span { font-size: var(--oc-size-11); letter-spacing: .035em; }
+.oc-smart-event-fallback > span { font-size: var(--oc-size-12); letter-spacing: .035em; }
 .oc-smart-event-fallback > strong { font-family: var(--oc-font-display); font-size: clamp(var(--oc-size-24), 2.5vw, var(--oc-size-36)); font-weight: 400; line-height: 1.13; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .oc-smart-event-fallback-rule { display: block; height: 2px; width: 40px; background: var(--brand-orange); }
 .oc-smart-event-date { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 65px; min-height: 75px; gap: 2px; border-radius: var(--oc-radius-lg); background: #fffefa; color: var(--school-primary); box-shadow: 0 4px 16px color-mix(in srgb, var(--school-primary) 8%, transparent); }
-.oc-smart-event-date > span { font-size: var(--oc-size-11); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; color: var(--brand-ink); }
+.oc-smart-event-date > span { font-size: var(--oc-size-12); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; color: var(--brand-ink); }
 .oc-smart-event-date > strong { font-size: var(--oc-text-metric); line-height: 1.05; font-weight: 500; font-variant-numeric: tabular-nums; }
 .oc-smart-event-copy { min-width: 0; display: flex; flex-direction: column; padding: 26px 30px 22px; }
-.oc-smart-event-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--oc-size-11); margin-bottom: 13px; }
+.oc-smart-event-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--oc-size-12); margin-bottom: 13px; }
 .oc-smart-event-host { font-weight: 500; color: var(--muted-foreground); overflow-wrap: anywhere; }
 .oc-smart-event-category { background: transparent; color: inherit; padding: 2px 8px; border-left: 2px solid var(--border); border-radius: 0; }
 .oc-smart-event-copy h2 { font-family: var(--oc-font-display); font-size: clamp(var(--oc-size-24), 2.3vw, var(--oc-size-32)); font-weight: 400; line-height: 1.18; color: var(--primary); overflow-wrap: anywhere; margin-bottom: 18px; }
@@ -673,7 +667,7 @@
 .oc-smart-event-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; }
 .oc-smart-event-actions { display: flex; gap: 7px; flex-wrap: wrap; }
 .oc-smart-event-footer .oc-event-pill { z-index: 2; }
-.oc-smart-event-rsvp { color: var(--muted-foreground); font-size: var(--oc-size-11); margin-top: 12px; }
+.oc-smart-event-rsvp { color: var(--muted-foreground); font-size: var(--oc-size-12); margin-top: 12px; }
 @keyframes oc-event-view-enter { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 900px) { .oc-smart-event-copy { padding: 24px; } .oc-smart-event-card { grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr); } }
 @media (max-width: 700px) {

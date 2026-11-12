@@ -1,5 +1,6 @@
 import { ActionError } from "@/lib/action-result";
 import { z } from "zod";
+import { rubricScoresSchema } from "@/lib/review-rubric";
 export const kitQuestionSchema = z.object({
   id: z.string().uuid(),
   prompt: z.string().trim().min(1).max(3000),
@@ -42,6 +43,8 @@ export const interviewDraftSchema = z.object({
   overallReview: z.string().max(20000),
   // Reading old records preserves historical decimals and out-of-range evidence.
   score: z.number().finite().nullable(),
+  // Category grades behind `score` from applicant review (lib/review-rubric.ts). Absent for the interview room's single score.
+  rubricScores: rubricScoresSchema.optional(),
 });
 export type InterviewDraft = z.infer<typeof interviewDraftSchema>;
 export function validateAdditionalQuestionSnapshots(previous: InterviewDraft, next: InterviewDraft, bank: KitQuestion[]) {

@@ -7,8 +7,9 @@ import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
 import { DEMO_COOKIE } from "@/lib/demo/access";
-import { isUvaEmail } from "@/lib/auth";
+import { isUvaEmail, safeReturnPath } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
+import { RETURN_PATH_HEADER, secondFactorPending, TWO_STEP_REQUIRED_MESSAGE, twoStepChallengeHref } from "@/lib/user-mfa";
 import { createClient } from "./supabase/server";
 import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
@@ -17,25 +18,31 @@ import { cache } from "react";
 
 // React's request cache is limited to one server render/request. It never shares
 // a verified identity between requests, users, clubs, or support sessions.
-export const getSessionUser = cache(async () => {
+export const getSessionState = cache(async () => {
   const supabase = await createClient(await cookies());
   // getSession only supplies a candidate token; verify that exact token remotely
   // before trusting its session claim. This retains one getUser verification.
   const session = await supabase.auth.getSession();
-  if (session.error || !session.data.session) return { data: { user: null }, error: session.error };
+  if (session.error || !session.data.session) return { identity: { data: { user: null }, error: session.error }, secondFactorPending: false };
   const token = session.data.session.access_token;
   const identity = await serverPhase("identity", () => supabase.auth.getUser(token));
-  if (identity.error || !identity.data.user) return identity;
+  if (identity.error || !identity.data.user) return { identity, secondFactorPending: false };
   const sessionId = sessionIdFromVerifiedToken(token, identity.data.user.id);
-  if (!sessionId) return { data: { user: null }, error: null };
+  if (!sessionId) return { identity: { data: { user: null }, error: null }, secondFactorPending: false };
   // Auth can accept an unexpired JWT beyond the session's not_after boundary.
   // Request caching coalesces this indexed check, never across requests/users.
   const [row] = await serverPhase("live_session", () => prisma.$queryRaw<{ live: boolean }[]>`
     SELECT EXISTS(SELECT 1 FROM auth.sessions WHERE id=${sessionId}::uuid
       AND user_id=${identity.data.user.id}::uuid
       AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`);
-  return row?.live ? identity : { data: { user: null }, error: null };
+  if (!row?.live) return { identity: { data: { user: null }, error: null }, secondFactorPending: false };
+  // Optional two-step sign-in: factors come from the verified Auth user, the level from the
+  // verified token. An enrolled account that has not passed its code is not signed in yet.
+  if (secondFactorPending(identity.data.user, token))
+    return { identity: { data: { user: null }, error: null }, secondFactorPending: true, pendingUser: identity.data.user };
+  return { identity, secondFactorPending: false };
 });
+export const getSessionUser = cache(async () => (await getSessionState()).identity);
 
 /**
  * Ensures a user is logged in. Returns the Supabase user and Prisma user.
@@ -63,8 +70,16 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
     return { user: effective, supabaseUser: { id: effective.id, email: effective.email, email_confirmed_at: undefined, app_metadata: {} }, impersonation: session };
   }
   if (cookieStore.get(DEMO_COOKIE)?.value === "1") throw new AdminAccessError("ADMIN_ACCESS_DENIED", "Live data is unavailable in Demo Mode.");
-  const { data: { user }, error } = await getSessionUser();
-  
+  const state = await getSessionState();
+  if (state.secondFactorPending) {
+    if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_MFA_REQUIRED", TWO_STEP_REQUIRED_MESSAGE);
+    // Server Actions are refused outright; page renders go to the code challenge.
+    const requestHeaders = await headers();
+    if (requestHeaders.has("next-action")) throw new Error(TWO_STEP_REQUIRED_MESSAGE);
+    redirect(twoStepChallengeHref(safeReturnPath(requestHeaders.get(RETURN_PATH_HEADER))));
+  }
+  const { data: { user }, error } = state.identity;
+
   if (options.adminDiagnostics && error && !providerAuthFailure(error)) throw error;
   if (error || !user || !user.email || !isUvaEmail(user.email) || !user.email_confirmed_at) {
     if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_AUTH_REQUIRED", "Sign-in required.");
@@ -73,7 +88,9 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
 
   // Fetch the Prisma user to get global roles
   const existingUser = await prisma.user.findUnique({ where: { id: user.id } });
-  const prismaUser = cookieStore.has(PLATFORM_VIEW_COOKIE) || existingUser?.email === user.email ? existingUser : await prisma.user.upsert({
+  // A disabled account (suspended, or an account-deletion tombstone) is never
+  // rewritten from the provider: a surviving session must not restore its email.
+  const prismaUser = cookieStore.has(PLATFORM_VIEW_COOKIE) || existingUser?.disabledAt || existingUser?.email === user.email ? existingUser : await prisma.user.upsert({
     where: { id: user.id },
     update: { email: user.email },
     create: { id: user.id, email: user.email!, role: "STUDENT" },

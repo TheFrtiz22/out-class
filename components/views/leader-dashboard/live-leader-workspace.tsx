@@ -1,93 +1,47 @@
 "use client"
 import { UserFacingError } from "@/lib/action-result"
-import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
+import "@/components/applicant-review/applicant-review.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
-import { nextQuickReviewApplicant } from "@/lib/quick-review-queue"
 import { usePipelinePage } from "@/hooks/use-pipeline-page"
-import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
-import { useEditorDraft } from "@/hooks/use-editor-draft"
-import { AutosaveStatus } from "@/components/ui/autosave-status"
-import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
-import { ScheduleDecision } from "@/components/decision-schedules";
-import { slotTime } from "@/lib/interview-rooms"
-import { SCHEDULING_TIMEZONE, schedulingDateTime } from "@/lib/scheduling-config"
+import { useStagedDecisions } from "@/hooks/use-staged-decisions"
 import { isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle"
-import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
-import { profilePhotoSource } from "@/lib/profile-photo"
 import { genderValues } from "@/lib/student-profile"
-import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
-import { InterviewFeedbackPanel } from "@/components/interview-feedback"
-import { applicationAttachmentUrl } from "@/lib/student-applications"
-import { applicationDecisionGroup, decisionFilters, type DecisionFilter } from "@/lib/application-decisions"
+import { decisionFilters, type DecisionFilter } from "@/lib/application-decisions"
 import { type ApplicantSort } from "@/lib/live-applicant-sorting"
-import { applicantLane, isOptimisticBoardMove, withApplicantStatus } from "@/lib/applicant-board"
-import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList, applicantSortOptions, type ApplicantLane } from "./live-applicant-views"
+import { boardColumnFor, type BoardColumnId } from "@/lib/applicant-board"
+import { isPendingDecision } from "@/lib/staged-decisions"
+import { LiveApplicantList, LiveDecisionList, applicantSortOptions } from "./live-applicant-views"
+import { ApplicantBoard } from "@/components/applicant-review/applicant-board"
+import { ApplicantReviewFlow } from "@/components/applicant-review/applicant-review-flow"
 import { useListSort } from "@/hooks/use-list-sort"
 import { SortControl } from "@/components/ui/sort-control"
 import { useDemoMode } from "@/contexts/demo-context"
-import { ApplicantRecusal } from "@/components/applicant-recusal"
-import { ClubExportLink } from "@/components/club-export-link"
-import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
-import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
-import { interviewCapabilities } from "@/lib/interview-access"
-import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
+import { canExport, clubExportHref } from "@/lib/club-exports-access"
 import { useRouter } from "next/navigation"
-import { saveVotingSelection,votingSetupHref,decisionsHref } from "@/lib/voting-navigation"
+import { saveVotingSelection, votingSetupHref, decisionsHref } from "@/lib/voting-navigation"
 import { RankedReviewList, type RankedReviewApi } from "@/components/ranked-review-list"
 import Link from "next/link"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
-
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, FileText, Kanban, Linkedin, MoreHorizontal, Rows3, Settings as SettingsIcon, Trophy } from "@/components/icons"
-import { IconButton } from "@/components/ui/icon-button"
-import { canOpenRecruitingSettings, withRecruitingSettings } from "@/lib/recruiting-settings"
+import { Download, Kanban, MoreHorizontal, Rows3, Settings as SettingsIcon, SlidersHorizontal, Trophy } from "@/components/icons"
+import { canOpenRecruitingSettings, withRecruitingSettings, type RecruitingSettingsSection } from "@/lib/recruiting-settings"
 import { navigateWithinClub } from "@/lib/workspace-navigation"
-import { StatusPill } from "@/components/ui/status-pill"
-import { PreviouslyAppliedBadge } from "@/components/previously-applied-badge"
-import { joinFacts } from "@/lib/join-facts"
-import { SectionErrorBoundary } from "@/components/ui/section-error-boundary"
-import { AdditionalObservations } from "@/components/additional-observations"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { DisabledReason, ReviewSection } from "./applicant-quick-review"
+import { IconButton } from "@/components/ui/icon-button"
 import { createPortal } from "react-dom"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { getRankedReviewRound, getRankedReviewSettings, getRoundTargetSummary, saveRankedReviewBands } from "@/lib/workspace-api"
-import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
-import { submitEvaluation } from "@/lib/workspace-api"
+import { getClubPipelinePage, getClubPipelineSelection } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoRoundTarget } from "@/components/demo-workspace"
-import { resolveRecruitingResumeUrl, safeProfileUrl } from "@/lib/student-profile"
 import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
-import { anonymousApplicantLabel } from "@/lib/anonymous-review"
-import { ApplicantProfileFacts, applicantProfileFacts } from "./applicant-profile-facts"
-import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { NativeSelect } from "@/components/ui/native-select"
 import { SearchField } from "@/components/ui/search-field"
 import { readApplicantView, writeApplicantView, type ApplicantView } from "@/lib/applicant-view"
 import { FilterPopover } from "@/components/ui/filter-popover"
@@ -96,25 +50,19 @@ import { PillGroup } from "@/components/ui/segmented-control"
 import { RangeSlider } from "@/components/ui/range-slider"
 import { Toggle } from "@/components/ui/toggle"
 import { pluralize } from "@/lib/copy/terms"
-import { useConfirm } from "@/components/ui/confirm-dialog"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
+type Review = { ids: string[]; startId: string; title: string }
 /** Pending decisions split into these stages (the old Status dropdown's remaining distinct choices). */
 const pendingStatuses = ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"] as const
 /** Range filters keep their string state ("" = no minimum); sliders speak numbers. */
 const numberFilter = (value: string) => value === "" || !Number.isFinite(Number(value)) ? null : Number(value)
 const filterText = (value: number | null) => value === null ? "" : String(value)
-const selectStyle =
-  "h-9 max-w-full rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
-const name = (app: Candidate) =>
+const name = (app: { student: { email?: string; studentProfile?: { firstName: string; lastName: string } | null } }) =>
   app.student.studentProfile
     ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}`
-    : app.student.email
-const average = (app: Candidate) =>
-  app.roundScore?.average ?? null
-/** Decision buttons name the action, not the resulting state. */
-const decisionActionLabels: Record<"IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED", string> = { IN_REVIEW: "Return to review", INTERVIEWING: "Move to interview", WAITLISTED: "Waitlist", ACCEPTED: "Accept", REJECTED: "Not selected" }
+    : app.student.email ?? "Applicant"
 /** The club workspace page header renders an element with this id in its action slot; page actions portal into it. */
 const PAGE_HEADER_ACTIONS_ID = "workspace-page-actions"
 const applicantSortKeys: readonly ApplicantSort[] = ["name", "year", "status", "gpa", "sat", "act", "round", "score"]
@@ -164,47 +112,47 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
   )
 }
 
-/** Dashboard entry loads one applicant through the same masked CRM projection and review form. */
+/** One applicant in the shared review (dashboard assigned reviews, Ranked review): same masked read and decisions. */
 export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChanged, onNext }: { clubId: string; applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }) {
   const { user } = useAuth()
   const membership = user?.memberships.find(m => m.clubId === clubId)
   if (!membership) return <p role="alert">Applicant access unavailable.</p>
-  return <ClubWorkspace key={applicationId} membership={membership} preview={{ applicationId, onClose, onChanged, onNext }} />
+  return <ApplicantReviewFlow key={applicationId} membership={membership} ids={[applicationId]} startId={applicationId} title="Applicant review" onClose={onClose} onChanged={onChanged} onNext={onNext} />
 }
 
-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData = null, onData, preview, validatedInitialData = false }: { validatedInitialData?: boolean; preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
-  const router=useRouter();
-  const confirm=useConfirm();
-  const [votingSelection,setVotingSelection]=useState<string[]>([]);
-  const previewId = preview?.applicationId
+function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData = null, onData, validatedInitialData = false }: { validatedInitialData?: boolean; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+  const router = useRouter()
+  const [votingSelection, setVotingSelection] = useState<string[]>([])
   const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const auth = useAuth()
   const { readAuthority, isReadAuthorityCurrent } = auth
   const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
-  const canStartVoting=hasPermission(membership,"applications.review")&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"decisions.start");
-  useEffect(()=>setVotingSelection([]),[auth.user?.id,membership.id,demo.isDemoEnabled]);
-  const votingChoice=canStartVoting&&!preview&&!rejectedOnly?{ids:votingSelection,toggle:(id:string)=>setVotingSelection(old=>old.includes(id)?old.filter(v=>v!==id):[...old,id])}:undefined;
-  function startSelectedVoting(){if(!auth.user||!votingSelection.length||!canLeaveWorkspace())return;try{const key=saveVotingSelection(sessionStorage,{userId:auth.user.id,clubId:membership.clubId,demo:demo.isDemoEnabled,applicationIds:votingSelection});router.push(votingSetupHref(membership.clubId,demo.isDemoEnabled?"demo=1":"",key));}catch{setMessage("Could not retain the applicant selection in this tab. Allow session storage and retry.")}}
+  const canStartVoting = hasPermission(membership, "applications.review") && hasPermission(membership, "decisions.manage") && hasPermission(membership, "decisions.start")
+  const canReview = hasPermission(membership, "applications.review")
+  const canDecide = hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")
+  useEffect(() => setVotingSelection([]), [auth.user?.id, membership.id, demo.isDemoEnabled])
+  const votingChoice = canStartVoting && !rejectedOnly ? { ids: votingSelection, toggle: (id: string) => setVotingSelection(old => old.includes(id) ? old.filter(v => v !== id) : [...old, id]) } : undefined
+  function startSelectedVoting() { if (!auth.user || !votingSelection.length || !canLeaveWorkspace()) return; try { const key = saveVotingSelection(sessionStorage, { userId: auth.user.id, clubId: membership.clubId, demo: demo.isDemoEnabled, applicationIds: votingSelection }); router.push(votingSetupHref(membership.clubId, demo.isDemoEnabled ? "demo=1" : "", key)) } catch { setMessage("Could not retain the applicant selection in this tab. Allow session storage and retry.") } }
   const [error, setError] = useState("")
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
   const [position, setPosition] = useState<{ key: string; cursor: PipelineCursor } | null>(null)
-  // `roundId` and `quickReview=1` arrive from the Overview review card and Decide; read once, then the filters own them.
-  const initialParams = useRef(preview || typeof window === "undefined" || !window.location?.href ? new URLSearchParams() : new URL(window.location.href).searchParams)
+  // `roundId` and `review=1` (open the review) arrive from the Overview review card; read once, then the filters own them.
+  const initialParams = useRef(typeof window === "undefined" || !window.location?.href ? new URLSearchParams() : new URL(window.location.href).searchParams)
   const [round, setRound] = useState(initialParams.current.get("roundId") ?? "")
-  const quickReviewRequested = useRef(initialParams.current.get("quickReview") === "1")
+  const reviewRequested = useRef(initialParams.current.get("review") === "1")
   const [decisionGroup, setDecisionGroupState] = useState<DecisionFilter>(rejectedOnly ? "rejected" : initialDecision)
   // The decision filter lives in the URL (`decision=`), so Rejected and other groups are linkable.
   const setDecisionGroup = useCallback((value: DecisionFilter) => {
     setDecisionGroupState(value)
     // Stage pills subdivide Pending; another decision group leaves no stage to filter by.
     if (value !== "all" && value !== "pending") setStatus("")
-    if (preview || typeof window === "undefined" || !window.location?.href || !window.history) return
+    if (decisionsOnly || typeof window === "undefined" || !window.location?.href || !window.history) return
     const url = new URL(window.location.href)
     if (value === "all") url.searchParams.delete("decision"); else url.searchParams.set("decision", value)
     window.history.replaceState(window.history.state, "", url)
-  }, [preview])
+  }, [decisionsOnly])
   const [status, setStatus] = useState("")
   const [review, setReview] = useState("")
   const [major, setMajor] = useState("")
@@ -219,10 +167,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [view, setViewState] = useState<ApplicantView>(() => decisionsOnly ? "list" : readApplicantView(initialParams.current))
   const setView = useCallback((value: ApplicantView) => {
     setViewState(value)
-    if (preview || decisionsOnly || typeof window === "undefined" || !window.location?.href || !window.history) return
+    if (decisionsOnly || typeof window === "undefined" || !window.location?.href || !window.history) return
     window.history.replaceState(window.history.state, "", writeApplicantView(new URL(window.location.href), value))
-  }, [preview, decisionsOnly])
-  // Ranked review opens the same masked single-applicant review (with finalized interviewer feedback).
+  }, [decisionsOnly])
+  // Ranked review opens the same review flow (with finalized interviewer feedback).
   const [rankedOpen, setRankedOpen] = useState<string | null>(null)
   const [rankedChanged, setRankedChanged] = useState(0)
   const rankedApi = useMemo<RankedReviewApi>(() => ({
@@ -237,32 +185,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   // One sort for headers, the toolbar control and the server read; kept in the URL (?sort=&order=).
   const listSort = useListSort(applicantSortKeys, "name", applicantSortsDescending)
   const { key: sort, descending } = listSort
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [writing, setBusy] = useState(false)
+  const [reviewing, setReviewing] = useState<Review | null>(null)
+  const [opening, setOpening] = useState(false)
   const [message, setMessage] = useState("")
-  const [reconsiderReason, setReconsiderReason] = useState("")
-  const [score, setScore] = useState("")
-  const [notes, setNotes] = useState("")
-  const [baseline, setBaseline] = useState("")
-  const [decision, setDecision] = useState("")
-  const [targetRound, setTargetRound] = useState("")
-  // Quick review (default) or the full profile layout; collapsed sections and their counts.
-  const [fullProfile, setFullProfile] = useState(false)
-  const [openSections, setOpenSections] = useState<string[]>([])
-  const [notesCount, setNotesCount] = useState<number | "error" | null>(null)
-  const [prosSummary, setProsSummary] = useState<{ count: number; canAdd: boolean } | "error" | null>(null)
-  const [observationCount, setObservationCount] = useState<number | null>(null)
-  const [panel, setPanel] = useState<"round" | "cycle" | "reconsider" | null>(null)
-  const [quickQueue, setQuickQueue] = useState<string[] | null>(null)
-  const [boardMove, setBoardMove] = useState<{ id: string; lane: ApplicantLane } | null>(null)
-  const [boardError, setBoardError] = useState("")
-  const [boardSaving, setBoardSaving] = useState<string | null>(null)
-  const [mutationKind, setMutationKind] = useState<"review" | "round" | "decision" | null>(null)
-  const mutating = useRef(false)
-  // Bumped whenever a write starts, so a background read that began earlier never lands after it.
-  const mutationEpoch = useRef(0), revalidateTicket = useRef(0)
-  const [revalidateFailures, setRevalidateFailures] = useState(0)
-  const detail = usePipelineApplicant(membership.clubId, previewId || null, revision)
   const readQuery = useMemo<PipelinePageQuery>(() => ({
     query, mode: "decisions", decisionGroup,
     ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
@@ -276,18 +201,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   // not resurrect the previous selection's page cursor.
   useEffect(() => { if (position && position.key !== selectionKey) setPosition(null) }, [position, selectionKey])
   const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
-  const { data: listData, loading: listLoading, ready, invalid: invalidFilter, error: readError, setData, acceptPage, isCurrent } = usePipelinePage({
+  const { data: listData, loading, ready, invalid: invalidFilter, error: readError, setData, isCurrent } = usePipelinePage({
     clubId: membership.clubId, reviewerId: membership.id, userId: membership.userId, query: pageQuery, revision, authority,
-    enabled: !previewId && demo.ready && !auth.loading && !!auth.user, initialData, validatedInitialData,
+    enabled: demo.ready && !auth.loading && !!auth.user, initialData, validatedInitialData,
   })
   const latestAuthority = useRef(authority); latestAuthority.current = authority
-  const requestKey = JSON.stringify([selectionKey, cursor, revision])
-  const latestRequest = useRef(requestKey); latestRequest.current = requestKey
-  const pageReady = !!previewId || ready
-  const updating = !previewId && (!pageReady && !invalidFilter || !listData)
-  const busy = writing || updating || invalidFilter
-  const data = previewId ? detail.pipeline : listData
-  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
+  const updating = !ready && !invalidFilter || !listData
+  const busy = opening || updating || invalidFilter
+  const data = listData
+  const rounds = useMemo(() => data?.rounds ?? [], [data?.rounds])
+  const staged = useStagedDecisions(membership.clubId, { enabled: canDecide && !rejectedOnly, rounds, name: id => { const app = data?.applications.find(item => item.id === id); return app ? name(app) : "" } })
   // Page actions join the workspace page header when it provides a slot; otherwise they render inline.
   // Re-resolved after every commit (state changes only when the element does), so a remounted
   // header never leaves the portal on a detached node. A layout effect places it before paint.
@@ -298,12 +221,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setActionSlot(slot)
   })
   // Keep the list current without a Refresh button: re-read the current page in place (rows stay
-  // visible) on return to the tab and after applicant/decision changes elsewhere. Paused while an
-  // applicant is open or a write is running so a background read never replaces a review in progress.
+  // visible) on return to the tab and after applicant/decision changes elsewhere. Paused while the review is open.
+  const revalidateTicket = useRef(0)
+  const [revalidateFailures, setRevalidateFailures] = useState(0)
   const revalidate = useCallback(async () => {
-    if (mutating.current || !isCurrent()) return
-    const epoch = mutationEpoch.current, ticket = ++revalidateTicket.current
-    const landed = () => !mutating.current && epoch === mutationEpoch.current && ticket === revalidateTicket.current && isCurrent()
+    if (!isCurrent()) return
+    const ticket = ++revalidateTicket.current
+    const landed = () => ticket === revalidateTicket.current && isCurrent()
     try {
       const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
       if (landed() && setData(refreshed)) setRevalidateFailures(0)
@@ -312,49 +236,50 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       if (landed()) setRevalidateFailures(count => count + 1)
     }
   }, [membership.clubId, pageQuery, isCurrent, setData])
-  useRevalidate(revalidate, { scopes: ["applicants", "decisions"], events: ["outclass:decision-schedules"], enabled: !previewId && !activeId && !writing && ready })
+  useRevalidate(revalidate, { scopes: ["applicants", "decisions"], events: ["outclass:decision-schedules"], enabled: !reviewing && ready })
   const publish = useRef(onData)
   publish.current = onData
-  useEffect(() => { if (!previewId) publish.current?.(pageReady ? listData : null) }, [listData, pageReady, previewId])
-  const roundsForReview = useRef(data?.rounds)
-  roundsForReview.current = data?.rounds
-  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => { publish.current?.(ready ? listData : null) }, [listData, ready])
   // Everything inside the Filters menu, so its summary can show how many apply.
   const menuFilters = [round, status, review, gender, major, year, gpa, sat, act, rating].filter(Boolean).length
+  const anyFilter = !!(query || menuFilters)
   const clearMenuFilters = () => { setRound(""); setStatus(""); setReview(""); setGender(""); setShowGenderCounts(false); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
   const search = useRef<HTMLInputElement>(null)
   useEffect(() => { setError(""); setRevalidateFailures(0) }, [authority, revision, pageQuery])
   const selectionRequestKey = JSON.stringify([selectionKey, revision])
   const latestSelectionRequest = useRef(selectionRequestKey); latestSelectionRequest.current = selectionRequestKey
-  const loadSelection = useCallback(async (snapshot = listData) => {
-    if (!isReadAuthorityCurrent(readAuthority) || latestAuthority.current !== authority || latestSelectionRequest.current !== selectionRequestKey) throw new Error("Applicant selection changed")
-    const result = snapshot?.coverage?.complete
-      ? completePipelineSelection(snapshot, readQuery, membership.id, membership.userId)
-      : await getClubPipelineSelection(membership.clubId, readQuery)
-    if (!isReadAuthorityCurrent(readAuthority) || latestAuthority.current !== authority || latestSelectionRequest.current !== selectionRequestKey) throw new Error("Applicant selection changed")
+  /** The whole ordered selection (no identities) for the review queue and board counts. */
+  const loadSelection = useCallback(async (input: PipelinePageQuery = readQuery) => {
+    const owner = latestSelectionRequest.current
+    if (!isReadAuthorityCurrent(readAuthority) || latestAuthority.current !== authority) throw new Error("Applicant selection changed")
+    const result = input === readQuery && listData?.coverage?.complete
+      ? completePipelineSelection(listData, readQuery, membership.id, membership.userId)
+      : await getClubPipelineSelection(membership.clubId, input)
+    if (!isReadAuthorityCurrent(readAuthority) || latestAuthority.current !== authority || latestSelectionRequest.current !== owner) throw new Error("Applicant selection changed")
     return result.applications
-  }, [membership.clubId, membership.id, membership.userId, listData, readQuery, authority, selectionRequestKey, readAuthority, isReadAuthorityCurrent])
+  }, [membership.clubId, membership.id, membership.userId, listData, readQuery, authority, readAuthority, isReadAuthorityCurrent])
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       const element = event.target as HTMLElement
-      if (
-        event.key === "/" &&
-        !activeId &&
-        !element.closest('input, textarea, select, [contenteditable="true"]')
-      ) {
+      if (event.key === "/" && !reviewing && !element.closest('input, textarea, select, [contenteditable="true"]')) {
         event.preventDefault()
         search.current?.focus()
       }
     }
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
-  }, [activeId])
-  const applicants = data?.applications || []
-  const filtered = applicants
-  const pageInfo = !previewId ? listData?.page : undefined
-  const total = pageInfo?.total ?? filtered.length
+  }, [reviewing])
+  // Decide › Review lists only applicants still waiting for a decision: pending, with nothing staged.
+  const needsDecision = useCallback((app: { id: string; status: string }) => isPendingDecision(app.status) && !staged.get(app.id), [staged])
+  const applicants = useMemo(() => {
+    const rows = data?.applications || []
+    return decisionsOnly ? rows.filter(needsDecision) : rows
+  }, [data?.applications, decisionsOnly, needsDecision])
+  const pageInfo = listData?.page
+  const total = pageInfo?.total ?? applicants.length
   const baseTotal = pageInfo?.baseTotal ?? applicants.length
-  const displayed = { items: pageReady ? filtered : [], page: pageInfo?.index ?? 0, count: pageInfo?.count ?? 1, start: pageInfo?.start ?? 0 }
+  const displayed = { items: ready ? applicants : [], page: pageInfo?.index ?? 0, count: pageInfo?.count ?? 1, start: pageInfo?.start ?? 0 }
+  const profileFields = data?.profileFields ?? defaultProfileFieldVisibility()
   function changePage(next: PipelineCursor | null) {
     if (!next || busy) return
     focusPage.current = true
@@ -363,31 +288,45 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const workspaceElement = useRef<HTMLDivElement>(null)
   const focusPage = useRef(false)
   useEffect(() => {
-    if (!focusPage.current || !pageReady) return
+    if (!focusPage.current || !ready) return
     focusPage.current = false
-    if (activeId) return
-    const frame = requestAnimationFrame(() => Array.from(workspaceElement.current?.querySelectorAll<HTMLButtonElement>("[data-applicant-id]") ?? []).find(button => button.getClientRects().length > 0)?.focus())
+    if (reviewing) return
+    const frame = requestAnimationFrame(() => Array.from(workspaceElement.current?.querySelectorAll<HTMLElement>("[data-applicant-id]") ?? []).find(button => button.getClientRects().length > 0)?.focus())
     return () => cancelAnimationFrame(frame)
-  }, [displayed.page, activeId, pageReady])
-  const previewOpened = useRef(false), previewOpen = useRef<(app: Candidate) => void>(() => {})
-  useEffect(() => {
-    if (!previewId || !data || loading || previewOpened.current) return
-    const target = data.applications.find(app => app.id === previewId)
-    if (target) { previewOpened.current = true; previewOpen.current(target) }
-  }, [previewId, data, loading])
-  const active = activeId ? previewId ? detail.application : pageReady ? listData?.applications.find(app => app.id === activeId) ?? null : null : null
-  // The club's profile field choice. Hidden values are already removed on the server; this hides their labels.
-  const profileFields = data?.profileFields ?? defaultProfileFieldVisibility()
-  const dossierName = (app: Candidate) => profileFields.name || app.studentId.startsWith("anonymous-") ? name(app) : anonymousApplicantLabel(app.id)
-  const resumeHref = (url: string | null | undefined) => active ? resolveRecruitingResumeUrl(url, membership.clubId, active.id) : undefined
-  const canEvaluate = active?.canEvaluate === true
-  const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
-  const draftSave = useEditorDraft({
-    scope: { kind: "review", clubId: membership.clubId, resourceId: `${active?.id ?? "none"}:${active?.roundId ?? "none"}` },
-    value: { score, notes }, restore: value=>{setScore(value.score);setNotes(value.notes)},
-    enabled: canEvaluate, base: baseline,
-  })
-  const activeIndex = filtered.findIndex((app) => app.id === activeId)
+  }, [displayed.page, reviewing, ready])
+
+  /** What "Review applicants" covers: the current tab and filters, or Pending when nothing narrows the list. */
+  const reviewScope = useMemo(() => {
+    if (decisionsOnly) return { query: { ...readQuery, decisionGroup: "pending" as const }, title: "Needs a decision" }
+    if (decisionGroup === "all" && !anyFilter) return { query: { ...readQuery, decisionGroup: "pending" as const }, title: "Reviewing pending applicants" }
+    const group = decisionFilters.find(item => item.id === decisionGroup)?.label ?? "All"
+    return { query: readQuery, title: anyFilter ? `Reviewing ${group.toLowerCase() === "all" ? "filtered" : `${group.toLowerCase()}, filtered`} applicants` : `Reviewing ${group.toLowerCase()} applicants` }
+  }, [decisionsOnly, decisionGroup, anyFilter, readQuery])
+  const queueIds = useCallback((rows: { id: string; status: string }[]) => rows.filter(app => !decisionsOnly || needsDecision(app)).map(app => app.id), [decisionsOnly, needsDecision])
+  async function startReview() {
+    if (busy) return
+    setOpening(true); setMessage("")
+    try {
+      const ids = queueIds(await loadSelection(reviewScope.query))
+      if (!ids.length) { setMessage(decisionsOnly ? "Everyone here has a decision. Send them from the Send step." : "No applicants to review with this tab and these filters."); return }
+      setReviewing({ ids, startId: ids[0], title: reviewScope.title })
+    } catch { setMessage("Couldn’t load the applicants to review. Please try again.") }
+    finally { setOpening(false) }
+  }
+  /** Clicking a row or card opens the review there; Next continues through the whole selection. */
+  function open(app: Pick<Candidate, "id">) {
+    const pageIds = displayed.items.map(item => item.id)
+    setReviewing({ ids: pageIds.includes(app.id) ? pageIds : [app.id], startId: app.id, title: decisionsOnly ? "Needs a decision" : "Applicant review" })
+    void loadSelection().then(rows => {
+      const ids = queueIds(rows)
+      if (ids.includes(app.id)) setReviewing(current => current?.startId === app.id ? { ...current, ids } : current)
+    }).catch(() => {})
+  }
+  function closeReview(lastId: string | null) {
+    setReviewing(null)
+    setRevision(value => value + 1)
+    requestAnimationFrame(() => Array.from(document.querySelectorAll<HTMLElement>(`[data-applicant-id="${CSS.escape(lastId ?? "")}"]`)).find(element => element.getClientRects().length > 0)?.focus())
+  }
   useEffect(() => {
     if (!data || loading || !leaderFocus || leaderFocus.clubId !== membership.clubId) return
     if (leaderFocus.roundId) setRound(leaderFocus.roundId)
@@ -396,253 +335,40 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       if (target) { setDecisionGroup("all"); open(target) }
     }
     clearLeaderFocus()
-  }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus, setDecisionGroup])
-  function open(app?: Pick<Candidate, "id" | "roundId">, located = false) {
-    if (busy) return
-    const apply = () => {
-    setActiveId(app?.id || null)
-    if (app && !located && !previewId && pageInfo && !filtered.some(item => item.id === app.id)) {
-      setPosition({ key: selectionKey, cursor: { id: app.id, direction: "at", scope: pageInfo.scope } })
-    }
-    if (!app) { setQuickQueue(null); preview?.onClose() }
-    setMessage("")
-    setDecision("")
-    if (app) {
-      setScore("")
-      setNotes("")
-      setBaseline(JSON.stringify(["", ""]))
-      setTargetRound(app.roundId)
-    } else
-      requestAnimationFrame(() => {
-        Array.from(
-          document.querySelectorAll<HTMLButtonElement>(
-            `[data-applicant-id="${CSS.escape(activeId || "")}"]`,
-          ),
-        )
-          .find((button) => button.getClientRects().length > 0)
-          ?.focus()
-      })
-    }
-    if (active?.canEvaluate && (draftSave.dirty || draftSave.saving)) void draftSave.flush().then(apply).catch(() => {})
-    else apply()
-  }
-  async function navigateApplicant(direction: -1 | 1) {
-    if (busy || mutating.current || activeIndex < 0) return
-    const adjacent = filtered[activeIndex + direction]
-    if (adjacent) { open(adjacent); return }
-    const next = direction === 1 ? pageInfo?.next : pageInfo?.previous
-    if (!next) return
-    mutating.current = true; mutationEpoch.current++; setBusy(true)
-    try {
-      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
-      if (!isCurrent()) return
-      const nextQuery = { ...readQuery, cursor: next }
-      const adjacentPage = await getClubPipelinePage(membership.clubId, nextQuery)
-      if (!acceptPage(adjacentPage, nextQuery)) return
-      setPosition({ key: selectionKey, cursor: next })
-      const target = direction === 1 ? adjacentPage.applications[0] : adjacentPage.applications.at(-1)
-      if (target) open(target, true)
-    } catch { setMessage("Couldn’t load the next applicant. Your review stays open.") }
-    finally { mutating.current = false; setBusy(false) }
-  }
-
+  }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus, setDecisionGroup]) // eslint-disable-line react-hooks/exhaustive-deps -- open reads the current page
   useEffect(() => {
-    if (!active) return
-    const mine = findReviewerEvaluation(active.evaluations, membership.id, roundsForReview.current?.find(item => item.id === active.roundId))
-    const value = mine ? String(mine.score) : ""
-    setScore(value)
-    setNotes(mine?.notes || "")
-    setBaseline(JSON.stringify([value, mine?.notes || ""]))
-    setTargetRound(active.roundId)
-    requestAnimationFrame(() => heading.current?.focus())
-  }, [active, membership.id])
-  previewOpen.current = open
-  async function mutate(kind: "review" | "round" | "decision") {
-    if (!active || mutating.current) return
-    if (kind === "review" && (!score || Number(score) < 1 || Number(score) > 10)) {
-      setMessage("Enter a score from 1 to 10 before saving your evaluation.")
-      return
-    }
-    mutating.current = true; mutationEpoch.current++
-    setBusy(true); setMutationKind(kind)
-    setMessage("")
-    try {
-      if (kind === "review") {
-        if (!canEvaluate) throw new UserFacingError("A current panel assignment is required to submit this identified review.")
-        await draftSave.flush()
-        const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
-        if (!roundName) throw new Error()
-        const result = await submitEvaluation({
-          clubId: membership.clubId,
-          applicationId: active.id,
-          roundName,
-          score: Number(score),
-          notes,
-        })
+    if (!reviewRequested.current || !data || loading || !ready) return
+    reviewRequested.current = false
+    if (data.rounds.length && round && !data.rounds.some(item => item.id === round)) setRound("")
+    if (typeof window !== "undefined" && window.history) { const url = new URL(window.location.href); url.searchParams.delete("review"); window.history.replaceState(window.history.state, "", url) }
+    if (canReview || canDecide) void startReview()
+  }, [data, loading, ready]) // eslint-disable-line react-hooks/exhaustive-deps -- runs once, when the first page is ready
 
-        await draftSave.clear()
-        setBaseline(JSON.stringify([score, notes]))
-        setMessage("Evaluation saved.")
-        setRevision(value => value + 1)
-      } else if (kind === "round") {
-        await moveApplicantRound({
-          clubId: membership.clubId,
-          applicationId: active.id,
-          newRoundId: targetRound,
-          expectedRoundId: active.roundId,
-        })
-        setData(null)
-        setActiveId(null)
-        setRevision(v => v + 1)
-        const mine = findReviewerEvaluation(active.evaluations, membership.id, data?.rounds.find(item => item.id === targetRound))
-        setScore(mine ? String(mine.score) : "")
-        setNotes(mine?.notes || "")
-        setBaseline(JSON.stringify([mine ? String(mine.score) : "", mine?.notes || ""]))
-        setMessage("Round updated. Moving out of an interview round returns interview applicants to review.")
-        preview?.onClose()
-      } else {
-        await setApplicationStatus({
-          clubId: membership.clubId,
-          applicationId: active.id,
-          status: decision as "ACCEPTED",
-          expectedStatus: active.status === "DRAFTING" ? undefined : active.status,
-        })
-        // Apply the acknowledged status only after the server confirms publication.
-        setData(current => current ? { ...current, applications: current.applications.map(app => app.id === active.id ? { ...app, status: decision as "ACCEPTED" } : app) } : current)
-        // The following read refreshes canonical offer and privacy state.
-        setDecision("")
-        setRevision(v => v + 1)
-        setMessage("Application status updated.")
-      }
-      preview?.onChanged()
-    } catch {
-      setMessage(
-        "This change could not be saved. The applicant may have changed or your access may have changed. Your entries are still here; save or copy your review, then reload before retrying.",
-      )
-    } finally {
-      mutating.current = false
-      setBusy(false); setMutationKind(null)
-    }
-  }
-  const canDecide = hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")
-  const pendingCandidate = (app: Candidate) => !["ACCEPTED", "REJECTED", "WAITLISTED", "DRAFTING"].includes(app.status) && !app.studentId.startsWith("anonymous-") && app.studentId !== membership.userId
-  function canMove(app: Candidate, lane: ApplicantLane) {
-    if (!canDecide || busy || !pendingCandidate(app) || applicantLane(app.status) === lane) return false
-    return lane !== "interview" || isInterviewRecruitmentRound(data?.rounds.find(item => item.id === app.roundId)?.type || "")
-  }
-  async function writeStatus(app: Candidate, status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED", onSaved?: () => void) {
-    await setApplicationStatus({ clubId: membership.clubId, applicationId: app.id, status, expectedStatus: app.status === "DRAFTING" ? undefined : app.status })
-    onSaved?.()
-    try {
-      if (!isCurrent()) throw new Error("Applicant scope changed")
-      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
-      if (!setData(refreshed)) throw new Error("Applicant scope changed")
-      return refreshed
-    } catch (error) {
-      if (!isCurrent()) throw error
-      setData(null); setActiveId(null); setQuickQueue(null)
-      setError("The status was saved, but applicants could not be refreshed. Reload to check current data and access.")
-      throw error
-    }
-  }
-  async function confirmBoardMove(status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED") {
-    const app = applicants.find(candidate => candidate.id === boardMove?.id)
-    if (!app || !boardMove || !canMove(app, boardMove.lane) || mutating.current) return
-    mutating.current = true; mutationEpoch.current++; setBusy(true); setBoardError("")
-    // Review and interview moves publish nothing, so the card moves now. The write still carries
-    // expectedStatus (the revision check) and a refused or conflicting move puts the card back.
-    // Final decisions wait for the server inside the dialog.
-    const optimistic = isOptimisticBoardMove(status)
-    let saved = false
-    if (optimistic) { setData(page => withApplicantStatus(page, app.id, status)); setBoardMove(null) } else setBoardSaving(status)
-    try { await writeStatus(app, status, () => { saved = true }); setBoardMove(null) }
-    catch {
-      if (optimistic && !saved) setData(page => withApplicantStatus(page, app.id, app.status, status))
-      if (!optimistic || !saved) setBoardError("This move could not be saved. Check your current access, then try again.")
-    }
-    finally { mutating.current = false; setBusy(false); setBoardSaving(null) }
-  }
-  async function quickDecision(status: "ACCEPTED" | "REJECTED") {
-    if (!active || !canDecide || !pendingCandidate(active) || mutating.current || !quickQueue) return
-    mutating.current = true; mutationEpoch.current++; setBusy(true); setMessage("")
-    try {
-      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
-      const refreshed = await writeStatus(active, status)
-      const remaining = quickQueue.filter(id => id !== active.id)
-      const selection = await loadSelection(refreshed)
-      const next = nextQuickReviewApplicant(remaining, selection)
-      setQuickQueue(remaining)
-      // Release the guard before opening the next profile; identity comes from the refreshed projection.
-      mutating.current = false; setBusy(false)
-      if (next) open(next)
-      else { setActiveId(null); setQuickQueue(null); setMessage("Quick decisions complete.") }
-    } catch { setMessage("This decision could not be saved. The candidate stays open. Check your access before retrying.") }
-    finally { mutating.current = false; setBusy(false) }
-  }
-  /**
-   * Start quick review: the first applicant in the current round and filters that you haven't reviewed, opened in
-   * the one-column quick layout (#225), where ←/→ move between applicants. Looks at the loaded page first, then at
-   * the whole selection's applicants with no evaluations yet.
-   */
-  async function startReview() {
-    if (busy || mutating.current || !data) return
-    const unreviewed = filtered.find(app => !app.evaluations?.some(evaluation => evaluation.interviewerId === membership.id))
-    let target: Pick<Candidate, "id" | "roundId"> | undefined = unreviewed
-    if (!target) {
-      try { target = (await getClubPipelineSelection(membership.clubId, { ...readQuery, review: "unreviewed" })).applications[0] }
-      catch { setMessage("Couldn’t find the next applicant to review. Please try again."); return }
-    }
-    if (!target) { setMessage("Everyone in this view has a review. Change the round or filters to keep going."); return }
-    setFullProfile(false)
-    open(target)
-  }
-  async function startQuickReview() {
-    if (!canDecide || busy || mutating.current) return
-    const owner = authority, key = requestKey
-    mutating.current = true; mutationEpoch.current++; setBusy(true); setMessage("")
-    try {
-      const queue = (await loadSelection()).filter(app => app.canQuickReview)
-      if (!isCurrent() || latestAuthority.current !== owner || latestRequest.current !== key) return
-      setQuickQueue(queue.map(app => app.id))
-      if (queue[0]) open(queue[0])
-    } catch { setMessage("Couldn’t load the complete review selection. Please try again.") }
-    finally { mutating.current = false; setBusy(false) }
-  }
-  async function skipQuickReview() {
-    if (!active || !quickQueue || busy || mutating.current) return
-    const owner = authority, key = requestKey
-    mutating.current = true; mutationEpoch.current++; setBusy(true)
-    try {
-      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
-      const remaining = quickQueue.filter(id => id !== active.id)
-      const selection = await loadSelection()
-      if (!isCurrent() || latestAuthority.current !== owner || latestRequest.current !== key) return
-      const next = nextQuickReviewApplicant(remaining, selection)
-      setQuickQueue(remaining)
-      if (next) open(next)
-      else open()
-    } catch { setMessage("Couldn’t refresh the complete review selection. Your review stays open.") }
-    finally { mutating.current = false; setBusy(false) }
-  }
-  const sortBy = listSort.toggle
-  useEffect(() => { setNotesCount(null); setProsSummary(null); setObservationCount(null); setPanel(null) }, [activeId])
-  // ←/→ move between applicants while the review is open (Esc closes it). Ignored while typing or in a menu.
-  const navigateRef = useRef(navigateApplicant); navigateRef.current = navigateApplicant
+  // Board counts come from the whole filtered selection (ids, rounds and statuses only), placed by staged decisions.
+  const [selection, setSelection] = useState<{ key: string; rows: { id: string; status: string; roundId: string }[] } | null>(null)
   useEffect(() => {
-    if (!activeId) return
-    const key = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return
-      const target = event.target as HTMLElement | null
-      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="menu"], [role="listbox"], [role="slider"], [role="tablist"], [role="radiogroup"], iframe')) return
-      // Another dialog over the review (confirm decision, move round) keeps the arrows.
-      if (document.querySelector('[role="alertdialog"][data-state="open"]') || document.querySelectorAll('[role="dialog"][data-state="open"]').length > 1) return
-      event.preventDefault()
-      void navigateRef.current(event.key === "ArrowLeft" ? -1 : 1)
-    }
-    window.addEventListener("keydown", key)
-    return () => window.removeEventListener("keydown", key)
-  }, [activeId])
-  const votingBarShown = !!votingChoice && votingSelection.length > 0 && !activeId
+    if (view !== "kanban" || !ready || decisionsOnly) return
+    let current = true
+    const key = selectionRequestKey
+    loadSelection().then(rows => { if (current) setSelection({ key, rows }) }).catch(() => { if (current) setSelection(null) })
+    return () => { current = false }
+  }, [view, ready, selectionRequestKey, decisionsOnly]) // eslint-disable-line react-hooks/exhaustive-deps -- reload per selection, not per loader identity
+  const boardCounts = useMemo(() => {
+    if (!selection || selection.key !== selectionRequestKey) return null
+    const counts = new Map<BoardColumnId, number>()
+    for (const row of selection.rows) { const column = boardColumnFor(row, staged.get(row.id)); if (column) counts.set(column, (counts.get(column) ?? 0) + 1) }
+    return counts
+  }, [selection, selectionRequestKey, staged])
+
+  // The drawer returns focus to whatever had it when it opened: put it on ⋯ first, since the menu item is gone.
+  const moreTools = useRef<HTMLButtonElement>(null)
+  const openSettings = (section: RecruitingSettingsSection) => {
+    if (!canLeaveWorkspace() || typeof window === "undefined") return
+    moreTools.current?.focus({ preventScroll: true })
+    const href = `${window.location.pathname}?${withRecruitingSettings(window.location.search, section)}`
+    if (!navigateWithinClub(href)) router.push(href, { scroll: false })
+  }
+  const votingBarShown = !!votingChoice && votingSelection.length > 0 && !reviewing
   // The list clears the floating bar by its measured height (it wraps on phones), so no row is ever covered.
   const votingBar = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -655,49 +381,34 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     observer.observe(bar)
     return () => { observer.disconnect(); root.style.removeProperty("--oc-voting-bar-height") }
   }, [votingBarShown])
-  useEffect(() => {
-    if (!quickReviewRequested.current || !data || loading || !pageReady) return
-    quickReviewRequested.current = false
-    if (data.rounds.length && round && !data.rounds.some(item => item.id === round)) setRound("")
-    if (typeof window !== "undefined" && window.history) { const url = new URL(window.location.href); url.searchParams.delete("quickReview"); window.history.replaceState(window.history.state, "", url) }
-    if (hasPermission(membership, "applications.review")) void startReview()
-  }, [data, loading, pageReady]) // eslint-disable-line react-hooks/exhaustive-deps -- runs once, when the first page is ready
   if (loading) return <WorkspaceLoading label="Preparing your applicant pipeline…" layout="applicants" rows={5} />
   if (!data || error || readError)
     return (
       <div role="alert" className="space-y-3">
-        <p>{error || (readError ? "Couldn’t load this club’s applicants. Your access may have changed." : previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
+        <p>{error || (readError ? "Couldn’t load this club’s applicants. Your access may have changed." : "No data available.")}</p>
         <Button variant="outline" onClick={() => { setError(""); setPosition(null); setRevision((value) => value + 1) }}>
           Try again
         </Button>
       </div>
     )
+  const exportable = !demo.isDemoEnabled && canExport(membership, "applicants")
+  const settingsAllowed = canOpenRecruitingSettings(membership)
+  const reviewButton = (canReview || canDecide) && !rejectedOnly && <Button disabled={busy} onClick={() => void startReview()}>{opening ? "Loading…" : decisionsOnly ? "Review applicants needing a decision" : "Review applicants"}</Button>
+  const statusTabs = view !== "ranked" && !decisionsOnly && !rejectedOnly && <SegmentedControl label="Decision" size="compact" className="oc-status-tabs" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: group.label, count: group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0 }))} />
   return (
-    <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-unsaved={draftSave.dirty} data-saving={busy}>
-      <div hidden={!!preview} className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
-      {!active && message && <p role="status" className="text-sm">{message}</p>}
-      {!preview && view !== "ranked" && <SegmentedControl label="Decision" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: group.label, count: group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0 }))} />}
-{!rejectedOnly && !preview && actionSlot !== undefined && (() => {
-        const actions = <div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">
-          {!decisionsOnly && hasPermission(membership, "applications.review") && <Button variant="outline" disabled={busy || !filtered.length} onClick={() => void startReview()}>Start quick review</Button>}
-          {/* The decision queue (Accept & next / Deny & next) from #225, renamed so it isn't confused with Start quick review. */}
-          {!decisionsOnly && canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick decisions</Button>}
-        </div>
-        return actionSlot ? createPortal(actions, actionSlot) : actions
-      })()}
-      <div className="oc-toolbar">
+    <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-saving={busy}>
+      <div className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
+      {message && <p role="status" className="text-sm">{message}</p>}
+      {/* The one review entry point: the current tab and filters (Pending when nothing narrows the list). */}
+      {!decisionsOnly && reviewButton && actionSlot !== undefined && (actionSlot ? createPortal(<div role="group" aria-label="Recruitment review" className="flex flex-wrap items-center justify-end gap-2">{reviewButton}</div>, actionSlot) : <div className="flex justify-end">{reviewButton}</div>)}
+      {decisionsOnly && <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Applicants still waiting for a decision. Advance, Hold and Reject are saved here and sent from the Send step.</p>{reviewButton}</div>}
+      <div className="oc-applicants-toolbar-wrap"><div className="oc-toolbar oc-applicants-toolbar">
         {!decisionsOnly && <SegmentedControl label="Applicant view" size="compact" className="oc-view-switch" value={view} onChange={setView} options={[
           { value: "list", label: null, ariaLabel: "List", icon: <Rows3 /> },
           { value: "kanban", label: null, ariaLabel: "Kanban", icon: <Kanban /> },
           { value: "ranked", label: null, ariaLabel: "Ranked", icon: <Trophy /> },
         ]} />}
-        {!decisionsOnly && <ClubExportLink clubId={membership.clubId} kind="applicants" membership={membership} filter={round || null} label="Export CSV" />}
-        {/* Recruiting settings (Anonymous review, Auto-reject rules): the drawer opens from the URL, so Back closes it. */}
-        {!decisionsOnly && !preview && canOpenRecruitingSettings(membership) && <IconButton variant="outline" aria-label="Recruiting settings" title="Recruiting settings" aria-haspopup="dialog" onClick={() => {
-          if (!canLeaveWorkspace() || typeof window === "undefined") return
-          const href = `${window.location.pathname}?${withRecruitingSettings(window.location.search, "anonymous")}`
-          if (!navigateWithinClub(href)) router.push(href, { scroll: false })
-        }}><SettingsIcon aria-hidden="true" /></IconButton>}
+        {statusTabs}
         {view !== "ranked" && <><SearchField
             ref={search}
             aria-label="Search applicants"
@@ -707,11 +418,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             onClear={() => setQuery("")}
             shortcut="/"
             shortcutListener={false}
-            containerClassName="min-w-0 flex-1 basis-60"
+            containerClassName="oc-toolbar-search"
           />
         {/* Sort at every width; the table's column headers drive the same state. */}
-        <SortControl label="Sort applicants" options={applicantSortOptions.filter(option => sortableByProfile(option.key, profileFields))} value={sort} descending={descending} descendingByDefault={applicantSortsDescending} onChange={listSort.set} />
-        <FilterPopover count={menuFilters} title="Applicant filters"
+        <div className="oc-toolbar-sort flex items-center"><SortControl label="Sort applicants" options={applicantSortOptions.filter(option => sortableByProfile(option.key, profileFields))} value={sort} descending={descending} descendingByDefault={applicantSortsDescending} onChange={listSort.set} /></div></>}
+        <div className="oc-toolbar-tools flex items-center gap-2">
+        {view !== "ranked" && <FilterPopover count={menuFilters} title="Applicant filters"
           footer={<><Button variant="ghost" size="sm" disabled={!menuFilters} onClick={clearMenuFilters}>Clear filters</Button>{view === "list" && <Button size="sm" variant="ghost" aria-pressed={compact} onClick={() => setCompact((value) => !value)}>Compact rows</Button>}</>}>
         <div className="oc-filter-field"><span className="oc-filter-field-label">Round</span>
           <PillSelect label="Filter round" size="compact" allLabel="All rounds" value={round} onChange={value => { setRound(value); setGender(""); setShowGenderCounts(false) }}
@@ -739,29 +451,33 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           {profileFields.act && <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />}
           <RangeSlider label="Minimum rating (out of 10)" min={0} max={10} step={0.1} value={numberFilter(rating)} onChange={value => setRating(filterText(value))} />
       </section>}
-        </FilterPopover></>}
-      </div>
-      {view === "ranked" ? <RankedReviewList clubId={membership.clubId} rounds={data.rounds} initialRoundId={round || data.rounds.find(item => isInterviewRecruitmentRound(item.type))?.id} api={rankedApi} onOpen={setRankedOpen} votingSelection={votingChoice} changeSignal={rankedChanged}
-        votingLink={hasPermission(membership, "applications.review") ? <Button variant="outline" size="sm" asChild><Link href={decisionsHref(membership.clubId, "voting", demo.isDemoEnabled ? "demo=1" : "")}>Open Voting room</Link></Button> : undefined} /> : <>
+        </FilterPopover>}
+        {!decisionsOnly && (exportable || settingsAllowed) && <DropdownMenu>
+          <DropdownMenuTrigger asChild><IconButton ref={moreTools} variant="outline" aria-label="More applicant tools" title="More"><MoreHorizontal aria-hidden="true" /></IconButton></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-52">
+            {exportable && <DropdownMenuItem asChild><a href={clubExportHref(membership.clubId, "applicants", round || null)} download><Download aria-hidden="true" />Export CSV</a></DropdownMenuItem>}
+            {/* Recruiting settings open from the URL, so Back closes the drawer. Opening waits a frame for the menu to close. */}
+            {settingsAllowed && <DropdownMenuItem onSelect={() => requestAnimationFrame(() => openSettings("grading"))}><SlidersHorizontal aria-hidden="true" />Grading categories</DropdownMenuItem>}
+            {settingsAllowed && <DropdownMenuItem onSelect={() => requestAnimationFrame(() => openSettings("anonymous"))}><SettingsIcon aria-hidden="true" />Recruiting settings</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>}
+        </div>
+      </div></div>
+      {view === "ranked" && !decisionsOnly ? <RankedReviewList clubId={membership.clubId} rounds={data.rounds} initialRoundId={round || data.rounds.find(item => isInterviewRecruitmentRound(item.type))?.id} api={rankedApi} onOpen={setRankedOpen} votingSelection={votingChoice} changeSignal={rankedChanged}
+        votingLink={canReview ? <Button variant="outline" size="sm" asChild><Link href={decisionsHref(membership.clubId, "voting", demo.isDemoEnabled ? "demo=1" : "")}>Open Voting room</Link></Button> : undefined} /> : <>
       <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-3">
         <p className="text-xs text-muted-foreground" role="status">
-          {decisionsOnly ? `${pluralize(total, "application")} in this selection` : `${total} of ${pluralize(baseTotal, "applicant")} · scores out of 10`}
+          {decisionsOnly ? `${pluralize(displayed.items.length, "applicant")} on this page need a decision` : `${total} of ${pluralize(baseTotal, "applicant")} · scores out of 10`}
         </p>
-        {(query || round || status || review || major || year || gpa || sat || act || rating) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearApplicantFilters}
-          >
-            Clear filters
-          </Button>
-        )}
+        {anyFilter && <Button variant="ghost" size="sm" onClick={clearApplicantFilters}>Clear filters</Button>}
         {revalidateFailures >= 2 && <p role="status" className="flex w-full flex-wrap items-center gap-2 text-xs text-muted-foreground">Couldn’t update applicants. Showing the last loaded list.<Button variant="ghost" size="sm" disabled={busy} onClick={() => void revalidate()}>Try again</Button></p>}
       </div>
-      {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate or use Move to; interview moves need an interview round.</p>}
-      {decisionGroup==="rejected"&&<p className="text-sm text-muted-foreground">Reconsidering returns an application to review; its history is kept.</p>}
-      {!boardMove && boardError && <p role="alert" className="text-sm text-destructive">{boardError}</p>}
-      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {decisionGroup === "rejected" && <p className="text-sm text-muted-foreground">Reconsidering returns an application to review; its history is kept.</p>}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !displayed.items.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "Every applicant here has a decision. Send them from the Send step." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal && !decisionsOnly ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : !decisionsOnly && <Button variant="outline" size="sm" asChild><Link href={rejectedOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div>
+        : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={listSort.toggle} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} staged={staged.items} />
+        : view === "kanban" ? <ApplicantBoard applicants={displayed.items} rounds={data.rounds} counts={boardCounts} staged={canDecide ? staged : null} canDecide={canDecide} name={name} open={open}
+            note={displayed.count > 1 ? `Showing ${displayed.items.length} of ${total} on this page. Column counts cover all ${total}.` : undefined} />
+        : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={listSort.toggle} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} staged={staged.items} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
@@ -774,231 +490,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <Button size="sm" variant="ghost" onClick={() => setVotingSelection([])}>Clear selection</Button>
       </div>}
       </div>
-      {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
-      {!preview && view === "ranked" && rankedOpen && <ApplicantReviewPreview key={rankedOpen} clubId={membership.clubId} applicationId={rankedOpen} onClose={() => setRankedOpen(null)} onChanged={() => setRankedChanged(value => value + 1)} />}
-      <Sheet
-        open={!!activeId}
-        onOpenChange={(value) => {
-          if (!value) open()
-        }}
-      >
-        <SheetContent
-          data-layout={fullProfile ? "full" : "quick"}
-          className="oc-workspace-drawer oc-applicant-drawer w-full p-0"
-          onCloseAutoFocus={event => { if (previewId) { event.preventDefault(); requestAnimationFrame(() => (Array.from(document.querySelectorAll<HTMLElement>(`[data-applicant-id="${CSS.escape(previewId)}"]`)).find(element => element.getClientRects().length > 0) ?? document.getElementById("dashboard-reviews"))?.focus({ preventScroll: true })) } }}
-          onInteractOutside={(event) => {
-            if (dirty || busy) event.preventDefault()
-          }}
-        >
-          {activeId && !active && <div className="oc-applicant-drawer-scroll">
-            <SheetHeader><SheetTitle>Applicant review</SheetTitle><SheetDescription>{detail.error ? "This applicant could not be loaded. Your access may have changed." : "Loading applicant…"}</SheetDescription></SheetHeader>
-            {detail.error && <div role="alert"><Button variant="outline" onClick={detail.retry}>Retry applicant</Button></div>}
-          </div>}
-          {active && (() => {
-            const anonymousActive = active.studentId.startsWith("anonymous-")
-            const profile = active.student.studentProfile
-            const activeRound = data.rounds.find(item => item.id === active.roundId)
-            const resumeUrl = anonymousActive || !profileFields.resume ? undefined : resolveRecruitingResumeUrl(profile?.resumeUrl, membership.clubId, active.id)
-            const linkedinUrl = anonymousActive || !profileFields.linkedin ? undefined : safeProfileUrl(profile?.linkedinUrl)
-            const canReview = hasPermission(membership, "applications.review")
-            const canManageRecruitment = hasPermission(membership, "recruitment.manage") && hasPermission(membership, "applicants.identify")
-            const finalStatus = ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(active.status)
-            // Matches the server's eligibility rule, so the panel never asks for observations it will refuse.
-            const observationsEligible = canReview && hasPermission(membership, "applicants.identify") && !anonymousActive && !!active.recruitmentCycleId && active.studentId !== membership.userId && !activeRound?.anonymousReview && active.status !== "DRAFTING"
-            const evaluateReason = canEvaluate ? "" : active.studentId === membership.userId ? "You can’t evaluate your own application." : anonymousActive ? "Anonymous review requires review permission." : "Submitted evaluations are read-only. A current panel assignment is required to evaluate this applicant."
-            const decisionOptions = canDecide ? (["IN_REVIEW", "INTERVIEWING", "WAITLISTED", "ACCEPTED", "REJECTED"] as const).filter((value) => value !== active.status && (value !== "INTERVIEWING" || isInterviewRecruitmentRound(activeRound?.type || "")) && (!finalStatus || ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(value))) : []
-            const interviewLinks = [...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !anonymousActive ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]
-            const interviewHref = (tool: "reviews" | "resumes") => applicantInterviewHref(membership.clubId, tool, (() => { const query = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search); if (round) query.set("roundId", round); return query.toString(); })(), active.id)
-            const toggleSection = (key: string) => (value: boolean) => setOpenSections(current => value ? [...current, key] : current.filter(item => item !== key))
-            const observationsPanel = observationsEligible && <SectionErrorBoundary label="observations"><AdditionalObservations key={active.id} clubId={membership.clubId} applicationId={active.id} embedded onCount={setObservationCount} /></SectionErrorBoundary>
-            return <>
-              <div className="oc-applicant-drawer-scroll">
-                <header className="oc-quick-header">
-                  {profileFields.photo && <Avatar className="size-10 shrink-0">
-                    <AvatarImage src={profilePhotoSource(profile?.headshotUrl)} alt="" />
-                    <AvatarFallback>{dossierName(active).split(" ").map((part) => part[0]).slice(0, 2).join("")}</AvatarFallback>
-                  </Avatar>}
-                  <div className="oc-quick-identity">
-                    <div className="oc-quick-title-row">
-                      <SheetTitle ref={heading} tabIndex={-1} className="oc-quick-name" title={anonymousActive || !profileFields.email ? undefined : active.student.email}>{dossierName(active)}</SheetTitle>
-                      <StatusPill status={active.status} />
-                      {quickQueue && <span className="oc-quick-fact">Quick decisions · {quickQueue.length} remaining</span>}
-                    </div>
-                    <SheetDescription className="oc-quick-facts">
-                      {anonymousActive ? "Anonymous review · identity and appointments withheld" : joinFacts(profileFields.major && profile?.major, ...(profile ? applicantProfileFacts(profile, profileFields) : [])) || "Academic profile not provided"}
-                      {!anonymousActive && profile && <> · <RecruitmentAttendanceSummary compact clubId={membership.clubId} applicationId={active.id} /></>}
-                    </SheetDescription>
-                    {"priorApplications" in active && !!active.priorApplications?.length && <p data-testid="prior-applications" className="oc-quick-facts"><PreviouslyAppliedBadge priors={active.priorApplications} detail /></p>}
-                    <ApplicantRecusal key={active.id} clubId={membership.clubId} applicationId={active.id} anonymous={anonymousActive} onChanged={() => setRevision(v => v + 1)} />
-                  </div>
-                  <div className="oc-quick-tools">
-                    {resumeUrl && <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger={<span className="sr-only">Résumé</span>} triggerClassName="size-9 border-0 bg-transparent p-0 text-muted-foreground shadow-none hover:bg-[var(--oc-content-soft)] hover:text-foreground" />}
-                    {linkedinUrl && <a className="oc-quick-icon-action" href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)" title="LinkedIn"><Linkedin size={16} aria-hidden="true" /></a>}
-                    {anonymousActive && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={active.id} clubId={membership.clubId} applicationId={active.id} />}
-                    <nav aria-label="Applicant navigation" className="oc-quick-pager">
-                      <Button variant="ghost" size="icon" aria-label="Previous applicant" aria-keyshortcuts="ArrowLeft" disabled={busy || activeIndex < 0 || activeIndex === 0 && !pageInfo?.previous} onClick={() => void navigateApplicant(-1)}><ChevronLeft className="size-4" /></Button>
-                      <span className="text-xs text-muted-foreground tabular-nums">{activeIndex >= 0 ? `${displayed.start + activeIndex + 1}/${total}` : "Outside filters"}</span>
-                      <Button variant="ghost" size="icon" aria-label="Next applicant" aria-keyshortcuts="ArrowRight" disabled={busy || activeIndex < 0 || activeIndex >= filtered.length - 1 && !pageInfo?.next} onClick={() => void navigateApplicant(1)}><ChevronRight className="size-4" /></Button>
-                    </nav>
-                    {preview?.onNext && <Button variant="outline" size="sm" disabled={busy} onClick={() => void (canEvaluate ? draftSave.flush() : Promise.resolve()).then(() => preview.onNext?.()).catch(() => {})}>Next assigned review</Button>}
-                    <Button variant="link" size="sm" className="oc-quick-layout-toggle" aria-pressed={fullProfile} onClick={() => setFullProfile(value => !value)}>{fullProfile ? "Quick review" : "Full profile"}</Button>
-                  </div>
-                </header>
-                {!fullProfile ? <div className="oc-quick-body">
-                  <section aria-label="Application responses" className="oc-quick-responses">
-                    {active.answers.map((answer) => <div key={answer.id} className="oc-quick-answer">
-                      <h3>{answer.question.prompt}</h3>
-                      {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId)
-                        ? <a className="text-sm underline" href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)} target="_blank" rel="noopener noreferrer">Open document (new tab)</a>
-                        : <p>{answerText(answer.question, answer.response) || "No response"}</p>}
-                    </div>)}
-                    {!active.answers.length && <p className="text-sm text-muted-foreground">{anonymousActive ? "Responses and files are withheld during anonymous review." : "No club-specific responses."}</p>}
-                  </section>
-                  <div className="oc-quick-sections">
-                    {resumeUrl && <ReviewSection id={`resume-${active.id}`} title="Résumé preview" open={openSections.includes("resume")} onOpenChange={toggleSection("resume")} lazy>
-                      <iframe key={active.id} title={`Résumé for ${dossierName(active)}`} src={resumeUrl} referrerPolicy="no-referrer" className="h-[60dvh] min-h-80 w-full rounded-lg border bg-muted" />
-                    </ReviewSection>}
-                    {canReview && !anonymousActive && <div hidden={!notesCount}><ReviewSection id={`notes-${active.id}`} title="Interview notes" count={typeof notesCount === "number" ? notesCount : null} open={openSections.includes("notes")} onOpenChange={toggleSection("notes")}>
-                      <InterviewFeedbackPanel key={active.id} embedded clubId={membership.clubId} applicationId={active.id} roundId={active.roundId} refreshKey={JSON.stringify(active.evaluations)} onCount={setNotesCount} />
-                    </ReviewSection></div>}
-                    {canReview && <div hidden={!prosSummary || prosSummary !== "error" && !prosSummary.count && !prosSummary.canAdd}><ReviewSection id={`pros-${active.id}`} title="Pros/cons" count={prosSummary === "error" ? null : prosSummary?.count} open={openSections.includes("pros")} onOpenChange={toggleSection("pros")}>
-                      <ApplicantDisplayPanel key={active.id} embedded additionalObservations={false} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} onSummary={setProsSummary} />
-                    </ReviewSection></div>}
-                    {observationsEligible && <ReviewSection id={`observations-${active.id}`} title="Additional observations" count={observationCount} open={openSections.includes("observations")} onOpenChange={toggleSection("observations")}>{observationsPanel}</ReviewSection>}
-                    {active.evaluations.length > 0 && <ReviewSection id={`evaluations-${active.id}`} title="Evaluations" count={active.evaluations.length} open={openSections.includes("evaluations")} onOpenChange={toggleSection("evaluations")}>
-                      <ul className="space-y-3">{active.evaluations.map((item) => <li key={item.id} className="border-l-2 border-border pl-3">
-                        <p className="text-xs font-medium">{item.round} · {item.score} / 10{item.interviewerId === membership.id ? " · You" : " · Club reviewer"}</p>
-                        {item.notes && <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{item.notes}</p>}
-                      </li>)}</ul>
-                    </ReviewSection>}
-                  </div>
-                </div> : <div className="oc-applicant-profile-layout"><div className="oc-dossier-document min-w-0 space-y-6">
-                  <section className="oc-dossier-responses space-y-5 border-b border-border pb-6">
-                    <h3 className="oc-card-heading">Application responses</h3>
-                    {active.answers.map((answer, index) => <div className="oc-dossier-answer" key={answer.id}>
-                      <p className="oc-editorial-label">{String(index + 1).padStart(2, "0")} / Application response</p>
-                      <h4 className="text-sm font-medium leading-6">{answer.question.prompt}</h4>
-                      {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId)
-                        ? <a className="mt-2 inline-block text-sm underline" href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)} target="_blank" rel="noopener noreferrer">Open document (new tab)</a>
-                        : <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">{answerText(answer.question, answer.response) || "No response"}</p>}
-                    </div>)}
-                    {!active.answers.length && <p className="text-sm text-muted-foreground">{anonymousActive ? "Responses and files are withheld during anonymous review." : "No club-specific responses."}</p>}
-                  </section>
-                  <section className="space-y-3 border-b border-border pb-6">
-                    <h3 className="oc-card-heading">Profile</h3>
-                    {profile ? <ApplicantProfileFacts profile={profile} fields={profileFields} resume={resumeUrl && <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Résumé" />}>
-                      <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
-                    </ApplicantProfileFacts> : <p className="text-sm text-muted-foreground">No profile provided.</p>}
-                  </section>
-                  <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading">Interviews</h3>{anonymousActive ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{schedulingDateTime(booking.slot.startTime)} – {slotTime(booking.slot.endTime, SCHEDULING_TIMEZONE)}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview scheduled.</p>}</section>
-                  {canReview && <ApplicantDisplayPanel key={active.id} additionalObservations={false} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
-                  {observationsPanel && <div className="space-y-2"><h3 className="oc-card-heading">Additional observations</h3>{observationsPanel}</div>}
-                </div><div className="oc-applicant-assessment min-w-0 space-y-6">
-                  {canReview && !anonymousActive && <InterviewFeedbackPanel key={active.id} clubId={membership.clubId} applicationId={active.id} roundId={active.roundId} refreshKey={JSON.stringify(active.evaluations)} />}
-                  <section className="space-y-4">
-                    <h3 className="oc-card-heading">Evaluations</h3>
-                    {active.evaluations.map((item) => <div key={item.id} className="border-l-2 border-border pl-3"><p className="text-xs font-medium">{item.round} · {item.score} / 10{item.interviewerId === membership.id ? " · You" : " · Club reviewer"}</p>{item.notes && <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{item.notes}</p>}</div>)}
-                    {!active.evaluations.length && <p className="text-sm text-muted-foreground">No evaluations yet.</p>}
-                  </section>
-                </div>{resumeUrl && <aside className="oc-applicant-resume" aria-label="Applicant résumé">
-                  <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Open résumé" triggerClassName="self-start" />
-                  <iframe key={active.id} title={`Résumé for ${dossierName(active)}`} src={resumeUrl} referrerPolicy="no-referrer" className="h-[70dvh] min-h-96 w-full rounded-lg border bg-muted" />
-                </aside>}</div>}
-              </div>
-              <footer className="oc-applicant-review-footer oc-quick-footer" aria-label="Review and decide">
-                <form data-autosave-editor="true" className="oc-quick-evaluation" onBlur={canEvaluate ? draftSave.onBlur : undefined} onSubmit={(event) => { event.preventDefault(); if (canEvaluate) void mutate("review") }}>
-                  <Label htmlFor="review-score" className="sr-only">Score (1–10)</Label>
-                  <DisabledReason field reason={evaluateReason}>
-                    <Input id="review-score" type="number" required min={1} max={10} step="any" placeholder="Score" className="oc-quick-score" value={score} disabled={!canEvaluate || busy || !draftSave.ready || draftSave.recovery != null} onChange={(event) => setScore(event.target.value)} />
-                  </DisabledReason>
-                  <Label htmlFor="review-notes" className="sr-only">Overall evaluation feedback</Label>
-                  <DisabledReason field reason={evaluateReason}>
-                    <Textarea id="review-notes" rows={1} placeholder="One-line note" className="oc-quick-note min-h-10 resize-none" value={notes} disabled={!canEvaluate || busy || !draftSave.ready || draftSave.recovery != null} onChange={(event) => setNotes(event.target.value)} />
-                  </DisabledReason>
-                  {canEvaluate && <Button type="submit" variant="outline" disabled={busy || !canReview}>{busy ? "Saving…" : "Finalize evaluation"}</Button>}
-                  {canEvaluate && <span className="oc-quick-save-state"><AutosaveStatus save={draftSave} />{dirty ? "Draft · not finalized" : score ? "Finalized review" : ""}</span>}
-                </form>
-                <div className="oc-quick-actions" role="group" aria-label={quickQueue ? "Quick decisions" : "Decisions"}>
-                  {quickQueue ? <>
-                    <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>
-                    <Button variant="outline" aria-describedby="quick-review-publishes" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("REJECTED")}>Deny & next</Button>
-                    <Button aria-describedby="quick-review-publishes" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("ACCEPTED")}>{busy ? "Saving…" : "Accept & next"}</Button>
-                    <span id="quick-review-publishes" className="oc-quick-publishes text-xs text-muted-foreground">Decisions publish immediately<span className="sr-only">. Skip leaves the candidate unchanged.</span></span>
-                  </> : decisionOptions.map((value) => <DisabledReason key={value} reason={!busy && dirty && "Save your review before changing the status."}>
-                    <Button variant={value === "ACCEPTED" ? "default" : "outline"} size="sm" disabled={busy || dirty} onClick={() => setDecision(value)}>{decisionActionLabels[value]}</Button>
-                  </DisabledReason>)}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="More applicant actions"><MoreHorizontal size={20} /></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="min-w-56">
-                      {canManageRecruitment && <DropdownMenuItem onSelect={() => { setTargetRound(active.roundId); setPanel("round") }}>Move round…</DropdownMenuItem>}
-                      {canManageRecruitment && !activeRound?.anonymousReview && <DropdownMenuItem onSelect={() => setPanel("cycle")}>Recruitment cycle assignment…</DropdownMenuItem>}
-                      {active.status === "REJECTED" && canDecide && <DropdownMenuItem onSelect={() => setPanel("reconsider")}>Reconsider application…</DropdownMenuItem>}
-                      {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && canDecide && <DropdownMenuItem disabled={busy || dirty} onSelect={async () => { if (!(await confirm({ title: "Rescind this pending offer?", description: "Accepted memberships are managed in member management.", confirmLabel: "Rescind offer", tone: "danger" }))) return; setBusy(true); try { await revokeRecruitmentOffer(membership.clubId, active.id); setRevision(v => v + 1); setMessage("Pending offer rescinded."); preview?.onChanged() } catch { setMessage("Only pending offers can be rescinded. Manage existing members through member management.") } finally { setBusy(false) } }}>Rescind pending offer</DropdownMenuItem>}
-                      {interviewLinks.map(item => <DropdownMenuItem key={item.tool} disabled={busy || dirty} asChild><Link href={interviewHref(item.tool)} onClick={e => { if (busy || dirty || !canLeaveWorkspace()) e.preventDefault() }}>{item.label}</Link></DropdownMenuItem>)}
-                      <DropdownMenuItem disabled={busy} onSelect={async () => { if (dirty && !(await confirm({ title: "Discard review and reload?", description: "Your unsaved review will be lost.", confirmLabel: "Discard and reload", tone: "danger" }))) return; setActiveId(null); setDecision(""); setRevision(v => v + 1) }}>Reload applicant data</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                {message && <p role="status" className="oc-quick-message">{message}</p>}
-              </footer>
-              <Dialog open={panel !== null} onOpenChange={value => { if (!value && !busy) setPanel(null) }}>
-                <DialogContent>
-                  {panel === "round" && <><DialogHeader><DialogTitle>Move round</DialogTitle><DialogDescription>{dossierName(active)} · currently in {activeRound?.name ?? "an unavailable round"}.</DialogDescription></DialogHeader>
-                    <Label htmlFor="move-round">Round</Label>
-                    <NativeSelect id="move-round" className={selectStyle} disabled={busy} value={targetRound} onChange={(event) => setTargetRound(event.target.value)}>{data.rounds.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect>
-                    <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button>
-                      <DisabledReason reason={!busy && (finalStatus ? "Final decisions can’t move rounds. Reconsider a rejected application first; correct other decisions with the decision buttons." : dirty ? "Save your review before moving." : false)}>
-                        <Button disabled={busy || dirty || finalStatus || targetRound === active.roundId} loading={mutationKind === "round"} onClick={() => { setMessage(""); void mutate("round") }}>{mutationKind === "round" ? "Moving…" : "Move round"}</Button>
-                      </DisabledReason></div>
-                    {message && <p role="status" className="text-sm">{message}</p>}</>}
-                  {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle assignment</DialogTitle><DialogDescription>{dossierName(active)}</DialogDescription></DialogHeader>
-                    <ApplicationCycleAssignment key={active.id + active.recruitmentCycleId} clubId={membership.clubId} applicationId={active.id} cycleId={active.recruitmentCycleId} onSaved={() => { setPanel(null); setRevision(v => v + 1) }} /></>}
-                  {panel === "reconsider" && <><DialogHeader><DialogTitle>Reconsider application</DialogTitle><DialogDescription>Returns {dossierName(active)} to review. Earlier decisions stay in the history.</DialogDescription></DialogHeader>
-                    <Label htmlFor="reconsider-reason">Reason (at least 10 characters)</Label>
-                    <Textarea id="reconsider-reason" maxLength={1000} value={reconsiderReason} onChange={e => setReconsiderReason(e.target.value)} />
-                    <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button>
-                      <Button disabled={busy || reconsiderReason.trim().length < 10} onClick={async () => { setBusy(true); try { await reconsiderRejectedApplication({ clubId: membership.clubId, applicationId: active.id, expectedGuard: active.publicationGuard, reason: reconsiderReason }); setReconsiderReason(""); setPanel(null); setActiveId(null); setRevision(v => v + 1); setMessage("Application returned to review. Historical decisions are preserved.") } catch { setMessage("Reconsideration failed. Check your access and try again.") } finally { setBusy(false) } }}>Reconsider application</Button></div></>}
-                </DialogContent>
-              </Dialog>
-            </>
-          })()}
-        </SheetContent>
-      </Sheet>
-      <Dialog open={!!boardMove} onOpenChange={value => { if (!value && !busy) setBoardMove(null) }}><DialogContent><DialogHeader><DialogTitle>{boardMove?.lane === "closed" ? "Choose the final decision" : "Move this candidate?"}</DialogTitle><DialogDescription>{applicants.find(app => app.id === boardMove?.id) && name(applicants.find(app => app.id === boardMove?.id)!)} · This updates the applicant’s status. Final decisions are visible to the applicant and publish their decision notification.</DialogDescription></DialogHeader>
-        {boardError && <p role="alert" className="text-sm text-destructive">{boardError}</p>}
-        <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setBoardMove(null)}>Cancel move</Button>{boardMove?.lane === "closed" ? <><Button variant="outline" disabled={busy} loading={boardSaving === "REJECTED"} onClick={() => void confirmBoardMove("REJECTED")}>{boardSaving === "REJECTED" ? "Saving…" : "Deny candidate"}</Button><Button disabled={busy} loading={boardSaving === "ACCEPTED"} onClick={() => void confirmBoardMove("ACCEPTED")}>{boardSaving === "ACCEPTED" ? "Saving…" : "Accept candidate"}</Button></> : <Button disabled={busy} loading={boardSaving === "WAITLISTED"} onClick={() => void confirmBoardMove(boardMove?.lane === "interview" ? "INTERVIEWING" : boardMove?.lane === "decision" ? "WAITLISTED" : "IN_REVIEW")}>{boardSaving ? "Saving…" : "Confirm move"}</Button>}</div>
-      </DialogContent></Dialog>
-      <Dialog
-        open={!!decision}
-        onOpenChange={(value) => {
-          if (!value && !busy) setDecision("")
-        }}
-      >
-        <DialogContent className="max-h-[90dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Update application status?</DialogTitle>
-            <DialogDescription>
-              {active && dossierName(active)} will see their application marked{" "}
-              {applicationStatusLabels[decision]}. The applicant will see this status in OutClass.
-              {["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) && (demo.isDemoEnabled ? " A fictional letter and notification will be saved in Demo. No email is sent." : " Status and a notification publish with an optional formal letter according to club settings. Decision-availability email follows separate student preferences.")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" disabled={busy} onClick={() => setDecision("")}>
-              Cancel
-            </Button>
-            <Button disabled={busy} onClick={() => void mutate("decision")}>
-              {busy ? "Updating…" : ["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) ? "Send now" : "Confirm status"}
-            </Button>
-          </div>
-            {active&&["ACCEPTED","WAITLISTED","REJECTED"].includes(decision)&&<ScheduleDecision clubId={membership.clubId} selection={{kind:"DIRECT",applicationId:active.id,expectedGuard:active.publicationGuard,status:decision as "ACCEPTED"|"WAITLISTED"|"REJECTED"}} disabled={busy} onScheduled={()=>{setDecision("");setRevision(v=>v+1)}}/>}
-          {decision && message && (
-            <p role="status" className="text-sm">
-              {message}
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
+      {view === "ranked" && rankedOpen && <ApplicantReviewFlow key={rankedOpen} membership={membership} ids={[rankedOpen]} startId={rankedOpen} title="Ranked review" staged={canDecide ? staged : null} onClose={() => setRankedOpen(null)} onChanged={() => setRankedChanged(value => value + 1)} />}
+      {reviewing && <ApplicantReviewFlow key={`${reviewing.title}:${reviewing.startId}`} membership={membership} ids={reviewing.ids} startId={reviewing.startId} title={reviewing.title} staged={canDecide ? staged : null} onClose={closeReview} onChanged={() => void revalidate()} />}
     </div>
   )
 }
+

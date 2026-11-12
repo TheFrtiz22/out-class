@@ -23,10 +23,12 @@ import {
   type EventFilters,
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
+import { ReportContentButton } from "@/components/reports/report-content-button";
 import { SegmentedControl } from "@/components/product/segmented-control";
 import { SmartEventCard } from "./smart-event-card";
 import { EventCalendarButton, EventSaveButton } from "./event-discovery-actions";
 import { useSavedCampusEvents } from "./use-saved-campus-events";
+import { EventShareButton } from "@/components/share/event-share-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -366,14 +368,13 @@ export function PublicEventBoard() {
                 <div className="oc-event-detail-actions">
                   <EventSaveButton event={selected} identity={identity} saved={saves.ids.has(selected.id)} ready={saves.ready} pending={saves.pending.has(selected.id)} onSave={() => void saveEvent(selected.id)} />
                   <EventCalendarButton event={selected} />
+                  <EventShareButton event={selected} clubName={selected.clubName} />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-4">
+                  <ReportContentButton target={{ type: "event", id: selected.id }} label="Report event" ownerClubId={selected.clubId} />
+                  {selected.flyerUrl && <ReportContentButton target={{ type: "event-flyer", eventId: selected.id }} label="Report flyer" ownerClubId={selected.clubId} />}
                 </div>
                 {saves.error && <p role="alert" className="mt-3 text-sm text-destructive">{saves.error}</p>}
-                <Link
-                  className="oc-event-permalink"
-                  href={`/corkboard?event=${selected.id}`}
-                >
-                  Event link
-                </Link>
               </div>
             </DialogContent>
           )}
