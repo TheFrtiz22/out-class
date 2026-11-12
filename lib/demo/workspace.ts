@@ -305,6 +305,7 @@ export const leaveInterviewCollaboration: Demo<"leaveInterviewCollaboration"> = 
 export const dismissInterviewInvitation: Demo<"dismissInterviewInvitation"> = demoCollaboration.dismissInterviewInvitation
 export const prepareInterviewAdvance: Demo<"prepareInterviewAdvance"> = demoCollaboration.prepareInterviewAdvance
 export const confirmInterviewAdvance: Demo<"confirmInterviewAdvance"> = demoCollaboration.confirmInterviewAdvance
+export const controlInterviewTimer: Demo<"controlInterviewTimer"> = demoCollaboration.controlInterviewTimer
 export const saveInterviewKit: Demo<"saveInterviewKit"> = demoInterviews.saveInterviewKit
 export const openInterviewSession: Demo<"openInterviewSession"> = demoInterviews.openInterviewSession
 export const saveInterviewSession: Demo<"saveInterviewSession"> = demoInterviews.saveInterviewSession

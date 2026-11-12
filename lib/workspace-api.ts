@@ -29,6 +29,7 @@ import * as interviewResumes from "@/actions/interview-resumes"
 import * as interviewGrants from "@/actions/organization-members"
 import * as interviewKits from "@/actions/interview-kits"
 import * as collaboration from "@/actions/interview-collaboration"
+import * as interviewTimer from "@/actions/interview-timer"
 import * as meetingsApi from "@/actions/meetings"
 import * as apps from "@/actions/applications"
 import * as crm from "@/actions/crm"
@@ -130,6 +131,7 @@ export const leaveInterviewCollaboration = adapt(collaboration.leaveInterviewCol
 export const dismissInterviewInvitation = adapt(collaboration.dismissInterviewInvitation, "dismissInterviewInvitation")
 export const prepareInterviewAdvance = adapt(collaboration.prepareInterviewAdvance, "prepareInterviewAdvance")
 export const confirmInterviewAdvance = adapt(collaboration.confirmInterviewAdvance, "confirmInterviewAdvance")
+export const controlInterviewTimer = adapt(interviewTimer.controlInterviewTimer, "controlInterviewTimer")
 export const saveInterviewKit = adapt(interviewKits.saveInterviewKit, "saveInterviewKit")
 export const openInterviewSession = adapt(interviewKits.openInterviewSession, "openInterviewSession")
 export const saveInterviewSession = adapt(interviewKits.saveInterviewSession, "saveInterviewSession")
