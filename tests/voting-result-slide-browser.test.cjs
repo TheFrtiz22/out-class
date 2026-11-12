@@ -148,7 +148,7 @@ test('decision motion: failed and delayed saves, failed next slide, Hold, reserv
   await sample(leader);
   f.h.as(leaderId);assert.equal((await f.h.command('DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[2],passNumber:1,choice:'REJECT',reason:'Decided on another device',confirmed:true})).ok,true);
   await focus([leader]);
-  await leader.locator('.vr-slide-in [data-applicant-heading]',{hasText:'Pass complete'}).waitFor({timeout:20000});
+  await leader.locator('.vr-slide-in [data-applicant-heading]',{hasText:'Review held applicants'}).waitFor({timeout:20000});
   const l=await stop(leader);assert.deepEqual(l.outcomes,['Not passed without a vote']);assert.equal(l.blank,0);
   assert.deepEqual(errors,[]);
  }finally{for(const c of contexts)await c.close();await browser.close();await f.close();}

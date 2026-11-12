@@ -76,11 +76,11 @@ test('multi-user voting: ballots never advance; finalization advances every view
   //    advances (2 → 3 → pass end); when reads resume it lands on the current state directly, with no replay.
   await leaderAct(['CLOSE_VOTING'],['DECIDE_AND_ADVANCE',{applicationId:apps[2],passNumber:1,choice:'REJECT',reason:'Synthetic'}]);
   await watch(member);hold=false;released();await member.waitForTimeout(200);await member.unroute('**/action',{behavior:'ignoreErrors'});await focus([member]);
-  await member.locator('.vr-slide-in [data-applicant-heading]',{hasText:'Pass complete'}).waitFor({timeout:20000});await member.waitForTimeout(800);
+  await member.locator('.vr-slide-in [data-applicant-heading]',{hasText:'Review held applicants'}).waitFor({timeout:20000});await member.waitForTimeout(800);
   const caught=await stop(member);
   assert.equal(caught.slides,0,'missed advances are reconciled directly, never replayed');assert.deepEqual(caught.outcomes,[]);
   // A reload reconciles directly too: no transition at all.
-  await member.reload();await watch(member);await member.locator('.vr-slide-in [data-applicant-heading]',{hasText:'Pass complete'}).waitFor();
+  await member.reload();await watch(member);await member.locator('.vr-slide-in [data-applicant-heading]',{hasText:'Review held applicants'}).waitFor();
   await member.waitForTimeout(800);assert.equal((await stop(member)).slides,0,'a reload shows the current state directly');
 
   // 6. Privacy: no snapshot the leader or projector received carried a ballot list or the member's own choice.
