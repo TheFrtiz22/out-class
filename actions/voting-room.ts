@@ -11,7 +11,7 @@ import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-tran
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
 import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged } from "@/lib/voting-room";
-import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, roomFingerprint, signRoomView, verifyRoomView, type LiveRoom } from "@/utils/voting-room";
+import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, undoableDecision, roomFingerprint, signRoomView, verifyRoomView, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
@@ -115,6 +115,11 @@ export async function getLiveVotingRoom(input:unknown) {
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);
     const later=await tx.pipelineRound.count({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}}});
     const snapshot=projectVotingRoom(s,m,round.anonymousReview,{name:round.name,final:later===0});
+    // Server-backed Undo: the command that produced this revision is the latest room activity. Leaders see its
+    // decision only while UNDO_DECISION would accept it (same rule), after any refresh or on any device.
+    // Other receipts in this table (slide preparation, setup) carry their own `revision` numbers, so check each match.
+    const latest=snapshot.permissions.canCorrect?await tx.votingRoomCommand.findMany({where:{sessionId:s.id,result:{path:["revision"],equals:s.revision}},select:{result:true},orderBy:{createdAt:"desc"},take:10}):[];
+    const undo=latest.map(r=>undoableDecision(s,r.result)).find(Boolean)??null;
     const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},status:"ACTIVE",user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
@@ -126,7 +131,7 @@ export async function getLiveVotingRoom(input:unknown) {
     const removedVoters=openRule?.rules.mode==="THRESHOLD"?openRule.electorate.filter(id=>!eligible.some(v=>v.id===id)).length:0;
     const ruled=rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
     const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
-    return {snapshot:{...snapshot,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
+    return {snapshot:{...snapshot,undo,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
       votingPaused:removedVoters>0,viewedAt,viewToken:snapshot.permissions.leader?signRoomView({sessionId:s.id,revision:s.revision,viewedAt,memberId:m.id}):null,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
@@ -327,9 +332,9 @@ export async function commandLiveVotingRoom(input:unknown) {
       case "UNDO_DECISION": {
         requireRoomLeader(s,m,"decisions.manage");
         const receipt=d.undoRequestId?await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:{sessionId:s.id,requestId:d.undoRequestId}}}):null;
-        const saved=roomCommandResultSchema.safeParse(receipt?.result),previous=saved.success?saved.data.decision:null;
-        const old=pass?.candidates.find(c=>c.applicationId===d.applicationId);
-        if(!previous||saved.data!.revision!==s.revision||previous.applicationId!==d.applicationId||previous.passNumber!==d.passNumber||d.passNumber!==s.currentPass||old?.ballotState!=="CONFIRMED"||s.activeApplicationId!==previous.nextApplicationId||!["OPEN","PAUSED"].includes(s.state)||current&&(current.ballots.length>0||current.ballotState!=="PENDING"))throw new RoomConflict("UNDO_UNSAFE","Newer room activity prevents Undo. Use Correct an outcome to return the applicant to Hold.");
+        // Same rule the leader's snapshot uses to show Undo (undoableDecision), so a hidden Undo is always a refused one.
+        const previous=undoableDecision(s,receipt?.result),old=pass?.candidates.find(c=>c.applicationId===d.applicationId);
+        if(!previous||!old||previous.applicationId!==d.applicationId||previous.passNumber!==d.passNumber)throw new RoomConflict("UNDO_UNSAFE","Newer room activity prevents Undo. Use Correct an outcome to return the applicant to Hold.");
         if(!await tx.application.findFirst({where:{id:old.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===old.applicationId)!.expectedStatus}}))throw new RoomConflict("APPLICANT_CHANGED","The applicant recruitment state changed. Review it before correcting this outcome.");
         previousDecision=old.confirmedDecision;
         await tx.auditLog.create({data:{actorId:user.id,clubId:s.clubId,targetId:s.id,action:"voting.room.undo_authorized",details:{requestId:d.requestId,applicationId:old.applicationId,passNumber:s.currentPass,revision:s.revision,previousDecision}}});

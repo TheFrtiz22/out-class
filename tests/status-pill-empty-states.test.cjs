@@ -32,7 +32,9 @@ test("StatusPill: icon and text per application state, token colors only, stored
 test("Applications, Home and the leader Applicants table all show StatusPill; the thin left bar is gone", () => {
   for (const file of ["components/applications/application-management-card.tsx", "components/applications/application-status-card.tsx", "components/views/student-dashboard-view.tsx", "components/views/leader-dashboard/live-applicant-views.tsx"]) assert.match(read(file), /<StatusPill status=\{app\.status\}/, file)
   const leader = read("components/views/leader-dashboard/live-applicant-views.tsx")
-  assert.equal((leader.match(/<StatusPill status=\{app\.status\}/g) || []).length, 5, "applicant table and card, board, decision table and card")
+  // One Status cell (pill plus any staged decision) shared by the applicant table and card, and the decision table and card.
+  assert.equal((leader.match(/<StatusPill status=\{app\.status\}/g) || []).length, 1)
+  assert.equal((leader.match(/<Status app=\{app\}/g) || []).length, 4, "applicant table and card, decision table and card")
   assert.doesNotMatch(leader, /data-application-status|<Badge /)
   assert.ok(!fs.existsSync("components/status-badge.tsx"))
   const css = read("styles/product-components.css") + read("styles/product-workflows.css") + read("components/applications/application-tracker.css")
@@ -42,7 +44,7 @@ test("Applications, Home and the leader Applicants table all show StatusPill; th
 test("leader scores hidden before your own review show a lock and a short label", () => {
   const leader = read("components/views/leader-dashboard/live-applicant-views.tsx")
   assert.doesNotMatch(leader, /Submit your own review to see round scores/)
-  assert.match(leader, /<Lock aria-hidden="true" size=\{14\} \/>Hidden until you review/)
+  assert.match(leader, /<Lock aria-hidden="true" size=\{14\} \/>Hidden<span className="sr-only"> until you review<\/span>/)
 })
 
 test("Corkboard empty state never offers 'show all' when everything is already shown", () => {

@@ -113,38 +113,15 @@ test('a confirmed “Not now” reports the change once', () => withWindow(async
 }))
 
 // ---------- (a) Pipeline board stage move ----------
-const board = load('lib/applicant-board.ts', {})
-const page = () => ({ applications: [{ id: 'a', status: 'SUBMITTED' }, { id: 'b', status: 'INTERVIEWING' }], facets: { lanes: { review: 1, interview: 1, decision: 0, closed: 0 } } })
-
-test('only review and interview moves are optimistic; decisions wait for the server', () => {
-  assert.deepEqual(['IN_REVIEW', 'INTERVIEWING', 'WAITLISTED', 'ACCEPTED', 'REJECTED'].map(board.isOptimisticBoardMove), [true, true, false, false, false])
-})
-
-test('a stage move updates the card and lane counts before the server resolves and rolls back on a conflict', async () => {
-  let state = page(); const setData = fn => { state = fn(state) }
-  const server = deferred()
-  // The order confirmBoardMove uses: apply, write with expectedStatus, roll back only if still optimistic.
-  const app = state.applications[0]
-  setData(p => board.withApplicantStatus(p, app.id, 'INTERVIEWING'))
-  assert.equal(state.applications[0].status, 'INTERVIEWING')
-  assert.deepEqual(state.facets.lanes, { review: 0, interview: 2, decision: 0, closed: 0 })
-  server.reject(Error('Application changed. Reload the page and try again.'))
-  await server.promise.catch(() => setData(p => board.withApplicantStatus(p, app.id, app.status, 'INTERVIEWING')))
-  assert.deepEqual(state, page())
-  // A newer read that already moved the card elsewhere is never overwritten by the rollback.
-  state.applications[0].status = 'IN_REVIEW'
-  assert.equal(board.withApplicantStatus(state, 'a', 'SUBMITTED', 'INTERVIEWING'), state)
-  assert.equal(board.withApplicantStatus(null, 'a', 'IN_REVIEW'), null)
-})
-
-test('the board keeps its revision check and existing conflict message around the optimistic move', () => {
-  const source = fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx', 'utf8')
-  const body = source.slice(source.indexOf('async function confirmBoardMove'), source.indexOf('async function quickDecision'))
-  assert.match(source, /expectedStatus: app\.status === "DRAFTING" \? undefined : app\.status/)
-  assert.ok(body.indexOf('withApplicantStatus(page, app.id, status)') < body.indexOf('await writeStatus'), 'applied before the write')
-  assert.match(body, /withApplicantStatus\(page, app\.id, app\.status, status\)/)
-  assert.match(body, /This move could not be saved\. Check your current access, then try again\./)
-  assert.match(source, /\{!boardMove && boardError && <p role="alert"/, 'rollback error stays visible after the dialog closes')
+// Board drops stage a decision (nothing is sent). The staged placement shows before the server answers
+// and rolls back to the previous staged state if the write is refused.
+test('a board drop stages optimistically, keeps the revision check, and rolls back on a refusal', () => {
+  const source = fs.readFileSync('hooks/use-staged-decisions.ts', 'utf8')
+  const body = source.slice(source.indexOf('const write = useCallback'), source.indexOf('return true', source.indexOf('const write = useCallback')))
+  assert.ok(body.indexOf('put(app.id, {') < body.indexOf('await stageDecision'), 'placed before the write')
+  assert.match(body, /expectedStatus: app\.status as "IN_REVIEW", expectedRoundId: app\.roundId/)
+  const failure = source.slice(source.indexOf('} catch (error) {', source.indexOf('const write = useCallback')))
+  assert.match(failure, /put\(app\.id, previous\)/, 'a refused stage restores the previous placement')
 })
 
 // ---------- (b) Must-wait actions disable and acknowledge while pending ----------
@@ -160,20 +137,12 @@ test('every must-wait submit in the listed surfaces is disabled while pending an
     ['components/club-tasks.tsx', /<Button className="w-full sm:w-auto" disabled=\{busy \|\| uploading\}>\s*\{busy\s*\? "Submitting…"/],
     ['components/qr/meeting-check-in.tsx', /disabled=\{busy \|\| !title\}[^]*?\{busy \? "Checking in…" : "Check in"\}/],
     ['components/communications-preferences.tsx', /<Button disabled=\{saving\} onClick=\{\(\)=>void save\(\)\}>\{saving\?"Saving…"/],
-    ['components/views/leader-dashboard/live-leader-workspace.tsx', /<Button type="submit" variant="outline" disabled=\{busy \|\| !canReview\}>\{busy \? "Saving…"/],
-    ['components/views/leader-dashboard/live-leader-workspace.tsx', /disabled=\{busy\} onClick=\{\(\) => void mutate\("decision"\)\}>\s*\{busy \? "Updating…"/],
-    ['components/views/leader-dashboard/live-leader-workspace.tsx', /quickDecision\("ACCEPTED"\)\}>\{busy \? "Saving…"/],
-    ['components/views/leader-dashboard/live-leader-workspace.tsx', /disabled=\{busy\} loading=\{boardSaving === "REJECTED"\}[^\n]*?>\{boardSaving === "REJECTED" \? "Saving…"/],
-    ['components/views/leader-dashboard/live-leader-workspace.tsx', /disabled=\{busy\} loading=\{boardSaving === "ACCEPTED"\}[^\n]*?>\{boardSaving === "ACCEPTED" \? "Saving…"/],
-    ['components/views/leader-dashboard/live-leader-workspace.tsx', /loading=\{boardSaving === "WAITLISTED"\}[^\n]*?>\{boardSaving \? "Saving…" : "Confirm move"\}/],
-    ['components/views/leader-dashboard/live-leader-workspace.tsx', /loading=\{mutationKind === "round"\}[^\n]*?>\{mutationKind === "round" \? "Moving…" : "Move round"\}/],
+    ['components/applicant-review/review-grading.tsx', /disabled=\{!ready\} onClick=\{\(\) => void submit\(\)\}>\{busy \? "Submitting…" : "Submit grade"\}/],
+    ['components/applicant-review/staged-decisions-panel.tsx', /<Button disabled=\{busy \|\| !chosen\.length\} onClick=\{\(\) => void send\(\)\}>\{busy \? "Sending…"/],
+    ['components/applicant-review/applicant-review-flow.tsx', /<Button disabled=\{busy \|\| targetRound === app\.roundId\}[^\n]*?>\{busy \? "Moving…" : "Move round"\}/],
+    ['components/applicant-review/applicant-review-flow.tsx', /<Button disabled=\{busy \|\| reason\.trim\(\)\.length < 10\}[^\n]*?>\{busy \? "Returning…" : "Reconsider"\}/],
   ]
   for (const [file, pattern] of expectations) assert.match(read(file), pattern, `${file}: ${pattern}`)
-  // Final board decisions set their pending state before awaiting the server, so the label appears on the same click.
-  const leader = read('components/views/leader-dashboard/live-leader-workspace.tsx')
-  const body = leader.slice(leader.indexOf('async function confirmBoardMove'), leader.indexOf('async function quickDecision'))
-  assert.ok(body.indexOf('setBoardSaving(status)') < body.indexOf('await writeStatus'))
-  assert.match(body, /finally \{[^}]*setBoardSaving\(null\)/)
   // No surface uses <form action={serverAction}>, so useFormStatus has no form to observe; keep it that way or add it.
   for (const file of expectations.map(([f]) => f)) {
     const src = read(file)

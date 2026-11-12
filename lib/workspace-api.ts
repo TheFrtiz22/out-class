@@ -33,6 +33,7 @@ import * as interviewTimer from "@/actions/interview-timer"
 import * as meetingsApi from "@/actions/meetings"
 import * as apps from "@/actions/applications"
 import * as crm from "@/actions/crm"
+import * as reviewDecisions from "@/actions/review-decisions"
 import * as evaluation from "@/actions/evaluations"
 import * as profile from "@/actions/profile"
 import * as directory from "@/actions/club-directory"
@@ -97,6 +98,12 @@ export const getClubPipelineSelection = adapt((...args: Parameters<typeof crm.ge
 export const moveApplicantRound = adapt(crm.moveApplicantRound, "moveApplicantRound")
 export const setApplicationStatus = adapt(crm.setApplicationStatus, "setApplicationStatus")
 export const submitEvaluation = adapt(evaluation.submitEvaluation, "submitEvaluation")
+export const getReviewRubric = adapt(reviewDecisions.getReviewRubric, "getReviewRubric")
+export const saveReviewRubric = adapt(reviewDecisions.saveReviewRubric, "saveReviewRubric")
+export const listStagedDecisions = adapt(reviewDecisions.listStagedDecisions, "listStagedDecisions")
+export const stageDecision = adapt(reviewDecisions.stageDecision, "stageDecision")
+export const clearStagedDecision = adapt(reviewDecisions.clearStagedDecision, "clearStagedDecision")
+export const sendStagedDecisions = adapt(reviewDecisions.sendStagedDecisions, "sendStagedDecisions")
 export const startClubApplication = adapt(directory.startClubApplication, "startClubApplication")
 
 export const saveApplicationDraft = adapt(apps.saveApplicationDraft, "saveApplicationDraft")

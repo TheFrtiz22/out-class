@@ -177,6 +177,26 @@ function actionsClient({ github, getOctokit, token }) {
   return new github.constructor({ auth: token })
 }
 
+// With a merge queue on main, direct merges are refused; the PR is added to the queue
+// instead, pinned to the same head commit.
+function isMergeQueueRefusal(error) {
+  return /merge queue/i.test(String(error?.message || ""))
+}
+
+async function mergeOrEnqueue({ github, owner, repo, pr }) {
+  try {
+    await github.rest.pulls.merge({ owner, repo, pull_number: pr.number, sha: pr.head.sha, merge_method: "merge" })
+    return "merged"
+  } catch (error) {
+    if (!isMergeQueueRefusal(error)) throw error
+    await github.graphql(
+      "mutation($id: ID!, $oid: GitObjectID!) { enqueuePullRequest(input: { pullRequestId: $id, expectedHeadOid: $oid }) { mergeQueueEntry { id } } }",
+      { id: pr.node_id, oid: pr.head.sha },
+    )
+    return "queued"
+  }
+}
+
 async function run({ github, context, core, getOctokit }) {
   const { owner, repo } = context.repo
   const repoFullName = `${owner}/${repo}`
@@ -278,13 +298,15 @@ async function run({ github, context, core, getOctokit }) {
     }
 
     try {
-      await github.rest.pulls.merge({ owner, repo, pull_number: number, sha: pr.head.sha, merge_method: "merge" })
-      core.info(`#${number}: merged at ${pr.head.sha}`)
+      const outcome = await mergeOrEnqueue({ github, owner, repo, pr })
+      core.info(`#${number}: ${outcome} at ${pr.head.sha}`)
       await actions.rest.issues.createComment({
         owner,
         repo,
         issue_number: number,
-        body: `Merge bot: merged at ${code(pr.head.sha.slice(0, 8))} after the ${requiredChecks.length} required checks passed.`,
+        body: outcome === "queued"
+          ? `Merge bot: added to the merge queue at ${code(pr.head.sha.slice(0, 8))} after the ${requiredChecks.length} required checks passed. The queue merges it once it also passes on top of main.`
+          : `Merge bot: merged at ${code(pr.head.sha.slice(0, 8))} after the ${requiredChecks.length} required checks passed.`,
       })
     } catch (error) {
       core.warning(`#${number}: merge failed: ${error.message}`)
@@ -294,6 +316,8 @@ async function run({ github, context, core, getOctokit }) {
 
 module.exports = {
   run,
+  mergeOrEnqueue,
+  isMergeQueueRefusal,
   actionsClient,
   evaluate,
   protectedFiles,

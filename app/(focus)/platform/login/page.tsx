@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
+import { AuthenticatorCodeInput, AuthenticatorQr } from "@/components/security/authenticator-setup"
 import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 export default function PlatformLogin() {
   const [password, setPassword] = useState(""),
@@ -83,20 +84,8 @@ export default function PlatformLogin() {
           </>
         ) : (
           <>
-            {qr && (
-              <img src={qr} alt="Scan to enroll your authenticator" width={220} height={220} />
-            )}
-            <label className="block">
-              Authenticator code
-              <Input
-                autoComplete="one-time-code"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                required
-              />
-            </label>
+            {qr && <AuthenticatorQr qr={qr} />}
+            <AuthenticatorCodeInput value={code} onChange={setCode} />
           </>
         )}
         {!factor && <TurnstileWidget action="admin" onToken={setTurnstileToken} resetKey={turnstileReset} />}

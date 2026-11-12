@@ -66,7 +66,7 @@ test('pipeline summaries omit hidden fields on the server, so filters cannot inf
 
 test('the CRM read applies the club setting to every pipeline payload, read in the same snapshot', () => {
   const crm = fs.readFileSync('actions/crm.ts', 'utf8')
-  assert.match(crm, /archivedAt: true, club: \{ select: \{ profileFieldVisibility: true \} \}/)
+  assert.match(crm, /archivedAt: true, club: \{ select: \{ profileFieldVisibility: true, reviewRubric: true \} \}/)
   assert.match(crm, /const profileFields = normalizeProfileFieldVisibility\(allRounds\[0\]\?\.club\?\.profileFieldVisibility\)/)
   assert.match(crm, /restrictApplicationProfile\(pipelineDetailProjection\(raw, membership, prior\.get\(raw\.id\) \?\? \[\]\), profileFields\)/)
   assert.match(crm, /restrictApplicationProfile\(pipelineSummaryProjection\(app, membership\), profileFields\)/)
@@ -93,16 +93,18 @@ test('applicant display and voting slides treat the club setting as a ceiling', 
 
 test('the leader dossier, list, filters and sorts follow the club setting', () => {
   const src = fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx', 'utf8')
+  const flow = fs.readFileSync('components/applicant-review/applicant-review-flow.tsx', 'utf8')
   assert.match(src, /const profileFields = data\?\.profileFields \?\? defaultProfileFieldVisibility\(\)/)
-  assert.match(src, /const profile = active\.student\.studentProfile/)
-  assert.match(src, /<ApplicantProfileFacts profile=\{profile\} fields=\{profileFields\}/)
-  // The quick review's header facts use the same field filter as the full profile.
-  assert.match(src, /applicantProfileFacts\(profile, profileFields\)/)
+  assert.match(flow, /const profileFields = pipeline\?\.profileFields \?\? defaultProfileFieldVisibility\(\)/)
+  assert.match(flow, /const profile = app\?\.student\.studentProfile/)
+  assert.match(flow, /<ApplicantProfileFacts profile=\{profile\} fields=\{profileFields\}/)
+  // The review header's facts use the same field filter as the profile section.
+  assert.match(flow, /applicantProfileFacts\(\{ \.\.\.profile, academicYear: null \}, profileFields\)/)
   // Résumé and LinkedIn are only offered when the club shows them; every résumé surface keys off resumeUrl.
-  assert.match(src, /const resumeUrl = anonymousActive \|\| !profileFields\.resume \? undefined/)
-  assert.match(src, /const linkedinUrl = anonymousActive \|\| !profileFields\.linkedin \? undefined/)
-  assert.match(src, /\{resumeUrl && <aside className="oc-applicant-resume"/)
-  assert.match(src, /\{profileFields\.photo && <Avatar/)
+  assert.match(flow, /const resumeUrl = app && !anonymous && profileFields\.resume \?/)
+  assert.match(flow, /const linkedinUrl = !anonymous && profileFields\.linkedin \?/)
+  assert.match(flow, /\{resumeUrl && <ReviewSection/)
+  assert.match(flow, /\{profileFields\.photo && <Avatar/)
   for (const [field, control] of [['major', '<PillSelect label="Filter major"'], ['academicYear', '<PillSelect label="Filter academic year"'], ['gpa', '<RangeSlider label="GPA greater than"'], ['sat', '<RangeSlider label="SAT greater than"'], ['act', '<RangeSlider label="ACT greater than"']])
     assert.ok(src.includes(`{profileFields.${field} && ${control}`), `${field} filter follows the setting`)
   assert.match(src, /applicantSortOptions\.filter\(option => sortableByProfile\(option\.key, profileFields\)\)/)
