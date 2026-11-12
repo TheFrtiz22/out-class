@@ -99,8 +99,8 @@ importers:
         specifier: 15.5.28
         version: 15.5.28(@opentelemetry/api@1.10.0)(@types/node@22.20.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       nodemailer:
-        specifier: ^10.0.13
-        version: 10.0.13
+        specifier: 10.2.1
+        version: 10.2.1
       pdfjs-dist:
         specifier: 6.4.299
         version: 6.4.299
@@ -2949,8 +2949,8 @@ packages:
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
 
-  nodemailer@10.0.13:
-    resolution: {integrity: sha512-SzG86OlvcW/NNhUFC6uROMwRTL4n7MswfQqC/T8mhkmnY1YVa23zUEMYi4ijSeXSl9GLz9ZeTJDUatEDuY5FeQ==}
+  nodemailer@10.2.1:
+    resolution: {integrity: sha512-ZrDNsPFoDMwefNs7sJwrYiEJ/CG4ClJWDZv05iNJsEBWa8GRDry1QJHTJxsuTAY9eDDKjX4k+q3SxslXJOao7w==}
     engines: {node: '>=20.0.0'}
 
   nypm@0.6.10:
@@ -6222,7 +6222,7 @@ snapshots:
 
   node-fetch-native@1.6.7: {}
 
-  nodemailer@10.0.13: {}
+  nodemailer@10.2.1: {}
 
   nypm@0.6.10:
     dependencies:

@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
@@ -63,6 +64,7 @@ import { resolveRecruitingResumeUrl, safeProfileUrl } from "@/lib/student-profil
 import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { anonymousApplicantLabel } from "@/lib/anonymous-review"
 import { ApplicantProfileFacts, applicantProfileFacts } from "./applicant-profile-facts"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
@@ -467,7 +469,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setMessage("")
     try {
       if (kind === "review") {
-        if (!canEvaluate) throw new Error("A current panel assignment is required to submit this identified review.")
+        if (!canEvaluate) throw new UserFacingError("A current panel assignment is required to submit this identified review.")
         await draftSave.flush()
         const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
         if (!roundName) throw new Error()
@@ -757,10 +759,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         )}
         {revalidateFailures >= 2 && <p role="status" className="flex w-full flex-wrap items-center gap-2 text-xs text-muted-foreground">Couldn’t update applicants. Showing the last loaded list.<Button variant="ghost" size="sm" disabled={busy} onClick={() => void revalidate()}>Try again</Button></p>}
       </div>
-      {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
-      {decisionGroup==="rejected"&&<p className="text-sm text-muted-foreground">Rejected applications keep their reviews and decision history. Open one to reconsider it; that returns it to review and does not change the student’s account or membership.</p>}
+      {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate or use Move to; interview moves need an interview round.</p>}
+      {decisionGroup==="rejected"&&<p className="text-sm text-muted-foreground">Reconsidering returns an application to review; its history is kept.</p>}
       {!boardMove && boardError && <p role="alert" className="text-sm text-destructive">{boardError}</p>}
-      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected. Published rejections appear here with their history preserved." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : <Button variant="outline" size="sm" asChild><Link href={rejectedOnly || decisionsOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly || decisionsOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div> : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban votingSelection={votingChoice} canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
@@ -881,10 +883,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                         ? <a className="mt-2 inline-block text-sm underline" href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)} target="_blank" rel="noopener noreferrer">Open document (new tab)</a>
                         : <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">{answerText(answer.question, answer.response) || "No response"}</p>}
                     </div>)}
-                    {!active.answers.length && <p className="text-sm text-muted-foreground">{anonymousActive ? "Responses and files are withheld during anonymous review. Any prepared anonymous content appears in the Profile section." : "No club-specific responses."}</p>}
+                    {!active.answers.length && <p className="text-sm text-muted-foreground">{anonymousActive ? "Responses and files are withheld during anonymous review." : "No club-specific responses."}</p>}
                   </section>
                   <section className="space-y-3 border-b border-border pb-6">
-                    <h3 className="oc-card-heading">Profile</h3>
+                    <div className="flex flex-wrap items-baseline justify-between gap-3"><h3 className="oc-card-heading">Profile</h3><ReportContentButton target={{ type: "student", clubId: membership.clubId, applicationId: active.id }} label="Report this profile" hidden={active.studentId === membership.userId || !hasPermission(membership, "applications.review")} ownerUserId={active.studentId} /></div>
                     {profile ? <ApplicantProfileFacts profile={profile} fields={profileFields} resume={resumeUrl && <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Résumé" />}>
                       <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
                     </ApplicantProfileFacts> : <p className="text-sm text-muted-foreground">No profile provided.</p>}

@@ -16,6 +16,10 @@ const modes=[['white-png','/logos/white.png',{}],['white-svg','/logos/white.svg'
 function Replacement(){const [source,setSource]=React.useState(null);return <div data-logo-case="replacement"><ClubLogo clubId="12345678-1234-1234-1234-123456789abc" logoUrl={source} text="CC" color="#315B51" alt="Replacement club"/><button onClick={()=>setSource('/logos/missing.png')}>Break replacement</button><button onClick={()=>setSource('/logos/dark.png')}>Load replacement</button></div>}
 createRoot(document.getElementById('root')).render(<main><Replacement/><h1>Club logo settings</h1><ClubProfileEditor initial={initial} onSave={async value=>{await fetch('/profile',{method:'POST',body:JSON.stringify(value)})}}/><section aria-label="Shared logo presentation">{modes.map(([id,logoUrl,marketing])=><div key={id} data-logo-case={id}><h2>{id}</h2><ClubLogo logoUrl={logoUrl} marketing={marketing} text="CC" color="#315B51" alt={id} size="lg"/></div>)}<div data-logo-case="directory"><DirectoryLogo club={{id:'club',source:'database',logoUrl:'/logos/white.png',marketing:initial.marketing,color:initial.color,logoText:'CC'}}/></div><div data-logo-case="profile"><MarketingProfile compact profile={initial}/></div></section></main>);`
   const script=bundle(entry,{
+    '@/actions/content-reports':`exports.reportContent=async()=>({ok:true,message:''});`,
+    'next/link':`const React=require('react');module.exports=({children,href,...props})=>React.createElement('a',{...props,href},children);`,
+    '@/contexts/auth-context':`exports.useAuth=()=>({user:null,loading:false});`,
+    '@/contexts/demo-context':`exports.useDemoMode=()=>({isDemoEnabled:false,ready:true});`,
     '@/hooks/use-editor-draft':`exports.useEditorDraft=()=>({ready:true,recovery:null,dirty:false,state:'idle',flush:async()=>{},clear:async()=>{},onBlur:()=>{}});`,
     'next/image':`exports.__esModule=true;exports.default=({fill,priority,unoptimized,...p})=>require('react').createElement('img',p);`,
   })

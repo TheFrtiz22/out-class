@@ -4,17 +4,19 @@ import { Button } from "@/components/ui/button"
 import { SectionReveal } from "@/components/motion/scroll-motion"
 import { PublicInformationPage } from "@/components/landing/public-information-page"
 import { publicPageMetadata, publicPageStructuredData } from "@/lib/seo"
+import { cspNonce } from "@/utils/csp-nonce"
 
 const description = "OutClass is building infrastructure for college club recruitment, beginning at the University of Virginia. Learn who it is for and why it exists."
 export const metadata = publicPageMetadata("About", description, "/about")
 const structuredData = publicPageStructuredData("About OutClass", description, "/about", "AboutPage")
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const nonce = await cspNonce()
   return (
     <PublicInformationPage className="oc-editorial-page oc-about-page" eyebrow="About OutClass" title="Club recruitment, without the scattered forms and spreadsheets." introduction="OutClass is being built by UVA students to make it easier to discover organizations, apply, schedule interviews, and keep track of what happens next."
       heroActions={<div className="oc-public-actions"><Button asChild size="lg"><Link prefetch={false} href="/signup">Create your profile</Link></Button><a className="oc-public-text-link" href="#why-outclass">Why we’re building it</a></div>}
       heroAside={<figure className="oc-about-hero-photo oc-public-glass"><div className="oc-about-hero-image"><Image src="/images/campus/autumn-lawn-1600.webp" alt="Autumn trees framing the University of Virginia Lawn" width={1600} height={1614} sizes="(max-width: 800px) 100vw, 45vw" priority /></div><figcaption><span>Beginning on Grounds</span><span>Charlottesville, Virginia</span></figcaption></figure>}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <SectionReveal id="why-outclass" className="oc-public-section oc-editorial-split oc-about-problem" aria-labelledby="why-title">
         <div><p className="oc-public-kicker">01 / Why this exists</p><h2 id="why-title" data-motion="text">Club recruitment is scattered.</h2></div>
         <div className="oc-editorial-prose" data-motion="body"><p>Students juggle separate forms, email threads, deadlines, and interview links. Club leaders juggle spreadsheets, scheduling, reviewer notes, and decisions.</p><p>That work is already complicated enough. We’re building one place to handle it, without asking clubs to give up control of their recruiting process.</p></div>

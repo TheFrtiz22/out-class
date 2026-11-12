@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { useEffect, useRef, useState } from "react"
@@ -23,7 +24,7 @@ export function InterviewBookingPublication({ clubId, roundId, settings, cycles,
       await setInterviewBookingPublication({ clubId, roundId, revision: settings.bookingRevision, action, cycleId: cycleId || null, allowCancellation: cancel, allowRescheduling: reschedule })
       setNotice(action === "PUBLISH" ? "Schedule published." : action === "PAUSE" ? "Booking paused. Existing interviews are kept." : "Booking settings saved.")
       setPause(false); onChanged(); if (action === "PUBLISH") onPublished?.()
-    } catch (e) { setError(e instanceof Error && !("digest" in e) ? e.message : "Couldn't save booking settings. Your choices are still here. Try again.") }
+    } catch (e) { setError(userMessage(e, "Couldn't save booking settings. Your choices are still here. Try again.")) }
     finally { saving.current = false; setBusy(false) }
   }
   const blocked = coverage?.slots.filter(s => !s.bookable) ?? []
