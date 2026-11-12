@@ -42,10 +42,10 @@
 .oc-floating-unread { position: absolute; right: 10px; top: 10px; width: 6px; height: 6px; border-radius: 50%; background: var(--brand-orange); box-shadow: 0 0 0 2px var(--oc-glass-light-solid); }
 .oc-account-initials { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--oc-surface-sage); font-size: var(--oc-text-caption); color: var(--primary); font-weight: 600; }
 .oc-floating-profile [data-slot="avatar"] { width: 32px; height: 32px; border-radius: 50%; }
-.oc-product-header .oc-floating-search { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 232px; height: 48px; min-height: 48px; padding: 12px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--muted-foreground); box-shadow: none; font-size: 13px; }
+.oc-product-header .oc-floating-search { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 232px; height: 48px; min-height: 48px; padding: 12px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--muted-foreground); box-shadow: none; font-size: var(--oc-size-13); }
 .oc-floating-search::before { content: ""; position: absolute; z-index: -1; inset: 0; border: 1px solid var(--oc-floating-border); border-radius: inherit; background: var(--oc-floating-surface); box-shadow: var(--oc-floating-shadow); -webkit-backdrop-filter: var(--oc-glass-light-filter); backdrop-filter: var(--oc-glass-light-filter); transform: scaleX(1); transition: transform 260ms var(--oc-floating-ease), border-color var(--oc-glass-quick) var(--oc-floating-ease); }
 .oc-floating-search:focus-visible::before, .oc-floating-search[aria-expanded="true"]::before { transform: scaleX(1.05); border-color: color-mix(in srgb, var(--school-primary) 30%, transparent); }
-.oc-floating-search kbd { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; width: 40px; min-height: 22px; border: 1px solid var(--oc-floating-border); border-radius: 6px; font-size: 10px; line-height: 16px; font-family: inherit; color: var(--muted-foreground); }
+.oc-floating-search kbd { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; width: 40px; min-height: 22px; border: 1px solid var(--oc-floating-border); border-radius: 6px; font-size: var(--oc-size-12); line-height: 1.3333; font-family: inherit; color: var(--muted-foreground); }
 .oc-product-header :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .oc-floating-account-menu { border-radius: 16px; padding: 6px; }
 .oc-floating-account-menu [role="menuitem"] { min-height: 44px; border-radius: 10px; }
@@ -69,14 +69,14 @@
 .oc-evolving-indicator { position: absolute; z-index: -1; inset: 0 auto 0 0; width: calc(var(--workspace-base) * var(--workspace-ratio)); border: 1px solid var(--oc-glass-pill-navy-edge); border-radius: 999px; background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); transform: translateX(calc(var(--workspace-index) * (100% / var(--workspace-ratio) + 4px))); transition: transform 420ms var(--oc-floating-ease), width 420ms var(--oc-floating-ease), opacity var(--oc-glass-quick) ease; }
 .oc-evolving-segments[data-has-active="false"] .oc-evolving-indicator { opacity: 0; }
 
-.oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 2px 4px; border-radius: 999px; color: var(--primary); background: transparent; font-size: 13px; font-weight: 500; line-height: 18px; text-decoration: none; text-align: center; }
+.oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 2px 4px; border-radius: 999px; color: var(--primary); background: transparent; font-size: var(--oc-size-13); font-weight: 500; line-height: 1.3846; text-decoration: none; text-align: center; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option[aria-current="page"] { color: #fff7ec; }
 .oc-workspace-option-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::before, .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::after { display: none; }
 .oc-evolving-toggle :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
 /* A leader of several clubs picks another club beside the pill, in the same row. */
 .oc-workspace-club-switch { display: flex; flex: 0 1 auto; min-width: 0; justify-content: flex-start; }
-.oc-header-club { display: flex; align-items: center; justify-content: center; gap: 6px; width: min(100%,240px); min-width: 0; min-height: 44px; padding: 4px 8px; border-radius: 12px; color: var(--muted-foreground); font-size: 12px; font-weight: 500; text-align: center; }
+.oc-header-club { display: flex; align-items: center; justify-content: center; gap: 6px; width: min(100%,240px); min-width: 0; min-height: 44px; padding: 4px 8px; border-radius: 12px; color: var(--muted-foreground); font-size: var(--oc-size-12); font-weight: 500; text-align: center; }
 .oc-header-club > :first-child { display: none; }
 .oc-header-club-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oc-header-club > svg:last-child { flex-shrink: 0; width: 12px; }
@@ -103,7 +103,7 @@ button.oc-header-club:hover { color: var(--primary); background: color-mix(in sr
   .oc-product-workspaces, .oc-evolving-toggle { width: 100%; }
   .oc-product-utilities { justify-self: end; margin-top: 0; }
   .oc-evolving-indicator { transition: transform 420ms var(--oc-floating-ease), opacity 180ms ease; }
-  .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 3px; font-size: 12px; }
+  .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 3px; font-size: var(--oc-size-12); }
   /* Phones, as in the app: the logo leads, search · bell · account follow. When there is somewhere to switch to,
      a mini workspace pill takes the logo's place (equal segments, the club by its short label); the bottom bar
      is the section nav and the account menu still lists every workspace by full name. */
@@ -121,7 +121,7 @@ button.oc-header-club:hover { color: var(--primary); background: color-mix(in sr
   .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { min-height: 44px; padding-inline: 6px; }
   /* One label in the DOM: the phone pill swaps in the short label visually (the name already starts with it). */
   .oc-workspace-option-label[data-mini] { font-size: 0; }
-  .oc-workspace-option-label[data-mini]::after { content: attr(data-mini); font-size: 12px; }
+  .oc-workspace-option-label[data-mini]::after { content: attr(data-mini); font-size: var(--oc-size-12); }
   .oc-workspace-club-switch { display: none; }
 }
 @media (max-width: 639px) {
@@ -133,8 +133,8 @@ button.oc-header-club:hover { color: var(--primary); background: color-mix(in sr
 @media (max-width: 359px) {
   .oc-product-header-row { gap: 4px; }
   .oc-product-utilities { gap: 4px; }
-  .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 1px; font-size: 11px; }
-  .oc-workspace-option-label[data-mini]::after { font-size: 11px; }
+  .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 1px; font-size: var(--oc-size-12); }
+  .oc-workspace-option-label[data-mini]::after { font-size: var(--oc-size-12); }
 }
 @media (prefers-reduced-motion: reduce) { .oc-evolving-toggle *, .oc-floating-search::before, .oc-product-header :is(a,button) { transition: none !important; animation: none !important; } }
 @media (forced-colors: active) { .oc-evolving-bar { border-color: CanvasText; } .oc-evolving-indicator { background: Highlight; forced-color-adjust: none; } .oc-evolving-toggle .oc-workspace-option[aria-current="page"] { color: HighlightText; forced-color-adjust: none; } }

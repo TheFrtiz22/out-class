@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MeetingDetail } from "@/components/meeting-workspace";
+export const metadata = { title: "Meeting", robots: { index: false, follow: false } }
 export default async function Page({
   params,
 }: {

@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { getOrganizationInvitations } from "@/lib/workspace-read";
@@ -56,7 +57,7 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
         return [{ ...invitation, dismissedAt: kind === "dismissed" ? new Date() : kind === "restored" ? null : invitation.dismissedAt }];
       });
       setData(previous => ({ ...previous, invitations, notice: previous.failed ? "" : previous.notice }));
-    }).catch(error => { if (current()) setData(previous => ({ ...previous, invitations: [], failed: true, notice: error instanceof Error ? error.message : "Could not check organization invitations." })); })
+    }).catch(error => { if (current()) setData(previous => ({ ...previous, invitations: [], failed: true, notice: userMessage(error, "Could not check organization invitations.") })); })
       .finally(() => { if (current()) setData(previous => ({ ...previous, loading: false })); });
     return () => { cancelled = true; };
   }, [accountKey, enabled, attempt]);

@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -70,7 +71,7 @@ function setup() {
     } },
     '@/utils/platform-admin': { requirePlatformAdmin: async () => { if (!state.platformAllowed) throw Error('Platform denied'); return {id:'inviter'}; } },
   });
-  return {state,tx,prisma,load,api:load('actions/club-onboarding.ts')};
+  return {state,tx,prisma,load,api:unwrapActions(load('actions/club-onboarding.ts'))};
 }
 
 test('membership roles cannot appoint owners through global role or ordinary admin capabilities', () => {
@@ -295,7 +296,7 @@ test('concurrent claiming attempts revalidate after the organization transaction
   let tail=Promise.resolve();
   const prisma={...h.tx,$transaction:fn=>{const result=tail.then(()=>fn(h.tx));tail=result.catch(()=>{});return result;}};
   const load=loader({'@/utils/verified-email-policy':{...loader({})('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}},'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-01'}})},'@/utils/platform-admin':{}});
-  const api=load('actions/club-onboarding.ts');
+  const api=unwrapActions(load('actions/club-onboarding.ts'));
   const results=await Promise.allSettled([api.acceptIdentityClubInvitation(inviteId),api.acceptIdentityClubInvitation(inviteId)]);
   assert.equal(results.filter(result=>result.status==='fulfilled').length,2);
   assert.equal(results.filter(result=>result.status==='rejected').length,0);

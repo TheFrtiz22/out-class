@@ -59,7 +59,7 @@
 @media (max-width: 639px) { [data-product-shell] .oc-club-settings #related-club-settings + ul { grid-template-columns: 1fr; } }
 .oc-applicant-person { display: flex; align-items: center; gap: .7rem; min-width: 0; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }
 .oc-applicant-person [data-slot="avatar"] { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: var(--oc-radius-md); }
-.oc-applicant-person [data-slot="avatar-fallback"] { background: var(--oc-surface-blue); color: var(--primary); font-size: var(--oc-size-11); }
+.oc-applicant-person [data-slot="avatar-fallback"] { background: var(--oc-surface-blue); color: var(--primary); font-size: var(--oc-size-12); }
 .oc-applicant-person-row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .6rem; min-width: 0; }
 .oc-previously-applied { color: var(--muted-foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-regular); }
 .oc-applicant-person-row .oc-previously-applied { white-space: nowrap; }
@@ -67,7 +67,7 @@
 .oc-applicant-review-hidden { display: inline-flex; align-items: center; gap: .375rem; white-space: nowrap; }
 .oc-applicant-review { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
 .oc-applicant-review strong { display: inline-flex; align-items: baseline; gap: .15rem; padding: 0; background: transparent; color: inherit; border-radius: 0; font-size: var(--oc-text-small); font-weight: 600; font-variant-numeric: tabular-nums; }
-.oc-applicant-review strong > span { font-size: var(--oc-size-10); font-weight: 400; }
+.oc-applicant-review strong > span { font-size: var(--oc-size-12); font-weight: 400; }
 
 [data-product-shell] .oc-organization-checklist[data-density="compact"] { margin-top: 1.25rem; margin-bottom: 0; padding: 1rem; }
 [data-product-shell] .oc-organization-checklist[data-density="compact"] h2 { font-size: var(--oc-text-card); margin-top: .25rem; }

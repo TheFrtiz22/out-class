@@ -49,8 +49,8 @@ export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApp
     // File answers and signed capabilities remain outside the presentation contract.
     answers: safe.answers.filter(a => a.question.type !== "FILE_UPLOAD").map(a => `${a.question.prompt}\n${a.response}`),
     applicationContext: [`${round.name} · ${safe.status}`],
-    pros: anonymous ? [] : observations.filter(o => o.kind === "PRO").map(o => `${o.body}\n— ${o.author}`),
-    cons: anonymous ? [] : observations.filter(o => o.kind === "CON").map(o => `${o.body}\n— ${o.author}`),
+    pros: anonymous ? [] : observations.filter(o => o.kind === "PRO").map(o => `${o.body}\n(${o.author})`),
+    cons: anonymous ? [] : observations.filter(o => o.kind === "CON").map(o => `${o.body}\n(${o.author})`),
     score: safe.evaluations.map(e => `${e.round}: ${e.score} / 10 · Reviewer ${e.interviewerId}`),
     feedback: anonymous ? [] : feedback.items,
   };

@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./action-result.cjs');
 // Synthetic, in-memory benchmark harness for the Ranked review read. No database,
 // no .env, no network: a mocked Prisma client returns fictional rows shaped exactly
 // by the select/include/omit each query asks for, so the bytes it "fetches" are a
@@ -80,7 +81,7 @@ function harness(rows, { member = viewer, memberships = { [clubId]: member }, su
     return { user: { id: m.userId }, membership: m };
   } };
   const mocks = { "@/utils/auth": auth, "@/utils/prisma": { prisma: { $transaction: async fn => fn(tx) } }, "next/cache": { revalidatePath() {}, revalidateTag() {} } };
-  return { stats, crm: load("actions/crm.ts", mocks), ranked: load("lib/ranked-review.ts"), read: load("lib/ranked-review-read.ts") };
+  return { stats, crm: unwrapActions(load("actions/crm.ts", mocks)), ranked: load("lib/ranked-review.ts"), read: load("lib/ranked-review-read.ts") };
 }
 
 const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];

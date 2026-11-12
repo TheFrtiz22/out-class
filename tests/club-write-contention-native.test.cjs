@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Club-write contention on isolated native PostgreSQL with simulated network latency.
 // Production functions (iad1) and the database (us-west-2) are ~70 ms apart, so every
 // statement inside a transaction extends how long its locks are held. A Prisma
@@ -62,11 +63,11 @@ test('club-wide write contention under simulated cross-region latency', { skip: 
     'next/cache': { revalidatePath() {}, revalidateTag() {} },
     '@/utils/auth': { requireAuth: async () => ({ user: request.getStore() }) },
   };
-  const current = loader(mocks)('actions/applications.ts');
+  const current = unwrapActions(loader(mocks)('actions/applications.ts'));
   // Optional before/after comparison: OUTCLASS_CONTENTION_BASELINE_REF=origin/main
   // (the ref's applications.ts must compile against the current schema).
   const baselineRef = process.env.OUTCLASS_CONTENTION_BASELINE_REF;
-  const previous = baselineRef ? loader(mocks, { 'actions/applications.ts': execFileSync('git', ['show', `${baselineRef}:actions/applications.ts`], { encoding: 'utf8' }) })('actions/applications.ts') : null;
+  const previous = baselineRef ? unwrapActions(loader(mocks, { 'actions/applications.ts': execFileSync('git', ['show', `${baselineRef}:actions/applications.ts`], { encoding: 'utf8' }) })('actions/applications.ts')) : null;
 
   const club = await operator.club.create({ data: { slug: `contention-${randomUUID()}`, name: 'Contention Club', tagline: '', description: '', color: '#142d4e', category: 'Academic', applicationOpen: true } });
   await operator.pipelineRound.create({ data: { clubId: club.id, name: 'Applied', order: 0 } });
@@ -137,7 +138,7 @@ test('club-wide write contention under simulated cross-region latency', { skip: 
     await leader;
     await operator.club.update({ where: { id: club.id }, data: { suspendedAt: new Date() } });
     try {
-      await assert.rejects(request.run(user, () => current.saveApplicationDraft(draft('after suspension'))), /suspended/i);
+      await refused(request.run(user, () => current.saveApplicationDraft(draft('after suspension'))), /suspended/i);
     } finally {
       await operator.club.update({ where: { id: club.id }, data: { suspendedAt: null } });
     }

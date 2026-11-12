@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 // Interview self-booking bursts on isolated native PostgreSQL with simulated statement latency.
 // Every invited student reserves a distinct published slot at once through the real
 // reserveInterview (ReadCommitted atomic(), the platform-wide panel publication advisory
@@ -47,7 +48,10 @@ const percentile = (values, p) => {
 
 test('interview self-booking bursts under simulated latency', { skip: !databaseUrl, timeout: 1800000 }, async t => {
   const url = new URL(databaseUrl);
-  assert.equal(url.hostname, '127.0.0.1'); assert.equal(url.port, '58455'); assert.equal(url.pathname, '/outclass_contention_test');
+  // Only the two reserved loopback fixtures: the contention benchmark's own database
+  // (scripts/run-contention-benchmark.cjs) or the CI security suite's (scripts/run-disposable-postgres.cjs security).
+  const reserved = { 58455: '/outclass_contention_test', 58454: '/outclass_security_test' };
+  assert.equal(url.hostname, '127.0.0.1'); assert.equal(url.pathname, reserved[url.port], 'reserved disposable fixture only');
   const operator = new PrismaClient({ datasourceUrl: databaseUrl });
   const base = new PrismaClient({ datasourceUrl: databaseUrl.replace('fixture_superuser@', 'outclass_production_app@') });
   t.after(async () => { await base.$disconnect(); await operator.$disconnect(); });
@@ -88,7 +92,7 @@ test('interview self-booking bursts under simulated latency', { skip: !databaseU
     const mod = load(file);
     for (const name of names) { const real = mod[name]; if (name === 'validatePanelDocument') { mod[name] = (...args) => { const t0 = performance.now(); try { return real(...args); } finally { const p = profile[name] ??= { calls: 0, ms: 0, statements: 0 }; p.calls++; p.ms += performance.now() - t0; } }; continue; } mod[name] = async (...args) => { const t0 = performance.now(), s0 = statements; try { return await real(...args); } finally { const p = profile[name] ??= { calls: 0, ms: 0, statements: 0 }; p.calls++; p.ms += performance.now() - t0; p.statements += statements - s0; } }; }
   }
-  const rooms = load('actions/interview-rooms.ts'), proposals = load('actions/panel-proposals.ts');
+  const rooms = unwrapActions(load('actions/interview-rooms.ts')), proposals = load('actions/panel-proposals.ts');
   const publication = load('actions/panel-publication.ts'), booking = load('actions/interview-booking-publication.ts');
   const as = (user, fn) => request.run(user, fn);
   const ok = r => { assert.equal(r.ok, true, r.error); return r.value; };
@@ -182,7 +186,7 @@ test('interview self-booking bursts under simulated latency', { skip: !databaseU
   // Correctness under real concurrency, with latency so the transactions overlap.
   const attempt = (student, slotId) => as(student.user, async () => {
     try { await rooms.reserveInterview({ applicationId: student.app.id, slotId }); return { ok: true }; }
-    catch (error) { return { ok: false, error: String(error?.message || error) }; }
+    catch (error) { return { ok: false, error: String(error?.message || error), refused: error?.refused === true, code: error?.code }; }
   });
 
   await t.test('two students racing for the last seat of one session: exactly one is booked', async () => {
@@ -192,6 +196,7 @@ test('interview self-booking bursts under simulated latency', { skip: !databaseU
     rttMs = 2; const results = await Promise.all(club.students.map(s => attempt(s, slotId))); rttMs = 0;
     assert.equal(results.filter(r => r.ok).length, 1, JSON.stringify(results));
     assert.match(results.find(r => !r.ok).error, /just booked|no longer available|fully staffed|changed while saving/i);
+    assert.equal(results.find(r => !r.ok).refused, true, 'the losing booking is a returned { ok: false } refusal');
     assert.equal(await operator.interviewBooking.count({ where: { slotId } }), 1);
   });
 
@@ -206,6 +211,7 @@ test('interview self-booking bursts under simulated latency', { skip: !databaseU
     rttMs = 2; const results = await Promise.all([attempt(student, slotA.id), attempt(second, slotB.id)]); rttMs = 0;
     assert.equal(results.filter(r => r.ok).length, 1, JSON.stringify(results));
     assert.match(results.find(r => !r.ok).error, /already have an interview at that time|changed while saving/i);
+    assert.equal(results.find(r => !r.ok).refused, true, 'the losing booking is a returned { ok: false } refusal');
     assert.equal(await operator.interviewBooking.count({ where: { application: { studentId: student.user.id } } }), 1);
   });
 });

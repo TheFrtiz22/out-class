@@ -10,8 +10,12 @@ async function fixture(){
   '@/lib/application-state':"exports.useApplicationState=()=>({notifications:[],durableUnread:0,syncTaskNotifications(){},syncDurableNotifications(){}})",
   '@/contexts/organization-invitations-context':"exports.useOrganizationInvitations=()=>({invitations:[]})",
   '@/utils/supabase/client':"exports.createClient=()=>({})",
+  // The Report control reaches server-only modules (support audit, node:crypto).
+  '@/components/reports/report-content-button':"exports.ReportContentButton=()=>null",
   '@/actions/communications':"exports.getDurableNotifications=async()=>({notifications:[],unread:0})",
   '@/actions/editor-drafts':"exports.getEditorDraft=async()=>null;exports.saveEditorDraft=async()=>({revision:1})",
+  // A Server Action (rate limiter imports node:net); null means Typesense is unavailable, so Explore filters locally.
+  '@/actions/typesense-search':"exports.searchPublicClubIds=async()=>null",
   '@/lib/demo/store':"exports.demoStore={active:()=>false};exports.demoDirectory=()=>[]",'@/components/views/club-profile-view':inert,'@/components/tutorial-walkthrough':inert,'@/components/shell/navigation-search':inert,'@/components/shell/notification-center':inert,'@/components/demo-controls':inert,
   'next/link':"const React=require('react');module.exports=({children,href,prefetch,...props})=>React.createElement('a',{href,...props},children)",
   'next/image':"const React=require('react');module.exports=({priority,unoptimized,...props})=>React.createElement('img',props)",
