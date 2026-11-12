@@ -11,19 +11,23 @@ export type WorkspaceSearchResult = {
   detail: string
   clubId: string
 }
+/**
+ * One search for the whole account, wherever it is opened: public clubs, the account's own applications, and the
+ * applicants and rounds of every club whose membership allows identifying applicants. The server derives those
+ * clubs from memberships on each call; nothing the browser sends widens access.
+ * `_leader` is the retired "only search records from a club workspace" flag, still accepted from older clients.
+ */
 export async function searchWorkspace(
   query: string,
-  leader = false,
+  _leader?: boolean,
 ): Promise<WorkspaceSearchResult[]> {
   const { user } = await requireAuth()
   const text = query.trim().slice(0, 120)
   if (text.length < 2) return []
-  const memberships = leader
-    ? await prisma.clubMember.findMany({
-        where: { userId: user.id, status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
-        select: { clubId: true },
-      })
-    : []
+  const memberships = await prisma.clubMember.findMany({
+    where: { userId: user.id, status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
+    select: { clubId: true },
+  })
   const clubIds = memberships.map((item) => item.clubId)
   const contains = { contains: text, mode: "insensitive" as const }
   const typesenseClubIds = await searchPublicClubIds(text)

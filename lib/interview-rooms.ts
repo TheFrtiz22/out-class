@@ -28,6 +28,19 @@ export const roomInputSchema = z.object({
   panelMemberIds: z.array(z.string().uuid()).max(10).default([]),
 }).refine(v => v.kind !== "VIRTUAL" || /^https:\/\//i.test(v.location) && (() => { try { return !!new URL(v.location).hostname } catch { return false } })(), { message: "Use a full https:// meeting link.", path: ["location"] })
 export type RoomInput = z.infer<typeof roomInputSchema>
+/** "Add dates" from Manage room: more times for one existing room, which keeps its location, length and buffer. */
+/** Added times stay within a year so a mistyped year can't create far-future sessions. */
+export const ROOM_TIMES_MAX_DAYS_AHEAD = 366
+export function latestRoomTimesDate(now = Date.now()) { return dayKey(new Date(now + ROOM_TIMES_MAX_DAYS_AHEAD * 86400000), SCHEDULING_TIMEZONE) }
+export const roomTimesInputSchema = roomInputSchema.innerType().pick({ clubId: true, dates: true, start: true, end: true, capacity: true }).extend({ roomId: z.string().uuid() }).strict()
+  .refine(v => v.dates.every(date => date <= latestRoomTimesDate()), { message: "Choose dates within the next year.", path: ["dates"] })
+export type RoomTimesInput = z.infer<typeof roomTimesInputSchema>
+/** "Remove time" from Manage room: one unbooked, unstaffed time of one room. */
+export const roomTimeRemovalSchema = z.object({ clubId: z.string().uuid(), roomId: z.string().uuid(), slotId: z.string().uuid() }).strict()
+/** Whether a time currently has interviewers (published panel, or the room's legacy approval). */
+export function slotHasInterviewers(slot: Pick<RoomSlot, "panelScheduleVersionId" | "publishedPanelMemberIds">, room: Pick<InterviewRoom, "isOpen" | "panelApprovedBy" | "approvedPanelMemberIds" | "panelMemberIds">) {
+  return slot.panelScheduleVersionId ? (slot.publishedPanelMemberIds?.length ?? 0) > 0 : !!room.isOpen && !!room.panelApprovedBy && (room.approvedPanelMemberIds ?? []).some(id => room.panelMemberIds.includes(id))
+}
 export type RoomSlot = { publishedPanelMemberIds?: string[]; panelScheduleVersionId?: string | null; interviewersNeeded?: number | null; staffingRevision?: number; id: string; startTime: string; endTime: string; capacity: number; booked: number }
 export type InterviewRoom = { externallyBookedAt?: string | null; interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
 export type RoomBooking = { id: string; applicationId: string; slotId: string; roomId: string; roundId: string; candidate: string; startTime: string; endTime: string; location: string }
@@ -57,7 +70,7 @@ export function zonedInstant(date: string, time: string, timezone: string): Date
   if (matches.length !== 1) throw new Error("This time crosses a daylight-saving change. Choose another time.")
   return matches[0]
 }
-export function roomSlots(input: RoomInput, now = Date.now()) {
+export function roomSlots(input: Pick<RoomInput, "dates" | "start" | "end" | "timezone" | "duration" | "buffer" | "capacity">, now = Date.now()) {
   const windows = [...new Set(input.dates)].sort().flatMap(date => {
     const start = zonedInstant(date, input.start, input.timezone), end = zonedInstant(date, input.end, input.timezone)
     if (+end <= +start) throw new Error("End time must be after start time on the same day.")

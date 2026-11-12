@@ -231,7 +231,7 @@ export const updateStudentProfileSection: Demo<"updateStudentProfileSection"> = 
 export const uploadProfileFile: Demo<"uploadProfileFile"> = () => {
   throw new Error("Uploads are disabled in Demo Mode. The sample PDF and photos stay isolated from production.")
 }
-export const searchWorkspace: Demo<"searchWorkspace"> = (query, leader = false) => {
+export const searchWorkspace: Demo<"searchWorkspace"> = (query) => {
   const s = demoStore.get(),
     text = query.trim().toLowerCase()
   if (text.length < 2) return []
@@ -256,7 +256,8 @@ export const searchWorkspace: Demo<"searchWorkspace"> = (query, leader = false) 
       detail: a.status,
     }))
   const applicants =
-    leader && s.perspective.role === "leader" && s.perspective.clubId === s.clubs[0].id
+    // Role-based, as in production: the leader perspective finds its applicants from any workspace.
+    s.perspective.role === "leader" && s.perspective.clubId === s.clubs[0].id
       ? s.applications
           .filter((a) => a.clubId === s.perspective.clubId && a.status !== "DRAFTING" && !s.clubs.find(c => c.id === a.clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview)
           .map((a) => {
@@ -415,6 +416,8 @@ export const getRecruitingRuleFlags: Demo<"getRecruitingRuleFlags"> = demoRecrui
 export const clearRecruitingRuleFlags: Demo<"clearRecruitingRuleFlags"> = demoRecruitingRules.clearRecruitingRuleFlags
 export const getRoomWorkspace: Demo<"getRoomWorkspace"> = demoRoomApi.getRoomWorkspace
 export const createInterviewRoom: Demo<"createInterviewRoom"> = demoRoomApi.createInterviewRoom
+export const addInterviewRoomTimes: Demo<"addInterviewRoomTimes"> = demoRoomApi.addInterviewRoomTimes
+export const removeInterviewRoomTime: Demo<"removeInterviewRoomTime"> = demoRoomApi.removeInterviewRoomTime
 export const setInterviewStaffingRequirement: Demo<"setInterviewStaffingRequirement"> = raw=>demoRoomApi.setInterviewStaffingRequirement(raw as Parameters<typeof demoRoomApi.setInterviewStaffingRequirement>[0])
 export const setInterviewRoomOpen: Demo<"setInterviewRoomOpen"> = demoRoomApi.setInterviewRoomOpen
 export const renameInterviewRoom: Demo<"renameInterviewRoom"> = demoRoomApi.renameInterviewRoom

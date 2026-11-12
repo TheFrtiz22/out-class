@@ -50,7 +50,7 @@ test("items 5 and 6: open slots are not candidates; the palette counts every row
   const list = read("components/interviews/interview-rooms-list.tsx")
   assert.match(list, /<span className="oc-dt-muted">Open slot<\/span>/)
   assert.doesNotMatch(list, /cell: row => <span className="oc-dt-name"[^>]*>\{row\.candidate \|\| row\.roomName\}/)
-  assert.match(read("components/shell/navigation-search.tsx"), /pluralize\(pages\.length \+ linkPages\.length \+ results\.length, "result"\)/)
+  assert.match(read("components/shell/navigation-search.tsx"), /pluralize\(pages\.length \+ linkPages\.length \+ elsewhere\.length \+ results\.length, "result"\)/)
 })
 
 test("item 9: a known admin keeps a non-interactive Admin segment while eligibility is rechecked; the hint never authorizes", () => {
