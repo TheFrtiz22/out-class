@@ -1,6 +1,7 @@
 import { requireAuth } from "@/utils/auth"
 import { AccountSettings } from "@/components/settings/account-settings"
 import { userMfaEnabled, verifiedFactorCount } from "@/lib/user-mfa"
+import { getAccountDeletionRequest } from "@/actions/account-deletion"
 
 export const metadata = { title: "Account & Security" }
 export default async function AccountSettingsPage() {
@@ -12,5 +13,6 @@ export default async function AccountSettingsPage() {
     enabled: !impersonation && verifiedFactorCount(supabaseUser as { factors?: { status?: string }[] }) > 0,
     required: (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(v => v.trim()).includes(user.id),
   } : null
-  return <AccountSettings email={user.email} passwordAccount={passwordAccount} impersonating={!!impersonation} twoStep={twoStep} />
+  const deletion = impersonation ? null : await getAccountDeletionRequest()
+  return <AccountSettings email={user.email} passwordAccount={passwordAccount} impersonating={!!impersonation} twoStep={twoStep} deletionRequest={deletion?.pending ?? null} deletionWarnings={deletion?.warnings ?? []} />
 }

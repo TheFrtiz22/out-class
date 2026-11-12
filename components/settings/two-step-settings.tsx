@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 import { AuthenticatorCodeInput, AuthenticatorQr } from "@/components/security/authenticator-setup"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 
 type Setup = { factorId: string; qr: string; secret: string }
 
@@ -16,12 +18,12 @@ export function TwoStepSettings({ enabled: initiallyEnabled, required, impersona
   async function call(body: object) {
     const response = await fetch("/api/auth/two-step", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
     const result = await response.json().catch(() => ({}))
-    if (!response.ok) throw Error(result.error || "Two-step sign-in is temporarily unavailable.")
+    if (!response.ok) throw new UserFacingError(result.error || "Two-step sign-in is temporarily unavailable.")
     return result
   }
   async function run(fn: () => Promise<void>) {
     setBusy(true); setError(""); setMessage("")
-    try { await fn() } catch (reason) { setError(reason instanceof Error ? reason.message : "Something went wrong.") } finally { setBusy(false) }
+    try { await fn() } catch (reason) { setError(userMessage(reason, "Something went wrong.")) } finally { setBusy(false) }
   }
   const reset = () => { setSetup(null); setDisabling(false); setConfirming(false); setPassword(""); setCode(""); setError("") }
   // Turning on needs fresh re-authentication: the current password, or a recent university sign-in.

@@ -7,6 +7,7 @@ const mocks = {
   'next/navigation': { useSearchParams: () => new URLSearchParams(process.env.EXPLORE_QUERY || '') },
   'next/image': { __esModule: true, default: props => React.createElement('img', { src: props.src, alt: props.alt }) },
   '@/actions/typesense-search': { searchPublicClubIds: async () => null },
+  '@/actions/content-reports': { reportContent: async () => ({ ok: true, message: '' }) },
   '@/lib/workspace-api': { getClubDirectory: async () => { throw Error('seeded render must not read') }, getPublicClub: async () => ({ club: null }) },
   '@/lib/data': { discoverClubs: [] },
   '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) },

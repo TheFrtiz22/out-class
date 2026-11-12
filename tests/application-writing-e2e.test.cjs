@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 // Uses the existing disposable localhost Auth/PostgreSQL stack. Never accepts
 // production URLs or account credentials from the application environment.
 const {test}=require('node:test')
@@ -78,13 +79,13 @@ test('application writing and branding through real sessions, server actions, Po
   await db.club.update({where:{id:club.id},data:{applicationOpen:false}})
   await page.reload();await expect(page.getByRole('button',{name:'Review & submit',exact:true})).toBeDisabled()
   await answer.fill('Saved while intake is closed.');await page.getByRole('button',{name:'Save draft',exact:true}).click();await page.getByText('Draft saved to your account.').waitFor()
-  await assert.rejects(student.action('actions/applications.ts','submitApplication',[{clubId:club.id,answers:[{questionId:question.id,response:'Saved while intake is closed.'}]}]))
+  await refused(student.action('actions/applications.ts','submitApplication',[{clubId:club.id,answers:[{questionId:question.id,response:'Saved while intake is closed.'}]}]))
   await db.club.update({where:{id:club.id},data:{applicationOpen:true}})
   await page.reload();await page.getByRole('button',{name:'Review & submit',exact:true}).click();await page.getByRole('button',{name:'Submit application',exact:true}).click()
   await page.getByRole('region',{name:'Submitted responses'}).waitFor()
   assert.equal((await db.application.findUnique({where:{id:draft.applicationId}})).status,'SUBMITTED')
   assert.equal(await page.locator('textarea').count(),0)
-  await assert.rejects(student.action('actions/applications.ts','saveApplicationDraft',[{clubId:club.id,answers:[{questionId:question.id,response:'Attempted overwrite'}]}]))
+  await refused(student.action('actions/applications.ts','saveApplicationDraft',[{clubId:club.id,answers:[{questionId:question.id,response:'Attempted overwrite'}]}]))
   assert.equal((await db.applicationAnswer.findFirst({where:{applicationId:draft.applicationId}})).response,'Saved while intake is closed.')
   // Explore lists summaries; profile-only content (sections) loads when a club is opened.
   const sectionTitle='Explore profile section '+suffix

@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 import { serverPhase } from "@/lib/server-phase-trace";
 import { AdminAccessError, providerAuthFailure } from "@/lib/admin-failure";
 import { assertClubOperational } from "@/lib/club-suspension";
@@ -87,7 +88,9 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
 
   // Fetch the Prisma user to get global roles
   const existingUser = await prisma.user.findUnique({ where: { id: user.id } });
-  const prismaUser = cookieStore.has(PLATFORM_VIEW_COOKIE) || existingUser?.email === user.email ? existingUser : await prisma.user.upsert({
+  // A disabled account (suspended, or an account-deletion tombstone) is never
+  // rewritten from the provider: a surviving session must not restore its email.
+  const prismaUser = cookieStore.has(PLATFORM_VIEW_COOKIE) || existingUser?.disabledAt || existingUser?.email === user.email ? existingUser : await prisma.user.upsert({
     where: { id: user.id },
     update: { email: user.email },
     create: { id: user.id, email: user.email!, role: "STUDENT" },
@@ -116,7 +119,7 @@ export async function requireClubPermission(clubId: string, permissions: ClubPer
   const { user } = await requireAuth();
   const membership = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
   if (!membership || !isActiveMembership(membership) || !permissions.every(permission => hasPermission(membership, permission))) {
-    throw new Error("You do not have permission for this club action.");
+    throw new ActionError("You do not have permission for this club action.", "FORBIDDEN");
   }
   if (!options.allowSuspendedRead) await assertClubOperational(prisma, clubId);
   return { user, membership };

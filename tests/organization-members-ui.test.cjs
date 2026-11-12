@@ -46,7 +46,7 @@ test('an ordinary role label updates immediately and rolls back if the server re
   const form=nodes(drawer).find(n=>n.type==='form'&&nodes(n).some(c=>['select','NativeSelect'].includes(c.type?.name??c.type)&&c.props.name==='role'));
   await form.props.onSubmit({preventDefault(){},currentTarget:{}});
   assert.equal(nodes(h.render()).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.name==='role').at(-1).props.defaultValue,'ADMIN');
-  reject(Error('Grant changed'));await h.flush();
+  reject(Object.assign(Error('Grant changed'),{userFacing:true}));await h.flush();
   assert.equal(nodes(h.render()).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.name==='role').at(-1).props.defaultValue,'MEMBER');
   assert.ok(JSON.stringify(h.render()).includes('Grant changed'));
  }finally{global.FormData=FormDataBefore;restore()}

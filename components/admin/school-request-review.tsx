@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { PillGroup } from "@/components/ui/segmented-control"
 import { LoadingState } from "@/components/ui/loading-state"
 
@@ -26,7 +27,7 @@ function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: ()
       if (busy) return
       setBusy(true); setError("")
       try { await reviewSchoolRequest({ id: row.id, revision: row.revision, status, note }); onReviewed() }
-      catch (e) { setError(e instanceof Error ? e.message : "Review could not be saved.") }
+      catch (e) { setError(userMessage(e, "Review could not be saved.")) }
       finally { setBusy(false) }
     }}>
       <label className="block space-y-1"><span className="text-sm">Review status</span><NativeSelect className="block" value={status} onChange={event => setStatus(event.target.value)}>{schoolRequestStatuses.map(value => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}</NativeSelect></label>
@@ -47,7 +48,7 @@ export function SchoolRequestReview() {
   useEffect(() => {
     let live = true
     setLoading(true); setError("")
-    listSchoolRequests({ status, page }).then(data => { if (live) setResult(data) }).catch(e => { if (live) setError(e instanceof Error ? e.message : "Requests unavailable.") }).finally(() => { if (live) setLoading(false) })
+    listSchoolRequests({ status, page }).then(data => { if (live) setResult(data) }).catch(e => { if (live) setError(userMessage(e, "Requests unavailable.")) }).finally(() => { if (live) setLoading(false) })
     return () => { live = false }
   }, [status, page, refresh])
   return <section className="space-y-5">

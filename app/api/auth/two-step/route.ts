@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { sameOriginRequest } from "@/lib/request-origin";
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
 import { providerAuthFailure } from "@/lib/admin-failure";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
@@ -31,6 +32,8 @@ const isPlatformAdmin = (id: string) => (process.env.OUTCLASS_PLATFORM_ADMIN_IDS
 export async function POST(request: NextRequest) {
   if (!userMfaEnabled()) return reply({ error: "Not found." }, 404);
   if (!sameOriginRequest(request)) return reply({ error: "Invalid origin." }, 403);
+  const limited = limitRequest(request, RATE_LIMITS.twoStep);
+  if (limited) return limited;
   const jar = await cookies();
   if (jar.has(PLATFORM_VIEW_COOKIE) || jar.get(DEMO_COOKIE)?.value === "1") return reply({ error: "Two-step sign-in is unavailable in this session." }, 403);
   let body: unknown;

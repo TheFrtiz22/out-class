@@ -43,7 +43,7 @@
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-title { font-size: 1.1875rem; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-actions { flex-wrap: nowrap; margin-top: .75rem; margin-inline: calc(-1 * var(--oc-content-padding, 1rem)); padding-inline: var(--oc-content-padding, 1rem); padding-bottom: 2px; overflow-x: auto; scrollbar-width: none; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-actions::-webkit-scrollbar { display: none; }
-  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-actions > .oc-button { flex: 0 0 auto; height: 36px; min-height: 36px; padding-inline: .875rem; font-size: var(--oc-text-caption); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-actions > .oc-button { flex: 0 0 auto; height: 36px; min-height: 36px; padding-inline: .875rem; font-size: var(--oc-size-13); }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meetings { margin-top: .5rem; }
   /* Interviews: time, avatar and person on one line; the actions under them. */
   [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row { grid-template-columns: 4rem 2.25rem minmax(0, 1fr); gap: .375rem .625rem; min-height: 0; }
@@ -51,7 +51,7 @@
   [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row > :is(.oc-interview-actions, .oc-button) { grid-column: 3; justify-self: start; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-actions { justify-content: flex-start; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-time { white-space: nowrap; }
-  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row :is(.oc-interview-actions > *, > .oc-button) { height: 36px; min-height: 36px; font-size: var(--oc-text-caption); }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-interview-row :is(.oc-interview-actions > *, > .oc-button) { height: 36px; min-height: 36px; font-size: var(--oc-size-13); }
 }
 
 /* Phones: the next meeting leads, then tasks, the week and announcements. */

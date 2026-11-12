@@ -11,7 +11,8 @@ async function fixture(){
  const catalog={groups:[],cohorts:[],cycles:[],rounds:[],events:[],canEdit:true}
  const eligibility={revision:0,roles:['MEMBER'],members:directory.members.map(m=>({id:m.id,name:m.user.studentProfile.firstName,role:m.accessRole,rounds:[],override:null})),rounds:[{id:voting.roundId,name:'Interviews'}]}
  async function call(name,args){
-  if(failures.has(name)){const message=failures.get(name);failures.delete(name);throw Error(message)}
+  // Converted actions refuse by returning an actionResult failure, never by throwing.
+  if(failures.has(name)){const message=failures.get(name);failures.delete(name);return {$action:'outclass.action/v1',ok:false,error:message,code:'ACTION_REFUSED'}}
   if(name.startsWith('get')||name.startsWith('list')||name.startsWith('preview'))reads.push(name);else writes.push({name,args:structuredClone(args)})
   if(name in vote.api)return vote.api[name](...args)
   switch(name){

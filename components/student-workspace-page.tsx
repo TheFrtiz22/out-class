@@ -1,4 +1,5 @@
 import { cookies } from "next/headers"
+import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { redirect } from "next/navigation"
 import { unstable_cache } from "next/cache"
 import { getSessionUser, requireAuth } from "@/utils/auth"
@@ -45,7 +46,7 @@ export async function StudentWorkspacePage({ path, searchParams, views }: { path
   if (!user) redirect(`/login?next=${encodeURIComponent(params.size ? `${path}?${params}` : path)}`)
 
   const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
-  if (account?.disabledAt) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
+  if (account?.disabledAt) return <AccountUnavailable />
   // After the identity and disabled-account gates these reads are independent. Explore also gets the
   // public directory (the same loader /api/workspace serves) so its first paint is not an empty list.
   const [initialData, profile, launchClubs, initialDirectory] = await Promise.all([

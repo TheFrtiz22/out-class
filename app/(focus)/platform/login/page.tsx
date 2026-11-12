@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { PageHeader } from "@/components/ui/page-header"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -26,7 +28,7 @@ export default function PlatformLogin() {
     try {
       await fn()
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not authenticate.")
+      setMessage(userMessage(e, "Could not authenticate."))
     } finally {
       setBusy(false)
     }
@@ -61,7 +63,7 @@ export default function PlatformLogin() {
               body: JSON.stringify(factor ? { action: "verify", code } : { action: "password", password, ...(turnstileToken ? { turnstileToken } : {}) }),
             })
             const result = await response.json()
-            if (!response.ok) throw Error(result.error || "Could not authenticate.")
+            if (!response.ok) throw new UserFacingError(result.error || "Could not authenticate.")
             if (result.step === "mfa") { setFactor("challenge"); setPassword(""); setQr(result.qr || "") }
             else window.location.assign("/platform")
           })

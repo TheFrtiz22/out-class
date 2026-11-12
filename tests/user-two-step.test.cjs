@@ -151,7 +151,7 @@ test('route: turning off needs a fresh valid code and an aal2 session; admins ke
 });
 
 test('settings: the section is hidden when the flag is off and shows state when on',async()=>{
- const page=impersonation=>loader({'@/components/settings/account-settings':{AccountSettings:()=>null},'@/utils/auth':{requireAuth:async()=>({user:{id,email:enrolled.email},supabaseUser:{...enrolled,app_metadata:{provider:'email'}},impersonation})}})('app/(workspace)/settings/account/page.tsx').default;
+ const page=impersonation=>loader({'@/components/settings/account-settings':{AccountSettings:()=>null},'@/actions/account-deletion':{getAccountDeletionRequest:async()=>null},'@/utils/auth':{requireAuth:async()=>({user:{id,email:enrolled.email},supabaseUser:{...enrolled,app_metadata:{provider:'email'}},impersonation})}})('app/(workspace)/settings/account/page.tsx').default;
  delete process.env.OUTCLASS_USER_MFA;
  assert.equal((await page(null)()).props.twoStep,null);
  process.env.OUTCLASS_USER_MFA='1';

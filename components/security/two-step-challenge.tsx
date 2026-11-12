@@ -3,6 +3,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
 import { AuthenticatorCodeInput } from "@/components/security/authenticator-setup"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 
 export function TwoStepChallenge({ next, demo = false }: { next: string; demo?: boolean }) {
   const [inDemo, setInDemo] = useState(demo), [code, setCode] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false)
@@ -11,9 +13,9 @@ export function TwoStepChallenge({ next, demo = false }: { next: string; demo?: 
     try {
       const response = await fetch("/api/auth/two-step", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "challenge", code }) })
       const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw Error(result.error || "Could not verify your code.")
+      if (!response.ok) throw new UserFacingError(result.error || "Could not verify your code.")
       window.location.assign(next)
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not verify your code."); setCode(""); setBusy(false) }
+    } catch (reason) { setError(userMessage(reason, "Could not verify your code.")); setCode(""); setBusy(false) }
   }
   async function exitDemo() {
     setBusy(true); setError("")
