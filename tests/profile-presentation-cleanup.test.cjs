@@ -7,6 +7,8 @@ function load(file, mocks = {}) {
   new Function('require','module','exports',code)(n => n in mocks ? mocks[n] : n.startsWith('@/lib/') ? load(n.slice(2)+'.ts',mocks) : require(n),mod,mod.exports);
   return mod.exports;
 }
+// Profile saves must not consult Terms acceptance while LEGAL_PAGES_PUBLIC is off.
+const TERMS = { hasCurrentTermsAcceptance: async () => { throw Error('Terms acceptance is not consulted while LEGAL_PAGES_PUBLIC is off') } };
 const profile = load('lib/student-profile.ts');
 const display = load('lib/applicant-display.ts');
 const owner='123e4567-e89b-12d3-a456-426614174000';
@@ -44,7 +46,7 @@ test('canonical interview/voting projection hides historical Bio/subsections and
 });
 test('identity updates persist the headshot while leaving historical bio and academic data untouched',async()=>{
   let stored={headshotUrl:null,bio:'Historical',actEnglish:34};
-  const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/prisma':{prisma:{studentProfile:{update:async({where,data})=>{assert.equal(where.userId,owner);stored={...stored,...data};return stored},findUnique:async()=>stored}}},'next/cache':{revalidatePath(){}}});
+  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/prisma':{prisma:{studentProfile:{update:async({where,data})=>{assert.equal(where.userId,owner);stored={...stored,...data};return stored},findUnique:async()=>stored}}},'next/cache':{revalidatePath(){}}});
   await api.updateStudentProfileSection({section:'identity',firstName:'Jordan',lastName:'Avery',headshotUrl:`${owner}/new.png`,bio:'Forged'});
   assert.equal(stored.headshotUrl,`${owner}/new.png`);assert.equal(stored.bio,'Historical');assert.equal(stored.actEnglish,34);
   const refreshed=await api.getStudentProfile();assert.equal(refreshed.profile.headshotUrl,stored.headshotUrl);
@@ -77,7 +79,7 @@ test('interview uses a narrow panel while the leader workspace retains the share
 
 test('profile link edits store normalized external URLs without weakening private-key ownership',async()=>{
   let saved;
-  const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/prisma':{prisma:{studentProfile:{update:async({data})=>{saved=data;return data}}}},'next/cache':{revalidatePath(){}}});
+  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/prisma':{prisma:{studentProfile:{update:async({data})=>{saved=data;return data}}}},'next/cache':{revalidatePath(){}}});
   const result=await api.updateStudentProfileSection({section:'links',linkedinUrl:'linkedin.com/in/example',resumeUrl:'example.com/resume.pdf'});assert.ok(!result.error);assert.equal(saved.resumeUrl,'https://example.com/resume.pdf');assert.equal(saved.linkedinUrl,'https://linkedin.com/in/example');
   assert.ok((await api.updateStudentProfileSection({section:'links',linkedinUrl:null,resumeUrl:'00000000-0000-4000-8000-000000000001/private.pdf'})).error);
 });

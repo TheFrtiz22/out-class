@@ -6,8 +6,9 @@ test('area highlight migration source: additive, LF, bounded lock, no new grants
  assert.ok(!sql.includes('\r'),'LF line endings');
  assert.match(sql,/^BEGIN;\nSET LOCAL lock_timeout = '5s';\n/);assert.match(sql,/COMMIT;\n$/);
  assert.doesNotMatch(sql.replace(/--.*$/gm,''),/CREATE TABLE|ADD COLUMN|GRANT|REVOKE|POLICY|DROP TABLE|DROP COLUMN|UPDATE "|DELETE FROM/i);
- const later=fs.readdirSync('prisma/migrations').filter(n=>fs.existsSync(path.join('prisma/migrations',n,'migration.sql'))&&n!==name);
- assert.ok(later.every(n=>n<name),'timestamp is later than every other migration');
+ // It must sort after the interview shared-timer migration it was renumbered to follow; later migrations may follow it.
+ assert.ok(fs.existsSync(path.join('prisma/migrations','20261111180000_interview_shared_timer','migration.sql')));
+ assert.ok(name>'20261111180000_interview_shared_timer','sorts after the shared timer migration');
 });
 
 test('area highlight migration: existing rows kept, rect checks enforced, foundation guards and RLS unchanged',{timeout:240000},async()=>{
