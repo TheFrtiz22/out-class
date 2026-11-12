@@ -4,6 +4,8 @@ on:
   push:
     branches: ["main"]
   pull_request:
+  # The merge queue tests each PR on top of everything queued ahead of it.
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -43,6 +45,8 @@ jobs:
       # and on an expired exception. Moderate advisories are listed but do not fail.
       - run: node scripts/check-dependency-audit.cjs
   accessibility:
+    # Not a required check: merge queue, main, or full-ci.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -62,6 +66,9 @@ jobs:
           path: test-results/accessibility
           retention-days: 14
   authenticated-accessibility:
+    # Not a required check. Runs in the merge queue and on main; on a PR only with the
+    # full-ci label, to keep the shared runner queue moving.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -83,6 +90,8 @@ jobs:
           path: test-results/accessibility-authenticated
           retention-days: 14
   native-application-transactions:
+    # Not a required check: merge queue, main, or full-ci.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

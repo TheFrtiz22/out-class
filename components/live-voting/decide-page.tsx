@@ -7,7 +7,7 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { canLeaveWorkspace, decideAccess } from "@/lib/product-navigation";
 import { decisionsHref, legacyVotingHistoryHref } from "@/lib/voting-navigation";
-import { decideCounts, decideSteps, decideTab, readyToSend, roundsFromRooms, type DecideTab } from "@/lib/decide";
+import { decideCounts, decideTab, decideTabs, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
 import { listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getWorkspaceRounds } from "@/lib/workspace-api";
 import { liveRoomPath } from "@/lib/voting-room";
@@ -20,6 +20,7 @@ import { Panel } from "@/components/ui/panel";
 import { LoadingState } from "@/components/ui/loading-state";
 import { WorkspaceLoading } from "@/components/workspace-loading";
 import { DecisionSchedules } from "@/components/decision-schedules";
+import { DecideOverview } from "./decide-overview";
 const VotingRoomLanding = dynamic(() => import("./room-landing").then(m => m.VotingRoomLanding), { loading: () => <WorkspaceLoading label="Loading voting sessions…" layout="rows" rows={3} /> });
 const DecideReview = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.LiveLeaderWorkspace), { loading: () => <WorkspaceLoading label="Loading applicants needing a decision…" layout="applicants" rows={3} /> });
 const StagedDecisionsPanel = dynamic(() => import("@/components/applicant-review/staged-decisions-panel").then(m => m.StagedDecisionsPanel), { loading: () => <LoadingState label="Loading saved decisions…" layout="rows" rows={2} /> });
@@ -28,9 +29,10 @@ const DecisionTemplateEditor = dynamic(() => import("@/components/communications
 type Rooms = Awaited<ReturnType<typeof listLiveVotingRooms>>;
 
 /**
- * Decide: pick a round, then Review, Vote and Send as ordered steps. The round lives in the URL (`roundId`), as does
- * the step (`decisionTab`). Each step reuses the existing screen: the shared applicant review (decisions are saved,
- * not sent), the Voting room, and Send (saved decisions, letters, scheduled sends). Board sessions are read-only history (FE-27).
+ * Decide: pick a round, see its Overview (the default tab), then Review, Vote and Send as ordered steps. The round
+ * lives in the URL (`roundId`), as does the tab (`decisionTab`). Each step reuses the existing screen: the shared
+ * applicant review (decisions are saved, not sent), the Voting room, and Send (saved decisions, letters, scheduled
+ * sends). Board sessions are read-only history (FE-27).
  */
 export function DecidePage({ clubId, member }: { clubId: string; member: ClubAccess & { club?: { name?: string } } }) {
   const params = useSearchParams(), router = useRouter(), demo = useDemoMode();
@@ -61,7 +63,7 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
     else if (access.canVote) listLiveVotingRooms({ clubId }).then(rows => { if (current) setAllRooms(rows) }).catch(() => { if (current) setAllRooms(null) });
     return () => { current = false };
   }, [clubId, canManageRounds, access.canVote, demo.ready]);
-  const rows = rooms?.identity === identity ? rooms.rows : null;
+  const rows = rooms?.identity === identity ? rooms.rows : null, roomsFailed = !!rooms?.failed && rooms.identity === identity;
   const counts = rows ? decideCounts(rows) : null;
   const rounds = managedRounds ?? (allRooms ? roundsFromRooms(allRooms) : []);
   const search = params.toString();
@@ -69,26 +71,29 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
   const setRound = (value: string) => {
     const next = new URLSearchParams(search);
     if (value) next.set("roundId", value); else next.delete("roundId");
-    go(`/club/${encodeURIComponent(clubId)}/workspace?${next}`, true);
+    // Pushed, not replaced: Back and Forward restore the round as well as the tab.
+    go(`/club/${encodeURIComponent(clubId)}/workspace?${next}`);
   };
   if (!tab) return <p role="alert">Decide is unavailable with your current access.</p>;
-  const label = (step: DecideTab) => {
+  const label = (step: DecideStep) => {
     const count = counts?.[step];
     return count == null ? undefined : step === "voting" ? `${pluralize(count, "session")} to run` : `${pluralize(count, "applicant")} ready to send`;
   };
-  const steps = decideSteps.filter(step => decideTab(step.id, access) === step.id);
+  // Overview (the default tab) leads the stepper; Review, Vote and Send follow as ordered steps.
+  const steps = decideTabs.filter(step => decideTab(step.id, access) === step.id);
   const index = steps.findIndex(step => step.id === tab);
   const open = (step: DecideTab) => go(decisionsHref(clubId, step, search));
   return <div className="oc-decide space-y-5">
     <div className="oc-decide-header">
       <Stepper label="Decide steps" className="oc-decide-steps" current={tab} onSelect={open}
-        steps={steps.map(step => ({ id: step.id, label: <>{step.label}{label(step.id) && <span className="sr-only">, {label(step.id)}</span>}</>, badge: counts?.[step.id] ?? undefined }))} />
+        steps={steps.map(step => ({ id: step.id, label: <>{step.label}{step.id !== "overview" && label(step.id) && <span className="sr-only">, {label(step.id)}</span>}</>, badge: step.id === "overview" ? undefined : counts?.[step.id] ?? undefined }))} />
       {rounds.length > 0 && <RoundSelect rounds={rounds} value={rounds.some(r => r.id === roundId) ? roundId : ""} onChange={setRound} className="oc-decide-round" />}
     </div>
     <section aria-label={steps[index]?.label} className="space-y-6">
+      {tab === "overview" && <DecideOverview clubId={clubId} member={member} access={access} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} roundId={roundId} cycleId={cycleId} stepHref={step => decisionsHref(clubId, step, search)} />}
       {tab === "review" && access.canDecide && <DecideReview key={roundId} scoped decisionsOnly initialDecision="pending" />}
       {tab === "voting" && access.canVote && <VotingRoomLanding clubId={clubId} />}
-      {tab === "letters" && access.canSend && <>{access.canDecide && <StagedDecisionsPanel clubId={clubId} roundId={roundId || undefined} />}<SendStep clubId={clubId} member={member} rows={rows} failed={!!rooms?.failed && rooms.identity === identity} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} /></>}
+      {tab === "letters" && access.canSend && <>{access.canDecide && <StagedDecisionsPanel clubId={clubId} roundId={roundId || undefined} />}<SendStep clubId={clubId} member={member} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} /></>}
     </section>
     <StepperNav onBack={index > 0 ? () => open(steps[index - 1].id) : undefined} backLabel={index > 0 ? `Back to ${steps[index - 1].label}` : undefined}
       onNext={index >= 0 && index < steps.length - 1 ? () => open(steps[index + 1].id) : undefined} nextLabel={index < steps.length - 1 ? `Next: ${steps[index + 1]?.label}` : undefined} />

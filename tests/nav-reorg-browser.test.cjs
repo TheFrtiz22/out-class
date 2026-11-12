@@ -59,20 +59,23 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' })
   await expect(recruiting.getByRole('button', { name: 'Auto-reject rules', exact: true })).toBeFocused()
 
-  // Decide: Review → Vote → Send as a stepper with counts as badges, the round dropdown in the header row, both in the URL.
+  // Decide: Overview (the default), then Review → Vote → Send, as one stepper with counts as badges; the round
+  // dropdown shares the header row; round and step both live in the URL and in history.
   await open('section=recruitment&tool=decisions')
   await expect(page.locator('main h1').first()).toHaveText('Decide')
   const steps = page.getByRole('navigation', { name: 'Decide steps', exact: true })
-  await expect(steps.getByRole('button')).toHaveCount(3)
+  await expect(steps.getByRole('button')).toHaveCount(4)
+  const overview = steps.getByRole('button', { name: /^Overview/ })
   const reviewStep = steps.getByRole('button', { name: /^Review/ }), vote = steps.getByRole('button', { name: /^Vote/ }), send = steps.getByRole('button', { name: /^Send/ })
+  await expect(overview).toHaveAttribute('aria-current', 'step')
+  await expect(vote).toHaveText(/Vote, \d+ sessions? to run\d+$/); await expect(send).toHaveText(/Send, \d+ applicants? ready to send\d+$/)
+  await expect(vote.locator('.oc-stepper-badge')).toHaveText(/^\d+$/); await expect(send.locator('.oc-stepper-badge')).toHaveText(/^\d+$/)
+  // Review (#281): the shared applicant review, then back to Overview before the round and history checks.
+  await page.getByRole('button', { name: 'Next: Review', exact: true }).click()
   await expect(reviewStep).toHaveAttribute('aria-current', 'step')
   await expect(page.getByRole('button', { name: 'Review applicants needing a decision', exact: true })).toBeVisible()
-  await expect(reviewStep).toHaveText(/^1Review$/); await expect(vote).toHaveText(/^2Vote, \d+ sessions? to run\d+$/); await expect(send).toHaveText(/^3Send, \d+ applicants? ready to send\d+$/)
-  await expect(vote.locator('.oc-stepper-badge')).toHaveText(/^\d+$/); await expect(send.locator('.oc-stepper-badge')).toHaveText(/^\d+$/)
-  await expect(page.locator('.oc-decide-steps li:first-child')).toHaveCSS('display', 'flex')
-  await page.getByRole('button', { name: 'Next: Vote', exact: true }).click()
-  await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting' }))
-  await expect(vote).toHaveAttribute('aria-current', 'step')
+  await overview.click(); await expect(overview).toHaveAttribute('aria-current', 'step')
+  await expect(page.getByText('Choose a round to see its decisions and target.', { exact: true })).toBeVisible()
   const picker = page.getByRole('combobox', { name: 'Round', exact: true })
   await expect(picker).toHaveText(/Round:?\s*All/)
   const header = await page.locator('.oc-decide-header').boundingBox(), pickerBox = await picker.boundingBox()
@@ -80,6 +83,24 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   await picker.click(); const round = page.getByRole('option').nth(1), roundName = (await round.textContent()).trim()
   await round.click(); await expect.poll(params).toEqual(expect.objectContaining({ roundId: expect.any(String) }))
   await expect(picker).toContainText(roundName)
+  // Overview's figures for the round: one count per outcome, and the reused round target summary.
+  await expect(page.locator('dl[aria-label="Applicants by outcome"] > div')).toHaveText([/^Passed\d+$/, /^Held\d+$/, /^Not passed\d+$/, /^Undecidedin voting sessions\d+$/])
+  await page.getByRole('region', { name: 'Round target', exact: true }).waitFor()
+  await vote.click(); await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting', roundId: expect.any(String) }))
+  await expect(vote).toHaveAttribute('aria-current', 'step')
+  // Round and step changes are both history entries: Back returns to Overview with the round, Back again to
+  // All rounds; Forward twice returns to Vote with the round.
+  const selectedRound = params().roundId
+  await page.goBack(); await expect(overview).toHaveAttribute('aria-current', 'step')
+  await expect.poll(params).toEqual(expect.objectContaining({ roundId: selectedRound }))
+  await page.goBack(); await expect(overview).toHaveAttribute('aria-current', 'step')
+  await expect.poll(() => params().roundId).toBeUndefined()
+  await page.goForward(); await expect.poll(params).toEqual(expect.objectContaining({ roundId: selectedRound }))
+  await page.goForward(); await expect(vote).toHaveAttribute('aria-current', 'step')
+  await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting', roundId: selectedRound }))
+  // Overview's step links are real links.
+  await page.goBack(); await expect(page.getByRole('link', { name: 'Open Vote', exact: true })).toHaveAttribute('href', /decisionTab=voting/)
+  await page.getByRole('link', { name: 'Open Vote', exact: true }).click(); await expect(vote).toHaveAttribute('aria-current', 'step')
   await send.click(); await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'letters', roundId: expect.any(String) }))
   await expect(send).toHaveAttribute('aria-current', 'step')
   await page.getByRole('heading', { name: 'Decision letters', exact: true }).waitFor()

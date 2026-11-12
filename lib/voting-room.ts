@@ -65,5 +65,18 @@ export const finalizeRoomInput=finalizationPreviewInput.extend({requestId:z.stri
 
 export const outcomeLabels={ACCEPT:"Pass",HOLD:"Hold",REJECT:"Do not pass",UNREVIEWED:"Unreviewed"} as const;
 export const savedOutcomeLabels={ACCEPT:"Passed",HOLD:"Held",REJECT:"Not passed"} as const;
+export type RoomResult={outcome:keyof typeof savedOutcomeLabels;withoutVote:boolean};
+/** The between-applicant result slide: outcome only, never ballot totals. Without-vote wording matches the pass history. */
+export function resultOutcomeLabel({outcome,withoutVote}:RoomResult){
+  // Hold is the club's private marker for a later voting session, never an applicant-facing decision.
+  if(outcome==="HOLD")return "Held for another vote";
+  return withoutVote?`${savedOutcomeLabels[outcome]} without a vote`:savedOutcomeLabels[outcome];
+}
+/** A candidate's confirmed outcome as every room viewer already receives it (room.history), or null while undecided. */
+export function confirmedResult(history:readonly {number:number;candidates:readonly {applicationId:string;ballotState:string;outcome:string;withoutVote?:boolean}[]}[],passNumber:number,applicationId:string):RoomResult|null{
+  const c=history.find(p=>p.number===passNumber)?.candidates.find(c=>c.applicationId===applicationId);
+  if(!c||c.ballotState!=="CONFIRMED"||!(c.outcome in savedOutcomeLabels))return null;
+  return {outcome:c.outcome as RoomResult["outcome"],withoutVote:!!c.withoutVote};
+}
 export const decisionReceiptSchema=z.object({requestId:z.string().uuid(),applicationId:z.string().uuid(),passNumber:z.number().int().positive(),choice:roomChoice,nextApplicationId:z.string().uuid().nullable(),withoutVote:z.boolean()}).strict();
 export const roomCommandResultSchema=z.object({revision:z.number().int().nonnegative(),decision:decisionReceiptSchema.optional(),undone:z.boolean().optional()}).strict();

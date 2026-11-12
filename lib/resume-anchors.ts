@@ -1,7 +1,11 @@
 import type { z } from "zod";
-import type { annotationContentSchema } from "@/lib/interview-access";
+import type { areaAnchorSchema, textAnchorSchema } from "@/lib/interview-access";
 
-export type ResumeAnchor = NonNullable<z.infer<typeof annotationContentSchema>["anchor"]>;
+export type ResumeAnchor = z.output<typeof textAnchorSchema>;
+/** A page region: `rect` is 0–1 of the page's width and height, so it lines up at any zoom or pixel ratio. */
+export type ResumeArea = z.output<typeof areaAnchorSchema>;
+export const isTextAnchor = (anchor: ResumeAnchor | ResumeArea | null | undefined): anchor is ResumeAnchor => !!anchor && "quote" in anchor;
+export const isAreaAnchor = (anchor: ResumeAnchor | ResumeArea | null | undefined): anchor is ResumeArea => !!anchor && "rect" in anchor;
 export function anchorMatchesText(anchor: ResumeAnchor, text: string, pageCount: number) {
   return anchor.page <= pageCount && anchor.end <= text.length &&
     text.slice(anchor.start, anchor.end) === anchor.quote &&

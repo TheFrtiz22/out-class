@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { PillSelect } from "@/components/ui/pill-select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "./events.css";
+import { EventShareButton } from "@/components/share/event-share-button";
 import type { ClubAccess } from "@/lib/permissions";
 import { NativeSelect } from "@/components/ui/native-select"
 const tabs = ["Upcoming", "Past", "Pending Approval", "Rejected", "Drafts", "Closed"];
@@ -56,6 +57,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
       {selected !== e.id && <Button variant="outline" onClick={() => setSelected(e.id)}>Manage event</Button>}
       {!["CANCELLED", "ARCHIVED"].includes(e.status) && <Button variant="outline" disabled={busy} onClick={() => setEditing(e)}>Edit & preview</Button>}
       {["DRAFT", "REJECTED"].includes(e.status) && <Button disabled={busy || +new Date(e.date) <= Date.now()} onClick={() => void command(e, "SUBMIT")}>Submit for approval</Button>}
+      {e.status === "PUBLISHED" && +new Date(e.endDate) > Date.now() && <EventShareButton event={e} clubName={clubName} />}
       {["PUBLISHED", "PENDING"].includes(e.status) && <Button variant="outline" disabled={busy} onClick={click => { removeOrigin.current = click.currentTarget; removed.current = false; setConfirm(e); }}>Remove from Corkboard</Button>}
     </div>;
   }

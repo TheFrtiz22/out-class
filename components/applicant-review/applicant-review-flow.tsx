@@ -17,7 +17,6 @@ import { ApplicantRecusal } from "@/components/applicant-recusal"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
-import { ReportContentButton } from "@/components/reports/report-content-button"
 import { InterviewFeedbackPanel } from "@/components/interview-feedback"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { AdditionalObservations } from "@/components/additional-observations"
@@ -44,6 +43,7 @@ import { defaultProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { defaultReviewRubric } from "@/lib/review-rubric"
 import { advanceLabel, canStage, stagedLabel, type StagedOutcome } from "@/lib/staged-decisions"
 import type { ExtendedMembership } from "@/contexts/auth-context"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 
 const decisionKeys: Record<string, StagedOutcome> = { a: "ADVANCE", h: "HOLD", r: "REJECT" }
 const typing = (target: EventTarget | null) => !!(target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable="true"], [role="menu"], [role="listbox"], [role="slider"], iframe')
@@ -178,6 +178,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
               {resumeUrl && <ResumeViewerDialog href={resumeUrl} name={displayName(app)} clubId={clubId} applicationId={app.id} trigger="Résumé" />}
               {linkedinUrl && <a className="oc-quick-icon-action" href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)" title="LinkedIn"><Linkedin size={16} aria-hidden="true" /></a>}
               {anonymous && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={app.id} clubId={clubId} applicationId={app.id} />}
+              <ReportContentButton target={{ type: "student", clubId, applicationId: app.id }} label="Report this profile" hidden={app.studentId === membership.userId || !canReview} ownerUserId={app.studentId} />
             </div>
           </header>
 
@@ -193,7 +194,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
           </section>
 
           {profile && !anonymous && <section aria-labelledby="review-profile" className="oc-review-block">
-            <div className="flex flex-wrap items-baseline justify-between gap-3"><h3 id="review-profile" className="oc-review-panel-heading">Profile</h3><ReportContentButton target={{ type: "student", clubId, applicationId: app.id }} label="Report this profile" hidden={app.studentId === membership.userId || !canReview} ownerUserId={app.studentId} /></div>
+            <h3 id="review-profile" className="oc-review-panel-heading">Profile</h3>
             <ApplicantProfileFacts profile={profile} fields={profileFields} />
           </section>}
 
@@ -260,13 +261,13 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
           {panel === "round" && <><DialogHeader><DialogTitle>Move round now</DialogTitle><DialogDescription>{displayName(app)} · currently in {activeRound?.name ?? "an unavailable round"}. This moves them immediately; use Advance to stage it for Send instead.</DialogDescription></DialogHeader>
             <Label htmlFor="flow-move-round">Round</Label>
             <NativeSelect id="flow-move-round" disabled={busy} value={targetRound} onChange={event => setTargetRound(event.target.value)}>{rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</NativeSelect>
-            <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button><Button disabled={busy || targetRound === app.roundId} loading={busy} onClick={() => void run(() => moveApplicantRound({ clubId, applicationId: app.id, newRoundId: targetRound, expectedRoundId: app.roundId }), "Round updated.", "This move couldn’t be saved. Reload and try again.")}>{busy ? "Moving…" : "Move round"}</Button></div></>}
+            <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button><Button disabled={busy || targetRound === app.roundId} onClick={() => void run(() => moveApplicantRound({ clubId, applicationId: app.id, newRoundId: targetRound, expectedRoundId: app.roundId }), "Round updated.", "This move couldn’t be saved. Reload and try again.")}>{busy ? "Moving…" : "Move round"}</Button></div></>}
           {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle</DialogTitle><DialogDescription>{displayName(app)}</DialogDescription></DialogHeader>
             <ApplicationCycleAssignment key={app.id + app.recruitmentCycleId} clubId={clubId} applicationId={app.id} cycleId={app.recruitmentCycleId} onSaved={() => { setPanel(null); refresh() }} /></>}
           {panel === "reconsider" && <><DialogHeader><DialogTitle>Reconsider application</DialogTitle><DialogDescription>Returns {displayName(app)} to review. Earlier decisions stay in the history.</DialogDescription></DialogHeader>
             <Label htmlFor="flow-reconsider">Reason (at least 10 characters)</Label>
             <Textarea id="flow-reconsider" maxLength={1000} value={reason} onChange={event => setReason(event.target.value)} />
-            <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button><Button disabled={busy || reason.trim().length < 10} onClick={() => void run(async () => { await reconsiderRejectedApplication({ clubId, applicationId: app.id, expectedGuard: app.publicationGuard, reason }); setReason("") }, "Application returned to review. Earlier decisions are preserved.", "Reconsideration failed. Check your access and try again.")}>Reconsider</Button></div></>}
+            <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button><Button disabled={busy || reason.trim().length < 10} onClick={() => void run(async () => { await reconsiderRejectedApplication({ clubId, applicationId: app.id, expectedGuard: app.publicationGuard, reason }); setReason("") }, "Application returned to review. Earlier decisions are preserved.", "Reconsideration failed. Check your access and try again.")}>{busy ? "Returning…" : "Reconsider"}</Button></div></>}
           {message && panel && <p role="status" className="text-sm">{message}</p>}
         </DialogContent>
       </Dialog>}

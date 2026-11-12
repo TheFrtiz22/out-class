@@ -2,7 +2,7 @@ const test = require("node:test")
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
 const path = require("node:path")
-const { actionsClient, evaluate, protectedFiles, requiredChecksStatus, lastLabeler, latestApproval, checkProvenanceProblems, MERGE_LABEL } = require("../.github/scripts/merge-bot.cjs")
+const { actionsClient, mergeOrEnqueue, evaluate, protectedFiles, requiredChecksStatus, lastLabeler, latestApproval, checkProvenanceProblems, MERGE_LABEL } = require("../.github/scripts/merge-bot.cjs")
 
 const REPO = "TheFrtiz22/out-class"
 const REQUIRED = ["validate", "Native PostgreSQL / security"]
@@ -158,4 +158,19 @@ test("the approval client uses the workflow token even without getOctokit", () =
   assert.throws(() => actionsClient({ github, token: "" }))
   const workflow = fs.readFileSync(path.join(__dirname, "../.github/workflows/merge-bot.yml"), "utf8")
   assert.doesNotMatch(workflow, /getOctokit/)
+})
+
+test("with a merge queue on main, the bot enqueues the pinned head instead of merging", async () => {
+  const pr = { number: 7, node_id: "PR_node", head: { sha: SHA } }
+  const calls = []
+  const queued = {
+    rest: { pulls: { merge: async () => { throw new Error("Changes must be made through the merge queue") } } },
+    graphql: async (query, vars) => { calls.push(vars); return {} },
+  }
+  assert.equal(await mergeOrEnqueue({ github: queued, owner: "o", repo: "r", pr }), "queued")
+  assert.deepEqual(calls, [{ id: "PR_node", oid: SHA }])
+  const direct = { rest: { pulls: { merge: async () => ({}) } }, graphql: async () => { throw new Error("unused") } }
+  assert.equal(await mergeOrEnqueue({ github: direct, owner: "o", repo: "r", pr }), "merged")
+  const other = { rest: { pulls: { merge: async () => { throw new Error("Head branch was modified") } } }, graphql: async () => ({}) }
+  await assert.rejects(mergeOrEnqueue({ github: other, owner: "o", repo: "r", pr }), /Head branch was modified/)
 })

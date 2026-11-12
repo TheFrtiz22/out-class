@@ -112,13 +112,16 @@ test('a confirmed “Not now” reports the change once', () => withWindow(async
   assert.deepEqual(h.changes, [{ id: 'inv', kind: 'dismissed', clubName: 'Consulting Club' }])
 }))
 
-// ---------- (a) Pipeline board ----------
-// The applicant board (#281) stages decisions instead of writing statuses: a drop never publishes, and the
-// staged decision is sent later from Decide › Send, so there is no optimistic status write to roll back.
-test('board drops stage decisions and never write an application status directly', () => {
-  const source = fs.readFileSync('components/applicant-review/applicant-board.tsx', 'utf8')
-  assert.doesNotMatch(source, /setApplicationStatus/)
-  assert.match(fs.readFileSync('lib/applicant-board.ts', 'utf8'), /export function boardDrop/)
+// ---------- (a) Pipeline board stage move ----------
+// Board drops stage a decision (nothing is sent). The staged placement shows before the server answers
+// and rolls back to the previous staged state if the write is refused.
+test('a board drop stages optimistically, keeps the revision check, and rolls back on a refusal', () => {
+  const source = fs.readFileSync('hooks/use-staged-decisions.ts', 'utf8')
+  const body = source.slice(source.indexOf('const write = useCallback'), source.indexOf('return true', source.indexOf('const write = useCallback')))
+  assert.ok(body.indexOf('put(app.id, {') < body.indexOf('await stageDecision'), 'placed before the write')
+  assert.match(body, /expectedStatus: app\.status as "IN_REVIEW", expectedRoundId: app\.roundId/)
+  const failure = source.slice(source.indexOf('} catch (error) {', source.indexOf('const write = useCallback')))
+  assert.match(failure, /put\(app\.id, previous\)/, 'a refused stage restores the previous placement')
 })
 
 // ---------- (b) Must-wait actions disable and acknowledge while pending ----------
@@ -134,8 +137,10 @@ test('every must-wait submit in the listed surfaces is disabled while pending an
     ['components/club-tasks.tsx', /<Button className="w-full sm:w-auto" disabled=\{busy \|\| uploading\}>\s*\{busy\s*\? "Submitting…"/],
     ['components/qr/meeting-check-in.tsx', /disabled=\{busy \|\| !title\}[^]*?\{busy \? "Checking in…" : "Check in"\}/],
     ['components/communications-preferences.tsx', /<Button disabled=\{saving\} onClick=\{\(\)=>void save\(\)\}>\{saving\?"Saving…"/],
-    ['components/applicant-review/review-grading.tsx', /<Button type="button" variant="outline" disabled=\{!ready\} onClick=\{\(\) => void submit\(\)\}>\{busy \? "Submitting…"/],
-    ['components/applicant-review/applicant-review-flow.tsx', /loading=\{busy\}[^\n]*?moveApplicantRound[^\n]*?>\{busy \? "Moving…" : "Move round"\}/],
+    ['components/applicant-review/review-grading.tsx', /disabled=\{!ready\} onClick=\{\(\) => void submit\(\)\}>\{busy \? "Submitting…" : "Submit grade"\}/],
+    ['components/applicant-review/staged-decisions-panel.tsx', /<Button disabled=\{busy \|\| !chosen\.length\} onClick=\{\(\) => void send\(\)\}>\{busy \? "Sending…"/],
+    ['components/applicant-review/applicant-review-flow.tsx', /<Button disabled=\{busy \|\| targetRound === app\.roundId\}[^\n]*?>\{busy \? "Moving…" : "Move round"\}/],
+    ['components/applicant-review/applicant-review-flow.tsx', /<Button disabled=\{busy \|\| reason\.trim\(\)\.length < 10\}[^\n]*?>\{busy \? "Returning…" : "Reconsider"\}/],
   ]
   for (const [file, pattern] of expectations) assert.match(read(file), pattern, `${file}: ${pattern}`)
   // No surface uses <form action={serverAction}>, so useFormStatus has no form to observe; keep it that way or add it.
