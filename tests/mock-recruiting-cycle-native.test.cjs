@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Mock recruiting cycle, end to end, on the disposable native PostgreSQL of the
 // security runner (scripts/run-disposable-postgres.cjs security). 50 synthetic
 // applicants (fake names, @example.test addresses) go through one club's full cycle:
@@ -86,11 +87,11 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
   t.after(() => { if (previousBase === undefined) delete global.outclassPrismaBase; else global.outclassPrismaBase = previousBase; });
   const load = loader(mocks);
   ({ hasPermission } = load('lib/permissions.ts'));
-  const applications = load('actions/applications.ts'), evaluations = load('actions/evaluations.ts'), crm = load('actions/crm.ts');
-  const display = load('actions/applicant-intelligence.ts'), rooms = load('actions/interview-rooms.ts');
+  const applications = unwrapActions(load('actions/applications.ts')), evaluations = load('actions/evaluations.ts'), crm = unwrapActions(load('actions/crm.ts'));
+  const display = load('actions/applicant-intelligence.ts'), rooms = unwrapActions(load('actions/interview-rooms.ts'));
   const proposals = load('actions/panel-proposals.ts'), publication = load('actions/panel-publication.ts'), booking = load('actions/interview-booking-publication.ts');
   const voting = { ...load('actions/voting-room.ts'), ...load('actions/voting-room-setup.ts'), ...load('actions/voting-room-finalization.ts') };
-  const offers = load('actions/recruitment-offers.ts'), exportsRoute = load('app/api/club-exports/route.ts');
+  const offers = unwrapActions(load('actions/recruitment-offers.ts')), exportsRoute = load('app/api/club-exports/route.ts');
   const as = (user, fn) => request.run(user, fn);
   const okValue = r => { assert.equal(r.ok, true, r.error); return r.value; };
   const okRoom = r => { assert.equal(r.ok, true, JSON.stringify(r)); return r.result; };
@@ -107,7 +108,7 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
   });
 
   // Club, cycle, two rounds (anonymous application review, identified interview) and staff.
-  const club = await operator.club.create({ data: { name: 'Mock Recruiting Cycle Club', slug: `mock-cycle-${randomUUID()}`, tagline: '', description: '', color: '#142d45', category: 'Other', applicationOpen: true } });
+  const club = await operator.club.create({ data: { name: 'Mock Recruiting Cycle Club', slug: `mock-cycle-${randomUUID()}`, tagline: '', description: '', color: '#142d45', category: 'Other', applicationOpen: true, features: { csvExport: true } } });
   const cycle = await operator.recruitmentCycle.create({ data: { clubId: club.id, name: 'Mock cycle' } });
   const reviewRound = await operator.pipelineRound.create({ data: { clubId: club.id, name: 'Application review', type: 'APPLICATION_REVIEW', order: 0, anonymousReview: true } });
   const interviewRound = await operator.pipelineRound.create({ data: { clubId: club.id, name: 'Interview', type: 'INTERVIEW', order: 1, anonymousReview: false } });
@@ -240,7 +241,7 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
     const offered = visible.rooms.flatMap(r => r.slots.map(s => s.id));
     assert.equal(offered.length, slotIds.length);
     // Rejected applicants hold no interview invitation.
-    await assert.rejects(as(cut[0].user, () => rooms.reserveInterview({ applicationId: cut[0].applicationId, slotId: offered[0] })), /invitation is required/);
+    await refused(as(cut[0].user, () => rooms.reserveInterview({ applicationId: cut[0].applicationId, slotId: offered[0] })), /invitation is required/);
     await Promise.all(finalists.map((a, i) => as(a.user, () => rooms.reserveInterview({ applicationId: a.applicationId, slotId: offered[i] }))));
     const bookings = await operator.interviewBooking.findMany({ where: { application: { clubId: club.id } } });
     assert.equal(bookings.length, FINALISTS);
@@ -320,7 +321,7 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
     for (const a of accepting) assert.equal((await as(a.user, () => offers.respondToOffer(a.applicationId, 'ACCEPT'))).status, 'ACCEPTED');
     for (const a of declining) assert.equal((await as(a.user, () => offers.respondToOffer(a.applicationId, 'DECLINE'))).status, 'DECLINED');
     // A rejected applicant has no offer to accept.
-    await assert.rejects(as(declined()[0].user, () => offers.respondToOffer(declined()[0].applicationId, 'ACCEPT')), /unavailable/i);
+    await refused(as(declined()[0].user, () => offers.respondToOffer(declined()[0].applicationId, 'ACCEPT')), /unavailable/i);
     const members = await operator.clubMember.findMany({ where: { clubId: club.id, userId: { in: applicants.map(a => a.user.id) } } });
     assert.deepEqual(new Set(members.map(m => m.userId)), new Set(accepting.map(a => a.user.id)));
     assert.ok(members.every(m => m.status === 'ACTIVE' && m.accessRole === 'MEMBER' && !m.isOwner && m.permissions.length === 0));

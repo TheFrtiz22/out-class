@@ -146,3 +146,13 @@ Resource: `Club.features` (JSON switches). Written only by `setAdminClubFeature`
 | Signed-in non-admin, club leader of the club, student | deny | deny, nothing written | `club-features.test` (guard throws AdminAccessError) |
 | Logged-out visitor / expired session | deny (`requireAuth`) | deny | existing `platform-admin.test` |
 | Feature code at request time | reads via `clubHasFeature` only | n/a | `club-features.test` |
+## 2026-11-11 · S1-2 · CSV exports gated by the `csvExport` pilot switch (branch `feature/csv-export-gate`)
+Resource: `GET /api/club-exports` (applicants, roster, attendance, RSVPs). Unchanged: request-time `requireClubPermission` and in-snapshot `authorizeClubTransaction` with `clubExportPermissions`, club scoping in every builder, CSV formula neutralizing, one `club.export.<kind>` audit row per export, support view-as audit. New: after both capability checks, `clubHasFeature(tx, clubId, "csvExport")` in the same RepeatableRead snapshot; the switch defaults off (S1-1 registry). UI: `ClubExportLink` reads the switch from the signed-in account's own active memberships (`accountMembershipClubSelect`, display only) and shows a one-line note instead of the link while off.
+| Actor | Feature on | Feature off | Test |
+|---|---|---|---|
+| Leader with the kind's capability (incl. owner) | allow, audited | 403 "CSV export is not enabled for this club.", no rows read, no audit | `club-exports.test` (each kind), `club-exports-native.test` |
+| Platform admin in view-as as such a leader | allow, club audit + `platform.impersonation.club-export.<kind>` | 403, no audits | `club-exports.test` |
+| Leader of a suspended club | allow (`allowSuspendedRead` at both checks) | 403 | `club-exports.test` |
+| Member without the capability, other club's leader, removed member | 403 "Export unavailable" (switch never read, so its state is not revealed) | same | `club-exports.test` |
+| Logged-out visitor | redirect/deny (`requireClubPermission`) | same | existing |
+| UI | link shown | note shown to capable leaders; nothing for others, demo, or before the account loads | `club-exports.test` (render) |

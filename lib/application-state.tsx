@@ -259,7 +259,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
           logoUrl: club.logoUrl,
           marketing: club.marketing,
           senderName: "Recruitment Team",
-          senderTitle: `${club.name} — Recruitment`,
+          senderTitle: `${club.name} Recruitment`,
           title: `${club.name} application ${club.applicationId ? "ready" : "started"}`,
           preview: club.applicationId ? "Open your application from Application Tracker." : "Your draft is ready. Complete and submit it from Application Tracker.",
           body: [club.applicationId ? "Open your application from Application Tracker." : "Your draft is ready. Complete and submit it from Application Tracker."],

@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { useState } from "react";
 import {
@@ -40,7 +41,7 @@ export function RevealApplicant({
                 await revealApplicantIdentity(clubId, applicationId, reason),
               );
             } catch (e) {
-              setError(e instanceof Error ? e.message : "Reveal failed.");
+              setError(userMessage(e, "Reveal failed."));
             } finally {
               setBusy(false);
             }
@@ -90,7 +91,7 @@ export function RevealApplicant({
                     "Anonymous content saved. Reload the workspace to see it.",
                   );
                 } catch (e) {
-                  setError(e instanceof Error ? e.message : "Could not save.");
+                  setError(userMessage(e, "Could not save."));
                 } finally {
                   setBusy(false);
                 }

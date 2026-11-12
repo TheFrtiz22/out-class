@@ -193,7 +193,7 @@ test('responses finishing together still collapse the final request',async()=>{
 });
 
 test('Settings explains missing university proof and conceals previously loaded invitations on a denied refresh',async()=>{
- let denied=false;const h=container({getOrganizationInvitations:async()=>{if(denied)throw Error('Verify your university email through the normal email verification or password recovery flow before responding to invitations.');return[invitation()]}},{includeDismissed:true});
+ let denied=false;const h=container({getOrganizationInvitations:async()=>{if(denied)throw Object.assign(Error('Verify your university email through the normal email verification or password recovery flow before responding to invitations.'),{userFacing:true});return[invitation()]}},{includeDismissed:true});
  h.render();await h.flush();assert.equal(cards(h.render()).length,1);
  denied=true;h.context().refresh();h.render();await h.flush();const tree=h.render();
  assert.equal(cards(tree).length,0);assert.match(JSON.stringify(tree),/Verify your university email/);assert.ok(nodes(tree).some(n=>n.props?.role==='alert'));

@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -61,7 +62,7 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
   activeRef.current = active
   useEffect(() => { if (activeRef.current && demo.isDemoEnabled) void refresh() }, [demo.state, demo.isDemoEnabled, refresh])
   async function saveClub(club: DirectoryClub, saved: boolean) {
-    if (!identity || state.identity !== identity || state.loading || club.source === "preview") throw new Error("Sign in and load your Corkboard before saving.")
+    if (!identity || state.identity !== identity || state.loading || club.source === "preview") throw new UserFacingError("Sign in and load your Corkboard before saving.")
     if (pendingWrites.current.has(club.id)) return
     const previous = state.items.find(item => item.club.id === club.id)
     revision.current++ // Ignore reads started before this optimistic mutation.
@@ -74,7 +75,7 @@ export function CorkboardProvider({ children }: { children: ReactNode }) {
       if (owner.current === identity && result.savedAt) setState(value => ({ ...value, items: value.items.map(item => item.club.id === club.id ? { ...item, savedAt: result.savedAt! } : item) }))
     } catch {
       if (owner.current === identity) setState(value => ({ ...value, error: "We couldn’t save that change. Your previous selection has been restored.", items: previous ? [...value.items.filter(item => item.club.id !== club.id), previous] : value.items.filter(item => item.club.id !== club.id) }))
-      throw new Error("Couldn’t save this change. Your previous selection has been restored.")
+      throw new UserFacingError("Couldn’t save this change. Your previous selection has been restored.")
     } finally {
       if (owner.current === identity) { pendingWrites.current.delete(club.id); setPending(new Set(pendingWrites.current)); if (succeeded && !pendingWrites.current.size) void refresh() }
     }

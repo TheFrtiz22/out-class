@@ -231,3 +231,7 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Bundle check without a DSN: shared first-load JS 107 kB vs 105 kB on a branch without Sentry; cause: scrub module statically imported by instrumentation-client. Fixed in 2b437ea (SDK and filter load only inside the DSN branch). SDK code exists only in lazily loaded chunks.
 - 2b437ea rebuild without a DSN: shared first-load JS 105 kB (= main 00840ee); /home 186 kB, /login 209 kB vs 208 kB on main. tests/sentry-scrub 6/6, typecheck ok after the change.
 - First-load deltas vs main on the other branches (no keys set): security/turnstile /login +1 kB, /signup +1 kB, /platform/login +1 kB, /request-school +1 kB; scheduling/outlook-busy /settings/availability +2 kB.
+## 2026-11-11 ROOM-25LIVE-GAPS-1 interviews/room-25live-gaps
+- tests/interview-room-names-25live.test.cjs + tests/room-names-25live-browser.test.cjs: 8 pass, 0 fail, 0 skipped (browser run in isolated Demo fixture, desktop 1280 and mobile 390 screenshots checked).
+- eslint on changed files: 0 errors. Local typecheck not usable (stale generated Prisma client on this machine also fails untouched main code); CI typecheck/build is the gate.
+- Not run: full pnpm run test locally (machine shared with a concurrent Codex session), authenticated check on a deployed site (no QA login available).

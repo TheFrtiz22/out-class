@@ -1,3 +1,4 @@
+const {unwrap}=require('./action-result.cjs');
 const fs=require('node:fs');
 const path=require('node:path');
 const {createHmac,randomUUID}=require('node:crypto');
@@ -107,7 +108,8 @@ class Actor {
   const row=rows.get(resultId);if(!row)throw Error(`Server action ${name} result missing`);
   if(row.startsWith('E'))throw Error(`Server action ${name} rejected (HTTP ${response.status})`);
   if(row.startsWith('"$undefined"'))return undefined;
-  return JSON.parse(row,(_key,value)=>typeof value==='string'&&value.startsWith('$D')?new Date(value.slice(2)):value==='$undefined'?undefined:value);
+  // Converted actions return { ok, data | error, code }; a refusal becomes a `refused` error (tests/helpers/action-result.cjs).
+  return unwrap(JSON.parse(row,(_key,value)=>typeof value==='string'&&value.startsWith('$D')?new Date(value.slice(2)):value==='$undefined'?undefined:value));
  }
  async signIn(email,password){const result=await this.client.auth.signInWithPassword({email,password});if(result.error)throw result.error;this.user=result.data.user;return this.user;}
  async signUp(name,identifier,year){

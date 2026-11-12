@@ -37,6 +37,11 @@ export const accountClubSelect = {
 
 export type AccountClub = Prisma.ClubGetPayload<{ select: typeof accountClubSelect }>
 
+// The signed-in user's own active memberships also carry the club's pilot switches,
+// so leader UI can hide controls that are off. Display only: feature routes re-check
+// with `clubHasFeature` on the server. Not added to clubs on applications.
+export const accountMembershipClubSelect = { ...accountClubSelect, features: true } as const satisfies Prisma.ClubSelect
+
 export const accountUserInclude = {
   studentProfile: true,
   applications: {
@@ -48,6 +53,6 @@ export const accountUserInclude = {
   },
   memberships: {
     where: { status: "ACTIVE" },
-    include: { club: { select: accountClubSelect } },
+    include: { club: { select: accountMembershipClubSelect } },
   },
 } as const satisfies Prisma.UserInclude

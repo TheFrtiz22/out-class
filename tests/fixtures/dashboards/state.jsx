@@ -51,3 +51,5 @@ export function useCorkboard() { return { items: scenario() === 'full' ? [{ club
 export async function getClubDirectory() { return { clubs: directory } }
 export async function getDashboardReviewQueue(clubId, roundId) { await new Promise(resolve => setTimeout(resolve, 200)); return [{ id: 'queue-r1', label: 'Applicant 7Q2K', round: 'Written review', anonymous: true }] }
 export function ApplicantReviewPreview() { return null }
+// The Report control reaches server-only modules (support audit, crypto); fixtures have no session to report from.
+export function ReportContentButton() { return null }
