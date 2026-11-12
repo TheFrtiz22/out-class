@@ -27,6 +27,19 @@
 /* Reduced motion: a short crossfade, no movement. */
 @keyframes vr-fade-out{from{opacity:1}to{opacity:0}}@keyframes vr-fade-in{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.vr-slide-sliding .vr-slide-out{animation:vr-fade-out 150ms ease-out both}.vr-slide-sliding .vr-slide-in{animation:vr-fade-in 150ms ease-out both}}
+/* Crossfade (intermission, a new pass, end of voting): no movement, just a gentle fade between the two layers. */
+.vr-slide-fade.vr-slide-sliding .vr-slide-out{animation:vr-fade-out 320ms ease-out both}
+.vr-slide-fade.vr-slide-sliding .vr-slide-in{animation:vr-fade-in 320ms ease-out both}
+@media(prefers-reduced-motion:reduce){.vr-slide-fade.vr-slide-sliding .vr-slide-out{animation-duration:150ms}.vr-slide-fade.vr-slide-sliding .vr-slide-in{animation-duration:150ms}}
+/* Intermission between passes and the end-of-voting summary: compact, fills the stage the applicant held. */
+/* The intermission fills the stage the last applicant held (no blank gap, no jump), content centred. */
+.vr-slide-idle>div{align-self:stretch}
+.vr-intermission{display:grid;align-content:center;gap:14px;height:100%;padding:20px 4px}
+.vr-intermission-kicker{font-size:.85rem;color:var(--muted-foreground)}
+.vr-intermission-counts{display:flex;flex-wrap:wrap;gap:8px 20px;margin:0}
+.vr-intermission-counts>div{display:flex;align-items:baseline;gap:6px}.vr-intermission-counts dt{font-size:.85rem;color:var(--muted-foreground)}.vr-intermission-counts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.vr-intermission-passed{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.vr-intermission-passed li{padding:2px 10px;border:1px solid var(--border);border-radius:var(--oc-radius-full);font-size:.9rem}
 /* Outcome beside the name: colour always paired with text. */
 .vr-outcome{display:inline-flex;align-self:flex-start;align-items:center;gap:6px;font-size:.875rem;font-weight:500;line-height:1.25;padding:1px 10px 1px 6px;border-radius:var(--oc-radius-full);border:1px solid currentColor;white-space:nowrap}
 .vr-outcome[data-outcome=ACCEPT]{color:var(--color-success)}.vr-outcome[data-outcome=HOLD]{color:var(--color-warning)}.vr-outcome[data-outcome=REJECT]{color:var(--color-destructive)}
