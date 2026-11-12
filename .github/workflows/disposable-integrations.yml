@@ -72,11 +72,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
+      - name: Run Next.js / Supabase Auth / SMTP / settings, selected-navigation and active Interview Rooms integration
         env:
           OUTCLASS_HYDRATION_CAPTURE_DIR: ${{ runner.temp }}/hydration-captures
           OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
-        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair
+        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair --active-interviews
       # Redacted `supabase start` output from any failed attempt (the runner retries once).
       - uses: actions/upload-artifact@v4
         if: always()
