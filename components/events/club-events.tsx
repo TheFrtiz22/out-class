@@ -1,10 +1,12 @@
 "use client";
+import { EmptyState } from "@/components/ui/empty-state";
+import { TERMS } from "@/lib/copy/terms";
 import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "@/components/icons";
+import { ArrowLeft, Plus } from "@/components/icons";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { listClubCampusEvents, saveCampusEvent, commandCampusEvent, uploadEventFlyer, getCampusEventRsvpDashboard } from "@/lib/workspace-api";
 import { eventDay, nyDate, eventSchedule, eventDurations, eventScheduleLabel, eventCategories, flyerTemplates, newYorkInput, newYorkInstant, eventDateLabel, managedEventStatus, eventRsvpSummary, type CampusEvent, type ManagedCampusEvent } from "@/lib/campus-events";
@@ -20,7 +22,7 @@ import "./events.css";
 import { EventShareButton } from "@/components/share/event-share-button";
 import type { ClubAccess } from "@/lib/permissions";
 import { NativeSelect } from "@/components/ui/native-select"
-const tabs = ["Upcoming", "Past", "Pending Approval", "Rejected", "Drafts", "Closed"];
+const tabs = ["Upcoming", "Past", "Pending approval", "Rejected", "Drafts", "Closed"];
 export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { clubId: string; clubName: string; canSeeAttendees: boolean; membership?: ClubAccess | null }) {
   const [rows, setRows] = useState<ManagedCampusEvent[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState(""),
     [tab, setTab] = useState("Upcoming"), [editing, setEditing] = useState<ManagedCampusEvent | null | undefined>(),
@@ -43,13 +45,13 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
       await commandCampusEvent({ eventId: event.id, clubId, revision: event.revision, command: value });
       setNotice(value === "WITHDRAW" ? `Removed “${event.title}” from Corkboard. Event history and RSVPs are preserved.` : "");
       removed.current = value === "WITHDRAW";
-      if (value === "SUBMIT") setTab("Pending Approval");
+      if (value === "SUBMIT") setTab("Pending approval");
       setConfirm(null); setRetry(n => n + 1);
     } catch { setError("Event could not be updated. It may have changed; the list now shows the latest version."); setRetry(n => n + 1) }
     finally { inFlight.current = false; setBusy(false) }
   }
   const event = rows.find(e => e.id === selected);
-  const inTab = (name: string, e: ManagedCampusEvent) => name === "Upcoming" ? +new Date(e.endDate) > Date.now() && !["ARCHIVED", "CANCELLED"].includes(e.status) : name === "Past" ? +new Date(e.endDate) <= Date.now() : name === "Pending Approval" ? e.status === "PENDING" : name === "Rejected" ? e.status === "REJECTED" : name === "Closed" ? ["CANCELLED", "ARCHIVED"].includes(e.status) : e.status === "DRAFT";
+  const inTab = (name: string, e: ManagedCampusEvent) => name === "Upcoming" ? +new Date(e.endDate) > Date.now() && !["ARCHIVED", "CANCELLED"].includes(e.status) : name === "Past" ? +new Date(e.endDate) <= Date.now() : name === "Pending approval" ? e.status === "PENDING" : name === "Rejected" ? e.status === "REJECTED" : name === "Closed" ? ["CANCELLED", "ARCHIVED"].includes(e.status) : e.status === "DRAFT";
   const visible = rows.filter(e => inTab(tab, e));
   if (editing !== undefined) return <EventEditor key={editing?.id || "new"} clubId={clubId} clubName={clubName} event={editing} onClose={() => { setEditing(undefined); setRetry(n => n + 1) }} onSaved={(next = "Drafts") => { setEditing(undefined); setTab(next); setRetry(n => n + 1) }} />;
   function actions(e: ManagedCampusEvent) {
@@ -62,7 +64,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
     </div>;
   }
   return <section aria-label="Events" className="min-w-0 space-y-5">
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Events</h2></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create event</Button></header>
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Events</h2></div><Button onClick={() => { setSelected(null); setEditing(null) }}><Plus className="size-4" aria-hidden="true" />{TERMS.newEvent}</Button></header>
     {notice && <p role="status" className="rounded-lg border p-3 text-sm">{notice}</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}{!rows.length && !loading && <> <Button variant="outline" size="sm" disabled={busy} onClick={() => setRetry(n => n + 1)}>Try again</Button></>}</p>}
     {event ? <div className="oc-event-management-detail">
@@ -76,7 +78,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
       </div>
     </div> : <>
       <PillSelect label="Event filter" prefix="Status" size="compact" className="oc-event-management-status" active={false} value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t[0]}${t.slice(1).toLowerCase()} (${rows.filter(e => inTab(t, e)).length})` }))} />
-      {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create event</Button></div> : !visible.length ? <div className="space-y-3 rounded-lg border p-8 text-sm"><p>None of your club’s events are {tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.</p><Button variant="outline" size="sm" onClick={() => setEditing(null)}>Create event</Button></div> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
+      {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <EmptyState tone="outlined" title="No events yet." description="Use New event to create a draft, preview it, then submit it for OutClass approval." /> : !visible.length ? <EmptyState tone="outlined" density="compact" align="start" title={`No ${tab === "Upcoming" ? "upcoming" : tab.toLowerCase()} events`} description={`None of your club’s events are ${tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.`} /> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
         <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}
     </>}
@@ -201,7 +203,7 @@ function EventEditor({
     const current = await save(false, true);
     if (!current) { operation.current = false; setBusy(false); return; }
     setBusy(true);
-    try { await commandCampusEvent({ clubId, eventId: current.id, revision: current.revision, command: "SUBMIT" }); await draftSave.clear(); onSaved("Pending Approval") }
+    try { await commandCampusEvent({ clubId, eventId: current.id, revision: current.revision, command: "SUBMIT" }); await draftSave.clear(); onSaved("Pending approval") }
     catch { setError("Draft saved, but submission failed. Refresh and try again.") }
     finally { operation.current = false; setBusy(false) }
   }
@@ -235,7 +237,7 @@ function EventEditor({
     <section>
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-serif text-2xl">
-          {event ? "Edit event" : "Create event"}
+          {event ? "Edit event" : TERMS.newEvent}
         </h2>
         <Button variant="ghost" disabled={busy} onClick={() => void draftSave.flush().then(onClose).catch(() => {})}>
           Back to events

@@ -1,4 +1,5 @@
 "use client";
+import { TERMS } from "@/lib/copy/terms";
 import { UserFacingError } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { MeetingGroupInvitation } from "@/components/meeting-group-invitation"
@@ -100,7 +101,7 @@ export function MeetingCreateAction({ clubId, onSaved, initialOpen = false }: { 
   const [notice, setNotice] = useState("");
   // `?new=1` (Club home "New meeting") opens the form directly.
   const [open, setOpen] = useState(initialOpen);
-  return <div className="space-y-2"><ActionWorkflow showCloseAction={false} title="New meeting" description="Choose a time, place, and audience. Add an agenda or resources when you’re ready." trigger={<><Plus size={16} aria-hidden="true" />New meeting</>} variant="default" open={open} onOpenChange={setOpen}>{done => <MeetingEditor clubId={clubId} onCancel={done} onSaved={() => { done(); setNotice("Meeting created."); onSaved?.() }} />}</ActionWorkflow>{!onSaved && notice && <p role="status" className="text-xs">{notice}</p>}</div>;
+  return <div className="space-y-2"><ActionWorkflow showCloseAction={false} title={TERMS.newMeeting} description="Choose a time, place, and audience. Add an agenda or resources when you’re ready." trigger={<><Plus size={16} aria-hidden="true" />{TERMS.newMeeting}</>} variant="default" open={open} onOpenChange={setOpen}>{done => <MeetingEditor clubId={clubId} onCancel={done} onSaved={() => { done(); setNotice("Meeting created."); onSaved?.() }} />}</ActionWorkflow>{!onSaved && notice && <p role="status" className="text-xs">{notice}</p>}</div>;
 }
 
 /** Fetch the existing permission-checked roster only on request; list browsing does not fan out roster queries.

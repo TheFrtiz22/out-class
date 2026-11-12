@@ -3,7 +3,7 @@
 import { AccountAvatar } from "@/components/account-avatar"
 import { useEffect, useRef, useState } from "react"
 import { countShellStart } from "@/lib/shell-metrics"
-import { ArrowDown, ArrowUp, ArrowUpRight, Building2, FileText, Layers, UserRound } from "@/components/icons"
+import { ArrowDown, ArrowUp, ArrowUpRight, Building2, FileText, Layers, UserRound, type IconComponent } from "@/components/icons"
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,8 @@ export function NavigationSearch({
   /** Every page the account can open in any workspace (lib/search-destinations); matched only once the person types. */
   destinations?: SearchDestination[]
   /** Rail destinations that are not views (club pages, Settings): every nav destination is searchable. */
-  links?: { id: string; title: string; href: string }[]
+  /** Pages outside this workspace's view list; `icon` is the rail icon when the page has one. */
+  links?: { id: string; title: string; href: string; icon?: IconComponent }[]
   open: boolean
   onOpenChange: (open: boolean) => void
   items: NavItem[]
@@ -212,8 +213,9 @@ export function NavigationSearch({
                 ))}
                 {linkPages.map(link => (
                   <CommandItem key={`link-${link.id}`} value={`link-${link.id}-${link.title}`} onSelect={async () => { if (await prepare()) window.location.assign(link.href) }} className="min-h-11">
-                    <ArrowUpRight className="size-4" aria-hidden="true" />
+                    {link.icon ? <link.icon className="size-4" aria-hidden="true" /> : <ArrowUpRight className="size-4" aria-hidden="true" />}
                     <span className="flex-1">{link.title}</span>
+                    {link.icon && <ArrowUpRight className="size-3.5 text-muted-foreground" aria-hidden="true" />}
                   </CommandItem>
                 ))}
               </CommandGroup>

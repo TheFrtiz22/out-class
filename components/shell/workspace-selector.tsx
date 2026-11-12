@@ -32,7 +32,9 @@ function leaveMayPrompt() {
  * cancelled leave (unsaved changes) clears it straight away and the indicator slides back.
  */
 export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitcher }: { access: WorkspaceAccess; current: WorkspaceKind; clubId: string; onSwitch?: () => void; clubSwitcher?: ReactNode }) {
-  const options = useWorkspaceOptions(access, clubId)
+  const confirmed = useWorkspaceOptions(access, clubId)
+  // While eligibility is rechecked, a known admin keeps a non-interactive Admin segment so the pill doesn't change width.
+  const options: (WorkspaceOption & { placeholder?: boolean })[] = access.adminPlaceholder && !confirmed.some(option => option.id === "admin") ? [...confirmed, { id: "admin", label: "Admin", href: "/platform", placeholder: true }] : confirmed
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const [target, setTarget] = useState<WorkspaceKind | null>(null)
   const location = `${pathname}?${params.toString()}`
@@ -62,6 +64,8 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitc
         // accessible name starts with it so it contains every visible label (WCAG 2.5.3), then the full name.
         const abbreviated = option.shortLabel && option.shortLabel !== option.label ? option.shortLabel : null
         const short = shown !== option.id ? abbreviated : null
+        if (option.placeholder) return <div key={option.id} className="oc-workspace-segment" data-selected={shown === option.id} data-workspace-kind={option.id} data-workspace-label={option.label} data-placeholder="true" aria-hidden="true">
+          <span className="oc-workspace-option" aria-disabled="true"><span className="oc-workspace-option-label">{option.label}</span></span></div>
         return <div key={option.id} className="oc-workspace-segment" data-selected={shown === option.id} data-workspace-kind={option.id} data-workspace-label={option.label}>
         <Link data-workspace-option href={option.href} className="oc-workspace-option" aria-label={abbreviated ? `${abbreviated}, ${workspaceOptionName(option)}` : workspaceOptionName(option)} title={option.id === "leader" ? option.label : undefined} aria-current={current === option.id ? "page" : undefined}
           onMouseEnter={() => { if (current !== option.id) router.prefetch(option.href) }}

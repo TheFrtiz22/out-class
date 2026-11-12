@@ -5,7 +5,7 @@ test('leader landing, selected setup, dedicated room, return/resume and member e
  const f=await fixture(),browser=await chromium.launch({headless:true}),leader=await browser.newPage({viewport:{width:1280,height:800}}),member=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
  for(const page of [leader,member])page.on('pageerror',e=>errors.push(e.message));
  try{
-  await leader.goto(f.url+'/landing?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:'Start voting session',exact:true}).waitFor();await leader.getByText('No voting sessions available.',{exact:true}).waitFor();
+  await leader.goto(f.url+'/landing?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:'Start voting session',exact:true}).waitFor();await leader.getByText('No active sessions.',{exact:true}).waitFor();
   // The Decisions tab row this step used to click is gone: Decide's Vote/Send steps (components/live-voting/decide-page)
   // switch through the same canLeaveWorkspace() guard. This fixture renders the Voting room alone.
   assert.equal(f.h.state().sessions.length,0);
@@ -23,7 +23,7 @@ test('leader landing, selected setup, dedicated room, return/resume and member e
   await member.reload();await member.getByText('Voting has not started.',{exact:true}).waitFor();
   assert.equal(f.h.state().notifications.length,0);assert.ok(f.h.state().apps.every(a=>a.status==='IN_REVIEW'));
   const dir=path.resolve('test-results/voting-navigation');fs.mkdirSync(dir,{recursive:true});await leader.goto(f.url+'/landing?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:/^View details/}).waitFor();await leader.screenshot({path:path.join(dir,'desktop.png'),fullPage:true});await member.goto(f.url+'/landing?actor=member&decisionTab=voting');await member.getByRole('link',{name:/^View details/}).waitFor();await member.screenshot({path:path.join(dir,'mobile.png'),fullPage:true});assert.equal(await member.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-  const find=f.h.tx.votingSession.findMany;f.h.tx.votingSession.findMany=async()=>{throw Error('Synthetic list failure')};await leader.reload();await leader.getByText('Voting sessions could not be loaded. Check your current access and retry.',{exact:true}).waitFor();assert.equal(await leader.getByText('No voting sessions available.',{exact:true}).count(),0);f.h.tx.votingSession.findMany=find;await leader.getByRole('button',{name:'Retry sessions',exact:true}).click();await leader.getByRole('link',{name:/^View details/}).waitFor();assert.deepEqual(errors,[]);
+  const find=f.h.tx.votingSession.findMany;f.h.tx.votingSession.findMany=async()=>{throw Error('Synthetic list failure')};await leader.reload();await leader.getByText('Voting sessions could not be loaded. Check your current access and retry.',{exact:true}).waitFor();assert.equal(await leader.getByText('No active sessions.',{exact:true}).count(),0);f.h.tx.votingSession.findMany=find;await leader.getByRole('button',{name:'Retry sessions',exact:true}).click();await leader.getByRole('link',{name:/^View details/}).waitFor();assert.deepEqual(errors,[]);
  }finally{await browser.close();await f.close()}
 });
 

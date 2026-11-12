@@ -106,7 +106,7 @@ test("board uses original flyer in accessible modal, keyboard button activation 
   slots[5] = false;
   let tree = render();
   const filterPanel = all(tree).find((n) => n.type === "FilterPopover");
-  assert.equal(filterPanel.props.label, "Filter", "Corkboard filters sit in the viewport-safe FilterPopover (Escape and outside press close it)");
+  assert.equal(filterPanel.props.label ?? "Filters", "Filters", "Corkboard filters sit in the viewport-safe FilterPopover (Escape and outside press close it)");
   assert.equal(filterPanel.props.count, 0);
   assert.ok(all(tree).some((n) => n.type === "SearchField" && n.props["aria-label"] === "Search events"));
   const trigger = all(tree).find(
@@ -198,7 +198,7 @@ test("Calendar shows Meetings and Events under their own headings with Jump to l
   try { params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar(props);effects.splice(0).forEach(effect=>effect()) } finally { delete global.document }
   assert.ok(scrolled.includes('calendar-events'));
   demo=true;tree=ClubCalendar(props);
-  assert.match(title(tree),/not available in Demo yet/);
+  assert.ok(all(tree).some(n=>n.type==='EmptyState'&&/aren’t available in Demo/.test(n.props.title)));
   assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
   // Without meetings.manage: meetings only, even on an Events link.
   demo=false;params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar({...props,canManage:false,personalOnly:true});

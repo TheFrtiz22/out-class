@@ -132,14 +132,14 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   const jump = page.getByRole('navigation', { name: 'Calendar sections', exact: true })
   await expect(jump.getByRole('link')).toHaveText(['Meetings', 'Events'])
   await expect(page.getByRole('heading', { name: 'Meetings', exact: true })).toBeVisible()
-  await expect(page.getByText(/Event management is not available in Demo/)).toBeVisible()
+  await expect(page.getByText(/Events aren’t available in Demo/)).toBeVisible()
   await jump.getByRole('link', { name: 'Events', exact: true }).click()
   await expect.poll(() => page.evaluate(() => location.hash)).toBe('#calendar-events')
   await expect(page.getByRole('switch', { name: 'Show past', exact: true })).toHaveAttribute('aria-checked', 'false')
   await expect(page.getByRole('combobox', { name: 'Audience', exact: true })).toHaveText(/Audience:?\s*All/)
   await open('section=calendar&type=events')
   await expect(page.getByRole('heading', { name: 'Meetings', exact: true })).toBeAttached()
-  await expect(page.getByText(/Event management is not available in Demo/)).toBeInViewport()
+  await expect(page.getByText(/Events aren’t available in Demo/)).toBeInViewport()
 
   // Review applicants opens the full-screen review on Pending; ←/→ move between applicants ("X of N").
   await open('section=recruitment&tool=applicants')

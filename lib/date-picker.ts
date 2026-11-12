@@ -29,6 +29,8 @@ export function monthGrid(day: string) {
 export function formatDay(day: string, options: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric", year: "numeric" }) {
   return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", ...options }).format(toDate(day))
 }
+/** A day key as a full heading, "Thursday, October 15, 2026": for day keys shown to people instead of raw ISO dates. */
+export const formatLongDay = (day: string) => formatDay(day, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
 /** Keyboard movement in the grid, following the WAI-ARIA date picker pattern. */
 export function moveDay(day: string, key: string, shift = false) {
   switch (key) {

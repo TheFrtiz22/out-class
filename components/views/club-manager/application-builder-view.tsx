@@ -1,4 +1,5 @@
 "use client";
+import { Toggle } from "@/components/ui/toggle"
 import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
@@ -224,14 +225,7 @@ export function ApplicationBuilderView({
             disabled={busy || !draftSave.ready || draftSave.recovery != null}
             className="grid gap-4 border-b pb-6 sm:grid-cols-2"
           >
-            <label className="inline-flex min-h-11 items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={open}
-                onChange={(e) => setOpen(e.target.checked)}
-              />
-              Applications open
-            </label>
+            <Toggle label="Applications open" checked={open} onCheckedChange={setOpen} className="self-start" />
             <label className="space-y-2 text-sm">
               Deadline (optional, your local time)
               <Input

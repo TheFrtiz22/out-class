@@ -410,19 +410,17 @@ function renderLink({ features, demo = false, membership = { isOwner: true }, ki
   return require('react-dom/server').renderToStaticMarkup(React.createElement(ClubExportLink, { clubId, kind, membership, label: 'Export CSV', showNotice }))
 }
 
-test('UI: export link shown only when the club switch is on; off shows one short note instead', () => {
+test('UI: export link shown only when the club switch is on; off hides the control without a note', () => {
   assert.match(renderLink({ features: on }), /<a href="\/api\/club-exports\?clubId=[^"]+&amp;kind=roster" download="">Export CSV<\/a>/)
   for (const features of [undefined, null, {}, { csvExport: false }]) {
     const html = renderLink({ features })
-    assert.doesNotMatch(html, /<a |Export CSV/, JSON.stringify(features))
-    assert.match(html, /CSV export isn&#x27;t turned on for this club yet\./)
+    assert.equal(html, '', JSON.stringify(features))
   }
-  assert.equal(renderLink({ features: null, showNotice: false }), '', 'second link beside the first adds no duplicate note')
   assert.equal(renderLink({ features: on, membership: { permissions: [] } }), '', 'no capability: nothing, not even the note')
   assert.equal(renderLink({ features: null, membership: { permissions: [] } }), '')
   assert.equal(renderLink({ features: on, demo: true }), '', 'demo stays hidden')
   assert.equal(renderLink({ features: on, user: false }), '', 'no account loaded yet: nothing')
-  assert.match(fs.readFileSync('components/organization-member-management.tsx', 'utf8'), /kind="attendance" membership=\{data\.actor\} label="Export attendance" showNotice=\{false\}/)
+  assert.match(fs.readFileSync('components/organization-member-management.tsx', 'utf8'), /kind="attendance" membership=\{data\.actor\} label="Export attendance" \/>/)
 })
 
 test('switch state reaches the UI only through the account\'s own memberships, not application clubs', () => {

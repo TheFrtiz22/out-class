@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 import { PillSelect } from "@/components/ui/pill-select"
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ClubCalendar } from "@/components/events/club-meetings-workspace";
@@ -210,12 +211,12 @@ export function ClubWorkspace({
   const allClubs = <Link className="text-sm text-muted-foreground underline underline-offset-4" href="/clubs">All my clubs</Link>;
   return <ShellState>
     <RecruitmentFocus />
-        {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
+        {loading || needsSelection ? <LoadingState label="Opening club workspace…" layout="workspace" /> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {section === "overview" && allowed
             ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={manager ? <ClubHomeActions clubId={clubId} membership={membership} /> : allClubs} /></DashboardHero>
             : active === "overview" && allowed
             ? <RecruitingHero clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} data={error ? null : current} />
-            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
+            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" || section === "members" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
           {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}

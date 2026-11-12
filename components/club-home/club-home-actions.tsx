@@ -14,6 +14,6 @@ export function ClubHomeActions({ clubId, membership }: { clubId: string; member
   if (!hrefs.announcements && !hrefs.meetings) return null
   return <DashboardActions className="oc-club-home-actions">
     {hrefs.announcements && <Button variant="outline" size="lg" asChild><Link href={`${hrefs.announcements}&compose=1`}><Megaphone aria-hidden="true" />{TERMS.newAnnouncement}</Link></Button>}
-    {hrefs.meetings && <Button size="lg" asChild><Link href={`${hrefs.meetings}&new=1`}><CalendarPlus aria-hidden="true" />New meeting</Link></Button>}
+    {hrefs.meetings && <Button size="lg" asChild><Link href={`${hrefs.meetings}&new=1`}><CalendarPlus aria-hidden="true" />{TERMS.newMeeting}</Link></Button>}
   </DashboardActions>
 }
