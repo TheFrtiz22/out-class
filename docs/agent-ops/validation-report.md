@@ -235,3 +235,33 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - tests/interview-room-names-25live.test.cjs + tests/room-names-25live-browser.test.cjs: 8 pass, 0 fail, 0 skipped (browser run in isolated Demo fixture, desktop 1280 and mobile 390 screenshots checked).
 - eslint on changed files: 0 errors. Local typecheck not usable (stale generated Prisma client on this machine also fails untouched main code); CI typecheck/build is the gate.
 - Not run: full pnpm run test locally (machine shared with a concurrent Codex session), authenticated check on a deployed site (no QA login available).
+
+## 2026-11-11 OPS-HEALTH-README ops/readme-health-audit (base main b2476112)
+- tests/health-route.test.cjs 6/6 (200 with DB; 503 on error and on 2 s timeout with mocked timers; no host/error text in body, headers or log; middleware bypass for GET/HEAD with demo, support and auth cookies; deploy.yml parses with js-yaml; audit gate classification and allowlist expiry). Negative control: with main's middleware.ts the bypass test fails.
+- Related suites (middleware, nodemailer, workflow, package.json, installable app): 107 tests, 106 pass, 1 fail (performance-regressions: `.prisma/client` not generated in this worktree's shared node_modules; environmental, unrelated).
+- `node scripts/check-dependency-audit.cjs`: pass. zod GHSA-mrhx-c7xc-m3w5 (high) allowlisted until 2027-02-01 (no patched 3.x; zod 4 is a separate migration); nodemailer advisories cleared by 10.2.1; moderate glob/minimatch via @sentry/nextjs reported, not blocking.
+- Lockfile: `pnpm install --lockfile-only --offline` resolved nodemailer 10.2.1 from the local cache; `--frozen-lockfile` check passes. Shared node_modules still holds 10.0.13 (not reinstalled); email tests mock the transport.
+- Not run here: full `pnpm run test`, typecheck, build (Prisma client not generated in the shared node_modules; tsc reports 1,579 pre-existing errors, none in changed files; eslint on changed files clean). CI must confirm.
+
+## 2026-11-11 SEC-CSP-1 security/csp-nonce
+- tests/csp.test.cjs 8/8. Related suites (51 files touching middleware, pages, next.config or app/api): 391 tests, 378 pass, 11 fail, 2 skipped; all 11 failures are `Cannot find module '.prisma/client/default'` (no generated Prisma client in this worktree), none from this change.
+- typecheck: no errors in changed files; the remaining errors are all from the missing generated Prisma client. eslint on changed files: 0 problems. check-ui-controls ok.
+- Real Chrome (Playwright, /usr/bin/google-chrome) with the generated policy on a synthetic page: 0 violations in Report-Only and enforce mode. An un-nonced control script was reported or blocked, and its report reached the endpoint in the application/csp-report format.
+- Not run: full `pnpm run test`, test:migrations or build (no Prisma client), Next.js page render, or a deployed check with Supabase Realtime, Sentry, Analytics, Turnstile and the résumé viewer.
+
+## 2026-11-11 UI-FRIENDLY-ERRORS-1 ui/friendly-errors
+- Targeted unit run (1522 tests in files touching the changed actions, components, hooks and libs): 1384 pass, 137 fail, 1 skipped. Every failure is `Cannot find module '.prisma/client/default'` (no generated Prisma client in this worktree). New: tests/user-message 3/3, tests/user-message-guard 3/3, tests/action-results 3/3.
+- typecheck: no new errors versus main in this worktree (main itself reports ~1540 errors here because the Prisma client is not generated, so action return types are partly `any`; the real CI typecheck is the authority). eslint on changed files: 0 errors, 6 pre-existing warnings.
+- Not run: full `pnpm run test`, test:migrations, build, E2E/native/browser suites, or a production build check that a returned failure renders its message.
+- Review fixes (follow-up commit): 13 more actions wrapped (club-access accept/decline/invite/revoke, identity revoke, roster import record, invitation dismissal, saved events, anonymous-review toggles, member groups/offices/panel, decision schedule/cancel); actionResult logs `action.refused` (action + code only) at info; userMessage drops the bare "digest" word match and narrows Prisma/Postgres/stack patterns; tests/action-result-coverage.test.cjs guards unwrapped ActionError actions with a reviewed exclusion list. Targeted run: 1537 tests, 1397 pass, 138 fail (137 missing Prisma client; 1 coverage-guard finding fixed afterwards and rerun green), 2 skipped. Native/E2E/browser files updated to read `{ ok: false, code }` refusals but not run (no disposable stack here); each passes `node --check`.
+
+## 2026-11-11 SAFETY-REPORT-1 feature/report-content
+- Local sandbox without a generated Prisma client or Playwright browsers. tests/content-reports 10/10. Full node --test run compared test-by-test against a clean copy of the base commit: no test passes on base and fails on the branch (remaining failures are the same Prisma-client / missing-browser environment failures on both). Harness mocks added for the new action in 4 browser/SSR fixtures; SQL harness learns UserNotification.announcement.
+- eslint on changed files: 0 errors (3 pre-existing <img> warnings). typecheck: only Prisma-client-missing errors. Not run: typecheck/build with a generated client, test:migrations, browser fixtures, authenticated E2E.
+
+## 2026-11-11 OPS-MERGE-BATCH-1111 merge batch (#267, #275–#287, #292, #295, #296)
+- Merged one at a time through the API once the ruleset's 5 required checks passed on each head; never pushed to main. "Applicant workflow / shell" (not required) failed everywhere on the known Explore header-gap flake.
+- Conflicts resolved on PR branches with origin/main merged in; each resolution typechecked and run against the touched suites locally (Prisma engines are unreachable here, so prisma generate used placeholder engines: types only; anonymous-review, integration-audit, interview-collaboration and performance-regressions fail locally for that reason and pass in CI).
+- Cross-PR breakages each PR's CI could not see (non-strict required checks): #276 x #278 health test (fixed by #314), #277 x #279 unsubscribe limiter, #279 x #278 middleware stubs, #286 x #292 error.message (all fixed by #317); #283 x #275 em dashes, #283 x #282 px font sizes, #283 x #278 JSON-LD nonce, #279 x #278 CSP report exemption, #296 and #295 browser fixtures (fixed on the PR branches).
+- Full unit run on main + #317 locally: 2538 tests, 2454 pass, 6 fail (5 environment-only as above plus the userMessage guard #317 then fixed), 78 skipped. All browser tests on #295 + main: 96, one environment-only failure (PDF text layer).
+- Not run here: build, test:migrations, authenticated E2E (CI ran them per PR).
