@@ -63,8 +63,7 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
     // Decide's step names, if typed or linked, map to the internal tab values.
     if (q.get("tool") === "decisions" && q.get("decisionTab") === "vote") set("decisionTab", "voting")
     if (q.get("tool") === "decisions" && q.get("decisionTab") === "send") set("decisionTab", "letters")
-    // Decisions → Overview is the Applicants decision filter.
-    if (q.get("tool") === "decisions" && q.get("decisionTab") === "overview") { set("tool", "applicants"); set("decisionTab", null) }
+    // `decisionTab=overview` is Decide's Overview tab again (it once redirected to the Applicants decision filter).
     // The board ballot opens from the Voting room, not from Applicants.
     if ((q.get("tool") ?? "applicants") === "applicants" && q.get("voting") === "1") { set("tool", "decisions"); set("decisionTab", "voting"); set("voting", null) }
   }

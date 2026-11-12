@@ -12,6 +12,8 @@ import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSum
 import { demoAssignmentNotice } from "./interview-improvements";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
+import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
+import { decodeInterviewListCursor, interviewListFiltersSchema, interviewListLimitSchema, interviewListScope, pageSortedInterviewList } from "@/lib/interview-list-page";
 
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
@@ -131,19 +133,27 @@ function demoApplicantPhoto(anonymous: boolean, value: string | null | undefined
   const source = anonymous ? undefined : profilePhotoSource(value);
   return source && !source.startsWith("/api/") ? source : null;
 }
-export function getSubmittedInterviewReviews(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+/** Same contract as the server page: re-checks access and filters on every page; a cursor is only a position. */
+export function getSubmittedInterviewReviewPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit), listScope = interviewListScope(clubId, selected);
+  const position = decodeInterviewListCursor(cursor, "reviews", listScope);
   demoStore.refresh();
   const { s, caps } = actor(clubId);
   if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
   // Demo has no recorded recruitment cycles; never infer a cycle for legacy fixtures.
-  return s.interviews.filter(r => {
+  const records = s.interviews.filter(r => {
     if (!r.completedAt || r.clubId !== clubId) return false;
-    if (filters.applicationId && r.applicationId !== filters.applicationId || filters.roundId && r.roundId !== filters.roundId || filters.cycleId) return false;
+    if (selected.applicationId && r.applicationId !== selected.applicationId || selected.roundId && r.roundId !== selected.roundId || selected.cycleId) return false;
     try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closingReview"); return true; } catch { return false; }
-  }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || b.id.localeCompare(a.id)).slice(0,100).map(r => {
+  }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0));
+  const page = pageSortedInterviewList(records, r => r.id, position, "reviews", listScope, take);
+  return { ...page, items: page.items.map(r => {
     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
     const club = s.clubs.find(c => c.id === clubId)!; const round = club.rounds.find(round => round.id === r.roundId)!; const anonymous = !!(r.anonymousReview || round.anonymousReview || club.rounds.find(round => round.id === app.roundId)?.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : round.name, applicantName: anonymous ? anonymousApplicantLabel(app.id) : profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided", photo: demoApplicantPhoto(anonymous, profile?.headshotUrl) };
-  });
+  }) };
+}
+export function getSubmittedInterviewReviews(clubId: string, filters: ApplicantInterviewFilters = {}) {
+  return getSubmittedInterviewReviewPage(clubId, filters).items;
 }
 export function getSubmittedInterviewReview(input: InterviewScope & { interviewerId: string }) {
   demoStore.refresh();
@@ -226,18 +236,27 @@ export function getInterviewApplicantPanel(input: InterviewScope) {
   const { s, app } = access(input); const p = s.students.find(p => p.id === app.studentId)!.profile;
   return { profile: { firstName: p.firstName, lastName: p.lastName, headshotUrl: p.headshotUrl, scholarStatus: p.scholarStatus }, document: s.interviewFoundation.documents.find(d => d.applicationId === app.id && d.roundId === input.roundId) || null };
 }
-export function getInterviewResumeModerationQueue(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+/** Same contract as the server page: re-checks access and filters on every page; a cursor is only a position. */
+export function getInterviewResumeModerationPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit), listScope = interviewListScope(clubId, selected);
+  const position = decodeInterviewListCursor(cursor, "resumes", listScope);
   demoStore.refresh(); const { s, member, caps } = actor(clubId);
   if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
-  return s.interviewFoundation.documents.flatMap(document => {
+  const ordered = [...s.interviewFoundation.documents].map((document, index) => ({ document, index }))
+    .sort((a, b) => (+new Date(b.document.createdAt) - +new Date(a.document.createdAt)) || (a.document.id < b.document.id ? 1 : a.document.id > b.document.id ? -1 : 0) || b.index - a.index).map(entry => entry.document);
+  const rows = ordered.flatMap(document => {
     const app = s.applications.find(a => a.id === document.applicationId && a.clubId === clubId && a.studentId !== member.userId && a.status !== "DRAFTING");
     const round = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === document.roundId);
     const current = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === app?.roundId);
     if (!app || !round || !current || round.anonymousReview || current.anonymousReview) return [];
-    if (filters.applicationId && app.id !== filters.applicationId || filters.roundId && document.roundId !== filters.roundId || filters.cycleId) return [];
+    if (selected.applicationId && app.id !== selected.applicationId || selected.roundId && document.roundId !== selected.roundId || selected.cycleId) return [];
     const profile = s.students.find(p => p.id === app.studentId)?.profile;
     return [{ documentId: document.id, clubId, applicationId: app.id, roundId: round.id, roundName: round.name, applicantName: profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" }];
-  }).reverse().slice(0, 100);
+  });
+  return pageSortedInterviewList(rows, r => r.documentId, position, "resumes", listScope, take);
+}
+export function getInterviewResumeModerationQueue(clubId: string, filters: ApplicantInterviewFilters = {}) {
+  return getInterviewResumeModerationPage(clubId, filters).items;
 }
 export function getInterviewResumeAnnotations(input: InterviewScope & { documentId: string }) {
   demoStore.refresh();

@@ -117,9 +117,19 @@ test("every old URL maps to its new home (server redirect and client replace sha
 })
 
 test("Decide: tab choice respects access; counts are per round", () => {
-  assert.equal(decide.decideTab("letters", { canVote: true, canSend: false }), "voting")
-  assert.equal(decide.decideTab(null, { canVote: false, canSend: true }), "letters")
+  // Overview is first and the default; a tab this member may not open falls back to it.
+  assert.deepEqual(decide.decideTabs.map(tab => tab.id), ["overview", "review", "voting", "letters"])
+  // Review (#281) needs decision access; without it the request falls back to Overview.
+  assert.equal(decide.decideTab("review", { canVote: false, canSend: false, canDecide: true }), "review")
+  assert.equal(decide.decideTab(null, { canVote: false, canSend: false, canDecide: true }), "overview")
+  assert.equal(decide.decideTab("review", { canVote: true, canSend: true }), "overview")
+  assert.equal(decide.decideTab(null, { canVote: true, canSend: true }), "overview")
+  assert.equal(decide.decideTab("letters", { canVote: true, canSend: false }), "overview")
+  assert.equal(decide.decideTab("voting", { canVote: true, canSend: false }), "voting")
+  assert.equal(decide.decideTab(null, { canVote: false, canSend: true }), "overview")
+  assert.equal(decide.decideTab("letters", { canVote: false, canSend: true }), "letters")
   assert.equal(decide.decideTab("voting", { canVote: false, canSend: false }), null)
+  assert.equal(decide.decideTab("overview", { canVote: false, canSend: false }), null)
   const rooms = [
     { roundId: "a", roundName: "A", state: "OPEN", applicantCount: 9 },
     { roundId: "a", roundName: "A", state: "DRAFT", applicantCount: 3 },
