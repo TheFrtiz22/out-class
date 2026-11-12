@@ -131,16 +131,20 @@ test("Decide: tab choice respects access; counts are per round", () => {
   assert.equal(decide.decideTab("voting", { canVote: false, canSend: false }), null)
   assert.equal(decide.decideTab("overview", { canVote: false, canSend: false }), null)
   const rooms = [
-    { roundId: "a", roundName: "A", state: "OPEN", applicantCount: 9 },
-    { roundId: "a", roundName: "A", state: "DRAFT", applicantCount: 3 },
-    { roundId: "b", roundName: "B", state: "COMPLETED", publishedAt: null, applicantCount: 6 },
-    { roundId: "b", roundName: "B", state: "COMPLETED", publishedAt: "2026-11-01T00:00:00Z", applicantCount: 4 },
+    { roundId: "a", roundName: "A", mode: "LIVE", state: "OPEN", applicantCount: 9 },
+    { roundId: "a", roundName: "A", mode: "LIVE", state: "DRAFT", applicantCount: 3 },
+    { roundId: "b", roundName: "B", mode: "LIVE", state: "COMPLETED", publishedAt: null, applicantCount: 6 },
+    { roundId: "b", roundName: "B", mode: "LIVE", state: "COMPLETED", publishedAt: "2026-11-01T00:00:00Z", applicantCount: 4 },
   ]
   assert.deepEqual(decide.decideCounts(rooms), { voting: 2, letters: 6 })
   // Closed board sessions are read-only history, so they never count as waiting to be sent.
   const closedBoard = { roundId: "b", roundName: "B", state: "COMPLETED", mode: "LEGACY", publishedAt: null, applicantCount: 5 }
   assert.equal(decide.readyToSend(closedBoard), false)
   assert.deepEqual(decide.decideCounts([...rooms, closedBoard]), { voting: 2, letters: 6 })
+  // Cancelled meetings and board sessions are history: never counted as sessions to run.
+  const cancelled = { roundId: "a", roundName: "A", mode: "LIVE", state: "DRAFT", meeting: { status: "CANCELLED" }, applicantCount: 2 }
+  const openBoard = { roundId: "a", roundName: "A", mode: "LEGACY", state: "OPEN", applicantCount: 2 }
+  assert.deepEqual(decide.decideCounts([...rooms, cancelled, openBoard]), { voting: 2, letters: 6 })
   assert.deepEqual(decide.roundsFromRooms(rooms), [{ id: "a", name: "A" }, { id: "b", name: "B" }])
 })
 
