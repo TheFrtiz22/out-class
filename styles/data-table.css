@@ -50,10 +50,10 @@
 .oc-dt .oc-status-pill { padding-block: .125rem; line-height: 1rem; }
 .oc-dt .oc-applicant-person { gap: .5rem; }
 .oc-dt .oc-applicant-person [data-slot="avatar"] { width: 1.5rem; height: 1.5rem; border-radius: var(--oc-radius-sm); }
-.oc-dt .oc-applicant-person [data-slot="avatar-fallback"] { font-size: .5625rem; }
+.oc-dt .oc-applicant-person [data-slot="avatar-fallback"] { font-size: var(--oc-size-12); }
 
 /* A row's explicit action (Enter interview): compact, so the row stays one line. */
-.oc-dt-action { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 .625rem; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); white-space: nowrap; }
+.oc-dt-action { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0 .625rem; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); font-size: var(--oc-size-13); font-weight: var(--oc-weight-semibold); white-space: nowrap; }
 .oc-dt-action:hover { background: var(--oc-content-soft); }
 .oc-dt-action:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 /* A column that takes the remaining width and truncates (announcement title and preview). */

@@ -482,7 +482,7 @@ export function ApplicationBuilderView({
                 />
                 <p
                   id={`help-${q.id}`}
-                  className="text-xs text-muted-foreground"
+                  className="text-control text-muted-foreground"
                 >
                   {q.type === "ESSAY" && q.wordLimit
                     ? `Up to ${q.wordLimit} words`

@@ -8,7 +8,8 @@ import type { AccountClub } from '@/lib/account-data';
 import { adoptAutosaveOwner } from "@/lib/autosave-store";
 
 export type ExtendedApplication = Omit<Application, "anonymousReviewText"> & { club: AccountClub };
-export type ExtendedMembership = ClubMember & { club: AccountClub };
+// `features` (pilot switches) is present on live account memberships; demo data omits it.
+export type ExtendedMembership = ClubMember & { club: AccountClub & { features?: unknown } };
 
 export type PopulatedUser = User & {
   impersonating?: boolean;

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getInterviewCollaboration, leaveInterviewCollaboration, selectSharedInterviewQuestion, dismissInterviewInvitation } from "@/lib/workspace-api";
 import { COLLABORATION_POLL_MS, newerCollaboration, type CollaborationView } from "@/lib/interview-collaboration";
 import type { InterviewScope } from "@/lib/interview-access";
+import { clockOffsetMs } from "@/lib/interview-shared-timer";
 
 /** Each tab owns a client ID; server identity always comes from verified Auth. */
 export function useInterviewWorkspace(scope: InterviewScope, enabled: boolean) {
@@ -17,7 +18,10 @@ export function useInterviewWorkspace(scope: InterviewScope, enabled: boolean) {
     const current = epoch.current;
     const sequence = ++requestSequence.current;
     try {
-      const result = await getInterviewCollaboration({ clubId, applicationId, roundId, clientId });
+      const sentAt = Date.now();
+      const response = await getInterviewCollaboration({ clubId, applicationId, roundId, clientId });
+      // The shared timer runs on server time: record this device's clock offset with each read.
+      const result = response.timer ? { ...response, timer: { ...response.timer, clockOffsetMs: clockOffsetMs(response.timer.serverNow, sentAt, Date.now()) } } : response;
       if (current === epoch.current && sequence >= appliedSequence.current) { appliedSequence.current = sequence; setView(old => newerCollaboration(old, result)); setError(""); }
     } catch { if (current === epoch.current && sequence >= appliedSequence.current) { appliedSequence.current = sequence; setView(null); setError("Room connection unavailable. Your private draft is retained. Retry to check current access."); } }
   }, [clubId, applicationId, roundId, clientId]);

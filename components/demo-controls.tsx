@@ -25,7 +25,7 @@ export function DemoMenuItems() {
           if (await safe()) void demo.toggleDemo()
         }}
       >
-        Demo Mode: {demo.isDemoEnabled ? "On — exit demo" : "Off — enable demo"}
+        Demo Mode: {demo.isDemoEnabled ? "On (exit demo)" : "Off (enable demo)"}
       </DropdownMenuItem>
       {demo.isDemoEnabled && (
         <>

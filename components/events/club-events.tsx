@@ -280,7 +280,7 @@ function EventEditor({
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
-          <p id="event-description-help" className="text-xs leading-relaxed text-muted-foreground">Include every flyer detail here, including anything shown only in the image.</p>
+          <p id="event-description-help" className="text-control leading-relaxed text-muted-foreground">Include every flyer detail here, including anything shown only in the image.</p>
           <div className="oc-event-editor-pair">
             <label>
               Category
@@ -363,7 +363,7 @@ function EventEditor({
           </label>
           {!useTemplate && saved?.flyerUrl && <Button type="button" variant="outline" disabled={busy} onClick={() => { setUseTemplate(true); setNotice("Flyer removed from this preview. Save the draft to apply."); }}>Remove uploaded flyer</Button>}
           <label className="rounded-xl border-2 border-dashed p-5" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file && !busy && draftSave.ready && !draftSave.recovery) void upload(file); }}>
-            Event Flyer — Optional
+            Event flyer (optional)
             <span className="block text-sm text-muted-foreground">Drop a PNG, JPEG or WebP here, or choose a file. Up to 10 MB.</span>
             <Input
               type="file"

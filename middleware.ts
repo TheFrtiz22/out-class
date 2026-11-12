@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
 import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
+import { RATE_LIMITS, RATE_LIMIT_MESSAGE, rateLimiter, rateLimitHeaders, rateLimitKey } from "@/lib/rate-limit-core"
 import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, CSP_NONCE_HEADER } from "@/lib/csp"
 
 /**
@@ -34,6 +35,11 @@ async function route(request: NextRequest): Promise<Response> {
   // The uptime probe needs no session, cookies or redirects, and nothing here may rate-limit it.
   if (path === "/api/health" && ["GET", "HEAD"].includes(request.method)) return NextResponse.next()
   try { path = decodeURIComponent(path) } catch { return new NextResponse(null, { status: 400 }) }
+  // Short-link resolution is a page, which cannot answer 429 itself, so the per-address limit lives here.
+  if (path.startsWith("/q/")) {
+    const limit = rateLimiter.check(RATE_LIMITS.shortLinks, rateLimitKey({ forwardedFor: request.headers.get("x-forwarded-for") }))
+    if (!limit.ok) return new NextResponse(RATE_LIMIT_MESSAGE, { status: 429, headers: { ...rateLimitHeaders(limit.retryAfterSeconds), "Content-Type": "text/plain; charset=utf-8" } })
+  }
   // Student workspace views moved from `/?workspace=student&view=…` to real paths. Old URLs live
   // on in stored notifications and sent email, so this redirect stays (307 until the paths are
   // proven in production; then 308). Next rewrites a 127.0.0.1/[::1] host to localhost in any
@@ -47,9 +53,9 @@ async function route(request: NextRequest): Promise<Response> {
       return response
     }
   }
-  // Privacy and Terms are not public until the owner turns them on: serve the real 404 page (an
-  // unmatched path), not a streamed 200, and never their titles.
-  if (!LEGAL_PAGES_PUBLIC && (path === "/privacy" || path === "/terms")) {
+  // Privacy, Terms, Cookies and Legal are not public until the owner turns them on: serve the real
+  // 404 page (an unmatched path), not a streamed 200, and never their titles.
+  if (!LEGAL_PAGES_PUBLIC && (path === "/privacy" || path === "/terms" || path === "/cookies" || path === "/legal")) {
     return NextResponse.rewrite(new URL("/__not-public", request.url), { request: { headers: request.headers }, headers: { "X-Robots-Tag": "noindex, nofollow" } })
   }
   if (path === "/preview" || path.startsWith("/preview/") || path === "/demo" || path.startsWith("/demo/")) {
@@ -64,7 +70,7 @@ async function route(request: NextRequest): Promise<Response> {
   // The internal delivery route checks its independent bearer secret. Cron needs no Supabase session refresh.
   if (["/api/internal/invitation-delivery", "/api/internal/notification-delivery"].includes(request.nextUrl.pathname)) return NextResponse.next()
   // Metadata routes, the service worker and its offline page contain only public content and need no session refresh.
-  if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest", "/icon", "/apple-icon", "/sw.js", "/offline.html"].includes(request.nextUrl.pathname)) return NextResponse.next()
+  if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/llms.txt", "/manifest.webmanifest", "/icon", "/apple-icon", "/sw.js", "/offline.html"].includes(request.nextUrl.pathname)) return NextResponse.next()
   // Club link-preview cards (opengraph-image / twitter-image) are public and CDN-cached.
   if (["GET", "HEAD"].includes(request.method) && /^\/club\/[^/]+\/(?:opengraph|twitter)-image(?:-[\w-]+)?$/.test(request.nextUrl.pathname)) return NextResponse.next()
   // Static GETs can skip auth refresh; POSTs must never bypass read-only guards by using an image-like URL.
