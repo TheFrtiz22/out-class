@@ -10,6 +10,7 @@ import { z } from "zod"
 import { prisma } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
+import { interviewCapabilities } from "@/lib/interview-access"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { roomInputSchema, roomTimesInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
 import { revalidatePath } from "next/cache"
@@ -112,15 +113,27 @@ async function addInterviewRoomTimesCommand(raw: unknown) {
       const sharedPanel = other.roomId !== room.id && other.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))
       if ((sameRoom || sharedPanel) && overlaps(slot, other, Math.max(room.buffer, other.room?.buffer ?? 0))) throw new ActionError(sharedPanel ? "An interviewer already has an overlapping room schedule." : "This room already has interview times that overlap these.")
     }
-    // A legacy room-level approval staffs new times at once; hold those people to their other commitments.
-    const approved = room.isOpen && room.panelApprovedBy ? room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) : []
-    if (approved.length) {
-      const members = await tx.clubMember.findMany({ where: { id: { in: approved }, clubId: room.clubId }, select: { userId: true } })
+    // Slots without a published panel fall back to the room-level approval in every reader, so
+    // new times must never pick up a panel implicitly from an outdated approval.
+    const legacy = room.isOpen && room.panelApprovedBy ? room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) : []
+    let retiredApproval = false
+    if (room.isOpen && room.panelApprovedBy && await tx.interviewSlot.count({ where: { roomId: room.id, panelScheduleVersionId: { not: null } } })) {
+      // The room is staffed through panel publication: retire the leftover room approval so the new
+      // times stay unstaffed until a publication staffs them. Retiring revokes booking access that
+      // still rests on that approval, so refuse rather than touch any such interview.
+      if (await tx.interviewBooking.count({ where: { slot: { roomId: room.id, panelScheduleVersionId: null } } })) throw new ActionError("Some interviews in this room still use its earlier interviewer approval, so dates can't be added here. Add them as a new room.")
+      await tx.interviewRoom.update({ where: { id: room.id }, data: { approvedPanelMemberIds: [], panelApprovedBy: null, panelApprovalRevision: { increment: 1 } } })
+      retiredApproval = true
+    } else if (legacy.length) {
+      // Room-level approval only: it staffs the new times at once, so it must still be valid
+      // (same rule as approveInterviewRoomPanel) and those people stay held to their other commitments.
+      const members = await tx.clubMember.findMany({ where: { id: { in: legacy }, clubId: room.clubId, status: "ACTIVE", user: { disabledAt: null } } })
+      if (members.length !== legacy.length || members.some(m => !interviewCapabilities(m).participate)) throw new ActionError("Someone on this room's approved panel can no longer interview. Ask the owner to re-approve the panel before adding dates.")
       await lockSchedulingPeople(tx, { exclusive: members.map(m => m.userId) })
       await assertOfficialPanelConflicts(tx, members.map(m => m.userId), slots.map((s, i) => ({ id: `new:${i}`, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), buffer: room.buffer })))
     }
     await tx.interviewSlot.createMany({ data: slots.map(s => ({ ...s, clubId: input.clubId, roomId: room.id, location: room.location })) })
-    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.times.add", details: { count: slots.length, dates: [...new Set(input.dates)].sort() } } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.times.add", details: { count: slots.length, dates: [...new Set(input.dates)].sort(), ...(retiredApproval ? { retiredRoomApproval: true } : {}) } } })
     return { id: room.id, count: slots.length }
   })
   revalidatePath(`/club/${input.clubId}/workspace`)
