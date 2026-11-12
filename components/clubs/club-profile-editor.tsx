@@ -2,6 +2,7 @@
 import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
+import { OnThisPage } from "@/components/ui/on-this-page"
 
 import { useEffect, useState, type ReactNode } from "react"
 import { BarChart3, Eye, IdCard, Link2, Palette, Plus, RotateCcw, ImageIcon, Users, X } from "@/components/icons"
@@ -50,8 +51,9 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
     <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Your public presence</p><h2 className="oc-section-heading mt-2">Make your club stand out.</h2><p className="mt-2 text-sm text-muted-foreground">Tell your story. Show what makes joining worthwhile.</p></div><Button type="button" variant="outline" onClick={() => setPreview(!preview)}><Eye size={16} />{preview ? "Back to editor" : "Full profile preview"}</Button></div>
     {demo && <p className="text-xs text-muted-foreground">Demo changes stay in this browser.</p>}
     {preview ? <div className="max-w-[var(--oc-reading-width)] space-y-5"><MarketingProfile assetPreview profile={draft} /><AboutSection assetPreview profile={draft} /><MarketingSections assetPreview profile={draft} /></div> : <>
-      <nav aria-label="Profile editor sections" className="flex flex-wrap gap-2">{sections.map(s => <Button key={s.id} type="button" size="sm" variant="outline" onClick={() => jump(s.id)}>{s.title}</Button>)}</nav>
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]">
+      <div className="oc-profile-editor-layout">
+      <OnThisPage label="On this page" sections={sections.map(({ id, title }) => ({ id, title }))} targetId={id => `profile-${id}`} onJump={jump} />
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]">
         <fieldset disabled={busy || !!clubId && (!draftSave.ready || draftSave.recovery != null)} className="min-w-0 space-y-4">
           {sections.map(({ id, title, icon: Icon }) => <details key={id} id={`profile-${id}`} open className="oc-content-panel scroll-mt-36"><summary className="cursor-pointer text-sm font-semibold"><span className="ml-2 inline-flex items-center gap-2"><Icon size={16} />{title}</span></summary><div className="space-y-5 pt-6">
             {id === "identity" && <><div className="grid gap-4 sm:grid-cols-2"><Field label="Club name"><Input required maxLength={150} value={draft.name} onChange={e => set("name", e.target.value)} /></Field><div className="space-y-2"><Field label="Short name"><Input maxLength={CLUB_SHORT_NAME_MAX} autoComplete="off" value={draft.shortName ?? ""} placeholder={clubAbbreviation(draft.name)} aria-describedby="club-short-name-hint" onChange={e => set("shortName", e.target.value === "" ? null : e.target.value)} /></Field><p id="club-short-name-hint" className="text-control text-muted-foreground">Shown in navigation when your club isn&rsquo;t selected.</p></div><Field label="Category"><Input required maxLength={100} list="club-categories" value={draft.category} onChange={e => set("category", e.target.value)} /><datalist id="club-categories">{["Finance", "Consulting", "Technology", "Arts & Culture", "Community Service", "Sports", "Academic", "Other"].map(c => <option key={c} value={c} />)}</datalist></Field></div><Field label="One-line pitch"><Input maxLength={300} value={draft.tagline} onChange={e => set("tagline", e.target.value)} placeholder="What makes your club different?" /></Field><Field label="About your club"><Textarea rows={6} maxLength={10000} value={draft.description} onChange={e => set("description", e.target.value)} /></Field><ProfileImageInput onUpload={onUpload} label="Club logo" logoPresentation={{text:draft.name.slice(0,2),color:draft.color,marketing:m}} value={draft.logoUrl} onChange={v => set("logoUrl", v)} /><LogoBackgroundPicker logoUrl={draft.logoUrl} name={draft.name} color={draft.color} marketing={m} onChange={value => marketing("logoBackground", value)} /><ProfileImageInput onUpload={onUpload} label="Cover banner" banner value={draft.bannerUrl} onChange={v => set("bannerUrl", v)} /><div className="grid gap-4 sm:grid-cols-2">{(["x", "y"] as const).map(axis => <Field key={axis} label={`Banner ${axis === "x" ? "horizontal" : "vertical"} focal point (%)`}><Input type="number" min={0} max={100} value={m.bannerPosition[axis]} onChange={e => marketing("bannerPosition", { ...m.bannerPosition, [axis]: Number(e.target.value) })} /></Field>)}</div></>}
@@ -74,6 +76,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
           </div></details>)}
         </fieldset>
         <aside className="hidden space-y-3 xl:sticky xl:top-36 xl:block"><p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"><Eye size={16} />Live public profile preview</p><MarketingProfile assetPreview profile={draft} compact action={<span className="rounded-md bg-primary px-4 py-2 text-xs text-primary-foreground">Apply now</span>} /><p className="text-xs leading-5 text-muted-foreground">Preview updates as you type. Publish when you’re ready.</p></aside>
+      </div>
       </div>
     </>}
     {clubId && <AutosaveStatus save={draftSave} />}

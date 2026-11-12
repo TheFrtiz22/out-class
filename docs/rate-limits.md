@@ -31,6 +31,7 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | `GET /api/calendar-feed/[token]` | IP, then token | 300 / min per IP (before the lookup; calendar services poll many feeds from shared addresses), 30 / 10 min per token |
 | `POST /api/school-requests` | IP | 10 / h (plus the existing 100/h global and 3/day per email in Postgres) |
 | `POST /api/auth/password-recovery` | IP | 30 / 15 min |
+| `POST /api/auth/two-step` | IP (plus per-account attempts) | 30 / 15 min |
 | `POST /api/auth/student-claim` | IP | 30 / 15 min |
 | Signup server action (`registerStudent`) | IP | 60 / h |
 | `POST /api/platform/elevation` | IP | 20 / 15 min |

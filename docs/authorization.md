@@ -44,6 +44,8 @@ Removing a reviewer membership would cascade evaluation history in the legacy sc
 3. An active `PlatformAdmin` database grant for that UUID.
 4. An authenticated `aal2` session (MFA).
 
+**With optional two-step sign-in on (`OUTCLASS_USER_MFA=1`)**, an administrator's normal sign-in also stops at `/auth/two-step` (their admin authenticator is a verified account factor), and `/platform/login` then asks for the password and a code again. This double prompt is deliberate. Exempting `/platform/login`, `/api/platform/elevation` and `/api/platform/eligibility` from the account-level challenge would also require opening `/api/users/me` (the login page reads the signed-in account from it) to a session that has not passed its second factor, and would add an allowlist check to edge middleware. The admin entry already re-verifies the password and requires `aal2`, so the extra code costs a few seconds for a handful of accounts and keeps a single rule: no route serves account data to an unverified session. The challenge redirect keeps `next=/platform/login`, so the admin returns there after the first code.
+
 There is no client/profile/admin-role shortcut, no email-based auto-grant, and no grant-management API. Provision the first grant out of band through your trusted database administration process:
 
 ```sql

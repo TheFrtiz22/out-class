@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ClubExportLink } from "@/components/club-export-link";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Input } from "@/components/ui/input";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import { PillSelect } from "@/components/ui/pill-select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "./events.css";
 import { EventShareButton } from "@/components/share/event-share-button";
@@ -49,7 +49,8 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
     finally { inFlight.current = false; setBusy(false) }
   }
   const event = rows.find(e => e.id === selected);
-  const visible = rows.filter(e => tab === "Upcoming" ? +new Date(e.endDate) > Date.now() && !["ARCHIVED", "CANCELLED"].includes(e.status) : tab === "Past" ? +new Date(e.endDate) <= Date.now() : tab === "Pending Approval" ? e.status === "PENDING" : tab === "Rejected" ? e.status === "REJECTED" : tab === "Closed" ? ["CANCELLED", "ARCHIVED"].includes(e.status) : e.status === "DRAFT");
+  const inTab = (name: string, e: ManagedCampusEvent) => name === "Upcoming" ? +new Date(e.endDate) > Date.now() && !["ARCHIVED", "CANCELLED"].includes(e.status) : name === "Past" ? +new Date(e.endDate) <= Date.now() : name === "Pending Approval" ? e.status === "PENDING" : name === "Rejected" ? e.status === "REJECTED" : name === "Closed" ? ["CANCELLED", "ARCHIVED"].includes(e.status) : e.status === "DRAFT";
+  const visible = rows.filter(e => inTab(tab, e));
   if (editing !== undefined) return <EventEditor key={editing?.id || "new"} clubId={clubId} clubName={clubName} event={editing} onClose={() => { setEditing(undefined); setRetry(n => n + 1) }} onSaved={(next = "Drafts") => { setEditing(undefined); setTab(next); setRetry(n => n + 1) }} />;
   function actions(e: ManagedCampusEvent) {
     return <div className="oc-event-actions">
@@ -74,7 +75,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
         {canSeeAttendees ? <RsvpDashboard key={event.id} event={event} membership={membership} /> : <p className="text-sm">{eventRsvpSummary(event.rsvpCount, event.capacity)}. Attendee access requires attendance-management permission.</p>}
       </div>
     </div> : <>
-      <SegmentedControl label="Event filter" className="oc-event-management-tabs" value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t}${t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}` }))} />
+      <PillSelect label="Event filter" prefix="Status" size="compact" className="oc-event-management-status" active={false} value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t[0]}${t.slice(1).toLowerCase()} (${rows.filter(e => inTab(t, e)).length})` }))} />
       {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create event</Button></div> : !visible.length ? <div className="space-y-3 rounded-lg border p-8 text-sm"><p>None of your club’s events are {tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.</p><Button variant="outline" size="sm" onClick={() => setEditing(null)}>Create event</Button></div> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
         <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}

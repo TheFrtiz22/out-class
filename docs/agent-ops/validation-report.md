@@ -235,6 +235,7 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - tests/interview-room-names-25live.test.cjs + tests/room-names-25live-browser.test.cjs: 8 pass, 0 fail, 0 skipped (browser run in isolated Demo fixture, desktop 1280 and mobile 390 screenshots checked).
 - eslint on changed files: 0 errors. Local typecheck not usable (stale generated Prisma client on this machine also fails untouched main code); CI typecheck/build is the gate.
 - Not run: full pnpm run test locally (machine shared with a concurrent Codex session), authenticated check on a deployed site (no QA login available).
+- Post-merge: PR #300 merged as b2f94c95 with required checks green (validate, Integration infrastructure coverage, Native PostgreSQL security and transactions, Applicant application-writing). Non-required merge-bot check failed on getOctokit (fixed separately in #308). Vercel production deployment dpl_55RVqbf4XRSv2qpL3Jss1S7PQo1m READY for b2f94c95; get_runtime_errors over the following hour: none. No migration, env or data change.
 
 ## 2026-11-11 OPS-HEALTH-README ops/readme-health-audit (base main b2476112)
 - tests/health-route.test.cjs 6/6 (200 with DB; 503 on error and on 2 s timeout with mocked timers; no host/error text in body, headers or log; middleware bypass for GET/HEAD with demo, support and auth cookies; deploy.yml parses with js-yaml; audit gate classification and allowlist expiry). Negative control: with main's middleware.ts the bypass test fails.
@@ -277,3 +278,16 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - phosphor-icons 5 pass / 2 fail, environmental in this worktree (no local node_modules LICENSE; CRLF checkout of existing icon modules); new BoundingBox.tsx is LF.
 - eslint on changed files: 0 errors. check-ui-controls: OK. typecheck: only stale-Prisma-client errors (profileFieldVisibility/features/calendarFeedToken etc.), none new in changed files.
 - Not run: full pnpm test/test:migrations/build, real Supabase/staging, physical touch hardware.
+## 2026-11-11 ROOM-25LIVE-LIVE-QA-1 live check on https://uva.out-class.net (production b2f94c95+)
+- Signed in as the hidden QA Interview Test Club owner (owner approved resetting that QA account password; bcrypt hash set locally, one auth.users row). Cloudflare Turnstile blocks automated sign-in, so the owner completed the check by hand in a plain Chrome window; Playwright attached afterwards over CDP.
+- Unpublished "QA Interview Round 2": 14/16 checks pass. Notice text, 25Live link and new tab; create room; post-save reminder; notice on Confirm interviewers; Not-booked tag; card rename (Enter trims, Escape cancels, blank reverts, 60-char cap); rename persists after reload; rename from Manage room sheet; 25Live tick and name persist after reload; room closed.
+- Fail 1: checkbox did not tick until the save returned (fixed by ROOM-25LIVE-TOGGLE-1). Fail 2: one minified React #418 hydration error during the session, page not identified, not in Sentry.
+- DB audit for the test room: create, rename x2, external_booking.mark, close (Escape and blank produced no writes). Test room "QA Clark Study Room B 11120340" left closed. Not covered live: rename from the Bookings list (needs a real booking).
+- Side finding: production CSP (report-only) frame-src omits challenges.cloudflare.com; enforcing it as-is would block the login Turnstile.
+
+## 2026-11-11 UI-CONTROLS-1 ui/control-cleanup (stacked on applicants/review-flow, #281)
+- typecheck ok. lint 0 errors / 18 warnings (unchanged from #281). ui-controls OK (allowlist note about outclass-qr-code is pre-existing).
+- Unit (378 files, non-browser): 2174 tests, 2137 pass, 4 fail, 33 skipped. The 4 failing files (anonymous-review, integration-audit, interview-collaboration, performance-regressions) fail only because this container has no Prisma query engine binary; same on the base branch.
+- Browser (70 *-browser.test.cjs): all pass except interview-enter (fails on main and #281 too). Updated: nav-reorg, club-workspace-refinements, interview-round-workflow, interview-tab-retention, interview-date-sections, interview-entry, round-scoped-review, task-cleanup, scheduling-simplification.
+- Screenshots: 12 pages × desktop 1440 and 375, before (#281) and after; document scrollWidth equals viewport width on every page at 375.
+- Not run: pnpm build, DB e2e suites, test:migrations (no schema change).

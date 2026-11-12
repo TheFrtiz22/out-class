@@ -1,5 +1,6 @@
 "use client"
-import { PillGroup } from "@/components/ui/segmented-control"
+import { PillSelect } from "@/components/ui/pill-select"
+import { RoundSelect } from "@/components/ui/round-select"
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import type { getRankedReviewRound, getRankedReviewSettings, saveRankedReviewBands } from "@/lib/workspace-api"
 import { ApplicantIdentity } from "@/components/applicant-identity"
@@ -201,8 +202,8 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
   return <section ref={listRoot} className="oc-ranked-review space-y-4" aria-labelledby="ranked-review-heading">
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="grid gap-1 text-xs text-muted-foreground"><span>Round</span><PillGroup label="Ranked round" size="compact" value={roundId} onChange={value => { setRoundId(value); setChosenCycle(null) }} options={rounds.map(r => ({ value: r.id, label: r.name }))} /></div>
-        {cycleOptions.length > 1 && <div className="grid gap-1 text-xs text-muted-foreground"><span>Cycle</span><PillGroup label="Ranked cycle" size="compact" value={cycleKey} onChange={value => setChosenCycle(value)} options={cycleOptions.map(c => ({ value: c.key, label: c.label }))} /></div>}
+        <RoundSelect label="Ranked round" includeAll={false} value={roundId} onChange={value => { setRoundId(value); setChosenCycle(null) }} rounds={rounds} />
+        {cycleOptions.length > 1 && <PillSelect label="Ranked cycle" prefix="Cycle" size="compact" active={false} value={cycleKey} onChange={value => setChosenCycle(value)} options={cycleOptions.map(c => ({ value: c.key, label: c.label }))} />}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="sm" disabled={!shown} onClick={() => void check()}>Check for updates</Button>

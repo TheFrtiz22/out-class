@@ -90,7 +90,7 @@ async function verify(config, root) {
     console.log('Native concurrent saves and authenticated permission boundaries: PASS')
     const owner = await context('owner'); await owner.page.goto(`${config.appUrl}/club/${club.id}/workspace?section=recruitment&tool=interviews`)
     await owner.page.getByRole('tab', { name: 'Scheduling' }).click()
-    await owner.page.getByRole('group', { name: 'Recruitment round', exact: true }).locator(`button[data-value="${club.roundId}"]`).click()
+    await owner.page.getByRole('combobox', { name: 'Recruitment round', exact: true }).click(); await owner.page.locator(`[role=option][data-value="${club.roundId}"]`).click()
     await pickDate(owner.page, 'Week of', '2026-10-12')
     await owner.page.getByRole('heading', { name: 'Session coverage' }).waitFor()
     await owner.page.getByText('No confirmed availability at this time.', { exact: true }).waitFor()

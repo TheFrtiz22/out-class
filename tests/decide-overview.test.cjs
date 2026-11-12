@@ -66,7 +66,8 @@ test("the Decide link, tab changes and Back/Forward keep the round in the URL", 
   assert.equal(product.managerNavigation({ isOwner: true }, "c", "recruiting", "roundId=r").find(i => i.id === "decisions").href, "/club/c/workspace?section=recruitment&tool=decisions&decisionTab=overview&roundId=r")
   const page = fs.readFileSync("components/live-voting/decide-page.tsx", "utf8")
   // Tab and round changes both push history through go(), so Back/Forward restore round and tab.
-  assert.match(page, /onValueChange=\{value => go\(decisionsHref\(clubId, value as DecideTab, search\)\)\}/)
+  assert.match(page, /const open = \(step: DecideTab\) => go\(decisionsHref\(clubId, step, search\)\);/)
+  assert.match(page, /<Stepper label="Decide steps"[^>]*onSelect=\{open\}/)
   assert.match(page, /go\(`\/club\/\$\{encodeURIComponent\(clubId\)\}\/workspace\?\$\{next\}`\);/)
   assert.doesNotMatch(page, /workspace\?\$\{next\}`, true\)/)
   // Overview's step links are real links that keep the unsaved-work guard.

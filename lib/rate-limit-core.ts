@@ -30,6 +30,8 @@ export const RATE_LIMITS = {
   schoolRequests: { name: "school-requests", limit: 10, windowMs: 60 * minute },
   passwordRecovery: { name: "password-recovery", limit: 30, windowMs: 15 * minute },
   studentClaim: { name: "student-claim", limit: 30, windowMs: 15 * minute },
+  // Per address, on top of the per-account attempt count the two-step route keeps in the database.
+  twoStep: { name: "two-step", limit: 30, windowMs: 15 * minute },
   signup: { name: "signup", limit: 60, windowMs: 60 * minute },
   adminElevation: { name: "admin-elevation", limit: 20, windowMs: 15 * minute },
   adminViewAs: { name: "admin-view-as", limit: 60, windowMs: 10 * minute },

@@ -3,7 +3,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import {useDemoMode} from "@/contexts/demo-context";
 import {getVotingSlidePreparation,getVotingSlidePreparationApplicant,saveVotingSlidePreparation} from "@/lib/voting-slide-preparation-api";
 import {getLiveVotingPresentation} from "@/lib/voting-room-api";
-import {maxQuoteLength,maxSlideHighlights,maxSummaryLength,slideSourceTypeLabels,slideSourceTypes,slideTimingLabels,slideTimingShort,type SlideSource} from "@/lib/voting-slide-preparation";
+import {maxQuoteLength,maxSlideHighlights,maxSummaryLength,quotableSource,slideSourceTypeLabels,slideSourceTypes,slideTimingLabels,slideTimingShort,type SlideSource} from "@/lib/voting-slide-preparation";
 import {liveRoomPath,isStalePresentation} from "@/lib/voting-room";
 import {Button} from "@/components/ui/button";
 import {LoadingState} from "@/components/ui/loading-state";
@@ -166,16 +166,18 @@ function SourceUpdate({item,current,editable,onUse}:{item:Item;current:SlideSour
 function SourceCard({source,disabled,onAdd}:{source:SlideSource;disabled:boolean;onAdd:(s:SlideSource,mode:"QUOTE"|"SUMMARY",text:string)=>void}){
   const area=useRef<HTMLTextAreaElement>(null),writer=useRef<HTMLTextAreaElement>(null),[selection,setSelection]=useState(""),[summary,setSummary]=useState<string|null>(null);
   const writing=summary!==null;useEffect(()=>{if(writing)writer.current?.focus();},[writing]);
-  const short=source.text.length<=maxQuoteLength;
+  const short=source.text.length<=maxQuoteLength,quotable=quotableSource(source.type);
   const readSelection=()=>{const el=area.current;if(!el)return;setSelection(el.value.slice(el.selectionStart,el.selectionEnd).trim());};
   const meta=[source.label,source.author,source.roundName,source.revision?`Version ${source.revision}`:null].filter(Boolean).join(" · ");
-  return <article className="vr-prep-source">
+  return <article className="vr-prep-source" data-source-type={source.type}>
     <p className="text-xs text-muted-foreground">{meta}</p>
-    {short?<p className="whitespace-pre-wrap break-words">{source.text}</p>:
+    {!quotable?<p className="whitespace-pre-wrap break-words"><span className="font-medium">Interviewer note:</span> {source.text}</p>:
+    short?<p className="whitespace-pre-wrap break-words">{source.text}</p>:
       <><label className="sr-only" htmlFor={`source-${source.id}`}>{meta}. Select text to use as an excerpt.</label>
       <textarea id={`source-${source.id}`} ref={area} readOnly className="vr-prep-textarea" rows={4} value={source.text} onSelect={readSelection} onKeyUp={readSelection} onMouseUp={readSelection}/></>}
+    {!quotable&&<p className="text-xs text-muted-foreground">Marks a region of a résumé page, so there is no résumé text to quote. Write a summary instead.</p>}
     <div className="flex flex-wrap gap-2">
-      {short?<Button type="button" size="sm" variant="outline" disabled={disabled} onClick={()=>onAdd(source,"QUOTE",source.text.trim())}>Use as excerpt</Button>
+      {!quotable?null:short?<Button type="button" size="sm" variant="outline" disabled={disabled} onClick={()=>onAdd(source,"QUOTE",source.text.trim())}>Use as excerpt</Button>
         :<Button type="button" size="sm" variant="outline" disabled={disabled||!selection||selection.length>maxQuoteLength} onClick={()=>{onAdd(source,"QUOTE",selection);setSelection("");}}>{selection.length>maxQuoteLength?`Select under ${maxQuoteLength} characters`:"Use selected text"}</Button>}
       {summary===null?<Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={()=>setSummary("")}>Write a summary</Button>:null}
     </div>

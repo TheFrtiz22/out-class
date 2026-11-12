@@ -40,10 +40,13 @@ test("every phone bar link has an accessible name and the bar marks Recruiting a
   assert.match(source, /aria-label="More sections"/)
 })
 
-test("one segmented look for Decide's steps, phone Recruiting tabs and Interviews", () => {
-  assert.match(fs.readFileSync("components/live-voting/decide-page.tsx", "utf8"), /<TabsList variant="segmented" aria-label="Decide steps"/)
+test("Decide is a stepper, phone Recruiting tabs stay segmented, Interviews uses underlined page tabs", () => {
+  const decide = fs.readFileSync("components/live-voting/decide-page.tsx", "utf8")
+  assert.match(decide, /<Stepper label="Decide steps"/)
+  assert.match(decide, /<div className="oc-decide-header">\s*<Stepper[\s\S]*?<RoundSelect /, "the round dropdown shares the header row with the stepper")
+  assert.match(decide, /<StepperNav /)
   assert.match(fs.readFileSync("components/club-workspace.tsx", "utf8"), /<SectionTabs label="Recruiting sections"/)
-  assert.match(fs.readFileSync("components/interview-management-tabs.tsx", "utf8"), /<TabsList variant="segmented" aria-label="Interview management">/, "Interviews tabs use the same segmented pill track")
+  assert.match(fs.readFileSync("components/interview-management-tabs.tsx", "utf8"), /<TabsList variant="underline" aria-label="Interview management">/, "Interviews tabs are underlined page tabs")
 })
 
 test("Settings is configuration only and Members has one Add members menu", () => {
