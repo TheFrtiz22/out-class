@@ -158,7 +158,7 @@ test('sign-out clears the local copy and its key; another account gets nothing a
     await page.getByRole('button', { name: 'Fixture sign out' }).click()
     await page.waitForSelector('body[data-signed-out="true"]')
     const cleared = await vault(page)
-    assert.deepEqual(cleared.records, []); assert.equal(cleared.hasKey, false)
+    assert.deepEqual(cleared.records, []); assert.equal(cleared.exists, false)   // database (and key) deleted
     await page.close()
 
     // Account A leaves a copy; account B opens the same interview in this browser.

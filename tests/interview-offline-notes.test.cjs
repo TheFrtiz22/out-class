@@ -72,6 +72,7 @@ test('copies expire after 7 days and are purged on load (fake time)', async t =>
   t.mock.timers.tick(7 * 86400000 - 1000)
   assert.equal((await vault.readOfflineNotes(A, scope)).copy.value.questionNotes[0].notes, 'Week-old notes')
   t.mock.timers.tick(2000)
+  localStorage.setItem('outclass:autosave:owner', A)
   store.adoptAutosaveOwner(A); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r))
   assert.equal(backend.records.size, 0)
   await vault.writeOfflineNotes(copy(A, 'expired', { at: Date.now() - 8 * 86400000 }))
@@ -122,4 +123,32 @@ test('a copy that cannot be opened (missing key, failed decryption, storage erro
   assert.deepEqual(await vault.readOfflineNotes(A, scope), { copy: null, unreadable: true }); assert.equal(backend.records.size, 1)
   backend.get = get; await backend.dropKey(); await backend.addKey(saved)
   assert.equal((await vault.readOfflineNotes(A, scope)).copy.value.questionNotes[0].notes, 'Keep me even if unreadable')
+})
+
+test('sign-out resolves even if storage hangs, refuses later writes, and the next signed-in load purges what was left', async () => {
+  await vault.writeOfflineNotes(copy(A, 'left on disk by a hung sign-out'))
+  store.adoptAutosaveOwner(A); await new Promise(r => setTimeout(r, 20))
+  await vault.writeOfflineNotes(copy(A, 'left on disk by a hung sign-out'))
+  const hung = backend; hung.clear = () => new Promise(() => {}); hung.dropKey = () => new Promise(() => {})
+  const started = Date.now(); await store.sealAutosaveDraftsForSignOut(); const took = Date.now() - started
+  assert.ok(took >= 1900 && took < 3000, `took ${took} ms`)
+  assert.equal(localStorage.getItem('outclass:autosave:owner'), null)
+  assert.equal(await vault.writeOfflineNotes(copy(A, 'after sign-out')), false)
+  // Next page load (fresh module state) with the ciphertext still there: the missing owner marker purges it.
+  const left = memoryBackend(); for (const r of hung.records.values()) left.records.set(r.key, r)
+  vault.setOfflineNotesBackendForTests(left); store.resetAutosaveSealForTests(); backend = left
+  assert.equal(left.records.size, 1)
+  store.adoptAutosaveOwner(A); await new Promise(r => setTimeout(r, 20))
+  assert.equal(left.records.size, 0)
+})
+
+test('an explicit sign-out in another tab seals this page; a passive SIGNED_OUT keeps the copy', async () => {
+  localStorage.setItem('outclass:autosave:owner', A)
+  await vault.writeOfflineNotes(copy(A, 'passive sign-out keeps this'))
+  store.handleSignedOutEvent(); await new Promise(r => setTimeout(r, 20))
+  assert.equal(backend.records.size, 1); assert.equal(await vault.writeOfflineNotes(copy(A, 'still writable')), true)
+  localStorage.removeItem('outclass:autosave:owner')   // the other tab's explicit sign-out cleared the marker
+  store.handleSignedOutEvent(); await new Promise(r => setTimeout(r, 20))
+  assert.equal(backend.records.size, 0)
+  assert.equal(await vault.writeOfflineNotes(copy(A, 'dirty editor here')), false); assert.equal(backend.records.size, 0)
 })

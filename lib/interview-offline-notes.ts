@@ -43,6 +43,8 @@ export interface OfflineNotesBackend {
   /** Store `key` unless another tab stored one first; returns the key that is stored. */
   addKey(key: CryptoKey): Promise<CryptoKey>
   dropKey(): Promise<void>
+  /** Delete everything at once (sign-out). Optional: test backends fall back to clear + dropKey. */
+  destroy?(): Promise<void>
 }
 
 export function interviewNotesOnly(draft: InterviewDraft | LocalInterviewNotes): LocalInterviewNotes {
@@ -106,6 +108,20 @@ const indexedDbBackend: OfflineNotesBackend = {
     catch { const stored = await indexedDbBackend.getKey(); if (stored) return stored; throw Error("Offline notes key unavailable.") }
   },
   dropKey: async () => { await run(OFFLINE_KEYS_STORE, "readwrite", s => s.delete(DEVICE_KEY_ID)) },
+  // Sign-out: drop the key first on an already-open connection, then delete the whole database. Neither
+  // step waits for queued writes or for indexedDB.databases(); other tabs close on versionchange.
+  destroy: async () => {
+    const opened = database; database = null
+    if (opened) {
+      try {
+        const db = await opened, tx = db.transaction(OFFLINE_KEYS_STORE, "readwrite")
+        tx.objectStore(OFFLINE_KEYS_STORE).delete(DEVICE_KEY_ID)
+        await new Promise<void>(resolve => { tx.oncomplete = tx.onerror = tx.onabort = () => resolve() })
+        db.close()
+      } catch { /* The database deletion below removes the key too. */ }
+    }
+    await new Promise<void>((resolve, reject) => { const request = indexedDB.deleteDatabase(OFFLINE_NOTES_DB); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error) })
+  },
 }
 
 let override: OfflineNotesBackend | null = null
@@ -181,7 +197,12 @@ export function writeOfflineNotes(copy: OfflineNotesCopy): Promise<boolean> {
     // A newer write for this record is already queued: it carries the latest notes.
     if (sealed) return false
     if (generations.get(key) !== generation) return true
-    try { await backend().put(await seal(value, key)); return true } catch { return false }
+    try {
+      const record = await seal(value, key)
+      // Sign-out may have started while encrypting: never recreate a record after it.
+      if (sealed) return false
+      await backend().put(record); return true
+    } catch { return false }
   })
 }
 /** Delete this interview's copy (saved, submitted, or dismissed by the interviewer). */
@@ -242,9 +263,11 @@ export async function clearOfflineNotes({ seal: refuseWrites = false }: { seal?:
   pending.clear()
   for (const key of generations.keys()) generations.set(key, (generations.get(key) ?? 0) + 1)
   if (!offlineNotesSupported()) return
-  await Promise.allSettled([...chains.values()])
-  if (!(await databasePresent())) return
-  try { const store = backend(); await store.clear(); await store.dropKey() } catch { /* The next signed-in load purges other accounts' copies. */ }
+  try {
+    const store = backend()
+    if (store.destroy) await store.destroy()
+    else { await store.dropKey(); await store.clear() }
+  } catch { /* The next signed-in load after a sign-out purges every copy. */ }
 }
 /** Readable text of a copy's notes, for a read-only view (never applied or saved from there). */
 export function offlineNotesText(value: LocalInterviewNotes | null | undefined) {

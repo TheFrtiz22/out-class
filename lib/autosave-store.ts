@@ -114,6 +114,16 @@ export function sealAutosaveDraftsForSignOut(timeoutMs = 2000): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined
   return Promise.race([clearOfflineNotes({ seal: true }), new Promise<void>(resolve => { timer = setTimeout(resolve, timeoutMs) })]).finally(() => clearTimeout(timer))
 }
+/**
+ * Auth reported SIGNED_OUT. A passive sign-out (expiry, revocation) keeps the owner-keyed copies. An
+ * explicit sign-out in another tab removed the shared owner marker: seal this page too, so a dirty
+ * editor here cannot recreate a copy afterwards.
+ */
+export function handleSignedOutEvent() {
+  let marker: string | null = null
+  try { marker = storage("localStorage")?.getItem(OWNER_MARKER) ?? null } catch { return }
+  if (!marker) void sealAutosaveDraftsForSignOut()
+}
 /** Test hook: a fresh page load starts unsealed. */
 export function resetAutosaveSealForTests() { sealed = false }
 
@@ -133,7 +143,8 @@ function clearStorageCopies() {
  */
 export function adoptAutosaveOwner(owner: string) {
   if (!validDraftOwner(owner)) return
-  let previous: string | null = null
+  let previous: string | null = null, shared: string | null | undefined
+  try { shared = storage("localStorage")?.getItem(OWNER_MARKER) } catch { shared = undefined }
   for (const store of [storage("localStorage"), storage("sessionStorage")]) {
     try { previous ??= store?.getItem(OWNER_MARKER) ?? null } catch { /* Ignore. */ }
   }
@@ -146,9 +157,11 @@ export function adoptAutosaveOwner(owner: string) {
   for (const store of [storage("localStorage"), storage("sessionStorage")]) {
     try { store?.setItem(OWNER_MARKER, owner) } catch { /* Ignore. */ }
   }
-  // Interview notes carry their owner: on every signed-in load, drop expired copies and any copy
-  // another account left in this browser (including after a sign-out in another tab).
-  void purgeOfflineNotes({ owner, onlyIfPresent: true })
+  // No shared owner marker: this browser was signed out explicitly (sign-out removes it) or its storage
+  // was cleared. A sign-out that timed out may have left ciphertext behind: delete every device copy.
+  if (shared === null) void clearOfflineNotes()
+  // Otherwise interview notes carry their owner: drop expired copies and any other account's copies.
+  else void purgeOfflineNotes({ owner, onlyIfPresent: true })
 }
 
 export function browserOnline() {
