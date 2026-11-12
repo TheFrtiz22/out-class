@@ -72,11 +72,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - name: Run Next.js / Supabase Auth / SMTP / settings and selected-navigation integration
+      - name: Run Next.js / Supabase Auth / SMTP / settings, selected-navigation and active Interview Rooms integration
         env:
           OUTCLASS_HYDRATION_CAPTURE_DIR: ${{ runner.temp }}/hydration-captures
           OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
-        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair
+        run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair --active-interviews
       # Redacted `supabase start` output from any failed attempt (the runner retries once).
       - uses: actions/upload-artifact@v4
         if: always()
@@ -124,7 +124,20 @@ jobs:
       - name: Verify existing real Auth and production-build applicant journeys
         env:
           OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
-        run: node scripts/run-onboarding-e2e.cjs --${{ matrix.suite }}
+        # The shell suite keeps its signed-out production build (next start on 127.0.0.1:3107,
+        # disposable seeded clubs) running for the internal link crawl below.
+        run: node scripts/run-onboarding-e2e.cjs --${{ matrix.suite }}${{ matrix.suite == 'shell' && ' --keep' || '' }}
+      - name: Crawl public pages for broken internal links
+        if: matrix.suite == 'shell'
+        timeout-minutes: 2
+        run: node scripts/check-internal-links.cjs --base http://127.0.0.1:3107 --max-pages 200 --deadline-ms 50000
+      - name: Stop the kept disposable stack
+        if: always() && matrix.suite == 'shell'
+        run: |
+          if test -f /tmp/outclass-onboarding-e2e/server.pid; then kill "$(cat /tmp/outclass-onboarding-e2e/server.pid)" 2>/dev/null || true; fi
+          if test -f /tmp/outclass-onboarding-e2e/config.json; then
+            node node_modules/supabase/dist/supabase.js stop --workdir /tmp/outclass-onboarding-e2e --no-backup
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
