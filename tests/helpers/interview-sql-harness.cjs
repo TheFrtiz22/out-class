@@ -14,7 +14,7 @@ async function harness(options={}){
  relations.Application.club=['Club','clubId','id'];relations.PipelineRound={bookingCycle:['RecruitmentCycle','bookingCycleId','id']};
  relations.Application.bookings=['InterviewBooking','id','applicationId'];
  relations.InterviewRecord.application=['Application','applicationId','id'];
- relations.User.memberships=['ClubMember','id','userId'];relations.UserNotification={club:['Club','clubId','id']};
+ relations.User.memberships=['ClubMember','id','userId'];relations.UserNotification={club:['Club','clubId','id'],announcement:['ClubAnnouncement','announcementId','id']};
  relations.Club={pipelineRounds:['PipelineRound','id','clubId'],members:['ClubMember','id','clubId']};
  relations.PipelineRound.stableEvaluations=['Evaluation','id','roundId'];relations.Evaluation.interviewRecords=['InterviewRecord','id','evaluationId'];
  relations.ClubMember.club=['Club','clubId','id'];relations.ClubMember.interviewParticipation=['InterviewRoundParticipation','id','memberId'];
