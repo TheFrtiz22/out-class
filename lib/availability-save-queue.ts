@@ -1,3 +1,4 @@
+import { userMessage } from "@/lib/user-message"
 import type { AvailabilityDocument, AvailabilitySchedule } from "@/lib/availability"
 import { OfflineError } from "@/lib/autosave-queue"
 import { browserOnline, connectionMessage, connectionProblem, type ConnectionProblem, type DraftWriteResult } from "@/lib/autosave-store"
@@ -50,7 +51,7 @@ export class AvailabilitySaveQueue {
       } catch (error) {
         const problem = connectionProblem(error, this.online())
         if (problem) { this.connection(problem); throw new OfflineError(this.error) }
-        this.state = "error"; this.error = error instanceof Error ? error.message : "Could not save availability. Retry when connected."
+        this.state = "error"; this.error = userMessage(error, "Could not save availability. Retry when connected.")
         throw error
       } finally {
         this.flight = null; if (!this.disposed) this.notify()

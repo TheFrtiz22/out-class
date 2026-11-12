@@ -1,6 +1,7 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{harness}=require('./helpers/interview-sql-harness.cjs')
 async function fixture(t, runtimeRole=false){
- const h=await harness({permissiveDefaults:true,runtimeRole});t.after(()=>h.db.close());h.api=h.load('actions/panel-proposals.ts');h.rooms=h.load('actions/interview-rooms.ts')
+ const h=await harness({permissiveDefaults:true,runtimeRole});t.after(()=>h.db.close());h.api=h.load('actions/panel-proposals.ts');h.rooms=unwrapActions(h.load('actions/interview-rooms.ts'))
  h.scope={clubId:h.ids.club,roundId:h.ids.round};h.window={start:'2030-10-12T09:00:00.000Z',end:'2030-10-12T11:00:00.000Z'};h.options={maxConsecutiveMinutes:null,breakMinutes:15}
  const schedule={timezone:'UTC',weeklySubmitted:true,weekly:Array.from({length:7},()=>[[0,1440]]),exceptions:{}}
  for(const k of ['panel','peer']){await h.db.query('UPDATE "ClubMember" SET "accessRole"=\'INTERVIEWER\' WHERE id=$1',[h.ids[k+'Member']]);await h.db.query('INSERT INTO "InterviewRoundParticipation"(id,"clubId","memberId","roundId",availability,"confirmedAt") VALUES ($1,$2,$3,$4,$5,now())',[randomUUID(),h.ids.club,h.ids[k+'Member'],h.ids.round,JSON.stringify(schedule)])}

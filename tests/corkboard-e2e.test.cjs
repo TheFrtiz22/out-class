@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 const { test } = require("node:test"),
   assert = require("node:assert/strict"),
   fs = require("node:fs"),
@@ -70,8 +71,8 @@ test(
         template: "academic",
         useTemplate: true,
       };
-    await assert.rejects(action(outsider, "saveCampusEvent", base));
-    await assert.rejects(
+    await refused(action(outsider, "saveCampusEvent", base));
+    await refused(
       action(leader, "saveCampusEvent", { ...base, clubId: c.otherClubId }),
     );
     await assert.rejects(
@@ -136,7 +137,7 @@ test(
         approved: true,
       }),
     );
-    await assert.rejects(
+    await refused(
       action(admin, "reviewCampusEvent", {
         eventId: id,
         revision: draft.revision,
@@ -151,7 +152,7 @@ test(
         permissions: ["meetings.manage"],
       },
     });
-    await assert.rejects(
+    await refused(
       action(admin, "reviewCampusEvent", {
         eventId: id,
         revision: draft.revision,
@@ -195,7 +196,7 @@ test(
         clubId: c.clubId,
       },
     });
-    await assert.rejects(
+    await refused(
       action(admin, "reviewCampusEvent", {
         eventId: supportDraft.id,
         revision: supportDraft.revision,

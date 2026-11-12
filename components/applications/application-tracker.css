@@ -12,10 +12,10 @@
 .oc-application-identity button::after { content: ""; position: absolute; inset: 0; border-radius: var(--oc-content-radius); }
 .oc-application-identity button:focus-visible { outline: none; }
 .oc-application-round { font-size: var(--oc-text-caption); color: var(--muted-foreground); margin-top: .35rem; overflow-wrap: anywhere; }
-.oc-application-status { margin-left: auto; flex-shrink: 0; padding: .3rem .6rem; border: 0; border-radius: var(--oc-radius-sm); font-size: var(--oc-size-11); }
+.oc-application-status { margin-left: auto; flex-shrink: 0; padding: .3rem .6rem; border: 0; border-radius: var(--oc-radius-sm); font-size: var(--oc-size-12); }
 .oc-application-progress { grid-column: 1; width: 100%; max-width: 34rem; }
 .oc-application-row .oc-recruitment-timeline, .oc-application-row .oc-recruitment-timeline ol { margin: 0; }
-.oc-application-row .oc-recruitment-timeline strong { font-size: var(--oc-size-11); }
+.oc-application-row .oc-recruitment-timeline strong { font-size: var(--oc-size-12); }
 .oc-application-row .oc-recruitment-timeline small { display: none; }
 .oc-application-next { grid-column: 2; grid-row: 1 / 3; display: grid; grid-template-columns: 2.5rem minmax(0,1fr); align-content: center; align-items: start; gap: .65rem; border-left: 1px solid var(--border); padding-left: 1rem; }
 .oc-application-next p { font-size: var(--oc-text-caption); line-height: var(--oc-leading-body); color: var(--muted-foreground); overflow-wrap: anywhere; }
@@ -111,7 +111,7 @@
 .oc-writing-profile { border-top: 1px solid var(--border); padding-top: 1rem; }
 .oc-writing-profile summary { width: fit-content; cursor: pointer; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }
 .oc-writing-profile summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
-.oc-writing-profile-warning { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem 1rem; border-left: 3px solid var(--warning); padding: .5rem .875rem; background: var(--warning-subtle); font-size: var(--oc-text-caption); }
+.oc-writing-profile-warning { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem 1rem; border-left: 3px solid var(--warning); padding: .5rem .875rem; background: var(--warning-subtle); font-size: var(--oc-size-13); }
 .oc-writing-profile-warning p { flex: 1 1 24rem; }
 @media (max-width: 639px) {
   .oc-writing-workspace { gap: .75rem; }

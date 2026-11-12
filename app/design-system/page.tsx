@@ -2,6 +2,7 @@ import { notFound, unstable_rethrow } from "next/navigation"
 import { AdminAccessError } from "@/lib/admin-failure"
 import { requirePlatformAdmin } from "@/utils/platform-admin"
 import { DesignSystemReference } from "./design-system-reference"
+export const metadata = { title: "Design system · Admin", robots: { index: false, follow: false } }
 
 export const dynamic = "force-dynamic"
 

@@ -1,6 +1,7 @@
 // Opt-in, real multi-connection PostgreSQL regression suite. Never uses application DATABASE_URL.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const {randomUUID}=require('node:crypto');
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const databaseUrl=process.env.OUTCLASS_SECURITY_TEST_DATABASE_URL;
 
 test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions', {skip:!databaseUrl,timeout:120000},async t=>{
@@ -16,8 +17,8 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  const authAccount=()=>({user:account,supabaseUser:{id:account.id,email:account.email,confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-02'}});
  const mocks={'next/server':{after(){}},'@/utils/prisma':{prisma},'@/utils/verified-email-policy':{...load('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}},'@/utils/auth':{requireAuth:async()=>authAccount(),requireClubPermission:async(clubId,permissions)=>{const membership=await prisma.clubMember.findUnique({where:{userId_clubId:{userId:account.id,clubId}}});if(!membership||membership.status!=='ACTIVE'||(!membership.isOwner&&!permissions.every(p=>membership.permissions.includes(p))))throw Error('Denied');return{...authAccount(),membership};}},'@/utils/email':{invitationEmailConfig:()=>{},sendInvitationEmail:async data=>{smtp.push(data);await new Promise(resolve=>setTimeout(resolve,20));return{messageId:data.deliveryId};}}};
  new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),mod,mod.exports);return mod.exports;}
- const members=load('actions/organization-members.ts');
- const api=load('actions/club-onboarding.ts'),roster=load('actions/roster-import.ts'),mail=load('actions/invitation-emails.ts');
+ const members=unwrapActions(load('actions/organization-members.ts'));
+ const api=unwrapActions(load('actions/club-onboarding.ts')),roster=load('actions/roster-import.ts'),mail=unwrapActions(load('actions/invitation-emails.ts'));
  const club=await prisma.club.create({data:{name:'Security Club',slug:randomUUID(),tagline:'',description:'',color:'#ffffff',category:'Other'}});
  async function invitation(person,clubId,role='OWNER'){
   const identifier=person.email.split('@')[0];const identity=await prisma.schoolIdentity.upsert({where:{schoolId_identifierTypeId_normalizedIdentifier:{schoolId:'school-uva',identifierTypeId:'school-uva-computing-id',normalizedIdentifier:identifier}},create:{schoolId:'school-uva',identifierTypeId:'school-uva-computing-id',identifier,normalizedIdentifier:identifier},update:{}});
@@ -80,7 +81,7 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  // A legacy invitation cannot restore a removed member's retained access/history.
  const member=await createUser('removed');await prisma.clubMember.create({data:{userId:member.id,clubId:club.id,status:'LEFT'}});
  const legacy=await prisma.clubInvitation.create({data:{clubId:club.id,email:member.email,invitedBy:account.id,permissions:[],expiresAt:new Date(Date.now()+86400000)}});
- account=member;await assert.rejects(load('actions/club-access.ts').acceptClubInvitation(legacy.id),/inactive/);account=ownAccount;
+ account=member;await assert.rejects(unwrapActions(load('actions/club-access.ts')).acceptClubInvitation(legacy.id),/inactive/);account=ownAccount;
  // Database safeguards, with concurrent independent Prisma connections.
  const coOwner=await createUser('coowner');await prisma.clubMember.create({data:{userId:coOwner.id,clubId:club.id,isOwner:true}});
  const suspensions=await Promise.allSettled([prisma.user.update({where:{id:account.id},data:{disabledAt:new Date()}}),prisma.user.update({where:{id:coOwner.id},data:{disabledAt:new Date()}})]);

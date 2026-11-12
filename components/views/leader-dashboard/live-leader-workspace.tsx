@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
@@ -63,6 +64,7 @@ import { resolveRecruitingResumeUrl, safeProfileUrl } from "@/lib/student-profil
 import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { anonymousApplicantLabel } from "@/lib/anonymous-review"
 import { ApplicantProfileFacts, applicantProfileFacts } from "./applicant-profile-facts"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
@@ -467,7 +469,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setMessage("")
     try {
       if (kind === "review") {
-        if (!canEvaluate) throw new Error("A current panel assignment is required to submit this identified review.")
+        if (!canEvaluate) throw new UserFacingError("A current panel assignment is required to submit this identified review.")
         await draftSave.flush()
         const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
         if (!roundName) throw new Error()
@@ -884,7 +886,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     {!active.answers.length && <p className="text-sm text-muted-foreground">{anonymousActive ? "Responses and files are withheld during anonymous review." : "No club-specific responses."}</p>}
                   </section>
                   <section className="space-y-3 border-b border-border pb-6">
-                    <h3 className="oc-card-heading">Profile</h3>
+                    <div className="flex flex-wrap items-baseline justify-between gap-3"><h3 className="oc-card-heading">Profile</h3><ReportContentButton target={{ type: "student", clubId: membership.clubId, applicationId: active.id }} label="Report this profile" hidden={active.studentId === membership.userId || !hasPermission(membership, "applications.review")} ownerUserId={active.studentId} /></div>
                     {profile ? <ApplicantProfileFacts profile={profile} fields={profileFields} resume={resumeUrl && <ResumeViewerDialog href={resumeUrl} name={dossierName(active)} clubId={membership.clubId} applicationId={active.id} trigger="Résumé" />}>
                       <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
                     </ApplicantProfileFacts> : <p className="text-sm text-muted-foreground">No profile provided.</p>}
