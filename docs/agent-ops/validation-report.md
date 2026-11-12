@@ -235,6 +235,7 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - tests/interview-room-names-25live.test.cjs + tests/room-names-25live-browser.test.cjs: 8 pass, 0 fail, 0 skipped (browser run in isolated Demo fixture, desktop 1280 and mobile 390 screenshots checked).
 - eslint on changed files: 0 errors. Local typecheck not usable (stale generated Prisma client on this machine also fails untouched main code); CI typecheck/build is the gate.
 - Not run: full pnpm run test locally (machine shared with a concurrent Codex session), authenticated check on a deployed site (no QA login available).
+- Post-merge: PR #300 merged as b2f94c95 with required checks green (validate, Integration infrastructure coverage, Native PostgreSQL security and transactions, Applicant application-writing). Non-required merge-bot check failed on getOctokit (fixed separately in #308). Vercel production deployment dpl_55RVqbf4XRSv2qpL3Jss1S7PQo1m READY for b2f94c95; get_runtime_errors over the following hour: none. No migration, env or data change.
 
 ## 2026-11-11 OPS-HEALTH-README ops/readme-health-audit (base main b2476112)
 - tests/health-route.test.cjs 6/6 (200 with DB; 503 on error and on 2 s timeout with mocked timers; no host/error text in body, headers or log; middleware bypass for GET/HEAD with demo, support and auth cookies; deploy.yml parses with js-yaml; audit gate classification and allowlist expiry). Negative control: with main's middleware.ts the bypass test fails.
