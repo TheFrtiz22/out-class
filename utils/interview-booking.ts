@@ -4,7 +4,7 @@ import { validatePanelDocument, panelOptionsSchema, sameSessionTime, type PanelA
 /** One current staffing gate for publication, applicant reads and reservation confirmation. */
 export async function interviewBookingCoverage(tx: AppTransactionClient, clubId: string, roundId: string, applicant?: { id: string; studentId: string }) {
   const live = await loadPanelPlanningScene(tx, { clubId, roundId })
-  const slots = await tx.interviewSlot.findMany({ where: { clubId, room: { roundId, isOpen: true }, startTime: { gt: new Date() } }, include: { room: true, panelScheduleVersion: true } })
+  const slots = await tx.interviewSlot.findMany({ where: { clubId, room: { roundId, isOpen: true }, startTime: { gt: new Date() } }, include: { room: true, panelScheduleVersion: true, _count: { select: { bookings: true } } } })
   const owners = await tx.clubMember.findMany({ where: { clubId, isOwner: true, status: "ACTIVE", user: { disabledAt: null } }, select: { userId: true } })
   const revocations = applicant ? await tx.interviewPanelAssignment.findMany({ where: { applicationId: applicant.id, roundId, bookingManaged: false, revokedAt: { not: null } } }) : []
   const assignments: PanelAssignment[] = []
@@ -33,7 +33,9 @@ export async function interviewBookingCoverage(tx: AppTransactionClient, clubId:
   const active = await tx.interviewPanelScheduleVersion.findFirst({ where: { clubId, roundId, status: "PUBLISHED" }, orderBy: { version: "desc" } })
   const parsedOptions = panelOptionsSchema.safeParse((active?.document as { options?: unknown } | undefined)?.options)
   const validation = validatePanelDocument({ version: 1, window: live.window ?? { start: new Date().toISOString(), end: new Date(Date.now() + 1).toISOString() }, options: parsedOptions.success ? parsedOptions.data : { maxConsecutiveMinutes: null, breakMinutes: 15 }, sessions: scene.sessions, assignments }, scene)
-  return validation.sessions.filter(row => slots.some(s => s.id === row.slotId)).map(row => ({ slotId: row.slotId, bookable: approved.has(row.slotId) && row.unfilled === 0 && row.status === "FULLY_STAFFED", reasons: [
+  // A time with no interviewers and no bookings is simply not offered; it never blocks publishing.
+  const booked = new Map(slots.map(s => [s.id, s._count.bookings]))
+  return validation.sessions.filter(row => slots.some(s => s.id === row.slotId)).map(row => ({ slotId: row.slotId, bookable: approved.has(row.slotId) && row.unfilled === 0 && row.status === "FULLY_STAFFED", unoffered: row.proposed === 0 && !booked.get(row.slotId), reasons: [
     ...(!approved.has(row.slotId) ? ["Panel approval is required."] : []),
     ...(row.unfilled ? [`${row.unfilled} unfilled interviewer position${row.unfilled === 1 ? "" : "s"}.`] : []),
     ...validation.issues.filter(i => i.slotId === row.slotId).map(i => i.message),

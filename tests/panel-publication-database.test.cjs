@@ -40,7 +40,7 @@ test('understaffing defaults to blocked, safe explicit overrides are recorded, a
  workspace=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(workspace.published.version,1)
 })
 test('K: booking publication is separate from safe understaffed panel publication and preserves existing reservations',async t=>{
- const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[3];await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==empty)});const review=ok(await h.review());ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'Existing reservations are retained while staffing is completed.'}));
+ const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[1],dropped=d.document.assignments.find(a=>a.slotId===empty);await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a!==dropped)});const review=ok(await h.review());ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'Existing reservations are retained while staffing is completed.'}));
  const before=await h.snapshot(),booking=h.load('actions/interview-booking-publication.ts');await assert.rejects(booking.setInterviewBookingPublication({...h.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true}),/unfilled/);h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.publicationState,'NOT_PUBLISHED');assert.equal(schedule.rooms.length,0);assert.ok(schedule.booking);await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}),/aren.t open/);assert.deepEqual(await h.snapshot(),before);await h.rooms.cancelRoomBooking(schedule.booking.id);assert.equal((await h.snapshot()).InterviewBooking.length,0)
 })
 
@@ -120,4 +120,16 @@ test('un-staffing an unbooked session publishes an empty panel through the appro
  draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments.filter(a=>a.slotId!==h.slotIds[0])})
  const booked=await h.review();assert.equal(booked.ok,false);assert.match(booked.error,/booked session needs at least one interviewer/)
  assert.equal((await h.api.getPanelProposalWorkspace(h.scope)).published.version,2)
+})
+
+test('A: empty unbooked times never block booking publication and are never offered; partially staffed times still block',async t=>{
+ const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[3];await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==empty)})
+ // A never-staffed, unbooked session needs no understaffing reason; it simply is not offered.
+ const review=ok(await h.review());assert.equal(review.overrideRequired,false);assert.equal(review.unstaffed,0);assert.equal(review.unoffered,1);ok(await h.confirm(review))
+ const booking=h.load('actions/interview-booking-publication.ts'),coverage=(await booking.getInterviewBookingPublication(h.scope)).slots
+ assert.deepEqual(coverage.find(s=>s.slotId===empty),{...coverage.find(s=>s.slotId===empty),bookable:false,unoffered:true})
+ await booking.setInterviewBookingPublication({...h.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true})
+ const round=(await h.db.query('SELECT "bookingSlots","bookingPublishedAt" FROM "PipelineRound" WHERE id=$1',[h.ids.round])).rows[0];assert.ok(round.bookingPublishedAt);assert.equal(round.bookingSlots.some(s=>s.id===empty),false);assert.equal(round.bookingSlots.length,3)
+ h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.publicationState,'PUBLISHED');assert.equal(schedule.rooms.flatMap(r=>r.slots).some(s=>s.id===empty),false)
+ await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}))
 })
