@@ -503,7 +503,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               </FilterPopover>
               {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
             </div>
-            <SortControl className="oc-dt-cards-sort" label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
+            <SortControl className="oc-dt-cards-sort oc-dt-sort-until-md" label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
             </div>
             {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
             {selection.length > 0 && (

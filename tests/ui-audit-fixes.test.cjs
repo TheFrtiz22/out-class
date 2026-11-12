@@ -124,10 +124,17 @@ test("items 22, 23, 24 and 25: Members action in the header, shared empty states
   assert.match(read("components/organization-member-management.tsx"), /actionSlot \? createPortal\(addMembers, actionSlot\) : addMembers/)
   for (const file of ["components/events/club-events.tsx", "components/club-tasks.tsx", "components/events/public-event-board.tsx", "components/events/club-meetings-workspace.tsx"]) assert.match(read(file), /<EmptyState /, file)
   assert.doesNotMatch(read("components/events/club-events.tsx"), /rounded-lg border p-8/)
-  assert.match(read("styles/data-table.css"), /@container oc-dt-scope \(min-width: 640px\) \{ \.oc-sort-control\.oc-dt-cards-sort \{ display: none; \} \}/)
+  const dt = read("styles/data-table.css")
+  assert.match(dt, /@container oc-dt-scope \(min-width: 704px\) \{ \.oc-sort-control\.oc-dt-cards-sort:not\(\.oc-dt-sort-until-md\) \{ display: none; \} \}/)
+  assert.match(dt, /@container oc-dt-scope \(min-width: 824px\) \{ \.oc-sort-control\.oc-dt-cards-sort\.oc-dt-sort-until-md \{ display: none; \} \}/)
+  // A list whose sortable column only shows from md keeps its control until that header is visible.
+  for (const file of ["components/club-members.tsx", "components/organization-member-management.tsx", "components/interviews/interview-rooms-list.tsx"]) {
+    const source = read(file)
+    if (/sortKey: "[a-z]+", showFrom: "md"/.test(source)) assert.match(source, /<SortControl className="oc-dt-cards-sort oc-dt-sort-until-md"/, file)
+  }
   for (const file of ["components/club-members.tsx", "components/club-announcements.tsx", "components/organization-member-management.tsx", "components/interviews/interview-rooms-list.tsx"]) {
     const source = read(file)
-    assert.match(source, /oc-dt-scope/, file); assert.match(source, /<SortControl className="oc-dt-cards-sort"/, file)
+    assert.match(source, /oc-dt-scope/, file); assert.match(source, /<SortControl className="oc-dt-cards-sort[ "]/, file)
   }
   assert.match(read("lib/product-navigation.ts"), /item\("overview", TERMS\.recruitingOverview, "recruitment"\)/)
   assert.match(read("components/recruiting-overview.tsx"), /PageHeader|Recruiting/)

@@ -114,7 +114,10 @@ button.oc-dt-card-open::after { content: ""; position: absolute; inset: 0; }
 .oc-dt-primary { display: flex; align-items: center; gap: .5rem; min-width: 0; max-width: 100%; }
 .oc-dt-primary > .oc-dt-open { flex: 0 1 auto; }
 
-/* A SortControl beside a DataTable (UI audit item 24) is the only sort while the list shows cards. The page marks an
-   ancestor as wide as the list with .oc-dt-scope; the control hides at the same 640px where sortable headers appear. */
+/* A SortControl beside a DataTable (UI audit item 24) stays until every one of its options has a visible sortable header:
+   the table appears at 640px, and a sortable column marked showFrom="md" only at 760px (add .oc-dt-sort-until-md).
+   The page marks an ancestor about as wide as the list with .oc-dt-scope; 64px of slack covers the list being a little
+   narrower than that ancestor, so in between both may show, never neither. */
 .oc-dt-scope { container: oc-dt-scope / inline-size; }
-@container oc-dt-scope (min-width: 640px) { .oc-sort-control.oc-dt-cards-sort { display: none; } }
+@container oc-dt-scope (min-width: 704px) { .oc-sort-control.oc-dt-cards-sort:not(.oc-dt-sort-until-md) { display: none; } }
+@container oc-dt-scope (min-width: 824px) { .oc-sort-control.oc-dt-cards-sort.oc-dt-sort-until-md { display: none; } }
