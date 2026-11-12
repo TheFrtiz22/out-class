@@ -4,7 +4,7 @@ import Image from "next/image"
 import { ClubLogo } from "@/components/club-logo"
 import { clubAssetSource } from "@/lib/club-assets"
 import type { ReactNode } from "react"
-import { Globe, Instagram, Linkedin, Mail, ExternalLink, Check, Play } from "@/components/icons"
+import { Globe, Instagram, Linkedin, Mail, ExternalLink, Play } from "@/components/icons"
 import "@/components/clubs/profile-presentation.css"
 import { profileStatistics, readMarketing, type ClubMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
 import { presentPublicMarketing } from "@/lib/public-club-content"
@@ -91,7 +91,7 @@ export function MembersSection({ profile, assetPreview = false }: SectionProps) 
     {sections.map((s, i) => <ProfileSection key={i} section={s} assetPreview={assetPreview} parent="What members do" />)}
     {m.features.length > 0 && <div className="oc-club-subsection"><h3>Projects and highlights</h3><ul className="oc-club-feature-list">{m.features.map((f, i) => <li key={i}><h4>{f.title}</h4>{f.description && <p>{f.description}</p>}{f.url && <a className="oc-tap-link" href={f.url} target="_blank" rel="noopener noreferrer">Learn more about {f.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={14} aria-hidden="true" /></a>}</li>)}</ul></div>}
     <MemberOutcomes profile={profile} />
-    {accolades.length > 0 && <div className="oc-club-subsection"><h3>Recognition</h3><ul className="oc-club-check-list">{accolades.map((a, i) => <li key={i}><Check size={16} aria-hidden="true" />{a}</li>)}</ul></div>}
+    {accolades.length > 0 && <div className="oc-club-subsection"><h3>Recognition</h3><ul className="oc-club-list">{accolades.map((a, i) => <li key={i}>{a}</li>)}</ul></div>}
     {gallery.length > 0 && <div className="oc-club-subsection"><h3>A look inside</h3><div className="mt-4 grid grid-cols-2 gap-3">{gallery.map((g, i) => <figure key={i}><img src={clubAssetSource(g.url, assetPreview)} alt={g.caption || "Club activity"} className="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />{g.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{g.caption}</figcaption>}</figure>)}</div></div>}
   </section>
 }
@@ -110,7 +110,7 @@ export function LifeSection({ profile }: SectionProps) {
   if (!benefits.length && !facts.length) return null
   return <section className={sectionClass} aria-labelledby="club-life">
     <h2 id="club-life">Life in the club</h2>
-    {benefits.length > 0 && <ul className="oc-club-check-list">{benefits.map((b, i) => <li key={i}><Check size={16} aria-hidden="true" />{b}</li>)}</ul>}
+    {benefits.length > 0 && <ul className="oc-club-list">{benefits.map((b, i) => <li key={i}>{b}</li>)}</ul>}
     {facts.length > 0 && <dl className="oc-club-facts-list">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}
   </section>
 }

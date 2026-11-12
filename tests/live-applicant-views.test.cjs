@@ -10,7 +10,9 @@ function compile(file, mocks = {}) {
   new Function('require', 'module', 'exports', code)(name => mocks[name] || require(name.startsWith('@/') ? require('node:path').resolve(name.slice(2)) : name), mod, mod.exports)
   return mod.exports
 }
-const lifecycle = compile('lib/recruitment-lifecycle.ts', { '@prisma/client': {} })
+// recruitment-lifecycle throws ActionError (#292); action-result has no imports of its own.
+const actionResult = compile('lib/action-result.ts')
+const lifecycle = compile('lib/recruitment-lifecycle.ts', { '@prisma/client': {}, '@/lib/action-result': actionResult })
 const staged = compile('lib/staged-decisions.ts', { '@/lib/recruitment-lifecycle': lifecycle })
 const board = compile('lib/applicant-board.ts')
 const zod = require('zod')
@@ -109,7 +111,8 @@ test('server: staging needs decision access, refuses self and recused reviewers,
   assert.match(src, /const decideCaps = \["decisions\.manage", "applicants\.identify"\] as const/)
   const stage = src.slice(src.indexOf('export async function stageDecision'), src.indexOf('export async function clearStagedDecision'))
   for (const check of ['requireClubPermission(data.clubId, [...decideCaps])', 'authorizeClubTransaction(tx, data.clubId, user.id, decideCaps', 'app.studentId === user.id', 'app.status !== data.expectedStatus || app.roundId !== data.expectedRoundId', 'assertNotRecused(tx, app.id, member.id)', 'resolveStagedTarget(']) assert.ok(stage.includes(check), check)
-  const send = src.slice(src.indexOf('export async function sendStagedDecisions'))
+  const send = src.slice(src.indexOf('async function sendStagedDecisionsCommand'), src.indexOf('export async function sendStagedDecisions'))
+  assert.match(src, /export async function sendStagedDecisions\([^)]*\) \{\n  return actionResult\(\(\) => sendStagedDecisionsCommand\(input\), "sendStagedDecisions"\)/, 'Send refusals reach the user (#292)')
   for (const check of ['supportContext()', 'stagedIsStale(item, app)', 'publishRecruitmentDecision(tx,', 'hasPermission(member, "recruitment.manage")', 'tx.stagedDecision.delete(']) assert.ok(send.includes(check), check)
   assert.match(read('actions/evaluations.ts'), /boundedParse\(evaluateSchema, data\)/)
   assert.match(read('actions/evaluations.ts'), /validateRubricScores\(value, normalizeReviewRubric\(club\.reviewRubric\)\)/)

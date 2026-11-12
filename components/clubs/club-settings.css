@@ -131,6 +131,10 @@
   .oc-settings-desktop-navigation {
     display: none;
   }
+  /* Personal settings: phones reach sections from the /settings list and return by the breadcrumbs. */
+  .oc-personal-settings-menu {
+    display: none;
+  }
 }
 
 /* The surrounding label is the touch target; keep the checkbox itself square. */

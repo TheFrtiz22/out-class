@@ -49,6 +49,8 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
                 <h2>Legal</h2>
                 <a href="/privacy">Privacy</a>
                 <a href="/terms">Terms</a>
+                <a href="/cookies">Cookies</a>
+                <a href="/legal">Legal</a>
                 <a href={CONTACT_HREF}>Contact</a>
               </div>}
             </nav>

@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import "@/components/product/operational-dashboard.css"
 import "@/components/applicant-review/applicant-review.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"

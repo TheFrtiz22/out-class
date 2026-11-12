@@ -6,7 +6,7 @@ const { NextRequest } = require('next/server')
 function load(file, mocks = {}) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith('@/lib/rate-limit') ? load(name.slice(2) + '.ts') : require(name), mod, mod.exports)
   return mod.exports
 }
 const access = load('lib/demo/access.ts', { '@/lib/auth': load('lib/auth.ts') })

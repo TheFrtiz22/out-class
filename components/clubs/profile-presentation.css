@@ -35,9 +35,9 @@
 .oc-tap-link, .oc-club-links a { display:inline-flex; align-items:center; gap:8px; min-height:44px; font-size:0.9375rem; text-decoration:underline; text-underline-offset:4px; }
 .oc-club-links { list-style:none; display:flex; flex-wrap:wrap; gap:0 24px; margin-top:12px; }
 .oc-tap-target { min-width:44px; min-height:44px; }
-.oc-club-check-list { list-style:none; display:grid; gap:10px; margin-top:12px; }
-.oc-club-check-list li { display:flex; gap:10px; font-size:var(--oc-size-16); line-height:1.6; }
-.oc-club-check-list svg { flex-shrink:0; margin-top:4px; color:var(--success, currentColor); }
+.oc-club-list { list-style:disc; display:grid; gap:8px; margin-top:12px; padding-left:1.25em; }
+.oc-club-list li { font-size:var(--oc-size-16); line-height:1.6; padding-left:2px; }
+.oc-club-list li::marker { color:var(--muted-foreground); }
 .oc-club-facts-list { display:grid; gap:16px; margin-top:20px; }
 .oc-club-facts-list dt { font-size:0.9375rem; font-weight:600; }
 .oc-club-facts-list dd { margin-top:4px; white-space:pre-line; font-size:var(--oc-size-16); line-height:1.6; color:var(--muted-foreground); }

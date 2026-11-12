@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { PageHeader } from "@/components/ui/page-header";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
@@ -107,9 +108,7 @@ export function MeetingCheckIn() {
                 setResult(await checkInMeeting(demo.isDemoEnabled, id, token));
               } catch (e) {
                 setError(
-                  e instanceof Error
-                    ? e.message
-                    : "Check-in failed. Please try again.",
+                  userMessage(e, "Check-in failed. Please try again."),
                 );
               } finally {
                 setBusy(false);

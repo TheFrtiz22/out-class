@@ -1,8 +1,9 @@
-export class UniversityVerificationError extends Error {
+import { ActionError } from "@/lib/action-result";
+export class UniversityVerificationError extends ActionError {
   constructor(public readonly code: "UNIVERSITY_VERIFICATION_REQUIRED" | "UNIVERSITY_VERIFICATION_UNAVAILABLE") {
     super(code === "UNIVERSITY_VERIFICATION_REQUIRED"
       ? "Verify your university email through the normal email verification or password recovery flow before responding to invitations."
-      : "University email verification is temporarily unavailable. Try again later.");
+      : "University email verification is temporarily unavailable. Try again later.", code);
   }
 }
 
