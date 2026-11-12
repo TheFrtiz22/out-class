@@ -14,6 +14,7 @@ import { allowedByProfileCeiling, normalizeProfileFieldVisibility } from "@/lib/
 import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { votingHighlightChoices } from "@/utils/voting-room-presentation";
 import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
+import { joinMeetingPreview } from "@/lib/voting-session-setup";
 
 export async function getLiveVotingSetup(input:unknown){
   const d=z.object({clubId:z.string().uuid(),cycleId:z.string().uuid().optional(),roundId:z.string().uuid().optional()}).strict().parse(input);
@@ -66,7 +67,8 @@ export async function getLiveVotingJoinInfo(input:unknown){
     if(round.archivedAt||cycle?.archivedAt)return {status:"EXPIRED" as const};
     try{if(!roomAuthority(s,m,round.anonymousReview).voter)return {status:"DENIED" as const};}catch{return {status:"DENIED" as const};}
     if(s.state==="COMPLETED"||s.finalizedAt)return {status:"ENDED" as const};
-    return {status:s.participants.find(p=>p.memberId===m.id)?.joinedAt?"JOINED" as const:"READY" as const};
+    const meeting=joinMeetingPreview((s.presentationOptions as {meeting?:unknown}|null)?.meeting,s.state==="DRAFT"&&!s.startedAt);
+    return {status:s.participants.find(p=>p.memberId===m.id)?.joinedAt?"JOINED" as const:"READY" as const,meeting};
   },votingReadLimits);
 }
 export async function joinLiveVotingRoom(input:unknown){

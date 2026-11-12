@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { limitRequest, RATE_LIMITS } from "@/lib/rate-limit"
 import { unsubscribeOutcome, verifyUnsubscribeToken } from "@/lib/email-unsubscribe"
 import { emailPreferencesPath, escapeEmailHtml } from "@/lib/transactional-email"
 import { applyEmailUnsubscribe } from "@/utils/notification-preferences"
@@ -28,6 +29,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const limited = limitRequest(request, RATE_LIMITS.emailUnsubscribe)
+  if (limited) return limited
   const claim = verifyUnsubscribeToken(new URL(request.url).searchParams.get("token"))
   if (!claim) return page(400, "Link not valid", "This unsubscribe link is not valid. You can change your email preferences after signing in.")
   // RFC 8058 providers send "List-Unsubscribe=One-Click"; the confirmation form sends source=page.

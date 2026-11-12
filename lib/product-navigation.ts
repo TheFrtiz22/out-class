@@ -47,8 +47,8 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(interviewCapabilities(member).readClosing ? [item("reviews", "Submitted reviews", "recruitment", { hidden: true, href: applicantInterviewHref(clubId, "reviews", search) })] : []),
       // Interview participants reach kits here (Settings no longer repeats the Interviews tool).
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate ? [item("interviews", "Interviews", "recruitment")] : []),
-      // Decide keeps the internal `tool=decisions` value; its tabs are Vote (decisionTab=voting) and Send (decisionTab=letters).
-      ...(canVote || canSend ? [item("decisions", "Decide", "recruitment", { href: decisionsHref(clubId, canVote ? "voting" : "letters", search) })] : []),
+      // Decide keeps the internal `tool=decisions` value; it opens on Overview, then Vote (decisionTab=voting) and Send (decisionTab=letters).
+      ...(canVote || canSend ? [item("decisions", "Decide", "recruitment", { href: decisionsHref(clubId, "overview", search) })] : []),
       ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
   }
   return [item("overview", "Home"),
