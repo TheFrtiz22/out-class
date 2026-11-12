@@ -557,6 +557,7 @@ export function InterviewKitSession({
       {toolbar?.(!!session.completedAt)}
       <InterviewTimer key={session.id} scope={{ clubId, applicationId, roundId }} shared={collaboration.view?.timer} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
       {recovery.recovery != null && <AutosaveStatus save={{ ...recovery, state: "idle", error: "", flush: flushLatest }} />}
+      {recovery.deviceNotice && <p role="status" className="text-xs text-muted-foreground">{recovery.deviceNotice}</p>}
       {recovery.offlineBanner && !session.completedAt && <AutosaveStatus save={{ state: "offline", error: recovery.offlineBanner, flush: flushLatest }} />}
       <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? (connection === "offline" ? `Offline${notesKept}` : connection === "unreachable" ? `Couldn’t reach OutClass${notesKept}` : "Couldn’t save") : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>

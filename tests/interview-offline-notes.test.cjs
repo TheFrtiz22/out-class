@@ -38,27 +38,28 @@ test('stores only the interviewer\'s notes, encrypted with a non-extractable AES
   assert.doesNotMatch(raw, /Strong evidence|candidate|misc/)
   assert.equal(backend.key.extractable, false); assert.equal(backend.key.algorithm.name, 'AES-GCM'); assert.equal(backend.key.algorithm.length, 256)
   await assert.rejects(crypto.subtle.exportKey('raw', backend.key))
-  const read = await vault.readOfflineNotes(A, scope)
+  const read = (await vault.readOfflineNotes(A, scope)).copy
   assert.equal(read.value.questionNotes[0].notes, 'Strong evidence about the candidate')
   // Scores are never stored.
   assert.equal('score' in read.value, false); assert.equal('rubricScores' in read.value, false)
-  // Ciphertext moved under another key does not decrypt (additional data binds it) and is deleted.
+  // Ciphertext moved under another key does not decrypt (additional data binds it): never returned.
   const other = { ...scope, roundId: '00000000-0000-4000-8000-000000000009' }, otherKey = `${A}:${scope.clubId}:${scope.applicationId}:${other.roundId}`
   backend.records.set(otherKey, { ...record, key: otherKey })
-  assert.equal(await vault.readOfflineNotes(A, other), null); assert.equal(backend.records.has(otherKey), false)
+  assert.deepEqual(await vault.readOfflineNotes(A, other), { copy: null, unreadable: true })
 })
 
 test('another account on the same browser gets nothing, and the stale entry is deleted', async () => {
   await vault.writeOfflineNotes(copy(A, 'Account A private notes'))
   assert.equal(backend.records.size, 1)
-  assert.equal(await vault.readOfflineNotes(B, scope), null)
+  assert.equal((await vault.readOfflineNotes(B, scope)).copy, null)
   assert.equal(backend.records.size, 0)
-  assert.equal(await vault.readOfflineNotes(A, scope), null)
-  // A record whose readable owner was altered fails the inner owner check and is deleted too.
+  assert.equal((await vault.readOfflineNotes(A, scope)).copy, null)
+  // A record relabelled as B's never decrypts for B (the key is the additional data): B gets nothing.
   await vault.writeOfflineNotes(copy(A, 'Account A again'))
   const [record] = backend.records.values(), forged = `${B}:${scope.clubId}:${scope.applicationId}:${scope.roundId}`
   backend.records.clear(); backend.records.set(forged, { ...record, key: forged, owner: B })
-  assert.equal(await vault.readOfflineNotes(B, scope), null); assert.equal(backend.records.size, 0)
+  assert.deepEqual(await vault.readOfflineNotes(B, scope), { copy: null, unreadable: true })
+  backend.records.clear()
   // Signing in as another account purges the previous account's copies on load.
   await vault.writeOfflineNotes(copy(A, 'left behind'))
   store.adoptAutosaveOwner(A); store.adoptAutosaveOwner(B); await new Promise(r => setTimeout(r, 20))
@@ -69,12 +70,12 @@ test('copies expire after 7 days and are purged on load (fake time)', async t =>
   t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-11T12:00:00Z') })
   await vault.writeOfflineNotes(copy(A, 'Week-old notes', { at: Date.now() }))
   t.mock.timers.tick(7 * 86400000 - 1000)
-  assert.equal((await vault.readOfflineNotes(A, scope)).value.questionNotes[0].notes, 'Week-old notes')
+  assert.equal((await vault.readOfflineNotes(A, scope)).copy.value.questionNotes[0].notes, 'Week-old notes')
   t.mock.timers.tick(2000)
   store.adoptAutosaveOwner(A); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r))
   assert.equal(backend.records.size, 0)
   await vault.writeOfflineNotes(copy(A, 'expired', { at: Date.now() - 8 * 86400000 }))
-  assert.equal(await vault.readOfflineNotes(A, scope), null); assert.equal(backend.records.size, 0)
+  assert.equal((await vault.readOfflineNotes(A, scope)).copy, null); assert.equal(backend.records.size, 0)
 })
 
 test('sign-out deletes every copy and the device key, and refuses later writes from the page', async () => {
@@ -89,7 +90,7 @@ test('sign-out deletes every copy and the device key, and refuses later writes f
 test('writes and deletes stay ordered: a delete after a write wins, and the newest write is what is stored', async () => {
   const writes = [vault.writeOfflineNotes(copy(A, 'one')), vault.writeOfflineNotes(copy(A, 'two')), vault.writeOfflineNotes(copy(A, 'three'))]
   await Promise.all(writes)
-  assert.equal((await vault.readOfflineNotes(A, scope)).value.questionNotes[0].notes, 'three')
+  assert.equal((await vault.readOfflineNotes(A, scope)).copy.value.questionNotes[0].notes, 'three')
   void vault.writeOfflineNotes(copy(A, 'saved meanwhile')); await vault.deleteOfflineNotes(A, scope)
   assert.equal(backend.records.size, 0); assert.equal(vault.hasPendingOfflineNotes(), false)
 })
@@ -108,4 +109,17 @@ test('fingerprints ignore key order and scores; readable text never includes ids
   const b = { additionalNotes: 'x', overallReview: '', additionalQuestions: [], questionNotes: [], score: 9, rubricScores: { a: 1 } }
   assert.equal(vault.notesFingerprint(a), vault.notesFingerprint(b))
   assert.equal(vault.offlineNotesText(draft('Visible note')), 'Visible note\n\nmisc')
+})
+
+test('a copy that cannot be opened (missing key, failed decryption, storage error) is kept and reported, never deleted', async () => {
+  await vault.writeOfflineNotes(copy(A, 'Keep me even if unreadable'))
+  const saved = backend.key
+  await backend.dropKey()
+  assert.deepEqual(await vault.readOfflineNotes(A, scope), { copy: null, unreadable: true }); assert.equal(backend.records.size, 1)
+  await backend.addKey(await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']))
+  assert.deepEqual(await vault.readOfflineNotes(A, scope), { copy: null, unreadable: true }); assert.equal(backend.records.size, 1)
+  const get = backend.get; backend.get = async () => { throw Error('transient') }
+  assert.deepEqual(await vault.readOfflineNotes(A, scope), { copy: null, unreadable: true }); assert.equal(backend.records.size, 1)
+  backend.get = get; await backend.dropKey(); await backend.addKey(saved)
+  assert.equal((await vault.readOfflineNotes(A, scope)).copy.value.questionNotes[0].notes, 'Keep me even if unreadable')
 })

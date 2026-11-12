@@ -20,6 +20,7 @@ export const OFFLINE_NOTES_STORE = "interview-notes"
 export const OFFLINE_KEYS_STORE = "device-keys"
 export const OFFLINE_NOTES_MAX_AGE = 7 * 86400000
 export const OFFLINE_NOTES_MESSAGE = "You're offline. Your notes are kept on this device and will save when you reconnect."
+export const OFFLINE_NOTES_UNREADABLE = "A saved copy on this device couldn't be opened. It has been kept; your notes here still save to OutClass."
 const DEVICE_KEY_ID = "interview-notes-v1"
 const OWNER = /^[A-Za-z0-9_.@-]{1,120}$/
 const ID = /^[A-Za-z0-9_-]{1,80}$/
@@ -143,9 +144,9 @@ async function seal(copy: OfflineNotesCopy, key: string): Promise<StoredOfflineN
   return { key, owner: copy.owner, at: copy.at, iv, data }
 }
 async function open(record: StoredOfflineNotes): Promise<OfflineNotesCopy | null> {
-  const cryptoKey = await deviceKey(false)
-  if (!cryptoKey) return null
   try {
+    const cryptoKey = await deviceKey(false)
+    if (!cryptoKey) return null
     const plain = await subtle()!.decrypt({ name: "AES-GCM", iv: record.iv, additionalData: encoder.encode(record.key) }, cryptoKey, record.data)
     return JSON.parse(decoder.decode(plain)) as OfflineNotesCopy
   } catch { return null }
@@ -203,32 +204,34 @@ export async function purgeOfflineNotes({ owner, now = Date.now(), onlyIfPresent
     if (onlyIfPresent && !(await databasePresent())) return
     const store = backend()
     for (const record of await store.all()) {
-      const stale = typeof record?.at !== "number" || now - record.at > OFFLINE_NOTES_MAX_AGE || record.at - now > 60000
+      const stale = typeof record?.at !== "number" || now - record.at > OFFLINE_NOTES_MAX_AGE
       const foreign = owner != null && record?.owner !== owner
       if (stale || foreign) await enqueue(record.key, () => store.delete(record.key))
     }
   } catch { /* Storage can be unavailable; reads still check age and owner. */ }
 }
+export type OfflineNotesRead = { copy: OfflineNotesCopy | null; unreadable: boolean }
 /**
- * The signed-in interviewer's copy for this interview, or null. Expired copies, copies for another
- * account, and copies that fail to decrypt or do not match the requested key are deleted.
+ * The signed-in interviewer's copy for this interview. Only copies that are provably another
+ * account's or expired are deleted. A copy that cannot be opened (missing key, decryption or storage
+ * failure) is kept and reported as `unreadable`, never silently removed.
  */
-export async function readOfflineNotes(owner: string, scope: InterviewNotesScope, now = Date.now()): Promise<OfflineNotesCopy | null> {
-  if (!offlineNotesSupported() || !validNotesOwner(owner)) return null
+export async function readOfflineNotes(owner: string, scope: InterviewNotesScope, now = Date.now()): Promise<OfflineNotesRead> {
+  const none = { copy: null, unreadable: false }
+  if (!offlineNotesSupported() || !validNotesOwner(owner)) return none
   let key: string
-  try { key = offlineNotesKey(owner, scope) } catch { return null }
+  try { key = offlineNotesKey(owner, scope) } catch { return none }
   await purgeOfflineNotes({ owner, now })
-  try {
-    const store = backend()
-    await chains.get(key)?.catch(() => {})
-    const record = await store.get(key)
-    if (!record) return null
-    const copy = record.owner === owner ? await open(record) : null
-    const valid = copy && copy.owner === owner && offlineNotesKey(copy.owner, copy.scope) === key && typeof copy.at === "number" && now - copy.at <= OFFLINE_NOTES_MAX_AGE
-      && typeof copy.baseline === "string" && typeof copy.sessionId === "string" && Number.isInteger(copy.revision) && copy.value && typeof copy.value === "object"
-    if (!valid) { await enqueue(key, () => store.delete(key)); return null }
-    return { ...copy, value: interviewNotesOnly(copy.value) }
-  } catch { return null }
+  let record: StoredOfflineNotes | undefined
+  const store = backend()
+  try { await chains.get(key)?.catch(() => {}); record = await store.get(key) } catch { return { copy: null, unreadable: true } }
+  if (!record) return none
+  const copy = await open(record)
+  if (!copy) return { copy: null, unreadable: true }
+  const expired = typeof copy.at !== "number" || now - copy.at > OFFLINE_NOTES_MAX_AGE
+  if (copy.owner !== owner || expired) { await enqueue(key, () => store.delete(key)).catch(() => {}); return none }
+  const valid = typeof copy.baseline === "string" && typeof copy.sessionId === "string" && Number.isInteger(copy.revision) && !!copy.value && typeof copy.value === "object"
+  return valid ? { copy: { ...copy, value: interviewNotesOnly(copy.value) }, unreadable: false } : { copy: null, unreadable: true }
 }
 /**
  * Sign-out and account switch: delete every copy and the device key. With `seal`, later writes from

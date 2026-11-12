@@ -5,7 +5,7 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery"
 import { browserOnline, type DraftWriteResult } from "@/lib/autosave-store"
 import type { InterviewDraft, InterviewSessionData } from "@/lib/interview-kits"
-import { deleteOfflineNotes, interviewNotesOnly, notesFingerprint, OFFLINE_NOTES_MESSAGE, offlineNotesSupported, offlineNotesText, readOfflineNotes, validNotesOwner, writeOfflineNotes, type InterviewNotesScope, type LocalInterviewNotes } from "@/lib/interview-offline-notes"
+import { deleteOfflineNotes, interviewNotesOnly, notesFingerprint, OFFLINE_NOTES_MESSAGE, OFFLINE_NOTES_UNREADABLE, offlineNotesSupported, offlineNotesText, readOfflineNotes, validNotesOwner, writeOfflineNotes, type InterviewNotesScope, type LocalInterviewNotes } from "@/lib/interview-offline-notes"
 
 /**
  * Interview-room notes that survive a dropped connection and a reload (docs/interview-offline-notes.md).
@@ -53,12 +53,15 @@ export function useInterviewOfflineNotes({ scope, session, draft, saved, dirty, 
   const [conflict, setConflict] = useState<LocalInterviewNotes | null>(null), [reviewing, setReviewing] = useState(false)
   const [stored, setStored] = useState(false)
   const [unopened, setUnopened] = useState<LocalInterviewNotes | null>(null)
+  // A copy exists but could not be opened (missing key, storage or decryption failure): it is kept,
+  // never overwritten, and the interviewer is told.
+  const [unreadable, setUnreadable] = useState(false)
 
   // Session could not be opened (offline): show this interviewer's own copy read-only until reconnecting.
   useEffect(() => {
     if (!owner || session) return
     let current = true
-    void readOfflineNotes(owner, scopeRef.current).then(copy => { if (current) setUnopened(copy?.value ?? null) })
+    void readOfflineNotes(owner, scopeRef.current).then(read => { if (current) { setUnopened(read.copy?.value ?? null); setUnreadable(read.unreadable) } })
     return () => { current = false }
   }, [owner, session, clubId, applicationId, roundId])
 
@@ -68,8 +71,9 @@ export function useInterviewOfflineNotes({ scope, session, draft, saved, dirty, 
     if (!owner || !sessionId || readFor === sessionId) return
     let current = true
     void (async () => {
-      const copy = await readOfflineNotes(owner, scopeRef.current)
+      const read = await readOfflineNotes(owner, scopeRef.current), copy = read.copy
       if (!current) return
+      setUnreadable(read.unreadable)
       const { session: record, saved: savedNow, draft: draftNow } = latest.current
       if (!record || record.id !== sessionId) return
       setUnopened(null)
@@ -94,13 +98,13 @@ export function useInterviewOfflineNotes({ scope, session, draft, saved, dirty, 
   useEffect(() => {
     if (!owner || !sessionId) return
     if (completed) { void deleteOfflineNotes(owner, scopeRef.current); setStored(false); return }
-    if (readFor !== sessionId || conflict) return
+    if (readFor !== sessionId || conflict || unreadable) return
     if (notes === savedNotes || revision === undefined) { void deleteOfflineNotes(owner, scopeRef.current); setStored(false); return }
     let current = true
     void writeOfflineNotes({ owner, scope: scopeRef.current, sessionId, revision, baseline: savedNotes, value: interviewNotesOnly(latest.current.draft), at: Date.now() })
       .then(ok => { if (current) setStored(ok) })
     return () => { current = false }
-  }, [owner, sessionId, readFor, conflict, completed, notes, savedNotes, revision])
+  }, [owner, sessionId, readFor, conflict, unreadable, completed, notes, savedNotes, revision])
 
   const copyScope: DraftWriteResult = owner ? (stored ? "device" : false) : "tab"
   return {
@@ -119,6 +123,8 @@ export function useInterviewOfflineNotes({ scope, session, draft, saved, dirty, 
     copyScope,
     /** The exact offline banner text while notes are kept on this device, else "". */
     offlineBanner: owner && !online && !completed && (session ? stored || !dirty : !!unopened) ? OFFLINE_NOTES_MESSAGE : "",
+    /** Shown while a saved device copy exists but cannot be opened. */
+    deviceNotice: unreadable ? OFFLINE_NOTES_UNREADABLE : "",
     /** Read-only text of this interviewer's device copy while the session cannot be opened. */
     unopenedText: session ? "" : offlineNotesText(unopened),
   }
