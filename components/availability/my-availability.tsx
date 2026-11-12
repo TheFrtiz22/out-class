@@ -8,7 +8,11 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
-import { declineRoundParticipation, saveMyAvailability, saveMyRoundAvailability } from "@/actions/availability"
+import { declineRoundParticipation as declineRoundParticipationAction, saveMyAvailability as saveMyAvailabilityAction, saveMyRoundAvailability as saveMyRoundAvailabilityAction } from "@/actions/availability"
+import { unwrapped } from "@/lib/action-result"
+const declineRoundParticipation = unwrapped(declineRoundParticipationAction)
+const saveMyAvailability = unwrapped(saveMyAvailabilityAction)
+const saveMyRoundAvailability = unwrapped(saveMyRoundAvailabilityAction)
 import { availabilityHref, responseLabels, addDays, availabilityEditorDays, availabilityEditorKnownDays, editAvailabilityDays, restoreVisibleRecurring, monday, today, WEEK_DAYS, type AvailabilityDocument, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
 import { getMyAvailability, getMyRoundAvailability } from "@/lib/availability-workspace-read"
 import { saveAvailabilityWithRecovery } from "@/lib/availability-save-recovery"

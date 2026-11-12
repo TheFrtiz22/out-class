@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 import { z } from "zod";
 import { rubricScoresSchema } from "@/lib/review-rubric";
 export const kitQuestionSchema = z.object({
@@ -50,13 +51,13 @@ export function validateAdditionalQuestionSnapshots(previous: InterviewDraft, ne
   for (const old of previous.additionalQuestions) {
     const item = next.additionalQuestions.find(q => q.id === old.id);
     if (!item || item.question !== old.question || JSON.stringify(item.bankQuestion) !== JSON.stringify(old.bankQuestion))
-      throw new Error("Existing question prompts and answer-key snapshots must be preserved.");
+      throw new ActionError("Existing question prompts and answer-key snapshots must be preserved.");
   }
   for (const item of next.additionalQuestions) {
     if (!item.bankQuestion || previous.additionalQuestions.some(q => q.id === item.id)) continue;
     const source = bank.some(q => q.id === item.id && q.prompt === item.question && q.guidance === item.bankQuestion!.guidance);
     if (!source)
-      throw new Error("The question bank changed. Reload the bank before adding this question.");
+      throw new ActionError("The question bank changed. Reload the bank before adding this question.");
   }
 }
 export const emptyInterviewDraft: InterviewDraft = {
@@ -72,7 +73,7 @@ export function validateQuestionNotes(
   const ids = [...questions.map(q => q.id), ...draft.additionalQuestions.map(q => q.id)];
   const completed = draft.completedQuestionIds || [];
   if (new Set(ids).size !== ids.length || new Set(completed).size !== completed.length || completed.some(id => !ids.includes(id)))
-    throw new Error("Invalid completed question IDs.");
+    throw new ActionError("Invalid completed question IDs.");
   if (
     new Set(draft.questionNotes.map((n) => n.questionId)).size !==
       draft.questionNotes.length ||
@@ -80,12 +81,12 @@ export function validateQuestionNotes(
       (n) => !questions.some((q) => q.id === n.questionId),
     )
   )
-    throw new Error("Notes reference a question outside this interview kit.");
+    throw new ActionError("Notes reference a question outside this interview kit.");
   if (
     new Set(draft.additionalQuestions.map((q) => q.id)).size !==
     draft.additionalQuestions.length
   )
-    throw new Error("Additional question IDs must be unique.");
+    throw new ActionError("Additional question IDs must be unique.");
 }
 export type InterviewSessionData = {
   submittedQuestions?: import("zod").infer<typeof import("@/lib/interview-review-summary").submittedQuestionsSchema> | null;

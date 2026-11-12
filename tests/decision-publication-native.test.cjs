@@ -17,7 +17,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
  const member=await db.clubMember.create({data:{clubId:club.id,userId:leader.id,isOwner:true}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Review',order:0,type:'CUSTOM'}});
  let acting=leader,support=null;
  const load=loader({'@/utils/prisma':{prisma:db},'@/utils/auth':{requireClubPermission:async()=>({user:acting,membership:member}),requireAuth:async()=>({user:acting})},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()},'@/utils/admin-elevation':{requireAdminElevation:async()=>{throw Error('Unexpected elevation')}},'next/cache':{revalidatePath(){}}});
- const schedules=unwrapActions(load('actions/decision-schedules.ts')),worker=load('utils/scheduled-communications.ts'),management=load('actions/recruitment-management.ts'),communications=load('actions/communications.ts'),offers=load('utils/recruitment-offers.ts');
+ const schedules=unwrapActions(load('actions/decision-schedules.ts')),worker=load('utils/scheduled-communications.ts'),management=load('actions/recruitment-management.ts'),communications=unwrapActions(load('actions/communications.ts')),offers=load('utils/recruitment-offers.ts');
  async function application(){const user=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}});return db.application.create({data:{studentId:user.id,clubId:club.id,roundId:round.id,status:'IN_REVIEW',submittedAt:new Date()}})}
  const input=(app,status='WAITLISTED')=>({id:randomUUID(),clubId:club.id,localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER',selection:{kind:'DIRECT',applicationId:app.id,expectedGuard:guard(app),status}});
  const due=id=>db.scheduledCommunication.update({where:{id},data:{scheduledAt:new Date(Date.now()-1000)}});
@@ -115,7 +115,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
   // Mixed due backlog: real announcements on four other clubs, plus a locked
   // club, cancelled send, revoked sender and an expired crashed claim. One slow
   // atomic 50-applicant decision must not monopolize small-send capacity.
-  const announcements=load('actions/communication-schedules.ts'),small=[];
+  const announcements=unwrapActions(load('actions/communication-schedules.ts')),small=[];
   for(let c=0;c<4;c++){
    const fixture=await db.club.create({data:{slug:randomUUID(),name:'Capacity '+c,tagline:'',description:'',category:'Other',color:'#142d45'}});
    await db.clubMember.create({data:{clubId:fixture.id,userId:leader.id,isOwner:true}});

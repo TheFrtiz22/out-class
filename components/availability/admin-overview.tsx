@@ -9,7 +9,9 @@ import { ActionWorkflow } from "@/components/product/action-workflow";
 import {ScheduleAvailabilityRequest,AvailabilitySchedules} from "./scheduled-requests"
 import { useEffect, useMemo, useState } from "react"
 import { useRevalidate } from "@/hooks/use-revalidate"
-import { requestRoundAvailability } from "@/actions/availability"
+import { requestRoundAvailability as requestRoundAvailabilityAction } from "@/actions/availability"
+import { unwrapped } from "@/lib/action-result"
+const requestRoundAvailability = unwrapped(requestRoundAvailabilityAction)
 import { getAvailabilityOverview } from "@/lib/availability-workspace-read"
 import { getRoomWorkspace } from "@/lib/workspace-api"
 import { addDays, monday, today, WEEK_DAYS, responseLabels, type AvailabilityOverview } from "@/lib/availability"

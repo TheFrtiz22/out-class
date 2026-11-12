@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -48,7 +49,7 @@ test('roster preview, confirmation, rollback and retry respect the complete SQL 
     const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
     new Function('require','module','exports',code)(name=>name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireClubPermission:async()=>({user:{id:actor}})}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;
   }
-  const api=load('actions/roster-import.ts');
+  const api=unwrapActions(load('actions/roster-import.ts'));
   const preview=await api.previewRosterImport({clubId,requestId:randomUUID(),filename:'roster.csv',csv:'name,year,computing_id\nJohn,2028,JMS8XY\nJohn,2028,jms8xy\nSarah,,sl3ab\nBad,2040,bad12'});
   assert.equal(preview.summary.ready,2);
   assert.equal((await one('SELECT count(*)::int AS n FROM "SchoolIdentity"')).n,0);

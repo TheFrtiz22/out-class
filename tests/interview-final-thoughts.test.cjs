@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {harness}=require('./helpers/interview-harness.cjs');
 const words=n=>Array.from({length:n},(_,i)=>`word${i}`).join(' ');
@@ -18,7 +19,7 @@ test('real adapter autosaves over-limit thoughts separately, blocks completion, 
  const draft={...record.draft,score:9.5,applicantQuestions:'Legacy questions stay separate',finalInterviewThoughts:words(51)};
  record=(await api.saveInterviewSession({...h.scope,revision:0,draft})).session;
  assert.equal(record.draft.finalInterviewThoughts,draft.finalInterviewThoughts);
- await assert.rejects(api.saveInterviewSession({...h.scope,revision:1,draft,complete:true}),/50 words/);
+ await refused(api.saveInterviewSession({...h.scope,revision:1,draft,complete:true}),/50 words/);
  assert.equal(h.state.evaluations.length,0);assert.equal(h.state.records[0].completedAt,null);
  await assert.rejects(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}),/unavailable/i);
  const final={...draft,finalInterviewThoughts:words(50)};
@@ -27,7 +28,7 @@ test('real adapter autosaves over-limit thoughts separately, blocks completion, 
  const review=await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id});
  assert.equal(review.finalInterviewThoughts,final.finalInterviewThoughts);assert.equal(review.applicantQuestions,draft.applicantQuestions);assert.equal('draft' in review,false);
  await api.saveInterviewSession({...h.scope,revision:1,draft:final,complete:true});assert.equal(h.state.evaluations.length,1);
- await assert.rejects(api.saveInterviewSession({...h.scope,revision:2,draft:{...final,finalInterviewThoughts:'Rewrite'},complete:true}),/completed/);
+ await refused(api.saveInterviewSession({...h.scope,revision:2,draft:{...final,finalInterviewThoughts:'Rewrite'},complete:true}),/completed/);
  h.round.anonymousReview=true;assert.equal((await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id})).finalInterviewThoughts,'');
  h.as(11);await assert.rejects(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}),/Leadership|privacy/);
 });

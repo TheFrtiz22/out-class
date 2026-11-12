@@ -1,4 +1,5 @@
 "use client";
+import { unwrapped } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { ActionWorkflow } from "@/components/product/action-workflow";
@@ -13,12 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
-import { publishClubAnnouncement } from "@/actions/communications";
+import { publishClubAnnouncement as publishClubAnnouncementAction } from "@/actions/communications";
+const publishClubAnnouncement = unwrapped(publishClubAnnouncementAction);
 import { getClubAnnouncements } from "@/lib/workspace-read";
 import { RecipientGroups, AudienceEditor, AudiencePreview } from "@/components/recipient-audiences";
-import { getRecipientGroups, previewRecipientAudience } from "@/actions/recipient-groups";
+import { getRecipientGroups, previewRecipientAudience as previewRecipientAudienceAction } from "@/actions/recipient-groups";
+const previewRecipientAudience = unwrapped(previewRecipientAudienceAction);
 import { recipientAudienceSchema } from "@/lib/recipient-audience";
-import { saveCommunicationSchedule } from "@/actions/communication-schedules";
+import { saveCommunicationSchedule as saveCommunicationScheduleAction } from "@/actions/communication-schedules";
+const saveCommunicationSchedule = unwrapped(saveCommunicationScheduleAction);
 import { ScheduledCommunications, ScheduleFields, initialTiming, type ScheduledItem } from "@/components/communication-schedules";
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"

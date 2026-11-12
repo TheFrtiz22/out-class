@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 import { normalizeSchoolIdentifier } from "@/lib/club-onboarding";
 
 export const ROSTER_MAX_BYTES = 1024 * 1024;
@@ -12,21 +13,21 @@ export type RosterRow = {
 
 /** Strict comma-separated CSV, including escaped quotes and quoted newlines. */
 export function parseRosterCsv(text: string): RosterInputRow[] {
-  if (new TextEncoder().encode(text).length > ROSTER_MAX_BYTES) throw new Error("CSV must be 1 MB or smaller.");
-  if (text.includes("\0")) throw new Error("CSV contains unsupported binary content.");
-  if (/\uFFFD|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text)) throw new Error("CSV contains malformed encoding. Export it as UTF-8 CSV again.");
+  if (new TextEncoder().encode(text).length > ROSTER_MAX_BYTES) throw new ActionError("CSV must be 1 MB or smaller.");
+  if (text.includes("\0")) throw new ActionError("CSV contains unsupported binary content.");
+  if (/\uFFFD|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text)) throw new ActionError("CSV contains malformed encoding. Export it as UTF-8 CSV again.");
   text = text.replace(/^\uFEFF/, "");
   const records: string[][] = [];
   let record: string[] = [], cell = "", state: "plain" | "quoted" | "closed" = "plain";
   function finishCell() {
     record.push(cell); cell = ""; state = "plain";
-    if (record.length > 3) throw new Error("CSV must contain only name, year, and computing_id columns.");
+    if (record.length > 3) throw new ActionError("CSV must contain only name, year, and computing_id columns.");
   }
   function finishRecord() {
     finishCell();
     if (record.length > 1 || record.some(value => value.trim())) records.push(record);
     record = [];
-    if (records.length > ROSTER_MAX_ROWS + 1) throw new Error(`CSV cannot exceed ${ROSTER_MAX_ROWS} data rows.`);
+    if (records.length > ROSTER_MAX_ROWS + 1) throw new ActionError(`CSV cannot exceed ${ROSTER_MAX_ROWS} data rows.`);
   }
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
@@ -38,26 +39,26 @@ export function parseRosterCsv(text: string): RosterInputRow[] {
     else if (char === "\r" || char === "\n") { finishRecord(); if (char === "\r" && text[i + 1] === "\n") i++; }
     else if (char === '"' && state === "plain" && cell === "") state = "quoted";
     else {
-      if (state === "closed" || char === '"') throw new Error("Malformed CSV quoting. Export the file as comma-separated CSV again.");
+      if (state === "closed" || char === '"') throw new ActionError("Malformed CSV quoting. Export the file as comma-separated CSV again.");
       cell += char;
     }
-    if (cell.length > 2000) throw new Error("CSV cells cannot exceed 2,000 characters.");
+    if (cell.length > 2000) throw new ActionError("CSV cells cannot exceed 2,000 characters.");
   }
-  if (state === "quoted") throw new Error("CSV contains an unclosed quoted field.");
+  if (state === "quoted") throw new ActionError("CSV contains an unclosed quoted field.");
   if (cell || record.length || state === "closed") finishRecord();
   const headers = records.shift();
-  if (!headers) throw new Error("CSV is empty.");
+  if (!headers) throw new ActionError("CSV is empty.");
   const aliases: Record<string, keyof RosterInputRow> = { name: "name", fullname: "name", year: "year", graduationyear: "year", gradyear: "year", computingid: "computing_id" };
   const columns = headers.map(header => {
     const key = header.trim().toLowerCase().replace(/[ _-]/g, "");
-    if (!Object.hasOwn(aliases, key)) throw new Error(`Unsupported column: ${header.slice(0, 80)}. Use name, year, computing_id.`);
+    if (!Object.hasOwn(aliases, key)) throw new ActionError(`Unsupported column: ${header.slice(0, 80)}. Use name, year, computing_id.`);
     return aliases[key];
   });
-  if (new Set(columns).size !== columns.length) throw new Error("CSV has duplicate column headers.");
-  if (!columns.includes("name") || !columns.includes("computing_id")) throw new Error("CSV requires name and computing_id columns. Year is optional.");
-  if (!records.length) throw new Error("CSV contains no data rows.");
+  if (new Set(columns).size !== columns.length) throw new ActionError("CSV has duplicate column headers.");
+  if (!columns.includes("name") || !columns.includes("computing_id")) throw new ActionError("CSV requires name and computing_id columns. Year is optional.");
+  if (!records.length) throw new ActionError("CSV contains no data rows.");
   return records.map((values, index) => {
-    if (values.length !== columns.length) throw new Error(`Data row ${index + 1} has ${values.length} columns; expected ${columns.length}.`);
+    if (values.length !== columns.length) throw new ActionError(`Data row ${index + 1} has ${values.length} columns; expected ${columns.length}.`);
     const row: RosterInputRow = { name: "", year: "", computing_id: "" };
     columns.forEach((column, i) => { row[column] = values[i]; });
     return row;

@@ -14,7 +14,7 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:unwrapActions(load('actions/interview-kits.ts')),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
 }
 // Actions return through actionResult (#292): read the action's own value inside the envelope.
 const innerValue=r=>r.value&&r.value.$action?r.value.data:r.value;
@@ -77,7 +77,7 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  assert.equal(await prisma.evaluation.count({where:{applicationId:app.id,interviewerId:oneMember.id}}),1);
  assert.equal((await b.kits.openInterviewSession(scope)).completedAt,null);
  await assert.rejects(prisma.interviewRecord.update({where:{id:second.id},data:{completedAt:new Date()}}),/canonical submitted evaluation/,'The old deployed completion order must be blocked until the matching application is released');
- await assert.rejects(a.kits.saveInterviewSession({...scope,revision:2,draft:{...closing,score:9},complete:true}),/completed/);
+ await refused(a.kits.saveInterviewSession({...scope,revision:2,draft:{...closing,score:9},complete:true}),/completed/);
  await assert.rejects(a.evaluations.submitEvaluation({applicationId:app.id,clubId:club.id,roundId:round.id,score:9,notes:'Attempt rewrite'}));
  await assert.rejects(prisma.evaluation.update({where:{id:finished[0].evaluation.id},data:{score:9}}),/immutable/);
  const next=await prisma.pipelineRound.create({data:{clubId:club.id,name:'Interview',order:1,anonymousReview:true}});

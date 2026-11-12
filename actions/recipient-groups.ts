@@ -1,4 +1,5 @@
 "use server";
+import { ActionError, actionResult } from "@/lib/action-result";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { requireClubPermission } from "@/utils/auth";
@@ -14,7 +15,7 @@ const saveInput = z.object({ clubId: uuid, id: uuid, revision: z.number().int().
 }).strict().superRefine((d,ctx)=>{
   if (d.kind === "RULES" && (!d.rules || d.userIds.length || [...d.rules.include, ...d.rules.exclude].some(r=>r.source === "PEOPLE")) || d.kind === "MANUAL" && d.rules) ctx.addIssue({code:"custom",message:"Choose manual recipients or audience rules."});
 });
-export async function previewRecipientAudience(clubId: string, input: unknown) {
+async function previewRecipientAudienceCommand(clubId: string, input: unknown) {
   uuid.parse(clubId);
   assertBoundedInput(input, inputLimitsFor(recipientAudienceSchema));
   const { user } = await requireClubPermission(clubId, ["meetings.manage"]);
@@ -44,7 +45,7 @@ export async function getRecipientGroups(clubId: string) {
     };
   });
 }
-export async function saveRecipientGroup(input: unknown) {
+async function saveRecipientGroupCommand(input: unknown) {
   const d = boundedParse(saveInput, input);
   const { user } = await requireClubPermission(d.clubId, ["meetings.manage", "members.manage"]);
   return clubWriteTransaction(async tx => {
@@ -55,12 +56,12 @@ export async function saveRecipientGroup(input: unknown) {
     if (previous) {
       const entries = await tx.recipientGroupEntry.findMany({ where: { groupId: d.id, clubId: d.clubId }, select: { userId: true }, orderBy: { userId: "asc" } });
       if (previous.kind === d.kind && previous.name === d.name && audienceKey(previous.rules) === audienceKey(rules) && audienceKey(entries.map(e=>e.userId)) === audienceKey(ids)) return previous;
-      if (d.revision === null || previous.revision !== d.revision) throw Error("Group changed. Reload before saving.");
-    } else if (d.revision !== null) throw Error("Recipient group unavailable in this club.");
+      if (d.revision === null || previous.revision !== d.revision) throw new ActionError("Group changed. Reload before saving.", "STALE");
+    } else if (d.revision !== null) throw new ActionError("Recipient group unavailable in this club.", "STALE");
     const spec = d.kind === "MANUAL" ? { include: [{ source: "PEOPLE", userIds: ids }] } : rules;
     const resolved = await resolveRecipientAudience(tx, d.clubId, user.id, spec);
-    if (d.kind === "MANUAL" && resolved.length !== ids.length) throw Error("One or more recipients are unavailable in this club.");
-    if (!previous && await tx.recipientGroup.count({ where: { clubId: d.clubId } }) >= 100) throw Error("A club can have up to 100 recipient groups.");
+    if (d.kind === "MANUAL" && resolved.length !== ids.length) throw new ActionError("One or more recipients are unavailable in this club.", "STALE");
+    if (!previous && await tx.recipientGroup.count({ where: { clubId: d.clubId } }) >= 100) throw new ActionError("A club can have up to 100 recipient groups.");
     const data = { name: d.name, kind: d.kind, rules: rules ?? Prisma.DbNull };
     const group = previous ? await tx.recipientGroup.update({ where: { id: d.id }, data: { ...data, revision: { increment: 1 } } })
       : await tx.recipientGroup.create({ data: { id: d.id, clubId: d.clubId, ...data } });
@@ -72,17 +73,29 @@ export async function saveRecipientGroup(input: unknown) {
     return group;
   });
 }
-export async function deleteRecipientGroup(clubId: string, groupId: string, revision: number) {
+async function deleteRecipientGroupCommand(clubId: string, groupId: string, revision: number) {
   uuid.parse(clubId); uuid.parse(groupId); z.number().int().nonnegative().parse(revision);
   const { user } = await requireClubPermission(clubId, ["meetings.manage", "members.manage"]);
   return clubWriteTransaction(async tx => {
     await authorizeClubTransaction(tx, clubId, user.id, ["meetings.manage", "members.manage"]);
     const group = await tx.recipientGroup.findFirst({ where: { id: groupId, clubId, revision } });
-    if (!group) throw Error("Group unavailable or changed. Reload before deleting.");
+    if (!group) throw new ActionError("Group unavailable or changed. Reload before deleting.", "STALE");
     const others = await tx.recipientGroup.findMany({ where: { clubId, kind: "RULES", id: { not: groupId } }, select: { rules: true }, take: 100 });
-    if (others.some(g=>{const r=recipientAudienceSchema.parse(g.rules);return [...r.include,...r.exclude].some(rule=>rule.source==="GROUP"&&rule.groupId===groupId);})) throw Error("Remove this group from other saved rules first.");
+    if (others.some(g=>{const r=recipientAudienceSchema.parse(g.rules);return [...r.include,...r.exclude].some(rule=>rule.source==="GROUP"&&rule.groupId===groupId);})) throw new ActionError("Remove this group from other saved rules first.");
     await tx.recipientGroup.delete({ where: { id: groupId } });
     await tx.auditLog.create({ data: { actorId: user.id, clubId, action: "recipient.group.delete", targetId: groupId } });
     return { deleted: true };
   });
+}
+
+export async function previewRecipientAudience(...args: Parameters<typeof previewRecipientAudienceCommand>) {
+  return actionResult(() => previewRecipientAudienceCommand(...args), "previewRecipientAudience")
+}
+
+export async function saveRecipientGroup(...args: Parameters<typeof saveRecipientGroupCommand>) {
+  return actionResult(() => saveRecipientGroupCommand(...args), "saveRecipientGroup")
+}
+
+export async function deleteRecipientGroup(...args: Parameters<typeof deleteRecipientGroupCommand>) {
+  return actionResult(() => deleteRecipientGroupCommand(...args), "deleteRecipientGroup")
 }

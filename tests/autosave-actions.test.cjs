@@ -1,4 +1,4 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{loader}=require('./helpers/communications-loader.cjs'),{unwrapActions}=require('./helpers/action-result.cjs')
+const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{loader}=require('./helpers/communications-loader.cjs'),{unwrapActions,refused}=require('./helpers/action-result.cjs')
 const student=loader({})('lib/student-applications.ts'),profile=loader({})('lib/student-profile.ts'),clubId=randomUUID(),questionId=randomUUID(),userId=randomUUID()
 test('application autosave compares persisted answers, permits idempotent retries, and never submits',async()=>{
  let answers=[],status='DRAFTING';const transitions=[]
@@ -23,6 +23,6 @@ test('decision template autosave changes future wording without publishing decis
  const api=loader({'@/utils/auth':{requireClubPermission:async()=>({user:{id:userId}})},'@/utils/prisma':{prisma:{}},'@/utils/club-write-transaction':{clubWriteTransaction:fn=>fn(tx)},'@/lib/club-transaction-authorization':{authorizeClubTransaction:async()=>{}}})('actions/communications.ts')
  const next={ACCEPTED:{...letters.defaultLetters.ACCEPTED,body:'A private template'}}
  await api.saveDecisionTemplates(clubId,next,'{}');await api.saveDecisionTemplates(clubId,next,'{}')
- await assert.rejects(api.saveDecisionTemplates(clubId,{...next,ACCEPTED:{...next.ACCEPTED,body:'Other tab'}},'{}'),/another tab/)
+ assert.equal((await refused(api.saveDecisionTemplates(clubId,{...next,ACCEPTED:{...next.ACCEPTED,body:'Other tab'}},'{}'),/another tab/)).code,'STALE')
  assert.ok(writes.every(data=>Object.keys(data).join(',')==='decisionLetterTemplates'))
 })

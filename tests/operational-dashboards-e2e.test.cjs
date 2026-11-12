@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 // Real local Auth, production server actions, PostgreSQL and browser verification.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path')
 const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),{expect}=require('playwright/test'),AxeBuilder=require('@axe-core/playwright').default
@@ -50,7 +51,7 @@ test('operational dashboards authorize summaries and persist inline work with re
  assert.deepEqual(memberData.operations.rounds,[]);assert.deepEqual(memberData.operations.reviewWork,[]);assert.equal(memberData.operations.tasks.awaitingReview,null)
  assert.ok(reviewerData.operations.rounds.every(r=>r.anonymous));assert.ok(!JSON.stringify(reviewerData.operations).includes('Dashboard outsider'));assert.ok(!JSON.stringify(reviewerData.operations).includes(outsider.user.email))
  assert.ok(assignedData.operations.queue.some(a=>a.id===identified.id));assert.ok(!leaderData.operations.queue.some(a=>a.id===identified.id),'management alone is not panel assignment')
- await assert.rejects(overview(outsider));await assert.rejects(member.action('actions/tasks.ts','reviewTask',[{assignmentId:reviewAssignment.id,revision:1,feedback:'forbidden',reopen:false}]))
+ await assert.rejects(overview(outsider));await refused(member.action('actions/tasks.ts','reviewTask',[{assignmentId:reviewAssignment.id,revision:1,feedback:'forbidden',reopen:false}]))
  await assert.rejects(member.action('actions/tasks.ts','getTaskWorkspace',[second.id,{taskId:task.id}]))
  async function session(actor){const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});await context.addCookies([...actor.cookies].map(([name,value])=>({name,value,url:config.appUrl})));const page=await context.newPage();return {context,page}}
  const {page}=await session(owner),recruitUrl=config.appUrl+`/club/${club.id}/workspace?section=recruitment&tool=overview`,clubUrl=config.appUrl+`/club/${club.id}/workspace?section=overview`

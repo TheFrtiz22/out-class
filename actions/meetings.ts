@@ -1,4 +1,5 @@
 "use server";
+import { ActionError, actionResult } from "@/lib/action-result";
 import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 import { createHash, randomBytes } from "node:crypto";
@@ -35,7 +36,7 @@ export async function listMeetings(clubId?: string) {
     orderBy: [{ date: "desc" }, { id: "asc" }],
   });
 }
-export async function getMeeting(meetingId: string) {
+async function getMeetingCommand(meetingId: string) {
   z.string().uuid().parse(meetingId);
   const { user } = await requireAuth();
   const meeting = await prisma.meeting.findFirst({
@@ -48,10 +49,10 @@ export async function getMeeting(meetingId: string) {
     },
     select: meetingFields,
   });
-  if (!meeting) throw new Error("Meeting unavailable or access denied.");
+  if (!meeting) throw new ActionError("Meeting unavailable or access denied. Check the link or ask the club for a new one.", "NOT_FOUND");
   return meeting;
 }
-export async function saveMeeting(input: unknown) {
+async function saveMeetingCommand(input: unknown) {
   const data = boundedParse(meetingInputSchema, input);
   const { user } = await requireClubPermission(data.clubId, [
     "meetings.manage",
@@ -67,8 +68,9 @@ export async function saveMeeting(input: unknown) {
         data: { ...values, revision: { increment: 1 } },
       });
       if (result.count !== 1)
-        throw new Error(
+        throw new ActionError(
           "Meeting changed or is unavailable. Reload before editing.",
+          "STALE",
         );
       await tx.meetingCheckInToken.deleteMany({ where: { meetingId: id } });
       meeting = await tx.meeting.findUnique({
@@ -95,7 +97,7 @@ export async function saveMeeting(input: unknown) {
     return meeting!;
   });
 }
-export async function issueMeetingCheckIn(clubId: string, meetingId: string) {
+async function issueMeetingCheckInCommand(clubId: string, meetingId: string) {
   const { user } = await requireClubPermission(clubId, ["meetings.attendance"]);
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, clubId);
@@ -103,14 +105,14 @@ export async function issueMeetingCheckIn(clubId: string, meetingId: string) {
     const meeting = await tx.meeting.findFirst({
       where: { id: meetingId, clubId },
     });
-    if (!meeting) throw new Error("Meeting unavailable.");
+    if (!meeting) throw new ActionError("Meeting unavailable. Reload the meetings list.", "NOT_FOUND");
     await assertClubOperational(tx, meeting.clubId);
     const now = new Date();
     if (
       now.getTime() < meeting.date.getTime() - 3600000 ||
       now.getTime() > (meeting.endDate || meeting.date).getTime() + 6 * 3600000
     )
-      throw new Error(
+      throw new ActionError(
         "Attendance opens one hour before the meeting and closes six hours after its end (or start if no end is set).",
       );
     const token = randomBytes(32).toString("hex"),
@@ -144,41 +146,46 @@ export async function issueMeetingCheckIn(clubId: string, meetingId: string) {
     return { token, expiresAt: expiresAt.toISOString(), shortCode, shortUrl };
   });
 }
-export async function closeMeetingCheckIn(clubId: string, meetingId: string) {
+async function closeMeetingCheckInCommand(clubId: string, meetingId: string) {
   await requireClubPermission(clubId, ["meetings.attendance"]);
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, clubId);
     await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
     if (!(await tx.meeting.findFirst({ where: { id: meetingId, clubId } })))
-      throw new Error("Meeting unavailable.");
+      throw new ActionError("Meeting unavailable. Reload the meetings list.", "NOT_FOUND");
     await tx.meetingCheckInToken.deleteMany({ where: { meetingId } });
     await closeMeetingCheckInShortLinks(tx, meetingId);
     return { success: true };
   });
 }
-export async function checkInMeeting(
+async function checkInMeetingCommand(
   meetingId: string,
   token: string,
 ): Promise<CheckInResult> {
   z.string().uuid().parse(meetingId);
   if (!/^[a-f0-9]{64}$/.test(token))
-    throw new Error(
+    throw new ActionError(
       "Invalid check-in code. Scan the current QR code at the meeting.",
     );
   const { user } = await requireAuth();
+  // Callers who may not check in to this meeting get the same result as for a
+  // meeting that does not exist; club state is reported only to eligible callers.
+  const unavailable = () =>
+    new ActionError("Meeting unavailable. Scan the current QR code at the meeting.", "NOT_FOUND");
   return prisma.$transaction(async (tx) => {
     const scope = await tx.meeting.findUnique({ where: { id: meetingId }, select: { clubId: true } });
-    if (!scope) throw new Error("Meeting unavailable.");
-    await assertClubOperational(tx, scope.clubId);
+    if (!scope) throw unavailable();
+    // Same lock order as before (club share lock, then the meeting row); the
+    // suspension state is read after eligibility is known.
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
     await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
     const meeting = await tx.meeting.findUnique({ where: { id: meetingId }, include: { publication: true } });
-    if (!meeting) throw new Error("Meeting unavailable.");
-    await assertClubOperational(tx, meeting.clubId);
+    if (!meeting) throw unavailable();
     const membership = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: meeting.clubId } },
     });
-    if (!canReadMeeting(meeting, membership))
-      throw new Error("This meeting is available to club members only.");
+    if (!canReadMeeting(meeting, membership)) throw unavailable();
+    await assertClubOperational(tx, meeting.clubId);
     const access = await tx.meetingCheckInToken.findFirst({
       where: {
         meetingId,
@@ -187,8 +194,9 @@ export async function checkInMeeting(
       },
     });
     if (!access)
-      throw new Error(
+      throw new ActionError(
         "This code has expired or was closed. Scan the current QR code at the meeting.",
+        "CLOSED",
       );
     const issuer = await tx.clubMember.findUnique({
       where: {
@@ -204,8 +212,9 @@ export async function checkInMeeting(
       issuerUser.disabledAt ||
       !hasPermission(issuer, "meetings.attendance")
     )
-      throw new Error(
+      throw new ActionError(
         "This check-in session is no longer available. Ask a meeting manager to reopen it.",
+        "CLOSED",
       );
     const where = {
       eventId_studentId: { eventId: meetingId, studentId: user.id },
@@ -226,10 +235,10 @@ export async function checkInMeeting(
     };
   });
 }
-export async function meetingAttendance(clubId: string, meetingId: string) {
+async function meetingAttendanceCommand(clubId: string, meetingId: string) {
   await requireClubPermission(clubId, ["meetings.attendance"]);
   if (!(await prisma.meeting.findFirst({ where: { id: meetingId, clubId } })))
-    throw new Error("Meeting unavailable.");
+    throw new ActionError("Meeting unavailable. Reload the meetings list.", "NOT_FOUND");
   // Do not disclose names for applicants currently in anonymous review.
   const rows = await prisma.eventAttendance.findMany({
     where: { eventId: meetingId, event: { clubId } },
@@ -269,6 +278,7 @@ export async function recruitmentAttendanceSummary(
   clubId: string,
   applicationId: string,
 ) {
+  // Read only through /api/workspace, which answers every failure generically.
   const { membership } = await requireClubPermission(clubId, []);
   if (
     !hasPermission(membership, "applications.review") &&
@@ -298,4 +308,28 @@ export async function recruitmentAttendanceSummary(
     }),
   ]);
   return { held, attended };
+}
+
+export async function getMeeting(...args: Parameters<typeof getMeetingCommand>) {
+  return actionResult(() => getMeetingCommand(...args), "getMeeting")
+}
+
+export async function saveMeeting(...args: Parameters<typeof saveMeetingCommand>) {
+  return actionResult(() => saveMeetingCommand(...args), "saveMeeting")
+}
+
+export async function issueMeetingCheckIn(...args: Parameters<typeof issueMeetingCheckInCommand>) {
+  return actionResult(() => issueMeetingCheckInCommand(...args), "issueMeetingCheckIn")
+}
+
+export async function closeMeetingCheckIn(...args: Parameters<typeof closeMeetingCheckInCommand>) {
+  return actionResult(() => closeMeetingCheckInCommand(...args), "closeMeetingCheckIn")
+}
+
+export async function checkInMeeting(...args: Parameters<typeof checkInMeetingCommand>) {
+  return actionResult(() => checkInMeetingCommand(...args), "checkInMeeting")
+}
+
+export async function meetingAttendance(...args: Parameters<typeof meetingAttendanceCommand>) {
+  return actionResult(() => meetingAttendanceCommand(...args), "meetingAttendance")
 }

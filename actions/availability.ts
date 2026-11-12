@@ -1,4 +1,5 @@
 "use server"
+import { ActionError, actionResult } from "@/lib/action-result";
 
 import {publishAvailabilityRequest} from "@/utils/availability-publication"
 import {clubWriteTransaction} from "@/utils/club-write-transaction"
@@ -20,7 +21,7 @@ const changed = "Availability changed in another tab. Reload before saving again
 async function accountLock(tx: AppTransactionClient, userId: string) {
   await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`
   const user = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } })
-  if (!user || user.disabledAt) throw new Error("Account unavailable.")
+  if (!user || user.disabledAt) throw new ActionError("Account unavailable. Sign in again.", "FORBIDDEN")
 }
 async function roundFor(tx: AppTransactionClient, clubId: string, roundId: string) {
   const round = await tx.pipelineRound.findFirst({ where: { id: roundId, clubId, archivedAt: null }, include: { _count: { select: { interviewRooms: true } } } })
@@ -46,13 +47,13 @@ export async function getMyAvailability(): Promise<{ document: AvailabilityDocum
   }))
   return { document: document(saved, user.id), rounds }
 }
-export async function saveMyAvailability(raw: unknown): Promise<AvailabilityDocument> {
+async function saveMyAvailabilityCommand(raw: unknown): Promise<AvailabilityDocument> {
   const input = boundedParse(availabilitySaveSchema, raw), { user } = await requireAuth()
-  if (input.accountId && input.accountId !== user.id) throw new Error("Account changed. Reload your availability before saving.")
+  if (input.accountId && input.accountId !== user.id) throw new ActionError("Account changed. Reload your availability before saving.", "STALE")
   return prisma.$transaction(async tx => {
     await accountLock(tx, user.id)
     const old = await tx.userAvailability.findUnique({ where: { userId: user.id } })
-    if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
+    if ((old?.revision ?? 0) !== input.revision) throw new ActionError(changed, "STALE")
     validateAvailabilityEdit(input.schedule, old ? parseSchedule(old.schedule) : emptySchedule())
     const saved = await tx.userAvailability.upsert({ where: { userId: user.id }, create: { userId: user.id, schedule: input.schedule }, update: { schedule: input.schedule, revision: { increment: 1 } } })
     return document(saved, user.id)
@@ -71,21 +72,21 @@ export async function getMyRoundAvailability(raw: unknown) {
     return { preferredWeek: firstSlot ? monday(localParts(firstSlot.startTime, SCHEDULING_TIMEZONE).date) : undefined, document: { accountId: user.id, schedule: participation?.availability ? parseSchedule(participation.availability) : global.schedule, revision: participation?.revision ?? 0 }, global: global.schedule, confirmed: !!participation?.confirmedAt, declined: !!participation?.declinedAt, name: `${club.name} · ${round.name}` }
   })
 }
-export async function saveMyRoundAvailability(raw: unknown) {
+async function saveMyRoundAvailabilityCommand(raw: unknown) {
   const input = boundedParse(availabilitySaveSchema.extend({ clubId: id, roundId: id, confirm: z.boolean() }), raw), { user } = await requireAuth()
-  if (input.accountId && input.accountId !== user.id) throw new Error("Account changed. Reload your availability before saving.")
+  if (input.accountId && input.accountId !== user.id) throw new ActionError("Account changed. Reload your availability before saving.", "STALE")
   return prisma.$transaction(async tx => {
     const member = await authorizeClubTransaction(tx, input.clubId, user.id, [])
     const round = await roundFor(tx, input.clubId, input.roundId)
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
     const key = { memberId: member.id, roundId: round.id }
     const old = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: key } })
-    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You aren’t an interviewer for this round.")
-    if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
+    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new ActionError("You aren’t an interviewer for this round. Ask a recruitment manager if this is wrong.", "FORBIDDEN")
+    if ((old?.revision ?? 0) !== input.revision) throw new ActionError(changed, "STALE")
     const global = document(await tx.userAvailability.findUnique({ where: { userId: user.id } }), user.id).schedule
     const importingGlobal = JSON.stringify(input.schedule) === JSON.stringify(global)
     validateAvailabilityEdit(input.schedule, importingGlobal || !old?.availability ? global : parseSchedule(old.availability))
-    if (input.confirm && !input.schedule.weeklySubmitted && !Object.keys(input.schedule.exceptions).length) throw new Error("Submit your availability before confirming participation. You can explicitly save an empty week.")
+    if (input.confirm && !input.schedule.weeklySubmitted && !Object.keys(input.schedule.exceptions).length) throw new ActionError("Submit your availability before confirming participation. You can explicitly save an empty week.")
     const confirmedAt = input.confirm ? new Date() : null
     const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, availability: input.schedule, confirmedAt, declinedAt: null }, update: { availability: input.schedule, confirmedAt, declinedAt: null, revision: { increment: 1 } } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: saved.id, action: input.confirm ? "interview.participation.confirm" : "interview.participation.save" } })
@@ -105,17 +106,17 @@ export async function getInterviewerEligibility(clubId: string) {
   })
 }
 /** One atomic bulk operation. Scheduling eligibility never changes permissions. */
-export async function setInterviewerEligibility(raw: unknown) {
+async function setInterviewerEligibilityCommand(raw: unknown) {
   const input = boundedParse(z.object({ clubId: id, revision: z.number().int().nonnegative(), roles: z.array(z.enum(organizationRoles)).max(5).optional(), roundId: id.optional(), targets: z.array(z.object({ memberId: id, eligible: z.boolean().nullable() }).strict()).max(1000).default([]) }).strict(), raw)
-  if (new Set(input.targets.map(t => t.memberId)).size !== input.targets.length || (input.roundId && input.roles)) throw new Error("Choose each member once, and one place it applies.")
+  if (new Set(input.targets.map(t => t.memberId)).size !== input.targets.length || (input.roundId && input.roles)) throw new ActionError("Choose each member once, and one place it applies.")
   const { user } = await requireAuth()
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["members.manage"])
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId } })
-    if (club.interviewerEligibilityRevision !== input.revision) throw new Error("This changed elsewhere. Reload before saving.")
+    if (club.interviewerEligibilityRevision !== input.revision) throw new ActionError("This changed elsewhere. Reload before saving.", "STALE")
     if (input.roundId) await roundFor(tx, input.clubId, input.roundId)
     const targets = await tx.clubMember.findMany({ where: { id: { in: input.targets.map(t => t.memberId) }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } })
-    if (targets.length !== input.targets.length) throw new Error("Select active members of this club.")
+    if (targets.length !== input.targets.length) throw new ActionError("Select active members of this club.")
     for (const target of input.targets) {
       if (input.roundId) {
         const key = { memberId: target.memberId, roundId: input.roundId }
@@ -173,10 +174,10 @@ export async function getAvailabilityOverview(raw: unknown): Promise<Availabilit
   }, { timeout: 20000 })
 }
 /** Read-only input for a future panel proposal; never assigns or publishes. */
-export async function getEligibleInterviewerPool(raw: unknown) {
+async function getEligibleInterviewerPoolCommand(raw: unknown) {
   const input = scopeSchema.extend({ start: z.string().datetime(), end: z.string().datetime() }).parse(raw), { user } = await requireAuth()
   const start = +new Date(input.start), end = +new Date(input.end)
-  if (end <= start || end - start > 7 * 86400000) throw new Error("Choose a session of up to seven days.")
+  if (end <= start || end - start > 7 * 86400000) throw new ActionError("Choose a session of up to seven days.")
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"], { readOnly: true })
     await roundFor(tx, input.clubId, input.roundId)
@@ -186,23 +187,23 @@ export async function getEligibleInterviewerPool(raw: unknown) {
 }
 
 /** Collection changes never write proposals, official panels or applicant bookings. */
-export async function requestRoundAvailability(raw: unknown) {
+async function requestRoundAvailabilityCommand(raw: unknown) {
   const input = boundedParse(scopeSchema.extend({ memberIds: z.array(id).min(1).max(1000), reminder: z.boolean().default(false) }), raw)
   const { user } = await requireAuth()
   return clubWriteTransaction(tx=>publishAvailabilityRequest(tx,input,user.id),{maxWait:5000,timeout:20000})
 }
 
-export async function declineRoundParticipation(raw: unknown) {
+async function declineRoundParticipationCommand(raw: unknown) {
   const input = scopeSchema.extend({ revision: z.number().int().nonnegative(), accountId: id }).parse(raw), { user } = await requireAuth()
-  if (input.accountId !== user.id) throw new Error("Account changed. Reload before responding.")
+  if (input.accountId !== user.id) throw new ActionError("Account changed. Reload before responding.", "STALE")
   return prisma.$transaction(async tx => {
     const member = await authorizeClubTransaction(tx, input.clubId, user.id, [])
     await roundFor(tx, input.clubId, input.roundId)
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
     const key = { memberId: member.id, roundId: input.roundId }
     const old = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: key } })
-    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You aren’t an interviewer for this round.")
-    if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
+    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new ActionError("You aren’t an interviewer for this round. Ask a recruitment manager if this is wrong.", "FORBIDDEN")
+    if ((old?.revision ?? 0) !== input.revision) throw new ActionError(changed, "STALE")
     const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, declinedAt: new Date() }, update: { declinedAt: new Date(), confirmedAt: null, revision: { increment: 1 } } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: saved.id, action: "interview.participation.decline" } })
     return { revision: saved.revision }
@@ -224,4 +225,28 @@ export async function getRoundStaffingCoverage(raw: unknown) {
       slots: planning.scene.sessions.map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, active: s.active, required: s.required, assigned: s.existingMemberIds.length, availableMemberIds: planning.scene.members.filter(m => m.confirmed && m.allowedSlotIds.includes(s.id)).map(m => m.id) })),
     }
   }, { timeout: 20000 })
+}
+
+export async function saveMyAvailability(...args: Parameters<typeof saveMyAvailabilityCommand>) {
+  return actionResult(() => saveMyAvailabilityCommand(...args), "saveMyAvailability")
+}
+
+export async function saveMyRoundAvailability(...args: Parameters<typeof saveMyRoundAvailabilityCommand>) {
+  return actionResult(() => saveMyRoundAvailabilityCommand(...args), "saveMyRoundAvailability")
+}
+
+export async function setInterviewerEligibility(...args: Parameters<typeof setInterviewerEligibilityCommand>) {
+  return actionResult(() => setInterviewerEligibilityCommand(...args), "setInterviewerEligibility")
+}
+
+export async function getEligibleInterviewerPool(...args: Parameters<typeof getEligibleInterviewerPoolCommand>) {
+  return actionResult(() => getEligibleInterviewerPoolCommand(...args), "getEligibleInterviewerPool")
+}
+
+export async function requestRoundAvailability(...args: Parameters<typeof requestRoundAvailabilityCommand>) {
+  return actionResult(() => requestRoundAvailabilityCommand(...args), "requestRoundAvailability")
+}
+
+export async function declineRoundParticipation(...args: Parameters<typeof declineRoundParticipationCommand>) {
+  return actionResult(() => declineRoundParticipationCommand(...args), "declineRoundParticipation")
 }
