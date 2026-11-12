@@ -2,7 +2,8 @@ import { syncDemoBookingPanel } from "./interview-access-setup";
 import { demoBookingSettings, demoBookingCoverage, demoBookingNotice } from "./interview-booking";
 import { hasPermission } from "@/lib/permissions";
 import { demoStore, demoMember } from "./store"
-import { roomInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
+import { roomInputSchema, roomTimesInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 // Snapshot hydration revives dates; match the production DTO's ISO strings at this boundary.
 function presentBooking(booking: import("@/lib/interview-rooms").RoomBooking) {
   return { ...booking, startTime: new Date(booking.startTime).toISOString(), endTime: new Date(booking.endTime).toISOString() }
@@ -34,6 +35,16 @@ export async function createInterviewRoom(raw: RoomInput) {
   const id = crypto.randomUUID()
   demoStore.mutate(s => { s.interviewRooms ??= []; s.roomBookings ??= []; s.interviewRooms.push({ ...input, id, isOpen: true, slots: slots.map(slot => ({ ...slot, id: crypto.randomUUID(), startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), booked: 0 })) }) })
   return { id, count: slots.length }
+}
+/** Mirrors the live "Add dates": new times join the managed room; no copy is created. */
+export async function addInterviewRoomTimes(raw: unknown) {
+  const input = roomTimesInputSchema.parse(raw), s = manager(input.clubId)
+  const room = s.interviewRooms?.find(r => r.id === input.roomId && r.clubId === input.clubId)
+  if (!room) throw new Error("Room unavailable.")
+  const slots = roomSlots({ ...input, timezone: SCHEDULING_TIMEZONE, duration: room.duration, buffer: room.buffer })
+  if ((s.interviewRooms ?? []).some(r => r.clubId === input.clubId && (r.id === room.id || r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && (r.id === room.id || r.location.toLowerCase() === room.location.toLowerCase() || r.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && r.slots.some(a => slots.some(b => overlaps(a, b, Math.max(r.buffer, room.buffer)))))) throw new Error("This room or panel already has an overlapping schedule.")
+  demoStore.mutate(s => { const target = s.interviewRooms.find(r => r.id === room.id)!; target.slots.push(...slots.map(slot => ({ ...slot, id: crypto.randomUUID(), startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), booked: 0 }))); target.slots.sort((a, b) => +new Date(a.startTime) - +new Date(b.startTime)) })
+  return { id: room.id, count: slots.length }
 }
 export async function setInterviewRoomOpen({ roomId, open }: { roomId: string; open: boolean }) {
   const room = demoStore.get().interviewRooms?.find(r => r.id === roomId)

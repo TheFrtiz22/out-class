@@ -194,6 +194,7 @@ export const clearRecruitingRuleFlags = adapt(recruitingRules.clearRecruitingRul
 
 export const getRoomWorkspace = adapt((...args: Parameters<typeof roomApi.getRoomWorkspace>) => readWorkspace<Awaited<ReturnType<typeof roomApi.getRoomWorkspace>>>("roomWorkspace", args), "getRoomWorkspace")
 export const createInterviewRoom = adapt(roomApi.createInterviewRoom, "createInterviewRoom")
+export const addInterviewRoomTimes = adapt(roomApi.addInterviewRoomTimes, "addInterviewRoomTimes")
 export const setInterviewStaffingRequirement = adapt(roomApi.setInterviewStaffingRequirement, "setInterviewStaffingRequirement")
 export const setInterviewRoomOpen = adapt(roomApi.setInterviewRoomOpen, "setInterviewRoomOpen")
 export const renameInterviewRoom = adapt(roomApi.renameInterviewRoom, "renameInterviewRoom")

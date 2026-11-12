@@ -28,6 +28,9 @@ export const roomInputSchema = z.object({
   panelMemberIds: z.array(z.string().uuid()).max(10).default([]),
 }).refine(v => v.kind !== "VIRTUAL" || /^https:\/\//i.test(v.location) && (() => { try { return !!new URL(v.location).hostname } catch { return false } })(), { message: "Use a full https:// meeting link.", path: ["location"] })
 export type RoomInput = z.infer<typeof roomInputSchema>
+/** "Add dates" from Manage room: more times for one existing room, which keeps its location, length and buffer. */
+export const roomTimesInputSchema = roomInputSchema.innerType().pick({ clubId: true, dates: true, start: true, end: true, capacity: true }).extend({ roomId: z.string().uuid() }).strict()
+export type RoomTimesInput = z.infer<typeof roomTimesInputSchema>
 export type RoomSlot = { publishedPanelMemberIds?: string[]; panelScheduleVersionId?: string | null; interviewersNeeded?: number | null; staffingRevision?: number; id: string; startTime: string; endTime: string; capacity: number; booked: number }
 export type InterviewRoom = { externallyBookedAt?: string | null; interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
 export type RoomBooking = { id: string; applicationId: string; slotId: string; roomId: string; roundId: string; candidate: string; startTime: string; endTime: string; location: string }
@@ -57,7 +60,7 @@ export function zonedInstant(date: string, time: string, timezone: string): Date
   if (matches.length !== 1) throw new Error("This time crosses a daylight-saving change. Choose another time.")
   return matches[0]
 }
-export function roomSlots(input: RoomInput, now = Date.now()) {
+export function roomSlots(input: Pick<RoomInput, "dates" | "start" | "end" | "timezone" | "duration" | "buffer" | "capacity">, now = Date.now()) {
   const windows = [...new Set(input.dates)].sort().flatMap(date => {
     const start = zonedInstant(date, input.start, input.timezone), end = zonedInstant(date, input.end, input.timezone)
     if (+end <= +start) throw new Error("End time must be after start time on the same day.")

@@ -11,8 +11,9 @@ import { prisma } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
-import { roomInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
+import { roomInputSchema, roomTimesInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
 import { revalidatePath } from "next/cache"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
 
 import { syncBookingPanel } from "@/utils/interview-scheduling-access"
@@ -83,6 +84,43 @@ async function createInterviewRoomCommand(raw: RoomInput) {
     }
     const room = await tx.interviewRoom.create({ data: { clubId: input.clubId, roundId: input.roundId, name: input.name, location: input.location, kind: input.kind, timezone: input.timezone, duration: input.duration, buffer: input.buffer, interviewersNeeded: input.interviewersNeeded ?? 2, panelMemberIds: panelIds, slots: { create: slots.map(s => ({ ...s, clubId: input.clubId, location: input.location })) } } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.create" } })
+    return { id: room.id, count: slots.length }
+  })
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
+}
+/**
+ * "Add dates" from Manage room. Adds times to this room instead of creating a same-named copy.
+ * New times start without an official panel; staffing them goes through panel publication.
+ */
+async function addInterviewRoomTimesCommand(raw: unknown) {
+  const input = boundedParse(roomTimesInputSchema, raw)
+  const { user } = await requireAuth()
+  const result = await atomic(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    // Same club-wide serialization as room creation, so overlap checks see every competing write.
+    await lockOperationalClub(tx, input.clubId)
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId } })
+    if (!room) throw new ActionError("Room unavailable.")
+    if (!await tx.pipelineRound.findFirst({ where: { id: room.roundId, clubId: input.clubId, archivedAt: null } })) throw new ActionError("Archived rounds cannot add interview times.")
+    let slots: ReturnType<typeof roomSlots>
+    try { slots = roomSlots({ ...input, timezone: SCHEDULING_TIMEZONE, duration: room.duration, buffer: room.buffer }) }
+    catch (error) { throw new ActionError(error instanceof Error ? error.message : "Check the interview times.") }
+    const existing = await tx.interviewSlot.findMany({ where: { clubId: input.clubId, startTime: { lt: new Date(+slots[slots.length - 1].endTime + 3600000) }, endTime: { gt: new Date(+slots[0].startTime - 3600000) }, OR: [{ roomId: room.id }, { roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }, include: { room: true } })
+    for (const slot of slots) for (const other of existing) {
+      const sameRoom = other.roomId === room.id || other.location.trim().toLowerCase() === room.location.trim().toLowerCase()
+      const sharedPanel = other.roomId !== room.id && other.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))
+      if ((sameRoom || sharedPanel) && overlaps(slot, other, Math.max(room.buffer, other.room?.buffer ?? 0))) throw new ActionError(sharedPanel ? "An interviewer already has an overlapping room schedule." : "This room already has interview times that overlap these.")
+    }
+    // A legacy room-level approval staffs new times at once; hold those people to their other commitments.
+    const approved = room.isOpen && room.panelApprovedBy ? room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) : []
+    if (approved.length) {
+      const members = await tx.clubMember.findMany({ where: { id: { in: approved }, clubId: room.clubId }, select: { userId: true } })
+      await lockSchedulingPeople(tx, { exclusive: members.map(m => m.userId) })
+      await assertOfficialPanelConflicts(tx, members.map(m => m.userId), slots.map((s, i) => ({ id: `new:${i}`, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), buffer: room.buffer })))
+    }
+    await tx.interviewSlot.createMany({ data: slots.map(s => ({ ...s, clubId: input.clubId, roomId: room.id, location: room.location })) })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.times.add", details: { count: slots.length, dates: [...new Set(input.dates)].sort() } } })
     return { id: room.id, count: slots.length }
   })
   revalidatePath(`/club/${input.clubId}/workspace`)
@@ -293,6 +331,9 @@ export async function createInterviewRoom(...args: Parameters<typeof createInter
   return actionResult(() => createInterviewRoomCommand(...args), "createInterviewRoom")
 }
 
+export async function addInterviewRoomTimes(...args: Parameters<typeof addInterviewRoomTimesCommand>) {
+  return actionResult(() => addInterviewRoomTimesCommand(...args), "addInterviewRoomTimes")
+}
 export async function setInterviewRoomOpen(...args: Parameters<typeof setInterviewRoomOpenCommand>) {
   return actionResult(() => setInterviewRoomOpenCommand(...args), "setInterviewRoomOpen")
 }
