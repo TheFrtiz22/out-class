@@ -4,6 +4,7 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
  const club='00000000-0000-4000-8000-000000000001',app='00000000-0000-4000-8000-000000000002',round='00000000-0000-4000-8000-000000000003';
  const pipeline={rounds:[{id:round,name:'Interview',order:0,type:'INTERVIEW'},{id:'next-round',name:'Next round',order:1,type:'CUSTOM'}],applications:[{id:app,studentId:'synthetic-student',roundId:round,status:'IN_REVIEW',student:{email:'synthetic@demo.invalid',studentProfile:{firstName:'Synthetic',lastName:'Applicant',major:'Economics',experiences:[]}},evaluations:[],answers:[],bookings:[]}]};
  const mocks={
+  '@/actions/content-reports':'exports.reportContent=async()=>({ok:true,message:""});',
   '@/actions/recusals':'module.exports=new Proxy({},{get:()=>async()=>({selfRecused:false,canManage:false,recused:[]})});',
   'next/navigation':`exports.useRouter=()=>({push:href=>location.href=href});exports.useSearchParams=()=>new URLSearchParams(location.search);`,
   'next/link':`const React=require('react');module.exports=({children,href,...props})=>React.createElement('a',{...props,href},children);`,

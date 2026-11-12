@@ -26,7 +26,7 @@ test('offline: edits stay on this device, no request is sent, and the status say
   let online = false; const calls = []
   const { queue, drafts } = deviceQueue('user-a', 'application:1', async value => { calls.push(value) }, () => online)
   queue.change('typed on the train')
-  assert.equal(queue.state, 'offline'); assert.equal(queue.error, 'Offline — changes saved on this device')
+  assert.equal(queue.state, 'offline'); assert.equal(queue.error, 'Offline. Changes saved on this device')
   await assert.rejects(queue.flush(), OfflineError); assert.deepEqual(calls, []); assert.equal(queue.dirty, true)
   assert.equal(JSON.parse(localStorage.getItem(drafts.key)).value, 'typed on the train')
   online = true; await queue.flush()
@@ -39,23 +39,23 @@ test('a fetch failure while navigator.onLine is true says OutClass could not be 
   let calls = 0
   const { queue } = deviceQueue('user-a', 'kit:1', async () => { calls++; throw failedFetch() }, () => true)
   queue.change('draft'); t.mock.timers.tick(850); await tick()
-  assert.equal(queue.state, 'unreachable'); assert.equal(queue.error, 'Couldn’t reach OutClass — changes saved on this device'); assert.equal(calls, 1)
+  assert.equal(queue.state, 'unreachable'); assert.equal(queue.error, 'Couldn’t reach OutClass. Changes saved on this device'); assert.equal(calls, 1)
   t.mock.timers.tick(60000); await tick(); assert.equal(calls, 1)
   // A server rejection is still an error with its own message.
   const rejected = new AutosaveQueue('', async () => { throw Error('Draft is too large.') }, () => {}, () => 'device', 850, () => true)
   rejected.change('x'); await assert.rejects(rejected.flush(), /too large/); assert.equal(rejected.state, 'error')
   assert.equal(store.connectionProblem(new TypeError('Load failed'), true), 'unreachable'); assert.equal(store.connectionProblem(new TypeError('Failed to fetch'), true), 'unreachable')
   assert.equal(store.connectionProblem(Error('Failed to fetch'), true), null); assert.equal(store.connectionProblem(Error('x'), false), 'offline'); assert.equal(store.connectionProblem(new TypeError('Failed to fetch'), false), 'offline')
-  assert.equal(store.connectionMessage('offline', 'device'), 'Offline — changes saved on this device'); assert.equal(store.connectionMessage('unreachable', 'tab'), 'Couldn’t reach OutClass — changes kept in this tab')
+  assert.equal(store.connectionMessage('offline', 'device'), 'Offline. Changes saved on this device'); assert.equal(store.connectionMessage('unreachable', 'tab'), 'Couldn’t reach OutClass. Changes kept in this tab')
 })
 
 test('tab-only screens never touch localStorage and say where the copy is', () => {
   const { queue, drafts } = deviceQueue('user-a', 'review:club:app', async () => {}, () => false, 'tab')
   queue.change('private notes about an applicant')
   assert.equal(localStorage.length, 0); assert.ok(sessionStorage.getItem(drafts.key))
-  assert.equal(queue.error, 'Offline — changes kept in this tab')
+  assert.equal(queue.error, 'Offline. Changes kept in this tab')
   const unstored = new AutosaveQueue('', async () => {}, () => {}, () => false, 850, () => false)
-  unstored.change('x'); assert.equal(unstored.error, 'Offline — keep this page open; changes save when you reconnect')
+  unstored.change('x'); assert.equal(unstored.error, 'Offline. Keep this page open; changes save when you reconnect')
   queue.markOffline(); assert.equal(queue.state, 'offline')
 })
 
@@ -118,18 +118,18 @@ test('blocked storage never breaks editing or saving', async () => {
   assert.equal(drafts.write({ value: 1, baseline: '0', writer: 'w', at: Date.now() }), false); assert.equal(drafts.read(), null)
   drafts.clear(); store.clearAutosaveDrafts(); store.adoptAutosaveOwner('user-a')
   const queue = new AutosaveQueue(0, async () => {}, () => {}, v => v === null ? undefined : drafts.write({ value: v, baseline: '0', writer: 'w', at: Date.now() }), 850, () => false)
-  queue.change(1); assert.equal(queue.error, 'Offline — keep this page open; changes save when you reconnect')
+  queue.change(1); assert.equal(queue.error, 'Offline. Keep this page open; changes save when you reconnect')
 })
 
 test('availability queue: offline status, device copy, and cleanup after the reconnect save', async () => {
   let online = false; const writes = [], records = []
   const queue = new AvailabilitySaveQueue({ schedule: { weekly: [] }, revision: 3 }, async value => { writes.push(value); return { ...value, revision: value.revision + 1 } }, () => {}, 10000, { online: () => online, recover: value => { records.push(value); return value ? 'device' : undefined } })
   queue.change({ weekly: [[1]] })
-  assert.equal(queue.state, 'offline'); assert.equal(queue.error, 'Offline — changes saved on this device'); assert.equal(records.at(-1).revision, 3)
+  assert.equal(queue.state, 'offline'); assert.equal(queue.error, 'Offline. Changes saved on this device'); assert.equal(records.at(-1).revision, 3)
   await assert.rejects(queue.flush(), OfflineError); assert.equal(writes.length, 0)
   online = true; await queue.flush(); assert.equal(queue.state, 'saved'); assert.equal(queue.document.revision, 4); assert.equal(records.at(-1), null)
   const failing = new AvailabilitySaveQueue({ schedule: { weekly: [] }, revision: 1 }, async () => { throw failedFetch() }, () => {}, 10000, { online: () => true, recover: () => 'device' })
-  failing.change({ weekly: [[2]] }); await assert.rejects(failing.flush(), OfflineError); assert.equal(failing.state, 'unreachable'); assert.equal(failing.error, 'Couldn’t reach OutClass — changes saved on this device'); assert.equal(failing.dirty, true)
+  failing.change({ weekly: [[2]] }); await assert.rejects(failing.flush(), OfflineError); assert.equal(failing.state, 'unreachable'); assert.equal(failing.error, 'Couldn’t reach OutClass. Changes saved on this device'); assert.equal(failing.dirty, true)
   failing.dispose(); queue.dispose()
 })
 
@@ -163,7 +163,7 @@ test('after the sign-out clear, beforeunload recover() and later change() calls 
   store.sealAutosaveDraftsForSignOut()
   queue.change('late keystroke'); assert.equal(drafts.write({ value: 'beforeunload', baseline: '""', writer: 'w', at: Date.now() }), false)
   assert.equal(drafts.read(), null); assert.equal(localStorage.length + sessionStorage.length, 0)
-  assert.equal(queue.error, 'Offline — keep this page open; changes save when you reconnect', 'status no longer claims a device copy')
+  assert.equal(queue.error, 'Offline. Keep this page open; changes save when you reconnect', 'status no longer claims a device copy')
 })
 
 test('an offered copy survives change() and is never saved while held', async () => {

@@ -63,6 +63,59 @@ export function publicPageStructuredData(name: string, description: string, path
   }
 }
 
+/**
+ * JSON for a <script type="application/ld+json">. JSON.stringify already escapes quotes; this also
+ * escapes the characters that could close the script element or confuse the HTML parser, so club
+ * text is data, never markup.
+ */
+export function serializeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/[<>&\u2028\u2029]/g, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`)
+}
+
+export type ClubStructuredDataInput = { id: string; name: string; description: string; logoUrl?: string | null; sameAs?: (string | null | undefined)[] }
+
+/**
+ * The trail above a club's own page. Signed out (what crawlers see) it follows the public pages and
+ * matches the BreadcrumbList JSON-LD; signed in it starts at Explore.
+ */
+export function clubBreadcrumbs(clubName: string, { signedIn = false }: { signedIn?: boolean } = {}) {
+  return signedIn
+    ? [{ label: "Explore", href: "/explore" }, { label: clubName }]
+    : [{ label: "OutClass", href: "/" }, { label: "UVA", href: "/uva" }, { label: clubName }]
+}
+
+/** Organization data for an indexable public club page, from fields the page already shows. */
+export function clubStructuredData(club: ClubStructuredDataInput) {
+  const url = new URL(`/club/${encodeURIComponent(club.id)}`, SITE_URL).toString()
+  // Only absolute web URLs or bundled /logos files; uploaded assets and data: URIs are left out.
+  const logo = club.logoUrl && (/^https:\/\//i.test(club.logoUrl) ? club.logoUrl : /^\/logos\/[\w.-]+$/.test(club.logoUrl) ? `${SITE_URL}${club.logoUrl}` : undefined)
+  const sameAs = [...new Set((club.sameAs ?? []).filter((link): link is string => !!link && /^https?:\/\//i.test(link)))]
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${url}#organization`,
+        name: club.name,
+        description: club.description.trim().replace(/\s+/g, " "),
+        url,
+        ...(logo ? { logo } : {}),
+        ...(sameAs.length ? { sameAs } : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: clubBreadcrumbs(club.name).map((crumb, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: crumb.label,
+          item: crumb.href ? new URL(crumb.href, SITE_URL).toString() : url,
+        })),
+      },
+    ],
+  }
+}
+
 // These parameters select account, authentication, or demonstration interfaces.
 // Tracking parameters still consolidate to the indexable homepage canonical.
 export const privateHomepageParams = ["workspace", "view", "demoClub", "next", "error", "signup"] as const

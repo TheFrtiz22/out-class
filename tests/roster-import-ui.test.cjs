@@ -52,7 +52,7 @@ test('network retry reuses the upload key and unsuccessful confirmation preserve
   pick(h.render(),file());await h.flush();let tree=h.render();nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Retry upload').props.onClick();await h.flush();tree=h.render();
   assert.equal(payloads[0].requestId,payloads[1].requestId);
   nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Import members').props.onClick();await h.flush();tree=h.render();
-  assert.ok(JSON.stringify(tree).includes('Access changed'));assert.ok(nodes(tree).some(node=>node.type==='table'));assert.equal(nodes(tree).find(node=>node.type==='Input').props.disabled,false);
+  assert.ok(JSON.stringify(tree).includes('Could not confirm import. Try again.'));assert.ok(nodes(tree).some(node=>node.type==='table'));assert.equal(nodes(tree).find(node=>node.type==='Input').props.disabled,false);
 });
 
 test('drop rejects multiple files, supports a single CSV and disables confirmation with no ready rows',async()=>{
@@ -67,7 +67,7 @@ test('UI drives successive batches, retains progress after interruption, and res
   let calls=0;const base={created:50,alreadyMember:10,alreadyInvited:2,invalid:1,duplicates:0,failed:0,skipped:13,total:160,processed:63,completed:false,reused:false,rows:[]};
   const h=harness({previewRosterImport:async()=>preview,confirmRosterImport:async()=>{calls++;if(calls===1)return base;if(calls===2)throw Error('Connection interrupted');return{...base,created:147,processed:160,completed:true};}});
   pick(h.render(),file());await h.flush();nodes(h.render()).find(node=>node.type==='Button'&&node.props.children==='Import members').props.onClick();await h.flush();let tree=h.render();
-  assert.equal(calls,2);assert.ok(JSON.stringify(tree).includes('Connection interrupted'));
+  assert.equal(calls,2);assert.ok(JSON.stringify(tree).includes('Could not confirm import. Try again.'));
   const resume=nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Resume import');assert.equal(resume.props.disabled,false);resume.props.onClick();await h.flush();tree=h.render();
   assert.equal(calls,3);assert.ok(JSON.stringify(tree).includes('new invitations'));assert.ok(JSON.stringify(tree).includes('already members'));assert.ok(JSON.stringify(tree).includes('already invited'));assert.ok(JSON.stringify(tree).includes('invalid'));
   assert.equal(nodes(tree).some(node=>node.type==='Button'&&node.props.children==='Resume import'),false);

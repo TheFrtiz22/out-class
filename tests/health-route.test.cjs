@@ -70,6 +70,10 @@ test('middleware passes /api/health through with no session refresh, even with d
     '@/utils/supabase/middleware': { createClient: async () => { refreshed++; return new Response('refreshed') } },
     '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
     '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false },
+    // The real CSP helpers (#278): the health path must stay a plain pass-through with them in place.
+    '@/lib/csp': load('lib/csp.ts'),
+    // The real per-IP limiter (#279), which the health path never calls.
+    '@/lib/rate-limit-core': load('lib/rate-limit-core.ts'),
   })
   for (const cookie of ['', 'outclass-demo-session=1', 'outclass-platform-view=x; sb-abc-auth-token=y']) {
     for (const method of ['GET', 'HEAD']) {

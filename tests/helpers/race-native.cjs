@@ -70,7 +70,7 @@ async function raceFixture(t, { roundTripMs = 6 } = {}) {
   };
   const load = loader(mocks);
   const as = (user, fn) => request.run(user, fn);
-  const settle = promise => promise.then(value => ({ ok: true, value }), error => ({ ok: false, error: String(error?.message || error) }));
+  const settle = promise => promise.then(value => ({ ok: true, value }), error => ({ ok: false, error: String(error?.message || error), refused: error?.refused === true, code: error?.code }));
   /** Start both calls in the same tick, with simulated latency so their transactions overlap. */
   async function race(...calls) {
     delay = roundTripMs;

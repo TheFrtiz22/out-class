@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 
@@ -186,7 +187,7 @@ function EventEditor({
       else setNotice("Draft saved. You can now upload a flyer.");
       return result;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save the event.");
+      setError(userMessage(e, "Could not save the event."));
       return null;
     } finally {
       if (!nested) { operation.current = false; setBusy(false); }
@@ -222,7 +223,7 @@ function EventEditor({
       setUseTemplate(false);
       setNotice("Flyer uploaded privately. Apply event changes when ready.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Flyer upload failed.");
+      setError(userMessage(e, "Flyer upload failed."));
     } finally {
       operation.current = false; setBusy(false); setUploading(false);
     }
@@ -362,7 +363,7 @@ function EventEditor({
           </label>
           {!useTemplate && saved?.flyerUrl && <Button type="button" variant="outline" disabled={busy} onClick={() => { setUseTemplate(true); setNotice("Flyer removed from this preview. Save the draft to apply."); }}>Remove uploaded flyer</Button>}
           <label className="rounded-xl border-2 border-dashed p-5" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file && !busy && draftSave.ready && !draftSave.recovery) void upload(file); }}>
-            Event Flyer — Optional
+            Event flyer (optional)
             <span className="block text-sm text-muted-foreground">Drop a PNG, JPEG or WebP here, or choose a file. Up to 10 MB.</span>
             <Input
               type="file"
