@@ -37,7 +37,7 @@
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
   .oc-share-copy { flex-direction: column; align-items: stretch; }
-  .oc-share-copy input { font-size: max(16px, var(--oc-text-body)); }
+  .oc-share-copy input { font-size: max(1rem, var(--oc-text-body)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
