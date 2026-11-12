@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
  * light: full two-tone sword lockup on ivory/white
  * dark: ivory/orange sword lockup on brand navy
  * wordmark: compact sword-free two-tone logo for narrow, light-background headers
- * mark: sword-free interlocking OC app icon
+ * mark: sword-free, all-ivory interlocking OC app icon on the navy tile
  */
 type OutClassLogoProps = {
   variant?: "light" | "dark" | "wordmark" | "mark"
@@ -21,7 +21,7 @@ export function OutClassLogo({ variant = "light", className }: OutClassLogoProps
   if (variant === "mark") {
     return (
       <Image
-        src={`${brandRoot}/05_app_icon_primary.svg`}
+        src={`${brandRoot}/11_app_icon_white.svg`}
         alt="OutClass"
         width={175}
         height={175}

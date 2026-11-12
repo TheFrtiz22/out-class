@@ -291,3 +291,7 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Browser (70 *-browser.test.cjs): all pass except interview-enter (fails on main and #281 too). Updated: nav-reorg, club-workspace-refinements, interview-round-workflow, interview-tab-retention, interview-date-sections, interview-entry, round-scoped-review, task-cleanup, scheduling-simplification.
 - Screenshots: 12 pages × desktop 1440 and 375, before (#281) and after; document scrollWidth equals viewport width on every page at 375.
 - Not run: pnpm build, DB e2e suites, test:migrations (no schema change).
+
+2026-11-12 BRAND-WHITE-OC-ICON-1 (PR pending) app gates: targeted tests 83/0/0 (installable-app, focus-frame, loading-experience, seo, public-navigation, student-paths, csp, email-design, internal-links-static) | eslint clean on the 3 changed TS files | full `pnpm run test`, typecheck, build and browser suites NOT run to completion in the cloud sandbox (Prisma engines unreachable, `.prisma/client` not generated; a browser suite hangs) - rely on CI | migrations n/a (no schema change) | agent-hook tests n/a
+- Assets: 11_app_icon_white.svg/.jpg added; icon-192, icon-512 (transparent corners), icon-maskable-512 and apple-touch-icon-180 (opaque) regenerated with rsvg-convert from the new SVG.
+- Not verified: real-device home-screen icon refresh; already-installed PWAs may keep the old icon until re-added.
