@@ -5,6 +5,7 @@ import { Panel } from "@/components/ui/panel";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { userMessage } from "@/lib/user-message";
 import { completeAccountDeletion, listAccountDeletionRequests } from "@/actions/account-deletion";
 
 type Row = Awaited<ReturnType<typeof listAccountDeletionRequests>>[number];
@@ -15,7 +16,7 @@ export function AdminDeletionRequests() {
   const confirm = useConfirm();
   const [rows, setRows] = useState<Row[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState(""), [notice, setNotice] = useState("");
   const [reason, setReason] = useState(""), [busy, setBusy] = useState(false), [retry, setRetry] = useState(0);
-  useEffect(() => { let live = true; setLoading(true); listAccountDeletionRequests().then(r => { if (live) setRows(r); }).catch(e => { if (live) setError(e instanceof Error ? e.message : "Could not load deletion requests."); }).finally(() => { if (live) setLoading(false); }); return () => { live = false; }; }, [retry]);
+  useEffect(() => { let live = true; setLoading(true); listAccountDeletionRequests().then(r => { if (live) setRows(r); }).catch(e => { if (live) setError(userMessage(e, "Could not load deletion requests.")); }).finally(() => { if (live) setLoading(false); }); return () => { live = false; }; }, [retry]);
   async function complete(row: Row) {
     if (!(await confirm({ title: "Complete this account deletion?", description: "Personal data, Storage files and the sign-in account are deleted. This can’t be undone.", confirmLabel: "Complete deletion", tone: "danger" }))) return;
     setBusy(true); setError(""); setNotice("");
@@ -23,7 +24,7 @@ export function AdminDeletionRequests() {
       const result = await completeAccountDeletion({ id: row.id, revision: row.revision, reason });
       setNotice(`Deleted. ${result.storageObjects} files removed; ${result.anonymizedApplications} applications and ${result.anonymizedMemberships} memberships anonymized.${result.retainedDecisionLetters || result.retainedResumeSnapshots ? ` ${result.retainedDecisionLetters} decision letters and ${result.retainedResumeSnapshots} résumé snapshots remain (immutable until a migration).` : ""}`);
       setRetry(r => r + 1);
-    } catch (e) { setError(e instanceof Error ? e.message : "Deletion failed."); setRetry(r => r + 1); }
+    } catch (e) { setError(userMessage(e, "Deletion didn’t complete. Reload the request and try again.")); setRetry(r => r + 1); }
     finally { setBusy(false); }
   }
   return <section className="oc-workspace-stack" aria-labelledby="deletion-requests-heading">

@@ -332,4 +332,7 @@ fieldset { min-inline-size: 0; }
 .oc-breadcrumbs a:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }
 .oc-breadcrumbs [aria-current="page"] { color: var(--foreground); font-weight: 500; overflow-wrap: anywhere; }
 .oc-breadcrumbs-separator { flex-shrink: 0; opacity: .6; }
+/* The links keep a 44px touch target, but the text sits where a line of text would: half the extra target height
+   overlaps the space above, so a page that opens with breadcrumbs starts the same distance below the header as any other. */
+.oc-breadcrumbs ol { margin-block-start: calc((1lh - 2.75rem) / 2); }
 @media (prefers-reduced-motion: reduce) { .oc-breadcrumbs a { transition: none; } }
