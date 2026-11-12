@@ -421,9 +421,16 @@ test("attacker pass: IDOR, logout replay, public-key access, headers, enumeratio
       notes.push(`Rate-limit module: ${limiter}.`);
       const burst = async (count, send) => { const statuses = []; for (let n = 0; n < count; n += 10) statuses.push(...await Promise.all(Array.from({ length: Math.min(10, count - n) }, send))); return statuses; };
       const code = randomBytes(6).toString("base64url");
-      const shortLinks = await burst(80, async () => { const r = await fetch(new URL(`/q/${code}`, c.appUrl), { redirect: "manual" }); await r.arrayBuffer(); return r.status; });
-      const recovery = await burst(40, async () => { const r = await fetch(new URL("/api/auth/password-recovery", c.appUrl), { method: "POST", headers: { origin: c.appUrl.replace("127.0.0.1", "localhost"), "content-type": "application/json" }, body: JSON.stringify({ action: "request", email: `attack.burst.${randomUUID()}@virginia.edu` }) }); await r.arrayBuffer(); return r.status; });
-      notes.push(`/q burst: ${shortLinks.filter(s => s === 429).length}/80 got 429. Recovery burst: ${recovery.filter(s => s === 429).length}/40 got 429.`);
+      // Each burst comes from its own documentation-range address (RFC 5737), the way a separate attacker
+      // would reach Vercel, so it fills its own bucket. Without it every burst shares the test server's
+      // 127.0.0.1 bucket and later suites' real password-recovery requests get 429. Next keeps a client
+      // x-forwarded-for (`??=`); on Vercel the platform sets it, so this cannot skip a production limit.
+      const limitFor = policy => { const match = fs.readFileSync(path.join(repo, "lib/rate-limit-core.ts"), "utf8").match(new RegExp(`\\b${policy}: \\{[^}]*\\blimit: (\\d+)`)); assert.ok(match, `RATE_LIMITS.${policy} not found`); return Number(match[1]); };
+      const qCount = limitFor("shortLinks") + 20, recoveryCount = limitFor("passwordRecovery") + 10;
+      const qAddress = `198.51.100.${1 + randomBytes(1)[0] % 120}`, recoveryAddress = `198.51.100.${121 + randomBytes(1)[0] % 120}`;
+      const shortLinks = await burst(qCount, async () => { const r = await fetch(new URL(`/q/${code}`, c.appUrl), { redirect: "manual", headers: { "x-forwarded-for": qAddress } }); await r.arrayBuffer(); return r.status; });
+      const recovery = await burst(recoveryCount, async () => { const r = await fetch(new URL("/api/auth/password-recovery", c.appUrl), { method: "POST", headers: { origin: c.appUrl.replace("127.0.0.1", "localhost"), "content-type": "application/json", "x-forwarded-for": recoveryAddress }, body: JSON.stringify({ action: "request", email: `attack.burst.${randomUUID()}@virginia.edu` }) }); await r.arrayBuffer(); return r.status; });
+      notes.push(`/q burst: ${shortLinks.filter(s => s === 429).length}/${qCount} got 429. Recovery burst: ${recovery.filter(s => s === 429).length}/${recoveryCount} got 429.`);
       assert.ok(shortLinks.includes(429), "/q/<code> burst is rate limited");
       assert.ok(recovery.includes(429), "Password recovery burst is rate limited");
     });

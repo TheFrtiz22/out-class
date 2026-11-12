@@ -65,8 +65,10 @@ const gates = {
   "interview-booking-contention-native": ["OUTCLASS_CONTENTION_TEST_DATABASE_URL"],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 47, "The inventory must track all 47 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 47-test inventory");
+// No hard-coded total: the list above is the inventory. A literal count had to be bumped by every PR
+// that added a suite, so any two such PRs broke each other's CI. Each entry is still checked below
+// (no duplicates, its file exists, and a runner the workflow calls invokes it).
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");

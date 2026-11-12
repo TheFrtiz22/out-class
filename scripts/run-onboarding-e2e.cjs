@@ -129,16 +129,22 @@ async function ready(url,headers={}){
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
  // --club-integration runs all tests gated by the reserved onboarding project,
- // ending with the attacker pass (writes test-results/attacker-pass.json),
+ // then the attacker pass on its own (writes test-results/attacker-pass.json),
  // including settings/navigation and real built PDF import (which needs the
  // ui-fixture.json written by onboarding). Keep files serialized.
  const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/student-paths-e2e.test.cjs','tests/focus-frame-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs','tests/share-card-production-e2e.test.cjs'];
  const testFiles=dashboards?['tests/operational-dashboards-e2e.test.cjs']:process.argv.includes('--application-writing')?['tests/application-writing-e2e.test.cjs']:
    process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
-   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs','tests/resume-import-runtime.test.cjs','tests/attacker-pass-e2e.test.cjs']:
+   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
    process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs',...onboardingTests]:shellSuite?[]:onboardingTests;
  const result=testFiles.length===0?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
+ // node --test sorts the files it is given, so listing the attacker pass last above would still run it
+ // second. Its bursts and probes must not share a run with suites that use the same endpoints.
+ if(process.argv.includes('--club-integration')){
+  const attacker=spawnSync(process.execPath,['--test','tests/attacker-pass-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+  if(attacker.status!==0)throw Error('Attacker pass failed; see test-results/attacker-pass.json');
+ }
  if(selectedNavigation){
   logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'selected-navigation-seed.log',env);
   const navigationTests=['tests/navigation-phase1-e2e.test.cjs','tests/navigation-phase2-e2e.test.cjs','tests/navigation-phase10-e2e.test.cjs','tests/navigation-phase12-e2e.test.cjs'];

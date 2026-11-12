@@ -4,9 +4,15 @@
 
 The normal \`pnpm test\` suite intentionally does not boot Auth, Storage, Next.js, SMTP, or PostgreSQL. Environment-gated tests therefore report **skipped** unless their guarded configuration is provisioned. Migration fixtures and mocked-browser tests cannot replace the real service boundary.
 
-This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on every pull request, Mondays at 05:17 UTC, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
+This branch introduces a separate GitHub Actions workflow: **Disposable integration verification** (\`.github/workflows/disposable-integrations.yml\`). It runs on every pull request, nightly at 05:17 UTC on main, and through manual workflow dispatch. Every job runs on a fresh Ubuntu runner; no production secrets are supplied.
 
 **A successful static coverage report does not imply all 46 tests were executed.** The coverage script lists unwired suites explicitly. Each integration job must pass independently.
+
+## Which suites a pull request runs
+
+The four required checks (Native PostgreSQL / security and / transactions, Applicant workflow / application-writing, Integration infrastructure coverage) run on every PR. The other suites (Local Auth, settings and navigation; Applicant workflow / shell and / dashboards; Native PostgreSQL / events, audiences and scheduler; Private Storage) run on a PR only when it touches the code they exercise: `prisma/`, `supabase/`, `actions/`, `app/api/`, `app/auth/`, `utils/`, auth/rate-limit/demo/platform `lib/` modules, `middleware.ts`, `next.config.mjs`, dependencies, `components/shell/`, `styles/`, the root and workspace layouts, the fixture runners, `tests/helpers/` and the e2e/native suites. The `changes` job decides, and its summary says which. To run everything on any PR, add the `full-ci` label and push, or dispatch the workflow on the branch. The nightly run covers main.
+
+Branch protection does not require a PR to be up to date with main, so merge main into a branch only to resolve a conflict or pick up a fix the branch needs. Each extra merge restarts every check on that PR.
 
 ## Run locally
 
@@ -32,7 +38,7 @@ Do **not** run concurrent local suites that share the 58453 port. CI gives each 
 
 ## Attacker pass
 
-\`tests/attacker-pass-e2e.test.cjs\` runs last in the onboarding runner's \`--club-integration\` list (CI job "Local Auth, settings and navigation"). It refuses to start unless the app, Supabase and database URLs are loopback, and uses only the runner's disposable config. Four accounts are seeded: students A and B, leader L (owner of club X) and leader M (owner of club Y).
+\`tests/attacker-pass-e2e.test.cjs\` runs on its own after the onboarding runner's \`--club-integration\` suites (\`node --test\` sorts the files it is given, so it cannot simply be listed last) (CI job "Local Auth, settings and navigation"). It refuses to start unless the app, Supabase and database URLs are loopback, and uses only the runner's disposable config. Four accounts are seeded: students A and B, leader L (owner of club X) and leader M (owner of club Y).
 
 | Case | Checks |
 | --- | --- |
@@ -42,7 +48,7 @@ Do **not** run concurrent local suites that share the 58453 port. CI gives each 
 | Headers | frame-ancestors / X-Frame-Options on HTML; \`/.git/*\` and \`/.env*\` 404; no \`.map\` files; middleware CSP (skipped while middleware sets none). |
 | Enumeration | Login, forgot-password and signup answer known and unknown emails alike; direct \`/auth/v1/otp\` is recorded as informational. |
 | Open redirect | \`next\` payloads on \`/login\`, \`/signup\` and \`/auth/callback\` never leave the origin, signed out and signed in. |
-| Rate limits | Bursts against \`/q/<code>\` and password recovery expect 429, only when \`lib/rate-limit\` exists; skipped otherwise. |
+| Rate limits | Bursts past each limit (read from \`lib/rate-limit-core.ts\`) against \`/q/<code>\` and password recovery expect 429. Each burst sends its own RFC 5737 client address, so it fills its own bucket instead of the shared 127.0.0.1 one that later suites use. Skipped when \`lib/rate-limit\` is absent. |
 | Uploads | HTML/SVG/JS named \`.png\` is rejected as a headshot; a PNG+HTML polyglot is recorded as informational. |
 
 The summary is written to \`test-results/attacker-pass.json\` (case, result, notes) and uploaded as the \`attacker-pass\` artifact. A \`partial\` result means a probe was malformed (HTTP 400) or a provider rate limit made a comparison inconclusive; read its notes.

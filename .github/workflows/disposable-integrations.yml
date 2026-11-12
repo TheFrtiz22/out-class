@@ -3,13 +3,15 @@ name: Disposable integration verification
 # No repository secrets, hosted Auth, production database or external SMTP
 # credentials. Each job provisions its own local fixture on a fresh runner.
 on:
-  # Runs on every PR (no paths filter): its jobs are required status checks on
-  # main, and GitHub never reports a filtered-out required check, which blocks
-  # docs- and config-only PRs forever.
+  # Runs on every PR (no paths filter): some of its jobs are required status checks
+  # on main, and GitHub never reports a filtered-out required check, which blocks
+  # docs- and config-only PRs forever. The `changes` job below decides which of the
+  # NON-required suites a PR needs; required ones always run.
   pull_request:
   workflow_dispatch:
+  # Nightly full run on main (was weekly), so a break that only lighter PRs touched shows up next morning.
   schedule:
-    - cron: "17 5 * * 1"
+    - cron: "17 5 * * *"
 
 permissions:
   contents: read
@@ -19,14 +21,54 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Required checks (ruleset protect-main): Native PostgreSQL / security and / transactions,
+  # Applicant workflow / application-writing and Integration infrastructure coverage. They run on
+  # every PR. The other suites run on a PR only when it touches the code they exercise (list below)
+  # or carries the `full-ci` label (applied on the next push), and always nightly on main and on
+  # manual dispatch. Each PR push used to start 11 jobs here; UI- and docs-only PRs now start 5.
+  changes:
+    name: Choose integration suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      full: ${{ steps.pick.outputs.full }}
+      native: ${{ steps.pick.outputs.native }}
+      applicant: ${{ steps.pick.outputs.applicant }}
+    steps:
+      - id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          FULL_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'full-ci') }}
+        run: |
+          full=true
+          if [ "$EVENT" = "pull_request" ] && [ "$FULL_LABEL" != "true" ]; then
+            files=$(gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate --jq '.[].filename')
+            # Auth, data, server, shell layout and the test fixtures themselves.
+            risky='^(prisma/|supabase/|actions/|app/api/|app/auth/|utils/|lib/(auth|rate-limit|supabase|demo|platform)|middleware\.ts$|next\.config\.mjs$|package\.json$|pnpm-lock\.yaml$|components/shell/|styles/|app/layout\.tsx$|app/\(workspace\)/layout\.tsx$|scripts/(run-|test-|check-disposable|navigation-audit)|tests/helpers/|tests/[^/]*(e2e|native)[^/]*$|\.github/workflows/disposable-integrations\.yml$)'
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -Eq "$risky"; then full=false; fi
+          fi
+          if [ "$full" = true ]; then
+            native='["security","events","audiences","transactions","scheduler"]'; applicant='["dashboards","application-writing","shell"]'
+          else
+            native='["security","transactions"]'; applicant='["application-writing"]'
+          fi
+          { echo "full=$full"; echo "native=$native"; echo "applicant=$applicant"; } >> "$GITHUB_OUTPUT"
+          echo "Full integration suites: $full" >> "$GITHUB_STEP_SUMMARY"
+
   native-postgres:
     name: Native PostgreSQL / ${{ matrix.suite }}
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
-        suite: [security, events, audiences, transactions, scheduler]
+        suite: ${{ fromJSON(needs.changes.outputs.native) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,6 +101,8 @@ jobs:
 
   authenticated-next-supabase:
     name: Local Auth, settings and navigation
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
@@ -105,13 +149,15 @@ jobs:
 
   applicant-workflow-regressions:
     name: Applicant workflow / ${{ matrix.suite }}
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
-        # shell: persistent workspace shell, header height/spacing, dashboard split and overview views.
-        suite: [dashboards, application-writing, shell]
+        # dashboards, application-writing, shell (persistent workspace shell, header height/spacing,
+        # dashboard split and overview views); see the changes job.
+        suite: ${{ fromJSON(needs.changes.outputs.applicant) }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -135,6 +181,8 @@ jobs:
 
   local-storage:
     name: Private Storage and native PostgreSQL
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:

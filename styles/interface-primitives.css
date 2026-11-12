@@ -325,7 +325,8 @@ fieldset { min-inline-size: 0; }
 }
 
 /* Breadcrumbs: quiet, one line on wide screens, wrapping on phones. */
-.oc-breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin: 0; padding: 0; list-style: none; font-size: var(--oc-text-small); color: var(--muted-foreground); }
+/* A fixed 1.25rem line inside each 2.75rem link box leaves .75rem above the text. A trail that opens a page pulls itself up by that much (-mt-3), so its text lines up where a page title would (tests/header-gap-e2e). */
+.oc-breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin: 0; padding: 0; list-style: none; font-size: var(--oc-text-small); line-height: 1.25rem; color: var(--muted-foreground); }
 .oc-breadcrumbs li { display: inline-flex; align-items: center; gap: .25rem; min-width: 0; }
 .oc-breadcrumbs a { display: inline-flex; align-items: center; min-height: 2.75rem; color: inherit; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: color var(--oc-duration-micro, 120ms), text-decoration-color var(--oc-duration-micro, 120ms); }
 .oc-breadcrumbs a:hover { color: var(--foreground); text-decoration-color: currentColor; }

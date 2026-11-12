@@ -20,7 +20,7 @@ export function PersonalSettingsLayout({ children }: { children: ReactNode }) {
   // overview list (/settings) and drill in; a section shows breadcrumbs back to it.
   const guard = (event: { preventDefault(): void }) => { if (!canLeaveWorkspace()) event.preventDefault() }
   return <div data-settings-hub>
-    {section && <Breadcrumbs className="mb-2" items={[{ label: "Settings", href: "/settings" }, { label: section.label }]} onLinkClick={guard} />}
+    {section && <Breadcrumbs className="-mt-3 mb-2" items={[{ label: "Settings", href: "/settings" }, { label: section.label }]} onLinkClick={guard} />}
     <PageHeader title={section?.label ?? "Settings"} description={section?.description ?? "Your account, notifications and availability."} />
     <div className="oc-settings-workspace">
       <aside className="oc-settings-menu oc-personal-settings-menu">
