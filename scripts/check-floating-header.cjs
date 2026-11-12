@@ -17,7 +17,7 @@ async function build(root, { realNotificationState = false, entry = path.join(fi
   const compiled = require('next/dist/compiled/webpack/webpack'); compiled.init()
   const boundaries = path.join(fixture, 'boundaries.jsx')
   const alias = { 'next/link$': path.join(fixture, 'navigation.jsx'), 'next/navigation$': path.join(fixture, 'navigation.jsx'), 'next/image$': boundaries }
-  for (const key of ['@/contexts/auth-context', '@/contexts/demo-context', '@/contexts/organization-invitations-context', '@/lib/application-state', '@/lib/workspace-api', '@/actions/communications', '@/actions/club-onboarding', '@/utils/supabase/client', '@/components/tutorial-walkthrough']) alias[`${key}$`] = boundaries
+  for (const key of ['@/contexts/auth-context', '@/contexts/demo-context', '@/contexts/organization-invitations-context', '@/lib/application-state', '@/lib/workspace-api', '@/actions/communications', '@/actions/club-onboarding', '@/actions/push-subscriptions', '@/utils/supabase/client', '@/components/tutorial-walkthrough']) alias[`${key}$`] = boundaries
   if (realNotificationState) delete alias['@/lib/application-state$']
   for (const key of keep) delete alias[`${key}$`]
   Object.assign(alias, aliases)
