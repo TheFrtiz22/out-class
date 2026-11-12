@@ -5,7 +5,7 @@ import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
 import type { AccountClub } from '@/lib/account-data';
-import { adoptAutosaveOwner } from "@/lib/autosave-store";
+import { adoptAutosaveOwner, handleSignedOutEvent } from "@/lib/autosave-store";
 
 export type ExtendedApplication = Omit<Application, "anonymousReviewText"> & { club: AccountClub };
 // `features` (pilot switches) is present on live account memberships; demo data omits it.
@@ -56,6 +56,8 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
       // A passive SIGNED_OUT (expiry, revocation, another tab) keeps unsaved copies: they are owner-keyed,
       // and adoptAutosaveOwner clears them if a different account signs in here.
+      // An explicit sign-out in another tab (owner marker removed) seals this page's editors too.
+      if (event === "SIGNED_OUT") handleSignedOutEvent();
       const next = session?.access_token ?? "";
       if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") {
         // Publish the fence before scheduling React's context update. A newly

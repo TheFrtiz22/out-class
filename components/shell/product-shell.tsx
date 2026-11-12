@@ -94,7 +94,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       await import("@/lib/push-device").then(async ({ unsubscribeOnSignOut }) => unsubscribeOnSignOut((await import("@/actions/push-subscriptions")).removePushSubscription)).catch(() => {})
       const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out.")
       const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error
-      sealAutosaveDraftsForSignOut(); window.location.assign("/")
+      await sealAutosaveDraftsForSignOut(); window.location.assign("/")
     } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) }
   }
   const current = (pathname ? activeNavItem(pathname, new URLSearchParams(params?.toString()), { member: !manager && !!clubId }) : null) ?? active

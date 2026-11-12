@@ -7,8 +7,10 @@
  * - "tab": sessionStorage only. Screens holding private data about other students
  *   (review notes, voting setup, task feedback, interview notes) use this.
  * Every copy is bound to its owner; sign-out and a different signed-in account clear them
- * (including the older v1 tab-only copies used by interview notes).
+ * (including the older v1 tab-only copies). Interview-room notes use their own encrypted IndexedDB
+ * copy (lib/interview-offline-notes.ts); the same sign-out, account-switch and expiry rules clear it.
  */
+import { clearOfflineNotes, hasOfflineNotesFor, hasPendingOfflineNotes, purgeOfflineNotes } from "@/lib/interview-offline-notes"
 export type DraftPersistence = "device" | "tab"
 export type DraftRecord<T = unknown> = { v: 2; owner: string; value: T; baseline: string; writer: string; at: number; revision?: number }
 export type StoredDraft<T = unknown> = DraftRecord<T> & { source: "tab" | "device" }
@@ -86,7 +88,7 @@ export function hasUnsavedAutosaveCopies() {
   for (const store of [storage("localStorage"), storage("sessionStorage")]) {
     try { if (store && autosaveKeys(store).some(key => key !== OWNER_MARKER)) return true } catch { /* Ignore. */ }
   }
-  return false
+  return hasPendingOfflineNotes()
 }
 /**
  * Explicit sign-out from this tab. Copies are kept on a passive SIGNED_OUT (expiry, revocation,
@@ -94,21 +96,54 @@ export function hasUnsavedAutosaveCopies() {
  * "clean": nothing unsaved. "flushed": everything saved within the timeout. "discard": the user
  * confirmed discarding. "cancel": keep the session and the copies.
  */
+/**
+ * hasUnsavedAutosaveCopies plus encrypted interview-notes copies this account left in IndexedDB from
+ * earlier pages or tabs (never reopened here), so sign-out asks before discarding them. Bounded to 1 s.
+ */
+export async function hasUnsavedCopiesIncludingDevice() {
+  if (hasUnsavedAutosaveCopies()) return true
+  let owner: string | null = null
+  for (const store of [storage("localStorage"), storage("sessionStorage")]) {
+    try { owner ??= store?.getItem(OWNER_MARKER) ?? null } catch { /* Ignore. */ }
+  }
+  if (!owner) return false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return Promise.race([hasOfflineNotesFor(owner).catch(() => false), new Promise<boolean>(resolve => { timer = setTimeout(() => resolve(false), 1000) })]).finally(() => clearTimeout(timer))
+}
 export async function prepareSignOut({ flush, confirm, timeoutMs = 3000 }: { flush: () => Promise<void>; confirm: () => Promise<boolean>; timeoutMs?: number }): Promise<"clean" | "flushed" | "discard" | "cancel"> {
-  if (!hasUnsavedAutosaveCopies()) return "clean"
+  if (!(await hasUnsavedCopiesIncludingDevice())) return "clean"
   let timer: ReturnType<typeof setTimeout> | undefined
   try { await Promise.race([flush().catch(() => {}), new Promise<void>(resolve => { timer = setTimeout(resolve, timeoutMs) })]) }
   finally { if (timer) clearTimeout(timer) }
-  if (!hasUnsavedAutosaveCopies()) return "flushed"
+  if (!(await hasUnsavedCopiesIncludingDevice())) return "flushed"
   return (await confirm()) ? "discard" : "cancel"
 }
-/** Clear every copy after a confirmed explicit sign-out, and refuse further writes from this page. */
-export function sealAutosaveDraftsForSignOut() { sealed = true; clearAutosaveDrafts() }
+/**
+ * Clear every copy after a confirmed explicit sign-out, and refuse further writes from this page.
+ * Await it before navigating away: the encrypted interview-notes copy is deleted asynchronously.
+ */
+export function sealAutosaveDraftsForSignOut(timeoutMs = 2000): Promise<void> {
+  sealed = true; clearStorageCopies()
+  // A blocked IndexedDB never holds sign-out hostage; the next signed-in load purges other accounts' copies.
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return Promise.race([clearOfflineNotes({ seal: true }), new Promise<void>(resolve => { timer = setTimeout(resolve, timeoutMs) })]).finally(() => clearTimeout(timer))
+}
+/**
+ * Auth reported SIGNED_OUT. A passive sign-out (expiry, revocation) keeps the owner-keyed copies. An
+ * explicit sign-out in another tab removed the shared owner marker: seal this page too, so a dirty
+ * editor here cannot recreate a copy afterwards.
+ */
+export function handleSignedOutEvent() {
+  let marker: string | null = null
+  try { marker = storage("localStorage")?.getItem(OWNER_MARKER) ?? null } catch { return }
+  if (!marker) void sealAutosaveDraftsForSignOut()
+}
 /** Test hook: a fresh page load starts unsealed. */
 export function resetAutosaveSealForTests() { sealed = false }
 
-/** Remove every recovery copy (both storages, every account) and the owner marker. */
-export function clearAutosaveDrafts() {
+/** Remove every recovery copy (both storages, IndexedDB interview notes, every account) and the owner marker. */
+export function clearAutosaveDrafts() { clearStorageCopies(); return clearOfflineNotes() }
+function clearStorageCopies() {
   for (const store of [storage("localStorage"), storage("sessionStorage")]) {
     try {
       if (!store) continue
@@ -122,7 +157,8 @@ export function clearAutosaveDrafts() {
  */
 export function adoptAutosaveOwner(owner: string) {
   if (!validDraftOwner(owner)) return
-  let previous: string | null = null
+  let previous: string | null = null, shared: string | null | undefined
+  try { shared = storage("localStorage")?.getItem(OWNER_MARKER) } catch { shared = undefined }
   for (const store of [storage("localStorage"), storage("sessionStorage")]) {
     try { previous ??= store?.getItem(OWNER_MARKER) ?? null } catch { /* Ignore. */ }
   }
@@ -131,10 +167,15 @@ export function adoptAutosaveOwner(owner: string) {
     try { for (let i = 0; store && i < store.length; i++) if (store.key(i)?.startsWith(`${AUTOSAVE_PREFIX}v2:`)) hasCopies = true } catch { /* Ignore. */ }
   }
   // Unknown provenance (copies but no marker) is treated as another account.
-  if ((previous && previous !== owner) || (!previous && hasCopies)) clearAutosaveDrafts()
+  if ((previous && previous !== owner) || (!previous && hasCopies)) clearStorageCopies()
   for (const store of [storage("localStorage"), storage("sessionStorage")]) {
     try { store?.setItem(OWNER_MARKER, owner) } catch { /* Ignore. */ }
   }
+  // No shared owner marker: this browser was signed out explicitly (sign-out removes it) or its storage
+  // was cleared. A sign-out that timed out may have left ciphertext behind: delete every device copy.
+  if (shared === null) void clearOfflineNotes()
+  // Otherwise interview notes carry their owner: drop expired copies and any other account's copies.
+  else void purgeOfflineNotes({ owner, onlyIfPresent: true })
 }
 
 export function browserOnline() {

@@ -3,11 +3,9 @@ import { UserFacingError } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
-import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery";
+import { useInterviewOfflineNotes } from "@/hooks/use-interview-offline-notes";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { connectionMessage, connectionProblem, type ConnectionProblem } from "@/lib/autosave-store";
-/** Private interview notes are kept in memory and this tab's sessionStorage only. */
-const NOTES_STORAGE_SCOPE = "tab" as const;
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { animateQuestionCompletion, captureQuestionCompletion, type QuestionCompletionOrigin } from "@/lib/interview-question-motion";
 import {
@@ -384,7 +382,7 @@ export function InterviewKitSession({
         if (mounted.current) {
           const problem = connectionProblem(failure);
           setConnection(problem);
-          setError(problem ? connectionMessage(problem, NOTES_STORAGE_SCOPE) : userMessage(failure, "Your interview could not be saved. Retry, or refresh your access and revision."));
+          setError(problem ? connectionMessage(problem, recoveryRef.current?.copyScope ?? "tab") : userMessage(failure, "Your interview could not be saved. Retry, or refresh your access and revision."));
         }
         return false;
       } finally {
@@ -408,7 +406,10 @@ export function InterviewKitSession({
       if (!(await persist())) throw new UserFacingError("Your private notes are retained. Retry before leaving.");
     }
   }
-  const recovery = useAutosaveRecovery({ identity: `interview:${session?.id}`, value: draft, baseline: saved, dirty, enabled: !!session && !session.completedAt, restore: setDraft, flush: flushLatest });
+  // Unsaved private notes also survive a dropped connection and a reload: encrypted on this device (docs/interview-offline-notes.md).
+  const recovery = useInterviewOfflineNotes({ scope: { clubId, applicationId, roundId }, session, draft, saved, dirty, restore: setDraft, flush: flushLatest, reconnect: () => setRetry(v => v + 1) });
+  const recoveryRef = useRef(recovery); recoveryRef.current = recovery;
+  const notesKept = recovery.copyScope === false ? "" : recovery.copyScope === "device" ? " · notes kept on this device" : " · notes kept in this tab";
   useEffect(() => { if (!error) setConnection(null); }, [error]);
   useEffect(() => {
     const form = formRef.current;
@@ -426,7 +427,7 @@ export function InterviewKitSession({
   }, [serialized, saved, session?.id, saving, error, recovery.recovery]);
   if (!session)
     return (
-      error ? <div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div> : <LoadingState label="Preparing your interview…" layout="interview" rows={3} />
+      error ? <div className="space-y-3">{recovery.offlineBanner && <AutosaveStatus save={{ state: "offline", error: recovery.offlineBanner, flush: async () => setRetry(v => v + 1) }} />}<div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div>{recovery.unopenedText && <Textarea readOnly rows={6} aria-label="Your unsaved notes on this device (read-only)" value={recovery.unopenedText} />}</div> : <LoadingState label="Preparing your interview…" layout="interview" rows={3} />
     );
   function note(questionId: string, notes: string) {
     setDraft((d) => ({
@@ -556,7 +557,9 @@ export function InterviewKitSession({
       {toolbar?.(!!session.completedAt)}
       <InterviewTimer key={session.id} scope={{ clubId, applicationId, roundId }} shared={collaboration.view?.timer} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
       {recovery.recovery != null && <AutosaveStatus save={{ ...recovery, state: "idle", error: "", flush: flushLatest }} />}
-      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? (connection === "offline" ? "Offline · notes kept in this tab" : connection === "unreachable" ? "Couldn’t reach OutClass · notes kept in this tab" : "Couldn’t save") : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
+      {recovery.deviceNotice && <p role="status" className="text-xs text-muted-foreground">{recovery.deviceNotice}</p>}
+      {recovery.offlineBanner && !session.completedAt && <AutosaveStatus save={{ state: "offline", error: recovery.offlineBanner, flush: flushLatest }} />}
+      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? (connection === "offline" ? `Offline${notesKept}` : connection === "unreachable" ? `Couldn’t reach OutClass${notesKept}` : "Couldn’t save") : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     <div className="oc-room-collaboration" aria-label="Room participants">

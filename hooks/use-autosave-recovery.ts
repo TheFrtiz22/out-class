@@ -2,8 +2,12 @@
 import { useEffect, useRef, useState } from "react"
 import { registerAutosaveNavigation } from "@/lib/autosave-navigation"
 
-/** Lifecycle/recovery adapter for mature domain editors that already serialize their own saves. */
-export function useAutosaveRecovery<T>({ identity, value, baseline, dirty, enabled, restore, flush }: { identity: string; value: T; baseline: string; dirty: boolean; enabled: boolean; restore: (value: T) => void; flush: () => Promise<void> }) {
+/**
+ * Lifecycle/recovery adapter for mature domain editors that already serialize their own saves.
+ * `tabCopy: false` keeps the lifecycle (reconnect/visibility flush, unload guard, navigation flush)
+ * but writes no sessionStorage copy: the caller keeps its own (interview notes: encrypted IndexedDB).
+ */
+export function useAutosaveRecovery<T>({ identity, value, baseline, dirty, enabled, restore, flush, tabCopy = true }: { identity: string; value: T; baseline: string; dirty: boolean; enabled: boolean; restore: (value: T) => void; flush: () => Promise<void>; tabCopy?: boolean }) {
   const latest = useRef({ value, baseline, dirty, restore, flush }); latest.current = { value, baseline, dirty, restore, flush }
   const [recovery, setRecovery] = useState<{ value: T } | null>(null), [reviewing, setReviewing] = useState(false)
   const restored = useRef(false)
@@ -11,7 +15,8 @@ export function useAutosaveRecovery<T>({ identity, value, baseline, dirty, enabl
   useEffect(() => {
     if (!enabled) return
     try {
-      const raw = sessionStorage.getItem(key), stored = raw ? JSON.parse(raw) : null
+      if (!tabCopy) sessionStorage.removeItem(key)
+      const raw = tabCopy ? sessionStorage.getItem(key) : null, stored = raw ? JSON.parse(raw) : null
       if (stored && Date.now() - stored.at < 7 * 86400000) {
         if (JSON.stringify(stored.value) === latest.current.baseline) sessionStorage.removeItem(key)
         else if (stored.baseline === latest.current.baseline) { restored.current = true; latest.current.restore(stored.value) }
@@ -29,17 +34,17 @@ export function useAutosaveRecovery<T>({ identity, value, baseline, dirty, enabl
       window.removeEventListener("online", save); window.removeEventListener("beforeunload", unload); window.removeEventListener("outclass:flush-editors", collect)
       document.removeEventListener("visibilitychange", hidden); unregister()
     }
-  }, [key, enabled])
+  }, [key, enabled, tabCopy])
   const serialized = JSON.stringify(value)
   useEffect(() => {
-    if (!enabled || recovery) return
+    if (!enabled || recovery || !tabCopy) return
     if (restored.current && !dirty) { restored.current = false; return }
     restored.current = false
     try {
       if (dirty) sessionStorage.setItem(key, JSON.stringify({ value: latest.current.value, baseline, at: Date.now() }))
       else sessionStorage.removeItem(key)
     } catch { /* The unload guard remains available. */ }
-  }, [key, serialized, baseline, dirty, enabled, recovery])
+  }, [key, serialized, baseline, dirty, enabled, recovery, tabCopy])
   // A copy whose baseline moved on is a conflict: it can be read or dismissed, never restored over the newer save.
   return { recovery: recovery?.value, recoveryKind: "conflict" as const, reviewing, reviewRecovery: () => setReviewing(true), restoreRecovery: () => {}, discardRecovery: async () => { try { sessionStorage.removeItem(key) } catch {} setRecovery(null); setReviewing(false) }, onBlur: () => { if (!recovery) void flush().catch(() => {}) } }
 }
