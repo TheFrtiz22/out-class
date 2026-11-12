@@ -12,7 +12,7 @@ const expected = [
   "communication-schedules-native", "communications-e2e", "communications-native",
   "corkboard-e2e", "decision-communications-e2e", "decision-publication-e2e",
   "decision-publication-native", "decision-transactions-native",
-  "event-storage-native", "interview-collaboration-native",
+  "event-storage-native", "interview-collaboration-native", "interview-shared-timer-native",
   "interview-native-concurrency", "invitation-schedules-e2e", "mock-recruiting-cycle-native",
   "invitation-schedules-native", "onboarding-concurrency", "onboarding-e2e",
   "recipient-audiences-e2e", "recipient-audiences-native",
@@ -33,7 +33,7 @@ const runners = {
   ],
   "scripts/run-disposable-postgres.cjs": [
     "campus-event-discovery-browser", "campus-event-discovery",
-    "interview-collaboration-native", "interview-native-concurrency",
+    "interview-collaboration-native", "interview-shared-timer-native", "interview-native-concurrency",
     "mock-recruiting-cycle-native", "onboarding-concurrency",
     "recruitment-cycle-start-native",
     "application-submit-race-native", "invitation-accept-race-native",
