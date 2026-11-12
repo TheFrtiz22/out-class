@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Actual Prisma connections; synthetic identity only. Never inherits DATABASE_URL.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
@@ -13,7 +14,7 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:load('actions/organization-members.ts'),evaluations:load('actions/evaluations.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts')};
 }
 test('native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening',{skip:!databaseUrl,timeout:120000},async t=>{
  const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
@@ -40,7 +41,7 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  await prisma.interviewBooking.create({data:{applicationId:app.id,roundId:round.id,slotId:slot.id}});
  assert.equal((await a.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
  assert.equal((await b.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
- await assert.rejects(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
+ await refused(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
  for(const user of [applicant,outsider])await assert.rejects(actions(prisma,user.id).kits.openInterviewSession(scope));
  await assert.rejects(a.kits.openInterviewSession({...scope,clubId:randomUUID()}));
  const [first,second]=await Promise.all([a.kits.openInterviewSession(scope),b.kits.openInterviewSession(scope)]);

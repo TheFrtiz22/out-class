@@ -3,13 +3,14 @@ import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import Link from "next/link"
 import { eventScheduleLabel, eventDateLabel, eventTimeLabel } from "@/lib/campus-events"
 import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
-import { useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check, ArrowUpRight } from "@/components/icons"
+import { useEffect, useRef, useState, type ReactNode } from "react"
+import { ArrowLeft, ArrowRight, CalendarDays, MapPin, ArrowUpRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
 import { ShareClubButton } from "@/components/clubs/share-club-button"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
 import { useClubCustomization } from "@/lib/club-customization"
 import { useApplicationState } from "@/lib/application-state"
@@ -32,6 +33,7 @@ export function ClubProfileView({
   onNavigate,
   preview = false,
   backLabel = "Back to Explore",
+  breadcrumbs,
   serverNow,
 }: {
   club: DirectoryClub
@@ -39,6 +41,8 @@ export function ClubProfileView({
   onNavigate: (view: ViewId) => void
   preview?: boolean
   backLabel?: string
+  /** On the club's own page, breadcrumbs take the place of the back button. */
+  breadcrumbs?: ReactNode
   /** The server's render time, when this view is server-rendered: deadline state follows the server. */
   serverNow?: number
 }) {
@@ -186,16 +190,17 @@ export function ClubProfileView({
           {(recruitment.deadline || deadline) && <p className="oc-club-action-note">{recruitment.closingSoon ? "Closing soon · " : ""}{deadlineText}</p>}
         </>}
     {application && <StatusPill status={application.status} />}
+    {real && !preview && <ReportContentButton target={{ type: "club", id: club.id }} label={`Report ${name}`} ownerClubId={club.id} className="oc-club-report" />}
     {error && <p role="alert" className="w-full text-destructive">{error}</p>}
   </div>
   const showRequirements = real && (!!club.testRequirement || !!club.timeCommitment || !!club.requirements?.length)
   const recruitmentSection = !!deadlineText || recruitment.expired || !!application || showRequirements || readMarketing(publicProfile.marketing).sections.some(section => section.visible && section.kind === "recruitment")
   return (
     <article className="oc-club-profile">
-      <Button variant="ghost" className="oc-club-back" onClick={onBack} disabled={preview}>
+      {breadcrumbs ?? <Button variant="ghost" className="oc-club-back" onClick={onBack} disabled={preview}>
         <ArrowLeft size={16} aria-hidden="true" />
         {backLabel}
-      </Button>
+      </Button>}
       {!real && (
         <p className="oc-club-preview-note">
           {preview ? "Club profile preview" : "Sample club profile"} ·{" "}
@@ -212,7 +217,7 @@ export function ClubProfileView({
           {user?.memberships.some(m => m.clubId === club.id) && <Link className="oc-tap-link" href={`/club/${club.id}/workspace`}>Open club workspace <ArrowUpRight size={14} aria-hidden="true" /></Link>}
         </nav>}
       </AboutSection>
-      <MembersSection profile={publicProfile} />
+      <MembersSection profile={publicProfile} reportClubId={real && !preview ? club.id : undefined} />
       {recruitmentSection && <section className="oc-club-section oc-club-recruitment-section" aria-labelledby="club-recruitment">
         <h2 id="club-recruitment">Recruitment and requirements</h2>
         {deadlineText && <p className="oc-club-prose">{deadlineText}{recruitment.expired && " The deadline has passed. Existing drafts remain available."}</p>}
@@ -225,8 +230,8 @@ export function ClubProfileView({
           {club.timeCommitment && <p className="oc-club-prose">Time commitment: {club.timeCommitment} hours per week.</p>}
           {!!club.requirements?.length && <>
             <h4 className="oc-club-minor-heading">Required club questions</h4>
-            <ul className="oc-club-check-list">
-              {club.requirements.map((requirement, index) => <li key={index}><Check size={16} aria-hidden="true" />{requirement}</li>)}
+            <ul className="oc-club-list">
+              {club.requirements.map((requirement, index) => <li key={index}>{requirement}</li>)}
             </ul>
           </>}
         </div>}

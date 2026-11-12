@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { useConfirm } from "@/components/ui/confirm-dialog"
 
@@ -56,7 +58,7 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
   useEffect(() => {
     let current = true
     initial.current ??= getPanelProposalWorkspace({ clubId, roundId, ...(initialWindowRef.current ? { window: initialWindowRef.current } : {}) })
-    initial.current.then(value => { if (current) acceptLatest.current(value) }).catch(error => { if (current) setError(error instanceof Error?error.message:"Could not load the panel draft.") }).finally(() => { if (current) setBusy(false) })
+    initial.current.then(value => { if (current) acceptLatest.current(value) }).catch(error => { if (current) setError(userMessage(error, "Could not load the panel draft.")) }).finally(() => { if (current) setBusy(false) })
     return () => { current = false }
   // Each scope gets a keyed workspace; sharing the promise also prevents duplicate Strict Mode generation.
   }, [clubId, roundId])
@@ -96,7 +98,7 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
   async function run(work: () => Promise<void>) {
     if (busy) return
     setBusy(true); setError(""); setNotice("")
-    try { await work() } catch(error) { setError(error instanceof Error&&!("digest"in error)?error.message:"Could not apply this change. Check conflicts or reload if another administrator changed the draft.") } finally { setBusy(false) }
+    try { await work() } catch(error) { setError(userMessage(error, "Could not apply this change. Check conflicts or reload if another administrator changed the draft.")) } finally { setBusy(false) }
   }
   async function generate(mode: "REGENERATE" | "FILL_MISSING",selectedSlotIds?:string[], requestedWindow?: { start: string; end: string }) {
     if (!workspace) return
@@ -141,15 +143,15 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
         setDraft(saved); setDirty(false)
         const result = await revalidatePanelDraft({ ...scope, proposalId: saved.id, revision: saved.revision })
         const current = await getPanelProposalWorkspace(scope)
-        if (!current.proposal || current.proposal.id !== saved.id || !result.ok && current.proposal.revision !== saved.revision) throw new Error("The draft changed. Reload before confirming.")
+        if (!current.proposal || current.proposal.id !== saved.id || !result.ok && current.proposal.revision !== saved.revision) throw new UserFacingError("The draft changed. Reload before confirming.")
         accept(current); revealIssues(current.proposal)
-        if (!result.ok) throw new Error(result.error)
-        if (current.proposal.validation.issues.length) throw new Error("Assignments still have conflicts. Review the affected slots and recheck availability.")
-        if (generation !== availabilityGeneration.current || current.proposal.stale) throw new Error("Availability changed again while checking. Recheck availability before confirming.")
+        if (!result.ok) throw new UserFacingError(result.error)
+        if (current.proposal.validation.issues.length) throw new UserFacingError("Assignments still have conflicts. Review the affected slots and recheck availability.")
+        if (generation !== availabilityGeneration.current || current.proposal.stale) throw new UserFacingError("Availability changed again while checking. Recheck availability before confirming.")
         setRecheckRequired(false); setRecheckResult("Availability rechecked.")
       } catch (error) {
         setRecheckRequired(true); setDraft(previous => previous ? { ...previous, stale: true } : previous)
-        setRecheckError(error instanceof Error && !("digest" in error) ? error.message : "Could not check availability. Retry the check.")
+        setRecheckError(userMessage(error, "Could not check availability. Retry the check."))
       } finally { setRechecking(false) }
     }) } finally { checking.current = false }
   }
@@ -175,7 +177,7 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
     if (!workspace?.published) return
     await run(async () => {
       const result = await beginPanelScheduleRevision({ ...scope, publishedVersion: workspace.published!.version, restoreVersion })
-      if (!result.ok) throw new Error(result.error)
+      if (!result.ok) throw new UserFacingError(result.error)
       const current = await getPanelProposalWorkspace(scope)
       if (fill && current.proposal) {
         const proposal = current.proposal

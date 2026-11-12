@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { schedulingDateTime } from "@/lib/scheduling-config"
 import { academicYear } from "@/lib/recruitment-profile"
 import { useState } from "react"
@@ -136,25 +138,25 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
       loadedDemoStore().demoStore.mutate((s) => {
         const slot = s.slots.find((i) => i.id === slotId && i.clubId === clubId)!
         if (applicationId && !applications.some((a) => a.id === applicationId))
-          throw new Error("Applicant unavailable")
+          throw new UserFacingError("Applicant unavailable")
         if (
           applicationId &&
           s.slots.some((i) => i.id !== slotId && i.applicationId === applicationId)
         )
-          throw new Error(
+          throw new UserFacingError(
             "This applicant already has a scheduled interview. Release that slot first.",
           )
         slot.applicationId = applicationId || null
         if (applicationId) {
           const a = s.applications.find((a) => a.id === applicationId)!
-          if (["ACCEPTED", "REJECTED", "WAITLISTED"].includes(a.status)) throw new Error("Final decisions cannot be reopened.")
+          if (["ACCEPTED", "REJECTED", "WAITLISTED"].includes(a.status)) throw new UserFacingError("Final decisions cannot be reopened.")
           a.status = "INTERVIEWING"
           a.roundId = club.rounds.find((r) => r.name === "Interview")!.id
         }
       })
       setError("")
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save")
+      setError(userMessage(e, "Could not save"))
     }
   }
   return (
@@ -189,7 +191,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
                     Interviewer: {interviewer?.profile.firstName} {interviewer?.profile.lastName}
                   </p>
                 </div>
-                <label className="text-xs text-muted-foreground">
+                <label className="text-control text-muted-foreground">
                   {student ? "Scheduled candidate" : "Open slot"}
                   <NativeSelect
                     aria-label={`Candidate for ${slot.id}`}

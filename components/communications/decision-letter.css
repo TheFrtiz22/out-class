@@ -1,24 +1,24 @@
 /* Formal decision letter. Paper colors stay light in every theme so the letter reads (and prints) like stationery. */
 .decision-layout{max-width:860px;margin:0 auto}
-.decision-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px;font-size:14px}
+.decision-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px;font-size:var(--oc-size-14)}
 .decision-controls a{text-decoration:underline;text-underline-offset:4px}
 .decision-controls :focus-visible,.decision-celebrate-banner :focus-visible{outline:3px solid var(--ring);outline-offset:4px}
 
-.decision-paper{--letter-accent:var(--school-primary);--letter-ink:#1f2a3a;--letter-muted:#5b6676;--letter-rule:#e4ded2;position:relative;padding:68px 76px 44px;background:var(--oc-content-solid);color:var(--letter-ink);border:1px solid var(--oc-content-edge-solid);border-top:4px solid var(--letter-accent);box-shadow:var(--oc-content-shadow-solid);overflow-wrap:anywhere;font-family:var(--oc-font-display);font-size:16.5px;line-height:1.8}
+.decision-paper{--letter-accent:var(--school-primary);--letter-ink:#1f2a3a;--letter-muted:#5b6676;--letter-rule:#e4ded2;position:relative;padding:68px 76px 44px;background:var(--oc-content-solid);color:var(--letter-ink);border:1px solid var(--oc-content-edge-solid);border-top:4px solid var(--letter-accent);box-shadow:var(--oc-content-shadow-solid);overflow-wrap:anywhere;font-family:var(--oc-font-display);font-size:1.0312rem;line-height:1.8}
 .decision-paper::before{content:"";position:absolute;inset:14px;border:1px solid color-mix(in srgb,var(--letter-accent) 20%,transparent);pointer-events:none}
-.decision-preview{position:relative;font-family:var(--oc-font-sans);font-size:11px;font-weight:600;letter-spacing:.08em;padding:10px;background:var(--oc-content-soft);margin:0 0 28px;text-align:center}
+.decision-preview{position:relative;font-family:var(--oc-font-sans);font-size:var(--oc-size-12);font-weight:600;letter-spacing:.08em;padding:10px;background:var(--oc-content-soft);margin:0 0 28px;text-align:center}
 
 .decision-masthead{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
 .decision-masthead img{width:72px;height:72px;object-fit:contain}
-.decision-eyebrow{margin:6px 0 0;font-size:21px;font-weight:600;font-variant:small-caps;letter-spacing:.12em;line-height:1.3;color:var(--letter-accent)}
-.decision-subtitle{margin:0;font-family:var(--oc-font-sans);font-size:11px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--letter-muted)}
+.decision-eyebrow{margin:6px 0 0;font-size:1.3125rem;font-weight:600;font-variant:small-caps;letter-spacing:.12em;line-height:1.3;color:var(--letter-accent)}
+.decision-subtitle{margin:0;font-family:var(--oc-font-sans);font-size:var(--oc-size-12);font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--letter-muted)}
 .decision-rule{align-self:stretch;height:5px;margin-top:20px;border-top:2px solid var(--letter-accent);border-bottom:1px solid var(--letter-accent);opacity:.85}
 
-.decision-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;margin:26px 0 34px;font-family:var(--oc-font-sans);font-size:13px;color:var(--letter-muted)}
+.decision-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;margin:26px 0 34px;font-family:var(--oc-font-sans);font-size:var(--oc-size-13);color:var(--letter-muted)}
 .decision-meta p{margin:0}
-.decision-meta-label{margin-right:10px;font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase}
+.decision-meta-label{margin-right:10px;font-size:var(--oc-size-12);font-weight:600;letter-spacing:.18em;text-transform:uppercase}
 .decision-date{order:2}
-.decision-paper h1{margin:0 0 34px;font-family:var(--oc-font-display);font-size:31px;font-weight:500;line-height:1.25;letter-spacing:-.01em;text-align:center;text-wrap:balance}
+.decision-paper h1{margin:0 0 34px;font-family:var(--oc-font-display);font-size:1.9375rem;font-weight:500;line-height:1.25;letter-spacing:-.01em;text-align:center;text-wrap:balance}
 .decision-paper[data-decision="accepted"] h1{color:var(--letter-accent)}
 .decision-salutation{margin:0}
 .decision-prose p{margin:18px 0;white-space:pre-line;hyphens:auto}
@@ -30,10 +30,10 @@
 .decision-signature-line{width:240px;max-width:100%;margin:46px 0 8px;border-bottom:1px solid var(--letter-ink);opacity:.45}
 .decision-signer{font-weight:600;font-variant:small-caps;letter-spacing:.06em}
 .decision-seal-mark{flex:none;width:112px;height:112px;margin-right:4px;opacity:.82;transform:rotate(-8deg)}
-.decision-seal-ring{font-family:var(--oc-font-sans);font-size:8.4px;font-weight:600;letter-spacing:.1em;fill:currentColor}
-.decision-seal-initials{font-family:var(--oc-font-display);font-size:23px;letter-spacing:.04em;fill:currentColor}
-.decision-footer{margin-top:30px;font-family:var(--oc-font-sans);font-size:13.5px;line-height:1.6;color:var(--letter-muted);white-space:pre-line}
-.decision-seal{position:relative;margin-top:40px;padding-top:16px;border-top:1px solid var(--letter-rule);font-family:var(--oc-font-sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;text-align:center;color:var(--letter-muted)}
+.decision-seal-ring{font-family:var(--oc-font-sans);font-size:8.4px;font-weight:600;letter-spacing:.1em;fill:currentColor} /* type-literal-ok: SVG user units in the aria-hidden seal artwork */
+.decision-seal-initials{font-family:var(--oc-font-display);font-size:23px;letter-spacing:.04em;fill:currentColor} /* type-literal-ok: SVG user units in the aria-hidden seal artwork */
+.decision-footer{margin-top:30px;font-family:var(--oc-font-sans);font-size:0.8438rem;line-height:1.6;color:var(--letter-muted);white-space:pre-line}
+.decision-seal{position:relative;margin-top:40px;padding-top:16px;border-top:1px solid var(--letter-rule);font-family:var(--oc-font-sans);font-size:var(--oc-size-12);letter-spacing:.16em;text-transform:uppercase;text-align:center;color:var(--letter-muted)}
 
 .decision-response{align-items:flex-start;flex-direction:column;padding:28px;margin-top:24px;border:1px solid var(--border);border-radius:var(--oc-content-radius)}
 
@@ -42,15 +42,15 @@
 .decision-celebrate-icon{flex:none;width:30px;height:30px;color:var(--primary)}
 .decision-celebrate-copy{flex:1 1 240px}
 .decision-celebrate-copy p{margin:0}
-.decision-celebrate-title{font-family:var(--oc-font-display);font-size:22px;line-height:1.3}
-.decision-celebrate-text{margin-top:2px!important;font-size:14px;color:var(--muted-foreground)}
+.decision-celebrate-title{font-family:var(--oc-font-display);font-size:var(--oc-size-22);line-height:1.3}
+.decision-celebrate-text{margin-top:2px!important;font-size:var(--oc-size-14);color:var(--muted-foreground)}
 .decision-celebration-canvas{position:fixed;inset:0;z-index:80;pointer-events:none}
 
 @media(max-width:640px){
- .decision-paper{padding:36px 24px 28px;font-size:15.5px}
+ .decision-paper{padding:36px 24px 28px;font-size:0.9688rem}
  .decision-paper::before{inset:8px}
- .decision-paper h1{font-size:25px}
- .decision-eyebrow{font-size:18px}
+ .decision-paper h1{font-size:1.5625rem}
+ .decision-eyebrow{font-size:var(--oc-size-18)}
  .decision-masthead img{width:56px;height:56px}
  .decision-seal-mark{width:88px;height:88px}
  .decision-response{padding:20px}

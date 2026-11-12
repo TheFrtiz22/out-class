@@ -12,7 +12,7 @@ const expected = [
   "communication-schedules-native", "communications-e2e", "communications-native",
   "corkboard-e2e", "decision-communications-e2e", "decision-publication-e2e",
   "decision-publication-native", "decision-transactions-native",
-  "event-storage-native", "interview-collaboration-native",
+  "event-storage-native", "interview-collaboration-native", "interview-shared-timer-native",
   "interview-native-concurrency", "invitation-schedules-e2e", "mock-recruiting-cycle-native",
   "invitation-schedules-native", "onboarding-concurrency", "onboarding-e2e",
   "recipient-audiences-e2e", "recipient-audiences-native",
@@ -22,6 +22,7 @@ const expected = [
   "student-claim-e2e", "share-card-production-e2e", "clock-skew-hydration-e2e",
   "application-submit-race-native", "invitation-accept-race-native",
   "meeting-check-in-race-native", "club-claim-race-native",
+  "attacker-pass-e2e",
   "active-interview-navigation-e2e", "interview-booking-contention-native",
 ];
 const runners = {
@@ -29,11 +30,12 @@ const runners = {
     "account-data-e2e", "onboarding-e2e", "resume-import-runtime",
     "session-revocation-e2e", "settings-navigation-e2e", "clock-skew-hydration-e2e",
     "signup-privacy-e2e", "student-claim-e2e", "share-card-production-e2e",
+    "attacker-pass-e2e",
     "active-interview-navigation-e2e",
   ],
   "scripts/run-disposable-postgres.cjs": [
     "campus-event-discovery-browser", "campus-event-discovery",
-    "interview-collaboration-native", "interview-native-concurrency",
+    "interview-collaboration-native", "interview-shared-timer-native", "interview-native-concurrency",
     "mock-recruiting-cycle-native", "onboarding-concurrency",
     "recruitment-cycle-start-native",
     "application-submit-race-native", "invitation-accept-race-native",
@@ -63,8 +65,8 @@ const gates = {
   "interview-booking-contention-native": ["OUTCLASS_CONTENTION_TEST_DATABASE_URL"],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 45, "The inventory must track all 45 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 45-test inventory");
+assert.equal(expected.length, 46, "The inventory must track all 46 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 46-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");

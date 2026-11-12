@@ -85,6 +85,15 @@ jobs:
           path: ${{ runner.temp }}/supabase-start-logs
           if-no-files-found: ignore
           retention-days: 7
+      # Attacker pass summary (case, result, notes) from tests/attacker-pass-e2e.test.cjs. Labels, statuses
+      # and counts only: no response bodies, credentials or fixture personal data.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: attacker-pass
+          path: test-results/attacker-pass.json
+          if-no-files-found: warn
+          retention-days: 14
       # Server HTML and the hydrated DOM from any React hydration error (#418/#423/#425), disposable fixture data only.
       - uses: actions/upload-artifact@v4
         if: always()

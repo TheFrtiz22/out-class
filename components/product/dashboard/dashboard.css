@@ -123,7 +123,7 @@
 
 /* Date chips (This week). */
 .oc-date-chip { display: grid; place-content: center; justify-items: center; width: 2.75rem; height: 3rem; border-radius: var(--oc-glass-chip-radius); background: var(--oc-surface-glass-navy); color: var(--oc-glass-cream); box-shadow: var(--oc-glass-navy-highlight); line-height: 1; }
-.oc-date-chip span { font-size: .6875rem; font-weight: var(--oc-weight-semibold); text-transform: uppercase; letter-spacing: .04em; }
+.oc-date-chip span { font-size: var(--oc-size-12); font-weight: var(--oc-weight-semibold); text-transform: uppercase; letter-spacing: .04em; }
 .oc-date-chip strong { margin-top: .125rem; font-family: var(--oc-font-display); font-size: 1.125rem; font-weight: 400; }
 .oc-date-chip:is([data-kind="interview"], [data-kind="deadline"]) { box-shadow: none; outline: 1px solid var(--chip-ring); outline-offset: -1px; }
 .oc-date-chip[data-kind="interview"] { --chip-ring: color-mix(in srgb, var(--interview) 18%, transparent); background: var(--interview-subtle); color: var(--interview); }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { isUvaEmail } from "@/lib/auth";
+import { newPasswordSchema, passwordIssue } from "@/lib/password-policy";
 import { freshAuthClient } from "@/utils/admin-elevation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/utils/prisma";
@@ -10,9 +11,12 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { studentInvitationFingerprint } from "@/lib/student-invitation";
 import { createClient as providerClient } from "@supabase/supabase-js";
 import { turnstileMessage, turnstileRemoteIp, verifyTurnstile } from "@/lib/turnstile";
-const schema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), tokenHash: z.string().regex(/^[a-f0-9]{56,64}$/), password: z.string().min(12).max(72) }).strict();
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
+const schema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), tokenHash: z.string().regex(/^[a-f0-9]{56,64}$/), password: newPasswordSchema }).strict();
 export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
+  const limited = limitRequest(request, RATE_LIMITS.studentClaim);
+  if (limited) return limited;
   let body: unknown;
   try { body = await request.json(); } catch { body = null; }
   // The bot check runs before any account lookup, so its answer never depends on the address.
@@ -23,7 +27,9 @@ export async function POST(request: NextRequest) {
   try {
     const jar = await cookies();
     if (jar.has(PLATFORM_VIEW_COOKIE)) throw Error("Return from impersonation before claiming an account.");
-    const d = schema.parse(fields);
+    const parsed = schema.safeParse(fields);
+    if (!parsed.success) throw Error(passwordIssue(fields.password) ?? "Check your UVA email and open the invitation link again.");
+    const d = parsed.data;
     const normal = await createClient(jar), current = await normal.auth.getUser();
     if (current.data.user && current.data.user.email?.toLowerCase() !== d.email) throw Error("Sign out of the other account before claiming this invitation.");
     const invalid = "Invitation expired, already claimed, or belongs to another address.";

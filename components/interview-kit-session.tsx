@@ -1,8 +1,13 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
+import { connectionMessage, connectionProblem, type ConnectionProblem } from "@/lib/autosave-store";
+/** Private interview notes are kept in memory and this tab's sessionStorage only. */
+const NOTES_STORAGE_SCOPE = "tab" as const;
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { animateQuestionCompletion, captureQuestionCompletion, type QuestionCompletionOrigin } from "@/lib/interview-question-motion";
 import {
@@ -67,6 +72,7 @@ export function InterviewKitSession({
     ),
     [saved, setSaved] = useState(initialSession ? JSON.stringify(initialSession.draft) : ""),
     [saving, setSaving] = useState(false),
+    [connection, setConnection] = useState<ConnectionProblem | null>(null),
     [completing, setCompleting] = useState(false),
     [error, setError] = useState(""),
     [newQuestion, setNewQuestion] = useState(""),
@@ -311,7 +317,7 @@ export function InterviewKitSession({
       .catch((e) => {
         if (current)
           setError(
-            e instanceof Error ? e.message : "Could not open interview.",
+            userMessage(e, "Could not open interview."),
           );
       });
     return () => {
@@ -347,6 +353,7 @@ export function InterviewKitSession({
       savingRef.current = true;
       setSaving(true);
       setError("");
+      setConnection(null);
       setFailedFinish(false);
       const snapshot = structuredClone({ ...draftRef.current, ...patch });
       const request = (async () => { try {
@@ -371,10 +378,14 @@ export function InterviewKitSession({
           if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
         }
         return true;
-      } catch {
+      } catch (failure) {
         if (mounted.current) setFailedFinish(complete);
-        if (mounted.current)
-          setError("Your interview could not be saved. Retry, or refresh your access and revision.");
+        // Private notes stay in memory and this tab's sessionStorage only; they save when the connection returns.
+        if (mounted.current) {
+          const problem = connectionProblem(failure);
+          setConnection(problem);
+          setError(problem ? connectionMessage(problem, NOTES_STORAGE_SCOPE) : "Your interview could not be saved. Retry, or refresh your access and revision.");
+        }
         return false;
       } finally {
         savingRef.current = false;
@@ -394,10 +405,11 @@ export function InterviewKitSession({
   async function flushLatest() {
     if (pendingSave.current) await pendingSave.current;
     while (!finishingRef.current && sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
-      if (!(await persist())) throw Error("Your private notes are retained. Retry before leaving.");
+      if (!(await persist())) throw new UserFacingError("Your private notes are retained. Retry before leaving.");
     }
   }
   const recovery = useAutosaveRecovery({ identity: `interview:${session?.id}`, value: draft, baseline: saved, dirty, enabled: !!session && !session.completedAt, restore: setDraft, flush: flushLatest });
+  useEffect(() => { if (!error) setConnection(null); }, [error]);
   useEffect(() => {
     const form = formRef.current;
     if (!form) return;
@@ -542,9 +554,9 @@ export function InterviewKitSession({
   return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); }}>
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
-      <InterviewTimer key={session.id} recordId={session.id} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
+      <InterviewTimer key={session.id} scope={{ clubId, applicationId, roundId }} shared={collaboration.view?.timer} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
       {recovery.recovery != null && <AutosaveStatus save={{ ...recovery, state: "idle", error: "", flush: flushLatest }} />}
-      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
+      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? (connection === "offline" ? "Offline · notes kept in this tab" : connection === "unreachable" ? "Couldn’t reach OutClass · notes kept in this tab" : "Couldn’t save") : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     <div className="oc-room-collaboration" aria-label="Room participants">
