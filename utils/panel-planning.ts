@@ -18,12 +18,16 @@ export async function planningRound(tx: AppTransactionClient, scope: Scope) {
 export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Scope, window?: { start: string; end: string }) {
   const round = await planningRound(tx, scope)
   const [rooms, pool, overrides] = await Promise.all([
-    tx.interviewRoom.findMany({ where: { clubId: scope.clubId, roundId: scope.roundId }, include: { slots: { orderBy: { startTime: "asc" } } }, orderBy: { createdAt: "asc" } }),
+    tx.interviewRoom.findMany({ where: { clubId: scope.clubId, roundId: scope.roundId }, include: { slots: { orderBy: { startTime: "asc" }, include: { _count: { select: { bookings: true } } } } }, orderBy: { createdAt: "asc" } }),
     loadInterviewerPool(tx, scope.clubId, scope.roundId),
     validAvailabilityOverrides(tx, scope.clubId, scope.roundId),
   ])
   const now = Date.now()
-  const future = rooms.filter(r => r.isOpen).flatMap(r => r.slots.filter(s => +s.startTime > now))
+  // A closed room's future, unbooked time that still has a published panel stays plannable, only so its
+  // interviewers can be removed. Booked and past times keep their published panel untouched.
+  const unstaffOnly = (room: (typeof rooms)[number], slot: (typeof rooms)[number]["slots"][number]) =>
+    !room.isOpen && +slot.startTime > now && !!slot.panelScheduleVersionId && slot.publishedPanelMemberIds.length > 0 && slot._count.bookings === 0
+  const future = rooms.flatMap(r => r.slots.filter(s => +s.startTime > now && (r.isOpen || unstaffOnly(r, s))))
   const suggestedWindow = future.length ? {
     start: new Date(Math.min(...future.map(s => +s.startTime))).toISOString(),
     end: new Date(Math.max(...future.map(s => +s.endTime))).toISOString(),
@@ -37,6 +41,7 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
     required: slot.interviewersNeeded ?? room.interviewersNeeded ?? 2,
     active: room.isOpen && +slot.startTime > now, roomRevision: room.staffingRevision, slotRevision: slot.staffingRevision,
     existingMemberIds: slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.panelApprovedBy ? room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) : [],
+    ...(unstaffOnly(room, slot) ? { unstaffOnly: true as const } : {}),
   }))
   const replacementIds = new Set(sessions.filter(s => s.active).map(s => s.id))
   const userIds = [...new Set(pool.members.filter(m => m.eligible).map(m => m.userId))]

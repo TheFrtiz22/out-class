@@ -51,3 +51,16 @@ test('whole-window coverage matches exhaustive feasible solutions across all sma
   const generated=p.generatePanelAssignments(scene,doc(sessions),'REGENERATE');assert.equal(generated.validation.filled,optimum,`eligibility graph ${graph}`);assert.deepEqual(generated.validation.issues,[])
  }
 })
+test('closed-room sessions keep only their current interviewers, never count toward coverage or duty, and are never staffed by generation',()=>{
+ const open=slot('open',9,1),closed={...slot('closed',9,2),active:false,unstaffOnly:true,existingMemberIds:['kept']},scene={sessions:[open,closed],members:[member('kept',['open'],{blocks:{closed:['UNAVAILABLE']}}),member('new',['open','closed'])]}
+ // Retained interviewers stay without availability or overlap issues; the closed session adds no required positions.
+ let v=p.validatePanelDocument(doc([open,closed],[a('open','kept'),a('closed','kept')]),scene);assert.deepEqual(v.issues,[]);assert.equal(v.required,1);assert.equal(v.filled,1);assert.equal(v.sessions.find(s=>s.slotId==='closed').unfilled,0);assert.deepEqual(v.workloads,[{memberId:'kept',sessions:1,minutes:30}])
+ // Placing anybody new on a closed session is a conflict.
+ v=p.validatePanelDocument(doc([open,closed],[a('closed','new')]),scene);assert.deepEqual(v.issues.map(i=>[i.memberId,i.code]),[['new','SESSION_UNAVAILABLE']])
+ assert.ok(p.canProposeMember(scene,[],'closed','new',doc([]).options).includes('SESSION_UNAVAILABLE'))
+ // A retained interviewer who lost eligibility still blocks, as the publication guard would.
+ v=p.validatePanelDocument(doc([open,closed],[a('closed','kept')]),{...scene,members:[member('kept',[],{eligible:false})]});assert.deepEqual(v.issues.map(i=>i.code),['INELIGIBLE'])
+ // Emptying a closed session is an un-staffing that needs confirmation, but it is not subtracted from required coverage.
+ const unstaffing=p.panelUnstaffing(doc([open,closed],[]),scene,new Set());assert.deepEqual(unstaffing.removedSlotIds,['closed']);assert.equal(unstaffing.exemptRequired,1)
+ assert.equal(p.generatePanelAssignments({...scene,sessions:[open,closed]},doc([open,closed]),'REGENERATE').document.assignments.some(x=>x.slotId==='closed'),false)
+})
