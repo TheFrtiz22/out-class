@@ -292,7 +292,24 @@ export function generatePanelAssignments(scene: PanelScene, document: PanelDocum
 
 export type PanelScheduleChange = { kind: "ADDED" | "REMOVED" | "REASSIGNED" | "ROOM_CHANGED" | "TIME_CHANGED" | "REQUIREMENT_CHANGED" | "AVAILABILITY_OVERRIDDEN"; memberId?: string; before?: PanelSession; after?: PanelSession }
 export type PanelPublishedView = { id: string; version: number; previousVersion: number; status: "PUBLISHED" | "SUPERSEDED"; document: PanelDocument; changes: PanelScheduleChange[]; publishedAt: string; author: string; understaffedOverride: boolean; overrideReason: string | null; notifications: Record<string, number> }
-export type PanelApprovalReview = { proposalId: string; revision: number; approvalToken: string; clubName: string; roundName: string; rooms: number; sessions: number; required: number; filled: number; unfilled: number; conflicts: number; canOverride: boolean; overrideWarning: string | null; changes: PanelScheduleChange[]; previousVersion: number }
+export type PanelApprovalReview = { proposalId: string; revision: number; approvalToken: string; clubName: string; roundName: string; rooms: number; sessions: number; required: number; filled: number; unfilled: number; conflicts: number; canOverride: boolean; overrideWarning: string | null; changes: PanelScheduleChange[]; previousVersion: number
+  /** Unbooked sessions this publication empties (they currently have interviewers). */
+  unstaffed: number
+  /** Whether unfilled positions still need the understaffing confirmation and reason. */
+  overrideRequired: boolean }
+/**
+ * Explicit un-staffing. An unbooked session with no interviewers is not offered to applicants,
+ * so emptying it (or keeping an officially empty one empty) is not an understaffing override.
+ * Booked sessions are never exempt: assertPanelBookingSafety still requires an interviewer.
+ * Sessions that were never staffed keep needing the understaffing confirmation.
+ */
+export function panelUnstaffing(document: PanelDocument, scene: PanelScene, official: PanelDocument | null, bookedSlotIds: ReadonlySet<string>) {
+  const published = new Set(official?.sessions.map(s => s.id) ?? [])
+  const staffed = (id: string) => (scene.sessions.find(s => s.id === id)?.existingMemberIds.length ?? 0) > 0
+  const empty = document.sessions.filter(s => !bookedSlotIds.has(s.id) && !document.assignments.some(a => a.slotId === s.id))
+  const exempt = empty.filter(s => published.has(s.id) || staffed(s.id))
+  return { exemptSlotIds: exempt.map(s => s.id), exemptRequired: exempt.reduce((n, s) => n + s.required, 0), removedSlotIds: empty.filter(s => staffed(s.id)).map(s => s.id) }
+}
 export const publishedPanelDocumentSchema = panelDocumentSchema.innerType().extend({ sessions: z.array(panelSessionSchema).max(5000), assignments: z.array(panelAssignmentSchema).max(40000) }).superRefine((d, ctx) => {
   const slots = new Set(d.sessions.map(s => s.id))
   if (slots.size !== d.sessions.length || d.assignments.some(a => !slots.has(a.slotId)) || new Set(d.assignments.map(assignmentKey)).size !== d.assignments.length) ctx.addIssue({code: z.ZodIssueCode.custom, message: "Invalid published session references."})
