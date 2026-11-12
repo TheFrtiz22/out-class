@@ -37,6 +37,9 @@ export const RATE_LIMITS = {
   adminViewAs: { name: "admin-view-as", limit: 60, windowMs: 10 * minute },
   adminViewAsBlocked: { name: "admin-view-as-blocked", limit: 60, windowMs: minute },
   demoMode: { name: "demo-mode", limit: 30, windowMs: 10 * minute },
+  // RFC 8058 one-click POSTs come from mail providers' shared servers, so this only bounds a flood of writes;
+  // the signed token, not the limit, is what stops forged requests.
+  emailUnsubscribe: { name: "email-unsubscribe", limit: 300, windowMs: minute },
 } as const satisfies Record<string, RateLimitPolicy>
 
 export const RATE_LIMIT_MESSAGE = "Too many requests. Please wait a moment and try again."
