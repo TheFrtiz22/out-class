@@ -231,6 +231,13 @@ export async function purgeOfflineNotes({ owner, now = Date.now(), onlyIfPresent
     }
   } catch { /* Storage can be unavailable; reads still check age and owner. */ }
 }
+/** True when this browser holds an unexpired device copy for `owner` (any interview, any tab or session). */
+export async function hasOfflineNotesFor(owner: string, now = Date.now()) {
+  if (!offlineNotesSupported() || !validNotesOwner(owner)) return false
+  if (!(await databasePresent())) return false
+  try { return (await backend().all()).some(record => record?.owner === owner && typeof record.at === "number" && now - record.at <= OFFLINE_NOTES_MAX_AGE) }
+  catch { return false }
+}
 export type OfflineNotesRead = { copy: OfflineNotesCopy | null; unreadable: boolean }
 /**
  * The signed-in interviewer's copy for this interview. Only copies that are provably another

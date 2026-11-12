@@ -10,7 +10,7 @@
  * (including the older v1 tab-only copies). Interview-room notes use their own encrypted IndexedDB
  * copy (lib/interview-offline-notes.ts); the same sign-out, account-switch and expiry rules clear it.
  */
-import { clearOfflineNotes, hasPendingOfflineNotes, purgeOfflineNotes } from "@/lib/interview-offline-notes"
+import { clearOfflineNotes, hasOfflineNotesFor, hasPendingOfflineNotes, purgeOfflineNotes } from "@/lib/interview-offline-notes"
 export type DraftPersistence = "device" | "tab"
 export type DraftRecord<T = unknown> = { v: 2; owner: string; value: T; baseline: string; writer: string; at: number; revision?: number }
 export type StoredDraft<T = unknown> = DraftRecord<T> & { source: "tab" | "device" }
@@ -96,12 +96,26 @@ export function hasUnsavedAutosaveCopies() {
  * "clean": nothing unsaved. "flushed": everything saved within the timeout. "discard": the user
  * confirmed discarding. "cancel": keep the session and the copies.
  */
+/**
+ * hasUnsavedAutosaveCopies plus encrypted interview-notes copies this account left in IndexedDB from
+ * earlier pages or tabs (never reopened here), so sign-out asks before discarding them. Bounded to 1 s.
+ */
+export async function hasUnsavedCopiesIncludingDevice() {
+  if (hasUnsavedAutosaveCopies()) return true
+  let owner: string | null = null
+  for (const store of [storage("localStorage"), storage("sessionStorage")]) {
+    try { owner ??= store?.getItem(OWNER_MARKER) ?? null } catch { /* Ignore. */ }
+  }
+  if (!owner) return false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return Promise.race([hasOfflineNotesFor(owner).catch(() => false), new Promise<boolean>(resolve => { timer = setTimeout(() => resolve(false), 1000) })]).finally(() => clearTimeout(timer))
+}
 export async function prepareSignOut({ flush, confirm, timeoutMs = 3000 }: { flush: () => Promise<void>; confirm: () => Promise<boolean>; timeoutMs?: number }): Promise<"clean" | "flushed" | "discard" | "cancel"> {
-  if (!hasUnsavedAutosaveCopies()) return "clean"
+  if (!(await hasUnsavedCopiesIncludingDevice())) return "clean"
   let timer: ReturnType<typeof setTimeout> | undefined
   try { await Promise.race([flush().catch(() => {}), new Promise<void>(resolve => { timer = setTimeout(resolve, timeoutMs) })]) }
   finally { if (timer) clearTimeout(timer) }
-  if (!hasUnsavedAutosaveCopies()) return "flushed"
+  if (!(await hasUnsavedCopiesIncludingDevice())) return "flushed"
   return (await confirm()) ? "discard" : "cancel"
 }
 /**

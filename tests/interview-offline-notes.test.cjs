@@ -152,3 +152,17 @@ test('an explicit sign-out in another tab seals this page; a passive SIGNED_OUT 
   assert.equal(backend.records.size, 0)
   assert.equal(await vault.writeOfflineNotes(copy(A, 'dirty editor here')), false); assert.equal(backend.records.size, 0)
 })
+
+test('sign-out asks before discarding device copies this account left in earlier pages', async () => {
+  localStorage.setItem('outclass:autosave:owner', A)
+  assert.equal(await store.prepareSignOut({ flush: async () => {}, confirm: async () => { throw Error('not asked') } }), 'clean')
+  await vault.writeOfflineNotes(copy(A, 'never reopened'))
+  vault.setOfflineNotesBackendForTests(backend)   // a later page: nothing pending in memory, the copy is on disk
+  assert.equal(vault.hasPendingOfflineNotes(), false); assert.equal(store.hasUnsavedAutosaveCopies(), false)
+  let asked = 0
+  assert.equal(await store.prepareSignOut({ flush: async () => {}, confirm: async () => { asked++; return false } }), 'cancel')
+  assert.equal(asked, 1); assert.equal(backend.records.size, 1)
+  // Another account's leftover copy is not this account's unsaved work.
+  localStorage.setItem('outclass:autosave:owner', B)
+  assert.equal(await store.prepareSignOut({ flush: async () => {}, confirm: async () => { throw Error('not asked') } }), 'clean')
+})
