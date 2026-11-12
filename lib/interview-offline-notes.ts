@@ -29,7 +29,7 @@ export type InterviewNotesScope = { clubId: string; applicationId: string; round
 export type LocalInterviewNotes = Omit<InterviewDraft, "score" | "rubricScores">
 export type OfflineNotesCopy = { owner: string; scope: InterviewNotesScope; sessionId: string; revision: number; baseline: string; value: LocalInterviewNotes; at: number }
 /** What IndexedDB holds: only the key, owner and age are readable; the notes are ciphertext. */
-export type StoredOfflineNotes = { key: string; owner: string; at: number; iv: Uint8Array; data: ArrayBuffer }
+export type StoredOfflineNotes = { key: string; owner: string; at: number; iv: Uint8Array<ArrayBuffer>; data: ArrayBuffer }
 
 /** Storage boundary. The browser uses IndexedDB; unit tests pass an in-memory backend. */
 export interface OfflineNotesBackend {

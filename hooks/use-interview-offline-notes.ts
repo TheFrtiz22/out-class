@@ -30,9 +30,9 @@ export function useInterviewOfflineNotes({ scope, session, draft, saved, dirty, 
   reconnect?: () => void
 }) {
   const { user, isImpersonating } = useAuth(), demo = useDemoMode()
-  // Decided after mount: IndexedDB is a browser-only capability.
-  const [supported, setSupported] = useState(false)
-  useEffect(() => { setSupported(offlineNotesSupported()) }, [])
+  // Known from the first client render, so the tab-only fallback never reads or writes a plaintext copy
+  // first. Only status text depends on it, and that text appears after a failed save, never on hydration.
+  const [supported] = useState(() => typeof window !== "undefined" && offlineNotesSupported())
   const owner = supported && !demo.isDemoEnabled && !isImpersonating && validNotesOwner(user?.id) ? user!.id : null
   const completed = !!session?.completedAt
   const base = useAutosaveRecovery({ identity: `interview:${session?.id}`, value: draft, baseline: saved, dirty, enabled: !!session && !completed, restore, flush, tabCopy: !owner })
