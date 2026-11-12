@@ -30,7 +30,7 @@ export type InterviewNotesScope = { clubId: string; applicationId: string; round
 export type LocalInterviewNotes = Omit<InterviewDraft, "score" | "rubricScores">
 export type OfflineNotesCopy = { owner: string; scope: InterviewNotesScope; sessionId: string; revision: number; baseline: string; value: LocalInterviewNotes; at: number }
 /** What IndexedDB holds: only the key, owner and age are readable; the notes are ciphertext. */
-export type StoredOfflineNotes = { key: string; owner: string; at: number; iv: Uint8Array<ArrayBuffer>; data: ArrayBuffer }
+export type StoredOfflineNotes = { key: string; owner: string; at: number; iv: Uint8Array<ArrayBuffer>; data: ArrayBuffer; writer?: string; revision?: number }
 
 /** Storage boundary. The browser uses IndexedDB; unit tests pass an in-memory backend. */
 export interface OfflineNotesBackend {
@@ -43,6 +43,8 @@ export interface OfflineNotesBackend {
   /** Store `key` unless another tab stored one first; returns the key that is stored. */
   addKey(key: CryptoKey): Promise<CryptoKey>
   dropKey(): Promise<void>
+  /** Delete `key` only when `remove` accepts the stored record, atomically where possible. */
+  deleteIf?(key: string, remove: (record: StoredOfflineNotes) => boolean): Promise<boolean>
   /** Delete everything at once (sign-out). Optional: test backends fall back to clear + dropKey. */
   destroy?(): Promise<void>
 }
@@ -100,6 +102,15 @@ const indexedDbBackend: OfflineNotesBackend = {
   get: key => run(OFFLINE_NOTES_STORE, "readonly", s => s.get(key) as IDBRequest<StoredOfflineNotes | undefined>),
   put: async record => { await run(OFFLINE_NOTES_STORE, "readwrite", s => s.put(record)) },
   delete: async key => { await run(OFFLINE_NOTES_STORE, "readwrite", s => s.delete(key)) },
+  deleteIf: async (key, remove) => {
+    // Read and delete in one transaction: another tab cannot write in between.
+    const db = await openDatabase(), tx = db.transaction(OFFLINE_NOTES_STORE, "readwrite"), store = tx.objectStore(OFFLINE_NOTES_STORE)
+    let removed = false
+    const read = store.get(key)
+    read.onsuccess = () => { const record = read.result as StoredOfflineNotes | undefined; if (record && remove(record)) { store.delete(key); removed = true } }
+    await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error ?? Error("Offline notes transaction aborted.")) })
+    return removed
+  },
   all: () => run(OFFLINE_NOTES_STORE, "readonly", s => s.getAll() as IDBRequest<StoredOfflineNotes[]>),
   clear: async () => { await run(OFFLINE_NOTES_STORE, "readwrite", s => s.clear()) },
   getKey: () => run(OFFLINE_KEYS_STORE, "readonly", s => s.get(DEVICE_KEY_ID) as IDBRequest<CryptoKey | undefined>),
@@ -157,7 +168,7 @@ async function seal(copy: OfflineNotesCopy, key: string): Promise<StoredOfflineN
   if (!cryptoKey) throw Error("Offline notes key unavailable.")
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(12))
   const data = await subtle()!.encrypt({ name: "AES-GCM", iv, additionalData: encoder.encode(key) }, cryptoKey, encoder.encode(JSON.stringify(copy)))
-  return { key, owner: copy.owner, at: copy.at, iv, data }
+  return { key, owner: copy.owner, at: copy.at, iv, data, writer: WRITER, revision: copy.revision }
 }
 async function open(record: StoredOfflineNotes): Promise<OfflineNotesCopy | null> {
   try {
@@ -177,6 +188,29 @@ function enqueue<T>(key: string, op: () => Promise<T>) {
   chains.set(key, next)
   void next.catch(() => {}).finally(() => { if (chains.get(key) === next) chains.delete(key) })
   return next
+}
+// ---------------------------------------------------------------- tabs
+/** This page's writer id. A tab deletes only copies it wrote itself; other tabs hear about changes. */
+const WRITER = (() => { try { return globalThis.crypto.randomUUID() } catch { return `w${Math.random().toString(36).slice(2)}${Date.now()}` } })()
+export type OfflineNotesChange = { type: "write" | "delete"; key: string; writer: string }
+const CHANNEL = "outclass-offline-notes"
+let poster: BroadcastChannel | null | undefined
+function announce(change: Omit<OfflineNotesChange, "writer">) {
+  try {
+    if (poster === undefined) {
+      poster = typeof BroadcastChannel === "function" ? new BroadcastChannel(CHANNEL) : null
+      // Node (tests) keeps the process alive for an open channel; browsers have no unref.
+      ;(poster as unknown as { unref?: () => void } | null)?.unref?.()
+    }
+    poster?.postMessage({ ...change, writer: WRITER })
+  } catch { /* Other tabs still re-check on their next write. */ }
+}
+/** Changes made by OTHER tabs or pages to device copies. Returns an unsubscribe function. */
+export function onOfflineNotesChange(listener: (change: OfflineNotesChange) => void) {
+  if (typeof BroadcastChannel !== "function") return () => {}
+  const channel = new BroadcastChannel(CHANNEL)
+  channel.onmessage = event => { const change = event.data as OfflineNotesChange; if (change?.writer !== WRITER && typeof change?.key === "string") listener(change) }
+  return () => channel.close()
 }
 /** Keys this page has written and not yet deleted: lets sign-out know there are unsaved notes. */
 const pending = new Set<string>()
@@ -201,18 +235,30 @@ export function writeOfflineNotes(copy: OfflineNotesCopy): Promise<boolean> {
       const record = await seal(value, key)
       // Sign-out may have started while encrypting: never recreate a record after it.
       if (sealed) return false
-      await backend().put(record); return true
+      await backend().put(record); announce({ type: "write", key }); return true
     } catch { return false }
   })
 }
-/** Delete this interview's copy (saved, submitted, or dismissed by the interviewer). */
-export function deleteOfflineNotes(owner: string, scope: InterviewNotesScope): Promise<void> {
+/**
+ * Delete this interview's copy. With `onlyMine` (this tab's save was confirmed, or this tab submitted),
+ * a copy another tab wrote since is kept: it holds that tab's newer unsaved notes.
+ */
+export function deleteOfflineNotes(owner: string, scope: InterviewNotesScope, { onlyMine = false }: { onlyMine?: boolean } = {}): Promise<void> {
   let key: string
   try { key = offlineNotesKey(owner, scope) } catch { return Promise.resolve() }
   generations.set(key, (generations.get(key) ?? 0) + 1)
   pending.delete(key)
   if (!offlineNotesSupported()) return Promise.resolve()
-  return enqueue(key, async () => { try { await backend().delete(key) } catch { /* Expiry still removes it. */ } })
+  return enqueue(key, async () => {
+    try {
+      const store = backend(), mine = (record: StoredOfflineNotes) => record.writer === WRITER
+      let removed: boolean
+      if (!onlyMine) { await store.delete(key); removed = true }
+      else if (store.deleteIf) removed = await store.deleteIf(key, mine)
+      else { const record = await store.get(key); removed = !!record && mine(record); if (removed) await store.delete(key) }
+      if (removed) announce({ type: "delete", key })
+    } catch { /* Expiry still removes it. */ }
+  })
 }
 /**
  * Delete expired copies and every copy that belongs to another account. With `owner` omitted only

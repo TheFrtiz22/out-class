@@ -166,3 +166,17 @@ test('sign-out asks before discarding device copies this account left in earlier
   localStorage.setItem('outclass:autosave:owner', B)
   assert.equal(await store.prepareSignOut({ flush: async () => {}, confirm: async () => { throw Error('not asked') } }), 'clean')
 })
+
+test('a tab deletes only the copy it wrote: another tab\'s newer copy survives this tab\'s confirmed save', async () => {
+  await vault.writeOfflineNotes(copy(A, 'this tab'))
+  const [mine] = backend.records.values(); assert.ok(mine.writer); assert.equal(mine.revision, 3)
+  backend.records.set(mine.key, { ...mine, writer: 'other-tab' })   // another tab wrote its newer notes since
+  await vault.deleteOfflineNotes(A, scope, { onlyMine: true })
+  assert.equal(backend.records.size, 1)
+  backend.records.set(mine.key, mine)
+  await vault.deleteOfflineNotes(A, scope, { onlyMine: true })
+  assert.equal(backend.records.size, 0)
+  // Without onlyMine (the interviewer chose "Keep newer version"), it is deleted regardless.
+  await vault.writeOfflineNotes(copy(A, 'x')); const [r] = backend.records.values(); backend.records.set(r.key, { ...r, writer: 'other-tab' })
+  await vault.deleteOfflineNotes(A, scope); assert.equal(backend.records.size, 0)
+})
