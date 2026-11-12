@@ -60,6 +60,7 @@ model User {
   conversations ClubConversation[]
   sentClubMessages ClubMessage[]
   notificationEmails NotificationEmailDelivery[]
+  pushSubscriptions WebPushSubscription[]
 }
 
 enum AppRole {
@@ -643,6 +644,19 @@ model InterviewCollaboration {
   revision Int @default(0)
   @@unique([applicationId, roundId, roomKey])
   @@index([clubId, roundId])
+}
+
+model InterviewTimer {
+  sessionId String @id
+  durationMs Int
+  contextKey String
+  startedAt DateTime?
+  pausedAt DateTime?
+  pausedMs Int @default(0)
+  revision Int @default(1)
+  lastRequestId String?
+  updatedBy String?
+  updatedAt DateTime @default(now())
 }
 
 model InterviewPresence {
@@ -1545,6 +1559,7 @@ model UserNotification {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now()) @updatedAt
   emailOutbox    NotificationEmailOutbox?
+  pushDeliveries WebPushDelivery[]
 
   @@unique([userId, eventKey])
   @@index([userId, createdAt])
@@ -1631,6 +1646,37 @@ model NotificationEmailDelivery {
   updatedAt DateTime @default(now()) @updatedAt
   @@index([status, nextAttemptAt])
   @@index([userId, createdAt])
+}
+
+// Web Push (S1-8): one row per browser push endpoint, server-only. An extra
+// delivery channel on top of the notification email outbox; never a replacement.
+model WebPushSubscription {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+  failureCount  Int       @default(0)
+  deliveries    WebPushDelivery[]
+  @@index([userId, createdAt])
+}
+
+// At most one push per (notification, subscription): the primary key is the
+// idempotency key, and a row is claimed PENDING -> SENDING exactly once.
+model WebPushDelivery {
+  notificationId String
+  notification   UserNotification    @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  subscription   WebPushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  status         String              @default("PENDING")
+  createdAt      DateTime            @default(now())
+  attemptedAt    DateTime?
+  @@id([notificationId, subscriptionId])
+  @@index([status, createdAt])
+  @@index([subscriptionId])
 }
 
 model DecisionLetter {

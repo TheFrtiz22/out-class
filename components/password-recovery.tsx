@@ -13,6 +13,7 @@ import {
   recoveryEmail,
   recoveryConfirmation,
 } from "@/lib/password-recovery";
+import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, passwordIssue } from "@/lib/password-policy";
 import { PublicPageFrame } from "@/components/landing/public-page-frame";
 import "@/components/auth/login.css";
 
@@ -67,7 +68,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
       mode === "reset" &&
       (!newPassword.safeParse(password).success || password !== confirmation)
     ) {
-      setError("Use matching passwords of 8–128 characters.");
+      setError(passwordIssue(password) ?? "Passwords must match.");
       return;
     }
     if (mode === "request" && turnstileRequired && !turnstileToken) {
@@ -128,7 +129,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                 : "Sign in with your new password to continue to OutClass."
               : mode === "request"
                 ? "Enter your UVA email and we’ll help you get back to OutClass."
-                : "Use a unique password of at least 8 characters. Your account’s security requirements also apply."}
+                : "Choose a new password you don’t use anywhere else."}
           </p>
           {!ready && (
             <LoadingState label="Preparing secure reset…" layout="inline" rows={3} className="mt-6" />
@@ -171,17 +172,16 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                       type="password"
                       autoComplete="new-password"
                       required
-                      minLength={8}
-                      maxLength={128}
+                      minLength={PASSWORD_MIN_LENGTH}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       aria-describedby="password-help"
                     />
                     <p
                       id="password-help"
-                      className="text-xs text-muted-foreground"
+                      className="text-control text-muted-foreground"
                     >
-                      8–128 characters. Spaces and password managers are
+                      {PASSWORD_HINT} Spaces and password managers are
                       welcome.
                     </p>
                   </div>
@@ -194,8 +194,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                       type="password"
                       autoComplete="new-password"
                       required
-                      minLength={8}
-                      maxLength={128}
+                      minLength={PASSWORD_MIN_LENGTH}
                       value={confirmation}
                       onChange={(e) => setConfirmation(e.target.value)}
                     />
@@ -212,7 +211,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                       onChange={(e) => setAuthenticatorCode(e.target.value)}
                       aria-describedby="recovery-authenticator-help"
                     />
-                    <p id="recovery-authenticator-help" className="text-xs text-muted-foreground">
+                    <p id="recovery-authenticator-help" className="text-control text-muted-foreground">
                       If your account uses two-step verification, enter a fresh six-digit code from your authenticator app.
                     </p>
                   </div>

@@ -3,6 +3,9 @@ function bundle(entry,mocks={}){
  // pdf.js is loaded on demand (dynamic import) by résumé previews and pulls in Node-only
  // canvas bindings; these fixtures never render a PDF, so bundle it as an empty module.
  mocks={'pdfjs-dist':'module.exports={}',...mocks}
+ // The shell removes this device's push subscription on sign-out through a server action
+ // (dynamic import); fixtures have no server, so the action is a no-op.
+ mocks={'@/actions/push-subscriptions':'exports.removePushSubscription=async()=>({ok:true})',...mocks}
  // The app mounts ConfirmProvider once in the root layout; give every fixture root the same
  // provider so components that call useConfirm() render as they do in the app.
  const client=JSON.stringify(require.resolve('react-dom/client'))

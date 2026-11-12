@@ -1,9 +1,11 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
 import { passwordNotSavedNotice, setPasswordAfterConfirmation } from "@/lib/signup-password"
+import { PASSWORD_HINT } from "@/lib/password-policy"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
@@ -459,8 +461,8 @@ export function StudentOnboardingWizard({
 
       // Navigate to the dashboard
       onComplete()
-    } catch (err: any) {
-      setGlobalError(err?.message ?? "Failed to save your profile")
+    } catch (err) {
+      setGlobalError(userMessage(err, "Couldn’t save your profile. Your answers are still here. Try again."))
     } finally {
       setLoading(false)
     }
@@ -524,7 +526,7 @@ export function StudentOnboardingWizard({
                       {...step1Form.register("firstName")}
                     />
                     {step1Form.formState.errors.firstName && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step1Form.formState.errors.firstName.message}
                       </p>
                     )}
@@ -539,7 +541,7 @@ export function StudentOnboardingWizard({
                       {...step1Form.register("lastName")}
                     />
                     {step1Form.formState.errors.lastName && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step1Form.formState.errors.lastName.message}
                       </p>
                     )}
@@ -563,7 +565,7 @@ export function StudentOnboardingWizard({
                     {accountCreated ? "Your sign-in email is kept with your account. Invitations are matched using your verified university identity." : "Only @virginia.edu addresses are accepted."}
                   </p>
                   {step1Form.formState.errors.email && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-control text-red-600">
                       {step1Form.formState.errors.email.message}
                     </p>
                   )}
@@ -572,8 +574,8 @@ export function StudentOnboardingWizard({
                 {!accountCreated && <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" autoComplete="new-password" {...step1Form.register("password")} />
-                  <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
-                  {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
+                  <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
+                  {step1Form.formState.errors.password && <p className="text-control text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
                 {askTerms && <TermsClickwrap checked={acceptTerms} onCheckedChange={value => { setAcceptTerms(value); if (value && globalError === TERMS_REQUIRED_MESSAGE) setGlobalError("") }} disabled={loading} />}
                 {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
@@ -619,7 +621,7 @@ export function StudentOnboardingWizard({
                   />
                 </div>
                 {step2Form.formState.errors.code && (
-                  <p className="text-center text-xs text-red-600">
+                  <p className="text-center text-control text-red-600">
                     {step2Form.formState.errors.code.message}
                   </p>
                 )}
@@ -699,7 +701,7 @@ export function StudentOnboardingWizard({
                       }
                     />
                     {step3Form.formState.errors.gradYear && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.gradYear.message}
                       </p>
                     )}
@@ -714,7 +716,7 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("major")}
                     />
                     {step3Form.formState.errors.major && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.major.message}
                       </p>
                     )}
@@ -738,7 +740,7 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("gpa")}
                     />
                     {step3Form.formState.errors.gpa && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.gpa.message}
                       </p>
                     )}
@@ -747,7 +749,7 @@ export function StudentOnboardingWizard({
                   <div className="space-y-1.5">
                     <Label htmlFor="actScore">ACT composite (optional)</Label>
                     <Input id="actScore" type="number" min={1} max={36} step={1} {...step3Form.register("actScore")} />
-                    {step3Form.formState.errors.actScore && <p role="alert" className="text-xs text-red-600">{step3Form.formState.errors.actScore.message}</p>}
+                    {step3Form.formState.errors.actScore && <p role="alert" className="text-control text-red-600">{step3Form.formState.errors.actScore.message}</p>}
                     <Label htmlFor="satScore">
                       SAT score{" "}
                       <span className="font-normal text-muted-foreground">
@@ -763,7 +765,7 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("satScore")}
                     />
                     {step3Form.formState.errors.satScore && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.satScore.message}
                       </p>
                     )}
@@ -793,7 +795,7 @@ export function StudentOnboardingWizard({
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   Add your LinkedIn and resume to strengthen your profile. Both
-                  are optional — you can always add them later.
+                  are optional, and you can add them later.
                 </p>
               </div>
 
@@ -808,7 +810,7 @@ export function StudentOnboardingWizard({
                     <Input aria-label={`Experience ${index + 1} role`} placeholder="Role or title" {...step4Form.register(`experiences.${index}.title`)} />
                     <Input aria-label={`Experience ${index + 1} organization`} placeholder="Club, employer, or organization" {...step4Form.register(`experiences.${index}.subtitle`)} />
                     <Input aria-label={`Experience ${index + 1} dates`} placeholder="e.g. 2025–present" {...step4Form.register(`experiences.${index}.period`)} />
-                    {step4Form.formState.errors.experiences?.[index] && <p className="text-xs text-red-600">Add a title, organization, and dates, or remove this experience.</p>}
+                    {step4Form.formState.errors.experiences?.[index] && <p className="text-control text-red-600">Add a title, organization, and dates, or remove this experience.</p>}
                     <Button type="button" variant="ghost" onClick={() => experienceFields.remove(index)}>Remove experience</Button>
                   </div>)}
                   <Button type="button" variant="outline" disabled={experienceFields.fields.length >= 20} onClick={() => experienceFields.append({ title: "", subtitle: "", period: "" })}>Add experience</Button>
@@ -817,7 +819,7 @@ export function StudentOnboardingWizard({
                   <Label htmlFor="linkedinUrl">
                     LinkedIn profile{" "}
                     <span className="font-normal text-muted-foreground">
-                      — Optional / Skippable
+                      (optional)
                     </span>
                   </Label>
                   <Input
@@ -828,7 +830,7 @@ export function StudentOnboardingWizard({
                     {...step4Form.register("linkedinUrl")}
                   />
                   {step4Form.formState.errors.linkedinUrl && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-control text-red-600">
                       {step4Form.formState.errors.linkedinUrl.message}
                     </p>
                   )}

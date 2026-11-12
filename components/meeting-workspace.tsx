@@ -1,4 +1,6 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { MeetingGroupInvitation } from "@/components/meeting-group-invitation"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
@@ -73,7 +75,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
-    <div className="flex flex-wrap items-start justify-between gap-4"><p className="max-w-xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance for your club.</p>
+    <div className="flex flex-wrap items-start justify-between gap-4">
       {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} initialOpen={openCreate} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
@@ -86,7 +88,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} />}
     <ul className="oc-meeting-list grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
-      <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
+      <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` – ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}
     </li>)}</ul>
     <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-[var(--oc-reading-width)]"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
@@ -159,7 +161,7 @@ function MeetingEditor({
         setMessage(""); setFailed(false);
         try {
           const input = meetingInputSchema.safeParse({ ...fields, id: meeting?.id, clubId, resources, revision: meeting?.revision ?? 0, endDate: fields.endDate || null });
-          if (!input.success) throw new Error(input.error.issues[0].message);
+          if (!input.success) throw new UserFacingError(input.error.issues[0].message);
           await draftSave.flush();
           await saveMeeting({
             id: meeting?.id,
@@ -187,7 +189,7 @@ function MeetingEditor({
         } catch (error) {
           setFailed(true);
           setMessage(
-            error instanceof Error ? error.message : "Could not save.",
+            userMessage(error, "Could not save."),
           );
         } finally {
           setBusy(false);
@@ -263,8 +265,7 @@ function MeetingEditor({
         <section hidden={tab !== "resources"} className="space-y-3">
           <h3 className="oc-card-heading ">Slides, files, and links</h3>
           <p className="text-xs text-muted-foreground">
-            Attach links to resources. For member-only documents, also restrict
-            sharing with your file provider.
+            For member-only files, also restrict sharing with your file provider.
           </p>
           {resources.map((r, i) => (
             <div key={r.id} className="space-y-2 border-l pl-3">
@@ -364,7 +365,7 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
       })
       .catch((e) => {
         if (current)
-          setError(e instanceof Error ? e.message : "Meeting unavailable.");
+          setError(userMessage(e, "Meeting unavailable."));
       });
     return () => {
       current = false;
@@ -395,7 +396,7 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
         <p>
           {meetingDate(meeting.date)}
           {meeting.endDate &&
-            ` — ${meetingDate(meeting.endDate)}`}{" "}
+            ` – ${meetingDate(meeting.endDate)}`}{" "}
           · {meeting.location}
         </p>
         <p className="whitespace-pre-wrap">{meeting.description}</p>
@@ -483,7 +484,7 @@ function MeetingAttendance({ meeting, member }: { meeting: Meeting; member: Para
         }
       } catch (e) {
         if (current) {
-          const message = e instanceof Error ? e.message : "Could not refresh QR code.";
+          const message = userMessage(e, "Could not refresh QR code.");
           setError(message);
           setIssueError(message);
         }
@@ -507,14 +508,11 @@ function MeetingAttendance({ meeting, member }: { meeting: Meeting; member: Para
       <h2 className="oc-section-heading ">Attendance</h2>
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
-          Demo QR check-in works in this browser only. It does not simulate a
-          shared cross-device database.
+          Demo check-in works in this browser only.
         </p>
       )}
       <p className="text-sm text-muted-foreground">
-        Codes refresh every minute and expire after 90 seconds. Attendees must
-        sign in. Closing revokes all current codes; leaving this page lets them
-        expire.
+        Attendees must sign in. Closing revokes all current codes.
       </p>
       <Button
         variant="outline"

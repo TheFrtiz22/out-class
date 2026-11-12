@@ -1,3 +1,4 @@
+const errorModule=require('./helpers/communications-loader.cjs').loader({});
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -33,7 +34,7 @@ function provider({ storageFails = false, role = 'student', load } = {}) {
   const changes = [], store = { subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn) }, stop() { active = false }, active: () => active, get: () => demoState, start() { if (storageFails) throw Error('Storage unavailable'); active = true; listeners.forEach(fn => fn()) }, mutate(fn) { fn(demoState); changes.push(structuredClone(demoState)); listeners.forEach(fn => fn()) }, reset() { changes.push('reset') } }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('contexts/demo-context.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  const mocks = { react, '@/contexts/demo-mode': { DemoContext: react.createContext(null), useDemoMode() {} }, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store, demoUser: () => ({ id: 'demo-student' }) }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null }, '@/lib/navigation': require('./helpers/navigation-module.cjs') }
+  const mocks = { react, '@/contexts/demo-mode': { DemoContext: react.createContext(null), useDemoMode() {} }, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store, demoUser: () => ({ id: 'demo-student' }) }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null }, '@/lib/navigation': require('./helpers/navigation-module.cjs'), '@/lib/action-result': errorModule('lib/action-result.ts'), '@/lib/user-message': errorModule('lib/user-message.ts') }
   // The provider loads the store through the shared loader and records activation
   // in lib/demo/activation (a fresh real copy per provider, so state never leaks).
   mocks['@/lib/demo/loader'] = { loadDemoStore: () => { loads++; return load ? load(mocks['@/lib/demo/store']) : Promise.resolve(mocks['@/lib/demo/store']) } }

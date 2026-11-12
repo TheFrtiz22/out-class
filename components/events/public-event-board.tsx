@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { isUuid } from "@/lib/uuid";
@@ -22,6 +23,7 @@ import {
   type EventFilters,
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
+import { ReportContentButton } from "@/components/reports/report-content-button";
 import { SegmentedControl } from "@/components/product/segmented-control";
 import { SmartEventCard } from "./smart-event-card";
 import { EventCalendarButton, EventSaveButton } from "./event-discovery-actions";
@@ -366,6 +368,10 @@ export function PublicEventBoard() {
                   <EventSaveButton event={selected} identity={identity} saved={saves.ids.has(selected.id)} ready={saves.ready} pending={saves.pending.has(selected.id)} onSave={() => void saveEvent(selected.id)} />
                   <EventCalendarButton event={selected} />
                 </div>
+                <div className="mt-3 flex flex-wrap gap-4">
+                  <ReportContentButton target={{ type: "event", id: selected.id }} label="Report event" ownerClubId={selected.clubId} />
+                  {selected.flyerUrl && <ReportContentButton target={{ type: "event-flyer", eventId: selected.id }} label="Report flyer" ownerClubId={selected.clubId} />}
+                </div>
                 {saves.error && <p role="alert" className="mt-3 text-sm text-destructive">{saves.error}</p>}
                 <Link
                   className="oc-event-permalink"
@@ -460,16 +466,20 @@ export function RsvpControls({
     };
   }, [event.id, identity, retry]);
   async function change(next: boolean) {
+    // Optimistic: show the new RSVP at once; the server's answer (capacity, deadline) confirms or restores it.
+    const previous = going;
+    setGoing(next);
     setBusy(true);
     setError("");
     try {
       const r = await setCampusEventRsvp({ eventId: event.id, going: next });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { setGoing(previous); setError(r.error); return; }
       setGoing(r.going);
       onChanged(r.count);
       window.dispatchEvent(new Event("outclass-event-rsvp"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not update RSVP.");
+      setGoing(previous);
+      setError(userMessage(e, "Could not update RSVP."));
     } finally {
       setBusy(false);
     }
@@ -581,16 +591,20 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     setBusy(true);
     setError("");
     setNotice("");
+    // Optimistic: the row leaves at once and returns to its place if the server refuses.
+    const index = rows.findIndex((e) => e.eventId === id), removed = rows[index];
+    const restore = () => { if (removed) setRows((r) => r.some((e) => e.eventId === id) ? r : [...r.slice(0, index), removed, ...r.slice(index)]); };
+    setRows((r) => r.filter((e) => e.eventId !== id));
     try {
       const r = await setCampusEventRsvp({ eventId: id, going: false });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { restore(); setError(r.error); return; }
       ++readVersion.current;
       setLoading(false);
       setError("");
       setNotice("Your RSVP was cancelled.");
-      setRows((r) => r.filter((e) => e.eventId !== id));
       onCancelled(id);
     } catch {
+      restore();
       setError("Could not cancel. Please try again.");
     } finally {
       setBusy(false);

@@ -83,7 +83,7 @@ test('Supabase captcha helpers: only well-formed tokens are passed, and captcha 
 function loadWith(file, mocks) {
   const m = { exports: {} }
   const code = ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), m, m.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === '@/lib/rate-limit-action' ? { limitAction: async () => ({ ok: true }) } : name.startsWith('@/lib/rate-limit') ? loadWith(name.slice(2) + '.ts', {}) : require(name), m, m.exports)
   return m.exports
 }
 
@@ -94,7 +94,7 @@ test('signup hands the token to Supabase Auth and reports a failed check without
   const { registerStudent } = loadWith('actions/onboarding.ts', {
     'next/headers': { cookies: async () => ({ has: () => false }) },
     '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
-    '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
+    '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
     '@/lib/auth-email': { authEmailError: () => 'email error' },
     '@/lib/legal-versions': { checkClickwrap: () => ({ ok: true }) },
     '@/lib/turnstile': t,
@@ -120,13 +120,14 @@ test('every Supabase Auth call that sends email or checks a password carries the
     ['components/views/auth-view.tsx', /signInWithOtp\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['components/views/student-onboarding-wizard.tsx', /auth\.resend\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['app/api/platform/elevation/route.ts', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, input\.turnstileToken\)\)/],
+    ['actions/account-deletion.ts', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
   ]
   for (const [file, pattern] of expectations) assert.match(read(file), pattern, file)
   // Any new direct Auth call must be added above.
   const callers = ['actions', 'app', 'components', 'lib', 'utils', 'contexts', 'hooks'].flatMap(function walk(dir) {
     return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? walk(path.join(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [path.join(dir, entry.name)] : [])
   }).filter(file => /auth\.(signUp|signInWithPassword|signInWithOtp|resetPasswordForEmail|resend|signInAnonymously)\(/.test(read(file)))
-  assert.deepEqual(callers.sort(), ['actions/onboarding.ts', 'app/api/auth/password-recovery/route.ts', 'app/api/platform/elevation/route.ts', 'components/views/auth-view.tsx', 'components/views/student-onboarding-wizard.tsx'])
+  assert.deepEqual(callers.sort(), ['actions/account-deletion.ts', 'actions/onboarding.ts', 'app/api/auth/password-recovery/route.ts', 'app/api/platform/elevation/route.ts', 'components/views/auth-view.tsx', 'components/views/student-onboarding-wizard.tsx'])
   const recovery = read('app/api/auth/password-recovery/route.ts')
   assert.ok(recovery.indexOf('captchaFailed(error)') > recovery.indexOf('resetPasswordForEmail'), 'a failed check is reported; other provider errors keep the uniform response')
 })
@@ -221,7 +222,7 @@ test('flag unset: registerStudent runs siteverify first and never reaches signUp
     const { registerStudent } = loadWith('actions/onboarding.ts', {
       'next/headers': { cookies: async () => ({ has: () => false }) },
       '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
-      '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
+      '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
       '@/lib/auth-email': { authEmailError: () => 'email error' },
     '@/lib/legal-versions': { checkClickwrap: () => ({ ok: true }) },
       '@/lib/turnstile': t,
@@ -260,7 +261,7 @@ test('student claims verify with siteverify before any account lookup; the token
   const verify = claim.indexOf('action: "student-claim"')
   assert.ok(verify > 0 && verify < claim.indexOf('prisma.user.findFirst') && verify < claim.indexOf('await cookies()'))
   assert.match(claim, /const \{ turnstileToken, \.\.\.fields \} =/)
-  assert.match(claim, /schema\.parse\(fields\)/)
+  assert.match(claim, /schema\.safeParse\(fields\)/)
   const page = read('app/(focus)/auth/student-claim/page.tsx')
   assert.match(page, /<TurnstileWidget[^>]*action="student-claim"/)
   assert.match(page, /setTurnstileReset\(/)

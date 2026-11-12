@@ -14,6 +14,7 @@ import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/a
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
 import { boundedParse } from "@/lib/bounded-input";
+import { writeNotificationPreferences } from "@/utils/notification-preferences";
 
 const uuid = z.string().uuid();
 const publishInput = z.object({
@@ -41,10 +42,9 @@ export async function getNotificationPreferences() {
 export async function saveNotificationPreferences(input: unknown) {
   const { user } = await requireAuth();
   const values = preferenceInput.parse(input);
-  return prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
-    return tx.userNotificationPreference.upsert({ where: { userId: user.id }, create: { userId: user.id, ...values }, update: values });
-  });
+  const saved = await writeNotificationPreferences(user.id, values);
+  if (!saved) throw new Error("Your account is unavailable.");
+  return saved;
 }
 
 export async function getDurableNotifications(cursor?: string) {
@@ -56,7 +56,7 @@ export async function getDurableNotifications(cursor?: string) {
     where: { userId: user.id, archivedAt: null, ...(boundary ? { OR: [{ createdAt: { lt: boundary.createdAt } }, { createdAt: boundary.createdAt, id: { lt: boundary.id } }] } : {}) },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: 51,
-    include: { club: { select: { name: true, color: true, logoUrl: true, marketing: true } } },
+    include: { club: { select: { name: true, color: true, logoUrl: true, marketing: true } }, announcement: { select: { authorId: true } } },
   });
   const unread = await prisma.userNotification.count({ where: { userId: user.id, archivedAt: null, readAt: null } });
   const items = await prisma.$transaction(async tx => {
@@ -76,7 +76,8 @@ export async function getDurableNotifications(cursor?: string) {
     return { ...row, ...(context || { title: "Interview assignment changed", body: "This assignment is no longer available. Check your current interview list.", href: `/club/${row.clubId}/workspace?section=recruitment&tool=interviews` }) };
     }));
   }, { maxWait: 10000, timeout: 20000 });
-  return { items, nextCursor: rows.length > 50 ? rows[49].id : null, unread };
+  // Recipients learn only whether they wrote an announcement (to hide Report on it), never its author.
+  return { items: items.map(({ announcement, ...item }) => ({ ...item, ownAnnouncement: !!announcement && announcement.authorId === user.id })), nextCursor: rows.length > 50 ? rows[49].id : null, unread };
 }
 
 export async function setDurableNotificationsRead(ids: string[], read: boolean) {

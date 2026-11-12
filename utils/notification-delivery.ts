@@ -6,10 +6,16 @@ import { panelScheduleNotificationPrefix,currentPanelScheduleNotification } from
 import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/availability-request-notifications";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
+import { enqueueNotificationPushes } from "@/utils/notification-push";
+import { notificationStillCurrent } from "@/utils/notification-currency";
 
 // Retry the exact persisted payload inside Resend's 24-hour deduplication window.
 // A crash outside that window requires receipt reconciliation, never a blind resend.
 const RETRY_WINDOW_MS = 23 * 3600000;
+const SEND_BUDGET_MS = 35000;
+// Push enqueueing runs after every email send and stops starting work at this point, so it can
+// neither delay an email nor push the cron past the push worker's own budget (40 s of 60 s).
+const PUSH_ENQUEUE_BUDGET_MS = 38000;
 export async function processNotificationEmails(limit = 10) {
   const config = communicationEmailConfig();
   if (!config) return { enabled: false, sent: 0, failed: 0, suppressed: 0, invalid: 0 };
@@ -24,10 +30,15 @@ export async function processNotificationEmails(limit = 10) {
     WHERE o.status='PENDING' AND c."suspendedAt" IS NULL AND (COALESCE(p."emailFrequency",'INSTANT')<>'DAILY' OR o."createdAt"<date_trunc('day',CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
     GROUP BY n."userId" ORDER BY MIN(o."createdAt") LIMIT ${batchSize}`;
   const users = pending.map(row => row.userId);
+  const pushQueue: { userId: string; notifications: { id: string; createdAt: Date }[] }[] = [];
   // Each recipient is isolated: one user's failure must not stop everyone else's
   // email (the same user would otherwise head the queue on every run).
   for (const userId of users) {
+    // Web Push is queued only after this transaction commits and after the email send phase,
+    // so a push-table error or lock wait can never roll back, delay or repeat an email.
+    let instant: { id: string; createdAt: Date }[] = [];
     try { await prisma.$transaction(async tx => {
+      instant = [];
       await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`;
       const user = await tx.user.findUnique({ where: { id: userId }, include: { notificationPreferences: true } });
       if (!user) return;
@@ -66,7 +77,7 @@ export async function processNotificationEmails(limit = 10) {
       if (!eligible.length) return;
       const digest = user.notificationPreferences?.emailFrequency === "DAILY";
       const build = (group: { notification: Parameters<typeof buildNotificationEmail>[0]["items"][number] }[]) => notificationEmailPayload.safeParse((() => {
-        try { return buildNotificationEmail({ from: config.from, to: user.email, siteUrl: config.siteUrl, digest, items: group.map(row => row.notification) }); } catch { return null; }
+        try { return buildNotificationEmail({ from: config.from, to: user.email, userId: user.id, siteUrl: config.siteUrl, digest, items: group.map(row => row.notification) }); } catch { return null; }
       })());
       // A row that cannot produce a valid email (e.g. a non-canonical decision
       // link) is suppressed individually; the in-app notification remains.
@@ -83,16 +94,19 @@ export async function processNotificationEmails(limit = 10) {
         const payload = built.data;
         const delivery = await tx.notificationEmailDelivery.create({ data: { userId, payload } });
         await tx.notificationEmailOutbox.updateMany({ where: { notificationId: { in: group.map(row => row.notificationId) }, status: "PENDING" }, data: { status: "ASSIGNED", deliveryId: delivery.id } });
+        if (!digest) instant.push(...group.map(row => ({ id: row.notification.id, createdAt: row.notification.createdAt })));
       }
     }, { timeout: 15000 }); } catch (error) {
       failed++;
       console.error("notification-email grouping failed", { userId, code: error instanceof Error ? error.name : "UNKNOWN" });
+      continue;
     }
+    if (instant.length) pushQueue.push({ userId, notifications: instant });
   }
   const now = new Date();
   const candidates = await prisma.notificationEmailDelivery.findMany({ where: { OR: [{ status: "QUEUED", nextAttemptAt: { lte: now } }, { status: "SENDING", leaseUntil: { lt: now } }] }, select: { id: true }, orderBy: { createdAt: "asc" }, take: batchSize });
   for (const candidate of candidates) {
-    if (Date.now() - started > 35000) break;
+    if (Date.now() - started > SEND_BUDGET_MS) break;
     let claim;
     try { claim = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "NotificationEmailDelivery" WHERE id=${candidate.id} FOR UPDATE`;
@@ -104,21 +118,10 @@ export async function processNotificationEmails(limit = 10) {
       }
       const payload = parsedPayload.data;
       let inaccessibleMessage = false;
-      for (const item of row.items.filter(item => item.notification.eventKey.startsWith(applicantBookingNotificationPrefix))) {
-        if (!await currentApplicantBookingNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
-      }
-      for (const item of row.items.filter(item => item.notification.eventKey?.startsWith(assignmentNotificationPrefix) && item.notification.eventKey.includes(":assigned:"))) {
-        if (!await currentAssignmentNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
-      }
-      for (const item of row.items.filter(item => item.notification.eventKey.startsWith(availabilityRequestPrefix))) {
-        if (!await currentAvailabilityRequest(tx, item.notification, row.userId)) inaccessibleMessage = true;
+      for (const item of row.items) {
+        if (!await notificationStillCurrent(tx, item.notification, row.userId, config.siteUrl)) inaccessibleMessage = true;
       }
       for(const snapshot of payload.panelSchedules??[]){const item=row.items.find(item=>item.notificationId===snapshot.notificationId);const context=item?await currentPanelScheduleNotification(tx,item.notification,row.userId):null;if(!context||context.panelSchedule.signature!==snapshot.signature)inaccessibleMessage=true}
-      for (const item of row.items.filter(item => item.notification.type === "MESSAGE")) {
-        const conversationId = new URL(item.notification.href, config.siteUrl).searchParams.get("conversation");
-        const conversation = conversationId ? await tx.clubConversation.findUnique({ where: { id: conversationId }, select: { clubId: true, studentId: true } }) : null;
-        if (!conversation || !await requireCommunicationAccess(tx, conversation.clubId, conversation.studentId, row.userId).catch(() => null)) inaccessibleMessage = true;
-      }
       if (inaccessibleMessage || row.user.disabledAt || row.user.email !== payload.to || payload.categories.some(type => !optionalEmailAllowed(row.user.notificationPreferences, type)) || row.items.some(item => item.notification.archivedAt)) {
         await tx.notificationEmailDelivery.update({ where: { id: row.id }, data: { status: "SUPPRESSED", failureCode: "PREFERENCE_OR_ACCOUNT_CHANGED", leaseToken: null, leaseUntil: null } }); suppressed++; return null;
       }
@@ -151,5 +154,13 @@ export async function processNotificationEmails(limit = 10) {
       failed++;
     }
   }
+  // Web Push rides on the instant-delivery decision above (no-op unless VAPID is configured).
+  // enqueueNotificationPushes never throws; a run out of time leaves those pushes unsent (logged).
+  let pushDeferred = 0;
+  for (const entry of pushQueue) {
+    if (Date.now() - started > PUSH_ENQUEUE_BUDGET_MS) { pushDeferred += entry.notifications.length; continue; }
+    await enqueueNotificationPushes(entry.userId, entry.notifications);
+  }
+  if (pushDeferred) console.error("notification-push enqueue skipped at deadline", { count: pushDeferred });
   return { enabled: true, sent, failed, suppressed, invalid };
 }

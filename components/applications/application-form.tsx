@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useAutosave } from "@/hooks/use-autosave"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { useAuth } from "@/contexts/auth-context"
@@ -60,7 +61,7 @@ export function ApplicationForm({
     response: responses[question.id] || "",
   }))
   const autosave = useAutosave({
-    identity: `${demo.isDemoEnabled ? "demo:" : ""}${user?.id}:application:${application.id}`,
+    identity: `${demo.isDemoEnabled ? "demo:" : ""}${user?.id}:application:${application.id}`, owner: demo.isDemoEnabled ? null : user?.id,
     value: responses, restore: setResponses,
     save: async snapshot => {
       const savedAnswers = questions.map(q => ({ questionId: q.id, response: snapshot[q.id] || "" }))
@@ -117,12 +118,7 @@ export function ApplicationForm({
       setMessage(final ? "Application submitted." : "Draft saved to your account.")
       onSaved(final, answers)
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : ""
-      setError(
-        /already|profile|pipeline|questions|words|response|URL|closed|option/.test(message)
-          ? message
-          : "We couldn’t save your application. Your responses are still here. Please try again.",
-      )
+      setError(userMessage(cause, "We couldn’t save your application. Your responses are still here. Please try again."))
       setConfirm(false)
     } finally {
       setBusy(false)
@@ -205,7 +201,7 @@ export function ApplicationForm({
               <QuestionField question={question} value={responses[question.id] || ""} onChange={value => change(question.id, value)} invalid={!!errors[question.id]} />
               {question.type === "FILE_UPLOAD" && (
                 <div className="space-y-2">
-                  <Label htmlFor={`upload-${question.id}`} className="text-xs">
+                  <Label htmlFor={`upload-${question.id}`} className="text-control">
                     Or upload a PDF (up to 10 MB)
                   </Label>
                   <Input
@@ -223,7 +219,7 @@ export function ApplicationForm({
               )}
               <div
                 id={`help-${question.id}`}
-                className="text-xs leading-relaxed text-muted-foreground"
+                className="text-control leading-relaxed text-muted-foreground"
               >
                 {question.type === "ESSAY"
                   ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`

@@ -39,9 +39,10 @@ test('slide preparation migration: revisioned working copy, immutable pre-presen
  const rls=(await db.query(`SELECT relname,relrowsecurity FROM pg_class WHERE relname IN ('VotingSlidePreparation','VotingSlideLock')`)).rows;assert.equal(rls.length,2);assert.ok(rls.every(r=>r.relrowsecurity));
  for(const role of ['anon','authenticated'])for(const t of ['VotingSlidePreparation','VotingSlideLock'])for(const p of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await db.query(`SELECT has_table_privilege($1,$2,$3) AS ok`,[role,`"${t}"`,p])).rows[0].ok,false,`${role} ${p} ${t}`);
  const grant=async(t,p)=>(await db.query(`SELECT has_table_privilege('outclass_production_app',$1,$2) AS ok`,[`"${t}"`,p])).rows[0].ok;
- assert.deepEqual(await Promise.all(['SELECT','INSERT','UPDATE','DELETE'].map(p=>grant('VotingSlidePreparation',p))),[true,true,true,false]);
+ // DELETE since 20261111120000_voting_setup_edit_prepared, for discarding a removed applicant's working copy; the guard trigger still refuses every other delete (above).
+ assert.deepEqual(await Promise.all(['SELECT','INSERT','UPDATE','DELETE'].map(p=>grant('VotingSlidePreparation',p))),[true,true,true,true]);
  assert.deepEqual(await Promise.all(['SELECT','INSERT','UPDATE','DELETE'].map(p=>grant('VotingSlideLock',p))),[true,true,false,false]);
  const policies=(await db.query(`SELECT tablename,cmd FROM pg_policies WHERE tablename IN ('VotingSlidePreparation','VotingSlideLock') ORDER BY tablename,cmd`)).rows.map(r=>`${r.tablename}:${r.cmd}`);
- assert.deepEqual(policies,['VotingSlideLock:INSERT','VotingSlideLock:SELECT','VotingSlidePreparation:INSERT','VotingSlidePreparation:SELECT','VotingSlidePreparation:UPDATE']);
+ assert.deepEqual(policies,['VotingSlideLock:INSERT','VotingSlideLock:SELECT','VotingSlidePreparation:DELETE','VotingSlidePreparation:INSERT','VotingSlidePreparation:SELECT','VotingSlidePreparation:UPDATE']);
  }finally{await db.close();}
 });

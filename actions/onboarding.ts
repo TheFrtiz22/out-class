@@ -7,6 +7,8 @@ import { registrationSchema } from "@/lib/onboarding-schemas"
 import { authEmailError } from "@/lib/auth-email"
 import { authTurnstile, captchaFailed, turnstileMessage } from "@/lib/turnstile"
 import { checkClickwrap } from "@/lib/legal-versions"
+import { RATE_LIMITS, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit"
+import { limitAction } from "@/lib/rate-limit-action"
 
 /**
  * Normal signup always requires Supabase email confirmation, in every environment.
@@ -20,6 +22,7 @@ export async function registerStudent(input: unknown, turnstileToken?: unknown, 
   const parsed = registrationSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { email, password, firstName, lastName } = parsed.data
+  if (!(await limitAction(RATE_LIMITS.signup)).ok) return { error: RATE_LIMIT_MESSAGE }
   const clickwrap = checkClickwrap(terms)
   if (!clickwrap.ok) return { error: clickwrap.error }
   // Bot check before any provider call: siteverify here, or (once Supabase enforces it) a presence check.

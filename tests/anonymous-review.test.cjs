@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -23,7 +24,7 @@ test('anonymous wire payload uses an allowlist and removes every identity-bearin
 })
 test('pipeline redacts even owners; anonymous-only reviewers receive only anonymous-round applications', async () => {
   let permission = 'applicants.identify', captured
-  const api = load('actions/crm.ts', { '@/utils/auth': { requireClubPermission: async () => ({ membership: { permissions:[permission] } }) }, '@/utils/prisma': { prisma: { $transaction: async fn => fn({ applicantRecusal: { findMany: async () => [] }, pipelineRound: { findMany: async () => [{id:'round',anonymousReview:true}] }, application: { findMany: async args => { captured=args.where; return [{...app,round:{anonymousReview:true}}] } } }), pipelineRound: { findMany: async () => [{id:'round',anonymousReview:true}] }, application: { findMany: async args => { captured=args.where; return [{...app,round:{anonymousReview:true}}] } } } }, 'next/cache':{revalidatePath:()=>{}} })
+  const api = unwrapActions(load('actions/crm.ts', { '@/utils/auth': { requireClubPermission: async () => ({ membership: { permissions:[permission] } }) }, '@/utils/prisma': { prisma: { $transaction: async fn => fn({ applicantRecusal: { findMany: async () => [] }, pipelineRound: { findMany: async () => [{id:'round',anonymousReview:true}] }, application: { findMany: async args => { captured=args.where; return [{...app,round:{anonymousReview:true}}] } } }), pipelineRound: { findMany: async () => [{id:'round',anonymousReview:true}] }, application: { findMany: async args => { captured=args.where; return [{...app,round:{anonymousReview:true}}] } } } }, 'next/cache':{revalidatePath:()=>{}} }))
   assert.ok(!JSON.stringify(await api.getClubPipeline(clubId)).includes('SECRET'))
   permission='applications.review'
   await api.getClubPipeline(clubId)
@@ -32,7 +33,7 @@ test('pipeline redacts even owners; anonymous-only reviewers receive only anonym
 test('identity reveal requires permission and a reason, writes audit before returning identity', async () => {
   let denied=true, audited=false
   const tx={user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>({status:'ACTIVE',isOwner:true})},$queryRaw:async()=>[],application:{findFirst:async()=>app},auditLog:{create:async({data})=>{assert.equal(data.action,'applicant.identity.reveal');audited=true}}}
-  const api=load('actions/crm.ts',{'@/utils/auth':{requireClubPermission:async(_,caps)=>{assert.deepEqual(caps,['applicants.identify']);if(denied)throw Error('Denied');return {user:{id:'manager'}}}},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath:()=>{}}})
+  const api=unwrapActions(load('actions/crm.ts',{'@/utils/auth':{requireClubPermission:async(_,caps)=>{assert.deepEqual(caps,['applicants.identify']);if(denied)throw Error('Denied');return {user:{id:'manager'}}}},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath:()=>{}}}))
   await assert.rejects(api.revealApplicantIdentity(clubId,id,'Resolve an application issue'),/Denied/)
   denied=false
   await assert.rejects(api.revealApplicantIdentity(clubId,id,'short'))
@@ -66,7 +67,7 @@ test('anonymous narrative must be explicitly prepared; raw essays are never copi
 test('publishing anonymous content requires manager permission, explicit review, and prior audited reveal', async () => {
   let revealed=false, written=false, audit=false
   const tx={user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>({status:'ACTIVE',isOwner:true})},$queryRaw:async()=>[],application:{findFirst:async()=>({id,student:{email:'student@virginia.edu',studentProfile:{firstName:'Alice',lastName:'Smith',computingId:'as123'}}}),update:async()=>{written=true}},auditLog:{findFirst:async()=>revealed?{id:'audit'}:null,create:async()=>{audit=true}}}
-  const api=load('actions/crm.ts',{'@/utils/auth':{requireClubPermission:async(_,caps)=>{assert.deepEqual(caps,['recruitment.manage','applicants.identify']);return {user:{id:'manager'}}}},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath:()=>{}}})
+  const api=unwrapActions(load('actions/crm.ts',{'@/utils/auth':{requireClubPermission:async(_,caps)=>{assert.deepEqual(caps,['recruitment.manage','applicants.identify']);return {user:{id:'manager'}}}},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath:()=>{}}}))
   await assert.rejects(api.saveAnonymousReviewContent(clubId,id,'Research experience.',false))
   await assert.rejects(api.saveAnonymousReviewContent(clubId,id,'Research experience.',true),/reveal/)
   revealed=true

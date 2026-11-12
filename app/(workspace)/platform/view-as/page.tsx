@@ -3,6 +3,7 @@ import { logAdminFailure } from "@/utils/admin-page";
 import { AdminRecovery } from "@/components/admin/admin-recovery";
 import { platformViewSession } from "@/utils/platform-view-as";
 import { redirect } from "next/navigation";
+export const metadata = { title: "View as · Admin", robots: { index: false, follow: false } }
 export default async function Page() {
   let session;
   try { session = await platformViewSession(); }

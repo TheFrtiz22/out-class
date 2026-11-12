@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache"
 import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import type { z } from "zod"
 import { boundedParse } from "@/lib/bounded-input"
+import { ActionError, actionResult } from "@/lib/action-result"
 
 async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
   const { user } = await requireAuth()
@@ -27,35 +28,35 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     await assertClubOperational(tx, parsed.clubId)
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
-    if (!configuration || submit && !applicationAvailability(configuration)) throw new Error("Applications are closed for this club. Your saved draft is retained.")
+    if (!configuration || submit && !applicationAvailability(configuration)) throw new ActionError("Applications are closed for this club. Your saved draft is retained.")
     if (submit) {
       const profile = await tx.studentProfile.findUnique({ where: { userId: user.id } })
-      if (!profile) throw new Error("You must complete your unified profile before applying.")
-      if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
+      if (!profile) throw new ActionError("You must complete your unified profile before applying.")
+      if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new ActionError("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
     const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
     parsed.answers = normalizeApplicationAttachments(questions, parsed.answers)
     assertApplicationAttachmentOwnership(questions, parsed.answers, user.id)
     const errors = answerErrors(questions, parsed.answers, submit)
-    if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
+    if (Object.keys(errors).length) throw new ActionError(Object.values(errors)[0])
     const firstRound = await tx.pipelineRound.findFirst({
       where: { clubId: parsed.clubId, archivedAt: null },
       orderBy: { order: "asc" },
     })
-    if (!firstRound) throw new Error("This club has not set up their application pipeline yet.")
+    if (!firstRound) throw new ActionError("This club has not set up their application pipeline yet.")
     const existing = await currentApplication(tx, user.id, parsed.clubId)
     // Submissions join the club's single active recruitment cycle; a new
     // application after a rejection is only allowed in a different cycle.
     const activeCycle = submit || !existing ? await activeRecruitmentCycle(tx, parsed.clubId) : null
     if (!existing) {
       const unavailable = await reapplicationUnavailable(tx, user.id, parsed.clubId, activeCycle)
-      if (unavailable) throw new Error(unavailable)
+      if (unavailable) throw new ActionError(unavailable)
     }
     if (existing && parsed.expectedAnswers !== undefined) {
       const current = await tx.applicationAnswer.findMany({ where: { applicationId: existing.id }, select: { questionId: true, response: true } })
       const key = applicationAnswersKey(current)
       if (key !== parsed.expectedAnswers && key !== applicationAnswersKey(parsed.answers))
-        throw Error("This application changed in another tab. Your responses are retained. Reopen it to compare before saving.")
+        throw new ActionError("This application changed in another tab. Your responses are retained. Reopen it to compare before saving.")
     }
     const cycle = submit && !existing?.recruitmentCycleId && activeCycle ? { recruitmentCycleId: activeCycle.id } : {}
     const transition = submit
@@ -68,7 +69,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
         data: transition,
       })
       if (result.count !== 1)
-        throw new Error(
+        throw new ActionError(
           "This application has already been submitted. Reload to see its current status.",
         )
       await tx.applicationAnswer.deleteMany({ where: { applicationId: existing.id } })
@@ -95,10 +96,10 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
 }
 
 export async function submitApplication(data: z.infer<typeof applicationInputSchema>) {
-  return persistApplication(data, true)
+  return actionResult(() => persistApplication(data, true), "submitApplication")
 }
 export async function saveApplicationDraft(data: z.infer<typeof applicationInputSchema>) {
-  return persistApplication(data, false)
+  return actionResult(() => persistApplication(data, false), "saveApplicationDraft")
 }
 
 export async function getStudentApplications() {

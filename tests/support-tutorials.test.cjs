@@ -265,7 +265,7 @@ test('tutorial UI advances, goes back, skips with Escape, restarts, highlights c
 test('support uploads sign only fresh effective-user paths and fail closed before issuance if audit fails', async () => {
   const oldKey = process.env.SUPABASE_SECRET_KEY; process.env.SUPABASE_SECRET_KEY = 'fixture';
   let signed, auditFailure = false;
-  const admin = { storage: { getBucket: async () => ({ data: { public: false } }), from: () => ({ createSignedUploadUrl: async path => { signed = path; return { data: { signedUrl: 'https://fixture.invalid/upload', token: 'fixture' } }; }, uploadToSignedUrl: async () => ({ error: null }) }) } };
+  const admin = { storage: { getBucket: async () => ({ data: { public: false } }), from: () => ({ list: async () => ({ data: [], error: null }), createSignedUploadUrl: async path => { signed = path; return { data: { signedUrl: 'https://fixture.invalid/upload', token: 'fixture' } }; }, uploadToSignedUrl: async () => ({ error: null }) }) } };
   try {
     const api = loader({
       '@/utils/auth': { requireAuth: async () => ({ user: { id: target }, impersonation: { actorId: actor } }) },
