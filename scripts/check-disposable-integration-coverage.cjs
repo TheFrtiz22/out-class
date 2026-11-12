@@ -65,8 +65,8 @@ const gates = {
   "interview-booking-contention-native": ["OUTCLASS_CONTENTION_TEST_DATABASE_URL"],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 46, "The inventory must track all 46 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 46-test inventory");
+assert.equal(expected.length, 47, "The inventory must track all 47 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 47-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");
