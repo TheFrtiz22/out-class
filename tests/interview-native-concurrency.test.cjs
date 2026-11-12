@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Actual Prisma connections; synthetic identity only. Never inherits DATABASE_URL.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
@@ -13,8 +14,10 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:load('actions/organization-members.ts'),evaluations:load('actions/evaluations.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
 }
+// Actions return through actionResult (#292): read the action's own value inside the envelope.
+const innerValue=r=>r.value&&r.value.$action?r.value.data:r.value;
 test('native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening',{skip:!databaseUrl,timeout:120000},async t=>{
  const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
  const {PrismaClient}=require('@prisma/client');
@@ -40,7 +43,7 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  await prisma.interviewBooking.create({data:{applicationId:app.id,roundId:round.id,slotId:slot.id}});
  assert.equal((await a.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
  assert.equal((await b.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
- await assert.rejects(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
+ await refused(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
  for(const user of [applicant,outsider])await assert.rejects(actions(prisma,user.id).kits.openInterviewSession(scope));
  await assert.rejects(a.kits.openInterviewSession({...scope,clubId:randomUUID()}));
  const [first,second]=await Promise.all([a.kits.openInterviewSession(scope),b.kits.openInterviewSession(scope)]);
@@ -118,4 +121,64 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  assert.ok(remaining.length>0);assert.ok(remaining.every(row=>row.clubId===club.id&&row.roundId===round.id&&retainedGrants.some(g=>g.applicationId===row.applicationId)),'all remaining candidate rows still require their own active grant');
  assert.equal((await prisma.interviewResumeDocument.findUnique({where:{id:document.id}})).contentHash,document.contentHash);
  const audit=await prisma.auditLog.findMany({where:{clubId:club.id}});assert.doesNotMatch(JSON.stringify(audit),/Comment one|Edit A|Only interviewer/);
+});
+
+// Two owners in different clubs each hold their own User row, then lock the other's: a lock
+// cycle PostgreSQL breaks by aborting one side (40P01). Statement latency makes both reach
+// their own row before the other's, so the cycle forms on every run.
+async function crossClubOwners(t){
+ const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
+ const {PrismaClient}=require('@prisma/client');
+ const prisma=new PrismaClient({datasourceUrl:databaseUrl});t.after(()=>prisma.$disconnect());
+ const conflicts=[];
+ const slow=prisma.$extends({query:{async $allOperations({args,query}){
+  try{const r=await query(args);await new Promise(res=>setTimeout(res,40));return r}
+  catch(error){const code=error?.meta?.code||error?.code;if(['40P01','40001','P2034'].includes(code)||/deadlock detected/.test(error?.message))conflicts.push(code);throw error}
+ }}});
+ const [ownerX,ownerY,applicantX,applicantY]=await Promise.all(Array.from({length:4},()=>prisma.user.create({data:{email:`native-${randomUUID()}@virginia.edu`}})));
+ const perms=['applications.review','applicants.identify','members.manage','leaders.manage'];
+ async function clubFor(owner,peer,applicant){
+  const club=await prisma.club.create({data:{name:'Synthetic Cross Grant',slug:randomUUID(),tagline:'',description:'',color:'#fff',category:'Other'}});
+  const ownerMember=await prisma.clubMember.create({data:{clubId:club.id,userId:owner.id,isOwner:true,permissions:perms}});
+  const peerMember=await prisma.clubMember.create({data:{clubId:club.id,userId:peer.id,permissions:['applications.review','applicants.identify']}});
+  const round=await prisma.pipelineRound.create({data:{clubId:club.id,name:'Interview',order:0}});
+  const app=await prisma.application.create({data:{clubId:club.id,studentId:applicant.id,roundId:round.id,status:'INTERVIEWING'}});
+  await actions(prisma,owner.id).members.setMemberInterviewOffices({clubId:club.id,memberId:ownerMember.id,offices:['PRESIDENT']});
+  return {owner,club,round,scope:{clubId:club.id,applicationId:app.id,roundId:round.id},peerMember};
+ }
+ const x=await clubFor(ownerX,ownerY,applicantX),y=await clubFor(ownerY,ownerX,applicantY);
+ return {prisma,slow,conflicts,x,y};
+}
+
+test('native PostgreSQL: two owners granting each other panel access across clubs both succeed',{skip:!databaseUrl,timeout:120000},async t=>{
+ const {prisma,slow,conflicts,x,y}=await crossClubOwners(t);
+ const results=await Promise.allSettled([x,y].map(side=>actions(slow,side.owner.id).members.setInterviewPanelAssignment({...side.scope,memberId:side.peerMember.id,assigned:true})));
+ assert.deepEqual(results.map(r=>r.status),['fulfilled','fulfilled'],JSON.stringify(results.map(r=>r.reason?.message)));
+ // Exhausted retries come back as a typed failure, not a rejection; neither side may get one.
+ assert.deepEqual(results.map(r=>innerValue(r)?.ok),[undefined,undefined],JSON.stringify(results.map(innerValue)));
+ // The cycle really formed and was resolved by re-running the victim, not avoided by timing.
+ assert.ok(conflicts.length>=1,'expected PostgreSQL to abort one grant as a deadlock victim');
+ for(const side of [x,y]){
+  // Exactly one grant, one assignment notice and one audit row: the rolled-back attempt left nothing.
+  assert.equal(await prisma.interviewPanelAssignment.count({where:{applicationId:side.scope.applicationId,memberId:side.peerMember.id}}),1);
+  assert.equal(await prisma.interviewPanelAssignment.count({where:{applicationId:side.scope.applicationId,memberId:side.peerMember.id,revokedAt:null}}),1);
+  assert.equal(await prisma.userNotification.count({where:{clubId:side.club.id,userId:side.peerMember.userId,eventKey:{startsWith:'interview-assignment:'}}}),1);
+  assert.equal(await prisma.auditLog.count({where:{clubId:side.club.id,action:'interview.panel.change'}}),1);
+ }
+});
+
+test('native PostgreSQL: two owners approving room panels that include each other across clubs both succeed',{skip:!databaseUrl,timeout:120000},async t=>{
+ const {prisma,slow,conflicts,x,y}=await crossClubOwners(t);
+ for(const side of [x,y])side.room=await prisma.interviewRoom.create({data:{clubId:side.club.id,roundId:side.round.id,name:'Cross approval room',location:'Synthetic',kind:'IN_PERSON',timezone:'UTC',duration:20,isOpen:true,panelMemberIds:[side.peerMember.id]}});
+ const results=await Promise.allSettled([x,y].map(side=>actions(slow,side.owner.id).setup.approveInterviewRoomPanel({clubId:side.club.id,roomId:side.room.id,revision:0,panelMemberIds:[side.peerMember.id],confirm:true})));
+ assert.deepEqual(results.map(r=>r.status),['fulfilled','fulfilled'],JSON.stringify(results.map(r=>r.reason?.message)));
+ // Exhausted retries come back as a typed failure, not a rejection; neither side may get one.
+ assert.deepEqual(results.map(r=>innerValue(r)?.ok),[undefined,undefined],JSON.stringify(results.map(innerValue)));
+ assert.ok(conflicts.length>=1,'expected PostgreSQL to abort one approval as a deadlock victim');
+ for(const side of [x,y]){
+  const room=await prisma.interviewRoom.findUniqueOrThrow({where:{id:side.room.id}});
+  // A re-run against the original revision would fail if the first attempt had partly committed.
+  assert.equal(room.panelApprovalRevision,1);assert.deepEqual(room.approvedPanelMemberIds,[side.peerMember.id]);
+  assert.equal(await prisma.auditLog.count({where:{clubId:side.club.id,action:'interview.room.panel.approve'}}),1);
+ }
 });

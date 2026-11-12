@@ -1,7 +1,24 @@
 import {meetingDetails} from "@/lib/voting-session-setup";
 import type { Prisma } from "@prisma/client";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
-import { roomOutcomes, roomTally, publicChoice } from "@/lib/voting-room";
+import { roomOutcomes, roomTally, publicChoice, roomCommandResultSchema } from "@/lib/voting-room";
+import type { z } from "zod";
+
+export type UndoableDecision=NonNullable<z.infer<typeof roomCommandResultSchema>["decision"]>;
+type UndoRoom={revision:number;state:string;currentPass:number;activeApplicationId:string|null;finalizedAt:Date|string|null;passes:{number:number;candidates:{applicationId:string;ballotState:string;ballots:unknown[]}[]}[]};
+/**
+ * The one Undo rule, shared by UNDO_DECISION and the leader's room snapshot so Undo shows exactly when the
+ * server will accept it. `receipt` is a stored command result. Its decision is undoable only while it is the
+ * latest room activity (its revision is the room's), in the current pass, with the room OPEN or PAUSED, the
+ * applicant still confirmed, and the next applicant current and untouched (no ballot, voting not opened).
+ */
+export function undoableDecision(s:UndoRoom,receipt:unknown):UndoableDecision|null{
+  const saved=roomCommandResultSchema.safeParse(receipt),decision=saved.success?saved.data.decision:undefined;
+  if(!saved.success||!decision||s.finalizedAt||saved.data.revision!==s.revision||decision.passNumber!==s.currentPass||!["OPEN","PAUSED"].includes(s.state)||s.activeApplicationId!==decision.nextApplicationId)return null;
+  const pass=s.passes.find(p=>p.number===s.currentPass),old=pass?.candidates.find(c=>c.applicationId===decision.applicationId),current=pass?.candidates.find(c=>c.applicationId===s.activeApplicationId);
+  if(old?.ballotState!=="CONFIRMED"||current&&(current.ballots.length>0||current.ballotState!=="PENDING"))return null;
+  return decision;
+}
 import { roundTargetSummary, sessionTargetSummary } from "@/lib/voting-target-summary";
 export type LiveRoom=Prisma.VotingSessionGetPayload<{include:typeof import("@/utils/voting-room").roomInclude}>;
 type Member={id:string}&NonNullable<Parameters<typeof hasPermission>[0]>;

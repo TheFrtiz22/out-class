@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
@@ -16,7 +17,7 @@ import { canLeaveWorkspace } from "@/lib/product-navigation";
 import { canOpenRecruitingSettings, recruitingSettingsSections, withRecruitingSettings } from "@/lib/recruiting-settings";
 import { hasPermission, permissionLabels } from "@/lib/permissions";
 import { organizationRoleLabels, organizationRolePermissions, organizationRoles } from "@/lib/organization-authorization";
-import { saveClubPreferences } from "@/actions/club-settings";
+import { saveClubPreferences as saveClubPreferencesAction } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
 import { ProfileFieldSettings } from "@/components/profile-field-settings";
 
@@ -24,6 +25,8 @@ import "@/components/clubs/club-settings.css";
 import { VotingRuleDefaults } from "@/components/live-voting/voting-rule-defaults";
 import { NativeSelect } from "@/components/ui/native-select"
 import { Button } from "@/components/ui/button"
+import { unwrapped } from "@/lib/action-result"
+const saveClubPreferences = unwrapped(saveClubPreferencesAction)
 const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(
     (m) => m.ApplicationBuilderView,
@@ -94,7 +97,7 @@ export function ClubSettingsWorkspace({
       await refreshUser();
       onSaved?.();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save preference.");
+      setError(userMessage(e, "Could not save preference."));
     } finally {
       setBusy(false);
     }

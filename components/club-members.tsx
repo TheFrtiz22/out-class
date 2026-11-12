@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { SearchField } from "@/components/ui/search-field"
 import { useConfirmOnce } from "@/components/ui/confirm-dialog"
 import { memberAcademicProfile } from "@/lib/recruitment-profile"
@@ -14,7 +15,7 @@ import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { permissionLabels, type ClubPermission } from "@/lib/permissions"
-import { getClubMembers, getClubAccess, addClubMember, removeClubMember } from "@/actions/club-access"
+import { getClubMembers, getClubAccess, addClubMember as addClubMemberAction, removeClubMember as removeClubMemberAction } from "@/actions/club-access"
 import { updateTaskMember } from "@/lib/workspace-api"
 import { RosterCsvImporter } from "@/components/roster-csv-importer"
 import { ClubAccessEditor } from "@/components/club-access-editor"
@@ -22,6 +23,9 @@ import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+import { unwrapped } from "@/lib/action-result"
+const addClubMember = unwrapped(addClubMemberAction)
+const removeClubMember = unwrapped(removeClubMemberAction)
 type Member = Omit<Awaited<ReturnType<typeof getClubMembers>>[number], "status" | "accessRole" | "joinedAt" | "updatedAt">
 const name = (m: Member) => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email
 const role = (m: Member) => m.title || m.role.replaceAll("_", " ").toLowerCase()
@@ -68,7 +72,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
     else setData({clubId,members:await getClubMembers(clubId),access:null})
     setDirty(false); await refreshUser()
   }
-  async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await reload() } catch(e) { setError(e instanceof Error ? e.message : "Could not save.") } finally { setBusy(false) } }
+  async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await reload() } catch(e) { setError(userMessage(e, "Could not save.")) } finally { setBusy(false) } }
   if (!canAccess && !canMembers) return <p role="alert">Member management is not available with your current access.</p>
   if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} validatedInitialData={validatedInitialData} />
   return <div className="oc-workspace-stack" data-unsaved={dirty} data-saving={busy}>

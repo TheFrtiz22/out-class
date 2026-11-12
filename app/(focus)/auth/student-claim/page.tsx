@@ -1,4 +1,6 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,9 +16,9 @@ export default function StudentClaimPage() {
   return <div className="space-y-5"><PageHeader title="Claim your OutClass account" description="Choose your own password. Use the UVA address that received the invitation." />
     <form className="oc-form-section" onSubmit={async e => { e.preventDefault(); const issue = passwordIssue(password); if (issue) { setError(issue); return; } if (turnstileRequired && !turnstileToken) { setError(TURNSTILE_PENDING); return; } setBusy(true); setError(""); try {
       const response = await fetch("/api/auth/student-claim", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, tokenHash, ...(turnstileToken ? { turnstileToken } : {}) }) });
-      const result = await response.json(); if (!response.ok) throw Error(result.error);
+      const result = await response.json(); if (!response.ok) throw new UserFacingError(result.error);
       window.history.replaceState(null, "", "/auth/student-claim"); window.location.assign("/home");
-    } catch (err) { setError(err instanceof Error ? err.message : "Could not claim invitation."); setBusy(false); setTurnstileReset(value => value + 1); /* tokens are single use */ } }}>
+    } catch (err) { setError(userMessage(err, "Could not claim invitation.")); setBusy(false); setTurnstileReset(value => value + 1); /* tokens are single use */ } }}>
       <label className="oc-field">UVA email<Input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label>
       <label className="oc-field">New password<Input type="password" autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} required aria-describedby="claim-password-help" value={password} onChange={e => setPassword(e.target.value)} /><span id="claim-password-help" className="text-xs text-muted-foreground">{PASSWORD_HINT}</span></label>
       <TurnstileWidget action="student-claim" onToken={setTurnstileToken} resetKey={turnstileReset} />

@@ -34,6 +34,8 @@ const loadMiddleware = (live = { calls: 0, forwarded: [] }) => load('middleware.
   '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
   '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: true },
   '@/lib/csp': csp,
+  // Harmless until middleware imports it (rate limits, #279); then these tests keep loading.
+  '@/lib/rate-limit-core': fs.existsSync('lib/rate-limit-core.ts') ? load('lib/rate-limit-core.ts') : {},
 })
 
 test('middleware sends a fresh nonce per page request and forwards the same nonce to rendering', async () => {
@@ -126,8 +128,12 @@ test('inline scripts carry the request nonce', async () => {
   // No other page or component renders an inline executable script or next/script.
   const { execFileSync } = require('node:child_process')
   const files = execFileSync('git', ['ls-files', 'app', 'components', 'contexts', 'hooks'], { encoding: 'utf8' }).split('\n').filter(f => /\.tsx$/.test(f))
-  const offenders = files.filter(f => !['app/page.tsx', 'app/about/page.tsx', 'app/uva/page.tsx'].includes(f) && /<script\b|from ["']next\/script["']/.test(fs.readFileSync(f, 'utf8')))
+  const offenders = files.filter(f => !['app/page.tsx', 'app/about/page.tsx', 'app/uva/page.tsx', 'app/(workspace)/club/[clubId]/page.tsx'].includes(f) && /<script\b|from ["']next\/script["']/.test(fs.readFileSync(f, 'utf8')))
   assert.deepEqual(offenders, [])
+  // Club pages emit JSON-LD (data, not executed) for indexable clubs; it still carries the nonce.
+  const club = fs.readFileSync('app/(workspace)/club/[clubId]/page.tsx', 'utf8')
+  for (const tag of club.match(/<script\b[^>]*>/g) || []) assert.match(tag, /nonce=\{nonce\}/, `club page: ${tag}`)
+  assert.match(club, /await cspNonce\(\)/)
   // Rendered: the nonce reaches the JSON-LD tag React emits.
   const React = require('react'), { renderToStaticMarkup } = require('react-dom/server')
   const About = load('app/about/page.tsx', {

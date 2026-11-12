@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Actual Prisma engine + PostgreSQL + production support query extension.
 // Only request/provider authentication is synthetic; all transactional authority,
 // audit writes, locks, triggers, rollback and concurrency use real connections.
@@ -80,7 +81,8 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     const previous = global.outclassPrismaBase; delete global.outclassPrismaBase;
     const api = loader(mocks, overrides); api('utils/prisma.ts');
     if (previous === undefined) delete global.outclassPrismaBase; else global.outclassPrismaBase = previous;
-    return api;
+    // Converted actions return { ok, data | error, code }; read them through unwrapActions.
+    return file => file.startsWith('actions/') ? unwrapActions(api(file)) : api(file);
   }
   const api = load();
   async function fixture(impersonated = true) {
@@ -213,7 +215,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
   await t.test('cross-club publication, voting and invitation denied without writes', async () => {
     const f = await fixture(false), other = await fixture(false); await voteFixture(other);
     const votingSession = await base.votingSession.findFirstOrThrow({ where: { clubId: other.club.id } });
-    await assert.rejects(f.run(() => api('actions/crm.ts').setApplicationStatus({ clubId: f.club.id, applicationId: other.app.id, status: 'ACCEPTED' })), /Application changed/);
+    await refused(f.run(() => api('actions/crm.ts').setApplicationStatus({ clubId: f.club.id, applicationId: other.app.id, status: 'ACCEPTED' })), /Application changed/);
     await assert.rejects(f.run(() => api('actions/voting.ts').commandVotingSession({ clubId: other.club.id, sessionId: votingSession.id, revision: 0, action: 'PUBLISH', applicationIds: [other.app.id] })), /read-only|Permission denied/);
     await assert.rejects(other.run(() => api('actions/club-onboarding.ts').createClubIdentityInvitation({ clubId: f.club.id, identifierTypeId: 'school-uva-computing-id', identifier: 'outsider', requestedRole: 'MEMBER' })), /cannot grant/);
     await assertRollback(f); await assertRollback(other);
@@ -380,7 +382,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     const invited=await request.run({...f.context,user:admin,session:null},()=>onboarding.createClubIdentityInvitation({clubId:club.id,identifierTypeId:'school-uva-computing-id',identifier:f.student.email.split('@')[0],requestedRole:'OWNER',platformDesignation:true}));
     const r=await recipient(f,false);
     state.afterPolicy=()=>operator.platformAdmin.update({where:{userId:admin.id},data:{active:false}});
-    try { await assert.rejects(r.run(()=>onboarding.acceptIdentityClubInvitation(invited.id)),/authority was revoked/); }
+    try { await refused(r.run(()=>onboarding.acceptIdentityClubInvitation(invited.id)),/authority was revoked/); }
     finally {state.afterPolicy=null;await operator.platformAdmin.update({where:{userId:admin.id},data:{active:true}});}
     assert.equal(await base.clubMember.count({where:{clubId:club.id}}),0);
     assert.equal((await base.clubInvitation.findUniqueOrThrow({where:{id:invited.id}})).status,'PENDING');
@@ -448,7 +450,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
       await f.run(() => actions.saveApplicationDraft(f.input));
       assert.equal((await base.application.findUniqueOrThrow({ where: { id: f.ownApp.id } })).status, 'DRAFTING');
       await f.run(() => actions.submitApplication(f.input));
-      await assert.rejects(f.run(() => actions.submitApplication({ ...f.input, answers: [{ questionId: f.question.id, response: 'Must not overwrite' }] })), /already been submitted/);
+      await refused(f.run(() => actions.submitApplication({ ...f.input, answers: [{ questionId: f.question.id, response: 'Must not overwrite' }] })), /already been submitted/);
       assert.deepEqual((await base.applicationAnswer.findMany({ where: { applicationId: f.ownApp.id } })).map(a => a.response), ['Submitted response']);
       assert.equal((await base.application.findUniqueOrThrow({ where: { id: f.app.id } })).status, 'IN_REVIEW', 'the other student application is unchanged');
     });

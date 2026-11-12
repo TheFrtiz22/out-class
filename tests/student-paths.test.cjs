@@ -102,6 +102,7 @@ function entryHarness({ session = null, authError = null, cookies = {}, account 
       studentProfile: { findUnique: async () => { calls.prisma++; return account.profile === false ? null : { id: "profile" } } },
     } },
     "@/components/app-shell": { AppShell: "AppShell" },
+    "@/components/auth/account-unavailable": { AccountUnavailable: "AccountUnavailable" },
     "@/lib/auth": load("lib/auth.ts"),
     "@/lib/navigation": nav, "@/lib/student-routes": nav,
   }
@@ -123,8 +124,37 @@ test("authz: logged-out, expired, unconfirmed and non-UVA sessions are sent to s
 test("authz: a disabled account gets the unavailable notice before any dashboard read", async () => {
   const h = entryHarness({ session: confirmed, account: { disabledAt: new Date() } })
   const page = await h.render("/home")
-  assert.equal(page.type, "main")
+  assert.equal(page.type, "AccountUnavailable")
   assert.equal(h.calls.dashboard, 0)
+})
+
+test("the disabled-account notice is a calm sign-in card with sign-out and the support contact", () => {
+  const legal = load("lib/legal-content.ts")
+  const { AccountUnavailable } = load("components/auth/account-unavailable.tsx", {
+    "next/link": "Link", "@/components/outclass-logo": { OutClassLogo: "OutClassLogo" }, "@/components/ui/button": { Button: "Button" },
+    "./account-unavailable-sign-out": { AccountUnavailableSignOut: "AccountUnavailableSignOut" }, "@/components/landing/sign-in-card.css": {},
+  })
+  const nodes = node => !node || typeof node !== "object" ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)]
+  const text = node => typeof node === "string" ? node : !node || typeof node !== "object" ? "" : [node.props?.children].flat(Infinity).map(text).join("")
+  const page = AccountUnavailable(), all = nodes(page)
+  assert.equal(page.type, "main")
+  const card = all.find(node => node.props?.className?.includes("oc-sign-in-card"))
+  const title = all.find(node => node.type === "h1")
+  assert.equal(card.props["aria-labelledby"], title.props.id)
+  assert.equal(text(title), "Your account is unavailable")
+  assert.equal(all.filter(node => node.type === "p").length, 1, "one plain sentence")
+  assert.equal(all.filter(node => node.type === "AccountUnavailableSignOut").length, 1)
+  const mail = all.filter(node => node.type === "a").map(node => node.props.href)
+  assert.ok(mail.length >= 1 && mail.every(href => href === legal.CONTACT_HREF), "support links use the shared contact address")
+  assert.ok(text(page).includes(legal.CONTACT_EMAIL))
+  // Every account entry point renders this notice, not bare text.
+  for (const file of ["app/page.tsx", "app/login/page.tsx", "app/signup/page.tsx", "components/student-workspace-page.tsx"]) {
+    const source = fs.readFileSync(file, "utf8")
+    assert.match(source, /return <AccountUnavailable \/>/, file)
+    assert.doesNotMatch(source, /Contact OutClass support\.<\/main>/, file)
+  }
+  const signOut = fs.readFileSync("components/auth/account-unavailable-sign-out.tsx", "utf8")
+  assert.match(signOut, /fetch\("\/api\/auth\/logout", \{ method: "POST" \}\)/)
 })
 
 test("authz: demo renders fictional client data only, with no session, database or dashboard reads", async () => {
@@ -173,7 +203,7 @@ function pageMocks(opts = {}) {
     "@/actions/applications": { getStudentDashboardData: async () => ({}) },
     "@/utils/prisma": { prisma: { user: { findUnique: async () => ({ disabledAt: opts.disabled ? new Date() : null, memberships: opts.memberships ?? [] }) }, studentProfile: { findUnique: async () => opts.noProfile ? null : { id: "p" } } } },
     "@/lib/permissions": load("lib/permissions.ts"),
-    "@/components/home-entry": { HomeEntry: "HomeEntry" },
+    "@/components/home-entry": { HomeEntry: "HomeEntry" }, "@/components/auth/account-unavailable": { AccountUnavailable: "AccountUnavailable" },
     "@/lib/auth": load("lib/auth.ts"), "@/lib/navigation": nav, "@/lib/student-routes": nav,
     "@/lib/seo": { SITE_TITLE: "", SITE_DESCRIPTION: "", publicPageMetadata: () => ({}), privateRobots: {}, privateHomepageParams: [], websiteStructuredData: {} },
     "@/lib/landing-audience": { initialLandingAudience: () => "student", landingAudienceBootScript: "", LANDING_AUDIENCE_PREFERENCE: "aud" },
@@ -195,7 +225,7 @@ test("authz: signed-in visitors to / go to /home or a same-origin ?next; demo, l
   }
   await deniedTo(home({ session: confirmed, noProfile: true }), "/home")
   // A disabled account gets the notice, not a redirect to its requested destination.
-  for (const params of [{}, { next: "/settings/profile" }]) assert.equal((await home({ session: confirmed, disabled: true }, params)).type, "main")
+  for (const params of [{}, { next: "/settings/profile" }]) assert.equal((await home({ session: confirmed, disabled: true }, params)).type, "AccountUnavailable")
   const nodes = node => !node || typeof node !== "object" ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)]
   const entry = async (...args) => nodes(await home(...args)).find(node => node.type === "HomeEntry")
   assert.equal((await entry({})).props.initialView, "landing")
@@ -295,7 +325,7 @@ test("FE-4: a direct /explore load seeds Explore with the public directory after
   assert.equal(home.props.initialDirectory, undefined); assert.equal(typeof home.props.serverNow, "number")
   assert.equal(h.calls.directory, 1)
   const disabled = entryHarness({ session: confirmed, account: { disabledAt: new Date() } })
-  assert.equal((await disabled.render("/explore")).type, "main"); assert.equal(disabled.calls.directory, undefined)
+  assert.equal((await disabled.render("/explore")).type, "AccountUnavailable"); assert.equal(disabled.calls.directory, undefined)
   const demo = entryHarness({ session: confirmed, cookies: { demo: "1" }, demoAllowed: true })
   assert.equal((await demo.render("/explore")).props.initialDirectory, undefined); assert.equal(demo.calls.directory, undefined)
   const source = fs.readFileSync("components/student-workspace-page.tsx", "utf8")

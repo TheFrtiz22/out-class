@@ -29,6 +29,7 @@ import * as interviewResumes from "@/actions/interview-resumes"
 import * as interviewGrants from "@/actions/organization-members"
 import * as interviewKits from "@/actions/interview-kits"
 import * as collaboration from "@/actions/interview-collaboration"
+import * as interviewTimer from "@/actions/interview-timer"
 import * as meetingsApi from "@/actions/meetings"
 import * as apps from "@/actions/applications"
 import * as crm from "@/actions/crm"
@@ -41,16 +42,34 @@ import * as rankedReview from "@/actions/ranked-review"
 import * as interviewFeedbackApi from "@/actions/interview-feedback"
 import * as votingTargetSummary from "@/actions/voting-target-summary"
 import { demoGate, loadDemoWorkspace, type DemoWorkspaceModule } from "@/lib/demo/loader"
+import { unwrapAction, UserFacingError, type Unwrapped } from "@/lib/action-result"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 // The sole client data boundary: demo operations never invoke a server action,
 // and demo implementations load only while Demo Mode is active.
 type DemoKey = keyof DemoWorkspaceModule
-function adapt<F extends (...args: never[]) => Promise<unknown>>(real: F, key: DemoKey): F {
+// Actions that return an `actionResult` envelope are unwrapped here: callers get
+// the data, or a `UserFacingError` whose message survives production builds.
+type Adapted<F extends (...args: never[]) => Promise<unknown>> = (...args: Parameters<F>) => Promise<Unwrapped<Awaited<ReturnType<F>>>>
+function adapt<F extends (...args: never[]) => Promise<unknown>>(real: F, key: DemoKey): Adapted<F> {
   return (async (...args: Parameters<F>) => {
-    if (!(await demoGate())) return real(...args)
+    if (!(await demoGate())) return unwrapAction(await real(...args))
     const demo = (await loadDemoWorkspace())[key] as unknown as (...args: Parameters<F>) => unknown
-    return demo(...args)
-  }) as F
+    let value: unknown
+    try {
+      value = await demo(...args)
+    } catch (error) {
+      throw demoRefusal(error)
+    }
+    return unwrapAction(value)
+  }) as Adapted<F>
+}
+// Demo implementations run in the browser and refuse with plain `Error`s whose
+// messages are written for people (the Demo counterpart of `ActionError`). Mark
+// those user-facing so `userMessage` shows them; Zod, runtime and other typed
+// errors pass through unchanged and still get the caller's fallback.
+function demoRefusal(error: unknown): unknown {
+  if (!(error instanceof Error) || error.constructor !== Error || (error as { userFacing?: unknown }).userFacing === true) return error
+  return Object.assign(new UserFacingError(error.message, "DEMO_REFUSED"), { cause: error })
 }
 export const getPanelProposalWorkspace = adapt((scope: Parameters<typeof panelApi.getPanelProposalWorkspace>[0]) => readWorkspace<Awaited<ReturnType<typeof panelApi.getPanelProposalWorkspace>>>("panelWorkspace", [scope]), "getPanelProposalWorkspace")
 export const generatePanelProposal = adapt(panelApi.generatePanelProposal, "generatePanelProposal")
@@ -105,14 +124,17 @@ export const leaveInterviewCollaboration = adapt(collaboration.leaveInterviewCol
 export const dismissInterviewInvitation = adapt(collaboration.dismissInterviewInvitation, "dismissInterviewInvitation")
 export const prepareInterviewAdvance = adapt(collaboration.prepareInterviewAdvance, "prepareInterviewAdvance")
 export const confirmInterviewAdvance = adapt(collaboration.confirmInterviewAdvance, "confirmInterviewAdvance")
+export const controlInterviewTimer = adapt(interviewTimer.controlInterviewTimer, "controlInterviewTimer")
 export const saveInterviewKit = adapt(interviewKits.saveInterviewKit, "saveInterviewKit")
 export const openInterviewSession = adapt(interviewKits.openInterviewSession, "openInterviewSession")
 export const saveInterviewSession = adapt(interviewKits.saveInterviewSession, "saveInterviewSession")
 export const getSubmittedInterviewReview = adapt(interviewKits.getSubmittedInterviewReview, "getSubmittedInterviewReview")
 export const getSubmittedInterviewReviews = adapt(interviewKits.getSubmittedInterviewReviews, "getSubmittedInterviewReviews")
+export const getSubmittedInterviewReviewPage = adapt(interviewKits.getSubmittedInterviewReviewPage, "getSubmittedInterviewReviewPage")
 export const getPreviousInterviewScores = adapt(interviewKits.getPreviousInterviewScores, "getPreviousInterviewScores")
 export const getInterviewApplicantPanel = adapt(interviewResumes.getInterviewApplicantPanel, "getInterviewApplicantPanel")
 export const getInterviewResumeModerationQueue = adapt(interviewResumes.getInterviewResumeModerationQueue, "getInterviewResumeModerationQueue")
+export const getInterviewResumeModerationPage = adapt(interviewResumes.getInterviewResumeModerationPage, "getInterviewResumeModerationPage")
 export const pinInterviewResume = adapt(interviewResumes.pinInterviewResume, "pinInterviewResume")
 export const getInterviewResumeAnnotations = adapt(interviewResumes.getInterviewResumeAnnotations, "getInterviewResumeAnnotations")
 export const saveInterviewResumeAnnotation = adapt(interviewResumes.saveInterviewResumeAnnotation, "saveInterviewResumeAnnotation")
