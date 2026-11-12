@@ -51,7 +51,7 @@ export function QrPresentButton({ className, ...props }: ComponentProps<typeof B
     <Button
       variant="outline"
       size="sm"
-      className={`h-9 gap-1.5 border-border text-xs text-foreground shadow-none hover:bg-muted ${className ?? ""}`}
+      className={`h-9 gap-1.5 border-border text-control text-foreground shadow-none hover:bg-muted ${className ?? ""}`}
       {...props}
     >
       <Maximize2 className="size-3.5" />
