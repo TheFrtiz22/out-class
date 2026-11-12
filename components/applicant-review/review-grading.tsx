@@ -89,7 +89,7 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
         </span>
       </div>)}
     </div>
-    {invalid && <p role="alert" className="text-xs text-destructive">{invalid.label} must be between 0 and {invalid.max}.</p>}
+    {invalid && <p role="alert" className="text-control text-destructive">{invalid.label} must be between 0 and {invalid.max}.</p>}
     <div className="oc-review-overall-row">
       <div>
         <p className="text-xs text-muted-foreground">{draft.override ? "Overall (edited)" : rubric.categories.length > 1 ? "Overall · average of scored categories" : "Overall"}</p>
@@ -100,7 +100,7 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
       {canEvaluate && rubric.categories.length > 1 && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => set(draft.override ? { override: false } : { override: true, overall: computed === null ? "" : String(computed) })}>{draft.override ? "Use average" : "Edit"}</Button>}
     </div>
     {stored !== null && overall !== null && Math.abs(stored - overall) > 0.001 && <p className="text-xs text-muted-foreground">Ratings record this as {stored.toFixed(1)} (scores are kept in half points from 1 to 10).</p>}
-    {overallInvalid && <p role="alert" className="text-xs text-destructive">Enter an overall score from 0 to 10.</p>}
+    {overallInvalid && <p role="alert" className="text-control text-destructive">Enter an overall score from 0 to 10.</p>}
     <Label htmlFor="grade-notes" className="text-xs text-muted-foreground">Comment (optional)</Label>
     <Textarea id="grade-notes" rows={3} className="min-h-20 resize-y" value={draft.notes} disabled={!canEvaluate || busy || !save.ready || save.recovery != null} onChange={event => set({ notes: event.target.value })} />
     {canEvaluate && <div className="flex flex-wrap items-center gap-2">
