@@ -10,21 +10,21 @@ import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { activePanelPublication, assertCurrentPanelDocument, assertPanelBookingSafety, publicationDocument, lockSchedulingPeople, PanelPublicationError, draftApprovalReset } from "@/utils/panel-publication"
 import { syncBookingPanel,type BookingPanelBatch } from "@/utils/interview-scheduling-access"
 import { panelScheduleNotificationPrefix } from "@/utils/official-panel-schedule"
+import { logContentionExhausted, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
 const draftScope=panelScopeSchema.extend({proposalId:z.string().uuid(),revision:z.number().int().positive()}).strict()
 type Result<T>={ok:true;value:T}|{ok:false;error:string}
 async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:(tx:AppTransactionClient,actorId:string)=>Promise<T>):Promise<Result<T>>{
  try{
   const {user}=await requireAuth({verifyEmail:owner})
-  for(let attempt=0;;attempt++)try{
-   const value=await prisma.$transaction(async tx=>{
-    const member=await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"])
-    if(owner&&!interviewCapabilities(member).manageGrants)throw new PanelPublicationError("Only a current club owner can approve panel access and publish schedules.")
-    if(!publishing)await tx.$queryRaw`SELECT set_config('outclass.panel_proposal_mode','unpublished',true)`
-    return work(tx,user.id)
-   },{isolationLevel:publishing?"ReadCommitted":"Serializable",timeout:60000,maxWait:15000})
-   return{ok:true,value}
-  }catch(error){if(error&&typeof error==="object"&&"code"in error&&error.code==="P2034"&&attempt<2)continue;throw error}
- }catch(error){return{ok:false,error:error instanceof PanelPublicationError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
+  // Deadlock or serialization victims (e.g. two clubs publishing panels that share people) are re-run whole.
+  const value=await retryTransactionConflict(()=>prisma.$transaction(async tx=>{
+   const member=await authorizeClubTransaction(tx,clubId,user.id,["interviews.manage"])
+   if(owner&&!interviewCapabilities(member).manageGrants)throw new PanelPublicationError("Only a current club owner can approve panel access and publish schedules.")
+   if(!publishing)await tx.$queryRaw`SELECT set_config('outclass.panel_proposal_mode','unpublished',true)`
+   return work(tx,user.id)
+  },{isolationLevel:publishing?"ReadCommitted":"Serializable",timeout:60000,maxWait:15000}))
+  return{ok:true,value}
+ }catch(error){if(error instanceof TransactionConflictError)logContentionExhausted("panel.publication",error);return{ok:false,error:error instanceof PanelPublicationError||error instanceof TransactionConflictError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
 }
 async function draftFor(tx:AppTransactionClient,input:z.infer<typeof draftScope>){
  const row=await tx.interviewPanelProposal.findFirst({where:{id:input.proposalId,clubId:input.clubId,roundId:input.roundId}})
