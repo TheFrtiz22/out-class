@@ -56,8 +56,8 @@ const runners = {
   ],
 };
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 44, "The inventory must track all 44 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 44-test inventory");
+assert.equal(expected.length, 45, "The inventory must track all 45 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 45-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");
