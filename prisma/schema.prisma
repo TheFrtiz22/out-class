@@ -644,6 +644,19 @@ model InterviewCollaboration {
   @@index([clubId, roundId])
 }
 
+model InterviewTimer {
+  sessionId String @id
+  durationMs Int
+  contextKey String
+  startedAt DateTime?
+  pausedAt DateTime?
+  pausedMs Int @default(0)
+  revision Int @default(1)
+  lastRequestId String?
+  updatedBy String?
+  updatedAt DateTime @default(now())
+}
+
 model InterviewPresence {
   id String @id @default(uuid())
   sessionId String

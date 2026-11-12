@@ -24,6 +24,7 @@ test('preview and sample asset URLs deny public/forged sessions before static by
     '@/lib/demo/access': privateAccess,
     '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'support-view' },
     '@/utils/supabase/middleware': client,
+    '@/lib/csp': load('lib/csp.ts'),
   })
   for (const path of ['/preview', '/preview?view=leader-dashboard', '/preview/nested', '/demo/sample-resume.pdf', '/demo/sample-headshot.svg', '/demo/sample-research.txt', '/de%6do/sample-headshot.svg', '/demo%2Fsample-resume.pdf']) {
     const request = cookie => new NextRequest('https://outclass.example'+path, { headers: cookie ? { cookie } : {} })

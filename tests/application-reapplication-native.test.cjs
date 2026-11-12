@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Re-application after rejection and active-cycle assignment on isolated native
 // PostgreSQL: real Prisma, transactions, locks and the partial unique index.
 // Only request authentication is synthetic. Run: node scripts/run-contention-benchmark.cjs
@@ -42,7 +43,7 @@ test('students can re-apply after rejection in the club\'s next active cycle', {
     },
   };
   const load = loader(mocks);
-  const applications = load('actions/applications.ts'), directory = load('actions/club-directory.ts'), recruitment = load('actions/recruitment-management.ts');
+  const applications = unwrapActions(load('actions/applications.ts')), directory = load('actions/club-directory.ts'), recruitment = load('actions/recruitment-management.ts');
 
   async function clubWith(cycles) {
     const club = await operator.club.create({ data: { slug: `reapply-${randomUUID()}`, name: 'Reapply Club', tagline: '', description: '', color: '#142d4e', category: 'Academic', applicationOpen: true } });
@@ -65,7 +66,7 @@ test('students can re-apply after rejection in the club\'s next active cycle', {
     assert.equal((await operator.application.findUniqueOrThrow({ where: { id: applicationId } })).recruitmentCycleId, f.cycles[0].id);
     await operator.application.update({ where: { id: applicationId }, data: { status: 'REJECTED' } });
     assert.deepEqual(await as(user, () => directory.startClubApplication(f.club.id)), { applicationId: null, unavailable: "You can apply to this club again in its next recruitment cycle." });
-    await assert.rejects(as(user, () => applications.saveApplicationDraft(f.input('Too soon'))), /next recruitment cycle/);
+    await refused(as(user, () => applications.saveApplicationDraft(f.input('Too soon'))), /next recruitment cycle/);
     assert.equal(await operator.application.count({ where: { studentId: user.id, clubId: f.club.id } }), 1);
   });
 
@@ -82,7 +83,7 @@ test('students can re-apply after rejection in the club\'s next active cycle', {
     await as(user, () => applications.submitApplication(f.input('Spring answer')));
     const rows = await operator.application.findMany({ where: { studentId: user.id, clubId: f.club.id }, include: { answers: true }, orderBy: { submittedAt: 'asc' } });
     assert.deepEqual(rows.map(r => [r.status, r.recruitmentCycleId, r.answers[0].response]), [['REJECTED', f.cycles[0].id, 'Fall answer'], ['SUBMITTED', spring.id, 'Spring answer']]);
-    await assert.rejects(as(user, () => applications.saveApplicationDraft(f.input('Overwrite'))), /already been submitted/);
+    await refused(as(user, () => applications.saveApplicationDraft(f.input('Overwrite'))), /already been submitted/);
   });
 
   await t.test('legacy rejections without a cycle are judged by when they were submitted', async () => {
