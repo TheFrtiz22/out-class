@@ -419,11 +419,19 @@ test("attacker pass: IDOR, logout replay, public-key access, headers, enumeratio
       const limiter = rateLimitModule(repo);
       if (!limiter) { notes.push("No lib/rate-limit module in this build; burst checks skipped. Supabase Auth's own provider limits still apply."); return "skip"; }
       notes.push(`Rate-limit module: ${limiter}.`);
-      const burst = async (count, send) => { const statuses = []; for (let n = 0; n < count; n += 10) statuses.push(...await Promise.all(Array.from({ length: Math.min(10, count - n) }, send))); return statuses; };
+      // Each burst comes from its own documentation-range address (RFC 5737), so it proves one address is limited
+      // without using up the shared loopback bucket that the other e2e files' recovery and claim flows run in.
+      // Burst sizes follow the live policy table, so raising a limit cannot silently turn this check into a no-op.
+      const policy = name => Number(fs.readFileSync(path.join(repo, "lib/rate-limit-core.ts"), "utf8").match(new RegExp(`${name}: \\{ name: "[^"]+", limit: (\\d+)`))?.[1]);
+      const shortLinkLimit = policy("shortLinks"), recoveryLimit = policy("passwordRecovery");
+      assert.ok(shortLinkLimit > 0 && recoveryLimit > 0, "policy limits are readable from lib/rate-limit-core.ts");
+      const address = () => `198.51.100.${1 + randomBytes(1)[0] % 254}`;
+      const shortLinkAddress = address(); let recoveryAddress = address(); while (recoveryAddress === shortLinkAddress) recoveryAddress = address();
+      const burst = async (count, width, send) => { const statuses = []; for (let n = 0; n < count; n += width) statuses.push(...await Promise.all(Array.from({ length: Math.min(width, count - n) }, send))); return statuses; };
       const code = randomBytes(6).toString("base64url");
-      const shortLinks = await burst(80, async () => { const r = await fetch(new URL(`/q/${code}`, c.appUrl), { redirect: "manual" }); await r.arrayBuffer(); return r.status; });
-      const recovery = await burst(40, async () => { const r = await fetch(new URL("/api/auth/password-recovery", c.appUrl), { method: "POST", headers: { origin: c.appUrl.replace("127.0.0.1", "localhost"), "content-type": "application/json" }, body: JSON.stringify({ action: "request", email: `attack.burst.${randomUUID()}@virginia.edu` }) }); await r.arrayBuffer(); return r.status; });
-      notes.push(`/q burst: ${shortLinks.filter(s => s === 429).length}/80 got 429. Recovery burst: ${recovery.filter(s => s === 429).length}/40 got 429.`);
+      const shortLinks = await burst(shortLinkLimit + 40, 25, async () => { const r = await fetch(new URL(`/q/${code}`, c.appUrl), { redirect: "manual", headers: { "x-forwarded-for": shortLinkAddress } }); await r.arrayBuffer(); return r.status; });
+      const recovery = await burst(recoveryLimit + 10, 10, async () => { const r = await fetch(new URL("/api/auth/password-recovery", c.appUrl), { method: "POST", headers: { origin: c.appUrl.replace("127.0.0.1", "localhost"), "content-type": "application/json", "x-forwarded-for": recoveryAddress }, body: JSON.stringify({ action: "request", email: `attack.burst.${randomUUID()}@virginia.edu` }) }); await r.arrayBuffer(); return r.status; });
+      notes.push(`/q burst: ${shortLinks.filter(s => s === 429).length}/${shortLinks.length} got 429. Recovery burst: ${recovery.filter(s => s === 429).length}/${recovery.length} got 429.`);
       assert.ok(shortLinks.includes(429), "/q/<code> burst is rate limited");
       assert.ok(recovery.includes(429), "Password recovery burst is rate limited");
     });

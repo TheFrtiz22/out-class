@@ -326,12 +326,6 @@
   font-weight: 600;
   color: var(--success);
 }
-.oc-event-permalink {
-  display: inline-block;
-  font-size: var(--oc-text-caption);
-  text-decoration: underline;
-  margin-top: 14px;
-}
 .oc-event-pagination {
   display: flex;
   justify-content: center;

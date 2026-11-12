@@ -138,7 +138,9 @@ test('a Storage outage or fetch timeout is logged and reported as a retryable ch
 
 test('submitTask checks every file in parallel before the submission transaction', () => {
   const source = fs.readFileSync('actions/tasks.ts', 'utf8')
-  const submit = source.slice(source.indexOf('export async function submitTask'), source.indexOf('export async function reviewTask'))
+  // submitTask returns through actionResult (#298); the body is submitTaskCommand.
+  const start = source.indexOf('async function submitTaskCommand')
+  const submit = source.slice(start, source.indexOf('\nasync function ', start + 1) > 0 ? source.indexOf('\nasync function ', start + 1) : undefined)
   const check = submit.indexOf('Promise.all(files.map((file) => checkStoredTaskFile(bucket, file)))'), tx = submit.indexOf('prisma.$transaction')
   assert.ok(check > 0 && check < tx)
   assert.doesNotMatch(submit, /for \(const file of files\)/)
