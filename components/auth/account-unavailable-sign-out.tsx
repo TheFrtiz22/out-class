@@ -12,7 +12,7 @@ export function AccountUnavailableSignOut() {
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out.")
       const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error
-      sealAutosaveDraftsForSignOut(); window.location.assign("/login")
+      await sealAutosaveDraftsForSignOut(); window.location.assign("/login")
     } catch { setState("failed") }
   }
   return <>
