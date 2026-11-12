@@ -29,7 +29,11 @@ export const roomInputSchema = z.object({
 }).refine(v => v.kind !== "VIRTUAL" || /^https:\/\//i.test(v.location) && (() => { try { return !!new URL(v.location).hostname } catch { return false } })(), { message: "Use a full https:// meeting link.", path: ["location"] })
 export type RoomInput = z.infer<typeof roomInputSchema>
 /** "Add dates" from Manage room: more times for one existing room, which keeps its location, length and buffer. */
+/** Added times stay within a year so a mistyped year can't create far-future sessions. */
+export const ROOM_TIMES_MAX_DAYS_AHEAD = 366
+export function latestRoomTimesDate(now = Date.now()) { return dayKey(new Date(now + ROOM_TIMES_MAX_DAYS_AHEAD * 86400000), SCHEDULING_TIMEZONE) }
 export const roomTimesInputSchema = roomInputSchema.innerType().pick({ clubId: true, dates: true, start: true, end: true, capacity: true }).extend({ roomId: z.string().uuid() }).strict()
+  .refine(v => v.dates.every(date => date <= latestRoomTimesDate()), { message: "Choose dates within the next year.", path: ["dates"] })
 export type RoomTimesInput = z.infer<typeof roomTimesInputSchema>
 export type RoomSlot = { publishedPanelMemberIds?: string[]; panelScheduleVersionId?: string | null; interviewersNeeded?: number | null; staffingRevision?: number; id: string; startTime: string; endTime: string; capacity: number; booked: number }
 export type InterviewRoom = { externallyBookedAt?: string | null; interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
