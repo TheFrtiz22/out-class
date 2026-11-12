@@ -28,7 +28,7 @@
 @keyframes vr-fade-out{from{opacity:1}to{opacity:0}}@keyframes vr-fade-in{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.vr-slide-sliding .vr-slide-out{animation:vr-fade-out 150ms ease-out both}.vr-slide-sliding .vr-slide-in{animation:vr-fade-in 150ms ease-out both}}
 /* Outcome beside the name: colour always paired with text. */
-.vr-outcome{display:inline-flex;align-self:flex-start;align-items:center;gap:6px;font-size:.875rem;font-weight:500;line-height:1.25;padding:1px 10px 1px 6px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.vr-outcome{display:inline-flex;align-self:flex-start;align-items:center;gap:6px;font-size:.875rem;font-weight:500;line-height:1.25;padding:1px 10px 1px 6px;border-radius:var(--oc-radius-full);border:1px solid currentColor;white-space:nowrap}
 .vr-outcome[data-outcome=ACCEPT]{color:var(--color-success)}.vr-outcome[data-outcome=HOLD]{color:var(--color-warning)}.vr-outcome[data-outcome=REJECT]{color:var(--color-destructive)}
 .vr-outcome svg{flex-shrink:0}
 @media(prefers-reduced-motion:no-preference){.vr-outcome{animation:vr-fade-in 120ms ease-out both}}
