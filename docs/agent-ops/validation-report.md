@@ -300,3 +300,7 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - New tests/ui-audit-fixes.test.cjs 11/11. Real-Chromium CSS check (repo stylesheets): sort control shown at 500px container, hidden at 900px; underline tab widths unchanged on select; board thin scrollbar + scroll-linked mask, none under reduced motion.
 - nextjs-reviewer: no high/critical findings (notes: inert Admin placeholder persists if eligibility hangs; Toggle inside a disabled fieldset is disabled natively but not dimmed).
 - Not run: authenticated E2E against Supabase/Postgres (unavailable here); real-app checks of items 16 (review-flow sliver), 30 (duplicate header line), 33, 36, 37.
+
+2026-11-12 BRAND-WHITE-OC-ICON-1 (#339) app gates: targeted tests 83/0/0 (installable-app, focus-frame, loading-experience, seo, public-navigation, student-paths, csp, email-design, internal-links-static) | eslint clean on the 3 changed TS files | full `pnpm run test`, typecheck, build and browser suites NOT run to completion in the cloud sandbox (Prisma engines unreachable, `.prisma/client` not generated; a browser suite hangs) - rely on CI | migrations n/a (no schema change) | agent-hook tests n/a
+- Assets: 11_app_icon_white.svg/.jpg added; icon-192, icon-512 (transparent corners), icon-maskable-512 and apple-touch-icon-180 (opaque) regenerated with rsvg-convert from the new SVG.
+- Not verified: real-device home-screen icon refresh; already-installed PWAs may keep the old icon until re-added.
