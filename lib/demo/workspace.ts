@@ -450,9 +450,10 @@ export const getApplicantDisplay: Demo<"getApplicantDisplay"> = input => {
   }
   const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id), feedback, demoProfileFieldVisibility(input.clubId));
   // The bundled fictional résumé is a demo asset, never a live private-download request.
-  if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.pdf") {
+  const demoResume = s.students.find(u => u.id === app.studentId)?.profile.resumeUrl;
+  if (!display.anonymous && display.visible.includes("resume") && (demoResume === "/demo/sample-resume.pdf" || demoResume === "/demo/sample-scanned-resume.pdf")) {
     display.links = display.links.filter(link => link.field !== "resume")
-    display.links.push({ field: "resume", label: "Sample résumé", href: "/demo/sample-resume.pdf" })
+    display.links.push({ field: "resume", label: demoResume === "/demo/sample-resume.pdf" ? "Sample résumé" : "Sample scanned résumé", href: demoResume })
   }
   return display;
 }

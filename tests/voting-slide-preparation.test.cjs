@@ -27,6 +27,7 @@ test('quotes must be verbatim, summaries are labelled leader writing, at most th
 function interviewMock(state){return{
  votingInterviewEvidence:async(_tx,_c,_a,userId,selected)=>{const ok=state.interviewUsers.includes(userId);return{score:{byRound:ok&&selected.score?[{roundId,roundName:'Round 2',average:8.5,submitted:2}]:[]},thoughts:ok&&selected.thoughts?state.thoughts:[],authorized:ok,roundIds:ok?[roundId]:[]};},
  votingHighlightChoices:async()=>state.resume,
+ resumeAnnotationChoices:async()=>({text:state.resume,areas:state.areas||[]}),
 };}
 function observationMock(state){return{
  listObservations:async(_tx,_s,userId)=>{if(!state.observationUsers.includes(userId))throw Error('Additional observations are unavailable.');return state.observations.filter(o=>!o.deletedAt);},
