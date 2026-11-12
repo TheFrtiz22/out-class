@@ -12,7 +12,7 @@ import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
-import { roomInputSchema, roomTimesInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
+import { roomInputSchema, roomTimesInputSchema, roomTimeRemovalSchema, slotHasInterviewers, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
 import { revalidatePath } from "next/cache"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
@@ -135,6 +135,32 @@ async function addInterviewRoomTimesCommand(raw: unknown) {
     await tx.interviewSlot.createMany({ data: slots.map(s => ({ ...s, clubId: input.clubId, roomId: room.id, location: room.location })) })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.times.add", details: { count: slots.length, dates: [...new Set(input.dates)].sort(), ...(retiredApproval ? { retiredRoomApproval: true } : {}) } } })
     return { id: room.id, count: slots.length }
+  })
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
+}
+/**
+ * "Remove time" from Manage room. Hard-deletes one time that nobody booked and nobody staffs.
+ * Published panel history keeps its immutable record of the session; times with availability
+ * exceptions (append-only, ON DELETE RESTRICT) cannot be removed.
+ */
+async function removeInterviewRoomTimeCommand(raw: unknown) {
+  const input = roomTimeRemovalSchema.parse(raw)
+  const { user } = await requireAuth()
+  const result = await atomic(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    // Club row exclusively (reservations hold it FOR SHARE), then the same slot row lock a
+    // reservation takes before counting bookings, so no booking can land in between.
+    await lockOperationalClub(tx, input.clubId)
+    await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${input.slotId} AND "clubId"=${input.clubId} FOR UPDATE`
+    const slot = await tx.interviewSlot.findFirst({ where: { id: input.slotId, clubId: input.clubId, roomId: input.roomId }, include: { room: true } })
+    if (!slot?.room || slot.room.clubId !== input.clubId) throw new ActionError("Time unavailable.")
+    if (await tx.interviewBooking.count({ where: { slotId: slot.id } })) throw new ActionError("This time has been booked, so it can't be removed.")
+    if (slotHasInterviewers(slot, slot.room)) throw new ActionError("Remove this time's interviewers in Edit Panels first, then remove the time.")
+    if (await tx.interviewAvailabilityOverride.count({ where: { slotId: slot.id } })) throw new ActionError("This time has an availability exception on record, so it can't be removed. With no interviewers it isn't offered to applicants.")
+    await tx.interviewSlot.delete({ where: { id: slot.id } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: slot.room.id, action: "interview.room.time.remove", details: { slotId: slot.id, startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), panelScheduleVersionId: slot.panelScheduleVersionId } } })
+    return { removed: slot.id }
   })
   revalidatePath(`/club/${input.clubId}/workspace`)
   return result
@@ -346,6 +372,9 @@ export async function createInterviewRoom(...args: Parameters<typeof createInter
 
 export async function addInterviewRoomTimes(...args: Parameters<typeof addInterviewRoomTimesCommand>) {
   return actionResult(() => addInterviewRoomTimesCommand(...args), "addInterviewRoomTimes")
+}
+export async function removeInterviewRoomTime(...args: Parameters<typeof removeInterviewRoomTimeCommand>) {
+  return actionResult(() => removeInterviewRoomTimeCommand(...args), "removeInterviewRoomTime")
 }
 export async function setInterviewRoomOpen(...args: Parameters<typeof setInterviewRoomOpenCommand>) {
   return actionResult(() => setInterviewRoomOpenCommand(...args), "setInterviewRoomOpen")

@@ -35,6 +35,12 @@ export function latestRoomTimesDate(now = Date.now()) { return dayKey(new Date(n
 export const roomTimesInputSchema = roomInputSchema.innerType().pick({ clubId: true, dates: true, start: true, end: true, capacity: true }).extend({ roomId: z.string().uuid() }).strict()
   .refine(v => v.dates.every(date => date <= latestRoomTimesDate()), { message: "Choose dates within the next year.", path: ["dates"] })
 export type RoomTimesInput = z.infer<typeof roomTimesInputSchema>
+/** "Remove time" from Manage room: one unbooked, unstaffed time of one room. */
+export const roomTimeRemovalSchema = z.object({ clubId: z.string().uuid(), roomId: z.string().uuid(), slotId: z.string().uuid() }).strict()
+/** Whether a time currently has interviewers (published panel, or the room's legacy approval). */
+export function slotHasInterviewers(slot: Pick<RoomSlot, "panelScheduleVersionId" | "publishedPanelMemberIds">, room: Pick<InterviewRoom, "isOpen" | "panelApprovedBy" | "approvedPanelMemberIds" | "panelMemberIds">) {
+  return slot.panelScheduleVersionId ? (slot.publishedPanelMemberIds?.length ?? 0) > 0 : !!room.isOpen && !!room.panelApprovedBy && (room.approvedPanelMemberIds ?? []).some(id => room.panelMemberIds.includes(id))
+}
 export type RoomSlot = { publishedPanelMemberIds?: string[]; panelScheduleVersionId?: string | null; interviewersNeeded?: number | null; staffingRevision?: number; id: string; startTime: string; endTime: string; capacity: number; booked: number }
 export type InterviewRoom = { externallyBookedAt?: string | null; interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
 export type RoomBooking = { id: string; applicationId: string; slotId: string; roomId: string; roundId: string; candidate: string; startTime: string; endTime: string; location: string }

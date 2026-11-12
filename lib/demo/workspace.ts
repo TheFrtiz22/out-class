@@ -416,6 +416,7 @@ export const clearRecruitingRuleFlags: Demo<"clearRecruitingRuleFlags"> = demoRe
 export const getRoomWorkspace: Demo<"getRoomWorkspace"> = demoRoomApi.getRoomWorkspace
 export const createInterviewRoom: Demo<"createInterviewRoom"> = demoRoomApi.createInterviewRoom
 export const addInterviewRoomTimes: Demo<"addInterviewRoomTimes"> = demoRoomApi.addInterviewRoomTimes
+export const removeInterviewRoomTime: Demo<"removeInterviewRoomTime"> = demoRoomApi.removeInterviewRoomTime
 export const setInterviewStaffingRequirement: Demo<"setInterviewStaffingRequirement"> = raw=>demoRoomApi.setInterviewStaffingRequirement(raw as Parameters<typeof demoRoomApi.setInterviewStaffingRequirement>[0])
 export const setInterviewRoomOpen: Demo<"setInterviewRoomOpen"> = demoRoomApi.setInterviewRoomOpen
 export const renameInterviewRoom: Demo<"renameInterviewRoom"> = demoRoomApi.renameInterviewRoom
