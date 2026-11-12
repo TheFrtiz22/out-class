@@ -23,6 +23,7 @@ const expected = [
   "application-submit-race-native", "invitation-accept-race-native",
   "meeting-check-in-race-native", "club-claim-race-native",
   "attacker-pass-e2e",
+  "active-interview-navigation-e2e", "interview-booking-contention-native",
 ];
 const runners = {
   "scripts/run-onboarding-e2e.cjs": [
@@ -30,6 +31,7 @@ const runners = {
     "session-revocation-e2e", "settings-navigation-e2e", "clock-skew-hydration-e2e",
     "signup-privacy-e2e", "student-claim-e2e", "share-card-production-e2e",
     "attacker-pass-e2e",
+    "active-interview-navigation-e2e",
   ],
   "scripts/run-disposable-postgres.cjs": [
     "campus-event-discovery-browser", "campus-event-discovery",
@@ -38,6 +40,7 @@ const runners = {
     "recruitment-cycle-start-native",
     "application-submit-race-native", "invitation-accept-race-native",
     "meeting-check-in-race-native", "club-claim-race-native",
+    "interview-booking-contention-native",
   ],
   "scripts/test-decision-publication-local.cjs": [
     "availability-schedules-native", "communication-schedules-native",
@@ -55,9 +58,15 @@ const runners = {
     "event-storage-native",
   ],
 };
+// Suites whose skip condition is an env var the runner must set itself: a runner that
+// still names the file but stops setting its gate would only produce a silent SKIP.
+const gates = {
+  "active-interview-navigation-e2e": ["OUTCLASS_ONBOARDING_E2E_CONFIG", "--active-interviews"],
+  "interview-booking-contention-native": ["OUTCLASS_CONTENTION_TEST_DATABASE_URL"],
+};
 const expectedSet = new Set(expected);
-assert.equal(expected.length, 44, "The inventory must track all 44 environment-gated top-level suites");
-assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 44-test inventory");
+assert.equal(expected.length, 47, "The inventory must track all 47 environment-gated top-level suites");
+assert.equal(expectedSet.size, expected.length, "Duplicate suite in the 47-test inventory");
 const covered = new Set();
 for (const [runner, suites] of Object.entries(runners)) {
   const source = fs.readFileSync(runner, "utf8");
@@ -66,6 +75,12 @@ for (const [runner, suites] of Object.entries(runners)) {
     assert(!covered.has(name), "Multiple runner claims for " + name);
     assert(source.includes("tests/" + name + ".test.cjs"),
       runner + " must explicitly invoke " + name + ".test.cjs");
+    const [gate] = gates[name] || [];
+    if (gate) {
+      assert(fs.readFileSync(path.join("tests", name + ".test.cjs"), "utf8").includes("process.env." + gate),
+        name + " is no longer gated by " + gate + "; update this inventory");
+      assert(source.includes(gate), runner + " must set " + gate + " for " + name);
+    }
     covered.add(name);
   }
 }
@@ -76,6 +91,8 @@ for (const name of expected) {
 const workflow = fs.readFileSync(".github/workflows/disposable-integrations.yml", "utf8");
 for (const runner of Object.keys(runners))
   assert(workflow.includes(path.basename(runner)), "Missing CI runner: " + runner);
+for (const [name, [, flag]] of Object.entries(gates))
+  if (flag) assert(workflow.includes(flag), "CI must pass " + flag + " to run " + name);
 const pending = expected.filter(name => !covered.has(name));
 const report = [
   "### Environment-gated integration suites",
