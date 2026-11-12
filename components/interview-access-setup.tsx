@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,7 +18,7 @@ export function InterviewAccessSetup({clubId,initialRoundId}:{clubId:string;init
   useEffect(() => { const changed = () => setRetry(v => v + 1); window.addEventListener("outclass:interview-rounds-changed", changed); return () => window.removeEventListener("outclass:interview-rounds-changed", changed); }, []);
   const [offices,setOffices]=useState<Record<string,string[]>>({}),[panels,setPanels]=useState<Record<string,string[]>>({});
   useEffect(()=>{let current=true;setData(null);getInterviewAccessSetup(clubId).then(value=>{if(current){setData(value);setOffices(Object.fromEntries(value.members.map(m=>[m.id,m.offices])));setPanels(Object.fromEntries(value.rooms.map(r=>[r.id,r.panelMemberIds])));setError("");}}).catch(()=>{if(current)setError("Owner access setup unavailable. Check current membership and retry.");});return()=>{current=false};},[clubId,retry]);
-  const run=async(action:()=>Promise<unknown>,message:string)=>{if(busy)return;setBusy(true);setError("");try{unwrapContention(await action());setNotice(message);await refreshUser();setRetry(v=>v+1);}catch(e){setError(e instanceof Error&&!("digest" in e)?e.message:"Couldn't save this change. Your choices are still here. Try again in a moment.");}finally{setBusy(false);}};
+  const run=async(action:()=>Promise<unknown>,message:string)=>{if(busy)return;setBusy(true);setError("");try{unwrapContention(await action());setNotice(message);await refreshUser();setRetry(v=>v+1);}catch(e){setError(userMessage(e, "Couldn't save this change. Your choices are still here. Try again in a moment."));}finally{setBusy(false);}};
   const app=data?.applications.find(a=>a.id===applicationId);
   // One Save / Discard for every office and proposed-panel edit on this tab. Approving access stays per panel.
   const same=(a:string[]=[],b:string[]=[])=>JSON.stringify([...a].sort())===JSON.stringify([...b].sort());

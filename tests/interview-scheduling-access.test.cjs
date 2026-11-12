@@ -1,7 +1,8 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {harness}=require('./helpers/interview-sql-harness.cjs');
 test('real migrated SQL plus live room/booking/grant/session actions enforce owner setup, rescheduling, cancellation and revocation',async t=>{
- const h=await harness();t.after(()=>h.db.close());const{id:unused,...ids}=h.ids,rooms=h.load('actions/interview-rooms.ts'),setup=h.load('actions/interview-access-setup.ts'),sessions=h.load('actions/interview-kits.ts'),grants=h.load('actions/organization-members.ts');
+ const h=await harness();t.after(()=>h.db.close());const{id:unused,...ids}=h.ids,rooms=unwrapActions(h.load('actions/interview-rooms.ts')),setup=h.load('actions/interview-access-setup.ts'),sessions=h.load('actions/interview-kits.ts'),grants=unwrapActions(h.load('actions/organization-members.ts'));
  const pub=h.load('actions/interview-booking-publication.ts');await h.db.query('UPDATE "PipelineRound" SET type=\'INTERVIEW\' WHERE id=$1',[ids.round]);const declared={timezone:'UTC',weeklySubmitted:true,weekly:Array.from({length:7},()=>[[0,1440]]),exceptions:{}};for(const key of ['panel','peer']){await h.db.query('UPDATE "ClubMember" SET "accessRole"=\'INTERVIEWER\' WHERE id=$1',[ids[key+'Member']]);await h.db.query('INSERT INTO "InterviewRoundParticipation"(id,"clubId","memberId","roundId",availability,"confirmedAt") VALUES ($1,$2,$3,$4,$5,now())',[require('node:crypto').randomUUID(),ids.club,ids[key+'Member'],ids.round,JSON.stringify(declared)])}
  const input={interviewersNeeded:1,clubId:ids.club,roundId:ids.round,name:'Room one',location:'Room one',kind:'IN_PERSON',timezone:'UTC',dates:['2099-09-07'],start:'10:00',end:'11:00',duration:20,buffer:0,capacity:2,panelMemberIds:[ids.panelMember]};
  h.as(ids.scheduler);const one=await rooms.createInterviewRoom(input);h.as(ids.student);let slot=(await h.db.query('SELECT id FROM "InterviewSlot" WHERE "roomId"=$1 ORDER BY "startTime"',[one.id])).rows[0];await assert.rejects(rooms.reserveInterview({applicationId:ids.app,slotId:slot.id}),/aren.t open/);let booking;
@@ -17,7 +18,7 @@ test('real migrated SQL plus live room/booking/grant/session actions enforce own
  const audits=(await h.db.query('SELECT action FROM "AuditLog"')).rows.map(r=>r.action);assert.ok(audits.includes('interview.room.panel.approve'));assert.ok(audits.includes('interview.panel.booking.grant'));assert.ok(audits.includes('interview.booking.cancel'));
 });
 test('legacy booking review stays unresolved and panel edits cannot introduce scheduling conflicts',async t=>{
- const h=await harness();t.after(()=>h.db.close());const i=h.ids,rooms=h.load('actions/interview-rooms.ts'),setup=h.load('actions/interview-access-setup.ts');
+ const h=await harness();t.after(()=>h.db.close());const i=h.ids,rooms=unwrapActions(h.load('actions/interview-rooms.ts')),setup=h.load('actions/interview-access-setup.ts');
  const input={clubId:i.club,roundId:i.round,name:'Legacy room',location:'Legacy room',kind:'IN_PERSON',timezone:'UTC',dates:['2099-09-07'],start:'10:00',end:'11:00',duration:20,buffer:0,capacity:2,panelMemberIds:[i.panelMember]};
  const room=await rooms.createInterviewRoom(input),other=await rooms.createInterviewRoom({...input,name:'Other room',location:'Other room',panelMemberIds:[i.peerMember]});
  await assert.rejects(setup.changeInterviewRoomPanel({clubId:i.club,roomId:other.id,revision:0,panelMemberIds:[i.panelMember]}),/overlapping/);

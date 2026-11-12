@@ -23,7 +23,7 @@ test('Demo direct decisions and voting share offers, reversal revokes pending bu
 test('student offer controls show only for a valid pending accepted application; no invitation IDs are rendered',()=>{
  const fs=require('node:fs'),ts=require('typescript'),React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
  const m={exports:{}};const mocks={'@/components/ui/button':{Button:({children,variant,...props})=>React.createElement('button',props,children)},'@/lib/workspace-api':{respondToOffer:async()=>{}},'@/contexts/auth-context':{useAuth:()=>({refreshUser:async()=>{}})}};
- new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/applications/recruitment-offer.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText)(n=>n in mocks?mocks[n]:require(n),m,m.exports);
+ new Function('require','module','exports',ts.transpileModule(fs.readFileSync('components/applications/recruitment-offer.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/lib/')?require('./helpers/communications-loader.cjs').loader({})(n.slice(2)+'.ts'):require(n),m,m.exports);
  for(const status of ['PENDING','ACCEPTED','DECLINED','REVOKED','EXPIRED']){
   const html=renderToStaticMarkup(React.createElement(m.exports.RecruitmentOffer,{application:{id:'internal-application',status:'ACCEPTED',club:{name:'Sample club'},recruitmentOffer:{id:'internal-invitation',status,expiresAt:new Date(Date.now()+86400000)}},onChanged(){},onMyClubs(){}}));
   assert.equal(html.includes('Accept Offer'),status==='PENDING');assert.equal(html.includes('Decline Offer'),status==='PENDING');assert.equal(html.includes('Open My Clubs'),status==='ACCEPTED');assert.ok(!html.includes('internal-'));
@@ -40,7 +40,7 @@ test('inactive membership response is actionable in student and legacy invitatio
   const hooks={...React,useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=v]},useRef(initial){const i=index++;return slots[i]??={current:initial}}};
   const blocked=async()=>({clubId:'club',status:'INACTIVE_MEMBERSHIP'});
   const mocks={react:hooks,'@/components/ui/button':{Button:'button'},'@/lib/workspace-api':{respondToOffer:blocked},'@/contexts/auth-context':{useAuth:()=>({refreshUser:async()=>{throw Error('Must not refresh')}})},'@/actions/club-access':{acceptClubInvitation:blocked},'@/actions/club-onboarding':{},'@/lib/club-workspace':{}};
-  new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText)(n=>n in mocks?mocks[n]:require(n),m,m.exports);
+  new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/lib/')?require('./helpers/communications-loader.cjs').loader({})(n.slice(2)+'.ts'):require(n),m,m.exports);
   const render=()=>{index=0;return m.exports[name](props)};
   function nodes(v){if(!v||typeof v!=='object')return[];return[v,...[].concat(v.props?.children??[]).flatMap(nodes)]}
   const tree=render(),button=nodes(tree).find(n=>n.type==='button');button.props.onClick();await new Promise(r=>setImmediate(r));

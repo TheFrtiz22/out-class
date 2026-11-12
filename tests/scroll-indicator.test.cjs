@@ -104,3 +104,12 @@ test('hidden tabs pause the indicator and unmount cleans up observers and listen
   assert.equal(h.resizes[0].disconnected, true)
   assert.equal(h.listeners.size, 0)
 })
+
+test('the arrow invitation plays a fixed number of times and honors reduced motion', () => {
+  const css = fs.readFileSync('components/landing/scroll-indicator.css', 'utf8')
+  const rule = css.match(/\.oc-scroll-indicator-motion \{[^}]*animation:([^;]+);/)
+  assert.ok(rule, 'motion rule exists')
+  assert.doesNotMatch(rule[1], /infinite/)
+  assert.match(rule[1], /\s[12]\s*$/)
+  assert.match(css, /prefers-reduced-motion: reduce\)\s*\{\s*\.oc-scroll-indicator-motion \{ animation: none !important/)
+})

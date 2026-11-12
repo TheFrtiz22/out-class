@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
@@ -34,7 +35,7 @@ function harness(actorRole='OWNER',targetRole='MEMBER'){
  };
  let tail=Promise.resolve();const prisma={$transaction:fn=>{const result=tail.then(async()=>{const snapshot=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,snapshot);throw e;}});tail=result.catch(()=>{});return result;}};
  let manual;
- const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma},'@/utils/email':{invitationEmailConfig:()=>{}},'@/actions/club-onboarding':{createClubIdentityInvitation:async input=>{manual=input;return{id:inviteId};}}});
+ const api=unwrapActions(load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma},'@/utils/email':{invitationEmailConfig:()=>{}},'@/actions/club-onboarding':{createClubIdentityInvitation:async input=>{manual=input;return{id:inviteId};}}}));
  return{state,api,manual:()=>manual};
 }
 
@@ -148,7 +149,7 @@ test('bulk selection protects all owners together, rejects stale versions and es
  // Add real bulk-model semantics to this fixture through a separate action harness.
  const state={members:[a,b,member(otherId,'MEMBER')],audits:[]};for(const m of state.members)m.updatedAt=new Date('2026-10-05T12:00:00Z');
  let actor=actorId,writes=0;const tx={$queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>state.members.find(m=>m.userId===actor),findMany:async({where})=>state.members.filter(m=>where.id.in.includes(m.id)),count:async({where})=>state.members.filter(m=>m.isOwner&&m.status==='ACTIVE'&&!where.id.notIn.includes(m.id)).length,updateMany:async({where,data})=>{writes++;for(const m of state.members.filter(m=>where.id.in.includes(m.id)))Object.assign(m,data);}},invitationDelivery:{updateMany:async()=>{}},clubInvitation:{findMany:async()=>[],updateMany:async()=>{}},auditLog:{create:async({data})=>state.audits.push(data)}};
- const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actor}})},'@/utils/prisma':{prisma:{$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}}},'@/actions/club-onboarding':{}});
+ const api=unwrapActions(load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actor}})},'@/utils/prisma':{prisma:{$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}}},'@/actions/club-onboarding':{}}));
  const targets=ids=>state.members.filter(m=>ids.includes(m.userId)).map(m=>({id:m.id,updatedAt:m.updatedAt}));
  await assert.rejects(api.bulkOrganizationMembers({clubId,targets:targets([actorId,targetId]),action:'REMOVE'}),/active owner/);assert.equal(writes,0);
  const stale=targets([otherId]);stale[0].updatedAt=new Date(0);await assert.rejects(api.bulkOrganizationMembers({clubId,targets:stale,action:'ROLE',role:'ADMIN'}),/changed/);assert.equal(writes,0);
@@ -195,7 +196,8 @@ test('panel grant: exhausted deadlock retries and timeouts return distinct calm 
  for(const [error,attempts,kind,code,wording] of cases){
   let calls=0;
   const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma:{$transaction:async()=>{calls++;throw error;}}},'@/actions/club-onboarding':{}});
-  const result=await api.setInterviewPanelAssignment(scope);
+  // The action returns through actionResult (#292); clients unwrap it, then read the contention result.
+  const wrapped=await api.setInterviewPanelAssignment(scope);const result=wrapped&&wrapped.$action?wrapped.data:wrapped;
   assert.equal(calls,attempts);
   assert.equal(result.ok,false);assert.equal(result.contention,kind);assert.match(result.error,wording);
   assert.doesNotMatch(result.error,/40P01|55P03|P20|deadlock|lock timeout|Transaction/);

@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Actual Prisma connections; synthetic identity only. Never inherits DATABASE_URL.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
@@ -13,8 +14,10 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:load('actions/organization-members.ts'),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
 }
+// Actions return through actionResult (#292): read the action's own value inside the envelope.
+const innerValue=r=>r.value&&r.value.$action?r.value.data:r.value;
 test('native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening',{skip:!databaseUrl,timeout:120000},async t=>{
  const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
  const {PrismaClient}=require('@prisma/client');
@@ -40,7 +43,7 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  await prisma.interviewBooking.create({data:{applicationId:app.id,roundId:round.id,slotId:slot.id}});
  assert.equal((await a.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
  assert.equal((await b.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
- await assert.rejects(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
+ await refused(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
  for(const user of [applicant,outsider])await assert.rejects(actions(prisma,user.id).kits.openInterviewSession(scope));
  await assert.rejects(a.kits.openInterviewSession({...scope,clubId:randomUUID()}));
  const [first,second]=await Promise.all([a.kits.openInterviewSession(scope),b.kits.openInterviewSession(scope)]);
@@ -152,7 +155,7 @@ test('native PostgreSQL: two owners granting each other panel access across club
  const results=await Promise.allSettled([x,y].map(side=>actions(slow,side.owner.id).members.setInterviewPanelAssignment({...side.scope,memberId:side.peerMember.id,assigned:true})));
  assert.deepEqual(results.map(r=>r.status),['fulfilled','fulfilled'],JSON.stringify(results.map(r=>r.reason?.message)));
  // Exhausted retries come back as a typed failure, not a rejection; neither side may get one.
- assert.deepEqual(results.map(r=>r.value?.ok),[undefined,undefined],JSON.stringify(results.map(r=>r.value)));
+ assert.deepEqual(results.map(r=>innerValue(r)?.ok),[undefined,undefined],JSON.stringify(results.map(innerValue)));
  // The cycle really formed and was resolved by re-running the victim, not avoided by timing.
  assert.ok(conflicts.length>=1,'expected PostgreSQL to abort one grant as a deadlock victim');
  for(const side of [x,y]){
@@ -170,7 +173,7 @@ test('native PostgreSQL: two owners approving room panels that include each othe
  const results=await Promise.allSettled([x,y].map(side=>actions(slow,side.owner.id).setup.approveInterviewRoomPanel({clubId:side.club.id,roomId:side.room.id,revision:0,panelMemberIds:[side.peerMember.id],confirm:true})));
  assert.deepEqual(results.map(r=>r.status),['fulfilled','fulfilled'],JSON.stringify(results.map(r=>r.reason?.message)));
  // Exhausted retries come back as a typed failure, not a rejection; neither side may get one.
- assert.deepEqual(results.map(r=>r.value?.ok),[undefined,undefined],JSON.stringify(results.map(r=>r.value)));
+ assert.deepEqual(results.map(r=>innerValue(r)?.ok),[undefined,undefined],JSON.stringify(results.map(innerValue)));
  assert.ok(conflicts.length>=1,'expected PostgreSQL to abort one approval as a deadlock victim');
  for(const side of [x,y]){
   const room=await prisma.interviewRoom.findUniqueOrThrow({where:{id:side.room.id}});

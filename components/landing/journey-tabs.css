@@ -64,7 +64,7 @@
   .oc-landing .oc-product-stories { padding-bottom: 72px; }
   .oc-journey-tabs { margin-top: 28px; }
   .oc-journey-tabs [data-slot="tabs"] { gap: 28px; }
-  .oc-journey-number { font-size: 56px; /* type-literal-ok: display numeral, no 3.5rem step */ margin-bottom: -6px; }
+  .oc-journey-number { font-size: 3.5rem; /* type-literal-ok: display numeral, no 3.5rem token step */ margin-bottom: -6px; }
   .oc-journey-copy h3 { font-size: var(--oc-text-title); }
   .oc-journey-screen-header, .oc-journey-screen li { padding-inline: 16px; }
 }

@@ -87,9 +87,9 @@ test("password login preserves normalized credentials, pending state, provider e
   let pending = render().onSignIn(submit)
   assert.equal(render().loading, true)
   assert.deepEqual(payload, { email: "student@virginia.edu", password: "test password" })
-  resolve({ error: { message: "Invalid login credentials" } })
+  resolve({ error: { code: "invalid_credentials", status: 400, message: "Invalid login credentials" } })
   await pending
-  assert.equal(render().error, "Invalid login credentials")
+  assert.equal(render().error, "That email and password don’t match. Check them and try again.")
   assert.equal(render().loading, false)
   assert.equal(window.location.href, "")
   pending = render().onSignIn(submit)

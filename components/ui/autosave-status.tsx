@@ -18,8 +18,8 @@ export function AutosaveStatus({ save }: { save: StatusHandle }) {
   if (save.state === "idle") return null
   const connection = save.state === "offline" || save.state === "unreachable"
   return <div role="status" aria-live="polite" className="flex items-center gap-2 text-xs text-muted-foreground">
-    {connection ? <><span>{save.error || (save.state === "offline" ? "Offline — changes save when you reconnect" : "Couldn’t reach OutClass")}</span><button type="button" className="underline" onClick={retry}>Retry</button></>
-      : save.state === "error" ? <><span>Couldn’t save — </span><button type="button" className="underline" onClick={retry}>Retry</button>{save.error && <span className="ml-2">{save.error}</span>}</>
+    {connection ? <><span>{save.error || (save.state === "offline" ? "Offline. Changes save when you reconnect" : "Couldn’t reach OutClass")}</span><button type="button" className="underline" onClick={retry}>Retry</button></>
+      : save.state === "error" ? <><span>Couldn’t save. </span><button type="button" className="underline" onClick={retry}>Retry</button>{save.error && <span className="ml-2">{save.error}</span>}</>
       : save.state === "saved" ? "Saved" : <><LoadingIndicator size="sm" /><span>Saving…</span></>}
   </div>
 }

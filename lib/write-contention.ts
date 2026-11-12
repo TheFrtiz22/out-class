@@ -1,3 +1,4 @@
+import { UserFacingError } from "@/lib/action-result";
 // Shared by server actions and their client callers: production masks thrown
 // server-action messages, so contention is returned as a typed result instead.
 
@@ -14,6 +15,6 @@ export function isContentionFailure(value: unknown): value is ContentionFailure 
 
 /** Client side: turn a returned contention failure back into an error carrying its real wording. */
 export function unwrapContention<T>(value: T | ContentionFailure): T {
-  if (isContentionFailure(value)) throw new Error(value.error);
+  if (isContentionFailure(value)) throw new UserFacingError(value.error);
   return value as T;
 }

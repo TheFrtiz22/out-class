@@ -19,6 +19,8 @@ async function start() {
   const script = bundle(`import React from 'react'; import {createRoot} from 'react-dom/client'; import {PublicEventBoard} from '@/components/events/public-event-board'; createRoot(document.getElementById('root')).render(<PublicEventBoard />);`, {
     '@/lib/workspace-api': apiMock,
     '@/contexts/auth-context': `exports.useAuth=()=>({user:{id:${JSON.stringify(fixture.users[0])}}});`,
+    '@/contexts/demo-context': `exports.useDemoMode=()=>({isDemoEnabled:false,ready:true});`,
+    '@/actions/content-reports': `exports.reportContent=async()=>({ok:true,message:''});`,
     'next/navigation': `exports.useSearchParams=()=>new URLSearchParams(location.search);`,
     'next/link': `exports.__esModule=true;const React=require('react');exports.default=({children,...props})=>React.createElement('a',props,children);`,
     'next/image': `exports.__esModule=true;const React=require('react');exports.default=({fill,unoptimized,sizes,...props})=>React.createElement('img',{...props,sizes,style:fill?{position:'absolute',inset:0,width:'100%',height:'100%'}:undefined});`,

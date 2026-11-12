@@ -83,7 +83,7 @@ test('Supabase captcha helpers: only well-formed tokens are passed, and captcha 
 function loadWith(file, mocks) {
   const m = { exports: {} }
   const code = ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), m, m.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === '@/lib/rate-limit-action' ? { limitAction: async () => ({ ok: true }) } : name.startsWith('@/lib/rate-limit') ? loadWith(name.slice(2) + '.ts', {}) : require(name), m, m.exports)
   return m.exports
 }
 
@@ -119,13 +119,14 @@ test('every Supabase Auth call that sends email or checks a password carries the
     ['components/views/auth-view.tsx', /signInWithOtp\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['components/views/student-onboarding-wizard.tsx', /auth\.resend\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['app/api/platform/elevation/route.ts', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, input\.turnstileToken\)\)/],
+    ['actions/account-deletion.ts', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
   ]
   for (const [file, pattern] of expectations) assert.match(read(file), pattern, file)
   // Any new direct Auth call must be added above.
   const callers = ['actions', 'app', 'components', 'lib', 'utils', 'contexts', 'hooks'].flatMap(function walk(dir) {
     return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? walk(path.join(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [path.join(dir, entry.name)] : [])
   }).filter(file => /auth\.(signUp|signInWithPassword|signInWithOtp|resetPasswordForEmail|resend|signInAnonymously)\(/.test(read(file)))
-  assert.deepEqual(callers.sort(), ['actions/onboarding.ts', 'app/api/auth/password-recovery/route.ts', 'app/api/platform/elevation/route.ts', 'components/views/auth-view.tsx', 'components/views/student-onboarding-wizard.tsx'])
+  assert.deepEqual(callers.sort(), ['actions/account-deletion.ts', 'actions/onboarding.ts', 'app/api/auth/password-recovery/route.ts', 'app/api/platform/elevation/route.ts', 'components/views/auth-view.tsx', 'components/views/student-onboarding-wizard.tsx'])
   const recovery = read('app/api/auth/password-recovery/route.ts')
   assert.ok(recovery.indexOf('captchaFailed(error)') > recovery.indexOf('resetPasswordForEmail'), 'a failed check is reported; other provider errors keep the uniform response')
 })
