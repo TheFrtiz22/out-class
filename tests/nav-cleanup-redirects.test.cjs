@@ -22,9 +22,6 @@ test("club workspace: removed tools and tabs redirect, keeping other parameters"
     // Rejected Applicants → Applicants filtered to Rejected
     "section=recruitment&tool=rejected": "section=recruitment&tool=applicants&decision=rejected",
     "section=recruitment&tool=rejected&roundId=r1&applicantId=a1": "section=recruitment&tool=applicants&roundId=r1&applicantId=a1&decision=rejected",
-    // Decisions → Overview → Applicants decision filter
-    "section=recruitment&tool=decisions&decisionTab=overview": "section=recruitment&tool=applicants",
-    "section=recruitment&tool=decisions&decisionTab=overview&cycleId=c1": "section=recruitment&tool=applicants&cycleId=c1",
     // The Applicants ballot modal opens from the Voting room
     "section=recruitment&tool=applicants&voting=1&sessionId=s1": "section=recruitment&tool=decisions&sessionId=s1&decisionTab=voting",
     "section=recruitment&voting=1": "section=recruitment&tool=decisions&decisionTab=voting",
@@ -59,6 +56,8 @@ test("club workspace: removed tools and tabs redirect, keeping other parameters"
 
 test("club workspace: canonical URLs are left alone", () => {
   for (const query of ["", "section=overview", "section=recruitment&tool=applicants", "section=recruitment&tool=applicants&decision=rejected",
+    // Decide's Overview tab is canonical again (it once redirected to the Applicants decision filter).
+    "section=recruitment&tool=decisions&decisionTab=overview", "section=recruitment&tool=decisions&decisionTab=overview&cycleId=c1&roundId=r1",
     "section=recruitment&tool=decisions&decisionTab=voting", "section=recruitment&tool=decisions&decisionTab=voting&sessionId=s1",
     "section=recruitment&tool=decisions&decisionTab=letters", "section=recruitment&tool=interviews&interviewTab=schedule",
     "section=calendar", "section=calendar&type=events", "section=calendar&type=meetings&new=1",
@@ -78,7 +77,7 @@ test("no navigation or dashboard link points at a removed club workspace value",
   const files = ["lib/product-navigation.ts", "lib/navigation.ts", "components/club-home/club-home-model.ts", "components/recruiting-overview.tsx", "components/live-voting/room-landing.tsx", "components/views/leader-dashboard/live-leader-workspace.tsx", "components/club-workspace.tsx"]
   for (const file of files) {
     const source = fs.readFileSync(file, "utf8")
-    assert.doesNotMatch(source, /tool=rejected|decisionTab=overview|voting=1|item\("rejected"/, file)
+    assert.doesNotMatch(source, /tool=rejected|voting=1|item\("rejected"/, file)
   }
 })
 

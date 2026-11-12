@@ -41,13 +41,13 @@
   .oc-dock-navigation-content { position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100%; padding-block: 2px; }
   .oc-dock-section[data-pinned] { margin-top: auto; }
   .oc-dock-section { border-top: 1px solid rgb(255 255 255 / 13%); margin-top: 8px; padding-top: 6px; }
-  .oc-dock-section-heading { display: flex; align-items: center; height: 25px; margin: 0; padding-left: 19px; color: var(--oc-rail-muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+  .oc-dock-section-heading { display: flex; align-items: center; height: 25px; margin: 0; padding-left: 19px; color: var(--oc-rail-muted); font-size: var(--oc-size-12); font-weight: 400; white-space: nowrap; }
   .oc-dock-section nav { display: flex; flex-direction: column; gap: 4px; }
   .oc-dock-rail nav :is(a,button) {
     display: flex; position: relative; align-items: center; gap: 0; flex-shrink: 0;
     width: 100%; min-width: 60px; height: 48px; min-height: 48px; padding: 0; margin: 0;
     border-radius: 13px; color: var(--oc-rail-muted); background: transparent;
-    text-align: left; font-size: 14px; font-weight: 500; white-space: nowrap;
+    text-align: left; font-size: var(--oc-size-14); font-weight: 500; white-space: nowrap;
     transition: color 160ms ease;
   }
   .oc-dock-rail nav :is(a,button):is(:hover,[aria-current="page"],[data-active="true"]) { color: var(--oc-rail-text); background: transparent; }

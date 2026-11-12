@@ -1,4 +1,5 @@
 import { LoginPageView } from "@/components/auth/login-page-view"
+import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { getAuthEntryAccount } from "@/utils/auth-entry"
 import { safeReturnPath, authEntryHref, authenticationError } from "@/lib/auth"
 import { redirect } from "next/navigation"
@@ -8,7 +9,7 @@ export const metadata = { title: "Sign in", robots: { index: false, follow: fals
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams
   const account = await getAuthEntryAccount()
-  if (account?.disabled) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
+  if (account?.disabled) return <AccountUnavailable />
   if (account) {
     const next = safeReturnPath(typeof params.next === "string" ? params.next : undefined)
     // Deliberate platform entry retains its independent authorization and MFA checks.

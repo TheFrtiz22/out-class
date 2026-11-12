@@ -12,22 +12,46 @@ import { isPrivateResume, validateProfileFile } from "@/lib/student-profile";
 import { validateResumeAnchor, validateResumeArea } from "@/lib/resume-anchor-validation";
 import { isAreaAnchor } from "@/lib/resume-anchors";
 import { boundedParse } from "@/lib/bounded-input";
+import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
+import { STALE_INTERVIEW_LIST_CURSOR, decodeInterviewListCursor, interviewListFiltersSchema, interviewListLimitSchema, interviewListPage, interviewListScope } from "@/lib/interview-list-page";
 
 const documentSelect = { id: true, contentHash: true, mimeType: true, createdAt: true } as const;
 /** Explicit moderation entry point includes only preserved documents, never private question drafts. */
-export async function getInterviewResumeModerationQueue(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+async function readInterviewResumeModeration(clubId: string, filters: ApplicantInterviewFilters, cursor: unknown, withTotal: boolean, limit?: unknown) {
   z.string().uuid().parse(clubId); const { user } = await requireAuth();
-  const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit);
+  const listScope = interviewListScope(clubId, selected);
+  const position = decodeInterviewListCursor(cursor, "resumes", listScope);
   return prisma.$transaction(async tx => {
+    // Every page re-checks live moderation access before reading anything.
     const { caps } = await interviewActor(tx, clubId, user.id);
     if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
+    const where: Prisma.InterviewResumeDocumentWhereInput = { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } };
+    let page = where;
+    if (position) {
+      // The anchor must satisfy this request's own authorized filters; a cursor never widens scope.
+      const anchor = await tx.interviewResumeDocument.findFirst({ where: { AND: [where, { id: position.id }] }, select: { createdAt: true } });
+      if (!anchor) throw new Error(STALE_INTERVIEW_LIST_CURSOR);
+      page = { AND: [where, { OR: [{ createdAt: { lt: anchor.createdAt } }, { createdAt: anchor.createdAt, id: { lt: position.id } }] }] };
+    }
     const documents = await tx.interviewResumeDocument.findMany({
-      where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100,
+      where: page,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: take + 1,
       select: { id: true, applicationId: true, roundId: true, round: { select: { name: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
     });
-    return documents.map(d => ({ documentId: d.id, clubId, applicationId: d.applicationId, roundId: d.roundId, roundName: d.round.name, applicantName: d.application.student.studentProfile ? `${d.application.student.studentProfile.firstName} ${d.application.student.studentProfile.lastName}` : "Profile not provided" }));
+    const total = withTotal ? await tx.interviewResumeDocument.count({ where }) : 0;
+    const rows = documents.map(d => ({ documentId: d.id, clubId, applicationId: d.applicationId, roundId: d.roundId, roundName: d.round.name, applicantName: d.application.student.studentProfile ? `${d.application.student.studentProfile.firstName} ${d.application.student.studentProfile.lastName}` : "Profile not provided" }));
+    return interviewListPage(rows, r => r.documentId, "resumes", listScope, total, take);
   }, interviewTransactionOptions);
+}
+/** One page (50) of preserved documents, newest first. `cursor` is the previous page's `nextCursor`;
+ * `limit` (up to 500) lets a refresh re-read everything already loaded in one request. */
+export async function getInterviewResumeModerationPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  return readInterviewResumeModeration(clubId, filters, cursor, true, limit);
+}
+/** Earlier array contract: the first page only. The moderation UI pages with getInterviewResumeModerationPage. */
+export async function getInterviewResumeModerationQueue(clubId: string, filters: ApplicantInterviewFilters = {}) {
+  return (await readInterviewResumeModeration(clubId, filters, null, false)).items;
 }
 export async function getInterviewApplicantPanel(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();

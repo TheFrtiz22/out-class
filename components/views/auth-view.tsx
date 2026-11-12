@@ -12,7 +12,7 @@ import { isUvaEmail, loginReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
-import { authEmailError, confirmedEmailSession, isNoAccountCodeError, signInCodeNotice } from "@/lib/auth-email"
+import { authEmailError, passwordSignInError, confirmedEmailSession, isNoAccountCodeError, signInCodeNotice } from "@/lib/auth-email"
 import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 
 export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student", initialError = "" }: {
@@ -72,7 +72,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     setError("")
     try {
       const { error } = await supabase.auth.signInWithPassword(withCaptcha({ email: email.trim().toLowerCase(), password }, turnstileToken))
-      if (error) { setError(captchaFailed(error) ? turnstileMessage("rejected") : error.message); return }
+      if (error) { setError(captchaFailed(error) ? turnstileMessage("rejected") : passwordSignInError(error)); return }
       window.location.href = loginReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch { setError("Unable to sign in. Please try again.") }
     finally { setLoading(false); setTurnstileReset(value => value + 1) }
