@@ -6,8 +6,8 @@ import {listSetupDrafts,discardSetupDraft} from './voting-setup-drafts';
 import type * as Live from "@/actions/voting-room";
 import type * as Setup from "@/actions/voting-room-setup";
 import { demoStore,demoMember } from "./store";
-import { createRoomSchema,roomScope,roomBallotSchema,roomCommandSchema,roomCommandResultSchema,roomOutcomes,roomDisplayConfig,roomPresentationSchema,liveRoomFields,recommendedOutcome,storedChoice,uniqueSelection,finalizationPreviewInput,finalizeRoomInput } from "@/lib/voting-room";
-import { roomAuthority,requireRoomLeader,projectVotingRoom,projectRoundTargetSummary,type LiveRoom } from "@/lib/voting-room-projection";
+import { createRoomSchema,roomScope,roomBallotSchema,roomCommandSchema,roomOutcomes,roomDisplayConfig,roomPresentationSchema,liveRoomFields,recommendedOutcome,storedChoice,uniqueSelection,finalizationPreviewInput,finalizeRoomInput } from "@/lib/voting-room";
+import { roomAuthority,requireRoomLeader,projectVotingRoom,undoableDecision,projectRoundTargetSummary,type LiveRoom } from "@/lib/voting-room-projection";
 import type * as TargetSummary from "@/actions/voting-target-summary";
 import { editorValue } from "@/lib/editor-value";
 import { hasPermission } from "@/lib/permissions";
@@ -57,7 +57,10 @@ async function perform<K extends keyof typeof Live>(method:K,input:unknown,membe
   if(method==="getLiveVotingRoom"){
    const snapshot=projectVotingRoom(c.s,c.m,c.round.anonymousReview??false,{name:c.round.name,final:!c.club.rounds.some(r=>!r.archivedAt&&r.order>c.round.order)}),entry=c.s.passes.find(p=>p.number===c.s.currentPass)?.candidates.find(v=>v.applicationId===c.s.activeApplicationId);
    const eligible=c.state.memberships.filter(m=>c.s.participants.some(p=>p.memberId===m.id)&&hasPermission(m,"applications.review")&&hasPermission(m,"decisions.vote"));const opts=roomPresentationSchema.safeParse(c.s.presentationOptions);
-   result={...snapshot,accessVersion:editorValue([c.m.permissions,c.round.anonymousReview]),fields:opts.success?opts.data.fields:null,joinedSelf:!!c.s.participants.find(p=>p.memberId===c.m.id)?.joinedAt,participation:{voted:entry?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},joinedParticipants:c.role.leader?eligible.map(m=>({id:m.id,label:label(c.state,m.userId),joined:!!c.s.participants.find(p=>p.memberId===m.id)?.joinedAt})):[]};
+   // Same server-backed Undo as the live room: the receipt that produced this revision, leaders only.
+   const receipts=Object.entries((c.state as State&Receipts).liveVotingReceipts??{}).filter(([k])=>k.startsWith(`${c.s.id}:`)).map(([,v])=>(v.result as {result?:unknown})?.result);
+   const undo=snapshot.permissions.canCorrect?receipts.map(r=>undoableDecision(c.s,r)).find(Boolean)??null:null;
+   result={...snapshot,undo,accessVersion:editorValue([c.m.permissions,c.round.anonymousReview]),fields:opts.success?opts.data.fields:null,joinedSelf:!!c.s.participants.find(p=>p.memberId===c.m.id)?.joinedAt,participation:{voted:entry?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},joinedParticipants:c.role.leader?eligible.map(m=>({id:m.id,label:label(c.state,m.userId),joined:!!c.s.participants.find(p=>p.memberId===m.id)?.joinedAt})):[]};
   }else if(method==="getLiveVotingPresentation"){
    const applicationId=(input as {applicationId:string}).applicationId,a=c.state.applications.find(a=>a.id===applicationId&&a.clubId===c.s.clubId&&a.roundId===c.s.roundId);if(!a||!c.s.candidates.some(v=>v.applicationId===a.id)||(!c.role.leader&&c.s.activeApplicationId!==a.id))throw Error("Demo presentation unavailable.");
    result=demoPresentation(c,applicationId);
@@ -81,8 +84,8 @@ async function perform<K extends keyof typeof Live>(method:K,input:unknown,membe
       case "DECIDE_AND_ADVANCE":case "CONFIRM":if(entry?.ballotState!=="CLOSED"||!b.choice)throw Error("Demo confirmation unavailable.");if(recommendedOutcome(entry,s.participants.length)!==storedChoice[b.choice]&&!b.reason)throw new DemoConflict({ok:false,code:"REASON_REQUIRED",message:"Provide a reason for an override or incomplete ballot."});Object.assign(entry,{ballotState:"CONFIRMED",confirmedDecision:storedChoice[b.choice],confirmedAt:now,confirmedBy:c.m.userId});break;
       case "UNDO_DECISION":{
        const receipt=b.undoRequestId?(state as State&Receipts).liveVotingReceipts?.[`${s.id}:${b.undoRequestId}`]:null;
-       const saved=roomCommandResultSchema.safeParse((receipt?.result as {result?:unknown})?.result),prev=saved.success?saved.data.decision:null,old=pass?.candidates.find(c=>c.applicationId===b.applicationId);
-       if(!prev||saved.data!.revision!==s.revision||prev.applicationId!==b.applicationId||prev.passNumber!==b.passNumber||s.currentPass!==b.passNumber||s.activeApplicationId!==prev.nextApplicationId||old?.ballotState!=="CONFIRMED"||!["OPEN","PAUSED"].includes(s.state)||entry&&(entry.ballots.length>0||entry.ballotState!=="PENDING"))throw new DemoConflict({ok:false,code:"UNDO_UNSAFE",message:"Newer activity prevents Undo. Use Correct an outcome to return the applicant to Hold."});
+       const prev=undoableDecision(s,(receipt?.result as {result?:unknown})?.result),old=pass?.candidates.find(c=>c.applicationId===b.applicationId);
+       if(!prev||!old||prev.applicationId!==b.applicationId||prev.passNumber!==b.passNumber)throw new DemoConflict({ok:false,code:"UNDO_UNSAFE",message:"Newer activity prevents Undo. Use Correct an outcome to return the applicant to Hold."});
        const applicant=state.applications.find(a=>a.id===old.applicationId&&a.clubId===s.clubId&&a.roundId===s.roundId&&a.status===s.candidates.find(c=>c.applicationId===old.applicationId)!.expectedStatus);if(!applicant)throw new DemoConflict({ok:false,code:"APPLICANT_CHANGED",message:"Applicant recruitment state changed. Review it before correcting this outcome."});
        previousDecision=old.confirmedDecision;Object.assign(old,{ballotState:old.openedAt?"CLOSED":"PENDING",withoutVote:false,confirmedDecision:null,confirmedAt:null,confirmedBy:null,override:null,overrideBy:null,overrideAt:null});pass!.state="OPEN";pass!.completedAt=null;s.activeApplicationId=old.applicationId;s.state="OPEN";break;
       }
