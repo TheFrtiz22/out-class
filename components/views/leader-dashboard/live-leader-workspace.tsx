@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import { answerText } from "@/lib/student-applications"
 import "@/components/product/operational-dashboard.css"
 import { completePipelineSelection, type PipelinePageQuery, type PipelineCursor } from "@/lib/pipeline-page"
@@ -468,7 +469,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setMessage("")
     try {
       if (kind === "review") {
-        if (!canEvaluate) throw new Error("A current panel assignment is required to submit this identified review.")
+        if (!canEvaluate) throw new UserFacingError("A current panel assignment is required to submit this identified review.")
         await draftSave.flush()
         const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
         if (!roundName) throw new Error()

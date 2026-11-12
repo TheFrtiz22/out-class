@@ -1,4 +1,6 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { MeetingGroupInvitation } from "@/components/meeting-group-invitation"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
@@ -159,7 +161,7 @@ function MeetingEditor({
         setMessage(""); setFailed(false);
         try {
           const input = meetingInputSchema.safeParse({ ...fields, id: meeting?.id, clubId, resources, revision: meeting?.revision ?? 0, endDate: fields.endDate || null });
-          if (!input.success) throw new Error(input.error.issues[0].message);
+          if (!input.success) throw new UserFacingError(input.error.issues[0].message);
           await draftSave.flush();
           await saveMeeting({
             id: meeting?.id,
@@ -187,7 +189,7 @@ function MeetingEditor({
         } catch (error) {
           setFailed(true);
           setMessage(
-            error instanceof Error ? error.message : "Could not save.",
+            userMessage(error, "Could not save."),
           );
         } finally {
           setBusy(false);
@@ -363,7 +365,7 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
       })
       .catch((e) => {
         if (current)
-          setError(e instanceof Error ? e.message : "Meeting unavailable.");
+          setError(userMessage(e, "Meeting unavailable."));
       });
     return () => {
       current = false;
@@ -482,7 +484,7 @@ function MeetingAttendance({ meeting, member }: { meeting: Meeting; member: Para
         }
       } catch (e) {
         if (current) {
-          const message = e instanceof Error ? e.message : "Could not refresh QR code.";
+          const message = userMessage(e, "Could not refresh QR code.");
           setError(message);
           setIssueError(message);
         }

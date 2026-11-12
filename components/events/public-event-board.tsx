@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { isUuid } from "@/lib/uuid";
@@ -478,7 +479,7 @@ export function RsvpControls({
       window.dispatchEvent(new Event("outclass-event-rsvp"));
     } catch (e) {
       setGoing(previous);
-      setError(e instanceof Error ? e.message : "Could not update RSVP.");
+      setError(userMessage(e, "Could not update RSVP."));
     } finally {
       setBusy(false);
     }

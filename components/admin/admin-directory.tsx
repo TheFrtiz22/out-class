@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { PillGroup } from "@/components/ui/segmented-control"
 import { SearchField } from "@/components/ui/search-field"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -35,11 +36,11 @@ export function AdminDirectory({ resource, initialQuery = "", initialUserId = ""
   const [query, setQuery] = useState(initialQuery), [status, setStatus] = useState(""), [page, setPage] = useState(0), [rows, setRows] = useState<Row[]>([]), [reason, setReason] = useState(""), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [selected, setSelected] = useState<Row | null>(null), [detail, setDetail] = useState<unknown>(null), [busy, setBusy] = useState(false), [confirmation, setConfirmation] = useState("");
   useEffect(() => {
     let live = true; setLoading(true); setError("");
-    readPlatformResource(resource, page, { query, status, userId: initialUserId, clubId: initialClubId }).then(r => { if (live) setRows(r as Row[]); }).catch(e => { if (live) setError(e.message); }).finally(() => { if (live) setLoading(false); });
+    readPlatformResource(resource, page, { query, status, userId: initialUserId, clubId: initialClubId }).then(r => { if (live) setRows(r as Row[]); }).catch(e => { if (live) setError(userMessage(e, "Couldn’t load this list. Try again.")); }).finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [resource, query, status, page, retry, initialUserId, initialClubId]);
   useRevalidate(() => setRetry(r => r + 1), { enabled: !busy && !selected, scopes: ["admin"] });
-  async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); setRetry(r => r + 1); } catch (e) { setError(e instanceof Error ? e.message : "Operation failed."); } finally { setBusy(false); } }
+  async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); setRetry(r => r + 1); } catch (e) { setError(userMessage(e, "Operation failed.")); } finally { setBusy(false); } }
   async function inspect(row: Row) { if (reason.trim().length < 10) { setError("Provide an investigation reason of at least 10 characters."); return; } await run(async () => {
     const result = resource === "clubs" ? await inspectAdminClub(String(row.id), reason) : resource === "users" ? await inspectAdminStudent(String(row.id), reason) : ["applications", "meetings"].includes(resource) ? await inspectPlatformRecord(resource, String(row.id), reason) : row;
     setDetail(result); setSelected(row); setConfirmation("");

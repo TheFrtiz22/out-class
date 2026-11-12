@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod";
@@ -9,13 +10,13 @@ import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/pe
 
 export async function recipientInvitation(tx: AppTransactionClient, invitationId: string, account: Awaited<ReturnType<typeof requireAuth>>, acceptedRetry = false) {
   const hint = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
-  if (!hint) throw new Error("Invitation unavailable.");
+  if (!hint) throw new ActionError("Invitation unavailable.");
   await lockOperationalClub(tx, hint.clubId);
   const identities = await verifiedSchoolIdentities(tx, account);
   const invitation = await tx.clubInvitation.findUniqueOrThrow({ where: { id: invitationId } });
   const alreadyAccepted = acceptedRetry && invitation.status === "ACCEPTED" && invitation.claimedUserId === account.user.id && !!invitation.acceptedAt;
   if (invitation.applicationId || (!alreadyAccepted && (invitation.status !== "PENDING" || invitation.acceptedAt)) || invitation.declinedAt || invitation.revokedAt || invitation.expiredAt || (!alreadyAccepted && invitation.expiresAt <= new Date()) || !identities.some(i => i.id === invitation.schoolIdentityId)) {
-    throw new Error("Invitation unavailable or expired.");
+    throw new ActionError("Invitation unavailable or expired.");
   }
   return invitation;
 }
@@ -24,22 +25,22 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
     const invitation = await recipientInvitation(tx, invitationId, account, true);
     if (invitation.status === "ACCEPTED") {
       const membership = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: account.user.id, clubId: invitation.clubId } } });
-      if (!isActiveMembership(membership)) throw new Error("Invitation unavailable. Membership is inactive.");
+      if (!isActiveMembership(membership)) throw new ActionError("Invitation unavailable. Membership is inactive.");
       return { clubId: invitation.clubId };
     }
     const inviterAccount = await tx.user.findUnique({ where: { id: invitation.invitedBy } });
-    if (!inviterAccount || inviterAccount.disabledAt) throw new Error("Inviter account unavailable.");
+    if (!inviterAccount || inviterAccount.disabledAt) throw new ActionError("Inviter account unavailable.");
     if (invitation.authoritySource === "PLATFORM_ADMIN") {
       const allowed = (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(s => s.trim());
       const grant = await tx.platformAdmin.findUnique({ where: { userId: invitation.invitedBy } });
-      if (!allowed.includes(invitation.invitedBy) || !grant?.active) throw new Error("Platform invitation authority was revoked.");
+      if (!allowed.includes(invitation.invitedBy) || !grant?.active) throw new ActionError("Platform invitation authority was revoked.");
       if (invitation.requestedRole === "OWNER" && await tx.clubMember.count({ where: { clubId: invitation.clubId, isOwner: true } })) {
-        throw new Error("Organization already has an owner. Request an updated invitation.");
+        throw new ActionError("Organization already has an owner. Request an updated invitation.");
       }
     } else {
       const inviter = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: invitation.invitedBy, clubId: invitation.clubId } } });
       if (!canGrantOnboardingRole(inviter, invitation.requestedRole) || invitation.permissions.some(p => !hasPermission(inviter, p as ClubPermission))) {
-        throw new Error("The inviter can no longer grant this access.");
+        throw new ActionError("The inviter can no longer grant this access.");
       }
     }
     const where = { userId_clubId: { userId: account.user.id, clubId: invitation.clubId } };
@@ -47,7 +48,7 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
     // Removed members may rejoin only through a new, currently authorized invitation.
     // Suspensions and invitations predating removal never reactivate membership.
     const rejoining = existing?.status === "LEFT" && invitation.createdAt > existing.updatedAt;
-    if (existing && !isActiveMembership(existing) && !rejoining) throw new Error("Membership is inactive. Contact an organization owner.");
+    if (existing && !isActiveMembership(existing) && !rejoining) throw new ActionError("Membership is inactive. Contact an organization owner.");
     const permissions = Array.from(new Set([...(existing?.permissions || []), ...invitation.permissions]));
     const isOwner = existing?.isOwner === true || invitation.requestedRole === "OWNER";
     const roleOrder = ["MEMBER", "INTERVIEWER", "RECRUITING_ADMIN", "ADMIN", "OWNER"];
@@ -69,32 +70,32 @@ export async function createIdentityInvitationInTransaction(tx: AppTransactionCl
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${actor.id} FOR SHARE`;
     await tx.$queryRaw`SELECT id FROM "ClubMember" WHERE "clubId"=${data.clubId} AND "userId"=${actor.id} FOR SHARE`;
     const account = await tx.user.findUnique({ where: { id: actor.id }, select: { disabledAt: true } });
-    if (!account || account.disabledAt) throw new Error("Invitation authority unavailable.");
+    if (!account || account.disabledAt) throw new ActionError("Invitation authority unavailable.");
     if (data.platformDesignation) {
       await tx.$queryRaw`SELECT "userId" FROM "PlatformAdmin" WHERE "userId"=${actor.id} FOR SHARE`;
       const allowed = (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(id => id.trim());
       const grant = await tx.platformAdmin.findUnique({ where: { userId: actor.id } });
-      if (!allowed.includes(actor.id) || !grant?.active) throw new Error("Invitation authority unavailable.");
+      if (!allowed.includes(actor.id) || !grant?.active) throw new ActionError("Invitation authority unavailable.");
     }
     const club = await tx.club.findUniqueOrThrow({ where: { id: data.clubId } });
     const config = await tx.schoolIdentifierType.findUniqueOrThrow({ where: { id: data.identifierTypeId }, include: { school: true } });
-    if (config.schoolId !== club.schoolId || !config.school.active) throw new Error("Identifier type does not belong to this organization's active school.");
+    if (config.schoolId !== club.schoolId || !config.school.active) throw new ActionError("Identifier type does not belong to this organization's active school.");
     const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: actor.id, clubId: club.id } } });
-    if (!data.platformDesignation && !canGrantOnboardingRole(member, data.requestedRole)) throw new Error("You cannot grant this organization role.");
+    if (!data.platformDesignation && !canGrantOnboardingRole(member, data.requestedRole)) throw new ActionError("You cannot grant this organization role.");
     if (data.platformDesignation && data.requestedRole === "OWNER" &&
         (club.claimedAt || await tx.clubMember.count({ where: { clubId: club.id, isOwner: true } }))) {
-      throw new Error("Organization already claimed. Use existing ownership management.");
+      throw new ActionError("Organization already claimed. Use existing ownership management.");
     }
     const normalized = normalizeSchoolIdentifier(data.identifier, config);
     const email = config.verification === "EMAIL_LOCAL_PART" && config.emailDomain
       ? `${normalized}@${config.emailDomain}` : data.deliveryEmail;
-    if (!email || !z.string().email().safeParse(email).success) throw new Error("Enter an email address, or choose a school that has a default email format.");
+    if (!email || !z.string().email().safeParse(email).success) throw new ActionError("Enter an email address, or choose a school that has a default email format.");
     const identity = await tx.schoolIdentity.upsert({
       where: { schoolId_identifierTypeId_normalizedIdentifier: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: normalized } },
       create: { schoolId: config.schoolId, identifierTypeId: config.id, identifier: data.identifier, normalizedIdentifier: normalized }, update: {},
     });
     const existingMember = await tx.clubMember.findFirst({ where: { clubId: club.id, status: "ACTIVE", OR: [...(identity.userId ? [{ userId: identity.userId }] : []), { user: { email } }] } });
-    if (existingMember) throw new Error("This person is already an active member. Change their role through member management.");
+    if (existingMember) throw new ActionError("This person is already an active member. Change their role through member management.");
     const expired = await tx.clubInvitation.findMany({ where: { clubId: club.id, schoolIdentityId: identity.id, status: "PENDING", expiresAt: { lte: new Date() } }, select: { id: true } });
     for (const stale of expired) {
       await tx.clubInvitation.update({ where: { id: stale.id }, data: { status: "EXPIRED", expiredAt: new Date() } });
@@ -103,7 +104,7 @@ export async function createIdentityInvitationInTransaction(tx: AppTransactionCl
     const pending = await tx.clubInvitation.findFirst({ where: { clubId: club.id, schoolIdentityId: identity.id, status: "PENDING" } });
     if (pending) {
       if (pending.requestedRole !== data.requestedRole || pending.authoritySource !== (data.platformDesignation ? "PLATFORM_ADMIN" : "CLUB_MEMBER")) {
-        throw new Error("A different invitation is pending. Revoke it before changing its grant.");
+        throw new ActionError("A different invitation is pending. Revoke it before changing its grant.");
       }
       return { id: pending.id, reused: true };
     }

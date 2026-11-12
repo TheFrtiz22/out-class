@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState } from "react";
 import { getSavedCampusEventIds, setSavedCampusEvent } from "@/lib/workspace-api";
 
@@ -40,7 +41,7 @@ export function useSavedCampusEvents(identity: string) {
       });
       return true;
     } catch (cause) {
-      if (current.current === account) setError(cause instanceof Error ? cause.message : "Couldn’t save this event. Try again.");
+      if (current.current === account) setError(userMessage(cause, "Couldn’t save this event. Try again."));
       return false;
     } finally {
       if (current.current === account) {

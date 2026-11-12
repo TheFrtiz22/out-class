@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -43,7 +44,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
     if (!result.success) { const issue = result.error.issues[0]; setError(`${issue.path.filter(p => p !== "marketing").map(p => typeof p === "number" ? p + 1 : p.replace(/([A-Z])/g, " $1")).join(" · ")}: ${issue.message}`); return }
     setBusy(true)
     try { if (clubId) await draftSave.flush(); await onSave(result.data, saved); if (clubId) await draftSave.clear(); setDraft(result.data); setSaved(result.data); setMessage(demo ? "Profile saved in this demo. Open Explore to see your changes." : "Profile published. Your changes are now visible in Explore.") }
-    catch (error) { setError(error instanceof Error ? error.message : "Could not publish. Your edits are still here.") }
+    catch (error) { setError(userMessage(error, "Could not publish. Your edits are still here.")) }
     finally { setBusy(false) }
   }}>
     <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Your public presence</p><h2 className="oc-section-heading mt-2">Make your club stand out.</h2><p className="mt-2 text-sm text-muted-foreground">Tell your story. Show what makes joining worthwhile.</p></div><Button type="button" variant="outline" onClick={() => setPreview(!preview)}><Eye size={16} />{preview ? "Back to editor" : "Full profile preview"}</Button></div>

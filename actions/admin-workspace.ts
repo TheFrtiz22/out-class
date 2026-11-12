@@ -42,7 +42,7 @@ export async function getAdminOverview() {
 export async function listAdminReports(input: unknown) {
   const actor = await requirePlatformAdmin();
   const f = z.object({ query: z.string().trim().max(200).default(""), status: z.union([statuses, z.literal("")]).default(""), support: z.boolean().default(false) }).strict().parse(input);
-  const rows = await prisma.platformReport.findMany({ where: { kind: f.support ? "SUPPORT" : { not: "SUPPORT" }, ...(f.status ? { status: f.status } : {}), ...(f.query ? { OR: [{ summary: { contains: f.query, mode: "insensitive" } }, { targetId: { contains: f.query, mode: "insensitive" } }] } : {}) }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, include: { reporter: { select: { id: true, email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } });
+  const rows = await prisma.platformReport.findMany({ where: { kind: f.support ? "SUPPORT" : { notIn: ["SUPPORT", "ACCOUNT_DELETION"] }, ...(f.status ? { status: f.status } : {}), ...(f.query ? { OR: [{ summary: { contains: f.query, mode: "insensitive" } }, { targetId: { contains: f.query, mode: "insensitive" } }] } : {}) }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, include: { reporter: { select: { id: true, email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } });
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.reports.read", targetId: "reports", details: { support: f.support, result: "success" } } });
   // Reported announcements are only readable here: carry the title so the admin sees what was reported.
   const announcementIds = rows.flatMap(r => r.kind === "CONTENT" && r.targetId.startsWith("announcement:") ? [r.targetId.split(":")[2]] : []).filter(id => uuid.safeParse(id).success);
@@ -74,6 +74,7 @@ export async function resolveAdminReport(input: unknown) {
     await tx.$queryRaw`SELECT id FROM "PlatformReport" WHERE id=${d.id} FOR UPDATE`;
     const row = await tx.platformReport.findUnique({ where: { id: d.id } });
     if (!row || row.revision !== d.revision) throw Error("Report changed. Reload it before resolving.");
+    if (row.kind === "ACCOUNT_DELETION") throw Error("Complete or review account deletions from the deletion queue.");
     const closed = ["RESOLVED", "DISMISSED"].includes(d.status);
     await tx.platformReport.update({ where: { id: d.id }, data: { status: d.status, resolution: d.reason, revision: { increment: 1 }, resolvedAt: closed ? new Date() : null, resolvedBy: closed ? actor.id : null } });
     await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.report.resolve", targetId: d.id, reason: d.reason, details: { from: row.status, to: d.status, result: "success" } } });
