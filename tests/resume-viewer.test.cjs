@@ -46,9 +46,9 @@ test('the dialog uses the shared primitives, Phosphor icons, pdf.js lazily, and 
 })
 
 test('the leader dossier opens résumés in the viewer instead of a new tab', () => {
-  const src = fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx', 'utf8')
+  const src = fs.readFileSync('components/applicant-review/applicant-review-flow.tsx', 'utf8')
   assert.doesNotMatch(src, /Open résumé in a new tab/)
-  // Header icon, Full profile link and the Full profile résumé pane.
-  assert.equal((src.match(/<ResumeViewerDialog href=/g) || []).length, 3)
-  assert.match(src, /resolveRecruitingResumeUrl\(url, membership\.clubId, active\.id\)/)
+  // The review header's Résumé button; the inline preview is a collapsed section.
+  assert.equal((src.match(/<ResumeViewerDialog href=/g) || []).length, 1)
+  assert.match(src, /resolveRecruitingResumeUrl\(profile\?\.resumeUrl, clubId, app\.id\)/)
 })

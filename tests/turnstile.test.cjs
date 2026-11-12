@@ -120,6 +120,7 @@ test('every Supabase Auth call that sends email or checks a password carries the
     ['components/views/auth-view.tsx', /signInWithOtp\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['components/views/student-onboarding-wizard.tsx', /auth\.resend\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['app/api/platform/elevation/route.ts', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, input\.turnstileToken\)\)/],
+    ['app/api/auth/two-step/route.ts', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
     ['actions/account-deletion.ts', /signInWithPassword\(withCaptcha\([\s\S]{0,160}, turnstileToken\)\)/],
   ]
   for (const [file, pattern] of expectations) assert.match(read(file), pattern, file)
@@ -127,7 +128,7 @@ test('every Supabase Auth call that sends email or checks a password carries the
   const callers = ['actions', 'app', 'components', 'lib', 'utils', 'contexts', 'hooks'].flatMap(function walk(dir) {
     return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? walk(path.join(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [path.join(dir, entry.name)] : [])
   }).filter(file => /auth\.(signUp|signInWithPassword|signInWithOtp|resetPasswordForEmail|resend|signInAnonymously)\(/.test(read(file)))
-  assert.deepEqual(callers.sort(), ['actions/account-deletion.ts', 'actions/onboarding.ts', 'app/api/auth/password-recovery/route.ts', 'app/api/platform/elevation/route.ts', 'components/views/auth-view.tsx', 'components/views/student-onboarding-wizard.tsx'])
+  assert.deepEqual(callers.sort(), ['actions/account-deletion.ts', 'actions/onboarding.ts', 'app/api/auth/password-recovery/route.ts', 'app/api/auth/two-step/route.ts', 'app/api/platform/elevation/route.ts', 'components/views/auth-view.tsx', 'components/views/student-onboarding-wizard.tsx'])
   const recovery = read('app/api/auth/password-recovery/route.ts')
   assert.ok(recovery.indexOf('captchaFailed(error)') > recovery.indexOf('resetPasswordForEmail'), 'a failed check is reported; other provider errors keep the uniform response')
 })

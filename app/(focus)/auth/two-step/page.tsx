@@ -1,0 +1,19 @@
+import { cookies } from "next/headers"
+import { notFound, redirect } from "next/navigation"
+import { DEMO_COOKIE } from "@/lib/demo/access"
+import { signInReturnPath } from "@/lib/auth"
+import { userMfaEnabled } from "@/lib/user-mfa"
+import { getSessionState } from "@/utils/auth"
+import { TwoStepChallenge } from "@/components/security/two-step-challenge"
+
+export const metadata = { title: "Two-step sign-in", robots: { index: false, follow: false } }
+
+export default async function TwoStepPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  if (!userMfaEnabled()) notFound()
+  const params = await searchParams
+  const next = signInReturnPath(typeof params.next === "string" ? params.next : undefined)
+  const state = await getSessionState()
+  if (!state.secondFactorPending) redirect(state.identity.data.user ? next : "/login")
+  // Demo Mode blocks every write, including this one; offer to leave it rather than failing the code.
+  return <TwoStepChallenge next={next} demo={(await cookies()).get(DEMO_COOKIE)?.value === "1"} />
+}

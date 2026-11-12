@@ -425,6 +425,8 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
     tutorials: { student: { status: "SKIPPED", step: 0, version: 1 }, leader: { status: "SKIPPED", step: 0, version: 1 } } as Record<import("@/lib/tutorials").TutorialExperience, import("@/lib/tutorials").TutorialProgress>,
     applicantDisplay,
     profileFieldVisibility: {} as Record<string, import("@/lib/profile-field-visibility").ProfileFieldVisibility>,
+    reviewRubric: {} as Record<string, import("@/lib/review-rubric").ReviewRubric>,
+    stagedDecisions: [] as import("./review-decisions").DemoStagedDecision[],
     votingSessions,
     votingAudit,
     observations: observations as (import("@/lib/applicant-display").ObservationView & { applicationId: string })[],

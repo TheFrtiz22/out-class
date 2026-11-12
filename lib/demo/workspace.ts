@@ -28,6 +28,7 @@ import * as demoRoomApi from "./interview-rooms"
 import * as demoRecruitingRules from "./recruiting-rules"
 import { demoDashboardSummary } from "./dashboard-summary"
 import * as demoTasks from "./tasks"
+import * as demoReview from "./review-decisions"
 import { anonymousApplication, identifiedApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
 import * as demoInterviews from "./interview-foundation"
@@ -128,6 +129,7 @@ export const getClubPipeline: Demo<"getClubPipeline"> = (clubId, filter = {}) =>
   const profileFields = demoProfileFieldVisibility(clubId)
   return {
     profileFields,
+    rubric: demoReview.demoReviewRubric(clubId),
     genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: scoped.filter(a => s.students.find(u => u.id === a.studentId)?.profile.gender === gender).length })) : null,
     rounds: rounds.map(r => ({ ...r, type: /interview/i.test(r.name) ? "INTERVIEW" : "CUSTOM", genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
     applications: s.applications
@@ -141,7 +143,7 @@ export const getClubPipelinePage: Demo<"getClubPipelinePage"> = async (clubId, i
     const query = pipelinePageQuery.parse(input), member = demoMember()
     const list = await api.getClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts })
     const page = pagePipeline(list, query, member.id, member.userId, `demo:${clubId}:${member.id}:${pipelineSelectionKey(query)}`)
-    return { ...page, profileFields: list.profileFields, coverage: { mode: query.mode, complete: !query.roundId && !query.gender && !query.genderCounts && page.page.start === 0 && page.applications.length === page.page.baseTotal } }
+    return { ...page, profileFields: list.profileFields, rubric: list.rubric, coverage: { mode: query.mode, complete: !query.roundId && !query.gender && !query.genderCounts && page.page.start === 0 && page.applications.length === page.page.baseTotal } }
   }
 export const getClubPipelineSelection: Demo<"getClubPipelineSelection"> = async (clubId, input = {}) => {
     const query = pipelinePageQuery.omit({ cursor: true }).parse(input), member = demoMember()
@@ -592,3 +594,10 @@ export const getRankedReviewSettings: Demo<"getRankedReviewSettings"> = demoRank
 export const saveRankedReviewBands: Demo<"saveRankedReviewBands"> = demoRankedReview.saveRankedReviewBands
 
 export const getRoundTargetSummary: Demo<"getRoundTargetSummary"> = input => demoRoundTargetSummary(input)
+
+export const getReviewRubric: Demo<"getReviewRubric"> = demoReview.getReviewRubric
+export const saveReviewRubric: Demo<"saveReviewRubric"> = demoReview.saveReviewRubric
+export const listStagedDecisions: Demo<"listStagedDecisions"> = demoReview.listStagedDecisions
+export const stageDecision: Demo<"stageDecision"> = demoReview.stageDecision
+export const clearStagedDecision: Demo<"clearStagedDecision"> = demoReview.clearStagedDecision
+export const sendStagedDecisions: Demo<"sendStagedDecisions"> = demoReview.sendStagedDecisions
