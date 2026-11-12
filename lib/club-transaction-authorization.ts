@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
@@ -19,7 +20,7 @@ export async function authorizeClubTransaction(
   const user = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
   if (!user || user.disabledAt || !isActiveMembership(member) || !permissions.every(p => hasPermission(member, p)))
-    throw new Error("Club access denied. Membership or permissions changed.");
+    throw new ActionError("Club access denied. Membership or permissions changed.", "FORBIDDEN");
   if (!options.allowSuspendedRead) await assertClubOperational(tx, clubId);
   return member!;
 }

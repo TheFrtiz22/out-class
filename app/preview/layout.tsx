@@ -5,6 +5,9 @@ import { getSessionUser } from "@/utils/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 
+// The page is a client component, so its title lives here.
+export const metadata = { title: "Preview", robots: { index: false, follow: false } }
+
 /** Private presenter workspace; never an anonymous public product experience. */
 export default async function PreviewLayout({ children }: { children: ReactNode }) {
   const jar = await cookies()

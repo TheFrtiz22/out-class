@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 
 import { useEffect, useState } from "react"
@@ -17,7 +18,7 @@ export function InterviewerEligibilityControls({ clubId, selectedIds, onSaved, i
   useEffect(() => {
     if (!demo.ready || demo.isDemoEnabled) return
     let active = true
-    getInterviewerEligibility(clubId).then(value => { if (active) { setData(value); setRoles(value.roles) } }).catch(error => { if (active) setError(error instanceof Error ? error.message : "Couldn’t load interviewers.") })
+    getInterviewerEligibility(clubId).then(value => { if (active) { setData(value); setRoles(value.roles) } }).catch(error => { if (active) setError(userMessage(error, "Couldn’t load interviewers.")) })
     return () => { active = false }
   }, [clubId, attempt, demo.ready, demo.isDemoEnabled, refreshKey])
   const selected = data?.members.filter(m => selectedIds.includes(m.id)) ?? []
@@ -29,7 +30,7 @@ export function InterviewerEligibilityControls({ clubId, selectedIds, onSaved, i
       setNotice("Saved. People affected need to confirm they can interview again.")
       const value = await getInterviewerEligibility(clubId); setData(value); setRoles(value.roles)
       await onSaved?.()
-    } catch (error) { setError(error instanceof Error ? error.message : "Couldn’t save. Try again.") }
+    } catch (error) { setError(userMessage(error, "Couldn’t save. Try again.")) }
     finally { setBusy(false) }
   }
   if (demo.isDemoEnabled) return null

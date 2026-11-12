@@ -67,6 +67,9 @@
   --text-display--letter-spacing: var(--oc-tracking-display);
   --text-title: var(--oc-text-title);
   --text-caption: var(--oc-text-caption);
+  /* 13px floor for control labels, form errors and helper text (text-control). */
+  --text-control: var(--oc-size-13);
+  --text-control--line-height: calc(1.125 / 0.8125);
   --text-body: var(--oc-text-body);
   --text-body--line-height: var(--oc-leading-body);
   --default-transition-duration: var(--oc-duration-micro);
@@ -216,7 +219,10 @@ html { scroll-padding-top: 5rem; }
   [data-slot="sheet-content"] {
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
-  input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size: var(--oc-text-body); }
+  /* iOS zooms into focused controls under 16px. :where() keeps this floor at zero specificity so a
+     larger component size (the sign-in code field) still wins; smaller component sizes add their own
+     mobile override (tests/mobile-input-zoom.test.cjs). */
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) { font-size: max(var(--oc-size-16), var(--oc-text-body)); }
   [data-slot="dialog-title"], [data-slot="sheet-title"] { padding-right: 2rem; line-height: 1.35; }
   .dashboard-layout { padding-inline: env(safe-area-inset-left) env(safe-area-inset-right); }
 }

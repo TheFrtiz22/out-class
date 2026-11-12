@@ -5,7 +5,7 @@ const ts = require('typescript')
 function load(file, mocks = {}) {
   const mod = {exports:{}}
   const code = ts.transpileModule(fs.readFileSync(file,'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText
-  new Function('require','module','exports',code)(name => mocks[name] || (name === "@/components/product/action-workflow" ? {ActionWorkflow:"ActionWorkflow"} : require(name)),mod,mod.exports)
+  new Function('require','module','exports',code)(name => mocks[name] || (name === "@/components/product/action-workflow" ? {ActionWorkflow:"ActionWorkflow"} : name === "@/lib/user-message" || name === "@/lib/action-result" ? require("./helpers/communications-loader.cjs").loader({})(name.slice(2) + ".ts") : require(name)),mod,mod.exports)
   return mod.exports
 }
 function nodes(node) {return !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node,...nodes(node.props?.children)]}

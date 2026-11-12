@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const {PrismaClient}=require('@prisma/client'),{createClient}=require('@supabase/supabase-js'),{randomUUID}=require('node:crypto');
 test('isolated native database + Supabase: authorized flyers, replacement/removal/cascade cleanup, public serving and all-day edits', {skip:!process.env.OUTCLASS_EVENT_STORAGE_TEST_CONFIG},async t=>{
@@ -12,7 +13,7 @@ test('isolated native database + Supabase: authorized flyers, replacement/remova
  await prisma.clubMember.create({data:{userId:ids[0],clubId:club.id,permissions:["meetings.manage"]}});
  const mocks={'server-only':{},'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async()=>({user:{id:actor}}),requireAuth:async()=>{if(!actor)throw Error('Unauthorized');return{user:{id:actor}}}},'@/utils/platform-admin':{requirePlatformAdmin:async()=>{throw Error('Denied')}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'next/cache':{revalidatePath(){},revalidateTag(){}}};
  const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const m={exports:{}};cache[file]=m;new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return m.exports;}
- const api=load('actions/campus-events.ts'),upload=load('actions/event-flyers.ts').uploadEventFlyer,route=load('app/api/event-flyers/route.ts').GET,cleanup=load('utils/event-flyer-cleanup.ts').cleanupEventFlyers;
+ const api=unwrapActions(load('actions/campus-events.ts')),upload=load('actions/event-flyers.ts').uploadEventFlyer,route=load('app/api/event-flyers/route.ts').GET,cleanup=load('utils/event-flyer-cleanup.ts').cleanupEventFlyers;
  const base={clubId:club.id,title:'No flyer necessary',description:'Event details',date:'2099-10-16T22:00:00Z',endDate:'2099-10-16T23:00:00Z',location:'Hall',category:'Arts',rsvpEnabled:true,rsvpRequired:false,capacity:null,rsvpDeadline:null,template:'academic',useTemplate:false};
  const png=await require('sharp')({create:{width:8,height:8,channels:3,background:'#123456'}}).png().toBuffer();
  let event;

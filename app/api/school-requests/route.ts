@@ -5,6 +5,7 @@ import { schoolRequestSchema, schoolRequestConfirmation } from "@/lib/school-req
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { turnstileMessage, turnstileRemoteIp, verifyTurnstile } from "@/lib/turnstile"
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit"
 
 const reply = (body: object, status = 200) => NextResponse.json(body, {
   status, headers: { "Cache-Control": "no-store" },
@@ -14,6 +15,8 @@ export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return reply({ error: "Request not allowed." }, 403)
   if (request.cookies.get(DEMO_COOKIE)?.value === "1" || request.cookies.has(PLATFORM_VIEW_COOKIE))
     return reply({ error: "Exit demo or administrator view before submitting a request." }, 403)
+  const limited = limitRequest(request, RATE_LIMITS.schoolRequests)
+  if (limited) return limited
   // Bound the body even when Content-Length is absent or forged.
   let raw = ""
   try {
