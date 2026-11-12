@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -25,7 +26,7 @@ export function ApplicantRecusal({ clubId, applicationId, anonymous, onChanged }
   async function change(recused: boolean, memberId?: string) {
     setBusy(true); setMessage("")
     try { await setApplicantRecusal({ clubId, applicationId, recused, ...(memberId ? { memberId } : {}) }); setReload(n => n + 1); onChanged?.() }
-    catch (error) { setMessage(error instanceof Error ? error.message : "Couldn’t update. Try again.") }
+    catch (error) { setMessage(userMessage(error, "Couldn’t update. Try again.")) }
     finally { setBusy(false) }
   }
   return <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground" data-testid="applicant-recusal">

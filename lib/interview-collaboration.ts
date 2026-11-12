@@ -11,6 +11,8 @@ export type CollaborationView = {
   invitation: { id: string; sender: string; candidate: string } | null;
   simulated?: boolean;
   timing?: import("@/lib/interview-session-timing").InterviewTiming | null;
+  /** Shared room countdown: server timestamps plus the server clock at read time. The device adds `clockOffsetMs`. */
+  timer?: (import("@/lib/interview-shared-timer").SharedTimerView & { clockOffsetMs?: number }) | null;
 };
 
 /** Recover from an older response without replaying a selection or notification. */

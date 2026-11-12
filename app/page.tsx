@@ -1,4 +1,5 @@
 import { requireAuth } from "@/utils/auth"
+import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { getLaunchClubs } from "@/lib/launch-clubs"
 import { safeReturnPath, isUvaEmail } from "@/lib/auth"
@@ -15,6 +16,7 @@ import { unstable_cache } from "next/cache"
 import { redirect } from "next/navigation"
 import { SITE_TITLE, SITE_DESCRIPTION, publicPageMetadata, privateRobots, privateHomepageParams, websiteStructuredData } from "@/lib/seo"
 import { initialLandingAudience, landingAudienceBootScript, LANDING_AUDIENCE_PREFERENCE } from "@/lib/landing-audience"
+import { cspNonce } from "@/utils/csp-nonce"
 
 const getCachedLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
 
@@ -66,7 +68,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   let hasProfile = false
   if (user) {
     const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
-    if (account?.disabledAt) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
+    if (account?.disabledAt) return <AccountUnavailable />
     // Old leader views on the homepage open the matching club workspace section. The club is the
     // first active, unsuspended membership with workspace access (same rule as sign-in); without
     // one the visitor gets Home, as the student view replaced these before.
@@ -96,11 +98,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     user ? getStudentDashboardData().catch(e => { console.error(e); return null }) : null,
     getCachedLaunchClubs(),
   ])
+  const nonce = await cspNonce()
   const landingAudience = initialLandingAudience(params.audience, cookieStore.get(LANDING_AUDIENCE_PREFERENCE)?.value)
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />
+    <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />
     <style id="oc-landing-audience-gate" />
-    <script dangerouslySetInnerHTML={{ __html: landingAudienceBootScript }} />
+    <script nonce={nonce} dangerouslySetInnerHTML={{ __html: landingAudienceBootScript }} />
     <HomeEntry initialLandingAudience={landingAudience} launchClubs={launchClubs} initialView={!user && next !== "/" ? "auth" : "landing"} initialSession={user} initialData={initialData} hasProfile={hasProfile} />
   </>
 }

@@ -6,7 +6,7 @@ const { NextRequest } = require('next/server')
 function load(file, mocks = {}) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith('@/lib/rate-limit') ? load(name.slice(2) + '.ts') : require(name), mod, mod.exports)
   return mod.exports
 }
 const access = load('lib/demo/access.ts', { '@/lib/auth': load('lib/auth.ts') })
@@ -66,6 +66,7 @@ test('demo cookie blocks live identity reads and mutations without granting a se
     '@/lib/navigation': require('./helpers/navigation-module.cjs'),
     '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
     '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false },
+    '@/lib/csp': load('lib/csp.ts'),
   })
   for (const [path, method] of [['/api/users/me', 'GET'], ['/', 'POST']]) {
     const res = await middleware(new NextRequest(`https://demo.example${path}`, { method, headers: { cookie: `${access.DEMO_COOKIE}=1` } }))
