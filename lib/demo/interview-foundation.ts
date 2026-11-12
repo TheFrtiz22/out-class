@@ -6,7 +6,7 @@ import { demoStore, demoMember } from "./store";
 import { annotationContentSchema, interviewCapabilities, interviewOfficesSchema, interviewScopeSchema, interviewScoreSchema, type InterviewScope } from "@/lib/interview-access";
 import { emptyInterviewDraft, interviewDraftSchema, kitSchema, validateQuestionNotes, validateAdditionalQuestionSnapshots } from "@/lib/interview-kits";
 import { z } from "zod";
-import { anchorMatchesText } from "@/lib/resume-anchors";
+import { anchorMatchesText, isAreaAnchor } from "@/lib/resume-anchors";
 import { demoResumeText } from "./resume-fixture";
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 import { demoAssignmentNotice } from "./interview-improvements";
@@ -226,7 +226,7 @@ export function setInterviewPanelAssignment(input: unknown) {
 }
 export function pinInterviewResume(input: InterviewScope) {
   const { app } = access(input, "resume");
-  return demoStore.mutate(s => { const f = s.interviewFoundation; let d = f.documents.find(d => d.applicationId === input.applicationId && d.roundId === input.roundId); if (!d) { if(app.roundId !== input.roundId) throw new Error("Past round snapshot unavailable."); d = { id: crypto.randomUUID(), applicationId: app.id, roundId: input.roundId, source: "/demo/sample-resume.pdf", createdAt: new Date().toISOString() }; f.documents.push(d); } return structuredClone(d); });
+  return demoStore.mutate(s => { const f = s.interviewFoundation; let d = f.documents.find(d => d.applicationId === input.applicationId && d.roundId === input.roundId); if (!d) { if(app.roundId !== input.roundId) throw new Error("Past round snapshot unavailable."); const scanned = s.students.find(p => p.id === app.studentId)?.profile.resumeUrl === "/demo/sample-scanned-resume.pdf"; d = { id: crypto.randomUUID(), applicationId: app.id, roundId: input.roundId, source: scanned ? "/demo/sample-scanned-resume.pdf" : "/demo/sample-resume.pdf", createdAt: new Date().toISOString() }; f.documents.push(d); } return structuredClone(d); });
 }
 function documentAccess(input: InterviewScope & { documentId: string }) {
   const a = access(input, "resume"), d = a.s.interviewFoundation.documents.find(d => d.id === input.documentId && d.applicationId === input.applicationId && d.roundId === input.roundId);
@@ -272,7 +272,9 @@ export async function saveInterviewResumeAnnotation(input: unknown) {
   return annotationMutation(() => {
   const d = interviewScopeSchema.extend({ documentId: z.string(), id: z.string(), revision: z.number().int().min(0).optional(), content: annotationContentSchema }).parse(input);
   const { member, caps, document } = documentAccess(d);
-  if (d.content.anchor && (document.source !== "/demo/sample-resume.pdf" || !anchorMatchesText(d.content.anchor, demoResumeText, 1))) throw new Error("Highlight does not match the saved demo document.");
+  // Both bundled demo PDFs are one page. Areas carry no text, so they work on the scanned fixture too.
+  if (isAreaAnchor(d.content.anchor)) { if (d.content.anchor.page !== 1) throw new Error("Area highlight page is not in the saved demo document."); }
+  else if (d.content.anchor && (document.source !== "/demo/sample-resume.pdf" || !anchorMatchesText(d.content.anchor, demoResumeText, 1))) throw new Error("Highlight does not match the saved demo document.");
   return demoStore.mutate(s => {
     const f = s.interviewFoundation, old = f.annotations.find(a => a.id === d.id);
     if (old && (old.documentId !== d.documentId || old.deletedAt || (old.authorId !== member.id && !caps.moderateResume))) throw new Error("Annotation unavailable.");

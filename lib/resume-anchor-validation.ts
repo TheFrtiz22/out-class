@@ -1,4 +1,4 @@
-﻿import { anchorMatchesText, type ResumeAnchor } from "@/lib/resume-anchors";
+﻿import { anchorMatchesText, type ResumeAnchor, type ResumeArea } from "@/lib/resume-anchors";
 import { Worker } from "node:worker_threads";
 
 // Resolve PDF.js in a native worker, outside Next/Webpack's module rewriting.
@@ -27,10 +27,17 @@ const { parentPort, workerData } = require('node:worker_threads');
 let activeWorkers = 0;
 /** Called only after document/panel authorization, on immutable database bytes. No URL ingestion. */
 export async function validateResumeAnchor(bytes: Uint8Array, anchor: ResumeAnchor) {
+  await readPdfPage(bytes, anchor.page, result => anchorMatchesText(anchor, result.text, result.pageCount), "Highlight does not match the saved document.");
+}
+/** An area carries no text; it only needs a page that exists in the pinned document. */
+export async function validateResumeArea(bytes: Uint8Array, area: ResumeArea) {
+  await readPdfPage(bytes, area.page, result => area.page <= result.pageCount, "Area highlight page is not in the saved document.");
+}
+function readPdfPage(bytes: Uint8Array, page: number, accept: (result: { text: string; pageCount: number }) => boolean, mismatch: string) {
   if (activeWorkers >= 2) throw new Error("Highlight validation is busy. Please retry.");
-  await new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const worker = new Worker(workerCode, { eval: true, workerData: {
-      bytes, page: anchor.page, packagePath: `${process.cwd()}/package.json`,
+      bytes, page, packagePath: `${process.cwd()}/package.json`,
     }, resourceLimits: { maxOldGenerationSizeMb: 128, maxYoungGenerationSizeMb: 16, stackSizeMb: 4 } });
     activeWorkers++;
     let settled = false;
@@ -44,8 +51,7 @@ export async function validateResumeAnchor(bytes: Uint8Array, anchor: ResumeAnch
     };
     const timer = setTimeout(() => finish("Highlight validation timed out. Retry or use general notes."), 8000);
     worker.once("message", result => finish(
-      typeof result.text === "string" && anchorMatchesText(anchor, result.text, result.pageCount)
-        ? undefined : "Highlight does not match the saved document.",
+      typeof result.text === "string" && typeof result.pageCount === "number" && accept(result) ? undefined : mismatch,
     ));
     worker.once("error", () => finish("Highlight validation failed. Retry or use general notes."));
     worker.once("exit", () => { if (!settled) finish("Highlight validation failed. Retry or use general notes."); });
