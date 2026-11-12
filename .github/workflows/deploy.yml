@@ -45,6 +45,8 @@ jobs:
       # and on an expired exception. Moderate advisories are listed but do not fail.
       - run: node scripts/check-dependency-audit.cjs
   accessibility:
+    # Not a required check: merge queue, main, or full-ci.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -88,6 +90,8 @@ jobs:
           path: test-results/accessibility-authenticated
           retention-days: 14
   native-application-transactions:
+    # Not a required check: merge queue, main, or full-ci.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

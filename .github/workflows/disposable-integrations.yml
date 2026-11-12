@@ -14,7 +14,7 @@ on:
     branches: ["main"]
   workflow_dispatch:
   schedule:
-    - cron: "17 5 * * 1"
+    - cron: "17 5 * * *"
 
 permissions:
   contents: read
@@ -31,7 +31,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [security, events, audiences, transactions, scheduler]
+        # security and transactions are required checks and always run; events, audiences and
+        # scheduler (not required) run in the merge queue, on main, nightly, or with full-ci.
+        suite: ${{ fromJSON((github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')) && '["security","events","audiences","transactions","scheduler"]' || '["security","transactions"]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -145,6 +147,8 @@ jobs:
 
   local-storage:
     name: Private Storage and native PostgreSQL
+    # Not a required check: merge queue, main, nightly, or full-ci.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
