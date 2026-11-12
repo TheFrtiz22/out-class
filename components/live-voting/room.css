@@ -11,14 +11,27 @@
 .vr-leader label{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0}.vr-leader input,.vr-leader select{max-width:100%;min-height:40px;border:1px solid var(--border);border-radius:var(--oc-radius-sm);background:var(--card);padding:8px}.vr-leader details{margin:12px 0}.vr-leader summary{cursor:pointer;min-height:44px;align-content:center}.vr-leader summary:focus-visible{outline:2px solid var(--ring);outline-offset:3px}.vr-leader h2{margin:12px 0}.vr-summary-lists{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}.vr-summary-lists>section{border:1px solid var(--border);background:var(--card);border-radius:var(--oc-radius-sm);padding:14px}.vr-summary-lists h3{margin-bottom:8px}.vr-summary-lists .vr-accepted{border-left:3px solid var(--primary)}.vr-leader [aria-label="Finalize decisions"]{border-top:1px solid var(--border);margin-top:16px;padding-top:8px}
 @media(max-width:600px){.vr-summary-lists{grid-template-columns:1fr}.vr-leader .vr-actions{align-items:stretch}.vr-leader label{align-items:flex-start;flex-direction:column}}
 
+/* Applicant-to-applicant motion. Only the stage moves; header, progress, counts and controls stay put.
+   The outgoing applicant keeps its real slide (outcome beside the name), the next one loads hidden and out of flow
+   beneath it, then both move left together: out slides and fades, in arrives from the right and eases to rest. */
 .vr-slide-stage{position:relative;overflow:hidden;min-height:300px;display:grid;align-items:start;isolation:isolate}
-.vr-slide-stage>div{grid-area:1/1;min-width:0;width:100%}.vr-slide-out{pointer-events:none;visibility:hidden}.vr-slide-stage .vr-slide-in{position:relative}
-.vr-slide-sliding .vr-slide-out{visibility:visible;animation:vr-out 550ms cubic-bezier(.22,.61,.36,1) both}
-.vr-slide-sliding .vr-slide-in{animation:vr-in 550ms cubic-bezier(.22,.61,.36,1) both}
+.vr-slide-stage>div{grid-area:1/1;min-width:0;width:100%}.vr-slide-out{pointer-events:none}.vr-slide-stage .vr-slide-in{position:relative}
+.vr-slide-pending .vr-slide-in{position:absolute;top:0;left:0;right:0;visibility:hidden}
+/* Descendants too: anything that sets its own visibility must not show through before its turn. */
+.vr-slide-pending .vr-slide-in *{visibility:hidden!important}
+.vr-slide-sliding .vr-slide-out{animation:vr-out 520ms cubic-bezier(.22,1,.36,1) both}
+.vr-slide-sliding .vr-slide-in{animation:vr-in 520ms cubic-bezier(.22,1,.36,1) both}
 .vr-decision-saved{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px;margin:8px 0;color:var(--primary)}
 @keyframes vr-out{from{transform:translateX(0);opacity:1}to{transform:translateX(-100%);opacity:0}}
 @keyframes vr-in{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-@media(prefers-reduced-motion:reduce){.vr-slide-sliding .vr-slide-in,.vr-slide-sliding .vr-slide-out{animation:none}.vr-slide-out{display:none}}
+/* Reduced motion: a short crossfade, no movement. */
+@keyframes vr-fade-out{from{opacity:1}to{opacity:0}}@keyframes vr-fade-in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.vr-slide-sliding .vr-slide-out{animation:vr-fade-out 150ms ease-out both}.vr-slide-sliding .vr-slide-in{animation:vr-fade-in 150ms ease-out both}}
+/* Outcome beside the name: colour always paired with text. */
+.vr-outcome{display:inline-flex;align-self:flex-start;align-items:center;gap:6px;font-size:.875rem;font-weight:500;line-height:1.25;padding:1px 10px 1px 6px;border-radius:var(--oc-radius-full);border:1px solid currentColor;white-space:nowrap}
+.vr-outcome[data-outcome=ACCEPT]{color:var(--color-success)}.vr-outcome[data-outcome=HOLD]{color:var(--color-warning)}.vr-outcome[data-outcome=REJECT]{color:var(--color-destructive)}
+.vr-outcome svg{flex-shrink:0}
+@media(prefers-reduced-motion:no-preference){.vr-outcome{animation:vr-fade-in 120ms ease-out both}}
 
 /* Setup controls share the existing compact writing surfaces. */
 .vr-form input:not([type=checkbox]):not([type=radio]),.vr-form textarea{min-height:44px;border:1px solid var(--border);border-radius:var(--oc-radius-sm);padding:8px;background:var(--card);width:100%;min-width:0}.vr-form label:has(>input:not([type=checkbox]):not([type=radio])),.vr-form label:has(>textarea),.vr-form label:has(>select){flex-direction:column;align-items:stretch;gap:6px}.vr-form textarea:focus-visible{outline:2px solid var(--ring);outline-offset:2px}.vr-form [aria-current=step]{color:var(--foreground);font-weight:500}.vr-form [hidden]{display:none}
