@@ -118,8 +118,12 @@ export async function getLiveVotingRoom(input:unknown) {
     // Server-backed Undo: the command that produced this revision is the latest room activity. Leaders see its
     // decision only while UNDO_DECISION would accept it (same rule), after any refresh or on any device.
     // Other receipts in this table (slide preparation, setup) carry their own `revision` numbers, so check each match.
-    const latest=snapshot.permissions.canCorrect?await tx.votingRoomCommand.findMany({where:{sessionId:s.id,result:{path:["revision"],equals:s.revision}},select:{result:true},orderBy:{createdAt:"desc"},take:10}):[];
-    const undo=latest.map(r=>undoableDecision(s,r.result)).find(Boolean)??null;
+    const latest=snapshot.permissions.canCorrect?await tx.votingRoomCommand.findMany({where:{sessionId:s.id,result:{path:["revision"],equals:s.revision}},select:{result:true,actorId:true},orderBy:{createdAt:"desc"},take:10}):[];
+    const receipt=latest.map(r=>({decision:undoableDecision(s,r.result),actorId:r.actorId})).find(r=>r.decision);
+    // When another leader made the decision, name them beside Undo so nobody undoes a colleague's decision unknowingly.
+    const decider=receipt&&receipt.actorId!==user.id?await tx.clubMember.findFirst({where:{clubId:d.clubId,userId:receipt.actorId},select:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}):null;
+    const deciderProfile=decider?.user.studentProfile;
+    const undo=receipt?.decision?{...receipt.decision,decidedBy:receipt.actorId===user.id?null:deciderProfile?`${deciderProfile.firstName} ${deciderProfile.lastName}`:"Another leader"}:null;
     const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},status:"ACTIVE",user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
