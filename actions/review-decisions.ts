@@ -13,6 +13,7 @@ import { hasPermission } from "@/lib/permissions";
 import { normalizeReviewRubric, reviewRubricSchema } from "@/lib/review-rubric";
 import { resolveStagedTarget, stagedIsStale, stagedOutcomes, type StagedDecisionView } from "@/lib/staged-decisions";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
+import { actionResult, type ActionResult } from "@/lib/action-result";
 
 /**
  * Review grading categories and staged decisions (lib/review-rubric.ts, lib/staged-decisions.ts).
@@ -123,7 +124,8 @@ type SendResult = { sent: number; stale: { applicationId: string; reason: string
  * applicant is skipped (and stays staged) instead of applied. Final decisions publish through the canonical
  * decision publisher, exactly like an individual decision; round moves notify through the Application trigger.
  */
-export async function sendStagedDecisions(input: z.input<typeof sendInput>): Promise<SendResult> {
+export async function sendStagedDecisions(input: z.input<typeof sendInput>): Promise<ActionResult<SendResult>> {
+  return actionResult(async () => {
   const data = boundedParse(sendInput, input);
   const ids = [...new Set(data.applicationIds)].sort();
   const { user } = await requireClubPermission(data.clubId, [...decideCaps]);
@@ -162,6 +164,7 @@ export async function sendStagedDecisions(input: z.input<typeof sendInput>): Pro
   });
   revalidatePath("/", "layout");
   return result;
+  }, "sendStagedDecisions");
 }
 
 async function lockApplications(tx: AppTransactionClient, clubId: string, ids: string[]) {

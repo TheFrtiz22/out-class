@@ -262,9 +262,9 @@ function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, a
     finally { setSaving(false) }
   }
   return <div className="oc-ranked-settings text-sm">
-    <p className="text-xs text-muted-foreground">{summary ? <>Discussion bands: {summary}</> : canManage ? "No discussion bands yet — ranks only. Set bands to group ranks for discussion." : "No discussion bands set — ranks only."}</p>
+    <p className="text-xs text-muted-foreground">{summary ? <>Discussion bands: {summary}</> : canManage ? "No discussion bands yet, so only ranks show. Set bands to group ranks for discussion." : "No discussion bands set, so only ranks show."}</p>
     {canManage && <details className="mt-2" open={!bands || undefined}>
-      <summary className="min-h-9 cursor-pointer py-2 text-xs font-medium">{bands ? "Edit discussion bands" : "Set discussion bands"}</summary>
+      <summary className="min-h-9 cursor-pointer py-2 text-control font-medium">{bands ? "Edit discussion bands" : "Set discussion bands"}</summary>
       <form className="mt-2 flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); if (proposed.ok) void save(proposed.bands) }}>
         <div><Label htmlFor={`green-end-${roundId}`}>Green ends at rank</Label><Input id={`green-end-${roundId}`} className="mt-1 w-28" type="number" min={1} step={1} value={greenEnd} onChange={e => setGreenEnd(e.target.value)} /></div>
         <div><Label htmlFor={`yellow-end-${roundId}`}>Yellow ends at rank</Label><Input id={`yellow-end-${roundId}`} className="mt-1 w-28" type="number" min={2} step={1} value={yellowEnd} onChange={e => setYellowEnd(e.target.value)} /></div>
@@ -272,8 +272,8 @@ function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, a
         <Button type="submit" size="sm" disabled={saving || !proposed.ok}>Save bands</Button>
         {bands && <Button type="button" size="sm" variant="ghost" disabled={saving} onClick={() => void save(null)}>Remove bands</Button>}
       </form>
-      {!proposed.ok && <p role="alert" className="mt-2 text-xs">{proposed.errors.join(" ")}</p>}
-      {message && <p role="alert" className="mt-2 text-xs">{message}</p>}
+      {!proposed.ok && <p role="alert" className="mt-2 text-control">{proposed.errors.join(" ")}</p>}
+      {message && <p role="alert" className="mt-2 text-control">{message}</p>}
     </details>}
   </div>
 }

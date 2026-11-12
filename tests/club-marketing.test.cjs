@@ -31,7 +31,7 @@ test('publishing checks club permission and atomically saves every profile field
   let stored, audit, allowed = false, writes = 0
   const actions = load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
-    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async (id, p) => { assert.equal(id, clubId); assert.deepEqual(p, ['club.settings']); if (!allowed) throw new Error('Denied'); return { user: { id: 'editor' } } } },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn({ $queryRaw: async()=>[], club: { findUniqueOrThrow: async () => draft(), update: async q => { writes++; stored = q.data; assert.equal(q.where.id, clubId) } }, auditLog: { create: async q => { audit = q.data } } }) } },
   })
@@ -74,7 +74,7 @@ test('shared public renderer displays marketing content and respects empty and h
   const { renderToStaticMarkup } = require('react-dom/server')
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/clubs/marketing-profile.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', code)(n => n === '@/components/club-logo' ? require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx') : n === '@/components/icons' ? require('./helpers/icons.cjs') : n.endsWith('.css') ? {} : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts') : require(n), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(n => n === '@/components/reports/report-content-button' ? { ReportContentButton: () => null } : n === '@/components/club-logo' ? require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx') : n === '@/components/icons' ? require('./helpers/icons.cjs') : n.endsWith('.css') ? {} : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts') : require(n), mod, mod.exports)
   const profile = draft()
   const header = renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile }))
   const sections = renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile }))
@@ -98,7 +98,7 @@ test('published profile compare tokens reject concurrent authors and recover ide
   const tx = { club: { findUniqueOrThrow: async () => current, update: async q => { writes++; current = { ...current, ...q.data } } }, auditLog: { create: async () => {} } }
   const actions = load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
-    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'editor' } }) },
     '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
   })
@@ -194,7 +194,7 @@ test('logo presentation choices persist through the existing authorized settings
   let profile = draft(), allowed = true, transactionAllowed = true, writes = 0
   const actions = load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, actor, permissions) => { assert.equal(id, clubId); assert.equal(actor, 'editor'); assert.deepEqual(permissions, ['club.settings']); if (!transactionAllowed) throw Error('Revoked') } },
-    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async () => { if (!allowed) throw Error('Denied'); return { user: { id: 'editor' } } } },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn({ club: { findUniqueOrThrow: async () => profile, update: async ({data}) => { writes++; profile = {...profile,...data} } }, auditLog: {create: async()=>{}} }) } },
   })

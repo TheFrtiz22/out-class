@@ -1,7 +1,8 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState, useRef } from "react";
-import { listEventApprovals, reviewCampusEvent } from "@/actions/campus-events";
+import { listEventApprovals, reviewCampusEvent as reviewCampusEventAction } from "@/actions/campus-events";
 import {
   type ManagedCampusEvent,
   eventDateLabel,
@@ -18,6 +19,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import "./events.css";
+import { unwrapped } from "@/lib/action-result"
+const reviewCampusEvent = unwrapped(reviewCampusEventAction)
 export function EventApprovals() {
   const origin = useRef<HTMLButtonElement | null>(null),
     queueTabs = useRef<HTMLDivElement | null>(null),
@@ -43,7 +46,7 @@ export function EventApprovals() {
         }
       })
       .catch((e) => {
-        if (active) setError(e.message || "Could not load approvals.");
+        if (active) setError(userMessage(e, "Could not load approvals."));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -68,7 +71,7 @@ export function EventApprovals() {
       setReason("");
       setRetry((n) => n + 1);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Review failed.");
+      setError(userMessage(e, "Review failed."));
     } finally {
       setBusy(false);
     }

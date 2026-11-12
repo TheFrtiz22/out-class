@@ -1,4 +1,5 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
 import { PillSelect } from "@/components/ui/pill-select"
 import { PillGroup } from "@/components/ui/segmented-control"
 import { InterviewApplicantPanel } from "@/components/interview-applicant-panel"
@@ -166,7 +167,7 @@ function InterviewSession({
           setData(result)
           const recovery = recoveredApplicant()
           const linked = result.applications.find(a => a.id === query.get("applicationId") && a.assignedRoundIds.includes(query.get("roundId") || "") && (a.roundId === query.get("roundId") || a.completedRoundIds.includes(query.get("roundId") || "")));
-          if (query.has("applicationId") && !linked) throw Error("Requested interview unavailable.");
+          if (query.has("applicationId") && !linked) throw new UserFacingError("Requested interview unavailable.");
           if (linked) setActiveId(linked.id);
           if (linked) try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId: query.get("roundId"), applicationId: linked.id })); } catch { /* Authorized queue still opens if browser storage is unavailable. */ }
           const focused = linked || result.applications.find(a => a.id === leaderFocus?.applicantId)
@@ -261,13 +262,13 @@ function InterviewSession({
       const fresh = await getInterviewWorkspace(membership.clubId)
       if (epoch !== navigation.current) return false
       const next = fresh.applications.find(app => app.id === destination.scope.applicationId && app.roundId === roundId && app.assignedRoundIds.includes(roundId) && !app.completedRoundIds.includes(roundId))
-      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw Error("That round is no longer available.")
+      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw new UserFacingError("That round is no longer available.")
       const scope = destination.scope
       // Both actions enforce current access. Keep the submitted candidate visible
       // until the destination's own draft, snapshot and identity are all ready.
       const [session, panel] = await Promise.all([openInterviewSession(scope), getInterviewApplicantPanel(scope)])
       if (epoch !== navigation.current) return false
-      if (session.completedAt) throw new Error("That interview was completed elsewhere. Retry the queue.")
+      if (session.completedAt) throw new UserFacingError("That interview was completed elsewhere. Retry the queue.")
       const stage = candidateRoom.current?.querySelector<HTMLElement>(".oc-interview-columns")
       if (stage) outgoing.current = captureInterviewCandidate(stage)
       setPrepared({ applicationId: next.id, session, panel })

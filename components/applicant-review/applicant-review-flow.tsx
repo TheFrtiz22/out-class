@@ -17,6 +17,7 @@ import { ApplicantRecusal } from "@/components/applicant-recusal"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { ResumeViewerDialog } from "@/components/resume-viewer-dialog"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import { InterviewFeedbackPanel } from "@/components/interview-feedback"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { AdditionalObservations } from "@/components/additional-observations"
@@ -192,7 +193,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
           </section>
 
           {profile && !anonymous && <section aria-labelledby="review-profile" className="oc-review-block">
-            <h3 id="review-profile" className="oc-review-panel-heading">Profile</h3>
+            <div className="flex flex-wrap items-baseline justify-between gap-3"><h3 id="review-profile" className="oc-review-panel-heading">Profile</h3><ReportContentButton target={{ type: "student", clubId, applicationId: app.id }} label="Report this profile" hidden={app.studentId === membership.userId || !canReview} ownerUserId={app.studentId} /></div>
             <ApplicantProfileFacts profile={profile} fields={profileFields} />
           </section>}
 
@@ -226,7 +227,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
             <div className="flex items-center justify-between gap-2">
               <h3 id="decide-heading" className="oc-review-panel-heading">Decision</h3>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="More applicant actions"><MoreHorizontal size={18} /></Button></DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="More applicant actions"><MoreHorizontal size={20} /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-56">
                   {staged && canStage(app.status) && app.status !== "WAITLISTED" && <DropdownMenuItem disabled={!!decideReason} onSelect={() => void decide("WAITLIST")}>Waitlist</DropdownMenuItem>}
                   {staged && canStage(app.status) && <DropdownMenuItem disabled={!!decideReason} onSelect={() => void decide("ACCEPT")}>Accept</DropdownMenuItem>}
@@ -247,7 +248,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
               <DisabledReason reason={decideReason || (app.status === "WAITLISTED" ? "Already on hold (waitlisted)." : "")}><Button variant="outline" className="oc-review-decision" data-outcome="hold" aria-keyshortcuts="H" data-selected={current?.outcome === "HOLD" || undefined} onClick={() => void decide("HOLD")}><Pause aria-hidden="true" />Hold<kbd>H</kbd></Button></DisabledReason>
               <DisabledReason reason={decideReason}><Button variant="outline" className="oc-review-decision" data-outcome="reject" aria-keyshortcuts="R" data-selected={current?.outcome === "REJECT" || undefined} onClick={() => void decide("REJECT")}><X aria-hidden="true" />Reject<kbd>R</kbd></Button></DisabledReason>
             </div>
-            <p className="oc-review-keys text-xs text-muted-foreground" aria-hidden="true"><kbd>A</kbd> advance · <kbd>H</kbd> hold · <kbd>R</kbd> reject · <kbd><ArrowLeft size={10} /></kbd><kbd><ArrowRight size={10} /></kbd> move · <kbd>Esc</kbd> close</p>
+            <p className="oc-review-keys text-xs text-muted-foreground" aria-hidden="true"><kbd>A</kbd> advance · <kbd>H</kbd> hold · <kbd>R</kbd> reject · <kbd><ArrowLeft size={14} /></kbd><kbd><ArrowRight size={14} /></kbd> move · <kbd>Esc</kbd> close</p>
             <p className="text-xs text-muted-foreground">Decisions are saved, not sent. Send them from Decide › Send.</p>
             {message && <p role="status" className="text-xs">{message}</p>}
           </section>
@@ -259,7 +260,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
           {panel === "round" && <><DialogHeader><DialogTitle>Move round now</DialogTitle><DialogDescription>{displayName(app)} · currently in {activeRound?.name ?? "an unavailable round"}. This moves them immediately; use Advance to stage it for Send instead.</DialogDescription></DialogHeader>
             <Label htmlFor="flow-move-round">Round</Label>
             <NativeSelect id="flow-move-round" disabled={busy} value={targetRound} onChange={event => setTargetRound(event.target.value)}>{rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</NativeSelect>
-            <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button><Button disabled={busy || targetRound === app.roundId} onClick={() => void run(() => moveApplicantRound({ clubId, applicationId: app.id, newRoundId: targetRound, expectedRoundId: app.roundId }), "Round updated.", "This move couldn’t be saved. Reload and try again.")}>Move round</Button></div></>}
+            <div className="flex justify-end gap-2"><Button variant="ghost" disabled={busy} onClick={() => setPanel(null)}>Cancel</Button><Button disabled={busy || targetRound === app.roundId} loading={busy} onClick={() => void run(() => moveApplicantRound({ clubId, applicationId: app.id, newRoundId: targetRound, expectedRoundId: app.roundId }), "Round updated.", "This move couldn’t be saved. Reload and try again.")}>{busy ? "Moving…" : "Move round"}</Button></div></>}
           {panel === "cycle" && <><DialogHeader><DialogTitle>Recruitment cycle</DialogTitle><DialogDescription>{displayName(app)}</DialogDescription></DialogHeader>
             <ApplicationCycleAssignment key={app.id + app.recruitmentCycleId} clubId={clubId} applicationId={app.id} cycleId={app.recruitmentCycleId} onSaved={() => { setPanel(null); refresh() }} /></>}
           {panel === "reconsider" && <><DialogHeader><DialogTitle>Reconsider application</DialogTitle><DialogDescription>Returns {displayName(app)} to review. Earlier decisions stay in the history.</DialogDescription></DialogHeader>

@@ -84,12 +84,46 @@ overlapping interviews in two clubs at once (exactly one booked). Removing the s
 makes the first fail (the database capacity trigger then rejects the second booking with a
 raw error), so the test detects that regression.
 
-Known residual: manual panel grants lock the acting owner's User row before the sorted
-person lock; a cross-pattern with a simultaneous booking can deadlock, which PostgreSQL
-detects within ~1 s and aborts one side (reported as a retryable error).
-The same pattern applies to two owners in different clubs assigning each other to panels at
-the same moment; `setInterviewPanelAssignment` surfaces that 40P01 as a raw error rather than
-the friendly retry message.
+Former residual, fixed (2026-11-05, completed 2026-11-11 on `backend/panel-assignment-retry-pr`):
+manual panel grants and room panel approval hold the acting owner's User row before the sorted
+person lock, so two owners in different clubs granting or approving each other at the same moment,
+or a grant racing a reservation that locks the same two people in sorted order, form a lock cycle.
+PostgreSQL detects it within ~1 s and aborts one side. Every path that takes these person locks now
+re-runs a transaction PostgreSQL aborted as a deadlock (40P01) or serialization failure (40001)
+through `retryTransactionConflict` (`utils/club-write-transaction.ts`): at most 3 attempts, whole
+transaction each time, 25 ms then 50 ms backoff plus up to 25 ms jitter. Lock timeouts (55P03),
+statement timeouts (57014) and Prisma transaction timeouts (P2028) are not retried.
+
+| Path | Before | Now |
+|---|---|---|
+| `setInterviewPanelAssignment` (manual grant) | 40P01 retried (no backoff) | retried; returns a typed `{ ok: false }` result: exhausted → "Someone else just changed this. Try again.", lock/transaction timeout → "This is taking longer than usual. Try again in a moment." |
+| `approveInterviewRoomPanel` (room panel approval) | not retried, raw error | retried; same typed results |
+| `atomic()` in `actions/interview-rooms.ts` (`reserveInterview`, reopen room, room edits) | only Prisma P2034 retried; 40P01 from a raw `FOR UPDATE` was reported as contention without a retry | retried; existing "schedule changed" / "Many people are scheduling" wording kept |
+| Panel publication `operation()` | only P2034 retried | retried; existing retained-draft wording, or the calm message |
+| Legacy `bookInterviewSlot` | only P2034 retried, no backoff | shared wrapper; existing "That time changed" wording |
+
+The two owner actions return contention as a typed result (`contentionResult`, `lib/write-contention.ts`)
+because production masks thrown server-action messages; the access-setup UI unwraps it so owners
+see the real wording. Every path logs a structured server warning when it gives up:
+`{"event":"write.contention.exhausted","path":…,"kind":"conflict"|"timeout","code":…}`, with the
+Prisma or SQLSTATE code only (no IDs, PII or messages).
+
+Exactly-once: the rolled-back attempt leaves no rows, so the re-run creates one grant (upsert on
+`applicationId_roundId_memberId`), one assignment notice (`createMany` with `skipDuplicates`) and
+one audit row, all written inside the same transaction. Room approval re-checks
+`panelApprovalRevision`, which a partial commit would have advanced. No email or other side effect
+runs inside the retried function.
+
+Tests: `tests/write-contention-errors.test.cjs` (classification, one re-run on 40P01/40001, no retry
+on lock or statement timeout, stop after N, calm message without database detail, backoff and
+jitter, typed results, the structured log). `tests/organization-members.test.cjs` checks the grant
+action end to end: deadlock retried 3 times, timeouts once, distinct wording, one log line each.
+`tests/interview-native-concurrency.test.cjs` reproduces both cross-club cycles on real
+PostgreSQL, asserts a conflict was actually raised, and checks one grant, one notice and one audit
+row per club; without the retry one side fails with 40P01. It runs only in CI (`security` suite of
+`scripts/run-disposable-postgres.cjs`, `disposable-integrations.yml`, every PR); the fixture does
+not support Windows. A grant-versus-`reserveInterview` cycle is covered by the same wrapper but has
+no native reproduction yet.
 
 Authorization review (2026-11-05, read-only `authz-reviewer`, base bd3e12d3): no high or
 medium findings. Two low findings fixed before merge: an applicant without an interview

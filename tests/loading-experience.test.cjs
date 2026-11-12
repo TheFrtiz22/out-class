@@ -41,6 +41,7 @@ function provider({ hasSession = true, isImpersonating = false, demo = { isDemoE
   const { AuthProvider } = load("contexts/auth-context.tsx", {
     react,
     "@/lib/workspace-read-diagnostics": { recordWorkspaceRead() {} },
+    "@/lib/autosave-store": { adoptAutosaveOwner() {} },
     "@/utils/supabase/client": { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) },
     "@/lib/permissions": { hasWorkspace: member => member.isOwner === true },
     // The demo provider computes the sample identity; auth no longer imports the demo store.
@@ -253,4 +254,41 @@ test("the root layout carries no club-customization provider or seed data", () =
   assert.deepEqual(imports.filter(s => /club-customization|lib\/data$/.test(s)), [], "club customization loads only with the views that use it")
   assert.doesNotMatch(layout, /ClubCustomizationProvider/)
   assert.doesNotMatch(fs.readFileSync("lib/club-customization.tsx", "utf8"), /export function ClubCustomizationProvider/, "the store replaced the root provider")
+})
+
+// Polish item 2 (skeletons shaped like content). Each student page's loading state draws the page's own layout from
+// skeleton blocks; its only text is the screen-reader label, and there is no spinner. Reduced motion stills the sheen.
+test("student page loading states are layout-shaped skeletons, not a spinner or loading text", async () => {
+  const loose = (file, mocks = {}) => load(file, new Proxy(mocks, { has: () => true, get: (target, name) => name in target ? target[name] : String(name).startsWith("@/") ? {} : require(name) }))
+  const fallbackOf = element => element.type === "Suspense" ? element.props.fallback : element
+  const page = async route => fallbackOf(await loose(`app/(workspace)/${route}/page.tsx`, { react: { Suspense: "Suspense" }, "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" }, "@/components/student-workspace-page": { StudentWorkspacePage: "StudentWorkspacePage" } }).default({ searchParams: Promise.resolve({}) }))
+  const routeLoader = route => loose(`app/(workspace)/${route}/loading.tsx`, { "@/components/workspace-loading": { WorkspaceLoading: "WorkspaceLoading" } }).default()
+  const shell = fs.readFileSync("components/app-shell.tsx", "utf8")
+  const lazyFallback = name => { const [, label, layout] = shell.match(new RegExp(`const ${name} = dynamic\\(.*loading: \\(\\) => <WorkspaceLoading label="([^"]+)" layout="([^"]+)"`)); return { type: "WorkspaceLoading", props: { label, layout } } }
+  const states = {
+    "/home": [routeLoader("home"), lazyFallback("StudentDashboardView")],
+    "/applications": [await page("applications"), lazyFallback("ApplicationTrackerView")],
+    "/calendar": [routeLoader("calendar"), lazyFallback("CalendarView")],
+    "/inbox": [await page("inbox"), lazyFallback("InboxView")],
+    "/explore": [routeLoader("explore/categories"), lazyFallback("ExploreView")],
+  }
+  const expected = { "/home": "home", "/applications": "applications", "/calendar": "schedule", "/inbox": "feed", "/explore": "explore" }
+  const { LoadingState } = load("components/ui/loading-state.tsx", { "@/components/ui/loading-indicator": { LoadingIndicator: "LoadingIndicator" }, "@/lib/utils": { cn: (...names) => names.filter(Boolean).join(" ") }, "@/components/ui/skeleton": { Skeleton: "Skeleton" } })
+  const walk = node => !node || typeof node !== "object" ? (typeof node === "string" ? [node] : []) : Array.isArray(node) ? node.flatMap(walk) : [node, ...walk(node.props?.children)]
+  for (const [path, elements] of Object.entries(states)) for (const element of elements) {
+    assert.equal(element.type, "WorkspaceLoading", path)
+    assert.equal(element.props.layout, expected[path], `${path} uses its own layout`)
+    const tree = LoadingState({ label: element.props.label, layout: element.props.layout, rows: element.props.rows })
+    const nodes = walk(tree)
+    assert.ok(nodes.filter(node => node.type === "Skeleton").length >= 4, `${path} draws skeleton blocks`)
+    assert.equal(nodes.some(node => node.type === "LoadingIndicator"), false, `${path} has no spinner`)
+    const texts = nodes.filter(node => typeof node === "string")
+    assert.deepEqual(texts, [element.props.label], `${path}: the label is the only text`)
+    assert.ok(nodes.some(node => node.props?.className === "sr-only" && node.props.children === element.props.label), `${path}: the label is for screen readers only`)
+    assert.equal(tree.props["aria-busy"], "true")
+  }
+  // The shared sheen is the only motion, and it stops under reduced motion.
+  const css = fs.readFileSync("styles/loading.css", "utf8")
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.oc-loading-indicator \{ animation: none; \}\s*\.oc-loading-preview::after[^{]*\{ animation: none; display: none; \}/)
+  for (const layout of ["oc-loading-home", "oc-loading-explore-grid"]) assert.doesNotMatch(css.match(new RegExp(`\\.${layout} \\{[^}]*\\}`))[0], /animation/)
 })

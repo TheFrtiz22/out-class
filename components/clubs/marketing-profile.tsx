@@ -3,8 +3,9 @@
 import Image from "next/image"
 import { ClubLogo } from "@/components/club-logo"
 import { clubAssetSource } from "@/lib/club-assets"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import type { ReactNode } from "react"
-import { Globe, Instagram, Linkedin, Mail, ExternalLink, Check, Play } from "@/components/icons"
+import { Globe, Instagram, Linkedin, Mail, ExternalLink, Play } from "@/components/icons"
 import "@/components/clubs/profile-presentation.css"
 import { profileStatistics, readMarketing, type ClubMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
 import { presentPublicMarketing } from "@/lib/public-club-content"
@@ -42,7 +43,7 @@ export function MarketingProfile({ profile, action, compact = false, assetPrevie
       <ProfileStatistics profile={profile} compact={compact} />
       {(links.length > 0 || action) && <div className="oc-club-hero-actions mt-6 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
         {action && <div className="oc-club-primary-action min-w-0 flex-1">{action}</div>}
-        {links.length > 0 && <ul className="flex gap-1" aria-label="Club links">{links.map(({ label, url, icon: Icon }) => <li key={label}><a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${profile.name} ${label}${label === "Email" ? "" : " (opens in a new tab)"}`} className="oc-tap-target inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-2"><Icon size={18} aria-hidden="true" /></a></li>)}</ul>}
+        {links.length > 0 && <ul className="flex gap-1" aria-label="Club links">{links.map(({ label, url, icon: Icon }) => <li key={label}><a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${profile.name} ${label}${label === "Email" ? "" : " (opens in a new tab)"}`} className="oc-tap-target inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-2"><Icon size={20} aria-hidden="true" /></a></li>)}</ul>}
       </div>}
     </div>
   </div>
@@ -80,7 +81,8 @@ function ProfileSection({ section, assetPreview, parent }: { section: ClubMarket
 }
 
 /** What members do: programs, people and impact sections, projects, destinations, accolades, photos. */
-export function MembersSection({ profile, assetPreview = false }: SectionProps) {
+/** `reportClubId` (live public profile only) adds a Report control to each gallery image. */
+export function MembersSection({ profile, assetPreview = false, reportClubId }: SectionProps & { reportClubId?: string }) {
   const m = publicMarketing(profile.marketing)
   const sections = m.sections.filter(s => s.visible && ["programs", "people", "impact"].includes(s.kind))
   const accolades = m.accolades.filter(Boolean)
@@ -89,10 +91,10 @@ export function MembersSection({ profile, assetPreview = false }: SectionProps) 
   return <section className={sectionClass} aria-labelledby="club-members">
     <h2 id="club-members">What members do</h2>
     {sections.map((s, i) => <ProfileSection key={i} section={s} assetPreview={assetPreview} parent="What members do" />)}
-    {m.features.length > 0 && <div className="oc-club-subsection"><h3>Projects and highlights</h3><ul className="oc-club-feature-list">{m.features.map((f, i) => <li key={i}><h4>{f.title}</h4>{f.description && <p>{f.description}</p>}{f.url && <a className="oc-tap-link" href={f.url} target="_blank" rel="noopener noreferrer">Learn more about {f.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={13} aria-hidden="true" /></a>}</li>)}</ul></div>}
+    {m.features.length > 0 && <div className="oc-club-subsection"><h3>Projects and highlights</h3><ul className="oc-club-feature-list">{m.features.map((f, i) => <li key={i}><h4>{f.title}</h4>{f.description && <p>{f.description}</p>}{f.url && <a className="oc-tap-link" href={f.url} target="_blank" rel="noopener noreferrer">Learn more about {f.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={14} aria-hidden="true" /></a>}</li>)}</ul></div>}
     <MemberOutcomes profile={profile} />
-    {accolades.length > 0 && <div className="oc-club-subsection"><h3>Recognition</h3><ul className="oc-club-check-list">{accolades.map((a, i) => <li key={i}><Check size={16} aria-hidden="true" />{a}</li>)}</ul></div>}
-    {gallery.length > 0 && <div className="oc-club-subsection"><h3>A look inside</h3><div className="mt-4 grid grid-cols-2 gap-3">{gallery.map((g, i) => <figure key={i}><img src={clubAssetSource(g.url, assetPreview)} alt={g.caption || "Club activity"} className="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />{g.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{g.caption}</figcaption>}</figure>)}</div></div>}
+    {accolades.length > 0 && <div className="oc-club-subsection"><h3>Recognition</h3><ul className="oc-club-list">{accolades.map((a, i) => <li key={i}>{a}</li>)}</ul></div>}
+    {gallery.length > 0 && <div className="oc-club-subsection"><h3>A look inside</h3><div className="mt-4 grid grid-cols-2 gap-3">{gallery.map((g, i) => <figure key={i}><img src={clubAssetSource(g.url, assetPreview)} alt={g.caption || "Club activity"} className="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />{g.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{g.caption}</figcaption>}{reportClubId && <ReportContentButton target={{ type: "club-image", clubId: reportClubId, index: i }} label={`Report image ${i + 1}`} ownerClubId={reportClubId} className="mt-1" />}</figure>)}</div></div>}
   </section>
 }
 
@@ -110,7 +112,7 @@ export function LifeSection({ profile }: SectionProps) {
   if (!benefits.length && !facts.length) return null
   return <section className={sectionClass} aria-labelledby="club-life">
     <h2 id="club-life">Life in the club</h2>
-    {benefits.length > 0 && <ul className="oc-club-check-list">{benefits.map((b, i) => <li key={i}><Check size={16} aria-hidden="true" />{b}</li>)}</ul>}
+    {benefits.length > 0 && <ul className="oc-club-list">{benefits.map((b, i) => <li key={i}>{b}</li>)}</ul>}
     {facts.length > 0 && <dl className="oc-club-facts-list">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}
   </section>
 }

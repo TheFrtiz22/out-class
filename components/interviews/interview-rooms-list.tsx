@@ -85,6 +85,6 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
         ]}
         card={{ title: row => row.candidate || row.roomName, meta: row => joinFacts(interviewEntryStatus(row), interviewTimingContext(row), row.roundName, row.location), actions: row => openable(row) ? <Link className="oc-dt-action" data-entry-link="" href={entryHref(row)}>{interviewEntryAction(row)}</Link> : null }} /></CollapsibleContent>
     </Collapsible>)}
-    {!error && secondary && <section className="border-t pt-3 text-sm"><h3 className="py-2 font-medium">Other assigned interviews</h3><p className="mb-2 text-muted-foreground">Your authorized assignments outside the scheduled rooms.</p><Link className="inline-flex min-h-10 items-center underline" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open assigned candidate queue</Link></section>}
+    {!error && secondary && <section className="border-t pt-3 text-sm"><h3 className="py-2 font-medium">Other assigned interviews</h3><Link className="inline-flex min-h-10 items-center underline" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open assigned candidate queue</Link></section>}
   </section>;
 }

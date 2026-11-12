@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Actual production actions and Prisma transactions; synthetic authentication only.
 // This never inherits DATABASE_URL or connects to staging/production.
 const { test } = require('node:test');
@@ -25,7 +26,7 @@ function actions(prisma, userId, onAuthorized = () => {}) {
     new Function('require', 'module', 'exports', code)(n => n in mocks ? mocks[n] : n.startsWith('@/') ? load(n.slice(2) + '.ts') : require(n), mod, mod.exports);
     return mod.exports;
   }
-  return { crm: load('actions/crm.ts'), settings: load('actions/club-settings.ts'), display: load('actions/applicant-intelligence.ts'), photo: load('lib/crm-photo-authorization.ts') };
+  return { crm: unwrapActions(load('actions/crm.ts')), settings: unwrapActions(load('actions/club-settings.ts')), display: load('actions/applicant-intelligence.ts'), photo: load('lib/crm-photo-authorization.ts') };
 }
 test('native recruitment authorization races, immutable round rename, feedback and narrow photos', { skip: !databaseUrl, timeout: 120000 }, async t => {
   const url = new URL(databaseUrl);
@@ -94,7 +95,7 @@ test('native recruitment authorization races, immutable round rename, feedback a
     assert.deepEqual(await prisma.evaluation.findUnique({ where: { id: evaluation.id } }), evaluation);
     assert.equal((await prisma.pipelineRound.findUnique({ where: { id: interview.id } })).name, 'Panel');
     assert.equal((await prisma.application.findUnique({ where: { id: app.id } })).roundId, interview.id);
-    await assert.rejects(api.settings.savePipelineSettings({ clubId: club.id, version: 1, rounds: [
+    await refused(api.settings.savePipelineSettings({ clubId: club.id, version: 1, rounds: [
       { id: first.id, name: 'Interview', type: 'APPLICATION_REVIEW', configuration: {} },
       { id: interview.id, name: 'Panel', type: 'INTERVIEW', configuration: {} },
     ] }), /existing review history/);

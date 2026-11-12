@@ -10,8 +10,9 @@ function compile(file, mocks = {}) {
   new Function('require', 'module', 'exports', code)(name => mocks[name] || require(name.startsWith('@/') ? require('node:path').resolve(name.slice(2)) : name), mod, mod.exports)
   return mod.exports
 }
-const lifecycle = compile('lib/recruitment-lifecycle.ts', { '@prisma/client': {} })
-const staged = compile('lib/staged-decisions.ts', { '@/lib/recruitment-lifecycle': lifecycle })
+const actionResult = compile('lib/action-result.ts')
+const lifecycle = compile('lib/recruitment-lifecycle.ts', { '@prisma/client': {}, '@/lib/action-result': actionResult })
+const staged = compile('lib/staged-decisions.ts', { '@/lib/recruitment-lifecycle': lifecycle, '@/lib/action-result': actionResult })
 const board = compile('lib/applicant-board.ts')
 const zod = require('zod')
 const rubric = compile('lib/review-rubric.ts', { zod })
@@ -116,4 +117,14 @@ test('server: staging needs decision access, refuses self and recused reviewers,
   assert.match(read('actions/evaluations.ts'), /validateRubricScores\(value, normalizeReviewRubric\(club\.reviewRubric\)\)/)
   const sql = read('prisma/migrations/20261111150000_review_rubric_staged_decisions/migration.sql')
   assert.match(sql, /ENABLE ROW LEVEL SECURITY/); assert.match(sql, /REVOKE ALL ON "StagedDecision" FROM %I',r\)/)
+})
+
+// QA saw a column headed only "Test". It is the narrow-width combination of SAT and ACT (hidden from 880px,
+// where SAT and ACT get their own columns), so it is labelled as test scores and never shown beside them.
+test('applicant list labels the combined SAT/ACT column "Test scores" and swaps it with SAT and ACT at the same width', () => {
+  const src = read('components/views/leader-dashboard/live-applicant-views.tsx')
+  assert.match(src, /\{ id: "test", header: "Test scores", hideFrom: "lg",/)
+  assert.match(src, /\{ id: "sat", header: "SAT", sortKey: "sat", align: "end", showFrom: "lg",/)
+  assert.match(src, /\{ id: "act", header: "ACT", sortKey: "act", align: "end", showFrom: "lg",/)
+  assert.doesNotMatch(src, /header: "Test"[,\s]/)
 })

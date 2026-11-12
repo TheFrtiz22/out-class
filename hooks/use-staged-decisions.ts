@@ -1,6 +1,7 @@
 "use client"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
+import { userMessage } from "@/lib/user-message"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { announceDataChanged, useRevalidate } from "@/hooks/use-revalidate"
@@ -77,7 +78,7 @@ export function useStagedDecisions(clubId: string, { enabled, rounds, name }: { 
   /** Stage an outcome, with an Undo toast for 5 seconds. Resolves false if it could not be saved. */
   const stage = useCallback(async (app: StageApp, outcome: StagedOutcome, roundId?: string | null) => {
     const previous = itemsRef.current.get(app.id)
-    try { resolveStagedTarget(app, roundsRef.current, outcome, roundId) } catch (error) { toast.error(error instanceof Error ? error.message : "That decision isn’t available."); return false }
+    try { resolveStagedTarget(app, roundsRef.current, outcome, roundId) } catch (error) { toast.error(userMessage(error, "That decision isn’t available.")); return false }
     const prior = previous
     const ok = await write(app, { outcome, roundId }, prior)
     if (ok) {

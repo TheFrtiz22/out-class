@@ -1,4 +1,5 @@
 import { isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle"
+import { UserFacingError } from "@/lib/action-result"
 
 /**
  * Staged decisions: Advance / Hold / Reject (and Waitlist / Accept / a specific round from the board) are
@@ -37,11 +38,11 @@ export function canStage(status: string) {
 
 /** Resolve an outcome into the status and round it will apply on send. Throws a reader-facing reason. */
 export function resolveStagedTarget(app: { status: string; roundId: string }, roundsInput: readonly StageRound[], outcome: StagedOutcome, roundId?: string | null): StagedTarget {
-  if (!canStage(app.status)) throw new Error("Final decisions can't be staged. Use the applicant menu to correct them.")
+  if (!canStage(app.status)) throw new UserFacingError("Final decisions can't be staged. Use the applicant menu to correct them.")
   const rounds = [...roundsInput].sort((a, b) => a.order - b.order)
   const current = rounds.find(round => round.id === app.roundId)
   const moveTo = (target: StageRound): StagedTarget => {
-    if (app.status === "WAITLISTED") throw new Error("Waitlisted applicants can be accepted or rejected, not moved between rounds.")
+    if (app.status === "WAITLISTED") throw new UserFacingError("Waitlisted applicants can be accepted or rejected, not moved between rounds.")
     const keepInterview = app.status === "INTERVIEWING" && isInterviewRecruitmentRound(target.type)
     return { targetStatus: keepInterview ? "INTERVIEWING" : "IN_REVIEW", targetRoundId: target.id }
   }
@@ -53,15 +54,15 @@ export function resolveStagedTarget(app: { status: string; roundId: string }, ro
     }
     case "ROUND": {
       const target = rounds.find(round => round.id === roundId)
-      if (!target || target.id === app.roundId) throw new Error("Choose another active round.")
+      if (!target || target.id === app.roundId) throw new UserFacingError("Choose another active round.")
       return moveTo(target)
     }
     case "HOLD":
-      if (app.status === "WAITLISTED") throw new Error("This applicant is already on hold (waitlisted).")
+      if (app.status === "WAITLISTED") throw new UserFacingError("This applicant is already on hold (waitlisted).")
       return { targetStatus: "IN_REVIEW", targetRoundId: null }
     case "REJECT": return { targetStatus: "REJECTED", targetRoundId: null }
     case "WAITLIST":
-      if (app.status === "WAITLISTED") throw new Error("This applicant is already waitlisted.")
+      if (app.status === "WAITLISTED") throw new UserFacingError("This applicant is already waitlisted.")
       return { targetStatus: "WAITLISTED", targetRoundId: null }
     case "ACCEPT": return { targetStatus: "ACCEPTED", targetRoundId: null }
   }

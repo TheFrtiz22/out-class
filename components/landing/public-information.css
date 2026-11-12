@@ -8,7 +8,7 @@
 .oc-information h1 {
   font-family: var(--oc-font-display);
   max-width: 900px;
-  font-size: clamp(36px, 5vw, 64px);
+  font-size: clamp(2.25rem, 5vw, 4rem);
   line-height: var(--oc-leading-heading);
   letter-spacing: var(--oc-tracking-heading);
   font-weight: var(--oc-weight-regular);
@@ -18,7 +18,7 @@
   max-width: 760px;
   margin-top: 28px;
   color: var(--muted-foreground);
-  font-size: 18px;
+  font-size: var(--oc-size-18);
   line-height: var(--oc-leading-body);
 }
 .oc-information-content {
@@ -91,21 +91,21 @@
 .oc-information-hero[data-split="true"] { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 6vw, 80px); }
 .oc-information-hero-copy, .oc-information-hero-aside { min-width: 0; }
 .oc-information h1 { font-size: clamp(2.5rem, 4.7vw, 4.5rem); line-height: 1.1; max-width: 15ch; letter-spacing: -.04em; }
-.oc-information-introduction { max-width: 48ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.75; margin-top: 28px; }
+.oc-information-introduction { max-width: 48ch; font-size: clamp(1rem, 1.4vw, 1.1875rem); line-height: 1.75; margin-top: 28px; }
 .oc-editorial-page .oc-information-content { max-width: none; padding: 0; }
 .oc-editorial-page .oc-public-section h2 { font-size: var(--oc-public-heading); margin: 0 0 24px; }
-.oc-editorial-page .oc-public-section h3 { font-size: 24px; font-weight: 400; margin-bottom: 16px; }
+.oc-editorial-page .oc-public-section h3 { font-size: var(--oc-size-24); font-weight: 400; margin-bottom: 16px; }
 .oc-editorial-page .oc-public-section .oc-public-kicker { line-height: 1.5; }
 .oc-editorial-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 8vw, 112px); align-items: start; }
 .oc-editorial-split > div { min-width: 0; }
-.oc-editorial-prose { color: var(--muted-foreground); font-size: 17px; }
+.oc-editorial-prose { color: var(--muted-foreground); font-size: 1.0625rem; }
 .oc-editorial-prose p + p { margin-top: 20px; }
 .oc-editorial-prose strong { color: var(--foreground); font-weight: 500; }
 .oc-editorial-page .oc-photo-credit { padding: 16px var(--oc-public-gutter) 28px; margin: 0; background: var(--background); }
 @media (max-width: 800px) {
   .oc-information-hero[data-split="true"], .oc-editorial-split { grid-template-columns: minmax(0, 1fr); gap: 36px; }
   .oc-information h1 { max-width: 18ch; }
-  .oc-editorial-prose { font-size: 16px; }
+  .oc-editorial-prose { font-size: var(--oc-size-16); }
 }
 
 /* About: an opening photograph, a shared problem, and a campus-grounded story. */
@@ -115,25 +115,25 @@
 .oc-about-hero-photo, .oc-about-grounded figure { --oc-public-glass-radius: 1.625rem; padding: 14px; }
 .oc-about-hero-image { position: relative; }
 .oc-about-hero-photo img { display: block; position: relative; width: 100%; aspect-ratio: 4 / 4.6; object-fit: cover; object-position: center 55%; border-radius: var(--oc-radius-xl); }
-.oc-about-hero-photo figcaption { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 12px 4px 2px; font-size: 13px; line-height: 1.5; color: var(--muted-foreground); }
+.oc-about-hero-photo figcaption { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 12px 4px 2px; font-size: var(--oc-size-13); line-height: 1.5; color: var(--muted-foreground); }
 .oc-about-problem { border-bottom: 1px solid var(--border); }
 .oc-about-idea .oc-public-section > h2 { max-width: 24ch; }
 /* Two workspaces: a light-glass student card and a navy-glass leader card. */
 .oc-about-perspectives { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 40px 0 32px; }
 .oc-about-perspective { --oc-public-glass-radius: 1.25rem; padding: 32px; }
-.oc-about-margin-label { display: block; margin-bottom: 16px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.oc-about-margin-label { display: block; margin-bottom: 16px; font-size: var(--oc-size-13); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
 .oc-about-perspectives h3 { max-width: 24ch; }
-.oc-about-perspectives p { max-width: 42ch; font-size: 16px; color: var(--muted-foreground); }
+.oc-about-perspectives p { max-width: 42ch; font-size: var(--oc-size-16); color: var(--muted-foreground); }
 .oc-about-perspective.oc-public-glass-navy :is(h3, .oc-about-margin-label, p) { color: inherit; }
 .oc-about-perspective.oc-public-glass-navy :is(.oc-about-margin-label, p) { color: var(--oc-rail-muted); }
 .oc-about-grounded { align-items: center; }
 .oc-about-grounded figure { margin: 0; }
 .oc-about-grounded img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center; border-radius: var(--oc-radius-xl); }
-.oc-about-grounded figcaption { margin: 12px 4px 2px; font-size: 13px; line-height: 1.5; color: var(--muted-foreground); }
+.oc-about-grounded figcaption { margin: 12px 4px 2px; font-size: var(--oc-size-13); line-height: 1.5; color: var(--muted-foreground); }
 .oc-about-independence { width: min(var(--oc-public-width), calc(100% - var(--oc-public-gutter) * 2)); margin: auto; border-block: 1px solid var(--border); padding-block: 24px; }
-.oc-about-independence p { max-width: 85ch; margin: auto; font-size: 13px; color: var(--muted-foreground); line-height: 1.8; }
+.oc-about-independence p { max-width: 85ch; margin: auto; font-size: var(--oc-size-13); color: var(--muted-foreground); line-height: 1.8; }
 .oc-public-section.oc-about-next { --oc-public-glass-radius: 1.625rem; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; width: min(var(--oc-public-width), calc(100% - var(--oc-public-gutter) * 2)); margin-block: 48px var(--oc-public-space); padding: 48px; }
-.oc-about-next > div > p:not(.oc-public-kicker):not(.oc-public-note) { max-width: 38ch; color: var(--muted-foreground); font-size: 18px; }
+.oc-about-next > div > p:not(.oc-public-kicker):not(.oc-public-note) { max-width: 38ch; color: var(--muted-foreground); font-size: var(--oc-size-18); }
 .oc-about-next .oc-public-note { margin-top: 24px; max-width: 48ch; }
 @media (max-width: 800px) {
   .oc-about-page .oc-information-hero { padding-block: 56px; }
@@ -157,20 +157,20 @@
 /* FAQ: a compact index and readable, individually addressable answers. */
 .oc-information .oc-information-faq { padding-top: 64px; border-top: 1px solid var(--border); }
 .oc-faq-heading { margin-bottom: 48px; }
-.oc-faq-heading > p:last-child { color: var(--muted-foreground); font-size: 17px; }
+.oc-faq-heading > p:last-child { color: var(--muted-foreground); font-size: 1.0625rem; }
 .oc-faq-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 72px; align-items: start; }
 .oc-faq-categories { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 120px; }
 .oc-faq-categories > span { margin-bottom: 16px; }
-.oc-faq-categories a { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 44px; padding-block: 8px; font-size: 14px; }
-.oc-faq-categories a > span { font-size: 12px; color: var(--muted-foreground); }
+.oc-faq-categories a { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 44px; padding-block: 8px; font-size: var(--oc-size-14); }
+.oc-faq-categories a > span { font-size: var(--oc-size-12); color: var(--muted-foreground); }
 .oc-faq-categories a:hover { text-decoration: underline; text-underline-offset: 5px; }
 .oc-faq-group { padding-bottom: 44px; }
-.oc-information .oc-faq-group > h3 { display: flex; align-items: center; gap: 20px; font-size: 22px; margin: 0 0 16px; font-weight: 400; }
-.oc-faq-group > h3 > span { font-size: 12px; color: var(--muted-foreground); }
+.oc-information .oc-faq-group > h3 { display: flex; align-items: center; gap: 20px; font-size: var(--oc-size-22); margin: 0 0 16px; font-weight: 400; }
+.oc-faq-group > h3 > span { font-size: var(--oc-size-12); color: var(--muted-foreground); }
 /* Each question is its own round light-glass row (docs/public-site/redesign/Main.mockup.html). */
 .oc-faq-group { display: flex; flex-direction: column; gap: 10px; }
 .oc-information-faq .oc-faq-entry { --oc-public-glass-radius: 1.625rem; padding: 0 26px; border-bottom: 0; }
-.oc-information-faq .oc-faq-entry summary { display: flex; justify-content: space-between; align-items: center; gap: 24px; min-height: 68px; padding-block: 20px; font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--primary); list-style: none; cursor: pointer; }
+.oc-information-faq .oc-faq-entry summary { display: flex; justify-content: space-between; align-items: center; gap: 24px; min-height: 68px; padding-block: 20px; font-size: 1.0625rem; font-weight: 600; line-height: 1.5; color: var(--primary); list-style: none; cursor: pointer; }
 .oc-faq-entry summary::-webkit-details-marker { display: none; }
 .oc-faq-entry[open] summary { color: var(--primary); }
 .oc-faq-indicator { width: 24px; height: 24px; flex-shrink: 0; position: relative; transition: transform 240ms var(--oc-public-ease); }
@@ -178,17 +178,17 @@
 .oc-faq-indicator::after { transform: rotate(90deg); transition: transform 240ms var(--oc-public-ease); }
 .oc-faq-entry[open] .oc-faq-indicator::after { transform: rotate(0); }
 .oc-faq-answer { overflow: hidden; }
-.oc-information-faq .oc-faq-answer p { margin: 0; max-width: 62ch; padding: 0 36px 20px 0; font-size: 16px; line-height: 1.7; color: var(--muted-foreground); }
+.oc-information-faq .oc-faq-answer p { margin: 0; max-width: 62ch; padding: 0 36px 20px 0; font-size: var(--oc-size-16); line-height: 1.7; color: var(--muted-foreground); }
 /* "Not at UVA?" as a light-glass card (same tokens as .oc-public-glass; markup is pinned by tests). */
 .oc-faq-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 32px; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-overlay-radius); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
 .oc-faq-next h3 { margin: 0 0 8px !important; }
-.oc-faq-next p { color: var(--muted-foreground); font-size: 15px; }
+.oc-faq-next p { color: var(--muted-foreground); font-size: 0.9375rem; }
 @media (max-width: 800px) {
   .oc-faq-layout { grid-template-columns: 1fr; gap: 32px; }
   .oc-faq-categories { position: static; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px 20px; border-block: 1px solid var(--border); padding-block: 12px; }
   .oc-faq-categories > span { display: none; }
-  .oc-faq-categories a { justify-content: start; font-size: 13px; gap: 8px; }
-  .oc-information-faq .oc-faq-entry summary { font-size: 16px; min-height: 72px; gap: 16px; }
+  .oc-faq-categories a { justify-content: start; font-size: var(--oc-size-13); gap: 8px; }
+  .oc-information-faq .oc-faq-entry summary { font-size: var(--oc-size-16); min-height: 72px; gap: 16px; }
   .oc-faq-next { padding: 24px; }
 }
 
@@ -196,47 +196,47 @@
 .oc-request-page .oc-information-hero { background: var(--oc-public-linen); padding-block: 64px; }
 /* The campus note is a navy glass card; upright, no line art, no orange. */
 .oc-campus-letter { --oc-public-glass-radius: 1.625rem; padding: 28px; max-width: 440px; margin-left: auto; }
-.oc-campus-letter-top, .oc-campus-letter-bottom { display: flex; justify-content: space-between; gap: 20px; font-size: 12px; letter-spacing: .06em; color: var(--oc-rail-muted); }
+.oc-campus-letter-top, .oc-campus-letter-bottom { display: flex; justify-content: space-between; gap: 20px; font-size: var(--oc-size-12); letter-spacing: .06em; color: var(--oc-rail-muted); }
 .oc-campus-letter-art { display: none; }
-.oc-campus-letter > p { font-family: var(--oc-font-display); font-size: clamp(24px, 3vw, 36px); line-height: 1.25; text-align: center; margin: 32px 0; }
+.oc-campus-letter > p { font-family: var(--oc-font-display); font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.25; text-align: center; margin: 32px 0; }
 .oc-campus-letter > p > em { font-style: normal; color: var(--oc-rail-muted); }
-.oc-campus-letter-bottom { padding-top: 18px; border-top: 1px solid var(--oc-glass-navy-edge); font-size: 12px; letter-spacing: 0; }
+.oc-campus-letter-bottom { padding-top: 18px; border-top: 1px solid var(--oc-glass-navy-edge); font-size: var(--oc-size-12); letter-spacing: 0; }
 .oc-campus-letter-bottom > span:last-child { color: var(--oc-glass-cream); }
 .oc-request-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(32px, 6vw, 80px); align-items: start; padding-top: 72px; }
 .oc-request-introduction { padding-top: 24px; }
-.oc-request-introduction > p:not(.oc-public-kicker):not(.oc-public-note) { max-width: 38ch; color: var(--muted-foreground); font-size: 16px; }
+.oc-request-introduction > p:not(.oc-public-kicker):not(.oc-public-note) { max-width: 38ch; color: var(--muted-foreground); font-size: var(--oc-size-16); }
 .oc-request-expectations { list-style: none; padding: 0; margin: 36px 0; display: grid; gap: 24px; }
 .oc-request-expectations li { display: flex; gap: 20px; }
-.oc-request-expectations li > span { font-size: 12px; color: var(--muted-foreground); padding-top: 4px; }
-.oc-request-expectations strong { font-size: 15px; font-weight: 500; }
-.oc-request-expectations p { font-size: 13px; color: var(--muted-foreground); margin-top: 5px; }
+.oc-request-expectations li > span { font-size: var(--oc-size-12); color: var(--muted-foreground); padding-top: 4px; }
+.oc-request-expectations strong { font-size: 0.9375rem; font-weight: 500; }
+.oc-request-expectations p { font-size: var(--oc-size-13); color: var(--muted-foreground); margin-top: 5px; }
 .oc-request-introduction .oc-public-note { max-width: 43ch; }
 /* Light-glass form card (docs/public-site/redesign/RequestSchool.mockup.html). */
 .oc-request-form, .oc-request-success { --oc-public-glass-radius: 1.375rem; min-width: 0; padding: clamp(24px, 3vw, 36px); }
 .oc-request-form-heading { margin-bottom: 28px; }
 .oc-request-form-heading .oc-public-kicker { margin-bottom: 18px; }
-.oc-information .oc-request-form-heading h3 { font-size: 25px; font-weight: 400; line-height: 1.35; margin-bottom: 12px; max-width: 25ch; }
-.oc-request-form-heading > p:last-child { font-size: 14px; color: var(--muted-foreground); }
+.oc-information .oc-request-form-heading h3 { font-size: 1.5625rem; font-weight: 400; line-height: 1.35; margin-bottom: 12px; max-width: 25ch; }
+.oc-request-form-heading > p:last-child { font-size: var(--oc-size-14); color: var(--muted-foreground); }
 .oc-request-fields { min-width: 0; display: grid; gap: 22px; }
 .oc-request-fields[disabled] { opacity: .75; }
 .oc-request-field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
 .oc-request-field { min-width: 0; }
-.oc-request-field label { display: block; font-size: 13px; margin-bottom: 8px; line-height: 1.6; }
+.oc-request-field label { display: block; font-size: var(--oc-size-13); margin-bottom: 8px; line-height: 1.6; }
 .oc-request-field label > span { font-weight: 400; color: var(--muted-foreground); }
-.oc-request-field :is(input, textarea, select) { width: 100%; min-height: 48px; background: var(--card); font-size: 15px; border-radius: var(--oc-glass-row-radius); box-shadow: var(--oc-glass-field-depth); }
+.oc-request-field :is(input, textarea, select) { width: 100%; min-height: 48px; background: var(--card); font-size: 0.9375rem; border-radius: var(--oc-glass-row-radius); box-shadow: var(--oc-glass-field-depth); }
 .oc-request-field textarea { min-height: 100px; }
 .oc-request-field :is(input, textarea, select)[aria-invalid="true"] { border-color: var(--destructive); }
-.oc-request-field-error { color: var(--destructive); font-size: 12px; margin-top: 6px; }
-.oc-request-form #request-contact-note { margin-top: 24px; font-size: 14px; line-height: 1.75; }
+.oc-request-field-error { color: var(--destructive); font-size: var(--oc-size-13); margin-top: 6px; }
+.oc-request-form #request-contact-note { margin-top: 24px; font-size: var(--oc-size-14); line-height: 1.75; }
 .oc-request-form .oc-request-submit { width: 100%; min-height: 50px; margin-top: 24px; border-radius: var(--oc-radius-full); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); color: var(--oc-glass-cream); }
-.oc-request-form > .oc-public-note { margin-top: 12px; text-align: center; font-size: 12px; }
-.oc-request-error { background: var(--error-subtle); color: var(--destructive); padding: 16px; margin-top: 20px; font-size: 13px; border-radius: var(--oc-glass-row-radius); }
-.oc-request-error > span { display: block; font-size: 12px; margin-top: 6px; }
+.oc-request-form > .oc-public-note { margin-top: 12px; text-align: center; font-size: var(--oc-size-12); }
+.oc-request-error { background: var(--error-subtle); color: var(--destructive); padding: 16px; margin-top: 20px; font-size: var(--oc-size-13); border-radius: var(--oc-glass-row-radius); }
+.oc-request-error > span { display: block; font-size: var(--oc-size-13); margin-top: 6px; }
 .oc-request-success { padding-block: 48px; }
 .oc-request-success-mark { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 32px; background: var(--success-subtle); border: 1px solid #29644830; color: var(--success); border-radius: 50%; }
-.oc-request-success h2 { font-size: clamp(30px, 4vw, 44px) !important; }
-.oc-request-success > p[role="status"] { color: var(--muted-foreground); font-size: 15px; margin-block: 24px; }
-.oc-request-success-school { color: var(--primary); font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.oc-request-success h2 { font-size: clamp(1.875rem, 4vw, 2.75rem) !important; }
+.oc-request-success > p[role="status"] { color: var(--muted-foreground); font-size: 0.9375rem; margin-block: 24px; }
+.oc-request-success-school { color: var(--primary); font-size: var(--oc-size-18); font-weight: 600; overflow-wrap: anywhere; }
 .oc-request-success:focus, .oc-request-error:focus { outline: 2px solid var(--ring); outline-offset: 5px; }
 @media (max-width: 800px) {
   .oc-request-page .oc-information-hero { padding-block: 48px; }
@@ -249,9 +249,11 @@
   .oc-request-introduction > p { max-width: 52ch !important; }
   .oc-request-form { scroll-margin-top: 96px; }
 }
+@media (max-width: 767px) {
+  .oc-request-field :is(input, textarea, select) { font-size: var(--oc-size-16); }
+}
 @media (max-width: 480px) {
   .oc-request-field-pair { grid-template-columns: 1fr; gap: 22px; }
-  .oc-request-field :is(input, textarea, select) { font-size: 16px; }
 }
 
 /* Shared public frame: header, normal page margins, footer (components/landing/public-page-frame.tsx). */

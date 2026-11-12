@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { useAutosave } from "@/hooks/use-autosave"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -9,6 +11,7 @@ import { Plus, Trash2 } from "@/components/icons"
 import { getStudentProfile, updateStudentProfileSection } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
+import { useDemoMode } from "@/contexts/demo-context"
 import { profileSectionSnapshot, gpaSchema, genderValues, pronounValues, type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
 import {
   Dialog,
@@ -49,7 +52,7 @@ export function EditStudentProfileDialog({
   extra?: ReactNode | ((sync: (profile: FullStudentProfile) => void) => ReactNode)
 }) {
   const [section, setSection] = useState<ProfileSection>(initialSection)
-  const { user } = useAuth()
+  const { user } = useAuth(), demo = useDemoMode()
   const expected = useRef("")
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<FullStudentProfile | null>(null)
@@ -90,7 +93,7 @@ export function EditStudentProfileDialog({
     }
   }
   async function persist(snapshot: FullStudentProfile) {
-    if (section === "education" && scholarYes && !snapshot.scholarStatus) throw Error("Choose at least one scholar program.")
+    if (section === "education" && scholarYes && !snapshot.scholarStatus) throw new UserFacingError("Choose at least one scholar program.")
       const payload =
         section === "identity"
           ? { section, firstName: snapshot.firstName, lastName: snapshot.lastName, ...(snapshot.headshotUrl !== originalPhoto ? { headshotUrl: snapshot.headshotUrl } : {}) }
@@ -109,12 +112,12 @@ export function EditStudentProfileDialog({
               ? { section, experiences: snapshot.experiences }
               : { section, linkedinUrl: snapshot.linkedinUrl, resumeUrl: snapshot.resumeUrl }
       const result = await updateStudentProfileSection(payload, expected.current)
-      if ("error" in result) throw Error(result.error || "Unable to save.")
+      if ("error" in result) throw new UserFacingError(result.error || "Unable to save.")
       expected.current = profileSectionSnapshot(result.profile, section)
       onSaved?.(result.profile)
   }
   const autosave = useAutosave({
-    identity: `${user?.id}:profile:${section}`,
+    identity: `${user?.id}:profile:${section}`, owner: demo.isDemoEnabled ? null : user?.id,
     value: draft, restore: setDraft, enabled: open && !!draft,
     save: async snapshot => { if (snapshot) await persist(snapshot) },
   })
@@ -129,7 +132,7 @@ export function EditStudentProfileDialog({
       const payload = new FormData(); payload.set("file", file); payload.set("kind", kind)
       const { reference } = await uploadProfileFile(payload)
       setDraft(current => current ? { ...current, [kind === "resume" ? "resumeUrl" : "headshotUrl"]: reference } : current)
-    } catch (e) { setError(e instanceof Error ? e.message : "Upload failed. Your saved profile has not changed."); if (kind === "headshot") throw e }
+    } catch (e) { setError(userMessage(e, "Upload failed. Your saved profile has not changed.")); if (kind === "headshot") throw e }
     finally { setBusy(false) }
   }
   function field(

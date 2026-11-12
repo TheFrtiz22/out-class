@@ -30,6 +30,7 @@ import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { ActionError, actionResult } from "@/lib/action-result";
 
 const pipelineFilter = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
 export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
@@ -111,7 +112,7 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
     !hasPermission(membership, "applicants.identify") &&
     !hasPermission(membership, "applications.review")
   )
-    throw new Error("Applicant access denied.");
+    throw new ActionError("Applicant access denied.");
 
   const started = Date.now();
   let transactionStarted: number | null = null;
@@ -132,8 +133,8 @@ async function readPipeline<T>(clubId: string, input: z.infer<typeof pipelineFil
     const rubric = normalizeReviewRubric(allRounds[0]?.club?.reviewRubric);
     const selectedRound = rounds.find(r => r.id === filter.roundId);
     if (filter.gender || filter.genderCounts) {
-      if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new Error("Gender visibility must be explicitly enabled for this round.");
-      if (!selectedRound.anonymousReview && !hasPermission(membership, "applicants.identify")) throw new Error("Applicant access denied.");
+      if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new ActionError("Gender visibility must be explicitly enabled for this round.");
+      if (!selectedRound.anonymousReview && !hasPermission(membership, "applicants.identify")) throw new ActionError("Applicant access denied.");
     }
     const where = { clubId, ...(filter.applicationId ? { id: filter.applicationId } : {}), status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
     phase = "applications";
@@ -175,7 +176,7 @@ const moveApplicantSchema = z.object({
   expectedRoundId: z.string().uuid().optional(),
 });
 
-export async function moveApplicantRound(
+async function moveApplicantRoundCommand(
   data: z.infer<typeof moveApplicantSchema>,
 ) {
   const parsed = moveApplicantSchema.parse(data);
@@ -192,9 +193,9 @@ export async function moveApplicantRound(
     const round = await tx.pipelineRound.findFirst({
       where: { id: parsed.newRoundId, clubId: parsed.clubId, archivedAt: null },
     });
-    if (!round) throw new Error("Round is not available for this club.");
+    if (!round) throw new ActionError("Round is not available for this club.");
     const current = await tx.application.findFirst({ where: { id: parsed.applicationId, clubId: parsed.clubId } });
-    if (!current) throw Error("Application unavailable.");
+    if (!current) throw new ActionError("Application unavailable.");
     assertRecruitmentRoundMove(current.status);
     const result = await tx.application.updateMany({
       where: {
@@ -206,7 +207,7 @@ export async function moveApplicantRound(
       data: { roundId: parsed.newRoundId, ...(current.status === "INTERVIEWING" && !isInterviewRecruitmentRound(round.type) ? { status: "IN_REVIEW" as const } : {}) },
     });
     if (result.count !== 1)
-      throw new Error("Application changed or is not available for this club. Reload the page and try again.");
+      throw new ActionError("Application changed or is not available for this club. Reload the page and try again.");
     const updated = await tx.application.findFirst({
       where: { id: parsed.applicationId, clubId: parsed.clubId },
       include: { round: true },
@@ -254,7 +255,7 @@ const statusUpdateSchema = z.object({
     .optional(),
 });
 
-export async function setApplicationStatus(
+async function setApplicationStatusCommand(
   data: z.infer<typeof statusUpdateSchema>,
 ) {
   const parsed = statusUpdateSchema.parse(data);
@@ -293,7 +294,7 @@ export async function setApplicationStatus(
   return { success: true, application };
 }
 
-export async function revealApplicantIdentity(
+async function revealApplicantIdentityCommand(
   clubId: string,
   applicationId: string,
   reason: string,
@@ -316,7 +317,7 @@ export async function revealApplicantIdentity(
         bookings: { include: { slot: true } },
       },
     });
-    if (!application) throw new Error("Application unavailable.");
+    if (!application) throw new ActionError("Application unavailable.");
     const { club, ...revealed } = application;
     await tx.auditLog.create({
       data: {
@@ -331,7 +332,7 @@ export async function revealApplicantIdentity(
     return restrictApplicationProfile(identifiedApplication({ ...revealed, evaluations: revealed.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, hasPermission(membership, "applications.review") && genderVisibility(revealed.round?.applicantDisplay)), normalizeProfileFieldVisibility(club?.profileFieldVisibility));
   });
 }
-export async function setRoundAnonymousReview(
+async function setRoundAnonymousReviewCommand(
   clubId: string,
   roundId: string,
   enabled: boolean,
@@ -348,7 +349,7 @@ export async function setRoundAnonymousReview(
       where: { id: roundId, clubId, archivedAt: null },
       data: { anonymousReview: enabled },
     });
-    if (result.count !== 1) throw new Error("Round unavailable.");
+    if (result.count !== 1) throw new ActionError("Round unavailable.");
     await tx.auditLog.create({
       data: {
         actorId: user.id,
@@ -389,7 +390,7 @@ export async function setClubTestRequirement(
   });
 }
 
-export async function saveAnonymousReviewContent(
+async function saveAnonymousReviewContentCommand(
   clubId: string,
   applicationId: string,
   content: string,
@@ -416,7 +417,7 @@ export async function saveAnonymousReviewContent(
         },
       },
     });
-    if (!application) throw new Error("Application unavailable.");
+    if (!application) throw new ActionError("Application unavailable.");
     if (
       !(await tx.auditLog.findFirst({
         where: {
@@ -427,7 +428,7 @@ export async function saveAnonymousReviewContent(
         },
       }))
     )
-      throw new Error(
+      throw new ActionError(
         "Explicitly reveal this applicant before preparing anonymous content.",
       );
     validateAnonymousText(text, application.student);
@@ -447,4 +448,24 @@ export async function saveAnonymousReviewContent(
     revalidatePath("/", "layout");
     return { success: true };
   });
+}
+
+export async function setApplicationStatus(...args: Parameters<typeof setApplicationStatusCommand>) {
+  return actionResult(() => setApplicationStatusCommand(...args), "setApplicationStatus")
+}
+
+export async function moveApplicantRound(...args: Parameters<typeof moveApplicantRoundCommand>) {
+  return actionResult(() => moveApplicantRoundCommand(...args), "moveApplicantRound")
+}
+
+export async function revealApplicantIdentity(...args: Parameters<typeof revealApplicantIdentityCommand>) {
+  return actionResult(() => revealApplicantIdentityCommand(...args), "revealApplicantIdentity")
+}
+
+export async function setRoundAnonymousReview(...args: Parameters<typeof setRoundAnonymousReviewCommand>) {
+  return actionResult(() => setRoundAnonymousReviewCommand(...args), "setRoundAnonymousReview")
+}
+
+export async function saveAnonymousReviewContent(...args: Parameters<typeof saveAnonymousReviewContentCommand>) {
+  return actionResult(() => saveAnonymousReviewContentCommand(...args), "saveAnonymousReviewContent")
 }

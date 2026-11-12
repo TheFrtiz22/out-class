@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
@@ -10,7 +11,7 @@ import { compareAcademicYears } from "@/lib/recruitment-profile";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
 import { ActionWorkflow } from "@/components/product/action-workflow";
-import { addClubMember } from "@/actions/club-access";
+import { addClubMember as addClubMemberAction } from "@/actions/club-access";
 import {InvitationScheduleComposer} from "@/components/invitation-schedules";
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import {
@@ -29,13 +30,13 @@ import { useEffect, useRef, useState } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  changeOrganizationMemberRole,
-  removeOrganizationMember,
-  transferOrganizationOwnership,
-  inviteOrganizationMember,
-  manageOrganizationInvitation,
-  bulkOrganizationMembers,
-  bulkOrganizationInvitations,
+  changeOrganizationMemberRole as changeOrganizationMemberRoleAction,
+  removeOrganizationMember as removeOrganizationMemberAction,
+  transferOrganizationOwnership as transferOrganizationOwnershipAction,
+  inviteOrganizationMember as inviteOrganizationMemberAction,
+  manageOrganizationInvitation as manageOrganizationInvitationAction,
+  bulkOrganizationMembers as bulkOrganizationMembersAction,
+  bulkOrganizationInvitations as bulkOrganizationInvitationsAction,
 } from "@/actions/organization-members";
 import {
   canChangeOrganizationRole,
@@ -68,6 +69,15 @@ import { SearchField } from "@/components/ui/search-field"
 import { PillSelect } from "@/components/ui/pill-select"
 import { Toggle } from "@/components/ui/toggle"
 import { useConfirmOnce } from "@/components/ui/confirm-dialog"
+import { unwrapped } from "@/lib/action-result"
+const changeOrganizationMemberRole = unwrapped(changeOrganizationMemberRoleAction)
+const removeOrganizationMember = unwrapped(removeOrganizationMemberAction)
+const transferOrganizationOwnership = unwrapped(transferOrganizationOwnershipAction)
+const inviteOrganizationMember = unwrapped(inviteOrganizationMemberAction)
+const manageOrganizationInvitation = unwrapped(manageOrganizationInvitationAction)
+const bulkOrganizationMembers = unwrapped(bulkOrganizationMembersAction)
+const bulkOrganizationInvitations = unwrapped(bulkOrganizationInvitationsAction)
+const addClubMember = unwrapped(addClubMemberAction)
 
 type Directory = Awaited<ReturnType<typeof getOrganizationMemberManagement>>;
 type Member = Directory["members"][number];
@@ -198,7 +208,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       return true;
     } catch (e) {
       if (optimistic) setData(previous);
-      setError(e instanceof Error ? e.message : "Could not save. Try again.");
+      setError(userMessage(e, "Could not save. Try again."));
       return false;
     } finally {
       working.current = false;
@@ -388,7 +398,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                     )
                                 }
                               >
-                                <Copy size={15} />
+                                <Copy size={16} />
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -398,7 +408,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                     aria-label={`Invitation actions for ${row.name}`}
                                     disabled={busy}
                                   >
-                                    <MoreHorizontal size={18} />
+                                    <MoreHorizontal size={20} />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -489,7 +499,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             </div>
             <SortControl label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
             </div>
-            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
+            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" showNotice={false} /></div>}
             {selection.length > 0 && (
               <div
                 role="toolbar"
@@ -699,7 +709,6 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       data-unsaved={dirty}
       aria-busy={busy}
     >
-      <p className="text-sm text-muted-foreground">Manage your club’s members and access.</p>
       {notice && (
         <p role="status" className="rounded-lg border bg-muted/40 p-4 text-sm">
           {notice}
@@ -733,9 +742,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   {notice && <p role="status" className="text-sm">{notice}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                   {inviteTab === "pending" && <>{directory}{scheduledInviteId && <InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId} />}</>}
                   {inviteTab === "new" && <div data-unsaved={dirty} onChangeCapture={() => setDirty(true)}>              <p className="mt-3 text-sm text-muted-foreground">
-                Create an invitation using the member’s school identity. They
-                must accept before becoming a member. No account or email is
-                created.
+                They must accept to join. No account or email is created.
               </p>
               {!data.identifierTypes.length ? (
                 <p className="mt-3 text-sm">

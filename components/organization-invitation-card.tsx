@@ -1,12 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { acceptIdentityClubInvitation, declineIdentityClubInvitation, setOrganizationInvitationDismissed, type getOrganizationInvitations } from "@/actions/club-onboarding";
+import { acceptIdentityClubInvitation as acceptIdentityClubInvitationAction, declineIdentityClubInvitation as declineIdentityClubInvitationAction, setOrganizationInvitationDismissed as setOrganizationInvitationDismissedAction, type getOrganizationInvitations } from "@/actions/club-onboarding";
 import { ClubLogo } from "@/components/club-logo";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { clubWorkspaceHref } from "@/lib/club-workspace";
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
+import { unwrapped } from "@/lib/action-result"
+const acceptIdentityClubInvitation = unwrapped(acceptIdentityClubInvitationAction)
+const declineIdentityClubInvitation = unwrapped(declineIdentityClubInvitationAction)
+const setOrganizationInvitationDismissed = unwrapped(setOrganizationInvitationDismissedAction)
 
 export type OrganizationInvitation = Awaited<ReturnType<typeof getOrganizationInvitations>>[number];
 export type InvitationChange = { id: string; kind: "accepted" | "dismissed" | "restored" | "declined"; clubName: string };
@@ -21,6 +25,9 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
   const [busy, setBusy] = useState<InvitationChange["kind"] | null>(null);
   const [error, setError] = useState("");
   const [confirmDecline, setConfirmDecline] = useState(false);
+  // Optimistic "Not now" / "Show on dashboard": the card shows its new state before the server confirms.
+  const [hidden, setHidden] = useState<boolean | null>(null);
+  const dismissed = hidden ?? !!invitation.dismissedAt;
   const working = useRef(false);
   const owner = invitation.requestedRole === "OWNER";
   const actionClass = compact ? "h-auto min-h-11 whitespace-normal px-3" : "h-auto min-h-11 min-w-0 flex-1 whitespace-normal px-3 sm:flex-none";
@@ -37,10 +44,13 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
         await declineIdentityClubInvitation(invitation.id);
         await onChanged({ id: invitation.id, kind, clubName: invitation.club.name });
       } else {
+        setHidden(kind === "dismissed");
         await setOrganizationInvitationDismissed(invitation.id, kind === "dismissed");
         await onChanged({ id: invitation.id, kind, clubName: invitation.club.name });
+        setHidden(null); // The confirmed invitation now carries the state.
       }
     } catch {
+      if (kind === "dismissed" || kind === "restored") setHidden(null);
       setError(kind === "accepted"
         ? "Could not accept this invitation. It may have expired or your access may have changed. Try again."
         : "Could not update this request. Try again.");
@@ -55,7 +65,7 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
           <p className="text-sm leading-6 text-muted-foreground">{owner ? `You’re the designated administrator for ${invitation.club.name}.`
             : `${invitation.club.name} invited you as ${role}.`}</p>
           {!compact && <p className="text-xs leading-5 text-muted-foreground">{owner ? "Claiming lets you manage members, roles, applications, recruiting, interviews, and organization settings." : "Accept to join this organization."}</p>}
-          {invitation.dismissedAt && <p className="text-xs font-medium text-muted-foreground">Hidden from your dashboard · still pending</p>}
+          {dismissed && <p className="text-xs font-medium text-muted-foreground">Hidden from your dashboard · still pending</p>}
         </div>
       </div>
       <div className={compact ? "flex shrink-0 flex-wrap gap-2" : "flex shrink-0 flex-wrap gap-2 lg:max-w-72"} aria-label={`Respond to ${invitation.club.name}`}>
@@ -63,8 +73,8 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
         <Button tabIndex={tabIndex} className={actionClass} disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
           {busy === "accepted" ? owner ? "Claiming…" : "Accepting…" : owner ? "Claim organization" : "Accept"}
         </Button>
-        <Button tabIndex={tabIndex} className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(invitation.dismissedAt ? "restored" : "dismissed")}>
-          {busy === "dismissed" ? "Hiding…" : busy === "restored" ? "Restoring…" : invitation.dismissedAt ? "Show on dashboard" : "Not now"}
+        <Button tabIndex={tabIndex} className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(dismissed ? "restored" : "dismissed")}>
+          {dismissed ? "Show on dashboard" : "Not now"}
         </Button>
         {allowDecline && <Button tabIndex={tabIndex} className="min-h-11" variant="ghost" disabled={!!busy} aria-expanded={confirmDecline} aria-controls={`invitation-decline-${invitation.id}`} onClick={() => setConfirmDecline(true)}>Decline</Button>}
       </div>

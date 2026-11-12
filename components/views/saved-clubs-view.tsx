@@ -61,7 +61,7 @@ export function SavedClubsView({
         <LoadingState label="Loading Saved clubs…" layout="cards" rows={3} />
       ) : !authenticated ? (
         <section className="oc-directory-empty">
-          <Bookmark className="size-7" />
+          <Bookmark className="size-6" />
           <h2>Sign in to see your saved clubs.</h2>
           <p>Sign in to save clubs and revisit them across devices.</p>
           <Button onClick={() => onNavigate("auth")}>Sign in</Button>

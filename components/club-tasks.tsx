@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -42,12 +44,12 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
   // Every read takes a ticket; a response lands only if no newer read (including run()'s post-mutation read) started since.
   const readTicket=useRef(0),shown=useRef(workspace);shown.current=workspace
   const [stale,setStale]=useState(false)
-  useEffect(()=>{if(!demo.ready||loading)return;if(firstRead.current){firstRead.current=false;return;}let current=true;const ticket=++readTicket.current,background=!!shown.current;if(!background)setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current&&ticket===readTicket.current){setWorkspace(data);setStale(false);setError("")}}).catch(error=>{if(!current||ticket!==readTicket.current)return;if(background)setStale(true);else{setWorkspace(null);setError(error instanceof Error?error.message:"Could not load tasks.")}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
+  useEffect(()=>{if(!demo.ready||loading)return;if(firstRead.current){firstRead.current=false;return;}let current=true;const ticket=++readTicket.current,background=!!shown.current;if(!background)setError("");setLoaded(false);getTaskWorkspace(clubId).then(data=>{if(current&&ticket===readTicket.current){setWorkspace(data);setStale(false);setError("")}}).catch(error=>{if(!current||ticket!==readTicket.current)return;if(background)setStale(true);else{setWorkspace(null);setError(userMessage(error, "Could not load tasks."))}}).finally(()=>{if(current)setLoaded(true)});return()=>{current=false}},[clubId,refresh,demo.ready,demo.isDemoEnabled,loading])
   // No Refresh button: mutations here reload in run(); returning to the tab or a "tasks" change reloads too.
   useRevalidate(()=>setRefresh(value=>value+1),{scopes:["tasks"],enabled:!busy&&!dirty})
   useEffect(()=>{if(!dirty&&!busy)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=""};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn)},[dirty,busy])
   useEffect(()=>{if(manager||!focusedTask||focusedTask===consumedFocus.current||!workspace)return;const task=workspace.tasks.find(task=>task.id===focusedTask),own=task?.assignments.find(assignment=>assignment.memberId===workspace.memberId);if(own){consumedFocus.current=focusedTask;setActive(task!.id);if(!own.viewedAt)void viewTask(own.id).catch(()=>{})}},[focusedTask,workspace,manager])
-  async function run(fn:()=>Promise<unknown>){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){setError(error instanceof Error?error.message:"Could not save. Please try again.");return false}finally{setBusy(false)}}
+  async function run(fn:()=>Promise<unknown>){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){setError(userMessage(error, "Could not save. Please try again."));return false}finally{setBusy(false)}}
   async function closeTask(){if(busy||document.querySelector('[data-task-uploading="true"]'))return;if(dirty&&!(await confirm({title:"Close task?",description:"Unsaved changes will be lost.",confirmLabel:"Close task",cancelLabel:"Keep editing",tone:"danger"})))return;setActive(null);setDirty(false)}
   async function open(task:Task,event?:React.MouseEvent<HTMLElement>){const trigger=event?.currentTarget??document.activeElement as HTMLElement;if(dirty&&!(await confirm({title:"Open another task?",description:"Unsaved changes will be lost.",confirmLabel:"Open task",cancelLabel:"Keep editing",tone:"danger"})))return;taskTrigger.current=trigger;setActive(task.id);setDirty(false);const own=task.assignments.find(assignment=>assignment.memberId===workspace?.memberId);if(own&&!own.viewedAt)void viewTask(own.id).catch(()=>{})}
   const personal=workspace?.tasks.filter(task=>task.status!=="DRAFT"&&task.assignments.some(assignment=>assignment.memberId===workspace.memberId))??[]
@@ -71,7 +73,7 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
       </div>
       {!tasks.length&&<div className="oc-task-empty" role="status"><h2 className="oc-card-heading">{query.trim()||filter!=="open"?"No tasks match your filters.":"You're all caught up."}</h2><p>{query.trim()||filter!=="open"?"Try another search or clear the filters.":personal.length?"No tasks need your attention. You can still view earlier work.":"New tasks will appear here."}</p>{(query.trim()||filter!=="open")?<Button type="button" variant="outline" size="sm" onClick={()=>{setQuery("");setFilter("open")}}>Clear filters</Button>:personal.length>0&&<Button type="button" variant="outline" size="sm" onClick={()=>setFilter("all")}>View all tasks</Button>}</div>}
       <ul className="oc-task-list">{tasks.map(task=>{const own=task.assignments.find(assignment=>assignment.memberId===workspace.memberId)!,status=task.status==="DONE"?"Closed":taskState(task,own,now),tone=!own.revisionRequestedAt&&(own.submittedAt||own.reviewedAt)?"submitted":isMissing(task,own,now)?"missing":"due";return <li key={task.id}><button type="button" className={`oc-task-row oc-task-${tone}`} onClick={event=>void open(task,event)}><span className="oc-task-icon"><FilePenLine aria-hidden="true"/></span><span className="oc-task-row-copy"><strong>{task.title}</strong><span>{membership?.club.name??"Your club"}{task.projectId?` · ${task.project?.title??workspace.tasks.find(project=>project.id===task.projectId)?.title??"Related project"}`:""}{own.groupLabel?` · ${own.groupLabel}`:""}</span><small>{task.kind==="PROJECT"?"Project":task.requirements?.length?task.requirements.map(type=>({TEXT:"Written response",LINK:"Link",FILE:"File upload"})[type as "TEXT"]).join(" + "):"Written response, link, or file"} · {status==="Overdue"?"Missing":status}</small></span><span className="oc-task-deadline"><CalendarClock aria-hidden="true"/>{relativeDue(task.dueAt,now)}</span></button></li>})}</ul>
-      <Sheet open={!!active} onOpenChange={open=>{if(!open)void closeTask()}}><SheetContent className="oc-workspace-drawer oc-task-drawer w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={event=>{event.preventDefault();if(taskTrigger.current?.isConnected)taskTrigger.current.focus();else document.getElementById("workspace-content")?.focus()}}><div className="oc-task-detail-icon"><FilePenLine aria-hidden="true"/></div><SheetTitle className="oc-task-detail-title">{active?.title||"Task details"}</SheetTitle><SheetDescription>{membership?.club.name??"Your club"} · {active?.kind==="PROJECT"?"Project":"Assignment"}</SheetDescription>{active&&<div className="oc-task-detail-meta"><span><CalendarClock size={17}/>Due {relativeDue(active.dueAt,now)}</span><span>{taskState(active,active.assignments.find(assignment=>assignment.memberId===workspace.memberId)!,now)}</span></div>}{error&&<p role="alert" className="oc-task-error">{error}</p>}{active&&<div onChangeCapture={event=>{if((event.target as HTMLElement).closest("form"))setDirty(true)}} onClickCapture={event=>{if((event.target as HTMLElement).closest("[data-task-edit]"))setDirty(true)}}><TaskDetail key={`${active.id}-${active.revision}`} task={active} workspace={workspace} manager={false} run={run} busy={busy} onOpen={open}/></div>}</SheetContent></Sheet>
+      <Sheet open={!!active} onOpenChange={open=>{if(!open)void closeTask()}}><SheetContent className="oc-workspace-drawer oc-task-drawer w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={event=>{event.preventDefault();if(taskTrigger.current?.isConnected)taskTrigger.current.focus();else document.getElementById("workspace-content")?.focus()}}><div className="oc-task-detail-icon"><FilePenLine aria-hidden="true"/></div><SheetTitle className="oc-task-detail-title">{active?.title||"Task details"}</SheetTitle><SheetDescription>{membership?.club.name??"Your club"} · {active?.kind==="PROJECT"?"Project":"Assignment"}</SheetDescription>{active&&<div className="oc-task-detail-meta"><span><CalendarClock size={16}/>Due {relativeDue(active.dueAt,now)}</span><span>{taskState(active,active.assignments.find(assignment=>assignment.memberId===workspace.memberId)!,now)}</span></div>}{error&&<p role="alert" className="oc-task-error">{error}</p>}{active&&<div onChangeCapture={event=>{if((event.target as HTMLElement).closest("form"))setDirty(true)}} onClickCapture={event=>{if((event.target as HTMLElement).closest("[data-task-edit]"))setDirty(true)}}><TaskDetail key={`${active.id}-${active.revision}`} task={active} workspace={workspace} manager={false} run={run} busy={busy} onOpen={open}/></div>}</SheetContent></Sheet>
     </>}
   </div>
 }
@@ -140,7 +142,7 @@ function Submission({
           : "Your private draft saves automatically. Submit when ready to share it."}
       </p>
       <label className="oc-task-submission-field">
-        <span><FileText size={17} />Written response <small>{task.requirements.includes("TEXT") ? "Required" : "Optional"}</small></span>
+        <span><FileText size={16} />Written response <small>{task.requirements.includes("TEXT") ? "Required" : "Optional"}</small></span>
         <Textarea
           name="text"
           rows={5}
@@ -152,7 +154,7 @@ function Submission({
         />
       </label>
       <label className="oc-task-submission-field">
-        <span><Link2 size={17} />Website or document link <small>{task.requirements.includes("LINK") ? "Required" : "Optional"}</small></span>
+        <span><Link2 size={16} />Website or document link <small>{task.requirements.includes("LINK") ? "Required" : "Optional"}</small></span>
         <Input
           name="link"
           type="url"
@@ -182,7 +184,7 @@ function Submission({
                       window.location.assign(url);
                     } catch (e) {
                       setError(
-                        e instanceof Error ? e.message : "Download failed.",
+                        userMessage(e, "Download failed."),
                       );
                     }
                   }}
@@ -207,9 +209,9 @@ function Submission({
       </ul>
       {!closed && (
         <label className="oc-task-submission-field oc-task-upload">
-          <span><UploadCloud size={19} />File upload <small>{task.requirements.includes("FILE") ? "Required" : "Optional"}</small></span>
+          <span><UploadCloud size={20} />File upload <small>{task.requirements.includes("FILE") ? "Required" : "Optional"}</small></span>
           <span className="text-muted-foreground">
-            — up to 5, 10 MB each; PDF, images, text, or Office documents
+            Up to 5, 10 MB each. PDF, images, text, or Office documents.
           </span>
           <Input
             type="file"
@@ -241,14 +243,14 @@ function Submission({
                     body: file,
                   });
                   if (!response.ok)
-                    throw new Error("Upload failed. Please try again.");
+                    throw new UserFacingError("Upload failed. Please try again.");
                   setFiles((current) => [
                     ...current,
                     { id: upload.id, name: file.name, size: file.size },
                   ]);
                 }
               } catch (e) {
-                setError(e instanceof Error ? e.message : "Upload failed.");
+                setError(userMessage(e, "Upload failed."));
               } finally {
                 setUploading(false);
               }

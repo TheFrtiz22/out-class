@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { PillSelect } from "@/components/ui/pill-select"
 import { DateField } from "@/components/ui/date-picker"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -12,6 +13,9 @@ import { availabilityHref, responseLabels, addDays, availabilityEditorDays, avai
 import { getMyAvailability, getMyRoundAvailability } from "@/lib/availability-workspace-read"
 import { saveAvailabilityWithRecovery } from "@/lib/availability-save-recovery"
 import { AvailabilitySaveQueue } from "@/lib/availability-save-queue"
+import { createDraftStore, validDraftOwner } from "@/lib/autosave-store"
+import { useAuth } from "@/contexts/auth-context"
+import { useDemoMode } from "@/contexts/demo-context"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { WeeklyCalendar } from "./weekly-calendar"
 import { OutlookBusyImport } from "./outlook-busy-import"
@@ -26,19 +30,42 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
   const [, render] = useState(0), [confirmed, setConfirmed] = useState(initialConfirmed), [declined, setDeclined] = useState(initialDeclined), [confirming, setConfirming] = useState(false), [notice, setNotice] = useState("")
   const [mode, setMode] = useState<"recurring" | "week">(scope || initial.schedule.timezone !== SCHEDULING_TIMEZONE ? "week" : "recurring")
   const [week, setWeek] = useState(() => initialWeek ?? monday(today(SCHEDULING_TIMEZONE))), [copyFrom, setCopyFrom] = useState(0), [copyTo, setCopyTo] = useState(1)
+  const { user } = useAuth(), demo = useDemoMode(), owner = demo.isDemoEnabled ? null : user?.id
+  // Unsaved edits survive a reload or browser restart on this device; the server copy stays authoritative.
+  const storeRef = useRef<ReturnType<typeof createDraftStore<AvailabilitySchedule>> | null>(null)
+  if (!storeRef.current && validDraftOwner(owner)) storeRef.current = createDraftStore<AvailabilitySchedule>({ owner, identity: `availability:${scope ? `${scope.clubId}:${scope.roundId}` : "global"}`, persistence: "device" })
+  const writer = useRef(""), [recovery, setRecovery] = useState<{ schedule: AvailabilitySchedule; conflict: boolean } | null>(null), [reviewing, setReviewing] = useState(false)
   const queueRef = useRef<AvailabilitySaveQueue | null>(null)
   if (!queueRef.current) queueRef.current = new AvailabilitySaveQueue(initial, async payload => {
     const saved = await saveAvailabilityWithRecovery(payload,
       async () => scope ? (await saveMyRoundAvailability({ ...payload, ...scope, confirm: false })).document : saveMyAvailability(payload),
       async () => { if (scope) { const current = await getMyRoundAvailability(scope); return { document: current.document, responseMatches: !current.confirmed && !current.declined } } return { document: (await getMyAvailability()).document, responseMatches: true } })
     onSaved?.(saved); return saved
-  }, () => render(value => value + 1))
+  }, () => render(value => value + 1), undefined, {
+    recover: value => {
+      const store = storeRef.current
+      if (!store) return
+      writer.current ||= crypto.randomUUID()
+      if (value === null) { store.clear(writer.current); return }
+      return store.write({ value: value.schedule, baseline: String(value.revision), revision: value.revision, writer: writer.current, at: Date.now() })
+    },
+  })
   const queue = queueRef.current, schedule = queue.document.schedule
+  useEffect(() => {
+    const stored = storeRef.current?.read()
+    if (stored && JSON.stringify(stored.value) !== JSON.stringify(initial.schedule)) setRecovery({ schedule: stored.value, conflict: stored.revision !== initial.revision })
+    else if (stored) storeRef.current?.clear()
+  // Read once per mounted editor: later edits are this editor's own copy.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   useEffect(() => {
     queue.activate()
     const unload = (event: BeforeUnloadEvent) => { if (queue.dirty || queue.saving) { event.preventDefault(); event.returnValue = "" } }
-    window.addEventListener("beforeunload", unload)
-    return () => { window.removeEventListener("beforeunload", unload); queue.dispose() }
+    const online = () => { void queue.flush().catch(() => {}) }, offline = () => queue.markOffline()
+    // Shell navigation and explicit sign-out collect pending writes through this event.
+    const collect = (event: Event) => { if (queue.dirty) (event as CustomEvent<Promise<void>[]>).detail.push(queue.flush()) }
+    window.addEventListener("beforeunload", unload); window.addEventListener("online", online); window.addEventListener("offline", offline); window.addEventListener("outclass:flush-editors", collect)
+    return () => { window.removeEventListener("beforeunload", unload); window.removeEventListener("online", online); window.removeEventListener("offline", offline); window.removeEventListener("outclass:flush-editors", collect); queue.dispose() }
   }, [queue])
   const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(week, i)), [week])
   const days = useMemo(() => availabilityEditorDays(schedule, week, mode === "recurring"), [week, mode, schedule])
@@ -59,8 +86,8 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
     editDays(previous, indices)
   }
   return <Panel as="section" className="oc-availability space-y-5 sm:p-6" data-unsaved={queue.dirty} data-saving={queue.saving || queue.state === "saving" || confirming} aria-busy={confirming}>
-    <header className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="oc-section-heading">{title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{scope ? "Your global schedule is prefilled. Adjust specific dates here and confirm your participation for this club and round." : "Enter your usual free time once. Your schedule follows local clock time, including daylight saving changes."}</p></div><p role="status" aria-live="polite" className={`text-xs font-medium ${queue.state === "error" ? "text-destructive" : "text-muted-foreground"}`}>{queue.state === "saving" ? "Saving…" : queue.state === "unsaved" ? "Unsaved changes" : queue.state === "error" ? "Save failed · edits retained" : queue.document.revision === 0 ? "No schedule saved" : "All changes saved"}</p></header>
-    <fieldset disabled={confirming} className="min-w-0 space-y-5">
+    <header className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="oc-section-heading">{title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{scope ? "Your global schedule is prefilled. Adjust specific dates here and confirm your participation for this club and round." : "Enter your usual free time once. Your schedule follows local clock time, including daylight saving changes."}</p></div><p role="status" aria-live="polite" className={`text-control font-medium ${queue.state === "error" ? "text-destructive" : "text-muted-foreground"}`}>{queue.state === "saving" ? "Saving…" : queue.state === "offline" || queue.state === "unreachable" ? queue.error : queue.state === "unsaved" ? "Unsaved changes" : queue.state === "error" ? "Save failed · edits retained" : queue.document.revision === 0 ? "No schedule saved" : "All changes saved"}</p></header>
+    <fieldset disabled={confirming || !!recovery} className="min-w-0 space-y-5">
       <p className="text-xs text-muted-foreground">8:00 AM–9:00 PM · {SCHEDULING_TIMEZONE_LABEL}. Daylight saving changes are automatic. Previously saved hours outside this window are retained.</p>
       {!scope && schedule.timezone === SCHEDULING_TIMEZONE && <SegmentedControl label="Availability editing mode" value={mode} onChange={setMode} options={[{ value: "recurring", label: <span className="inline-flex items-center gap-2"><CalendarDays className="size-4" aria-hidden="true" />Recurring week</span> }, { value: "week", label: "Specific dates" }]} />}
       {mode === "week" && <div className="flex flex-wrap items-center gap-2"><Button variant="outline" aria-label="Previous week" onClick={() => setWeek(addDays(week, -7))}><ChevronLeft className="size-4" /></Button><div className="text-sm"><span className="block">Week of</span><DateField label="Week of" className="mt-1" value={week} onChange={value => { if (value) setWeek(monday(value)) }} /></div><Button variant="outline" aria-label="Next week" onClick={() => setWeek(addDays(week, 7))}><ChevronRight className="size-4" /></Button><Button variant="outline" onClick={copyPrevious}><Copy className="size-4" />Copy previous week</Button></div>}
@@ -71,22 +98,22 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
         try { await queue.flush(); const saved = await saveAvailabilityWithRecovery(queue.document,
           async () => (await saveMyRoundAvailability({ ...queue.document, ...scope, confirm: true })).document,
           async () => { const current = await getMyRoundAvailability(scope); return { document: current.document, responseMatches: current.confirmed && !current.declined } }); queue.document = saved; setConfirmed(true); setDeclined(false); onStatus?.(true, false); window.dispatchEvent(new Event("outclass:availability-changed")); render(v => v + 1) }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not confirm participation.") }
+        catch (error) { setNotice(userMessage(error, "Could not confirm participation.")) }
         finally { setConfirming(false) }
       }}><Check className="size-4" />{confirmed ? "Update submitted availability" : "Submit round availability"}</Button><Button variant="outline" onClick={async () => {
         setConfirming(true)
         try { const latest = await getMyRoundAvailability(scope); if (JSON.stringify(latest.global) === JSON.stringify(queue.document.schedule)) setNotice("Already using your current global schedule. Your response is unchanged."); else { setConfirmed(false); setDeclined(false); onStatus?.(false, false); queue.change(structuredClone(latest.global)) } }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not refresh the global schedule.") }
+        catch (error) { setNotice(userMessage(error, "Could not refresh the global schedule.")) }
         finally { setConfirming(false) }
       }}>Use current global schedule</Button><Button variant="outline" disabled={!confirmed} onClick={async () => {
         setConfirming(true)
         try { await queue.flush(); const result = await saveMyRoundAvailability({ ...queue.document, ...scope, confirm: false }); queue.document = result.document; setConfirmed(false); onStatus?.(false, false); window.dispatchEvent(new Event("outclass:availability-changed")) }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not withdraw confirmation.") }
+        catch (error) { setNotice(userMessage(error, "Could not withdraw confirmation.")) }
         finally { setConfirming(false) }
       }}>Withdraw confirmation</Button><Button variant="ghost" disabled={confirming || declined} onClick={async () => {
         setConfirming(true); setNotice("")
         try { await queue.flush(); const result = await declineRoundParticipation({ ...scope, revision: queue.document.revision, accountId: queue.document.accountId }); queue.document = { ...queue.document, revision: result.revision }; setDeclined(true); setConfirmed(false); onStatus?.(false, true); window.dispatchEvent(new Event("outclass:availability-changed")) }
-        catch (error) { setNotice(error instanceof Error ? error.message : "Could not decline participation.") }
+        catch (error) { setNotice(userMessage(error, "Could not decline participation.")) }
         finally { setConfirming(false) }
       }}>Decline participation</Button>{!schedule.weeklySubmitted && !Object.keys(schedule.exceptions).length && <Button variant="outline" onClick={() => change({ ...schedule, weeklySubmitted: true })}>Declare no availability</Button>}</div></div>}
       <WeeklyCalendar knownDays={knownDays} days={days} dates={mode === "week" ? dates : undefined} onChange={editDays} />
@@ -96,7 +123,13 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
 
     </fieldset>
     {notice && <p role="status" className="text-sm">{notice}</p>}
-    {queue.error && <div className="space-y-3"><p role="alert" className="text-sm text-destructive">{queue.error}</p><div className="flex gap-2"><Button variant="outline" onClick={() => void queue.flush().catch(() => {})}>Retry save</Button><Button variant="outline" onClick={() => { if (canLeaveWorkspace()) window.location.reload() }}>Reload saved version</Button></div></div>}
+    {recovery && (recovery.conflict
+      // The server moved on since these edits: keep the newer version or read them; they are never saved.
+      ? <div role="status" className="space-y-3 text-sm"><div className="flex flex-wrap items-center gap-2"><span>This device has changes from before a newer version was saved elsewhere.</span><Button variant="outline" size="sm" onClick={() => { setRecovery(null); setReviewing(false); storeRef.current?.clear() }}>Keep newer version</Button>{!reviewing && <Button variant="ghost" size="sm" onClick={() => setReviewing(true)}>Review my copy</Button>}</div>
+        {reviewing && <fieldset disabled aria-label="Your earlier availability (read-only)" className="min-w-0 opacity-80"><WeeklyCalendar knownDays={mode === "recurring" ? Array(7).fill(recovery.schedule.weeklySubmitted) as boolean[] : availabilityEditorKnownDays(recovery.schedule, week)} days={availabilityEditorDays(recovery.schedule, week, mode === "recurring")} dates={mode === "week" ? dates : undefined} onChange={() => {}} /></fieldset>}</div>
+      : <div role="status" className="flex flex-wrap items-center gap-2 text-sm"><span>Unsaved availability from this device is available.</span><Button variant="outline" size="sm" onClick={() => { const value = recovery.schedule; setRecovery(null); change(value) }}>Restore edits</Button><Button variant="ghost" size="sm" onClick={() => { setRecovery(null); storeRef.current?.clear() }}>Discard</Button></div>)}
+    {(queue.state === "offline" || queue.state === "unreachable") && <div role="status" className="flex flex-wrap items-center gap-2 text-sm"><span>{queue.error}</span><Button variant="outline" size="sm" onClick={() => void queue.flush().catch(() => {})}>Retry save</Button></div>}
+    {queue.state === "error" && queue.error && <div className="space-y-3"><p role="alert" className="text-sm text-destructive">{queue.error}</p><div className="flex gap-2"><Button variant="outline" onClick={() => void queue.flush().catch(() => {})}>Retry save</Button><Button variant="outline" onClick={() => { if (canLeaveWorkspace()) window.location.reload() }}>Reload saved version</Button></div></div>}
   </Panel>
 }
 
@@ -126,7 +159,7 @@ function RoundEditor({ round, onStatus }: { round: AvailabilityRound; onStatus: 
   const [data, setData] = useState<Awaited<ReturnType<typeof getMyRoundAvailability>> | null>(null), [error, setError] = useState(""), [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let active = true
-    getMyRoundAvailability({ clubId: round.clubId, roundId: round.id }).then(value => { if (active) setData(value) }).catch(error => { if (active) setError(error instanceof Error ? error.message : "Could not load this round.") })
+    getMyRoundAvailability({ clubId: round.clubId, roundId: round.id }).then(value => { if (active) setData(value) }).catch(error => { if (active) setError(userMessage(error, "Could not load this round.")) })
     return () => { active = false }
   }, [round.clubId, round.id, attempt])
   if (error) return <div role="alert" className="space-y-3 text-sm text-destructive">{error}<Button variant="outline" onClick={() => { setError(""); setAttempt(v => v + 1) }}>Retry loading round</Button></div>

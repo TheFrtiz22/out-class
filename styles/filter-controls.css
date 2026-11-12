@@ -46,7 +46,7 @@
 .oc-toggle { display: inline-flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 46px; padding: .25rem .375rem .25rem 1.125rem; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); }
 .oc-toggle-text { display: grid; min-width: 0; }
 .oc-toggle-label { color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); cursor: pointer; }
-.oc-toggle-description { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+.oc-toggle-description { color: var(--muted-foreground); font-size: var(--oc-size-13); }
 .oc-toggle[data-disabled] { opacity: .5; }
 [data-slot="switch"].oc-toggle-switch { position: relative; width: 2.75rem; height: 1.625rem; padding: 2px; border-radius: var(--oc-radius-full); }
 /* The phone rule that gives every product button a 44px minimum would turn these into circles; the Toggle pill
@@ -67,7 +67,7 @@
 .oc-filter-sheet .oc-filter-panel-body { padding-inline: 0; }
 .oc-filter-sheet .oc-filter-panel-footer { padding-inline: 0; }
 .oc-filter-field { display: grid; gap: .5rem; }
-.oc-filter-field-label { color: var(--muted-foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); letter-spacing: .02em; text-transform: uppercase; }
+.oc-filter-field-label { color: var(--muted-foreground); font-size: var(--oc-size-13); font-weight: var(--oc-weight-semibold); letter-spacing: .02em; text-transform: uppercase; }
 
 /* DateField: the DatePicker trigger as a pill on the segmented track. */
 .oc-date-picker-trigger[data-variant="pill"] { min-height: 46px; padding-inline: 1rem 1.125rem; border-color: var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }

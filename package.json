@@ -68,7 +68,7 @@
     "cmdk": "1.0.4",
     "input-otp": "1.4.1",
     "next": "15.5.28",
-    "nodemailer": "^10.0.13",
+    "nodemailer": "10.2.1",
     "pdfjs-dist": "6.4.299",
     "qrcode": "^1.5.4",
     "react": "19.2.0",

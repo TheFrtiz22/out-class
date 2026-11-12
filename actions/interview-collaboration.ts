@@ -12,6 +12,7 @@ import { interviewTransactionOptions } from "@/utils/interview-access";
 import { getInterviewWorkspace } from "@/actions/interview-kits";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
 import { interviewTiming } from "@/lib/interview-session-timing";
+import { presentTimer } from "@/lib/interview-shared-timer";
 
 const inputSchema = interviewScopeSchema.extend({ clientId: z.string().uuid() });
 // Current-access checks for each peer span several pooler round trips. Keep the
@@ -76,7 +77,9 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
         if (question) selection = { question, by: peerName(selector), memberId: selector.id };
       }
     }
-    return { sessionId: session.id, revision: session.revision, participants, selection, invitation, timing: interviewTiming(data, round.configuration, booking) };
+    const timing = interviewTiming(data, round.configuration, booking);
+    const timer = presentTimer(await tx.interviewTimer.findUnique({ where: { sessionId: session.id } }), timing, Date.now());
+    return { sessionId: session.id, revision: session.revision, participants, selection, invitation, timing, timer };
   }, transactionOptions);
   // Bootstrap alone needs an exclusive lock. End the shared transaction before
   // retrying, so simultaneous first joins cannot deadlock on a lock upgrade.

@@ -3,6 +3,7 @@ import { schedulingDateTime } from "@/lib/scheduling-config"
 
 import Link from "next/link"
 import { useDemoMode } from "@/contexts/demo-context"
+import { ReportContentButton } from "@/components/reports/report-content-button"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { CommunicationsInbox } from "@/components/communications-inbox"
 import { useEffect, useMemo, useState, useRef } from "react"
@@ -248,11 +249,11 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                             logoUrl={item.logoUrl} marketing={item.marketing}
                             text={item.logoText}
                             color={item.color}
-                            className="size-7 shrink-0 rounded-md text-[length:var(--oc-size-10)]"
+                            className="size-7 shrink-0 rounded-md text-xs"
                           />
                           <span className="text-xs text-muted-foreground">{item.club}</span>
                           {!item.read && (
-                            <span className="ml-auto shrink-0 text-[length:var(--oc-size-11)] font-medium text-primary">
+                            <span className="ml-auto shrink-0 text-xs font-medium text-primary">
                               <span
                                 aria-hidden="true"
                                 className="mr-1 inline-block size-1.5 rounded-full bg-primary"
@@ -272,7 +273,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                         <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                           {item.preview}
                         </p>
-                        <div className="flex flex-wrap items-center gap-2 text-[length:var(--oc-size-11)] text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           {item.urgent && (
                             <span className="rounded bg-secondary px-1.5 py-0.5 font-medium text-foreground">
                               Urgent
@@ -303,7 +304,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
             ))}
             {!filtered.length && (
               <div className="space-y-3 p-10 text-center">
-                <Bell className="mx-auto size-7 text-muted-foreground" />
+                <Bell className="mx-auto size-6 text-muted-foreground" />
                 <p className="text-sm font-medium">
                   {items.length ? "No matching notifications" : "No notifications yet"}
                 </p>
@@ -325,7 +326,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
         >
           {!selected ? (
             <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-              <Bell className="size-8 text-muted-foreground" />
+              <Bell className="size-6 text-muted-foreground" />
               <p className="text-sm">Choose a notification to read the full update.</p>
             </div>
           ) : (
@@ -393,6 +394,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     <Trash2 className="size-4" />
                     Delete
                   </Button>
+                  {selected.announcementId && <ReportContentButton target={{ type: "announcement", id: selected.announcementId }} label="Report announcement" hidden={selected.ownAnnouncement} className="self-center" />}
                 </div>
               </div>
               <div className="space-y-5 p-5 sm:p-6">
