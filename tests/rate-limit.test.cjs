@@ -113,9 +113,6 @@ const POST_EXEMPT = {
   "app/api/internal/scheduled-communications/route.ts": "cron",
   // Signing out must always work; it only tears down the caller's own session.
   "app/api/auth/logout/route.ts": "sign-out",
-  // RFC 8058 one-click unsubscribe: mail providers POST from shared servers, the token is signed, and a
-  // legal opt-out must always go through. Repeating it changes nothing.
-  "app/api/email/unsubscribe/route.ts": "unsubscribe",
   // Browser CSP violation reports: body capped at CSP_REPORT_MAX_BYTES, nothing stored, and lib/csp-report
   // keeps its own deduplicated, rate-limited log. A per-IP limit here would only drop real reports.
   "app/api/csp-report/route.ts": "csp-report",

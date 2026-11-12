@@ -37,7 +37,7 @@ test('live discovery scopes filters inside existing authorized queries; applican
  h.tx.interviewRecord.findMany=async q=>{queries.push(q);return[]};h.tx.interviewResumeDocument.findMany=async q=>{queries.push(q);return[]};
  for(const read of [reviews.getSubmittedInterviewReviews,resumes.getInterviewResumeModerationQueue]){
   await read(h.scope.clubId,{applicationId:h.scope.applicationId,roundId:h.scope.roundId,cycleId:id(7)});
-  const q=queries.at(-1);assert.equal(q.where.applicationId,h.scope.applicationId);assert.equal(q.where.roundId,h.scope.roundId);assert.equal(q.where.application.clubId,h.scope.clubId);assert.equal(q.where.application.recruitmentCycleId,id(7));assert.equal(q.take,100);
+  const q=queries.at(-1);assert.equal(q.where.applicationId,h.scope.applicationId);assert.equal(q.where.roundId,h.scope.roundId);assert.equal(q.where.application.clubId,h.scope.clubId);assert.equal(q.where.application.recruitmentCycleId,id(7));assert.equal(q.take,51);
  }
  h.as(11);for(const read of [reviews.getSubmittedInterviewReviews,resumes.getInterviewResumeModerationQueue])await assert.rejects(read(h.scope.clubId,{applicationId:h.scope.applicationId}),/leadership|moderation/i);
 });
