@@ -41,7 +41,7 @@ export function AccountDeletion({ email, passwordAccount, pending: initial, warn
       setTyped(""); setPassword("")
       setMessage(result.emailSent ? "Request received. We sent a confirmation to your university email." : "")
       router.refresh()
-    } catch (reason) { setError(userMessage(reason, "We couldn’t request deletion. Check your password and confirmation, then try again.")) }
+    } catch (reason) { setError(userMessage(reason, "Could not request deletion.")) }
     finally { setBusy(false); setTurnstileReset(value => value + 1) }
   }
 
@@ -52,7 +52,7 @@ export function AccountDeletion({ email, passwordAccount, pending: initial, warn
       setPending(null)
       setMessage("Deletion cancelled. Your account stays as it is.")
       router.refresh()
-    } catch (reason) { setError(userMessage(reason, "We couldn’t cancel the request. Reload the page and try again.")) }
+    } catch (reason) { setError(userMessage(reason, "Could not cancel the request.")) }
     finally { setBusy(false) }
   }
 

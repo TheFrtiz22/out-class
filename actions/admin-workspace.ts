@@ -18,6 +18,7 @@ import { scheduleInvitationDelivery } from "@/utils/invitation-background";
 import { PLATFORM_SETTINGS_KEY, SITE_SETTINGS_TAG, platformSettingsSchema } from "@/lib/site-settings";
 import { createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
 import { boundedParse } from "@/lib/bounded-input";
+import { reportTargetContext } from "@/lib/content-reports";
 const reasonSchema = z.string().trim().min(10).max(1000);
 const uuid = z.string().uuid();
 const statuses = z.enum(["OPEN", "INVESTIGATING", "RESOLVED", "DISMISSED"]);
@@ -41,17 +42,23 @@ export async function getAdminOverview() {
 export async function listAdminReports(input: unknown) {
   const actor = await requirePlatformAdmin();
   const f = z.object({ query: z.string().trim().max(200).default(""), status: z.union([statuses, z.literal("")]).default(""), support: z.boolean().default(false) }).strict().parse(input);
-  const rows = await prisma.platformReport.findMany({ where: { kind: f.support ? "SUPPORT" : { notIn: ["SUPPORT", "ACCOUNT_DELETION"] }, ...(f.status ? { status: f.status } : {}), ...(f.query ? { OR: [{ summary: { contains: f.query, mode: "insensitive" } }, { targetId: { contains: f.query, mode: "insensitive" } }] } : {}) }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100 });
+  const rows = await prisma.platformReport.findMany({ where: { kind: f.support ? "SUPPORT" : { notIn: ["SUPPORT", "ACCOUNT_DELETION"] }, ...(f.status ? { status: f.status } : {}), ...(f.query ? { OR: [{ summary: { contains: f.query, mode: "insensitive" } }, { targetId: { contains: f.query, mode: "insensitive" } }] } : {}) }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, include: { reporter: { select: { id: true, email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } });
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.reports.read", targetId: "reports", details: { support: f.support, result: "success" } } });
-  return rows;
+  // Reported announcements are only readable here: carry the title so the admin sees what was reported.
+  const announcementIds = rows.flatMap(r => r.kind === "CONTENT" && r.targetId.startsWith("announcement:") ? [r.targetId.split(":")[2]] : []).filter(id => uuid.safeParse(id).success);
+  const announcements = announcementIds.length ? new Map((await prisma.clubAnnouncement.findMany({ where: { id: { in: announcementIds } }, select: { id: true, title: true, club: { select: { name: true } } } })).map(a => [a.id, `${a.club.name}: ${a.title}`])) : new Map<string, string>();
+  return rows.map(({ reporter, ...row }) => {
+    const target = reportTargetContext(row.kind, row.targetId), title = announcements.get(row.targetId.split(":")[2] ?? "");
+    const name = [reporter.studentProfile?.firstName, reporter.studentProfile?.lastName].filter(Boolean).join(" ");
+    return { ...row, target: title ? { ...target, label: `${target.label} · ${title}` } : target, reporter: { id: reporter.id, email: reporter.email, name } };
+  });
 }
+// Support requests only. Reports about users, clubs, events and content go through
+// reportContent (actions/content-reports.ts), which checks the reporter can see the target.
 export async function submitPlatformReport(input: unknown) {
-  const { user } = await requireAuth();
-  const d = z.object({ kind: z.enum(["USER", "CLUB", "EVENT", "CONTENT", "SUPPORT"]), targetId: z.string().trim().min(1).max(200), summary: z.string().trim().min(10).max(2000) }).strict().parse(input);
-  if (d.kind !== "SUPPORT") {
-    const exists = d.kind === "USER" ? await prisma.user.findUnique({ where: { id: d.targetId }, select: { id: true } }) : d.kind === "CLUB" ? await prisma.club.findUnique({ where: { id: d.targetId }, select: { id: true } }) : d.kind === "EVENT" ? await prisma.meeting.findUnique({ where: { id: d.targetId }, select: { id: true } }) : await prisma.platformContent.findUnique({ where: { key: d.targetId }, select: { id: true } });
-    if (!exists) throw Error("Report target unavailable.");
-  }
+  const { user, impersonation } = await requireAuth();
+  if (impersonation) throw Error("Support sessions cannot file reports.");
+  const d = z.object({ kind: z.literal("SUPPORT"), targetId: z.string().trim().min(1).max(200), summary: z.string().trim().min(10).max(2000) }).strict().parse(input);
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
     if (await tx.platformReport.count({ where: { reporterId: user.id, createdAt: { gte: new Date(Date.now() - 3600000) } } }) >= 10) throw Error("Too many reports. Try again later.");
