@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useDemoMode } from "@/contexts/demo-context";
 import { getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
 import { clubInterviewHref, interviewEntryAction, interviewEntryCandidate, interviewEntryHref, interviewEntryStatus, interviewRoomRoundOptions, interviewTimingContext, unfinishedInterviewEntries, type InterviewRoomEntry } from "@/lib/interview-entry";
-import { defaultInterviewDate, groupInterviewDates, readExpandedInterviewDates } from "@/lib/interview-room-dates";
+import { defaultInterviewDate, groupInterviewDates, interviewDaysParam, readExpandedInterviewDates } from "@/lib/interview-room-dates";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-picker";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -38,11 +38,12 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
   const openDays = expanded ?? (defaultDay ? [defaultDay] : []);
   const rememberDays = useCallback((days: string[]) => {
     setExpanded(days);
-    const url = new URL(window.location.href); url.searchParams.set("interviewDays", days.join(","));
+    const url = new URL(window.location.href); url.searchParams.set("interviewDays", interviewDaysParam(days));
     window.history.replaceState(null, "", url.pathname + url.search);
   }, []);
   useEffect(() => {
-    if (expanded === null && !loading && !error && groups.length) rememberDays(defaultDay ? [defaultDay] : []);
+    // Nothing to expand by default: keep the URL clean instead of writing an empty interviewDays param.
+    if (expanded === null && !loading && !error && groups.length) { if (defaultDay) rememberDays([defaultDay]); else setExpanded([]); }
   }, [expanded, loading, error, groups.length, defaultDay, rememberDays]);
   useEffect(() => {
     if (!demo.ready) return;

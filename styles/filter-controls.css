@@ -230,3 +230,7 @@
 .oc-profile-editor-layout { display: grid; gap: 1.25rem; min-width: 0; }
 @media (min-width: 1536px) { .oc-profile-editor-layout { grid-template-columns: 11rem minmax(0, 1fr); gap: 2rem; } }
 .oc-underline-tab { gap: 0; }
+
+/* Public profile: while a draft recovery choice is pending the fields are locked, but saved values must still read as
+   values, not as placeholders or empty inputs (UI audit item 12). The bar above explains the lock. */
+.oc-profile-fieldset:disabled :is(input, textarea, select, button[role="combobox"]) { opacity: 1; color: var(--foreground); background-color: var(--muted); cursor: not-allowed; }
