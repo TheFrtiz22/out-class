@@ -267,7 +267,7 @@ export function NavigationSearch({
               ? "Sign in to search records"
               : pending
                 ? "Searching your workspace"
-                : pluralize(pages.length + results.length, "result")}
+                : pluralize(pages.length + linkPages.length + results.length, "result")}
           </span>
           <span className="inline-flex items-center gap-1"><ArrowUp size={14} aria-hidden="true" /><span className="sr-only">Up arrow</span><ArrowDown size={14} aria-hidden="true" /><span className="sr-only">Down arrow</span> to browse · Enter to open · Esc to close</span>
         </footer>

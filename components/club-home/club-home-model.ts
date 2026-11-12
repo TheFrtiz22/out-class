@@ -2,7 +2,7 @@ import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
 import { leaderRailSections, railItems } from "@/lib/navigation"
 import { anonymousApplicantLabel } from "@/lib/anonymous-review"
-import { TERMS } from "@/lib/copy/terms"
+import { TERMS, pluralize } from "@/lib/copy/terms"
 import { votingSessionHref, votingStateLabel } from "@/lib/voting-navigation"
 
 /** Pure view model for Club home. Reads only the overview the server already authorized. */
@@ -10,7 +10,6 @@ export type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
 type Booking = Overview["operations"]["bookings"][number]
 
 const DAY = 86_400_000
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
 /** Hrefs come only from the rail, so the rail highlight follows every dashboard link. */
 export function railHrefs(member: ClubAccess, clubId: string) {
@@ -58,16 +57,16 @@ export function needsYou(data: Overview, hrefs: RailHrefs): NeedsCard[] {
   const cards: NeedsCard[] = []
   if (op.tasks.overdue > 0) {
     const first = data.work.find(w => isOverdue(w.task.dueAt, now))
-    if (first || hrefs.tasks) cards.push({ id: "overdue", priority: 1, title: `${plural(op.tasks.overdue, "task")} overdue`, detail: first ? first.task.title : "Open your tasks to catch up.", action: first ? { kind: "task", label: "Open task", taskId: first.task.id, assignmentId: first.id, title: first.task.title } : { kind: "link", href: `${hrefs.tasks}&taskView=mine`, label: "Open tasks" } })
+    if (first || hrefs.tasks) cards.push({ id: "overdue", priority: 1, title: `${pluralize(op.tasks.overdue, "task")} overdue`, detail: first ? first.task.title : "Open your tasks to catch up.", action: first ? { kind: "task", label: "Open task", taskId: first.task.id, assignmentId: first.id, title: first.task.title } : { kind: "link", href: `${hrefs.tasks}&taskView=mine`, label: "Open tasks" } })
   }
-  if (hasPermission(m, "tasks.manage") && (op.team?.overdue ?? 0) > 0 && hrefs.tasks) cards.push({ id: "team-overdue", priority: 2, title: `${plural(op.team!.overdue, "team task")} overdue`, detail: op.teamTasks.find(t => isOverdue(t.dueAt, now))?.title ?? "Follow up from Team tasks.", action: { kind: "link", href: `${hrefs.tasks}&taskView=team`, label: "Open team tasks" } })
+  if (hasPermission(m, "tasks.manage") && (op.team?.overdue ?? 0) > 0 && hrefs.tasks) cards.push({ id: "team-overdue", priority: 2, title: `${pluralize(op.team!.overdue, "team task")} overdue`, detail: op.teamTasks.find(t => isOverdue(t.dueAt, now))?.title ?? "Follow up from Team tasks.", action: { kind: "link", href: `${hrefs.tasks}&taskView=team`, label: "Open team tasks" } })
   const submission = op.reviewWork[0]
-  if (hasPermission(m, "tasks.manage") && (op.tasks.awaitingReview ?? 0) > 0 && submission) cards.push({ id: "submissions", priority: 3, title: `${plural(op.tasks.awaitingReview!, "submission")} waiting for feedback`, detail: submission.task.title, action: { kind: "task", label: "Give feedback", taskId: submission.task.id, assignmentId: submission.id, title: submission.task.title, review: true } })
+  if (hasPermission(m, "tasks.manage") && (op.tasks.awaitingReview ?? 0) > 0 && submission) cards.push({ id: "submissions", priority: 3, title: `${pluralize(op.tasks.awaitingReview!, "submission")} waiting for feedback`, detail: submission.task.title, action: { kind: "task", label: "Give feedback", taskId: submission.task.id, assignmentId: submission.id, title: submission.task.title, review: true } })
   const bare = hasPermission(m, "meetings.manage") ? op.meetings.find(meeting => +new Date(meeting.date) >= now && +new Date(meeting.date) <= now + 2 * DAY && !meeting.agenda?.trim()) : undefined
   if (bare) cards.push({ id: "agenda", priority: 4, title: "Next meeting has no agenda", detail: bare.title, action: { kind: "meeting", label: "Add agenda", meetingId: bare.id, title: bare.title } })
   const soon = data.work.find(w => !isOverdue(w.task.dueAt, now) && !!w.task.dueAt && +new Date(w.task.dueAt) <= now + 2 * DAY)
   if (soon) cards.push({ id: "due-soon", priority: 5, title: "A task is due soon", detail: soon.task.title, action: { kind: "task", label: "Open task", taskId: soon.task.id, assignmentId: soon.id, title: soon.task.title } })
-  if ((data.members?.pendingInvitations ?? 0) > 0 && hrefs.members) cards.push({ id: "invitations", priority: 6, title: `${plural(data.members!.pendingInvitations, "invitation")} pending`, detail: "Members who have not joined yet", action: { kind: "link", href: hrefs.members, label: "Open members" } })
+  if ((data.members?.pendingInvitations ?? 0) > 0 && hrefs.members) cards.push({ id: "invitations", priority: 6, title: `${pluralize(data.members!.pendingInvitations, "invitation")} pending`, detail: "Members who have not joined yet", action: { kind: "link", href: hrefs.members, label: "Open members" } })
   return cards.sort((a, b) => a.priority - b.priority).slice(0, 4)
 }
 
@@ -90,6 +89,14 @@ export function recruitingStrip(data: Overview, hrefs: RailHrefs): RecruitingStr
   return { open: !!op.intake?.applicationOpen, applicants, attention, href: hrefs.recruiting }
 }
 
+/**
+ * The strip's counts, named for what they count: applicants, then recruiting work items (reviews, interview
+ * times and open votes). The work items are not applicants, so they are never phrased as "N need attention".
+ */
+export function recruitingStripText(strip: Pick<RecruitingStrip, "applicants" | "attention">) {
+  return `${pluralize(strip.applicants, "applicant")}${strip.attention > 0 ? ` · ${pluralize(strip.attention, "recruiting item")} ${strip.attention === 1 ? "needs" : "need"} you` : ""}`
+}
+
 /** Where a voting row opens: the join page for members not yet in the session, else the Voting room. */
 export function voteHref(clubId: string, membership: Overview["membership"], vote: Overview["operations"]["votes"][number]) {
   return !vote.participants.length && !hasPermission(membership, "decisions.view") && !hasPermission(membership, "decisions.manage") ? `/voting/${vote.id}/join` : votingSessionHref(clubId, vote, hasPermission(membership, "decisions.start") ? "leader" : "member")
@@ -106,16 +113,17 @@ export function recruitingNeeds(data: Overview, hrefs: RailHrefs): NeedsCard[] {
   const live = op.votes.filter(v => v.state === "OPEN" || !v.participants.length && !!v.joinOpenedAt && !voteComplete(v) && !hasPermission(m, "decisions.manage"))
   if (live[0]) cards.push({ id: "vote-live", priority: 1, title: live[0].state === "OPEN" ? live.length === 1 ? "Voting is open" : `${live.length} voting sessions are open` : "You can join a voting session", detail: live.map(v => `${v.round.name} · ${votingStateLabel(v.state)}`).join(" · "), action: { kind: "link", href: voteHref(club.id, m, live[0]), label: live[0].state === "OPEN" ? TERMS.openVoting : "Join session" } })
   const pending = op.rounds.reduce((n, r) => n + r.pending, 0), eligible = op.rounds.reduce((n, r) => n + r.eligible, 0)
-  if (hasPermission(m, "applications.review") && pending > 0 && hrefs.applicants) cards.push({ id: "reviews", priority: 2, title: `${plural(pending, "application")} to review`, detail: op.rounds.filter(r => r.pending > 0).map(r => `${r.name} · ${r.pending} left`).join(" · "), progress: { done: eligible - pending, total: eligible }, action: { kind: "link", href: reviewApplicantsHref(hrefs.applicants, op.rounds), label: "Open applicants" } })
+  if (hasPermission(m, "applications.review") && pending > 0 && hrefs.applicants) cards.push({ id: "reviews", priority: 2, title: `${pluralize(pending, "application")} to review`, detail: op.rounds.filter(r => r.pending > 0).map(r => `${r.name} · ${r.pending} left`).join(" · "), progress: { done: eligible - pending, total: eligible }, action: { kind: "link", href: reviewApplicantsHref(hrefs.applicants, op.rounds), label: "Open applicants" } })
   const unscheduled = op.rounds.filter(r => r.needsBooking > 0), needsTime = unscheduled.reduce((n, r) => n + r.needsBooking, 0)
-  if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${plural(needsTime, "applicant")} ${needsTime === 1 ? "needs" : "need"} an interview time`, detail: unscheduled.map(r => r.name).join(" · "), action: { kind: "link", href: `${hrefs.interviews}&interviewTab=schedule&roundId=${unscheduled[0]!.id}`, label: TERMS.scheduleInterviews } })
+  if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${pluralize(needsTime, "applicant")} ${needsTime === 1 ? "needs" : "need"} an interview time`, detail: unscheduled.map(r => r.name).join(" · "), action: { kind: "link", href: `${hrefs.interviews}&interviewTab=schedule&roundId=${unscheduled[0]!.id}`, label: TERMS.scheduleInterviews } })
   const done = op.votes.filter(voteComplete)
   if (done[0]) cards.push({ id: "vote-complete", priority: 4, title: "Voting complete", detail: `${done.map(v => v.round.name).join(" · ")} · Send decisions when you are ready`, action: { kind: "link", href: voteHref(club.id, m, done[0]), label: TERMS.openSession } })
-  if (op.offers[0]) cards.push({ id: "offers", priority: 5, title: `${plural(op.offers.length, "offer")} awaiting a response`, detail: `Next expires ${new Date(op.offers[0].expiresAt).toLocaleDateString([], { month: "short", day: "numeric" })}`, action: { kind: "applicant", label: "View offer", applicationId: op.offers[0].applicationId } })
+  if (op.offers[0]) cards.push({ id: "offers", priority: 5, title: `${pluralize(op.offers.length, "offer")} awaiting a response`, detail: `Next expires ${new Date(op.offers[0].expiresAt).toLocaleDateString([], { month: "short", day: "numeric" })}`, action: { kind: "applicant", label: "View offer", applicationId: op.offers[0].applicationId } })
   return cards.sort((a, b) => a.priority - b.priority).slice(0, 4)
 }
 
-export type PipelineStage = { id: "applied" | "review" | "interviews" | "offers"; label: string; count: number; tone: "navy" | "info" | "interview" }
+/** `noun` is the count's singular and plural, for "1 offer" / "2 offers" beside the label. */
+export type PipelineStage = { id: "applied" | "review" | "interviews" | "offers"; label: string; noun: [string, string]; count: number; tone: "navy" | "info" | "interview" }
 /** Stages from application status counts. A count is null when this member may not read applicants. */
 export function pipeline(recruitment: Overview["recruitment"]): { stages: PipelineStage[]; total: number; declined: number; waitlisted: number } | null {
   if (!recruitment) return null
@@ -124,10 +132,10 @@ export function pipeline(recruitment: Overview["recruitment"]): { stages: Pipeli
   return {
     total, declined: count("REJECTED"), waitlisted: count("WAITLISTED"),
     stages: [
-      { id: "applied", label: "Applied", count: total, tone: "navy" },
-      { id: "review", label: "In review", count: count("SUBMITTED", "IN_REVIEW"), tone: "info" },
-      { id: "interviews", label: "Interviews", count: count("INTERVIEWING"), tone: "interview" },
-      { id: "offers", label: "Offers", count: count("ACCEPTED"), tone: "navy" },
+      { id: "applied", label: "Applied", noun: ["applicant", "applicants"], count: total, tone: "navy" },
+      { id: "review", label: "In review", noun: ["in review", "in review"], count: count("SUBMITTED", "IN_REVIEW"), tone: "info" },
+      { id: "interviews", label: "Interviews", noun: ["interview", "interviews"], count: count("INTERVIEWING"), tone: "interview" },
+      { id: "offers", label: "Offers", noun: ["offer", "offers"], count: count("ACCEPTED"), tone: "navy" },
     ],
   }
 }

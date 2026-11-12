@@ -20,7 +20,7 @@ import { welcomeDeadline } from "@/lib/welcome"
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import type { ClubAccess } from "@/lib/permissions"
 import "@/components/club-home/club-home.css"
-import { TERMS } from "@/lib/copy/terms"
+import { TERMS, pluralize } from "@/lib/copy/terms"
 import { votingStateLabel } from "@/lib/voting-navigation"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
 const Review = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.ApplicantReviewPreview), { loading: () => <LoadingState variant="glass" layout="form" rows={3} label="Loading authorized review…" /> })
@@ -92,7 +92,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
       <DashboardCard id="dashboard-pipeline" title="Pipeline by round" index={cards.length + 1} className="oc-pipeline-section">
         {op.rounds.length > 0 ? <>
           <PipelineBars stages={op.rounds.map((r, i) => ({ id: r.id, label: `${String(i + 1).padStart(2, "0")} · ${r.name}`, count: r.count }))} />
-          <DashboardFoot>{[`${total} active ${total === 1 ? "applicant" : "applicants"}`, ...(statuses ? statuses.stages.slice(1).map(stage => `${stage.count} ${stage.label.toLowerCase()}`) : []), `${pending} ${pending === 1 ? "review" : "reviews"} left for you`].join(" · ")}</DashboardFoot>
+          <DashboardFoot>{[pluralize(total, "active applicant"), ...(statuses ? statuses.stages.slice(1).map(stage => pluralize(stage.count, ...stage.noun)) : []), `${pluralize(pending, "review")} left for you`].join(" · ")}</DashboardFoot>
         </> : empty(hasPermission(membership, "recruitment.manage") ? "No recruiting rounds yet." : "No rounds are available with your current review access.",
           hasPermission(membership, "recruitment.manage") ? <DashboardMore href={`/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=cycles`}>Set up rounds</DashboardMore> : undefined)}
       </DashboardCard>

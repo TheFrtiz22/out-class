@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useDemoMode } from "@/contexts/demo-context";
 import { getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
-import { clubInterviewHref, interviewEntryAction, interviewEntryHref, interviewEntryStatus, interviewRoomRoundOptions, interviewTimingContext, unfinishedInterviewEntries, type InterviewRoomEntry } from "@/lib/interview-entry";
+import { clubInterviewHref, interviewEntryAction, interviewEntryCandidate, interviewEntryHref, interviewEntryStatus, interviewRoomRoundOptions, interviewTimingContext, unfinishedInterviewEntries, type InterviewRoomEntry } from "@/lib/interview-entry";
 import { defaultInterviewDate, groupInterviewDates, readExpandedInterviewDates } from "@/lib/interview-room-dates";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-picker";
@@ -75,15 +75,15 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
       </CollapsibleTrigger></h3>
       <CollapsibleContent className="oc-interview-day-content" inert={!openDays.includes(day)} aria-hidden={!openDays.includes(day)}><DataTable caption={`Interviews on ${label}`} rows={sortEntries(entries)} rowKey={row => row.id}
         sort={{ key: listSort.key, descending: listSort.descending, toggle: key => listSort.toggle(key as RoomSort) }}
-        isOpenable={openable} openLabel={row => `${interviewEntryAction(row)} · ${row.candidate || row.roomName}`} onOpen={(_row, origin) => origin?.closest("tr, li")?.querySelector<HTMLAnchorElement>("a[data-entry-link]")?.click()}
+        isOpenable={openable} openLabel={row => `${interviewEntryAction(row)} · ${interviewEntryCandidate(row) ?? row.roomName}`} onOpen={(_row, origin) => origin?.closest("tr, li")?.querySelector<HTMLAnchorElement>("a[data-entry-link]")?.click()}
         columns={[
-          { id: "candidate", header: "Candidate", sortKey: "candidate", primary: true, cell: row => <span className="oc-dt-name" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{row.candidate || row.roomName}</span>, secondary: row => <DataTableSecondary>{interviewEntryStatus(row)}</DataTableSecondary> },
+          { id: "candidate", header: "Candidate", sortKey: "candidate", primary: true, cell: row => interviewEntryCandidate(row) ? <span className="oc-dt-name" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{interviewEntryCandidate(row)}</span> : <span className="oc-dt-muted">Open slot</span>, secondary: row => <DataTableSecondary>{interviewEntryStatus(row)}</DataTableSecondary> },
           { id: "time", header: "Time", sortKey: "time", cell: row => interviewTimingContext(row) },
           { id: "round", header: "Round", sortKey: "round", showFrom: "md", cell: row => row.roundName },
           { id: "room", header: "Room", showFrom: "xl", cell: row => <span className="oc-dt-muted" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{joinFacts(row.roomName, row.location)}</span> },
           { id: "action", header: <span className="sr-only">Action</span>, align: "end", cell: row => openable(row) ? <Link className="oc-dt-action" data-entry-link="" href={entryHref(row)}>{interviewEntryAction(row)}</Link> : null },
         ]}
-        card={{ title: row => row.candidate || row.roomName, meta: row => joinFacts(interviewEntryStatus(row), interviewTimingContext(row), row.roundName, row.location), actions: row => openable(row) ? <Link className="oc-dt-action" data-entry-link="" href={entryHref(row)}>{interviewEntryAction(row)}</Link> : null }} /></CollapsibleContent>
+        card={{ title: row => interviewEntryCandidate(row) ?? "Open slot", meta: row => joinFacts(interviewEntryStatus(row), interviewTimingContext(row), row.roundName, row.location), actions: row => openable(row) ? <Link className="oc-dt-action" data-entry-link="" href={entryHref(row)}>{interviewEntryAction(row)}</Link> : null }} /></CollapsibleContent>
     </Collapsible>)}
     {!error && secondary && <section className="border-t pt-3 text-sm"><h3 className="py-2 font-medium">Other assigned interviews</h3><Link className="inline-flex min-h-10 items-center underline" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open assigned candidate queue</Link></section>}
   </section>;
