@@ -6,12 +6,12 @@ test('recruiting destinations are flat links: Applicants and Decide, with Schedu
  assert.ok(owner.every(i=>!('navGroup' in i)),'no flyout groups')
  assert.deepEqual(owner.filter(i=>!i.hidden).map(i=>[i.id,i.label]),[['overview','Overview'],['applicants','Applicants'],['interviews','Interviews'],['decisions','Decide'],['settings','Settings']])
  assert.equal(owner.find(i=>i.id==='applicants').href,'/club/club/workspace?section=recruitment&tool=applicants')
- assert.equal(owner.find(i=>i.id==='decisions').href,'/club/club/workspace?section=recruitment&tool=decisions&decisionTab=voting')
+ assert.equal(owner.find(i=>i.id==='decisions').href,'/club/club/workspace?section=recruitment&tool=decisions&decisionTab=overview')
  const reviewer=managerNavigation({permissions:['applications.review']},'club','recruiting')
  // Decision status filters live on Applicants; Decide needs voting, letters or scheduled-send access.
- assert.ok(!reviewer.some(i=>i.id==='decisions'));assert.ok(managerNavigation({permissions:['applications.review','decisions.vote']},'club','recruiting').some(i=>i.id==='decisions'));assert.equal(managerNavigation({permissions:['recruitment.manage']},'club','recruiting').find(i=>i.id==='decisions').href,'/club/club/workspace?section=recruitment&tool=decisions&decisionTab=letters')
+ assert.ok(!reviewer.some(i=>i.id==='decisions'));assert.ok(managerNavigation({permissions:['applications.review','decisions.vote']},'club','recruiting').some(i=>i.id==='decisions'));assert.equal(managerNavigation({permissions:['recruitment.manage']},'club','recruiting').find(i=>i.id==='decisions').href,'/club/club/workspace?section=recruitment&tool=decisions&decisionTab=overview')
  assert.ok(!managerNavigation({permissions:['decisions.publish']},'club','recruiting').some(i=>i.id==='decisions'))
- assert.equal(managerNavigation({permissions:['decisions.publish','applicants.identify']},'club','recruiting').find(i=>i.id==='decisions').href,'/club/club/workspace?section=recruitment&tool=decisions&decisionTab=letters')
+ assert.equal(managerNavigation({permissions:['decisions.publish','applicants.identify']},'club','recruiting').find(i=>i.id==='decisions').href,'/club/club/workspace?section=recruitment&tool=decisions&decisionTab=overview')
  assert.deepEqual(mobileDestinations(owner).map(i=>i.label),['Overview','Applicants','Interviews','Decide','Settings'])
 })
 test('Announcements are not a destination: they live on Home; Settings keeps its page',()=>{
