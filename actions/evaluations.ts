@@ -9,6 +9,7 @@ import { hasPermission } from "@/lib/permissions";
 import { assertNotRecused } from "@/lib/recusal";
 import { interviewScoreSchema } from "@/lib/interview-access";
 import { openInterviewSession, saveInterviewSession } from "@/actions/interview-kits";
+import { unwrapAction } from "@/lib/action-result";
 import { canonicalEvaluationScore, normalizeReviewRubric, rubricScoresSchema, validateRubricScores, type RubricScores } from "@/lib/review-rubric";
 import type { AppTransactionClient } from "@/utils/prisma";
 
@@ -50,9 +51,10 @@ export async function submitEvaluation(data: z.infer<typeof evaluateSchema>) {
     return round.id;
   });
   const scope = { clubId: input.clubId, applicationId: input.applicationId, roundId };
-  const session = await openInterviewSession(scope);
+  // The kit actions return refusals as results; this action still throws them, as before.
+  const session = unwrapAction(await openInterviewSession(scope));
   if (session.completedAt) throw new Error("Submitted evaluation is immutable.");
-  const result = await saveInterviewSession({ ...scope, revision: session.revision, draft: { ...session.draft, score: input.score, ...(input.rubricScores ? { rubricScores: input.rubricScores } : {}), additionalNotes: input.notes ?? session.draft.additionalNotes ?? session.draft.overallReview, overallReview: input.notes ?? session.draft.overallReview }, complete: true });
+  const result = unwrapAction(await saveInterviewSession({ ...scope, revision: session.revision, draft: { ...session.draft, score: input.score, ...(input.rubricScores ? { rubricScores: input.rubricScores } : {}), additionalNotes: input.notes ?? session.draft.additionalNotes ?? session.draft.overallReview, overallReview: input.notes ?? session.draft.overallReview }, complete: true }));
   return { success: true, evaluation: result.evaluation! };
 }
 export async function getEvaluations(clubId: string, applicationId: string) {

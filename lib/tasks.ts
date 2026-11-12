@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result"
 import { academicYear } from "@/lib/recruitment-profile";
 import { z } from "zod";
 const uuid = z.string().uuid();
@@ -119,13 +120,13 @@ export function validateTaskSubmission(
   input: z.infer<typeof submissionSchema>,
 ) {
   if (requirements.includes("TEXT") && !input.text)
-    throw new Error("A written response is required.");
+    throw new ActionError("A written response is required.");
   if (requirements.includes("LINK") && !input.link)
-    throw new Error("A link is required.");
+    throw new ActionError("A link is required.");
   if (requirements.includes("FILE") && !input.fileIds.length)
-    throw new Error("A file is required.");
+    throw new ActionError("A file is required.");
   if (!input.text && !input.link && !input.fileIds.length)
-    throw new Error("Add a response, link, or file before submitting.");
+    throw new ActionError("Add a response, link, or file before submitting.");
 }
 export const taskFileSchema = z.object({
   assignmentId: uuid,
@@ -162,15 +163,15 @@ export function resolveTaskRecipients<T extends AudienceMember>(members: readonl
     const random = () => { state += 0x6D2B79F5; let n = state; n = Math.imul(n ^ n >>> 15, n | 1); n ^= n + Math.imul(n ^ n >>> 7, n | 61); return ((n ^ n >>> 14) >>> 0) / 4294967296 };
     for (let i=selected.length-1;i>0;i--) { const j=Math.floor(random()*(i+1)); [selected[i],selected[j]]=[selected[j],selected[i]] }
     if (audience.random.count) {
-      if (audience.random.count > selected.length) throw new Error(`Only ${selected.length} members match this audience. Choose a smaller sample.`);
+      if (audience.random.count > selected.length) throw new ActionError(`Only ${selected.length} members match this audience. Choose a smaller sample.`);
       selected = selected.slice(0,audience.random.count);
     }
-    if (audience.random.groups && audience.random.groups > selected.length) throw new Error("Choose no more groups than members.");
+    if (audience.random.groups && audience.random.groups > selected.length) throw new ActionError("Choose no more groups than members.");
   }
   return selected.map((member,index) => ({ member, groupLabel: audience.random?.groups ? `Group ${index % audience.random.groups + 1}` : null }));
 }
 export function assertRecipientPreview(recipients: readonly { member: { id: string } }[], expected?: readonly string[]) {
-  if (expected && JSON.stringify(recipients.map(r=>r.member.id).sort()) !== JSON.stringify([...new Set(expected)].sort())) throw new Error("The recipient list changed. Review the updated recipients before assigning.");
+  if (expected && JSON.stringify(recipients.map(r=>r.member.id).sort()) !== JSON.stringify([...new Set(expected)].sort())) throw new ActionError("The recipient list changed. Review the updated recipients before assigning.");
 }
 export const reviewTaskSchema = z.object({ assignmentId: uuid, revision: z.number().int().nonnegative(), feedback: z.string().max(5000), reopen: z.boolean(), requestChanges: z.boolean().default(false) }).refine(value => !value.requestChanges || value.reopen && !!value.feedback.trim(), "Add feedback explaining the requested revisions.");
 export const bulkTaskSchema = z.object({ clubId: uuid, tasks: z.array(z.object({ id: uuid, revision: z.number().int().nonnegative() })).min(1).max(100), action: z.enum(["DUE", "CLOSE"]), dueAt: z.string().datetime().nullable().default(null) });

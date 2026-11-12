@@ -8,6 +8,7 @@ import { DemoUnavailableError } from "@/lib/demo/activation";
 import * as finalization from "@/actions/voting-room-finalization";
 import * as plans from '@/actions/voting-session-setup';
 import * as targetSummary from "@/actions/voting-target-summary";
+import * as letters from "@/actions/decide-letters";
 function planAction<K extends keyof typeof plans>(key:K){return (async(input:Parameters<(typeof plans)[K]>[0])=>(await demoGate())?(await demo()).sessionSetup(key,input):plans[key](input)) as (input:Parameters<(typeof plans)[K]>[0])=>ReturnType<(typeof plans)[K]>;}
 export const listVotingSetupDrafts=planAction('listVotingSetupDrafts'),discardVotingSetupDraft=planAction('discardVotingSetupDraft'),getVotingSessionSetup=planAction('getVotingSessionSetup'),updateVotingSessionSetup=planAction('updateVotingSessionSetup'),cancelVotingSession=planAction('cancelVotingSession'),previewVotingSetup=planAction('previewVotingSetup');
 function finalAction<K extends keyof typeof finalization>(key:K){return (async(input:Parameters<(typeof finalization)[K]>[0])=>{
@@ -36,3 +37,6 @@ export const resolveLiveVotingSelection=async(input:unknown)=>(await demoGate())
 
 /** Entire-round target and decision counts (counts only), Demo or live. */
 export const getRoundTargetSummary=async(input:Parameters<typeof targetSummary.getRoundTargetSummary>[0])=>(await demoGate())?(await demo()).roundTargetSummary(input):targetSummary.getRoundTargetSummary(input);
+
+/** A round's decision letters ready to send and sent (each applicant once), Demo or live. */
+export const getRoundLetterCounts=async(input:Parameters<typeof letters.getRoundLetterCounts>[0])=>(await demoGate())?(await demo()).roundLetterCounts(input):letters.getRoundLetterCounts(input);

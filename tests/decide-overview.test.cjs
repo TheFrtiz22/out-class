@@ -21,7 +21,7 @@ const summary = load("lib/voting-target-summary.ts")
 function loadOverview() {
   const mocks = {
     "@/contexts/demo-context": { useDemoMode: () => ({ isDemoEnabled: false, ready: false }) },
-    "@/lib/voting-room-api": { getRoundTargetSummary: async () => { throw Error("not in tests") } },
+    "@/lib/voting-room-api": { getRoundTargetSummary: async () => { throw Error("not in tests") }, getRoundLetterCounts: async () => { throw Error("not in tests") } },
     "@/lib/workspace-api": { getDecisionTemplates: async () => { throw Error("not in tests") } },
     "@/lib/voting-room": { liveRoomPath: () => "/voting" },
     "next/link": { __esModule: true, default: ({ href, children, scroll: _scroll, ...rest }) => React.createElement("a", { href, ...rest }, children) },
@@ -106,24 +106,78 @@ test("Overview lists active and scheduled live sessions with Resume, Join or Vie
   assert.equal(decide.overviewSessionAction(room({ view: "leader", state: "DRAFT", meeting: { status: "SCHEDULED" } })), "View details")
 })
 
-test("Overview's send figures are session counts, never applicants or letters", () => {
-  const rooms = [
-    { roundId: "r", roundName: "R", state: "COMPLETED", mode: "LIVE", publishedAt: null, applicantCount: 6 },
-    { roundId: "r", roundName: "R", state: "COMPLETED", mode: "LIVE", publishedAt: "2026-11-01T00:00:00Z", applicantCount: 4 },
-    { roundId: "r", roundName: "R", state: "COMPLETED", mode: "LEGACY", publishedAt: null, applicantCount: 5 },
-    { roundId: "r", roundName: "R", state: "OPEN", mode: "LIVE", publishedAt: null, applicantCount: 9 },
-  ]
-  assert.deepEqual(decide.overviewSendCounts(rooms), { ready: 1, sent: 1 })
-  // Two ready sessions that share an applicant (a Hold re-vote) are two sessions, not 2 + 3 applicants.
-  const shared = [
-    { roundId: "r", roundName: "R", state: "COMPLETED", mode: "LIVE", publishedAt: null, applicantCount: 2 },
-    { roundId: "r", roundName: "R", state: "COMPLETED", mode: "LIVE", publishedAt: null, applicantCount: 3 },
-  ]
-  assert.deepEqual(decide.overviewSendCounts(shared), { ready: 2, sent: 0 })
+test("letters are counted per applicant: sent means this exact decision version was delivered", () => {
+  // The marker matches what every send path writes, character for character.
+  assert.equal(decide.decisionEventKey({ id: "a1", decisionVersion: 3 }), "decision:a1:3")
+  assert.match(fs.readFileSync("utils/decision-communications.ts", "utf8"), /eventKey:`decision:\$\{app\.id\}:\$\{app\.decisionVersion\}`/)
+  assert.match(fs.readFileSync("actions/voting-room-finalization.ts", "utf8"), /`decision:\$\{a\.id\}:\$\{a\.decisionVersion\}`/)
+  const apps = [{ id: "a", decisionVersion: 1 }, { id: "b", decisionVersion: 2 }, { id: "c", decisionVersion: 1 }]
+  // b's earlier version was sent, but its decision changed since: ready again. Duplicate keys never double count.
+  assert.deepEqual(decide.roundLetterCounts(apps, ["decision:a:1", "decision:b:1", "decision:a:1"]), { ready: 2, sent: 1 })
+  assert.deepEqual(decide.roundLetterCounts([], []), { ready: 0, sent: 0 })
   const source = fs.readFileSync("components/live-voting/decide-overview.tsx", "utf8")
-  assert.match(source, /const showSends = access\.canVote && !!roundId;/)
-  assert.match(source, /Sessions ready to send <span className="font-medium tabular-nums">\{send\.ready\}<\/span> · Sessions sent/)
-  assert.doesNotMatch(source, /label="Ready to send"|label="Sent"/)
+  assert.match(source, /const showSends = \(access\.canVote \|\| access\.canSend\) && !!roundId;/)
+  assert.match(source, /<Figure label="Ready to send" value=\{letterCounts\.value\.ready\} \/><Figure label="Sent" value=\{letterCounts\.value\.sent\} \/>/)
+  assert.doesNotMatch(source, /Sessions ready to send|overviewSendCounts/)
+})
+
+test("Overview opens on the current round: active, then scheduled, then most recent session, then the first round", () => {
+  const rounds = [{ id: "r1" }, { id: "r2" }, { id: "r3" }]
+  const room = (roundId, over) => ({ roundId, roundName: roundId, applicantCount: 1, mode: "LIVE", state: "COMPLETED", meeting: null, ...over })
+  assert.equal(decide.overviewDefaultRound(rounds, [room("r1"), room("r2", { state: "DRAFT", meeting: { status: "SCHEDULED" } }), room("r3", { state: "OPEN" })]), "r3")
+  assert.equal(decide.overviewDefaultRound(rounds, [room("r1"), room("r2", { state: "DRAFT", meeting: { status: "SCHEDULED" } })]), "r2")
+  assert.equal(decide.overviewDefaultRound(rounds, [room("r3"), room("r1")]), "r3", "rooms arrive newest first")
+  assert.equal(decide.overviewDefaultRound(rounds, [room("archived-round", { state: "OPEN" })]), "r1", "only rounds in the picker")
+  assert.equal(decide.overviewDefaultRound(rounds, null), "r1")
+  assert.equal(decide.overviewDefaultRound([], [room("r1")]), null)
+  const page = fs.readFileSync("components/live-voting/decide-page.tsx", "utf8")
+  // Only when the URL names no round, written with replace (no extra Back step); "All rounds" is an explicit empty roundId.
+  assert.match(page, /const needsDefault = tab === "overview" && !params\.has\("roundId"\);/)
+  assert.match(page, /if \(!navigateWithinClub\(href, true\)\) router\.replace\(href, \{ scroll: false \}\);/)
+  assert.match(page, /next\.set\("roundId", value\);/)
+})
+
+test("getRoundLetterCounts: Decide access and the applicants.identify rule, counts only, each applicant once", async () => {
+  const calls = []
+  const load = (member, round, apps, sentKeys) => {
+    const tx = {
+      pipelineRound: { findFirst: async args => { calls.push(["round", args]); return round } },
+      application: { findMany: async args => { calls.push(["apps", args]); return apps } },
+      userNotification: { findMany: async args => { calls.push(["sent", args]); return sentKeys.filter(k => args.where.eventKey.in.includes(k)).map(eventKey => ({ eventKey })) } },
+    }
+    const mocks = {
+      "@/utils/prisma": { prisma: { $transaction: async work => work(tx) } },
+      "@/utils/auth": { requireClubPermission: async () => ({ user: { id: "u1" } }) },
+      "@/lib/club-transaction-authorization": { authorizeClubTransaction: async () => member },
+      "@/lib/voting-transaction-limits": { votingReadLimits: {} },
+    }
+    const mod = { exports: {} }
+    const code = ts.transpileModule(fs.readFileSync("actions/decide-letters.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
+    const req = name => name in mocks ? mocks[name] : name.startsWith("@/") ? (function loadDep(p) { const m = { exports: {} }; const c = ts.transpileModule(fs.readFileSync(`${p}.ts`, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText; new Function("require", "module", "exports", c)(n => n in mocks ? mocks[n] : n.startsWith("@/") ? loadDep(n.slice(2)) : require(n), m, m.exports); return m.exports })(name.slice(2)) : require(name)
+    new Function("require", "module", "exports", code)(req, mod, mod.exports)
+    return mod.exports.getRoundLetterCounts
+  }
+  const input = { clubId: "11111111-1111-4111-8111-111111111111", roundId: "22222222-2222-4222-8222-222222222222" }
+  const apps = [{ id: "a", decisionVersion: 1 }, { id: "b", decisionVersion: 1 }]
+  const voter = { permissions: ["applications.review", "decisions.vote", "applicants.identify"] }
+  assert.deepEqual(await load(voter, { anonymousReview: false }, apps, ["decision:a:1"])(input), { ready: 1, sent: 1 })
+  // Only this club's letter-bearing decisions in this round are read; no applicant data leaves.
+  const appsQuery = calls.find(c => c[0] === "apps")[1]
+  assert.deepEqual(appsQuery.where.status.in, ["ACCEPTED", "WAITLISTED", "REJECTED"]); assert.equal(appsQuery.where.clubId, input.clubId); assert.equal(appsQuery.where.roundId, input.roundId)
+  assert.deepEqual(appsQuery.select, { id: true, decisionVersion: true })
+  assert.equal(calls.find(c => c[0] === "sent")[1].where.clubId, input.clubId)
+  // Send-only members (no voting) see counts too; members without any Decide access are refused.
+  assert.deepEqual(await load({ permissions: ["decisions.publish", "applicants.identify"] }, { anonymousReview: false }, apps, [])(input), { ready: 2, sent: 0 })
+  await assert.rejects(load({ permissions: ["applications.review"] }, { anonymousReview: false }, apps, [])(input), /Decision letters unavailable/)
+  // Identified rounds need applicants.identify; anonymous rounds don't.
+  const noIdentify = { permissions: ["applications.review", "decisions.vote"] }
+  await assert.rejects(load(noIdentify, { anonymousReview: false }, apps, [])(input), /Applicant access denied/)
+  assert.deepEqual(await load(noIdentify, { anonymousReview: true }, apps, [])(input), { ready: 2, sent: 0 })
+  await assert.rejects(load(voter, null, apps, [])(input), /Round unavailable/)
+  // The cycle narrows the applicants when given.
+  calls.length = 0
+  await load(voter, { anonymousReview: false }, apps, [])({ ...input, cycleId: "33333333-3333-4333-8333-333333333333" })
+  assert.equal(calls.find(c => c[0] === "apps")[1].where.recruitmentCycleId, "33333333-3333-4333-8333-333333333333")
 })
 
 const scope = round => `club:cycle:${round}:false:applications.review,decisions.vote`
@@ -190,7 +244,9 @@ test("the letters panel: an Open Send line when there is nothing else to show; n
 test("Overview reuses the existing reads, Demo routing and permission gates", () => {
   const source = fs.readFileSync("components/live-voting/decide-overview.tsx", "utf8")
   // Demo-gated adapters, never the server actions directly.
-  assert.match(source, /import \{ getRoundTargetSummary, type listLiveVotingRooms \} from "@\/lib\/voting-room-api"/)
+  assert.match(source, /import \{ getRoundLetterCounts, getRoundTargetSummary, type listLiveVotingRooms \} from "@\/lib\/voting-room-api"/)
+  // The letter counts adapter routes to Demo or the live action, like the round totals.
+  assert.match(fs.readFileSync("lib/voting-room-api.ts", "utf8"), /export const getRoundLetterCounts=async\(input:Parameters<typeof letters\.getRoundLetterCounts>\[0\]\)=>\(await demoGate\(\)\)\?\(await demo\(\)\)\.roundLetterCounts\(input\):letters\.getRoundLetterCounts\(input\);/)
   assert.match(source, /import \{ getDecisionTemplates \} from "@\/lib\/workspace-api"/)
   assert.doesNotMatch(source, /@\/actions\//)
   assert.match(source, /<VotingTargetSummary label="Round target" target=\{value\} \/>/)

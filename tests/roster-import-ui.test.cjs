@@ -47,6 +47,12 @@ test('invalid or oversized uploads fail locally and never invoke the server',asy
   assert.equal(calls,0);
 });
 
+test('local CSV structure errors show their plain message, and server refusals show the returned message',async()=>{
+  const h=harness({previewRosterImport:async()=>({$action:'outclass.action/v1',ok:false,error:'Roster upload requires member-management access. Ask a club owner to grant it.',code:'FORBIDDEN'})});
+  pick(h.render(),file({text:async()=> 'name,email\nJohn,jms8xy'}));await h.flush();assert.ok(JSON.stringify(h.render()).includes('Unsupported column: email'));
+  pick(h.render(),file());await h.flush();assert.ok(JSON.stringify(h.render()).includes('Ask a club owner to grant it.'));
+});
+
 test('network retry reuses the upload key and unsuccessful confirmation preserves preview for retry',async()=>{
   let calls=0;const payloads=[];const h=harness({previewRosterImport:async data=>{payloads.push(data);if(++calls===1)throw Error('Transport failed');return preview;},confirmRosterImport:async()=>{throw Error('Access changed');}});
   pick(h.render(),file());await h.flush();let tree=h.render();nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Retry upload').props.onClick();await h.flush();tree=h.render();

@@ -1,35 +1,36 @@
+const {refused}=require('./helpers/action-result.cjs');
 ﻿const {test}=require('node:test'),assert=require('node:assert/strict');
 const {harness,id}=require('./helpers/interview-harness.cjs');
 const draft=(h,score=null)=>({questionNotes:[{questionId:id(4),notes:'Private reasoning'}],additionalQuestions:[],completedQuestionIds:[id(4)],applicantQuestions:'Applicant question',additionalNotes:'Closing only',overallReview:'Legacy closing',score});
 test('master kit requires explicit office; assigned interviewers can read but not edit',async()=>{
  const h=harness(),api=h.load('actions/interview-kits.ts');h.as(11);assert.equal((await api.getInterviewKit(id(1),id(3))).questions[0].id,id(4));await assert.rejects(api.saveInterviewKit(id(1),id(3),0,[]),/denied/);
- h.members[1].isOwner=true;await assert.rejects(api.saveInterviewKit(id(1),id(3),0,[]),/denied/);h.members[1].interviewOffices=['BOARD'];await api.saveInterviewKit(id(1),id(3),0,[]);await assert.rejects(api.saveInterviewKit(id(1),id(3),0,[]),/changed/);
+ h.members[1].isOwner=true;await assert.rejects(api.saveInterviewKit(id(1),id(3),0,[]),/denied/);h.members[1].interviewOffices=['BOARD'];await api.saveInterviewKit(id(1),id(3),0,[]);await refused(api.saveInterviewKit(id(1),id(3),0,[]),/changed/);
 });
 test('per-interviewer notes and completions survive kit edits and never modify another record',async()=>{
  const h=harness(),api=h.load('actions/interview-kits.ts');await api.openInterviewSession(h.scope);h.round.interviewKit=[];await api.saveInterviewSession({...h.scope,revision:0,draft:draft(h)});assert.equal((await api.openInterviewSession(h.scope)).questions[0].prompt,'Original');h.as(11);const other=await api.openInterviewSession(h.scope);assert.deepEqual(other.draft.questionNotes,[]);assert.equal(h.state.records[0].draft.completedQuestionIds[0],id(4));
 });
 test('submission is canonical, atomic, immutable, and exactly retryable; alternate endpoint cannot edit it',async()=>{
- const h=harness(),api=h.load('actions/interview-kits.ts');await api.openInterviewSession(h.scope);const input={...h.scope,revision:0,draft:draft(h,8.5),complete:true};const first=await api.saveInterviewSession(input);const again=await api.saveInterviewSession(input);assert.equal(first.evaluation.id,again.evaluation.id);assert.equal(h.state.evaluations.length,1);assert.equal(first.evaluation.roundId,h.scope.roundId);assert.equal(first.evaluation.notes,'Closing only');await assert.rejects(api.saveInterviewSession({...input,draft:draft(h,9)}),/completed/);await assert.rejects(h.load('actions/evaluations.ts').submitEvaluation({...h.scope,roundName:'Interview',score:9}),/immutable/);
+ const h=harness(),api=h.load('actions/interview-kits.ts');await api.openInterviewSession(h.scope);const input={...h.scope,revision:0,draft:draft(h,8.5),complete:true};const first=await api.saveInterviewSession(input);const again=await api.saveInterviewSession(input);assert.equal(first.evaluation.id,again.evaluation.id);assert.equal(h.state.evaluations.length,1);assert.equal(first.evaluation.roundId,h.scope.roundId);assert.equal(first.evaluation.notes,'Closing only');await refused(api.saveInterviewSession({...input,draft:draft(h,9)}),/completed/);await assert.rejects(h.load('actions/evaluations.ts').submitEvaluation({...h.scope,roundName:'Interview',score:9}),/immutable/);
 });
 test('audit failure rolls back submission; half steps, foreign IDs, stale revisions and changed prompts are enforced',async()=>{
  const h=harness(),api=h.load('actions/interview-kits.ts');await api.openInterviewSession(h.scope);
  for(const score of [0,11,8.25,NaN,Infinity])await assert.rejects(api.saveInterviewSession({...h.scope,revision:0,draft:draft(h,score),complete:true}));
- await assert.rejects(api.saveInterviewSession({...h.scope,revision:1,draft:draft(h)}),/newer/);
- await assert.rejects(api.saveInterviewSession({...h.scope,revision:0,draft:{...draft(h),completedQuestionIds:[id(99)]}}),/IDs/);
+ await refused(api.saveInterviewSession({...h.scope,revision:1,draft:draft(h)}),/newer/);
+ await refused(api.saveInterviewSession({...h.scope,revision:0,draft:{...draft(h),completedQuestionIds:[id(99)]}}),/IDs/);
  h.failAudit(true);await assert.rejects(api.saveInterviewSession({...h.scope,revision:0,draft:draft(h,8),complete:true}),/Audit/);assert.equal(h.state.records[0].completedAt,null);assert.equal(h.state.evaluations.length,0);
- h.failAudit(false);await api.saveInterviewSession({...h.scope,revision:0,draft:{...draft(h),additionalQuestions:[{id:id(5),question:'Off script',notes:'private'}]}});await assert.rejects(api.saveInterviewSession({...h.scope,revision:1,draft:draft(h)}),/preserved/);
+ h.failAudit(false);await api.saveInterviewSession({...h.scope,revision:0,draft:{...draft(h),additionalQuestions:[{id:id(5),question:'Off script',notes:'private'}]}});await refused(api.saveInterviewSession({...h.scope,revision:1,draft:draft(h)}),/preserved/);
 });
 test('current authorization blocks cross club, revoked panel, disabled membership and anonymous transitions',async()=>{
  const h=harness(),api=h.load('actions/interview-kits.ts');await assert.rejects(api.openInterviewSession({...h.scope,clubId:id(9)}),/unavailable/);h.assignments[0].revokedAt=new Date();await assert.rejects(api.openInterviewSession(h.scope),/panel/);h.assignments[0].revokedAt=null;h.members[0].status='LEFT';await assert.rejects(api.openInterviewSession(h.scope),/unavailable/);h.members[0].status='ACTIVE';h.members[0].user.disabledAt=new Date();await assert.rejects(api.openInterviewSession(h.scope),/unavailable/);h.members[0].user.disabledAt=null;h.round.anonymousReview=true;await assert.rejects(api.openInterviewSession(h.scope),/privacy/);
 });
 test('submitted review remains readable after advancement; leaders never receive private notes; bank history uses stable IDs',async()=>{
  const h=harness(),api=h.load('actions/interview-kits.ts');await api.openInterviewSession(h.scope);await api.saveInterviewSession({...h.scope,revision:0,draft:draft(h,7.5),complete:true});h.app.roundId=id(8);h.app.round={id:id(8),anonymousReview:false};h.round.name='Renamed';const result=await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id});assert.equal(result.score,7.5);assert.doesNotMatch(JSON.stringify(result),/Private reasoning|questionNotes/);assert.ok(result.readOnly);assert.deepEqual(await api.getPreviousInterviewScores(h.scope),[],'Unscheduled interviews never borrow a room history');
- h.as(11);await assert.rejects(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}),/Leadership/);h.members[1].interviewOffices=['BOARD'];assert.ok((await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id})).readOnly);
+ h.as(11);await refused(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}),/Leadership/);h.members[1].interviewOffices=['BOARD'];assert.ok((await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id})).readOnly);
 });
 test('leadership review discovery projects safe anonymous metadata and excludes applicant-owned and unfinished records',async()=>{
  const h=harness(),api=h.load('actions/interview-kits.ts');let query;
  h.tx.interviewRecord.findMany=async args=>{query=args;return[{id:id(100),applicationId:h.app.id,roundId:h.round.id,interviewerId:h.members[0].id,round:{name:'Old round',anonymousReview:false},application:{round:{anonymousReview:false},student:{studentProfile:{firstName:'Synthetic',lastName:'Applicant'}}}}]};
- h.as(11);await assert.rejects(api.getSubmittedInterviewReviews(id(1)),/leadership/);
+ h.as(11);await refused(api.getSubmittedInterviewReviews(id(1)),/leadership/);
  for(const office of ['PRESIDENT','VICE_PRESIDENT','BOARD']){h.members[1].interviewOffices=[office];const rows=await api.getSubmittedInterviewReviews(id(1));assert.equal(rows[0].applicantName,'Synthetic Applicant');assert.equal(query.where.completedAt.not,null);assert.equal(query.where.anonymousReview,undefined);assert.equal(query.where.round.clubId,id(1));assert.equal(query.where.application.round,undefined);assert.equal(query.where.application.studentId.not,id(11));assert.equal(query.select.draft,undefined);assert.equal(query.select.evaluation,undefined);assert.deepEqual(query.orderBy,[{completedAt:'desc'},{id:'desc'}]);}
  h.members[1].status='LEFT';await assert.rejects(api.getSubmittedInterviewReviews(id(1)),/unavailable/);h.members[1].status='ACTIVE';await assert.rejects(api.getSubmittedInterviewReviews(id(9)),/unavailable/);
 });

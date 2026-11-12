@@ -91,6 +91,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     if (outcome === "cancel" || (outcome !== "discard" && !canLeaveWorkspace())) return
     setSigningOut(true)
     try {
+      await import("@/lib/push-device").then(async ({ unsubscribeOnSignOut }) => unsubscribeOnSignOut((await import("@/actions/push-subscriptions")).removePushSubscription)).catch(() => {})
       const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out.")
       const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error
       await sealAutosaveDraftsForSignOut(); window.location.assign("/")

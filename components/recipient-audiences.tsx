@@ -1,4 +1,5 @@
 "use client";
+import { unwrapped } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +8,10 @@ import { academicYear } from "@/lib/recruitment-profile";
 import { organizationRoleLabels } from "@/lib/organization-authorization";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useConfirmOnce } from "@/components/ui/confirm-dialog";
-import { getRecipientGroups, previewRecipientAudience, saveRecipientGroup, deleteRecipientGroup } from "@/actions/recipient-groups";
+import { getRecipientGroups, previewRecipientAudience as previewRecipientAudienceAction, saveRecipientGroup as saveRecipientGroupAction, deleteRecipientGroup as deleteRecipientGroupAction } from "@/actions/recipient-groups";
+const previewRecipientAudience = unwrapped(previewRecipientAudienceAction);
+const saveRecipientGroup = unwrapped(saveRecipientGroupAction);
+const deleteRecipientGroup = unwrapped(deleteRecipientGroupAction);
 import { recipientAudienceSchema, type AudienceRule, type RecipientAudience } from "@/lib/recipient-audience";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

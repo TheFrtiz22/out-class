@@ -74,26 +74,38 @@ test('browser: old links, Decide, Recruiting settings drawer, Calendar filter an
   await overview.click(); await expect(overview).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByRole('tabpanel')).toBeVisible()
   await page.getByRole('heading', { name: 'Voting sessions', exact: true }).waitFor()
-  await expect(page.getByText('Choose a round to see its decisions and target.', { exact: true })).toBeVisible()
+  // With no round in the URL, Overview opens on the current round and writes it into the URL (no extra Back step).
   const picker = page.getByRole('group', { name: 'Round', exact: true })
-  await expect(picker.getByRole('button', { name: 'All rounds', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(() => params().roundId ?? '').not.toBe('')
+  const defaultRound = params().roundId
+  await expect(picker.getByRole('button', { name: 'All rounds', exact: true })).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.locator('dl[aria-label="Applicants by outcome"] > div')).toHaveText([/^Passed\d+$/, /^Held\d+$/, /^Not passed\d+$/, /^Undecidedin voting sessions\d+$/])
+  // Letters: each applicant once, ready to send and sent.
+  await expect(page.locator('dl[aria-label="Applicants by letter status"] > div')).toHaveText([/^Ready to send\d+$/, /^Sent\d+$/])
+  // "All rounds" is an explicit choice: kept in the URL and never replaced by the default.
+  await picker.getByRole('button', { name: 'All rounds', exact: true }).click()
+  await expect.poll(() => params().roundId).toBe('')
+  await expect(page.getByText('Choose a round to see its decisions and target.', { exact: true })).toBeVisible()
+  await page.waitForTimeout(500); expect(params().roundId).toBe('')
   const round = picker.getByRole('button').nth(1), roundName = await round.textContent()
-  await round.click(); await expect.poll(params).toEqual(expect.objectContaining({ roundId: expect.any(String) }))
+  await round.click(); await expect.poll(params).toEqual(expect.objectContaining({ roundId: expect.stringMatching(/./) }))
   await expect(picker.getByRole('button', { name: roundName, exact: true })).toHaveAttribute('aria-pressed', 'true')
   // Overview's figures for the round: one count per outcome, and the reused round target summary.
   await expect(page.locator('dl[aria-label="Applicants by outcome"] > div')).toHaveText([/^Passed\d+$/, /^Held\d+$/, /^Not passed\d+$/, /^Undecidedin voting sessions\d+$/])
   await page.getByRole('region', { name: 'Round target', exact: true }).waitFor()
-  await vote.click(); await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting', roundId: expect.any(String) }))
+  await vote.click(); await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting', roundId: expect.stringMatching(/./) }))
   await expect(vote).toHaveAttribute('aria-selected', 'true')
-  // Round and tab changes are both history entries: Back returns to Overview with the round, Back again to
-  // All rounds; Forward twice returns to Vote with the round.
+  // Round and tab changes are history entries: Back returns to Overview with the round, Back again to the explicit
+  // All rounds (still not replaced by the default), Back again to the default round; Forward returns to Vote.
   const selectedRound = params().roundId
   await page.goBack(); await expect(overview).toHaveAttribute('aria-selected', 'true')
   await expect.poll(params).toEqual(expect.objectContaining({ roundId: selectedRound }))
   await expect(picker.getByRole('button', { name: roundName, exact: true })).toHaveAttribute('aria-pressed', 'true')
   await page.goBack(); await expect(overview).toHaveAttribute('aria-selected', 'true')
-  await expect.poll(() => params().roundId).toBeUndefined()
+  await expect.poll(() => params().roundId).toBe('')
   await expect(picker.getByRole('button', { name: 'All rounds', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.goBack(); await expect.poll(() => params().roundId).toBe(defaultRound)
+  await page.goForward(); await expect.poll(() => params().roundId).toBe('')
   await page.goForward(); await expect.poll(params).toEqual(expect.objectContaining({ roundId: selectedRound }))
   await page.goForward(); await expect(vote).toHaveAttribute('aria-selected', 'true')
   await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting', roundId: selectedRound }))

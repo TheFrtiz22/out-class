@@ -382,7 +382,7 @@ export function InterviewKitSession({
         if (mounted.current) {
           const problem = connectionProblem(failure);
           setConnection(problem);
-          setError(problem ? connectionMessage(problem, recoveryRef.current?.copyScope ?? "tab") : "Your interview could not be saved. Retry, or refresh your access and revision.");
+          setError(problem ? connectionMessage(problem, recoveryRef.current?.copyScope ?? "tab") : userMessage(failure, "Your interview could not be saved. Retry, or refresh your access and revision."));
         }
         return false;
       } finally {
@@ -536,7 +536,7 @@ export function InterviewKitSession({
       sessionRef.current = fresh; setSession(fresh);
       setDraft(local => ({ ...local, completedQuestionIds: [...new Set([...(fresh.draft.completedQuestionIds || []), ...(local.completedQuestionIds || [])])], additionalQuestions: [...fresh.draft.additionalQuestions.filter(q => !local.additionalQuestions.some(l => l.id === q.id)), ...local.additionalQuestions] }));
       setError("Revision refreshed. Review your retained text, then choose Retry save.");
-    } catch { setError("Could not refresh access and revision. Your text remains here."); }
+    } catch (e) { setError(userMessage(e, "Could not refresh access and revision.")); }
     finally { savingRef.current = false; setSaving(false); }
   }
   async function nextApplicant() {

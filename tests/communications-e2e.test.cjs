@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 const { test } = require('node:test'), assert = require('node:assert/strict');
 const { PrismaClient } = require('@prisma/client');
 const { createClient } = require('@supabase/supabase-js');
@@ -35,7 +36,7 @@ test('announcements over real Next HTTP, verified local Auth and PostgreSQL; pro
     const rows = await db.userNotification.findMany({ where: { announcementId: published.id }, include: { emailOutbox: true } });
     assert.equal(rows.length, 1); notification = rows[0]; assert.equal(notification.userId, users.applicant.id); assert.equal(notification.emailOutbox.status, 'PENDING');
     const history = await call('owner', 'getClubAnnouncements', club.id); assert.equal(history[0]._count.notifications, 1); assert.equal(history[0].body, input.body);
-    await assert.rejects(call('owner', 'publishClubAnnouncement', { ...input, body: 'Changed retry' }));
+    await refused(call('owner', 'publishClubAnnouncement', { ...input, body: 'Changed retry' }), /already sent/);
   });
   assert.ok(notification, 'Publication prerequisite');
   await t.test('club permissions, forged audience, suspension, disabled accounts and notification ownership fail closed', async () => {
@@ -44,10 +45,10 @@ test('announcements over real Next HTTP, verified local Auth and PostgreSQL; pro
       await assert.rejects(call(role, 'getClubAnnouncements', club.id));
     }
     await assert.rejects(call('owner', 'publishClubAnnouncement', { ...input, studentId: users.foreign.id }));
-    await assert.rejects(call('owner', 'publishClubAnnouncement', { ...input, clubId: foreign.id }));
+    await refused(call('owner', 'publishClubAnnouncement', { ...input, clubId: foreign.id }));
     const anonymous = new Actor(config); await assert.rejects(anonymous.action('actions/communications.ts', 'getDurableNotifications', []));
     await db.club.update({ where: { id: club.id }, data: { suspendedAt: new Date() } });
-    await assert.rejects(call('owner', 'publishClubAnnouncement', { ...input, requestKey: randomUUID() }));
+    await refused(call('owner', 'publishClubAnnouncement', { ...input, requestKey: randomUUID() }), /suspended/);
     await db.club.update({ where: { id: club.id }, data: { suspendedAt: null } });
     assert.equal((await call('foreign', 'setDurableNotificationsRead', [notification.id], true)).updated, 0);
     await assert.rejects(call('foreign', 'getDurableNotifications', notification.id));

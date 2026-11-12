@@ -185,7 +185,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   // Workspace readers use their real HTTP boundary rather than a Server Action worker.
   const recruiter=await existing.request('/api/workspace?'+new URLSearchParams({kind:'rounds',args:JSON.stringify([clubId])}));
   assert.equal(recruiter.status,200);assert.ok(Array.isArray((await recruiter.json()).data));
-  await assert.rejects(call(existing,'roster-import','previewRosterImport',{clubId,requestId:randomUUID(),filename:'attack.csv',csv:'name,computing_id\nVictim,victimabc'}));
+  await refused(call(existing,'roster-import','previewRosterImport',{clubId,requestId:randomUUID(),filename:'attack.csv',csv:'name,computing_id\nVictim,victimabc'}));
   await call(president,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'ADMIN'});
   await call(existing,'organization-members','getOrganizationMemberManagement',clubId);
   await refused(call(existing,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'OWNER'}));

@@ -1,4 +1,5 @@
 "use server";
+import { ActionError, actionResult } from "@/lib/action-result";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 
@@ -15,10 +16,10 @@ async function authorize(tx: AppTransactionClient, clubId: string, userId: strin
   await lockOperationalClub(tx, clubId);
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
   const actor = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
-  if (!actor || actor.disabledAt || !hasPermission(member, "members.manage")) throw new Error("Roster upload requires member-management access.");
+  if (!actor || actor.disabledAt || !hasPermission(member, "members.manage")) throw new ActionError("Roster upload requires member-management access. Ask a club owner to grant it.", "FORBIDDEN");
   const club = await tx.club.findUniqueOrThrow({ where: { id: clubId } });
   const configs = await tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, verification: "EMAIL_LOCAL_PART", emailDomain: { not: null }, school: { active: true } }, include: { school: true } });
-  if (configs.length !== 1) throw new Error("This school needs an unambiguous university identifier/email configuration before CSV imports.");
+  if (configs.length !== 1) throw new ActionError("CSV imports are not set up for this school yet. Invite members one at a time, or contact OutClass support.", "UNAVAILABLE");
   const config = configs[0];
   return { ...config, validationRegex: onboardingIdentifierPattern(config) };
 }
@@ -60,7 +61,7 @@ const publicRows = (rows: RosterRow[]) => rows.map(({ rowNumber, name, year, ide
 const inputSchema = z.object({ clubId: z.string().uuid(), requestId: z.string().uuid(), filename: z.string().trim().min(1).max(255).regex(/\.csv$/i, "Choose a CSV file."), csv: z.string().max(ROSTER_MAX_BYTES) }).strict();
 
 /** Preview persists input/audit only. No invitation, identity, User or membership is created. */
-export async function previewRosterImport(input: unknown) {
+async function previewRosterImportCommand(input: unknown) {
   const data = inputSchema.parse(input);
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
   const inputs = parseRosterCsv(data.csv);
@@ -68,7 +69,7 @@ export async function previewRosterImport(input: unknown) {
   return prisma.$transaction(async tx => {
     const config = await authorize(tx, data.clubId, user.id);
     const existing = await tx.rosterImport.findUnique({ where: { clubId_idempotencyKey: { clubId: data.clubId, idempotencyKey: data.requestId } }, include: { rows: { orderBy: { rowNumber: "asc" } } } });
-    if (existing && (existing.fileHash !== fileHash || existing.filename !== data.filename || existing.uploadedById !== user.id || existing.status !== "VALIDATED")) throw new Error("Upload key already used. Reupload with a new request.");
+    if (existing && (existing.fileHash !== fileHash || existing.filename !== data.filename || existing.uploadedById !== user.id || existing.status !== "VALIDATED")) throw new ActionError("This upload was already used for a different file. Choose the file again to start a new preview.", "STALE");
     const rows = await classify(tx, data.clubId, inputs, config);
     if (existing) {
       for (let i = 0; i < rows.length; i++) {
@@ -164,17 +165,17 @@ async function bulkReadyRows(tx: AppTransactionClient, record: { id: string; clu
 }
 
 /** One resumable transaction of at most 50 ready rows. Creates MEMBER invitations only; no email. */
-export async function confirmRosterImport(importId: string) {
+async function confirmRosterImportCommand(importId: string) {
   z.string().uuid().parse(importId);
   const hint = await prisma.rosterImport.findUniqueOrThrow({ where: { id: importId } });
   const { user } = await requireClubPermission(hint.clubId, ["members.manage"]);
   return prisma.$transaction(async tx => {
     const config = await authorize(tx, hint.clubId, user.id);
     const record = await tx.rosterImport.findUniqueOrThrow({ where: { id: importId }, include: { rows: { orderBy: { rowNumber: "asc" } } } });
-    if (record.clubId !== hint.clubId || record.uploadedById !== user.id) throw new Error("Only the uploader can confirm this preview.");
+    if (record.clubId !== hint.clubId || record.uploadedById !== user.id) throw new ActionError("Only the person who uploaded this preview can confirm it. Upload the file again to import it yourself.", "FORBIDDEN");
     if (record.status === "COMPLETED") return importResult(record.rows, true, true);
-    if (!["VALIDATED", "PROCESSING"].includes(record.status)) throw new Error("Import is not ready to confirm.");
-    if (record.rows.length > ROSTER_MAX_ROWS || record.rows.some(row => row.clubId !== record.clubId || row.importId !== record.id || row.status === "PENDING")) throw new Error("Import rows require review.");
+    if (!["VALIDATED", "PROCESSING"].includes(record.status)) throw new ActionError("This import is not ready to confirm. Upload the file again to start a new preview.", "STALE");
+    if (record.rows.length > ROSTER_MAX_ROWS || record.rows.some(row => row.clubId !== record.clubId || row.importId !== record.id || row.status === "PENDING")) throw new ActionError("Some rows in this import changed. Upload the file again to review them.", "STALE");
     if (record.status === "VALIDATED") {
       await tx.rosterImport.update({ where: { id: importId }, data: { status: "PROCESSING" } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.start", targetId: importId, clubId: record.clubId } });
@@ -258,4 +259,12 @@ export async function confirmRosterImport(importId: string) {
       details: { created: result.created, alreadyMember: result.alreadyMember, alreadyInvited: result.alreadyInvited, invalid: result.invalid, duplicates: result.duplicates, failed: result.failed, processed: result.processed } } });
     return result;
   }, { timeout: 60000 });
+}
+
+export async function previewRosterImport(...args: Parameters<typeof previewRosterImportCommand>) {
+  return actionResult(() => previewRosterImportCommand(...args), "previewRosterImport")
+}
+
+export async function confirmRosterImport(...args: Parameters<typeof confirmRosterImportCommand>) {
+  return actionResult(() => confirmRosterImportCommand(...args), "confirmRosterImport")
 }
