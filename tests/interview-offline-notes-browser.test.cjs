@@ -11,7 +11,7 @@ const scope = { clubId: '00000000-0000-4000-8000-000000000001', applicationId: '
 const BANNER = "You're offline. Your notes are kept on this device and will save when you reconnect."
 const mocks = {
   '@/contexts/auth-context': "const q=new URLSearchParams(location.search);exports.useAuth=()=>({user:{id:q.get('user')},isImpersonating:q.has('support')})",
-  '@/contexts/demo-mode': "exports.useDemoMode=()=>({isDemoEnabled:new URLSearchParams(location.search).has('demo')})",
+  '@/contexts/demo-context': "exports.useDemoMode=()=>({isDemoEnabled:new URLSearchParams(location.search).has('demo')})",
   '@/lib/workspace-api': "async function call(path,body){const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw Error(j.error);return j}exports.openInterviewSession=s=>call('/api/open',s);exports.saveInterviewSession=s=>call('/api/save',s);exports.getInterviewKit=async()=>({questions:[],version:1});exports.getPreviousInterviewScores=async()=>[];",
   '@/hooks/use-interview-workspace': "exports.useInterviewWorkspace=()=>({clientId:'tab',view:null,error:'',refresh:async()=>{},dismiss:async()=>{},select:async id=>({revision:1,question:{id,prompt:'',guidance:''}})})",
   '@/components/interview-timer': 'exports.InterviewTimer=()=>null',

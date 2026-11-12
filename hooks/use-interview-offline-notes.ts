@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { useDemoMode } from "@/contexts/demo-mode"
+import { useDemoMode } from "@/contexts/demo-context"
 import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery"
 import { browserOnline, type DraftWriteResult } from "@/lib/autosave-store"
 import type { InterviewDraft, InterviewSessionData } from "@/lib/interview-kits"
