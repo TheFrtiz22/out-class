@@ -1,4 +1,5 @@
 import { SignupPageView } from "@/components/auth/signup-page-view"
+import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { getAuthEntryAccount } from "@/utils/auth-entry"
 import { signupReturnPath, authenticationError } from "@/lib/auth"
 import { redirect } from "next/navigation"
@@ -11,7 +12,7 @@ export const metadata = { title: "Create your profile", robots: { index: false, 
 export default async function SignupPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams
   const account = await getAuthEntryAccount()
-  if (account?.disabled) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
+  if (account?.disabled) return <AccountUnavailable />
   const next = signupReturnPath(typeof params.next === "string" ? params.next : undefined)
   if (account?.hasProfile) redirect(next === "/" ? account.destination : next)
   // A signed-in account finishing its profile (Microsoft, confirmed link) is asked once, unless it already accepted.
