@@ -284,3 +284,10 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Fail 1: checkbox did not tick until the save returned (fixed by ROOM-25LIVE-TOGGLE-1). Fail 2: one minified React #418 hydration error during the session, page not identified, not in Sentry.
 - DB audit for the test room: create, rename x2, external_booking.mark, close (Escape and blank produced no writes). Test room "QA Clark Study Room B 11120340" left closed. Not covered live: rename from the Bookings list (needs a real booking).
 - Side finding: production CSP (report-only) frame-src omits challenges.cloudflare.com; enforcing it as-is would block the login Turnstile.
+
+## 2026-11-11 UI-CONTROLS-1 ui/control-cleanup (stacked on applicants/review-flow, #281)
+- typecheck ok. lint 0 errors / 18 warnings (unchanged from #281). ui-controls OK (allowlist note about outclass-qr-code is pre-existing).
+- Unit (378 files, non-browser): 2174 tests, 2137 pass, 4 fail, 33 skipped. The 4 failing files (anonymous-review, integration-audit, interview-collaboration, performance-regressions) fail only because this container has no Prisma query engine binary; same on the base branch.
+- Browser (70 *-browser.test.cjs): all pass except interview-enter (fails on main and #281 too). Updated: nav-reorg, club-workspace-refinements, interview-round-workflow, interview-tab-retention, interview-date-sections, interview-entry, round-scoped-review, task-cleanup, scheduling-simplification.
+- Screenshots: 12 pages × desktop 1440 and 375, before (#281) and after; document scrollWidth equals viewport width on every page at 375.
+- Not run: pnpm build, DB e2e suites, test:migrations (no schema change).

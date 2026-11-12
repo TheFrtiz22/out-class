@@ -73,12 +73,12 @@ test('round-scoped review: ranking, score, feedback, earlier rounds, identity an
   await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
   assert.equal(await page.evaluate(()=>document.activeElement?.textContent),'Read full average interview score','focus returns to the opener');
   // Out-of-order: Interview 2 blocked, switch to Interview 2 then Interview 1; the late Interview 2 reply never replaces Interview 1.
-  await page.getByRole('group',{name:'Ranked round'}).getByRole('button',{name:'Interview 1',exact:true}).click();await page.getByText('Interview One Only').waitFor();
+  await page.getByRole('combobox',{name:'Ranked round'}).click();await page.getByRole('option',{name:'Interview 1',exact:true}).click();await page.getByText('Interview One Only').waitFor();
   assert.equal(await page.locator('.oc-ranked-row',{hasText:'QA Applicant One'}).count(),0,'no applicant from Interview 2');
   await page.evaluate(id=>window.__block('round:'+id),data.ids.r2);
-  await page.getByRole('group',{name:'Ranked round'}).getByRole('button',{name:'Interview 2',exact:true}).click();
+  await page.getByRole('combobox',{name:'Ranked round'}).click();await page.getByRole('option',{name:'Interview 2',exact:true}).click();
   await page.getByText('Loading ranking…').waitFor();assert.equal(await page.getByText('Interview One Only').count(),0,'previous round never shown under the new round');
-  await page.getByRole('group',{name:'Ranked round'}).getByRole('button',{name:'Interview 1',exact:true}).click();await page.getByText('Interview One Only').waitFor();
+  await page.getByRole('combobox',{name:'Ranked round'}).click();await page.getByRole('option',{name:'Interview 1',exact:true}).click();await page.getByText('Interview One Only').waitFor();
   await page.evaluate(id=>window.__release('round:'+id),data.ids.r2);await page.waitForTimeout(200);
   assert.deepEqual(await names(),['Interview One Only'],'stale response ignored');
   assert.equal(await page.locator('[aria-current="true"]').count(),0,'selection does not carry into another round');

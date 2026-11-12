@@ -65,8 +65,8 @@ const management=tree=>nodes(tree).filter(node=>node.type==='ApplicationManageme
 test('Applications and Status are one page: four stage tabs with counts, status cards for submitted stages',async()=>{
  const h=trackerHarness([app('Draft','DRAFTING'),app('Review'),app('Decision','ACCEPTED'),app('Interview','INTERVIEWING')]);h.render();await h.flush();let tree=h.render();
  assert.equal(nodes(tree).find(node=>node.type==='PageHeader').props.title,'Applications');assert.equal(nodes(tree).some(node=>node.type==='MetricStrip'),false,'no stat boxes repeating the tabs');
- const stages=()=>nodes(h.render()).find(node=>node.type==='SegmentedControl'&&node.props.label==='Application stage');
- assert.deepEqual(stages().props.options.map(item=>item.label),['Drafts (1)','In review (1)','Interviews (1)','Decisions (1)']);
+ const stages=()=>nodes(h.render()).find(node=>node.type==='UnderlineTabs'&&node.props.label==='Application stage');
+ assert.deepEqual(stages().props.items.map(item=>`${item.label} (${item.count})`),['Drafts (1)','In review (1)','Interviews (1)','Decisions (1)']);
  assert.deepEqual(cards(tree).map(node=>node.props.application.id),['Review']);assert.equal(management(tree).length,0);
  stages().props.onChange('interviews');assert.deepEqual(cards(h.render()).map(node=>node.props.application.id),['Interview']);
  stages().props.onChange('decisions');assert.deepEqual(cards(h.render()).map(node=>node.props.application.id),['Decision']);
@@ -74,7 +74,7 @@ test('Applications and Status are one page: four stage tabs with counts, status 
 });
 test('Applications opens on Drafts when there are drafts and uses the same stages as the Home card',async()=>{
  const h=trackerHarness([app('Draft','DRAFTING'),app('Decision','ACCEPTED'),app('Review')],'all');h.render();await h.flush();let tree=h.render();assert.equal(cards(tree).length,0);assert.equal(management(tree).length,1);
- nodes(tree).find(node=>node.type==='SegmentedControl').props.onChange('in-review');assert.equal(cards(h.render()).length,1);
+ nodes(tree).find(node=>node.type==='UnderlineTabs').props.onChange('in-review');assert.equal(cards(h.render()).length,1);
  const {stageCounts}=load('lib/application-stages.ts');assert.deepEqual(stageCounts(['Drafting','Submitted','In Review','Interviewing','Accepted','Rejected','Waitlisted']),{drafts:1,'in-review':2,interviews:1,decisions:3});
  assert.match(require('node:fs').readFileSync('components/views/student-dashboard-view.tsx','utf8'),/stageCounts\(apps\.map/);
 });

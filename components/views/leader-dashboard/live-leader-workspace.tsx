@@ -46,6 +46,7 @@ import { SearchField } from "@/components/ui/search-field"
 import { readApplicantView, writeApplicantView, type ApplicantView } from "@/lib/applicant-view"
 import { FilterPopover } from "@/components/ui/filter-popover"
 import { PillSelect } from "@/components/ui/pill-select"
+import { RoundSelect } from "@/components/ui/round-select"
 import { PillGroup } from "@/components/ui/segmented-control"
 import { RangeSlider } from "@/components/ui/range-slider"
 import { Toggle } from "@/components/ui/toggle"
@@ -394,7 +395,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const exportable = !demo.isDemoEnabled && canExport(membership, "applicants")
   const settingsAllowed = canOpenRecruitingSettings(membership)
   const reviewButton = (canReview || canDecide) && !rejectedOnly && <Button disabled={busy} onClick={() => void startReview()}>{opening ? "Loading…" : decisionsOnly ? "Review applicants needing a decision" : "Review applicants"}</Button>
-  const statusTabs = view !== "ranked" && !decisionsOnly && !rejectedOnly && <SegmentedControl label="Decision" size="compact" className="oc-status-tabs" value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: group.label, count: group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0 }))} />
+  const statusSelect = view !== "ranked" && !decisionsOnly && !rejectedOnly && <PillSelect label="Decision" prefix="Status" size="compact" className="oc-status-select" active={decisionGroup !== "all"} value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: `${group.label} (${group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0})` }))} />
   return (
     <div ref={workspaceElement} className="oc-live-pipeline oc-workspace-stack" data-saving={busy}>
       <div className={votingBarShown ? "oc-voting-bar-clearance" : undefined}>
@@ -408,7 +409,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           { value: "kanban", label: null, ariaLabel: "Kanban", icon: <Kanban /> },
           { value: "ranked", label: null, ariaLabel: "Ranked", icon: <Trophy /> },
         ]} />}
-        {statusTabs}
+        {statusSelect}
         {view !== "ranked" && <><SearchField
             ref={search}
             aria-label="Search applicants"
@@ -425,10 +426,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <div className="oc-toolbar-tools flex items-center gap-2">
         {view !== "ranked" && <FilterPopover count={menuFilters} title="Applicant filters"
           footer={<><Button variant="ghost" size="sm" disabled={!menuFilters} onClick={clearMenuFilters}>Clear filters</Button>{view === "list" && <Button size="sm" variant="ghost" aria-pressed={compact} onClick={() => setCompact((value) => !value)}>Compact rows</Button>}</>}>
-        <div className="oc-filter-field"><span className="oc-filter-field-label">Round</span>
-          <PillSelect label="Filter round" size="compact" allLabel="All rounds" value={round} onChange={value => { setRound(value); setGender(""); setShowGenderCounts(false) }}
-            options={data.rounds.map(item => ({ value: item.id, label: item.name }))} />
-        </div>
+        <RoundSelect label="Filter round" value={round} onChange={value => { setRound(value); setGender(""); setShowGenderCounts(false) }} rounds={data.rounds} />
         {!decisionsOnly && (decisionGroup === "all" || decisionGroup === "pending") && <div className="oc-filter-field"><span className="oc-filter-field-label">Stage</span>
           <PillSelect label="Filter stage" size="compact" allLabel={decisionGroup === "pending" ? "All pending" : "All stages"} value={status} onChange={setStatus}
             options={pendingStatuses.map(key => ({ value: key, label: applicationStatusLabels[key] }))} />

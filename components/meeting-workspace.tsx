@@ -34,6 +34,8 @@ import { QrPresentButton, QrPresenterDialog } from "@/components/qr/qr-presenter
 import { Button } from "@/components/ui/button";
 import { ClubExportLink } from "@/components/club-export-link";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { PillSelect } from "@/components/ui/pill-select";
+import { Toggle } from "@/components/ui/toggle";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
@@ -75,13 +77,13 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} initialOpen={openCreate} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
-    </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
-    <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-4 border-b pb-4">
-      <SegmentedControl label="Meeting time" size="compact" value={period} onChange={setPeriod} options={[{ value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }]} />
-      <SegmentedControl label="Audience" size="compact" value={audience} onChange={setAudience} options={[{ value: "ALL", label: "All permitted meetings" }, { value: "RECRUITMENT", label: "Recruitment / Interest" }, { value: "MEMBERS", label: "Members" }]} />
+    <div className="oc-meeting-toolbar flex flex-wrap items-center gap-3 border-b pb-4">
+      <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-3">
+        <Toggle label="Show past" checked={period === "past"} onCheckedChange={past => setPeriod(past ? "past" : "upcoming")} />
+        <PillSelect label="Audience" prefix="Audience" size="compact" active={audience !== "ALL"} value={audience} onChange={value => setAudience(value as typeof audience)} options={[{ value: "ALL", label: "All" }, { value: "RECRUITMENT", label: "Recruitment / Interest" }, { value: "MEMBERS", label: "Members" }]} />
+      </div>
+      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <div className="ms-auto"><MeetingCreateAction clubId={clubId} initialOpen={openCreate} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} /></div>}
     </div>
 
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}
