@@ -81,7 +81,7 @@ export async function reviewPanelPublication(raw:unknown):Promise<Result<PanelAp
  })
 }
 export async function publishPanelSchedule(raw:unknown){
- const input=draftScope.extend({approvalToken:z.string().uuid(),understaffedOverride:z.boolean().default(false),overrideReason:z.string().trim().max(1000).optional()}).strict().parse(raw)
+ const input=draftScope.extend({approvalToken:z.string().uuid(),understaffedOverride:z.boolean().default(false),overrideReason:z.string().trim().max(1000).optional(),confirmUnstaff:z.boolean().default(false)}).strict().parse(raw)
  return operation(input.clubId,true,true,async(tx,actorId)=>{
   const prior=await tx.interviewPanelScheduleVersion.findUnique({where:{approvalToken:input.approvalToken}})
   if(prior){if(prior.clubId!==input.clubId||prior.roundId!==input.roundId||prior.publishedBy!==actorId||prior.sourceProposalId!==input.proposalId||prior.sourceProposalRevision!==input.revision)throw new PanelPublicationError("This approval is for a different schedule.");return{publicationId:prior.id,version:prior.version,idempotent:true}}
@@ -94,6 +94,8 @@ export async function publishPanelSchedule(raw:unknown){
   const live=await loadPanelPlanningScene(tx,input,document.window),validation=assertCurrentPanelDocument(document,live.scene)
   if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("This approval is stale. Revalidate and review the draft again; the current schedule is unchanged.")
   const bookings=await assertPanelBookingSafety(tx,input,document),unstaffing=panelUnstaffing(document,live.scene,publicationDocument(active),new Set(bookings.map(b=>b.slotId))),understaffed=validation.filled<validation.required-unstaffing.exemptRequired
+  // Emptying staffed sessions takes an explicit confirmation, not only the reviewed approval token.
+  if(unstaffing.removedSlotIds.length&&!input.confirmUnstaff)throw new PanelPublicationError(`Confirm removing all interviewers from ${unstaffing.removedSlotIds.length} unbooked session${unstaffing.removedSlotIds.length===1?"":"s"} before approving.`)
   if(understaffed&&(!input.understaffedOverride||!input.overrideReason||input.overrideReason.length<10))throw new PanelPublicationError("Some sessions need more interviewers. To continue anyway, confirm and give a reason (at least 10 characters).")
   const before=currentOfficialDocument(publicationDocument(active),document,live),combined=publishedPanelDocumentSchema.parse(mergePanelPublication(publicationDocument(active),document)),changes=panelScheduleChanges(before,combined),publicationId=randomUUID()
   await tx.$queryRaw`SELECT set_config('outclass.panel_publication_id',${publicationId},true)`

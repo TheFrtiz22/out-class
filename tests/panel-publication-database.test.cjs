@@ -106,7 +106,9 @@ test('un-staffing an unbooked session publishes an empty panel through the appro
  h.as(foreign);assert.equal((await h.confirm(review)).ok,false);assert.equal((await h.publish.publishPanelSchedule({clubId:foreignClub,roundId:h.ids.round,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken})).ok,false)
  const unchanged=await h.snapshot();assert.deepEqual(unchanged.InterviewSlot,before.InterviewSlot);assert.deepEqual(unchanged.InterviewPanelScheduleVersion,before.InterviewPanelScheduleVersion)
  // The owner publishes without an understaffing reason; the empty panel is written only through the publication.
- h.as(h.ids.owner);const result=ok(await h.confirm(review));assert.equal(result.version,2)
+ // A direct call that empties staffed sessions without the explicit confirmation is refused and changes nothing.
+ h.as(h.ids.owner);const unconfirmed=await h.confirm(review);assert.equal(unconfirmed.ok,false);assert.match(unconfirmed.error,/Confirm removing all interviewers from 1 unbooked session/);assert.deepEqual((await h.snapshot()).InterviewSlot,before.InterviewSlot)
+ const result=ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,confirmUnstaff:true}));assert.equal(result.version,2)
  const after=await h.snapshot(),slot=after.InterviewSlot.find(s=>s.id===target);assert.deepEqual(slot.publishedPanelMemberIds,[]);assert.equal(slot.panelScheduleVersionId,result.publicationId)
  const version=after.InterviewPanelScheduleVersion.find(v=>v.id===result.publicationId);assert.equal(version.understaffedOverride,false);assert.equal(version.overrideReason,null);assert.equal(version.document.assignments.some(a=>a.slotId===target),false)
  for(const memberId of removed)assert.ok(after.UserNotification.some(n=>n.eventKey===`panel-schedule:${result.publicationId}:${memberId}`),'removed interviewers are told the schedule changed')
