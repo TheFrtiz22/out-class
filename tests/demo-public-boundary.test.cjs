@@ -18,6 +18,8 @@ test('preview and sample asset URLs deny public/forged sessions before static by
   let user = null, error = null, calls = 0
   const client = load('utils/supabase/middleware.ts', {
     '@/lib/demo/access': privateAccess,
+    // Two-step gate (#302); off unless OUTCLASS_USER_MFA is set, as here.
+    '@/lib/user-mfa': load('lib/user-mfa.ts'),
     '@supabase/ssr': { createServerClient: () => ({ auth: { getUser: async () => { calls++; return { data: { user }, error } } } }) },
   })
   const { middleware } = load('middleware.ts', {

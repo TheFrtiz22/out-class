@@ -16,7 +16,7 @@
  * server both require, so keys added without a rebuild change nothing. The
  * browser never sees the secret. Once configured, verification fails closed.
  */
-export type TurnstileAction = "signup" | "login" | "password-recovery" | "school-request" | "student-claim" | "admin" | "account-deletion"
+export type TurnstileAction = "signup" | "login" | "password-recovery" | "school-request" | "student-claim" | "admin" | "two-step" | "account-deletion"
 export type TurnstileResult = { ok: true } | { ok: false; reason: "missing" | "rejected" | "unavailable" }
 
 type Env = Record<string, string | undefined>
