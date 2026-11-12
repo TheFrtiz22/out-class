@@ -130,21 +130,21 @@ export function applicationAvailability(
 }
 export const settingsSections = [
   { id: "general", label: "Public profile", permission: "club.settings" },
-  { id: "application", label: "Recruitment & Applications", permission: "application.manage" },
-  { id: "profiles", label: "Applicant Profiles", permission: "club.settings" },
-  { id: "cycles", label: "Application Cycles", permission: "recruitment.manage" },
+  { id: "application", label: "Recruitment & applications", permission: "application.manage" },
+  { id: "profiles", label: "Applicant profiles", permission: "club.settings" },
+  { id: "cycles", label: "Application cycles", permission: "recruitment.manage" },
   {
     id: "pipeline",
-    label: "Recruitment Rounds",
+    label: "Recruitment rounds",
     permission: "recruitment.manage",
   },
   {
     id: "members",
-    label: "Members & Permissions",
+    label: "Members & permissions",
     permission: "members.manage",
   },
   { id: "notifications", label: "Communications", permission: "club.settings" },
-  { id: "advanced", label: "Ownership & Administration", permission: "club.settings" },
+  { id: "advanced", label: "Ownership & administration", permission: "club.settings" },
 ] as const;
 export function availableSettings(member: ClubAccess) {
   return settingsSections.filter(

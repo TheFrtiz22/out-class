@@ -25,7 +25,7 @@ const labels = sections => sections.map(section => [section.label ?? section.nam
 test("rail: Recruiting (Overview, Applicants, Interviews, Decide), Club (Home, Calendar, Tasks, Members), Settings pinned", () => {
   const sections = nav.leaderRailSections(owner, club)
   assert.deepEqual(labels(sections), [
-    ["Recruiting", ["Overview", "Applicants", "Interviews", "Decide"]],
+    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide"]],
     ["Club", ["Home", "Calendar", "Tasks", "Members"]],
     ["Settings", ["Settings"]],
   ])
@@ -75,7 +75,7 @@ test("phone bar: Home · Recruiting · Calendar · Members, then More lists the 
   assert.deepEqual(bar.map(item => item.label), ["Home", "Recruiting", "Calendar", "Members"])
   assert.ok(bar[1].matches.includes("decisions") && bar[1].matches.includes("resumes"))
   assert.deepEqual(labels(nav.moreSections(sections, bar)), [
-    ["Recruiting", ["Overview", "Applicants", "Interviews", "Decide"]],
+    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide"]],
     ["Club", ["Tasks"]],
     ["Settings", ["Settings"]],
   ])

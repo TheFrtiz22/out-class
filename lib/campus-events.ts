@@ -174,7 +174,7 @@ export function eventIsPublished(event: {
 }
 
 export function managedEventStatus(event: ManagedCampusEvent) {
-  return ({ DRAFT: event.submittedAt ? "Changes require approval" : "Draft", PENDING: "Pending Approval", PUBLISHED: "Published", REJECTED: "Rejected", CANCELLED: "Cancelled", ARCHIVED: "Archived" } as Record<string, string>)[event.status] || "Unavailable";
+  return ({ DRAFT: event.submittedAt ? "Changes require approval" : "Draft", PENDING: "Pending approval", PUBLISHED: "Published", REJECTED: "Rejected", CANCELLED: "Cancelled", ARCHIVED: "Archived" } as Record<string, string>)[event.status] || "Unavailable";
 }
 export function eventRsvpSummary(count: number, capacity: number | null) {
   return capacity === null ? `${count} RSVPs · Unlimited capacity` : `${count} / ${capacity} RSVPs · ${count >= capacity ? "Event Full" : `${capacity - count} ${capacity - count === 1 ? "spot" : "spots"} remaining`}`;

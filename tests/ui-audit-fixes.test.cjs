@@ -103,3 +103,42 @@ test("items 11, 13, 14, 15 and 16: native controls, raw strings, internal copy, 
   assert.doesNotMatch(content.slice(0, content.indexOf("{children}")), /data-\[state=open\]:fade-in-0/, "content opens opaque")
   assert.match(content, /data-\[state=open\]:zoom-in-95 motion-reduce:animate-none/)
 })
+
+test("items 19 and 20: sentence-case labels, New … create verbs with the Plus icon, one Filters label", () => {
+  assert.match(read("components/availability/availability-button.tsx"), /label = "Set my availability"/)
+  assert.doesNotMatch(read("components/clubs/saved-clubs-popover.tsx"), /Saved Clubs/)
+  assert.doesNotMatch(read("components/communications/template-editor.tsx"), /Reset to Default/)
+  for (const file of ["components/club-tasks.tsx", "components/tasks/task-manager-workspace.tsx"]) assert.doesNotMatch(read(file), /My Tasks/, file)
+  const { settingsSections } = loadComponent("lib/club-settings.ts")
+  for (const section of settingsSections) assert.doesNotMatch(section.label.split(" ").slice(1).join(" "), /\b[A-Z][a-z]/, section.label)
+  assert.doesNotMatch(read("lib/campus-events.ts") + read("components/events/club-events.tsx"), /Pending Approval/)
+  const { TERMS } = loadComponent("lib/copy/terms.ts")
+  assert.equal(TERMS.newEvent, "New event"); assert.equal(TERMS.newMeeting, "New meeting")
+  assert.match(read("components/club-announcements.tsx"), /<Plus className="size-4" aria-hidden="true" \/>\{TERMS\.newAnnouncement\}/)
+  for (const file of ["components/events/club-events.tsx", "components/admin/admin-clubs.tsx"]) assert.doesNotMatch(read(file), />\+ Create/, file)
+  for (const file of ["components/organization-member-management.tsx", "components/views/explore-view.tsx", "components/views/inbox-view.tsx", "components/events/public-event-board.tsx", "components/views/calendar-view.tsx"]) assert.doesNotMatch(read(file), /label="Filter"/, file)
+})
+
+test("items 22, 23, 24 and 25: Members action in the header, shared empty states, phone-only sort, recruiting overview name", () => {
+  assert.match(read("components/club-workspace.tsx"), /action=\{active === "applicants" \|\| section === "members" \? <div id="workspace-page-actions"/)
+  assert.match(read("components/organization-member-management.tsx"), /actionSlot \? createPortal\(addMembers, actionSlot\) : addMembers/)
+  for (const file of ["components/events/club-events.tsx", "components/club-tasks.tsx", "components/events/public-event-board.tsx", "components/events/club-meetings-workspace.tsx"]) assert.match(read(file), /<EmptyState /, file)
+  assert.doesNotMatch(read("components/events/club-events.tsx"), /rounded-lg border p-8/)
+  assert.match(read("styles/data-table.css"), /@container oc-dt-scope \(min-width: 640px\) \{ \.oc-sort-control\.oc-dt-cards-sort \{ display: none; \} \}/)
+  for (const file of ["components/club-members.tsx", "components/club-announcements.tsx", "components/organization-member-management.tsx", "components/interviews/interview-rooms-list.tsx"]) {
+    const source = read(file)
+    assert.match(source, /oc-dt-scope/, file); assert.match(source, /<SortControl className="oc-dt-cards-sort"/, file)
+  }
+  assert.match(read("lib/product-navigation.ts"), /item\("overview", TERMS\.recruitingOverview, "recruitment"\)/)
+  assert.match(read("components/recruiting-overview.tsx"), /PageHeader|Recruiting/)
+})
+
+test("item 26: Events has its own icon everywhere; palette links and interview tabs carry icons", () => {
+  assert.ok(fs.existsSync("components/icons/CalendarStar.tsx"))
+  assert.match(read("components/icons.tsx"), /export \{ CalendarStar \} from "@\/components\/icons\/CalendarStar"/)
+  assert.match(read("lib/views.ts"), /\{ id: "corkboard", title: "Events", icon: CalendarStar \}/)
+  for (const file of ["components/shell/product-shell.tsx", "components/shell/mobile-navigation.tsx"]) assert.match(read(file), /corkboard: CalendarStar/, file)
+  assert.match(read("components/shell/navigation-search.tsx"), /link\.icon \? <link\.icon className="size-4" aria-hidden="true" \/>/)
+  const tabs = read("components/interview-management-tabs.tsx")
+  assert.equal((tabs.match(/<TabsTrigger value="[a-z]+"><[A-Z][A-Za-z]+ aria-hidden="true" \/>/g) || []).length, 4)
+})

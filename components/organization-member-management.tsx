@@ -26,7 +26,8 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Copy, Plus, ChevronDown } from "@/components/icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -113,6 +114,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
   const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
   const [addOpen, setAddOpen] = useState(false), [importOpen, setImportOpen] = useState(false), [groupsOpen, setGroupsOpen] = useState(false);
+  // The club workspace page header renders #workspace-page-actions on Members (as on Applicants). Re-resolved after
+  // every commit so a remounted header never leaves the portal on a detached node; placed before paint.
+  const [actionSlot, setActionSlot] = useState<HTMLElement | null | undefined>(undefined)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally every commit; setState bails out when the slot is unchanged
+  useLayoutEffect(() => { setActionSlot(document.getElementById("workspace-page-actions")) })
   // Headers and the toolbar Sort share one state, kept in the URL (?sort=&order=).
   const listSort = useListSort(memberSortKeys, "name", memberSortsDescending);
   const { key: sort, descending } = listSort;
@@ -483,7 +489,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 }}
                 onClear={() => { setQuery(""); resetPaging() }}
               />
-              <FilterPopover label="Filter" title="Member filters" align="start" count={[roleFilter, showYear && yearFilter, !invitesOpen && groupFilter].filter(Boolean).length}
+              <FilterPopover title="Member filters" align="start" count={[roleFilter, showYear && yearFilter, !invitesOpen && groupFilter].filter(Boolean).length}
                 footer={<Button variant="ghost" size="sm" disabled={!roleFilter && !yearFilter && !groupFilter} onClick={() => { setRoleFilter(""); setYearFilter(""); setGroupFilter(""); resetPaging() }}>Clear filters</Button>}>
                 <div className="oc-filter-field"><span className="oc-filter-field-label">Role</span>
                   <PillSelect label="Filter members by role" size="compact" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
@@ -497,7 +503,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               </FilterPopover>
               {invitesOpen && <Toggle label="Show invitation history" checked={history} onCheckedChange={value => { setHistory(value); setPage(0) }} />}
             </div>
-            <SortControl label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
+            <SortControl className="oc-dt-cards-sort" label="Sort members" options={memberSortOptions} value={sort} descending={descending} descendingByDefault={memberSortsDescending} onChange={setSort} />
             </div>
             {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><ClubExportLink clubId={clubId} kind="roster" membership={data.actor} label="Export roster" /><ClubExportLink clubId={clubId} kind="attendance" membership={data.actor} label="Export attendance" /></div>}
             {selection.length > 0 && (
@@ -702,9 +708,12 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               </nav>
             )}
 </div>;
+  // The primary action sits in the page header (as on Applicants); inline only when the header slot is absent.
+  const addMembers = <div role="group" aria-label="Add members" className="inline-flex"><Button className="rounded-r-none" onClick={() => setAddOpen(true)}><Plus size={16} aria-hidden="true" />Add member</Button><DropdownMenu><DropdownMenuTrigger asChild><Button className="rounded-l-none border-l border-primary-foreground/30 px-2" aria-label="More ways to add members"><ChevronDown size={16} aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem className="min-h-11" onSelect={() => setInvitesOpen(true)}>Invite members</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setImportOpen(true)}>Import CSV</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setGroupsOpen(true)}>Create groups</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>
+
   return (
     <div
-      className="oc-member-directory min-w-0 space-y-6"
+      className="oc-member-directory oc-dt-scope min-w-0 space-y-6"
       data-saving={busy}
       data-unsaved={dirty}
       aria-busy={busy}
@@ -734,7 +743,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         data && (
           <>
             <div className="flex flex-wrap gap-2" aria-label="Member actions">
-              {caps.canManageMembers && <div role="group" aria-label="Add members" className="inline-flex"><Button className="rounded-r-none" onClick={() => setAddOpen(true)}><Plus size={16} aria-hidden="true" />Add member</Button><DropdownMenu><DropdownMenuTrigger asChild><Button className="rounded-l-none border-l border-primary-foreground/30 px-2" aria-label="More ways to add members"><ChevronDown size={16} aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem className="min-h-11" onSelect={() => setInvitesOpen(true)}>Invite members</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setImportOpen(true)}>Import CSV</DropdownMenuItem><DropdownMenuItem className="min-h-11" onSelect={() => setGroupsOpen(true)}>Create groups</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>}
+              {caps.canManageMembers && actionSlot !== undefined && (actionSlot ? createPortal(addMembers, actionSlot) : addMembers)}
               {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." open={addOpen} onOpenChange={setAddOpen}>{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
               <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger={caps.canManageMembers ? undefined : "Invite members"} presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
                 {invitesOpen && <div data-saving={busy} className="space-y-5">

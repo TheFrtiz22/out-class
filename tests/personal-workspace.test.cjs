@@ -152,9 +152,9 @@ test('Demo menu respects allowed access and existing saving/unsaved guards when 
  const mod={exports:{}},code=ts.transpileModule(fs.readFileSync('components/demo-controls.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
  new Function('require','module','exports','document','window',code)(name=>name==='react'?h.react:name==='@/contexts/demo-context'?{useDemoMode:()=>demo}:name==='@/components/ui/dropdown-menu'?{DropdownMenuItem:'Item',DropdownMenuSeparator:'Separator'}:name==='@/components/ui/confirm-dialog'?{useConfirm:()=>async()=>confirm}:require(name),mod,mod.exports,{querySelector:selector=>selector.includes('data-saving')?saving:unsaved},{confirm:()=>confirm});
  const render=()=>h.render(()=>mod.exports.DemoMenuItems());assert.equal(render(),null);demo.allowed=true;
- let item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/Off/);await item.props.onSelect();assert.equal(calls,1);
+ let item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/Turn on demo mode/);await item.props.onSelect();assert.equal(calls,1);
  saving=true;await item.props.onSelect();assert.equal(calls,1);saving=false;unsaved=true;await item.props.onSelect();assert.equal(calls,1);confirm=true;await item.props.onSelect();assert.equal(calls,2);
- demo.isDemoEnabled=true;item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/exit demo/);await item.props.onSelect();assert.equal(calls,3);
+ demo.isDemoEnabled=true;item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/Exit demo mode/);await item.props.onSelect();assert.equal(calls,3);
 });
 
 test('authoritative booking synchronization replaces cancelled/rescheduled bookings while preserving other calendar events',()=>{
