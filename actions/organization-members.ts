@@ -5,6 +5,7 @@ import { memberAcademicProfile } from "@/lib/recruitment-profile";
 import { normalizeProfileFieldVisibility, restrictProfileFields } from "@/lib/profile-field-visibility";
 
 import { lockSchedulingPeople } from "@/utils/panel-publication";
+import { contentionResult, retryTransactionConflict } from "@/utils/club-write-transaction";
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
@@ -97,7 +98,10 @@ async function setMemberInterviewOfficesCommand(input: unknown) {
 async function setInterviewPanelAssignmentCommand(input: unknown) {
   const data = interviewScopeSchema.extend({ memberId: id, assigned: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth({ verifyEmail: true });
-  return prisma.$transaction(async tx => {
+  // Two owners granting each other across clubs, or a grant racing a booking, can form a
+  // lock cycle; PostgreSQL rolls the victim back and it is re-run whole. Exhausted retries
+  // and timeouts (not retried) come back as a typed failure with their own wording.
+  return contentionResult("interview.panel.assignment", () => retryTransactionConflict(() => prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     // Assignment conveys private evidence access; ordinary schedulers cannot self-grant.
     if (!interviewCapabilities(actor).manageGrants) throw new ActionError("Only an active owner can grant panel access.");
@@ -121,7 +125,7 @@ async function setInterviewPanelAssignmentCommand(input: unknown) {
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "interview.panel.change", details: { ...key, assigned: data.assigned } } });
     return { ...key, assigned: data.assigned };
-  });
+  })));
 }
 async function actorFor(tx: AppTransactionClient, clubId: string, userId: string, lock = true) {
   if (lock) {
