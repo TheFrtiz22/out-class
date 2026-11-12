@@ -133,7 +133,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const resumeUrl = app && !anonymous && profileFields.resume ? resolveRecruitingResumeUrl(profile?.resumeUrl, clubId, app.id) : undefined
   const linkedinUrl = !anonymous && profileFields.linkedin ? safeProfileUrl(profile?.linkedinUrl) : undefined
   const observationsEligible = !!app && canReview && hasPermission(membership, "applicants.identify") && !anonymous && !!app.recruitmentCycleId && app.studentId !== membership.userId && !activeRound?.anonymousReview
-  const evaluateReason = !app || app.canEvaluate ? "" : app.studentId === membership.userId ? "You can’t grade your own application." : "Grading needs a panel assignment for this round. Recruiting leads assign panels in Interviews › Scheduling."
+  const evaluateReason = !app || app.canEvaluate ? "" : app.studentId === membership.userId ? "You can’t grade your own application." : "Grading needs a panel assignment for this round; recruiting leads assign panels in Interviews › Scheduling. Submitted grades are read-only."
   const interviewLinks = [...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !anonymous ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]
   const toggle = (key: string) => (open: boolean) => setOpenSections(list => open ? [...list, key] : list.filter(item => item !== key))
   const facts = app ? joinFacts(profileFields.academicYear && profile?.academicYear, activeRound?.name, ...(profile ? applicantProfileFacts({ ...profile, academicYear: null }, profileFields) : []), profileFields.major && profile?.major) : ""

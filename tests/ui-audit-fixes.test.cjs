@@ -159,7 +159,7 @@ test("items 27, 28, 30, 31 and 34: steady tab widths, settings links, review mod
   assert.match(settings, /<Button asChild variant="link" size="sm"><Link href=\{`\/club\/\$\{clubId\}\/workspace\?section=settings&setting=pipeline`\}/)
   assert.match(read("components/clubs/club-settings.css"), /\.oc-settings-personal-link \{[^}]*border-top: 1px solid var\(--border\)[^}]*text-decoration: none/)
   const flow = read("components/applicant-review/applicant-review-flow.tsx")
-  assert.match(flow, /Recruiting leads assign panels in Interviews › Scheduling\./)
+  assert.match(flow, /recruiting leads assign panels in Interviews › Scheduling\. Submitted grades are read-only\./)
   assert.doesNotMatch(flow, /<kbd>A<\/kbd> advance/, "A, H and R are shown once, on the buttons")
   assert.match(read("components/applicant-review/review-grading.tsx"), /"Overall · average of scored categories" : "Out of 10"/)
   assert.match(read("components/applicant-recusal.tsx"), /<Button variant="outline" size="sm" disabled=\{busy\} onClick=\{\(\) => void change\(true\)\} title="[^"]*"><UserCog aria-hidden="true" \/>I know this applicant/)
