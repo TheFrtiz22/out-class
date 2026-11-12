@@ -44,7 +44,7 @@ export async function addInterviewRoomTimes(raw: unknown) {
   const slots = roomSlots({ ...input, timezone: SCHEDULING_TIMEZONE, duration: room.duration, buffer: room.buffer })
   if ((s.interviewRooms ?? []).some(r => r.clubId === input.clubId && (r.id === room.id || r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && (r.id === room.id || r.location.toLowerCase() === room.location.toLowerCase() || r.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && r.slots.some(a => slots.some(b => overlaps(a, b, Math.max(r.buffer, room.buffer)))))) throw new Error("This room or panel already has an overlapping schedule.")
   demoStore.mutate(s => { const target = s.interviewRooms.find(r => r.id === room.id)!; target.slots.push(...slots.map(slot => ({ ...slot, id: crypto.randomUUID(), startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), booked: 0 }))); target.slots.sort((a, b) => +new Date(a.startTime) - +new Date(b.startTime)) })
-  return { id: room.id, count: slots.length }
+  return { id: room.id, count: slots.length, noLongerOffered: 0 }
 }
 /** Mirrors the live "Remove time": only an unbooked, unstaffed time without availability exceptions. */
 export async function removeInterviewRoomTime(raw: unknown) {
