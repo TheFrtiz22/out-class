@@ -31,6 +31,8 @@ export function TermsAcceptanceScreen({ children }: { children: ReactNode }) {
   async function signOut() {
     setBusy(true)
     try {
+      // Same as the shell's sign-out: this device stops receiving the account's push notifications.
+      await import("@/lib/push-device").then(async ({ unsubscribeOnSignOut }) => unsubscribeOnSignOut((await import("@/actions/push-subscriptions")).removePushSubscription)).catch(() => {})
       const response = await fetch("/api/auth/logout", { method: "POST" })
       if (!response.ok) throw Error()
       const { createClient } = await import("@/utils/supabase/client")

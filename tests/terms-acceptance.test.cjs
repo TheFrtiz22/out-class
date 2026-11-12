@@ -303,3 +303,10 @@ test('sign-up wizard: a failed save after email verification shows the box again
   const render3 = wizard.slice(wizard.indexOf('{step === 3 && ('), wizard.indexOf('{step === 4 && ('))
   assert.match(render3, /\{termsUnsaved && <TermsClickwrap id="accept-terms-retry" checked=\{acceptTerms\}/, 'the agree box is shown again on step 3')
 })
+
+test('signing out from the terms screen also unsubscribes this device from push', () => {
+  const src = require('node:fs').readFileSync('components/legal/terms-acceptance-screen.tsx', 'utf8')
+  const signOut = src.slice(src.indexOf('async function signOut'))
+  const unsubscribe = signOut.indexOf('unsubscribeOnSignOut'), logout = signOut.indexOf('/api/auth/logout')
+  require('node:assert/strict').ok(unsubscribe > 0 && unsubscribe < logout, 'push unsubscribe runs before the session ends')
+})
