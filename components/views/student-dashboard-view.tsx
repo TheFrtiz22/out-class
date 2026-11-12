@@ -146,8 +146,9 @@ export function StudentDashboardView({
   const memberClubIds = user?.memberships.filter(m => m.status === "ACTIVE").map(m => m.clubId) ?? []
   const taskItems = personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items ?? [] : []
   const overdueTasks = [...new Map(taskItems.flatMap(item => item.clubId && memberClubIds.includes(item.clubId) && item.taskActivity?.needsSubmission && item.taskActivity.dueAt && +new Date(item.taskActivity.dueAt) < now.getTime() ? [[item.taskActivity.assignmentId, item.clubId] as const] : [])).values()]
-  const upcomingDeadlines = applications.filter(app => app.draft && app.deadline && eventStart(app.deadline) >= now).sort((a, b) => eventStart(a.deadline!).getTime() - eventStart(b.deadline!).getTime())
-  const drafts = applications.filter(app => app.draft && !upcomingDeadlines.includes(app))
+  // Drafts for a club that stopped taking applications are not work to finish (lib/recruitment-presentation).
+  const upcomingDeadlines = applications.filter(app => app.draft && !app.intakeClosed && app.deadline && eventStart(app.deadline) >= now).sort((a, b) => eventStart(a.deadline!).getTime() - eventStart(b.deadline!).getTime())
+  const drafts = applications.filter(app => app.draft && !app.intakeClosed && !upcomingDeadlines.includes(app))
   const interviewing = applications.filter(app => app.status === "Interviewing")
   const urgentUpdate = updates.find(update => update.urgent && !update.read)
   const readUpdate = (id: string) => { focusNotification(id); onNavigate("inbox") }

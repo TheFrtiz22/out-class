@@ -7,6 +7,7 @@ export function AccountAvatar({ user, className }: { user?: AccountIdentity | nu
   const source = profilePhotoSource(user?.profile?.headshotUrl)
   return <Avatar className={cn("size-8", className)} aria-hidden="true">
     {source && <AvatarImage src={source} alt="" />}
-    <AvatarFallback>{accountInitials(user)}</AvatarFallback>
+    {/* With a photo, initials wait briefly so a fast-loading image doesn't flash initials first; the circle stays reserved. */}
+    <AvatarFallback delayMs={source ? 600 : undefined}>{accountInitials(user)}</AvatarFallback>
   </Avatar>
 }

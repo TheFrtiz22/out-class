@@ -1,4 +1,5 @@
 "use client";
+import { EmptyState } from "@/components/ui/empty-state";
 import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
@@ -188,7 +189,7 @@ export function PublicEventBoard() {
         <PillSelect label="When" prefix="When" size="compact" className="oc-event-when" active={(filters.period ?? "All") !== "All"}
           value={filters.period ?? "All"} onChange={(period) => filter({ period: period as EventFilters["period"] })}
           options={(["All", "Today", "This Week", "Weekend"] as const).map((period) => ({ value: period, label: period === "All" ? "Any time" : period === "This Week" ? "This week" : period }))} />
-        <FilterPopover count={menuFilters} label="Filter" title="Event filters"
+        <FilterPopover count={menuFilters} title="Event filters"
           footer={<Button type="button" variant="ghost" size="sm" onClick={() => setFilters(initialFilters)}>Reset filters</Button>}>
             {identity && <Toggle label="Saved events" checked={!!filters.savedOnly} onCheckedChange={(savedOnly) => filter({ savedOnly })} />}
             <div className="oc-filter-field"><span className="oc-filter-field-label">Category</span>
@@ -235,13 +236,10 @@ export function PublicEventBoard() {
         >
           <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Event board" : "Event list"}>
             {!loading && !events.length ? (
-              (() => { const empty = eventBoardEmpty(filters); return <div className="oc-events-empty">
-                <h2>{empty.title}</h2>
-                <p>{empty.description}</p>
-                {empty.action.kind === "explore-clubs"
+              (() => { const empty = eventBoardEmpty(filters); return <EmptyState className="oc-events-empty" align="start" title={empty.title} description={empty.description}
+                action={empty.action.kind === "explore-clubs"
                   ? <Button variant="outline" asChild><Link href="/explore">{empty.action.label}</Link></Button>
-                  : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>}
-              </div> })()
+                  : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>} /> })()
             ) : view === "list" ? (
               <ul className="oc-smart-event-list">
                 {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id) }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}

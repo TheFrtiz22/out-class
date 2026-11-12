@@ -1,4 +1,6 @@
 "use client";
+import { Toggle } from "@/components/ui/toggle"
+import { TERMS } from "@/lib/copy/terms"
 import { userMessage } from "@/lib/user-message"
 
 import { ActionWorkflow } from "@/components/product/action-workflow";
@@ -149,17 +151,13 @@ export function ClubSettingsWorkspace({
             {!demo.isDemoEnabled && (
               <section className="oc-form-section mt-6">
                 <h2 className="oc-section-heading">Profile visibility</h2>
-                <label className="mt-3 inline-flex min-h-11 items-center gap-3 text-sm">
-                  <input
-                    type="checkbox"
-                    disabled={busy}
-                    checked={member.club.isDiscoverable !== false}
-                    onChange={(e) =>
-                      void preference({ isDiscoverable: e.target.checked })
-                    }
-                  />
-                  Show this club in Discover
-                </label>
+                <Toggle
+                  className="mt-3"
+                  label={`Show this club in ${TERMS.explore}`}
+                  disabled={busy}
+                  checked={member.club.isDiscoverable !== false}
+                  onCheckedChange={(checked) => void preference({ isDiscoverable: checked })}
+                />
                 <p className="text-xs text-muted-foreground">
                   Your public profile remains accessible by its direct link.
                 </p>
@@ -169,7 +167,7 @@ export function ClubSettingsWorkspace({
         )}
         {visible("application") && (
           <div hidden={active !== "application"}>
-            {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></div>}
+            {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Button asChild variant="link" size="sm"><Link href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link></Button><Button asChild variant="link" size="sm"><Link href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></Button></div>}
             {/* Recruiting: opens the Recruiting settings drawer in place (the same drawer as the Applicants gear). */}
             {canOpenRecruitingSettings(member) && <section aria-labelledby="settings-recruiting-heading" className="mb-5 space-y-2 border-b pb-4"><h2 id="settings-recruiting-heading" className="oc-section-heading">Recruiting</h2><div className="flex flex-wrap gap-2">{recruitingSettingsSections.map(item => <Button key={item.id} type="button" variant="outline" size="sm" aria-haspopup="dialog" onClick={() => { if (canLeaveWorkspace()) router.push(`/club/${encodeURIComponent(clubId)}/workspace?${withRecruitingSettings(params.toString(), item.id)}`, { scroll: false }) }}>{item.label}</Button>)}</div></section>}
             <ApplicationBuilder clubId={clubId} />

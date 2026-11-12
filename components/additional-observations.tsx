@@ -1,4 +1,5 @@
 'use client';
+import { LoadingState } from "@/components/ui/loading-state"
 import { userMessage } from "@/lib/user-message"
 import {useEffect,useId,useRef,useState} from 'react';
 import {getAdditionalObservations,saveAdditionalObservation} from '@/lib/additional-observations-api';
@@ -32,7 +33,7 @@ export function AdditionalObservations({clubId,applicationId,onSaved,embedded=fa
   {!embedded&&<p className="text-xs text-muted-foreground">Share specific firsthand observations from an interaction. Keep these separate from interview evaluations.</p>}
   {error&&embedded&&!open&&<p role="alert" className="text-sm text-muted-foreground">Couldn’t load observations · <Button size="sm" variant="ghost" className="h-auto px-1 py-0" onClick={()=>setRefresh(v=>v+1)}>Retry</Button></p>}
   {error&&!(embedded&&!open)&&<p role="alert" className="text-sm text-destructive">{error} {open?<><Button type="button" size="sm" variant="ghost" disabled={busy||count>50} onClick={()=>void save(pending.current?.remove??false)}>Retry save</Button><Button type="button" size="sm" variant="ghost" disabled={busy} onClick={()=>setRefresh(v=>v+1)}>Reload observations</Button></>:<Button size="sm" variant="ghost" onClick={()=>setRefresh(v=>v+1)}>Retry</Button>}</p>}
-  {!rows&&!error&&<p role="status" className="text-sm">Loading observations…</p>}
+  {!rows&&!error&&<LoadingState label="Loading observations…" layout="rows" rows={2} />}
   {rows?.length===0&&<p className="text-xs text-muted-foreground">No shared additional observations.</p>}
   {rows?.map(row=><article key={row.id} className="space-y-1 border-l pl-3 text-sm"><p className="whitespace-pre-wrap break-words">{row.body}</p>{row.interactionContext&&<p className="text-xs">{row.interactionContext}</p>}<p className="text-xs text-muted-foreground">{row.author} · {new Date(row.updatedAt).toLocaleString()} · {row.roundName} · Version {row.revision}{row.locked?' · Referenced by a locked presentation':''}</p>{(row.canEdit||row.canModerate)&&<Button size="sm" variant="ghost" disabled={busy} onClick={e=>edit(row,e.currentTarget)}>{row.canEdit?'Edit observation':'Moderate observation'}</Button>}</article>)}
   {open&&<form className="space-y-3" onSubmit={e=>{e.preventDefault();void save();}}>

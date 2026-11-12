@@ -74,8 +74,13 @@ test('invalid/closed deadlines, decisions, declined and discovery events never p
   for (const status of ['ACCEPTED', 'REJECTED', 'WAITLISTED']) assert.equal(welcomeSubtitle(personal({ applications: [application({ status })] }), now), "Explore what's new in OutClass.")
   const ctx = personal({ applications: [application({ club: { applicationDeadline: 'invalid' } })] })
   assert.equal(welcomeSubtitle(ctx, now), 'You have 1 application to finish.')
+  // A club that stopped taking applications (intake off, or its deadline passed): the draft is not work to finish.
   ctx.applications[0].club = { applicationOpen: false, applicationDeadline: at(1) }
-  assert.equal(welcomeSubtitle(ctx, now), 'You have 1 application to finish.')
+  assert.equal(welcomeSubtitle(ctx, now), "Explore what's new in OutClass.")
+  ctx.applications[0].club = { applicationOpen: true, applicationDeadline: at(-1) }
+  assert.equal(welcomeSubtitle(ctx, now), 'An application deadline has passed. Check your draft.')
+  ctx.applications[0].club = { applicationOpen: true, applicationDeadline: at(1) }
+  assert.match(welcomeSubtitle(ctx, now), /application/)
   ctx.applications = []
   ctx.events = [event('declined', 1, { response: 'declined' }), event('discovery', 1, { response: undefined, type: 'Interest Meeting' }), event('invalid', 1, { startTime: 'invalid' }), event('past', -1)]
   assert.equal(welcomeSubtitle(ctx, now), "Explore what's new in OutClass.")

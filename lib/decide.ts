@@ -32,13 +32,33 @@ export function readyToSend(room: DecideRoom) {
   return room.state === "COMPLETED" && !room.publishedAt && room.mode !== "LEGACY"
 }
 
+export type VotingSessionGroup = "draft" | "scheduled" | "active" | "past"
+type GroupedRoom = Pick<DecideRoom, "state" | "mode"> & { meeting?: { status?: string | null } | null }
+
+/**
+ * The one grouping of voting sessions, shared by the Vote badge, Overview and the Voting room lists:
+ *   past      — closed, or a board (LEGACY) session (read-only history), or its meeting was cancelled;
+ *   scheduled — a draft with a scheduled meeting;
+ *   draft     — a draft with no scheduled meeting yet;
+ *   active    — open or paused.
+ * A room belongs to exactly one group; null only for a state this list does not know.
+ */
+export function votingSessionGroup(room: GroupedRoom): VotingSessionGroup | null {
+  if (room.state === "COMPLETED" || room.mode !== "LIVE" || room.meeting?.status === "CANCELLED") return "past"
+  if (room.state === "DRAFT") return room.meeting?.status === "SCHEDULED" ? "scheduled" : "draft"
+  return room.state === "OPEN" || room.state === "PAUSED" ? "active" : null
+}
+
+/** Sessions still to run: not yet scheduled, scheduled, or running. The Vote badge and Overview count the same set. */
+export const sessionToRun = (room: GroupedRoom) => { const group = votingSessionGroup(room); return group === "draft" || group === "scheduled" || group === "active" }
+
 /**
  * Tab counts for the selected round (rooms are already filtered to it by the server read):
- * Vote = sessions still to run or running; Send = applicants in closed sessions waiting to be sent.
+ * Vote = sessions still to run (see sessionToRun); Send = applicants in closed sessions waiting to be sent.
  */
 export function decideCounts(rooms: DecideRoom[]): Partial<Record<DecideTab, number>> {
   return {
-    voting: rooms.filter(room => room.state !== "COMPLETED").length,
+    voting: rooms.filter(sessionToRun).length,
     letters: rooms.filter(readyToSend).reduce((total, room) => total + room.applicantCount, 0),
   }
 }
@@ -52,14 +72,10 @@ export function roundsFromRooms(rooms: Pick<DecideRoom, "roundId" | "roundName">
 
 export type OverviewRoom = DecideRoom & { view?: "leader" | "present" | "member"; meeting?: { status?: string | null } | null }
 
-/**
- * Overview's session list, with the same grouping as the Voting room: Scheduled = a draft with a scheduled
- * meeting; Active = open or paused. Board (LEGACY) sessions, cancelled meetings and unscheduled drafts are left out.
- */
-export function overviewSessionGroup(room: OverviewRoom): "active" | "scheduled" | null {
-  if (room.mode !== "LIVE" || room.meeting?.status === "CANCELLED") return null
-  if (room.state === "DRAFT") return room.meeting?.status === "SCHEDULED" ? "scheduled" : null
-  return room.state === "OPEN" || room.state === "PAUSED" ? "active" : null
+/** Overview's session list: the sessions still to run, grouped as the Voting room groups them. Past sessions are left out. */
+export function overviewSessionGroup(room: OverviewRoom): Exclude<VotingSessionGroup, "past"> | null {
+  const group = votingSessionGroup(room)
+  return group === "past" ? null : group
 }
 
 /** The session's action, as the Voting room labels it: a leader resumes, a voter joins; otherwise view details. */

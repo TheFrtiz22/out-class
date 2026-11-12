@@ -292,6 +292,15 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Screenshots: 12 pages × desktop 1440 and 375, before (#281) and after; document scrollWidth equals viewport width on every page at 375.
 - Not run: pnpm build, DB e2e suites, test:migrations (no schema change).
 
+## 2026-11-12 UI-AUDIT-FIXES-1 design/authenticity-product-pages (on origin/main 234c5050)
+2026-11-12 UI-AUDIT-FIXES-1 app gates: test 2640/6/81 (phase-3 commit; 5 fails were stale assertions since updated and re-run green, 1 env-only) migrations pass lint ok types ok | integration skips 10 unwired of 47 (unchanged, environmental) | agent-hook tests n/a
+- Full `pnpm run test` (worktree, Playwright pointed at the preinstalled Chromium build 1243): phase 1 commit 2721 tests / 2638 pass / 2 fail / 81 skipped; phase 3 commit 2727 / 2640 / 6 / 81. Fails: panel-date-sections (ISO day labels → long dates), event-editor (duplicate New event action, fixed in code), list-pages (sort contract now control-or-headers), nav-reorg (Demo events copy), panel-publication-status (status panel now holds staffing checks), workspace-selector (rail "Recruiting overview"); each re-run passes. interview-enter-browser fails identically on origin/main in this sandbox.
+- typecheck exit 0; lint 0 errors / 17 warnings (pre-existing); ui-controls OK; build exit 0 (phase 1 and phase 3 commits); test:migrations: 89 migrations, 92 tables enforce RLS.
+- test:a11y 27/27 (first run 26/27: stale "+ Create event" label, fixed).
+- New tests/ui-audit-fixes.test.cjs 11/11. Real-Chromium CSS check (repo stylesheets): sort control shown at 500px container, hidden at 900px; underline tab widths unchanged on select; board thin scrollbar + scroll-linked mask, none under reduced motion.
+- nextjs-reviewer: no high/critical findings (notes: inert Admin placeholder persists if eligibility hangs; Toggle inside a disabled fieldset is disabled natively but not dimmed).
+- Not run: authenticated E2E against Supabase/Postgres (unavailable here); real-app checks of items 16 (review-flow sliver), 30 (duplicate header line), 33, 36, 37.
+
 2026-11-12 BRAND-WHITE-OC-ICON-1 (#339) app gates: targeted tests 83/0/0 (installable-app, focus-frame, loading-experience, seo, public-navigation, student-paths, csp, email-design, internal-links-static) | eslint clean on the 3 changed TS files | full `pnpm run test`, typecheck, build and browser suites NOT run to completion in the cloud sandbox (Prisma engines unreachable, `.prisma/client` not generated; a browser suite hangs) - rely on CI | migrations n/a (no schema change) | agent-hook tests n/a
 - Assets: 11_app_icon_white.svg/.jpg added; icon-192, icon-512 (transparent corners), icon-maskable-512 and apple-touch-icon-180 (opaque) regenerated with rsvg-convert from the new SVG.
 - Not verified: real-device home-screen icon refresh; already-installed PWAs may keep the old icon until re-added.

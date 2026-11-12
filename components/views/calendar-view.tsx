@@ -214,7 +214,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
         </div>
       )}
       {/* Phones, as in the app: search and filters sit behind a Filter button. */}
-      {events.length > 0 && <FilterButton size="sm" label="Filter" count={phoneActive} className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)} />}
+      {events.length > 0 && <FilterButton size="sm" count={phoneActive} className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)} />}
       {events.length > 0 && <div id="calendar-tools" className="oc-toolbar oc-calendar-tools" data-phone-open={phoneFilters || undefined}>
         <SearchField
           aria-label="Search calendar"

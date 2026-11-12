@@ -20,6 +20,11 @@ export function interviewDaySpan(entries: Pick<InterviewRoomEntry, "startTime">[
 export function defaultInterviewDate(groups: ReturnType<typeof groupInterviewDates>, now = new Date()) {
   return groups.find(g => g.day === dayKey(now, g.timezone))?.day || groups.find(g => g.day > dayKey(now, g.timezone))?.day;
 }
+/** The interviewDays value for the days a member left open: "none" when every day is collapsed, never an empty param. */
+export function interviewDaysParam(days: string[]) {
+  return days.length ? days.join(",") : "none";
+}
+/** Days to expand from the URL; null when the URL doesn't say. "none" (or an older empty value) means every day is collapsed. */
 export function readExpandedInterviewDates(search: string): string[] | null {
   const query = new URLSearchParams(search);
   if (!query.has("interviewDays")) return null;

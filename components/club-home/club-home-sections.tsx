@@ -10,7 +10,7 @@ import { memberDate } from "@/components/member-overview"
 import { hasPermission } from "@/lib/permissions"
 import { interviewEntryHref } from "@/lib/interview-entry"
 import { TERMS } from "@/lib/copy/terms"
-import { interviewPerson, isOverdue, pipeline, thisWeek, type Overview, type RailHrefs, type RecruitingStrip } from "@/components/club-home/club-home-model"
+import { interviewPerson, isOverdue, pipeline, thisWeek, type Overview, type RailHrefs, recruitingStripText, type RecruitingStrip } from "@/components/club-home/club-home-model"
 
 type Booking = Overview["operations"]["bookings"][number]
 const time = (value: Date | string) => new Date(value).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
@@ -158,7 +158,7 @@ export function MembersCard({ data, hrefs, index }: { data: Overview; hrefs: Rai
 export function RecruitingStripLink({ strip }: { strip: RecruitingStrip }) {
   return <Link href={strip.href} className="oc-recruiting-strip" data-tone="interview" onClick={event => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, strip.href) }}>
     <span className="oc-recruiting-strip-dot" aria-hidden="true" />
-    <span>{strip.open ? "Recruiting is open" : "Recruiting is underway"} · {strip.applicants} {strip.applicants === 1 ? "applicant" : "applicants"}{strip.attention > 0 ? ` · ${strip.attention} need${strip.attention === 1 ? "s" : ""} attention` : ""}</span>
+    <span>{strip.open ? "Recruiting is open" : "Recruiting is underway"} · {recruitingStripText(strip)}</span>
     <span className="oc-recruiting-strip-go">Recruiting overview <ArrowRight aria-hidden="true" size={14} /></span>
   </Link>
 }
