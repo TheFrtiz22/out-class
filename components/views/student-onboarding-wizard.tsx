@@ -32,6 +32,9 @@ import { Label } from "@/components/ui/label"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
+import { acceptCurrentTerms } from "@/actions/terms"
+import { TermsClickwrap, clickwrapAnswer, saveClickwrapAcceptance, TERMS_SAVE_FAILED } from "@/components/legal/terms-clickwrap"
+import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
@@ -207,15 +210,22 @@ function ResumeDropZone({
 // ─── Main Wizard ──────────────────────────────────────────────────────────────
 
 export function StudentOnboardingWizard({
-  onComplete, embedded = false, initialUser, onBack, onSignIn,
+  onComplete, embedded = false, initialUser, onBack, onSignIn, termsAccepted = false,
 }: {
   onComplete: () => void
   embedded?: boolean
   initialUser?: { email?: string; email_confirmed_at?: string | null; user_metadata?: Record<string, any> } | null
   onBack?: () => void
   onSignIn?: () => void
+  /** The signed-in account already accepted the current Terms and Privacy versions (server check). */
+  termsAccepted?: boolean
 }) {
   const { isImpersonating } = useAuth()
+  // Clickwrap: unticked until the person ticks it; asked once, on the account step.
+  const askTerms = TERMS_ACCEPTANCE_REQUIRED && !termsAccepted
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  // Set when the post-verification save failed: step 3 shows the box again and saves before moving on.
+  const [termsUnsaved, setTermsUnsaved] = useState(false)
   const [step, setStep] = useState(1)
   // Warm the later steps' chunks while the visitor fills in step 1.
   useEffect(() => { void loadVerificationCodeInput(); void loadGraduationYearSelect() }, [])
@@ -257,13 +267,24 @@ export function StudentOnboardingWizard({
   async function onStep1Submit(data: AccountBasicsData) {
     if (isImpersonating || loading) return
     setGlobalError("")
+    if (askTerms && !acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
     wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
-    if (accountCreated) { setStep(3); return }
+    if (accountCreated) {
+      // Signed in already (Microsoft or a confirmed email link): record the acceptance now.
+      if (askTerms) {
+        setLoading(true)
+        try {
+          const failed = await saveClickwrapAcceptance(acceptCurrentTerms)
+          if (failed) { setGlobalError(failed); return }
+        } finally { setLoading(false) }
+      }
+      setStep(3); return
+    }
     if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     try {
       const values = step1Form.getValues()
-      const result = await registerStudent(values, turnstileToken)
+      const result = await registerStudent(values, turnstileToken, clickwrapAnswer(acceptTerms))
       if (result.error) { setGlobalError(result.error); return }
       pendingPassword.current = values.password
       setCodeSent(true)
@@ -310,6 +331,12 @@ export function StudentOnboardingWizard({
       const password = await setPasswordAfterConfirmation(supabase, pendingPassword.current)
       pendingPassword.current = undefined
       setConfirmNotice(password.saved ? "" : passwordNotSavedNotice)
+      // The box was ticked on step 1 (registerStudent refused the account otherwise); now that the
+      // account holder has a session, store it. If that fails, step 3 shows the box again and retries,
+      // since the profile cannot be created without a stored acceptance.
+      if (askTerms && acceptTerms && await saveClickwrapAcceptance(acceptCurrentTerms)) {
+        setTermsUnsaved(true); setAcceptTerms(false); setGlobalError(TERMS_SAVE_FAILED)
+      }
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
@@ -355,8 +382,19 @@ export function StudentOnboardingWizard({
     }
   }
 
-  function onStep3Submit(data: AcademicProfileData) {
+  async function onStep3Submit(data: AcademicProfileData) {
     setConfirmNotice("")
+    if (loading) return
+    if (termsUnsaved) {
+      if (!acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
+      setLoading(true); setGlobalError("")
+      try {
+        const failed = await saveClickwrapAcceptance(acceptCurrentTerms)
+        if (failed) { setGlobalError(failed); return }
+        setTermsUnsaved(false)
+      } finally { setLoading(false) }
+    }
+    setGlobalError("")
     wizardData.current.academic = data
     setStep(4)
   }
@@ -539,6 +577,7 @@ export function StudentOnboardingWizard({
                   <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
                   {step1Form.formState.errors.password && <p className="text-control text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
+                {askTerms && <TermsClickwrap checked={acceptTerms} onCheckedChange={value => { setAcceptTerms(value); if (value && globalError === TERMS_REQUIRED_MESSAGE) setGlobalError("") }} disabled={loading} />}
                 {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button
                   type="submit"
@@ -733,8 +772,11 @@ export function StudentOnboardingWizard({
                   </div>
                 </div>
 
+                {termsUnsaved && <TermsClickwrap id="accept-terms-retry" checked={acceptTerms} onCheckedChange={value => { setAcceptTerms(value); if (value && (globalError === TERMS_REQUIRED_MESSAGE || globalError === TERMS_SAVE_FAILED)) setGlobalError("") }} disabled={loading} />}
+
                 <Button
                   type="submit"
+                  disabled={loading}
                   className="mt-2 h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
                   Continue

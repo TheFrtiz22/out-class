@@ -8,6 +8,8 @@ import { profileSectionSnapshot, gpaSchema, profileEducationFields, resumeRefere
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
+import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions";
+import { hasCurrentTermsAcceptance } from "@/utils/terms-acceptance";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { boundedParse, boundedSafeParse } from "@/lib/bounded-input";
@@ -57,6 +59,12 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   }
 
   if (parsed.headshotUrl && !parsed.headshotUrl.startsWith(`${user.id}/`)) throw new Error("You can only save your own photo.");
+
+  // Creating a profile completes the account (email, Microsoft or claimed sign-ins alike): refuse
+  // it until the account holder has accepted the current Terms. A support session cannot accept.
+  if (TERMS_ACCEPTANCE_REQUIRED && !await prisma.studentProfile.findUnique({ where: { userId: user.id }, select: { id: true } }) && !await hasCurrentTermsAcceptance(prisma, user.id)) {
+    throw new Error(TERMS_REQUIRED_MESSAGE);
+  }
 
   // Update or create the profile
   const profile = await prisma.studentProfile.upsert({

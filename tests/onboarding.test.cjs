@@ -105,6 +105,7 @@ test('profile saving derives identity from session and persists experience', asy
   let saved
   const { upsertStudentProfile } = load('actions/profile.ts', {
     '@/lib/student-profile': load('lib/student-profile.ts'),
+    '@/utils/terms-acceptance': { hasCurrentTermsAcceptance: async () => { throw Error('Terms acceptance is not consulted while LEGAL_PAGES_PUBLIC is off') } },
     '@/utils/prisma': { prisma: { studentProfile: { upsert: async data => { saved = data; return { id: 'profile' } } } } },
     '@/utils/auth': { requireAuth: async () => ({ user: { id: 'authenticated-user', email: 'actual@virginia.edu' } }) },
     'next/cache': { revalidatePath() {} },

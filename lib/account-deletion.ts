@@ -106,6 +106,7 @@ export const userRelationDeletionPlan: Record<string, { model: string; onDelete:
   matchedRosterRows: { model: "RosterImportRow", onDelete: "Restrict", treatment: "unlink", note: "Roster import history stays; match cleared." },
   claimedInvitations: { model: "ClubInvitation", onDelete: "Restrict", treatment: "retain", note: "Invitation history (claimedUser) points at the tombstone." },
   adminElevations: { model: "AdminElevation", onDelete: "Cascade", treatment: "retain", note: "Admin security audit trail." },
+  termsAcceptances: { model: "TermsAcceptance", onDelete: "Cascade", treatment: "retain", note: "Clickwrap acceptance evidence is kept (owner decision): the User row stays as an anonymized tombstone, so the cascade never fires and the rows hold only versions, source and time." },
   platformReports: { model: "PlatformReport", onDelete: "Restrict", treatment: "retain", note: "Moderation history, including this deletion request." },
   schoolRequestReviews: { model: "SchoolRequest", onDelete: "Restrict", treatment: "retain", note: "Admin review history." },
   reviewObservations: { model: "ApplicantObservation", onDelete: "Restrict", treatment: "retain", note: "Club review notes this person wrote as a reviewer." },
