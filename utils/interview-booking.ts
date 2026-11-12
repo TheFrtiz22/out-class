@@ -8,11 +8,13 @@ export async function interviewBookingCoverage(tx: AppTransactionClient, clubId:
   const owners = await tx.clubMember.findMany({ where: { clubId, isOwner: true, status: "ACTIVE", user: { disabledAt: null } }, select: { userId: true } })
   const revocations = applicant ? await tx.interviewPanelAssignment.findMany({ where: { applicationId: applicant.id, roundId, bookingManaged: false, revokedAt: { not: null } } }) : []
   const assignments: PanelAssignment[] = []
-  const approved = new Set<string>()
+  const approved = new Set<string>(), staffed = new Set<string>()
   for (const slot of slots) {
     const room = slot.room!, publisher = slot.panelScheduleVersion?.publishedBy ?? room.panelApprovedBy
+    // The slot's own staffing source (published panel, else the room approval), valid or not.
+    const ids = slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.panelApprovedBy ? room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) : []
+    if (ids.length) staffed.add(slot.id)
     if (!publisher || !owners.some(o => o.userId === publisher)) continue
-    const ids = slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id))
     const snapshot = slot.panelScheduleVersion?.document as { assignments?: PanelAssignment[]; sessions?: PanelSession[] } | undefined
     if (slot.panelScheduleVersionId && !snapshot?.sessions?.some(s => s.id === slot.id && sameSessionTime(s, { ...s, roomId: room.id, startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), buffer: room.buffer }) && s.required === (slot.interviewersNeeded ?? room.interviewersNeeded))) continue
     approved.add(slot.id)
@@ -33,9 +35,10 @@ export async function interviewBookingCoverage(tx: AppTransactionClient, clubId:
   const active = await tx.interviewPanelScheduleVersion.findFirst({ where: { clubId, roundId, status: "PUBLISHED" }, orderBy: { version: "desc" } })
   const parsedOptions = panelOptionsSchema.safeParse((active?.document as { options?: unknown } | undefined)?.options)
   const validation = validatePanelDocument({ version: 1, window: live.window ?? { start: new Date().toISOString(), end: new Date(Date.now() + 1).toISOString() }, options: parsedOptions.success ? parsedOptions.data : { maxConsecutiveMinutes: null, breakMinutes: 15 }, sessions: scene.sessions, assignments }, scene)
-  // A time with no interviewers and no bookings is simply not offered; it never blocks publishing.
+  // A time with no staffing source at all and no bookings is simply not offered; it never blocks
+  // publishing. A time whose panel or approval is no longer valid keeps reporting that problem.
   const booked = new Map(slots.map(s => [s.id, s._count.bookings]))
-  return validation.sessions.filter(row => slots.some(s => s.id === row.slotId)).map(row => ({ slotId: row.slotId, bookable: approved.has(row.slotId) && row.unfilled === 0 && row.status === "FULLY_STAFFED", unoffered: row.proposed === 0 && !booked.get(row.slotId), reasons: [
+  return validation.sessions.filter(row => slots.some(s => s.id === row.slotId)).map(row => ({ slotId: row.slotId, bookable: approved.has(row.slotId) && row.unfilled === 0 && row.status === "FULLY_STAFFED", unoffered: !staffed.has(row.slotId) && !booked.get(row.slotId), reasons: [
     ...(!approved.has(row.slotId) ? ["Panel approval is required."] : []),
     ...(row.unfilled ? [`${row.unfilled} unfilled interviewer position${row.unfilled === 1 ? "" : "s"}.`] : []),
     ...validation.issues.filter(i => i.slotId === row.slotId).map(i => i.message),

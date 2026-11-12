@@ -133,3 +133,14 @@ test('A: empty unbooked times never block booking publication and are never offe
  h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.publicationState,'PUBLISHED');assert.equal(schedule.rooms.flatMap(r=>r.slots).some(s=>s.id===empty),false)
  await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}))
 })
+
+test('coverage keeps flagging a staffed time whose approval is no longer valid instead of hiding it as unoffered',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())))
+ const booking=h.load('actions/interview-booking-publication.ts'),open=h.slotIds[1]
+ let row=(await booking.getInterviewBookingPublication(h.scope)).slots.find(s=>s.slotId===open);assert.equal(row.bookable,true);assert.equal(row.unoffered,false)
+ // The publishing owner hands ownership to the scheduler: the published panel is no longer approved by a current owner.
+ await h.db.query('UPDATE "ClubMember" SET "isOwner"=true WHERE id=$1',[h.ids.schedulerMember]);await h.db.query('UPDATE "ClubMember" SET "isOwner"=false WHERE id=$1',[h.ids.ownerMember])
+ h.as(h.ids.scheduler);row=(await booking.getInterviewBookingPublication(h.scope)).slots.find(s=>s.slotId===open)
+ assert.equal(row.bookable,false);assert.equal(row.unoffered,false);assert.ok(row.reasons.includes('Panel approval is required.'))
+ await assert.rejects(booking.setInterviewBookingPublication({...h.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true}),/Panel approval is required/)
+})
