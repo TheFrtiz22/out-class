@@ -89,7 +89,7 @@ test('events: corkboard/list, filter, empty state and dialog focus restoration',
 });
 test('leader: event creation, labelled date controls and equivalent flyer information',async()=>{
   const f=await pageFor(`${fixture.url}/?case=leader`);const p=f.page;try{
-    await p.getByRole('button',{name:'+ Create event',exact:true}).click();await p.getByLabel('Event name',{exact:true}).fill('Community night');
+    await p.getByRole('button',{name:'New event',exact:true}).click();await p.getByLabel('Event name',{exact:true}).fill('Community night');
     assert.equal(await p.getByLabel('Description',{exact:true}).getAttribute('aria-describedby'),'event-description-help');await scan(p,'leader-event-editor');await p.setViewportSize({width:320,height:800});await reflow(p);await scan(p,'leader-event-editor-320');
   }finally{await f.close();}
 });
