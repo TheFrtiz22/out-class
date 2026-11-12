@@ -21,6 +21,9 @@ import { ApplicantTransition } from "./applicant-transition";
 import { RoomPresentation } from "./room-presentation";
 import {LeaderControls,OutcomeCounts} from "./room-meeting";
 import {SessionDetails} from './session-details';
+import {formatDateTime} from '@/lib/copy/terms';
+import {SCHEDULING_TIMEZONE,SCHEDULING_TIMEZONE_LABEL} from '@/lib/scheduling-config';
+import type {VotingJoinMeeting} from '@/lib/voting-session-setup';
 import {BallotPrivacyNote} from "@/components/live-voting/ballot-privacy-note";
 import {DiscussionLeader,DiscussionMember} from "@/components/live-voting/discussion-panel";
 import "./room.css";
@@ -46,11 +49,16 @@ function MemberJoin(props:RoomProps){
  if(info?.status==="JOINED"||info?.status==="ENDED")return <VotingRoom {...props}/>;
  return <div className="vr-page vr-member"><PageHeader title="Join live voting" />{error&&<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry</Button></div>}
  {!info&&!error&&<LoadingState label="Checking session and membership…" layout="inline" rows={3} />}
- {info?.status==="READY"&&<><p>You can vote. Join and wait for the leader to start.</p><Button disabled={busy} onClick={()=>void join()}>{busy?"Joining…":"Join session"}</Button></>}
+ {info?.status==="READY"&&<>{info.meeting&&<JoinMeetingPreview meeting={info.meeting}/>}<p>You can vote. Join and wait for the leader to start.</p><Button disabled={busy} onClick={()=>void join()}>{busy?"Joining…":"Join session"}</Button></>}
  {info?.status==="DENIED"&&<p role="alert">You can’t vote in this session. Ask a club leader if you think that’s wrong.</p>}
  {info?.status==="EXPIRED"&&<p role="status">This session link is expired or unavailable.</p>}
 
  <Link className="vr-link" href="/">Return to OutClass</Link></div>;
+}
+/** Pre-join schedule for an eligible voter, in the same Eastern format the session details use. */
+function JoinMeetingPreview({meeting}:{meeting:VotingJoinMeeting}){
+ const until=meeting.plannedAt?+new Date(meeting.plannedAt)-Date.now():0,minutes=Math.max(1,Math.round(until/60000));
+ return <section aria-label="Session details" className="space-y-1"><h2>{meeting.name}</h2>{meeting.plannedAt&&<p>{`Scheduled start · ${formatDateTime(meeting.plannedAt,{timeZone:SCHEDULING_TIMEZONE})} ${SCHEDULING_TIMEZONE_LABEL}`}</p>}{until>0&&until<3600000&&<p>{`Starts in about ${minutes} ${minutes===1?"minute":"minutes"}`}</p>}{meeting.location&&<p className="break-words">{meeting.location}</p>}</section>;
 }
 export function VotingRoom(props:RoomProps){
  const {clubId,sessionId,view,demoScoped,identity,member}=props,{room,error,refresh}=useLiveVotingRoom(clubId,sessionId,identity,member),[qr,setQr]=useState(false),[preview,setPreview]=useState(""),[voteError,setVoteError]=useState(""),[voteBusy,setVoteBusy]=useState(false),[attempt,setAttempt]=useState<Ballot|null>(null),[ack,setAck]=useState<{key:string;choice:string;revision:number}|null>(null);
