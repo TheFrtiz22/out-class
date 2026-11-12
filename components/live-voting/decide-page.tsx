@@ -7,7 +7,7 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { canLeaveWorkspace, decideAccess } from "@/lib/product-navigation";
 import { decisionsHref, legacyVotingHistoryHref } from "@/lib/voting-navigation";
-import { decideCounts, decideSteps, decideTab, decideTabs, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
+import { decideCounts, decideSteps, decideTab, decideTabs, overviewDefaultRound, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
 import { listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getWorkspaceRounds } from "@/lib/workspace-api";
 import { liveRoomPath } from "@/lib/voting-room";
@@ -70,10 +70,22 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
   const go = (href: string, replace = false) => { if (!canLeaveWorkspace()) return; if (navigateWithinClub(href, replace)) return; if (replace) router.replace(href, { scroll: false }); else router.push(href, { scroll: false }) };
   const setRound = (value: string) => {
     const next = new URLSearchParams(search);
-    if (value) next.set("roundId", value); else next.delete("roundId");
+    // "All rounds" is an explicit empty roundId, so Overview never replaces that choice with a default round.
+    next.set("roundId", value);
     // Pushed, not replaced: Back and Forward restore the round as well as the tab.
     go(`/club/${encodeURIComponent(clubId)}/workspace?${next}`);
   };
+  // Overview opens on the current round when the URL names none: written into the URL (replace, so Back skips it).
+  const needsDefault = tab === "overview" && !params.has("roundId");
+  const roundsKnown = rounds.length > 0 && (!access.canVote || !!rows || roomsFailed);
+  const defaultRound = needsDefault && roundsKnown ? overviewDefaultRound(rounds, rows) : null;
+  useEffect(() => {
+    if (!defaultRound) return;
+    const next = new URLSearchParams(search);
+    next.set("roundId", defaultRound);
+    const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
+    if (!navigateWithinClub(href, true)) router.replace(href, { scroll: false });
+  }, [defaultRound, search, clubId, router]);
   if (!tab) return <p role="alert">Decide is unavailable with your current access.</p>;
   const label = (step: DecideStep) => {
     const count = counts?.[step];

@@ -69,14 +69,31 @@ export function overviewSessionAction(room: OverviewRoom): "Resume" | "Join" | "
 }
 
 /**
- * Closed live sessions in the selected round: ready to send (unpublished) and sent. Sessions, never applicants:
- * one applicant can sit in several sessions, and none of this is a letter count.
+ * The delivery marker every decision send writes (utils/decision-communications.ts, voting-room-finalization.ts):
+ * one notification per application and decision version. Its presence means this exact decision was sent.
  */
-export function overviewSendCounts(rooms: DecideRoom[]) {
-  return {
-    ready: rooms.filter(readyToSend).length,
-    sent: rooms.filter(room => room.mode !== "LEGACY" && room.state === "COMPLETED" && !!room.publishedAt).length,
-  }
+export const decisionEventKey = (app: { id: string; decisionVersion: number }) => `decision:${app.id}:${app.decisionVersion}`
+
+/**
+ * Decision letters for a round, each applicant once: applicants with a letter-bearing decision whose current
+ * version has been sent, and those still to send (a changed decision is a new version, so it counts as ready again).
+ */
+export function roundLetterCounts(apps: { id: string; decisionVersion: number }[], sentKeys: Iterable<string>) {
+  const sent = new Set(sentKeys)
+  const done = apps.filter(app => sent.has(decisionEventKey(app))).length
+  return { ready: apps.length - done, sent: done }
+}
+
+/**
+ * The round Overview opens on when the URL names none: the round of an active live session, else of a scheduled
+ * one, else of the most recent session (rooms arrive newest first), else the first round in pipeline order.
+ */
+export function overviewDefaultRound(rounds: { id: string }[], rooms: OverviewRoom[] | null): string | null {
+  const known = (room?: OverviewRoom) => room && rounds.some(round => round.id === room.roundId) ? room.roundId : null
+  return known(rooms?.find(room => overviewSessionGroup(room) === "active"))
+    ?? known(rooms?.find(room => overviewSessionGroup(room) === "scheduled"))
+    ?? known(rooms?.find(room => rounds.some(round => round.id === room.roundId)))
+    ?? rounds[0]?.id ?? null
 }
 
 /** A read keyed by its scope (club, cycle, round, demo, access): a response for another scope is never shown. */

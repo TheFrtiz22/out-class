@@ -5,8 +5,8 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { canLeaveWorkspace } from "@/lib/product-navigation";
 import { handleClubLink } from "@/lib/workspace-navigation";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
-import { overviewSendCounts, overviewSessionAction, overviewSessionGroup, overviewSummaryState, type DecideStep, type OverviewSummaryState, type ScopedRead } from "@/lib/decide";
-import { getRoundTargetSummary, type listLiveVotingRooms } from "@/lib/voting-room-api";
+import { overviewSessionAction, overviewSessionGroup, overviewSummaryState, type DecideStep, type OverviewSummaryState, type ScopedRead } from "@/lib/decide";
+import { getRoundLetterCounts, getRoundTargetSummary, type listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getDecisionTemplates } from "@/lib/workspace-api";
 import { decisionTypes } from "@/lib/decision-letters";
 import { liveRoomPath } from "@/lib/voting-room";
@@ -19,6 +19,7 @@ import { ArrowRight } from "@/components/icons";
 
 type Rooms = Awaited<ReturnType<typeof listLiveVotingRooms>>;
 type Templates = Awaited<ReturnType<typeof getDecisionTemplates>>;
+type LetterCounts = Awaited<ReturnType<typeof getRoundLetterCounts>>;
 
 function Figure({ label, sublabel, value }: { label: string; sublabel?: string; value: number | string }) {
   return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{label}{sublabel && <span className="block">{sublabel}</span>}</dt><dd className="m-0 text-xl font-semibold tabular-nums">{value}</dd></div>;
@@ -62,7 +63,8 @@ function useFocusReload() {
 /**
  * Decide → Overview for the selected round, read only. Each figure reuses an existing server read and its checks:
  * decisions and target from getRoundTargetSummary (canonical outcomes, each applicant once), sessions from the
- * Voting room list DecidePage already loaded, and letter templates from getDecisionTemplates (recruitment.manage).
+ * Voting room list DecidePage already loaded, letters ready and sent per applicant from getRoundLetterCounts, and
+ * letter templates from getDecisionTemplates (recruitment.manage).
  */
 export function DecideOverview({ clubId, member, access, rows, failed, onRetry, roundId, cycleId, stepHref }: {
   clubId: string; member: ClubAccess; access: { canVote: boolean; canSend: boolean }
@@ -88,11 +90,22 @@ export function DecideOverview({ clubId, member, access, rows, failed, onRetry, 
     getDecisionTemplates(clubId).then(value => { if (current) setLetters({ scope: lettersScope, value }) }).catch(() => { if (current) setLetters({ scope: lettersScope, value: null }) });
     return () => { current = false };
   }, [lettersScope, clubId, canLetters, demo.ready, lettersReload]);
-  const totals = overviewSummaryState({ roundId, scope, loaded: summary, canIdentify: hasPermission(member, "applicants.identify"), rooms: rows });
+  // Letters for this round, each applicant once: ready to send and sent (the canonical delivery marker).
+  const showSends = (access.canVote || access.canSend) && !!roundId;
+  const [counts, setCounts] = useState<ScopedRead<LetterCounts> | null>(null), [countsReload, reloadCounts] = useFocusReload();
+  useEffect(() => {
+    if (!showSends || !demo.ready) return;
+    let current = true;
+    getRoundLetterCounts({ clubId, roundId, ...(cycleId ? { cycleId } : {}) })
+      .then(value => { if (current) setCounts({ scope, value }) })
+      .catch(() => { if (current) setCounts({ scope, value: null }) });
+    return () => { current = false };
+  }, [scope, clubId, roundId, cycleId, showSends, demo.ready, countsReload]);
+  const canIdentify = hasPermission(member, "applicants.identify");
+  const totals = overviewSummaryState({ roundId, scope, loaded: summary, canIdentify, rooms: rows });
+  const letterCounts = overviewSummaryState({ roundId, scope, loaded: counts, canIdentify, rooms: rows });
   const templates = letters?.scope === lettersScope ? letters : null;
   const sessions = rows?.filter(r => overviewSessionGroup(r)) ?? [];
-  const showSends = access.canVote && !!roundId;
-  const send = rows ? overviewSendCounts(rows) : null;
   const customized = templates?.value ? decisionTypes.filter(type => templates.value!.templates[type]).length : 0;
   const roomsFailed = failed ? <div role="alert" className="space-y-2"><p className="text-sm">Voting sessions could not be loaded.</p><Button variant="outline" size="sm" onClick={onRetry}>Retry</Button></div> : null;
 
@@ -119,8 +132,10 @@ export function DecideOverview({ clubId, member, access, rows, failed, onRetry, 
 
     {(showSends || canLetters) ? <Panel as="section" aria-labelledby="decide-overview-letters" className="oc-workspace-stack">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="decide-overview-letters" className="oc-section-heading">Decision letters</h2>{access.canSend && <StepLink label="Open Send" href={stepHref("letters")} />}</div>
-      {showSends && (roomsFailed ?? (!send ? <LoadingState label="Loading voting sessions…" layout="rows" rows={1} />
-        : <p className="text-sm">Sessions ready to send <span className="font-medium tabular-nums">{send.ready}</span> · Sessions sent <span className="font-medium tabular-nums">{send.sent}</span></p>))}
+      {showSends && (letterCounts.kind === "loading" ? <LoadingState label="Loading decision letters…" layout="rows" rows={1} />
+        : letterCounts.kind === "denied" ? <p className="text-sm text-muted-foreground">Letter counts aren’t available with your access.</p>
+        : letterCounts.kind === "failed" ? <div role="alert" className="space-y-2"><p className="text-sm">Decision letters could not be loaded.</p><Button variant="outline" size="sm" onClick={reloadCounts}>Retry</Button></div>
+        : letterCounts.kind === "ready" ? <dl className="m-0 grid grid-cols-2 gap-4 sm:max-w-sm" aria-label="Applicants by letter status"><Figure label="Ready to send" value={letterCounts.value.ready} /><Figure label="Sent" value={letterCounts.value.sent} /></dl> : null)}
       {canLetters && (!templates ? <LoadingState label="Loading letter templates…" layout="rows" rows={1} />
         : !templates.value ? <p role="status" className="text-sm text-muted-foreground">Letter templates could not be loaded.</p>
         : <p className="text-sm"><span className="font-medium">{customized} of {decisionTypes.length}</span> outcome letters customized · Formal letters {templates.value.sendFormalDecisionLetters ? "on" : "off"}</p>)}

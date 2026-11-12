@@ -9,6 +9,9 @@ import { demoStore,demoMember } from "./store";
 import { createRoomSchema,roomScope,roomBallotSchema,roomCommandSchema,roomOutcomes,roomDisplayConfig,roomPresentationSchema,liveRoomFields,recommendedOutcome,storedChoice,uniqueSelection,finalizationPreviewInput,finalizeRoomInput } from "@/lib/voting-room";
 import { roomAuthority,requireRoomLeader,projectVotingRoom,undoableDecision,projectRoundTargetSummary,type LiveRoom } from "@/lib/voting-room-projection";
 import type * as TargetSummary from "@/actions/voting-target-summary";
+import type * as Letters from "@/actions/decide-letters";
+import { decideAccess } from "@/lib/product-navigation";
+import { decisionTypes } from "@/lib/decision-letters";
 import { editorValue } from "@/lib/editor-value";
 import { hasPermission } from "@/lib/permissions";
 import { anonymousApplicantLabel,type ReviewApplication } from "@/lib/anonymous-review";
@@ -58,8 +61,10 @@ async function perform<K extends keyof typeof Live>(method:K,input:unknown,membe
    const snapshot=projectVotingRoom(c.s,c.m,c.round.anonymousReview??false,{name:c.round.name,final:!c.club.rounds.some(r=>!r.archivedAt&&r.order>c.round.order)}),entry=c.s.passes.find(p=>p.number===c.s.currentPass)?.candidates.find(v=>v.applicationId===c.s.activeApplicationId);
    const eligible=c.state.memberships.filter(m=>c.s.participants.some(p=>p.memberId===m.id)&&hasPermission(m,"applications.review")&&hasPermission(m,"decisions.vote"));const opts=roomPresentationSchema.safeParse(c.s.presentationOptions);
    // Same server-backed Undo as the live room: the receipt that produced this revision, leaders only.
-   const receipts=Object.entries((c.state as State&Receipts).liveVotingReceipts??{}).filter(([k])=>k.startsWith(`${c.s.id}:`)).map(([,v])=>(v.result as {result?:unknown})?.result);
-   const undo=snapshot.permissions.canCorrect?receipts.map(r=>undoableDecision(c.s,r)).find(Boolean)??null:null;
+   const receipts=Object.entries((c.state as State&Receipts).liveVotingReceipts??{}).filter(([k])=>k.startsWith(`${c.s.id}:`)).map(([,v])=>({actor:v.actor,decision:undoableDecision(c.s,(v.result as {result?:unknown})?.result)}));
+   const receipt=snapshot.permissions.canCorrect?receipts.find(r=>r.decision):undefined;
+   const decider=receipt&&receipt.actor!==c.m.id?c.state.memberships.find(m=>m.id===receipt.actor):undefined;
+   const undo=receipt?.decision?{...receipt.decision,decidedBy:receipt.actor===c.m.id?null:decider?label(c.state,decider.userId):"Another leader"}:null;
    result={...snapshot,undo,accessVersion:editorValue([c.m.permissions,c.round.anonymousReview]),fields:opts.success?opts.data.fields:null,joinedSelf:!!c.s.participants.find(p=>p.memberId===c.m.id)?.joinedAt,participation:{voted:entry?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},joinedParticipants:c.role.leader?eligible.map(m=>({id:m.id,label:label(c.state,m.userId),joined:!!c.s.participants.find(p=>p.memberId===m.id)?.joinedAt})):[]};
   }else if(method==="getLiveVotingPresentation"){
    const applicationId=(input as {applicationId:string}).applicationId,a=c.state.applications.find(a=>a.id===applicationId&&a.clubId===c.s.clubId&&a.roundId===c.s.roundId);if(!a||!c.s.candidates.some(v=>v.applicationId===a.id)||(!c.role.leader&&c.s.activeApplicationId!==a.id))throw Error("Demo presentation unavailable.");
@@ -181,4 +186,15 @@ export async function roundTargetSummary(input:unknown):Promise<Awaited<ReturnTy
  if(!round)throw Error("Demo round unavailable.");
  const rooms=c.state.votingSessions.filter(s=>s.clubId===d.clubId&&s.roundId===d.roundId&&s.mode==="LIVE"&&(!d.cycleId||s.cycleId===d.cycleId));
  return projectRoundTargetSummary(rooms,c.m,{name:round.name,final:!c.club.rounds.some(r=>!r.archivedAt&&r.order>round.order),anonymousReview:round.anonymousReview??false});
+}
+
+/** Demo mirror of getRoundLetterCounts: same access rule; "sent" is a Demo letter for the applicant's current decision. */
+export async function roundLetterCounts(input:unknown):Promise<Awaited<ReturnType<typeof Letters.getRoundLetterCounts>>>{
+ const d=z.object({clubId:z.string().uuid(),roundId:z.string().uuid(),cycleId:z.string().uuid().optional()}).strict().parse(input),c=context(d.clubId),round=c.club.rounds.find(r=>r.id===d.roundId&&!r.archivedAt);
+ const access=decideAccess(c.m);if(!access.canVote&&!access.canSend)throw Error("Decision letters unavailable.");
+ if(!round)throw Error("Demo round unavailable.");
+ if(!round.anonymousReview&&!hasPermission(c.m,"applicants.identify"))throw Error("Applicant access denied.");
+ const apps=c.state.applications.filter(a=>a.clubId===d.clubId&&a.roundId===d.roundId&&(decisionTypes as readonly string[]).includes(a.status)&&(!d.cycleId||(a as {recruitmentCycleId?:string|null}).recruitmentCycleId==null||(a as {recruitmentCycleId?:string|null}).recruitmentCycleId===d.cycleId));
+ const sent=apps.filter(a=>c.state.decisionLetters.filter(l=>l.applicationId===a.id).at(-1)?.decision===a.status).length;
+ return {ready:apps.length-sent,sent};
 }
