@@ -18,7 +18,9 @@ function setup(memberships=[]) {
 }
 test('short queries never enumerate records',async()=>{const {calls,searchWorkspace}=setup();assert.deepEqual(await searchWorkspace(' a '),[]);assert.equal(calls.length,0)})
 test('student search is scoped to own applications with bounded result counts',async()=>{
- const {calls,searchWorkspace}=setup();await searchWorkspace('club');assert.equal(calls.length,2)
+ const {calls,searchWorkspace}=setup();await searchWorkspace('club')
+ // Memberships are always read server-side; with none authorized, no applicant or round query runs.
+ assert.deepEqual(calls.map(([name])=>name),['memberships','clubs','applications'])
  const query=calls.find(([name])=>name==='applications')[1];assert.equal(query.where.studentId,'student');assert.equal(query.take,6)
 })
 test('a client requesting leader search gains no private results without authorized memberships',async()=>{
@@ -38,4 +40,9 @@ test('full applicant names match across first and last name fields',async()=>{
  const applicant=calls.filter(([name])=>name==='applications')[1][1]
  const terms=applicant.where.student.OR[1].studentProfile.AND
  assert.deepEqual(terms.map(term=>term.OR[0].firstName.contains),['Alex','Morgan'])
+})
+test('record search is role-wide: authorized applicants are found without the retired leader flag',async()=>{
+ const {calls,searchWorkspace}=setup([{clubId:'authorized-club'}]);await searchWorkspace('Alex')
+ assert.deepEqual(calls.filter(([name])=>name==='applications')[1][1].where.clubId,{in:['authorized-club']})
+ assert.deepEqual(calls.find(([name])=>name==='rounds')[1].where.clubId,{in:['authorized-club']})
 })

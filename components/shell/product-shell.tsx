@@ -26,6 +26,7 @@ import { useWorkspaceAccess } from "@/components/shell/use-workspace-access"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
 import { NavigationSearch } from "@/components/shell/navigation-search"
+import { searchDestinations } from "@/lib/search-destinations"
 import { KeyboardShortcuts } from "@/components/shell/keyboard-shortcuts"
 import { IconButton } from "@/components/ui/icon-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -213,6 +214,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   // Meetings, Events and Members of this club, each only when its page would open; one entry per address.
   const clubLinks = allowed && !platform ? clubSearchLinks(member, clubId).filter(link => !railLinks.some(rail => rail.href === link.href)) : []
   const otherClubs = manager && !platform ? access.clubs.filter(club => club.clubId !== clubId) : []
+  // Cmd-K reaches every page the account's roles allow, not only this workspace's: personal pages, each club, the platform.
+  const destinations = user ? searchDestinations({ memberships: user.memberships, admin: access.admin, settings: !demo.isDemoEnabled }) : []
   return <div className="min-h-dvh bg-background text-foreground" data-product-shell={platform ? "admin" : manager ? "manager" : "personal"} data-shell-chrome={chrome ? undefined : "hidden"} style={{ "--oc-club-accent": member?.club.color || "var(--brand-orange)" } as CSSProperties}>
     <a href="#workspace-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-card focus:p-3">Skip to content</a>
     <header className="oc-product-header">
@@ -242,7 +245,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)
     }} />}
     <KeyboardShortcuts />
-    <NavigationSearch clubId={manager ? clubId : undefined} leader={manager} open={search} onOpenChange={setSearch} onDismissAutoFocus={() => {
+    <NavigationSearch clubId={manager ? clubId : undefined} leader={manager || platform} destinations={destinations} open={search} onOpenChange={setSearch} onDismissAutoFocus={() => {
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
