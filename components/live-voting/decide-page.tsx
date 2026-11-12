@@ -7,14 +7,14 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { canLeaveWorkspace, decideAccess } from "@/lib/product-navigation";
 import { decisionsHref, legacyVotingHistoryHref } from "@/lib/voting-navigation";
-import { decideCounts, decideSteps, decideTab, decideTabs, overviewDefaultRound, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
+import { decideCounts, decideTab, decideTabs, overviewDefaultRound, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
 import { listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getWorkspaceRounds } from "@/lib/workspace-api";
 import { liveRoomPath } from "@/lib/voting-room";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
 import { pluralize } from "@/lib/copy/terms";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Stepper, StepperNav } from "@/components/ui/stepper";
+import { RoundSelect } from "@/components/ui/round-select";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -91,24 +91,24 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
     const count = counts?.[step];
     return count == null ? undefined : step === "voting" ? `${pluralize(count, "session")} to run` : `${pluralize(count, "applicant")} ready to send`;
   };
+  // Overview (the default tab) leads the stepper; Review, Vote and Send follow as ordered steps.
+  const steps = decideTabs.filter(step => decideTab(step.id, access) === step.id);
+  const index = steps.findIndex(step => step.id === tab);
+  const open = (step: DecideTab) => go(decisionsHref(clubId, step, search));
   return <div className="oc-decide space-y-5">
-    {rounds.length > 0 && <SegmentedControl label="Round" className="oc-command-pipeline" size="compact" value={rounds.some(r => r.id === roundId) ? roundId : ""}
-      onChange={setRound} options={[{ value: "", label: "All rounds" }, ...rounds.map(r => ({ value: r.id, label: r.name }))]} />}
-    <Tabs value={tab} onValueChange={value => go(decisionsHref(clubId, value as DecideTab, search))}>
-      <TabsList variant="segmented" aria-label="Decide steps" className="oc-decide-steps">
-        {decideTabs.filter(item => decideTab(item.id, access) === item.id).map(item => {
-          if (item.id === "overview") return <TabsTrigger key={item.id} value={item.id}>{item.label}</TabsTrigger>;
-          const step = item.id, number = decideSteps.filter(s => decideTab(s.id, access) === s.id).findIndex(s => s.id === step) + 1;
-          return <TabsTrigger key={step} value={step} aria-label={[`Step ${number}: ${item.label}`, label(step)].filter(Boolean).join(", ")}>
-            <span className="oc-decide-step-number" aria-hidden="true">{number}</span>{item.label}{counts?.[step] != null && <span className="oc-segment-count" aria-hidden="true">{" · "}{counts[step]}</span>}
-          </TabsTrigger>;
-        })}
-      </TabsList>
-      <TabsContent value="overview" className="mt-5">{tab === "overview" && <DecideOverview clubId={clubId} member={member} access={access} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} roundId={roundId} cycleId={cycleId} stepHref={step => decisionsHref(clubId, step, search)} />}</TabsContent>
-      {access.canDecide && <TabsContent value="review" className="mt-5">{tab === "review" && <DecideReview key={roundId} scoped decisionsOnly initialDecision="pending" />}</TabsContent>}
-      {access.canVote && <TabsContent value="voting" className="mt-5">{tab === "voting" && <VotingRoomLanding clubId={clubId} />}</TabsContent>}
-      {access.canSend && <TabsContent value="letters" className="mt-5 space-y-6">{tab === "letters" && access.canDecide && <StagedDecisionsPanel clubId={clubId} roundId={roundId || undefined} />}{tab === "letters" && <SendStep clubId={clubId} member={member} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} />}</TabsContent>}
-    </Tabs>
+    <div className="oc-decide-header">
+      <Stepper label="Decide steps" className="oc-decide-steps" current={tab} onSelect={open}
+        steps={steps.map(step => ({ id: step.id, label: <>{step.label}{step.id !== "overview" && label(step.id) && <span className="sr-only">, {label(step.id)}</span>}</>, badge: step.id === "overview" ? undefined : counts?.[step.id] ?? undefined }))} />
+      {rounds.length > 0 && <RoundSelect rounds={rounds} value={rounds.some(r => r.id === roundId) ? roundId : ""} onChange={setRound} className="oc-decide-round" />}
+    </div>
+    <section aria-label={steps[index]?.label} className="space-y-6">
+      {tab === "overview" && <DecideOverview clubId={clubId} member={member} access={access} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} roundId={roundId} cycleId={cycleId} stepHref={step => decisionsHref(clubId, step, search)} />}
+      {tab === "review" && access.canDecide && <DecideReview key={roundId} scoped decisionsOnly initialDecision="pending" />}
+      {tab === "voting" && access.canVote && <VotingRoomLanding clubId={clubId} />}
+      {tab === "letters" && access.canSend && <>{access.canDecide && <StagedDecisionsPanel clubId={clubId} roundId={roundId || undefined} />}<SendStep clubId={clubId} member={member} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} /></>}
+    </section>
+    <StepperNav onBack={index > 0 ? () => open(steps[index - 1].id) : undefined} backLabel={index > 0 ? `Back to ${steps[index - 1].label}` : undefined}
+      onNext={index >= 0 && index < steps.length - 1 ? () => open(steps[index + 1].id) : undefined} nextLabel={index < steps.length - 1 ? `Next: ${steps[index + 1]?.label}` : undefined} />
   </div>;
 }
 

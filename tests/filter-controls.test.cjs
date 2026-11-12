@@ -29,8 +29,47 @@ test('stepper numbers steps and marks the current one', () => {
   const { Stepper } = loadComponent('components/ui/stepper.tsx')
   const html = renderToStaticMarkup(h(Stepper, { label: 'Scheduling workflow', current: 'rooms', onSelect() {}, steps: [{ id: 'availability', label: 'Availability', complete: true }, { id: 'rooms', label: 'Set interview times' }] }))
   assert.match(html, /<nav aria-label="Scheduling workflow"[^>]*><ol>/)
-  assert.match(html, /aria-current="step"><span class="oc-stepper-marker" aria-hidden="true">2<\/span>Set interview times/)
-  assert.match(html, /Availability<span class="sr-only"> \(done\)<\/span>/)
+  assert.match(html, /aria-current="step"><span class="oc-stepper-marker" aria-hidden="true">2<\/span><span class="oc-stepper-label">Set interview times<\/span>/)
+  assert.match(html, /Availability<\/span><span class="sr-only"> \(done\)<\/span>/)
+  assert.match(html, /<li data-complete="true"><button type="button" class="oc-stepper-step" data-step="availability"><span class="oc-stepper-marker" aria-hidden="true"><svg/, 'finished steps show a check')
+  const badge = renderToStaticMarkup(h(Stepper, { label: 'Decide steps', current: 'voting', steps: [{ id: 'voting', label: 'Vote', badge: 2 }] }))
+  assert.match(badge, /aria-current="step"><span class="oc-stepper-marker" aria-hidden="true">1<\/span><span class="oc-stepper-label">Vote<\/span><span class="oc-stepper-badge" aria-hidden="true">2<\/span>/)
+})
+
+test('stepper nav: Back and Next, each side optional', () => {
+  const { StepperNav } = loadComponent('components/ui/stepper.tsx')
+  const both = renderToStaticMarkup(h(StepperNav, { onBack() {}, onNext() {}, nextLabel: 'Next: Send' }))
+  assert.match(both, /data-slot="stepper-nav"/); assert.match(both, />Back<\/button>/); assert.match(both, />Next: Send<svg/)
+  assert.doesNotMatch(renderToStaticMarkup(h(StepperNav, { onNext() {} })), />Back</)
+  assert.equal(renderToStaticMarkup(h(StepperNav, {})), '')
+})
+
+test('underline tabs: a tablist of tabs with counts, faded empty tabs, links when given an href', () => {
+  const { UnderlineTabs } = loadComponent('components/ui/underline-tabs.tsx')
+  const html = renderToStaticMarkup(h(UnderlineTabs, { label: 'Application stage', value: 'review', onChange() {}, items: [{ id: 'drafts', label: 'Drafts', count: 0 }, { id: 'review', label: 'In review', count: 2 }] }))
+  assert.match(html, /^<div role="tablist" aria-label="Application stage" aria-orientation="horizontal"/)
+  assert.match(html, /<button type="button" role="tab" aria-selected="false" tabindex="-1" class="oc-underline-tab" data-value="drafts" data-empty="true">Drafts<span class="oc-underline-tab-count"> \(0\)<\/span><\/button>/)
+  assert.match(html, /role="tab" aria-selected="true" tabindex="0"[^>]*>In review<span class="oc-underline-tab-count"> \(2\)/)
+  const links = renderToStaticMarkup(h(UnderlineTabs, { label: 'Sections', value: 'a', items: [{ id: 'a', label: 'A', href: '/a' }, { id: 'b', label: 'B', href: '/b' }] }))
+  assert.match(links, /<a role="tab" aria-selected="true"[^>]*aria-current="page"[^>]*href="\/a">A<\/a>/)
+})
+
+test('round select: "Round: All" from the real rounds; no All where a page never had one', () => {
+  const src = fs.readFileSync('components/ui/round-select.tsx', 'utf8')
+  assert.match(src, /prefix = "Round"/); assert.match(src, /allLabel=\{includeAll \? allLabel : undefined\}/)
+  assert.match(src, /rounds\.map\(round => \(\{ value: round\.id, label: round\.name \}\)\)/)
+  for (const file of ['components/interviews/interview-rooms-list.tsx', 'components/interview-access-setup.tsx', 'components/live-voting/decide-page.tsx', 'components/interviews/room-manager.tsx', 'components/ranked-review-list.tsx', 'components/views/leader-dashboard/live-leader-workspace.tsx', 'components/availability/admin-overview.tsx'])
+    assert.match(fs.readFileSync(file, 'utf8'), /<RoundSelect /, file)
+  assert.match(fs.readFileSync('components/interviews/room-manager.tsx', 'utf8'), /<RoundSelect label="Recruitment round" includeAll=\{false\}/)
+  assert.match(fs.readFileSync('components/ranked-review-list.tsx', 'utf8'), /<RoundSelect label="Ranked round" includeAll=\{false\}/)
+})
+
+test('filter chips are light outlined chips, not the navy pill', () => {
+  const { FilterChips } = loadComponent('components/ui/filter-chips.tsx')
+  const html = renderToStaticMarkup(h(FilterChips, { label: 'Browse categories', value: 'all', onChange() {}, options: [{ value: 'all', label: 'All' }, { value: 'finance', label: 'Finance' }] }))
+  assert.match(html, /class="oc-segmented-control oc-chip-row"/)
+  const css = fs.readFileSync('styles/filter-controls.css', 'utf8')
+  assert.match(css, /\.oc-segmented-control\.oc-chip-row > button\[data-segment\]\[data-selected\] \{ border-color: var\(--primary\); background: var\(--accent\)/)
 })
 
 test('search field: named searchbox, clear only with a value and a handler, shortcut hint only while empty', () => {
@@ -42,10 +81,10 @@ test('search field: named searchbox, clear only with a value and a handler, shor
   assert.match(filled, /aria-label="Clear search"/); assert.doesNotMatch(filled, /<kbd/)
 })
 
-test('filter styles use tokens: no colour literals and only the 999px pill radius', () => {
+test('filter styles use tokens: no colour literals and only the 999px pill radius (0 for underlines)', () => {
   const css = fs.readFileSync('styles/filter-controls.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
   assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/)
-  for (const m of css.matchAll(/border-radius\s*:\s*([^;}]+)/g)) assert.match(m[1].trim(), /^(999px|var\(--[\w-]+\)( var\(--[\w-]+\))*( 0 0)?)$/, m[0])
+  for (const m of css.matchAll(/border-radius\s*:\s*([^;}]+)/g)) assert.match(m[1].trim(), /^(0|999px|var\(--[\w-]+\)( var\(--[\w-]+\))*( 0 0)?)$/, m[0])
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/); assert.match(css, /@media \(forced-colors: active\)/)
   assert.match(fs.readFileSync('app/globals.css', 'utf8'), /@import "\.\.\/styles\/filter-controls\.css";/)
 })

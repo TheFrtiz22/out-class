@@ -25,7 +25,7 @@ export function SortControl<K extends string>({ options, value, descending, onCh
 }) {
   const current = options.find(option => option.key === value)?.label ?? value
   return <div role="group" aria-label={label} data-sort-control="" className={cn("oc-sort-control", className)}>
-    <PillSelect label={`${label} by`} prefix="Sort:" size="compact" active={false} disabled={disabled} value={value}
+    <PillSelect label={`${label} by`} prefix="Sort" size="compact" active={false} disabled={disabled} value={value}
       onChange={next => onChange(next as K, next === value ? descending : descendingByDefault?.(next as K) ?? false)}
       options={options.map(option => ({ value: option.key, label: option.label }))} />
     <Button type="button" variant="ghost" size="icon" className="oc-sort-direction" disabled={disabled}

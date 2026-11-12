@@ -405,9 +405,6 @@
   border-radius: var(--oc-radius-sm);
   margin-top: 5px;
 }
-.oc-event-management-tabs {
-  margin: 20px 0;
-}
 .oc-event-actions {
   display: flex;
   gap: 8px;
@@ -672,7 +669,6 @@
 @media (max-width: 900px) { .oc-smart-event-copy { padding: 24px; } .oc-smart-event-card { grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr); } }
 @media (max-width: 700px) {
   .oc-event-toolbar { gap: 9px; }
-  .oc-event-toolbar .oc-event-periods { width: 100%; }
   .oc-event-toolbar .oc-event-search { width: 100%; max-width: none; flex-basis: 100%; }
   .oc-smart-event-card { display: flex; flex-direction: column; border-radius: var(--oc-radius-xl); }
   .oc-smart-event-media { height: 220px; min-height: 220px; }
@@ -694,13 +690,13 @@
 
 @media (max-width: 359px) { .oc-flyer-grid { grid-template-columns: minmax(0, 1fr); } .oc-physical-board { padding: 1.5rem; } }
 
-/* One toolbar: date range, search, the Filter menu and the view switch. */
+/* One toolbar: search, the When dropdown, the Filter menu and the view switch. */
 .oc-event-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 1 1 38rem; min-width: 0; }
 .oc-event-toolbar-actions .oc-event-search { margin-left: auto; max-width: none; min-width: min(100%, 10rem); }
 .oc-event-toolbar-actions > [data-slot="button"] { min-height: 44px; }
 @media (max-width: 700px) {
-  .oc-event-toolbar-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; flex-basis: 100%; }
-  /* Search gets its own full-width row; Filter and the icon view switch share the row below. */
+  .oc-event-toolbar-actions { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; flex-basis: 100%; }
+  /* Search gets its own full-width row; When, Filter and the icon view switch share the row below. */
   .oc-event-toolbar-actions .oc-event-search { grid-column: 1 / -1; margin: 0; min-width: 0; width: 100%; }
   .oc-event-toolbar-actions .oc-event-view-switch { width: auto; min-width: 0; }
   .oc-event-toolbar-actions > [data-slot="button"] { width: 100%; }
@@ -727,3 +723,8 @@
   .oc-smart-event-actions { display: flex; width: 100%; gap: 8px; }
   .oc-smart-event-actions > .oc-event-pill { flex: 1; min-height: 44px; padding-inline: 12px; }
 }
+
+/* Club Calendar: "Jump to: Meetings · Events" anchors above the two sections. */
+.oc-jump-links { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; color: var(--muted-foreground); font-size: var(--oc-text-small); }
+.oc-jump-links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--primary); font-weight: var(--oc-weight-medium); text-decoration: underline; text-underline-offset: 3px; }
+.oc-calendar-section { scroll-margin-top: 5rem; }

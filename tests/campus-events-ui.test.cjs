@@ -174,29 +174,33 @@ test("reduced motion removes pull and overlay animation; Escape and focus trappi
   assert.match(dialog, /@radix-ui\/react-dialog/);
 });
 
-test("Calendar shows meetings and events with an All / Meetings / Events filter; Demo still isolates events", () => {
+test("Calendar shows Meetings and Events under their own headings with Jump to links; Demo still isolates events", () => {
   let params = new URLSearchParams('section=calendar'), demo = false;
+  const effects = [];
   const { ClubCalendar } = load('components/events/club-meetings-workspace.tsx', {
-    'next/navigation': { useSearchParams: () => params, useRouter: () => ({ replace() {} }) },
+    react: { useEffect: effect => effects.push(effect) },
+    'next/navigation': { useSearchParams: () => params },
     '@/contexts/demo-context': { useDemoMode: () => ({isDemoEnabled: demo}) },
   });
   const props={clubId:'club',clubName:'Club',canManage:true,canSeeAttendees:true};
   let tree=ClubCalendar(props);
-  const filter=all(tree).find(n=>n.type==='PillGroup');
-  assert.deepEqual(filter.props.options.map(o=>o.label),['All','Meetings','Events']);
-  assert.equal(filter.props.value,'all');
+  assert.ok(!all(tree).some(n=>n.type==='PillGroup'||n.type==='SegmentedControl'),'no All / Meetings / Events switcher');
+  const jump=all(tree).find(n=>n.type==='nav');
+  assert.equal(jump.props['aria-label'],'Calendar sections');
+  assert.deepEqual(all(jump).filter(n=>n.type==='a').map(n=>n.props.href),['#calendar-meetings','#calendar-events']);
   assert.equal(all(tree).find(n=>n.type==='MeetingList').props.initialAudience,'ALL');
-  assert.ok(all(tree).some(n=>n.type==='ClubEvents'),'All shows events too');
+  assert.ok(all(tree).some(n=>n.type==='ClubEvents'),'both sections always show');
+  // Old type= links still land on that section (scrolled into view), with both sections on the page.
   params=new URLSearchParams('section=calendar&type=meetings&new=1');tree=ClubCalendar(props);
   assert.equal(all(tree).find(n=>n.type==='MeetingList').props.openCreate,true);
-  assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
-  params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar(props);
   assert.ok(all(tree).some(n=>n.type==='ClubEvents'));
-  assert.ok(!all(tree).some(n=>n.type==='MeetingList'));
+  const scrolled=[];global.document={getElementById:id=>({scrollIntoView(){scrolled.push(id)}})};
+  try { params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar(props);effects.splice(0).forEach(effect=>effect()) } finally { delete global.document }
+  assert.ok(scrolled.includes('calendar-events'));
   demo=true;tree=ClubCalendar(props);
   assert.match(title(tree),/not available in Demo yet/);
   assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
-  // Without meetings.manage: meetings only, no filter, even on an Events link.
+  // Without meetings.manage: meetings only, even on an Events link.
   demo=false;params=new URLSearchParams('section=calendar&type=events');tree=ClubCalendar({...props,canManage:false,personalOnly:true});
   assert.equal(tree.type,'MeetingList');assert.equal(tree.props.personalOnly,true);
 });

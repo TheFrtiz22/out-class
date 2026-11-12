@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { SegmentedControl, type SegmentOption } from "@/components/ui/segmented-control"
+import { cn } from "@/lib/utils"
 
 type Common<T extends string> = {
   label: string
@@ -16,7 +17,7 @@ type Single<T extends string> = Common<T> & { multiple?: false; value: T; onChan
 type Multiple<T extends string> = Common<T> & { multiple: true; value: T[]; onChange: (value: T[]) => void }
 
 /**
- * A chip row in the pill style (the segmented control's chip mode). Long lists collapse behind a
+ * A row of light outlined chips (the segmented control's chip mode, restyled by .oc-chip-row). Long lists collapse behind a
  * "+N more" chip that expands inline, in place of long dropdowns (categories, interests, roles, groups).
  */
 export function FilterChips<T extends string>(props: Single<T> | Multiple<T>) {
@@ -33,6 +34,6 @@ export function FilterChips<T extends string>(props: Single<T> | Multiple<T>) {
     : undefined
   // Chip rows never slide: several chips can be on, and a chip row re-flows as it expands.
   return props.multiple
-    ? <SegmentedControl multiple label={label} options={shown} value={props.value} onChange={props.onChange} size={size} className={className} after={more} />
-    : <SegmentedControl label={label} options={shown} value={props.value} onChange={props.onChange} size={size} animated={false} className={className} after={more} />
+    ? <SegmentedControl multiple label={label} options={shown} value={props.value} onChange={props.onChange} size={size} className={cn("oc-chip-row", className)} after={more} />
+    : <SegmentedControl label={label} options={shown} value={props.value} onChange={props.onChange} size={size} animated={false} className={cn("oc-chip-row", className)} after={more} />
 }
