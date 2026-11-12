@@ -10,20 +10,32 @@ function denied(e:unknown){return e instanceof Error&&[/^Interview access unavai
 
 /** Only verified saved anchors from the preserved document, never annotation comments. */
 export async function votingHighlightChoices(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string) {
-  const rows=await tx.interviewResumeAnnotation.findMany({where:{kind:"TEXT_HIGHLIGHT",deletedAt:null,document:{applicationId,round:{clubId,anonymousReview:false}}},
-    select:{id:true,anchor:true,document:{select:{id:true,roundId:true,round:{select:{club:{select:{profileFieldVisibility:true}}}}}}},orderBy:[{createdAt:"asc"},{id:"asc"}],take:100});
+  return (await resumeAnnotationChoices(tx,clubId,applicationId,userId)).text;
+}
+/** Text excerpts (verified quotes) and area highlights (a page region plus the panel note
+ * that explains it, never a quotation), each round authorized exactly like the résumé viewer. */
+export async function resumeAnnotationChoices(tx:AppTransactionClient,clubId:string,applicationId:string,userId:string) {
+  const rows=await tx.interviewResumeAnnotation.findMany({where:{kind:{in:["TEXT_HIGHLIGHT","AREA_HIGHLIGHT"]},deletedAt:null,document:{applicationId,round:{clubId,anonymousReview:false}}},
+    select:{id:true,kind:true,anchor:true,comment:true,author:{select:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}},document:{select:{id:true,roundId:true,round:{select:{club:{select:{profileFieldVisibility:true}}}}}}},orderBy:[{createdAt:"asc"},{id:"asc"}],take:200});
+  const text:{id:string;documentId:string;page:number;quote:string}[]=[],areas:{id:string;documentId:string;page:number;note:string;author:string}[]=[];
   // Résumé highlights are résumé content: none are offered or shown when the club hides résumés.
-  if(rows.length&&!normalizeProfileFieldVisibility(rows[0].document.round?.club?.profileFieldVisibility).resume)return [];
+  if(rows.length&&!normalizeProfileFieldVisibility(rows[0].document.round?.club?.profileFieldVisibility).resume)return {text,areas};
   const allowed=new Map<string,boolean>();
-  const choices:{id:string;documentId:string;page:number;quote:string}[]=[];
   for(const row of rows){
     if(!allowed.has(row.document.roundId)){
       try {await authorizeInterview(tx,{clubId,applicationId,roundId:row.document.roundId},userId,"resume","share");allowed.set(row.document.roundId,true);}catch(e){if(!denied(e))throw e;allowed.set(row.document.roundId,false);}
     }
+    if(!allowed.get(row.document.roundId))continue;
+    if(row.kind==="AREA_HIGHLIGHT"){
+      const area=z.object({page:z.number().int().positive(),rect:z.object({}).passthrough()}).safeParse(row.anchor);
+      const profile=row.author?.user?.studentProfile;
+      if(area.success)areas.push({id:row.id,documentId:row.document.id,page:area.data.page,note:row.comment,author:profile?`${profile.firstName} ${profile.lastName}`:"Club interviewer"});
+      continue;
+    }
     const anchor=z.object({page:z.number().int().positive(),quote:z.string().min(1).max(10000)}).safeParse(row.anchor);
-    if(allowed.get(row.document.roundId)&&anchor.success)choices.push({id:row.id,documentId:row.document.id,page:anchor.data.page,quote:anchor.data.quote});
+    if(anchor.success)text.push({id:row.id,documentId:row.document.id,page:anchor.data.page,quote:anchor.data.quote});
   }
-  return choices;
+  return {text,areas};
 }
 export async function votingSelectedHighlight(tx:AppTransactionClient,scope:{clubId:string;applicationId:string;roundId:string},userId:string,selected:boolean,anonymous:boolean,highlightId?:string){
   if(!selected||anonymous)return {};
