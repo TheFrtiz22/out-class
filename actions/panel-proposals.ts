@@ -36,6 +36,9 @@ function editDocument(row: InterviewPanelProposal, assignments: PanelAssignment[
     if (!slots.has(a.slotId) || !members.has(a.memberId) && !previous.has(assignmentKey(a))) throw new Error("Choose a session and interviewer from this club's draft.")
   }
   if(requirements && (new Set(requirements.map(r=>r.slotId)).size!==requirements.length || requirements.some(r=>!slots.has(r.slotId)))) throw new Error("Choose unique staffing requirements from this draft.")
+  // A closed room's session is only ever un-staffed, so its staffing requirement stays as published.
+  const closed=new Set(scene.sessions.filter(s=>s.unstaffOnly).map(s=>s.id))
+  if(requirements?.some(r=>closed.has(r.slotId)&&r.required!==document.sessions.find(s=>s.id===r.slotId)?.required)) throw new Error("This room is closed. Its interviewers can only be removed; its staffing requirement can't change.")
   const targets=new Map(requirements?.map(r=>[r.slotId,r.required])??[])
   const edited = { ...document, sessions: document.sessions.map(s=>({...s,required:targets.get(s.id)??s.required,originalRequired:s.originalRequired??s.required})), assignments: assignments.map(({ availabilityOverrideId: _untrusted, ...a }) => {
     const prior = previous.get(assignmentKey(a))
@@ -102,12 +105,14 @@ export async function generatePanelProposal(raw: unknown): Promise<PanelWorkspac
     if(selected)generated.document.assignments=generated.document.assignments.map(a=>!selected.has(a.slotId)?{...a,locked:document.assignments.find(old=>assignmentKey(old)===assignmentKey(a))?.locked??a.locked}:a)
     const order = (a: PanelAssignment, b: PanelAssignment) => a.slotId < b.slotId ? -1 : a.slotId > b.slotId ? 1 : a.memberId < b.memberId ? -1 : a.memberId > b.memberId ? 1 : 0
     generated.document = { ...generated.document, sessions, assignments: [...generated.document.assignments, ...closedPositions].sort(order) }
+    // Locked positions on sessions that were removed, ended or closed cannot be kept; say how many left.
+    const kept = new Set(generated.document.assignments.map(assignmentKey)), droppedLockedPositions = edited?.assignments.filter(a => a.locked && !kept.has(assignmentKey(a))).length ?? 0
     const validation = validatePanelDocument(generated.document, panelDraftScene(generated.document,live.scene))
     validation.search = generated.validation.search; validation.warnings = generated.validation.warnings
     const values = { ...draftApprovalReset,basePublishedVersion:active?.version??0, document: generated.document, validation, sourceFingerprint: live.fingerprint, modifiedBy: actorId }
     const row = old ? await tx.interviewPanelProposal.update({ where: { id: old.id }, data: { ...values, revision: { increment: 1 } } }) : await tx.interviewPanelProposal.create({ data: { clubId: input.clubId, roundId: input.roundId, createdBy: actorId, ...values } })
     await tx.auditLog.create({ data: { clubId: input.clubId, actorId, targetId: row.id, action: "interview.panel-proposal.generate", details: { mode: input.mode, revision: row.revision } } })
-    return { roundId: input.roundId, roundName: live.roundName, timezone: live.timezone, scene: publicPanelScene(live.scene), proposal: proposalView(row, live.scene, live.fingerprint, validation), suggestedWindow: live.suggestedWindow, fingerprint: live.fingerprint }
+    return { roundId: input.roundId, roundName: live.roundName, timezone: live.timezone, scene: publicPanelScene(live.scene), proposal: proposalView(row, live.scene, live.fingerprint, validation), suggestedWindow: live.suggestedWindow, fingerprint: live.fingerprint, droppedLockedPositions }
   })
 }
 async function editPreview(raw: unknown, persist: boolean) {

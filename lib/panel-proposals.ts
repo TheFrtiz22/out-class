@@ -78,6 +78,8 @@ export type PanelProposalView = { id: string; revision: number; status: "UNPUBLI
 export type PanelWorkspace = {
   roundId: string; roundName: string; timezone: string; scene: PanelScene; proposal: PanelProposalView | null
   suggestedWindow: { start: string; end: string } | null; fingerprint: string
+  /** Set by regeneration: locked positions dropped because their session was removed, ended or closed. */
+  droppedLockedPositions?: number
   clubName?: string; canPublish?: boolean; canOverrideAvailability?: boolean; published?: PanelPublishedView | null; history?: PanelPublishedView[]
 }
 export const availabilityOverrideConditions = ["UNCONFIRMED", "UNKNOWN_AVAILABILITY", "UNAVAILABLE"] as const

@@ -108,9 +108,11 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
     if (!workspace) return
     await run(async () => {
       const window = draft?.document.window ?? requestedWindow ?? { start: new Date(zonedInstant(start, "00:00", SCHEDULING_TIMEZONE)).toISOString(), end: new Date(zonedInstant(addDays(end, 1), "00:00", SCHEDULING_TIMEZONE)).toISOString() }
-      accept(await generatePanelProposal({ ...scope, window, options, revision: draft?.revision ?? 0, mode,selectedSlotIds, ...(draft ? { assignments: draft.document.assignments } : {}) }))
+      const generated = await generatePanelProposal({ ...scope, window, options, revision: draft?.revision ?? 0, mode,selectedSlotIds, ...(draft ? { assignments: draft.document.assignments } : {}) })
+      accept(generated)
       onGenerated?.(); globalThis.window.dispatchEvent(new Event("outclass:panels-changed"))
-      setNotice("")
+      const dropped = generated.droppedLockedPositions ?? 0
+      setNotice(dropped ? `${dropped} locked ${dropped === 1 ? "position was" : "positions were"} removed because ${dropped === 1 ? "its time" : "their times"} closed, ended or no longer exist.` : "")
     })
   }
   const requirements=()=>draft?.document.sessions.map(s=>({slotId:s.id,required:s.required}))??[]

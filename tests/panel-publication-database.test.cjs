@@ -189,3 +189,29 @@ test('closing a room never strands a ready draft: regenerate recovers it, closed
  ok(await h.confirm(ok(await h.review())))
  assert.deepEqual((await h.snapshot()).InterviewSlot.find(s=>s.id===booked),bookedBefore)
 })
+
+test('closed sessions: locked plans on them are dropped and reported, their requirement cannot change, and an added member is refused at publication',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())))
+ const [,openA,,closedTarget]=h.slotIds,interviewers=[h.ids.panelMember,h.ids.peerMember,h.ids.schedulerMember]
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}));let draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ const published=draft.document.assignments.filter(a=>a.slotId===closedTarget).map(a=>a.memberId).sort()
+ // A locked plan to put someone new on a room B time, made before the room closed.
+ const x=draft.document.assignments.find(a=>a.slotId===closedTarget),y=draft.document.assignments.find(a=>a.slotId===openA&&a.memberId!==x.memberId)
+ draft=await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments.map(a=>a===x?{...a,memberId:y.memberId,source:'MANUAL',locked:true}:a===y?{...a,memberId:x.memberId,source:'MANUAL'}:a)})
+ await h.db.query('UPDATE "InterviewRoom" SET "isOpen"=false WHERE id=$1',[h.roomIds[1]])
+ const regenerated=await h.generate(draft.revision,{window:draft.document.window,mode:'FILL_MISSING',assignments:draft.document.assignments});draft=regenerated.proposal
+ assert.equal(regenerated.droppedLockedPositions,1);assert.deepEqual(draft.document.assignments.filter(a=>a.slotId===closedTarget).map(a=>a.memberId).sort(),published)
+ // The requirement on a closed session can't change; sending the unchanged requirements (as the editor does) still saves.
+ const neededBefore=(await h.snapshot()).InterviewSlot.find(s=>s.id===closedTarget).interviewersNeeded
+ await assert.rejects(h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments,requirements:draft.document.sessions.map(s=>({slotId:s.id,required:s.id===closedTarget?s.required+1:s.required}))}),/staffing requirement can't change/)
+ draft=await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments,requirements:draft.document.sessions.map(s=>({slotId:s.id,required:s.required}))})
+ // A member added to a closed session behind the editor's back is refused by the publication action and changes nothing.
+ const review=ok(await h.review()),outsider=interviewers.find(id=>!published.includes(id))
+ await h.db.query('UPDATE "InterviewPanelProposal" SET document=jsonb_set(document,\'{assignments}\',(document->\'assignments\')||$1::jsonb),revision=revision+1 WHERE id=$2',[JSON.stringify([{slotId:closedTarget,memberId:outsider,locked:false,source:'MANUAL'}]),review.proposalId])
+ const before=await h.snapshot(),refused=await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision+1,approvalToken:review.approvalToken,confirmUnstaff:true})
+ assert.equal(refused.ok,false);assert.match(refused.error,/closed/);assert.equal(refused.code,'DRAFT_STALE');assert.deepEqual(await h.snapshot(),before)
+ // Regenerating removes the added member; the publication then keeps the closed session's interviewers and requirement.
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;draft=(await h.generate(draft.revision,{window:draft.document.window,mode:'FILL_MISSING',assignments:draft.document.assignments})).proposal
+ assert.equal(draft.document.assignments.some(a=>a.slotId===closedTarget&&a.memberId===outsider),false);ok(await h.confirm(ok(await h.review())))
+ const slot=(await h.snapshot()).InterviewSlot.find(s=>s.id===closedTarget);assert.equal(slot.interviewersNeeded,neededBefore);assert.deepEqual(slot.publishedPanelMemberIds.slice().sort(),published)
+})
