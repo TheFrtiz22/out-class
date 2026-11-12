@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -127,7 +128,7 @@ function invitationHarness(patch = {}) {
     '@/utils/email': { invitationEmailConfig() {}, sendInvitationEmail: async message => { sent.push(message); return { messageId: 'local' }; } },
     '@/utils/invitation-background': { scheduleInvitationDelivery: id => scheduled.push(id) },
   });
-  return { state, deliveries, audits, scheduled, sent, api: load('actions/invitation-emails.ts'), worker: load('utils/invitation-delivery.ts') };
+  return { state, deliveries, audits, scheduled, sent, api: unwrapActions(load('actions/invitation-emails.ts')), worker: load('utils/invitation-delivery.ts') };
 }
 async function adminConfigured(fn) {
   const old = process.env.OUTCLASS_PLATFORM_ADMIN_IDS;

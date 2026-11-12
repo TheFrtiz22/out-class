@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -31,13 +32,13 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
       createMany: async args => calls.push(['answers', args]),
     },
   }
-  const actions = load('actions/applications.ts', {
+  const actions = unwrapActions(load('actions/applications.ts', {
     '@/lib/student-applications': helpers,
     '@/utils/auth': { requireAuth: async () => ({ user: { id: userId } }) },
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     'next/cache': { revalidatePath: () => {} },
-  })
+  }))
   return { ...actions, calls }
 }
 test('draft permits incomplete and over-limit essays; submission enforces requirements', () => {
@@ -128,11 +129,11 @@ test('owned private attachments persist unchanged in drafts and submissions',asy
 
 test('student status projection remains owned and exposes only public round names and booking details', async () => {
   let query
-  const actions = load('actions/applications.ts', {
+  const actions = unwrapActions(load('actions/applications.ts', {
     '@/utils/auth': { requireAuth: async () => ({ user: { id: 'authenticated-student' } }) },
     '@/utils/prisma': { prisma: { application: { findMany: async input => { query = input; return [] } } } },
     'next/cache': { revalidatePath() {} },
-  })
+  }))
   await actions.getStudentApplications()
   assert.deepEqual(query.where, { studentId: 'authenticated-student' })
   assert.deepEqual(query.select.club.select.pipelineRounds, { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: 'asc' } })

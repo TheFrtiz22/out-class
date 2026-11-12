@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { isUuid } from "@/lib/uuid";
@@ -22,6 +23,7 @@ import {
   type EventFilters,
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
+import { ReportContentButton } from "@/components/reports/report-content-button";
 import { SegmentedControl } from "@/components/product/segmented-control";
 import { SmartEventCard } from "./smart-event-card";
 import { EventCalendarButton, EventSaveButton } from "./event-discovery-actions";
@@ -368,6 +370,10 @@ export function PublicEventBoard() {
                   <EventCalendarButton event={selected} />
                   <EventShareButton event={selected} clubName={selected.clubName} />
                 </div>
+                <div className="mt-3 flex flex-wrap gap-4">
+                  <ReportContentButton target={{ type: "event", id: selected.id }} label="Report event" ownerClubId={selected.clubId} />
+                  {selected.flyerUrl && <ReportContentButton target={{ type: "event-flyer", eventId: selected.id }} label="Report flyer" ownerClubId={selected.clubId} />}
+                </div>
                 {saves.error && <p role="alert" className="mt-3 text-sm text-destructive">{saves.error}</p>}
               </div>
             </DialogContent>
@@ -469,7 +475,7 @@ export function RsvpControls({
       window.dispatchEvent(new Event("outclass-event-rsvp"));
     } catch (e) {
       setGoing(previous);
-      setError(e instanceof Error ? e.message : "Could not update RSVP.");
+      setError(userMessage(e, "Could not update RSVP."));
     } finally {
       setBusy(false);
     }

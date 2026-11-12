@@ -1,4 +1,6 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import { useRef, useState } from "react";
@@ -25,13 +27,13 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
     working.current = true; setBusy(true); setError(""); setPreview(null); setResult(null); setPage(0);
     try {
       if (upload.current?.file !== file) upload.current = { file, requestId: crypto.randomUUID() };
-      if (!/\.csv$/i.test(file.name)) throw new Error("Choose a comma-separated CSV file.");
-      if (file.size > ROSTER_MAX_BYTES) throw new Error("CSV must be 1 MB or smaller.");
+      if (!/\.csv$/i.test(file.name)) throw new UserFacingError("Choose a comma-separated CSV file.");
+      if (file.size > ROSTER_MAX_BYTES) throw new UserFacingError("CSV must be 1 MB or smaller.");
       const csv = await file.text();
       parseRosterCsv(csv); // Immediate structural feedback; server independently parses and validates.
       const data = await previewRosterImport({ clubId, filename: file.name, csv, requestId: upload.current.requestId });
       setPreview(data);
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not validate CSV. Try again."); }
+    } catch (e) { setError(userMessage(e, "Could not validate CSV. Try again.")); }
     finally { working.current = false; setBusy(false); }
   }
   async function confirm() {
@@ -46,11 +48,11 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
           try { await onImported?.(); } catch { announceDataChanged("members"); setError("Import completed. The member list will update in a moment."); }
           break;
         }
-        if (outcome.processed <= previousProcessed) throw new Error("Import paused. Retry to resume processing.");
+        if (outcome.processed <= previousProcessed) throw new UserFacingError("Import paused. Retry to resume processing.");
         previousProcessed = outcome.processed;
       }
     }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not confirm import. Try again."); }
+    catch (e) { setError(userMessage(e, "Could not confirm import. Try again.")); }
     finally { working.current = false; setBusy(false); }
   }
   return <section className="space-y-4 rounded-xl border p-4 sm:p-6" aria-label="CSV member roster import" aria-busy={busy} data-saving={busy} data-unsaved={!!preview && !result?.completed}>
@@ -68,7 +70,7 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
       {preview.rows.length > 50 && <div className="flex flex-wrap items-center justify-between gap-3"><Button variant="outline" disabled={page === 0} onClick={() => setPage(value => value - 1)}>Previous</Button><span className="text-sm">Page {page + 1} of {Math.ceil(preview.rows.length / 50)}</span><Button variant="outline" disabled={(page + 1) * 50 >= preview.rows.length} onClick={() => setPage(value => value + 1)}>Next</Button></div>}
       {(!result || !result.completed) && <><p className="text-sm text-muted-foreground">Imports are additive: existing members stay in the organization, including anyone absent from this file. Fix and reupload before continuing, or import the ready rows. Importing creates pending MEMBER invitations, not memberships. Existing invitations remain unchanged. No emails will be sent. Membership and invitation changes since preview are rechecked.</p><Button className="min-h-11 w-full sm:w-auto" disabled={busy || !(preview.summary.ready + preview.summary.alreadyMember + preview.summary.alreadyInvited)} onClick={() => void confirm()}>{result ? "Resume import" : "Import members"}</Button></>}
     </>}
-    {result?.completed && <div role="status" className="space-y-3 rounded-xl border bg-muted/30 p-4 sm:p-5"><p className="font-medium">Roster import confirmed · Review before sending</p><ul className="mt-2 text-sm space-y-1"><li>{result.total ?? result.created} rows imported / reviewed</li><li>{result.created} new invitations</li><li>{result.existingUsers ?? 0} existing OutClass users invited (included above)</li><li>{result.invalid + result.failed + result.duplicates} rows require attention</li><li>{result.alreadyMember} already members</li><li>{result.alreadyInvited} already invited</li><li>{result.invalid} invalid</li>{result.duplicates > 0 && <li>{result.duplicates} duplicate rows</li>}{result.failed > 0 && <li>{result.failed} failed rows — review the errors below and reupload those rows</li>}</ul><p className="mt-2 text-sm">No emails sent automatically.</p>
+    {result?.completed && <div role="status" className="space-y-3 rounded-xl border bg-muted/30 p-4 sm:p-5"><p className="font-medium">Roster import confirmed · Review before sending</p><ul className="mt-2 text-sm space-y-1"><li>{result.total ?? result.created} rows imported / reviewed</li><li>{result.created} new invitations</li><li>{result.existingUsers ?? 0} existing OutClass users invited (included above)</li><li>{result.invalid + result.failed + result.duplicates} rows require attention</li><li>{result.alreadyMember} already members</li><li>{result.alreadyInvited} already invited</li><li>{result.invalid} invalid</li>{result.duplicates > 0 && <li>{result.duplicates} duplicate rows</li>}{result.failed > 0 && <li>{result.failed} failed rows. Review the errors below and reupload those rows.</li>}</ul><p className="mt-2 text-sm">No emails sent automatically.</p>
       {preview && <InvitationEmailControls clubId={clubId} importId={preview.id} onSent={onImported} />}
       <div className="mt-4 min-w-0 overflow-hidden rounded-xl border"><table className={onboardingTable.table}><caption className="sr-only">Final roster import outcomes</caption><thead className={onboardingTable.head}><tr>{["Name", "Year", "Computing ID", "Outcome"].map(label => <th key={label} scope="col" className="p-2">{label}</th>)}</tr></thead><tbody className={onboardingTable.body}>{result.rows.slice(page * 50, (page + 1) * 50).map(row => <tr key={row.rowNumber} className={onboardingTable.row}><td data-label="Name" className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}>{row.name || "—"}</td><td data-label="Year" className={onboardingTable.cell}>{row.year || "—"}</td><td data-label="Computing ID" className={onboardingTable.cell}>{row.identifier || "—"}</td><td data-label="Outcome" className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}>{row.status === "INVITATION_CREATED" ? "New invitation" : row.status === "ALREADY_INVITED" ? "ALREADY_INVITED" : row.status.replaceAll("_", " ")}{row.errors.map((message, index) => <p key={index} className="text-xs text-muted-foreground">{message}</p>)}</td></tr>)}</tbody></table></div></div>}
   </section>;

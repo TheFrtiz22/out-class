@@ -53,7 +53,8 @@ test('RSVP shows “You’re going” before the server answers and rolls back w
   let tree = h.render()
   assert.match(text(tree), /You’re going/, 'optimistic state before the server resolves')
   assert.equal(button(tree, 'Cancel RSVP').props.disabled, true, 'no double submit while saving')
-  pending.reject(Error('This event is full.')); await h.flush()
+  // workspace-api unwraps the action's { ok: false } result into a UserFacingError.
+  pending.reject(Object.assign(Error('This event is full.'), { userFacing: true })); await h.flush()
   tree = h.render()
   assert.doesNotMatch(text(tree), /You’re going/)
   assert.ok(button(tree, 'RSVP'))
