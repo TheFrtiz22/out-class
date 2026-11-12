@@ -1,4 +1,5 @@
 import { requireAuth } from "@/utils/auth"
+import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { getLaunchClubs } from "@/lib/launch-clubs"
 import { safeReturnPath, isUvaEmail } from "@/lib/auth"
@@ -67,7 +68,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   let hasProfile = false
   if (user) {
     const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
-    if (account?.disabledAt) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
+    if (account?.disabledAt) return <AccountUnavailable />
     // Old leader views on the homepage open the matching club workspace section. The club is the
     // first active, unsuspended membership with workspace access (same rule as sign-in); without
     // one the visitor gets Home, as the student view replaced these before.
