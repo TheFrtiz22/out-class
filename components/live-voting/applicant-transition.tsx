@@ -16,7 +16,7 @@ type Track={key:string;outgoing:Outgoing|null};
  * shown for OUTCOME_HOLD_MS (or `release`: voting already opened on it), both move left together. Nothing here
  * decides anything: the transition only follows confirmed room snapshots.
  */
-export function ApplicantTransition({applicantId,passNumber,children,onReady,summary,resultFor,release=false}:{applicantId:string|null;passNumber:number;children:Slide;onReady:(key:string|null)=>void;summary:boolean;resultFor?:(passNumber:number,applicationId:string)=>RoomResult|null;release?:boolean}){
+export function ApplicantTransition({applicantId,passNumber,children,onReady,summary,resultFor,animateFrom,release=false}:{applicantId:string|null;passNumber:number;children:Slide;onReady:(key:string|null)=>void;summary:boolean;resultFor?:(passNumber:number,applicationId:string)=>RoomResult|null;animateFrom?:(passNumber:number,applicationId:string)=>boolean;release?:boolean}){
  const key=`${passNumber}:${applicantId}`,root=useRef<HTMLDivElement>(null);
  // Refs read during render below are written only in effects (deterministic under StrictMode re-renders).
  const loaded=useRef<string|null>(null),onScreen=useRef<string|null>(null),restHeight=useRef(300),lastNode=useRef<{key:string;node:Slide;applicantId:string|null;passNumber:number}|null>(null);
@@ -28,6 +28,8 @@ export function ApplicantTransition({applicantId,passNumber,children,onReady,sum
  if(track.key!==key){
   const prev=lastNode.current;
   if(outgoing?.key===key)outgoing=null; // Undo back to the applicant still sliding out: it simply stays.
+  // Missed advances (a hidden or offline tab catching up) or a new pass: straight to the current applicant, no replay.
+  else if(prev?.applicantId&&animateFrom&&!animateFrom(prev.passNumber,prev.applicantId))outgoing=null;
   // Only a slide that actually reached the screen may leave it; a loaded-but-hidden one is dropped, never flashed.
   else if(prev&&prev.key===track.key&&onScreen.current===prev.key){
    // The slide that was showing becomes the outgoing layer, with its outcome if the room has confirmed one.

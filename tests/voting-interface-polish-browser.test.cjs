@@ -28,8 +28,8 @@ test('phase-focused leader/member controls retain safe saves, secondary actions,
   const gate=new Promise(r=>release=r);let held=false;
   await member.route('**/action',async route=>{if(!held&&route.request().postDataJSON().name==='castLiveVotingBallot'){held=true;await gate;}await route.continue()});
   await pass.click();await member.getByText('Saving Pass…',{exact:true}).waitFor();assert.equal(await member.getByRole('heading',{name:'QA Applicant One',exact:true}).count(),1);
-  assert.ok(await pass.isDisabled());release();await member.getByText('Saved: pass',{exact:true}).waitFor();
-  await member.getByRole('button',{name:'Hold',exact:true}).click();await member.getByText('Saved: hold',{exact:true}).waitFor();
+  assert.ok(await pass.isDisabled());release();await member.getByText('Vote recorded · Pass',{exact:true}).waitFor();
+  await member.getByRole('button',{name:'Hold',exact:true}).click();await member.getByText('Vote recorded · Hold',{exact:true}).waitFor();
   assert.equal(f.h.state().sessions[0].passes[0].candidates[0].ballots.length,1,'changed choice updates one ballot');
   if(out){fs.mkdirSync(out,{recursive:true});await leader.screenshot({path:path.join(out,'leader-desktop.png'),fullPage:true});await member.screenshot({path:path.join(out,'member-phone.png'),fullPage:true})}
   await leader.setViewportSize({width:390,height:844});await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('button',{name:'End voting',exact:true}).waitFor();
@@ -37,7 +37,7 @@ test('phase-focused leader/member controls retain safe saves, secondary actions,
   if(out)await leader.screenshot({path:path.join(out,'leader-phone.png'),fullPage:true});
   await leader.reload();await leader.getByRole('button',{name:'Close voting',exact:true}).waitFor();leader.once('dialog',d=>d.accept());await leader.getByRole('button',{name:'Close voting',exact:true}).click();
   await member.getByRole('region',{name:'Closed ballot totals'}).waitFor();assert.equal(await member.getByRole('button',{name:'Hold',exact:true}).count(),0,'closed ballot controls are replaced, not merely disabled');
-  await member.getByText('Saved: hold',{exact:true}).waitFor();assert.equal(await member.getByRole('region',{name:'Leader controls'}).count(),0);
+  await member.getByText('Vote recorded · Hold',{exact:true}).waitFor();assert.equal(await member.getByRole('region',{name:'Leader controls'}).count(),0);
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic discussion');f.failCommand();await leader.getByRole('button',{name:'Hold',exact:true}).click();
   await leader.getByRole('button',{name:'Retry command',exact:true}).waitFor();assert.equal(await leader.getByRole('textbox',{name:'Decision reason'}).inputValue(),'Synthetic discussion');
   await leader.getByRole('button',{name:'Retry command',exact:true}).click();await leader.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor();
