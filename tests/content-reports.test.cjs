@@ -140,7 +140,8 @@ test('Report appears on every listed surface with the shared control, and stays 
     'components/views/club-profile-view.tsx': /type: "club", id: club\.id/,
     'components/clubs/marketing-profile.tsx': /type: "club-image"/,
     'components/events/public-event-board.tsx': /type: "event", id: selected\.id[\s\S]*type: "event-flyer"/,
-    'components/views/leader-dashboard/live-leader-workspace.tsx': /type: "student"[\s\S]*hidden=\{active\.studentId === membership\.userId/,
+    // The applicant review flow (#281) replaced the workspace drawer.
+    'components/applicant-review/applicant-review-flow.tsx': /type: "student"[\s\S]*hidden=\{app\.studentId === membership\.userId \|\| !canReview\}/,
     'components/views/inbox-view.tsx': /type: "announcement"[\s\S]*hidden=\{selected\.ownAnnouncement\}/,
   }
   for (const [file, pattern] of Object.entries(surfaces)) {

@@ -129,6 +129,7 @@ model Club {
   invitationEmailEnabled Boolean @default(true)
   features Json? // Pilot feature switches set by platform admins; NULL or unknown keys read as off. See lib/club-features.ts.
   profileFieldVisibility Json? // Leader-facing applicant profile fields; NULL uses defaults (GPA and LinkedIn off). See lib/profile-field-visibility.ts.
+  reviewRubric Json? // Grading categories for applicant review; NULL = one Overall /10 category. See lib/review-rubric.ts.
   corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
   schoolId            String           @default("school-uva")
@@ -171,6 +172,7 @@ model Club {
 
 model ClubMember {
   recusals ApplicantRecusal[]
+  stagedDecisions StagedDecision[]
   availabilityOverrides InterviewAvailabilityOverride[]
   interviewerEligible Boolean?
   interviewParticipation InterviewRoundParticipation[]
@@ -286,6 +288,7 @@ enum QuestionType {
 
 model Application {
   recusals ApplicantRecusal[]
+  stagedDecision StagedDecision?
   decisionStateRevision Int @default(0)
   recruitmentCycleId String?
   recruitmentCycle RecruitmentCycle? @relation(fields: [recruitmentCycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
@@ -348,6 +351,7 @@ model ApplicationAnswer {
 
 model Evaluation {
   roundId String?
+  rubricScores Json? // Per-category scores behind `score` (lib/review-rubric.ts); NULL for a plain overall score.
   stableRound PipelineRound? @relation("EvaluationRound", fields: [roundId], references: [id], onDelete: Restrict)
   submittedAt DateTime?
   applicantQuestions String?
@@ -1779,6 +1783,28 @@ model ApplicantRecusal {
 
   @@unique([applicationId, memberId])
   @@index([clubId, memberId])
+}
+
+// A decision recorded during applicant review but not yet sent. Application status,
+// offers, letters and notifications change only when Decide > Send applies it.
+// One per application; expected status/round make a stale decision skip instead of apply.
+model StagedDecision {
+  id              String      @id @default(uuid())
+  clubId          String
+  applicationId   String      @unique
+  application     Application @relation(fields: [applicationId, clubId], references: [id, clubId], onDelete: Cascade)
+  outcome         String // ADVANCE | HOLD | REJECT | WAITLIST | ACCEPT | ROUND
+  targetStatus    AppStatus
+  targetRoundId   String?
+  expectedStatus  AppStatus
+  expectedRoundId String
+  stagedById      String
+  stagedBy        ClubMember  @relation(fields: [stagedById, clubId], references: [id, clubId], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([applicationId, clubId])
+  @@index([clubId])
 }
 
 // Private calendar subscription (webcal). Only a SHA-256 hash of the secret is

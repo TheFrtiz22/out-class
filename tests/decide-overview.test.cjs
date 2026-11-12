@@ -38,7 +38,7 @@ function loadOverview() {
 const tabFor = (permissions, requested = null) => decide.decideTab(requested, product.decideAccess({ permissions }))
 
 test("Overview is the first Decide tab and the default for anyone who can open Decide", () => {
-  assert.deepEqual(decide.decideTabs.map(tab => [tab.id, tab.label]), [["overview", "Overview"], ["voting", "Vote"], ["letters", "Send"]])
+  assert.deepEqual(decide.decideTabs.map(tab => [tab.id, tab.label]), [["overview", "Overview"], ["review", "Review"], ["voting", "Vote"], ["letters", "Send"]])
   // decisions.view / decisions.start / decisions.vote each need applications.review (decideAccess).
   for (const p of ["decisions.view", "decisions.start", "decisions.vote"]) assert.equal(tabFor(["applications.review", p]), "overview", p)
   assert.equal(tabFor(["recruitment.manage"]), "overview")

@@ -1,6 +1,6 @@
 // Nav reorganization in a real browser: the real shell and ClubWorkspace on Demo Mode data (leader-screens fixture).
 // Old links land on their new homes; Decide's round picker, steps and counts; the Recruiting settings drawer from
-// both entry points; the Calendar filter; Start quick review with ←/→.
+// both entry points; the Calendar filter; Review applicants with ←/→.
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -8,7 +8,7 @@ const { chromium } = require('playwright')
 const { expect } = require('playwright/test')
 const { startLeaderScreens } = require('./helpers/leader-screens-fixture.cjs')
 
-test('browser: old links, Decide, Recruiting settings drawer, Calendar filter and Start quick review', { timeout: 300000 }, async t => {
+test('browser: old links, Decide, Recruiting settings drawer, Calendar filter and Review applicants', { timeout: 300000 }, async t => {
   const fixture = await startLeaderScreens(); t.after(() => fixture.close(), { timeout: 30000 })
   const browser = await chromium.launch({ headless: true, ...(!fs.existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) }); t.after(() => browser.close(), { timeout: 30000 })
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } }); t.after(() => context.close())
@@ -41,10 +41,10 @@ test('browser: old links, Decide, Recruiting settings drawer, Calendar filter an
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' })
   await expect.poll(params).not.toHaveProperty('recruitingSettings')
 
-  // Recruiting settings from the Applicants gear: focus is trapped inside, Escape closes and returns to the gear.
+  // Recruiting settings from the Applicants ⋯ menu: focus is trapped inside, Escape closes and returns to the ⋯ button.
   await open('section=recruitment&tool=applicants')
-  const gear = page.getByRole('button', { name: 'Recruiting settings', exact: true })
-  await gear.click(); await drawer.waitFor()
+  const gear = page.getByRole('button', { name: 'More applicant tools', exact: true })
+  await gear.click(); await page.getByRole('menuitem', { name: 'Recruiting settings', exact: true }).click(); await drawer.waitFor()
   await expect(drawer.getByRole('tab', { name: 'Anonymous review', exact: true })).toHaveAttribute('aria-selected', 'true')
   for (let i = 0; i < 12; i++) await page.keyboard.press('Tab')
   assert.equal(await drawer.evaluate(el => el.contains(document.activeElement)), true, 'focus stays in the drawer')
@@ -59,15 +59,19 @@ test('browser: old links, Decide, Recruiting settings drawer, Calendar filter an
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' })
   await expect(recruiting.getByRole('button', { name: 'Auto-reject rules', exact: true })).toBeFocused()
 
-  // Decide: round picker, Overview (the default), then Vote/Send as real tabs with per-round counts, the round kept in the URL.
+  // Decide: round picker, Overview (the default), then Review/Vote/Send as real tabs with per-round counts, the round kept in the URL.
   await open('section=recruitment&tool=decisions')
   await expect(page.locator('main h1').first()).toHaveText('Decide')
   const steps = page.getByRole('tablist', { name: 'Decide steps', exact: true })
-  await expect(steps.getByRole('tab')).toHaveCount(3)
+  await expect(steps.getByRole('tab')).toHaveCount(4)
   const overview = steps.getByRole('tab', { name: 'Overview', exact: true })
-  const vote = steps.getByRole('tab', { name: /^Step 1: Vote/ }), send = steps.getByRole('tab', { name: /^Step 2: Send/ })
+  const reviewStep = steps.getByRole('tab', { name: /^Step 1: Review/ }), vote = steps.getByRole('tab', { name: /^Step 2: Vote/ }), send = steps.getByRole('tab', { name: /^Step 3: Send/ })
   await expect(overview).toHaveAttribute('aria-selected', 'true')
-  await expect(vote).toHaveText(/^1Vote · \d+$/); await expect(send).toHaveText(/^2Send · \d+$/)
+  await expect(reviewStep).toHaveText(/^1Review$/); await expect(vote).toHaveText(/^2Vote · \d+$/); await expect(send).toHaveText(/^3Send · \d+$/)
+  // Review (#281): the shared applicant review, then back to Overview before the round and history checks.
+  await reviewStep.click(); await expect(reviewStep).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('tabpanel').getByRole('button', { name: 'Review applicants needing a decision', exact: true })).toBeVisible()
+  await overview.click(); await expect(overview).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByRole('tabpanel')).toBeVisible()
   await page.getByRole('heading', { name: 'Voting sessions', exact: true }).waitFor()
   await expect(page.getByText('Choose a round to see its decisions and target.', { exact: true })).toBeVisible()
@@ -114,19 +118,20 @@ test('browser: old links, Decide, Recruiting settings drawer, Calendar filter an
   await filter.getByRole('button', { name: 'Meetings', exact: true }).click()
   await expect.poll(params).toEqual(expect.objectContaining({ type: 'meetings' }))
 
-  // Start quick review opens an applicant in the quick layout; ←/→ move between applicants.
+  // Review applicants opens the full-screen review on Pending; ←/→ move between applicants ("X of N").
   await open('section=recruitment&tool=applicants')
-  await page.getByRole('button', { name: 'Start quick review', exact: true }).click()
+  await page.getByRole('button', { name: 'Review applicants', exact: true }).click()
   const review = page.getByRole('dialog').filter({ has: page.getByRole('navigation', { name: 'Applicant navigation' }) })
   await review.waitFor()
-  const position = review.getByRole('navigation', { name: 'Applicant navigation' }).locator('span')
+  const position = review.locator('#review-flow-progress')
   const first = await position.textContent()
   await page.keyboard.press('ArrowRight'); await expect(position).not.toHaveText(first)
   await page.keyboard.press('ArrowLeft'); await expect(position).toHaveText(first)
 
-  // The Overview review card lands on Applicants with quick review open (removing quickReview from the URL).
-  await open('section=recruitment&tool=applicants&quickReview=1')
-  await review.waitFor(); await expect.poll(params).not.toHaveProperty('quickReview')
+  // The Overview review card lands on Applicants with the review open (removing review=1 from the URL).
+  await page.keyboard.press('Escape')
+  await open('section=recruitment&tool=applicants&review=1')
+  await review.waitFor(); await expect.poll(params).not.toHaveProperty('review')
 
   assert.deepEqual(errors, [])
 })
