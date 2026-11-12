@@ -9,6 +9,7 @@ import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 import { cancelAccountDeletion, requestAccountDeletion } from "@/actions/account-deletion"
 import { accountDeletionConfirmationMatches } from "@/lib/account-deletion"
+import { userMessage } from "@/lib/user-message"
 
 export type PendingAccountDeletion = { requestedAt: string; scheduledFor: string; emailSent: boolean } | null
 
@@ -40,7 +41,7 @@ export function AccountDeletion({ email, passwordAccount, pending: initial, warn
       setTyped(""); setPassword("")
       setMessage(result.emailSent ? "Request received. We sent a confirmation to your university email." : "")
       router.refresh()
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not request deletion.") }
+    } catch (reason) { setError(userMessage(reason, "Could not request deletion.")) }
     finally { setBusy(false); setTurnstileReset(value => value + 1) }
   }
 
@@ -51,7 +52,7 @@ export function AccountDeletion({ email, passwordAccount, pending: initial, warn
       setPending(null)
       setMessage("Deletion cancelled. Your account stays as it is.")
       router.refresh()
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not cancel the request.") }
+    } catch (reason) { setError(userMessage(reason, "Could not cancel the request.")) }
     finally { setBusy(false) }
   }
 
