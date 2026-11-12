@@ -125,7 +125,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
         <div className="flex flex-wrap items-center gap-3">
           <SearchField aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} containerClassName="min-w-0 flex-1 basis-60" />
           <SegmentedControl label="Read status" size="compact" value={readFilter} onChange={setReadFilter} options={[{ value: "all", label: "All" }, { value: "unread", label: "Unread", count: unread || undefined }, { value: "read", label: "Read" }]} />
-          <FilterPopover label="Filter" title="Notification filters" align="end" count={[filter !== "All", club !== "all", sort !== "priority"].filter(Boolean).length}>
+          <FilterPopover title="Notification filters" align="end" count={[filter !== "All", club !== "all", sort !== "priority"].filter(Boolean).length}>
             <div className="oc-filter-field"><span className="oc-filter-field-label">Type</span>
               <SegmentedControl label="Notification type" size="compact" value={filter} onChange={setFilter} options={filters.map((value) => ({ value, label: value }))} />
             </div>

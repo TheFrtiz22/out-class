@@ -1,10 +1,10 @@
 "use client"
 import Link from "next/link"
-import { Home, Compass, Bookmark, FileText, Users2, Menu, Video, CalendarDays, CheckCircle2, Megaphone, Settings, RefreshCw, ListChecks, Inbox, UserCircle, Gauge, Gavel, IdCard, type IconComponent } from "@/components/icons"
+import { CalendarStar, Home, Compass, FileText, Users2, Menu, Video, CalendarDays, CheckCircle2, Megaphone, Settings, RefreshCw, ListChecks, Inbox, UserCircle, Gauge, Gavel, IdCard, type IconComponent } from "@/components/icons"
 import type { ProductNavItem } from "@/lib/product-navigation"
 import { handleClubLink } from "@/lib/workspace-navigation"
 
-const icons: Record<string, IconComponent> = { recruiting: FileText, "student-dashboard": Home, "club-home": Home, explore: Compass, categories: Compass, status: CheckCircle2, calendar: CalendarDays, corkboard: Bookmark, applications: FileText, clubs: Users2, inbox: Inbox, "student-profile": UserCircle, overview: Gauge, applicants: IdCard, interviews: Video, meetings: CalendarDays, "club-meetings": CalendarDays, tasks: ListChecks, "club-tasks": ListChecks, members: Users2, decisions: Gavel, letters: FileText, announcements: Megaphone, settings: Settings, cycles: RefreshCw }
+const icons: Record<string, IconComponent> = { recruiting: FileText, "student-dashboard": Home, "club-home": Home, explore: Compass, categories: Compass, status: CheckCircle2, calendar: CalendarDays, corkboard: CalendarStar, applications: FileText, clubs: Users2, inbox: Inbox, "student-profile": UserCircle, overview: Gauge, applicants: IdCard, interviews: Video, meetings: CalendarDays, "club-meetings": CalendarDays, tasks: ListChecks, "club-tasks": ListChecks, members: Users2, decisions: Gavel, letters: FileText, announcements: Megaphone, settings: Settings, cycles: RefreshCw }
 
 /** Phones: the only section navigation. `items` come from lib/navigation's bottomBarItems.
  * Five items (the personal bar, as in the app) leave no room for More; fewer end with More. */

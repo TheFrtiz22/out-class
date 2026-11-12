@@ -42,7 +42,7 @@ test('browser: Club home dashboard, permissions, header glass, blur budget and a
   for (const name of ['New announcement', 'New meeting']) assert.ok(await page.getByRole('link', { name, exact: true }).first().isVisible(), name)
   // One slim strip is the only link to recruiting.
   assert.equal(await page.locator('.oc-recruiting-strip').count(), 1)
-  assert.match(await page.locator('.oc-recruiting-strip').textContent(), /Recruiting is open · 213 applicants · 21 need attention/)
+  assert.match(await page.locator('.oc-recruiting-strip').textContent(), /Recruiting is open · 213 applicants · 21 recruiting items need you/)
   for (const name of ['Open applicants', 'Open voting', 'Schedule interviews']) assert.equal(await page.getByRole('link', { name, exact: true }).count(), 0, `${name} lives on the Recruiting Overview`)
   assert.equal(await page.getByRole('heading', { name: 'Needs you', exact: true }).count(), 1)
   for (const name of ['Next meeting', 'Team tasks', 'Announcements', 'This week', 'Members', 'Team pulse', 'Your tasks']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 1, name)

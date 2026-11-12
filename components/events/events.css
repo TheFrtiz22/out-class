@@ -212,7 +212,7 @@
   color: var(--foreground);
   box-shadow: var(--oc-content-shadow)
 }
-.oc-events-empty h2 {
+.oc-events-empty :is(h2, h3) {
   font-family: var(--oc-font-display);
   font-size: var(--oc-text-section);
   margin-bottom: .5rem;

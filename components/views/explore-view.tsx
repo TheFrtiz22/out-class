@@ -221,7 +221,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
       </div>
       <div id="directory-tools" className="oc-directory-tools oc-toolbar" data-phone-open={phoneFilters || undefined}>
         {/* Filters with fewer than two real options are hidden; acceptance needs at least three clubs reporting a rate. */}
-        <FilterPopover label="Filter" title="Filter clubs" count={refined} align="start">
+        <FilterPopover title="Filter clubs" count={refined} align="start">
             <div className="oc-filter-field"><span className="oc-filter-field-label">Availability</span>
               <PillSelect label="Availability" size="compact" active={filters.recruitment !== emptyDirectoryFilters.recruitment} describedBy="directory-availability-note" value={filters.recruitment} onChange={(value) => change("recruitment", value)}
                 options={recruitmentOptions.map(option => ({ value: option.value, label: `${option.label} (${recruitmentCounts[option.value]})` }))} />

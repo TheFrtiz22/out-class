@@ -98,5 +98,6 @@ test("FE-23: no user-facing 'Corkboard Events' label remains; event lists say Ev
   assert.deepEqual(offenders, [])
   const clubEvents = fs.readFileSync("components/events/club-events.tsx", "utf8")
   assert.match(clubEvents, /aria-label="Events"/)
-  assert.match(clubEvents, />\+ Create event<\/Button>/)
+  assert.match(clubEvents, /<Plus className="size-4" aria-hidden="true" \/>\{TERMS\.newEvent\}<\/Button>/)
+  assert.doesNotMatch(clubEvents, />\+ Create/)
 })

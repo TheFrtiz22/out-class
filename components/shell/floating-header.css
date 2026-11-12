@@ -72,6 +72,7 @@
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 2px 4px; border-radius: 999px; color: var(--primary); background: transparent; font-size: var(--oc-size-13); font-weight: 500; line-height: 1.3846; text-decoration: none; text-align: center; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option[aria-current="page"] { color: #fff7ec; }
 .oc-workspace-option-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc-workspace-segment[data-placeholder] .oc-workspace-option { opacity: 0.55; cursor: default; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::before, .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::after { display: none; }
 .oc-evolving-toggle :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
 /* A leader of several clubs picks another club beside the pill, in the same row. */

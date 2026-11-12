@@ -17,7 +17,7 @@ import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react"
-import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, Gauge, Gavel, IdCard } from "@/components/icons"
+import { CalendarStar, Bell, Menu, UserRound, LogOut, Home, Users2, Compass, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, Gauge, Gavel, IdCard } from "@/components/icons"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { WorkspaceSelector, useWorkspaceOptions } from "@/components/shell/workspace-selector"
@@ -55,7 +55,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog"
  * Rail icons. Club workspace items each get a distinct glyph: Overview (gauge) vs Home (house), Applicants
  * (ID card) vs Members (people), one Calendar, and Decide (gavel). Exported for the phone bar.
  */
-export const navigationIcons: Record<string, typeof Home> = { rejected: IdCard, resumes: FileText, reviews: FileText, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: Gavel, clubs: Users2, overview: Gauge, meetings: CalendarDays, tasks: ListChecks, applicants: IdCard, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw, recruiting: FileText }
+export const navigationIcons: Record<string, typeof Home> = { rejected: IdCard, resumes: FileText, reviews: FileText, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: CalendarStar, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: Gavel, clubs: Users2, overview: Gauge, meetings: CalendarDays, tasks: ListChecks, applicants: IdCard, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw, recruiting: FileText }
 
 /**
  * One shell for every workspace. `sections` come from lib/navigation; the highlighted
@@ -249,6 +249,6 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])]} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])].map(link => ({ ...link, icon: navigationIcons[link.id] }))} onNavigate={onNavigate} />
   </div>
 }

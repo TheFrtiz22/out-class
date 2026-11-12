@@ -133,7 +133,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const resumeUrl = app && !anonymous && profileFields.resume ? resolveRecruitingResumeUrl(profile?.resumeUrl, clubId, app.id) : undefined
   const linkedinUrl = !anonymous && profileFields.linkedin ? safeProfileUrl(profile?.linkedinUrl) : undefined
   const observationsEligible = !!app && canReview && hasPermission(membership, "applicants.identify") && !anonymous && !!app.recruitmentCycleId && app.studentId !== membership.userId && !activeRound?.anonymousReview
-  const evaluateReason = !app || app.canEvaluate ? "" : app.studentId === membership.userId ? "You can’t grade your own application." : "Grading needs a current panel assignment for this round. Submitted grades are read-only."
+  const evaluateReason = !app || app.canEvaluate ? "" : app.studentId === membership.userId ? "You can’t grade your own application." : "Grading needs a panel assignment for this round; recruiting leads assign panels in Interviews › Scheduling. Submitted grades are read-only."
   const interviewLinks = [...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !anonymous ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]
   const toggle = (key: string) => (open: boolean) => setOpenSections(list => open ? [...list, key] : list.filter(item => item !== key))
   const facts = app ? joinFacts(profileFields.academicYear && profile?.academicYear, activeRound?.name, ...(profile ? applicantProfileFacts({ ...profile, academicYear: null }, profileFields) : []), profileFields.major && profile?.major) : ""
@@ -249,7 +249,8 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
               <DisabledReason reason={decideReason || (app.status === "WAITLISTED" ? "Already on hold (waitlisted)." : "")}><Button variant="outline" className="oc-review-decision" data-outcome="hold" aria-keyshortcuts="H" data-selected={current?.outcome === "HOLD" || undefined} onClick={() => void decide("HOLD")}><Pause aria-hidden="true" />Hold<kbd>H</kbd></Button></DisabledReason>
               <DisabledReason reason={decideReason}><Button variant="outline" className="oc-review-decision" data-outcome="reject" aria-keyshortcuts="R" data-selected={current?.outcome === "REJECT" || undefined} onClick={() => void decide("REJECT")}><X aria-hidden="true" />Reject<kbd>R</kbd></Button></DisabledReason>
             </div>
-            <p className="oc-review-keys text-xs text-muted-foreground" aria-hidden="true"><kbd>A</kbd> advance · <kbd>H</kbd> hold · <kbd>R</kbd> reject · <kbd><ArrowLeft size={14} /></kbd><kbd><ArrowRight size={14} /></kbd> move · <kbd>Esc</kbd> close</p>
+            {/* A, H and R show on the decision buttons themselves; the legend lists only the keys that have no button. */}
+            <p className="oc-review-keys text-xs text-muted-foreground" aria-hidden="true"><kbd><ArrowLeft size={14} /></kbd><kbd><ArrowRight size={14} /></kbd> move · <kbd>Esc</kbd> close</p>
             <p className="text-xs text-muted-foreground">Decisions are saved, not sent. Send them from Decide › Send.</p>
             {message && <p role="status" className="text-xs">{message}</p>}
           </section>
