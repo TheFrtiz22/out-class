@@ -3,15 +3,18 @@
 /* Full-screen review: one applicant at a time. */
 :root [data-slot="dialog-content"].oc-review-flow {
   inset: 0; top: 0; left: 0; translate: none; transform: none; width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh;
-  display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0; padding: 0; border: 0; border-radius: 0; overflow: hidden;
+  display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0; border: 0; border-radius: 0; overflow: hidden;
   background: var(--background);
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 @media (min-width: 1024px) {
   :root [data-slot="dialog-content"].oc-review-flow { inset: 1.5rem; width: auto; max-width: none; height: auto; max-height: none; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-overlay-radius); box-shadow: var(--shadow-modal, var(--oc-glass-menu-depth)); }
 }
-.oc-review-flow-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .625rem 1rem .625rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--oc-content-surface); }
-:root .oc-review-flow .oc-review-flow-title { font-family: inherit; font-size: var(--oc-text-body); font-weight: var(--oc-weight-semibold); }
+/* The bar wraps on narrow screens (navigation moves to its own line); the column above never grows past the dialog. */
+.oc-review-flow-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .375rem 1rem; padding: .625rem 1rem .625rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--oc-content-surface); }
+.oc-review-flow-bar > :first-child { flex: 1 1 10rem; }
+.oc-review-flow-bar > nav { flex-wrap: wrap; justify-content: flex-end; margin-inline-start: auto; }
+:root .oc-review-flow .oc-review-flow-title { overflow-wrap: anywhere; font-family: inherit; font-size: var(--oc-text-body); font-weight: var(--oc-weight-semibold); }
 .oc-review-flow-body { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 @media (min-width: 1024px) {
   .oc-review-flow-body { grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem); overflow: hidden; }
