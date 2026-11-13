@@ -43,7 +43,7 @@ attribution, and audit entry commit together. Existing active membership access 
 preserved; inactive memberships require owner intervention. Replays fail without
 a second grant. Success reloads the existing `/club/[clubId]/workspace` route.
 
-The profile wizard can suggest a name and supported graduation year from matched
+The profile wizard can suggest a name and supported graduation year (`lib/graduation-years.ts`) from matched
 invitations. Suggestions fill only untouched blank fields and never save a profile
 automatically. Existing login, school adapters, directory claims, and dismiss/restore
 semantics remain unchanged. Discovery excludes dashboard-dismissed requests; the

@@ -1,5 +1,6 @@
 import { ActionError } from "@/lib/action-result";
 import { normalizeSchoolIdentifier } from "@/lib/club-onboarding";
+import { graduationYearRange, isSupportedGraduationYear } from "@/lib/graduation-years";
 
 export const ROSTER_MAX_BYTES = 1024 * 1024;
 export const ROSTER_MAX_ROWS = 1000;
@@ -76,7 +77,7 @@ export function validateRosterRows(inputs: readonly RosterInputRow[], config: { 
     if (!identifier) errors.push("Missing computing ID");
     else try { normalizedIdentifier = normalizeSchoolIdentifier(identifier, config); } catch { errors.push("Malformed computing ID"); }
     if (!year) warnings.push("Missing year");
-    else if (!/^(202[5-9]|2030)$/.test(year)) errors.push("Unsupported year; use 2025–2030 or leave blank");
+    else if (!isSupportedGraduationYear(year)) { const { min, max } = graduationYearRange(); errors.push(`Unsupported year; use ${min}–${max} or leave blank`); }
     const duplicate = normalizedIdentifier !== null && seen.has(normalizedIdentifier);
     // Invalid rows never reserve an identity and prevent a later valid row from being used.
     if (normalizedIdentifier && !errors.length) seen.add(normalizedIdentifier);

@@ -17,6 +17,7 @@ import { invitationEmailConfig } from "@/utils/email";
 import { scheduleInvitationDelivery } from "@/utils/invitation-background";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { graduationYearMessage, isSupportedGraduationYear } from "@/lib/graduation-years";
 import { resendOrganizationInvitation } from "@/actions/invitation-emails";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { prisma } from "@/utils/prisma";
@@ -212,7 +213,7 @@ async function transferOrganizationOwnershipCommand(input: unknown) {
 }
 
 async function inviteOrganizationMemberCommand(input: unknown) {
-  const data = z.object({ clubId: id, identifierTypeId: z.string().min(1).max(100), identifier: z.string().min(1).max(128), invitedName: z.string().trim().min(1).max(200), invitedYear: z.enum(["2025", "2026", "2027", "2028", "2029", "2030"]).nullable(), requestedRole: z.enum(organizationRoles) }).strict().parse(input);
+  const data = z.object({ clubId: id, identifierTypeId: z.string().min(1).max(100), identifier: z.string().min(1).max(128), invitedName: z.string().trim().min(1).max(200), invitedYear: z.string().refine(year => isSupportedGraduationYear(year), () => ({ message: graduationYearMessage() })).nullable(), requestedRole: z.enum(organizationRoles) }).strict().parse(input);
   return createClubIdentityInvitation(data);
 }
 
