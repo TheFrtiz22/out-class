@@ -245,7 +245,7 @@ test('entry point and admin UI: account menu item for live accounts only, dialog
   assert.match(dialog, /window\.location\.pathname\}\$\{window\.location\.search\}/); assert.doesNotMatch(dialog, /location\.hash|location\.href/)
   assert.match(dialog, /We include this page, your browser and device, and the app version/)
   const admin = fs.readFileSync('components/admin/admin-reports.tsx', 'utf8')
-  assert.match(admin, /label="Kind"/); assert.match(admin, /ADMIN_REPORTS_CHANGED_EVENT/); assert.match(admin, /unwrapAction\(await getFeedbackScreenshot\(\{ id: row\.id \}\)\)/)
+  assert.match(admin, /label="Kind"/); assert.match(admin, /ADMIN_REPORTS_CHANGED_EVENT/); assert.match(admin, /import \{ getFeedbackScreenshot \} from "@\/lib\/workspace-api"/)
 })
 
 test('privacy policy says feedback reports include page and device details and any attached screenshot', () => {

@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Textarea } from "@/components/ui/textarea"
-import { prepareFeedbackScreenshot, submitFeedbackReport } from "@/actions/feedback-reports"
-import { UserFacingError, unwrapAction } from "@/lib/action-result"
+import { prepareFeedbackScreenshot, submitFeedbackReport } from "@/lib/workspace-api"
+import { UserFacingError } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { FEEDBACK_CONFIRMATION, FEEDBACK_MESSAGE_MAX, FEEDBACK_MESSAGE_MIN, FEEDBACK_SCREENSHOT_MAX_BYTES, feedbackKindLabels, type FeedbackKind } from "@/lib/feedback-reports"
 
@@ -64,16 +64,16 @@ export function FeedbackDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     try {
       let screenshot: { path: string; size: number; mime: "image/jpeg" } | undefined
       if (shot) {
-        const upload = unwrapAction(await prepareFeedbackScreenshot({ size: shot.blob.size, mime: "image/jpeg" }))
+        const upload = await prepareFeedbackScreenshot({ size: shot.blob.size, mime: "image/jpeg" })
         const response = await fetch(upload.url, { method: "PUT", headers: { "Content-Type": "image/jpeg", "x-upsert": "false" }, body: shot.blob })
         if (!response.ok) throw new UserFacingError("The screenshot didn’t upload. Try again, or remove it.")
         screenshot = { path: upload.path, size: shot.blob.size, mime: "image/jpeg" }
       }
-      unwrapAction(await submitFeedbackReport({
+      await submitFeedbackReport({
         kind, message,
         context: { path: `${window.location.pathname}${window.location.search}`, viewport: { width: Math.round(window.innerWidth), height: Math.round(window.innerHeight) } },
         ...(screenshot ? { screenshot } : {}),
-      }))
+      })
       setDone(true)
     } catch (e) { setError(userMessage(e, "We couldn’t send your report. Please try again.")) }
     finally { setBusy(false) }

@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
-import { getAdminReportsPulse } from "@/actions/admin-workspace"
+import { getAdminReportsPulse } from "@/lib/workspace-api"
 import { adminReportsRealtime, startAdminReportsLive } from "@/lib/admin-reports-live"
 import { ADMIN_REPORTS_CHANGED_EVENT, adminReportsRealtimeEnabled } from "@/lib/feedback-reports"
 

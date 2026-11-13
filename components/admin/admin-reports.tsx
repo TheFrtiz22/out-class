@@ -11,8 +11,7 @@ import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/ui/panel";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { getFeedbackScreenshot } from "@/actions/feedback-reports";
-import { unwrapAction } from "@/lib/action-result";
+import { getFeedbackScreenshot } from "@/lib/workspace-api";
 import { ADMIN_REPORTS_CHANGED_EVENT, feedbackKindLabels, type FeedbackKind } from "@/lib/feedback-reports";
 
 function ReportContext({ row }: { row: { id: string; context: { path: string; userAgent: string; viewport: string | null; appVersion: string; hasScreenshot: boolean } | null } }) {
@@ -23,7 +22,7 @@ function ReportContext({ row }: { row: { id: string; context: { path: string; us
     <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-muted-foreground"><dt>Page</dt><dd className="break-all text-foreground">{c.path}</dd><dt>Device</dt><dd>{c.userAgent}{c.viewport ? ` · ${c.viewport}` : ""}</dd><dt>Version</dt><dd>{c.appVersion}</dd></dl>
     {c.hasScreenshot && (shot.url ? <a href={shot.url} target="_blank" rel="noreferrer noopener" className="block w-fit">
       {/* eslint-disable-next-line @next/next/no-img-element -- a 60-second signed URL, not an optimizable asset */}
-      <img src={shot.url} alt="Screenshot attached to this report" className="max-h-80 max-w-full rounded-md border border-border object-contain" /></a> : <Button variant="outline" size="sm" disabled={shot.loading} onClick={async () => { setShot({ loading: true }); try { setShot({ url: unwrapAction(await getFeedbackScreenshot({ id: row.id })).url }); } catch (e) { setShot({ error: userMessage(e, "Couldn’t open the screenshot.") }); } }}>{shot.loading ? "Opening…" : "View screenshot"}</Button>)}
+      <img src={shot.url} alt="Screenshot attached to this report" className="max-h-80 max-w-full rounded-md border border-border object-contain" /></a> : <Button variant="outline" size="sm" disabled={shot.loading} onClick={async () => { setShot({ loading: true }); try { setShot({ url: (await getFeedbackScreenshot({ id: row.id })).url }); } catch (e) { setShot({ error: userMessage(e, "Couldn’t open the screenshot.") }); } }}>{shot.loading ? "Opening…" : "View screenshot"}</Button>)}
     {shot.error && <p role="alert" className="text-destructive">{shot.error}</p>}
   </div>;
 }
