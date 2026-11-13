@@ -1,4 +1,5 @@
 "use client"
+import type { MouseEvent } from "react"
 import Link from "next/link"
 import { handleClubLink } from "@/lib/workspace-navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
@@ -13,6 +14,19 @@ import { TERMS } from "@/lib/copy/terms"
 import { interviewPerson, isOverdue, pipeline, thisWeek, type Overview, type RailHrefs, recruitingStripText, type RecruitingStrip } from "@/components/club-home/club-home-model"
 
 type Booking = Overview["operations"]["bookings"][number]
+
+/**
+ * Link props for a dashboard CTA. A destination inside this club's workspace switches view client-side
+ * (handleClubLink, after the leave-page guard) and is never prefetched: Next would fetch an RSC payload
+ * the workspace does not use. Other destinations keep Next's default navigation and prefetch.
+ */
+export function clubLinkProps(clubId: string, href: string) {
+  const sameWorkspace = href.split("?")[0] === `/club/${encodeURIComponent(clubId)}/workspace`
+  return {
+    href, prefetch: sameWorkspace ? false : undefined,
+    onClick: (event: MouseEvent<HTMLElement>) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event as MouseEvent<HTMLAnchorElement>, href) },
+  }
+}
 const time = (value: Date | string) => new Date(value).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
 
 /** Stage counts from application statuses; bars are decorative, every number is text. */
@@ -37,7 +51,7 @@ export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview;
   const unscheduled = hasPermission(data.membership, "interviews.manage") && hrefs.interviews ? op.rounds.filter(r => r.needsBooking > 0) : []
   if (!op.bookings.length && !unscheduled.length) return null
   return <DashboardCard id="club-home-interviews" title="Your interviews" index={index} className="oc-club-home-card oc-club-home-interviews"
-    more={hrefs.interviews ? { href: hrefs.interviews, label: "Interviews" } : undefined}>
+    more={hrefs.interviews ? { ...clubLinkProps(data.club.id, hrefs.interviews), label: "Interviews" } : undefined}>
     <GlassRowList>
       {op.bookings.map((booking, i) => { const person = interviewPerson(booking, op.rounds); return <li key={booking.id} className="oc-interview-row">
         <time className="oc-interview-time" dateTime={new Date(booking.slot.startTime).toISOString()}>{time(booking.slot.startTime)}<small>{new Date(booking.slot.startTime).toLocaleDateString([], { weekday: "short" })}</small></time>
@@ -45,13 +59,13 @@ export function InterviewsCard({ data, hrefs, index, onOpen }: { data: Overview;
         <span className="oc-dashboard-row-copy"><strong>{person.label}</strong><small>{[booking.round?.name, booking.slot.location].filter(Boolean).join(" · ")}</small></span>
         {/* Every booking can open its preparation; the first one with a room can also be entered. */}
         <span className="oc-interview-actions"><Button size="lg" className="px-3" variant="outline" onClick={() => onOpen(booking)} aria-label={`Prep: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Prep</Button>
-          {i === 0 && booking.slot.roomId && booking.roundId && <Button size="lg" className="px-3" data-tone="interview" asChild><Link href={interviewEntryHref({ clubId: data.club.id, applicationId: booking.applicationId, roundId: booking.roundId, slotId: booking.slot.id, bookingId: booking.id, roomId: booking.slot.roomId })} aria-label={`Open room: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Open room</Link></Button>}</span>
+          {i === 0 && booking.slot.roomId && booking.roundId && <Button size="lg" className="px-3" data-tone="interview" asChild><Link {...clubLinkProps(data.club.id, interviewEntryHref({ clubId: data.club.id, applicationId: booking.applicationId, roundId: booking.roundId, slotId: booking.slot.id, bookingId: booking.id, roomId: booking.slot.roomId }))} aria-label={`Open room: ${person.label}, ${memberDate(booking.slot.startTime)}`}>Open room</Link></Button>}</span>
       </li> })}
       {unscheduled.map(round => <li key={round.id} className="oc-interview-row" data-unscheduled="true">
         <span className="oc-interview-time">Not set</span>
         <span className="oc-dashboard-avatar" data-unscheduled="true" aria-hidden="true" />
         <span className="oc-dashboard-row-copy"><strong>{round.needsBooking} without a time</strong><small>{round.name}</small></span>
-        <Button size="lg" className="px-3" variant="outline" asChild><Link href={hrefs.interviews!} aria-label={`Find a time: ${round.name}`}>Find a time</Link></Button>
+        <Button size="lg" className="px-3" variant="outline" asChild><Link {...clubLinkProps(data.club.id, hrefs.interviews!)} aria-label={`Find a time: ${round.name}`}>Find a time</Link></Button>
       </li>)}
     </GlassRowList>
   </DashboardCard>
