@@ -147,8 +147,12 @@ test('shared public footer connects all public pages with real HTML links', () =
     '@/components/outclass-logo': { OutClassLogo: () => null },
     '@/components/landing/footer-controls': load('components/landing/footer-controls.tsx'),
     '@/components/landing/interactive-footer-wordmark': load('components/landing/interactive-footer-wordmark.tsx'),
+    '@/lib/photo-credits': load('lib/photo-credits.ts'),
   })
   const html = renderToStaticMarkup(React.createElement(PublicFooter))
+  // CC attribution for the campus photographs: title, author, source and license links on every public page.
+  for (const href of ['https://creativecommons.org/licenses/by/2.0/', 'https://creativecommons.org/licenses/by-sa/2.0/', 'https://commons.wikimedia.org/wiki/File:Rotunda_UVa_from_the_south_east.jpg', 'https://commons.wikimedia.org/wiki/File:Colonnade_UVa_academical_village.jpg']) assert.ok(html.includes(`href="${href}"`), href)
+  assert.match(html, /Photo credits:.*terren in Virginia.*Eli Pousson.*adaptations shared under CC BY-SA 2\.0/s)
   for (const path of ['/', '/about', '/uva', '/uva#faq', '/request-school', '/signup', '/login', '/?audience=student#students', '/?audience=leader#club-leaders', '#top']) assert.ok(html.includes(`href="${path}"`))
   assert.ok(html.includes('<span class="sr-only">OutClass</span>'))
   assert.ok(html.includes('class="oc-footer-letters" aria-hidden="true"'))
