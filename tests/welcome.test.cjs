@@ -179,12 +179,14 @@ test('personal assignment urgency reuses structured task notifications and curre
 test('personal welcome uses current authenticated applications, neutral loading and immediate data changes', () => {
   let auth = { user: { id: 'student', profile: { firstName: 'Alex' }, applications: [application({ club: { name: 'One', applicationDeadline: at(1) } })], memberships: [] }, loading: true }
   const state = { hydrated: true, events: [], notifications: [], trackedApps: [] }
+  const demo = { isDemoEnabled: false }
   const mocks = {
     '@/contexts/auth-context': { useAuth: () => auth },
     '@/lib/application-state': { useApplicationState: () => state },
     '@/hooks/use-welcome-clock': { useWelcomeClock: () => now },
     '@/hooks/use-server-now': { useServerAnchoredNow: () => +now },
     '@/hooks/use-suggested-clubs': { useSuggestedClubs: () => ({ suggestions: [], hasSignal: false }) },
+    '@/contexts/demo-mode': { useDemoMode: () => demo },
   }
   // Unrelated content uses element sentinels; the actual welcome logic is evaluated below.
   for (const name of [...fs.readFileSync('components/views/student-dashboard-view.tsx', 'utf8').matchAll(/from "(@\/components\/[^"]+)"/g)].map(m => m[1])) mocks[name] = new Proxy({}, { get: (_, key) => key })
@@ -210,12 +212,14 @@ test('signed-in Home renders its records in the server HTML instead of a placeho
   const auth = { user: { id: 'student', profile: { firstName: 'Alex' }, applications: [], memberships: [] }, loading: false }
   // Server render and hydration: the shell store is not seeded yet and the device clock has not been read.
   const state = { hydrated: false, events: [], notifications: [], trackedApps: [] }
+  const demo = { isDemoEnabled: false }
   const mocks = {
     '@/contexts/auth-context': { useAuth: () => auth },
     '@/lib/application-state': { useApplicationState: () => state },
     '@/hooks/use-welcome-clock': { useWelcomeClock: () => null },
     '@/hooks/use-server-now': { useServerAnchoredNow: serverNow => serverNow ?? +now },
     '@/hooks/use-suggested-clubs': { useSuggestedClubs: () => ({ suggestions: [], hasSignal: false }) },
+    '@/contexts/demo-mode': { useDemoMode: () => demo },
   }
   for (const name of [...fs.readFileSync('components/views/student-dashboard-view.tsx', 'utf8').matchAll(/from "(@\/components\/[^"]+)"/g)].map(m => m[1])) mocks[name] = new Proxy({}, { get: (_, key) => key })
   const { StudentDashboardView } = load('components/views/student-dashboard-view.tsx', mocks)
@@ -230,4 +234,7 @@ test('signed-in Home renders its records in the server HTML instead of a placeho
   // Without server data (signed-out, demo, failed read) the placeholder stays until the browser state is ready.
   assert.ok(render({ authenticated: false, initialData: null }).some(n => n.type === 'Skeleton'))
   assert.ok(render({ authenticated: true, initialData: null }).some(n => n.type === 'Skeleton'))
+  // Demo Mode never takes the server-rendered path, even with an account session and seeded demo records.
+  demo.isDemoEnabled = true
+  assert.ok(render({ authenticated: true, initialData: { applications: [], attendances: [], meetings: [meeting] }, serverNow: +now }).some(n => n.type === 'Skeleton'))
 })

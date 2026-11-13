@@ -5,6 +5,7 @@ import { ArrowRight } from "@/components/icons"
 import { Card } from "@/components/ui/card"
 import { Panel } from "@/components/ui/panel"
 import { cn } from "@/lib/utils"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
 /**
  * Shared dashboard pieces, taken from club home (docs/design-system.md, "Dashboards"). Every dashboard
@@ -143,9 +144,13 @@ export function GlassRowList({ children, className, as: Tag = "ul" }: { children
   return <Tag className={cn("oc-dashboard-rows", className)}>{children}</Tag>
 }
 
-/** Month and day chip; navy for meetings, interview and deadline tints by kind. Decorative: the row says the date. */
-export function DateChip({ at, kind, timeZone }: { at: Date; kind?: string; timeZone?: string }) {
-  return <span className="oc-date-chip" data-kind={kind} aria-hidden="true"><span>{at.toLocaleDateString("en-US", { month: "short", timeZone })}</span><strong>{timeZone ? at.toLocaleDateString("en-US", { day: "numeric", timeZone }) : at.getDate()}</strong></span>
+/**
+ * Month and day chip; navy for meetings, interview and deadline tints by kind. Decorative: the row says the date.
+ * Always formatted in a fixed zone (the Eastern scheduling zone unless one is passed), so the server HTML and
+ * the browser render the same day.
+ */
+export function DateChip({ at, kind, timeZone = SCHEDULING_TIMEZONE }: { at: Date; kind?: string; timeZone?: string }) {
+  return <span className="oc-date-chip" data-kind={kind} aria-hidden="true"><span>{at.toLocaleDateString("en-US", { month: "short", timeZone })}</span><strong>{at.toLocaleDateString("en-US", { day: "numeric", timeZone })}</strong></span>
 }
 
 export type DateChipItem = { id: string; at: Date; kind?: string; title: ReactNode; detail?: ReactNode; onClick?: () => void; href?: string }

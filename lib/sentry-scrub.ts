@@ -208,7 +208,8 @@ export function scrubTransaction<T extends TransactionEvent>(event: T): T {
   return clean as T
 }
 
-type MetricRecord = { name: string; value: number; type: string; unit?: string; attributes?: Record<string, unknown> }
+/** The SDK's metric shape; unit is widened so any SDK unit type is accepted and only "millisecond" is kept. */
+type MetricRecord = { name: string; value: number; type: string; unit?: unknown; attributes?: Record<string, unknown> }
 const METRIC_NAMES = /^web_vital\.(lcp|inp|cls|fcp|ttfb)$/
 /** A route template: plain word segments and [param] placeholders only, or "other". */
 const ROUTE_TEMPLATE = /^(other|\/|(\/([a-z][a-z-]{0,39}|\[[A-Za-z]{1,30}\]))+)$/

@@ -4,6 +4,7 @@ import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
 
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
+import { useDemoMode } from "@/contexts/demo-mode"
 import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { studentCalendarEvents, type CalendarSource } from "@/lib/student-calendar-data"
 import { Bell, CheckCircle2, ChevronRight, Circle } from "@/components/icons"
@@ -92,6 +93,7 @@ export function StudentDashboardView({
     hydrated,
   } = useApplicationState()
   const { user, loading } = useAuth()
+  const { isDemoEnabled } = useDemoMode()
   // The greeting reads the device clock after hydration; deadlines and the agenda use the
   // server-anchored minute clock, so the server HTML already holds them (no skeleton swap).
   const now = useWelcomeClock()
@@ -100,7 +102,9 @@ export function StudentDashboardView({
   const realMode = authenticated || !!user || initialData != null
   // Before the shell store is seeded (server render and hydration), the agenda comes straight from the
   // same server records the store is seeded with, so hydration matches and nothing shifts afterwards.
-  const serverRendered = authenticated && initialData != null
+  // Demo Mode never takes this path: its records come from the browser demo store, which the server
+  // cannot render. isDemoEnabled comes from server props, so server and first client render agree.
+  const serverRendered = !isDemoEnabled && authenticated && initialData != null
   // Real records always win, including an empty array. Never fall back to browser demo applications.
   const realApps = user
     ? user.applications.map((app) => ({

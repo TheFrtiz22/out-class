@@ -6,7 +6,8 @@ export type VitalName = keyof typeof VITALS
 
 /**
  * Share of production page loads whose vitals are sent. Decided once per page load, so a sampled
- * load reports all of its vitals together. Previews and development send nothing.
+ * load reports all of its vitals together. Previews and development send nothing. `environment` is
+ * the one the Sentry SDK was initialized with (sentryOptions), not a separate env read.
  */
 export const WEB_VITALS_SAMPLE_RATE = 0.5
 
@@ -18,7 +19,8 @@ export type WebVitalMetric = { name: string; value: number; unit?: "millisecond"
 
 /**
  * One Sentry distribution for a reported vital: `web_vital.lcp` etc., tagged with the route template
- * of the page that loaded (never the URL, IDs or query) and the vital's rating. Anything else is null.
+ * of the page shown when the vital is reported (never the URL, IDs or query) and the vital's rating.
+ * Anything else is null.
  */
 export function webVitalMetric(metric: { name: string; value: number; rating?: string }, pathname: string): WebVitalMetric | null {
   if (!(metric.name in VITALS) || !Number.isFinite(metric.value) || metric.value < 0) return null
