@@ -8,7 +8,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
+import { authorizeInterview, authorizeQuestionBank, interviewActionResult, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { profilePhotoSource } from "@/lib/profile-photo";
@@ -284,20 +284,21 @@ export async function saveInterviewKit(...args: Parameters<typeof saveInterviewK
   return actionResult(() => saveInterviewKitCommand(...args), "saveInterviewKit")
 }
 
+// Room actions: an access denial (e.g. removed from the panel mid-interview) is a typed ACCESS_REVOKED refusal.
 export async function openInterviewSession(...args: Parameters<typeof openInterviewSessionCommand>) {
-  return actionResult(() => openInterviewSessionCommand(...args), "openInterviewSession")
+  return interviewActionResult(() => openInterviewSessionCommand(...args), "openInterviewSession")
 }
 
 export async function saveInterviewSession(...args: Parameters<typeof saveInterviewSessionCommand>) {
-  return actionResult(() => saveInterviewSessionCommand(...args), "saveInterviewSession")
+  return interviewActionResult(() => saveInterviewSessionCommand(...args), "saveInterviewSession")
 }
 
 export async function getEarlierInterviewReviews(...args: Parameters<typeof getEarlierInterviewReviewsCommand>) {
-  return actionResult(() => getEarlierInterviewReviewsCommand(...args), "getEarlierInterviewReviews")
+  return interviewActionResult(() => getEarlierInterviewReviewsCommand(...args), "getEarlierInterviewReviews")
 }
 
 export async function getInterviewRoundScore(...args: Parameters<typeof getInterviewRoundScoreCommand>) {
-  return actionResult(() => getInterviewRoundScoreCommand(...args), "getInterviewRoundScore")
+  return interviewActionResult(() => getInterviewRoundScoreCommand(...args), "getInterviewRoundScore")
 }
 
 export async function getSubmittedInterviewReviewPage(...args: Parameters<typeof getSubmittedInterviewReviewPageCommand>) {
@@ -308,9 +309,9 @@ export async function getSubmittedInterviewReviews(...args: Parameters<typeof ge
 }
 
 export async function getSubmittedInterviewReview(...args: Parameters<typeof getSubmittedInterviewReviewCommand>) {
-  return actionResult(() => getSubmittedInterviewReviewCommand(...args), "getSubmittedInterviewReview")
+  return interviewActionResult(() => getSubmittedInterviewReviewCommand(...args), "getSubmittedInterviewReview")
 }
 
 export async function getPreviousInterviewScores(...args: Parameters<typeof getPreviousInterviewScoresCommand>) {
-  return actionResult(() => getPreviousInterviewScoresCommand(...args), "getPreviousInterviewScores")
+  return interviewActionResult(() => getPreviousInterviewScoresCommand(...args), "getPreviousInterviewScores")
 }
