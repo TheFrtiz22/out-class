@@ -18,7 +18,7 @@ test("Settings navigation lists the interview schedule for signed-in accounts, n
   const entry = nav.personalSettingsSections.find(item => item.href === "/settings/interviews")
   assert.ok(entry, "the interview schedule has a Settings entry")
   assert.equal(entry.label, "Interview schedule")
-  assert.deepEqual(nav.visiblePersonalSettingsSections(false).map(item => item.id), ["account", "notifications", "availability", "interviews"])
+  assert.deepEqual(nav.visiblePersonalSettingsSections(false).map(item => item.id), ["account", "notifications", "availability", "interests", "interviews"])
   assert.deepEqual(nav.visiblePersonalSettingsSections(true).map(item => item.id), ["account", "availability"])
   // The page exists and reads only the signed-in account's own assignments.
   assert.ok(fs.existsSync("app/(workspace)/settings/interviews/page.tsx"))

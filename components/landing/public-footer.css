@@ -49,6 +49,11 @@
 /* Legal line */
 .oc-footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; font-size: var(--oc-size-13); color: var(--oc-footer-quiet); }
 .oc-footer-bottom small, .oc-footer-bottom p { margin: 0; font-size: var(--oc-size-13); line-height: 1.6; }
+/* Photo credits (CC attribution): quiet, small, still a real link target. */
+.oc-footer-bottom .oc-footer-credits { flex: 1 0 100%; color: var(--oc-footer-quiet); overflow-wrap: anywhere; }
+.oc-footer-credits a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 3px; }
+.oc-footer-credits a:hover { color: var(--oc-footer-ink); }
+.oc-footer-credits a:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .oc-footer-top-link { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--oc-size-13); color: var(--oc-footer-ink); white-space: nowrap; }
 
 .oc-information .oc-public-footer { padding-top: 40px; }
