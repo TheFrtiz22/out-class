@@ -203,6 +203,11 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
     await run(async()=>{const result=await publishPanelSchedule({...scope,proposalId:current.proposalId,revision:current.revision,approvalToken:current.approvalToken,understaffedOverride,overrideReason:understaffedOverride?reason:undefined,confirmUnstaff:current.unstaffed>0});if(!result.ok){setReview(null);accept(await getPanelProposalWorkspace(scope));throw new UserFacingError(result.error,result.code)}setReview(null);accept(await getPanelProposalWorkspace(scope));window.dispatchEvent(new Event("outclass:panels-changed")); setNotice("Interviewers confirmed. Schedule updates will be sent."); onApproved?.()})
   }
   async function finalize(){if(!draft)return;await run(async()=>{let current=draft;if(dirty)current=await savePanelProposalDraft({...scope,proposalId:draft.id,revision:draft.revision,assignments,requirements:requirements()});setDraft(current);setDirty(false);const result=await reviewPanelPublication({...scope,proposalId:current.id,revision:current.revision});const refreshed=await getPanelProposalWorkspace(scope);accept(refreshed);revealIssues(refreshed.proposal);if(!result.ok)throw new UserFacingError(result.error,result.code);setOverride(false);setReason("");setReview(result.value)})}
+  // Discarding deletes only the unpublished draft; published schedules and their history stay as they are.
+  async function discard(title: string, description: string) {
+    if (!draft || !(await confirm({ title, description, confirmLabel: "Discard draft", tone: "danger" }))) return
+    await run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") })
+  }
   const changes=draft?panelScheduleChanges(workspace?.published?.document??null,mergePanelPublication(workspace?.published?.document??null,draft.document)):[]
   const issues = draft ? panelIssueSummary(draft.validation) : null
   const needsRecheck = !!draft && (draft.stale || recheckRequired)
@@ -215,7 +220,7 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
     { id: "rules", label: "Assignment rules", onSelect: () => setSettingsOpen(true), disabled: busy },
     ...(draft ? [
       { id: "regenerate", label: "Regenerate unlocked assignments", onSelect: () => generate("REGENERATE"), disabled: busy },
-      { id: "discard", label: "Discard draft", disabled: busy, onSelect: async () => { if (await confirm({ title: "Discard draft changes?", description: "Unapproved changes are discarded. Confirmed reservations and the published schedule are retained.", confirmLabel: "Discard draft", tone: "danger" })) void run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") }) } },
+      { id: "discard", label: "Discard draft", disabled: busy, onSelect: () => discard("Discard draft changes?", "Unapproved changes are discarded. Confirmed reservations and the published schedule are retained.") },
     ] : []),
   ]
   const registered = useSchedulingTools(stepTools)
@@ -232,7 +237,7 @@ export function PanelPreviewWorkspace({ visible = true, clubId, roundId, autoSta
         <p role="status" className="font-medium">{publication.label}</p>{publication.detail && <p className="text-xs text-muted-foreground">{publication.detail}</p>}
         {!workspace.canPublish && <p className="text-xs text-muted-foreground">A club owner must approve interviewer access.</p>}
         {draft && issues && <section aria-label="Staffing issues" className="space-y-2 border-t pt-3">
-          {error && <p role="alert" className="text-destructive">{error} {errorCode === "DRAFT_STALE" ? <Button size="sm" variant="outline" disabled={busy} onClick={() => void generate("FILL_MISSING")}>Regenerate draft</Button> : <Button size="sm" variant="outline" disabled={busy} onClick={() => { if (canLeaveWorkspace()) void run(async () => accept(await getPanelProposalWorkspace(scope))) }}>Reload draft</Button>}</p>}
+          {error && <p role="alert" className="text-destructive">{error} {errorCode === "NO_OPEN_SESSIONS" ? <span className="inline-flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={busy} onClick={() => void discard("Discard this draft?", workspace.published ? "Nothing has been published from it. The current published schedule stays as it is." : "Nothing has been published from it.")}>Discard draft</Button>{onRooms && <Button size="sm" variant="link" className="h-9 px-0" disabled={busy} onClick={onRooms}>Reopen a room</Button>}</span> : errorCode === "DRAFT_STALE" ? <Button size="sm" variant="outline" disabled={busy} onClick={() => void generate("FILL_MISSING")}>Regenerate draft</Button> : <Button size="sm" variant="outline" disabled={busy} onClick={() => { if (canLeaveWorkspace()) void run(async () => accept(await getPanelProposalWorkspace(scope))) }}>Reload draft</Button>}</p>}
           {needsRecheck && <p role="status" className="text-amber-800">Availability has changed. Recheck assignments before confirming.</p>}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1"><Button size="sm" variant={needsRecheck ? "outline" : "link"} className={needsRecheck ? "" : "h-9 px-0 text-muted-foreground"} disabled={busy} onClick={() => void revalidate()}>{rechecking ? "Checking availability…" : "Recheck availability"}</Button>{recheckResult && <p role="status" className="text-xs text-muted-foreground">{recheckResult}</p>}</div>
           {recheckError && <p role="alert" className="text-destructive">{recheckError} Your assignments are retained. Recheck availability to retry.</p>}

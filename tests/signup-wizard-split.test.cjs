@@ -29,7 +29,7 @@ test('the split widgets keep their accessible names, autofill and the graduation
     assert.ok(code.includes(attribute), attribute);
   const year = fs.readFileSync('components/onboarding/graduation-year-select.tsx', 'utf8');
   assert.match(year, /<SelectTrigger id="onboarding-grad-year"/);
-  assert.match(wizard, /<Label htmlFor="onboarding-grad-year">Graduation year<\/Label>\s*<GraduationYearSelect\s*years=\{GRAD_YEARS\}/);
+  assert.match(wizard, /<Label htmlFor="onboarding-grad-year">Graduation year<\/Label>\s*<GraduationYearSelect\s*years=\{graduationYears\}/);
   assert.match(wizard, /<VerificationCodeInput\s*value=\{step2Form\.watch\("code"\)\}/);
 });
 

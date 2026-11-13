@@ -71,6 +71,7 @@ import { PillSelect } from "@/components/ui/pill-select"
 import { Toggle } from "@/components/ui/toggle"
 import { useConfirmOnce } from "@/components/ui/confirm-dialog"
 import { unwrapped } from "@/lib/action-result"
+import { graduationYearOptions } from "@/lib/graduation-years"
 const changeOrganizationMemberRole = unwrapped(changeOrganizationMemberRoleAction)
 const removeOrganizationMember = unwrapped(removeOrganizationMemberAction)
 const transferOrganizationOwnership = unwrapped(transferOrganizationOwnershipAction)
@@ -802,7 +803,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         className="mt-1 min-h-11 w-full"
                       >
                         <option value="">Not provided</option>
-                        {[2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
+                        {graduationYearOptions().map((year) => (
                           <option key={year}>{year}</option>
                         ))}
                       </NativeSelect>
