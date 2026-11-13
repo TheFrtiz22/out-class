@@ -1,5 +1,6 @@
 import { scholarStatusSchema } from "@/lib/scholar-status"
 import { actShape } from "@/lib/test-scores"
+import { graduationYearSchema } from "@/lib/graduation-years"
 import { z } from "zod"
 import type { Experience, StudentProfile } from "@prisma/client"
 
@@ -86,7 +87,7 @@ export const profileSectionSchema = z.discriminatedUnion("section", [
     scholarStatus: scholarStatusSchema.optional(),
     ...actShape,
     major: z.string().trim().min(1).max(200),
-    gradYear: z.number().int().min(2020).max(2030),
+    gradYear: graduationYearSchema,
     gpa: gpaSchema.nullable().optional(),
     satScore: z.number().int().min(400).max(1600).nullable(),
   }),

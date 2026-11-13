@@ -1,6 +1,7 @@
 "use client"
 import { UserFacingError } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
+import { graduationYearRange } from "@/lib/graduation-years"
 import { useAutosave } from "@/hooks/use-autosave"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -235,8 +236,8 @@ export function EditStudentProfileDialog({
                       id="profile-year"
                       type="number"
                       required
-                      min={2020}
-                      max={2030}
+                      min={graduationYearRange().min}
+                      max={graduationYearRange().max}
                       value={draft.gradYear}
                       onChange={(event) =>
                         setDraft({ ...draft, gradYear: Number(event.target.value) })

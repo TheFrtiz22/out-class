@@ -4,6 +4,7 @@ import { scholarStatusSchema } from "@/lib/scholar-status";
 
 
 import { actShape } from "@/lib/test-scores";
+import { graduationYearSchema } from "@/lib/graduation-years";
 import { profileSectionSnapshot, gpaSchema, profileEducationFields, resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
@@ -22,7 +23,7 @@ const profileSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   computingId: z.string().min(1, "Computing ID is required"),
   major: z.string().min(1, "Major is required"),
-  gradYear: z.number().int().min(2020).max(2030),
+  gradYear: graduationYearSchema,
   gpa: gpaSchema.optional(),
   satScore: z.number().int().min(400).max(1600).optional(),
   linkedinUrl: linkedinUrlSchema.optional().or(z.literal("")),
