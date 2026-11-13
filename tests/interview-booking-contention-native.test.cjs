@@ -92,7 +92,7 @@ test('interview self-booking bursts under simulated latency', { skip: !databaseU
     const mod = load(file);
     for (const name of names) { const real = mod[name]; if (name === 'validatePanelDocument') { mod[name] = (...args) => { const t0 = performance.now(); try { return real(...args); } finally { const p = profile[name] ??= { calls: 0, ms: 0, statements: 0 }; p.calls++; p.ms += performance.now() - t0; } }; continue; } mod[name] = async (...args) => { const t0 = performance.now(), s0 = statements; try { return await real(...args); } finally { const p = profile[name] ??= { calls: 0, ms: 0, statements: 0 }; p.calls++; p.ms += performance.now() - t0; p.statements += statements - s0; } }; }
   }
-  const rooms = unwrapActions(load('actions/interview-rooms.ts')), proposals = load('actions/panel-proposals.ts');
+  const rooms = unwrapActions(load('actions/interview-rooms.ts')), proposals = unwrapActions(load('actions/panel-proposals.ts'));
   const publication = load('actions/panel-publication.ts'), booking = load('actions/interview-booking-publication.ts');
   const as = (user, fn) => request.run(user, fn);
   const ok = r => { assert.equal(r.ok, true, r.error); return r.value; };

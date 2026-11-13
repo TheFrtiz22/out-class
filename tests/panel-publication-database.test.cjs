@@ -215,3 +215,15 @@ test('closed sessions: locked plans on them are dropped and reported, their requ
  assert.equal(draft.document.assignments.some(a=>a.slotId===closedTarget&&a.memberId===outsider),false);ok(await h.confirm(ok(await h.review())))
  const slot=(await h.snapshot()).InterviewSlot.find(s=>s.id===closedTarget);assert.equal(slot.interviewersNeeded,neededBefore);assert.deepEqual(slot.publishedPanelMemberIds.slice().sort(),published)
 })
+
+test('a working revision whose sessions have all passed returns NO_OPEN_SESSIONS on regenerate; discarding it leaves the published schedule and history untouched',async t=>{
+ const h=await fixture(t),{refused}=require('./helpers/action-result.cjs'),raw=h.load('actions/panel-proposals.ts')
+ await h.generate();ok(await h.confirm(ok(await h.review())));ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}))
+ const draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ await h.db.query('UPDATE "InterviewSlot" SET "startTime"="startTime"-make_interval(years=>20),"endTime"="endTime"-make_interval(years=>20) WHERE id=ANY($1::text[])',[h.slotIds])
+ const official=await h.snapshot(),published=await h.api.getPanelProposalWorkspace(h.scope)
+ const refusal=await refused(raw.generatePanelProposal({...h.scope,revision:draft.revision,window:draft.document.window,options:draft.document.options,mode:'FILL_MISSING',assignments:draft.document.assignments}),/no upcoming, open sessions left/)
+ assert.equal(refusal.code,'NO_OPEN_SESSIONS');assert.deepEqual(await h.snapshot(),official)
+ assert.deepEqual(await raw.discardPanelProposal(h.input(draft)),{discarded:true})
+ const after=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(after.proposal,null);assert.equal(after.published.version,1);assert.deepEqual(after.history,published.history);assert.deepEqual(await h.snapshot(),official)
+})
