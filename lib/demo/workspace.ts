@@ -31,6 +31,7 @@ import * as demoTasks from "./tasks"
 import * as demoReview from "./review-decisions"
 import { anonymousApplication, identifiedApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
+import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone"
 import * as demoInterviews from "./interview-foundation"
 import * as demoCollaboration from "./interview-collaboration"
 import { meetingInputSchema, canReadMeeting, TOKEN_LIFETIME_MS } from "@/lib/meetings"
@@ -63,6 +64,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
   if (s.perspective.role !== "student" || !club)
     throw new Error("Switch to the sample student first.")
   if (submit && !meetsTestRequirement(club.testRequirement, demoUser().profile)) throw new Error("Update your profile to meet this club’s SAT/ACT requirement.")
+  if (submit && !validPhone(demoUser().profile.phone)) throw new Error(PHONE_REQUIRED_MESSAGE)
   parsed.answers = normalizeApplicationAttachments(club.questions, parsed.answers)
   assertApplicationAttachmentOwnership(club.questions, parsed.answers, demoUser().id)
   const errors = answerErrors(club.questions, parsed.answers, submit)

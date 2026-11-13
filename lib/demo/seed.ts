@@ -139,6 +139,8 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
           ? null
           : `Fictional UVA student exploring ${majors[i % majors.length].toLowerCase()}. Interested in ${skills[i % skills.length].toLowerCase()} and practical, collaborative projects.`,
       linkedinUrl: `https://linkedin.com/in/outclass-demo-${i + 1}`,
+      // Fictional: 555-01xx numbers are reserved and never assigned.
+      phone: `+1434555${String(100 + (i % 100)).padStart(4, "0")}` as string | null,
       // A few fictional applicants submitted a scanned (image-only) résumé, for area highlights.
       resumeUrl: i % 3 !== 2 ? (i % 9 === 4 ? "/demo/sample-scanned-resume.pdf" : "/demo/sample-resume.pdf") : null,
       headshotUrl: i === 0 ? "/images/landing/jordan-avery.jpg" : i % 5 === 4 ? null : "/demo/sample-headshot.svg",

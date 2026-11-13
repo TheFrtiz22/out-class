@@ -1,6 +1,7 @@
 import { gpaSchema, linkedinUrlSchema } from "@/lib/student-profile"
 import { z } from "zod"
 import { newPasswordSchema } from "@/lib/password-policy"
+import { normalizePhone } from "@/lib/phone"
 
 // ─── Step 1: Account Basics ───────────────────────────────────────────────────
 
@@ -57,6 +58,13 @@ export const academicProfileSchema = z.object({
     .string()
     .min(1, "Major is required")
     .max(120, "Major is too long"),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine(
+      (v) => { try { normalizePhone(v); return true } catch { return false } },
+      "Enter a 10-digit US number, or start with + and your country code."
+    ),
   gpa: z
     .string()
     .optional()

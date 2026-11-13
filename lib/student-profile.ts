@@ -1,6 +1,7 @@
 import { scholarStatusSchema } from "@/lib/scholar-status"
 import { actShape } from "@/lib/test-scores"
 import { z } from "zod"
+import { phoneSchema } from "@/lib/phone"
 import type { Experience, StudentProfile } from "@prisma/client"
 
 export const genderValues = ["Male", "Female", "Other", "Prefer not to say"] as const
@@ -107,6 +108,11 @@ export const profileSectionSchema = z.discriminatedUnion("section", [
     linkedinUrl: linkedinUrlSchema.nullable().or(z.literal("")),
     resumeUrl: resumeReferenceSchema.nullable().or(z.literal("")),
   }),
+  // Appended last: lib/resume-import.ts reads the first three options by position.
+  z.object({
+    section: z.literal("contact"),
+    phone: phoneSchema,
+  }),
 ])
 export type ProfileSection = z.infer<typeof profileSectionSchema>["section"]
 export function safeProfileUrl(value?: string | null) {
@@ -136,6 +142,6 @@ export function profileChecklist(profile: FullStudentProfile) {
 export function profileSectionSnapshot(profile: object, section: ProfileSection) {
   const source = profile as Record<string, unknown>
   if (section === "experience") return JSON.stringify((source.experiences as { title: string; subtitle: string; period: string }[] ?? []).map(({ title, subtitle, period }) => ({ title, subtitle, period })))
-  const keys = section === "identity" ? ["firstName", "lastName", "headshotUrl"] : section === "links" ? ["linkedinUrl", "resumeUrl"] : ["highSchool", "gender", "pronouns", "transferStudent", "major", "gradYear", "scholarStatus", "gpa", "satScore", "actScore", "actEnglish", "actMath", "actReading", "actScience"]
+  const keys = section === "identity" ? ["firstName", "lastName", "headshotUrl"] : section === "links" ? ["linkedinUrl", "resumeUrl"] : section === "contact" ? ["phone"] : ["highSchool", "gender", "pronouns", "transferStudent", "major", "gradYear", "scholarStatus", "gpa", "satScore", "actScore", "actEnglish", "actMath", "actReading", "actScience"]
   return JSON.stringify(keys.map(key => [key, source[key] ?? null]))
 }

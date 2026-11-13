@@ -33,6 +33,7 @@ const titles = {
   education: "Education",
   experience: "Experience",
   links: "Links & résumé",
+  contact: "Phone",
 }
 export function EditStudentProfileDialog({
   trigger,
@@ -110,7 +111,9 @@ export function EditStudentProfileDialog({
               }
             : section === "experience"
               ? { section, experiences: snapshot.experiences }
-              : { section, linkedinUrl: snapshot.linkedinUrl, resumeUrl: snapshot.resumeUrl }
+              : section === "contact"
+                ? { section, phone: snapshot.phone ?? "" }
+                : { section, linkedinUrl: snapshot.linkedinUrl, resumeUrl: snapshot.resumeUrl }
       const result = await updateStudentProfileSection(payload, expected.current)
       if ("error" in result) throw new UserFacingError(result.error || "Unable to save.")
       expected.current = profileSectionSnapshot(result.profile, section)
@@ -356,6 +359,23 @@ export function EditStudentProfileDialog({
                     Add experience
                   </Button>
                 </>
+              )}
+              {section === "contact" && (
+                <div className="space-y-2">
+                  <Label htmlFor="profile-phone">Phone number</Label>
+                  <Input
+                    id="profile-phone"
+                    required
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(434) 555-0123"
+                    aria-describedby="profile-phone-note"
+                    value={draft.phone || ""}
+                    onChange={(event) => setDraft((current) => (current ? { ...current, phone: event.target.value } : current))}
+                  />
+                  <p id="profile-phone-note" className="text-xs text-muted-foreground">Required to apply. Clubs call applicants they accept; only a club that accepts you sees it.</p>
+                </div>
               )}
               {section === "links" && (
                 <>
