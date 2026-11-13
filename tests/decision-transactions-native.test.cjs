@@ -408,7 +408,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
   async function submissionFixture(support = true) {
     const f = await fixture(support);
     await operator.club.update({ where: { id: f.club.id }, data: { applicationOpen: true } });
-    await operator.studentProfile.create({ data: { userId: f.user.id, firstName: 'Synthetic', lastName: 'Applicant', computingId: randomUUID(), major: 'Economics', gradYear: 2027 } });
+    await operator.studentProfile.create({ data: { userId: f.user.id, firstName: 'Synthetic', lastName: 'Applicant', computingId: randomUUID(), major: 'Economics', gradYear: 2027, phone: '+14345550123' } });
     const question = await operator.applicationQuestion.create({ data: { clubId: f.club.id, prompt: 'Why this club?', type: 'ESSAY', required: true, order: 0 } });
     const app = await operator.application.create({ data: { studentId: f.user.id, clubId: f.club.id, roundId: f.round.id, status: 'DRAFTING', answers: { create: { questionId: question.id, response: 'Retained draft response' } } } });
     return { ...f, ownApp: app, question, input: { clubId: f.club.id, answers: [{ questionId: question.id, response: 'Submitted response' }] } };

@@ -3,15 +3,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getInterviewCollaboration, leaveInterviewCollaboration, selectSharedInterviewQuestion, dismissInterviewInvitation } from "@/lib/workspace-api";
 import { COLLABORATION_POLL_MS, newerCollaboration, type CollaborationView } from "@/lib/interview-collaboration";
 import type { InterviewScope } from "@/lib/interview-access";
+import { isAccessRevoked } from "@/lib/action-result";
 import { clockOffsetMs } from "@/lib/interview-shared-timer";
 
-/** Each tab owns a client ID; server identity always comes from verified Auth. */
-export function useInterviewWorkspace(scope: InterviewScope, enabled: boolean) {
+/** Each tab owns a client ID; server identity always comes from verified Auth.
+ * `onAccessRevoked` runs once when the server says this viewer no longer has access;
+ * polling then stops for good (the room unmounts this hook). */
+export function useInterviewWorkspace(scope: InterviewScope, enabled: boolean, onAccessRevoked?: () => void) {
   const [clientId] = useState(() => crypto.randomUUID());
   const [view, setView] = useState<CollaborationView | null>(null);
   const [error, setError] = useState("");
   const [claimedInvitation, setClaimedInvitation] = useState<string | null>(null);
-  const epoch = useRef(0);
+  const epoch = useRef(0), revoked = useRef(false), revokedHandler = useRef(onAccessRevoked);
+  revokedHandler.current = onAccessRevoked;
   const requestSequence = useRef(0), appliedSequence = useRef(0);
   const { clubId, applicationId, roundId } = scope;
   const refresh = useCallback(async () => {
@@ -23,21 +27,24 @@ export function useInterviewWorkspace(scope: InterviewScope, enabled: boolean) {
       // The shared timer runs on server time: record this device's clock offset with each read.
       const result = response.timer ? { ...response, timer: { ...response.timer, clockOffsetMs: clockOffsetMs(response.timer.serverNow, sentAt, Date.now()) } } : response;
       if (current === epoch.current && sequence >= appliedSequence.current) { appliedSequence.current = sequence; setView(old => newerCollaboration(old, result)); setError(""); }
-    } catch { if (current === epoch.current && sequence >= appliedSequence.current) { appliedSequence.current = sequence; setView(null); setError("Room connection unavailable. Your private draft is retained. Retry to check current access."); } }
+    } catch (e) {
+      if (isAccessRevoked(e)) { if (current === epoch.current && sequence >= appliedSequence.current && !revoked.current) { revoked.current = true; setView(null); revokedHandler.current?.(); } return; }
+      if (current === epoch.current && sequence >= appliedSequence.current) { appliedSequence.current = sequence; setView(null); setError("Room connection unavailable. Your private draft is retained. Retry to check current access."); } }
   }, [clubId, applicationId, roundId, clientId]);
   useEffect(() => {
     if (!enabled) return;
+    revoked.current = false;
     let stopped = false, timer: ReturnType<typeof setTimeout>;
-    const poll = async () => { await refresh(); if (!stopped) timer = setTimeout(poll, COLLABORATION_POLL_MS); };
+    const poll = async () => { if (revoked.current) return; await refresh(); if (!stopped && !revoked.current) timer = setTimeout(poll, COLLABORATION_POLL_MS); };
     void poll();
-    const reconnect = () => { if (document.visibilityState === "visible") void refresh(); };
+    const reconnect = () => { if (document.visibilityState === "visible" && !revoked.current) void refresh(); };
     window.addEventListener("online", reconnect); document.addEventListener("visibilitychange", reconnect);
     return () => {
       stopped = true;
       // This is a request generation counter, not a DOM ref captured by cleanup.
       // eslint-disable-next-line react-hooks/exhaustive-deps
       epoch.current++;
-      clearTimeout(timer); setView(null); void leaveInterviewCollaboration({ clubId, applicationId, roundId, clientId }).catch(() => {}); window.removeEventListener("online", reconnect); document.removeEventListener("visibilitychange", reconnect);
+      clearTimeout(timer); setView(null); if (!revoked.current) void leaveInterviewCollaboration({ clubId, applicationId, roundId, clientId }).catch(() => {}); window.removeEventListener("online", reconnect); document.removeEventListener("visibilitychange", reconnect);
     };
   }, [enabled, refresh, clubId, applicationId, roundId, clientId]);
   const invitationId = view?.invitation?.id;

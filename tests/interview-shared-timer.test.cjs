@@ -74,15 +74,15 @@ test('only current panel members of this club, round and room can read or change
  const control=(userId,scope=h.scope)=>{h.as(userId);return h.timer.controlInterviewTimer({...scope,revision:1,requestId:randomUUID(),command:{type:'pause'}});};
  const read=(userId,scope=h.scope)=>{h.as(userId);return h.rooms.getInterviewCollaboration({...scope,clientId:randomUUID()});};
  // The applicant (even if they knew every ID) and members without a panel assignment are refused.
- await assert.rejects(control(h.ids.student),/Interview access unavailable/);await assert.rejects(read(h.ids.student),/Interview access unavailable/);
- for(const user of [h.ids.scheduler,h.ids.owner]){await assert.rejects(control(user),/Current panel assignment or explicit leadership permission required/);await assert.rejects(read(user),/Current panel assignment or explicit leadership permission required/);}
+ await assert.rejects(control(h.ids.student),/no longer have access/);await assert.rejects(read(h.ids.student),/no longer have access/);
+ for(const user of [h.ids.scheduler,h.ids.owner]){await assert.rejects(control(user),/no longer have access/);await assert.rejects(read(user),/no longer have access/);}
  // Another club's scope and another round's scope are refused.
  const otherRound=randomUUID();await h.db.query('INSERT INTO "PipelineRound"(id,"clubId",name,"order",configuration) VALUES ($1,$2,\'Final\',2,\'{"duration":30}\')',[otherRound,h.ids.club]);
  await assert.rejects(control(h.ids.panel,{...h.scope,roundId:otherRound}));await assert.rejects(read(h.ids.panel,{...h.scope,roundId:otherRound}));
  await assert.rejects(control(h.ids.panel,{...h.scope,clubId:randomUUID()}));await assert.rejects(read(h.ids.panel,{...h.scope,clubId:randomUUID()}));
  // A revoked panelist loses access immediately; the room is unchanged.
  await h.db.query('UPDATE "InterviewPanelAssignment" SET "revokedAt"=NOW() WHERE "memberId"=$1',[h.ids.peerMember]);
- await assert.rejects(control(h.ids.peer),/assignment/);
+ await assert.rejects(control(h.ids.peer),/no longer have access/);
  const [row]=(await h.db.query('SELECT revision FROM "InterviewTimer"')).rows;assert.equal(row.revision,1);
  // Input is validated before any work: unknown commands and fields are refused.
  h.as(h.ids.panel);await assert.rejects(h.timer.controlInterviewTimer({...h.scope,revision:1,requestId:randomUUID(),command:{type:'set',startedAt:0}}));
