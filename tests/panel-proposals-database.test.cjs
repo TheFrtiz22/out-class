@@ -90,3 +90,12 @@ test('manual replacements, moves and swaps validate atomically and cannot spoof 
  for(const a of saved.document.assignments)if(!draft.document.assignments.some(old=>old.slotId===a.slotId&&old.memberId===a.memberId))assert.equal(a.source,'MANUAL')
  assert.deepEqual(await h.snapshot(),before)
 })
+
+test('locked positions on a removed time are dropped by regeneration and reported',async t=>{
+ const h=await fixture(t);let draft=(await h.generate()).proposal
+ const target=h.slotIds[1],locked=draft.document.assignments.map(a=>a.slotId===target?{...a,locked:true}:a),count=locked.filter(a=>a.slotId===target).length;assert.ok(count>0)
+ draft=await h.api.savePanelProposalDraft({...h.scope,proposalId:draft.id,revision:draft.revision,assignments:locked})
+ await h.db.query('DELETE FROM "InterviewSlot" WHERE id=$1',[target])
+ const regenerated=await h.generate(draft.revision,{mode:'FILL_MISSING',assignments:draft.document.assignments})
+ assert.equal(regenerated.droppedLockedPositions,count);assert.equal(regenerated.proposal.document.sessions.some(s=>s.id===target),false);assert.equal(regenerated.proposal.document.assignments.some(a=>a.slotId===target),false)
+})

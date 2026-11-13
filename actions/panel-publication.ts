@@ -12,7 +12,7 @@ import { syncBookingPanel,type BookingPanelBatch } from "@/utils/interview-sched
 import { panelScheduleNotificationPrefix } from "@/utils/official-panel-schedule"
 import { logContentionExhausted, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
 const draftScope=panelScopeSchema.extend({proposalId:z.string().uuid(),revision:z.number().int().positive()}).strict()
-type Result<T>={ok:true;value:T}|{ok:false;error:string}
+type Result<T>={ok:true;value:T}|{ok:false;error:string;code?:string}
 async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:(tx:AppTransactionClient,actorId:string)=>Promise<T>):Promise<Result<T>>{
  try{
   const {user}=await requireAuth({verifyEmail:owner})
@@ -24,7 +24,7 @@ async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:
    return work(tx,user.id)
   },{isolationLevel:publishing?"ReadCommitted":"Serializable",timeout:60000,maxWait:15000}))
   return{ok:true,value}
- }catch(error){if(error instanceof TransactionConflictError)logContentionExhausted("panel.publication",error);return{ok:false,error:error instanceof PanelPublicationError||error instanceof TransactionConflictError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
+ }catch(error){if(error instanceof TransactionConflictError)logContentionExhausted("panel.publication",error);return error instanceof PanelPublicationError?{ok:false,error:error.message,code:error.code}:{ok:false,error:error instanceof TransactionConflictError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
 }
 async function draftFor(tx:AppTransactionClient,input:z.infer<typeof draftScope>){
  const row=await tx.interviewPanelProposal.findFirst({where:{id:input.proposalId,clubId:input.clubId,roundId:input.roundId}})
@@ -46,9 +46,12 @@ export async function beginPanelScheduleRevision(raw:unknown){
   const restore=input.restoreVersion?await tx.interviewPanelScheduleVersion.findFirst({where:{clubId:input.clubId,roundId:input.roundId,version:input.restoreVersion}}):active
   if(!restore)throw new PanelPublicationError("Choose a published revision from this round's history.")
   const source=publicationDocument(restore)!,live=await loadPanelPlanningScene(tx,input)
-  if(!live.window||!live.scene.sessions.some(s=>s.active))throw new PanelPublicationError("There are no upcoming open sessions to revise.")
-  const sessions=live.scene.sessions.filter(s=>s.active).map(s=>{const previous=source.sessions.find(old=>old.id===s.id);return input.restoreVersion&&previous?{...previous,originalRequired:s.required,roomRevision:s.roomRevision,slotRevision:s.slotRevision}:{...s,originalRequired:s.required}}),ids=new Set(sessions.map(s=>s.id))
-  const assignments=input.restoreVersion?source.assignments.filter(a=>ids.has(a.slotId)):sessions.flatMap(s=>s.existingMemberIds.map(memberId=>({slotId:s.id,memberId,locked:false,source:"EXISTING" as const,...(source.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)?.availabilityOverrideId?{availabilityOverrideId:source.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)!.availabilityOverrideId}:{})})))
+  if(!live.window||!live.scene.sessions.some(s=>s.active||s.unstaffOnly))throw new PanelPublicationError("There are no upcoming open sessions to revise.")
+  // Closed-room sessions always start from their current interviewers: a restore never staffs them anew.
+  const official=publicationDocument(active)!,restoring=(s:{unstaffOnly?:true})=>!!input.restoreVersion&&!s.unstaffOnly
+  const sessions=live.scene.sessions.filter(s=>s.active||s.unstaffOnly).map(s=>{const previous=source.sessions.find(old=>old.id===s.id);if(restoring(s)&&previous){const{unstaffOnly:_closed,...restored}=previous;return{...restored,originalRequired:s.required,roomRevision:s.roomRevision,slotRevision:s.slotRevision}}return{...s,originalRequired:s.required}})
+  const existing=(s:{id:string;existingMemberIds:string[]})=>s.existingMemberIds.map(memberId=>{const prior=official.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId);return{slotId:s.id,memberId,locked:false,source:"EXISTING" as const,...(prior?.availabilityOverrideId?{availabilityOverrideId:prior.availabilityOverrideId}:{})}})
+  const assignments=live.scene.sessions.filter(s=>s.active||s.unstaffOnly).flatMap(s=>restoring(s)?source.assignments.filter(a=>a.slotId===s.id):existing(s))
   const document:PanelDocument=panelDocumentSchema.parse({version:1,window:live.window,options:source.options,sessions,assignments})
   const {validatePanelDocument,panelDraftScene}=await import("@/lib/panel-proposals")
   const row=await tx.interviewPanelProposal.create({data:{clubId:input.clubId,roundId:input.roundId,basePublishedVersion:active.version,createdBy:actorId,modifiedBy:actorId,document,validation:validatePanelDocument(document,panelDraftScene(document,live.scene)),sourceFingerprint:live.fingerprint}})
@@ -70,7 +73,7 @@ export async function reviewPanelPublication(raw:unknown):Promise<Result<PanelAp
  return operation(input.clubId,true,false,async(tx,actorId)=>{
   const {row,document,active}=await draftFor(tx,input),live=await loadPanelPlanningScene(tx,input,document.window)
   const validation=assertCurrentPanelDocument(document,live.scene)
-  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("Availability, interviewers or rooms changed. Reload the page and review the draft again.")
+  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("Availability, interviewers or rooms changed. Recheck availability, then confirm again.","RECHECK_REQUIRED")
   const round=await tx.pipelineRound.findUniqueOrThrow({where:{id:input.roundId}})
   if(round.anonymousReview)throw new PanelPublicationError("This round hides applicant names, so panel access cannot be shared. Ask the club owner to review privacy settings.")
   const booked=await assertPanelBookingSafety(tx,input,document),unstaffing=panelUnstaffing(document,live.scene,new Set(booked.map(b=>b.slotId))),overrideRequired=validation.filled<validation.required-unstaffing.exemptRequired
@@ -92,7 +95,7 @@ export async function publishPanelSchedule(raw:unknown){
   const candidateMembers=await tx.clubMember.findMany({where:{id:{in:document.assignments.map(a=>a.memberId)},clubId:input.clubId}})
   await lockSchedulingPeople(tx,{exclusive:candidateMembers.map(m=>m.userId)})
   const live=await loadPanelPlanningScene(tx,input,document.window),validation=assertCurrentPanelDocument(document,live.scene)
-  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("This approval is stale. Revalidate and review the draft again; the current schedule is unchanged.")
+  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("This approval is stale. Revalidate and review the draft again; the current schedule is unchanged.","RECHECK_REQUIRED")
   const bookings=await assertPanelBookingSafety(tx,input,document),unstaffing=panelUnstaffing(document,live.scene,new Set(bookings.map(b=>b.slotId))),understaffed=validation.filled<validation.required-unstaffing.exemptRequired
   // Emptying staffed sessions takes an explicit confirmation, not only the reviewed approval token.
   if(unstaffing.removedSlotIds.length&&!input.confirmUnstaff)throw new PanelPublicationError(`Confirm removing all interviewers from ${unstaffing.removedSlotIds.length} unbooked session${unstaffing.removedSlotIds.length===1?"":"s"} before approving.`)

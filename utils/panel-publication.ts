@@ -2,7 +2,17 @@ import type { InterviewPanelScheduleVersion } from "@prisma/client"
 import type { AppTransactionClient } from "@/utils/prisma"
 import { publishedPanelDocumentSchema, panelDocumentSchema, panelDraftScene, sameSessionTime, validatePanelDocument, type PanelDocument, type PanelPublishedView, type PanelScene, type PanelScheduleChange } from "@/lib/panel-proposals"
 
-export class PanelPublicationError extends Error {}
+/**
+ * A refusal whose message is written for leaders. `code` names the action that fixes it:
+ * DRAFT_STALE needs the draft regenerated against current sessions; RECHECK_REQUIRED needs an
+ * availability recheck before review.
+ */
+export class PanelPublicationError extends Error {
+  constructor(message: string, readonly code: "DRAFT_STALE" | "RECHECK_REQUIRED" | "PANEL_REFUSED" = "PANEL_REFUSED") { super(message) }
+}
+export const staleDraftMessage = "Session times or staffing configuration changed. Regenerate the draft, then review it again."
+/** Draft issues that regeneration resolves: positions on a session that closed, ended, was removed or moved. */
+const staleIssueCodes = new Set(["SESSION_UNAVAILABLE", "SESSION_CHANGED"])
 /**
  * Cross-club interview scheduling is consistent per person, not per platform.
  * Whether a session is bookable or a panel conflicts depends only on the official
@@ -26,10 +36,11 @@ export function assertCurrentPanelDocument(document: PanelDocument, scene: Panel
   if (!document.sessions.length) throw new PanelPublicationError("Choose at least one upcoming session.")
   for (const s of document.sessions) {
     const current=scene.sessions.find(row=>row.id===s.id)
-    if (!current?.active || +new Date(current.endTime)<=+new Date(current.startTime) || !sameSessionTime(s,current) || current.roomRevision!==s.roomRevision || current.slotRevision!==s.slotRevision) throw new PanelPublicationError("Session times or staffing configuration changed. Regenerate unlocked positions and review again.")
+    // A closed room's unbooked session may stay in a draft only so its interviewers can be kept or removed.
+    if (!(current?.active || current?.unstaffOnly) || +new Date(current.endTime)<=+new Date(current.startTime) || !sameSessionTime(s,current) || current.roomRevision!==s.roomRevision || current.slotRevision!==s.slotRevision) throw new PanelPublicationError(staleDraftMessage, "DRAFT_STALE")
   }
   const validation=validatePanelDocument(document,panelDraftScene(document,scene))
-  if(validation.issues.length)throw new PanelPublicationError(`Can't save the schedule: ${validation.issues[0].message} Nothing was changed.`)
+  if(validation.issues.length)throw new PanelPublicationError(`Can't save the schedule: ${validation.issues[0].message} Nothing was changed.`, staleIssueCodes.has(validation.issues[0].code) ? "DRAFT_STALE" : "PANEL_REFUSED")
   return validation
 }
 export async function activePanelPublication(tx: AppTransactionClient, scope: {clubId:string;roundId:string}) {
