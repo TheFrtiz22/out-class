@@ -16,10 +16,10 @@ test('leadership UI renders only closing DTO, supports empty/retry, and clears o
  anonymous=true;row={...row,applicantName:"Applicant SAFE",roundName:"Interview review"};[...polls.values()].forEach(fn=>fn());await flush();render();await flush();t=render();assert.match(text(t),/Applicant SAFE|Withheld for anonymity/);assert.doesNotMatch(text(t),/Synthetic Applicant|Final review|What comes next|Submitted 10/);assert.match(text(t),/8.25 \/ 10/);
  deny=true;[...polls.values()].forEach(fn=>fn());await flush();t=render();assert.doesNotMatch(text(t),/Synthetic Applicant|Final review|What comes next/);assert.match(text(t),/access/);deny=false;click(t,'Try again');render();await flush();assert.match(text(render()),/Applicant SAFE/);
  // The row score is only what the server sent: present, several, unscored, or withheld (null).
- const rowButton=()=>nodes(render()).find(n=>n.type==='Button'&&/Open review$/.test(n.props?.['aria-label']||''));
+ const rowButton=()=>nodes(render()).find(n=>n.type==='Button'&&/^Synthetic Applicant/.test(n.props?.['aria-label']||''));
  const refreshWith=async score=>{row={...row,applicantName:'Synthetic Applicant',roundName:'Past round',score};[...polls.values()].forEach(fn=>fn());await flush();render();await flush();return rowButton();};
- let b=await refreshWith({average:8.5,submitted:1});assert.equal(b.props['aria-label'],'Synthetic Applicant · Past round · Average interview score 8.5 / 10 · Open review');assert.match(text(b),/8\.5 \/ 10/);assert.doesNotMatch(text(b),/scored evaluation/);
- b=await refreshWith({average:7.75,submitted:2});assert.match(text(b),/7\.8 \/ 10 · 2 scored evaluations/);assert.match(b.props['aria-label'],/Average interview score 7\.8 \/ 10 · 2 scored evaluations · Open review$/);
- b=await refreshWith({average:null,submitted:0});assert.match(text(b),/Not scored/);assert.doesNotMatch(text(b),/\/ 10/);assert.doesNotMatch(b.props['aria-label'],/\b0\b/);
+ let b=await refreshWith({average:8.5,submitted:1});assert.equal(b.props['aria-label'],'Synthetic Applicant · Past round · Open review · Average interview score 8.5 / 10');assert.match(text(b),/8\.5 \/ 10/);assert.doesNotMatch(text(b),/scored evaluation/);
+ b=await refreshWith({average:7.75,submitted:2});assert.match(text(b),/7\.8 \/ 10 · 2 scored evaluations/);assert.match(b.props['aria-label'],/Open review · Average interview score 7\.8 \/ 10 · 2 scored evaluations$/);
+ b=await refreshWith({average:null,submitted:0});assert.match(text(b),/Not scored/);assert.doesNotMatch(text(b),/\/ 10/);assert.equal(b.props['aria-label'],'Synthetic Applicant · Past round · Open review · Not scored');
  b=await refreshWith(null);assert.equal(b.props['aria-label'],'Synthetic Applicant · Past round · Open review');assert.doesNotMatch(text(b),/\/ 10|Not scored|scored evaluation/);
 });

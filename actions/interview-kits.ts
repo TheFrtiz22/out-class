@@ -177,7 +177,7 @@ async function listRoundScores(tx: AppTransactionClient, clubId: string, memberI
   const applicationIds = [...new Set(rows.map(r => r.applicationId))], roundIds = [...new Set(rows.map(r => r.roundId))];
   const recused = new Set((await tx.applicantRecusal.findMany({ where: { applicationId: { in: applicationIds }, memberId, liftedAt: null }, select: { applicationId: true } })).map(r => r.applicationId));
   const evaluations = await tx.evaluation.findMany({ where: { applicationId: { in: applicationIds }, roundId: { in: roundIds }, submittedAt: { not: null }, stableRound: { clubId }, interviewer: { clubId } }, select: { applicationId: true, roundId: true, interviewerId: true, score: true, submittedAt: true } });
-  const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: { in: applicationIds }, roundId: { in: roundIds }, revokedAt: null }, include: { member: { include: { user: { select: { disabledAt: true } } } } } });
+  const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: { in: applicationIds }, roundId: { in: roundIds }, revokedAt: null, application: { clubId } }, include: { member: { include: { user: { select: { disabledAt: true } } } } } });
   for (const row of rows) {
     const key = `${row.applicationId}:${row.roundId}`;
     if (scores.has(key)) continue;

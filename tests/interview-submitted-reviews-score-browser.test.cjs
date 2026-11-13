@@ -7,7 +7,7 @@ test('browser: submitted review rows show the round score only when the server s
  try{
   browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const page=await browser.newPage({viewport:{width:1440,height:950}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>new URL(r.request().url()).origin===f.base?r.continue():r.abort());
   await page.goto(f.base+'/club/club/workspace?section=recruitment&tool=reviews');
-  const beta=page.getByRole('button',{name:'Sample Beta · Round B · Average interview score 7.3 / 10 · 2 scored evaluations · Open review',exact:true});await beta.waitFor();
+  const beta=page.getByRole('button',{name:'Sample Beta · Round B · Open review · Average interview score 7.3 / 10 · 2 scored evaluations',exact:true});await beta.waitFor();
   assert.match(await beta.innerText(),/Round B · Open review\s*7\.3 \/ 10 · 2 scored evaluations/);
   // Withheld by the server (null): the row has no score, no "0" and no "Not scored".
   const alpha=page.getByRole('button',{name:'Sample Alpha · Round A · Open review',exact:true});await alpha.waitFor();
