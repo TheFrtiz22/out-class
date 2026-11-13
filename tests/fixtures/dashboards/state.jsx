@@ -49,6 +49,7 @@ const directory = [
 ]
 export function useCorkboard() { return { items: scenario() === 'full' ? [{ club: directory[0], savedAt: iso(at(-day)) }] : [], loading: false, authenticated: true, error: '', pending: new Set(), refresh: async () => {}, saveClub: async () => {} } }
 export async function getClubDirectory() { return { clubs: directory } }
+export async function getMyInterestSurvey() { return null }
 export async function getDashboardReviewQueue(clubId, roundId) { await new Promise(resolve => setTimeout(resolve, 200)); return [{ id: 'queue-r1', label: 'Applicant 7Q2K', round: 'Written review', anonymous: true }] }
 export function ApplicantReviewPreview() { return null }
 // The Report control reaches server-only modules (support audit, crypto); fixtures have no session to report from.
