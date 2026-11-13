@@ -39,7 +39,7 @@ async function saveMyInterestSurveyCommand(raw: unknown): Promise<InterestSurvey
   const any = answeredAny(answers)
   const now = new Date()
   return prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR NO KEY UPDATE`
     const old = await tx.studentInterestProfile.findUnique({ where: { userId: user.id }, select: { revision: true } })
     if ((old?.revision ?? 0) !== revision) throw new ActionError(changed, "STALE")
     // Clearing every answer also retires the Home prompt: the student chose to answer nothing.

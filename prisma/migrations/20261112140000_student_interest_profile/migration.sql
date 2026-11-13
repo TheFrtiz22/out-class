@@ -18,8 +18,8 @@ CREATE TABLE "StudentInterestProfile" (
  "dismissedAt" TIMESTAMP(3),
  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
  CONSTRAINT "StudentInterestProfile_pkey" PRIMARY KEY ("userId"),
- CONSTRAINT "StudentInterestProfile_interests_bounded" CHECK (cardinality("interests") <= 6 AND array_position("interests", NULL) IS NULL AND array_to_string("interests", ',') ~ '^([a-z][a-z0-9-]{0,39}(,|$))*$'),
- CONSTRAINT "StudentInterestProfile_goals_bounded" CHECK (cardinality("goals") <= 6 AND array_position("goals", NULL) IS NULL AND array_to_string("goals", ',') ~ '^([a-z][a-z0-9-]{0,39}(,|$))*$'),
+ CONSTRAINT "StudentInterestProfile_interests_bounded" CHECK (cardinality("interests") <= 6 AND array_position("interests", NULL) IS NULL AND array_position("interests", '') IS NULL AND cardinality(string_to_array(array_to_string("interests", ','), ',')) = cardinality("interests") AND array_to_string("interests", ',') ~ '^([a-z][a-z0-9-]{0,39}(,|$))*$'),
+ CONSTRAINT "StudentInterestProfile_goals_bounded" CHECK (cardinality("goals") <= 6 AND array_position("goals", NULL) IS NULL AND array_position("goals", '') IS NULL AND cardinality(string_to_array(array_to_string("goals", ','), ',')) = cardinality("goals") AND array_to_string("goals", ',') ~ '^([a-z][a-z0-9-]{0,39}(,|$))*$'),
  CONSTRAINT "StudentInterestProfile_weeklyHours" CHECK ("weeklyHours" IS NULL OR "weeklyHours" IN ('1-2','3-5','6+')),
  CONSTRAINT "StudentInterestProfile_selectivity" CHECK ("selectivity" IS NULL OR "selectivity" IN ('yes','no','either')),
  CONSTRAINT "StudentInterestProfile_revision" CHECK ("revision" >= 0)
