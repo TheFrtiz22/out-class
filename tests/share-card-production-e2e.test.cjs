@@ -14,7 +14,7 @@ const repo = path.resolve(__dirname, '..');
 function requiredAssets() {
   const source = fs.readFileSync(path.join(repo, 'lib/share-card.tsx'), 'utf8');
   const assets = [...source.matchAll(/join\(process\.cwd\(\),\s*"([^"]+)"\)/g)].map(m => m[1]);
-  assert.ok(assets.includes('public/images/campus/sunset-rotunda-1600.webp') && assets.length >= 4, `renderer assets found: ${assets.join(', ')}`);
+  assert.ok(assets.includes('public/images/campus/rotunda-1600.webp') && assets.length >= 4, `renderer assets found: ${assets.join(', ')}`);
   return assets;
 }
 

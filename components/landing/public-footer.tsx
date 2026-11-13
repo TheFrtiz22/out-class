@@ -4,6 +4,7 @@ import { FooterAudienceLinks, FooterBackToTop } from "@/components/landing/foote
 import { InteractiveFooterWordmark } from "@/components/landing/interactive-footer-wordmark"
 import type { LandingPerspective } from "./journey-content"
 import { CONTACT_HREF, LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
+import { PHOTO_CREDITS } from "@/lib/photo-credits"
 
 /**
  * One shared public footer on every public page (account workspaces keep their own layouts): a navy glass
@@ -22,7 +23,7 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
     <footer className="oc-public-footer" aria-label="OutClass footer">
       <div className="oc-footer-frame">
         {/* Below the fold on every page, so the photograph loads lazily and never competes with LCP. */}
-        <Image className="oc-footer-photo" src="/images/campus/sunset-rotunda-1600.webp" alt="" fill sizes="(max-width: 1720px) 100vw, 1680px" loading="lazy" />
+        <Image className="oc-footer-photo" src="/images/campus/rotunda-1600.webp" alt="" fill sizes="(max-width: 1720px) 100vw, 1680px" loading="lazy" />
         <div className="oc-footer-panel oc-public-glass-navy">
           {invitation}
           <div className="oc-footer-columns">
@@ -60,6 +61,18 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
             <small>© 2026 OutClassPlatforms LLC. All rights reserved.</small>
             <p>{legalNote}</p>
             <FooterBackToTop />
+            <p className="oc-footer-credits">
+              <span>Photo credits:</span>{" "}
+              {PHOTO_CREDITS.map((photo, index) => (
+                <span key={photo.source}>
+                  {index > 0 && "; "}
+                  <a href={photo.source} rel="noopener noreferrer">“{photo.title}”</a> by {photo.author},{" "}
+                  <a href={photo.licenseUrl} rel="license noopener noreferrer">{photo.license}</a>
+                  {photo.note && ` (${photo.note})`}
+                </span>
+              ))}
+              . No endorsement by the photographers is implied.
+            </p>
           </div>
         </div>
       </div>
