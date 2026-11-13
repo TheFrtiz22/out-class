@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
+import { authorizeInterview, interviewActionResult, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, annotationContentSchema } from "@/lib/interview-access";
 import { isPrivateResume, validateProfileFile } from "@/lib/student-profile";
 import { validateResumeAnchor, validateResumeArea } from "@/lib/resume-anchor-validation";
@@ -96,7 +96,7 @@ export async function pinInterviewResume(input: z.infer<typeof scope>) {
   }, interviewTransactionOptions);
 }
 const documentScope = scope.extend({ documentId: z.string().uuid() });
-export async function getInterviewResumeAnnotations(input: z.infer<typeof documentScope>) {
+async function getInterviewResumeAnnotationsCommand(input: z.infer<typeof documentScope>) {
   const data = documentScope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { member, caps } = await authorizeInterview(tx, data, user.id, "resume", "share");
@@ -165,4 +165,9 @@ export async function getInterviewAnnotationHistory(input: unknown) {
     if (!annotation || (annotation.authorId !== member.id && !caps.moderateResume)) throw new Error("Annotation history unavailable.");
     return tx.interviewAnnotationRevision.findMany({ where: { annotationId: annotation.id }, orderBy: { revision: "asc" } });
   }, interviewTransactionOptions);
+}
+
+// Polled every few seconds by the open résumé viewer.
+export async function getInterviewResumeAnnotations(...args: Parameters<typeof getInterviewResumeAnnotationsCommand>) {
+  return interviewActionResult(() => getInterviewResumeAnnotationsCommand(...args), "getInterviewResumeAnnotations");
 }

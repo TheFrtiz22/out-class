@@ -100,7 +100,8 @@ function throwersOf(file) {
   return result;
 }
 
-const wrapped = body => /^\{\s*return\s+actionResult\(/.test(body);
+// interviewActionResult (utils/interview-access) is actionResult plus the uniform ACCESS_REVOKED mapping.
+const wrapped = body => /^\{\s*return\s+(?:interviewActionResult|actionResult)\(/.test(body);
 
 test('every exported action that can throw ActionError returns through actionResult', () => {
   const unwrapped = [], stale = [];
