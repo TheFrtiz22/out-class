@@ -22,7 +22,7 @@ async function build(root, { realNotificationState = false, entry = path.join(fi
   for (const key of keep) delete alias[`${key}$`]
   Object.assign(alias, aliases)
   alias['@'] = repo
-  await new Promise((resolve, reject) => compiled.webpack({ mode: 'development', context: repo, entry, output: { path: root, filename: 'bundle.js' }, devtool: false, resolve: { alias, extensions: ['.tsx', '.ts', '.jsx', '.js'], modules: ['node_modules'] }, module: { rules: [{ test: /\.[jt]sx?$/, exclude: /node_modules/, use: tsLoader }, { test: /\.css$/, use: cssLoader }] }, performance: { hints: false }, plugins: plugins(compiled.webpack) }, (error, stats) => { if (error) reject(error); else if (stats.hasErrors()) reject(Error(stats.toString({ all: false, errors: true }))); else resolve() }))
+  await new Promise((resolve, reject) => compiled.webpack({ mode: 'development', context: repo, entry, output: { path: root, filename: 'bundle.js' }, devtool: false, resolve: { alias, extensions: ['.tsx', '.ts', '.jsx', '.js'], modules: ['node_modules'] }, module: { rules: [{ test: /\.[jt]sx?$/, exclude: /node_modules/, use: tsLoader }, { test: /\.css$/, use: cssLoader }] }, performance: { hints: false }, plugins: [new compiled.webpack.DefinePlugin({ 'process.env.NEXT_PUBLIC_ADMIN_REPORTS_REALTIME': '""' }), ...plugins(compiled.webpack)] }, (error, stats) => { if (error) reject(error); else if (stats.hasErrors()) reject(Error(stats.toString({ all: false, errors: true }))); else resolve() }))
   const postcss = require('postcss'), plugin = require('@tailwindcss/postcss')
   const css = await fs.readFile(path.join(repo, 'app/globals.css'), 'utf8')
   const result = await postcss([plugin({ base: repo })]).process(css, { from: path.join(repo, 'app/globals.css') })
