@@ -82,3 +82,65 @@ test('no hardcoded graduation-year lists remain in the touched surfaces', () => 
   assert.match(fs.readFileSync(path.resolve(__dirname, '..', 'actions/profile.ts'), 'utf8'), /gradYear: graduationYearSchema/)
   assert.match(fs.readFileSync(path.resolve(__dirname, '..', 'actions/organization-members.ts'), 'utf8'), /invitedYear: z\.string\(\)\.refine\(year => isSupportedGraduationYear\(year\)/)
 })
+
+test('profile edits keep the stored year (alumni) but cannot move to another out-of-range year; new profiles stay strict', async (t) => {
+  t.after(() => mock.timers.reset())
+  mock.timers.enable({ apis: ['Date'], now: NOV_2026.getTime() })
+  const owner = '00000000-0000-4000-8000-000000000001'
+  let stored = 2024, reads = 0
+  const writes = []
+  function loadAction(file) {
+    const mod = { exports: {} }
+    const code = ts.transpileModule(fs.readFileSync(path.resolve(__dirname, '..', file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
+    const mocks = {
+      '@prisma/client': { Prisma: { DbNull: 'DbNull' } },
+      'next/cache': { revalidatePath() {} },
+      '@/utils/auth': { requireAuth: async () => ({ user: { id: owner, email: 'owner@virginia.edu' } }) },
+      '@/utils/terms-acceptance': { hasCurrentTermsAcceptance: async () => true },
+      '@/utils/prisma': { prisma: { studentProfile: {
+        findUnique: async q => { if (q.select?.gradYear) reads++; return stored === null ? null : { id: 'profile', gradYear: stored } },
+        update: async q => { writes.push(q.data); if (q.data.gradYear !== undefined) stored = q.data.gradYear; return { ...q.data, experiences: [] } },
+        upsert: async q => { writes.push(q.create); return q.create },
+      } } },
+    }
+    new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith('@/lib/') ? load(name.slice(2) + '.ts') : require(name), mod, mod.exports)
+    return mod.exports
+  }
+  const api = loadAction('actions/profile.ts')
+  const education = gradYear => api.updateStudentProfileSection({ section: 'education', major: 'Math', gradYear, satScore: null })
+
+  const same = await education(2024)
+  assert.equal(same.error, undefined)
+  assert.equal(writes.at(-1).gradYear, 2024)
+  assert.equal(reads, 1, 'the stored year is read only when the strict range rejects the value')
+
+  const older = await education(2023)
+  assert.equal(older.error, 'Choose a graduation year between 2025 and 2032')
+  assert.equal(writes.length, 1, 'a rejected year is never written')
+
+  const moved = await education(2031)
+  assert.equal(moved.error, undefined)
+  assert.equal(writes.at(-1).gradYear, 2031)
+  assert.equal(reads, 2, 'in-range years skip the extra read')
+  // Once moved into range, the old out-of-range year is no longer the stored one.
+  assert.equal((await education(2024)).error, 'Choose a graduation year between 2025 and 2032')
+
+  // Onboarding (no profile yet) keeps the strict range.
+  stored = null
+  const base = { firstName: 'A', lastName: 'B', computingId: 'x', major: 'Math' }
+  await assert.rejects(api.upsertStudentProfile({ ...base, gradYear: 2024 }), /between 2025 and 2032/)
+  await api.upsertStudentProfile({ ...base, gradYear: 2031 })
+  assert.equal(writes.at(-1).gradYear, 2031)
+  // An existing profile re-saved through the same action keeps its stored year.
+  stored = 2024
+  await api.upsertStudentProfile({ ...base, gradYear: 2024 })
+  assert.equal(writes.at(-1).gradYear, 2024)
+})
+
+test('the edit dialog offers the stored year alongside the current range', () => {
+  assert.deepEqual(years.graduationYearOptions(NOV_2026, 2024), ['2024', '2025', '2026', '2027', '2028', '2029', '2030', '2031', '2032'])
+  assert.deepEqual(years.graduationYearOptions(NOV_2026, 2028), years.graduationYearOptions(NOV_2026))
+  assert.deepEqual(years.graduationYearOptions(NOV_2026, null), years.graduationYearOptions(NOV_2026))
+  const dialog = fs.readFileSync(path.resolve(__dirname, '..', 'components/edit-student-profile-dialog.tsx'), 'utf8')
+  assert.match(dialog, /graduationYearOptions\(new Date\(\), storedGradYear\)/)
+})
