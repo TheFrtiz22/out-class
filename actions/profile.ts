@@ -10,6 +10,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions";
 import { hasCurrentTermsAcceptance } from "@/utils/terms-acceptance";
+import { applyGraduationYearChange } from "@/utils/graduation";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { boundedParse, boundedSafeParse } from "@/lib/bounded-input";
@@ -66,8 +67,11 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
     throw new Error(TERMS_REQUIRED_MESSAGE);
   }
 
-  // Update or create the profile
-  const profile = await prisma.studentProfile.upsert({
+  // Update or create the profile. A changed graduation year resets the graduation answer in the
+  // same transaction (utils/graduation.ts).
+  const profile = await prisma.$transaction(async tx => {
+  await applyGraduationYearChange(tx, user.id, parsed.gradYear);
+  return tx.studentProfile.upsert({
     where: { userId: user.id },
     update: {
       firstName: parsed.firstName,
@@ -108,6 +112,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       }
     }
   });
+  });
 
   revalidatePath("/student-dashboard");
   revalidatePath("/profile");
@@ -137,7 +142,8 @@ export async function updateStudentProfileSection(input: unknown, expected?: str
   }
   try {
     const update = (tx: Pick<typeof prisma, "studentProfile">) => tx.studentProfile.update({ where: { userId: user.id }, data: data as Prisma.StudentProfileUpdateInput, include: { experiences: true } });
-    const profile = expected === undefined ? await update(prisma) : await prisma.$transaction(async tx => {
+    const yearChange = section === "education" && "gradYear" in fields ? fields.gradYear : undefined;
+    const profile = expected === undefined && yearChange === undefined ? await update(prisma) : await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
       const account = await tx.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } });
       if (!account || account.disabledAt) throw Error("Account unavailable.");
@@ -148,6 +154,7 @@ export async function updateStudentProfileSection(input: unknown, expected?: str
         const actual = profileSectionSnapshot(current, section);
         if (actual !== expected && actual !== profileSectionSnapshot(next, section)) throw Error("This profile section changed in another tab. Reopen it to compare. Your text is retained.");
       }
+      if (yearChange !== undefined) await applyGraduationYearChange(tx, user.id, yearChange);
       return update(tx);
     });
     revalidatePath("/", "layout");

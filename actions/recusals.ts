@@ -3,7 +3,7 @@ import { z } from "zod"
 import { prisma } from "@/utils/prisma"
 import { requireClubPermission } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
-import { hasPermission } from "@/lib/permissions"
+import { hasPermission, activeMemberWhere } from "@/lib/permissions"
 import { profileName } from "@/lib/recusal-presentation"
 
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid() }).strict()
@@ -51,7 +51,7 @@ export async function setApplicantRecusal(input: unknown) {
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${d.applicationId} FOR UPDATE`
     const app = await tx.application.findFirst({ where: { id: d.applicationId, clubId: d.clubId, status: { not: "DRAFTING" } }, select: { id: true } })
     if (!app) throw new Error("Application unavailable.")
-    if (!await tx.clubMember.findFirst({ where: { id: targetId, clubId: d.clubId, status: "ACTIVE" }, select: { id: true } })) throw new Error("Member unavailable.")
+    if (!await tx.clubMember.findFirst({ where: { id: targetId, clubId: d.clubId, ...activeMemberWhere }, select: { id: true } })) throw new Error("Member unavailable.")
     const key = { applicationId_memberId: { applicationId: d.applicationId, memberId: targetId } }
     const existing = await tx.applicantRecusal.findUnique({ where: key })
     if (d.recused) {

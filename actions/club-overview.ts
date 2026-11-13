@@ -3,7 +3,7 @@ import { dashboardSummary, dashboardReviewQueue, type OverviewView } from "@/uti
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireClubMembership, requireClubPermission } from "@/utils/auth";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
 /** `view` limits the read to one dashboard (see OverviewView); the default keeps the full projection. */
 export async function getClubWorkspaceOverview(clubId: string, view: OverviewView = "all") {
@@ -79,10 +79,10 @@ export async function getClubWorkspaceOverview(clubId: string, view: OverviewVie
     dashboardSummary(clubId, membership, view),
     clubPart && (directory.canManageMembers || directory.canChangeRoles)
       ? Promise.all([
-          prisma.clubMember.count({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } } }),
+          prisma.clubMember.count({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null } } }),
           prisma.clubInvitation.count({ where: { clubId, applicationId: null, requestedRole: "MEMBER", purpose: { in: ["MEMBERSHIP", "ACCESS_GRANT"] }, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null } }),
           // New members: joined in the last 30 days (counts only, same gate as the directory).
-          prisma.clubMember.count({ where: { clubId, status: "ACTIVE", user: { disabledAt: null }, joinedAt: { gte: new Date(+now - 30 * 86400000) } } }),
+          prisma.clubMember.count({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null }, joinedAt: { gte: new Date(+now - 30 * 86400000) } } }),
         ]).then(([active, pendingInvitations, recent]) => ({ active, pendingInvitations, recent }))
       : Promise.resolve(null),
   ]);

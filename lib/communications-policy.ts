@@ -1,12 +1,12 @@
 import type { Prisma } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
-import { hasPermission, type ClubAccess } from "@/lib/permissions";
+import { activeMemberWhere, hasPermission, isActiveMembership, type ClubAccess } from "@/lib/permissions";
 
-export const communicationManager = { status: "ACTIVE" as const, user: { disabledAt: null }, OR: [{ isOwner: true }, { permissions: { has: "meetings.manage" } }] };
+export const communicationManager = { ...activeMemberWhere, user: { disabledAt: null }, OR: [{ isOwner: true }, { permissions: { has: "meetings.manage" } }] };
 export const identifiableApplication = { submittedAt: { not: null }, status: { not: "DRAFTING" as const }, round: { anonymousReview: false, archivedAt: null } };
 export function eligibleStudentWhere(clubId?: string): Prisma.UserWhereInput {
   return { disabledAt: null, OR: [
-    { memberships: { some: { ...(clubId ? { clubId } : {}), status: "ACTIVE", club: { suspendedAt: null } } } },
+    { memberships: { some: { ...(clubId ? { clubId } : {}), ...activeMemberWhere, club: { suspendedAt: null } } } },
     { applications: { some: { ...(clubId ? { clubId } : {}), ...identifiableApplication, club: { suspendedAt: null } } } },
   ] };
 }
@@ -15,11 +15,11 @@ export async function requireCommunicationAccess(tx: AppTransactionClient, clubI
     tx.club.findUnique({ where: { id: clubId }, select: { suspendedAt: true } }),
     tx.user.findFirst({ where: { id: studentId, ...eligibleStudentWhere(clubId) }, select: { id: true } }),
     tx.clubMember.findUnique({ where: { userId_clubId: { clubId, userId: actorId } } }),
-    tx.clubMember.findUnique({ where: { userId_clubId: { clubId, userId: studentId } }, select: { status: true } }),
+    tx.clubMember.findUnique({ where: { userId_clubId: { clubId, userId: studentId } }, select: { status: true, alumniSince: true } }),
   ]);
   if (!club || club.suspendedAt || !student) throw new Error("This conversation is unavailable with your current access.");
   if (actorId === studentId) return "STUDENT" as const;
-  if (!hasPermission(member, "meetings.manage") || studentMember?.status !== "ACTIVE" && !(hasPermission(member, "applicants.identify") && hasPermission(member, "applications.review"))) throw new Error("This conversation is unavailable with your current access.");
+  if (!hasPermission(member, "meetings.manage") || !isActiveMembership(studentMember) && !(hasPermission(member, "applicants.identify") && hasPermission(member, "applications.review"))) throw new Error("This conversation is unavailable with your current access.");
   return "CLUB" as const;
 }
 export function conversationWhere(userId: string, clubId?: string): Prisma.ClubConversationWhereInput {

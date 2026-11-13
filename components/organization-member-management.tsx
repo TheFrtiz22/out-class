@@ -95,6 +95,9 @@ const statusLabel = (status: string) =>
   status === "LEFT"
     ? "Removed"
     : status.charAt(0) + status.slice(1).toLowerCase();
+/** Alumni stay on the roster (removable) without club capabilities (lib/graduation.ts). */
+const memberStatusLabel = (member: { status: string; alumniSince?: Date | string | null }) =>
+  member.status === "ACTIVE" && member.alumniSince ? "Alumni" : statusLabel(member.status);
 
 /** Extends the existing club Members route; all authorization comes from the shared layer. */
 export function OrganizationMemberManagement({ clubId, initialData = null, onData, validatedInitialData = false }: { clubId: string; validatedInitialData?: boolean; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
@@ -234,7 +237,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           role: member.isOwner ? ("OWNER" as const) : member.accessRole,
           status: member.user.disabledAt
             ? "Account disabled"
-            : statusLabel(member.status),
+            : memberStatusLabel(member),
           detail: member.user.email,
           member,
           invitation: null,
@@ -968,7 +971,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     active.isOwner ? "OWNER" : active.accessRole
                   ]
                 }{" "}
-                · {statusLabel(active.status)}
+                · {memberStatusLabel(active)}
                 {data?.profileFields?.academicYear !== false && <> · {active.user.studentProfile?.academicYear || "Year not provided"}</>}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -976,14 +979,14 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 {active.groups.join(", ") || "None"} · Cohort:{" "}
                 {active.cohort || "Not set"}
               </p>
-              {caps.canManageMembers && active.status === "ACTIVE" && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual onSaved={() => reload()} />}
+              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual onSaved={() => reload()} />}
               {error && (
                 <p role="alert" className="text-sm text-destructive">
                   {error}
                 </p>
               )}
               {caps.canChangeRoles &&
-                active.status === "ACTIVE" &&
+                active.status === "ACTIVE" && !active.alumniSince &&
                 !active.user.disabledAt && (
                   <form
                     className="space-y-3 border-t pt-4"
@@ -1054,7 +1057,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     </Button>
                   </form>
                 )}
-              {caps.canManageMembers && active.status === "ACTIVE" && (
+              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && (
                 <form
                   className="space-y-3 border-t pt-4"
                   onSubmit={(event) => {
@@ -1095,11 +1098,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   <Button disabled={busy}>Save groups & cohort</Button>
                 </form>
               )}
-              {caps.canChangeRoles && active.status === "ACTIVE" && (
+              {caps.canChangeRoles && active.status === "ACTIVE" && !active.alumniSince && (
                 <ActionWorkflow title="Management permissions" description="Edit capabilities for this member. Owner and grant restrictions still apply." trigger="Manage permissions"> <ClubAccessEditor key={`${active.id}:${active.updatedAt}`} clubId={clubId} initial={data} selectedMemberId={active.id} onSaved={() => reload(active.id === data.actor.id)} /> </ActionWorkflow>
               )}
               {caps.canTransferOwnership &&
-                active.status === "ACTIVE" &&
+                active.status === "ACTIVE" && !active.alumniSince &&
                 !active.user.disabledAt &&
                 !active.isOwner &&
                 active.id !== data.actor.id && (

@@ -1,4 +1,5 @@
 "use server"
+import { activeMemberWhere } from "@/lib/permissions";
 import { ActionError, actionResult } from "@/lib/action-result";
 
 import {publishAvailabilityRequest} from "@/utils/availability-publication"
@@ -35,7 +36,7 @@ export async function getMyAvailability(): Promise<{ document: AvailabilityDocum
   const { user } = await requireAuth()
   const [saved, memberships] = await Promise.all([
     prisma.userAvailability.findUnique({ where: { userId: user.id } }),
-    prisma.clubMember.findMany({ where: { userId: user.id, status: "ACTIVE", club: { suspendedAt: null } }, include: {
+    prisma.clubMember.findMany({ where: { userId: user.id, ...activeMemberWhere, club: { suspendedAt: null } }, include: {
       club: { select: { name: true, interviewerRoles: true, pipelineRounds: { where: { archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true, type: true, _count: { select: { interviewRooms: true } } } } } },
       interviewParticipation: { select: { roundId: true, eligibilityOverride: true, confirmedAt: true, requestedAt: true, declinedAt: true } },
     } }),
@@ -99,7 +100,7 @@ export async function getInterviewerEligibility(clubId: string) {
     await authorizeClubTransaction(tx, clubId, user.id, ["members.manage"], { readOnly: true })
     const [club, members, rounds] = await Promise.all([
       tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { interviewerRoles: true, interviewerEligibilityRevision: true } }),
-      tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, accessRole: true, interviewerEligible: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } }, interviewParticipation: { select: { roundId: true, eligibilityOverride: true, confirmedAt: true } } } }),
+      tx.clubMember.findMany({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null } }, select: { id: true, accessRole: true, interviewerEligible: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } }, interviewParticipation: { select: { roundId: true, eligibilityOverride: true, confirmedAt: true } } } }),
       tx.pipelineRound.findMany({ where: { clubId, archivedAt: null }, select: { id: true, name: true, type: true, _count: { select: { interviewRooms: true } } }, orderBy: { order: "asc" } }),
     ])
     return { roles: club.interviewerRoles, revision: club.interviewerEligibilityRevision, members: members.map(m => ({ id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email, role: m.accessRole, override: m.interviewerEligible, rounds: m.interviewParticipation.map(p => ({ id: p.roundId, override: p.eligibilityOverride, confirmed: !!p.confirmedAt })) })), rounds: rounds.filter(r => r.type === "INTERVIEW" || /interview/i.test(r.name) || r._count.interviewRooms).map(r => ({ id: r.id, name: r.name })) }
@@ -115,7 +116,7 @@ async function setInterviewerEligibilityCommand(raw: unknown) {
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId } })
     if (club.interviewerEligibilityRevision !== input.revision) throw new ActionError("This changed elsewhere. Reload before saving.", "STALE")
     if (input.roundId) await roundFor(tx, input.clubId, input.roundId)
-    const targets = await tx.clubMember.findMany({ where: { id: { in: input.targets.map(t => t.memberId) }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } })
+    const targets = await tx.clubMember.findMany({ where: { id: { in: input.targets.map(t => t.memberId) }, clubId: input.clubId, ...activeMemberWhere, user: { disabledAt: null } } })
     if (targets.length !== input.targets.length) throw new ActionError("Select active members of this club.")
     for (const target of input.targets) {
       if (input.roundId) {
@@ -144,7 +145,7 @@ export async function getAvailabilityOverview(raw: unknown): Promise<Availabilit
     if (input.roundId) await roundFor(tx, input.clubId, input.roundId)
     const [club, members, planning] = await Promise.all([
       tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } }),
-      tx.clubMember.findMany({ where: { clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null }, ...(input.role ? { accessRole: input.role } : {}) }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true } }, availability: true } }, interviewParticipation: { where: { clubId: input.clubId, roundId: input.roundId ?? "" } } } }),
+      tx.clubMember.findMany({ where: { clubId: input.clubId, ...activeMemberWhere, user: { disabledAt: null }, ...(input.role ? { accessRole: input.role } : {}) }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true } }, availability: true } }, interviewParticipation: { where: { clubId: input.clubId, roundId: input.roundId ?? "" } } } }),
       input.roundId ? loadPanelPlanningScene(tx, { clubId: input.clubId, roundId: input.roundId }, { start: new Date(+new Date(`${monday(input.week)}T00:00:00Z`) - 86400000).toISOString(), end: new Date(+new Date(`${addDays(monday(input.week), 7)}T00:00:00Z`) + 86400000).toISOString() }) : null,
     ])
     const week = monday(input.week), cells = weekCells(week, input.timezone)

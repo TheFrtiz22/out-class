@@ -10,7 +10,7 @@ import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
 
-import { clubPermissions, hasPermission } from "@/lib/permissions";
+import { activeMemberWhere, clubPermissions, hasPermission } from "@/lib/permissions";
 import { canControlOrganizationAccess } from "@/lib/organization-authorization";
 import { enqueueInvitationEmails } from "@/utils/invitation-delivery";
 import { invitationEmailConfig } from "@/utils/email";
@@ -42,7 +42,7 @@ async function assignOrganizationMemberGroupsCommand(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new ActionError("Member management access denied.");
-    const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
+    const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, ...activeMemberWhere, user: { disabledAt: null } } });
     if (members.length !== data.targets.length) throw new ActionError("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
@@ -65,7 +65,7 @@ async function createOrganizationMemberGroupsCommand(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!hasPermission(actor, "members.manage")) throw new ActionError("Member management access denied.");
-    const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
+    const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, ...activeMemberWhere, user: { disabledAt: null } } });
     if (members.length !== data.targets.length) throw new ActionError("Some members are no longer available. Check the list and try again.");
     for (const member of members) {
       const expected = data.targets.find(target => target.id === member.id)!;
@@ -87,7 +87,7 @@ async function setMemberInterviewOfficesCommand(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     if (!interviewCapabilities(actor).manageGrants) throw new ActionError("Only an active owner can attest interview offices.");
-    const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null } } });
+    const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId, ...activeMemberWhere, user: { disabledAt: null } } });
     if (!target) throw new ActionError("Active member required.");
     await tx.clubMember.update({ where: { id: target.id }, data: { interviewOffices: data.offices } });
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "interview.offices.change", details: { before: target.interviewOffices, after: data.offices } } });
@@ -145,8 +145,9 @@ async function revokePendingGrants(tx: AppTransactionClient, clubId: string, use
   await revokeClubInvitations(tx, { clubId, status: "PENDING", OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId } }] }, actorId, "organization-members.revocation");
 }
 
-async function protectLastOwner(tx: AppTransactionClient, clubId: string, target: { id: string; isOwner: boolean; status: string }) {
-  if (target.isOwner && target.status === "ACTIVE" && await tx.clubMember.count({ where: { clubId, id: { not: target.id }, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } }) === 0)
+async function protectLastOwner(tx: AppTransactionClient, clubId: string, target: { id: string; isOwner: boolean; status: string; alumniSince?: Date | null }) {
+  // Alumni owners hold no capabilities, so they neither need protecting nor count as the remaining owner.
+  if (target.isOwner && target.status === "ACTIVE" && !target.alumniSince && await tx.clubMember.count({ where: { clubId, id: { not: target.id }, isOwner: true, ...activeMemberWhere, user: { disabledAt: null } } }) === 0)
     throw new ActionError("Assign another active owner before removing the last owner.");
 }
 
@@ -201,7 +202,7 @@ async function transferOrganizationOwnershipCommand(input: unknown) {
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
-    const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null } } });
+    const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId, ...activeMemberWhere, user: { disabledAt: null } } });
     if (!organizationCapabilities(actor).canTransferOwnership || !target || target.userId === user.id || target.isOwner) throw new ActionError("Transfer requires a different active non-owner member.");
     await tx.clubMember.update({ where: { id: target.id }, data: { accessRole: "OWNER", isOwner: true, permissions: organizationRolePermissions.OWNER } });
     await tx.clubMember.update({ where: { id: actor.id }, data: { accessRole: "ADMIN", isOwner: false, permissions: organizationRolePermissions.ADMIN } });
@@ -244,9 +245,10 @@ async function bulkOrganizationMembersCommand(input: unknown) {
     if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new ActionError("Selected memberships changed. Reload the page and try again.");
     if (data.action === "ROLE" && (!data.role || targets.some(t => !canChangeOrganizationRole(actor, t, data.role!)))) throw new ActionError("You cannot grant this role to the complete selection.");
     if (data.action === "REMOVE" && targets.some(t => !canRemoveOrganizationMember(actor, t))) throw new ActionError("You cannot remove the complete selection.");
+    if (data.action === "PERMISSIONS" && targets.some(t => t.alumniSince)) throw new ActionError("Alumni keep no club permissions. Remove alumni from the selection.");
     if (data.action === "PERMISSIONS" && (!data.permissions || !hasPermission(actor, "leaders.manage") || targets.some(t => t.isOwner || !canControlOrganizationAccess(actor, t)) || data.permissions.some(p => !hasPermission(actor, p)))) throw new ActionError("These permissions exceed your authority, or the selection contains an owner.");
     const ids = targets.map(t => t.id);
-    if ((data.action === "REMOVE" || data.action === "ROLE" && data.role !== "OWNER") && targets.some(t => t.isOwner) && !await tx.clubMember.count({ where: { clubId: data.clubId, isOwner: true, status: "ACTIVE", id: { notIn: ids }, user: { disabledAt: null } } })) throw new ActionError("Assign another active owner before changing all selected owners.");
+    if ((data.action === "REMOVE" || data.action === "ROLE" && data.role !== "OWNER") && targets.some(t => t.isOwner && !t.alumniSince) && !await tx.clubMember.count({ where: { clubId: data.clubId, isOwner: true, ...activeMemberWhere, id: { notIn: ids }, user: { disabledAt: null } } })) throw new ActionError("Assign another active owner before changing all selected owners.");
     const fields = data.action === "REMOVE" ? { status: "LEFT" as const, accessRole: "MEMBER" as const, isOwner: false, permissions: [] } : data.action === "ROLE" ? { accessRole: data.role!, isOwner: data.role === "OWNER", permissions: organizationRolePermissions[data.role!] } : { permissions: [...new Set(data.permissions!)] };
     await tx.clubMember.updateMany({ where: { clubId: data.clubId, id: { in: ids } }, data: fields });
     const grants = { clubId: data.clubId, status: "PENDING" as const, OR: [{ email: { in: targets.map(t => t.user.email.toLowerCase()), mode: "insensitive" as const } }, { schoolIdentity: { userId: { in: targets.map(t => t.userId) } } }] };

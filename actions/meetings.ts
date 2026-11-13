@@ -11,7 +11,7 @@ import {
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import {
   meetingInputSchema,
   meetingFields,
@@ -29,7 +29,7 @@ export async function listMeetings(clubId?: string) {
       ...(clubId ? { clubId } : {}),
       OR: [
         publicMeetingVisibility,
-        { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } },
+        { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } },
       ],
     },
     select: meetingFields,
@@ -44,7 +44,7 @@ async function getMeetingCommand(meetingId: string) {
       id: meetingId,
       OR: [
         publicMeetingVisibility,
-        { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } },
+        { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } },
       ],
     },
     select: meetingFields,

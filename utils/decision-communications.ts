@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import type { FrozenLetterSettings } from "@/lib/decision-schedule";
 import type { AppTransactionClient } from '@/utils/prisma';
 import { decisionTypes, decisionDestination, resolveLetter, type LetterDecision } from '@/lib/decision-letters';
@@ -28,7 +29,7 @@ export async function offerResponseNotification(tx:AppTransactionClient,app:{id:
 export async function declinedOfferLeaderNotification(tx:AppTransactionClient,app:{id:string;clubId:string},offerId:string) {
  const source=await tx.application.findUniqueOrThrow({where:{id:app.id},select:{recruitmentCycleId:true,club:{select:{name:true}}}});
  const waitlisted=await tx.application.count({where:{clubId:app.clubId,status:'WAITLISTED',...(source.recruitmentCycleId?{recruitmentCycleId:source.recruitmentCycleId}:{})}});
- const leaders=await tx.clubMember.findMany({where:{clubId:app.clubId,status:'ACTIVE',OR:[{isOwner:true},{permissions:{hasEvery:['decisions.manage','applicants.identify']}}]},select:{userId:true}});
+ const leaders=await tx.clubMember.findMany({where:{clubId:app.clubId,...activeMemberWhere,OR:[{isOwner:true},{permissions:{hasEvery:['decisions.manage','applicants.identify']}}]},select:{userId:true}});
  if(!leaders.length) return 0;
  const body=waitlisted?`${waitlisted} applicant${waitlisted===1?' is':'s are'} on the waitlist. Review the waitlist if you want to offer the spot.`:'No one is on the waitlist for this cycle.';
  const result=await tx.userNotification.createMany({skipDuplicates:true,data:leaders.map(l=>({userId:l.userId,clubId:app.clubId,type:'APPLICATION',title:`An offer to join ${source.club.name} was declined`,body,href:`/club/${encodeURIComponent(app.clubId)}/workspace?section=recruitment&tool=applicants&decision=waitlisted`,eventKey:`offer:${offerId}:declined:leaders`}))});

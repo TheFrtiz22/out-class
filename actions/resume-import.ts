@@ -6,6 +6,7 @@ import { extractPdfText } from "@/lib/resume-pdf"
 import { extractResumeProposal, confirmImportSchema, importBaseline } from "@/lib/resume-import"
 import { uploadProfileFile } from "@/actions/storage"
 import { revalidatePath } from "next/cache"
+import { applyGraduationYearChange } from "@/utils/graduation"
 import { boundedSafeParse } from "@/lib/bounded-input"
 
 const failure = (code: string, message: string) => ({ ok: false as const, code, message })
@@ -52,6 +53,7 @@ export async function confirmResumeImport(input: unknown) {
       const seen = new Set(current.experiences.map(key))
       const additions = experiences.filter(v => { const k = key(v); if (seen.has(k)) return false; seen.add(k); return true })
       if (current.experiences.length + additions.length > 50) throw Error("EXPERIENCE_LIMIT")
+      if (patch.gradYear !== undefined) await applyGraduationYearChange(tx, user.id, patch.gradYear)
       return tx.studentProfile.update({ where: { userId: user.id }, data: { ...patch, ...(resumeReference ? { resumeUrl: resumeReference } : {}), ...(additions.length ? { experiences: { create: additions } } : {}) }, include: { experiences: true } })
     }, { isolationLevel: "Serializable" })
     revalidatePath("/", "layout")

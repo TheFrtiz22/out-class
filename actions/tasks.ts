@@ -15,7 +15,7 @@ import {
   requireClubMembership,
   requireClubPermission,
 } from "@/utils/auth";
-import { hasPermission, isActiveMembership } from "@/lib/permissions";
+import { hasPermission, isActiveMembership, activeMemberWhere } from "@/lib/permissions";
 import {
   taskAudienceSchema,
   projectTaskAudience,
@@ -155,14 +155,14 @@ export async function getTaskWorkspace(clubId: string, focus?: { taskId: string;
     })),
     members: manage && !focus
       ? (await prisma.clubMember.findMany({
-          where: { clubId, status: "ACTIVE", user: { disabledAt: null } },
+          where: { clubId, ...activeMemberWhere, user: { disabledAt: null } },
           select: memberSelect,
         })).map(projectedTaskMember)
       : [],
   };
 }
 async function recipientsFor(tx: AppTransactionClient, clubId: string, audience: TaskAudience) {
-  const members = await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: memberSelect });
+  const members = await tx.clubMember.findMany({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null } }, select: memberSelect });
   if ([...audience.members, ...audience.excludeMembers].some(id => !members.some(member => member.id === id))) throw new ActionError("An assignee is no longer a member of this club.");
   let excluded: string[] = [];
   if (audience.excludeTasks.length) {

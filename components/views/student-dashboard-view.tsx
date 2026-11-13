@@ -2,6 +2,7 @@
 import type { ReactNode } from "react"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
+import { GraduationPrompt } from "@/components/graduation-prompt"
 
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import { Bell, CheckCircle2, ChevronRight, Circle } from "@/components/icons"
@@ -16,6 +17,7 @@ import { useSuggestedClubs } from "@/hooks/use-suggested-clubs"
 import { StatusPill } from "@/components/ui/status-pill"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth } from "@/contexts/auth-context"
+import { isActiveMembership } from "@/lib/permissions"
 import { eventStart } from "@/lib/calendar"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import {
@@ -126,7 +128,7 @@ export function StudentDashboardView({
     className="oc-home-header"
     now={now} firstName={user?.profile?.firstName}
     eyebrow={now?.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) ?? "Your OutClass"}
-    context={{ mode: "personal", applications: loading || !hydrated ? null : realApps ?? null, events: accountEvents, notifications: personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items : [], memberClubIds: user?.memberships.filter(m => m.status === "ACTIVE").map(m => m.clubId) ?? [] }}
+    context={{ mode: "personal", applications: loading || !hydrated ? null : realApps ?? null, events: accountEvents, notifications: personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items : [], memberClubIds: user?.memberships.filter(isActiveMembership).map(m => m.clubId) ?? [] }}
   />
   const hero = <DashboardHero className="oc-home-hero">{welcome}</DashboardHero>
 
@@ -143,7 +145,7 @@ export function StudentDashboardView({
     )
 
   // Needs you: only from records this page already reads. The next step (nextHomeAction) leads.
-  const memberClubIds = user?.memberships.filter(m => m.status === "ACTIVE").map(m => m.clubId) ?? []
+  const memberClubIds = user?.memberships.filter(isActiveMembership).map(m => m.clubId) ?? []
   const taskItems = personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items ?? [] : []
   const overdueTasks = [...new Map(taskItems.flatMap(item => item.clubId && memberClubIds.includes(item.clubId) && item.taskActivity?.needsSubmission && item.taskActivity.dueAt && +new Date(item.taskActivity.dueAt) < now.getTime() ? [[item.taskActivity.assignmentId, item.clubId] as const] : [])).values()]
   // Drafts for a club that stopped taking applications are not work to finish (lib/recruitment-presentation).
@@ -173,7 +175,7 @@ export function StudentDashboardView({
   // application, then My clubs — from the same records the desktop dashboard below reads.
   const stageOf = (status: string) => ["Accepted", "Rejected", "Waitlisted"].includes(status) ? 3 : status === "Interviewing" ? 2 : status === "In Review" ? 1 : 0
   const furthest = applications.filter(app => !app.draft && !app.closed && stageOf(app.status) < 3).sort((a, b) => stageOf(b.status) - stageOf(a.status))[0]
-  const clubs = user?.memberships.filter(m => m.status === "ACTIVE" && m.club) ?? []
+  const clubs = user?.memberships.filter(m => isActiveMembership(m) && m.club) ?? []
   const phone = <div className="oc-home-phone">
     {unavailable
       ? <Card variant="glass" className="oc-needs-clear" role="status"><div className="oc-dashboard-state"><p><strong>We couldn’t load your applications.</strong> Try again to see the latest information for your account.</p><Button onClick={() => window.location.reload()}>Try again</Button></div></Card>
@@ -226,6 +228,7 @@ export function StudentDashboardView({
       {hero}
       {/* Mounted once for both layouts, inside the same dashboard context (no blur, card type) as before. */}
       <Dashboard className="oc-home-availability-slot"><AvailabilityDashboardRequests /></Dashboard>
+      <Dashboard className="oc-home-graduation-slot"><GraduationPrompt now={now} /></Dashboard>
       {phone}
       <Dashboard className="oc-home-dashboard">
         {unavailable

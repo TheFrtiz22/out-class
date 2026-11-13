@@ -30,7 +30,7 @@ function GroupWizard({ clubId, members, onSaved, done }: { clubId: string; membe
   const [query, setQuery] = useState(""), [split, setSplit] = useState<MemberGroupSplit | null>(null)
   const working = useRef(false)
   const [busy, setBusy] = useState(false), [saved, setSaved] = useState(false), [error, setError] = useState("")
-  const active = members.filter(member => member.status === "ACTIVE" && !member.user.disabledAt)
+  const active = members.filter(member => member.status === "ACTIVE" && !member.alumniSince && !member.user.disabledAt)
   const selected = useMemo(() => selectGroupMembers(members, criteria), [members, criteria])
   const years = [...new Set(active.flatMap(member => member.user.studentProfile?.academicYear ? [member.user.studentProfile.academicYear.replace(/\*$/, "")] : []))].sort(compareAcademicYears)
   const groups = [...new Set(active.flatMap(member => member.groups))].sort()

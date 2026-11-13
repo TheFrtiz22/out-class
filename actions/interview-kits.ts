@@ -10,7 +10,7 @@ import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilities } from "@/lib/interview-access";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { profilePhotoSource } from "@/lib/profile-photo";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord, Prisma } from "@prisma/client";
@@ -164,7 +164,7 @@ async function getInterviewRoundScoreCommand(input: unknown) {
     const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: data.applicationId, roundId: data.roundId, memberId: access.member.id } } });
     if ((!access.caps.readClosing || access.app.roundId === data.roundId && assignment && !assignment.revokedAt) && !own?.submittedAt) throw new ActionError("Submit your own review before viewing round scores.");
     const evaluations = await tx.evaluation.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, submittedAt: { not: null }, stableRound: { clubId: data.clubId }, interviewer: { clubId: data.clubId } }, orderBy: [{ submittedAt: "desc" }, { id: "desc" }] });
-    const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null, member: { clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null } } }, include: { member: true } });
+    const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null, member: { clubId: data.clubId, ...activeMemberWhere, user: { disabledAt: null } } }, include: { member: true } });
     return submittedScoreSummary(evaluations, assignments.filter(a => interviewCapabilities(a.member).participate).map(a => a.memberId));
   }, interviewTransactionOptions);
 }

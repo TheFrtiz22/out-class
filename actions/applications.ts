@@ -7,6 +7,8 @@ import { publicMeetingVisibility } from "@/lib/campus-events";
 
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement } from "@/lib/test-scores"
+import { ALUMNI_APPLY_MESSAGE, isAlumniProfile } from "@/lib/graduation"
+import { activeMemberWhere } from "@/lib/permissions"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
@@ -32,6 +34,8 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     if (submit) {
       const profile = await tx.studentProfile.findUnique({ where: { userId: user.id } })
       if (!profile) throw new ActionError("You must complete your unified profile before applying.")
+      // Alumni keep drafts and history but cannot submit (lib/graduation.ts).
+      if (isAlumniProfile(profile)) throw new ActionError(ALUMNI_APPLY_MESSAGE)
       if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new ActionError("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
     const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
@@ -172,7 +176,7 @@ prisma.application.findMany({
   }),
 
 prisma.eventAttendance.findMany({
-    where: { studentId: user.id, event: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] } },
+    where: { studentId: user.id, event: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] } },
     include: {
       event: {
         include: { club: { select: { name: true } } },
@@ -180,7 +184,7 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { AND: [{ OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: { AND: [{ OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
   return { applications, attendances, meetings, panelAssignments }

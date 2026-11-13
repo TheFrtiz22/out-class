@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import type { AppTransactionClient } from "@/utils/prisma"
 import type { FeedEvent } from "@/lib/ical"
 import { ownPanelAssignments } from "@/utils/official-panel-schedule"
@@ -13,14 +14,14 @@ const MAX_ROWS = 500
  * events they RSVP'd to. No other student's name or data is included. */
 export async function calendarFeedEvents(tx: AppTransactionClient, userId: string, now = new Date()): Promise<FeedEvent[]> {
   const since = new Date(+now - HISTORY_MS), horizon = new Date(+now + HORIZON_MS)
-  const memberClubs = (await tx.clubMember.findMany({ where: { userId, status: "ACTIVE", club: { suspendedAt: null } }, select: { clubId: true } })).map(m => m.clubId)
+  const memberClubs = (await tx.clubMember.findMany({ where: { userId, ...activeMemberWhere, club: { suspendedAt: null } }, select: { clubId: true } })).map(m => m.clubId)
   const [bookings, meetings, rsvps, panels] = await Promise.all([
     tx.interviewBooking.findMany({ where: { application: { studentId: userId, club: { suspendedAt: null } }, slot: { endTime: { gte: since }, startTime: { lte: horizon } } }, take: MAX_ROWS, orderBy: { slot: { startTime: "asc" } },
       select: { id: true, slot: { select: { startTime: true, endTime: true, location: true } }, application: { select: { club: { select: { name: true } } } } } }),
     memberClubs.length ? tx.meeting.findMany({ where: { clubId: { in: memberClubs }, date: { lte: horizon }, OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }, take: MAX_ROWS, orderBy: { date: "asc" },
       select: { id: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, club: { select: { name: true } } } }) : [],
     // Same rule as the in-app calendar: a published public event, or any event of a club the subscriber is an active member of.
-    tx.eventRsvp.findMany({ where: { userId, event: { AND: [{ OR: [publicMeetingVisibility, { club: { is: { suspendedAt: null, members: { some: { userId, status: "ACTIVE" } } } } }] }, { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }, { date: { lte: horizon } }] } }, take: MAX_ROWS,
+    tx.eventRsvp.findMany({ where: { userId, event: { AND: [{ OR: [publicMeetingVisibility, { club: { is: { suspendedAt: null, members: { some: { userId, ...activeMemberWhere } } } } }] }, { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }, { date: { lte: horizon } }] } }, take: MAX_ROWS,
       select: { event: { select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, club: { select: { name: true } } } } } }),
     ownPanelAssignments(tx, userId),
   ])

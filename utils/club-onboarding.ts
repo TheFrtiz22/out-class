@@ -55,7 +55,7 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
     const accessRole = existing && !rejoining && roleOrder.indexOf(existing.accessRole) > roleOrder.indexOf(invitation.requestedRole) ? existing.accessRole : invitation.requestedRole;
     const membership = await tx.clubMember.upsert({ where,
       create: { userId: account.user.id, clubId: invitation.clubId, permissions, isOwner, accessRole },
-      update: { permissions, isOwner, accessRole, ...(rejoining ? { status: "ACTIVE", joinedAt: new Date() } : {}) },
+      update: { permissions, isOwner, accessRole, ...(rejoining ? { status: "ACTIVE", alumniSince: null, joinedAt: new Date() } : {}) },
     });
     if (isOwner) await tx.club.update({ where: { id: invitation.clubId }, data: { claimedAt: new Date() } });
     const now = new Date();
