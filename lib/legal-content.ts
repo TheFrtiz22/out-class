@@ -79,6 +79,7 @@ export const privacyPolicy: LegalDocument = {
       "Club and membership information: memberships and roles, Club profiles, events, RSVPs and saved events, announcements, messages between you and a Club, tasks and task submissions, meeting attendance recorded by QR check-in, and participation in live voting.",
       "Calendar information: availability you enter, and if you choose to import them, the busy times from your Outlook calendar for a selected week. If you subscribe to your OutClass calendar feed, we issue a private feed link that you can reset.",
       "Communications: messages and requests you send to us or through the Services, including school requests submitted through our website, and records of the emails we send you and your email preferences.",
+      "Issue reports and feedback: when you report an issue or send feedback, your message is stored with the page you were on, your browser and device type, screen size, the app version and any screenshot you choose to attach.",
       "Technical and usage information: IP address, browser and device information, pages viewed, performance measurements, error reports and security logs collected automatically when you use the Services.",
     ] },
     { heading: "3. How we use personal information", paragraphs: ["We use personal information to:"], list: [

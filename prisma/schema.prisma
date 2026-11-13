@@ -1487,6 +1487,8 @@ model PlatformReport {
   reporterId String
   reporter User @relation(fields: [reporterId], references: [id], onDelete: Restrict)
   summary String
+  /// ISSUE and FEEDBACK only: page, device, build and optional screenshot path (lib/feedback-reports.ts).
+  context Json?
   status String @default("OPEN")
   resolution String?
   resolvedBy String?

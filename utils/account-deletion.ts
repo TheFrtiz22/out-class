@@ -6,6 +6,7 @@ import {
   pendingApplicationStatuses,
   tombstoneEmail,
 } from "@/lib/account-deletion"
+import { FEEDBACK_SCREENSHOT_BUCKET, feedbackScreenshotFolder } from "@/lib/feedback-reports"
 
 /** Storage and Auth side effects, injectable for tests. */
 export type AccountDeletionServices = {
@@ -128,6 +129,8 @@ export async function performAccountDeletion(
     await tx.adminElevationChallenge.deleteMany({ where: { actorId: userId } })
     await tx.platformAdmin.deleteMany({ where: { userId, active: false } })
     await tx.rosterImportRow.updateMany({ where: { matchedUserId: userId }, data: { matchedUserId: null } })
+    // Their issue/feedback reports stay as moderation history; the screenshot reference goes (objects below).
+    await tx.$executeRaw`UPDATE "PlatformReport" SET "context" = "context" - 'screenshotPath' WHERE "reporterId" = ${userId} AND "context" ? 'screenshotPath'`
 
     // Applications: withdraw in-progress ones nothing depends on; anonymize the rest.
     // Kept rows keep the club's own evaluations, interview records and observations
@@ -180,6 +183,10 @@ export async function performAccountDeletion(
   }
   if (taskFiles.size) await services.removeObjects("task-submissions", [...taskFiles])
   storageObjects += taskFiles.size
+  // Feedback screenshots live under the person's own reports/<userId> folder (attached or abandoned uploads).
+  const screenshots = await services.listObjects(FEEDBACK_SCREENSHOT_BUCKET, feedbackScreenshotFolder(userId))
+  if (screenshots.length) await services.removeObjects(FEEDBACK_SCREENSHOT_BUCKET, screenshots)
+  storageObjects += screenshots.length
 
   let authDeleted = false
   for (let attempt = 0; attempt < AUTH_DELETE_ATTEMPTS && !authDeleted; attempt++) {

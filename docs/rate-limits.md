@@ -39,6 +39,7 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | `/api/platform/view-as/blocked` (still answers 403 when over, without another audit row) | IP | 60 / min |
 | `POST /api/demo` | IP | 30 / 10 min |
 | `POST /api/email/unsubscribe` (RFC 8058 one-click; `GET` only shows a button) | IP | 300 / min (mail providers post from shared servers) |
+| Feedback screenshot upload URLs (`prepareFeedbackScreenshot`) | account | 10 / h (plus 10 platform reports / h per account in Postgres) |
 
 Turnstile, Supabase Auth limits and the existing per-feature quotas (invitations, task files, platform reports) still apply on top of these limits.
 
