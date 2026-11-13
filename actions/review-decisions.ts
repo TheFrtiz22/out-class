@@ -15,6 +15,7 @@ import { normalizeReviewRubric, reviewRubricSchema } from "@/lib/review-rubric";
 import { resolveStagedTarget, stagedIsStale, stagedOutcomes, type StagedDecisionView } from "@/lib/staged-decisions";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { actionResult } from "@/lib/action-result";
+import { validPhone } from "@/lib/phone";
 
 /**
  * Review grading categories and staged decisions (lib/review-rubric.ts, lib/staged-decisions.ts).
@@ -49,7 +50,7 @@ export async function saveReviewRubric(input: z.input<typeof rubricInput>) {
 
 type ViewRow = { id: string; applicationId: string; outcome: string; targetStatus: string; targetRoundId: string | null; expectedStatus: string; expectedRoundId: string; stagedById: string; createdAt: Date
   stagedBy: { user: { studentProfile: { firstName: string; lastName: string } | null } }
-  application: { round: { name: string; anonymousReview: boolean }; student: { studentProfile: { firstName: string; lastName: string } | null } } }
+  application: { round: { name: string; anonymousReview: boolean }; student: { studentProfile: { firstName: string; lastName: string; phone: string | null } | null } } }
 function view(row: ViewRow, memberId: string, roundNames: ReadonlyMap<string, string>): StagedDecisionView {
   const profile = row.stagedBy.user.studentProfile, applicant = row.application.student.studentProfile;
   return {
@@ -58,13 +59,15 @@ function view(row: ViewRow, memberId: string, roundNames: ReadonlyMap<string, st
     id: row.id, applicationId: row.applicationId, outcome: row.outcome as StagedDecisionView["outcome"],
     targetStatus: row.targetStatus as StagedDecisionView["targetStatus"], targetRoundId: row.targetRoundId,
     expectedStatus: row.expectedStatus as StagedDecisionView["expectedStatus"], expectedRoundId: row.expectedRoundId,
+    // Offer calls: the number accompanies an acceptance only, never an anonymous-review round. Callers hold decideCaps.
+    phone: row.targetStatus === "ACCEPTED" && !row.application.round.anonymousReview && validPhone(applicant?.phone) ? applicant.phone : null,
     stagedBy: profile ? `${profile.firstName} ${profile.lastName}` : "Club reviewer", stagedByMe: row.stagedById === memberId, createdAt: row.createdAt.toISOString(),
   };
 }
 const name = { select: { firstName: true, lastName: true } } as const;
 const viewSelect = { id: true, applicationId: true, outcome: true, targetStatus: true, targetRoundId: true, expectedStatus: true, expectedRoundId: true, stagedById: true, createdAt: true,
   stagedBy: { select: { user: { select: { studentProfile: name } } } },
-  application: { select: { round: { select: { name: true, anonymousReview: true } }, student: { select: { studentProfile: name } } } } } as const;
+  application: { select: { round: { select: { name: true, anonymousReview: true } }, student: { select: { studentProfile: { select: { ...name.select, phone: true } } } } } } } as const;
 const roundNames = async (tx: AppTransactionClient, clubId: string) => new Map((await tx.pipelineRound.findMany({ where: { clubId }, select: { id: true, name: true } })).map(round => [round.id, round.name]));
 
 /** Every staged decision in the club (one per application). Decision managers only. */

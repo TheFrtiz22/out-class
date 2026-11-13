@@ -55,7 +55,7 @@ test('students can re-apply after rejection in the club\'s next active cycle', {
   }
   async function student() {
     const user = await operator.user.create({ data: { email: `${randomUUID()}@virginia.edu` } });
-    await operator.studentProfile.create({ data: { userId: user.id, firstName: 'Re', lastName: 'Applicant', computingId: randomUUID(), major: 'Economics', gradYear: 2028 } });
+    await operator.studentProfile.create({ data: { userId: user.id, firstName: 'Re', lastName: 'Applicant', computingId: randomUUID(), major: 'Economics', gradYear: 2028, phone: '+14345550123' } });
     return user;
   }
   const as = (user, fn) => request.run(user, fn);

@@ -376,7 +376,7 @@ export function StudentOnboardingWizard({
 
   const step3Form = useForm<AcademicProfileData>({
     resolver: zodResolver(academicProfileSchema),
-    defaultValues: { gradYear: "", major: "", gpa: "", satScore: "", actScore: "" },
+    defaultValues: { gradYear: "", major: "", phone: "", gpa: "", satScore: "", actScore: "" },
   })
 
   function applyInvitationDefaults(defaults: InvitationProfileDefaults) {
@@ -463,6 +463,7 @@ export function StudentOnboardingWizard({
           ? parseInt(academic!.satScore, 10)
           : undefined,
         linkedinUrl: data.linkedinUrl || "",
+        phone: academic!.phone,
         experiences: data.experiences,
         resumeUrl: resumeUrl ?? undefined,
       })
@@ -740,6 +741,28 @@ export function StudentOnboardingWizard({
                       </p>
                     )}
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(434) 555-0123"
+                    aria-describedby="phone-note"
+                    className="h-11 rounded-md border-border"
+                    {...step3Form.register("phone")}
+                  />
+                  <p id="phone-note" className="text-control text-muted-foreground">
+                    Clubs call applicants they accept. Only a club that accepts you sees it.
+                  </p>
+                  {step3Form.formState.errors.phone && (
+                    <p role="alert" className="text-control text-red-600">
+                      {step3Form.formState.errors.phone.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
