@@ -39,6 +39,9 @@ test('browser: every list keeps a visible sort (control or headers), one-line ro
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close())
   for (const width of widths) {
     const context = await browser.newContext({ viewport: { width, height: 764 }, reducedMotion: 'reduce' })
+    // The leader-screens fixture seeds Demo data from 2026-11-09; pin the page clock there so its
+    // interviews stay upcoming (a real clock aged them into the past on Nov 13 and the list emptied).
+    await context.clock.setFixedTime(new Date('2026-11-09T15:00:00-05:00'))
     const page = await context.newPage(), errors = []; page.on('pageerror', error => errors.push(error.message))
     for (const [name, fixture, query] of pages) {
       await page.goto(fixtures[fixture].url(query)); await page.locator('main h1').first().waitFor(); await page.waitForTimeout(500)
