@@ -1,0 +1,38 @@
+/* Promo videos on public pages (promo-video.tsx, docs/public-site/videos.md). Tokens only. */
+
+/* Text button that opens a video in a dialog: play mark, underlined label, then the running time, quieter. */
+.oc-watch-video { gap: 8px; min-height: 44px; padding-inline: 0; font-size: var(--oc-size-16); font-weight: 600; text-decoration: none; }
+.oc-watch-video-label { text-decoration: underline; text-underline-offset: 5px; text-decoration-color: color-mix(in srgb, currentColor 42%, transparent); }
+@media (hover: hover) and (pointer: fine) {
+  .oc-watch-video:not(:disabled):hover { text-decoration: none; }
+  .oc-watch-video:hover .oc-watch-video-label { text-decoration-color: currentColor; }
+}
+.oc-watch-video .oc-icon { flex: none; }
+.oc-watch-video-length { font-weight: 400; font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 82%, transparent); }
+.oc-landing .oc-watch-video:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+/* Under the how-it-works heading the button keeps its own width; under an FAQ answer it follows the text. */
+.oc-how-watch { align-self: flex-start; }
+.oc-faq-answer .oc-watch-video { margin: -8px 0 16px; padding-inline: 4px; font-size: var(--oc-size-14); }
+/* The answer clips its overflow while it opens and closes, so this focus ring is drawn inside the button. */
+.oc-landing .oc-faq-answer .oc-watch-video:focus-visible { outline-offset: -2px; }
+
+/* The dialog: a title row that leaves room for the close button, then the player at 16:9. */
+.oc-promo-dialog-header { justify-content: center; min-height: 44px; padding: 0 52px 0 8px; }
+.oc-promo-player { display: block; width: 100%; height: auto; max-height: calc(100dvh - 9rem); aspect-ratio: 16 / 9; border-radius: var(--oc-radius-lg); background: var(--primary); }
+
+/* A poster that plays in place. The whole poster is one button; its Play mark sits in a corner so the
+   poster's own headline stays readable. */
+.oc-promo-figure { margin: 0; padding: 14px; }
+.oc-promo-stage { position: relative; display: grid; place-items: end start; overflow: hidden; width: 100%; aspect-ratio: 16 / 9; padding: clamp(12px, 2.4vw, 24px); border: 0; border-radius: var(--oc-radius-xl); background: var(--primary); }
+.oc-promo-target { cursor: pointer; font: inherit; text-align: start; }
+.oc-landing .oc-promo-target:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.oc-promo-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.oc-promo-play { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 22px 0 18px; border-radius: var(--oc-radius-full); background: var(--primary); color: var(--primary-foreground); box-shadow: var(--oc-shadow-popover); font-size: var(--oc-size-16); font-weight: 600; }
+.oc-promo-play .oc-icon { flex: none; width: 18px; height: 18px; }
+/* A phone poster is about 180px tall: a smaller mark keeps clear of the poster's own text. */
+@media (max-width: 520px) { .oc-promo-play { min-height: 40px; padding: 0 16px 0 12px; font-size: var(--oc-size-14); } }
+@media (hover: hover) and (pointer: fine) { .oc-promo-target:hover .oc-promo-play { background: color-mix(in srgb, var(--primary) 88%, white); } }
+.oc-promo-stage .oc-promo-player { position: absolute; inset: 0; height: 100%; max-height: none; border-radius: 0; }
+.oc-promo-figure figcaption { display: grid; gap: 4px; margin: 14px 6px 4px; }
+.oc-promo-title { font-size: var(--oc-size-16); font-weight: 600; }
+.oc-promo-summary { max-width: 76ch; font-size: var(--oc-size-14); line-height: 1.6; color: var(--muted-foreground); }

@@ -2,20 +2,24 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { StatusMark, type StatusTone } from "@/components/ui/status-pill"
+import { WatchVideoButton } from "./promo-video"
 import type { LandingPerspective } from "./journey-content"
 import "./hero.css"
 
-/** Approved headline copy, split so one word carries the orange accent (docs/public-site/redesign). */
+/** Approved headline copy, split so one word carries the orange accent (docs/public-site/redesign).
+ *  Each audience also gets its own video beside the main action (docs/public-site/videos.md). */
 const copy = {
   student: {
     headline: { before: "Find and apply to UVA clubs with ", accent: "one profile.", after: "" },
     support: "Track applications, interviews and decisions in one place.",
     cta: "Create your profile",
+    watch: "Watch the video", video: "students",
   },
   leader: {
     headline: { before: "Build your next ", accent: "class.", after: " Bring your club together." },
     support: "Applications, interview panels, decisions and member life, in one workspace for your team.",
     cta: "Set up your club",
+    watch: "Watch the pitch", video: "club-pitch",
   },
 } as const
 
@@ -133,7 +137,7 @@ export function LandingHero({ perspective, selected = perspective, onPerspective
             <Button size="lg" onClick={perspective === "student" ? onCreateProfile : onLeaderEnter}>
               {text.cta}
             </Button>
-            <a className="oc-hero-demo-link" href="#about">See how it works</a>
+            <WatchVideoButton video={text.video} label={text.watch} />
           </div>
           <p className="oc-hero-audience">Made for the University of Virginia. Free for students.</p>
         </div>

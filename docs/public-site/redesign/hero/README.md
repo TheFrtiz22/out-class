@@ -35,3 +35,11 @@ the frame is below the fold and its images compete with the headline.
 - The nav keeps the existing links and labels. Over the hero only its material (navy glass) and logo change.
   The logo is the full sword lockup for navy (`public/brand/premium-board/10_hero_transparent.svg`, via
   `OutClassLogo variant="dark"`), not the mockup's thin wordmark (owner decision).
+
+## 2026-11-12: the video button (PUBLIC-VIDEOS-1)
+
+The "See how it works" text link beside the main action is now a text button that opens this audience's
+video in a dialog ("Watch the pitch" 0:59 for club leaders, "Watch the video" 1:36 for students). It keeps
+the link's cream ink and quiet underline, and adds a play mark and the running time. The header link and
+the scroll cue still lead to "How OutClass works". No video or poster loads with the hero, so LCP and CLS
+are unchanged by design; this was not re-measured. See [`../../videos.md`](../../videos.md).

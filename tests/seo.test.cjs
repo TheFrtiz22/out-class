@@ -90,8 +90,10 @@ test('public information pages render factual content, consistent entity referen
   const React = require('react')
   const PublicInformationPage = ({ title, introduction, children }) => React.createElement('main', null, React.createElement('h1', null, title), React.createElement('p', null, introduction), children)
   const publicFaq = load('lib/public-faq.ts')
-  const { PublicFaq } = load('components/landing/public-faq.tsx', { '@/lib/public-faq': publicFaq })
+  const promoVideo = { WatchVideoButton: ({ video, label }) => React.createElement('button', { 'data-video': video }, label), PromoVideoFigure: ({ video }) => React.createElement('figure', { 'data-video': video }) }
+  const { PublicFaq } = load('components/landing/public-faq.tsx', { '@/lib/public-faq': publicFaq, '@/components/landing/promo-video': promoVideo })
   const common = {
+    '@/components/landing/promo-video': promoVideo,
     '@/components/landing/public-information-page': { PublicInformationPage },
     '@/components/landing/public-faq': { PublicFaq },
     '@/lib/public-faq': publicFaq,
