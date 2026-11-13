@@ -198,9 +198,16 @@ test('graduation cron route: bearer secret required, job result returned, failur
     '@/utils/graduation': { runGraduationJob: async (db, now, limits) => { calls.push({ db, now, limits }); return impl() } },
   })
   const req = secret => new Request('https://out-class.net/api/internal/graduation', secret === undefined ? {} : { headers: { authorization: `Bearer ${secret}` } })
-  const previous = process.env.CRON_SECRET
+  const previous = process.env.CRON_SECRET, previousFlag = process.env.OUTCLASS_GRADUATION_JOB_ENABLED
   try {
     process.env.CRON_SECRET = 'cron-secret'
+    delete process.env.OUTCLASS_GRADUATION_JOB_ENABLED
+    const off = route(async () => ({ graduated: 9 }))
+    const skipped = await off.GET(req('cron-secret'))
+    assert.equal(skipped.status, 200); assert.deepEqual(await skipped.json(), { skipped: 'disabled' })
+    assert.equal(calls.length, 0, 'the job does nothing until the owner enables it')
+    assert.equal((await off.GET(req('wrong'))).status, 401, 'the secret is still checked first')
+    process.env.OUTCLASS_GRADUATION_JOB_ENABLED = 'true'
     const ok = route(async () => ({ graduated: 1, alumniMemberships: 2, retainedOwners: 0, more: false }))
     for (const secret of [undefined, 'wrong', 'cron-secret2', '']) assert.equal((await ok.GET(req(secret))).status, 401)
     assert.equal(calls.length, 0, 'no work without the secret')
@@ -213,7 +220,10 @@ test('graduation cron route: bearer secret required, job result returned, failur
     assert.equal((await ok.GET(req('undefined'))).status, 401, 'an unset secret never matches')
     const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'))
     assert.deepEqual(vercel.crons.find(c => c.path === '/api/internal/graduation'), { path: '/api/internal/graduation', schedule: '23 9 * * *' }, 'daily, after 5 AM Eastern')
-  } finally { if (previous === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = previous }
+  } finally {
+    if (previous === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = previous
+    if (previousFlag === undefined) delete process.env.OUTCLASS_GRADUATION_JOB_ENABLED; else process.env.OUTCLASS_GRADUATION_JOB_ENABLED = previousFlag
+  }
 })
 
 // ---- Server-side rules at their call sites ----
