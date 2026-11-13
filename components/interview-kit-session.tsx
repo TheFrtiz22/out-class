@@ -4,6 +4,7 @@ import { userMessage } from "@/lib/user-message"
 import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useInterviewOfflineNotes } from "@/hooks/use-interview-offline-notes";
+import { useKeepFocusedFieldVisible } from "@/hooks/use-keep-focused-field-visible";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { connectionMessage, connectionProblem, type ConnectionProblem } from "@/lib/autosave-store";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
@@ -408,6 +409,8 @@ export function InterviewKitSession({
   }
   // Unsaved private notes also survive a dropped connection and a reload: encrypted on this device (docs/interview-offline-notes.md).
   const recovery = useInterviewOfflineNotes({ scope: { clubId, applicationId, roundId }, session, draft, saved, dirty, restore: setDraft, flush: flushLatest, reconnect: () => setRetry(v => v + 1) });
+  // The on-screen keyboard must not cover the field being typed in (phones and tablets).
+  useKeepFocusedFieldVisible(formRef);
   const recoveryRef = useRef(recovery); recoveryRef.current = recovery;
   const notesKept = recovery.copyScope === false ? "" : recovery.copyScope === "device" ? " · notes kept on this device" : " · notes kept in this tab";
   useEffect(() => { if (!error) setConnection(null); }, [error]);
