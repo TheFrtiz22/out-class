@@ -12,7 +12,7 @@ export const PAGE_ROUTE_TEMPLATES = [
   "/platform", "/platform/[section]", "/platform/claims", "/platform/clubs", "/platform/events", "/platform/login",
   "/platform/school-requests", "/platform/view-as", "/preview", "/privacy", "/profile", "/q/[code]",
   "/request-school", "/reset-password", "/saved-clubs", "/settings", "/settings/account", "/settings/availability",
-  "/settings/interviews", "/settings/notifications", "/settings/organizations", "/settings/profile", "/signup",
+  "/settings/interests", "/settings/interviews", "/settings/notifications", "/settings/organizations", "/settings/profile", "/signup",
   "/terms", "/universities", "/uva", "/vote", "/voting/[sessionId]/join", "/voting/rooms/[sessionId]",
   "/voting/rooms/[sessionId]/history", "/voting/rooms/[sessionId]/prepare", "/voting/rooms/new",
 ] as const

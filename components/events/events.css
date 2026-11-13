@@ -630,6 +630,9 @@
 .oc-event-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .oc-event-view { animation: oc-event-view-enter 180ms ease-out both; }
 .oc-event-list { min-height: 320px; }
+/* Before the browser settles the view, both render and the device default shows: list on phones, board above. */
+@media (max-width: 1023px) { .oc-event-view[data-device-default="corkboard"] { display: none; } }
+@media (min-width: 1024px) { .oc-event-view[data-device-default="list"] { display: none; } }
 .oc-smart-event-list { display: grid; gap: 22px; list-style: none; margin: 0; padding: 0; }
 .oc-smart-event-list > li { min-width: 0; content-visibility: auto; contain-intrinsic-size: auto 340px; }
 .oc-smart-event-card { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.5fr); min-height: 310px; overflow: hidden; border-radius: var(--oc-content-radius); border: 1px solid var(--oc-content-edge); background: var(--oc-content-surface); color: var(--foreground); box-shadow: var(--oc-content-shadow); transition: box-shadow var(--oc-content-motion); }

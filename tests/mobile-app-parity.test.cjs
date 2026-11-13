@@ -38,7 +38,12 @@ test('phone Events open on the card list until the student picks a view; desktop
  const at=src.indexOf('const preference = localStorage.getItem("outclass:events:view:v1");');assert.ok(at>0);
  const block=src.slice(at,at+400);
  assert.ok(block.indexOf('if (preference === "list" || preference === "corkboard") setView(preference);')<block.indexOf('matchMedia?.("(max-width: 1023px)").matches) setView("list")'),'a saved choice wins over the phone default');
- assert.match(src,/useState<"corkboard" \| "list">\("corkboard"\)/,'desktop default unchanged');
+ assert.match(src,/useState<"corkboard" \| "list" \| null>\(null\)/,'the device default is decided by CSS until the browser settles it');
+ assert.match(src,/\(view \? \[view\] : \(\["list", "corkboard"\] as const\)\)\.map\(shown =>/,'server HTML carries both views before the choice settles');
+ assert.match(src,/data-device-default=\{view \? undefined : shown\}/);
+ const ev=css('components/events/events.css');
+ assert.match(ev,/@media \(max-width: 1023px\) \{ \.oc-event-view\[data-device-default="corkboard"\] \{ display: none; \} \}/,'phones show the list from the first paint');
+ assert.match(ev,/@media \(min-width: 1024px\) \{ \.oc-event-view\[data-device-default="list"\] \{ display: none; \} \}/,'desktop keeps the board');
  const s=css('components/events/events.css'),phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
  assert.match(phone,/\.oc-smart-event-card \{ display: flex; flex-direction: column;/);
 });

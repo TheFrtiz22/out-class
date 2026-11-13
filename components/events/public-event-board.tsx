@@ -79,7 +79,10 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
     [linkedError, setLinkedError] = useState(""),
     [linkedMissing, setLinkedMissing] = useState(false),
     [linkedRetry, setLinkedRetry] = useState(0);
-  const [view, setView] = useState<"corkboard" | "list">("corkboard");
+  // null until the browser decides: the server HTML (and first client render) then carries both views and
+  // CSS shows the device default (list below 1024px, board above), so a phone never paints the board first
+  // and hydration matches. The effect below settles a saved choice or the device default.
+  const [view, setView] = useState<"corkboard" | "list" | null>(null);
   const saves = useSavedCampusEvents(identity);
   // The server board answers the first, unfiltered read; any later filter, retry or account change fetches.
   const seeded = useRef(!!initialBoard);
@@ -89,7 +92,8 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
       if (preference === "list" || preference === "corkboard") setView(preference);
       // Phones open on the list of event cards, as in the OutClass app, until the student picks a view.
       else if (window.matchMedia?.("(max-width: 1023px)").matches) setView("list");
-    } catch { /* Storage may be unavailable in private browsing. */ }
+      else setView("corkboard");
+    } catch { setView(window.matchMedia?.("(max-width: 1023px)").matches ? "list" : "corkboard"); /* Storage may be unavailable in private browsing. */ }
   }, []);
   useEffect(() => {
     // A personal filter must never carry into a different account's session.
@@ -220,7 +224,7 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
             </div>
             <Toggle label="RSVP required" checked={filters.required || false} onCheckedChange={(required) => filter({ required })} />
         </FilterPopover>
-        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch oc-view-switch" size="compact" options={[{ value: "corkboard", label: null, ariaLabel: "Board", icon: <StickyNote /> }, { value: "list", label: null, ariaLabel: "List", icon: <Rows3 /> }]} />
+        <SegmentedControl label="Event view" value={view ?? "corkboard"} onChange={changeView} animated className="oc-event-view-switch oc-view-switch" size="compact" options={[{ value: "corkboard", label: null, ariaLabel: "Board", icon: <StickyNote /> }, { value: "list", label: null, ariaLabel: "List", icon: <Rows3 /> }]} />
         </div>
       </div>
       {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}
@@ -242,13 +246,14 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
             setOpen(value);
           }}
         >
-          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Event board" : "Event list"}>
+          {(view ? [view] : (["list", "corkboard"] as const)).map(shown => (
+          <div key={shown} role="region" className={shown === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-device-default={view ? undefined : shown} data-empty={!events.length || undefined} aria-busy={loading} aria-label={shown === "corkboard" ? "Event board" : "Event list"}>
             {!loading && !events.length ? (
               (() => { const empty = eventBoardEmpty(filters); return <EmptyState className="oc-events-empty" align="start" title={empty.title} description={empty.description}
                 action={empty.action.kind === "explore-clubs"
                   ? <Button variant="outline" asChild><Link href="/explore">{empty.action.label}</Link></Button>
                   : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>} /> })()
-            ) : view === "list" ? (
+            ) : shown === "list" ? (
               <ul className="oc-smart-event-list">
                 {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id) }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}
               </ul>
@@ -291,6 +296,7 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
               </ul>
             )}
           </div>
+          ))}
           {selected && (
             <DialogContent
               className="oc-event-detail"
