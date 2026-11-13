@@ -1,7 +1,7 @@
-const {unwrapActions}=require('./helpers/action-result.cjs');
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{harness}=require('./helpers/interview-sql-harness.cjs')
 async function fixture(t, runtimeRole=false){
- const h=await harness({permissiveDefaults:true,runtimeRole});t.after(()=>h.db.close());h.api=h.load('actions/panel-proposals.ts');h.rooms=unwrapActions(h.load('actions/interview-rooms.ts'))
+ const h=await harness({permissiveDefaults:true,runtimeRole});t.after(()=>h.db.close());h.api=unwrapActions(h.load('actions/panel-proposals.ts'));h.rooms=unwrapActions(h.load('actions/interview-rooms.ts'))
  h.scope={clubId:h.ids.club,roundId:h.ids.round};h.window={start:'2030-10-12T09:00:00.000Z',end:'2030-10-12T11:00:00.000Z'};h.options={maxConsecutiveMinutes:null,breakMinutes:15}
  const schedule={timezone:'UTC',weeklySubmitted:true,weekly:Array.from({length:7},()=>[[0,1440]]),exceptions:{}}
  for(const k of ['panel','peer']){await h.db.query('UPDATE "ClubMember" SET "accessRole"=\'INTERVIEWER\' WHERE id=$1',[h.ids[k+'Member']]);await h.db.query('INSERT INTO "InterviewRoundParticipation"(id,"clubId","memberId","roundId",availability,"confirmedAt") VALUES ($1,$2,$3,$4,$5,now())',[randomUUID(),h.ids.club,h.ids[k+'Member'],h.ids.round,JSON.stringify(schedule)])}
@@ -98,4 +98,35 @@ test('locked positions on a removed time are dropped by regeneration and reporte
  await h.db.query('DELETE FROM "InterviewSlot" WHERE id=$1',[target])
  const regenerated=await h.generate(draft.revision,{mode:'FILL_MISSING',assignments:draft.document.assignments})
  assert.equal(regenerated.droppedLockedPositions,count);assert.equal(regenerated.proposal.document.sessions.some(s=>s.id===target),false);assert.equal(regenerated.proposal.document.assignments.some(a=>a.slotId===target),false)
+})
+
+test('regenerating a draft whose sessions have all passed or closed returns NO_OPEN_SESSIONS; only a manager can discard it',async t=>{
+ const h=await fixture(t),raw=h.load('actions/panel-proposals.ts'),proposals=async()=>(await h.db.query('SELECT id,revision FROM "InterviewPanelProposal"')).rows
+ const audits=async action=>(await h.db.query('SELECT "actorId","targetId" FROM "AuditLog" WHERE action=$1',[action])).rows
+ let draft=(await h.generate()).proposal
+ const regenerate=d=>raw.generatePanelProposal({...h.scope,window:h.window,options:h.options,revision:d.revision,mode:'FILL_MISSING',assignments:d.document.assignments})
+ // The room closes: its unbooked and booked times are no longer plannable (nothing was published from them).
+ await h.db.query('UPDATE "InterviewRoom" SET "isOpen"=false WHERE id=$1',[h.roomId])
+ const before=await h.snapshot(),generated=(await audits('interview.panel-proposal.generate')).length
+ let result=await refused(regenerate(draft),/no upcoming, open sessions left/);assert.equal(result.code,'NO_OPEN_SESSIONS')
+ assert.deepEqual(await proposals(),[{id:draft.id,revision:draft.revision}]);assert.equal((await audits('interview.panel-proposal.generate')).length,generated);assert.deepEqual(await h.snapshot(),before)
+ // Reopened and then past: the same typed refusal, not a thrown error.
+ await h.db.query('UPDATE "InterviewRoom" SET "isOpen"=true WHERE id=$1',[h.roomId]);await h.db.query('UPDATE "InterviewSlot" SET "startTime"="startTime"-make_interval(years=>20),"endTime"="endTime"-make_interval(years=>20) WHERE "roomId"=$1',[h.roomId])
+ result=await refused(regenerate(draft));assert.equal(result.code,'NO_OPEN_SESSIONS')
+ const empty={start:'2031-01-01T00:00:00.000Z',end:'2031-01-02T00:00:00.000Z'}
+ // Other expected refusals are typed too, and unexpected failures still throw.
+ assert.equal((await refused(raw.generatePanelProposal({...h.scope,window:h.window,options:h.options,revision:draft.revision+5,mode:'REGENERATE'}),/another tab/)).code,'DRAFT_CHANGED')
+ assert.equal((await refused(raw.generatePanelProposal({...h.scope,window:empty,options:h.options,revision:draft.revision,mode:'REGENERATE'}),/Discard the existing draft/)).code,'WINDOW_CHANGED')
+ await assert.rejects(raw.generatePanelProposal({...h.scope,window:h.window,options:h.options,revision:'x',mode:'REGENERATE'}),e=>!e.refused)
+ // A member without interview management cannot discard; the draft and its revision are untouched.
+ for(const user of [h.ids.peer,h.ids.panel,h.ids.student]){h.as(user);await assert.rejects(raw.discardPanelProposal({...h.scope,proposalId:draft.id,revision:draft.revision}),/access denied/)}
+ h.as(h.ids.owner);assert.deepEqual(await proposals(),[{id:draft.id,revision:draft.revision}]);assert.deepEqual(await audits('interview.panel-proposal.discard'),[])
+ // A stale revision is refused; the current one discards and is audited, and nothing official changes.
+ await assert.rejects(raw.discardPanelProposal({...h.scope,proposalId:draft.id,revision:draft.revision+1}),/another tab/)
+ assert.deepEqual(await raw.discardPanelProposal({...h.scope,proposalId:draft.id,revision:draft.revision}),{discarded:true})
+ assert.deepEqual(await proposals(),[]);assert.deepEqual(await audits('interview.panel-proposal.discard'),[{actorId:h.ids.owner,targetId:draft.id}])
+ const workspace=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(workspace.proposal,null)
+ assert.equal((await refused(raw.generatePanelProposal({...h.scope,window:h.window,options:h.options,revision:0,mode:'REGENERATE'}),/There are no upcoming, open sessions in this window\./)).code,'NO_OPEN_SESSIONS')
+ // Without a draft the same code carries the plain message. Bookings, grants and notifications never changed.
+ const after=await h.snapshot();for(const table of ['InterviewBooking','InterviewPanelAssignment','UserNotification','NotificationEmailOutbox','NotificationEmailDelivery'])assert.deepEqual(after[table],before[table],table)
 })

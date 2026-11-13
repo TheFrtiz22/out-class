@@ -8,7 +8,7 @@ import { DashboardDrawer } from "@/components/product/dashboard-drawer"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Dashboard, DashboardGrid, NeedsAction, NeedsYouRow } from "@/components/product/dashboard/dashboard"
 import { needsYou, railHrefs, type NeedsCard } from "@/components/club-home/club-home-model"
-import { AssignmentsCard, MembersCard, NextMeetingCard, RecruitingStripLink, TasksCard, TeamPulse, UpdatesCard, WeekCard } from "@/components/club-home/club-home-sections"
+import { AssignmentsCard, MembersCard, clubLinkProps, NextMeetingCard, RecruitingStripLink, TasksCard, TeamPulse, UpdatesCard, WeekCard } from "@/components/club-home/club-home-sections"
 import { useRecruitingStrip } from "@/components/club-home/use-recruiting-strip"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist"
 import { organizationCapabilities } from "@/lib/organization-authorization"
@@ -37,12 +37,12 @@ export function ManagerOverview({ data, refreshing = false, onChanged = () => {}
   const openMeeting = (id: string, title: string) => setPreview({ kind: "meeting", id, title })
   const action = (card: NeedsCard) => {
     const a = card.action
-    if (a.kind === "link") return <NeedsAction href={a.href}>{a.label}</NeedsAction>
+    if (a.kind === "link") return <NeedsAction {...clubLinkProps(club.id, a.href)}>{a.label}</NeedsAction>
     return <NeedsAction onClick={() => { if (a.kind === "task") openTask(a.taskId, a.assignmentId, a.title, a.review); else if (a.kind === "meeting") openMeeting(a.meetingId, a.title) }}>{a.label}</NeedsAction>
   }
   const n = cards.length
   return <Dashboard className="oc-club-home" busy={refreshing}>
-    {strip && <RecruitingStripLink strip={strip} />}
+    {strip && <RecruitingStripLink clubId={club.id} strip={strip} />}
     <NeedsYouRow headingId="club-home-needs" className="oc-club-home-needs"
       items={cards.map(card => ({ id: card.id, title: card.title, detail: card.detail, progress: card.progress, action: action(card) }))}
       clear={<><strong>You’re clear for now.</strong> Overdue tasks, submissions and meetings that need you will show up here.</>} />
