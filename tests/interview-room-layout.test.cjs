@@ -84,8 +84,8 @@ test('an exact room link the server reports unavailable shows the cannot-open st
 test('an ACCESS_REVOKED refusal from the room switches to the access-removed state and stops entry validation until Try again',async()=>{
  const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
  const armed=h.intervals();assert.ok(armed>=1,'entry validation polls while the room is open');
- kit(t).props.onAccessRevoked();t=h.render();t=h.render();
- assert.equal(kit(t),undefined,'the room (polling, autosave) unmounts');assert.match(text(t),/no longer have access/);
+ kit(t).props.onAccessRevoked(true);t=h.render();t=h.render();
+ assert.equal(kit(t),undefined,'the room (polling, autosave) unmounts');assert.match(text(t),/no longer have access/);assert.match(text(t),/hadn’t saved stay in this browser/,'unsaved notes are not lost silently');
  assert.ok(h.cleared.includes(armed),'the validation interval is cleared');t=h.render();assert.equal(h.intervals(),armed,'and not re-armed while access is removed');
  nodes(t).find(n=>n.type==='Button'&&text(n)==='Try again').props.onClick();h.render();await flush();h.render();assert.equal(h.intervals(),armed+1,'Try again re-checks access');
 });

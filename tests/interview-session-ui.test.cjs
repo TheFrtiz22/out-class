@@ -300,9 +300,9 @@ test('an unacknowledged submission never unlocks Next or reports completion',asy
 // Production QA 2026-11-13: an interviewer removed from the panel mid-interview saw "Couldn't save".
 const revokedError=()=>{const {UserFacingError}=errorModules('lib/action-result.ts');return new UserFacingError('You no longer have access to this interview.','ACCESS_REVOKED')}
 test('an autosave refused with ACCESS_REVOKED hands the room its access-removed state: no "Couldn’t save", no retry, notes kept', async () => {
- let revoked=false,removed=0;const h=harness(undefined,{saveError:()=>revoked&&revokedError(),onAccessRevoked:()=>removed++});h.render();await flush();let t=h.render();select(t,'Snapshot question');await flush();t=h.render();edit(t,'Unsaved private note');t=h.render();
+ let revoked=false,removed=0;const flags=[];const h=harness(undefined,{saveError:()=>revoked&&revokedError(),onAccessRevoked:unsaved=>{removed++;flags.push(unsaved)}});h.render();await flush();let t=h.render();select(t,'Snapshot question');await flush();t=h.render();edit(t,'Unsaved private note');t=h.render();
  revoked=true;h.tick();await flush();t=h.render();
- assert.equal(removed,1,'the room is told access was removed');
+ assert.equal(removed,1,'the room is told access was removed');assert.deepEqual(flags,[true],'with unsaved notes');
  const header=nodes(t).find(n=>n.type==='header');assert.doesNotMatch(text(header),/Couldn’t save|Couldn’t reach/);assert.equal(button(t,'Retry'),undefined,'no save retry is offered');
  assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Unsaved private note','the text stays in the editor until the room unmounts (the device copy then keeps it)');
  const saves=h.calls.filter(c=>c[0]==='save').length;h.tick();await flush();h.render();assert.equal(h.calls.filter(c=>c[0]==='save').length,saves,'no automatic retry');

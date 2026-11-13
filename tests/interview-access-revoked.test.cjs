@@ -46,6 +46,16 @@ test('every interview access denial maps to the same refusal, so the message rev
  h.as(h.ids.peer);await revoked(kit.openInterviewSession(h.scope));
  }finally{await h.db.close();}
 });
+test('stepping out of the applicant (recusal) mid-interview is the same typed refusal, with no write',async()=>{
+ const h=await harness();try{
+ const rooms=h.load('actions/interview-collaboration.ts'),kit=h.load('actions/interview-kits.ts');
+ await h.db.query('INSERT INTO "InterviewPanelAssignment"(id,"applicationId","roundId","memberId","grantedBy") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),h.ids.app,h.ids.round,h.ids.panelMember,h.ids.owner]);
+ h.as(h.ids.panel);const session=await kit.openInterviewSession(h.scope);const room={...h.scope,clientId:randomUUID()};await rooms.getInterviewCollaboration(room);
+ await h.db.query('INSERT INTO "ApplicantRecusal"(id,"clubId","applicationId","memberId","createdById") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),h.ids.club,h.ids.app,h.ids.panelMember,h.ids.panel]);
+ await revoked(rooms.getInterviewCollaboration(room));await revoked(kit.saveInterviewSession({...h.scope,revision:0,draft:{...session.draft,additionalNotes:'after recusal'}}));
+ assert.equal((await h.db.query('SELECT revision FROM "InterviewRecord"')).rows[0].revision,0,'nothing saved');
+ }finally{await h.db.close();}
+});
 test('failures that are not access denials still throw (the client keeps its connection fallback)',async()=>{
  const h=await harness();try{
  const rooms=h.load('actions/interview-collaboration.ts');

@@ -1,7 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
 const {harness}=require('./helpers/interview-sql-harness.cjs');
 // Each refusal asserts the specific server message and that the timer table is untouched.
-const RECUSED="You've stepped out of reviewing this applicant because you know them. A recruitment lead can undo this.";
 // Every access denial is one uniform typed refusal (no reason disclosed).
 const REVOKED={message:'You no longer have access to this interview.',code:'ACCESS_REVOKED'};
 const ACTIVE={message:'Only active interviews can use the shared timer.'};
@@ -35,7 +34,7 @@ test('a panelist in the closing (post-interview) phase cannot drive the shared t
 test('a recused member can neither read nor change the timer',async()=>{
  const h=await setup();try{
  await h.db.query('INSERT INTO "ApplicantRecusal"(id,"clubId","applicationId","memberId","createdById") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),h.ids.club,h.ids.app,h.ids.peerMember,h.ids.owner]);
- await h.refused(h.press(h.ids.peer),{message:RECUSED});await h.refused(h.read(h.ids.peer),{message:RECUSED});
+ await h.refused(h.press(h.ids.peer),REVOKED);await h.refused(h.read(h.ids.peer),REVOKED);
  }finally{await h.db.close();}
 });
 test('an anonymous-review round exposes no timer and accepts no command',async()=>{

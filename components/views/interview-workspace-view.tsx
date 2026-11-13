@@ -90,6 +90,7 @@ function InterviewSession({
   const [data, setData] = useState<Pipeline | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  const [revokedNotes, setRevokedNotes] = useState(false)
   const [retry, setRetry] = useState(0)
   const [roundId, setRoundId] = useState("")
   const [activeId, setActiveId] = useState("")
@@ -110,7 +111,7 @@ function InterviewSession({
   const form = useRef<HTMLFormElement>(null)
   // The server refused a room call with ACCESS_REVOKED (e.g. removed from the panel mid-interview).
   // Unmounting the room stops its polling and autosave; unsaved notes stay on this device.
-  const accessRevoked = useCallback(() => { setData(null); setActiveId(""); setPrepared(null); setLoadError(true) }, [])
+  const accessRevoked = useCallback((unsavedNotes: boolean) => { setData(null); setActiveId(""); setPrepared(null); setRevokedNotes(unsavedNotes); setLoadError(true) }, [])
   const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
   const recoveredApplicant = useCallback(() => {
     try { return JSON.parse(sessionStorage.getItem(recoveryKey) || "null") as { roundId: string; applicationId: string; moveId?: string; clientId?: string } | null }
@@ -298,7 +299,8 @@ function InterviewSession({
     return (
       <div role="alert" className="space-y-4 py-12">
         <p>We couldn’t open this interview. It may have changed, or you may no longer have access. Use Exit to return to your interviews.</p>
-        <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
+        {revokedNotes && <p className="text-sm text-muted-foreground">Notes you hadn’t saved stay in this browser and return if you reopen this interview. Re-enter any unsaved score.</p>}
+        <Button variant="outline" onClick={() => { setRevokedNotes(false); setRetry((value) => value + 1) }}>
           Try again
         </Button>
       </div>

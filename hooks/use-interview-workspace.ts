@@ -28,11 +28,12 @@ export function useInterviewWorkspace(scope: InterviewScope, enabled: boolean, o
       const result = response.timer ? { ...response, timer: { ...response.timer, clockOffsetMs: clockOffsetMs(response.timer.serverNow, sentAt, Date.now()) } } : response;
       if (current === epoch.current && sequence >= appliedSequence.current) { appliedSequence.current = sequence; setView(old => newerCollaboration(old, result)); setError(""); }
     } catch (e) {
-      if (isAccessRevoked(e)) { if (current === epoch.current && !revoked.current) { revoked.current = true; setView(null); revokedHandler.current?.(); } return; }
+      if (isAccessRevoked(e)) { if (current === epoch.current && sequence >= appliedSequence.current && !revoked.current) { revoked.current = true; setView(null); revokedHandler.current?.(); } return; }
       if (current === epoch.current && sequence >= appliedSequence.current) { appliedSequence.current = sequence; setView(null); setError("Room connection unavailable. Your private draft is retained. Retry to check current access."); } }
   }, [clubId, applicationId, roundId, clientId]);
   useEffect(() => {
     if (!enabled) return;
+    revoked.current = false;
     let stopped = false, timer: ReturnType<typeof setTimeout>;
     const poll = async () => { if (revoked.current) return; await refresh(); if (!stopped && !revoked.current) timer = setTimeout(poll, COLLABORATION_POLL_MS); };
     void poll();
