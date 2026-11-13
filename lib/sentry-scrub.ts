@@ -208,6 +208,26 @@ export function scrubTransaction<T extends TransactionEvent>(event: T): T {
   return clean as T
 }
 
+type MetricRecord = { name: string; value: number; type: string; unit?: string; attributes?: Record<string, unknown> }
+const METRIC_NAMES = /^web_vital\.(lcp|inp|cls|fcp|ttfb)$/
+/** A route template: plain word segments and [param] placeholders only, or "other". */
+const ROUTE_TEMPLATE = /^(other|\/|(\/([a-z][a-z-]{0,39}|\[[A-Za-z]{1,30}\]))+)$/
+
+/**
+ * Privacy filter for metrics: only the web-vital distributions, tagged with a route template and
+ * rating plus Sentry's release, environment and SDK. The SDK's user attributes (id, email, name)
+ * and any other metric are dropped.
+ */
+export function scrubMetric<T extends MetricRecord>(metric: T): T | null {
+  if (!METRIC_NAMES.test(metric.name) || metric.type !== "distribution" || !Number.isFinite(metric.value)) return null
+  const source = metric.attributes ?? {}, attributes: Record<string, unknown> = {}
+  if (typeof source.route !== "string" || !ROUTE_TEMPLATE.test(source.route)) return null
+  attributes.route = source.route
+  if (typeof source.rating === "string" && ["good", "needs-improvement", "poor"].includes(source.rating)) attributes.rating = source.rating
+  for (const key of ["sentry.release", "sentry.environment", "sentry.sdk.name", "sentry.sdk.version"]) if (typeof source[key] === "string") attributes[key] = source[key]
+  return { name: metric.name, value: metric.value, type: metric.type, ...(metric.unit === "millisecond" ? { unit: metric.unit } : {}), attributes } as T
+}
+
 /**
  * Share of production requests and page loads timed. Previews and development send
  * no performance data, so test traffic never spends the plan's span quota.
@@ -233,5 +253,6 @@ export function sentryOptions(dsn: string | undefined, environment: string | und
     beforeSend: scrubEvent,
     beforeSendTransaction: scrubTransaction,
     beforeBreadcrumb: scrubBreadcrumb,
+    beforeSendMetric: scrubMetric,
   }
 }
