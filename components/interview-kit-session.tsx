@@ -1,5 +1,5 @@
 "use client";
-import { UserFacingError } from "@/lib/action-result"
+import { isAccessRevoked, UserFacingError } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
@@ -41,6 +41,7 @@ export function InterviewKitSession({
   onComplete,
   onNextApplicant,
   onReturnToList,
+  onAccessRevoked,
   context,
   toolbar,
   initialSession,
@@ -63,6 +64,10 @@ export function InterviewKitSession({
   ) => void;
   onNextApplicant?: (clientId: string, invitationId?: string) => Promise<boolean>;
   onReturnToList?: () => void;
+  /** The server refused with ACCESS_REVOKED: the room shows its "no longer have access" state.
+   * Unsaved notes stay on this device through useInterviewOfflineNotes when the room unmounts;
+   * `unsavedNotes` says whether there were any, so the room can say so. */
+  onAccessRevoked?: (unsavedNotes: boolean) => void;
 }) {
   const [session, setSession] = useState<InterviewSessionData | null>(initialSession || null),
     [draft, setDraft] = useState<InterviewDraft>(
@@ -76,7 +81,10 @@ export function InterviewKitSession({
     [newQuestion, setNewQuestion] = useState(""),
     [retry, setRetry] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState("");
-  const collaboration = useInterviewWorkspace({ clubId, applicationId, roundId }, !!session);
+  const accessRevoked = useRef(onAccessRevoked); accessRevoked.current = onAccessRevoked;
+  const collaboration = useInterviewWorkspace({ clubId, applicationId, roundId }, !!session, reportAccessRevoked);
+  // Hoisted: the refs it reads are set by the time any server response arrives.
+  function reportAccessRevoked() { accessRevoked.current?.(JSON.stringify(draftRef.current) !== savedRef.current); }
   const sharedRevision = useRef(-1);
   const personalQuestion = useRef(false);
   const suppressQuestionFocus = useRef(false);
@@ -313,6 +321,7 @@ export function InterviewKitSession({
         }
       })
       .catch((e) => {
+        if (current && isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; }
         if (current)
           setError(
             userMessage(e, "Could not open interview."),
@@ -377,6 +386,8 @@ export function InterviewKitSession({
         }
         return true;
       } catch (failure) {
+        // Removed from the panel: not a failed save. No retry; the room switches to its access-removed state.
+        if (isAccessRevoked(failure) && accessRevoked.current) { if (mounted.current) reportAccessRevoked(); return false; }
         if (mounted.current) setFailedFinish(complete);
         // Private notes stay in memory and this tab's sessionStorage only; they save when the connection returns.
         if (mounted.current) {

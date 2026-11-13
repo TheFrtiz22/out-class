@@ -26,3 +26,16 @@ export function formatAverage(score: number | null) { return score === null ? "N
 export function formatScore(score: number | null) { return score === null ? "Not scored" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(score); }
 /** The count behind an average: scored, submitted evaluations only. */
 export function scoredEvaluationsLabel(count: number) { return `${count} scored evaluation${count === 1 ? "" : "s"}`; }
+/** The one rule for reading a round's score summary (detail and list): your own submitted
+ * review always counts; otherwise leadership may read, except while also on this
+ * applicant's current-round panel (independent scoring). */
+export function canReadRoundScore(v: { readClosing: boolean; currentRound: boolean; assigned: boolean; ownSubmitted: boolean }) {
+  return v.ownSubmitted || (v.readClosing && !(v.currentRound && v.assigned));
+}
+/** What a list row may carry: the average and its count, never per-reviewer scores. */
+export type ListRoundScore = { average: number | null; submitted: number };
+/** Compact row label phrased like the detail: "8.5 / 10", the count only when several. Null when not scored. */
+export function compactRoundScore(score: ListRoundScore | null | undefined) {
+  if (!score || score.average === null) return null;
+  return `${formatAverage(score.average)} / 10${score.submitted > 1 ? ` · ${scoredEvaluationsLabel(score.submitted)}` : ""}`;
+}

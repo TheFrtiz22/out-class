@@ -8,7 +8,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
+import { authorizeInterview, authorizeQuestionBank, interviewActionResult, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { profilePhotoSource } from "@/lib/profile-photo";
@@ -19,7 +19,7 @@ import { STALE_INTERVIEW_LIST_CURSOR, decodeInterviewListCursor, interviewListFi
 import { approvedBookingPanel, collaborationAccess } from "@/utils/interview-collaboration";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { interviewHistoryWindow, previousApplicantScores } from "@/lib/interview-score-history";
-import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
+import { canReadRoundScore, snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary, type ListRoundScore } from "@/lib/interview-review-summary";
 import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
 import { boundedParse } from "@/lib/bounded-input";
@@ -162,11 +162,34 @@ async function getInterviewRoundScoreCommand(input: unknown) {
     const own = await tx.evaluation.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, interviewerId: access.member.id, roundId: data.roundId } } });
     // Independent scoring applies to leaders who also participate in this round.
     const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: data.applicationId, roundId: data.roundId, memberId: access.member.id } } });
-    if ((!access.caps.readClosing || access.app.roundId === data.roundId && assignment && !assignment.revokedAt) && !own?.submittedAt) throw new ActionError("Submit your own review before viewing round scores.");
+    if (!canReadRoundScore({ readClosing: access.caps.readClosing, currentRound: access.app.roundId === data.roundId, assigned: !!assignment && !assignment.revokedAt, ownSubmitted: !!own?.submittedAt })) throw new ActionError("Submit your own review before viewing round scores.");
     const evaluations = await tx.evaluation.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, submittedAt: { not: null }, stableRound: { clubId: data.clubId }, interviewer: { clubId: data.clubId } }, orderBy: [{ submittedAt: "desc" }, { id: "desc" }] });
     const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null, member: { clubId: data.clubId, ...activeMemberWhere, user: { disabledAt: null } } }, include: { member: true } });
     return submittedScoreSummary(evaluations, assignments.filter(a => interviewCapabilities(a.member).participate).map(a => a.memberId));
   }, interviewTransactionOptions);
+}
+/** Round scores for one list page, batched (three queries per page, not per row) and gated
+ * exactly like getInterviewRoundScore for a leadership viewer: recused applicants and a
+ * current-round panel seat without the viewer's own submitted review get null. */
+async function listRoundScores(tx: AppTransactionClient, clubId: string, memberId: string, rows: { applicationId: string; roundId: string; currentRoundId: string }[]) {
+  const scores = new Map<string, ListRoundScore | null>();
+  if (!rows.length) return scores;
+  const applicationIds = [...new Set(rows.map(r => r.applicationId))], roundIds = [...new Set(rows.map(r => r.roundId))];
+  const recused = new Set((await tx.applicantRecusal.findMany({ where: { applicationId: { in: applicationIds }, memberId, liftedAt: null }, select: { applicationId: true } })).map(r => r.applicationId));
+  const evaluations = await tx.evaluation.findMany({ where: { applicationId: { in: applicationIds }, roundId: { in: roundIds }, submittedAt: { not: null }, stableRound: { clubId }, interviewer: { clubId } }, select: { applicationId: true, roundId: true, interviewerId: true, score: true, submittedAt: true } });
+  const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: { in: applicationIds }, roundId: { in: roundIds }, revokedAt: null, application: { clubId } }, include: { member: { include: { user: { select: { disabledAt: true } } } } } });
+  for (const row of rows) {
+    const key = `${row.applicationId}:${row.roundId}`;
+    if (scores.has(key)) continue;
+    const pair = <T extends { applicationId: string; roundId: string | null }>(r: T) => r.applicationId === row.applicationId && r.roundId === row.roundId;
+    const reviews = evaluations.filter(pair), panel = assignments.filter(pair);
+    const visible = !recused.has(row.applicationId) && canReadRoundScore({ readClosing: true, currentRound: row.currentRoundId === row.roundId, assigned: panel.some(a => a.memberId === memberId), ownSubmitted: reviews.some(e => e.interviewerId === memberId) });
+    if (!visible) { scores.set(key, null); continue; }
+    const participants = panel.filter(a => a.member.clubId === clubId && a.member.status === "ACTIVE" && !a.member.user.disabledAt && interviewCapabilities(a.member).participate).map(a => a.memberId);
+    const { average, submitted } = submittedScoreSummary(reviews.map(e => ({ interviewerId: e.interviewerId, score: e.score, submittedAt: e.submittedAt })), participants);
+    scores.set(key, { average, submitted });
+  }
+  return scores;
 }
 export async function getInterviewRounds(clubId: string): Promise<InterviewSetupRounds> {
   z.string().uuid().parse(clubId); const { user } = await requireAuth();
@@ -192,7 +215,10 @@ export async function getInterviewRounds(clubId: string): Promise<InterviewSetup
 /** Leadership discovery returns metadata only; opening a review reauthorizes its scope. */
 async function readSubmittedInterviewReviews(clubId: string, filters: ApplicantInterviewFilters, cursor: unknown, withTotal: boolean, limit?: unknown) {
   z.string().uuid().parse(clubId);
-  const { user } = await requireAuth();
+  const { user, impersonation } = await requireAuth();
+  // Round scores need the same verified identity as getInterviewRoundScore; a support view
+  // whose target cannot be verified still gets the list, without scores.
+  const scoresAllowed = !impersonation || await requireAuth({ verifyEmail: true }).then(() => true, () => false);
   const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit);
   const listScope = interviewListScope(clubId, selected);
   const position = decodeInterviewListCursor(cursor, "reviews", listScope);
@@ -213,10 +239,11 @@ async function readSubmittedInterviewReviews(clubId: string, filters: ApplicantI
     const records = await tx.interviewRecord.findMany({
       where: page,
       orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: take + 1,
-      select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true, headshotUrl: true } } } } } } },
+      select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { roundId: true, round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true, headshotUrl: true } } } } } } },
     });
     const total = withTotal ? await tx.interviewRecord.count({ where }) : 0;
-    const rows = records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", photo: anonymous || !identify ? null : profilePhotoSource(r.application.student.studentProfile?.headshotUrl, { clubId, applicationId: r.applicationId, mode: "crm" }) ?? null }; });
+    const scores = scoresAllowed ? await listRoundScores(tx, clubId, member.id, records.slice(0, take).map(r => ({ applicationId: r.applicationId, roundId: r.roundId, currentRoundId: r.application.roundId }))) : new Map<string, ListRoundScore | null>();
+    const rows = records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", photo: anonymous || !identify ? null : profilePhotoSource(r.application.student.studentProfile?.headshotUrl, { clubId, applicationId: r.applicationId, mode: "crm" }) ?? null, score: scores.get(`${r.applicationId}:${r.roundId}`) ?? null }; });
     return interviewListPage(rows, r => r.id, "reviews", listScope, total, take);
   }, interviewTransactionOptions);
 }
@@ -284,20 +311,21 @@ export async function saveInterviewKit(...args: Parameters<typeof saveInterviewK
   return actionResult(() => saveInterviewKitCommand(...args), "saveInterviewKit")
 }
 
+// Room actions: an access denial (e.g. removed from the panel mid-interview) is a typed ACCESS_REVOKED refusal.
 export async function openInterviewSession(...args: Parameters<typeof openInterviewSessionCommand>) {
-  return actionResult(() => openInterviewSessionCommand(...args), "openInterviewSession")
+  return interviewActionResult(() => openInterviewSessionCommand(...args), "openInterviewSession")
 }
 
 export async function saveInterviewSession(...args: Parameters<typeof saveInterviewSessionCommand>) {
-  return actionResult(() => saveInterviewSessionCommand(...args), "saveInterviewSession")
+  return interviewActionResult(() => saveInterviewSessionCommand(...args), "saveInterviewSession")
 }
 
 export async function getEarlierInterviewReviews(...args: Parameters<typeof getEarlierInterviewReviewsCommand>) {
-  return actionResult(() => getEarlierInterviewReviewsCommand(...args), "getEarlierInterviewReviews")
+  return interviewActionResult(() => getEarlierInterviewReviewsCommand(...args), "getEarlierInterviewReviews")
 }
 
 export async function getInterviewRoundScore(...args: Parameters<typeof getInterviewRoundScoreCommand>) {
-  return actionResult(() => getInterviewRoundScoreCommand(...args), "getInterviewRoundScore")
+  return interviewActionResult(() => getInterviewRoundScoreCommand(...args), "getInterviewRoundScore")
 }
 
 export async function getSubmittedInterviewReviewPage(...args: Parameters<typeof getSubmittedInterviewReviewPageCommand>) {
@@ -308,9 +336,9 @@ export async function getSubmittedInterviewReviews(...args: Parameters<typeof ge
 }
 
 export async function getSubmittedInterviewReview(...args: Parameters<typeof getSubmittedInterviewReviewCommand>) {
-  return actionResult(() => getSubmittedInterviewReviewCommand(...args), "getSubmittedInterviewReview")
+  return interviewActionResult(() => getSubmittedInterviewReviewCommand(...args), "getSubmittedInterviewReview")
 }
 
 export async function getPreviousInterviewScores(...args: Parameters<typeof getPreviousInterviewScoresCommand>) {
-  return actionResult(() => getPreviousInterviewScoresCommand(...args), "getPreviousInterviewScores")
+  return interviewActionResult(() => getPreviousInterviewScoresCommand(...args), "getPreviousInterviewScores")
 }

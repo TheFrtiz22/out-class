@@ -9,7 +9,7 @@ import { interviewCapabilities, interviewScopeSchema, type InterviewScope } from
 import { kitSchema, interviewDraftSchema } from "@/lib/interview-kits";
 import { PRESENCE_TTL_MS, INVITATION_TTL_MS, type CollaborationView } from "@/lib/interview-collaboration";
 import { CollaborationInitializationRequired, collaborationAccess, collaborationScope, collaborationSession, eligibleDestination, memberName } from "@/utils/interview-collaboration";
-import { interviewTransactionOptions } from "@/utils/interview-access";
+import { interviewActionResult, interviewTransactionOptions } from "@/utils/interview-access";
 import { getInterviewWorkspace } from "@/actions/interview-kits";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
 import { interviewTiming } from "@/lib/interview-session-timing";
@@ -37,7 +37,7 @@ async function validInvite(tx: AppTransactionClient, id: string, sourceId: strin
 
 /** Authorized polling replaces the old unauthenticated shared-notes broadcast.
  * No browser SQL/realtime subscription exists; every refresh checks current access. */
-export async function getInterviewCollaboration(input: z.infer<typeof inputSchema>): Promise<CollaborationView> {
+async function getInterviewCollaborationCommand(input: z.infer<typeof inputSchema>): Promise<CollaborationView> {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
   const read = (readOnly: boolean) => prisma.$transaction(async tx => {
     const { member, session, roomKey, app, round, booking, panelIds } = await collaborationSession(tx, data, user.id, readOnly);
@@ -88,7 +88,7 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
   catch (error) { if (!(error instanceof CollaborationInitializationRequired)) throw error; return read(false); }
 }
 
-export async function selectSharedInterviewQuestion(input: z.infer<typeof inputSchema> & { questionId: string }) {
+async function selectSharedInterviewQuestionCommand(input: z.infer<typeof inputSchema> & { questionId: string }) {
   const data = inputSchema.extend({ questionId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { session, record, member, round, app } = await collaborationSession(tx, data, user.id);
@@ -114,12 +114,12 @@ export async function selectSharedInterviewQuestion(input: z.infer<typeof inputS
   }, transactionOptions);
 }
 
-export async function leaveInterviewCollaboration(input: z.infer<typeof inputSchema>) {
+async function leaveInterviewCollaborationCommand(input: z.infer<typeof inputSchema>) {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => { const { member, session } = await collaborationSession(tx, data, user.id); await tx.interviewPresence.deleteMany({ where: { memberId: member.id, clientId: data.clientId, sessionId: session.id } }); }, transactionOptions);
 }
 
-export async function dismissInterviewInvitation(input: z.infer<typeof inputSchema> & { invitationId: string }) {
+async function dismissInterviewInvitationCommand(input: z.infer<typeof inputSchema> & { invitationId: string }) {
   const data = inputSchema.extend({ invitationId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => { const { member } = await collaborationSession(tx, data, user.id); await tx.interviewInvitation.updateMany({ where: { id: data.invitationId, recipientId: member.id, dismissedAt: null }, data: { dismissedAt: new Date() } }); }, transactionOptions);
 }
@@ -177,4 +177,19 @@ export async function confirmInterviewAdvance(input: { moveId: string; clientId:
     await tx.interviewPresence.upsert({ where: { memberId_clientId: { memberId: member.id, clientId: data.clientId } }, create: { memberId: member.id, clientId: data.clientId, sessionId: destination.id }, update: { sessionId: destination.id, seenAt: new Date() } });
     return { confirmed: true };
   }, transactionOptions);
+}
+
+// The room polls and leaves through these while open. A viewer removed from the panel gets a
+// typed ACCESS_REVOKED refusal (no data) instead of a thrown denial that production reports as 500.
+export async function getInterviewCollaboration(...args: Parameters<typeof getInterviewCollaborationCommand>) {
+  return interviewActionResult(() => getInterviewCollaborationCommand(...args), "getInterviewCollaboration");
+}
+export async function selectSharedInterviewQuestion(...args: Parameters<typeof selectSharedInterviewQuestionCommand>) {
+  return interviewActionResult(() => selectSharedInterviewQuestionCommand(...args), "selectSharedInterviewQuestion");
+}
+export async function leaveInterviewCollaboration(...args: Parameters<typeof leaveInterviewCollaborationCommand>) {
+  return interviewActionResult(() => leaveInterviewCollaborationCommand(...args), "leaveInterviewCollaboration");
+}
+export async function dismissInterviewInvitation(...args: Parameters<typeof dismissInterviewInvitationCommand>) {
+  return interviewActionResult(() => dismissInterviewInvitationCommand(...args), "dismissInterviewInvitation");
 }
