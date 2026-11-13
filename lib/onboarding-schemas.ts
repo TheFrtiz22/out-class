@@ -1,6 +1,7 @@
 import { gpaSchema, linkedinUrlSchema } from "@/lib/student-profile"
 import { z } from "zod"
 import { newPasswordSchema } from "@/lib/password-policy"
+import { graduationYearMessage, isSupportedGraduationYear } from "@/lib/graduation-years"
 
 // ─── Step 1: Account Basics ───────────────────────────────────────────────────
 
@@ -46,13 +47,10 @@ export const academicProfileSchema = z.object({
   gradYear: z
     .string()
     .min(1, "Graduation year is required")
-    .refine(
-      (v) => {
-        const n = Number(v)
-        return Number.isInteger(n) && n >= 2025 && n <= 2030
-      },
-      "Choose a year between 2025 and 2030"
-    ),
+    .superRefine((v, ctx) => {
+      const now = new Date()
+      if (v && !isSupportedGraduationYear(v, now)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: graduationYearMessage(now) })
+    }),
   major: z
     .string()
     .min(1, "Major is required")

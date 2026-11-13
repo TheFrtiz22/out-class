@@ -38,6 +38,7 @@ import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-v
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
+import { graduationYearOptions } from "@/lib/graduation-years"
 import { uploadProfileFile } from "@/actions/storage"
 import {
   accountBasicsSchema,
@@ -61,8 +62,6 @@ const STEPS = [
   { label: "Academic", icon: GraduationCap },
   { label: "Experience", icon: Briefcase },
 ] as const
-
-const GRAD_YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
 
 // Steps 2 and 3 widgets load in their own chunks (server-rendered when visible). The wizard starts
 // both downloads after mount, and each placeholder matches the control's height, so a later step
@@ -221,6 +220,8 @@ export function StudentOnboardingWizard({
   termsAccepted?: boolean
 }) {
   const { isImpersonating } = useAuth()
+  // Computed per render (Eastern calendar year) so the list never goes stale; the server re-validates.
+  const graduationYears = graduationYearOptions()
   // Clickwrap: unticked until the person ticks it; asked once, on the account step.
   const askTerms = TERMS_ACCEPTANCE_REQUIRED && !termsAccepted
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -692,7 +693,7 @@ export function StudentOnboardingWizard({
                   <div className="space-y-1.5">
                     <Label htmlFor="onboarding-grad-year">Graduation year</Label>
                     <GraduationYearSelect
-                      years={GRAD_YEARS}
+                      years={graduationYears}
                       value={step3Form.watch("gradYear")}
                       onValueChange={(v) =>
                         step3Form.setValue("gradYear", v, {

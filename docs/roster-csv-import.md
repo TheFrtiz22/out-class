@@ -18,7 +18,8 @@ school mapping, including the existing UVA computing-ID grammar. Unsupported or
 ambiguous school email mappings require configuration before import.
 
 Rows validate required names/identifiers, control characters, formula-like names,
-identifier syntax, and the profile wizard's supported years (2025–2030). Missing
+identifier syntax, and the profile wizard's supported graduation years (`lib/graduation-years.ts`: last
+year through six years ahead, by the Eastern calendar year). Missing
 year is a warning. The first valid occurrence of an identifier can proceed; later
 valid occurrences are duplicates. An invalid earlier row does not suppress a later
 valid one. Existing users are matched for preview/audit only: email matching never
