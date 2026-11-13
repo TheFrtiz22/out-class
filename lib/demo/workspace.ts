@@ -230,6 +230,11 @@ export const updateStudentProfileSection: Demo<"updateStudentProfileSection"> = 
     return { profile: user.profile }
   })
 }
+// Interest answers are private to a real account; Demo Mode has none and saves none.
+export const getMyInterestSurvey: Demo<"getMyInterestSurvey"> = () => null
+const noDemoInterestWrite = () => { throw new Error("Exit Demo Mode to save your club interests.") }
+export const saveMyInterestSurvey: Demo<"saveMyInterestSurvey"> = () => noDemoInterestWrite()
+export const dismissInterestSurveyPrompt: Demo<"dismissInterestSurveyPrompt"> = () => noDemoInterestWrite()
 export const uploadProfileFile: Demo<"uploadProfileFile"> = () => {
   throw new Error("Uploads are disabled in Demo Mode. The sample PDF and photos stay isolated from production.")
 }
