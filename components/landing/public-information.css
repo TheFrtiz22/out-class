@@ -114,7 +114,7 @@
 /* Photographs sit in round light-glass frames (docs/public-site/redesign/About.mockup.html). */
 .oc-about-hero-photo, .oc-about-grounded figure { --oc-public-glass-radius: 1.625rem; padding: 14px; }
 .oc-about-hero-image { position: relative; }
-.oc-about-hero-photo img { display: block; position: relative; width: 100%; aspect-ratio: 4 / 4.6; object-fit: cover; object-position: center 55%; border-radius: var(--oc-radius-xl); }
+.oc-about-hero-photo img { display: block; position: relative; width: 100%; aspect-ratio: 4 / 4.6; object-fit: cover; object-position: center 50%; border-radius: var(--oc-radius-xl); }
 .oc-about-hero-photo figcaption { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 12px 4px 2px; font-size: var(--oc-size-13); line-height: 1.5; color: var(--muted-foreground); }
 .oc-about-problem { border-bottom: 1px solid var(--border); }
 .oc-about-idea .oc-public-section > h2 { max-width: 24ch; }
@@ -128,7 +128,7 @@
 .oc-about-perspective.oc-public-glass-navy :is(.oc-about-margin-label, p) { color: var(--oc-rail-muted); }
 .oc-about-grounded { align-items: center; }
 .oc-about-grounded figure { margin: 0; }
-.oc-about-grounded img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center; border-radius: var(--oc-radius-xl); }
+.oc-about-grounded img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 40% center; border-radius: var(--oc-radius-xl); }
 .oc-about-grounded figcaption { margin: 12px 4px 2px; font-size: var(--oc-size-13); line-height: 1.5; color: var(--muted-foreground); }
 .oc-about-independence { width: min(var(--oc-public-width), calc(100% - var(--oc-public-gutter) * 2)); margin: auto; border-block: 1px solid var(--border); padding-block: 24px; }
 .oc-about-independence p { max-width: 85ch; margin: auto; font-size: var(--oc-size-13); color: var(--muted-foreground); line-height: 1.8; }

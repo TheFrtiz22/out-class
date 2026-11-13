@@ -3,8 +3,6 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { handleClubLink } from "@/lib/workspace-navigation"
-import { canLeaveWorkspace } from "@/lib/product-navigation"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { hasPermission } from "@/lib/permissions"
 import { memberDate } from "@/components/member-overview"
@@ -12,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Dashboard, DashboardActions, DashboardCard, DashboardFoot, DashboardGrid, DashboardHero, DashboardMore, DashboardQuiet, DateChipList, GlassRow, GlassRowList, MetricTiles, NeedsAction, NeedsYouRow, PipelineBars } from "@/components/product/dashboard/dashboard"
 import { keyDates, pipeline, railHrefs, recruitingActive, recruitingNeeds, voteHref, type NeedsCard } from "@/components/club-home/club-home-model"
-import { InterviewsCard } from "@/components/club-home/club-home-sections"
+import { InterviewsCard, clubLinkProps } from "@/components/club-home/club-home-sections"
 import { PageHeader } from "@/components/ui/page-header"
 import { Badge } from "@/components/ui/badge"
 import { CalendarPlus, Users2 } from "@/components/icons"
@@ -49,8 +47,8 @@ export function RecruitingHero({ clubId, clubName, membership, data }: { clubId:
       action={<DashboardActions className="oc-recruiting-actions">
         {active && op?.intake && <Badge variant={applicationsClosed(op) ? "outline" : "success"} className="oc-command-status" data-state={applicationsClosed(op) ? "closed" : "open"}>Applications {applicationsClosed(op) ? "closed" : "open"}</Badge>}
         {/* Cycle actions appear once the overview shows an active cycle; with none, the page offers setup instead. */}
-        {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link href={hrefs.applicants} onClick={event => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, hrefs.applicants!) }}><Users2 aria-hidden="true" />Open applicants</Link></Button>}
-        {active && hasPermission(membership, "interviews.manage") && hrefs.interviews && <Button size="lg" data-tone="interview" asChild><Link href={`${hrefs.interviews}&interviewTab=schedule`} onClick={event => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, `${hrefs.interviews}&interviewTab=schedule`) }}><CalendarPlus aria-hidden="true" />{TERMS.scheduleInterviews}</Link></Button>}
+        {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link {...clubLinkProps(clubId, hrefs.applicants)}><Users2 aria-hidden="true" />Open applicants</Link></Button>}
+        {active && hasPermission(membership, "interviews.manage") && hrefs.interviews && <Button size="lg" data-tone="interview" asChild><Link {...clubLinkProps(clubId, `${hrefs.interviews}&interviewTab=schedule`)}><CalendarPlus aria-hidden="true" />{TERMS.scheduleInterviews}</Link></Button>}
       </DashboardActions>} />
   </DashboardHero>
 }
@@ -76,12 +74,12 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
   const vote = op.votes.find(v => v.state === "OPEN") ?? op.votes.find(v => v.state === "DRAFT" || v.state === "PAUSED") ?? op.votes[0]
   const dates = keyDates(op)
   const cards = recruitingNeeds(data, hrefs)
-  const action = (card: NeedsCard) => card.action.kind === "link" ? <NeedsAction href={card.action.href}>{card.action.label}</NeedsAction>
+  const action = (card: NeedsCard) => card.action.kind === "link" ? <NeedsAction {...clubLinkProps(club.id, card.action.href)}>{card.action.label}</NeedsAction>
     : card.action.kind === "applicant" ? <NeedsAction onClick={() => { const a = card.action; if (a.kind === "applicant") { setReviewContext(false); setApplicant(a.applicationId) } }}>{card.action.label}</NeedsAction> : null
 
   if (!recruitingActive(op)) return <Dashboard className="oc-command-center oc-command-recruiting" busy={refreshing}>
     <div className="oc-dashboard-state oc-recruiting-empty"><DashboardQuiet><strong>No recruiting cycle is active.</strong> Applicants, reviews, interviews and votes show up here once a cycle opens.</DashboardQuiet>
-      {hasPermission(membership, "recruitment.manage") && <Button asChild><Link href={`/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=cycles`}>Set up recruiting</Link></Button>}</div>
+      {hasPermission(membership, "recruitment.manage") && <Button asChild><Link {...clubLinkProps(club.id, `/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=cycles`)}>Set up recruiting</Link></Button>}</div>
   </Dashboard>
 
   return <Dashboard className="oc-command-center oc-command-recruiting" busy={refreshing}>
@@ -94,11 +92,11 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
           <PipelineBars stages={op.rounds.map((r, i) => ({ id: r.id, label: `${String(i + 1).padStart(2, "0")} · ${r.name}`, count: r.count }))} />
           <DashboardFoot>{[pluralize(total, "active applicant"), ...(statuses ? statuses.stages.slice(1).map(stage => pluralize(stage.count, ...stage.noun)) : []), `${pluralize(pending, "review")} left for you`].join(" · ")}</DashboardFoot>
         </> : empty(hasPermission(membership, "recruitment.manage") ? "No recruiting rounds yet." : "No rounds are available with your current review access.",
-          hasPermission(membership, "recruitment.manage") ? <DashboardMore href={`/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=cycles`}>Set up rounds</DashboardMore> : undefined)}
+          hasPermission(membership, "recruitment.manage") ? <DashboardMore {...clubLinkProps(club.id, `/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=cycles`)}>Set up rounds</DashboardMore> : undefined)}
       </DashboardCard>
       <DashboardCard id="dashboard-reviews" headingTabIndex={-1} index={cards.length + 2} className="oc-review-console"
         title={<>Review queue <span className="oc-section-count oc-dashboard-count" aria-hidden="true">{pending}</span></>}
-        more={{ href: `${base}&tool=applicants`, label: "All applicants", prefetch: false, onClick: event => handleClubLink(event as React.MouseEvent<HTMLAnchorElement>, `${base}&tool=applicants`) }}>
+        more={{ ...clubLinkProps(club.id, `${base}&tool=applicants`), label: "All applicants" }}>
         <p className="oc-command-footnote oc-dashboard-note">Applicants waiting on your review</p>
         {queue.length ? <GlassRowList className="oc-review-records">{queue.map((a, index) => <li key={a.id}><GlassRow data-applicant-id={a.id} onClick={() => openReview(a.id)}
             lead={<span className="oc-record-number oc-dashboard-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>} title={a.label} detail={`${a.round} · ${a.anonymous ? "Anonymous review" : "Current panel assignment"}`} trailing={<span className="oc-dashboard-row-end">Review</span>} /></li>)}</GlassRowList>
@@ -107,7 +105,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
       </DashboardCard>
       {(op.bookings.length > 0 || canSchedule && op.rounds.some(r => r.needsBooking > 0))
         ? <InterviewsCard data={data} hrefs={hrefs} index={cards.length + 3} onOpen={setBooking} />
-        : <DashboardCard id="club-home-interviews" title="Interviews" index={cards.length + 3} more={canSchedule && hrefs.interviews ? { href: `${hrefs.interviews}&interviewTab=schedule`, label: TERMS.scheduleInterviews } : undefined} moreAt="foot">
+        : <DashboardCard id="club-home-interviews" title="Interviews" index={cards.length + 3} more={canSchedule && hrefs.interviews ? { ...clubLinkProps(club.id, `${hrefs.interviews}&interviewTab=schedule`), label: TERMS.scheduleInterviews } : undefined} moreAt="foot">
             <DashboardQuiet>{canSchedule ? "No interviews in the next 7 days." : "Your assigned rooms show up here when interviews are scheduled."}</DashboardQuiet>
           </DashboardCard>}
     </>} side={<>
@@ -129,7 +127,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
       </DashboardCard>}
       {vote && <DashboardCard id="dashboard-voting" title="Voting" index={cards.length + 5} className="oc-voting-summary">
         <GlassRowList><li><GlassRow title={vote.round.name} detail={vote.state === "COMPLETE" || vote.state === "COMPLETED" ? "Voting complete · Send decisions when you are ready" : `${votingStateLabel(vote.state)} session`}
-          action={<Button variant="outline" asChild><Link href={voteHref(club.id, membership, vote)}>{!vote.participants.length && vote.joinOpenedAt && !hasPermission(membership, "decisions.manage") ? "Join session" : TERMS.openSession}</Link></Button>} /></li></GlassRowList>
+          action={<Button variant="outline" asChild><Link {...clubLinkProps(club.id, voteHref(club.id, membership, vote))}>{!vote.participants.length && vote.joinOpenedAt && !hasPermission(membership, "decisions.manage") ? "Join session" : TERMS.openSession}</Link></Button>} /></li></GlassRowList>
       </DashboardCard>}
     </>} />
     {applicant && <Review key={applicant} clubId={club.id} applicationId={applicant} onClose={() => setApplicant(null)} onChanged={onChanged} onNext={reviewContext && queue.some(a => a.id !== applicant) ? () => setApplicant(queue.find(a => a.id !== applicant)!.id) : undefined} />}

@@ -35,10 +35,10 @@ export default async function UvaPage() {
       heroAside={
         <figure className="oc-campus-hero-photo">
           <Image
-            src="/images/campus/lawn-aerial.jpg"
-            alt="An aerial view of the University of Virginia Lawn, with the Rotunda and surrounding pavilions in warm evening light."
-            width={675}
-            height={450}
+            src="/images/campus/rotunda-1600.webp"
+            alt="The University of Virginia Rotunda, seen from the southeast on a clear autumn afternoon."
+            width={1592}
+            height={1062}
             sizes="(max-width: 800px) calc(100vw - 40px), (max-width: 1200px) 44vw, 500px"
             priority
           />
