@@ -9,7 +9,7 @@ export function LandingIntro({ children }: { children: ReactNode }) {
     <div className="oc-landing-intro">
       <div className="oc-intro-visual" data-scroll-indicator-region="">
         <div className="oc-intro-backdrop" aria-hidden="true">
-          <CampusBackdrop view="sunset-rotunda" />
+          <CampusBackdrop view="rotunda" />
         </div>
         {children}
         <ScrollIndicator className="oc-intro-scroll" targetId="about" />
