@@ -97,6 +97,8 @@ test('production redirects only from the canonical site; other environments use 
 test('authorization asks for read-only calendar access with PKCE and no refresh token', () => {
   const { state, verifier, challenge } = outlook.pkce()
   assert.ok(state.length >= 32 && verifier.length >= 43)
+  assert.equal(outlook.stateMatches(state, state), true)
+  for (const other of [null, '', state.slice(1), state + 'x']) assert.equal(outlook.stateMatches(other, state), false)
   assert.equal(challenge, require('node:crypto').createHash('sha256').update(verifier).digest('base64url'))
   const url = new URL(outlook.authorizeUrl({ clientId: 'id', tenant: 'organizations' }, { redirectUri: 'https://www.out-class.net/api/calendar/outlook/callback', state, challenge, loginHint: 'a@virginia.edu' }))
   assert.equal(url.origin + url.pathname, 'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize')
@@ -155,7 +157,7 @@ test('routes: signed-in, not impersonating or in demo; state, account and single
   }
   assert.doesNotMatch(start, /NextResponse\.json/, 'start reports every outcome to the editor through the popup page')
   assert.match(start, /httpOnly: true/); assert.match(start, /path: OUTLOOK_COOKIE_PATH, maxAge: 600/)
-  assert.match(callback, /params\.get\("state"\) !== pending\.state/)
+  assert.match(callback, /!stateMatches\(params\.get\("state"\), pending\.state\)\) return fail\("expired"\)/)
   assert.match(callback, /user\.id !== pending\.userId/)
   assert.match(callback, /maxAge: 0/)
   assert.ok(callback.indexOf('maxAge: 0') < callback.indexOf('const config = outlookConfig()'), 'every response clears the pending lookup')

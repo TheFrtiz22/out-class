@@ -82,16 +82,13 @@ async function previewRosterImportCommand(input: unknown) {
     }
     const summary = rosterSummary(rows);
     if (existing) {
-      let changed = false;
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i], saved = existing.rows[i];
-        if (databaseStatus(row) !== saved.status) {
+      const changes = rows.flatMap((row, i) => databaseStatus(row) !== existing.rows[i].status ? [{ saved: existing.rows[i], row }] : []);
+      if (changes.length && !await settleRosterRows(tx, existing, changes)) {
+        for (const { saved, row } of changes)
           await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: databaseStatus(row), errors: [...row.errors, ...row.warnings],
             matchedUserId: row.matchedUserId, schoolIdentityId: row.schoolIdentityId, invitationId: row.invitationId } });
-          changed = true;
-        }
       }
-      if (changed) {
+      if (changes.length) {
         await tx.rosterImport.update({ where: { id: existing.id }, data: { failedRows: summary.invalid } });
         await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.repreview", targetId: existing.id, clubId: data.clubId, details: summary } });
       }
@@ -164,6 +161,30 @@ async function bulkReadyRows(tx: AppTransactionClient, record: { id: string; clu
   return new Set(entries.map(({ saved }) => saved.id));
 }
 
+type SettledRow = Pick<RosterRow, "status" | "errors" | "warnings"> & { matchedUserId: string | null; schoolIdentityId: string | null; invitationId: string | null };
+/** Records the outcome of rows that get no invitation in one statement. Returns false (nothing written)
+ * when a row constraint fails, so the caller records each row on its own as before. */
+async function settleRosterRows(tx: AppTransactionClient, record: { id: string; clubId: string }, entries: { saved: RosterImportRow; row: SettledRow }[]) {
+  if (!entries.length) return true;
+  const payload = JSON.stringify(entries.map(({ saved, row }) => ({ id: saved.id, status: databaseStatus(row as RosterRow), errors: [...row.errors, ...row.warnings],
+    user: row.matchedUserId, identity: row.schoolIdentityId, invitation: row.invitationId })));
+  await tx.$executeRaw`SAVEPOINT roster_settle`;
+  try {
+    const count = await tx.$executeRaw`UPDATE "RosterImportRow" r SET status = x.status::"RosterRowStatus", errors = x.errors, "matchedUserId" = x."user",
+      "schoolIdentityId" = x.identity, "invitationId" = x.invitation, "updatedAt" = CURRENT_TIMESTAMP
+      FROM jsonb_to_recordset(${payload}::jsonb) AS x(id text, status text, errors jsonb, "user" text, identity text, invitation text)
+      WHERE r.id = x.id AND r."importId" = ${record.id} AND r."clubId" = ${record.clubId}`;
+    if (count !== entries.length) throw new ActionError("Some rows in this import changed. Upload the file again to review them.", "STALE");
+  } catch (error) {
+    if (!rowDataError(error)) throw error;
+    await tx.$executeRaw`ROLLBACK TO SAVEPOINT roster_settle`;
+    await tx.$executeRaw`RELEASE SAVEPOINT roster_settle`;
+    return false;
+  }
+  await tx.$executeRaw`RELEASE SAVEPOINT roster_settle`;
+  return true;
+}
+
 /** One resumable transaction of at most 50 ready rows. Creates MEMBER invitations only; no email. */
 async function confirmRosterImportCommand(importId: string) {
   z.string().uuid().parse(importId);
@@ -200,13 +221,19 @@ async function confirmRosterImportCommand(importId: string) {
       return inputs[index].success && row.status === "READY" && saved.normalizedIdentifier === row.normalizedIdentifier ? [{ saved, row }] : [];
     });
     const completedIds = await bulkReadyRows(tx, record, ready, config, user.id);
-    for (const saved of selected.filter(row => !completedIds.has(row.id))) {
+    const remaining = selected.filter(row => !completedIds.has(row.id)).map(saved => {
       const index = indexById.get(saved.id)!;
       const row = classified[index];
       if (!inputs[index].success) { row.status = "INVALID"; row.errors = ["Malformed saved roster input; reupload this row"]; }
       if (saved.normalizedIdentifier !== row.normalizedIdentifier && row.status === "READY") {
         row.status = "INVALID"; row.errors.push("School identifier mapping changed; reupload this row");
       }
+      return { saved, row };
+    });
+    // Rows that get no invitation are recorded together; on a row constraint failure each is recorded below.
+    const settled = await settleRosterRows(tx, record, remaining.filter(({ row }) => row.status !== "READY"));
+    for (const { saved, row } of remaining) {
+      if (settled && row.status !== "READY") continue;
       await tx.$executeRaw`SAVEPOINT roster_import_row`;
       const expiredIds: string[] = [];
       let createdInvitationId = "";
