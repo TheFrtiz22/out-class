@@ -9,8 +9,11 @@ import { Panel } from "@/components/ui/panel";
 import { ApplicantIdentity } from "@/components/applicant-identity";
 import { InterviewListMore } from "@/components/interview-list-more";
 import { useInterviewListPages } from "@/hooks/use-interview-list-pages";
+import { compactRoundScore } from "@/lib/interview-review-summary";
 type Row = Awaited<ReturnType<typeof getSubmittedInterviewReviewPage>>["items"][number];
 const rowDomId = (id: string) => `submitted-review-${id}`;
+/** Rows carry a score only when the server says this viewer may read it; null shows nothing. */
+const rowScore = (row: Row) => row.score ? compactRoundScore(row.score) ?? "Not scored" : null;
 type Review = Awaited<ReturnType<typeof getSubmittedInterviewReview>>;
 export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewId }: { clubId: string; filters?: ApplicantInterviewFilters; initialReviewId?: string }) {
   const { applicationId, roundId, cycleId } = filters;
@@ -42,7 +45,7 @@ export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewI
     <p className="text-sm text-muted-foreground">Read-only closing reviews, including previous rounds. Newest first. Private question notes are not included.</p>
     {loading && <LoadingState label="Loading reviews…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button type="button" variant="outline" size="sm" onClick={list.retry}>Try again</Button></p>}
     {!loading && !error && !rows.length && <p role="status">No submitted reviews available.</p>}
-    <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button id={rowDomId(row.id)} type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto min-h-11 whitespace-normal py-2 text-left" aria-pressed={selected?.id === row.id} aria-label={`${row.applicantName} · ${row.roundName} · Open review`} onClick={() => { setReview(null); setSelected(row); if (window.location?.href && window.history) { const url = new URL(window.location.href); url.searchParams.set("reviewId", row.id); window.history.replaceState(null, "", url.pathname + url.search); } }}><ApplicantIdentity name={row.applicantName} photo={row.photo} anonymous={row.anonymous}><span className="text-xs font-normal text-muted-foreground">{row.roundName} · Open review</span></ApplicantIdentity></Button></li>)}</ul>
+    <ul className="flex flex-wrap gap-2">{rows.map(row => { const score = rowScore(row); return <li key={row.id}><Button id={rowDomId(row.id)} type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto min-h-11 whitespace-normal py-2 text-left" aria-pressed={selected?.id === row.id} aria-label={`${row.applicantName} · ${row.roundName}${score ? ` · Average interview score ${score}` : ""} · Open review`} onClick={() => { setReview(null); setSelected(row); if (window.location?.href && window.history) { const url = new URL(window.location.href); url.searchParams.set("reviewId", row.id); window.history.replaceState(null, "", url.pathname + url.search); } }}><ApplicantIdentity name={row.applicantName} photo={row.photo} anonymous={row.anonymous}><span className="text-xs font-normal text-muted-foreground">{row.roundName} · Open review</span>{score && <span className={row.score?.average === null ? "text-xs font-normal text-muted-foreground" : "text-xs font-medium tabular-nums"} data-review-score="">{score}</span>}</ApplicantIdentity></Button></li>; })}</ul>
     {!error && list.seekMissing && linked && !rows.some(r => r.id === linked) && <p role="status" className="text-xs text-muted-foreground">{list.nextCursor ? "The linked review isn’t in the newest reviews shown. Load more to find this review." : "The linked review isn’t available with your current access."}</p>}
     {!error && <InterviewListMore shown={rows.length} total={list.total} hasMore={!!list.nextCursor} state={list.more} announcement={list.announcement} label="reviews" onMore={() => void list.loadMore()} />}
     {selected && <Panel as="section" aria-label="Read-only closing review" className="space-y-4">
