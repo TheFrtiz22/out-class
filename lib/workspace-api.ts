@@ -26,6 +26,7 @@ import * as recruitingRules from "@/actions/recruiting-rules"
 import * as clubOverview from "@/actions/club-overview"
 import * as tasksApi from "@/actions/tasks"
 import * as interviewResumes from "@/actions/interview-resumes"
+import * as resumeSummaries from "@/actions/resume-summary"
 import * as interviewGrants from "@/actions/organization-members"
 import * as interviewKits from "@/actions/interview-kits"
 import * as collaboration from "@/actions/interview-collaboration"
@@ -152,6 +153,7 @@ export const getInterviewApplicantPanel = adapt(interviewResumes.getInterviewApp
 export const getInterviewResumeModerationQueue = adapt(interviewResumes.getInterviewResumeModerationQueue, "getInterviewResumeModerationQueue")
 export const getInterviewResumeModerationPage = adapt(interviewResumes.getInterviewResumeModerationPage, "getInterviewResumeModerationPage")
 export const pinInterviewResume = adapt(interviewResumes.pinInterviewResume, "pinInterviewResume")
+export const getResumeSummary = adapt(resumeSummaries.getResumeSummary, "getResumeSummary")
 export const getInterviewResumeAnnotations = adapt(interviewResumes.getInterviewResumeAnnotations, "getInterviewResumeAnnotations")
 export const saveInterviewResumeAnnotation = adapt(interviewResumes.saveInterviewResumeAnnotation, "saveInterviewResumeAnnotation")
 export const deleteInterviewResumeAnnotation = adapt(interviewResumes.deleteInterviewResumeAnnotation, "deleteInterviewResumeAnnotation")

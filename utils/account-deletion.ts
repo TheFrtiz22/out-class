@@ -106,6 +106,7 @@ export async function performAccountDeletion(
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`
     if (taskFiles.size) await tx.auditLog.create({ data: { actorId: context.actorId, action: accountDeletionAudit.storagePending, targetId: userId, details: { taskFiles: [...taskFiles] } } })
     await tx.studentProfile.deleteMany({ where: { userId } })
+    await tx.resumeSummary.deleteMany({ where: { userId } })
     await tx.eventRsvp.deleteMany({ where: { userId } })
     await tx.savedCampusEvent.deleteMany({ where: { userId } })
     await tx.corkboardClub.deleteMany({ where: { userId } })

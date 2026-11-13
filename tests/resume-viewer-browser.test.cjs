@@ -18,11 +18,15 @@ function App(){return <main><h1>Dossier</h1>
 <ResumeViewerDialog href="https://drive.example.com/view/abc" name="Ada Link" clubId="00000000-0000-4000-8000-000000000001" applicationId="00000000-0000-4000-8000-000000000005" trigger="Linked résumé"/>
 </main>}
 createRoot(document.getElementById('root')).render(<App/>)`
-const mocks = { 'next/dynamic': `module.exports={__esModule:true,default:()=>function PdfPages(p){return require('react').createElement('div',{'data-testid':'pdf-pages','data-path':p.resource.path,role:'region','aria-label':p.name+' résumé preview',tabIndex:0},'PDF pages')}}`, '@/components/interview-resume-preview': 'module.exports={default:()=>null}' }
+// The summary request goes through the workspace API facade; the fixture answers it like the server would.
+const summary = { status: 'ready', summary: { parserVersion: 1, confidence: 0.9, sections: [
+  { kind: 'Education', heading: 'EDUCATION', items: [{ org: 'Fictional University', role: 'B.A. Mathematics', dates: 'May 2027', bullets: [], metrics: ['GPA 3.9/4.0'] }] },
+  { kind: 'Experience', heading: 'EXPERIENCE', items: [{ org: 'Analytical Engine Lab', role: 'Research Assistant', dates: 'Jun 2025 – Present', bullets: ['Wrote the first published algorithm'], metrics: ['40%'] }] }] } }
+const mocks = { 'next/link': `module.exports=require('react').forwardRef((p,ref)=>require('react').createElement('a',{...p,ref,prefetch:undefined}))`, '@/contexts/demo-context': 'exports.useDemoMode=()=>({isDemoEnabled:false})', '@/lib/workspace-api': `window.summaryCalls=[];exports.getResumeSummary=async r=>{window.summaryCalls.push(r);return ${JSON.stringify(summary)}}`, 'next/dynamic': `module.exports={__esModule:true,default:()=>function PdfPages(p){return require('react').createElement('div',{'data-testid':'pdf-pages','data-path':p.resource.path,role:'region','aria-label':p.name+' résumé preview',tabIndex:0},'PDF pages')}}`, '@/components/interview-resume-preview': 'module.exports={default:()=>null}' }
 
 async function withPage(viewport, run) {
   const js = bundle(entry, mocks)
-  const css = fs.readFileSync('styles/tokens.css', 'utf8') + fs.readFileSync('styles/interface-primitives.css', 'utf8') + fs.readFileSync('components/resume-viewer.css', 'utf8') +
+  const css = fs.readFileSync('styles/tokens.css', 'utf8') + fs.readFileSync('styles/interface-primitives.css', 'utf8') + fs.readFileSync('components/resume-viewer.css', 'utf8') + fs.readFileSync('styles/filter-controls.css', 'utf8') + fs.readFileSync('components/resume-summary-panel.css', 'utf8') +
     // Minimal stand-ins for the Tailwind utilities on the shared Dialog primitive.
     '[data-slot=dialog-overlay]{position:fixed;inset:0}[data-slot=dialog-content]{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}body{margin:0;font-family:sans-serif}'
   const server = http.createServer((req, res) => { if (req.url === '/fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end(js); return } res.setHeader('content-type', 'text/html; charset=utf-8'); res.end(`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Résumé viewer</title><style>${css}</style><div id="root"></div><script src="/fixture.js"></script></html>`) })
@@ -47,7 +51,23 @@ test('browser: the résumé viewer opens in-page and closes on X, Esc and backdr
     const dialog = page.getByRole('dialog', { name: 'Résumé · Ada Lovelace' })
     await dialog.waitFor()
     assert.equal(await dialog.getAttribute('aria-labelledby') !== null, true)
+    // One panel: the section summary first, the document one keyboard step away.
+    const summaryTab = dialog.getByRole('tab', { name: 'Summary' }), documentTab = dialog.getByRole('tab', { name: 'Document' })
+    assert.equal(await summaryTab.getAttribute('aria-selected'), 'true')
+    await dialog.getByText('Analytical Engine Lab').waitFor()
+    await dialog.getByText('From the résumé file', { exact: false }).waitFor()
+    assert.ok(await dialog.getByText('GPA 3.9/4.0').isVisible())
+    assert.equal(await page.getByTestId('pdf-pages').count(), 0, 'the document loads only when asked for')
+    assert.deepEqual(await page.evaluate(() => window.summaryCalls.map(c => c.kind)).then(k => [...new Set(k)]), ['recruiting'])
+    await summaryTab.focus(); await page.keyboard.press('ArrowRight')
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role') + ':' + document.activeElement?.textContent), 'tab:Document', 'arrow keys move focus between tabs')
+    await page.keyboard.press('Enter')
+    assert.equal(await documentTab.getAttribute('aria-selected'), 'true')
+    assert.equal(await summaryTab.getAttribute('tabindex'), '-1', 'one tab stop')
+    assert.equal(await documentTab.getAttribute('aria-controls'), await dialog.getByRole('tabpanel').getAttribute('id'))
     assert.equal(await page.getByTestId('pdf-pages').getAttribute('data-path'), pdfHref, 'PDF pages load from the authorized route')
+    await page.keyboard.press('Home'); await page.keyboard.press('Space'); assert.equal(await summaryTab.getAttribute('aria-selected'), 'true')
+    assert.equal(await page.getByTestId('pdf-pages').count(), 1, 'the visited document stays mounted')
     const download = dialog.getByRole('link', { name: 'Download' })
     assert.equal(await download.getAttribute('href'), pdfHref, 'Download uses the same authorized href')
     assert.equal(await download.getAttribute('download'), 'Ada-Lovelace.pdf')
@@ -106,6 +126,9 @@ test('browser: on a phone the viewer is full-screen without horizontal overflow'
     await dialog.waitFor()
     const box = await dialog.boundingBox()
     assert.deepEqual([Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height)], [0, 0, 390, 844])
+    await dialog.getByText('Analytical Engine Lab').waitFor()
+    const smallest = await page.evaluate(() => Math.min(...[...document.querySelectorAll('.oc-resume-summary-panel *')].filter(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(e => parseFloat(getComputedStyle(e).fontSize))))
+    assert.ok(smallest >= 12, `summary text is at least 12px (${smallest})`)
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no horizontal overflow')
     const close = await dialog.getByRole('button', { name: 'Close résumé' }).boundingBox()
     assert.ok(close.x + close.width <= 390 && close.width >= 32, 'close control visible and tappable')  })

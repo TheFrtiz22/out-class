@@ -58,9 +58,11 @@ test('/api/recruiting-resumes returns 404 when the club hides résumés', async 
   let visibility = null
   const tx = { $queryRaw: async () => [], application: { findFirst: async q => { assert.deepEqual(q.include.club, { select: { profileFieldVisibility: true } }); return { id: appId, clubId, roundId, studentId, round: { anonymousReview: false }, club: { profileFieldVisibility: visibility } } } }, pipelineRound: { findFirst: async () => ({ anonymousReview: false }) }, studentProfile: { findUnique: async () => ({ resumeUrl: `${studentId}/resume.pdf` }) } }
   const shared = { '@/lib/profile-field-visibility': lib, '@/utils/interview-access': { interviewActor: async () => ({ member: { status: 'ACTIVE', isOwner: true } }) } }
-  const route = load('app/api/recruiting-resumes/route.ts', { ...shared,
-    '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'leader' } }) },
-    '@/utils/recruiting-resume': load('utils/recruiting-resume.ts', shared), '@/utils/support-audit': { auditSupportAction: async () => {} }, '@supabase/supabase-js': storage(pdf),
+  // The proxy and the résumé summary share utils/recruiting-resume.ts for the authorized read.
+  const deps = { ...shared, '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } }, '@/utils/support-audit': { auditSupportAction: async () => {} }, '@supabase/supabase-js': storage(pdf) }
+  const route = load('app/api/recruiting-resumes/route.ts', { ...deps,
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'leader' } }) },
+    '@/utils/recruiting-resume': load('utils/recruiting-resume.ts', deps),
   })
   const get = () => route.GET(new Request(`https://out-class.net/api/recruiting-resumes?clubId=${clubId}&applicationId=${appId}`))
   process.env.SUPABASE_SECRET_KEY ??= 'test-only'

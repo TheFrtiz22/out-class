@@ -12,6 +12,7 @@ import { isPrivateResume, validateProfileFile } from "@/lib/student-profile";
 import { validateResumeAnchor, validateResumeArea } from "@/lib/resume-anchor-validation";
 import { isAreaAnchor } from "@/lib/resume-anchors";
 import { boundedParse } from "@/lib/bounded-input";
+import { warmResumeSummary } from "@/utils/resume-summary";
 import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
 import { STALE_INTERVIEW_LIST_CURSOR, decodeInterviewListCursor, interviewListFiltersSchema, interviewListLimitSchema, interviewListPage, interviewListScope } from "@/lib/interview-list-page";
 
@@ -84,7 +85,8 @@ export async function pinInterviewResume(input: z.infer<typeof scope>) {
   if (error || !blob || blob.size > 10 * 1024 * 1024) throw new Error("Resume unavailable or too large.");
   const bytes = new Uint8Array(await blob.arrayBuffer()); validateProfileFile(bytes, blob.type, "resume");
   const hash = createHash("sha256").update(bytes).digest("hex");
-  return prisma.$transaction(async tx => {
+  let pinnedFor = null as string | null;
+  const pinned = await prisma.$transaction(async tx => {
     const { app } = await authorizeInterview(tx, data, user.id, "resume");
     const key = { applicationId: app.id, roundId: data.roundId };
     const existing = await tx.interviewResumeDocument.findUnique({ where: { applicationId_roundId: key }, select: documentSelect });
@@ -92,8 +94,12 @@ export async function pinInterviewResume(input: z.infer<typeof scope>) {
     if (app.roundId !== data.roundId) throw new Error("Applicant round changed while pinning resume.");
     const document = await tx.interviewResumeDocument.create({ data: { ...key, sourcePath: initial.path!, contentHash: hash, content: bytes }, select: documentSelect });
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: document.id, action: "interview.resume.pin" } });
+    pinnedFor = app.studentId;
     return document;
   }, interviewTransactionOptions);
+  // Prepare the section summary of the new snapshot after responding (best-effort).
+  if (pinnedFor) warmResumeSummary(pinnedFor, bytes, hash);
+  return pinned;
 }
 const documentScope = scope.extend({ documentId: z.string().uuid() });
 async function getInterviewResumeAnnotationsCommand(input: z.infer<typeof documentScope>) {

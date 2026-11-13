@@ -145,3 +145,18 @@ test('profile additions preserve historical GPA and saved Demo work instead of r
  const interviews=persisted(saved.interviews);localStorage.setItem(DEMO_KEY,JSON.stringify(saved));demoStore.stop();demoStore.start();demoStore.refresh();
  const restored=demoStore.get();assert.equal(restored.students[0].profile.gpa,3.1234);assert.equal(restored.students[1].profile.gpa,4.6);assert.equal(restored.students[0].profile.major,'Preserve customized education');assert.equal(restored.students[0].profile.highSchool,'Example school');assert.equal(restored.students[0].profile.gender,'Female');assert.equal(restored.students[0].profile.pronouns,'She/Her');assert.equal(restored.students[0].profile.transferStudent,true);assert.deepEqual(persisted(restored.interviews),interviews);assert.equal(h.calls(),0);demoStore.stop();
 });
+
+test('Demo résumé summary comes from the bundled fixture with the same access rules and no server call', async () => {
+  const { demoStore, api, h } = setup()
+  const s = demoStore.get(), club = s.clubs[0], round = club.rounds.find(r => r.name === 'Interview')
+  const applicant = (await api.getInterviewWorkspace(club.id)).applications.find(a => a.roundId === round.id)
+  const scope = { clubId: club.id, applicationId: applicant.id, roundId: round.id }
+  const document = await api.pinInterviewResume(scope)
+  const { summarizeResumeLines, resumeSummaryResult } = h.load('lib/resume-summary.ts'), { demoResumeLines, demoResumeText } = h.load('lib/demo/resume-fixture.ts')
+  assert.equal(demoResumeText, demoResumeLines.join(''), 'annotation anchors still match the PDF text layer')
+  const expected = resumeSummaryResult(summarizeResumeLines(demoResumeLines))
+  assert.deepEqual(await api.getResumeSummary({ kind: 'interview', ...scope, documentId: document.id }), expected)
+  assert.deepEqual(await api.getResumeSummary({ kind: 'recruiting', clubId: club.id, applicationId: applicant.id }), expected)
+  assert.doesNotMatch(JSON.stringify(expected), /Jordan Avery/, 'contact header stripped in Demo too')
+  await assert.rejects(api.getResumeSummary({ kind: 'recruiting', clubId: 'de000000-0000-4000-8000-000000999999', applicationId: applicant.id }), /unavailable/i)
+})

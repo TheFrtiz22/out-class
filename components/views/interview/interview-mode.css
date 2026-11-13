@@ -136,6 +136,8 @@
   .oc-resume-document, .oc-resume-mini { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .oc-resume-preview { height: auto; flex: 1; min-height: 120px; }
   .oc-resume-trigger { flex-shrink: 0; }
+  .oc-room-applicant .oc-resume-document :is(.oc-resume-summary-panel,.oc-resume-summary-document) { flex: 1; min-height: 0; }
+  .oc-room-applicant .oc-resume-document .oc-resume-summary-body { height: auto; flex: 1; min-height: 120px; }
   .oc-question-workspace > .oc-candidate-content { display: flex; flex-direction: column; min-height: 100%; gap: 14px; }
   .oc-question-workspace > .oc-candidate-content > :not(:last-child) { margin-bottom: 0; }
   .oc-question-workspace #interview-bank { max-height: 15rem; overflow: auto; flex-shrink: 0; }

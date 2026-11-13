@@ -37,6 +37,8 @@ const { parentPort, workerData } = require('node:worker_threads');
 })().catch(e => parentPort.postMessage({ error: e.message === 'PAGES' ? 'Choose a résumé with no more than 10 pages.' : e.message === 'TEXT' ? 'The PDF contains too much text. Choose a shorter résumé.' : e.name === 'PasswordException' ? 'Password-protected PDFs are unsupported. Upload an unlocked PDF.' : 'This PDF is malformed or unreadable. Export a new text-based PDF and try again.' }));
 `
 let activeWorkers = 0
+/** Background work (cache warming) runs only when no request is extracting. */
+export const pdfExtractionIdle = () => activeWorkers === 0
 export async function extractPdfText(bytes: Uint8Array): Promise<string> {
   if (activeWorkers >= 2) throw Error("PDF processing is busy. Please try again shortly.")
   return new Promise((resolve, reject) => {
