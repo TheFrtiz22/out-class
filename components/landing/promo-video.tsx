@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState, type ReactElement } from "react"
 import { Play } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -36,19 +36,13 @@ function Length({ video }: { video: PromoVideoId }) {
   return <span className="oc-watch-video-length"><span aria-hidden="true">{promoVideoLength(video)}</span><span className="sr-only">, {promoVideoSpokenLength(video)}</span></span>
 }
 
-/** A text button that opens one video in a dialog. `label` is the visible text; the running time follows it. */
-export function WatchVideoButton({ video, label, className }: { video: PromoVideoId; label: string; className?: string }) {
+/** One video in the shared dialog, opened by `trigger`. Radix mounts the content only while open, so closing
+ *  the dialog stops playback and frees the file. */
+function VideoDialog({ video, trigger }: { video: PromoVideoId; trigger: ReactElement }) {
   const summaryId = useId()
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button type="button" variant="link" className={`oc-watch-video${className ? ` ${className}` : ""}`}>
-          <Play aria-hidden="true" />
-          <span className="oc-watch-video-label">{label}</span>
-          <Length video={video} />
-        </Button>
-      </DialogTrigger>
-      {/* Radix mounts the content only while open, so closing the dialog stops playback and frees the file. */}
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="oc-promo-dialog gap-3 p-3 sm:max-w-[min(72rem,calc(100vw-3rem))] sm:p-4">
         <DialogHeader className="oc-promo-dialog-header">
           <DialogTitle>{promoVideos[video].title}</DialogTitle>
@@ -58,6 +52,43 @@ export function WatchVideoButton({ video, label, className }: { video: PromoVide
       </DialogContent>
     </Dialog>
   )
+}
+
+/** A text button that opens one video in a dialog, for use inside running copy (an FAQ answer). */
+export function WatchVideoButton({ video, label, className }: { video: PromoVideoId; label: string; className?: string }) {
+  return <VideoDialog video={video} trigger={
+    <Button type="button" variant="link" className={`oc-watch-video${className ? ` ${className}` : ""}`}>
+      <Play aria-hidden="true" />
+      <span className="oc-watch-video-label">{label}</span>
+      <Length video={video} />
+    </Button>
+  } />
+}
+
+/**
+ * A glass card that opens one video in a dialog: a small frame of the video with a play mark, the label,
+ * and one quiet line (`detail`, then the running time). The whole card is the button. `tone="navy"` is for
+ * cards over a campus photo, `"light"` for the warm canvas.
+ */
+export function WatchVideoCard({ video, label, detail, tone = "light", className }: {
+  video: PromoVideoId
+  label: string
+  detail?: string
+  tone?: "light" | "navy"
+  className?: string
+}) {
+  return <VideoDialog video={video} trigger={
+    <button type="button" className={`oc-watch-card ${tone === "navy" ? "oc-public-glass-navy" : "oc-public-glass"}${className ? ` ${className}` : ""}`}>
+      <span className="oc-watch-card-frame">
+        <Image src={promoVideoPoster(video)} alt="" width={192} height={108} sizes="192px" />
+        <span className="oc-watch-card-mark"><Play weight="fill" aria-hidden="true" /></span>
+      </span>
+      <span className="oc-watch-card-text">
+        <span className="oc-watch-card-label">{label}</span>
+        <span className="oc-watch-card-detail">{detail && <>{detail}<span aria-hidden="true"> · </span></>}<Length video={video} /></span>
+      </span>
+    </button>
+  } />
 }
 
 /** A poster that plays its video in place. The whole poster is the Play target; the written summary stays under it. */

@@ -6,9 +6,9 @@ Status: built on `marketing/promo-video-placements` (task PUBLIC-VIDEOS-1, 2026-
 
 | Video | File (`public/videos/`) | Length | Where it is offered |
 | --- | --- | --- | --- |
-| Club-leader pitch | `outclass-for-clubs-pitch` | 0:59 | Homepage hero, club-leader view: "Watch the pitch" beside "Set up your club" |
-| Students | `outclass-for-students` | 1:36 | Homepage hero, student view: "Watch the video" beside "Create your profile" |
-| Club-leader walkthrough | `outclass-for-clubs-walkthrough` | 2:08 | Homepage "How OutClass works", club-leader view; `/uva` FAQ answer "What can club leaders do?" |
+| Club-leader pitch | `outclass-for-clubs-pitch` | 0:59 | Homepage hero, club-leader view: a "Watch the pitch" card beside "Set up your club" |
+| Students | `outclass-for-students` | 1:36 | Homepage hero, student view: a "Watch the video" card beside "Create your profile" |
+| Club-leader walkthrough | `outclass-for-clubs-walkthrough` | 2:08 | Homepage "How OutClass works", club-leader view: a card under the heading; `/uva` FAQ answer "What can club leaders do?": a text button |
 | Overview | `outclass-overview` | 0:51 | `/about`, section 02, under the two workspace cards |
 | Universities | `outclass-for-universities` | 1:36 | `/universities` (new, unlisted) |
 
@@ -17,10 +17,13 @@ Sign-in and sign-up have no video. The first-run card for a new club workspace i
 ## How it works
 
 - `lib/promo-videos.ts` is the list: file name, title, length and a written summary of each video.
-- `components/landing/promo-video.tsx` has the only `<video>` on the site and two ways to reach it:
-  `WatchVideoButton` (a text button that opens the video in the shared `Dialog`) and `PromoVideoFigure`
-  (a poster that plays in place). Neither mounts the `<video>` before a click, so a page that offers a
-  video downloads only its poster, and only where a poster is shown.
+- `components/landing/promo-video.tsx` has the only `<video>` on the site and three ways to reach it:
+  `WatchVideoCard` (a glass card with a small frame of the video and a play mark; opens the shared
+  `Dialog`), `WatchVideoButton` (the same dialog from a text button, for running copy) and
+  `PromoVideoFigure` (a poster that plays in place). None mounts the `<video>` before a click. A card
+  loads its frame as a small optimized image (192px wide); the video file is only requested on a click.
+- Owner asked on 2026-11-12 for the videos to be "more obviously there": the hero and how-it-works
+  placements were text buttons first and are cards now.
 - The videos have music and on-screen text and no narration. The written summary is the text alternative:
   it is read to screen readers in the dialog and printed under an inline poster. The captions track
   (`public/videos/instrumental.vtt`, off until a viewer turns captions on) has one cue saying the sound is
@@ -41,10 +44,12 @@ promise a launch date. The video itself says "Designed to launch on a new campus
 
 ## Deviations from the approved mockups
 
-- Hero: the "See how it works" text link is now the video button. The header link and the scroll cue
+- Hero: the "See how it works" text link is now the video card. The header link and the scroll cue
   still lead to "How OutClass works".
-- "No decorative icons": the buttons carry a play mark, as a control, not as decoration. Posters are
-  frames from the videos, a new kind of image beside logos, headshots and campus photos.
+- "No decorative icons": the buttons and cards carry a play mark, as a control, not as decoration. On a
+  card the mark is the filled glyph (12px on a cream disc), where the regular outline would not read.
+  Posters and card frames are frames from the videos, a new kind of image beside logos, headshots and
+  campus photos.
 
 ## Replacing a video
 

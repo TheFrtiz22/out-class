@@ -21,6 +21,7 @@ const ids = Object.keys(videos.promoVideos)
 /** Stand-ins that print which video a placement asks for. */
 const standIn = {
   WatchVideoButton: ({ video, label }) => React.createElement('button', { 'data-watch': video }, label),
+  WatchVideoCard: ({ video, label, detail, tone }) => React.createElement('button', { 'data-card': video, 'data-tone': tone || 'light' }, label, detail),
   PromoVideoFigure: ({ video }) => React.createElement('figure', { 'data-figure': video }),
 }
 
@@ -47,7 +48,13 @@ test('every video has a same-origin file and a 16:9 poster, and a written summar
 })
 
 test('no page loads a video until the visitor asks: buttons and posters render without a <video>', () => {
-  const { WatchVideoButton, PromoVideoFigure } = loadComponent('components/landing/promo-video.tsx')
+  const { WatchVideoButton, WatchVideoCard, PromoVideoFigure } = loadComponent('components/landing/promo-video.tsx')
+  // The card shows a small frame of the video (an optimized image), never the video itself.
+  const card = renderToStaticMarkup(React.createElement(WatchVideoCard, { video: 'club-pitch', label: 'Watch the pitch', detail: 'Six tools, one place', tone: 'navy' }))
+  assert.doesNotMatch(card, /<video|\.mp4/)
+  assert.match(card, /<button type="button"[^>]*class="oc-watch-card oc-public-glass-navy"[^>]*aria-haspopup="dialog"|<button[^>]*aria-haspopup="dialog"[^>]*class="oc-watch-card oc-public-glass-navy"/)
+  assert.match(card, /<img[^>]*alt=""/); assert.match(card, /Watch the pitch<\/span><span class="oc-watch-card-detail">Six tools, one place<span aria-hidden="true"> · <\/span><span class="oc-watch-video-length"><span aria-hidden="true">0:59<\/span><span class="sr-only">, 59 seconds<\/span>/)
+  assert.match(renderToStaticMarkup(React.createElement(WatchVideoCard, { video: 'club-walkthrough', label: 'x' })), /class="oc-watch-card oc-public-glass"/)
   const button = renderToStaticMarkup(React.createElement(WatchVideoButton, { video: 'club-pitch', label: 'Watch the pitch' }))
   assert.doesNotMatch(button, /<video|\.mp4/)
   assert.match(button, /<button[^>]*type="button"[^>]*aria-haspopup="dialog"/)
@@ -72,12 +79,13 @@ test('no page loads a video until the visitor asks: buttons and posters render w
 
 test('homepage: each audience gets its own video beside the main action; leaders also get the walkthrough by the steps', () => {
   const hero = read('components/landing/landing-hero.tsx')
-  assert.match(hero, /watch: "Watch the video", video: "students"/); assert.match(hero, /watch: "Watch the pitch", video: "club-pitch"/)
-  assert.match(hero, /<div className="oc-hero-ctas">[\s\S]*?<\/Button>\s*<WatchVideoButton video=\{text\.video\} label=\{text\.watch\} \/>\s*<\/div>/)
+  assert.match(hero, /watch: "Watch the video", watchDetail: "From applying to hearing back", video: "students"/); assert.match(hero, /watch: "Watch the pitch", watchDetail: "Six tools, one place", video: "club-pitch"/)
+  // A navy glass card over the photo, directly after the main action.
+  assert.match(hero, /<div className="oc-hero-ctas">[\s\S]*?<\/Button>\s*<WatchVideoCard video=\{text\.video\} label=\{text\.watch\} detail=\{text\.watchDetail\} tone="navy" className="oc-hero-watch" \/>\s*<\/div>/)
   // The header and the scroll cue still lead to "How OutClass works"; the hero no longer repeats that link.
   assert.doesNotMatch(hero, /See how it works|oc-hero-demo-link/)
   assert.match(read('components/landing/landing-intro.tsx'), /<ScrollIndicator className="oc-intro-scroll" targetId="about" \/>/)
-  // The main action keeps its pill; the video button is a text button and must not inherit it.
+  // The main action keeps its pill; a text video button placed here later must not inherit it.
   const css = read('components/landing/hero.css')
   assert.equal((css.match(/\.oc-hero-ctas \[data-slot="button"\]:not\(\[data-variant="link"\]\)/g) || []).length, 5)
   assert.doesNotMatch(css, /\.oc-hero-ctas \[data-slot="button"\](?!:not)/)
@@ -85,9 +93,9 @@ test('homepage: each audience gets its own video beside the main action; leaders
   const hooks = { showcaseRef: null }
   const { ProductJourney } = load('components/landing/product-stories.tsx', { './journey-tabs': { JourneyTabs: () => null }, './promo-video': standIn, '@/hooks/use-journey-navigation': {} })
   const leader = renderToStaticMarkup(React.createElement(ProductJourney, { perspective: 'leader', navigation: hooks }))
-  assert.match(leader, /<button data-watch="club-walkthrough">Watch the full walkthrough<\/button>/)
+  assert.match(leader, /<button data-card="club-walkthrough" data-tone="light">Watch the full walkthroughFive chapters<\/button>/)
   const student = renderToStaticMarkup(React.createElement(ProductJourney, { perspective: 'student', navigation: hooks }))
-  assert.doesNotMatch(student, /data-watch/)
+  assert.doesNotMatch(student, /data-watch|data-card/)
 })
 
 test('FAQ: the club-leader answer ends with the walkthrough; search engines still get the text answer', () => {

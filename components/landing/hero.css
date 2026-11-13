@@ -17,9 +17,8 @@
 .oc-hero-ctas [data-slot="button"]:not([data-variant="link"]) { min-height: 50px; height: auto; padding: 0 28px; font-size: var(--oc-size-16); font-weight: 600; background: var(--oc-glass-cream); color: var(--primary); box-shadow: var(--oc-glass-pill-highlight); }
 .oc-hero-ctas [data-slot="button"]:not([data-variant="link"]):hover { background: white; transform: translateY(-2px); }
 .oc-hero-ctas [data-slot="button"]:not([data-variant="link"]):active { transform: translateY(0); }
-/* The text button beside the main action opens this audience's video (promo-video.css owns its shape). */
-.oc-hero-ctas .oc-watch-video { color: var(--hero-ink); }
-.oc-hero-ctas .oc-watch-video-label { text-decoration-color: var(--hero-quiet); }
+/* The card beside the main action opens this audience's video (promo-video.css owns its shape). */
+.oc-hero-watch .oc-watch-card-detail { color: var(--hero-quiet); }
 .oc-hero-audience { margin: 0; font-size: var(--oc-size-14); color: var(--hero-quiet); }
 .oc-landing .oc-hero-editorial :is(a, button):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 

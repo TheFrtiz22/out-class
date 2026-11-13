@@ -10,11 +10,26 @@
 .oc-watch-video .oc-icon { flex: none; }
 .oc-watch-video-length { font-weight: 400; font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 82%, transparent); }
 .oc-landing .oc-watch-video:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
-/* Under the how-it-works heading the button keeps its own width; under an FAQ answer it follows the text. */
-.oc-how-watch { align-self: flex-start; }
 .oc-faq-answer .oc-watch-video { margin: -8px 0 16px; padding-inline: 4px; font-size: var(--oc-size-14); }
 /* The answer clips its overflow while it opens and closes, so this focus ring is drawn inside the button. */
 .oc-landing .oc-faq-answer .oc-watch-video:focus-visible { outline-offset: -2px; }
+
+/* Video card: a frame of the video with a play mark, then two lines of text. One glass surface, one button. */
+.oc-watch-card { --oc-public-glass-radius: var(--oc-radius-lg); display: inline-flex; align-items: center; gap: 14px; padding: 7px 20px 7px 7px; font: inherit; text-align: start; cursor: pointer; transition: transform .18s ease; }
+.oc-watch-card-frame { position: relative; flex: none; display: grid; place-items: center; overflow: hidden; width: 96px; aspect-ratio: 16 / 9; border-radius: var(--oc-radius-md); background: var(--primary); }
+.oc-watch-card-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.oc-watch-card-mark { position: relative; display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--oc-radius-full); background: var(--oc-glass-cream); color: var(--primary); box-shadow: var(--oc-shadow-surface-hover); }
+.oc-watch-card-mark .oc-icon { width: 12px; height: 12px; margin-left: 1px; }
+.oc-watch-card-text { display: grid; gap: 1px; min-width: 0; }
+.oc-watch-card-label { font-size: var(--oc-size-16); font-weight: 600; line-height: 1.3; }
+.oc-watch-card-detail { font-size: var(--oc-size-13); line-height: 1.4; color: var(--muted-foreground); }
+.oc-watch-card-detail .oc-watch-video-length { color: inherit; }
+.oc-landing .oc-watch-card:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .oc-watch-card:hover { transform: translateY(-2px); } .oc-watch-card:hover .oc-watch-card-mark { background: white; } }
+@media (prefers-reduced-motion: reduce) { .oc-watch-card { transition: none; } .oc-watch-card:hover { transform: none; } }
+/* Under the how-it-works heading the card keeps its own width and a larger frame. */
+.oc-how-watch { align-self: flex-start; margin-top: 12px; }
+.oc-how-watch .oc-watch-card-frame { width: 128px; }
 
 /* The dialog: a title row that leaves room for the close button, then the player at 16:9. */
 .oc-promo-dialog-header { justify-content: center; min-height: 44px; padding: 0 52px 0 8px; }
