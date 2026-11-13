@@ -23,6 +23,7 @@ import {
   FileText,
   X,
   Check,
+  Compass,
 } from "@/components/icons"
 
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,8 @@ import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-v
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
+import { dismissInterestSurveyPrompt } from "@/lib/workspace-api"
+import { invalidateInterestSurvey } from "@/hooks/use-interest-survey"
 import { graduationYearOptions } from "@/lib/graduation-years"
 import { uploadProfileFile } from "@/actions/storage"
 import {
@@ -61,6 +64,7 @@ const STEPS = [
   { label: "Verify", icon: Mail },
   { label: "Academic", icon: GraduationCap },
   { label: "Experience", icon: Briefcase },
+  { label: "Interests", icon: Compass },
 ] as const
 
 // Steps 2 and 3 widgets load in their own chunks (server-rendered when visible). The wizard starts
@@ -70,6 +74,9 @@ const loadVerificationCodeInput = () => import("@/components/onboarding/verifica
 const loadGraduationYearSelect = () => import("@/components/onboarding/graduation-year-select")
 const VerificationCodeInput = dynamic(() => loadVerificationCodeInput().then(module => module.VerificationCodeInput), { loading: () => <div aria-hidden="true" className="h-12 w-[calc(6*clamp(28px,8vw,48px))]" /> })
 const GraduationYearSelect = dynamic(() => loadGraduationYearSelect().then(module => module.GraduationYearSelect), { loading: () => <div aria-hidden="true" className="h-11 w-full rounded-md border border-border" /> })
+// The optional interest survey (last step) loads in its own chunk once the profile is saved.
+const loadInterestSurveyForm = () => import("@/components/interests/interest-survey-form")
+const InterestSurveyForm = dynamic(() => loadInterestSurveyForm().then(module => module.InterestSurveyForm), { loading: () => <div aria-hidden="true" className="h-72 w-full" /> })
 const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10 MB
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -460,13 +467,24 @@ export function StudentOnboardingWizard({
         resumeUrl: resumeUrl ?? undefined,
       })
 
-      // Navigate to the dashboard
-      onComplete()
+      // Last, optional step: the club-interest survey.
+      setStep(5)
     } catch (err) {
       setGlobalError(userMessage(err, "Couldn’t save your profile. Your answers are still here. Try again."))
     } finally {
       setLoading(false)
     }
+  }
+
+  // ── Step 5: Interests (optional, private to the student) ─────────────────
+
+  useEffect(() => { if (step === 4) void loadInterestSurveyForm() }, [step])
+  async function skipInterests() {
+    setLoading(true)
+    // Skipping also retires the one-time Home prompt; a failure here never blocks finishing.
+    try { await dismissInterestSurveyPrompt() } catch { /* the Home prompt simply shows once */ }
+    finally { invalidateInterestSurvey(); setLoading(false) }
+    onComplete()
   }
 
   async function onSkipStep4() {
@@ -867,10 +885,22 @@ export function StudentOnboardingWizard({
                     disabled={loading}
                     className="h-11 flex-1 rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                   >
-                    Finish <Check className="size-4" />
+                    Continue <ArrowRight className="size-4" />
                   </Button>
                 </div>
               </form>
+            </>
+          )}
+          {/* ───── Step 5: Interests ───── */}
+          {step === 5 && (
+            <>
+              <div className="mb-6">
+                <h2 className="oc-section-heading text-foreground">Help us suggest clubs</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">About a minute. Optional.</p>
+              </div>
+              <InterestSurveyForm initial={null} idPrefix="onboarding-interests" submitLabel="Finish"
+                onSaved={() => { invalidateInterestSurvey(); onComplete() }}
+                secondary={busy => <Button type="button" variant="secondary" disabled={busy || loading} onClick={() => void skipInterests()}>Skip for now</Button>} />
             </>
           )}
         </Panel>

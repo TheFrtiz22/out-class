@@ -36,6 +36,7 @@ import * as crm from "@/actions/crm"
 import * as reviewDecisions from "@/actions/review-decisions"
 import * as evaluation from "@/actions/evaluations"
 import * as profile from "@/actions/profile"
+import * as interestSurvey from "@/actions/interest-survey"
 import * as directory from "@/actions/club-directory"
 import * as storage from "@/actions/storage"
 import * as search from "@/actions/workspace-search"
@@ -113,6 +114,10 @@ export const startClubApplication = adapt(directory.startClubApplication, "start
 export const saveApplicationDraft = adapt(apps.saveApplicationDraft, "saveApplicationDraft")
 export const submitApplication = adapt(apps.submitApplication, "submitApplication")
 export const getStudentProfile = adapt(profile.getStudentProfile, "getStudentProfile")
+// The student's own, private club-interest survey (never read or written in Demo Mode).
+export const getMyInterestSurvey = adapt(interestSurvey.getMyInterestSurvey, "getMyInterestSurvey")
+export const saveMyInterestSurvey = adapt(interestSurvey.saveMyInterestSurvey, "saveMyInterestSurvey")
+export const dismissInterestSurveyPrompt = adapt(interestSurvey.dismissInterestSurveyPrompt, "dismissInterestSurveyPrompt")
 export const updateStudentProfileSection = adapt(profile.updateStudentProfileSection, "updateStudentProfileSection")
 export const uploadProfileFile = adapt(storage.uploadProfileFile, "uploadProfileFile")
 export const searchWorkspace = adapt(search.searchWorkspace, "searchWorkspace")
