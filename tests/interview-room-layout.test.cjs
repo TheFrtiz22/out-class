@@ -3,7 +3,7 @@ const flush=()=>new Promise(r=>setImmediate(r));
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
 const text=n=>typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function harness(opts={}){
- const slots=[],effects=[],cleanups=[],storage=new Map(),confirmations=[],frames=[];let index=0,calls=0,denied=false,confirmationDenied=false,exits=0;
+ const slots=[],effects=[],cleanups=[],storage=new Map(),confirmations=[],frames=[];let intervals=0;const cleared=[];let index=0,calls=0,denied=false,confirmationDenied=false,exits=0;
  const rows=['a','b','c'].map(id=>({id,name:id.toUpperCase(),roundId:'r',assignedRoundIds:['r'],completedRoundIds:[]}));
  let pipeline={rounds:[{id:'r',name:'Round 1',archived:false}],applications:rows}, deferred=null, sessionDenied=false;
  const depsChanged=(a,b)=>!a||b.some((v,i)=>v!==a[i]);
@@ -17,9 +17,9 @@ function harness(opts={}){
  const api={resolveInterviewRoomEntry:opts.resolveEntry||(async input=>input),getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
  api.prepareInterviewAdvance=async scope=>{if(denied)throw Error('revoked');const next=queue.nextInterviewApplicant(pipeline.applications,scope.roundId,scope.applicationId);return next?{moveId:'move',scope:{clubId:scope.clubId,roundId:scope.roundId,applicationId:next.id}}:null};
  api.confirmInterviewAdvance=async receipt=>{confirmations.push(receipt);if(confirmationDenied)throw Error('disconnected');return{confirmed:true}};
- new Function('require','module','exports','window','sessionStorage','requestAnimationFrame','setInterval','clearInterval',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/components/shell/focus-frame-context'?{useFocusFrame:details=>frames.push(details)}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{location,history,addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn(),()=>0,()=>{});
+ new Function('require','module','exports','window','sessionStorage','requestAnimationFrame','setInterval','clearInterval',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/components/shell/focus-frame-context'?{useFocusFrame:details=>frames.push(details)}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{location,history,addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn(),()=>++intervals,id=>cleared.push(id));
  const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){exits++}};
- return{frames,storage,confirmations,exits:()=>exits,denyConfirmation:v=>confirmationDenied=v,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
+ return{intervals:()=>intervals,cleared,frames,storage,confirmations,exits:()=>exits,denyConfirmation:v=>confirmationDenied=v,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
 }
 const kit=t=>nodes(t).find(n=>n.type==='InterviewKitSession');
 test('selection controls exist only on the interview list; active and post-interview room has no strip or candidate navigation',async()=>{
@@ -79,4 +79,13 @@ test('an exact room link the server reports unavailable shows the cannot-open st
  h.render();await flush();let t=h.render();t=h.render();
  assert.deepEqual(seen,['a']);assert.equal(kit(t),undefined);assert.match(text(t),/couldn.t open this interview/i);
  const ok=harness({url:'https://out-class.net/club/club/interview?interviewTab=rooms&applicationId=a&roundId=r'});ok.render();await flush();t=ok.render();t=ok.render();assert.equal(kit(t).props.applicationId,'a','an available exact entry still opens the linked candidate');
+});
+// Production QA 2026-11-13: removed from the panel mid-interview.
+test('an ACCESS_REVOKED refusal from the room switches to the access-removed state and stops entry validation until Try again',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
+ const armed=h.intervals();assert.ok(armed>=1,'entry validation polls while the room is open');
+ kit(t).props.onAccessRevoked();t=h.render();t=h.render();
+ assert.equal(kit(t),undefined,'the room (polling, autosave) unmounts');assert.match(text(t),/no longer have access/);
+ assert.ok(h.cleared.includes(armed),'the validation interval is cleared');t=h.render();assert.equal(h.intervals(),armed,'and not re-armed while access is removed');
+ nodes(t).find(n=>n.type==='Button'&&text(n)==='Try again').props.onClick();h.render();await flush();h.render();assert.equal(h.intervals(),armed+1,'Try again re-checks access');
 });

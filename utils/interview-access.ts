@@ -1,8 +1,8 @@
 import { assertNotRecused } from "@/lib/recusal";
 import { assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
-import { ActionError, actionResult, type ActionResult } from "@/lib/action-result";
-import { INTERVIEW_ACCESS_REVOKED, INTERVIEW_ACCESS_REVOKED_MESSAGE, interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
+import { ACCESS_REVOKED, ActionError, actionResult, type ActionResult } from "@/lib/action-result";
+import { INTERVIEW_ACCESS_REVOKED_MESSAGE, interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
 
 export async function interviewActor(tx: AppTransactionClient, clubId: string, userId: string) {
   // Membership management serializes on Club. Hold this through authorization and mutation.
@@ -37,7 +37,7 @@ export function interviewActionResult<T>(work: () => Promise<T>, action: string)
     try { return await work(); }
     catch (error) {
       if (isInterviewAccessDenial(error) || (error instanceof Error && roomAccessDenial.some(p => p.test(error.message))))
-        throw new ActionError(INTERVIEW_ACCESS_REVOKED_MESSAGE, INTERVIEW_ACCESS_REVOKED);
+        throw new ActionError(INTERVIEW_ACCESS_REVOKED_MESSAGE, ACCESS_REVOKED);
       throw error;
     }
   }, action);

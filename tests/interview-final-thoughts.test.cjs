@@ -30,7 +30,7 @@ test('real adapter autosaves over-limit thoughts separately, blocks completion, 
  await api.saveInterviewSession({...h.scope,revision:1,draft:final,complete:true});assert.equal(h.state.evaluations.length,1);
  await refused(api.saveInterviewSession({...h.scope,revision:2,draft:{...final,finalInterviewThoughts:'Rewrite'},complete:true}),/completed/);
  h.round.anonymousReview=true;assert.equal((await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id})).finalInterviewThoughts,'');
- h.as(11);await assert.rejects(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}),/Leadership|privacy/);
+ h.as(11);await assert.rejects(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}),/Leadership|no longer have access/);
 });
 
 test('Demo retains over-limit drafts on refresh and applies the same submission boundary without live writes',async()=>{

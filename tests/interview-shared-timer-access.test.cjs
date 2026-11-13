@@ -2,6 +2,8 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUU
 const {harness}=require('./helpers/interview-sql-harness.cjs');
 // Each refusal asserts the specific server message and that the timer table is untouched.
 const RECUSED="You've stepped out of reviewing this applicant because you know them. A recruitment lead can undo this.";
+// Every access denial is one uniform typed refusal (no reason disclosed).
+const REVOKED={message:'You no longer have access to this interview.',code:'ACCESS_REVOKED'};
 const ACTIVE={message:'Only active interviews can use the shared timer.'};
 async function setup(){
  const h=await harness();const rooms=h.load('actions/interview-collaboration.ts'),kit=h.load('actions/interview-kits.ts'),timer=h.load('actions/interview-timer.ts');
@@ -39,7 +41,7 @@ test('a recused member can neither read nor change the timer',async()=>{
 test('an anonymous-review round exposes no timer and accepts no command',async()=>{
  const h=await setup();try{
  await h.db.query('UPDATE "PipelineRound" SET "anonymousReview"=true WHERE id=$1',[h.ids.round]);
- await h.refused(h.press(h.ids.panel),{message:'Identified interview unavailable under current privacy settings.'});await h.refused(h.read(h.ids.panel),{message:'Identified interview unavailable under current privacy settings.'});
+ await h.refused(h.press(h.ids.panel),REVOKED);await h.refused(h.read(h.ids.panel),REVOKED);
  }finally{await h.db.close();}
 });
 test('an archived round refuses timer commands',async()=>{
@@ -63,7 +65,7 @@ test('a panelist not on the booked room\'s approved panel cannot reach that room
  await h.db.query('INSERT INTO "InterviewBooking"(id,"slotId","applicationId","roundId") VALUES ($1,$2,$3,$4)',[randomUUID(),slot,h.ids.app,h.ids.round]);
  // The approved panelist reaches the booked room's own timer (a different room key from the manual panel room).
  h.as(h.ids.panel);const view=await h.read(h.ids.panel);assert.equal(view.timer.revision,0);
- await h.refused(h.press(h.ids.peer,h.scope,{type:'start'}),{message:'Current room assignment required.'});await h.refused(h.read(h.ids.peer),{message:'Current room assignment required.'});
+ await h.refused(h.press(h.ids.peer,h.scope,{type:'start'}),REVOKED);await h.refused(h.read(h.ids.peer),REVOKED);
  }finally{await h.db.close();}
 });
 test('a member of a second club cannot use that membership to reach this club\'s timer',async()=>{
@@ -73,7 +75,7 @@ test('a member of a second club cannot use that membership to reach this club\'s
  await h.db.query('INSERT INTO "ClubMember"(id,"clubId","userId","isOwner",permissions,"interviewOffices") VALUES ($1,$2,$3,false,$4,$5)',[randomUUID(),club,h.ids.peer,'{applications.review,applicants.identify}','{}']);
  await h.db.query('INSERT INTO "PipelineRound"(id,"clubId",name,"order",configuration) VALUES ($1,$2,\'Interview\',1,\'{"duration":20}\')',[round,club]);
  for(const scope of [{...h.scope,clubId:club},{...h.scope,clubId:club,roundId:round}]){
-  await h.refused(h.press(h.ids.peer,scope),{message:'Identified interview unavailable under current privacy settings.'});await h.refused(h.read(h.ids.peer,scope),{message:'Identified interview unavailable under current privacy settings.'});
+  await h.refused(h.press(h.ids.peer,scope),REVOKED);await h.refused(h.read(h.ids.peer,scope),REVOKED);
  }
  }finally{await h.db.close();}
 });

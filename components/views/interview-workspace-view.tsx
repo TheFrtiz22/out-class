@@ -108,6 +108,9 @@ function InterviewSession({
   const [arrivalRetry, setArrivalRetry] = useState(0)
   const heading = useRef<HTMLHeadingElement>(null)
   const form = useRef<HTMLFormElement>(null)
+  // The server refused a room call with ACCESS_REVOKED (e.g. removed from the panel mid-interview).
+  // Unmounting the room stops its polling and autosave; unsaved notes stay on this device.
+  const accessRevoked = useCallback(() => { setData(null); setActiveId(""); setPrepared(null); setLoadError(true) }, [])
   const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
   const recoveredApplicant = useCallback(() => {
     try { return JSON.parse(sessionStorage.getItem(recoveryKey) || "null") as { roundId: string; applicationId: string; moveId?: string; clientId?: string } | null }
@@ -201,6 +204,8 @@ function InterviewSession({
     setMessage("")
   }, [roundId, data, recoveredApplicant])
   useEffect(() => {
+    // Nothing to keep validating while the access-removed state shows; Try again restarts it.
+    if (loadError) return;
     let current = true, pending = false;
     const validate = async () => {
       const q = new URLSearchParams(window.location.search);
@@ -212,7 +217,7 @@ function InterviewSession({
     };
     const timer = setInterval(validate, 15000); window.addEventListener("focus", validate);
     return () => { current = false; clearInterval(timer); window.removeEventListener("focus", validate); };
-  }, [membership.clubId]);
+  }, [membership.clubId, loadError]);
   useEffect(() => {
     if (!dirty && !busy) return
     const warn = (event: BeforeUnloadEvent) => {
@@ -348,7 +353,7 @@ function InterviewSession({
         </div>
       ) : (
         <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
-          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList}
+          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList} onAccessRevoked={accessRevoked}
 
 toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button></>}
 context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} />}

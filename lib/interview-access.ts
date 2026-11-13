@@ -21,13 +21,8 @@ export function interviewCapabilities(member: InterviewAccess | null | undefined
 
 export const interviewScopeSchema = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), roundId: z.string().uuid() });
 export type InterviewScope = z.infer<typeof interviewScopeSchema>;
-/** Refusal code for an interview the viewer no longer has access to (panel removed, membership
- * ended, privacy changed). The room treats it as "access removed", not as a failed save. */
-export const INTERVIEW_ACCESS_REVOKED = "ACCESS_REVOKED";
+/** Shown with an ACCESS_REVOKED refusal (lib/action-result) for any interview access denial. */
 export const INTERVIEW_ACCESS_REVOKED_MESSAGE = "You no longer have access to this interview.";
-export function isInterviewAccessRevoked(error: unknown) {
-  return !!error && typeof error === "object" && (error as { code?: unknown }).code === INTERVIEW_ACCESS_REVOKED;
-}
 export const interviewScoreSchema = z.number().finite().min(1).max(10).multipleOf(0.5);
 export const textAnchorSchema = z.object({
   page: z.number().int().min(1).max(10000),

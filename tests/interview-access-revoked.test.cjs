@@ -52,3 +52,31 @@ test('failures that are not access denials still throw (the client keeps its con
  await assert.rejects(rooms.getInterviewCollaboration({...h.scope,clientId:'not-a-uuid'}),error=>error.refused!==true);
  }finally{await h.db.close();}
 });
+// The room's collaboration poll (every 3 s) is the call that kept returning 500s after removal.
+function hookHarness(getCollaboration){
+ const fs=require('node:fs'),ts=require('typescript'),slots=[],effects=[],cleanups=[],timers=new Map(),calls=[];let index=0,id=0;
+ const react={useState(v){const i=index++;if(!(i in slots))slots[i]=typeof v==='function'?v():v;return[slots[i],x=>slots[i]=typeof x==='function'?x(slots[i]):x]},useRef(v){const i=index++;return slots[i]??={current:v}},useCallback(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={fn,deps};return slots[i].fn},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
+ const api={getInterviewCollaboration:async input=>{calls.push('read');return getCollaboration(input)},leaveInterviewCollaboration:async()=>{calls.push('leave')},selectSharedInterviewQuestion:async()=>{},dismissInterviewInvitation:async()=>{}};
+ const listeners=[];const target={addEventListener:(t,f)=>listeners.push([t,f]),removeEventListener(){}};
+ const mod={exports:{}};const code=ts.transpileModule(fs.readFileSync('hooks/use-interview-workspace.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const actionResult=require('./helpers/communications-loader.cjs').loader({})('lib/action-result.ts');
+ new Function('require','module','exports','setTimeout','clearTimeout','setInterval','clearInterval','window','document','crypto','localStorage',code)(n=>n==='react'?react:n==='@/lib/workspace-api'?api:n==='@/lib/action-result'?actionResult:n==='@/lib/interview-collaboration'?{COLLABORATION_POLL_MS:3000,newerCollaboration:(_o,n)=>n}:n==='@/lib/interview-shared-timer'?{clockOffsetMs:()=>0}:n==='@/lib/interview-access'?{}:require(n),mod,mod.exports,fn=>{timers.set(++id,fn);return id},t=>timers.delete(t),()=>0,()=>{},target,{...target,visibilityState:'visible'},{randomUUID:()=>'00000000-0000-4000-8000-000000000000'},{getItem:()=>null,setItem(){},removeItem(){}});
+ let revoked=0;
+ return{calls,revoked:()=>revoked,timers,render(){index=0;const v=mod.exports.useInterviewWorkspace({clubId:'c',applicationId:'a',roundId:'r'},true,()=>revoked++);while(effects.length)effects.shift()();return v},tick(){const p=[...timers.values()];timers.clear();p.forEach(f=>f())},unmount(){cleanups.forEach(f=>f?.())},UserFacingError:actionResult.UserFacingError};
+}
+test('the collaboration poll stops for good on ACCESS_REVOKED, reports it once and skips the leave call',async()=>{
+ const flush=()=>new Promise(r=>setImmediate(r));let deny=false,h;
+ h=hookHarness(async()=>{if(deny)throw new h.UserFacingError('You no longer have access to this interview.','ACCESS_REVOKED');return{sessionId:'s',revision:1,participants:[],selection:null,invitation:null,timing:null,timer:null}});
+ h.render();await flush();assert.equal(h.calls.filter(c=>c==='read').length,1);assert.equal(h.timers.size,1,'next poll scheduled');
+ deny=true;h.tick();await flush();const v=h.render();
+ assert.equal(h.revoked(),1);assert.equal(v.view,null);assert.equal(v.error,'','no "Room connection unavailable" message');assert.equal(h.timers.size,0,'no further poll scheduled');
+ h.tick();await flush();assert.equal(h.calls.filter(c=>c==='read').length,2,'polling stopped');
+ h.unmount();assert.equal(h.calls.includes('leave'),false,'no leave call that would be refused');assert.equal(h.revoked(),1);
+});
+test('an ordinary poll failure keeps polling and still shows the connection message',async()=>{
+ const flush=()=>new Promise(r=>setImmediate(r));let fail=false;
+ const h=hookHarness(async()=>{if(fail)throw Error('network');return{sessionId:'s',revision:1,participants:[],selection:null,invitation:null,timing:null,timer:null}});
+ h.render();await flush();fail=true;h.tick();await flush();const v=h.render();
+ assert.equal(h.revoked(),0);assert.match(v.error,/Room connection unavailable/);assert.equal(h.timers.size,1,'polling continues');
+ h.unmount();assert.ok(h.calls.includes('leave'));
+});
