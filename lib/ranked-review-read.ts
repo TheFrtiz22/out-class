@@ -18,7 +18,7 @@ export const rankedReviewSelect = {
   // Same order as the CRM detail read, so the per-interviewer score chosen is identical.
   evaluations: { where: { submittedAt: { not: null } }, select: { interviewerId: true, roundId: true, submittedAt: true, score: true }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
   interviewAssignments: { where: { revokedAt: null }, select: {
-    memberId: true, roundId: true, member: { select: { status: true, isOwner: true, permissions: true } },
+    memberId: true, roundId: true, member: { select: { status: true, alumniSince: true, isOwner: true, permissions: true } },
   } },
 } satisfies Prisma.ApplicationSelect;
 

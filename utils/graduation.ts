@@ -1,5 +1,6 @@
 import type { AppTransactionClient } from "@/utils/prisma"
 import { graduationDefaultAt, graduationYearChange, lastDefaultedGradYear } from "@/lib/graduation"
+import { ActionError } from "@/lib/action-result"
 
 /** Audit actor for scheduled lifecycle changes; not a User id. */
 export const GRADUATION_JOB_ACTOR = "system:graduation"
@@ -73,7 +74,10 @@ export async function runGraduationJob(db: GraduationJobDb, now = new Date(), li
               SELECT 1 FROM "ClubMember" o JOIN "User" ou ON ou.id = o."userId" LEFT JOIN "StudentProfile" op ON op."userId" = o."userId"
               WHERE o."clubId" = c."clubId" AND o.id <> c.id AND o."isOwner" AND o.status = 'ACTIVE' AND o."alumniSince" IS NULL
                 AND ou."disabledAt" IS NULL AND (op."graduatedAt" IS NULL OR op."graduatedAt" > (${at}::timestamptz AT TIME ZONE 'UTC'))))
-          ORDER BY c.id LIMIT ${remaining} FOR UPDATE OF c)
+          -- The profile is taken FOR SHARE (members are already serialized by the club lock above), so
+          -- a concurrent graduation-year save (which holds the profile FOR UPDATE) finishes first and
+          -- the graduatedAt condition is re-checked against its result: a restored student is skipped.
+          ORDER BY c.id LIMIT ${remaining} FOR SHARE OF cp)
         RETURNING m.id, m."alumniSince"`
       if (rows.length) await tx.$executeRaw`
         INSERT INTO "AuditLog"(id, "actorId", action, "clubId", "targetId", details)
@@ -92,20 +96,38 @@ export async function runGraduationJob(db: GraduationJobDb, now = new Date(), li
   return result
 }
 
+/** Thrown when a support (view-as) session tries to change the graduation year. */
+export const SUPPORT_YEAR_CHANGE_MESSAGE = "Only the account holder can change their graduation year."
+
 /**
  * Applies a gradYear change inside the caller's profile transaction (lib/graduation.ts
- * graduationYearChange). A restored student's memberships lose exactly the alumniSince the job
- * gave them (equal to their graduatedAt); memberships the club changed since are left alone.
+ * graduationYearChange). Locks the User row, then the profile row, before reading, so it serializes
+ * with the daily job (which takes the profile FOR SHARE before converting memberships): the job
+ * either sees the restored profile and skips it, or finished first and is undone here.
+ *
+ * A restored student's memberships lose exactly the alumniSince the job gave them (equal to their
+ * graduatedAt) and come back as plain current members: owner, access role, permissions, offices,
+ * title and interviewer eligibility are cleared, so a returning leader needs a current leader to
+ * re-grant them. A support session may not change the year at all.
  */
-export async function applyGraduationYearChange(tx: Pick<AppTransactionClient, "studentProfile" | "clubMember" | "auditLog">, userId: string, nextYear: number, now = new Date()) {
+export async function applyGraduationYearChange(tx: Pick<AppTransactionClient, "$queryRaw" | "studentProfile" | "clubMember" | "auditLog">, userId: string, nextYear: number, options: { supportSession?: boolean; now?: Date } = {}) {
+  const now = options.now ?? new Date()
+  await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`
+  await tx.$queryRaw`SELECT id FROM "StudentProfile" WHERE "userId" = ${userId} FOR UPDATE`
   const current = await tx.studentProfile.findUnique({ where: { userId }, select: { id: true, gradYear: true, graduatedAt: true, graduationConfirmedAt: true, graduationPromptDismissedAt: true } })
-  if (!current) return null
+  if (!current || current.gradYear === nextYear) return null
+  if (options.supportSession) throw new ActionError(SUPPORT_YEAR_CHANGE_MESSAGE, "FORBIDDEN")
   const change = graduationYearChange(current, nextYear, now)
   if (!change) return null
   await tx.studentProfile.update({ where: { id: current.id }, data: change.data })
   if (change.restoreAlumniSince) {
-    const restored = await tx.clubMember.updateMany({ where: { userId, status: "ACTIVE", alumniSince: change.restoreAlumniSince }, data: { alumniSince: null } })
-    await tx.auditLog.create({ data: { actorId: userId, targetId: current.id, action: "student.graduation.reverse", details: { fromYear: current.gradYear, toYear: nextYear, memberships: restored.count } } })
+    const where = { userId, status: "ACTIVE" as const, alumniSince: change.restoreAlumniSince }
+    const before = await tx.clubMember.findMany({ where, select: { id: true, clubId: true, isOwner: true, accessRole: true, permissions: true, interviewOffices: true } })
+    const restored = await tx.clubMember.updateMany({ where: { ...where, id: { in: before.map(m => m.id) } }, data: { alumniSince: null, ...RESTORED_MEMBER } })
+    await tx.auditLog.create({ data: { actorId: userId, targetId: current.id, action: "student.graduation.reverse", details: { fromYear: current.gradYear, toYear: nextYear, memberships: restored.count, before, after: RESTORED_MEMBER } } })
   }
   return change
 }
+
+/** What a restored membership becomes: a current member with no leadership. */
+export const RESTORED_MEMBER = { isOwner: false, accessRole: "MEMBER" as const, role: "GENERAL_MEMBER" as const, permissions: [] as string[], interviewOffices: [] as string[], title: null, interviewerEligible: null }

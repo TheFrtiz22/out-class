@@ -187,6 +187,9 @@ async function updateClubAccessCommand(input: {
     });
     if (!actor || !target || !organizationCapabilities(actor).canChangeRoles || (target.status && target.status !== "ACTIVE"))
       throw new ActionError("Access denied.");
+    // Alumni hold no club access; they can only be removed (lib/graduation.ts). The target is
+    // therefore always a current member, so the last-owner count below (current owners only) includes it.
+    if (target.alumniSince) throw new ActionError("This member is an alumnus. Alumni can’t be given club access; remove them or ask them to rejoin.");
     if (
       !actor.isOwner &&
       (!canControlOrganizationAccess(actor, target) || target.isOwner ||

@@ -265,34 +265,113 @@ test('alumni are excluded from member counts, audiences, exports and member-only
   }
   // platform-admin: admin user filters; roster-import and club-onboarding: an alumnus is already on the
   // roster; tasks: the student's own assignment history; account-data: the signed-in user's own memberships
-  // (shown as Alumni); graduation: the restore itself.
-  assert.deepEqual([...new Set(remaining)].sort(), ['actions/platform-admin.ts', 'actions/roster-import.ts', 'actions/tasks.ts', 'lib/account-data.ts', 'utils/club-onboarding.ts', 'utils/graduation.ts'].sort())
+  // (shown as Alumni). (utils/graduation.ts restores with `status: "ACTIVE" as const`.)
+  assert.deepEqual([...new Set(remaining)].sort(), ['actions/platform-admin.ts', 'actions/roster-import.ts', 'actions/tasks.ts', 'lib/account-data.ts', 'utils/club-onboarding.ts'].sort())
 })
 
 test('a gradYear change runs inside each profile write transaction', () => {
-  assert.match(src('actions/profile.ts'), /prisma\.\$transaction\(async tx => \{\n\s*await applyGraduationYearChange\(tx, user\.id, parsed\.gradYear\);/)
-  assert.match(src('actions/profile.ts'), /if \(yearChange !== undefined\) await applyGraduationYearChange\(tx, user\.id, yearChange\);\n\s*return update\(tx\);/)
-  assert.match(src('actions/resume-import.ts'), /if \(patch\.gradYear !== undefined\) await applyGraduationYearChange\(tx, user\.id, patch\.gradYear\)/)
+  assert.match(src('actions/profile.ts'), /prisma\.\$transaction\(async tx => \{\n\s*await applyGraduationYearChange\(tx, user\.id, parsed\.gradYear, /)
+  assert.match(src('actions/profile.ts'), /if \(yearChange !== undefined\) await applyGraduationYearChange\(tx, user\.id, yearChange, [^\n]*\n\s*return update\(tx\);/)
+  assert.match(src('actions/resume-import.ts'), /if \(patch\.gradYear !== undefined\) await applyGraduationYearChange\(tx, user\.id, patch\.gradYear, /)
   const actions = src('actions/graduation.ts')
   assert.match(actions, /if \(impersonation\) throw new ActionError/)
   assert.match(actions, /actionResult\(confirmGraduationCommand, "confirmGraduation"\)/)
   assert.doesNotMatch(actions + src('utils/graduation.ts'), /sendEmail|enqueue|resend|notification/i, 'this PR sends nothing')
 })
 
-test('applyGraduationYearChange restores exactly the memberships the job converted', async () => {
-  const { applyGraduationYearChange } = job()
-  const writes = []
-  const graduatedAt = new Date('2026-08-01T04:00:00Z')
+function yearTx(profile, members = []) {
+  const log = []
   const tx = {
-    studentProfile: { findUnique: async () => ({ id: 'p1', gradYear: 2026, graduatedAt, graduationConfirmedAt: null, graduationPromptDismissedAt: null }), update: async a => writes.push(['profile', a]) },
-    clubMember: { updateMany: async a => { writes.push(['members', a]); return { count: 2 } } },
-    auditLog: { create: async a => writes.push(['audit', a]) },
+    $queryRaw: async strings => { log.push(['lock', strings.join('?').trim()]); return [] },
+    studentProfile: { findUnique: async () => { log.push(['read']); return profile }, update: async a => log.push(['profile', a]) },
+    clubMember: {
+      findMany: async ({ where }) => members.filter(m => m.userId === where.userId && m.status === where.status && +m.alumniSince === +where.alumniSince).map(m => structuredClone(m)),
+      updateMany: async ({ where, data }) => { const hit = members.filter(m => where.id.in.includes(m.id)); for (const m of hit) Object.assign(m, data); log.push(['members', { where, data }]); return { count: hit.length } },
+    },
+    auditLog: { create: async a => log.push(['audit', a]) },
   }
-  await applyGraduationYearChange(tx, 'u1', 2027, new Date('2026-09-01T12:00:00Z'))
-  assert.deepEqual(writes[0], ['profile', { where: { id: 'p1' }, data: { graduatedAt: null, graduationConfirmedAt: null, graduationPromptDismissedAt: null } }])
-  assert.deepEqual(writes[1], ['members', { where: { userId: 'u1', status: 'ACTIVE', alumniSince: graduatedAt }, data: { alumniSince: null } }])
-  assert.equal(writes[2][1].data.action, 'student.graduation.reverse')
-  writes.length = 0
-  assert.equal(await applyGraduationYearChange(tx, 'u1', 2026), null)
-  assert.equal(writes.length, 0)
+  return { tx, log }
+}
+
+test('applyGraduationYearChange locks User then profile before reading, and restores only what the job converted', async () => {
+  const { applyGraduationYearChange } = job()
+  const graduatedAt = new Date('2026-08-01T04:00:00Z')
+  const members = [
+    { id: 'm1', userId: 'u1', status: 'ACTIVE', alumniSince: graduatedAt },
+    { id: 'm-other', userId: 'u1', status: 'ACTIVE', alumniSince: new Date('2025-08-01T04:00:00Z') },
+  ]
+  const { tx, log } = yearTx({ id: 'p1', gradYear: 2026, graduatedAt, graduationConfirmedAt: null, graduationPromptDismissedAt: null }, members)
+  await applyGraduationYearChange(tx, 'u1', 2027, { now: new Date('2026-09-01T12:00:00Z') })
+  assert.match(log[0][1], /^SELECT id FROM "User" WHERE id = \? FOR UPDATE$/)
+  assert.match(log[1][1], /^SELECT id FROM "StudentProfile" WHERE "userId" = \? FOR UPDATE$/)
+  assert.deepEqual(log[2], ['read'], 'the profile is read only after both locks')
+  assert.deepEqual(log[3], ['profile', { where: { id: 'p1' }, data: { graduatedAt: null, graduationConfirmedAt: null, graduationPromptDismissedAt: null } }])
+  assert.deepEqual(log[4][1].where, { userId: 'u1', status: 'ACTIVE', alumniSince: graduatedAt, id: { in: ['m1'] } })
+  assert.equal(members[1].alumniSince.toISOString(), '2025-08-01T04:00:00.000Z', 'a membership the job did not convert is left alone')
+  assert.equal(log[5][1].data.action, 'student.graduation.reverse')
+  const { tx: same, log: sameLog } = yearTx({ id: 'p1', gradYear: 2026, graduatedAt: null })
+  assert.equal(await applyGraduationYearChange(same, 'u1', 2026), null)
+  assert.equal(sameLog.filter(e => e[0] !== 'lock' && e[0] !== 'read').length, 0)
+})
+
+test('a restored leader comes back as a plain current member, audited, with no club capabilities', async () => {
+  const { applyGraduationYearChange, RESTORED_MEMBER } = job()
+  const p = load('lib/permissions.ts')
+  const graduatedAt = new Date('2026-08-01T04:00:00Z')
+  const admin = { id: 'm1', userId: 'u1', clubId: 'c1', status: 'ACTIVE', alumniSince: graduatedAt, isOwner: true, accessRole: 'OWNER', role: 'PRESIDENT', permissions: [...p.clubPermissions], interviewOffices: ['PRESIDENT'], title: 'President', interviewerEligible: true }
+  const { tx, log } = yearTx({ id: 'p1', gradYear: 2026, graduatedAt, graduationConfirmedAt: null, graduationPromptDismissedAt: null }, [admin])
+  await applyGraduationYearChange(tx, 'u1', 2027, { now: new Date('2026-09-01T12:00:00Z') })
+  assert.equal(p.isActiveMembership(admin), true, 'current again')
+  for (const perm of ['members.manage', 'leaders.manage', 'club.settings']) assert.equal(p.hasPermission(admin, perm), false, perm)
+  assert.equal(p.hasWorkspace(admin), false)
+  assert.deepEqual({ isOwner: admin.isOwner, accessRole: admin.accessRole, role: admin.role, permissions: admin.permissions, interviewOffices: admin.interviewOffices, title: admin.title, interviewerEligible: admin.interviewerEligible },
+    { isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', permissions: [], interviewOffices: [], title: null, interviewerEligible: null })
+  const audit = log.find(e => e[0] === 'audit')[1].data
+  assert.equal(audit.details.before[0].accessRole, 'OWNER', 'the previous leadership is kept in the audit for a leader to re-grant')
+  assert.deepEqual(audit.details.after, RESTORED_MEMBER)
+})
+
+test('a support session cannot change the graduation year (and so cannot restore memberships)', async () => {
+  const { applyGraduationYearChange, SUPPORT_YEAR_CHANGE_MESSAGE } = job()
+  const graduatedAt = new Date('2026-08-01T04:00:00Z')
+  const members = [{ id: 'm1', userId: 'u1', status: 'ACTIVE', alumniSince: graduatedAt }]
+  const { tx, log } = yearTx({ id: 'p1', gradYear: 2026, graduatedAt, graduationConfirmedAt: null, graduationPromptDismissedAt: null }, members)
+  await assert.rejects(applyGraduationYearChange(tx, 'u1', 2027, { supportSession: true, now: new Date('2026-09-01T12:00:00Z') }), e => e.message === SUPPORT_YEAR_CHANGE_MESSAGE && e.code === 'FORBIDDEN')
+  assert.equal(log.filter(e => !['lock', 'read'].includes(e[0])).length, 0, 'nothing written')
+  assert.equal(+members[0].alumniSince, +graduatedAt)
+  const { tx: unchanged } = yearTx({ id: 'p1', gradYear: 2026, graduatedAt })
+  assert.equal(await applyGraduationYearChange(unchanged, 'u1', 2026, { supportSession: true }), null, 'saving other fields with the same year still works')
+  const profile = src('actions/profile.ts'), resume = src('actions/resume-import.ts')
+  assert.equal((profile.match(/applyGraduationYearChange\(tx, user\.id, [\w.]+, \{ supportSession: !!impersonation \}\)/g) || []).length, 2)
+  assert.equal((profile.match(/const \{ user, impersonation \} = await requireAuth\(\);/g) || []).length, 2)
+  assert.match(resume, /applyGraduationYearChange\(tx, user\.id, patch\.gradYear, \{ supportSession: !!impersonation \}\)/)
+  assert.match(resume, /SELECT id FROM "User" WHERE id=\$\{user\.id\} FOR UPDATE`\n\s*await tx\.\$queryRaw`SELECT id FROM "StudentProfile"/, 'resume import takes the same lock order')
+})
+
+test('graduation job step 2 re-reads the profile: a student restored between the steps is not converted', { timeout: 240000 }, async t => {
+  const db = await migratedDatabase(t)
+  await db.exec(`INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES('a','a','A','','','#142d4e','Academic');
+    INSERT INTO "User"(id,email) VALUES('grad','g@virginia.edu'),('lead','l@virginia.edu');
+    INSERT INTO "StudentProfile"(id,"userId","firstName","lastName","computingId",major,"gradYear") VALUES('p1','grad','G','L','grad','Econ',2026);
+    INSERT INTO "ClubMember"(id,"clubId","userId","isOwner") VALUES('a-grad','a','grad',false),('a-lead','a','lead',true);`)
+  const base = jobDb(db)
+  let transactions = 0
+  // Interleave: right after step 1 commits, the student saves gradYear 2027 (what applyGraduationYearChange writes).
+  const interleaved = { ...base, $transaction: async work => {
+    const result = await base.$transaction(work)
+    if (++transactions === 1) await db.exec(`UPDATE "StudentProfile" SET "gradYear"=2027, "graduatedAt"=NULL WHERE id='p1'`)
+    return result
+  } }
+  const result = await job().runGraduationJob(interleaved, new Date('2026-09-01T12:00:00Z'))
+  assert.equal(result.graduated, 1)
+  assert.equal(result.alumniMemberships, 0)
+  assert.deepEqual(await alumni(db), [], 'student and memberships agree')
+  assert.match(src('utils/graduation.ts'), /FOR SHARE OF cp\)/, 'step 2 waits for a concurrent profile save and re-checks graduatedAt')
+})
+
+test('alumni assignees and staff are read with alumniSince; access edits refuse alumni', () => {
+  for (const file of ['lib/pipeline-summary.ts', 'lib/ranked-review-read.ts', 'actions/recruiting-insights.ts'])
+    assert.match(src(file), /member: \{ select: \{ status: true, alumniSince: true, isOwner: true, permissions: true \} \}/, file)
+  assert.equal((src('actions/content-reports.ts').match(/select: \{ status: true, alumniSince: true,/g) || []).length, 2)
+  assert.match(src('actions/club-access.ts'), /if \(target\.alumniSince\) throw new ActionError\("This member is an alumnus/)
 })

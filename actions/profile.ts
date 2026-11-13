@@ -10,7 +10,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions";
 import { hasCurrentTermsAcceptance } from "@/utils/terms-acceptance";
-import { applyGraduationYearChange } from "@/utils/graduation";
+import { applyGraduationYearChange, SUPPORT_YEAR_CHANGE_MESSAGE } from "@/utils/graduation";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { boundedParse, boundedSafeParse } from "@/lib/bounded-input";
@@ -48,7 +48,7 @@ export async function getStudentProfile() {
 }
 
 export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) {
-  const { user } = await requireAuth();
+  const { user, impersonation } = await requireAuth();
   
   // Validate input
   const parsed = boundedParse(profileSchema, data);
@@ -70,7 +70,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   // Update or create the profile. A changed graduation year resets the graduation answer in the
   // same transaction (utils/graduation.ts).
   const profile = await prisma.$transaction(async tx => {
-  await applyGraduationYearChange(tx, user.id, parsed.gradYear);
+  await applyGraduationYearChange(tx, user.id, parsed.gradYear, { supportSession: !!impersonation });
   return tx.studentProfile.upsert({
     where: { userId: user.id },
     update: {
@@ -124,7 +124,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
 // Section updates deliberately omit unrelated fields and relations.
 // Editing education must never clear a résumé or replace experience records.
 export async function updateStudentProfileSection(input: unknown, expected?: string) {
-  const { user } = await requireAuth();
+  const { user, impersonation } = await requireAuth();
   const parsed = boundedSafeParse(profileSectionSchema, input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check your entries." };
   if (parsed.data.section === "identity" && parsed.data.headshotUrl && !parsed.data.headshotUrl.startsWith(`${user.id}/`)) return { error: "You can only save your own photo." };
@@ -154,12 +154,12 @@ export async function updateStudentProfileSection(input: unknown, expected?: str
         const actual = profileSectionSnapshot(current, section);
         if (actual !== expected && actual !== profileSectionSnapshot(next, section)) throw Error("This profile section changed in another tab. Reopen it to compare. Your text is retained.");
       }
-      if (yearChange !== undefined) await applyGraduationYearChange(tx, user.id, yearChange);
+      if (yearChange !== undefined) await applyGraduationYearChange(tx, user.id, yearChange, { supportSession: !!impersonation });
       return update(tx);
     });
     revalidatePath("/", "layout");
     return { profile };
   } catch (error) {
-    return { error: error instanceof Error && error.message.includes("changed in another tab") ? error.message : "Your changes could not be saved. Please try again." };
+    return { error: error instanceof Error && (error.message.includes("changed in another tab") || error.message === SUPPORT_YEAR_CHANGE_MESSAGE) ? error.message : "Your changes could not be saved. Please try again." };
   }
 }
