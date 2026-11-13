@@ -17,7 +17,9 @@ for (const name of ['pushState', 'replaceState']) {
   const original = history[name].bind(history)
   history[name] = (...args) => { original(...args); window.dispatchEvent(new Event('fixture:navigation')) }
 }
-const seed = createDemoSeed('2026-11-09')
+// Anchored to today (Eastern), like Demo Mode itself: a fixed date aged the fixture's
+// interviews into the past, and the Interviews list then had no rows (CI, Nov 13).
+const seed = createDemoSeed()
 seed.perspective = { role: 'leader', clubId: seed.clubs[0].id }
 window.__leaderClubId = seed.clubs[0].id
 const clubId = location.pathname.match(/\/club\/([^/]+)\/workspace/)?.[1]
