@@ -145,7 +145,7 @@ export function GlassRowList({ children, className, as: Tag = "ul" }: { children
 
 /** Month and day chip; navy for meetings, interview and deadline tints by kind. Decorative: the row says the date. */
 export function DateChip({ at, kind, timeZone }: { at: Date; kind?: string; timeZone?: string }) {
-  return <span className="oc-date-chip" data-kind={kind} aria-hidden="true"><span>{at.toLocaleDateString([], { month: "short", timeZone })}</span><strong>{timeZone ? at.toLocaleDateString("en-US", { day: "numeric", timeZone }) : at.getDate()}</strong></span>
+  return <span className="oc-date-chip" data-kind={kind} aria-hidden="true"><span>{at.toLocaleDateString("en-US", { month: "short", timeZone })}</span><strong>{timeZone ? at.toLocaleDateString("en-US", { day: "numeric", timeZone }) : at.getDate()}</strong></span>
 }
 
 export type DateChipItem = { id: string; at: Date; kind?: string; title: ReactNode; detail?: ReactNode; onClick?: () => void; href?: string }

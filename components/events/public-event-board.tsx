@@ -58,15 +58,17 @@ const initialFilters: EventFilters = {
   sort: "soonest",
   page: 0,
 };
-export function PublicEventBoard() {
+export type PublicEventBoardData = { events: CampusEvent[]; clubs: { id: string; name: string }[]; total: number; hasMore: boolean };
+/** `initialBoard` is the server's read of the unfiltered board, so the first paint shows events, not a placeholder. */
+export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventBoardData } = {}) {
   const { user } = useAuth(),
     identity = user?.id || "";
   const [filters, setFilters] = useState(initialFilters),
-    [events, setEvents] = useState<CampusEvent[]>([]),
-    [clubs, setClubs] = useState<{ id: string; name: string }[]>([]),
-    [total, setTotal] = useState(0),
-    [hasMore, setHasMore] = useState(false),
-    [loading, setLoading] = useState(true),
+    [events, setEvents] = useState<CampusEvent[]>(initialBoard?.events ?? []),
+    [clubs, setClubs] = useState<{ id: string; name: string }[]>(initialBoard?.clubs ?? []),
+    [total, setTotal] = useState(initialBoard?.total ?? 0),
+    [hasMore, setHasMore] = useState(initialBoard?.hasMore ?? false),
+    [loading, setLoading] = useState(!initialBoard),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0),
     [selected, setSelected] = useState<CampusEvent | null>(null),
@@ -79,6 +81,8 @@ export function PublicEventBoard() {
     [linkedRetry, setLinkedRetry] = useState(0);
   const [view, setView] = useState<"corkboard" | "list">("corkboard");
   const saves = useSavedCampusEvents(identity);
+  // The server board answers the first, unfiltered read; any later filter, retry or account change fetches.
+  const seeded = useRef(!!initialBoard);
   useEffect(() => {
     try {
       const preference = localStorage.getItem("outclass:events:view:v1");
@@ -101,6 +105,10 @@ export function PublicEventBoard() {
     }
   }
   useEffect(() => {
+    if (seeded.current) {
+      seeded.current = false;
+      if (filters === initialFilters && retry === 0) return;
+    }
     let active = true;
     setLoading(true);
     setError("");

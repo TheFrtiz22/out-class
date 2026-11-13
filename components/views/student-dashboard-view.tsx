@@ -4,6 +4,8 @@ import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
 
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
+import { studentCalendarEvents, type CalendarSource } from "@/lib/student-calendar-data"
 import { Bell, CheckCircle2, ChevronRight, Circle } from "@/components/icons"
 import { WelcomeHeader } from "@/components/product/welcome-header"
 import { Dashboard, DashboardCard, DashboardFoot, DashboardHero, DashboardMore, DashboardQuiet, DateChipList, GlassRow, GlassRowList, NeedsAction, NeedsYouRow, PipelineBars, type DateChipItem, type NeedsItem } from "@/components/product/dashboard/dashboard"
@@ -71,10 +73,13 @@ export function StudentDashboardView({
   onNavigate,
   initialData,
   authenticated = false,
+  serverNow,
 }: {
   onNavigate: (view: ViewId) => void
-  initialData?: { applications: HomeApplicationSource[] } | null
+  initialData?: ({ applications: HomeApplicationSource[] } & CalendarSource) | null
   authenticated?: boolean
+  /** The server's render time: a signed-in Home renders its records in the server HTML, not a placeholder. */
+  serverNow?: number
 }) {
   const {
     focusApplication,
@@ -87,8 +92,15 @@ export function StudentDashboardView({
     hydrated,
   } = useApplicationState()
   const { user, loading } = useAuth()
+  // The greeting reads the device clock after hydration; deadlines and the agenda use the
+  // server-anchored minute clock, so the server HTML already holds them (no skeleton swap).
   const now = useWelcomeClock()
+  const anchoredNow = useServerAnchoredNow(serverNow)
+  const clock = new Date(anchoredNow)
   const realMode = authenticated || !!user || initialData != null
+  // Before the shell store is seeded (server render and hydration), the agenda comes straight from the
+  // same server records the store is seeded with, so hydration matches and nothing shifts afterwards.
+  const serverRendered = authenticated && initialData != null
   // Real records always win, including an empty array. Never fall back to browser demo applications.
   const realApps = user
     ? user.applications.map((app) => ({
@@ -96,7 +108,7 @@ export function StudentDashboardView({
         answers: initialData?.applications.find((source) => source.id === app.id)?.answers,
       }))
     : initialData?.applications
-  const accountEvents = realMode && !authenticated && initialData == null ? [] : events
+  const accountEvents = realMode && !authenticated && initialData == null ? [] : serverRendered && !hydrated ? studentCalendarEvents(initialData) : events
   const accountNotifications =
     realMode && !authenticated && initialData == null ? [] : notifications
   const applications = homeApplications(
@@ -106,9 +118,10 @@ export function StudentDashboardView({
   )
   const unavailable = realMode && !realApps && !loading
   const agendaUnavailable = realMode && initialData == null
-  const agenda = now ? upcomingAgenda(accountEvents, now) : []
+  const bodyNow = serverRendered ? clock : now
+  const agenda = bodyNow ? upcomingAgenda(accountEvents, bodyNow) : []
   const updates = relevantUpdates(accountNotifications)
-  const next = now ? nextHomeAction(applications, agenda, now, accountNotifications) : { kind: "explore" as const }
+  const next = bodyNow ? nextHomeAction(applications, agenda, bodyNow, accountNotifications) : { kind: "explore" as const }
   function openApplication(app: HomeApplication) {
     focusApplication(app.clubId)
     onNavigate(app.draft ? "tracker" : "status")
@@ -130,7 +143,7 @@ export function StudentDashboardView({
   />
   const hero = <DashboardHero className="oc-home-hero">{welcome}</DashboardHero>
 
-  if (loading || !hydrated || !now)
+  if (loading || (serverRendered ? false : !hydrated || !bodyNow))
     return (
       <div className="oc-student-home">
         {hero}
@@ -142,12 +155,13 @@ export function StudentDashboardView({
       </div>
     )
 
+  const current = bodyNow ?? clock
   // Needs you: only from records this page already reads. The next step (nextHomeAction) leads.
   const memberClubIds = user?.memberships.filter(m => m.status === "ACTIVE").map(m => m.clubId) ?? []
   const taskItems = personalTaskActivities?.userId === user?.id ? personalTaskActivities?.items ?? [] : []
-  const overdueTasks = [...new Map(taskItems.flatMap(item => item.clubId && memberClubIds.includes(item.clubId) && item.taskActivity?.needsSubmission && item.taskActivity.dueAt && +new Date(item.taskActivity.dueAt) < now.getTime() ? [[item.taskActivity.assignmentId, item.clubId] as const] : [])).values()]
+  const overdueTasks = [...new Map(taskItems.flatMap(item => item.clubId && memberClubIds.includes(item.clubId) && item.taskActivity?.needsSubmission && item.taskActivity.dueAt && +new Date(item.taskActivity.dueAt) < current.getTime() ? [[item.taskActivity.assignmentId, item.clubId] as const] : [])).values()]
   // Drafts for a club that stopped taking applications are not work to finish (lib/recruitment-presentation).
-  const upcomingDeadlines = applications.filter(app => app.draft && !app.intakeClosed && app.deadline && eventStart(app.deadline) >= now).sort((a, b) => eventStart(a.deadline!).getTime() - eventStart(b.deadline!).getTime())
+  const upcomingDeadlines = applications.filter(app => app.draft && !app.intakeClosed && app.deadline && eventStart(app.deadline) >= current).sort((a, b) => eventStart(a.deadline!).getTime() - eventStart(b.deadline!).getTime())
   const drafts = applications.filter(app => app.draft && !app.intakeClosed && !upcomingDeadlines.includes(app))
   const interviewing = applications.filter(app => app.status === "Interviewing")
   const urgentUpdate = updates.find(update => update.urgent && !update.read)
@@ -158,7 +172,7 @@ export function StudentDashboardView({
   if (interviewing.length) needs.push({ order: 3, id: "interviews", title: interviewing.length === 1 ? `Interview with ${interviewing[0]!.name}` : `${plural(interviewing.length, "interview invitation")}`, detail: "Book your interview or view your appointment.", action: <NeedsAction onClick={() => openApplication(interviewing[0]!)}>View interview</NeedsAction> })
   if (urgentUpdate) needs.push({ order: next.kind === "notification" ? 0 : 4, id: "update", title: urgentUpdate.title, detail: urgentUpdate.preview, action: <NeedsAction onClick={() => readUpdate(urgentUpdate.id)}>Read update</NeedsAction> })
   if (drafts.length) needs.push({ order: next.kind === "application" && drafts.includes(next.application) ? 0 : 5, id: "drafts", title: drafts.length === 1 ? `Finish your ${drafts[0]!.name} application` : `${plural(drafts.length, "draft")} in progress`, detail: drafts[0]!.responsesSaved !== undefined ? `${plural(drafts[0]!.responsesSaved, "response")} saved` : "Pick up where you left off.", action: <NeedsAction onClick={() => openApplication(drafts[0]!)}>Continue draft</NeedsAction> })
-  if (next.kind === "event" && eventStart(next.event).getTime() <= now.getTime() + 48 * 3600000) needs.push({ order: 0, id: "event", title: next.event.title, detail: `${when(next.event)}${next.event.location ? ` · ${next.event.location}` : ""}`, action: <NeedsAction onClick={() => openEvent(next.event)}>View event details</NeedsAction> })
+  if (next.kind === "event" && eventStart(next.event).getTime() <= current.getTime() + 48 * 3600000) needs.push({ order: 0, id: "event", title: next.event.title, detail: `${when(next.event)}${next.event.location ? ` · ${next.event.location}` : ""}`, action: <NeedsAction onClick={() => openEvent(next.event)}>View event details</NeedsAction> })
   const needsItems = needs.sort((a, b) => a.order - b.order).slice(0, 4)
 
   const coming: DateChipItem[] = [

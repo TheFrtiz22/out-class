@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CorkboardView } from "@/components/views/corkboard-view";
-import { getPublicCampusEvent } from "@/actions/campus-events";
+import { unstable_cache } from "next/cache";
+import { getPublicCampusEvent, getPublicCorkboard } from "@/actions/campus-events";
 import { eventScheduleLabel } from "@/lib/campus-events";
 import { pageTitle, SITE_URL, socialDefaults } from "@/lib/seo";
 import { shareText, eventSharePath } from "@/lib/share-links";
@@ -29,10 +30,19 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
-export default function Page() {
+/**
+ * The unfiltered board, read on the server so the first paint shows events instead of a placeholder
+ * followed by a client round trip. Public data only (no saved filter); event and club changes
+ * revalidate the "club-directory" tag (actions/campus-events.ts refresh()).
+ */
+const readDefaultBoard = unstable_cache(() => getPublicCorkboard(), ["public-corkboard-default"], { revalidate: 60, tags: ["club-directory"] });
+
+export default async function Page() {
+  // A failed read falls back to the board's own client load and error state.
+  const initialBoard = await readDefaultBoard().catch(() => undefined);
   return (
     <div className="max-w-[var(--oc-content-width)]">
-      <CorkboardView />
+      <CorkboardView initialBoard={initialBoard} />
     </div>
   );
 }
