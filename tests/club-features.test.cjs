@@ -188,3 +188,18 @@ test('the migration applies after the existing chain, keeps rows NULL (all off),
   await write(null)
   for (const bad of ['[]', '"on"', 'true', '1']) await assert.rejects(write(bad), /Club_features_object/, bad)
 })
+
+test('every export link in the interface is hidden while the club\'s csvExport switch is off', () => {
+  // A link offered with the switch off would download a 403. Each component that builds an export
+  // href must apply the same display rule as ClubExportLink.
+  const sources = fs.readdirSync('components', { recursive: true })
+    .map(file => String(file).split(path.sep).join('/'))
+    .filter(file => /\.tsx?$/.test(file))
+    .map(file => `components/${file}`)
+    .filter(file => fs.readFileSync(file, 'utf8').includes('clubExportHref('))
+  assert.ok(sources.includes('components/club-export-link.tsx') && sources.includes('components/views/leader-dashboard/live-leader-workspace.tsx'), 'the scan sees the export links')
+  for (const file of sources)
+    assert.match(fs.readFileSync(file, 'utf8'), /isFeatureEnabled\([^)]*"csvExport"\)/, `${file} offers an export without checking the csvExport switch`)
+  // The Applicants menu's own gate, not just any mention of the switch in the file.
+  assert.match(fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx', 'utf8'), /const exportable = [^\n]*isFeatureEnabled\(membership\.club\?\.features, "csvExport"\)/)
+})

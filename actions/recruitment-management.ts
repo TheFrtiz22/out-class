@@ -5,6 +5,7 @@ import {requireClubPermission} from "@/utils/auth";
 import {clubWriteTransaction} from "@/utils/club-write-transaction";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {START_NEXT_CYCLE_ACTION,cycleDecisionBlocker,cycleVotingBlocker,nextCycleDeadline} from "@/lib/recruitment-cycle";
+import {ActionError,actionResult} from "@/lib/action-result";
 const uuid=z.string().uuid();
 export async function getRecruitmentCycles(clubId:string){
  uuid.parse(clubId);const {user}=await requireClubPermission(clubId,["recruitment.manage"]);
@@ -13,15 +14,24 @@ export async function getRecruitmentCycles(clubId:string){
   return tx.recruitmentCycle.findMany({where:{clubId},orderBy:{createdAt:"desc"}});
  });
 }
+/**
+ * Cycle refusals a leader can act on (undecided applications, live voting) are returned as ActionError
+ * results so their message survives production builds; anything else still throws and the client shows
+ * its fallback.
+ */
 export async function saveRecruitmentCycle(input:unknown){
+ return actionResult(()=>saveRecruitmentCycleCommand(input),"saveRecruitmentCycle");
+}
+async function saveRecruitmentCycleCommand(input:unknown){
  const d=z.object({id:uuid,clubId:uuid,name:z.string().trim().min(1).max(100),archived:z.boolean()}).strict().parse(input);
  const {user}=await requireClubPermission(d.clubId,["recruitment.manage"]);
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,d.clubId,user.id,["recruitment.manage"]);
   const existing=await tx.recruitmentCycle.findUnique({where:{id:d.id}});
   if(existing&&existing.clubId!==d.clubId)throw Error("Cycle unavailable.");
-  // Archiving freezes the cycle's votes; refuse while any are live or unfinalized.
-  if(existing&&d.archived&&!existing.archivedAt){const blocker=await cycleVotingBlocker(tx,d.clubId,existing);if(blocker)throw Error(blocker);}
+  // Archiving freezes the cycle's votes and ends its recruiting: refuse while any vote is live or unfinalized,
+  // or while an applicant is still waiting on a decision (the same rule as starting the next cycle).
+  if(existing&&d.archived&&!existing.archivedAt){const blocker=await cycleVotingBlocker(tx,d.clubId,existing)??await cycleDecisionBlocker(tx,d.clubId,existing,"archive");if(blocker)throw new ActionError(blocker,"CYCLE_NOT_CLOSABLE");}
   await tx.recruitmentCycle.upsert({where:{id:d.id},create:{id:d.id,clubId:d.clubId,name:d.name,archivedAt:d.archived?new Date():null},update:{name:d.name,archivedAt:d.archived?existing?.archivedAt??new Date():null}});
   await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.id,action:"recruitment.cycle.saved",details:{name:d.name,archived:d.archived}}});
   return {success:true};
@@ -63,9 +73,13 @@ const startNextCycleInput=z.object({id:uuid,clubId:uuid,sourceCycleId:uuid,name:
  * the new cycle. The source cycle is archived so new submissions join only the
  * new cycle, and a passed application deadline is left unset. The link to the
  * source is the audit entry. `id` is generated once per form, so a double
- * submit replays instead of creating a second cycle.
+ * submit replays instead of creating a second cycle. Refusals a leader can act
+ * on are returned as ActionError results (see saveRecruitmentCycle).
  */
 export async function startRecruitmentCycleFromPrevious(input:unknown){
+ return actionResult(()=>startRecruitmentCycleFromPreviousCommand(input),"startRecruitmentCycleFromPrevious");
+}
+async function startRecruitmentCycleFromPreviousCommand(input:unknown){
  const d=startNextCycleInput.parse(input);
  const {user}=await requireClubPermission(d.clubId,["recruitment.manage"]);
  return clubWriteTransaction(async tx=>{
@@ -81,12 +95,12 @@ export async function startRecruitmentCycleFromPrevious(input:unknown){
   const source=await tx.recruitmentCycle.findFirst({where:{id:d.sourceCycleId,clubId:d.clubId}});
   if(!source)throw Error("Cycle unavailable.");
   if(await tx.recruitmentCycle.count({where:{clubId:d.clubId,archivedAt:null,id:{not:source.id}}}))
-   throw Error("Archive the club's other open cycles first, so new applications join only the new cycle.");
-  if(await tx.recruitmentCycle.findFirst({where:{clubId:d.clubId,name:d.name},select:{id:true}}))throw Error("A cycle with this name already exists.");
+   throw new ActionError("Archive the club's other open cycles first, so new applications join only the new cycle.","OTHER_CYCLES_OPEN");
+  if(await tx.recruitmentCycle.findFirst({where:{clubId:d.clubId,name:d.name},select:{id:true}}))throw new ActionError("A cycle with this name already exists.","CYCLE_NAME_TAKEN");
   const archiveSource=!source.archivedAt;
   if(archiveSource){
-   const blocker=await cycleVotingBlocker(tx,d.clubId,source)??await cycleDecisionBlocker(tx,d.clubId,source);
-   if(blocker)throw Error(blocker);
+   const blocker=await cycleVotingBlocker(tx,d.clubId,source)??await cycleDecisionBlocker(tx,d.clubId,source,"start");
+   if(blocker)throw new ActionError(blocker,"CYCLE_NOT_CLOSABLE");
    const archived=await tx.recruitmentCycle.updateMany({where:{id:source.id,clubId:d.clubId,archivedAt:null},data:{archivedAt:new Date()}});
    if(archived.count!==1)throw Error("Cycle changed. Reload and try again.");
   }
