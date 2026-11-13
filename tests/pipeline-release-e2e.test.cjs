@@ -61,6 +61,8 @@ test('real desktop pointer and mobile touch support detail switching, global sea
    try{await guide.waitFor({timeout:3000});await activate(guide);}catch(e){if(e.name!=='TimeoutError')throw e;}
    const entryRequests=[];const observeEntry=request=>entryRequests.push(request);page.on('request',observeEntry);
    await activate(page.locator('.oc-command-recruiting').getByRole('link',{name:'All applicants',exact:true}));
+   // The overview's own review-queue rows also carry data-applicant-id; count only after it has gone.
+   await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});
    const rows=()=>page.locator('[data-applicant-id]').filter({visible:true});await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
    page.off('request',observeEntry);
    assert.equal(entryRequests.filter(request=>new URL(request.url()).searchParams.get('kind')==='pipelinePage').length,1,'Entry must still perform its fresh guarded page read');
