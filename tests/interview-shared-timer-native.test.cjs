@@ -1,8 +1,9 @@
 // Actual independent Prisma/PostgreSQL connections as the bounded runtime role; Auth identity is synthetic.
 // Never inherits application DATABASE_URL or touches a hosted project.
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript'),path=require('node:path'),{randomUUID}=require('node:crypto');
 const databaseUrl=process.env.OUTCLASS_SECURITY_TEST_DATABASE_URL;
-function actor(prisma,userId){const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const m={exports:{}};cache[file]=m;const mocks={'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:userId}})},'next/cache':{revalidatePath(){}}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return m.exports;}return{rooms:load('actions/interview-collaboration.ts'),kits:load('actions/interview-kits.ts'),timer:load('actions/interview-timer.ts')};}
+function actor(prisma,userId){const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const m={exports:{}};cache[file]=m;const mocks={'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:userId}})},'next/cache':{revalidatePath(){}}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return m.exports;}return{rooms:unwrapActions(load('actions/interview-collaboration.ts')),kits:unwrapActions(load('actions/interview-kits.ts')),timer:unwrapActions(load('actions/interview-timer.ts'))};}
 test('native shared timer: runtime-role writes, simultaneous presses on separate connections, idempotent retries and access refusal',{skip:!databaseUrl,timeout:120000},async t=>{
  const url=new URL(databaseUrl);assert.ok(['localhost','127.0.0.1'].includes(url.hostname)&&url.pathname==='/outclass_security_test');
  const runtime=new URL(databaseUrl);runtime.username='outclass_production_app';
@@ -32,8 +33,8 @@ test('native shared timer: runtime-role writes, simultaneous presses on separate
  assert.ok([p1,p2].every(r=>r.timer.revision===3));row=await db.interviewTimer.findUniqueOrThrow({where:{sessionId:ra.sessionId}});assert.equal(row.revision,3);assert.ok(row.pausedAt);
  assert.equal((await b.rooms.getInterviewCollaboration({...scope,clientId:randomUUID()})).timer.revision,3);
  // Applicant and an unassigned member are refused; nothing changes.
- await assert.rejects(press(actor(db,student.id),3,{type:'reset'}),{message:'Interview access unavailable.'});
- await assert.rejects(press(actor(db,outsider.id),3,{type:'reset'}),{message:'Current panel assignment or explicit leadership permission required.'});
+ await assert.rejects(press(actor(db,student.id),3,{type:'reset'}),{message:'You no longer have access to this interview.',code:'ACCESS_REVOKED'});
+ await assert.rejects(press(actor(db,outsider.id),3,{type:'reset'}),{message:'You no longer have access to this interview.',code:'ACCESS_REVOKED'});
  assert.equal((await db.interviewTimer.findUniqueOrThrow({where:{sessionId:ra.sessionId}})).revision,3);
  // The database guard refuses a skipped revision from the runtime role.
  await assert.rejects(db.$executeRaw`UPDATE "InterviewTimer" SET revision=revision+2 WHERE "sessionId"=${ra.sessionId}`,/revision mismatch/);

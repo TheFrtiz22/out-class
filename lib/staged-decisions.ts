@@ -26,6 +26,8 @@ export type StagedDecisionView = {
   stagedBy: string; stagedByMe: boolean; createdAt: string
   /** Display only: the applicant (anonymized in anonymous-review rounds) and round names at read time. */
   applicant: string; roundName: string; targetRoundName: string | null
+  /** The applicant's phone (E.164), only on a decision that accepts an identified applicant: for the offer call. */
+  phone?: string | null
 }
 
 export const pendingDecisionStatuses: readonly DecisionStatus[] = ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"]

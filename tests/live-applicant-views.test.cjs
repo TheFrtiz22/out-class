@@ -121,7 +121,7 @@ test('server: staging needs decision access, refuses self and recused reviewers,
   for (const check of ['requireClubPermission(data.clubId, [...decideCaps])', 'authorizeClubTransaction(tx, data.clubId, user.id, decideCaps', 'app.studentId === user.id', 'app.status !== data.expectedStatus || app.roundId !== data.expectedRoundId', 'assertNotRecused(tx, app.id, member.id)', 'resolveStagedTarget(']) assert.ok(stage.includes(check), check)
   const send = src.slice(src.indexOf('async function sendStagedDecisionsCommand'), src.indexOf('export async function sendStagedDecisions'))
   assert.match(src, /export async function sendStagedDecisions\([^)]*\) \{\n  return actionResult\(\(\) => sendStagedDecisionsCommand\(input\), "sendStagedDecisions"\)/, 'Send refusals reach the user (#292)')
-  for (const check of ['supportContext()', 'stagedIsStale(item, app)', 'publishRecruitmentDecision(tx,', 'hasPermission(member, "recruitment.manage")', 'tx.stagedDecision.delete(']) assert.ok(send.includes(check), check)
+  for (const check of ['supportContext()', 'stagedIsStale(item, app)', 'publishRecruitmentDecision(tx,', 'hasPermission(member, "recruitment.manage")', 'tx.stagedDecision.deleteMany(', 'recused.has(app.id)', 'tx.auditLog.createMany(']) assert.ok(send.includes(check), check)
   assert.match(read('actions/evaluations.ts'), /boundedParse\(evaluateSchema, data\)/)
   assert.match(read('actions/evaluations.ts'), /validateRubricScores\(value, normalizeReviewRubric\(club\.reviewRubric\)\)/)
   const sql = read('prisma/migrations/20261111150000_review_rubric_staged_decisions/migration.sql')

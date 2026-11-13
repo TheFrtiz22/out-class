@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SectionErrorBoundary } from "@/components/ui/section-error-boundary"
 import { useConfirm } from "@/components/ui/confirm-dialog"
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Linkedin, MoreHorizontal, Pause, X } from "@/components/icons"
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Linkedin, MoreHorizontal, Pause, Phone, X } from "@/components/icons"
+import { formatPhone, phoneHref } from "@/lib/phone"
 import { PreviouslyAppliedBadge } from "@/components/previously-applied-badge"
 import { ApplicantRecusal } from "@/components/applicant-recusal"
 import { RevealApplicant } from "@/components/reveal-applicant"
@@ -131,6 +132,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const activeRound = app ? rounds.find(round => round.id === app.roundId) : undefined
   const profile = app?.student.studentProfile
   const resumeUrl = app && !anonymous && profileFields.resume ? resolveRecruitingResumeUrl(profile?.resumeUrl, clubId, app.id) : undefined
+  const offerPhone = !anonymous && app && "offerPhone" in app && phoneHref(app.offerPhone) ? app.offerPhone : null
   const linkedinUrl = !anonymous && profileFields.linkedin ? safeProfileUrl(profile?.linkedinUrl) : undefined
   const observationsEligible = !!app && canReview && hasPermission(membership, "applicants.identify") && !anonymous && !!app.recruitmentCycleId && app.studentId !== membership.userId && !activeRound?.anonymousReview
   const evaluateReason = !app || app.canEvaluate ? "" : app.studentId === membership.userId ? "You can’t grade your own application." : "Grading needs a panel assignment for this round; recruiting leads assign panels in Interviews › Scheduling. Submitted grades are read-only."
@@ -176,6 +178,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {resumeUrl && <ResumeViewerDialog href={resumeUrl} name={displayName(app)} clubId={clubId} applicationId={app.id} trigger="Résumé" />}
+              {offerPhone && <a className="inline-flex items-center gap-1.5 whitespace-nowrap px-1 text-sm tabular-nums underline underline-offset-4" href={phoneHref(offerPhone)} aria-label={`Call ${displayName(app)} at ${formatPhone(offerPhone)}`} data-testid="offer-phone"><Phone size={16} aria-hidden="true" />{formatPhone(offerPhone)}</a>}
               {linkedinUrl && <a className="oc-quick-icon-action" href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)" title="LinkedIn"><Linkedin size={16} aria-hidden="true" /></a>}
               {anonymous && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={app.id} clubId={clubId} applicationId={app.id} />}
               <ReportContentButton target={{ type: "student", clubId, applicationId: app.id }} label="Report this profile" hidden={app.studentId === membership.userId || !canReview} ownerUserId={app.studentId} />

@@ -7,6 +7,7 @@ import { genderVisibility } from "@/lib/recruitment-profile";
 import { decisionPublicationGuard } from "@/lib/decision-publication-guard";
 import type { PriorApplication } from "@/lib/prior-applications";
 import { visibleQuestionIds } from "@/lib/student-applications";
+import { validPhone } from "@/lib/phone";
 
 // Exactly the canonical CRM detail projection, hydrated only for visible IDs.
 export const pipelineDetailInclude = {
@@ -29,5 +30,9 @@ export function pipelineDetailProjection(raw: Prisma.ApplicationGetPayload<{ inc
         const projected = anonymous ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
         const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
         // Defense in depth: the caller already filtered with mayShowPriorApplications.
-        return { ...projected, canEvaluate, priorApplications: anonymous || raw.studentId === membership.userId ? [] : [...priorApplications], publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
+        // Offer calls: the phone number leaves the server only for an accepted, identified applicant and
+        // only to a member who may both decide and identify. It is never part of the recruitment profile.
+        const phone = raw.student.studentProfile?.phone;
+        const offerPhone = !anonymous && raw.status === "ACCEPTED" && raw.studentId !== membership.userId && hasPermission(membership, "decisions.manage") && validPhone(phone) ? phone : null;
+        return { ...projected, offerPhone, canEvaluate, priorApplications: anonymous || raw.studentId === membership.userId ? [] : [...priorApplications], publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
 }

@@ -6,7 +6,7 @@ test('external, public, foreign and proxy references cannot be saved as owned ph
  const writes=[];const api=load('actions/profile.ts',{'@/utils/terms-acceptance':{ hasCurrentTermsAcceptance:async () => { throw Error('Terms acceptance is not consulted while LEGAL_PAGES_PUBLIC is off') } },'@/utils/auth':{requireAuth:async()=>({user:{id:owner,email:'owner@virginia.edu'}})},'@/utils/prisma':{prisma:{studentProfile:{update:async q=>{writes.push(q);return q.data},upsert:async q=>{writes.push(q);return q.create}}}},'next/cache':{revalidatePath(){}}});
  for(const headshotUrl of ['https://external.invalid/photo.png',`https://local.invalid/storage/v1/object/public/headshots/${owner}/p.png`,`${other}/p.png`,photo.profilePhotoSource(`${owner}/p.png`)]) {
   assert.ok((await api.updateStudentProfileSection({section:'identity',firstName:'New',lastName:'Name',headshotUrl})).error);
-  await assert.rejects(api.upsertStudentProfile({firstName:'New',lastName:'Name',computingId:'owner',major:'Math',gradYear:2028,headshotUrl}));
+  await assert.rejects(api.upsertStudentProfile({firstName:'New',lastName:'Name',computingId:'owner',major:'Math',gradYear:2028,phone:'434-555-0123',headshotUrl}));
  }
  assert.equal(writes.length,0);
  assert.ok(!(await api.updateStudentProfileSection({section:'identity',firstName:'New',lastName:'Name',headshotUrl:`${owner}/p.png`})).error);

@@ -12,6 +12,7 @@ import { requireAuth } from "@/utils/auth";
 import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions";
 import { hasCurrentTermsAcceptance } from "@/utils/terms-acceptance";
 import { z } from "zod";
+import { phoneSchema } from "@/lib/phone";
 import { revalidatePath } from "next/cache";
 import { boundedParse, boundedSafeParse } from "@/lib/bounded-input";
 
@@ -27,6 +28,7 @@ const profileSchemaFor = (storedGradYear?: number | null) => z.object({
   gpa: gpaSchema.optional(),
   satScore: z.number().int().min(400).max(1600).optional(),
   linkedinUrl: linkedinUrlSchema.optional().or(z.literal("")),
+  phone: phoneSchema,
   resumeUrl: resumeReferenceSchema.optional(),
   headshotUrl: headshotUrlSchema.optional(),
   experiences: z.array(z.object({
@@ -90,6 +92,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       satScore: parsed.satScore,
       actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
       linkedinUrl: parsed.linkedinUrl || null,
+      phone: parsed.phone,
       resumeUrl: parsed.resumeUrl || null,
       headshotUrl: parsed.headshotUrl || null,
       experiences: {
@@ -110,6 +113,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       satScore: parsed.satScore,
       actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
       linkedinUrl: parsed.linkedinUrl || null,
+      phone: parsed.phone,
       resumeUrl: parsed.resumeUrl || null,
       headshotUrl: parsed.headshotUrl || null,
       experiences: {
