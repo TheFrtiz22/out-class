@@ -56,7 +56,7 @@ async function classify(tx: AppTransactionClient, clubId: string, inputs: Roster
     return { ...row, existingUser: !!matchedUserId, matchedUserId, schoolIdentityId: invitation ? invitation.schoolIdentityId : identity?.id ?? null, invitationId: invitation?.id ?? null };
   });
 }
-const databaseStatus = (row: RosterRow): RosterRowStatus => ({ READY: "VALID", INVALID: "INVALID", DUPLICATE: "DUPLICATE_ROW", ALREADY_MEMBER: "ALREADY_MEMBER", ALREADY_INVITED: "INVITATION_REUSED" } as const)[row.status];
+const databaseStatus = (row: Pick<RosterRow, "status">): RosterRowStatus => ({ READY: "VALID", INVALID: "INVALID", DUPLICATE: "DUPLICATE_ROW", ALREADY_MEMBER: "ALREADY_MEMBER", ALREADY_INVITED: "INVITATION_REUSED" } as const)[row.status];
 const publicRows = (rows: RosterRow[]) => rows.map(({ rowNumber, name, year, identifier, status, errors, warnings, existingUser }) => ({ rowNumber, name, year, identifier, status, errors, warnings, existingUser }));
 const inputSchema = z.object({ clubId: z.string().uuid(), requestId: z.string().uuid(), filename: z.string().trim().min(1).max(255).regex(/\.csv$/i, "Choose a CSV file."), csv: z.string().max(ROSTER_MAX_BYTES) }).strict();
 
@@ -166,7 +166,7 @@ type SettledRow = Pick<RosterRow, "status" | "errors" | "warnings"> & { matchedU
  * when a row constraint fails, so the caller records each row on its own as before. */
 async function settleRosterRows(tx: AppTransactionClient, record: { id: string; clubId: string }, entries: { saved: RosterImportRow; row: SettledRow }[]) {
   if (!entries.length) return true;
-  const payload = JSON.stringify(entries.map(({ saved, row }) => ({ id: saved.id, status: databaseStatus(row as RosterRow), errors: [...row.errors, ...row.warnings],
+  const payload = JSON.stringify(entries.map(({ saved, row }) => ({ id: saved.id, status: databaseStatus(row), errors: [...row.errors, ...row.warnings],
     user: row.matchedUserId, identity: row.schoolIdentityId, invitation: row.invitationId })));
   await tx.$executeRaw`SAVEPOINT roster_settle`;
   try {
