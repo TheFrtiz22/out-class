@@ -1,4 +1,4 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript'),profileTx=require('./helpers/profile-transaction.cjs');
 function load(file,mocks={}) { const m={exports:{}}; new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts',mocks):require(n),m,m.exports);return m.exports; }
 const fields=load('lib/student-profile.ts'),privacy=load('lib/recruitment-profile.ts'),anon=load('lib/anonymous-review.ts'),display=load('lib/applicant-display.ts'),crop=load('lib/photo-crop.ts');
 const uuid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
@@ -28,7 +28,7 @@ test('gender defaults fail closed and anonymous voting/preview cannot independen
 });
 test('profile section stores fields only for authenticated owner and roundtrips canonical values',async()=>{
  let row={...profile},authorized=true;const writes=[];
- const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>{if(!authorized)throw Error('Unauthenticated');return{user:{id:profile.userId,email:'ja@virginia.edu'}}}},'@/utils/prisma':{prisma:{studentProfile:{update:async q=>{assert.equal(q.where.userId,profile.userId);writes.push(q);row={...row,...q.data};return row},findUnique:async q=>{assert.equal(q.where.userId,profile.userId);return row}}}},'next/cache':{revalidatePath(){}}});
+ const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>{if(!authorized)throw Error('Unauthenticated');return{user:{id:profile.userId,email:'ja@virginia.edu'}}}},'@/utils/graduation':profileTx.graduation(),'@/utils/prisma':{prisma:profileTx.withProfileTransaction({studentProfile:{update:async q=>{assert.equal(q.where.userId,profile.userId);writes.push(q);row={...row,...q.data};return row},findUnique:async q=>{assert.equal(q.where.userId,profile.userId);return row}}})},'next/cache':{revalidatePath(){}}});
  const input={section:'education',major:'Math',gradYear:2028,gpa:3.875,satScore:null,highSchool:'  Example High School  ',gender:'Female',pronouns:'Other',transferStudent:true,scholarStatus:{selections:['ECHOLS','CORE'],other:''},userId:uuid(99)};
  assert.ok(!(await api.updateStudentProfileSection(input)).error);
  const saved=(await api.getStudentProfile()).profile; assert.equal(saved.highSchool,'Example High School'); assert.equal(saved.gender,'Female');assert.equal(saved.pronouns,'Other');assert.equal(saved.transferStudent,true);assert.deepEqual(saved.scholarStatus.selections,['ECHOLS','CORE']);assert.equal(saved.gradYear,2028);

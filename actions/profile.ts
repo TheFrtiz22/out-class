@@ -11,6 +11,7 @@ import { requireAuth } from "@/utils/auth";
 import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions";
 import { hasCurrentTermsAcceptance } from "@/utils/terms-acceptance";
 import { applyGraduationYearChange, SUPPORT_YEAR_CHANGE_MESSAGE } from "@/utils/graduation";
+import { actionResult } from "@/lib/action-result";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { boundedParse, boundedSafeParse } from "@/lib/bounded-input";
@@ -47,7 +48,13 @@ export async function getStudentProfile() {
   return { profile };
 }
 
+// Returns through actionResult so a support-session refusal of a graduation-year change
+// (utils/graduation.ts) reaches the screen; other failures still reject.
 export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) {
+  return actionResult(() => upsertStudentProfileCommand(data), "upsertStudentProfile");
+}
+
+async function upsertStudentProfileCommand(data: z.infer<typeof profileSchema>) {
   const { user, impersonation } = await requireAuth();
   
   // Validate input

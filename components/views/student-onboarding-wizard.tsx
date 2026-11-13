@@ -1,5 +1,6 @@
 "use client"
 import { userMessage } from "@/lib/user-message"
+import { unwrapAction } from "@/lib/action-result"
 
 import Link from "next/link"
 import dynamic from "next/dynamic"
@@ -443,7 +444,7 @@ export function StudentOnboardingWizard({
 
       // Commit the full profile
       const { accountBasics, academic } = wizardData.current
-      await upsertStudentProfile({
+      unwrapAction(await upsertStudentProfile({
         firstName: accountBasics!.firstName,
         lastName: accountBasics!.lastName,
         computingId,
@@ -457,7 +458,7 @@ export function StudentOnboardingWizard({
         linkedinUrl: data.linkedinUrl || "",
         experiences: data.experiences,
         resumeUrl: resumeUrl ?? undefined,
-      })
+      }))
 
       // Navigate to the dashboard
       onComplete()
