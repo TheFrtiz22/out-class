@@ -899,6 +899,8 @@ model RecruitingRule {
   minGpa    Float?
   minSat    Int?
   minAct    Int?
+  // Recruiting events (info sessions, workshops, panels) of this club; an applicant with no check-in at any started one is flagged.
+  requiredEventIds String[]      @default([])
   revision  Int                  @default(1)
   updatedAt DateTime             @updatedAt
   flags     RecruitingRuleFlag[]
