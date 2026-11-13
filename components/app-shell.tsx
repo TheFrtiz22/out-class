@@ -231,7 +231,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   return (
     <StudentState serverData={initialData} initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
       {view === "interview-workspace" ? <FocusFrame task="Interview" width="full"><AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary></FocusFrame> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
-            {view === "student-dashboard" && <><View.OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><View.StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
+            {view === "student-dashboard" && <><View.OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><View.StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} serverNow={serverNow} /></>}
             {view === "student-profile" && <View.UnifiedStudentProfileView />}
             {view === "inbox" && <View.InboxView onNavigate={navigate} />}
             {view === "my-clubs" && <View.PersonalClubs section={personalSection} />}

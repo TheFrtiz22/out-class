@@ -179,11 +179,14 @@ test('personal assignment urgency reuses structured task notifications and curre
 test('personal welcome uses current authenticated applications, neutral loading and immediate data changes', () => {
   let auth = { user: { id: 'student', profile: { firstName: 'Alex' }, applications: [application({ club: { name: 'One', applicationDeadline: at(1) } })], memberships: [] }, loading: true }
   const state = { hydrated: true, events: [], notifications: [], trackedApps: [] }
+  const demo = { isDemoEnabled: false }
   const mocks = {
     '@/contexts/auth-context': { useAuth: () => auth },
     '@/lib/application-state': { useApplicationState: () => state },
     '@/hooks/use-welcome-clock': { useWelcomeClock: () => now },
+    '@/hooks/use-server-now': { useServerAnchoredNow: () => +now },
     '@/hooks/use-suggested-clubs': { useSuggestedClubs: () => ({ suggestions: [], hasSignal: false }) },
+    '@/contexts/demo-mode': { useDemoMode: () => demo },
   }
   // Unrelated content uses element sentinels; the actual welcome logic is evaluated below.
   for (const name of [...fs.readFileSync('components/views/student-dashboard-view.tsx', 'utf8').matchAll(/from "(@\/components\/[^"]+)"/g)].map(m => m[1])) mocks[name] = new Proxy({}, { get: (_, key) => key })
@@ -203,4 +206,35 @@ test('personal welcome uses current authenticated applications, neutral loading 
   assert.equal(welcomeSubtitle(header().context, header().now), "Explore what's new in OutClass.")
   auth.user = null
   assert.equal(welcomeGreeting(header().now, header().firstName), 'Good morning.')
+})
+
+test('signed-in Home renders its records in the server HTML instead of a placeholder', () => {
+  const auth = { user: { id: 'student', profile: { firstName: 'Alex' }, applications: [], memberships: [] }, loading: false }
+  // Server render and hydration: the shell store is not seeded yet and the device clock has not been read.
+  const state = { hydrated: false, events: [], notifications: [], trackedApps: [] }
+  const demo = { isDemoEnabled: false }
+  const mocks = {
+    '@/contexts/auth-context': { useAuth: () => auth },
+    '@/lib/application-state': { useApplicationState: () => state },
+    '@/hooks/use-welcome-clock': { useWelcomeClock: () => null },
+    '@/hooks/use-server-now': { useServerAnchoredNow: serverNow => serverNow ?? +now },
+    '@/hooks/use-suggested-clubs': { useSuggestedClubs: () => ({ suggestions: [], hasSignal: false }) },
+    '@/contexts/demo-mode': { useDemoMode: () => demo },
+  }
+  for (const name of [...fs.readFileSync('components/views/student-dashboard-view.tsx', 'utf8').matchAll(/from "(@\/components\/[^"]+)"/g)].map(m => m[1])) mocks[name] = new Proxy({}, { get: (_, key) => key })
+  const { StudentDashboardView } = load('components/views/student-dashboard-view.tsx', mocks)
+  const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)]
+  const meeting = { id: 'meeting-1', clubId: 'one', title: 'Info session', date: at(5), endDate: null, allDay: false, location: 'Rotunda', audience: 'RECRUITMENT', club: { name: 'One' } }
+  const render = props => nodes(StudentDashboardView({ onNavigate() {}, ...props }))
+  const tree = render({ authenticated: true, initialData: { applications: [], attendances: [], meetings: [meeting] }, serverNow: +now })
+  assert.equal(tree.some(n => n.type === 'Skeleton'), false, 'no placeholder in the server HTML')
+  assert.ok(tree.some(n => n.type === 'NeedsYouRow'))
+  const agenda = tree.filter(n => n.type === 'DateChipList').flatMap(n => n.props.items.map(item => item.title))
+  assert.ok(agenda.includes('Info session'), 'the agenda comes from the server records before the store is seeded')
+  // Without server data (signed-out, demo, failed read) the placeholder stays until the browser state is ready.
+  assert.ok(render({ authenticated: false, initialData: null }).some(n => n.type === 'Skeleton'))
+  assert.ok(render({ authenticated: true, initialData: null }).some(n => n.type === 'Skeleton'))
+  // Demo Mode never takes the server-rendered path, even with an account session and seeded demo records.
+  demo.isDemoEnabled = true
+  assert.ok(render({ authenticated: true, initialData: { applications: [], attendances: [], meetings: [meeting] }, serverNow: +now }).some(n => n.type === 'Skeleton'))
 })
