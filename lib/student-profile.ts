@@ -1,5 +1,6 @@
 import { scholarStatusSchema } from "@/lib/scholar-status"
 import { actShape } from "@/lib/test-scores"
+import { graduationYearSchemaFor } from "@/lib/graduation-years"
 import { z } from "zod"
 import { phoneSchema } from "@/lib/phone"
 import type { Experience, StudentProfile } from "@prisma/client"
@@ -74,7 +75,8 @@ export const resumeReferenceSchema = z.string().trim().transform((value, ctx) =>
 })
 export function isPrivateResume(value: string) { return !!value && storagePathSchema.safeParse(value).success }
 
-export const profileSectionSchema = z.discriminatedUnion("section", [
+/** `storedGradYear` lets an edit keep the year already on file (see lib/graduation-years.ts). */
+export const profileSectionSchemaFor = (storedGradYear?: number | null) => z.discriminatedUnion("section", [
   z.object({
     section: z.literal("identity"),
     firstName: z.string().trim().min(1).max(100),
@@ -87,7 +89,7 @@ export const profileSectionSchema = z.discriminatedUnion("section", [
     scholarStatus: scholarStatusSchema.optional(),
     ...actShape,
     major: z.string().trim().min(1).max(200),
-    gradYear: z.number().int().min(2020).max(2030),
+    gradYear: graduationYearSchemaFor(storedGradYear),
     gpa: gpaSchema.nullable().optional(),
     satScore: z.number().int().min(400).max(1600).nullable(),
   }),
@@ -114,6 +116,7 @@ export const profileSectionSchema = z.discriminatedUnion("section", [
     phone: phoneSchema,
   }),
 ])
+export const profileSectionSchema = profileSectionSchemaFor()
 export type ProfileSection = z.infer<typeof profileSectionSchema>["section"]
 export function safeProfileUrl(value?: string | null) {
   return value && /^https?:\/\//i.test(value) ? value : undefined

@@ -4,7 +4,8 @@ import { scholarStatusSchema } from "@/lib/scholar-status";
 
 
 import { actShape } from "@/lib/test-scores";
-import { profileSectionSnapshot, gpaSchema, profileEducationFields, resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
+import { graduationYearSchemaFor } from "@/lib/graduation-years";
+import { profileSectionSnapshot, gpaSchema, profileEducationFields, resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema, profileSectionSchemaFor } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -15,7 +16,7 @@ import { phoneSchema } from "@/lib/phone";
 import { revalidatePath } from "next/cache";
 import { boundedParse, boundedSafeParse } from "@/lib/bounded-input";
 
-const profileSchema = z.object({
+const profileSchemaFor = (storedGradYear?: number | null) => z.object({
   ...profileEducationFields,
   scholarStatus: scholarStatusSchema.optional(),
   ...actShape,
@@ -23,7 +24,7 @@ const profileSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   computingId: z.string().min(1, "Computing ID is required"),
   major: z.string().min(1, "Major is required"),
-  gradYear: z.number().int().min(2020).max(2030),
+  gradYear: graduationYearSchemaFor(storedGradYear),
   gpa: gpaSchema.optional(),
   satScore: z.number().int().min(400).max(1600).optional(),
   linkedinUrl: linkedinUrlSchema.optional().or(z.literal("")),
@@ -36,6 +37,13 @@ const profileSchema = z.object({
     period: z.string()
   })).optional()
 });
+const profileSchema = profileSchemaFor();
+
+// The strict range applies first. Only when that fails is the stored year read, so an existing
+// profile (e.g. alumni) may keep the graduation year already on file; new profiles stay strict.
+async function storedGradYear(userId: string) {
+  return (await prisma.studentProfile.findUnique({ where: { userId }, select: { gradYear: true } }))?.gradYear ?? null;
+}
 
 export async function getStudentProfile() {
   const { user } = await requireAuth();
@@ -52,7 +60,8 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   const { user } = await requireAuth();
   
   // Validate input
-  const parsed = boundedParse(profileSchema, data);
+  const strict = boundedSafeParse(profileSchema, data);
+  const parsed = strict.success ? strict.data : boundedParse(profileSchemaFor(await storedGradYear(user.id)), data);
   // Identity comes from the authenticated account, never a client-supplied ID.
   parsed.computingId = user.email.split("@")[0];
 
@@ -124,7 +133,10 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
 // Editing education must never clear a résumé or replace experience records.
 export async function updateStudentProfileSection(input: unknown, expected?: string) {
   const { user } = await requireAuth();
-  const parsed = boundedSafeParse(profileSectionSchema, input);
+  let parsed = boundedSafeParse(profileSectionSchema, input);
+  if (!parsed.success && typeof input === "object" && input !== null && (input as { section?: unknown }).section === "education") {
+    parsed = boundedSafeParse(profileSectionSchemaFor(await storedGradYear(user.id)), input);
+  }
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check your entries." };
   if (parsed.data.section === "identity" && parsed.data.headshotUrl && !parsed.data.headshotUrl.startsWith(`${user.id}/`)) return { error: "You can only save your own photo." };
   const { section, ...fields } = parsed.data;

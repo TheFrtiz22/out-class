@@ -21,7 +21,7 @@ function action() {
     '@/lib/student-profile': helpers,
     '@/utils/terms-acceptance': { hasCurrentTermsAcceptance: async () => { throw Error('Terms acceptance is not consulted while LEGAL_PAGES_PUBLIC is off') } },
     '@/utils/auth': { requireAuth: async () => ({ user: { id: VALID_UUID, email: 'authenticated-student@virginia.edu' } }) },
-    '@/utils/prisma': { prisma: { studentProfile: { update: async args => { calls.push(args); return { id: 'profile', ...args.data, experiences: [] } }, upsert: async args => { calls.push(args); return { id: 'profile', ...args.create } } } } },
+    '@/utils/prisma': { prisma: { studentProfile: { findUnique: async () => null, update: async args => { calls.push(args); return { id: 'profile', ...args.data, experiences: [] } }, upsert: async args => { calls.push(args); return { id: 'profile', ...args.create } } } } },
     'next/cache': { revalidatePath: () => {} },
   })
   return { calls, ...actions }

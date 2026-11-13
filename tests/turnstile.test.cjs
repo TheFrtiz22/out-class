@@ -94,7 +94,7 @@ test('signup hands the token to Supabase Auth and reports a failed check without
   const { registerStudent } = loadWith('actions/onboarding.ts', {
     'next/headers': { cookies: async () => ({ has: () => false }) },
     '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
-    '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/phone': loadWith('lib/phone.ts', {}), '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
+    '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/phone': loadWith('lib/phone.ts', {}), '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/graduation-years': loadWith('lib/graduation-years.ts', { '@/lib/scheduling-config': loadWith('lib/scheduling-config.ts', {}) }), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
     '@/lib/auth-email': { authEmailError: () => 'email error' },
     '@/lib/legal-versions': { checkClickwrap: () => ({ ok: true }) },
     '@/lib/turnstile': t,
@@ -223,7 +223,7 @@ test('flag unset: registerStudent runs siteverify first and never reaches signUp
     const { registerStudent } = loadWith('actions/onboarding.ts', {
       'next/headers': { cookies: async () => ({ has: () => false }) },
       '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
-      '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/phone': loadWith('lib/phone.ts', {}), '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
+      '@/lib/onboarding-schemas': loadWith('lib/onboarding-schemas.ts', { '@/lib/phone': loadWith('lib/phone.ts', {}), '@/lib/password-policy': loadWith('lib/password-policy.ts', {}), '@/lib/graduation-years': loadWith('lib/graduation-years.ts', { '@/lib/scheduling-config': loadWith('lib/scheduling-config.ts', {}) }), '@/lib/student-profile': { gpaSchema: require('zod').z.string(), linkedinUrlSchema: require('zod').z.string() } }),
       '@/lib/auth-email': { authEmailError: () => 'email error' },
     '@/lib/legal-versions': { checkClickwrap: () => ({ ok: true }) },
       '@/lib/turnstile': t,

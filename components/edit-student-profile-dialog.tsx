@@ -1,6 +1,7 @@
 "use client"
 import { UserFacingError } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
+import { graduationYearOptions } from "@/lib/graduation-years"
 import { useAutosave } from "@/hooks/use-autosave"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -61,6 +62,7 @@ export function EditStudentProfileDialog({
   const [error, setError] = useState("")
   const [originalPhoto, setOriginalPhoto] = useState<string | null>(null)
   const [originalGpa, setOriginalGpa] = useState<number | null>(null)
+  const [storedGradYear, setStoredGradYear] = useState<number | null>(null)
   const scholarship = draft?.scholarStatus as { selections: string[]; other: string } | null | undefined
   const [scholarYes, setScholarYes] = useState(false)
   const [photoSource, setPhotoSource] = useState<string | null>(null)
@@ -77,6 +79,7 @@ export function EditStudentProfileDialog({
     // The dialog always reopens on `initialSection`; snapshot that section, not the one shown last time.
     if (profile) expected.current = profileSectionSnapshot(profile, initialSection)
     setOriginalGpa(profile?.gpa ?? null)
+    setStoredGradYear(profile?.gradYear ?? null)
     setOriginalPhoto(profile?.headshotUrl ?? null)
     setScholarYes(!!(profile?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
     if (!profile && user) {
@@ -85,6 +88,7 @@ export function EditStudentProfileDialog({
         setDraft(loaded)
         if (loaded) expected.current = profileSectionSnapshot(loaded, initialSection)
         setOriginalGpa(loaded?.gpa ?? null)
+        setStoredGradYear(loaded?.gradYear ?? null)
         setOriginalPhoto(loaded?.headshotUrl ?? null)
         setScholarYes(!!(loaded?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
         if (!loaded) setError("Complete student onboarding before editing your profile.")
@@ -234,17 +238,18 @@ export function EditStudentProfileDialog({
                   {field("major", "Major / intended major", true)}
                   <div className="space-y-2">
                     <Label htmlFor="profile-year">Graduation year</Label>
-                    <Input
+                    {/* Current range plus the year on file, which an existing profile may keep. */}
+                    <NativeSelect
                       id="profile-year"
-                      type="number"
+                      className="w-full"
                       required
-                      min={2020}
-                      max={2030}
-                      value={draft.gradYear}
+                      value={String(draft.gradYear)}
                       onChange={(event) =>
                         setDraft({ ...draft, gradYear: Number(event.target.value) })
                       }
-                    />
+                    >
+                      {graduationYearOptions(new Date(), storedGradYear).map((year) => <option key={year} value={year}>{year}</option>)}
+                    </NativeSelect>
                   </div>
                   {field("highSchool", "High school (optional)")}
                   <div className="grid gap-4 sm:grid-cols-2">{([["gender", "Gender", genderValues], ["pronouns", "Pronouns", pronounValues]] as const).map(([key, label, values]) => <div className="space-y-2" key={key}><Label htmlFor={`profile-${key}`}>{label}</Label><NativeSelect id={`profile-${key}`} className="w-full" value={draft[key] ?? ""} onChange={e => setDraft({ ...draft, [key]: e.target.value || null })}><option value="">Not provided</option>{values.map(v => <option key={v}>{v}</option>)}</NativeSelect></div>)}</div>

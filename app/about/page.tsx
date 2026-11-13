@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { SectionReveal } from "@/components/motion/scroll-motion"
 import { PublicInformationPage } from "@/components/landing/public-information-page"
+import { PromoVideoFigure } from "@/components/landing/promo-video"
 import { publicPageMetadata, publicPageStructuredData } from "@/lib/seo"
 import { cspNonce } from "@/utils/csp-nonce"
 
@@ -28,7 +29,8 @@ export default async function AboutPage() {
             <div data-motion="body" className="oc-about-perspective oc-public-glass"><span className="oc-about-margin-label">For students</span><h3>Find clubs. Apply. See what’s next.</h3><p>Discover organizations. Apply through one profile. Manage interviews and follow your recruitment status.</p></div>
             <div data-motion="body" className="oc-about-perspective oc-public-glass-navy"><span className="oc-about-margin-label">For club leaders</span><h3>Run recruitment with your team.</h3><p>Configure applications, coordinate interviews, collaborate on evaluations, and manage recruiting decisions.</p></div>
           </div>
-          <Link prefetch={false} className="oc-public-text-link" href="/#about">See the product in action</Link>
+          <PromoVideoFigure video="overview" className="oc-about-video" sizes="(max-width: 800px) 100vw, 1040px" />
+          <Link prefetch={false} className="oc-public-text-link" href="/#about">See how it works, step by step</Link>
         </SectionReveal>
       </div>
       <SectionReveal className="oc-public-section oc-editorial-split oc-about-grounded" aria-labelledby="grounds-title">

@@ -1,3 +1,5 @@
+import type { PromoVideoId } from "@/lib/promo-videos"
+
 export const publicFaqGroups = [
   {
     id: "getting-started", label: "Getting started", items: [
@@ -15,7 +17,7 @@ export const publicFaqGroups = [
   },
   {
     id: "club-leaders", label: "Club leaders", items: [
-      { id: "leader-tools", question: "What can club leaders do?", answer: "Club leaders can configure applications, manage applicants, coordinate interviews and scheduling, collaborate on evaluations, and manage recruitment decisions. Access to specific tools depends on the permissions granted in their club workspace." },
+      { id: "leader-tools", question: "What can club leaders do?", answer: "Club leaders can configure applications, manage applicants, coordinate interviews and scheduling, collaborate on evaluations, and manage recruitment decisions. Access to specific tools depends on the permissions granted in their club workspace.", video: { id: "club-walkthrough", label: "Watch the full walkthrough" } },
     ],
   },
   {
@@ -32,4 +34,6 @@ export const publicFaqGroups = [
   },
 ] as const
 
-export const publicFaqs = publicFaqGroups.flatMap<{ id: string; question: string; answer: string }>(group => group.items)
+/** An answer can end with one video (lib/promo-videos.ts). Search engines still get the text answer only. */
+export type PublicFaqVideo = { id: PromoVideoId; label: string }
+export const publicFaqs = publicFaqGroups.flatMap<{ id: string; question: string; answer: string; video?: PublicFaqVideo }>(group => group.items)

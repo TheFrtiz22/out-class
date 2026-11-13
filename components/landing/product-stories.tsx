@@ -2,6 +2,7 @@
 
 import type { LandingPerspective } from "./journey-content"
 import { JourneyTabs } from "./journey-tabs"
+import { WatchVideoCard } from "./promo-video"
 import "./journey.css"
 import "./journey-tabs.css"
 import "./journey-atmosphere.css"
@@ -21,6 +22,8 @@ export function ProductJourney({ perspective, navigation }: {
       <div className="oc-how-introduction">
         <p className="oc-journey-kicker">How OutClass works</p>
         <h2 id="how-title">{perspective === "student" ? "From discovering a club to joining it." : "From first applicant to your next class."}</h2>
+        {/* Students get their video in the hero; leaders also get the long one here, beside the steps it follows. */}
+        {perspective === "leader" && <WatchVideoCard video="club-walkthrough" label="Watch the full walkthrough" detail="Five chapters" className="oc-how-watch" />}
       </div>
       <p className="sr-only" role="status">Showing the {perspective === "student" ? "student" : "club leader"} walkthrough.</p>
       <JourneyTabs perspective={perspective} />
