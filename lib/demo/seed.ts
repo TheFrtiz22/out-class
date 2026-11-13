@@ -412,6 +412,15 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
   })))
   const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
   const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []
+  // Decisions delivered: some MII offers already answered, so the Recruiting Overview shows a real acceptance tally.
+  // Accepting an offer makes the applicant a member, so accepted offers come with a fictional membership.
+  const offerStatus = new Map<string, import("./recruitment-offers").DemoOffer["status"]>()
+  applications.filter(a => a.clubId === mii.id && a.status === "ACCEPTED" && a.studentId !== students[0].id).forEach((a, i) => {
+    const status = i < 3 ? "ACCEPTED" : i === 3 ? "DECLINED" : "PENDING"
+    offerStatus.set(a.id, status)
+    if (status === "ACCEPTED" && !memberships.some(m => m.clubId === mii.id && m.userId === a.studentId))
+      memberships.push({ id: uid(36, i), interviewOffices: [], status: "ACTIVE", isOwner: false, permissions: [], groups: [], cohort: "Fall 2026", clubId: mii.id, userId: a.studentId, role: "GENERAL_MEMBER" as const })
+  })
   const result = {
     bookingFlow: emptyDemoBookingFlow(),
     letterTemplates: {} as Record<string, Partial<Record<LetterDecision,LetterTemplate>>>,
@@ -419,7 +428,7 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
       const club=clubs.find(c=>c.id===a.clubId)!,student=students.find(u=>u.id===a.studentId)!;
       return {id:uid(31,i),applicationId:a.id,clubId:a.clubId,version:1,decision:a.status as LetterDecision,createdAt:at(-4),content:resolveLetter(a.status as LetterDecision,{}, {firstName:student.profile.firstName,fullName:`${student.profile.firstName} ${student.profile.lastName}`,clubName:club.name,date:at(-4),expiresAt:a.status==='ACCEPTED'?at(30):null,logoReference:null,accent:club.color})};
     }) as import('./communications').DemoLetter[],
-    recruitmentOffers: applications.filter(a=>a.status==="ACCEPTED").map(a=>({applicationId:a.id,status:"PENDING",createdAt:at(-4),expiresAt:at(30)})) as import("./recruitment-offers").DemoOffer[],
+    recruitmentOffers: applications.filter(a=>a.status==="ACCEPTED").map(a=>({applicationId:a.id,status:offerStatus.get(a.id)??"PENDING",createdAt:at(-4),expiresAt:at(30)})) as import("./recruitment-offers").DemoOffer[],
     offerAudit: [] as {action:string;applicationId:string;at:Date}[],
     tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),
     meetings, meetingAttendances, meetingTokens,

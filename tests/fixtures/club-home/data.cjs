@@ -6,7 +6,7 @@ const empty = now => ({ offers: [], team: null, asOf: new Date(now), intake: nul
 
 /** kind: large | small | clear. membership: the fixture member DTO. */
 function overview(kind, club, membership, now = Date.now()) {
-  const base = { club: { id: club.id, name: club.name, tagline: '' }, membership, meeting: null, work: [], awaitingReview: null, upcomingInterviews: null, votingSessions: null, members: null, recruitment: null, operations: empty(now) }
+  const base = { club: { id: club.id, name: club.name, tagline: '' }, membership, meeting: null, work: [], awaitingReview: null, upcomingInterviews: null, votingSessions: null, members: null, recruitment: null, offerTally: null, operations: empty(now) }
   const perms = new Set(membership.isOwner ? ['tasks.manage', 'applications.review', 'applicants.identify', 'interviews.manage', 'members.manage', 'meetings.manage', 'decisions.manage', 'decisions.view'] : membership.permissions)
   const read = perms.has('applications.review') || perms.has('applicants.identify')
   if (kind === 'clear') return base
@@ -28,6 +28,8 @@ function overview(kind, club, membership, now = Date.now()) {
   const names = ['Jordan Avery', 'Priya Natarajan', 'Marcus Hale', 'Elena Ruiz']
   return { ...base,
     recruitment: read ? [{ status: 'SUBMITTED', count: 84 }, { status: 'IN_REVIEW', count: 61 }, { status: 'INTERVIEWING', count: 24 }, { status: 'ACCEPTED', count: 9 }, { status: 'WAITLISTED', count: 4 }, { status: 'REJECTED', count: 31 }] : null,
+    // Current offers on accepted applicants: sent = accepted + awaiting + declined + expired.
+    offerTally: read ? { sent: 12, accepted: 7, awaiting: 3, declined: 1, expired: 1 } : null,
     members: perms.has('members.manage') ? { active: 146, pendingInvitations: 7, recent: 9 } : null,
     work: [
       { id: id(901), task: { id: id(911), title: 'Submit interview scorecards for Round 2', dueAt: at(now, -DAY), kind: 'TASK' } },
@@ -67,6 +69,6 @@ function overview(kind, club, membership, now = Date.now()) {
 /** What Club home receives (getClubWorkspaceOverview(clubId, "club")): club work only, recruiting parts empty. */
 function clubView(data) {
   const op = data.operations
-  return { ...data, recruitment: null, operations: { ...op, intake: null, cycles: [], rounds: [], queue: [], bookings: [], votes: [], scheduled: [], offers: [] } }
+  return { ...data, recruitment: null, offerTally: null, operations: { ...op, intake: null, cycles: [], rounds: [], queue: [], bookings: [], votes: [], scheduled: [], offers: [] } }
 }
 module.exports = { overview, clubView, id }
