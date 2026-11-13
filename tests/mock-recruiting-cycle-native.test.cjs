@@ -89,7 +89,7 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
   ({ hasPermission } = load('lib/permissions.ts'));
   const applications = unwrapActions(load('actions/applications.ts')), evaluations = load('actions/evaluations.ts'), crm = unwrapActions(load('actions/crm.ts'));
   const display = load('actions/applicant-intelligence.ts'), rooms = unwrapActions(load('actions/interview-rooms.ts'));
-  const proposals = load('actions/panel-proposals.ts'), publication = load('actions/panel-publication.ts'), booking = load('actions/interview-booking-publication.ts');
+  const proposals = unwrapActions(load('actions/panel-proposals.ts')), publication = load('actions/panel-publication.ts'), booking = load('actions/interview-booking-publication.ts');
   const voting = { ...load('actions/voting-room.ts'), ...load('actions/voting-room-setup.ts'), ...load('actions/voting-room-finalization.ts') };
   const offers = unwrapActions(load('actions/recruitment-offers.ts')), exportsRoute = load('app/api/club-exports/route.ts');
   const as = (user, fn) => request.run(user, fn);

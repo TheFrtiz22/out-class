@@ -10,8 +10,12 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { loadPanelPlanningScene, publicPanelScene } from "@/utils/panel-planning"
 import { assignmentKey, generatePanelAssignments, panelAssignmentsSchema, panelDocumentSchema, panelOptionsSchema, panelScopeSchema, panelWindowSchema, panelDraftScene, sameSessionTime, validatePanelDocument, type PanelAssignment, type PanelDocument, type PanelProposalView, type PanelScene, type PanelValidation, type PanelWorkspace } from "@/lib/panel-proposals"
 import { boundedParse } from "@/lib/bounded-input"
+import { ActionError, actionResult, type ActionResult } from "@/lib/action-result"
 
 const changed = "The draft changed in another tab. Reload before editing again."
+/** Codes `generatePanelProposal` returns for expected refusals; the workspace acts on NO_OPEN_SESSIONS. */
+export type PanelGenerateRefusal = "DRAFT_CHANGED" | "PUBLICATION_CHANGED" | "WINDOW_CHANGED" | "NO_OPEN_SESSIONS" | "INVALID_EDIT"
+const refuse = (message: string, code: PanelGenerateRefusal) => new ActionError(message, code)
 const editSchema = panelScopeSchema.extend({ proposalId: z.string().uuid(), revision: z.number().int().positive(), assignments: panelAssignmentsSchema, requirements: z.array(z.object({slotId:z.string().uuid(),required:z.number().int().min(1).max(8)}).strict()).max(500).optional() }).strict()
 const generateSchema = panelScopeSchema.extend({ revision: z.number().int().nonnegative(), window: panelWindowSchema, options: panelOptionsSchema, mode: z.enum(["REGENERATE", "FILL_MISSING"]), assignments: panelAssignmentsSchema.optional(), selectedSlotIds:z.array(z.string().uuid()).min(1).max(500).optional() }).strict()
 async function previewTransaction<T>(clubId: string, work: (tx: AppTransactionClient, actorId: string) => Promise<T>): Promise<T> {
@@ -33,12 +37,12 @@ function editDocument(row: InterviewPanelProposal, assignments: PanelAssignment[
   const document = panelDocumentSchema.parse(row.document), previous = new Map(document.assignments.map(a => [assignmentKey(a), a]))
   const slots = new Set(document.sessions.map(s => s.id)), members = new Set(scene.members.map(m => m.id))
   for (const a of assignments) {
-    if (!slots.has(a.slotId) || !members.has(a.memberId) && !previous.has(assignmentKey(a))) throw new Error("Choose a session and interviewer from this club's draft.")
+    if (!slots.has(a.slotId) || !members.has(a.memberId) && !previous.has(assignmentKey(a))) throw refuse("Choose a session and interviewer from this club's draft.", "INVALID_EDIT")
   }
-  if(requirements && (new Set(requirements.map(r=>r.slotId)).size!==requirements.length || requirements.some(r=>!slots.has(r.slotId)))) throw new Error("Choose unique staffing requirements from this draft.")
+  if(requirements && (new Set(requirements.map(r=>r.slotId)).size!==requirements.length || requirements.some(r=>!slots.has(r.slotId)))) throw refuse("Choose unique staffing requirements from this draft.", "INVALID_EDIT")
   // A closed room's session is only ever un-staffed, so its staffing requirement stays as published.
   const closed=new Set(scene.sessions.filter(s=>s.unstaffOnly).map(s=>s.id))
-  if(requirements?.some(r=>closed.has(r.slotId)&&r.required!==document.sessions.find(s=>s.id===r.slotId)?.required)) throw new Error("This room is closed. Its interviewers can only be removed; its staffing requirement can't change.")
+  if(requirements?.some(r=>closed.has(r.slotId)&&r.required!==document.sessions.find(s=>s.id===r.slotId)?.required)) throw refuse("This room is closed. Its interviewers can only be removed; its staffing requirement can't change.", "INVALID_EDIT")
   const targets=new Map(requirements?.map(r=>[r.slotId,r.required])??[])
   const edited = { ...document, sessions: document.sessions.map(s=>({...s,required:targets.get(s.id)??s.required,originalRequired:s.originalRequired??s.required})), assignments: assignments.map(({ availabilityOverrideId: _untrusted, ...a }) => {
     const prior = previous.get(assignmentKey(a))
@@ -46,7 +50,7 @@ function editDocument(row: InterviewPanelProposal, assignments: PanelAssignment[
   }) }
   const validation = validatePanelDocument(edited, panelDraftScene(edited,scene)), additions = assignments.filter(a => !previous.has(assignmentKey(a)))
   const unsafe = validation.issues.filter(i => additions.some(a => a.slotId === i.slotId && (!i.memberId || a.memberId === i.memberId)))
-  if (unsafe.length) throw new Error(unsafe[0].message)
+  if (unsafe.length) throw refuse(unsafe[0].message, "INVALID_EDIT")
   return edited
 }
 export async function getPanelProposalWorkspace(raw: unknown): Promise<PanelWorkspace> {
@@ -60,21 +64,29 @@ export async function getPanelProposalWorkspace(raw: unknown): Promise<PanelWork
     return { clubName:club.name,canPublish:interviewCapabilities(member).manageGrants,canOverrideAvailability:interviewCapabilities(member).overrideAvailability,published:history.find(v=>v.status==="PUBLISHED")??null,history, roundId: scope.roundId, roundName: live.roundName, timezone: live.timezone, scene: publicPanelScene(live.scene), proposal: saved ? proposalView(saved, live.scene, live.fingerprint) : null, suggestedWindow: live.suggestedWindow, fingerprint: live.fingerprint }
   })
 }
-export async function generatePanelProposal(raw: unknown): Promise<PanelWorkspace> {
+/**
+ * Expected refusals (a changed revision or publication, a different window, no upcoming open
+ * sessions, an invalid edit) are returned as `{ ok: false, code, error }` so production shows
+ * the message; anything else still throws. Browser callers unwrap through lib/workspace-api.
+ */
+export async function generatePanelProposal(raw: unknown): Promise<ActionResult<PanelWorkspace>> {
+  return actionResult(() => generatePanelProposalCommand(raw), "generatePanelProposal")
+}
+async function generatePanelProposalCommand(raw: unknown): Promise<PanelWorkspace> {
   const input = boundedParse(generateSchema, raw)
   return previewTransaction(input.clubId, async (tx, actorId) => {
     const old = await savedProposal(tx, input)
-    if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
+    if ((old?.revision ?? 0) !== input.revision) throw refuse(changed, "DRAFT_CHANGED")
     const active=await activePanelPublication(tx,input)
-    if(old && old.basePublishedVersion!==(active?.version??0))throw new Error("A newer panel schedule was published. Reload and open a fresh revision.")
+    if(old && old.basePublishedVersion!==(active?.version??0))throw refuse("A newer panel schedule was published. Reload and open a fresh revision.", "PUBLICATION_CHANGED")
     const oldDocument = old ? panelDocumentSchema.parse(old.document) : null
-    if (oldDocument && (oldDocument.window.start !== input.window.start || oldDocument.window.end !== input.window.end)) throw new Error("Discard the existing draft before choosing a different window.")
+    if (oldDocument && (oldDocument.window.start !== input.window.start || oldDocument.window.end !== input.window.end)) throw refuse("Discard the existing draft before choosing a different window.", "WINDOW_CHANGED")
     const live = await loadPanelPlanningScene(tx, input, input.window)
-    if (!live.scene.sessions.some(s => s.active || s.unstaffOnly)) throw new Error(old ? "There are no upcoming, open sessions in this window. Discard this draft or reopen a room." : "There are no upcoming, open sessions in this window.")
+    if (!live.scene.sessions.some(s => s.active || s.unstaffOnly)) throw refuse(old ? "This draft has no upcoming, open sessions left: they have passed or their rooms are closed. Discard the draft, or reopen a room with future times." : "There are no upcoming, open sessions in this window.", "NO_OPEN_SESSIONS")
     const edited = old && input.assignments ? editDocument(old, input.assignments, live.scene) : oldDocument
-    if (!old && input.assignments?.length) throw new Error("Generate a draft before editing positions.")
+    if (!old && input.assignments?.length) throw refuse("Generate a draft before editing positions.", "INVALID_EDIT")
     const selected=input.selectedSlotIds?new Set(input.selectedSlotIds):null
-    if(selected&&([...selected].some(id=>!live.scene.sessions.some(s=>s.id===id))||selected.size!==input.selectedSlotIds!.length))throw new Error("Choose unique existing sessions to regenerate.")
+    if(selected&&([...selected].some(id=>!live.scene.sessions.some(s=>s.id===id))||selected.size!==input.selectedSlotIds!.length))throw refuse("Choose unique existing sessions to regenerate.", "INVALID_EDIT")
     // Every regeneration rebuilds the draft against current sessions, so closing or reopening a room, or
     // adding, removing or passing a time, never strands it. Positions on sessions that are gone, past, or
     // booked in a closed room leave the draft; their published panels stay exactly as they are.
