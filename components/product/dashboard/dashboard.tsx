@@ -94,9 +94,9 @@ export function NeedsYouRow({ items, clear, heading = "Needs you", headingId = "
 }
 
 /** The action that makes a whole needs card clickable: a link or an in-place button. */
-export function NeedsAction({ href, onClick, children }: { href?: string; onClick?: () => void; children: ReactNode }) {
+export function NeedsAction({ href, onClick, children, prefetch }: { href?: string; onClick?: MouseEventHandler<HTMLElement>; children: ReactNode; prefetch?: boolean }) {
   const content = <>{children} <ArrowRight aria-hidden="true" size={14} /></>
-  return href ? <Link className="oc-needs-action" href={href}>{content}</Link> : <button type="button" className="oc-needs-action" onClick={onClick}>{content}</button>
+  return href ? <Link className="oc-needs-action" href={href} onClick={onClick} prefetch={prefetch}>{content}</Link> : <button type="button" className="oc-needs-action" onClick={onClick}>{content}</button>
 }
 
 export type MetricTile = { label: ReactNode; value: ReactNode; of?: ReactNode; urgent?: boolean; key?: string }

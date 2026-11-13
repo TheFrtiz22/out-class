@@ -1,7 +1,7 @@
 const {unwrapActions}=require('./action-result.cjs');
 const {randomUUID}=require('node:crypto'),{harness}=require('./interview-sql-harness.cjs')
 async function fixture(t){
- const h=await harness({permissiveDefaults:true});t.after(()=>h.db.close());h.scope={clubId:h.ids.club,roundId:h.ids.round};h.api=h.load('actions/panel-proposals.ts');h.publish=h.load('actions/panel-publication.ts');h.rooms=unwrapActions(h.load('actions/interview-rooms.ts'));h.own=h.load('actions/official-panel-schedule.ts');h.core=h.load('lib/panel-proposals.ts')
+ const h=await harness({permissiveDefaults:true});t.after(()=>h.db.close());h.scope={clubId:h.ids.club,roundId:h.ids.round};h.api=unwrapActions(h.load('actions/panel-proposals.ts'));h.publish=h.load('actions/panel-publication.ts');h.rooms=unwrapActions(h.load('actions/interview-rooms.ts'));h.own=h.load('actions/official-panel-schedule.ts');h.core=h.load('lib/panel-proposals.ts')
  await h.db.query('UPDATE "PipelineRound" SET "anonymousReview"=false,type=\'INTERVIEW\' WHERE id=$1',[h.ids.round])
  const schedule={timezone:'UTC',weeklySubmitted:true,weekly:Array.from({length:7},()=>[[0,1440]]),exceptions:{}}
  for(const key of ['panel','peer','scheduler']){await h.db.query('UPDATE "ClubMember" SET "accessRole"=\'INTERVIEWER\',permissions=\'{interviews.manage,applications.review,applicants.identify}\' WHERE id=$1',[h.ids[key+'Member']]);await h.db.query('INSERT INTO "InterviewRoundParticipation"(id,"clubId","memberId","roundId",availability,"confirmedAt") VALUES ($1,$2,$3,$4,$5,now())',[randomUUID(),h.ids.club,h.ids[key+'Member'],h.ids.round,JSON.stringify(schedule)])}

@@ -3,6 +3,7 @@ import { interviewCapabilities } from "@/lib/interview-access"
 import { hasPermission } from "@/lib/permissions"
 import { overlaps, bookingSlotSnapshot, type BookingSettings } from "@/lib/interview-rooms"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
+import { ActionError } from "@/lib/action-result"
 import { panelScheduleChanges, mergePanelPublication, panelDocumentSchema, panelDraftScene, validatePanelDocument, generatePanelAssignments, canProposeMember, availabilityOverrideConditions, assignmentKey, type PanelWorkspace, type PanelProposalView, type PanelPublishedView, type PanelDocument, type PanelAssignment, type PanelScene } from "@/lib/panel-proposals"
 export type DemoBookingFlow = {
   settings: Record<string, BookingSettings>
@@ -52,6 +53,8 @@ async function saveDocument(input: { clubId: string; roundId: string; revision: 
 }
 export async function generatePanelProposal(input: { clubId: string; roundId: string; revision: number; window: { start: string; end: string }; options: PanelDocument["options"]; mode: "REGENERATE" | "FILL_MISSING"; assignments?: PanelAssignment[] }) {
   manager(input.clubId); const scene = demoPanelScene(input.clubId, input.roundId, input.window), old = panelState(input.roundId).draft
+  // Mirrors actions/panel-proposals.ts: an expected refusal with a code the workspace acts on.
+  if (!scene.sessions.some(s => s.active || s.unstaffOnly)) throw new ActionError(old ? "This draft has no upcoming, open sessions left: they have passed or their rooms are closed. Discard the draft, or reopen a room with future times." : "There are no upcoming, open sessions in this window.", "NO_OPEN_SESSIONS")
   const document = panelDocumentSchema.parse({ version: 1, window: input.window, options: input.options, sessions: scene.sessions, assignments: input.assignments ?? old?.document.assignments ?? [] })
   await saveDocument(input, generatePanelAssignments(scene, document, input.mode).document); return getPanelProposalWorkspace(input)
 }
