@@ -115,6 +115,16 @@ test("personal workspace: folded pages redirect with their focus parameters", ()
   assert.equal(student.legacyStudentRedirect(new URLSearchParams("workspace=student&view=status&section=status&applicationId=a1")), "/applications?applicationId=a1&tab=in-review")
   assert.equal(student.legacyStudentRedirect(new URLSearchParams("workspace=student&view=my-clubs&section=meetings")), "/calendar?type=meeting")
   assert.equal(student.applicantStatusHref(new URLSearchParams("applicationId=a1")), "/applications?applicationId=a1&tab=in-review")
+  // A decision letter, the booking page and the /decisions and /interviews shortcuts open their own stage; a tab in the URL still wins.
+  assert.equal(student.applicantStatusHref(undefined, "decisions"), "/applications?tab=decisions")
+  assert.equal(student.applicantStatusHref(new URLSearchParams("applicationId=a1"), "interviews"), "/applications?applicationId=a1&tab=interviews")
+  assert.equal(student.applicantStatusHref(new URLSearchParams("tab=drafts"), "decisions"), "/applications?tab=drafts")
+  const source = file => fs.readFileSync(file, "utf8")
+  assert.match(source("app/decisions/page.tsx"), /applicantStatusHref\(params, "decisions"\)/)
+  assert.match(source("app/interviews/page.tsx"), /applicantStatusHref\(params, "interviews"\)/)
+  assert.match(source("components/communications/decision-letter.tsx"), new RegExp(`const decisionsHref = '${student.applicantStatusHref(undefined, "decisions").replace(/[?]/g, "\\?")}'`), "the letter's exit link is the Decisions stage")
+  assert.match(source("components/interviews/booking-picker.tsx"), /href=\{applicantStatusHref\(undefined, "interviews"\)\}>Back to application status</, "the booking page returns to the Interviews stage")
+  assert.doesNotMatch(source("components/communications/decision-letter.tsx") + source("components/interviews/booking-picker.tsx"), /["']\/applications\/status["']/, "no link reaches In review by way of the old path")
 })
 
 test("personal pages folded into others redirect on the server", () => {
