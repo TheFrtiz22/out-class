@@ -10,7 +10,7 @@ test('student interest profile migration: private, bounded, one row per user, ca
     await db.exec('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;')
     const dir = 'prisma/migrations'
     const names = fs.readdirSync(dir).filter(n => fs.existsSync(path.join(dir, n, 'migration.sql'))).sort()
-    assert.ok(names.indexOf('20261112150000_student_interest_profile') > names.indexOf('20261112090000_terms_acceptance'), 'ordered after the existing history')
+    assert.ok(names.indexOf('20261112140000_student_interest_profile') > names.indexOf('20261112090000_terms_acceptance'), 'ordered after the existing history')
     for (const n of names) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
     await db.exec(`INSERT INTO "User"(id,email) VALUES('alice','a@virginia.edu'),('bob','b@virginia.edu')`)
     const put = (user, interests = "ARRAY[]::text[]", goals = "ARRAY[]::text[]", hours = 'NULL', sel = 'NULL') =>
