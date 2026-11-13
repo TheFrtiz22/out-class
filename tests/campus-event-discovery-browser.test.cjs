@@ -66,7 +66,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.getByRole('switch', { name: 'Saved events', exact: true }).click();
     await page.keyboard.press('Escape');
     assert.equal(await filterButton.getAttribute('aria-expanded'), 'false');
-    assert.equal(await page.locator('.oc-filter-button-count').innerText(), '1'); assert.equal(await toolbar.getByRole('button', { name: 'Filter, 1 active', exact: true }).count(), 1);
+    assert.equal(await page.locator('.oc-filter-button-count').innerText(), '1'); assert.equal(await toolbar.getByRole('button', { name: 'Filters, 1 active', exact: true }).count(), 1);
     await page.getByText('1 approved event · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'List', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 1);
