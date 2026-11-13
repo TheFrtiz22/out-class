@@ -97,6 +97,8 @@ model StudentProfile {
   gpa         Float?
   satScore    Int?
   linkedinUrl String?
+  // E.164. Shown only to a club's decision managers for applicants they accept (lib/phone.ts).
+  phone       String?
   bio         String?
   resumeUrl   String? // S3 URL
   headshotUrl String? // S3 URL

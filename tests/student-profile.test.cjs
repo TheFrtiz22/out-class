@@ -104,7 +104,7 @@ test('resume ownership authorization during save', async () => {
   assert.ok(res2.error)
 
   // Upsert tests
-  const profileData = { firstName: 'F', lastName: 'L', computingId: 'a', major: 'Math', gradYear: 2028 };
+  const profileData = { firstName: 'F', lastName: 'L', computingId: 'a', major: 'Math', gradYear: 2028, phone: '434-555-0123' };
   
   await assert.rejects(upsertStudentProfile({ ...profileData, resumeUrl: anotherPath }))
   const res3 = await upsertStudentProfile({ ...profileData, resumeUrl: myPath })

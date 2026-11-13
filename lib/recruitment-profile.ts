@@ -18,7 +18,7 @@ export function academicYear(profile: { gradYear: number; transferStudent?: bool
   const label = year < 1 ? "Incoming Student" : academicYearLabels[year - 1] || (year > 8 ? "Beyond Eighth Year" : "Year unavailable");
   return `${label}${profile.transferStudent ? "*" : ""}`;
 }
-export type RecruitmentProfile = Omit<FullStudentProfile, "gradYear" | "highSchool" | "pronouns" | "transferStudent" | "gender" | "graduatedAt" | "graduationConfirmedAt" | "graduationPromptDismissedAt"> & { academicYear: string; gender: string | null };
+export type RecruitmentProfile = Omit<FullStudentProfile, "gradYear" | "highSchool" | "pronouns" | "transferStudent" | "gender" | "phone" | "graduatedAt" | "graduationConfirmedAt" | "graduationPromptDismissedAt"> & { academicYear: string; gender: string | null };
 /** Shared fields for the full profile and the database summary projection. */
 export function recruitmentListProfile(p: Pick<FullStudentProfile, "firstName" | "lastName" | "major" | "gradYear" | "transferStudent" | "gpa" | "satScore" | "actScore">) {
   return { firstName: p.firstName, lastName: p.lastName, major: p.major,

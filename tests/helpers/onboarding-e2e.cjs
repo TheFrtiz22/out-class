@@ -121,6 +121,6 @@ class Actor {
   this.user=verified.data.user;assert.ok(this.user.confirmation_sent_at&&this.user.email_confirmed_at);
   this.credentials={email,password};this.year=year;return this.user;
  }
- async profile(name,year){const [firstName,...last]=name.split(' ');return this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,experiences:[]}]);}
+ async profile(name,year){const [firstName,...last]=name.split(' ');return this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,phone:'434-555-0123',experiences:[]}]);}
 }
 module.exports={Actor,totp,readConfig,readStagingImportConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect,redirectDestination,actionSourceMatches};

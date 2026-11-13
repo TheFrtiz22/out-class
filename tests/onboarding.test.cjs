@@ -111,8 +111,12 @@ test('profile saving derives identity from session and persists experience', asy
     '@/utils/auth': { requireAuth: async () => ({ user: { id: 'authenticated-user', email: 'actual@virginia.edu' } }) },
     'next/cache': { revalidatePath() {} },
   })
-  await upsertStudentProfile({ firstName: 'Test', lastName: 'Student', computingId: 'spoofed', major: 'Math', gradYear: 2028, bio: 'Bio', experiences: [{ title: 'Member', subtitle: 'Club', period: '2026' }] })
+  await assert.rejects(upsertStudentProfile({ firstName: 'Test', lastName: 'Student', computingId: 'spoofed', major: 'Math', gradYear: 2028 }))
+  assert.equal(saved, undefined)
+  await upsertStudentProfile({ firstName: 'Test', lastName: 'Student', computingId: 'spoofed', major: 'Math', gradYear: 2028, phone: '(434) 555-0123', bio: 'Bio', experiences: [{ title: 'Member', subtitle: 'Club', period: '2026' }] })
   assert.equal(saved.where.userId, 'authenticated-user')
   assert.equal(saved.create.computingId, 'actual')
+  assert.equal(saved.create.phone, '+14345550123')
+  assert.equal(saved.update.phone, '+14345550123')
   assert.equal(saved.create.experiences.create[0].title, 'Member')
 })

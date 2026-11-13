@@ -16,6 +16,7 @@ import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeA
 import type { z } from "zod"
 import { boundedParse } from "@/lib/bounded-input"
 import { ActionError, actionResult } from "@/lib/action-result"
+import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone"
 
 async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
   const { user } = await requireAuth()
@@ -36,6 +37,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
       if (!profile) throw new ActionError("You must complete your unified profile before applying.")
       // Alumni keep drafts and history but cannot submit (lib/graduation.ts).
       if (isAlumniProfile(profile)) throw new ActionError(ALUMNI_APPLY_MESSAGE)
+      if (!validPhone(profile.phone)) throw new ActionError(PHONE_REQUIRED_MESSAGE)
       if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new ActionError("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
     const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
