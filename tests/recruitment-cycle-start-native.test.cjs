@@ -1,4 +1,4 @@
-const {unwrapActions}=require('./helpers/action-result.cjs');
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 // Starting the next recruitment cycle from the last one on isolated native
 // PostgreSQL: real Prisma, the club row lock, unique constraints and rollback.
 // Only request authentication is synthetic. Run: node scripts/run-disposable-postgres.cjs security
@@ -47,7 +47,7 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     },
   };
   const load = loader(mocks);
-  const recruitment = load('actions/recruitment-management.ts'), offerActions = unwrapActions(load('actions/recruitment-offers.ts')), offers = load('utils/recruitment-offers.ts'), communications = load('utils/decision-communications.ts');
+  const rawRecruitment = load('actions/recruitment-management.ts'), recruitment = unwrapActions(rawRecruitment), offerActions = unwrapActions(load('actions/recruitment-offers.ts')), offers = load('utils/recruitment-offers.ts'), communications = load('utils/decision-communications.ts');
   const as = (user, fn) => request.run(user, fn);
   const counts = async (tables, clubIds) => Object.fromEntries(await Promise.all(tables.map(async table => {
     const where = ['Application', 'ApplicantObservation', 'InterviewRoom', 'InterviewSlot', 'VotingSession', 'DecisionLetter', 'ClubInvitation', 'ApplicationQuestion', 'PipelineRound', 'VotingRuleDefault'].includes(table) ? `WHERE "clubId" = ANY($1::text[])` : '';
@@ -122,6 +122,9 @@ test('starting the next cycle from the last one on native PostgreSQL', { skip: !
     const waiting = await operator.user.create({ data: { email: `${randomUUID()}@virginia.edu` } });
     await operator.application.create({ data: { studentId: waiting.id, clubId: f.club.id, roundId: f.round.id, recruitmentCycleId: f.fall.id, status: 'WAITLISTED', submittedAt: new Date() } });
     await assert.rejects(as(f.leader, () => recruitment.startRecruitmentCycleFromPrevious(input(f))), /1 waitlisted application\./);
+    // The plain Archive button applies the same rule, returned (not thrown) so production shows the reason.
+    await refused(as(f.leader, () => rawRecruitment.saveRecruitmentCycle({ id: f.fall.id, clubId: f.club.id, name: 'Fall 2026', archived: true })), /1 waitlisted application\. Record final decisions before archiving this cycle\./);
+    assert.equal(await operator.auditLog.count({ where: { clubId: f.club.id, action: 'recruitment.cycle.saved' } }), 0);
     assert.equal(await operator.recruitmentCycle.count({ where: { clubId: f.club.id } }), 1);
     assert.equal((await operator.recruitmentCycle.findUniqueOrThrow({ where: { id: f.fall.id } })).archivedAt, null);
     assert.equal(await operator.auditLog.count({ where: { clubId: f.club.id, action: 'recruitment.cycle.started_from_previous' } }), 0);

@@ -38,6 +38,18 @@ export function canStage(status: string) {
   return isPendingDecision(status) || status === "WAITLISTED"
 }
 
+/**
+ * What a reviewer can still do about a decision that has been sent, naming only actions that exist:
+ * a rejection can be reconsidered, and a pending membership offer can be rescinded (both in the review's ⋯ menu).
+ * `where` is the surface asking: the review dialog has the menu; the board sends people to the applicant.
+ */
+export function sentDecisionHint(status: string, where: "review" | "board", offerPending = false) {
+  const sent = "The decision has been sent."
+  if (status === "REJECTED") return where === "review" ? `${sent} To revisit it, choose Reconsider application in ⋯.` : `${sent} Open the applicant to reconsider it.`
+  if (status === "ACCEPTED" && offerPending && where === "review") return `${sent} The pending offer can be rescinded from ⋯.`
+  return sent
+}
+
 /** Resolve an outcome into the status and round it will apply on send. Throws a reader-facing reason. */
 export function resolveStagedTarget(app: { status: string; roundId: string }, roundsInput: readonly StageRound[], outcome: StagedOutcome, roundId?: string | null): StagedTarget {
   if (!canStage(app.status)) throw new UserFacingError("Final decisions can't be staged. Use the applicant menu to correct them.")

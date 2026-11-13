@@ -3,6 +3,7 @@
 // new cycle, club-scoped authorization through the real authorizeClubTransaction.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {load,uuid}=require('./helpers/voting-harness.cjs');
+const {unwrapAction}=load('lib/action-result.ts');
 
 const clubX=uuid(1),clubY=uuid(2),leader=uuid(3),reviewer=uuid(4),leaderY=uuid(5),fall=uuid(10),otherClubCycle=uuid(11),newId=uuid(20);
 const past=new Date(Date.now()-30*86400000),future=new Date(Date.now()+30*86400000);
@@ -70,8 +71,10 @@ function harness({deadline=past,undecided=false,extraOpenCycle=false,waitlisted=
   '@/utils/club-write-transaction':{clubWriteTransaction},
   '@/utils/auth':{requireClubPermission:async(clubId,permissions)=>{permissionChecks.push([clubId,permissions]);return{user:{id:actor}}}},
  });
- const start=(extra={})=>api.startRecruitmentCycleFromPrevious({id:newId,clubId:clubX,sourceCycleId:fall,name:'Spring 2027',...extra});
- return{api,start,state:()=>state,calls,forbidden,locks,permissionChecks,as:id=>actor=id,suspend:()=>state.clubs[0].suspendedAt=new Date()};
+ // Both actions return actionResult envelopes; unwrapping turns a refusal into the UserFacingError the client shows.
+ const start=async(extra={})=>unwrapAction(await api.startRecruitmentCycleFromPrevious({id:newId,clubId:clubX,sourceCycleId:fall,name:'Spring 2027',...extra}));
+ const archive=async(id=fall)=>unwrapAction(await api.saveRecruitmentCycle({id,clubId:clubX,name:'Fall 2026',archived:true}));
+ return{api,start,archive,state:()=>state,calls,forbidden,locks,permissionChecks,as:id=>actor=id,suspend:()=>state.clubs[0].suspendedAt=new Date()};
 }
 const configSnapshot=s=>structuredClone({questions:s.questions,rounds:s.rounds,rules:s.rules,votingDefaults:s.votingDefaults,templates:s.clubs[0].decisionLetterTemplates});
 
@@ -189,13 +192,47 @@ test('replaying an id with a different name is refused, not reported as success'
 
 test('the plain archive action refuses while a vote is live; restore and rename are unaffected',async()=>{
  const h=harness({sessions:[{state:'OPEN'}]});
- await assert.rejects(h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026',archived:true}),/voting session in progress/);
+ await assert.rejects(h.archive(),/voting session in progress/);
  assert.equal(h.state().cycles[0].archivedAt,null);assert.equal(h.state().audit.length,0);
- await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026 class',archived:false});
+ unwrapAction(await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026 class',archived:false}));
  assert.equal(h.state().cycles[0].name,'Fall 2026 class');
  h.state().votingSessions[0].finalizedAt=new Date();h.state().votingSessions[0].state='COMPLETED';
- await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026 class',archived:true});
+ unwrapAction(await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026 class',archived:true}));
  assert.ok(h.state().cycles[0].archivedAt instanceof Date);
+});
+
+test('Archive refuses while any applicant still waits on a decision, with the reason a leader sees; nothing is written',async()=>{
+ for(const [options,reason] of [[{undecided:true},/^Fall 2026 still has 1 undecided application\. Record final decisions before archiving this cycle\.$/],[{waitlisted:2},/^Fall 2026 still has 2 waitlisted applications\. Record final decisions before archiving this cycle\.$/]]){
+  const h=harness(options);
+  const result=await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026',archived:true});
+  // Returned, not thrown: a thrown message is replaced by a generic one in production builds.
+  assert.equal(result.ok,false);assert.equal(result.code,'CYCLE_NOT_CLOSABLE');assert.match(result.error,reason);
+  assert.equal(h.state().cycles[0].archivedAt,null);assert.equal(h.state().audit.length,0);
+  assert.deepEqual(h.calls.filter(c=>writeMethods.includes(c.split('.')[1])),[]);
+ }
+});
+
+test('Archive succeeds once every applicant has a final decision; renaming and restoring never read applicants',async()=>{
+ let h=harness();
+ await h.archive();
+ assert.ok(h.state().cycles[0].archivedAt instanceof Date);assert.equal(h.state().audit[0].action,'recruitment.cycle.saved');
+ h=harness({undecided:true});
+ unwrapAction(await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026 class',archived:false}));
+ assert.equal(h.state().cycles[0].name,'Fall 2026 class');
+ h.state().cycles[0].archivedAt=past;
+ unwrapAction(await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026 class',archived:true}));
+ assert.equal(+h.state().cycles[0].archivedAt,+past,'an already archived cycle is renamed without re-checking or re-dating');
+ assert.ok(!h.calls.includes('application.count'),'only archiving an open cycle reads applicant statuses');
+});
+
+test('start refusals are returned with the leader-facing reason; a lost permission is returned as FORBIDDEN, and bad input still throws',async()=>{
+ const result=await harness({undecided:true}).api.startRecruitmentCycleFromPrevious({id:newId,clubId:clubX,sourceCycleId:fall,name:'Spring 2027'});
+ assert.deepEqual([result.ok,result.code],[false,'CYCLE_NOT_CLOSABLE']);assert.match(result.error,/before starting the next cycle\.$/);
+ const h=harness();h.as(reviewer);
+ for(const denied of [await h.api.startRecruitmentCycleFromPrevious({id:newId,clubId:clubX,sourceCycleId:fall,name:'Spring 2027'}),await h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'Fall 2026',archived:true})])
+  assert.deepEqual([denied.ok,denied.code],[false,'FORBIDDEN']);
+ assert.equal(h.state().cycles[0].archivedAt,null);assert.equal(h.state().audit.length,0);
+ await assert.rejects(h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'',archived:true}),'invalid input is a thrown validation error, never a result');
 });
 
 test('decision publication and offer responses do not depend on whether the cycle is archived',()=>{
