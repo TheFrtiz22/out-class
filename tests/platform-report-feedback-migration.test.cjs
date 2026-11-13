@@ -1,5 +1,5 @@
-// Issue/feedback report migration on PGlite: the widened kind check (including ACCOUNT_DELETION,
-// which the deletion request already writes), the bounded context column reserved for ISSUE and
+// Issue/feedback report migration on PGlite: the widened kind check (ISSUE and FEEDBACK on top of
+// the ACCOUNT_DELETION fix in 20261113110000), the bounded context column reserved for ISSUE and
 // FEEDBACK, existing rows untouched, and the server-only access posture unchanged.
 const { test } = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), { PGlite } = require('@electric-sql/pglite')
 const NAME = '20261113120000_platform_report_feedback'
@@ -10,18 +10,20 @@ test('platform report feedback migration: new kinds, bounded context, browser ro
     await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE outclass_production_app;')
     const dir = 'prisma/migrations'
     const names = fs.readdirSync(dir).filter(n => fs.existsSync(path.join(dir, n, 'migration.sql'))).sort()
-    assert.equal(names.at(-1), NAME, 'forward migration ordered after the existing history')
-    for (const n of names.slice(0, -1)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
+    const PREVIOUS = '20261113110000_platform_report_account_deletion_kind'
+    assert.ok(names.includes(PREVIOUS) && names.indexOf(NAME) > names.indexOf(PREVIOUS), 'sorts after 20261113110000_platform_report_account_deletion_kind')
+    for (const n of names.filter(n => n < NAME)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
     await db.exec(`INSERT INTO "User"(id,email) VALUES('alice','a@virginia.edu')`)
     const insert = (id, kind, context = null) => db.query(`INSERT INTO "PlatformReport"(id,kind,"targetId","reporterId",summary,"updatedAt",context) VALUES($1,$2,'/home','alice','Something broke on this page',now(),$3)`, [id, kind, context])
     const insertOld = (id, kind) => db.query(`INSERT INTO "PlatformReport"(id,kind,"targetId","reporterId",summary,"updatedAt") VALUES($1,$2,'t','alice','A report filed before the change',now())`, [id, kind])
     await insertOld('old-support', 'SUPPORT')
     await insertOld('old-content', 'CONTENT')
-    await assert.rejects(insertOld('pre-deletion', 'ACCOUNT_DELETION'), /check constraint/, 'before: the foundation check refuses deletion requests')
+    await insertOld('pre-deletion', 'ACCOUNT_DELETION')
+    for (const kind of ['ISSUE', 'FEEDBACK']) await assert.rejects(insertOld(`pre-${kind}`, kind), /check constraint/, 'before: ISSUE/FEEDBACK refused')
 
-    await db.exec(fs.readFileSync(path.join(dir, NAME, 'migration.sql'), 'utf8'))
+    for (const n of names.filter(n => n >= NAME)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
     const kept = (await db.query(`SELECT id, kind, context FROM "PlatformReport" ORDER BY id`)).rows
-    assert.deepEqual(kept, [{ id: 'old-content', kind: 'CONTENT', context: null }, { id: 'old-support', kind: 'SUPPORT', context: null }], 'existing rows unchanged')
+    assert.deepEqual(kept, [{ id: 'old-content', kind: 'CONTENT', context: null }, { id: 'old-support', kind: 'SUPPORT', context: null }, { id: 'pre-deletion', kind: 'ACCOUNT_DELETION', context: null }], 'existing rows unchanged')
 
     const context = JSON.stringify({ path: '/home?tab=1', userAgent: 'Chrome 131 on macOS (desktop)', viewport: '1440×900', appVersion: 'abc123', screenshotPath: 'reports/alice/x.jpg' })
     await insert('issue', 'ISSUE', context)

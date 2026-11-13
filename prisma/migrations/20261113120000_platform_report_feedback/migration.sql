@@ -1,8 +1,8 @@
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 -- Issue reports and feedback from signed-in people (lib/feedback-reports.ts). Reuses
--- PlatformReport: widens the anonymous foundation kind check with ISSUE and FEEDBACK, and
--- with ACCOUNT_DELETION, which the account deletion request already writes. Adds a nullable
+-- PlatformReport: replaces the kind check (as left by 20261113110000, which added
+-- ACCOUNT_DELETION) with the same list plus ISSUE and FEEDBACK. Adds a nullable
 -- "context" object (page, device, build, optional screenshot path) that only those two kinds
 -- may carry, bounded in size. Existing rows satisfy the replacement unchanged and keep NULL.
 -- No new table, grant, policy, trigger or backfill: RLS and the server-only policy stay.
@@ -16,7 +16,7 @@ BEGIN
     EXECUTE format('ALTER TABLE "PlatformReport" DROP CONSTRAINT %I', c.conname);
     dropped := dropped + 1;
   END LOOP;
-  IF dropped <> 1 THEN RAISE EXCEPTION 'Expected the one foundation report kind check, found %', dropped; END IF;
+  IF dropped <> 1 THEN RAISE EXCEPTION 'Expected the one report kind check, found %', dropped; END IF;
 END $$;
 ALTER TABLE "PlatformReport"
   ADD COLUMN "context" JSONB,

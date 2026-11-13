@@ -6,7 +6,7 @@ Signed-in students and leaders send an issue report or feedback from the account
 ## Flow
 
 - **Storage:** a `PlatformReport` row, kind `ISSUE` or `FEEDBACK` (migration
-  `20261113120000_platform_report_feedback`). `summary` is the message (10–2000 characters);
+  `20261113120000_platform_report_feedback`, after `20261113110000_platform_report_account_deletion_kind`). `summary` is the message (10–2000 characters);
   `targetId` is the page path; `context` is a bounded object built on the server:
   `path` (path and query only, no fragment, credential-like query parameters dropped, opaque link
   tokens masked), `userAgent` (coarse "Chrome 131 on macOS (desktop)" line from the request
@@ -24,7 +24,7 @@ Signed-in students and leaders send an issue report or feedback from the account
 
 Optional. The browser downscales and re-encodes the chosen image as JPEG (≤ 2 MB), asks for a
 signed upload URL and uploads it to the existing private `task-submissions` bucket under
-`reports/<userId>/<uuid>.jpg`. That bucket denies every browser role (restrictive policy in
+`reports/<userId>/<uuid>.jpg` (or `.png`; the server issues the path and its extension follows the declared type). That bucket denies every browser role (restrictive policy in
 `supabase/task-submissions.sql`) and already allows PNG and JPEG, so **no Storage change is
 needed**. On submit the server checks the path belongs to the reporter, that the object has the
 declared size and type, and its first bytes (the task-file check); anything else is deleted.
