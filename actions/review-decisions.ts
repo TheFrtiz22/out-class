@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
@@ -136,29 +137,34 @@ async function sendStagedDecisionsCommand(input: z.input<typeof sendInput>): Pro
     const staged = await tx.stagedDecision.findMany({ where: { clubId: data.clubId, applicationId: { in: ids } } });
     const apps = await tx.application.findMany({ where: { clubId: data.clubId, id: { in: ids } }, include: { round: true } });
     const rounds = await tx.pipelineRound.findMany({ where: { clubId: data.clubId, archivedAt: null }, select: { id: true, name: true, order: true, type: true } });
+    const recused = new Set((await tx.applicantRecusal.findMany({ where: { applicationId: { in: ids }, memberId: member.id, liftedAt: null }, select: { applicationId: true } })).map(r => r.applicationId));
     const out: SendResult = { sent: 0, stale: [] };
+    // Support impersonation is refused above, so audit rows can be written together.
+    const audits: Prisma.AuditLogCreateManyInput[] = [], sentIds: string[] = [];
     for (const item of staged) {
       const app = apps.find(candidate => candidate.id === item.applicationId);
       const skip = (reason: string) => out.stale.push({ applicationId: item.applicationId, reason });
       if (!app || app.status === "DRAFTING") { skip("no longer available"); continue }
       if (stagedIsStale(item, app)) { skip("changed since the decision was staged"); continue }
       if (app.studentId === user.id) { skip("is your own application"); continue }
-      if (await tx.applicantRecusal.findFirst({ where: { applicationId: app.id, memberId: member.id, liftedAt: null }, select: { id: true } })) { skip("you have stepped out of reviewing this applicant"); continue }
+      if (recused.has(app.id)) { skip("you have stepped out of reviewing this applicant"); continue }
       if (item.targetRoundId) {
         if (!canMoveRounds) { skip("moving rounds needs recruitment management access"); continue }
         const target = rounds.find(round => round.id === item.targetRoundId);
         if (!target) { skip("its target round is no longer active"); continue }
         await tx.application.update({ where: { id: app.id }, data: { roundId: target.id, status: item.targetStatus } });
-        await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: app.id, action: "club.round.move", details: { staged: item.id, previousRoundId: app.roundId, newRoundId: target.id, previousStatus: app.status, status: item.targetStatus } } });
+        audits.push({ actorId: user.id, clubId: data.clubId, targetId: app.id, action: "club.round.move", details: { staged: item.id, previousRoundId: app.roundId, newRoundId: target.id, previousStatus: app.status, status: item.targetStatus } });
         // The Application notification trigger tells the applicant about the new round/status, as for any move.
       } else if (item.targetStatus !== app.status) {
         // Hold on an applicant already in review changes nothing; everything else publishes as a direct decision.
         await publishRecruitmentDecision(tx, { clubId: data.clubId, applicationId: app.id, status: item.targetStatus, expectedStatus: app.status, roundId: app.roundId }, user.id);
       }
-      await tx.stagedDecision.delete({ where: { id: item.id } });
-      await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: app.id, action: "recruitment.decision.staged.sent", details: { staged: item.id, outcome: item.outcome, targetStatus: item.targetStatus, targetRoundId: item.targetRoundId } } });
+      sentIds.push(item.id);
+      audits.push({ actorId: user.id, clubId: data.clubId, targetId: app.id, action: "recruitment.decision.staged.sent", details: { staged: item.id, outcome: item.outcome, targetStatus: item.targetStatus, targetRoundId: item.targetRoundId } });
       out.sent++;
     }
+    if (sentIds.length && (await tx.stagedDecision.deleteMany({ where: { id: { in: sentIds }, clubId: data.clubId } })).count !== sentIds.length) throw new Error("Staged decisions changed. Nothing was sent.");
+    if (audits.length) await tx.auditLog.createMany({ data: audits });
     return out;
   });
   revalidatePath("/", "layout");
@@ -166,7 +172,7 @@ async function sendStagedDecisionsCommand(input: z.input<typeof sendInput>): Pro
 }
 
 async function lockApplications(tx: AppTransactionClient, clubId: string, ids: string[]) {
-  for (const id of ids) await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${id} AND "clubId"=${clubId} FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "Application" WHERE "clubId"=${clubId} AND id=ANY(${ids}::text[]) ORDER BY id FOR UPDATE`;
 }
 
 /** Sending publishes decisions; refusals (e.g. an offer that changed) must reach the person who pressed Send. */
