@@ -143,6 +143,7 @@ test('inline scripts carry the request nonce', async () => {
     '@/components/ui/button': { Button: ({ children }) => children },
     'next/image': { __esModule: true, default: () => null }, 'next/link': { __esModule: true, default: ({ children }) => children },
     '@/lib/seo': { publicPageMetadata: () => ({}), publicPageStructuredData: () => ({ '@type': 'AboutPage' }) },
+    '@/components/landing/promo-video': { PromoVideoFigure: () => null },
   })
   const html = renderToStaticMarkup(await About.default())
   assert.match(html, /<script type="application\/ld\+json" nonce="rendered-nonce">/)

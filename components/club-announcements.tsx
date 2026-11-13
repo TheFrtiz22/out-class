@@ -26,7 +26,7 @@ const saveCommunicationSchedule = unwrapped(saveCommunicationScheduleAction);
 import { ScheduledCommunications, ScheduleFields, initialTiming, type ScheduledItem } from "@/components/communication-schedules";
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
-import { formatDateTime, formatShortDate } from "@/lib/copy/terms"
+import { TERMS, formatDateTime, formatShortDate } from "@/lib/copy/terms"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { DataTable, DataTableSecondary } from "@/components/ui/data-table"
 import { joinFacts } from "@/lib/join-facts"
@@ -104,15 +104,15 @@ export function ClubAnnouncements({ clubId, initialItems }: { clubId: string; in
   finally { publishing.current = false; setBusy(false); }
  }
  if (demo.isDemoEnabled) return <p className="rounded-lg border p-6 text-sm text-muted-foreground">Announcement publishing is available when signed into your live OutClass account.</p>;
- return <div className="oc-workspace-stack" data-saving={busy} data-unsaved={draftSave.dirty}>
-  <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mt-2 text-sm text-muted-foreground">Publish to your club’s current members or submitted applicants.</p></div><Button onClick={openComposer}><Plus className="size-4" /> Create announcement</Button></div>
+ return <div className="oc-workspace-stack oc-dt-scope" data-saving={busy} data-unsaved={draftSave.dirty}>
+  <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mt-2 text-sm text-muted-foreground">Publish to your club’s current members or submitted applicants.</p></div><Button onClick={openComposer}><Plus className="size-4" aria-hidden="true" />{TERMS.newAnnouncement}</Button></div>
   <div className="flex flex-wrap gap-2">
     <ActionWorkflow title="Scheduled announcements" description="Review, edit or cancel announcements scheduled for later." trigger="Scheduled announcements" presentation="sheet">  <ScheduledCommunications clubId={clubId} refresh={scheduleRefresh} onEdit={row=>{setEditing(row);setTitle(row.title);setBody(row.body);setAudience("CUSTOM");setAudienceSpec(recipientAudienceSchema.parse(row.audience));setTiming({localTime:row.localTime,timeZone:row.timeZone,occurrence:row.occurrence as "EARLIER"|"LATER",recipientMode:row.recipientMode as "FIXED"|"SEND_TIME"});setSendMode("SCHEDULE");setPreview(null);setError("");setCompose(true);void getRecipientGroups(clubId).then(setCatalog).catch(()=>setError("Audience catalog unavailable."));}}/></ActionWorkflow>
     <ActionWorkflow title="Audience groups" description="Manage reusable recipient groups for announcements." trigger="Manage audiences" presentation="sheet"><RecipientGroups clubId={clubId} /></ActionWorkflow>
   </div>
   {error && <p role="alert" className="oc-feedback">{error}</p>}
   {success && <p role="status" className="text-sm">{success}</p>}
-  {items.length > 0 && <div className="oc-list-toolbar justify-end"><SortControl label="Sort announcements" options={sortOptions} value={listSort.key} descending={listSort.descending} descendingByDefault={sortsDescending} onChange={listSort.set} /></div>}
+  {items.length > 0 && <div className="oc-list-toolbar justify-end"><SortControl className="oc-dt-cards-sort" label="Sort announcements" options={sortOptions} value={listSort.key} descending={listSort.descending} descendingByDefault={sortsDescending} onChange={listSort.set} /></div>}
   {items.length ? <DataTable caption="Published announcements" rows={sorted} rowKey={item => item.id}
    sort={{ key: listSort.key, descending: listSort.descending, toggle: key => listSort.toggle(key as AnnouncementSort) }}
    openLabel={item => `Read ${item.title}`}

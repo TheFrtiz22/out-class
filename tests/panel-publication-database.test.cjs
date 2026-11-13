@@ -40,7 +40,7 @@ test('understaffing defaults to blocked, safe explicit overrides are recorded, a
  workspace=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(workspace.published.version,1)
 })
 test('K: booking publication is separate from safe understaffed panel publication and preserves existing reservations',async t=>{
- const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[3];await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==empty)});const review=ok(await h.review());ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'Existing reservations are retained while staffing is completed.'}));
+ const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[1],dropped=d.document.assignments.find(a=>a.slotId===empty);await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a!==dropped)});const review=ok(await h.review());ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'Existing reservations are retained while staffing is completed.'}));
  const before=await h.snapshot(),booking=h.load('actions/interview-booking-publication.ts');await assert.rejects(booking.setInterviewBookingPublication({...h.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true}),/unfilled/);h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.publicationState,'NOT_PUBLISHED');assert.equal(schedule.rooms.length,0);assert.ok(schedule.booking);await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}),/aren.t open/);assert.deepEqual(await h.snapshot(),before);await h.rooms.cancelRoomBooking(schedule.booking.id);assert.equal((await h.snapshot()).InterviewBooking.length,0)
 })
 
@@ -90,4 +90,128 @@ test('availability rechecks preserve assignments and never waive concurrent conf
  draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;ok(await h.publish.revalidatePanelDraft(h.input(draft)));draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;assert.equal(draft.stale,false);assert.deepEqual(draft.document.assignments,assignments);const review=ok(await h.review());
  await h.db.query('UPDATE "PipelineRound" SET configuration=configuration||\'{"syntheticRecheck":2}\'::jsonb WHERE id=$1',[h.ids.round]);const afterChange=await h.snapshot();const failedPublication=await h.confirm(review);assert.equal(failedPublication.ok,false);assert.match(failedPublication.error,/stale|Revalidate/);assert.deepEqual(await h.snapshot(),afterChange);
  draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;await h.db.query('UPDATE "InterviewSlot" SET "endTime"="endTime"+interval \'5 minutes\' WHERE id=$1',[h.slotIds[0]]);const beforeFailure=await h.snapshot(),failedCheck=await h.publish.revalidatePanelDraft(h.input(draft));assert.equal(failedCheck.ok,false);assert.match(failedCheck.error,/Session times|configuration changed/);const retained=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;assert.equal(retained.revision,draft.revision);assert.deepEqual(retained.document.assignments,assignments);assert.deepEqual(await h.snapshot(),beforeFailure);
+})
+
+test('un-staffing an unbooked session publishes an empty panel through the approved publication; booked sessions and authorization stay protected',async t=>{
+ const {randomUUID}=require('node:crypto'),h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())))
+ const target=h.slotIds[1],official=await h.snapshot(),removed=official.InterviewSlot.find(s=>s.id===target).publishedPanelMemberIds;assert.ok(removed.length>0)
+ assert.equal(official.InterviewBooking.some(b=>b.slotId===target),false)
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}));let draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments.filter(a=>a.slotId!==target)})
+ const review=ok(await h.review());assert.equal(review.unstaffed,1);assert.equal(review.overrideRequired,false);assert.equal(review.overrideWarning,null);assert.equal(review.filled,4);assert.ok(review.unfilled>0)
+ // Only the club's current owner can publish; a scheduler and another club's owner are refused, and nothing changes.
+ const before=await h.snapshot()
+ h.as(h.ids.scheduler);const scheduler=await h.confirm(review);assert.equal(scheduler.ok,false);assert.match(scheduler.error,/owner/)
+ const foreign=randomUUID(),foreignClub=randomUUID();await h.db.query('INSERT INTO "User"(id,email) VALUES ($1,$2)',[foreign,'foreign@virginia.edu']);await h.db.query('INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES ($1,\'foreign-club\',\'Foreign\',\'\',\'\',\'\',\'\')',[foreignClub]);await h.db.query('INSERT INTO "ClubMember"(id,"clubId","userId","isOwner",permissions,"interviewOffices") VALUES ($1,$2,$3,true,\'{}\',\'{PRESIDENT}\')',[randomUUID(),foreignClub,foreign])
+ h.as(foreign);assert.equal((await h.confirm(review)).ok,false);assert.equal((await h.publish.publishPanelSchedule({clubId:foreignClub,roundId:h.ids.round,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken})).ok,false)
+ const unchanged=await h.snapshot();assert.deepEqual(unchanged.InterviewSlot,before.InterviewSlot);assert.deepEqual(unchanged.InterviewPanelScheduleVersion,before.InterviewPanelScheduleVersion)
+ // The owner publishes without an understaffing reason; the empty panel is written only through the publication.
+ // A direct call that empties staffed sessions without the explicit confirmation is refused and changes nothing.
+ h.as(h.ids.owner);const unconfirmed=await h.confirm(review);assert.equal(unconfirmed.ok,false);assert.match(unconfirmed.error,/Confirm removing all interviewers from 1 unbooked session/);assert.deepEqual((await h.snapshot()).InterviewSlot,before.InterviewSlot)
+ const result=ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,confirmUnstaff:true}));assert.equal(result.version,2)
+ const after=await h.snapshot(),slot=after.InterviewSlot.find(s=>s.id===target);assert.deepEqual(slot.publishedPanelMemberIds,[]);assert.equal(slot.panelScheduleVersionId,result.publicationId)
+ const version=after.InterviewPanelScheduleVersion.find(v=>v.id===result.publicationId);assert.equal(version.understaffedOverride,false);assert.equal(version.overrideReason,null);assert.equal(version.document.assignments.some(a=>a.slotId===target),false)
+ for(const memberId of removed)assert.ok(after.UserNotification.some(n=>n.eventKey===`panel-schedule:${result.publicationId}:${memberId}`),'removed interviewers are told the schedule changed')
+ const audit=(await h.db.query('SELECT details FROM "AuditLog" WHERE action=\'interview.panels.publish\' AND "targetId"=$1',[result.publicationId])).rows[0].details;assert.deepEqual(audit.unstaffedSlotIds,[target]);assert.equal(audit.understaffedOverride,false)
+ await assert.rejects(h.db.query('UPDATE "InterviewSlot" SET "publishedPanelMemberIds"=$1 WHERE id=$2',['{'+removed[0]+'}',target]),/approved publication/)
+ // A later revision keeps the officially empty session empty without asking for a reason again.
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:2}));const again=ok(await h.review());assert.equal(again.unstaffed,0);assert.equal(again.overrideRequired,false)
+ // Booked sessions are still protected: emptying one is refused before anything is published.
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments.filter(a=>a.slotId!==h.slotIds[0])})
+ const booked=await h.review();assert.equal(booked.ok,false);assert.match(booked.error,/booked session needs at least one interviewer/)
+ assert.equal((await h.api.getPanelProposalWorkspace(h.scope)).published.version,2)
+})
+
+test('A: empty unbooked times never block booking publication and are never offered; partially staffed times still block',async t=>{
+ const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[3];await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==empty)})
+ // A never-staffed, unbooked session needs no understaffing reason; it simply is not offered.
+ const review=ok(await h.review());assert.equal(review.overrideRequired,false);assert.equal(review.unstaffed,0);assert.equal(review.unoffered,1);ok(await h.confirm(review))
+ const booking=h.load('actions/interview-booking-publication.ts'),coverage=(await booking.getInterviewBookingPublication(h.scope)).slots
+ assert.deepEqual(coverage.find(s=>s.slotId===empty),{...coverage.find(s=>s.slotId===empty),bookable:false,unoffered:true})
+ await booking.setInterviewBookingPublication({...h.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true})
+ const round=(await h.db.query('SELECT "bookingSlots","bookingPublishedAt" FROM "PipelineRound" WHERE id=$1',[h.ids.round])).rows[0];assert.ok(round.bookingPublishedAt);assert.equal(round.bookingSlots.some(s=>s.id===empty),false);assert.equal(round.bookingSlots.length,3)
+ h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.publicationState,'PUBLISHED');assert.equal(schedule.rooms.flatMap(r=>r.slots).some(s=>s.id===empty),false)
+ await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}))
+})
+
+test('coverage keeps flagging a staffed time whose approval is no longer valid instead of hiding it as unoffered',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())))
+ const booking=h.load('actions/interview-booking-publication.ts'),open=h.slotIds[1]
+ let row=(await booking.getInterviewBookingPublication(h.scope)).slots.find(s=>s.slotId===open);assert.equal(row.bookable,true);assert.equal(row.unoffered,false)
+ // The publishing owner hands ownership to the scheduler: the published panel is no longer approved by a current owner.
+ await h.db.query('UPDATE "ClubMember" SET "isOwner"=true WHERE id=$1',[h.ids.schedulerMember]);await h.db.query('UPDATE "ClubMember" SET "isOwner"=false WHERE id=$1',[h.ids.ownerMember])
+ h.as(h.ids.scheduler);row=(await booking.getInterviewBookingPublication(h.scope)).slots.find(s=>s.slotId===open)
+ assert.equal(row.bookable,false);assert.equal(row.unoffered,false);assert.ok(row.reasons.includes('Panel approval is required.'))
+ await assert.rejects(booking.setInterviewBookingPublication({...h.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true}),/Panel approval is required/)
+})
+
+test('closing a room never strands a ready draft: regenerate recovers it, closed unbooked sessions can be un-staffed, booked ones stay protected',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())))
+ const [booked,openA,closedStaffed,closedTarget]=h.slotIds
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}));let draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ // The draft plans a different interviewer for a room B time, then waits for approval.
+ const x=draft.document.assignments.find(a=>a.slotId===closedTarget),y=draft.document.assignments.find(a=>a.slotId===openA&&a.memberId!==x.memberId)
+ await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments.map(a=>a===x?{...a,memberId:y.memberId,source:'MANUAL'}:a===y?{...a,memberId:x.memberId,source:'MANUAL'}:a)});const ready=ok(await h.review())
+ // "Stop bookings" on room B.
+ await h.db.query('UPDATE "InterviewRoom" SET "isOpen"=false WHERE id=$1',[h.roomIds[1]]);const official=await h.snapshot(),members=id=>official.InterviewSlot.find(s=>s.id===id).publishedPanelMemberIds.slice().sort()
+ const stale=await h.confirm(ready);assert.equal(stale.ok,false);assert.match(stale.error,/closed/);assert.equal(stale.code,'DRAFT_STALE');assert.deepEqual(await h.snapshot(),official)
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;const recheck=await h.publish.revalidatePanelDraft(h.input(draft));assert.equal(recheck.ok,false);assert.equal(recheck.code,'DRAFT_STALE')
+ // Regenerating one open session rebuilds the whole draft against current rooms, so it can be approved again.
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ draft=(await h.generate(draft.revision,{window:draft.document.window,mode:'REGENERATE',selectedSlotIds:[openA],assignments:draft.document.assignments})).proposal
+ assert.equal(ok(await h.review()).conflicts,0)
+ // "Assign available interviewers" (round-wide fill) also recovers, and keeps closed sessions exactly as published.
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ draft=(await h.generate(draft.revision,{window:draft.document.window,mode:'FILL_MISSING',assignments:draft.document.assignments})).proposal
+ assert.deepEqual(draft.document.sessions.filter(s=>s.unstaffOnly).map(s=>s.id).sort(),[closedStaffed,closedTarget].sort())
+ for(const id of [closedStaffed,closedTarget])assert.deepEqual(draft.document.assignments.filter(a=>a.slotId===id).map(a=>a.memberId).sort(),members(id))
+ let review=ok(await h.review());assert.equal(review.unstaffed,0);assert.equal(review.overrideRequired,false)
+ const v2=ok(await h.confirm(review));assert.equal(v2.version,2)
+ let after=await h.snapshot();for(const id of [closedStaffed,closedTarget])assert.deepEqual(after.InterviewSlot.find(s=>s.id===id).publishedPanelMemberIds.slice().sort(),members(id))
+ // A closed, unbooked, staffed session can be un-staffed through publication, but never newly staffed.
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:2}));draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ assert.ok(draft.document.sessions.some(s=>s.id===closedTarget&&s.unstaffOnly))
+ const outsider=[h.ids.panelMember,h.ids.peerMember,h.ids.schedulerMember].find(id=>!members(closedTarget).includes(id))
+ await assert.rejects(h.api.savePanelProposalDraft({...h.input(draft),assignments:[...draft.document.assignments,{slotId:closedTarget,memberId:outsider,locked:false,source:'MANUAL'}]}),/closed/)
+ draft=await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments.filter(a=>a.slotId!==closedTarget)})
+ review=ok(await h.review());assert.equal(review.unstaffed,1);assert.equal(review.overrideRequired,false)
+ const v3=ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,confirmUnstaff:true}))
+ after=await h.snapshot();assert.deepEqual(after.InterviewSlot.find(s=>s.id===closedTarget).publishedPanelMemberIds,[]);assert.equal(after.InterviewSlot.find(s=>s.id===closedTarget).panelScheduleVersionId,v3.publicationId)
+ assert.deepEqual(after.InterviewSlot.find(s=>s.id===closedStaffed).publishedPanelMemberIds.slice().sort(),members(closedStaffed))
+ // Closing the booked room too: the booked session keeps today's rules. It leaves the draft and its published panel is untouched.
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:3}));ok(await h.review())
+ const bookedBefore=(await h.snapshot()).InterviewSlot.find(s=>s.id===booked)
+ await h.db.query('UPDATE "InterviewRoom" SET "isOpen"=false WHERE id=$1',[h.roomIds[0]])
+ const failed=await h.review();assert.equal(failed.ok,false);assert.match(failed.error,/Session times or staffing configuration changed/);assert.equal(failed.code,'DRAFT_STALE')
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ draft=(await h.generate(draft.revision,{window:draft.document.window,mode:'FILL_MISSING',assignments:draft.document.assignments})).proposal
+ assert.equal(draft.document.sessions.some(s=>s.id===booked),false);assert.ok(draft.document.sessions.some(s=>s.id===openA&&s.unstaffOnly))
+ ok(await h.confirm(ok(await h.review())))
+ assert.deepEqual((await h.snapshot()).InterviewSlot.find(s=>s.id===booked),bookedBefore)
+})
+
+test('closed sessions: locked plans on them are dropped and reported, their requirement cannot change, and an added member is refused at publication',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())))
+ const [,openA,,closedTarget]=h.slotIds,interviewers=[h.ids.panelMember,h.ids.peerMember,h.ids.schedulerMember]
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}));let draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ const published=draft.document.assignments.filter(a=>a.slotId===closedTarget).map(a=>a.memberId).sort()
+ // A locked plan to put someone new on a room B time, made before the room closed.
+ const x=draft.document.assignments.find(a=>a.slotId===closedTarget),y=draft.document.assignments.find(a=>a.slotId===openA&&a.memberId!==x.memberId)
+ draft=await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments.map(a=>a===x?{...a,memberId:y.memberId,source:'MANUAL',locked:true}:a===y?{...a,memberId:x.memberId,source:'MANUAL'}:a)})
+ await h.db.query('UPDATE "InterviewRoom" SET "isOpen"=false WHERE id=$1',[h.roomIds[1]])
+ const regenerated=await h.generate(draft.revision,{window:draft.document.window,mode:'FILL_MISSING',assignments:draft.document.assignments});draft=regenerated.proposal
+ assert.equal(regenerated.droppedLockedPositions,1);assert.deepEqual(draft.document.assignments.filter(a=>a.slotId===closedTarget).map(a=>a.memberId).sort(),published)
+ // The requirement on a closed session can't change; sending the unchanged requirements (as the editor does) still saves.
+ const neededBefore=(await h.snapshot()).InterviewSlot.find(s=>s.id===closedTarget).interviewersNeeded
+ await assert.rejects(h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments,requirements:draft.document.sessions.map(s=>({slotId:s.id,required:s.id===closedTarget?s.required+1:s.required}))}),/staffing requirement can't change/)
+ draft=await h.api.savePanelProposalDraft({...h.input(draft),assignments:draft.document.assignments,requirements:draft.document.sessions.map(s=>({slotId:s.id,required:s.required}))})
+ // A member added to a closed session behind the editor's back is refused by the publication action and changes nothing.
+ const review=ok(await h.review()),outsider=interviewers.find(id=>!published.includes(id))
+ await h.db.query('UPDATE "InterviewPanelProposal" SET document=jsonb_set(document,\'{assignments}\',(document->\'assignments\')||$1::jsonb),revision=revision+1 WHERE id=$2',[JSON.stringify([{slotId:closedTarget,memberId:outsider,locked:false,source:'MANUAL'}]),review.proposalId])
+ const before=await h.snapshot(),refused=await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision+1,approvalToken:review.approvalToken,confirmUnstaff:true})
+ assert.equal(refused.ok,false);assert.match(refused.error,/closed/);assert.equal(refused.code,'DRAFT_STALE');assert.deepEqual(await h.snapshot(),before)
+ // Regenerating removes the added member; the publication then keeps the closed session's interviewers and requirement.
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;draft=(await h.generate(draft.revision,{window:draft.document.window,mode:'FILL_MISSING',assignments:draft.document.assignments})).proposal
+ assert.equal(draft.document.assignments.some(a=>a.slotId===closedTarget&&a.memberId===outsider),false);ok(await h.confirm(ok(await h.review())))
+ const slot=(await h.snapshot()).InterviewSlot.find(s=>s.id===closedTarget);assert.equal(slot.interviewersNeeded,neededBefore);assert.deepEqual(slot.publishedPanelMemberIds.slice().sort(),published)
 })

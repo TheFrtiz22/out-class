@@ -5,14 +5,14 @@ import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { interviewCapabilities } from "@/lib/interview-access"
-import { panelScopeSchema, panelDocumentSchema, panelScheduleChanges, mergePanelPublication, publishedPanelDocumentSchema, type PanelApprovalReview, type PanelDocument } from "@/lib/panel-proposals"
+import { panelScopeSchema, panelDocumentSchema, panelScheduleChanges, mergePanelPublication, panelUnstaffing, publishedPanelDocumentSchema, type PanelApprovalReview, type PanelDocument } from "@/lib/panel-proposals"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { activePanelPublication, assertCurrentPanelDocument, assertPanelBookingSafety, publicationDocument, lockSchedulingPeople, PanelPublicationError, draftApprovalReset } from "@/utils/panel-publication"
 import { syncBookingPanel,type BookingPanelBatch } from "@/utils/interview-scheduling-access"
 import { panelScheduleNotificationPrefix } from "@/utils/official-panel-schedule"
 import { logContentionExhausted, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
 const draftScope=panelScopeSchema.extend({proposalId:z.string().uuid(),revision:z.number().int().positive()}).strict()
-type Result<T>={ok:true;value:T}|{ok:false;error:string}
+type Result<T>={ok:true;value:T}|{ok:false;error:string;code?:string}
 async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:(tx:AppTransactionClient,actorId:string)=>Promise<T>):Promise<Result<T>>{
  try{
   const {user}=await requireAuth({verifyEmail:owner})
@@ -24,7 +24,7 @@ async function operation<T>(clubId:string,owner:boolean,publishing:boolean,work:
    return work(tx,user.id)
   },{isolationLevel:publishing?"ReadCommitted":"Serializable",timeout:60000,maxWait:15000}))
   return{ok:true,value}
- }catch(error){if(error instanceof TransactionConflictError)logContentionExhausted("panel.publication",error);return{ok:false,error:error instanceof PanelPublicationError||error instanceof TransactionConflictError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
+ }catch(error){if(error instanceof TransactionConflictError)logContentionExhausted("panel.publication",error);return error instanceof PanelPublicationError?{ok:false,error:error.message,code:error.code}:{ok:false,error:error instanceof TransactionConflictError?error.message:"Could not complete this action. Your draft and current schedule are retained. Reload to check permissions and current revisions."}}
 }
 async function draftFor(tx:AppTransactionClient,input:z.infer<typeof draftScope>){
  const row=await tx.interviewPanelProposal.findFirst({where:{id:input.proposalId,clubId:input.clubId,roundId:input.roundId}})
@@ -46,9 +46,12 @@ export async function beginPanelScheduleRevision(raw:unknown){
   const restore=input.restoreVersion?await tx.interviewPanelScheduleVersion.findFirst({where:{clubId:input.clubId,roundId:input.roundId,version:input.restoreVersion}}):active
   if(!restore)throw new PanelPublicationError("Choose a published revision from this round's history.")
   const source=publicationDocument(restore)!,live=await loadPanelPlanningScene(tx,input)
-  if(!live.window||!live.scene.sessions.some(s=>s.active))throw new PanelPublicationError("There are no upcoming open sessions to revise.")
-  const sessions=live.scene.sessions.filter(s=>s.active).map(s=>{const previous=source.sessions.find(old=>old.id===s.id);return input.restoreVersion&&previous?{...previous,originalRequired:s.required,roomRevision:s.roomRevision,slotRevision:s.slotRevision}:{...s,originalRequired:s.required}}),ids=new Set(sessions.map(s=>s.id))
-  const assignments=input.restoreVersion?source.assignments.filter(a=>ids.has(a.slotId)):sessions.flatMap(s=>s.existingMemberIds.map(memberId=>({slotId:s.id,memberId,locked:false,source:"EXISTING" as const,...(source.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)?.availabilityOverrideId?{availabilityOverrideId:source.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)!.availabilityOverrideId}:{})})))
+  if(!live.window||!live.scene.sessions.some(s=>s.active||s.unstaffOnly))throw new PanelPublicationError("There are no upcoming open sessions to revise.")
+  // Closed-room sessions always start from their current interviewers: a restore never staffs them anew.
+  const official=publicationDocument(active)!,restoring=(s:{unstaffOnly?:true})=>!!input.restoreVersion&&!s.unstaffOnly
+  const sessions=live.scene.sessions.filter(s=>s.active||s.unstaffOnly).map(s=>{const previous=source.sessions.find(old=>old.id===s.id);if(restoring(s)&&previous){const{unstaffOnly:_closed,...restored}=previous;return{...restored,originalRequired:s.required,roomRevision:s.roomRevision,slotRevision:s.slotRevision}}return{...s,originalRequired:s.required}})
+  const existing=(s:{id:string;existingMemberIds:string[]})=>s.existingMemberIds.map(memberId=>{const prior=official.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId);return{slotId:s.id,memberId,locked:false,source:"EXISTING" as const,...(prior?.availabilityOverrideId?{availabilityOverrideId:prior.availabilityOverrideId}:{})}})
+  const assignments=live.scene.sessions.filter(s=>s.active||s.unstaffOnly).flatMap(s=>restoring(s)?source.assignments.filter(a=>a.slotId===s.id):existing(s))
   const document:PanelDocument=panelDocumentSchema.parse({version:1,window:live.window,options:source.options,sessions,assignments})
   const {validatePanelDocument,panelDraftScene}=await import("@/lib/panel-proposals")
   const row=await tx.interviewPanelProposal.create({data:{clubId:input.clubId,roundId:input.roundId,basePublishedVersion:active.version,createdBy:actorId,modifiedBy:actorId,document,validation:validatePanelDocument(document,panelDraftScene(document,live.scene)),sourceFingerprint:live.fingerprint}})
@@ -70,18 +73,18 @@ export async function reviewPanelPublication(raw:unknown):Promise<Result<PanelAp
  return operation(input.clubId,true,false,async(tx,actorId)=>{
   const {row,document,active}=await draftFor(tx,input),live=await loadPanelPlanningScene(tx,input,document.window)
   const validation=assertCurrentPanelDocument(document,live.scene)
-  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("Availability, interviewers or rooms changed. Reload the page and review the draft again.")
+  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("Availability, interviewers or rooms changed. Recheck availability, then confirm again.","RECHECK_REQUIRED")
   const round=await tx.pipelineRound.findUniqueOrThrow({where:{id:input.roundId}})
   if(round.anonymousReview)throw new PanelPublicationError("This round hides applicant names, so panel access cannot be shared. Ask the club owner to review privacy settings.")
-  await assertPanelBookingSafety(tx,input,document)
+  const booked=await assertPanelBookingSafety(tx,input,document),unstaffing=panelUnstaffing(document,live.scene,new Set(booked.map(b=>b.slotId))),overrideRequired=validation.filled<validation.required-unstaffing.exemptRequired
   const club=await tx.club.findUniqueOrThrow({where:{id:input.clubId},select:{name:true}}),approvalToken=randomUUID(),changes=panelScheduleChanges(currentOfficialDocument(publicationDocument(active),document,live),mergePanelPublication(publicationDocument(active),document))
   const ready=await tx.interviewPanelProposal.update({where:{id:row.id},data:{status:"READY_FOR_APPROVAL",approvalToken,readyBy:actorId,readyAt:new Date(),validation,modifiedBy:actorId,revision:{increment:1}}})
   await tx.auditLog.create({data:{actorId,clubId:input.clubId,targetId:row.id,action:"interview.panel-proposal.ready",details:{revision:ready.revision}}})
-  return{proposalId:row.id,revision:ready.revision,approvalToken,clubName:club.name,roundName:live.roundName,rooms:new Set(document.sessions.map(s=>s.roomId)).size,sessions:document.sessions.length,required:validation.required,filled:validation.filled,unfilled:validation.required-validation.filled,conflicts:validation.issues.length,canOverride:true,overrideWarning:validation.filled<validation.required?"Some sessions need more interviewers. Booked sessions keep at least one interviewer; sessions with none will not be offered to applicants. Confirm the rest can handle the applicants you expect.":null,changes,previousVersion:active?.version??0}
+  return{proposalId:row.id,revision:ready.revision,approvalToken,clubName:club.name,roundName:live.roundName,rooms:new Set(document.sessions.map(s=>s.roomId)).size,sessions:document.sessions.length,required:validation.required,filled:validation.filled,unfilled:validation.required-validation.filled,conflicts:validation.issues.length,canOverride:true,unstaffed:unstaffing.removedSlotIds.length,unoffered:unstaffing.exemptSlotIds.length,overrideRequired,overrideWarning:overrideRequired?"Some sessions that will be offered have fewer interviewers than needed. Booked sessions keep at least one interviewer. Confirm they can handle the applicants you expect.":null,changes,previousVersion:active?.version??0}
  })
 }
 export async function publishPanelSchedule(raw:unknown){
- const input=draftScope.extend({approvalToken:z.string().uuid(),understaffedOverride:z.boolean().default(false),overrideReason:z.string().trim().max(1000).optional()}).strict().parse(raw)
+ const input=draftScope.extend({approvalToken:z.string().uuid(),understaffedOverride:z.boolean().default(false),overrideReason:z.string().trim().max(1000).optional(),confirmUnstaff:z.boolean().default(false)}).strict().parse(raw)
  return operation(input.clubId,true,true,async(tx,actorId)=>{
   const prior=await tx.interviewPanelScheduleVersion.findUnique({where:{approvalToken:input.approvalToken}})
   if(prior){if(prior.clubId!==input.clubId||prior.roundId!==input.roundId||prior.publishedBy!==actorId||prior.sourceProposalId!==input.proposalId||prior.sourceProposalRevision!==input.revision)throw new PanelPublicationError("This approval is for a different schedule.");return{publicationId:prior.id,version:prior.version,idempotent:true}}
@@ -92,8 +95,10 @@ export async function publishPanelSchedule(raw:unknown){
   const candidateMembers=await tx.clubMember.findMany({where:{id:{in:document.assignments.map(a=>a.memberId)},clubId:input.clubId}})
   await lockSchedulingPeople(tx,{exclusive:candidateMembers.map(m=>m.userId)})
   const live=await loadPanelPlanningScene(tx,input,document.window),validation=assertCurrentPanelDocument(document,live.scene)
-  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("This approval is stale. Revalidate and review the draft again; the current schedule is unchanged.")
-  const bookings=await assertPanelBookingSafety(tx,input,document),understaffed=validation.filled<validation.required
+  if(row.sourceFingerprint!==live.fingerprint)throw new PanelPublicationError("This approval is stale. Revalidate and review the draft again; the current schedule is unchanged.","RECHECK_REQUIRED")
+  const bookings=await assertPanelBookingSafety(tx,input,document),unstaffing=panelUnstaffing(document,live.scene,new Set(bookings.map(b=>b.slotId))),understaffed=validation.filled<validation.required-unstaffing.exemptRequired
+  // Emptying staffed sessions takes an explicit confirmation, not only the reviewed approval token.
+  if(unstaffing.removedSlotIds.length&&!input.confirmUnstaff)throw new PanelPublicationError(`Confirm removing all interviewers from ${unstaffing.removedSlotIds.length} unbooked session${unstaffing.removedSlotIds.length===1?"":"s"} before approving.`)
   if(understaffed&&(!input.understaffedOverride||!input.overrideReason||input.overrideReason.length<10))throw new PanelPublicationError("Some sessions need more interviewers. To continue anyway, confirm and give a reason (at least 10 characters).")
   const before=currentOfficialDocument(publicationDocument(active),document,live),combined=publishedPanelDocumentSchema.parse(mergePanelPublication(publicationDocument(active),document)),changes=panelScheduleChanges(before,combined),publicationId=randomUUID()
   await tx.$queryRaw`SELECT set_config('outclass.panel_publication_id',${publicationId},true)`
@@ -111,7 +116,7 @@ export async function publishPanelSchedule(raw:unknown){
   const affected=[...new Set(changes.flatMap(c=>c.memberId?[c.memberId]:[]))],members=await tx.clubMember.findMany({where:{id:{in:affected},clubId:input.clubId,status:"ACTIVE",user:{disabledAt:null}}})
   // These intents commit with the publication; the existing worker performs provider I/O after commit.
   if(members.length)await tx.userNotification.createMany({data:members.map(m=>({userId:m.userId,clubId:input.clubId,eventKey:`${panelScheduleNotificationPrefix}${version.id}:${m.id}`,type:"INTERVIEW",title:"Interview panel schedule updated",body:"An approved interview panel schedule changed. Open your interview schedule to review your assignments.",href:`/settings/interviews?clubId=${input.clubId}&roundId=${input.roundId}`})),skipDuplicates:true})
-  await tx.auditLog.create({data:{actorId,clubId:input.clubId,targetId:version.id,action:"interview.panels.publish",details:{previousVersion:version.previousVersion,version:version.version,proposalId:row.id,revision:row.revision,changes,understaffedOverride:understaffed,overrideReason:understaffed?input.overrideReason:null,notifiedMembers:affected}}})
+  await tx.auditLog.create({data:{actorId,clubId:input.clubId,targetId:version.id,action:"interview.panels.publish",details:{previousVersion:version.previousVersion,version:version.version,proposalId:row.id,revision:row.revision,changes,understaffedOverride:understaffed,overrideReason:understaffed?input.overrideReason:null,unstaffedSlotIds:unstaffing.removedSlotIds,notifiedMembers:affected}}})
   await tx.interviewPanelProposal.delete({where:{id:row.id}})
   return{publicationId:version.id,version:version.version,idempotent:false}
  })

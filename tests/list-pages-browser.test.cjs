@@ -19,7 +19,11 @@ async function measure(page) {
       sortOnScreen = r.left >= 0 && r.right <= innerWidth && hits.every(hit => hit && control.contains(hit)); window.scrollTo(0, 0)
     }
     const cards = [...document.querySelectorAll('main [data-list-card]')].filter(shown)
+    // Wide lists sort from their column headers; the toolbar SortControl beside them is for the card layout only.
+    const sortableHeaders = [...document.querySelectorAll('main .oc-dt thead th button')].some(shown)
+    const cardsOnlySortShown = [...document.querySelectorAll('main .oc-dt-cards-sort')].some(shown)
     return {
+      sortableHeaders, cardsOnlySortShown,
       pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       sortOnScreen,
       rows: [...document.querySelectorAll('main .oc-dt tbody tr')].filter(shown).map(r => r.getBoundingClientRect().height),
@@ -29,18 +33,22 @@ async function measure(page) {
   })
 }
 
-test('browser: every list keeps a visible sort, one-line rows or two-line cards, and no page scroll at five widths; the quick review fits', { timeout: 600000 }, async t => {
+test('browser: every list keeps a visible sort (control or headers), one-line rows or two-line cards, and no page scroll at five widths; the quick review fits', { timeout: 600000 }, async t => {
   const fixtures = { leader: await startLeaderScreens(), list: await startListPages() }
   t.after(async () => { for (const f of Object.values(fixtures)) await f.close() })
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close())
   for (const width of widths) {
     const context = await browser.newContext({ viewport: { width, height: 764 }, reducedMotion: 'reduce' })
+    // The leader-screens fixture seeds Demo data from 2026-11-09; pin the page clock there so its
+    // interviews stay upcoming (a real clock aged them into the past on Nov 13 and the list emptied).
+    await context.clock.setFixedTime(new Date('2026-11-09T15:00:00-05:00'))
     const page = await context.newPage(), errors = []; page.on('pageerror', error => errors.push(error.message))
     for (const [name, fixture, query] of pages) {
       await page.goto(fixtures[fixture].url(query)); await page.locator('main h1').first().waitFor(); await page.waitForTimeout(500)
       const m = await measure(page), at = `${name} at ${width}px`
       assert.ok(m.pageOverflow <= 0, `${at}: the page never scrolls sideways (${m.pageOverflow}px)`)
-      assert.ok(m.sortOnScreen, `${at}: a Sort control is fully on screen`)
+      assert.ok(m.sortOnScreen || m.sortableHeaders, `${at}: a Sort control or sortable column headers are on screen`)
+      if (m.rows.length && m.sortableHeaders) assert.equal(m.cardsOnlySortShown, false, `${at}: no second sort control beside sortable headers`)
       assert.ok(m.rows.length || m.cards.length, `${at}: renders rows or cards`)
       for (const h of m.rows) assert.ok(h <= 48, `${at}: table rows are 48px or less (${h})`)
       for (const h of m.cards) assert.ok(h <= 72, `${at}: cards are 72px or less (${h})`)

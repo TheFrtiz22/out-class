@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Progress } from "@/components/ui/progress"
 import { applicationResponseProgress } from "@/lib/student-applications"
-import { recruitmentDeadline, recruitmentDate } from "@/lib/recruitment-presentation"
+import { applicationIntakeClosed, recruitmentDeadline, recruitmentDate } from "@/lib/recruitment-presentation"
 import { ClubLogo } from "@/components/club-logo"
 import type { StudentApplication } from "./application-form"
 import { applicantDate } from "./application-status-card"
@@ -14,7 +14,7 @@ export function ApplicationManagementCard({ application: app, deadline, sample =
   const draft = app.status === "DRAFTING"
   const progress = applicationResponseProgress(app.club.questions, app.answers)
   const due = recruitmentDeadline(deadline || app.club.applicationDeadline)
-  const closed = app.club.applicationOpen === false || !!due && +due <= Date.now()
+  const closed = applicationIntakeClosed(app.club, Date.now(), deadline)
   return <article className="oc-application-management-row">
     <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || DEFAULT_CLUB_COLOR} />
     <div className="min-w-0 flex-1"><h2>{app.club.name}</h2><p>{draft ? progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions" : app.submittedAt ? `Submitted ${applicantDate(app.submittedAt)}` : "Submitted application"}</p>

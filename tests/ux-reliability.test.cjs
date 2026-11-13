@@ -1,8 +1,9 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs'), ts = require('typescript')
-const nodes = n => !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...nodes(n.props?.children)]
-const text = n => typeof n === 'string' ? n : Array.isArray(n) ? n.map(text).join('') : n?.props ? text(n.props.children) : ''
+const nodes = n => !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...nodes(n.props?.children), ...(n.type === 'EmptyState' ? nodes(n.props.action) : [])]
+// EmptyState renders its title, description and action from props.
+const text = n => typeof n === 'string' ? n : Array.isArray(n) ? n.map(text).join('') : n?.type === 'EmptyState' ? [n.props.title, n.props.description, text(n.props.action)].join(' ') : n?.props ? text(n.props.children) : ''
 function load(file, mocks, globals = {}) {
   mocks = { ...require('./helpers/shell-stubs.cjs'), '@/lib/copy/terms': require('./helpers/component-module.cjs').loadComponent('lib/copy/terms.ts'), '@/lib/event-board-empty': require('./helpers/component-module.cjs').loadComponent('lib/event-board-empty.ts'), '@/lib/uuid': require('./helpers/component-module.cjs').loadComponent('lib/uuid.ts'), './use-saved-campus-events': { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: '' }) }, ...mocks }
   const mod = { exports: {} }
@@ -24,7 +25,7 @@ const button = (tree, label) => nodes(tree).find(n => n.type === 'Button' && tex
 const deferred = () => { let resolve, reject; const promise = new Promise((res, rej) => { resolve = res; reject = rej }); return { promise, resolve, reject } }
 test('club search selection honors unsaved and in-flight guards before leaving the page', async () => {
   const h = hooks(), assigned = [], closed = []; let saving = false, consent = false, prompts = 0
-  const C = load('components/shell/navigation-search.tsx', { react: h.react, '@/components/ui/confirm-dialog': { useConfirm: () => async () => { prompts++; return consent } }, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'student' } }) }, '@/lib/application-state': { useApplicationState: () => ({}) }, '@/lib/demo/store': { demoStore: { active: () => false } }, '@/lib/demo/loader': { isDemoActive: () => false }, '@/lib/workspace-api': { searchWorkspace: async () => [{ kind: 'club', id: 'club', clubId: 'club', title: 'Club', detail: '' }] } }, { window: { setTimeout: fn => { fn(); return 1 }, clearTimeout() {}, location: { assign: path => assigned.push(path) } }, document: { querySelector: selector => selector.includes('saving') ? saving : true } }).NavigationSearch
+  const C = load('components/shell/navigation-search.tsx', { react: h.react, '@/components/ui/confirm-dialog': { useConfirm: () => async () => { prompts++; return consent } }, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'student', memberships: [] } }) }, '@/lib/search-destinations': require('./helpers/component-module.cjs').loadComponent('lib/search-destinations.ts'), '@/lib/navigation': { STUDENT_ROUTES: [], studentPath: () => '/applications' }, '@/lib/permissions': { hasPermission: () => false }, '@/lib/application-state': { useApplicationState: () => ({}) }, '@/lib/demo/store': { demoStore: { active: () => false } }, '@/lib/demo/loader': { isDemoActive: () => false }, '@/lib/workspace-api': { searchWorkspace: async () => [{ kind: 'club', id: 'club', clubId: 'club', title: 'Club', detail: '' }] } }, { window: { setTimeout: fn => { fn(); return 1 }, clearTimeout() {}, location: { assign: path => assigned.push(path) } }, document: { querySelector: selector => selector.includes('saving') ? saving : true } }).NavigationSearch
   const render = () => h.render(() => C({ open: true, items: [], onOpenChange: v => closed.push(v), onNavigate() {} }))
   nodes(render()).find(n => n.type === 'CommandInput').props.onValueChange('club'); render(); await h.flush()
   // Selection awaits the shared confirm dialog; let its microtasks settle.
@@ -68,7 +69,7 @@ test('the empty, unfiltered Corkboard never offers to show what it already shows
   assert.match(text(tree), /No upcoming campus events yet/)
   assert.equal(button(tree, 'Show all events'), undefined); assert.equal(button(tree, 'Browse all events'), undefined); assert.equal(button(tree, 'Clear filters'), undefined)
   assert.equal(nodes(tree).find(n => n.type === 'FilterPopover')?.props.count, 0, 'no active-filter count')
-  assert.equal(nodes(tree).some(n => n.type === 'SavedClubsPopover' || text(n) === 'Saved Clubs'), false)
+  assert.equal(nodes(tree).some(n => n.type === 'SavedClubsPopover' || text(n) === 'Saved clubs'), false)
 })
 test('Your RSVPs uses the shared Phosphor disclosure chevron, not a text triangle', () => {
   const h = rsvpHarness({ getMyCampusEventRsvps: () => new Promise(() => {}) })

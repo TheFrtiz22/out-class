@@ -8,7 +8,9 @@ import { VotingSelection } from "@/components/views/leader-dashboard/live-applic
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Lock } from "@/components/icons"
+import { LoadingState } from "@/components/ui/loading-state"
+import { ChevronDown, Lock } from "@/components/icons"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useRevalidate } from "@/hooks/use-revalidate"
 import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
 import { NO_INTERVIEW_SCORES } from "@/lib/interview-feedback"
@@ -214,7 +216,7 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
     {pending && <div role="status" className="oc-ranked-updates flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"><span>Updated results available.</span><Button size="sm" variant="outline" onClick={applyPending}>Refresh ranking</Button></div>}
     {checkFailed && <p role="status" className="text-xs text-muted-foreground">Couldn’t check for new results. Showing the last loaded ranking.</p>}
     {error ? <div role="alert" className="space-y-2 text-sm"><p>{error}</p><Button variant="outline" size="sm" onClick={() => void load(roundId)}>Try again</Button></div>
-      : !shown ? <p role="status" className="text-sm text-muted-foreground">Loading ranking…</p>
+      : !shown ? <LoadingState label="Loading ranking…" layout="rows" rows={4} />
       : <>
         <BandSettings key={`${shown.roundId}:${cycleKey}:${setting.revision}`} clubId={clubId} roundId={shown.roundId} cycleKey={cycleKey} bands={setting.bands} revision={setting.revision} canManage={canManage} api={api}
           onSaved={(bands, revision) => setShown(s => s && s.roundId === shown.roundId ? { ...s, settings: { ...s.settings, scopes: { ...s.settings.scopes, [cycleKey]: { bands, revision } } }, signature: signatureOf(s.data, { ...s.settings, scopes: { ...s.settings.scopes, [cycleKey]: { bands, revision } } }, s.roundId) } : s)} />
@@ -223,8 +225,8 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
         {selectedMissing && <p role="status" className="text-xs text-muted-foreground">The selected applicant is no longer in this round.</p>}
         <h3 ref={listHeading} tabIndex={-1} id="ranked-review-heading" className="text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">Ranked applicants <span className="font-normal text-muted-foreground">· {ranked.length} scored</span></h3>
         {rankedSection}
-        {notScoredShown.length > 0 && <div className="oc-ranked-group" data-group="not-scored"><h4 className="text-xs font-medium">Not scored · {notScored.length}</h4><p className="text-xs text-muted-foreground">No submitted interview score yet. Not ranked and not placed in a band.</p><ul className="oc-ranked-list">{notScoredShown.map(renderRow)}</ul></div>}
-        {hiddenShown.length > 0 && <div className="oc-ranked-group" data-group="hidden"><h4 className="text-xs font-medium">Score not available · {hidden.length}</h4><p className="text-xs text-muted-foreground">You can’t see these scores yet, so they are not ranked.</p><ul className="oc-ranked-list">{hiddenShown.map(renderRow)}</ul></div>}
+        {notScoredShown.length > 0 && <div className="oc-ranked-group" data-group="not-scored"><h4 className="text-xs font-medium">Not scored · {notScored.length}</h4><p className="text-xs text-muted-foreground">Waiting for an interview score.</p><ul className="oc-ranked-list">{notScoredShown.map(renderRow)}</ul></div>}
+        {hiddenShown.length > 0 && <div className="oc-ranked-group" data-group="hidden"><h4 className="text-xs font-medium">Score not available · {hidden.length}</h4><p className="text-xs text-muted-foreground">Scores show after you submit your review.</p><ul className="oc-ranked-list">{hiddenShown.map(renderRow)}</ul></div>}
         {remaining > 0 && <div className="oc-ranked-more flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <p aria-live="polite" className="mr-auto">Showing {visibleCount} of {ordered.length} applicants</p>
           <Button type="button" size="sm" variant="outline" onClick={() => showMore(RANKED_PAGE_SIZE)}>Show {Math.min(RANKED_PAGE_SIZE, remaining)} more</Button>
@@ -262,10 +264,10 @@ function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, a
     finally { setSaving(false) }
   }
   return <div className="oc-ranked-settings text-sm">
-    <p className="text-xs text-muted-foreground">{summary ? <>Discussion bands: {summary}</> : canManage ? "No discussion bands yet, so only ranks show. Set bands to group ranks for discussion." : "No discussion bands set, so only ranks show."}</p>
-    {canManage && <details className="mt-2" open={!bands || undefined}>
-      <summary className="min-h-9 cursor-pointer py-2 text-control font-medium">{bands ? "Edit discussion bands" : "Set discussion bands"}</summary>
-      <form className="mt-2 flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); if (proposed.ok) void save(proposed.bands) }}>
+    <p className="text-xs text-muted-foreground">{summary ? <>Discussion bands: {summary}</> : "No discussion bands yet."}</p>
+    {canManage && <Collapsible className="mt-2" defaultOpen={!bands}>
+      <CollapsibleTrigger className="group inline-flex min-h-9 items-center gap-2 rounded-md py-2 text-control font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring"><ChevronDown aria-hidden="true" size={16} className="-rotate-90 transition-transform duration-150 group-data-[state=open]:rotate-0 motion-reduce:transition-none" />{bands ? "Edit discussion bands" : "Set discussion bands"}</CollapsibleTrigger>
+      <CollapsibleContent><form className="mt-2 flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); if (proposed.ok) void save(proposed.bands) }}>
         <div><Label htmlFor={`green-end-${roundId}`}>Green ends at rank</Label><Input id={`green-end-${roundId}`} className="mt-1 w-28" type="number" min={1} step={1} value={greenEnd} onChange={e => setGreenEnd(e.target.value)} /></div>
         <div><Label htmlFor={`yellow-end-${roundId}`}>Yellow ends at rank</Label><Input id={`yellow-end-${roundId}`} className="mt-1 w-28" type="number" min={2} step={1} value={yellowEnd} onChange={e => setYellowEnd(e.target.value)} /></div>
         <p className="pb-2 text-xs text-muted-foreground">{proposed.ok ? `Red: rank ${proposed.bands.red.start} onward` : "Red: after Yellow"}</p>
@@ -274,6 +276,6 @@ function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, a
       </form>
       {!proposed.ok && <p role="alert" className="mt-2 text-control">{proposed.errors.join(" ")}</p>}
       {message && <p role="alert" className="mt-2 text-control">{message}</p>}
-    </details>}
+    </CollapsibleContent></Collapsible>}
   </div>
 }

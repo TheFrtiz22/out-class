@@ -7,6 +7,9 @@ export const TERMS = {
   /** Club broadcast posts. Not "Post update", "Club updates" or "Messages". */
   announcements: "Announcements",
   newAnnouncement: "New announcement",
+  /** Create actions read "New …", with the Plus icon, never a typed "+". */
+  newMeeting: "New meeting",
+  newEvent: "New event",
   /** Personal notification feed. Not "Notifications" or "Updates for you". */
   inbox: "Inbox",
   openInbox: "Open inbox",
@@ -34,6 +37,8 @@ export const TERMS = {
   events: "Events",
   browseEvents: "Browse events",
   recruiting: "Recruiting",
+  /** The recruiting Overview page in the rail and the document title; its H1 stays "Recruiting". */
+  recruitingOverview: "Recruiting overview",
   clubHome: "Club home",
   applicants: "Applicants",
   publicProfile: "Public profile",

@@ -2,6 +2,7 @@
 import { userMessage } from "@/lib/user-message"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { UserCog } from "@/components/icons"
 import { useDemoMode } from "@/contexts/demo-context"
 import { getApplicantRecusals, setApplicantRecusal } from "@/actions/recusals"
 
@@ -31,7 +32,7 @@ export function ApplicantRecusal({ clubId, applicationId, anonymous, onChanged }
   }
   return <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground" data-testid="applicant-recusal">
     {state.selfRecused ? <span>You’ve stepped out of reviewing, interviewing and voting on this applicant.</span>
-      : !anonymous && <Button variant="ghost" size="sm" disabled={busy} onClick={() => void change(true)} title="Step out of reviewing, interviewing and voting on this applicant">I know this applicant</Button>}
+      : !anonymous && <Button variant="outline" size="sm" disabled={busy} onClick={() => void change(true)} title="Step out of reviewing, interviewing and voting on this applicant"><UserCog aria-hidden="true" />I know this applicant</Button>}
     {state.canManage && state.recused.length > 0 && <span>Stepped out: {state.recused.map((r, i) => <span key={r.memberId}>{i ? ", " : ""}{r.name} <Button variant="link" size="sm" className="h-auto p-0" disabled={busy} onClick={() => void change(false, r.memberId)}>Undo</Button></span>)}</span>}
     {message && <span role="alert" className="text-destructive">{message}</span>}
   </div>

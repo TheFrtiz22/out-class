@@ -92,12 +92,13 @@ test("decision counts come from canonical outcomes, each applicant once across a
   assert.deepEqual(summary.decisionCounts([{ applicationId: "x", outcome: "ACCEPT" }, { applicationId: "x", outcome: "REJECT" }]), { pass: 1, hold: 0, notPass: 0, unreviewed: 0, total: 1 })
 })
 
-test("Overview lists active and scheduled live sessions with Resume, Join or View details", () => {
+test("Overview lists the sessions still to run with Resume, Join or View details", () => {
   const room = (over) => ({ roundId: "r", roundName: "R", applicantCount: 4, mode: "LIVE", state: "OPEN", view: "present", meeting: null, ...over })
   assert.equal(decide.overviewSessionGroup(room({})), "active")
   assert.equal(decide.overviewSessionGroup(room({ state: "PAUSED" })), "active")
   assert.equal(decide.overviewSessionGroup(room({ state: "DRAFT", meeting: { status: "SCHEDULED" } })), "scheduled")
-  assert.equal(decide.overviewSessionGroup(room({ state: "DRAFT" })), null)
+  assert.equal(decide.overviewSessionGroup(room({ state: "DRAFT" })), "draft")
+  assert.equal(decide.overviewSessionAction(room({ view: "leader", state: "DRAFT" })), "View details")
   assert.equal(decide.overviewSessionGroup(room({ state: "DRAFT", meeting: { status: "CANCELLED" } })), null)
   assert.equal(decide.overviewSessionGroup(room({ state: "COMPLETED" })), null)
   assert.equal(decide.overviewSessionGroup(room({ mode: "LEGACY" })), null)
@@ -262,4 +263,28 @@ test("Overview reuses the existing reads, Demo routing and permission gates", ()
   assert.match(action, /requireClubPermission\(d\.clubId, \["applications\.review"\]\)/)
   assert.match(fs.readFileSync("lib/voting-room-projection.ts", "utf8"), /!round\.anonymousReview && !hasPermission\(m, "applicants\.identify"\)/)
   assert.match(fs.readFileSync("actions/communications.ts", "utf8"), /getDecisionTemplates\(clubId:string\) \{\s*z\.string\(\)\.uuid\(\)\.parse\(clubId\);await requireClubPermission\(clubId,\['recruitment\.manage'\]\)/)
+})
+
+test("one grouping for the Vote badge, Overview and the Voting room lists: each room in exactly one group", () => {
+  const room = (over) => ({ roundId: "r", roundName: "R", applicantCount: 4, mode: "LIVE", state: "OPEN", meeting: null, ...over })
+  const cases = [
+    [room({}), "active"],
+    [room({ state: "PAUSED" }), "active"],
+    [room({ state: "DRAFT" }), "draft"],
+    [room({ state: "DRAFT", meeting: { status: "SCHEDULED" } }), "scheduled"],
+    [room({ state: "DRAFT", meeting: { status: "CANCELLED" } }), "past"],
+    [room({ state: "OPEN", meeting: { status: "CANCELLED" } }), "past"],
+    [room({ state: "COMPLETED" }), "past"],
+    [room({ mode: "LEGACY", state: "OPEN" }), "past"],
+  ]
+  for (const [value, group] of cases) assert.equal(decide.votingSessionGroup(value), group, JSON.stringify(value))
+  // A round with one unscheduled draft room: badge 1, Overview lists it, and the Vote page lists it under "Not yet scheduled".
+  const rooms = [room({ state: "DRAFT" }), room({ state: "COMPLETED" })]
+  assert.equal(decide.decideCounts(rooms).voting, 1)
+  assert.equal(rooms.filter(decide.overviewSessionGroup).length, 1)
+  assert.equal(rooms.filter(r => decide.votingSessionGroup(r) === "draft").length, 1)
+  const landing = fs.readFileSync("components/live-voting/room-landing.tsx", "utf8")
+  assert.match(landing, /votingSessionGroup\(r\)===kind/, "the Vote lists use the shared grouping")
+  assert.match(landing, /draft:"Not yet scheduled"/)
+  assert.doesNotMatch(landing, /No voting sessions available/)
 })

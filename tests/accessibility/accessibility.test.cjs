@@ -89,7 +89,7 @@ test('events: corkboard/list, filter, empty state and dialog focus restoration',
 });
 test('leader: event creation, labelled date controls and equivalent flyer information',async()=>{
   const f=await pageFor(`${fixture.url}/?case=leader`);const p=f.page;try{
-    await p.getByRole('button',{name:'+ Create event',exact:true}).click();await p.getByLabel('Event name',{exact:true}).fill('Community night');
+    await p.getByRole('button',{name:'New event',exact:true}).click();await p.getByLabel('Event name',{exact:true}).fill('Community night');
     assert.equal(await p.getByLabel('Description',{exact:true}).getAttribute('aria-describedby'),'event-description-help');await scan(p,'leader-event-editor');await p.setViewportSize({width:320,height:800});await reflow(p);await scan(p,'leader-event-editor-320');
   }finally{await f.close();}
 });
@@ -106,7 +106,7 @@ test('voting history: read-only outcomes and closing an unfinished board session
     assert.deepEqual(await p.evaluate(()=>window.fixtureCommands),['COMPLETE_PASS','FINISH']);
   }finally{await f.close();}
 });
-const publicRoutes=['/','/?audience=leader','/about','/uva','/request-school','/login','/signup','/forgot-password','/reset-password','/platform/login'];
+const publicRoutes=['/','/?audience=leader','/about','/uva','/request-school','/universities','/login','/signup','/forgot-password','/reset-password','/platform/login'];
 for(const [index,route] of publicRoutes.entries()){
   test(`public route: ${route}, semantics, axe, 320px and text spacing`,async()=>{
     assert.ok(process.env.OUTCLASS_A11Y_URL,'Use pnpm test:a11y to start the isolated local app');
@@ -119,6 +119,21 @@ for(const [index,route] of publicRoutes.entries()){
     }finally{await f.close();}
   });
 }
+test('promo videos: nothing mounts before a click; the hero button opens a named dialog and Escape returns focus; a poster plays in place',async()=>{
+  assert.ok(process.env.OUTCLASS_A11Y_URL,'Use pnpm test:a11y to start the isolated local app');
+  const f=await pageFor(process.env.OUTCLASS_A11Y_URL+'/?audience=leader');const p=f.page;try{
+    assert.equal(await p.locator('video').count(),0);
+    const watch=p.getByRole('button',{name:/^Watch the pitch/});await watch.focus();await p.keyboard.press('Enter');
+    const dialog=p.getByRole('dialog',{name:'Six tools, one place'});await dialog.waitFor();
+    await expect(dialog.locator('video')).toHaveAttribute('aria-label','Six tools, one place');await scan(p,'promo-video-dialog');
+    await p.keyboard.press('Escape');await dialog.waitFor({state:'detached'});await isFocused(watch);assert.equal(await p.locator('video').count(),0);
+  }finally{await f.close();}
+  const g=await pageFor(process.env.OUTCLASS_A11Y_URL+'/about');const q=g.page;try{
+    assert.equal(await q.locator('video').count(),0);
+    await q.getByRole('button',{name:/^Play video/}).click();
+    const video=q.locator('video');await video.waitFor();await isFocused(video);await scan(q,'promo-video-in-place');
+  }finally{await g.close();}
+});
 test('homepage: keyboard skip link, mobile navigation Escape and reduced motion',async()=>{
   const f=await pageFor(process.env.OUTCLASS_A11Y_URL,390);const p=f.page;try{
     await p.keyboard.press('Tab');const skip=p.getByRole('link',{name:'Skip to product overview',exact:true});await isFocused(skip);await p.keyboard.press('Enter');await p.waitForFunction(()=>document.activeElement.id==='about');assert.equal(await p.evaluate(()=>document.activeElement.id),'about');

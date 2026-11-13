@@ -4,6 +4,7 @@ import { hasPermission, isActiveMembership, type ClubAccess } from "@/lib/permis
 import { clubCalendarHref } from "@/lib/club-calendar"
 import { decisionsHref } from "@/lib/voting-navigation"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
+import { TERMS } from "@/lib/copy/terms"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
 export type ProductNavItem = { id: string; label: string; href?: string; preview?: boolean; mode?: "recruiting" | "club"
@@ -40,7 +41,7 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   if (mode === "recruiting") {
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     const { canVote, canSend } = decideAccess(member)
-    return [item("overview", "Overview", "recruitment"),
+    return [item("overview", TERMS.recruitingOverview, "recruitment"),
       ...(read ? [item("applicants", "Applicants", "recruitment", { matches: ["resumes", "reviews"] })] : []),
       // Interview records are Applicants pages: linked from its toolbar and from each dossier, not from the rail.
       ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { hidden: true, href: applicantInterviewHref(clubId, "resumes", search) })] : []),

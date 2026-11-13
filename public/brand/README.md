@@ -9,7 +9,7 @@ The site now uses the path-based, font-independent SVGs in [premium-board/](prem
 | Light public navigation | Primary two-tone wordmark with sword | `premium-board/02_primary_lockup.svg` |
 | Light-background full logo | Primary two-tone wordmark with sword | `premium-board/02_primary_lockup.svg` |
 | Navy navigation, login panel, sidebar, footer | Ivory/orange sword lockup with transparent background | `premium-board/10_hero_transparent.svg` |
-| Compact OC / app tile | Primary navy rounded-square monogram | `premium-board/05_app_icon_primary.svg` |
+| Compact OC / app tile, PWA and home-screen icons | All-ivory OC monogram on the navy rounded square | `premium-board/11_app_icon_white.svg` |
 | Browser favicon and light loading | Circular OC monogram | `premium-board/07_favicon.svg` |
 | Navy loading | Ivory tile OC monogram | `premium-board/06_app_icon_light.svg` |
 

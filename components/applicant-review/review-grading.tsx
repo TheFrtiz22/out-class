@@ -92,7 +92,7 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
     {invalid && <p role="alert" className="text-control text-destructive">{invalid.label} must be between 0 and {invalid.max}.</p>}
     <div className="oc-review-overall-row">
       <div>
-        <p className="text-xs text-muted-foreground">{draft.override ? "Overall (edited)" : rubric.categories.length > 1 ? "Overall · average of scored categories" : "Overall"}</p>
+        <p className="text-xs text-muted-foreground">{draft.override ? "Overall (edited)" : rubric.categories.length > 1 ? "Overall · average of scored categories" : "Out of 10"}</p>
         {draft.override
           ? <span className="flex items-center gap-1"><Label htmlFor="grade-overall" className="sr-only">Overall score out of 10</Label><Input id="grade-overall" type="number" inputMode="decimal" min={1} max={10} step={0.1} className="oc-review-score-input" value={draft.overall} disabled={!canEvaluate || busy} onChange={event => set({ overall: event.target.value })} /><span className="text-xs text-muted-foreground">/10</span></span>
           : <p className="oc-review-overall"><span className="tabular-nums">{formatOverall(computed)}</span><span className="oc-review-overall-scale">/10</span></p>}

@@ -5,8 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useDemoMode } from "@/contexts/demo-context";
 import { getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
-import { clubInterviewHref, interviewEntryAction, interviewEntryHref, interviewEntryStatus, interviewRoomRoundOptions, interviewTimingContext, unfinishedInterviewEntries, type InterviewRoomEntry } from "@/lib/interview-entry";
-import { defaultInterviewDate, groupInterviewDates, readExpandedInterviewDates } from "@/lib/interview-room-dates";
+import { clubInterviewHref, interviewEntryAction, interviewEntryCandidate, interviewEntryHref, interviewEntryStatus, interviewRoomRoundOptions, interviewTimingContext, unfinishedInterviewEntries, type InterviewRoomEntry } from "@/lib/interview-entry";
+import { defaultInterviewDate, groupInterviewDates, interviewDaysParam, readExpandedInterviewDates } from "@/lib/interview-room-dates";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-picker";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -38,11 +38,12 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
   const openDays = expanded ?? (defaultDay ? [defaultDay] : []);
   const rememberDays = useCallback((days: string[]) => {
     setExpanded(days);
-    const url = new URL(window.location.href); url.searchParams.set("interviewDays", days.join(","));
+    const url = new URL(window.location.href); url.searchParams.set("interviewDays", interviewDaysParam(days));
     window.history.replaceState(null, "", url.pathname + url.search);
   }, []);
   useEffect(() => {
-    if (expanded === null && !loading && !error && groups.length) rememberDays(defaultDay ? [defaultDay] : []);
+    // Nothing to expand by default: keep the URL clean instead of writing an empty interviewDays param.
+    if (expanded === null && !loading && !error && groups.length) { if (defaultDay) rememberDays([defaultDay]); else setExpanded([]); }
   }, [expanded, loading, error, groups.length, defaultDay, rememberDays]);
   useEffect(() => {
     if (!demo.ready) return;
@@ -63,8 +64,8 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
   const shown = groups.filter(group => !date || group.day === date);
   // Unfinished work whose scheduled time has passed stays one tap away, without an old notification.
   const unfinished = unfinishedInterviewEntries(rows.filter(row => !roundId || row.roundId === roundId));
-  return <section aria-label="Interview rooms" className="space-y-4 pb-20 md:pb-6">
-    <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Your interview rooms</h2><div className="oc-list-toolbar min-w-0 flex-1 justify-end"><div className="oc-filter-bar"><RoundSelect label="Filter interview rooms by round" value={roundId} onChange={value => { setRoundId(value); const url = new URL(window.location.href); if(value)url.searchParams.set("roundId",value);else url.searchParams.delete("roundId");window.history.replaceState(null,"",url.pathname+url.search); }} rounds={rounds} /><DateField label="Filter assigned interview date" value={date} marked={groups.map(group => group.day)} markedLabel="has interviews" placeholder="All dates" clearLabel="All dates" onChange={selected => {  setDate(selected); const url = new URL(window.location.href); if (selected) url.searchParams.set("interviewDate", selected); else url.searchParams.delete("interviewDate"); window.history.replaceState(null, "", url.pathname + url.search); if (selected) rememberDays([...new Set([...openDays, selected])]); }} /></div><SortControl label="Sort interviews" options={sortOptions} value={listSort.key} descending={listSort.descending} onChange={listSort.set} /></div></header>
+  return <section aria-label="Interview rooms" className="oc-dt-scope space-y-4 pb-20 md:pb-6">
+    <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Your interview rooms</h2><div className="oc-list-toolbar min-w-0 flex-1 justify-end"><div className="oc-filter-bar"><RoundSelect label="Filter interview rooms by round" value={roundId} onChange={value => { setRoundId(value); const url = new URL(window.location.href); if(value)url.searchParams.set("roundId",value);else url.searchParams.delete("roundId");window.history.replaceState(null,"",url.pathname+url.search); }} rounds={rounds} /><DateField label="Filter assigned interview date" value={date} marked={groups.map(group => group.day)} markedLabel="has interviews" placeholder="All dates" clearLabel="All dates" onChange={selected => {  setDate(selected); const url = new URL(window.location.href); if (selected) url.searchParams.set("interviewDate", selected); else url.searchParams.delete("interviewDate"); window.history.replaceState(null, "", url.pathname + url.search); if (selected) rememberDays([...new Set([...openDays, selected])]); }} /></div><SortControl className="oc-dt-cards-sort oc-dt-sort-until-md" label="Sort interviews" options={sortOptions} value={listSort.key} descending={listSort.descending} onChange={listSort.set} /></div></header>
     {loading && <LoadingState label="Loading assigned interviews…" layout="schedule" rows={3} />}
     {error && <div role="alert">{error} <Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && unfinished.length > 0 && <section aria-labelledby="unfinished-interviews" className="space-y-2"><h3 id="unfinished-interviews" className="text-sm font-medium">Unfinished interviews · {unfinished.length}</h3><ul className="divide-y rounded-lg border bg-card">{unfinished.map(row => <li key={`unfinished-${row.id}`} className="flex flex-wrap items-center justify-between gap-3 p-3"><div className="min-w-0"><p className="text-sm font-medium">{row.candidate || row.roomName}</p><p className="text-xs text-muted-foreground">{row.roundName} · {new Intl.DateTimeFormat("en-US", { timeZone: row.timezone, weekday: "short", month: "short", day: "numeric" }).format(new Date(row.startTime))} · {interviewTimingContext(row)}</p></div><Link className="inline-flex min-h-10 items-center rounded-md border px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring" href={interviewEntryHref(row, typeof window === "undefined" ? undefined : window.location.href)}>{interviewEntryAction(row)}</Link></li>)}</ul></section>}
@@ -75,15 +76,15 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
       </CollapsibleTrigger></h3>
       <CollapsibleContent className="oc-interview-day-content" inert={!openDays.includes(day)} aria-hidden={!openDays.includes(day)}><DataTable caption={`Interviews on ${label}`} rows={sortEntries(entries)} rowKey={row => row.id}
         sort={{ key: listSort.key, descending: listSort.descending, toggle: key => listSort.toggle(key as RoomSort) }}
-        isOpenable={openable} openLabel={row => `${interviewEntryAction(row)} · ${row.candidate || row.roomName}`} onOpen={(_row, origin) => origin?.closest("tr, li")?.querySelector<HTMLAnchorElement>("a[data-entry-link]")?.click()}
+        isOpenable={openable} openLabel={row => `${interviewEntryAction(row)} · ${interviewEntryCandidate(row) ?? row.roomName}`} onOpen={(_row, origin) => origin?.closest("tr, li")?.querySelector<HTMLAnchorElement>("a[data-entry-link]")?.click()}
         columns={[
-          { id: "candidate", header: "Candidate", sortKey: "candidate", primary: true, cell: row => <span className="oc-dt-name" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{row.candidate || row.roomName}</span>, secondary: row => <DataTableSecondary>{interviewEntryStatus(row)}</DataTableSecondary> },
+          { id: "candidate", header: "Candidate", sortKey: "candidate", primary: true, cell: row => interviewEntryCandidate(row) ? <span className="oc-dt-name" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{interviewEntryCandidate(row)}</span> : <span className="oc-dt-muted">Open slot</span>, secondary: row => <DataTableSecondary>{interviewEntryStatus(row)}</DataTableSecondary> },
           { id: "time", header: "Time", sortKey: "time", cell: row => interviewTimingContext(row) },
           { id: "round", header: "Round", sortKey: "round", showFrom: "md", cell: row => row.roundName },
           { id: "room", header: "Room", showFrom: "xl", cell: row => <span className="oc-dt-muted" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{joinFacts(row.roomName, row.location)}</span> },
           { id: "action", header: <span className="sr-only">Action</span>, align: "end", cell: row => openable(row) ? <Link className="oc-dt-action" data-entry-link="" href={entryHref(row)}>{interviewEntryAction(row)}</Link> : null },
         ]}
-        card={{ title: row => row.candidate || row.roomName, meta: row => joinFacts(interviewEntryStatus(row), interviewTimingContext(row), row.roundName, row.location), actions: row => openable(row) ? <Link className="oc-dt-action" data-entry-link="" href={entryHref(row)}>{interviewEntryAction(row)}</Link> : null }} /></CollapsibleContent>
+        card={{ title: row => interviewEntryCandidate(row) ?? "Open slot", meta: row => joinFacts(interviewEntryStatus(row), interviewTimingContext(row), row.roundName, row.location), actions: row => openable(row) ? <Link className="oc-dt-action" data-entry-link="" href={entryHref(row)}>{interviewEntryAction(row)}</Link> : null }} /></CollapsibleContent>
     </Collapsible>)}
     {!error && secondary && <section className="border-t pt-3 text-sm"><h3 className="py-2 font-medium">Other assigned interviews</h3><Link className="inline-flex min-h-10 items-center underline" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open assigned candidate queue</Link></section>}
   </section>;

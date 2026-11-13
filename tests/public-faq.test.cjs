@@ -22,6 +22,7 @@ function entry({ reduced = false, hash = '' } = {}) {
   const { PublicFaq } = load('components/landing/public-faq.tsx', {
     react: { ...React, useRef: value => { const ref = { current: value }; refs.push(ref); return ref }, useEffect: fn => effects.push(fn) },
     '@/lib/public-faq': content,
+    '@/components/landing/promo-video': { WatchVideoButton: () => null },
   }, { window, requestAnimationFrame: fn => { frames.push(fn); return frames.length }, cancelAnimationFrame() {} })
   const component = nodes(PublicFaq()).find(node => typeof node.type === 'function')
   const tree = component.type(component.props)

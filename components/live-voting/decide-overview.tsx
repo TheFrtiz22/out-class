@@ -118,10 +118,10 @@ export function DecideOverview({ clubId, member, access, rows, failed, onRetry, 
     {access.canVote && <Panel as="section" aria-labelledby="decide-overview-sessions" className="oc-workspace-stack">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="decide-overview-sessions" className="oc-section-heading">Voting sessions</h2><StepLink label="Open Vote" href={stepHref("voting")} /></div>
       {roomsFailed ?? (!rows ? <LoadingState label="Loading voting sessions…" layout="rows" rows={2} />
-        : !sessions.length ? <p className="text-sm text-muted-foreground">No active or scheduled sessions.</p>
+        : !sessions.length ? <p className="text-sm text-muted-foreground">No sessions to run.</p>
         : <ul className="divide-y border-y">{sessions.map(r => {
             const group = overviewSessionGroup(r), name = r.meeting?.name ?? r.roundName;
-            const status = group === "scheduled" ? "Scheduled" : r.state === "PAUSED" ? "Paused" : "Open";
+            const status = group === "scheduled" ? "Scheduled" : group === "draft" ? "Not yet scheduled" : r.state === "PAUSED" ? "Paused" : "Open";
             return <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="min-w-0"><p className="font-medium">{name}</p>
                 <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{status}</span>{group === "scheduled" && r.meeting?.plannedAt ? <> · {formatDateTime(r.meeting.plannedAt, { timeZone: r.meeting.timeZone })}</> : null} · {pluralize(r.applicantCount, "applicant")}</p></div>

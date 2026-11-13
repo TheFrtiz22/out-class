@@ -89,6 +89,17 @@
 /* Compact board */
 .oc-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(16.5rem, 1fr); gap: .75rem; overflow-x: auto; padding-bottom: .5rem; scroll-snap-type: x proximity; }
 @media (max-width: 639px) { .oc-board { grid-auto-columns: 82%; } }
+/* More columns off to the side (UI audit item 34): a visible scrollbar everywhere, plus edge fades where the browser can
+   tie them to the scroll position (each fade disappears at its end). Reduced motion keeps the static scrollbar only. */
+.oc-board { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .oc-board { --oc-board-fade-start: 0rem; --oc-board-fade-end: 2.5rem; mask-image: linear-gradient(to right, transparent 0, var(--foreground) var(--oc-board-fade-start), var(--foreground) calc(100% - var(--oc-board-fade-end)), transparent 100%); animation: oc-board-fade linear both; animation-timeline: scroll(self inline); }
+  }
+}
+@property --oc-board-fade-start { syntax: "<length>"; inherits: false; initial-value: 0rem; }
+@property --oc-board-fade-end { syntax: "<length>"; inherits: false; initial-value: 0rem; }
+@keyframes oc-board-fade { 0% { --oc-board-fade-start: 0rem; --oc-board-fade-end: 2.5rem; } 8% { --oc-board-fade-start: 2.5rem; } 92% { --oc-board-fade-end: 2.5rem; } 100% { --oc-board-fade-start: 2.5rem; --oc-board-fade-end: 0rem; } }
 .oc-board-column { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; max-height: min(72dvh, 46rem); border-radius: var(--oc-radius-lg); background: var(--oc-content-soft); scroll-snap-align: start; }
 .oc-board-column[data-over="true"] { outline: 2px solid var(--ring); outline-offset: -2px; }
 .oc-board-column > header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .625rem .75rem .375rem; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }

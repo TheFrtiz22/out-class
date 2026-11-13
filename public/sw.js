@@ -4,7 +4,7 @@
  *  - everything else (pages, RSC payloads, /api, /_next/data, /_next/image, server actions, auth,
  *    QR and check-in links, downloads, other origins, non-GET) is not intercepted at all.
  * No page HTML or user data is ever written to a cache. Bump VERSION to drop every old cache. */
-const VERSION = "v1"
+const VERSION = "v2"
 const STATIC_CACHE = `outclass-static-${VERSION}`
 const OFFLINE_CACHE = `outclass-offline-${VERSION}`
 const OFFLINE_URL = "/offline.html"

@@ -1,4 +1,4 @@
-import { LogIn, Home, CalendarDays, CalendarClock, Table2, Bell, Compass, Bookmark, ClipboardList, ShieldAlert, MessageSquareText, Settings2, UserRound, Megaphone, Globe, type IconComponent } from "@/components/icons";
+import { CalendarStar, LogIn, Home, CalendarDays, CalendarClock, Table2, Bell, Compass, ClipboardList, ShieldAlert, MessageSquareText, Settings2, UserRound, Megaphone, Globe, type IconComponent } from "@/components/icons";
 
 export type ViewId =
   | "my-clubs"
@@ -31,7 +31,7 @@ export const adminClubName = "Virginia Venture Fund"
 export const studentNav: NavItem[] = [
   { id: "student-dashboard", title: "Home", icon: Home },
   { id: "explore", title: "Explore", icon: Compass },
-  { id: "corkboard", title: "Events", icon: Bookmark },
+  { id: "corkboard", title: "Events", icon: CalendarStar },
   { id: "tracker", title: "Applications", icon: ClipboardList },
   { id: "calendar", title: "Calendar", icon: CalendarDays },
   { id: "student-profile", title: "Profile", icon: UserRound },
@@ -60,7 +60,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     items: [
       { id: "student-dashboard", title: "Dashboard", icon: Home },
       { id: "explore", title: "Explore", icon: Compass },
-      { id: "corkboard", title: "Corkboard", icon: Bookmark },
+      { id: "corkboard", title: "Corkboard", icon: CalendarStar },
       { id: "tracker", title: "Application Tracker", icon: ClipboardList },
       { id: "inbox", title: "Inbox", icon: Bell },
       { id: "calendar", title: "Calendar", icon: CalendarDays },
