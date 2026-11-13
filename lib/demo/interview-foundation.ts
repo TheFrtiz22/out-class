@@ -8,7 +8,7 @@ import { emptyInterviewDraft, interviewDraftSchema, kitSchema, validateQuestionN
 import { z } from "zod";
 import { anchorMatchesText, isAreaAnchor } from "@/lib/resume-anchors";
 import { demoResumeText } from "./resume-fixture";
-import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
+import { canReadRoundScore, snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary, type ListRoundScore } from "@/lib/interview-review-summary";
 import { demoAssignmentNotice } from "./interview-improvements";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
@@ -149,7 +149,7 @@ export function getSubmittedInterviewReviewPage(clubId: string, filters: Applica
   const page = pageSortedInterviewList(records, r => r.id, position, "reviews", listScope, take);
   return { ...page, items: page.items.map(r => {
     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
-    const club = s.clubs.find(c => c.id === clubId)!; const round = club.rounds.find(round => round.id === r.roundId)!; const anonymous = !!(r.anonymousReview || round.anonymousReview || club.rounds.find(round => round.id === app.roundId)?.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : round.name, applicantName: anonymous ? anonymousApplicantLabel(app.id) : profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided", photo: demoApplicantPhoto(anonymous, profile?.headshotUrl) };
+    const club = s.clubs.find(c => c.id === clubId)!; const round = club.rounds.find(round => round.id === r.roundId)!; const anonymous = !!(r.anonymousReview || round.anonymousReview || club.rounds.find(round => round.id === app.roundId)?.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : round.name, applicantName: anonymous ? anonymousApplicantLabel(app.id) : profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided", photo: demoApplicantPhoto(anonymous, profile?.headshotUrl), score: demoListRoundScore({ clubId, applicationId: r.applicationId, roundId: r.roundId }) };
   }) };
 }
 export function getSubmittedInterviewReviews(clubId: string, filters: ApplicantInterviewFilters = {}) {
@@ -203,9 +203,13 @@ export function getInterviewRoundScore(input: unknown) {
   const { s, app, member, caps } = access(scope, "closingReview");
   const own = app.evaluations.find(e => e.interviewerId === member.id && e.roundId === scope.roundId && e.submittedAt);
   const assignment = s.interviewFoundation.assignments.find(a => a.applicationId === app.id && a.roundId === scope.roundId && a.memberId === member.id && !a.revokedAt);
-  if ((!caps.readClosing || app.roundId === scope.roundId && assignment) && !own) throw Error("Submit your own review before viewing round scores.");
+  if (!canReadRoundScore({ readClosing: caps.readClosing, currentRound: app.roundId === scope.roundId, assigned: !!assignment, ownSubmitted: !!own })) throw Error("Submit your own review before viewing round scores.");
   const assigned = s.interviewFoundation.assignments.filter(a => a.applicationId === app.id && a.roundId === scope.roundId && !a.revokedAt && s.memberships.some(m => m.id === a.memberId && m.clubId === scope.clubId && interviewCapabilities(m).participate));
   return submittedScoreSummary(app.evaluations.filter(e => e.roundId === scope.roundId), assigned.map(a => a.memberId));
+}
+/** A list row carries only what getInterviewRoundScore would show this viewer; denied is null. */
+function demoListRoundScore(scope: InterviewScope): ListRoundScore | null {
+  try { const { average, submitted } = getInterviewRoundScore(scope); return { average, submitted }; } catch { return null; }
 }
 export function setMemberInterviewOffices(input: unknown) {
   const d = z.object({ clubId: z.string(), memberId: z.string(), offices: interviewOfficesSchema }).parse(input); const { member, caps } = actor(d.clubId);
