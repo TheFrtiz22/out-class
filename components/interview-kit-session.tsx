@@ -4,7 +4,7 @@ import { userMessage } from "@/lib/user-message"
 import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useInterviewOfflineNotes } from "@/hooks/use-interview-offline-notes";
-import { useKeepFocusedFieldVisible } from "@/hooks/use-keep-focused-field-visible";
+import { focusQuietly, useKeepFocusedFieldVisible } from "@/hooks/use-keep-focused-field-visible";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { connectionMessage, connectionProblem, type ConnectionProblem } from "@/lib/autosave-store";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
@@ -117,7 +117,8 @@ export function InterviewKitSession({
     if (closingQuestion || !questionFocusAfterSave.current) return;
     const target = questionFocusAfterSave.current === "bank" ? bankControl.current : activeNotes.current;
     questionFocusAfterSave.current = null;
-    target?.focus({ preventScroll: true });
+    // Quiet: the question completion motion is running; no keyboard reveal scroll may fight it.
+    if (target) focusQuietly(target);
   }, [closingQuestion, activeQuestion]);
   const completionSource = useRef<HTMLDivElement>(null);
   const [completionMotion, setCompletionMotion] = useState<{ id: string; origin: QuestionCompletionOrigin } | null>(null);

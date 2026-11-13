@@ -71,31 +71,49 @@ export function revealKeyboardField(field: HTMLTextAreaElement | HTMLInputElemen
   if (Math.abs(delta) >= 1) window.scrollBy({ top: delta, behavior })
 }
 
+// A keyboard takes far more height than a browser toolbar showing or hiding (about 56px) while scrolling.
+const KEYBOARD_SHRINK = 100
+const quiet = new WeakSet<Element>()
+
+/** Focus without scrolling and without a reveal (for focus moves during the room's own motion). */
+export function focusQuietly(node: HTMLElement) {
+  quiet.add(node)
+  try { node.focus({ preventScroll: true }) } finally { quiet.delete(node) }
+}
+
 /**
- * When a text field inside root gains focus, or the visual viewport shrinks (the on-screen keyboard
- * opening) while one is focused, scroll it into view. Smooth scrolling only without reduced motion;
- * pinch zoom (a scale change) is left alone.
+ * When a text field inside root gains focus, or the visual viewport shrinks by a keyboard's height
+ * while one is focused, scroll it into view. Toolbar show/hide, growth and pinch zoom (a scale change)
+ * are left alone, so reading elsewhere with the field focused never snaps back. Smooth scrolling only
+ * without reduced motion.
  */
 export function useKeepFocusedFieldVisible(rootRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const viewport = window.visualViewport, reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")
-    let frame = 0, scale = viewport?.scale ?? 1
+    const height = () => viewport?.height ?? window.innerHeight
+    // settled: the visual viewport height once resizing has paused, so a keyboard sliding in over several
+    // resize events still counts as one shrink, while a toolbar change after it does not.
+    let frame = 0, timer = 0, scale = viewport?.scale ?? 1, settled = height(), last = settled
     const focused = () => { const node = document.activeElement; return isKeyboardField(node) && rootRef.current?.contains(node) ? node : null }
     const schedule = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => { const field = focused(); if (field) revealKeyboardField(field, reduce?.matches ? "auto" : "smooth") })
     }
-    const onFocus = (event: FocusEvent) => { if (isKeyboardField(event.target) && rootRef.current?.contains(event.target)) schedule() }
+    const onFocus = (event: FocusEvent) => { if (isKeyboardField(event.target) && rootRef.current?.contains(event.target) && !quiet.has(event.target)) schedule() }
     const onResize = () => {
-      const next = viewport?.scale ?? 1
+      const next = viewport?.scale ?? 1, now = height(), shrank = now < last
+      last = now
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => { settled = height() }, 400)
       if (next !== scale) { scale = next; return }
-      if (focused()) schedule()
+      if (shrank && settled - now >= KEYBOARD_SHRINK && focused()) schedule()
     }
     document.addEventListener("focusin", onFocus)
     viewport?.addEventListener("resize", onResize)
     window.addEventListener("resize", onResize)
     return () => {
       cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
       document.removeEventListener("focusin", onFocus)
       viewport?.removeEventListener("resize", onResize)
       window.removeEventListener("resize", onResize)

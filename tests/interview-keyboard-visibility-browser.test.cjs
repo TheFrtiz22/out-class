@@ -91,3 +91,18 @@ test('desktop: focusing a visible field does not scroll the room or the page', a
     assert.deepEqual(await scroll(), before)
   } finally { await context.close() }
 })
+
+test('reading elsewhere with the keyboard open: a toolbar-sized resize does not snap back to the field', async () => {
+  const { context, page } = await open({ width: 390, height: 844 })
+  try {
+    const field = await fields['miscellaneous notes'](page)
+    await page.setViewportSize({ width: 390, height: 464 })
+    await visible(field); await page.waitForTimeout(500)
+    await page.evaluate(() => scrollBy(0, -300)); await page.waitForTimeout(100)
+    const before = await page.evaluate(() => scrollY)
+    // The browser toolbar reappearing while scrolling up takes about 56px.
+    await page.setViewportSize({ width: 390, height: 408 }); await page.waitForTimeout(300)
+    assert.equal(await page.evaluate(() => scrollY), before)
+    assert.equal((await box(field)).focused, true)
+  } finally { await context.close() }
+})
