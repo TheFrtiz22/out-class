@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
-import { getMyInterestSurvey } from "@/actions/interest-survey"
+import { getMyInterestSurvey } from "@/lib/workspace-api"
 import type { InterestSurveyDocument } from "@/lib/interest-survey"
 
 /**

@@ -39,7 +39,7 @@ import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-v
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
-import { dismissInterestSurveyPrompt } from "@/actions/interest-survey"
+import { dismissInterestSurveyPrompt } from "@/lib/workspace-api"
 import { invalidateInterestSurvey } from "@/hooks/use-interest-survey"
 import { uploadProfileFile } from "@/actions/storage"
 import {

@@ -5,8 +5,7 @@ import { X } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { DashboardCard, DashboardQuiet } from "@/components/product/dashboard/dashboard"
-import { dismissInterestSurveyPrompt } from "@/actions/interest-survey"
-import { unwrapAction } from "@/lib/action-result"
+import { dismissInterestSurveyPrompt } from "@/lib/workspace-api"
 import { useInterestSurvey } from "@/hooks/use-interest-survey"
 
 // The form loads only when the student opens it.
@@ -27,7 +26,7 @@ export function InterestSurveyPrompt() {
   async function dismiss() {
     setBusy(true)
     setHidden(true)
-    try { update(unwrapAction(await dismissInterestSurveyPrompt())) } catch { /* hidden for this visit; it may show once more */ }
+    try { update(await dismissInterestSurveyPrompt()) } catch { /* hidden for this visit; it may show once more */ }
     finally { setBusy(false) }
   }
 

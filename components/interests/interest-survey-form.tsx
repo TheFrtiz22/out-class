@@ -2,8 +2,7 @@
 import { useState, type ReactNode } from "react"
 import { FilterChips } from "@/components/ui/filter-chips"
 import { Button } from "@/components/ui/button"
-import { saveMyInterestSurvey } from "@/actions/interest-survey"
-import { unwrapAction } from "@/lib/action-result"
+import { saveMyInterestSurvey } from "@/lib/workspace-api"
 import { userMessage } from "@/lib/user-message"
 import {
   CLUB_GOALS, INTEREST_CHIPS, MAX_INTERESTS, SELECTIVITY, WEEKLY_HOURS, emptyInterestAnswers,
@@ -35,7 +34,7 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
     if (busy) return
     setBusy(true); setError("")
     try {
-      const survey = unwrapAction(await saveMyInterestSurvey({ ...answers, revision }))
+      const survey = await saveMyInterestSurvey({ ...answers, revision })
       setRevision(survey.revision); setSaved(true)
       onSaved(survey)
     } catch (err) {
