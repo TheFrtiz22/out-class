@@ -143,8 +143,20 @@
   .oc-about-grounded figure { order: 2; }
   .oc-about-grounded img { aspect-ratio: 5 / 4; }
   .oc-about-perspectives { margin-block: 36px; }
-  .oc-public-section.oc-about-next { padding: 28px 22px; }
+  /* One column on phones: the two-column rule above is more specific than the shared stacking rule. */
+  .oc-public-section.oc-about-next { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 28px 22px; }
   .oc-about-perspective { padding: 24px; }
+}
+
+/* The overview video closes About's product section. For universities (unlisted; docs/public-site/videos.md):
+   the campus video, then one card per audience, reusing the About cards and closing panel. */
+.oc-about-video { margin-bottom: 28px; }
+.oc-universities-video { padding-block: 56px 0; }
+.oc-universities-points ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 40px 0 0; padding: 0; list-style: none; }
+.oc-universities-points li p { font-size: var(--oc-size-16); color: var(--muted-foreground); }
+@media (max-width: 800px) {
+  .oc-universities-video { padding-top: 36px; }
+  .oc-universities-points ul { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* UVA: a balanced opening with the Lawn photograph beside the introduction. */

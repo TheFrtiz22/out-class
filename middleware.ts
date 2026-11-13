@@ -74,7 +74,8 @@ async function route(request: NextRequest): Promise<Response> {
   // Club link-preview cards (opengraph-image / twitter-image) are public and CDN-cached.
   if (["GET", "HEAD"].includes(request.method) && /^\/club\/[^/]+\/(?:opengraph|twitter)-image(?:-[\w-]+)?$/.test(request.nextUrl.pathname)) return NextResponse.next()
   // Static GETs can skip auth refresh; POSTs must never bypass read-only guards by using an image-like URL.
-  if (["GET", "HEAD"].includes(request.method) && /\.(svg|png|jpg|jpeg|gif|webp|ico)$/.test(request.nextUrl.pathname) && !/^\/(club|club-access|club-claims|invitations|meetings|platform|api)\//.test(request.nextUrl.pathname)) return NextResponse.next()
+  // .mp4 is the public promo videos (public/videos): a player asks for one file in several ranges.
+  if (["GET", "HEAD"].includes(request.method) && /\.(svg|png|jpg|jpeg|gif|webp|ico|mp4)$/.test(request.nextUrl.pathname) && !/^\/(club|club-access|club-claims|invitations|meetings|platform|api)\//.test(request.nextUrl.pathname)) return NextResponse.next()
 
   // Identity-provider operations must never replace the preserved administrator login.
   if (request.cookies.has(PLATFORM_VIEW_COOKIE) && (request.nextUrl.pathname.startsWith("/auth/") || request.nextUrl.pathname.startsWith("/api/auth/") || request.nextUrl.pathname === "/api/demo" || ["/platform/login", "/login", "/signup", "/forgot-password", "/reset-password"].includes(request.nextUrl.pathname))) {
