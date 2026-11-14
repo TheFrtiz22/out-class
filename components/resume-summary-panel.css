@@ -21,7 +21,7 @@
 .oc-resume-summary-bullets { display: grid; gap: .125rem; margin-top: .25rem; padding-left: 1rem; list-style: disc; font-size: .8125rem; line-height: 1.45; color: var(--muted-foreground); }
 .oc-resume-summary-bullets li { overflow-wrap: anywhere; }
 .oc-resume-summary-metrics { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .375rem; }
-.oc-resume-summary-metrics li { padding: .0625rem .5rem; border: 1px solid var(--border); border-radius: 999px; font-size: .75rem; line-height: 1.5; color: var(--foreground); background: var(--muted); }
+.oc-resume-summary-metrics li { padding: .0625rem .5rem; border: 1px solid var(--border); border-radius: var(--oc-radius-full); font-size: .75rem; line-height: 1.5; color: var(--foreground); background: var(--muted); }
 /* Interview room: same footprint as the former inline preview. */
 .oc-resume-document .oc-resume-summary-body { height: clamp(360px, 65dvh, 760px); }
 .oc-resume-document .oc-resume-summary-document-actions { display: flex; justify-content: flex-end; margin-bottom: .25rem; }

@@ -152,9 +152,11 @@ test('Demo résumé summary comes from the bundled fixture with the same access 
   const applicant = (await api.getInterviewWorkspace(club.id)).applications.find(a => a.roundId === round.id)
   const scope = { clubId: club.id, applicationId: applicant.id, roundId: round.id }
   const document = await api.pinInterviewResume(scope)
-  const { summarizeResumeLines, resumeSummaryResult } = h.load('lib/resume-summary.ts'), { demoResumeLines, demoResumeText } = h.load('lib/demo/resume-fixture.ts')
+  const { summarizeResumeLines, resumeSummaryResult } = h.load('lib/resume-summary.ts'), { demoResumeLines, demoResumeText, demoResumeSummaryLines } = h.load('lib/demo/resume-fixture.ts')
   assert.equal(demoResumeText, demoResumeLines.join(''), 'annotation anchors still match the PDF text layer')
-  const expected = resumeSummaryResult(summarizeResumeLines(demoResumeLines))
+  const expected = resumeSummaryResult(summarizeResumeLines(demoResumeSummaryLines))
+  assert.equal(expected.status, 'ready', 'Demo shows a real section summary')
+  assert.deepEqual(expected.summary.sections.map(s => s.kind), ['Education', 'Experience', 'Leadership', 'Projects', 'Skills'])
   assert.deepEqual(await api.getResumeSummary({ kind: 'interview', ...scope, documentId: document.id }), expected)
   assert.deepEqual(await api.getResumeSummary({ kind: 'recruiting', clubId: club.id, applicationId: applicant.id }), expected)
   assert.doesNotMatch(JSON.stringify(expected), /Jordan Avery/, 'contact header stripped in Demo too')
