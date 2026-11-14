@@ -210,7 +210,11 @@ export function InterviewKitSession({
     let current = true;
     setLibraryError("");
     setLibraryLoading(true);
-    getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(() => { if (current) setLibraryError("Current kit unavailable. Your session snapshot is still available.") }).finally(() => { if (current) setLibraryLoading(false); });
+    getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(e => {
+      if (!current) return;
+      if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; }
+      setLibraryError("Current kit unavailable. Your session snapshot is still available.");
+    }).finally(() => { if (current) setLibraryLoading(false); });
     return () => { current = false };
   }, [clubId, roundId, libraryOpen, libraryRetry]);
   useLayoutEffect(() => {
@@ -560,7 +564,9 @@ export function InterviewKitSession({
     try {
       const found = await onNextApplicant(collaboration.clientId);
       if (mounted.current) setNoMoreApplicants(!found);
-    } catch {
+    } catch (e) {
+      // Removed from the panel: the room shows its access-removed state; no advance happened.
+      if (isAccessRevoked(e) && accessRevoked.current) { if (mounted.current) reportAccessRevoked(); return; }
       if (mounted.current) setNextError("Could not load the next applicant. Your submitted review is safe. Retry to check your current access and assignments.");
     } finally {
       nextBusyRef.current = false;
@@ -669,7 +675,7 @@ export function InterviewKitSession({
       const invitationId = collaboration.view!.invitation!.id;
       if (!onNextApplicant || nextBusyRef.current) return;
       nextBusyRef.current = true; setNextBusy(true);
-      void onNextApplicant(collaboration.clientId, invitationId).catch(() => setCollaborationMessage("Could not join. Retry after checking current assignments; your review is safe.")).finally(() => { nextBusyRef.current = false; if (mounted.current) setNextBusy(false); });
+      void onNextApplicant(collaboration.clientId, invitationId).catch(e => { if (!mounted.current) return; if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; } setCollaborationMessage("Could not join. Retry after checking current assignments; your review is safe."); }).finally(() => { nextBusyRef.current = false; if (mounted.current) setNextBusy(false); });
     }}>Proceed</Button>{!session.completedAt && <Button type="button" variant="outline" disabled={saving || completing || ending} onClick={() => { if (!closing) void endInterview(); else closingHeading.current?.focus({ preventScroll: false }); }}>Finish current review</Button>}<Button type="button" variant="ghost" disabled={nextBusy} onClick={() => void collaboration.dismiss(collaboration.view!.invitation!.id).catch(() => setCollaborationMessage("Could not dismiss the invitation. Retry Stay here."))}>Stay here</Button></div></aside>}
     {flights.map(f => <div key={f.id} ref={el => { if (el) flightNodes.current.set(f.id, el); else flightNodes.current.delete(f.id); }} className="oc-question-flight" aria-hidden="true" inert style={{ left: f.from.left, top: f.from.top, width: f.from.width, height: f.from.height }}><div style={{ width: f.from.width }}><p>{f.prompt}</p>{f.notes && <p className="oc-note-preview">{f.notes}</p>}</div></div>)}
   </form>;

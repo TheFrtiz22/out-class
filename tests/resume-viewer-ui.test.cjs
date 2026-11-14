@@ -24,7 +24,7 @@ function ui(api, options={}) {
   new Function('require','module','exports',code)(n=>n==='@/components/ui/loading-state'?require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'):n==='@/components/icons'?require('./helpers/icons.cjs'):n==='react'?react:n==='@/contexts/auth-context'?{useAuth:()=>({user:{id:'actor'}})}:n==='@/components/interview-resume-placeholder'?{InterviewResumePlaceholder:'Placeholder'}:n==='@/components/resume-area-highlights'?{AreaHighlightMarks:'AreaHighlightMarks',AreaSelector:'AreaSelector'}:n==='@/lib/interview-resume-resource'?{InterviewResumeResource:Resource,ResumeAccessError:Error}:n==='@/lib/workspace-api'?api:n.endsWith('.css')?{}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
   let lost=0;
   const scope={clubId:'club',applicationId:'app',roundId:'round'};
-  return { warm(){return m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,preloadOnly:true})},render(){index=0;const wrapper=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++});const tree=wrapper.type(wrapper.props);const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
+  return { warm(){return m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,preloadOnly:true})},render(){index=0;const wrapper=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,...(options.onAccessRevoked?{onAccessRevoked:options.onAccessRevoked}:{})});const tree=wrapper.type(wrapper.props);const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
 }
 
 test('code warming mounts no authorized viewer and performs no document/comment reads until opening',async()=>{
@@ -87,4 +87,29 @@ test('Applicants shows moderation only for active explicit presidents/VPs; Inter
   offices=['VICE_PRESIDENT'];assert.match(menu(),/Résumé moderation/); offices=['PRESIDENT'];assert.match(menu(),/Résumé moderation/);
   for(const office of [[],['BOARD'],['VICE_PRESIDENT'],['PRESIDENT']]){offices=office;assert.doesNotMatch(text(render()),/Résumé moderation|Submitted reviews/);}
   status='INACTIVE';assert.doesNotMatch(menu(),/Submitted reviews|Résumé moderation/);
+});
+// Removed from the panel while the résumé is open: the room's access-removed state takes over.
+const revokedError=()=>{const {UserFacingError}=harness().load('lib/action-result.ts');return new UserFacingError('You no longer have access to this interview.','ACCESS_REVOKED')};
+test('a comment save refused with ACCESS_REVOKED hands its text to the room once: no inline error, refresh or retry',async()=>{
+  let reads=0,saves=0;const handed=[];
+  const h=ui({getInterviewResumeAnnotations:async()=>{reads++;return{annotations:[]}},saveInterviewResumeAnnotation:async()=>{saves++;throw revokedError()},deleteInterviewResumeAnnotation:async()=>{}},{onAccessRevoked:c=>handed.push(c)});
+  h.render();await flush();let t=h.render();button(t,'Add general résumé note').props.onClick();t=h.render();
+  nodes(t).find(n=>n.props?.id==='resume-comment').props.onChange({target:{value:'Highlight comment typed before removal'}});t=h.render();
+  const before=reads;await button(t,'Save comment').props.onClick();t=h.render();
+  assert.equal(saves,1);assert.deepEqual(handed,['Highlight comment typed before removal'],'the room is told, with the text that was not saved');
+  assert.doesNotMatch(text(t),/not saved/);assert.equal(reads,before,'no refresh after the refusal');assert.equal(h.lost,0);
+  h.poll();await flush();assert.equal(reads,before,'polling stops');assert.equal(handed.length,1);h.close();
+});
+test('a poll or delete refused with ACCESS_REVOKED reports to the room (with any open draft) instead of the inline access message',async()=>{
+  let denied=false;const handed=[];const row={id:'own',kind:'GENERAL_NOTE',comment:'Mine',anchor:null,revision:0,authorName:'Me',canEdit:true};
+  const h=ui({getInterviewResumeAnnotations:async()=>{if(denied)throw revokedError();return{annotations:[{...row}]}},saveInterviewResumeAnnotation:async()=>{},deleteInterviewResumeAnnotation:async()=>{}},{onAccessRevoked:c=>handed.push(c)});
+  h.render();await flush();let t=h.render();button(t,'Edit').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='resume-comment').props.onChange({target:{value:'Edited draft'}});t=h.render();
+  denied=true;h.poll();await flush();t=h.render();assert.deepEqual(handed,['Edited draft']);assert.equal(h.lost,0);assert.equal(button(t,'Retry access'),undefined);h.close();
+  const removed=[];const d=ui({getInterviewResumeAnnotations:async()=>({annotations:[{...row}]}),saveInterviewResumeAnnotation:async()=>{},deleteInterviewResumeAnnotation:async()=>{throw revokedError()}},{onAccessRevoked:c=>removed.push(c)});
+  d.render();await flush();t=d.render();await button(t,'Delete').props.onClick();await flush();t=d.render();assert.deepEqual(removed,[undefined]);assert.doesNotMatch(text(t),/not deleted/);d.close();
+});
+test('without a room handler a refused save keeps the existing inline message and text',async()=>{
+  const h=ui({getInterviewResumeAnnotations:async()=>({annotations:[]}),saveInterviewResumeAnnotation:async()=>{throw revokedError()},deleteInterviewResumeAnnotation:async()=>{}});
+  h.render();await flush();let t=h.render();button(t,'Add general résumé note').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='resume-comment').props.onChange({target:{value:'Kept'}});t=h.render();
+  await button(t,'Save comment').props.onClick();t=h.render();assert.match(text(t),/not saved/);assert.equal(nodes(t).find(n=>n.props?.id==='resume-comment').props.value,'Kept');h.close();
 });

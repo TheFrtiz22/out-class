@@ -141,3 +141,28 @@ test('an ordinary poll failure keeps polling and still shows the connection mess
  assert.equal(h.revoked(),0);assert.match(v.error,/Room connection unavailable/);assert.equal(h.timers.size,1,'polling continues');
  h.unmount();assert.ok(h.calls.includes('leave'));
 });
+// The applicant panel (identity + résumé pin) is the room's other one-off caller.
+function panelHarness(api,onAccessRevoked){
+ const fs=require('node:fs'),ts=require('typescript'),slots=[],effects=[],cleanups=[];let index=0;
+ const changed=(a,b)=>!a||b.some((v,i)=>v!==a[i]);
+ const react={useState(v){const i=index++;if(!(i in slots))slots[i]=typeof v==='function'?v():v;return[slots[i],x=>slots[i]=typeof x==='function'?x(slots[i]):x]},useRef(v){const i=index++;return slots[i]??={current:v}},useMemo(fn,deps){const i=index++;if(!slots[i]||changed(slots[i].deps,deps))slots[i]={deps,value:fn()};return slots[i].value},useEffect(fn,deps){const i=index++;if(changed(slots[i],deps)){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
+ const actionResult=require('./helpers/communications-loader.cjs').loader({})('lib/action-result.ts');
+ const mod={exports:{}};const code=ts.transpileModule(fs.readFileSync('components/interview-applicant-panel.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
+ new Function('require','module','exports',code)(n=>n==='react'?react:n==='@/lib/workspace-api'?api:n==='@/lib/action-result'?actionResult:n==='next/dynamic'?{default:()=>'ResumePreview'}:n==='next/image'?{default:'Image'}:n==='@/contexts/demo-context'?{useDemoMode:()=>({isDemoEnabled:false})}:n==='@/contexts/auth-context'?{useAuth:()=>({user:{id:'actor'}})}:n==='@/lib/interview-resume-resource'?{InterviewResumeResource:class{subscribe(){return()=>{}}getBlob(){return new Promise(()=>{})}invalidate(){}}}:n==='@/lib/scholar-status'?{scholarNames:()=>[]}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports);
+ const nodes=x=>!x||typeof x!=='object'?[]:Array.isArray(x)?x.flatMap(nodes):[x,...nodes(x.props?.children)];
+ const text=x=>typeof x==='string'?x:Array.isArray(x)?x.map(text).join(''):x?.props?text(x.props.children):'';
+ return{UserFacingError:actionResult.UserFacingError,render(){index=0;const t=mod.exports.InterviewApplicantPanel({clubId:'c',applicationId:'a',roundId:'r',onAccessRevoked});while(effects.length)effects.shift()();return{t,text:text(t),buttons:nodes(t).filter(n=>n.type==='Button').map(text)}}};
+}
+test('the applicant panel hands an ACCESS_REVOKED refusal (panel read or résumé pin) to the room, with no inline error or Retry',async()=>{
+ const flush=()=>new Promise(r=>setImmediate(r));
+ for(const step of ['panel','pin']){
+  const handed=[];let h;
+  h=panelHarness({getInterviewApplicantPanel:async()=>{if(step==='panel')throw new h.UserFacingError('You no longer have access to this interview.','ACCESS_REVOKED');return{profile:null,document:null}},pinInterviewResume:async()=>{throw new h.UserFacingError('You no longer have access to this interview.','ACCESS_REVOKED')}},(...a)=>handed.push(a));
+  h.render();await flush();await flush();const v=h.render();
+  assert.equal(handed.length,1,step);assert.deepEqual(handed[0],[],'nothing unsaved in the panel itself');
+  assert.doesNotMatch(v.text,/Applicant panel unavailable|No interview résumé is available/,step);assert.equal(v.buttons.includes('Retry applicant panel'),false,step);
+ }
+ // Any other failure keeps the panel's own message and Retry.
+ const other=panelHarness({getInterviewApplicantPanel:async()=>{throw Error('network')},pinInterviewResume:async()=>({id:'d'})},()=>assert.fail('not a revocation'));
+ other.render();await flush();const v=other.render();assert.match(v.text,/Applicant panel unavailable/);assert.ok(v.buttons.includes('Retry applicant panel'));
+});

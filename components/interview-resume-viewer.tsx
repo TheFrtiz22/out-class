@@ -8,6 +8,7 @@ import { composerEnter } from "@/lib/composer-enter";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { InterviewScope } from "@/lib/interview-access";
 import { annotationContentSchema } from "@/lib/interview-access";
+import { isAccessRevoked } from "@/lib/action-result";
 import { anchorFromRange, anchorMatchesText, isAreaAnchor, isTextAnchor, rangeForText, type ResumeAnchor, type ResumeArea } from "@/lib/resume-anchors";
 import { AreaHighlightMarks, AreaSelector } from "@/components/resume-area-highlights";
 import { defaultArea, type AreaRect } from "@/lib/resume-area-geometry";
@@ -135,12 +136,14 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
   </div>;
 }
 
-type ViewerProps = { scope: InterviewScope; documentId: string; isDemo: boolean; onAccessLost: () => void; resource?: InterviewResumeResource; initialPage?: number; preloadOnly?: boolean };
+/** `onAccessRevoked` (optional) takes over when the server refuses with ACCESS_REVOKED: the room shows its
+ * access-removed state, told about any comment that was open and could not be saved. */
+type ViewerProps = { scope: InterviewScope; documentId: string; isDemo: boolean; onAccessLost: () => void; onAccessRevoked?: (unsavedComment?: string) => void; resource?: InterviewResumeResource; initialPage?: number; preloadOnly?: boolean };
 /** Warming loads code only; authorization and document state belong to the visible viewer. */
 export default function InterviewResumeViewer(props: ViewerProps) {
   return props.preloadOnly ? null : <AuthorizedResumeViewer {...props} />;
 }
-function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resource: sharedResource, initialPage = 1 }: ViewerProps) {
+function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, onAccessRevoked, resource: sharedResource, initialPage = 1 }: ViewerProps) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const request = useMemo(() => ({ ...scope, documentId }), [scope, documentId]);
@@ -158,6 +161,14 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
   const refreshFlight = useRef<Promise<void> | null>(null);
   const savedFocus = useRef<string | null>(null), annotationNodes = useRef(new Map<string, HTMLLIElement>());
   accessLost.current = onAccessLost;
+  const draftRef = useRef(draft), revokedHandler = useRef(onAccessRevoked), revoked = useRef(false);
+  draftRef.current = draft; revokedHandler.current = onAccessRevoked;
+  /** True when an ACCESS_REVOKED refusal was handed to the room (once): no inline error, retry or refresh. */
+  const handOffRevoked = useCallback((error: unknown) => {
+    if (!isAccessRevoked(error) || !revokedHandler.current) return false;
+    if (!revoked.current) { revoked.current = true; revokedHandler.current(draftRef.current ? draftRef.current.comment : undefined); }
+    return true;
+  }, []);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
     const update = () => setDesktop(media.matches); update(); media.addEventListener("change", update);
@@ -170,6 +181,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
       await refreshFlight.current;
       if (!afterWrite || !mounted.current) return;
     }
+    if (revoked.current) return;
     const sequence = ++serial.current;
     const flight = (async () => {
     try {
@@ -179,19 +191,19 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
       // A row this client cannot read is skipped, never treated as lost access.
       const rows = result.annotations.flatMap(a => { const content = annotationContentSchema.safeParse({ kind: a.kind, comment: a.comment, anchor: a.anchor }); return content.success ? [{ ...a, ...content.data }] : []; }) as Annotation[];
       setAnnotations(rows); setAuthorizedKey(resource.key); setAllowed(true); setStatus("Shared comments up to date");
-    } catch {
-      if (!mounted.current || sequence !== serial.current) return;
+    } catch (error) {
+      if (!mounted.current || handOffRevoked(error) || sequence !== serial.current) return;
       setAllowed(false); setAnnotations([]); setDraft(null); setActive(undefined); setAreaEdit(null); resource.invalidate(); setStatus("Access could not be verified. Retry to check your membership and connection."); accessLost.current();
     }
     })();
     refreshFlight.current = flight;
     try { await flight; } finally { if (refreshFlight.current === flight) refreshFlight.current = null; }
-  }, [request, isDemo, resource]);
+  }, [request, isDemo, resource, handOffRevoked]);
   useEffect(() => { if (!sharedResource) return () => resource.invalidate(); }, [sharedResource, resource]);
   useEffect(() => {
     const sequenceRef = serial;
     mounted.current = true; void refresh();
-    const poll = () => { if (!document.hidden && !writing.current) void refresh(); };
+    const poll = () => { if (!document.hidden && !writing.current && !revoked.current) void refresh(); };
     const timer = setInterval(poll, 5000); window.addEventListener("focus", poll); document.addEventListener("visibilitychange", poll);
     return () => { mounted.current = false; ++sequenceRef.current; refreshFlight.current = null; clearInterval(timer); window.removeEventListener("focus", poll); document.removeEventListener("visibilitychange", poll); };
   }, [refresh]);
@@ -262,7 +274,9 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     try {
       await saveInterviewResumeAnnotation({ ...request, id: draft.id, ...(draft.revision !== undefined ? { revision: draft.revision } : {}), content: content.data });
       if (mounted.current) { savedFocus.current = draft.id; setActive(draft.id); setDraft(null); setStatus("Comment saved"); await refresh(true); }
-    } catch {
+    } catch (failure) {
+      // Removed from the panel: not a failed save. The room says the comment was not saved and shows its text.
+      if (handOffRevoked(failure)) return;
       if (mounted.current) { setError("Comment was not saved. Your text is retained. Retry, or review the latest version if someone changed it."); await refresh(true); }
     } finally { writing.current = false; if (mounted.current) setBusy(false); }
   }
@@ -270,7 +284,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     if (writing.current || !(await confirm({ title: `Delete this comment by ${a.authorName}?`, description: "Moderation history is retained.", confirmLabel: "Delete comment", tone: "danger" })) || writing.current) return;
     writing.current = true; ++serial.current; setBusy(true); setError("");
     try { await deleteInterviewResumeAnnotation({ ...request, id: a.id, revision: a.revision }); if (draft?.id === a.id) setDraft(null); await refresh(true); }
-    catch { setError("Comment was not deleted. Refresh and review its latest version before retrying."); await refresh(true); }
+    catch (failure) { if (handOffRevoked(failure)) return; setError("Comment was not deleted. Refresh and review its latest version before retrying."); await refresh(true); }
     finally { writing.current = false; if (mounted.current) setBusy(false); }
   }
   async function download() {
@@ -282,7 +296,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
       const blob = await response.blob(); if (!mounted.current) return;
       const url = URL.createObjectURL(blob), link = document.createElement("a");
       link.href = url; link.download = "interview-resume.pdf"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch { setError("Download unavailable. Check your current access and retry."); await refresh(); }
+    } catch (failure) { if (handOffRevoked(failure)) return; setError("Download unavailable. Check your current access and retry."); await refresh(); }
   }
   const latest = draft?.revision !== undefined ? annotations.find(a => a.id === draft.id) : undefined;
   const conflict = !!draft && draft.revision !== undefined && (!latest || latest.revision !== draft.revision || !latest.canEdit);
