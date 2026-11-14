@@ -53,7 +53,7 @@ export async function getInterviewResumeModerationPage(clubId: string, filters: 
 export async function getInterviewResumeModerationQueue(clubId: string, filters: ApplicantInterviewFilters = {}) {
   return (await readInterviewResumeModeration(clubId, filters, null, false)).items;
 }
-export async function getInterviewApplicantPanel(input: z.infer<typeof scope>) {
+async function getInterviewApplicantPanelCommand(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { app } = await authorizeInterview(tx, data, user.id, "panel", "share");
@@ -63,7 +63,7 @@ export async function getInterviewApplicantPanel(input: z.infer<typeof scope>) {
   }, interviewTransactionOptions);
 }
 /** Snapshot bytes once; neither profile replacement nor student object deletion changes this version. */
-export async function pinInterviewResume(input: z.infer<typeof scope>) {
+async function pinInterviewResumeCommand(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
   const initial = await prisma.$transaction(async tx => {
     const { app } = await authorizeInterview(tx, data, user.id, "resume");
@@ -106,7 +106,7 @@ async function getInterviewResumeAnnotationsCommand(input: z.infer<typeof docume
     return { document, annotations: annotations.map(({ author, ...a }) => ({ ...a, authorName: author.user.studentProfile ? `${author.user.studentProfile.firstName} ${author.user.studentProfile.lastName}` : "Club interviewer", canEdit: a.authorId === member.id || caps.moderateResume })) };
   }, interviewTransactionOptions);
 }
-export async function saveInterviewResumeAnnotation(input: unknown) {
+async function saveInterviewResumeAnnotationCommand(input: unknown) {
   const data = boundedParse(documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0).optional(), content: annotationContentSchema }).strict(), input);
   const { user } = await requireAuth();
   if (data.content.anchor) {
@@ -142,7 +142,7 @@ export async function saveInterviewResumeAnnotation(input: unknown) {
     return { id: data.id, revision: old ? old.revision + 1 : 0 };
   }, interviewTransactionOptions);
 }
-export async function deleteInterviewResumeAnnotation(input: unknown) {
+async function deleteInterviewResumeAnnotationCommand(input: unknown) {
   const data = documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0) }).strict().parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { member, caps } = await authorizeInterview(tx, data, user.id, "resume");
@@ -170,4 +170,18 @@ export async function getInterviewAnnotationHistory(input: unknown) {
 // Polled every few seconds by the open résumé viewer.
 export async function getInterviewResumeAnnotations(...args: Parameters<typeof getInterviewResumeAnnotationsCommand>) {
   return interviewActionResult(() => getInterviewResumeAnnotationsCommand(...args), "getInterviewResumeAnnotations");
+}
+// Room calls from the applicant panel and résumé viewer: an access denial (e.g. removed from the
+// panel mid-interview) is the same uniform ACCESS_REVOKED refusal, with no data and no write.
+export async function getInterviewApplicantPanel(...args: Parameters<typeof getInterviewApplicantPanelCommand>) {
+  return interviewActionResult(() => getInterviewApplicantPanelCommand(...args), "getInterviewApplicantPanel");
+}
+export async function pinInterviewResume(...args: Parameters<typeof pinInterviewResumeCommand>) {
+  return interviewActionResult(() => pinInterviewResumeCommand(...args), "pinInterviewResume");
+}
+export async function saveInterviewResumeAnnotation(...args: Parameters<typeof saveInterviewResumeAnnotationCommand>) {
+  return interviewActionResult(() => saveInterviewResumeAnnotationCommand(...args), "saveInterviewResumeAnnotation");
+}
+export async function deleteInterviewResumeAnnotation(...args: Parameters<typeof deleteInterviewResumeAnnotationCommand>) {
+  return interviewActionResult(() => deleteInterviewResumeAnnotationCommand(...args), "deleteInterviewResumeAnnotation");
 }

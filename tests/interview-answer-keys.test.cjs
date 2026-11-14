@@ -10,7 +10,7 @@ test('authorized bank keys persist and snapshot; ordinary panel can read but can
  await assert.rejects(api.saveInterviewKit(h.scope.clubId,h.scope.roundId,1,[{id:id(4),prompt:'Original',guidance:'Forged'}]),/denied/);
  h.as(10);await api.saveInterviewKit(h.scope.clubId,h.scope.roundId,1,[{id:id(4),prompt:'Edited',guidance:'New reference'}]);
  h.as(11);assert.deepEqual((await api.openInterviewSession(h.scope)).questions,opened.questions);
- await assert.rejects(api.getInterviewKit(id(8),h.scope.roundId));h.assignments[1].revokedAt=new Date();await assert.rejects(api.getInterviewKit(h.scope.clubId,h.scope.roundId),/denied/);
+ await assert.rejects(api.getInterviewKit(id(8),h.scope.roundId));h.assignments[1].revokedAt=new Date();await assert.rejects(api.getInterviewKit(h.scope.clubId,h.scope.roundId),/no longer have access/);
 });
 
 test('newly selected bank keys are authenticated snapshots, immutable after kit changes; off-script never inherits a key',async()=>{

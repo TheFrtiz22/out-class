@@ -303,8 +303,9 @@ async function getPreviousInterviewScoresCommand(input: z.infer<typeof scope>) {
   }, interviewTransactionOptions);
 }
 
+// Read by the room's question library and the leader kit editor; a lost question-bank grant is ACCESS_REVOKED.
 export async function getInterviewKit(...args: Parameters<typeof getInterviewKitCommand>) {
-  return actionResult(() => getInterviewKitCommand(...args), "getInterviewKit")
+  return interviewActionResult(() => getInterviewKitCommand(...args), "getInterviewKit")
 }
 
 export async function saveInterviewKit(...args: Parameters<typeof saveInterviewKitCommand>) {
