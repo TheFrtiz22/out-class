@@ -4,4 +4,6 @@ module.exports = {
   '@/components/ui/confirm-dialog': require('./confirm-stub.cjs'),
   '@/components/shell/workspace-shell-context': { useShellBindings() {}, useInWorkspaceShell: () => false, WorkspaceShellContext: null },
   '@/lib/shell-metrics': { countShellStart() {} },
+  // The admin Reports badge polls a server action; outside a live admin shell it reads zero.
+  '@/components/admin/use-admin-reports-badge': { useAdminReportsBadge: () => 0 },
 }

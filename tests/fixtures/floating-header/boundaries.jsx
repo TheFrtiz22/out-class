@@ -82,4 +82,5 @@ export async function searchWorkspace(query, leader) {
 export function createClient() { return { auth: { async signOut() { sessionStorage.setItem('fixtureSignOuts', String(Number(sessionStorage.getItem('fixtureSignOuts') || 0) + 1)); return { error: null } } } } }
 export function TutorialWalkthrough() { return null }
 export default function Image({ src, alt, priority: _priority, unoptimized: _unoptimized, ...props }) { return <img src={src} alt={alt} {...props} /> }
+export async function getAdminReportsPulse() { return { openFeedback: 0, fingerprint: 'fixture' } }
 export async function removePushSubscription() { return { ok: true } }

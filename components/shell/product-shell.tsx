@@ -17,7 +17,7 @@ import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react"
-import { CalendarStar, Bell, Menu, UserRound, LogOut, Home, Users2, Compass, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, Gauge, Gavel, IdCard } from "@/components/icons"
+import { CalendarStar, Bell, Menu, UserRound, LogOut, MessageSquare, Home, Users2, Compass, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, Gauge, Gavel, IdCard } from "@/components/icons"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { WorkspaceSelector, useWorkspaceOptions } from "@/components/shell/workspace-selector"
@@ -50,6 +50,11 @@ import { RouteChildren } from "@/components/route-content"
 import { prepareSignOut, sealAutosaveDraftsForSignOut } from "@/lib/autosave-store"
 import { flushEditors } from "@/lib/autosave-navigation"
 import { useConfirm } from "@/components/ui/confirm-dialog"
+import dynamic from "next/dynamic"
+import { useAdminReportsBadge } from "@/components/admin/use-admin-reports-badge"
+
+// Loaded on first open, so the shell bundle carries none of the dialog or its image handling.
+const FeedbackDialog = dynamic(() => import("@/components/feedback/feedback-dialog").then(m => m.FeedbackDialog), { ssr: false })
 
 /**
  * Rail icons. Club workspace items each get a distinct glyph: Overview (gauge) vs Home (house), Applicants
@@ -85,6 +90,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications, syncTaskNotifications, syncDurableNotifications, durableUnread } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
+  const [feedback, setFeedback] = useState(false)
   const confirmSignOut = useConfirm()
   async function signOut() {
     // Try to save unsaved edits first; only a confirmed discard clears this device's copies.
@@ -117,6 +123,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     if (platform || manager) router.replace(fallbackHref)
   }, [access.pending, allowed, platform, manager, fallbackHref, router])
   const workspaceChoices = useWorkspaceOptions(access, clubId)
+  // Open issue/feedback reports on the admin Reports item; live while an admin page is visible.
+  const reportsBadge = useAdminReportsBadge(platform && allowed && !!user && !demo.isDemoEnabled && !isImpersonating)
   // A focus screen's Exit returns to the last product page (same tab only).
   useEffect(() => { if (mode !== "preview") rememberProductRoute(productRouteAccount(user?.id, demo.isDemoEnabled)) })
   const searchItems = !allowed ? [] : platform ? [] : manager ? adminNav.filter(item => {
@@ -194,8 +202,10 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     const selected = item.id === current
     const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left", selected ? "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const NavIcon = navigationIcons[item.id] ?? FileText
-    const content = <>{(dock ? <span className="oc-dock-icon">{<NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" size={24} />}</span> : <NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" className="size-4 shrink-0" />)}<span className="oc-dock-item-label">{item.label}</span>{item.preview && <span className="oc-dock-preview ml-auto text-xs font-normal text-muted-foreground">Preview</span>}</>
-    const element = item.href ? <Link key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (item.mode && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.mode); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
+    const badge = platform && item.id === "reports" ? reportsBadge : 0
+    const accessibleName = badge > 0 ? `${item.label}, ${badge} open issue and feedback ${badge === 1 ? "report" : "reports"}` : item.label
+    const content = <>{(dock ? <span className="oc-dock-icon">{<NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" size={24} />}</span> : <NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" className="size-4 shrink-0" />)}<span className="oc-dock-item-label">{item.label}</span>{item.preview && <span className="oc-dock-preview ml-auto text-xs font-normal text-muted-foreground">Preview</span>}{badge > 0 && <span data-nav-badge className="ml-auto min-w-5 rounded-full bg-primary px-1.5 text-center text-xs font-semibold leading-5 tabular-nums text-primary-foreground" aria-hidden="true">{badge > 99 ? "99+" : badge}</span>}</>
+    const element = item.href ? <Link key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={accessibleName} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (item.mode && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.mode); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={accessibleName} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
     return element
   }
   // Account settings need a live session; the demo and signed-out preview hide them.
@@ -230,7 +240,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
             setTaskLoad({ loading: true, failed: false }); setDurableLoad({ loading: true, failed: false })
             window.dispatchEvent(new Event("outclass:tasks-changed")); window.dispatchEvent(new Event("outclass:communications-changed"))
           }} onNavigate={onNavigate} />
-          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{/* The account menu switches workspace at every width; the header pill is an extra shortcut on wider screens. */}{workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-xs text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={() => void signOut()}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{/* The account menu switches workspace at every width; the header pill is an extra shortcut on wider screens. */}{workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-xs text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem onSelect={() => setFeedback(true)}><MessageSquare />Report an issue or send feedback</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={() => void signOut()}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>
     </header>
@@ -244,6 +254,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       if ("view" in step) navigate(step.view)
       else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)
     }} />}
+    {feedback && <FeedbackDialog open={feedback} onOpenChange={setFeedback} />}
     <KeyboardShortcuts />
     <NavigationSearch clubId={manager ? clubId : undefined} leader={manager || platform} destinations={destinations} open={search} onOpenChange={setSearch} onDismissAutoFocus={() => {
       const origin = searchOrigin.current
