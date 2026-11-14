@@ -19,6 +19,7 @@ import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import type { ClubAccess } from "@/lib/permissions"
 import "@/components/club-home/club-home.css"
 import { TERMS, pluralize } from "@/lib/copy/terms"
+import { offerTallySummary } from "@/lib/offer-tally"
 import { votingStateLabel } from "@/lib/voting-navigation"
 import { DashboardDrawer } from "@/components/product/dashboard-drawer"
 const Review = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.ApplicantReviewPreview), { loading: () => <LoadingState variant="glass" layout="form" rows={3} label="Loading authorized review…" /> })
@@ -66,6 +67,9 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
   const base = `/club/${encodeURIComponent(club.id)}/workspace?section=recruitment`
   const outcomes = data.recruitment?.filter(r => ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(r.status)) ?? []
   const hasOutcomes = outcomes.some(r => r.count > 0)
+  // Offer tally rides on the same grouped read and visibility as the outcome counts.
+  const tally = data.offerTally, tallyText = offerTallySummary(tally)
+  const tallyDetail = tally ? [tally.awaiting && `${tally.awaiting} awaiting response`, tally.declined && `${tally.declined} declined`, tally.expired && `${tally.expired} expired`].filter(Boolean).join(" · ") : ""
   const canSchedule = hasPermission(membership, "interviews.manage")
   const openReview = (id: string) => { setReviewContext(true); setApplicant(id) }
   const empty = (copy: ReactNode, action?: ReactNode) => <div className="oc-dashboard-state"><DashboardQuiet>{copy}</DashboardQuiet>{action}</div>
@@ -112,8 +116,13 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
       <DashboardCard id="dashboard-milestones" title="Key dates" index={cards.length + 2} className="oc-milestone-agenda">
         <DateChipList when={memberDate} items={dates.map(d => ({ id: d.id, at: d.at, kind: d.kind, title: d.title }))} empty="No deadlines or scheduled messages this week." />
       </DashboardCard>
-      {hasOutcomes && <DashboardCard id="dashboard-outcomes" title="Outcomes" index={cards.length + 3} className="oc-decision-summary">
-        <MetricTiles items={outcomes.map(r => ({ key: r.status, label: r.status === "ACCEPTED" ? "Accepted" : r.status === "WAITLISTED" ? "Waitlisted" : "Not accepted", value: r.count }))} />
+      {(hasOutcomes || !!tally?.sent) && <DashboardCard id="dashboard-outcomes" title="Decisions delivered" index={cards.length + 3} className="oc-decision-summary">
+        {hasOutcomes && <MetricTiles items={outcomes.map(r => ({ key: r.status, label: r.status === "ACCEPTED" ? "Accepted" : r.status === "WAITLISTED" ? "Waitlisted" : "Not accepted", value: r.count }))} />}
+        {tally && tallyText ? <div className="oc-offer-tally">
+          <p className="oc-offer-tally-summary"><strong className="oc-dashboard-number">{tally.accepted}</strong> of {tally.sent} {tally.sent === 1 ? "offer" : "offers"} accepted</p>
+          <progress className="oc-dashboard-progress" value={tally.accepted} max={tally.sent} aria-label={tallyText} />
+          {tallyDetail && <p className="oc-offer-tally-detail">{tallyDetail}</p>}
+        </div> : <DashboardQuiet>No offers sent yet.</DashboardQuiet>}
         <DashboardFoot>Recorded outcomes are visible to applicants; voting stays separate until published.</DashboardFoot>
       </DashboardCard>}
       {total > 0 && <DashboardCard id="dashboard-coverage" title="Reviewer progress" index={cards.length + 4} className="oc-coverage-panel">

@@ -13,6 +13,8 @@
 .oc-interview-columns { position: relative; overflow: hidden; }
 .oc-interview-columns > :is(aside,.oc-question-workspace) { position: relative; min-width: 0; overflow: hidden; }
 .oc-candidate-content { min-width: 0; }
+/* Native focus scrolling (and useKeepFocusedFieldVisible) leave a little room around a field above the on-screen keyboard. */
+.oc-focused-interview :is(textarea,input) { scroll-margin-block: 12px; }
 .oc-candidate-outgoing { z-index: 2; pointer-events: none; }
 .oc-interview-room.oc-interview-room :is(.oc-question-heading h2,#interview-completed h2,.oc-post-interview h2) { font-family: var(--oc-font-sans); font-size: 1.125rem; font-weight: 500; letter-spacing: -.015em; line-height: 1.4; }
 .oc-question-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
@@ -21,7 +23,7 @@
 .oc-interview-room.oc-interview-room .oc-focused-interview label { display: block; font-size: .875rem; font-weight: 400; color: var(--muted-foreground); }
 .oc-interview-room.oc-interview-room .oc-focused-interview textarea { background: var(--card); border: 1px solid var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.65; font-size: .9375rem; box-shadow: none; }
 .oc-interview-room.oc-interview-room .oc-active-question { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.oc-interview-room.oc-interview-room .oc-active-question textarea { min-height: clamp(200px,28vh,320px); }
+.oc-interview-room.oc-interview-room .oc-active-question textarea { min-height: clamp(200px,28svh,320px); }
 .oc-active-question > [data-slot="button"]:last-child { display: flex; margin-left: auto; }
 .oc-interview-room.oc-interview-room .oc-post-interview textarea { min-height: 7rem; }
 .oc-active-question h3 { font-size: clamp(1.125rem,1.65vw,1.5rem); font-weight: 500; line-height: 1.45; letter-spacing: -.02em; }

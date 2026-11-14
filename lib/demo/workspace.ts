@@ -44,6 +44,7 @@ import { normalizeProfileFieldVisibility, restrictApplicationProfile, sameProfil
 import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { genderValues, profileSectionSchema } from "@/lib/student-profile"
 import * as api from "@/lib/workspace-api"
+import { offerTally } from "@/lib/offer-tally"
 type Api = typeof api
 type Demo<K extends keyof Api> = (...args: Parameters<Api[K]>) => unknown
 export { demoVoting }
@@ -409,6 +410,8 @@ export const getClubWorkspaceOverview: Demo<"getClubWorkspaceOverview"> = (clubI
   work:s.tasks.filter(t=>t.clubId===clubId&&!["DRAFT","DONE"].includes(t.status)).flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&(!a.submittedAt||a.revisionRequestedAt)&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
   awaitingReview:manage?s.tasks.filter(t=>t.clubId===clubId).flatMap(t=>t.assignments).filter(a=>a.submittedAt&&!a.reviewedAt).length:null,
   recruitment:manage?[...new Set(s.applications.filter(a=>a.clubId===clubId&&a.status!=="DRAFTING").map(a=>a.status))].map(status=>({status,count:s.applications.filter(a=>a.clubId===clubId&&a.status===status).length})):null,
+  // Same tally as the live reader: current offers sent (pending, accepted, declined, expired); revoked offers are not sent.
+  offerTally:manage?offerTally(s.recruitmentOffers.flatMap(o=>s.applications.some(a=>a.id===o.applicationId&&a.clubId===clubId)?[{offer:o.status==="PENDING"&&o.expiresAt<=now?"EXPIRED":o.status,count:1}]:[])):null,
  }
 }
 export const getDashboardReviewQueue: Demo<"getDashboardReviewQueue"> = async (clubId, roundId) => { const data = await api.getClubWorkspaceOverview(clubId); return demoDashboardSummary(clubId, data.membership.id, roundId).queue }

@@ -42,7 +42,7 @@ import { schedulingDateTime, SCHEDULING_TIMEZONE } from "@/lib/scheduling-config
 import { slotTime } from "@/lib/interview-rooms"
 import { defaultProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { defaultReviewRubric } from "@/lib/review-rubric"
-import { advanceLabel, canStage, stagedLabel, type StagedOutcome } from "@/lib/staged-decisions"
+import { advanceLabel, canStage, sentDecisionHint, stagedLabel, type StagedOutcome } from "@/lib/staged-decisions"
 import type { ExtendedMembership } from "@/contexts/auth-context"
 import { ReportContentButton } from "@/components/reports/report-content-button"
 
@@ -94,7 +94,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const anonymous = !!app?.studentId.startsWith("anonymous-")
   const displayName = (value: NonNullable<typeof app>) => profileFields.name || value.studentId.startsWith("anonymous-") ? value.student.studentProfile ? `${value.student.studentProfile.firstName} ${value.student.studentProfile.lastName}` : value.student.email : anonymousApplicantLabel(value.id)
   const current = app ? staged?.get(app.id) : undefined
-  const decideReason = !canDecide ? "Deciding needs decision access." : !app ? "Loading applicant…" : app.studentId === membership.userId ? "You can’t decide your own application." : !canStage(app.status) ? "The decision has been sent. Use ⋯ to correct it." : busy ? "Saving…" : ""
+  const decideReason = !canDecide ? "Deciding needs decision access." : !app ? "Loading applicant…" : app.studentId === membership.userId ? "You can’t decide your own application." : !canStage(app.status) ? sentDecisionHint(app.status, "review", app.recruitmentOffer?.status === "PENDING") : busy ? "Saving…" : ""
   const go = useCallback((direction: -1 | 1) => {
     setIndex(value => { const next = value + direction; if (next < 0) return value; if (next >= ids.length) { setFinished(true); return value } return next })
   }, [ids.length])

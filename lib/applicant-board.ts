@@ -2,6 +2,8 @@
  * Board columns: one per active round for applicants still pending (titled "Pending" when the club has one round),
  * then Waitlisted, Accepted and Rejected. A staged decision places the card where it will land once sent.
  */
+import { sentDecisionHint } from "@/lib/staged-decisions"
+
 export type BoardColumnId = `round:${string}` | "waitlisted" | "accepted" | "rejected"
 export type BoardColumn = { id: BoardColumnId; title: string; roundId?: string }
 type BoardStaged = { targetStatus: string; targetRoundId: string | null }
@@ -32,7 +34,7 @@ export function boardColumnFor(app: { status: string; roundId: string }, staged?
 /** What dropping a card on a column means: stage an outcome, remove the staged one (back home), or nothing. */
 export function boardDrop(app: { status: string; roundId: string }, column: BoardColumnId, staged: boolean):
   { kind: "stage"; outcome: "ROUND" | "WAITLIST" | "ACCEPT" | "REJECT"; roundId?: string } | { kind: "unstage" } | { kind: "none"; reason?: string } {
-  if (app.status === "ACCEPTED" || app.status === "REJECTED") return { kind: "none", reason: "The decision has been sent. Open the applicant to correct it." }
+  if (app.status === "ACCEPTED" || app.status === "REJECTED") return { kind: "none", reason: sentDecisionHint(app.status, "board") }
   const home = boardColumnFor(app, null)
   if (column === home) return staged ? { kind: "unstage" } : { kind: "none" }
   if (column.startsWith("round:")) {

@@ -62,6 +62,25 @@ function trackerHarness(records,scope='status',params='') {
 const cards=tree=>nodes(tree).filter(node=>node.type==='ApplicationStatusCard');
 const management=tree=>nodes(tree).filter(node=>node.type==='ApplicationManagementCard');
 
+test('a stage card opens that application\'s status (booking and offer live there); responses and back stay in place',async()=>{
+ const h=trackerHarness([app('Review'),app('Interview','INTERVIEWING')],'all');h.render();await h.flush();
+ nodes(h.render()).find(node=>node.type==='UnderlineTabs'&&node.props.label==='Application stage').props.onChange('interviews');
+ cards(h.render())[0].props.onOpen();
+ const detail=()=>nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail');
+ assert.equal(detail()?.props.application.id,'Interview','"Review interview" opens the status detail, not the submitted answers');
+ detail().props.onResponses();
+ assert.equal(detail(),undefined,'View submitted responses switches to the answers in place');assert.deepEqual(h.navigation,[],'without leaving the page');
+ assert.equal(cards(h.render()).length,0,'the answers view replaces the list');
+ const again=trackerHarness([app('Interview','INTERVIEWING')],'all');again.render();await again.flush();
+ nodes(again.render()).find(node=>node.type==='UnderlineTabs'&&node.props.label==='Application stage').props.onChange('interviews');
+ cards(again.render())[0].props.onOpen();nodes(again.render()).find(node=>node.type==='ApplicationStatusDetail').props.onBack();
+ assert.deepEqual(cards(again.render()).map(node=>node.props.application.id),['Interview'],'Back returns to the stage list');
+ // "Review offer" on a Decisions card lands on the status too (accept/decline lives there).
+ const offer=trackerHarness([app('Offer','ACCEPTED')],'all');offer.render();await offer.flush();
+ nodes(offer.render()).find(node=>node.type==='UnderlineTabs'&&node.props.label==='Application stage').props.onChange('decisions');
+ cards(offer.render())[0].props.onOpen();
+ assert.equal(nodes(offer.render()).find(node=>node.type==='ApplicationStatusDetail')?.props.application.id,'Offer');
+});
 test('Applications and Status are one page: four stage tabs with counts, status cards for submitted stages',async()=>{
  const h=trackerHarness([app('Draft','DRAFTING'),app('Review'),app('Decision','ACCEPTED'),app('Interview','INTERVIEWING')]);h.render();await h.flush();let tree=h.render();
  assert.equal(nodes(tree).find(node=>node.type==='PageHeader').props.title,'Applications');assert.equal(nodes(tree).some(node=>node.type==='MetricStrip'),false,'no stat boxes repeating the tabs');
@@ -114,9 +133,10 @@ test('old applicant URLs retain focus and unrelated parameters, while manager ro
  assert.equal(resolveStudentView('interview-scheduler'),null);assert.equal(resolveStudentView('leader-dashboard'),null);
 });
 test('legacy applicant path redirects preserve repeated parameters and leave the booking route intact',async()=>{
- for(const file of ['app/interviews/page.tsx','app/decisions/page.tsx']){
+ // Each shortcut opens its own Applications stage (it used to land on In review).
+ for(const [file,tab] of [['app/interviews/page.tsx','interviews'],['app/decisions/page.tsx','decisions']]){
   const C=load(file,{'next/navigation':{redirect:value=>{throw Error(value)}}}).default;
-  await assert.rejects(C({searchParams:Promise.resolve({applicationId:'application',tag:['a','b']})}),error=>{const url=new URL(error.message,'http://outclass.test'),params=url.searchParams;assert.equal(url.pathname,'/applications');assert.equal(params.get('tab'),'in-review');assert.equal(params.get('view'),null);assert.equal(params.get('applicationId'),'application');assert.deepEqual(params.getAll('tag'),['a','b']);return true});
+  await assert.rejects(C({searchParams:Promise.resolve({applicationId:'application',tag:['a','b']})}),error=>{const url=new URL(error.message,'http://outclass.test'),params=url.searchParams;assert.equal(url.pathname,'/applications');assert.equal(params.get('tab'),tab);assert.equal(params.get('view'),null);assert.equal(params.get('applicationId'),'application');assert.deepEqual(params.getAll('tag'),['a','b']);return true});
  }
  const bookingPage=load('app/(focus)/interviews/book/page.tsx').default();assert.equal(bookingPage.props.children.type,'AuthSessionBoundary');assert.equal(bookingPage.props.children.props.children.type,'BookingLinkPage');
 });
