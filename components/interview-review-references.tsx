@@ -15,18 +15,21 @@ function useReferencePoll<T>(enabled: boolean, request: () => Promise<T>, onValu
   const handler = useRef(onAccessRevoked); handler.current = onAccessRevoked;
   useEffect(() => {
     if (!enabled) return;
-    let current = true;
+    let current = true, interval: ReturnType<typeof setInterval> | undefined;
     const stop = () => { current = false; clearInterval(interval); window.removeEventListener("focus", read); };
     const read = () => { if (!current) return; void request().then(v => { if (current) onValue(v); }).catch(e => {
       if (!current) return;
       if (isAccessRevoked(e) && handler.current) { stop(); handler.current(); return; }
       onError();
     }); };
-    read(); const interval = setInterval(() => { if (!document.hidden) read(); }, 10000);
+    read(); interval = setInterval(() => { if (!document.hidden) read(); }, 10000);
     window.addEventListener("focus", read);
     return stop;
+    // deps is the caller's explicit scope key (the lint rule cannot see through it): request, onValue and
+    // onError are read once per run and must depend only on values listed there.
   }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 }
+// After a handoff the room unmounts these widgets (setData(null)); they show nothing further themselves.
 export function RoundScore({ scope, onAccessRevoked }: ReferenceProps) {
   const [value, setValue] = useState<RoundScoreSummary | null>(null), [error, setError] = useState(false), [retry, setRetry] = useState(0);
   useReferencePoll(true, () => getInterviewRoundScore(scope), v => { setValue(v); setError(false); }, () => { setValue(null); setError(true); }, onAccessRevoked, [scope.clubId, scope.applicationId, scope.roundId, retry]);
