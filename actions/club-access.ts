@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
-import { clubPermissions, hasPermission } from "@/lib/permissions";
+import { clubPermissions, hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { onboardingRolePermissions } from "@/lib/club-onboarding";
 import { canControlOrganizationAccess, canManageOrganizationInvitation, organizationCapabilities } from "@/lib/organization-authorization";
 import { isUvaEmail } from "@/lib/auth";
@@ -187,6 +187,9 @@ async function updateClubAccessCommand(input: {
     });
     if (!actor || !target || !organizationCapabilities(actor).canChangeRoles || (target.status && target.status !== "ACTIVE"))
       throw new ActionError("Access denied.");
+    // Alumni hold no club access; they can only be removed (lib/graduation.ts). The target is
+    // therefore always a current member, so the last-owner count below (current owners only) includes it.
+    if (target.alumniSince) throw new ActionError("This member is an alumnus. Alumni can’t be given club access; remove them or ask them to rejoin.");
     if (
       !actor.isOwner &&
       (!canControlOrganizationAccess(actor, target) || target.isOwner ||
@@ -203,7 +206,7 @@ async function updateClubAccessCommand(input: {
       target.isOwner &&
       !data.isOwner &&
       (await tx.clubMember.count({
-        where: { clubId: data.clubId, isOwner: true, status: "ACTIVE", user: { disabledAt: null } },
+        where: { clubId: data.clubId, isOwner: true, ...activeMemberWhere, user: { disabledAt: null } },
       })) <= 1
     )
       throw new ActionError("Assign another owner before removing the last owner.");

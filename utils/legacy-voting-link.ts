@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import "server-only"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
@@ -17,7 +18,7 @@ export async function liveRoomHrefForLegacyLink(sessionId: string | undefined | 
     const viewer = await verifiedViewer()
     if (viewer.state !== "VERIFIED") return null
     const session = await prisma.votingSession.findFirst({
-      where: { id: sessionId!, club: { suspendedAt: null, members: { some: { userId: viewer.userId, status: "ACTIVE" } } } },
+      where: { id: sessionId!, club: { suspendedAt: null, members: { some: { userId: viewer.userId, ...activeMemberWhere } } } },
       select: { clubId: true, mode: true },
     })
     if (!session) return null

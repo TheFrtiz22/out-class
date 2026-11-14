@@ -24,7 +24,7 @@ export async function getRecruitingInsights(clubId: string) {
     const identify = hasPermission(member, "applicants.identify")
     const apps = await tx.application.findMany({
       where: { clubId, status: { not: "DRAFTING" }, ...(cycle ? { recruitmentCycleId: cycle.id } : {}), ...(!identify ? { round: { anonymousReview: true } } : {}) },
-      select: { id: true, status: true, studentId: true, roundId: true, bookings: { select: { id: true }, take: 1 }, interviewAssignments: { where: { revokedAt: null }, select: { memberId: true, roundId: true, member: { select: { status: true, isOwner: true, permissions: true } } } }, recruitmentOffer: { select: { status: true } } },
+      select: { id: true, status: true, studentId: true, roundId: true, bookings: { select: { id: true }, take: 1 }, interviewAssignments: { where: { revokedAt: null }, select: { memberId: true, roundId: true, member: { select: { status: true, alumniSince: true, isOwner: true, permissions: true } } } }, recruitmentOffer: { select: { status: true } } },
     })
     const evaluations = apps.length && member && interviewCapabilities(member).readClosing ? await tx.evaluation.findMany({
       where: { applicationId: { in: apps.map(a => a.id) }, submittedAt: { not: null }, interviewer: { clubId }, stableRound: { clubId, anonymousReview: false }, interviewRecords: { none: { anonymousReview: true } } },

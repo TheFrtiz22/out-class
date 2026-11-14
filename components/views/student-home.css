@@ -7,7 +7,7 @@
 .oc-student-home .oc-home-hero h1 { font-size: clamp(1.75rem, 1.25rem + 1vw, 2.125rem); line-height: 1.15; }
 .oc-student-home .oc-home-hero .oc-page-description { min-block-size: 1lh; margin-top: .25rem; }
 .oc-home-loading { display: grid; gap: var(--oc-content-gap); }
-.oc-home-availability-slot:empty { display: none; }
+.oc-home-availability-slot:empty, .oc-home-graduation-slot:empty { display: none; }
 
 .oc-home-application > :first-child { width: 2.25rem; height: 2.25rem; border-radius: var(--oc-radius-md); }
 .oc-home-update-indicator { align-self: start; margin-top: .125rem; color: var(--muted-foreground); }

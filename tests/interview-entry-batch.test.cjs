@@ -13,7 +13,7 @@ function fixture(count = 24) {
   const matches = (value, where) => Object.entries(where).every(([key, expected]) => {
     if (key === 'OR') return expected.some(w => matches(value, w));
     if (expected && typeof expected === 'object') { if ('in' in expected) return expected.in.includes(value[key]); if ('not' in expected) return value[key] !== expected.not; return matches(value[key] || {}, expected); }
-    return value[key] === expected;
+    return expected === null ? value[key] == null : value[key] === expected;
   });
   h.tx.interviewSlot = { findMany: async ({ where }) => where.room.isOpen ? slots.filter(s => s.room.isOpen) : slots };
   h.tx.clubMember.findMany = async ({ where }) => h.members.filter(m => matches(m, where));

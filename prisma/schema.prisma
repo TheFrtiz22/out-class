@@ -89,6 +89,11 @@ model StudentProfile {
   computingId String  @unique
   major       String
   gradYear    Int
+  // Alumni lifecycle (lib/graduation.ts). graduatedAt is the instant the student becomes alumni:
+  // Aug 1 (America/New_York) of gradYear by default, or when the student confirms after it.
+  graduatedAt                 DateTime?
+  graduationConfirmedAt       DateTime?
+  graduationPromptDismissedAt DateTime?
   gpa         Float?
   satScore    Int?
   linkedinUrl String?
@@ -187,6 +192,9 @@ model ClubMember {
   votingParticipants VotingParticipant[]
   accessRole       MembershipAccessRole @default(MEMBER)
   status           MembershipStatus     @default(ACTIVE)
+  // Set when the member graduated (lib/graduation.ts). An alumni membership stays ACTIVE on the
+  // roster but carries no club capabilities and is excluded from active-member counts and audiences.
+  alumniSince      DateTime?
   joinedAt         DateTime             @default(now())
   updatedAt        DateTime             @default(now()) @updatedAt
   groups           String[]          @default([])

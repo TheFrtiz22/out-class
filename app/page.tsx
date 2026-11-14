@@ -6,7 +6,7 @@ import { safeReturnPath, isUvaEmail } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { HomeEntry } from "@/components/home-entry"
 import { STUDENT_HOME, isLeaderWorkspaceView, leaderWorkspaceHref, legacyStudentRedirect } from "@/lib/navigation"
-import { hasWorkspace } from "@/lib/permissions"
+import { hasWorkspace, activeMemberWhere } from "@/lib/permissions"
 import { getStudentDashboardData } from "@/actions/applications"
 import { getSessionUser } from "@/utils/auth"
 import { cookies } from "next/headers"
@@ -74,7 +74,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     // one the visitor gets Home, as the student view replaced these before.
     const requestedView = typeof params.view === "string" ? params.view : null
     if (isLeaderWorkspaceView(requestedView)) {
-      const leader = await prisma.user.findUnique({ where: { id: user.id }, select: { memberships: { where: { status: "ACTIVE", club: { suspendedAt: null } }, orderBy: { clubId: "asc" }, select: { clubId: true, status: true, isOwner: true, permissions: true, interviewOffices: true } } } })
+      const leader = await prisma.user.findUnique({ where: { id: user.id }, select: { memberships: { where: { ...activeMemberWhere, club: { suspendedAt: null } }, orderBy: { clubId: "asc" }, select: { clubId: true, status: true, isOwner: true, permissions: true, interviewOffices: true } } } })
       const club = leader?.memberships.find(hasWorkspace)
       const focus = { applicantId: typeof params.applicantId === "string" ? params.applicantId : null, roundId: typeof params.roundId === "string" ? params.roundId : null }
       redirect(club ? leaderWorkspaceHref(requestedView, club.clubId, focus) : STUDENT_HOME)

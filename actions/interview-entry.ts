@@ -1,4 +1,5 @@
 "use server";
+import { activeMemberWhere } from "@/lib/permissions";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -40,7 +41,7 @@ export async function getAssignedInterviewRooms(clubId: string): Promise<Intervi
         return { ...c, anonymous, reviewId, canOpen, completed: !!record?.completedAt, started: !!record && !record.completedAt };
       });
       const colleagueIds = [...new Set(projected.flatMap(c => c.canOpen && !c.anonymous ? panels.get(c.booking.id)! : []))];
-      const colleagues = colleagueIds.length ? await tx.clubMember.findMany({ where: { id: { in: colleagueIds }, clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } }) : [];
+      const colleagues = colleagueIds.length ? await tx.clubMember.findMany({ where: { id: { in: colleagueIds }, clubId, ...activeMemberWhere, user: { disabledAt: null } }, select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } }) : [];
       for (const c of projected) access.set(c.booking.id, { anonymous: c.anonymous, reviewId: c.reviewId, canOpen: c.canOpen, completed: c.completed, started: c.started, interviewers: c.canOpen && !c.anonymous ? colleagues.filter(m => m.id !== member.id && panels.get(c.booking.id)!.includes(m.id)).map(m => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : "Interviewer") : [] });
     }
     const rows: InterviewRoomEntry[] = [];

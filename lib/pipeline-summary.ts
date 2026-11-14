@@ -19,7 +19,7 @@ export const pipelineSummarySelect = {
     interviewerId: true, roundId: true, submittedAt: true, score: true,
   } },
   interviewAssignments: { where: { revokedAt: null }, select: {
-    memberId: true, roundId: true, member: { select: { status: true, isOwner: true, permissions: true } },
+    memberId: true, roundId: true, member: { select: { status: true, alumniSince: true, isOwner: true, permissions: true } },
   } },
 } satisfies Prisma.ApplicationSelect;
 

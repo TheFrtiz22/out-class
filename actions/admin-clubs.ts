@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
+import { activeMemberWhere } from "@/lib/permissions";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { authorizeAdminTransaction } from "@/utils/admin-transaction";
 import { adminPageLoad, logAdminFailure } from "@/utils/admin-page";
@@ -21,7 +22,7 @@ export async function getAdminClubs(input: unknown = {}) {
   const f = adminClubFilters.parse(input), contains = { contains: f.query, mode: 'insensitive' as const };
   const where = { ...(f.query ? { OR: [{ name: contains }, { slug: contains }, { category: contains }] } : {}), ...(f.status==='ACTIVE' ? { suspendedAt: null } : f.status==='SUSPENDED' ? { suspendedAt: { not: null } } : f.status==='DISCOVERABLE' ? { isDiscoverable: true, suspendedAt: null } : f.status==='HIDDEN' ? { isDiscoverable: false } : f.status==='RECRUITING' ? { suspendedAt: null, applicationOpen: true, AND: [{ OR: [{ applicationDeadline: null }, { applicationDeadline: { gt: new Date() } }] }], pipelineRounds: { some: { archivedAt: null } } } : {}) };
   const [rows, schools] = await Promise.all([
-    prisma.club.findMany({ where, select: { id: true, name: true, slug: true, logoUrl: true, marketing: true, color: true, category: true, tagline: true, isDiscoverable: true, suspendedAt: true, applicationOpen: true, applicationDeadline: true, school: { select: { name: true } }, _count: { select: { members: { where: { status: 'ACTIVE' } }, pipelineRounds: { where: { archivedAt: null } } } } }, orderBy: [{ name: 'asc' }, { id: 'asc' }], skip: f.page*30, take: 31 }),
+    prisma.club.findMany({ where, select: { id: true, name: true, slug: true, logoUrl: true, marketing: true, color: true, category: true, tagline: true, isDiscoverable: true, suspendedAt: true, applicationOpen: true, applicationDeadline: true, school: { select: { name: true } }, _count: { select: { members: { where: activeMemberWhere }, pipelineRounds: { where: { archivedAt: null } } } } }, orderBy: [{ name: 'asc' }, { id: 'asc' }], skip: f.page*30, take: 31 }),
     prisma.school.findMany({ where: { active: true }, select: { id: true, key: true, name: true }, orderBy: { name: 'asc' } }),
   ]);
   return { rows: rows.slice(0,30).map(c => ({ ...c, suspendedAt: c.suspendedAt?.toISOString() || null, applicationDeadline: c.applicationDeadline?.toISOString() || null })), schools, hasMore: rows.length > 30 };

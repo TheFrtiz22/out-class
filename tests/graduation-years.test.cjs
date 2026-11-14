@@ -97,11 +97,13 @@ test('profile edits keep the stored year (alumni) but cannot move to another out
       'next/cache': { revalidatePath() {} },
       '@/utils/auth': { requireAuth: async () => ({ user: { id: owner, email: 'owner@virginia.edu' } }) },
       '@/utils/terms-acceptance': { hasCurrentTermsAcceptance: async () => true },
-      '@/utils/prisma': { prisma: { studentProfile: {
+      // Year changes run in the profile transaction and through utils/graduation.ts (tests/graduation.test.cjs).
+      '@/utils/graduation': require('./helpers/profile-transaction.cjs').graduation(),
+      '@/utils/prisma': { prisma: require('./helpers/profile-transaction.cjs').withProfileTransaction({ studentProfile: {
         findUnique: async q => { if (q.select?.gradYear) reads++; return stored === null ? null : { id: 'profile', gradYear: stored } },
         update: async q => { writes.push(q.data); if (q.data.gradYear !== undefined) stored = q.data.gradYear; return { ...q.data, experiences: [] } },
         upsert: async q => { writes.push(q.create); return q.create },
-      } } },
+      } }) },
     }
     new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith('@/lib/') ? load(name.slice(2) + '.ts') : require(name), mod, mod.exports)
     return mod.exports

@@ -16,7 +16,7 @@ const OWN = "You can’t report your own content.";
 
 /** Staff of a club (anyone with a club workspace) own its profile, gallery, events and flyers. */
 async function clubStaff(userId: string, clubId: string) {
-  const member = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } }, select: { status: true, isOwner: true, permissions: true, interviewOffices: true } });
+  const member = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } }, select: { status: true, alumniSince: true, isOwner: true, permissions: true, interviewOffices: true } });
   return !!member && hasWorkspace(member);
 }
 
@@ -52,7 +52,7 @@ async function resolveTarget(userId: string, target: ReportTarget): Promise<Reso
     }
     case "student": {
       // Leaders see another student's profile only in their own club's applicant review.
-      const member = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId, clubId: target.clubId } }, select: { status: true, isOwner: true, permissions: true } });
+      const member = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId, clubId: target.clubId } }, select: { status: true, alumniSince: true, isOwner: true, permissions: true } });
       if (!hasPermission(member, "applications.review")) return null;
       const app = await prisma.application.findFirst({ where: { id: target.applicationId, clubId: target.clubId, status: { not: "DRAFTING" } }, select: { id: true, studentId: true } });
       if (!app) return null;

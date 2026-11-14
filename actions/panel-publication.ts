@@ -1,4 +1,5 @@
 "use server"
+import { activeMemberWhere } from "@/lib/permissions";
 import { randomUUID } from "node:crypto"
 import { z } from "zod"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
@@ -113,7 +114,7 @@ export async function publishPanelSchedule(raw:unknown){
   for(const booking of bookings){await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${booking.applicationId} FOR UPDATE`;const assigned=document.assignments.filter(a=>a.slotId===booking.slotId).map(a=>a.memberId);await syncBookingPanel(tx,booking.applicationId,input.roundId,actorId,{notify:false,batch,context:{app:booking.application,existing:booking.application.interviewAssignments,booking:{...booking,slot:{...booking.slot,panelScheduleVersion:version,panelScheduleVersionId:version.id,publishedPanelMemberIds:assigned}},members:candidateMembers,approvedBy:actorId}})}
   if(batch.grants.length)await tx.interviewPanelAssignment.createMany({data:batch.grants})
   if(batch.audits.length)await tx.auditLog.createMany({data:batch.audits})
-  const affected=[...new Set(changes.flatMap(c=>c.memberId?[c.memberId]:[]))],members=await tx.clubMember.findMany({where:{id:{in:affected},clubId:input.clubId,status:"ACTIVE",user:{disabledAt:null}}})
+  const affected=[...new Set(changes.flatMap(c=>c.memberId?[c.memberId]:[]))],members=await tx.clubMember.findMany({where:{id:{in:affected},clubId:input.clubId,...activeMemberWhere,user:{disabledAt:null}}})
   // These intents commit with the publication; the existing worker performs provider I/O after commit.
   if(members.length)await tx.userNotification.createMany({data:members.map(m=>({userId:m.userId,clubId:input.clubId,eventKey:`${panelScheduleNotificationPrefix}${version.id}:${m.id}`,type:"INTERVIEW",title:"Interview panel schedule updated",body:"An approved interview panel schedule changed. Open your interview schedule to review your assignments.",href:`/settings/interviews?clubId=${input.clubId}&roundId=${input.roundId}`})),skipDuplicates:true})
   await tx.auditLog.create({data:{actorId,clubId:input.clubId,targetId:version.id,action:"interview.panels.publish",details:{previousVersion:version.previousVersion,version:version.version,proposalId:row.id,revision:row.revision,changes,understaffedOverride:understaffed,overrideReason:understaffed?input.overrideReason:null,unstaffedSlotIds:unstaffing.removedSlotIds,notifiedMembers:affected}}})

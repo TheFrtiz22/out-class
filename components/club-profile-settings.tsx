@@ -4,7 +4,7 @@ import { uploadClubAsset } from "@/actions/club-assets"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { loadedDemoStore } from "@/lib/demo/loader"
-import { hasPermission } from "@/lib/permissions"
+import { hasPermission, isActiveMembership } from "@/lib/permissions"
 import { updateClubSettings } from "@/actions/club-workspace"
 import { ClubProfileEditor } from "@/components/clubs/club-profile-editor"
 import { useEffect, useState } from "react"
@@ -22,7 +22,7 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
   useEffect(() => {
     if (!canCount) return
     let current = true
-    readWorkspace<{ members: { status: string }[] }>("members", [clubId]).then(value => { if (current) setRoster({ clubId, count: value.members.filter(m => m.status === "ACTIVE").length }) }).catch(() => { if (current) setRoster({ clubId, count: null }) })
+    readWorkspace<{ members: { status: string; alumniSince?: string | null }[] }>("members", [clubId]).then(value => { if (current) setRoster({ clubId, count: value.members.filter(isActiveMembership).length }) }).catch(() => { if (current) setRoster({ clubId, count: null }) })
     return () => { current = false }
   }, [canCount, clubId])
   const rosterCount = roster?.clubId === clubId ? roster.count : null

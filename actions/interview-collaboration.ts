@@ -1,4 +1,5 @@
 "use server";
+import { activeMemberWhere } from "@/lib/permissions";
 
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
@@ -51,7 +52,7 @@ async function getInterviewCollaborationCommand(input: z.infer<typeof inputSchem
     // for every name (which blocked private saves on hosted pooler connections).
     const ids = [...new Set([...presentIds, ...(session.selectedBy ? [session.selectedBy] : [])])];
     await tx.$queryRaw`SELECT u.id FROM "User" u JOIN "ClubMember" m ON m."userId" = u.id WHERE m.id = ANY(${ids}::text[]) ORDER BY u.id FOR SHARE OF u, m`;
-    const peers = await tx.clubMember.findMany({ where: { id: { in: ids }, clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null }, interviewAssignments: { some: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null } } }, include: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
+    const peers = await tx.clubMember.findMany({ where: { id: { in: ids }, clubId: data.clubId, ...activeMemberWhere, user: { disabledAt: null }, interviewAssignments: { some: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null } } }, include: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
     const authorized = peers.filter(peer => peer.userId !== app.studentId && interviewCapabilities(peer).participate && (!booking || (roomKey === `booking:${booking.id}:${booking.slot.roomId}` && panelIds?.includes(peer.id))));
     const peerName = (peer: typeof authorized[number]) => peer.user.studentProfile ? `${peer.user.studentProfile.firstName} ${peer.user.studentProfile.lastName}` : "Interviewer";
     const participants: CollaborationView["participants"] = authorized.filter(peer => presentIds.includes(peer.id)).map(peer => ({ id: peer.id, name: peerName(peer) }));

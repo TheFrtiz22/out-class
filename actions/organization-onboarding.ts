@@ -1,4 +1,5 @@
 "use server";
+import { activeMemberWhere } from "@/lib/permissions";
 
 import { z } from 'zod';
 import { requireClubPermission } from '@/utils/auth';
@@ -14,7 +15,7 @@ export async function getOrganizationSetupChecklist(clubId: string) {
     if (!organizationCapabilities(actor).canManageOrganization) throw new Error('Organization setup access denied.');
     const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true, tagline: true, description: true, claimedAt: true } });
     const [members, rosterCount, roundCount] = await Promise.all([
-      tx.clubMember.findMany({ where: { clubId, status: 'ACTIVE', user: { disabledAt: null } }, select: { isOwner: true, permissions: true, status: true } }),
+      tx.clubMember.findMany({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null } }, select: { isOwner: true, permissions: true, status: true } }),
       tx.rosterImport.count({ where: { clubId, status: 'COMPLETED', rows: { some: { status: { in: ['INVITATION_CREATED', 'INVITATION_REUSED', 'ALREADY_MEMBER'] } } } } }),
       tx.pipelineRound.count({ where: { clubId } }),
     ]);

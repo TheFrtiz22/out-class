@@ -2,7 +2,7 @@ const {load,uuid}=require('./voting-harness.cjs');
 const clubId=uuid(1),roundId=uuid(2),cycleId=uuid(3),sessionId=uuid(4),leaderId=uuid(5),voterId=uuid(6),apps=[uuid(10),uuid(11),uuid(12)];
 function harness(){
  let actor=leaderId,sequence=100,state={preparations:[],hands:[],interviewRecords:[],ballotRules:[],sessions:[],receipts:[],audit:[],drafts:[],offers:[],notifications:[],apps:apps.map(id=>({id,clubId,roundId,recruitmentCycleId:cycleId,status:'IN_REVIEW',decisionVersion:0,decisionStateRevision:0,studentId:uuid(90),student:{studentProfile:{firstName:'Synthetic',lastName:id.slice(-2)}}}))};
- const members=[leaderId,voterId,uuid(7)].map((id,i)=>({id,userId:id,clubId,status:'ACTIVE',interviewOffices:[],permissions:['applications.review','applicants.identify','decisions.vote',...(i===0?['decisions.manage','decisions.start','decisions.finish','decisions.publish']:[])],user:{disabledAt:null}}));
+ const members=[leaderId,voterId,uuid(7)].map((id,i)=>({id,userId:id,clubId,status:'ACTIVE',alumniSince:null,interviewOffices:[],permissions:['applications.review','applicants.identify','decisions.vote',...(i===0?['decisions.manage','decisions.start','decisions.finish','decisions.publish']:[])],user:{disabledAt:null}}));
  // The club has turned GPA and LinkedIn on; the default ceiling is covered in profile-field-voting tests.
  const round={id:roundId,clubId,name:'Interview',type:'INTERVIEW',order:0,archivedAt:null,anonymousReview:false,club:{profileFieldVisibility:{gpa:true,linkedin:true}}},cycle={id:cycleId,clubId,archivedAt:null},rounds=[round];
  const draftData=d=>({...d,content:d.content===require('@prisma/client').Prisma.DbNull?null:d.content});
