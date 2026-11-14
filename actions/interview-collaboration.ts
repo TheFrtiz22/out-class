@@ -8,7 +8,7 @@ import { interviewCapabilities, interviewScopeSchema, type InterviewScope } from
 import { kitSchema, interviewDraftSchema } from "@/lib/interview-kits";
 import { PRESENCE_TTL_MS, INVITATION_TTL_MS, type CollaborationView } from "@/lib/interview-collaboration";
 import { CollaborationInitializationRequired, collaborationAccess, collaborationScope, collaborationSession, eligibleDestination, memberName } from "@/utils/interview-collaboration";
-import { interviewActionResult, interviewTransactionOptions } from "@/utils/interview-access";
+import { interviewActionResult, interviewTransactionOptions, isInterviewRoomAccessDenial } from "@/utils/interview-access";
 import { getInterviewWorkspace } from "@/actions/interview-kits";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
 import { interviewTiming } from "@/lib/interview-session-timing";
@@ -123,6 +123,13 @@ async function dismissInterviewInvitationCommand(input: z.infer<typeof inputSche
   return prisma.$transaction(async tx => { const { member } = await collaborationSession(tx, data, user.id); await tx.interviewInvitation.updateMany({ where: { id: data.invitationId, recipientId: member.id, dismissedAt: null }, data: { dismissedAt: new Date() } }); }, transactionOptions);
 }
 
+/** An advance's destination (or an invitation sender) being unavailable is not this viewer losing
+ * access to the room they are in: it stays an ordinary failure, never ACCESS_REVOKED. */
+async function destinationCheck<T>(work: () => Promise<T>): Promise<T> {
+  try { return await work(); }
+  catch (error) { if (isInterviewRoomAccessDenial(error)) throw new Error("That interview is unavailable."); throw error; }
+}
+
 /** Issues an expiring receipt; no invitation until destination UI confirms arrival. */
 async function prepareInterviewAdvanceCommand(input: z.infer<typeof inputSchema> & { invitationId?: string }) {
   const data = inputSchema.extend({ invitationId: z.string().uuid().optional() }).parse(input); const { user } = await requireAuth();
@@ -132,10 +139,10 @@ async function prepareInterviewAdvanceCommand(input: z.infer<typeof inputSchema>
   return prisma.$transaction(async tx => {
     const { member, record, session } = await collaborationSession(tx, data, user.id);
     if (!record.completedAt) throw Error("Finish your current review before joining.");
-    const invited = data.invitationId ? await validInvite(tx, data.invitationId, session.id, member.id, user.id) : null;
+    const invited = data.invitationId ? await destinationCheck(() => validInvite(tx, data.invitationId!, session.id, member.id, user.id)) : null;
     if (!invited && !next) return null;
     const scope: InterviewScope = invited ? collaborationScope(invited.destination) : { clubId: data.clubId, applicationId: next!.id, roundId: data.roundId };
-    const dest = await eligibleDestination(tx, scope, user.id);
+    const dest = await destinationCheck(() => eligibleDestination(tx, scope, user.id));
     // Creation does not create/change a private review or pin a résumé.
     const destination = invited?.destination || await tx.interviewCollaboration.upsert({ where: { applicationId_roundId_roomKey: { applicationId: scope.applicationId, roundId: scope.roundId, roomKey: dest.roomKey } }, create: { ...scope, roomKey: dest.roomKey, questions: kitSchema.parse(dest.round.interviewKit) }, update: {} });
     const move = await tx.interviewMove.create({ data: { sourceId: session.id, destinationId: destination.id, memberId: member.id, invited: !!invited, acceptedInvitationId: invited?.invite.id || null, expiresAt: new Date(Date.now() + INVITATION_TTL_MS) } });
@@ -156,9 +163,9 @@ async function confirmInterviewAdvanceCommand(input: { moveId: string; clientId:
     if (move.confirmedAt) return { confirmed: true };
     const later = await tx.interviewMove.findFirst({ where: { memberId: member.id, confirmedAt: { not: null }, createdAt: { gt: move.createdAt } } });
     if (later) throw Error("Interviewer has moved again. This arrival receipt is stale.");
-    if (move.acceptedInvitationId) await validInvite(tx, move.acceptedInvitationId, source.id, member.id, user.id);
+    if (move.acceptedInvitationId) await destinationCheck(() => validInvite(tx, move.acceptedInvitationId!, source.id, member.id, user.id));
     const destination = await tx.interviewCollaboration.findUniqueOrThrow({ where: { id: move.destinationId } });
-    const access = await eligibleDestination(tx, collaborationScope(destination), user.id);
+    const access = await destinationCheck(() => eligibleDestination(tx, collaborationScope(destination), user.id));
     if (destination.roomKey !== access.roomKey) throw Error("Destination room changed.");
     const destRecord = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: destination.applicationId, roundId: destination.roundId, interviewerId: member.id } } });
     if (!destRecord) throw Error("Destination must be loaded before confirming.");

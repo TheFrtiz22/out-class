@@ -21,7 +21,7 @@ const ResumePreview = dynamic(() => import("@/components/interview-resume-previe
 /** `onAccessRevoked` runs when the server refuses with ACCESS_REVOKED (e.g. removed from the panel);
  * the room then shows its "no longer have access" state. `unsavedComment` is a résumé comment that was
  * open in the viewer and could not be saved (an empty string for a highlight with no text yet). */
-export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel, onAccessRevoked }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>>; onAccessRevoked?: (unsavedComment?: string) => void }) {
+export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel, onAccessRevoked, onDraftComment }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>>; onAccessRevoked?: (unsavedComment?: string) => void; onDraftComment?: (comment: string | undefined) => void }) {
   const scope = useMemo(() => ({ clubId, applicationId, roundId }), [clubId, applicationId, roundId]);
   const { isDemoEnabled } = useDemoMode();
   const { user } = useAuth();
@@ -87,7 +87,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
         <DialogContent showCloseButton={false} aria-describedby={undefined} className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onEscapeKeyDown={event => { if ((event.target as Element)?.closest('[role="dialog"]')?.querySelector('[data-resume-comment-draft]')) event.preventDefault(); }} onCloseAutoFocus={e => { e.preventDefault(); (openedFromPreview.current ? previewFocus.current : resumeTrigger.current)?.focus(); }}>
           <DialogHeader className="pr-10"><DialogTitle className="text-base font-medium">{name} · Résumé</DialogTitle></DialogHeader>
           <DialogClose asChild><Button type="button" variant="ghost" size="icon" className="absolute right-3 top-3 size-9" aria-label="Close résumé"><X className="size-4" aria-hidden="true" /></Button></DialogClose>
-          {open && resource && <InterviewResumeViewer resource={resource} initialPage={initialPage} fallback={fallback} scope={scope} documentId={documentId} isDemo={isDemoEnabled} onAccessLost={() => { resource.invalidate(); setUrl(""); setResumeError("Document access could not be verified. Retry to check access."); }} onAccessRevoked={onAccessRevoked} />}
+          {open && resource && <InterviewResumeViewer resource={resource} initialPage={initialPage} fallback={fallback} scope={scope} documentId={documentId} isDemo={isDemoEnabled} onAccessLost={() => { resource.invalidate(); setUrl(""); setResumeError("Document access could not be verified. Retry to check access."); }} onAccessRevoked={onAccessRevoked} onDraftComment={onDraftComment} />}
         </DialogContent>
       </Dialog>
       </div>

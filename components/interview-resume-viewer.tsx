@@ -137,13 +137,14 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
 }
 
 /** `onAccessRevoked` (optional) takes over when the server refuses with ACCESS_REVOKED: the room shows its
- * access-removed state, told about any comment that was open and could not be saved. */
-type ViewerProps = { scope: InterviewScope; documentId: string; isDemo: boolean; onAccessLost: () => void; onAccessRevoked?: (unsavedComment?: string) => void; resource?: InterviewResumeResource; initialPage?: number; preloadOnly?: boolean };
+ * access-removed state, told about any comment that was open and could not be saved. `onDraftComment`
+ * keeps the room told about the open draft, so a refusal reported elsewhere in the room still shows it. */
+type ViewerProps = { scope: InterviewScope; documentId: string; isDemo: boolean; onAccessLost: () => void; onAccessRevoked?: (unsavedComment?: string) => void; onDraftComment?: (comment: string | undefined) => void; resource?: InterviewResumeResource; initialPage?: number; preloadOnly?: boolean };
 /** Warming loads code only; authorization and document state belong to the visible viewer. */
 export default function InterviewResumeViewer(props: ViewerProps) {
   return props.preloadOnly ? null : <AuthorizedResumeViewer {...props} />;
 }
-function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, onAccessRevoked, resource: sharedResource, initialPage = 1 }: ViewerProps) {
+function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, onAccessRevoked, onDraftComment, resource: sharedResource, initialPage = 1 }: ViewerProps) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const request = useMemo(() => ({ ...scope, documentId }), [scope, documentId]);
@@ -163,10 +164,14 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, onAcc
   accessLost.current = onAccessLost;
   const draftRef = useRef(draft), revokedHandler = useRef(onAccessRevoked), revoked = useRef(false);
   draftRef.current = draft; revokedHandler.current = onAccessRevoked;
+  const draftReport = useRef(onDraftComment); draftReport.current = onDraftComment;
+  const draftComment = draft ? draft.comment : undefined;
+  useEffect(() => { const report = draftReport.current; report?.(draftComment); return () => report?.(undefined); }, [draftComment]);
   /** True when an ACCESS_REVOKED refusal was handed to the room (once): no inline error, retry or refresh. */
   const handOffRevoked = useCallback((error: unknown) => {
     if (!isAccessRevoked(error) || !revokedHandler.current) return false;
-    if (!revoked.current) { revoked.current = true; revokedHandler.current(draftRef.current ? draftRef.current.comment : undefined); }
+    // A late refusal after this viewer closed (e.g. after Try again) must not close the reopened room.
+    if (!revoked.current && mounted.current) { revoked.current = true; revokedHandler.current(draftRef.current ? draftRef.current.comment : undefined); }
     return true;
   }, []);
   useEffect(() => {

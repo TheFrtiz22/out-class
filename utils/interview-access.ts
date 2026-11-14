@@ -34,11 +34,16 @@ const roomAccessDenial = [/^Current room panel approval required/, /^Current roo
  * does not reveal which check failed. The refusal carries no interview data. Every other
  * error is handled exactly as actionResult does.
  */
+/** True for every denial interviewActionResult turns into ACCESS_REVOKED. */
+export function isInterviewRoomAccessDenial(error: unknown) {
+  return isInterviewAccessDenial(error) || error instanceof RecusedError || (error instanceof Error && roomAccessDenial.some(p => p.test(error.message)));
+}
+
 export function interviewActionResult<T>(work: () => Promise<T>, action: string): Promise<ActionResult<T>> {
   return actionResult(async () => {
     try { return await work(); }
     catch (error) {
-      if (isInterviewAccessDenial(error) || error instanceof RecusedError || (error instanceof Error && roomAccessDenial.some(p => p.test(error.message))))
+      if (isInterviewRoomAccessDenial(error))
         throw new ActionError(INTERVIEW_ACCESS_REVOKED_MESSAGE, ACCESS_REVOKED);
       throw error;
     }

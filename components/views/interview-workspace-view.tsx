@@ -93,6 +93,9 @@ function InterviewSession({
   const [revokedNotes, setRevokedNotes] = useState(false)
   // A résumé comment the server refused with ACCESS_REVOKED. It cannot be kept, so it is shown once.
   const [revokedComment, setRevokedComment] = useState<string | null>(null)
+  // The résumé comment open in the viewer, so a refusal reported by any room part can still show it.
+  const openComment = useRef<string | undefined>(undefined)
+  const trackComment = useCallback((comment: string | undefined) => { openComment.current = comment }, [])
   const [retry, setRetry] = useState(0)
   const [roundId, setRoundId] = useState("")
   const [activeId, setActiveId] = useState("")
@@ -114,7 +117,7 @@ function InterviewSession({
   // The server refused a room call with ACCESS_REVOKED (e.g. removed from the panel mid-interview).
   // Unmounting the room stops its polling and autosave; unsaved notes stay on this device.
   // Several room parts can report it; what each knows about unsaved work is combined until Try again.
-  const accessRevoked = useCallback((unsavedNotes: boolean, unsavedComment?: string) => { setData(null); setActiveId(""); setPrepared(null); setArrival(null); setRevokedNotes(value => value || unsavedNotes); if (unsavedComment !== undefined) setRevokedComment(unsavedComment); setLoadError(true) }, [])
+  const accessRevoked = useCallback((unsavedNotes: boolean, unsavedComment?: string) => { setData(null); setActiveId(""); setPrepared(null); setArrival(null); setRevokedNotes(value => value || unsavedNotes); const comment = unsavedComment ?? openComment.current; if (comment !== undefined) setRevokedComment(comment); setLoadError(true) }, [])
   const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
   const recoveredApplicant = useCallback(() => {
     try { return JSON.parse(sessionStorage.getItem(recoveryKey) || "null") as { roundId: string; applicationId: string; moveId?: string; clientId?: string } | null }
@@ -370,7 +373,7 @@ function InterviewSession({
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList} onAccessRevoked={accessRevoked}
 
 toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button></>}
-context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} onAccessRevoked={panelAccessRevoked} />}
+context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} onAccessRevoked={panelAccessRevoked} onDraftComment={trackComment} />}
             onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)
               setKitDirty(false)

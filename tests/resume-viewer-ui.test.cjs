@@ -24,7 +24,7 @@ function ui(api, options={}) {
   new Function('require','module','exports',code)(n=>n==='@/components/ui/loading-state'?require('./helpers/component-module.cjs').loadComponent('components/ui/loading-state.tsx'):n==='@/components/icons'?require('./helpers/icons.cjs'):n==='react'?react:n==='@/contexts/auth-context'?{useAuth:()=>({user:{id:'actor'}})}:n==='@/components/interview-resume-placeholder'?{InterviewResumePlaceholder:'Placeholder'}:n==='@/components/resume-area-highlights'?{AreaHighlightMarks:'AreaHighlightMarks',AreaSelector:'AreaSelector'}:n==='@/lib/interview-resume-resource'?{InterviewResumeResource:Resource,ResumeAccessError:Error}:n==='@/lib/workspace-api'?api:n.endsWith('.css')?{}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
   let lost=0;
   const scope={clubId:'club',applicationId:'app',roundId:'round'};
-  return { warm(){return m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,preloadOnly:true})},render(){index=0;const wrapper=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,...(options.onAccessRevoked?{onAccessRevoked:options.onAccessRevoked}:{})});const tree=wrapper.type(wrapper.props);const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
+  return { warm(){return m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,preloadOnly:true})},render(){index=0;const wrapper=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,...(options.onAccessRevoked?{onAccessRevoked:options.onAccessRevoked}:{}),...(options.onDraftComment?{onDraftComment:options.onDraftComment}:{})});const tree=wrapper.type(wrapper.props);const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
 }
 
 test('code warming mounts no authorized viewer and performs no document/comment reads until opening',async()=>{
@@ -112,4 +112,13 @@ test('without a room handler a refused save keeps the existing inline message an
   const h=ui({getInterviewResumeAnnotations:async()=>({annotations:[]}),saveInterviewResumeAnnotation:async()=>{throw revokedError()},deleteInterviewResumeAnnotation:async()=>{}});
   h.render();await flush();let t=h.render();button(t,'Add general résumé note').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='resume-comment').props.onChange({target:{value:'Kept'}});t=h.render();
   await button(t,'Save comment').props.onClick();t=h.render();assert.match(text(t),/not saved/);assert.equal(nodes(t).find(n=>n.props?.id==='resume-comment').props.value,'Kept');h.close();
+});
+test('the open draft is reported to the room as it changes and cleared on close; a refusal arriving after close is not reported',async()=>{
+  const drafts=[],handed=[];let rejectSave;
+  const h=ui({getInterviewResumeAnnotations:async()=>({annotations:[]}),saveInterviewResumeAnnotation:()=>new Promise((_,reject)=>rejectSave=reject),deleteInterviewResumeAnnotation:async()=>{}},{onAccessRevoked:c=>handed.push(c),onDraftComment:c=>drafts.push(c)});
+  h.render();await flush();let t=h.render();button(t,'Add general résumé note').props.onClick();t=h.render();
+  nodes(t).find(n=>n.props?.id==='resume-comment').props.onChange({target:{value:'Draft text'}});t=h.render();
+  assert.equal(drafts.at(-1),'Draft text');
+  const saving=button(t,'Save comment').props.onClick();h.close();assert.equal(drafts.at(-1),undefined,'cleared when the viewer closes');
+  rejectSave(revokedError());await saving;assert.deepEqual(handed,[],'a late refusal does not close a reopened room');
 });

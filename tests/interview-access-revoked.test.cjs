@@ -71,6 +71,26 @@ test('a panelist removed mid-interview gets the same typed refusal, no data and 
  h.as(h.ids.peer);assert.equal((await resumes.getInterviewApplicantPanel(h.scope)).document.id,documentId);assert.equal((await kit.getInterviewKit(h.ids.club,h.ids.round)).version,0);
  }finally{await h.db.close();}
 });
+test('an unavailable advance destination is an ordinary failure, not ACCESS_REVOKED for the room the interviewer is still in',async()=>{
+ const h=await harness();try{
+ const rooms=h.load('actions/interview-collaboration.ts'),kit=h.load('actions/interview-kits.ts');
+ const other=randomUUID(),otherApp=randomUUID();
+ await h.db.query('INSERT INTO "User"(id,email) VALUES ($1,$2)',[other,'other@virginia.edu']);
+ await h.db.query(`INSERT INTO "Application"(id,"clubId","studentId","roundId",status) VALUES ($1,$2,$3,$4,'INTERVIEWING')`,[otherApp,h.ids.club,other,h.ids.round]);
+ for(const app of [h.ids.app,otherApp])await h.db.query('INSERT INTO "InterviewPanelAssignment"(id,"applicationId","roundId","memberId","grantedBy") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),app,h.ids.round,h.ids.panelMember,h.ids.owner]);
+ h.as(h.ids.panel);const session=await kit.openInterviewSession(h.scope);const room={...h.scope,clientId:randomUUID()};const view=await rooms.getInterviewCollaboration(room);
+ await kit.saveInterviewSession({...h.scope,revision:0,draft:{...session.draft,score:7},complete:true});
+ // Stepped out of the next applicant only: the current room is still theirs.
+ await h.db.query('INSERT INTO "ApplicantRecusal"(id,"clubId","applicationId","memberId","createdById") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),h.ids.club,otherApp,h.ids.panelMember,h.ids.panel]);
+ // An advance receipt into that applicant's room (as prepare issued it before the recusal).
+ const destinationId=randomUUID(),moveId=randomUUID();
+ await h.db.query(`INSERT INTO "InterviewCollaboration"(id,"clubId","applicationId","roundId","roomKey",questions) VALUES ($1,$2,$3,$4,$5,'[]')`,[destinationId,h.ids.club,otherApp,h.ids.round,`panel:${otherApp}`]);
+ await h.db.query(`INSERT INTO "InterviewMove"(id,"sourceId","destinationId","memberId","expiresAt") VALUES ($1,$2,$3,$4,NOW()+interval '1 hour')`,[moveId,view.sessionId,destinationId,h.ids.panelMember]);
+ await assert.rejects(rooms.confirmInterviewAdvance({moveId,clientId:room.clientId}),error=>error.refused!==true&&/That interview is unavailable/.test(error.message));
+ assert.equal((await h.db.query('SELECT "confirmedAt" FROM "InterviewMove" WHERE id=$1',[moveId])).rows[0].confirmedAt,null,'not confirmed');
+ assert.ok((await rooms.getInterviewCollaboration(room)).sessionId,'the current room still works');
+ }finally{await h.db.close();}
+});
 test('the one-off room calls give the same refusal to a never-assigned member and to the applicant',async()=>{
  const h=await harness();try{
  const rooms=h.load('actions/interview-collaboration.ts'),kit=h.load('actions/interview-kits.ts'),resumes=h.load('actions/interview-resumes.ts');
@@ -96,7 +116,7 @@ test('stepping out of the applicant (recusal) mid-interview is the same typed re
  const h=await harness();try{
  const rooms=h.load('actions/interview-collaboration.ts'),kit=h.load('actions/interview-kits.ts');
  await h.db.query('INSERT INTO "InterviewPanelAssignment"(id,"applicationId","roundId","memberId","grantedBy") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),h.ids.app,h.ids.round,h.ids.panelMember,h.ids.owner]);
- h.as(h.ids.panel);const session=await kit.openInterviewSession(h.scope);const room={...h.scope,clientId:randomUUID()};await rooms.getInterviewCollaboration(room);
+ h.as(h.ids.panel);const session=await kit.openInterviewSession(h.scope);const room={...h.scope,clientId:randomUUID()};const view=await rooms.getInterviewCollaboration(room);
  await h.db.query('INSERT INTO "ApplicantRecusal"(id,"clubId","applicationId","memberId","createdById") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),h.ids.club,h.ids.app,h.ids.panelMember,h.ids.panel]);
  await revoked(rooms.getInterviewCollaboration(room));await revoked(kit.saveInterviewSession({...h.scope,revision:0,draft:{...session.draft,additionalNotes:'after recusal'}}));
  assert.equal((await h.db.query('SELECT revision FROM "InterviewRecord"')).rows[0].revision,0,'nothing saved');

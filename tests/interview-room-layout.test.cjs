@@ -113,3 +113,8 @@ test('the applicant panel and résumé viewer report ACCESS_REVOKED through the 
  const none=harness();none.render();await flush();t=none.render();t=none.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=none.render();
  kit(t).props.context.props.onAccessRevoked();t=none.render();t=none.render();assert.match(text(t),/no longer have access/);assert.doesNotMatch(text(t),/wasn’t saved|hadn’t saved/);
 });
+test('an open résumé comment is shown when another room part reports ACCESS_REVOKED first',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
+ kit(t).props.context.props.onDraftComment('Typed in the viewer');kit(t).props.onAccessRevoked(false);t=h.render();t=h.render();
+ assert.match(text(t),/résumé comment wasn’t saved/);assert.match(text(t),/Typed in the viewer/);
+});
