@@ -88,6 +88,7 @@ export const userRelationDeletionPlan: Record<string, { model: string; onDelete:
   savedEvents: { model: "SavedCampusEvent", onDelete: "Cascade", treatment: "delete", note: "Personal bookmarks." },
   corkboardClubs: { model: "CorkboardClub", onDelete: "Cascade", treatment: "delete", note: "Saved clubs." },
   tutorials: { model: "UserTutorial", onDelete: "Cascade", treatment: "delete", note: "Tutorial dismissals." },
+  interestProfile: { model: "StudentInterestProfile", onDelete: "Cascade", treatment: "delete", note: "Private club-interest survey answers." },
   availability: { model: "UserAvailability", onDelete: "Cascade", treatment: "delete", note: "Personal availability." },
   editorDrafts: { model: "EditorDraft", onDelete: "Cascade", treatment: "delete", note: "Unsent drafts." },
   calendarFeedToken: { model: "CalendarFeedToken", onDelete: "Cascade", treatment: "delete", note: "Calendar subscription token." },

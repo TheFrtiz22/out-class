@@ -31,6 +31,7 @@ import * as demoTasks from "./tasks"
 import * as demoReview from "./review-decisions"
 import { anonymousApplication, identifiedApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
+import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone"
 import * as demoInterviews from "./interview-foundation"
 import * as demoCollaboration from "./interview-collaboration"
 import { meetingInputSchema, canReadMeeting, TOKEN_LIFETIME_MS } from "@/lib/meetings"
@@ -43,6 +44,7 @@ import { normalizeProfileFieldVisibility, restrictApplicationProfile, sameProfil
 import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { genderValues, profileSectionSchema } from "@/lib/student-profile"
 import * as api from "@/lib/workspace-api"
+import { offerTally } from "@/lib/offer-tally"
 type Api = typeof api
 type Demo<K extends keyof Api> = (...args: Parameters<Api[K]>) => unknown
 export { demoVoting }
@@ -63,6 +65,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
   if (s.perspective.role !== "student" || !club)
     throw new Error("Switch to the sample student first.")
   if (submit && !meetsTestRequirement(club.testRequirement, demoUser().profile)) throw new Error("Update your profile to meet this club’s SAT/ACT requirement.")
+  if (submit && !validPhone(demoUser().profile.phone)) throw new Error(PHONE_REQUIRED_MESSAGE)
   parsed.answers = normalizeApplicationAttachments(club.questions, parsed.answers)
   assertApplicationAttachmentOwnership(club.questions, parsed.answers, demoUser().id)
   const errors = answerErrors(club.questions, parsed.answers, submit)
@@ -228,6 +231,11 @@ export const updateStudentProfileSection: Demo<"updateStudentProfileSection"> = 
     return { profile: user.profile }
   })
 }
+// Interest answers are private to a real account; Demo Mode has none and saves none.
+export const getMyInterestSurvey: Demo<"getMyInterestSurvey"> = () => null
+const noDemoInterestWrite = () => { throw new Error("Exit Demo Mode to save your club interests.") }
+export const saveMyInterestSurvey: Demo<"saveMyInterestSurvey"> = () => noDemoInterestWrite()
+export const dismissInterestSurveyPrompt: Demo<"dismissInterestSurveyPrompt"> = () => noDemoInterestWrite()
 export const uploadProfileFile: Demo<"uploadProfileFile"> = () => {
   throw new Error("Uploads are disabled in Demo Mode. The sample PDF and photos stay isolated from production.")
 }
@@ -401,6 +409,8 @@ export const getClubWorkspaceOverview: Demo<"getClubWorkspaceOverview"> = (clubI
   work:s.tasks.filter(t=>t.clubId===clubId&&!["DRAFT","DONE"].includes(t.status)).flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&(!a.submittedAt||a.revisionRequestedAt)&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
   awaitingReview:manage?s.tasks.filter(t=>t.clubId===clubId).flatMap(t=>t.assignments).filter(a=>a.submittedAt&&!a.reviewedAt).length:null,
   recruitment:manage?[...new Set(s.applications.filter(a=>a.clubId===clubId&&a.status!=="DRAFTING").map(a=>a.status))].map(status=>({status,count:s.applications.filter(a=>a.clubId===clubId&&a.status===status).length})):null,
+  // Same tally as the live reader: current offers sent (pending, accepted, declined, expired); revoked offers are not sent.
+  offerTally:manage?offerTally(s.recruitmentOffers.flatMap(o=>s.applications.some(a=>a.id===o.applicationId&&a.clubId===clubId)?[{offer:o.status==="PENDING"&&o.expiresAt<=now?"EXPIRED":o.status,count:1}]:[])):null,
  }
 }
 export const getDashboardReviewQueue: Demo<"getDashboardReviewQueue"> = async (clubId, roundId) => { const data = await api.getClubWorkspaceOverview(clubId); return demoDashboardSummary(clubId, data.membership.id, roundId).queue }

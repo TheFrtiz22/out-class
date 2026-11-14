@@ -2,6 +2,7 @@
 import type { ReactNode } from "react"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
+import { InterestSurveyPrompt } from "@/components/interests/interest-survey-prompt"
 
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import { Bell, CheckCircle2, ChevronRight, Circle } from "@/components/icons"
@@ -226,6 +227,8 @@ export function StudentDashboardView({
       {hero}
       {/* Mounted once for both layouts, inside the same dashboard context (no blur, card type) as before. */}
       <Dashboard className="oc-home-availability-slot"><AvailabilityDashboardRequests /></Dashboard>
+      {/* One-time, private and optional; renders nothing once answered or dismissed. */}
+      {authenticated || user ? <Dashboard className="oc-home-availability-slot"><InterestSurveyPrompt /></Dashboard> : null}
       {phone}
       <Dashboard className="oc-home-dashboard">
         {unavailable

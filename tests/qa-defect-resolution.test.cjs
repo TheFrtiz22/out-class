@@ -25,7 +25,7 @@ test('D3 server limits room/day/round/club and selects no private notes; reviewe
  h.tx.interviewBooking.findMany=async q=>{query=q;return[{applicationId:id(70),application:{roundId:h.scope.roundId,interviewAssignments:[{id:'grant'}],student:{studentProfile:{firstName:'Synthetic',lastName:'Previous'}}}}]};
  h.tx.interviewRecord.findMany=async()=>[{id:'mine',applicationId:id(70),interviewerId:h.members[0].id,anonymousReview:false,evaluation:{score:8,submittedAt:new Date('2026-10-01T20:00:00Z')}},{id:'peer',applicationId:id(70),interviewerId:h.members[1].id,anonymousReview:false,evaluation:{score:9,submittedAt:new Date('2026-10-01T20:01:00Z')}}];
  assert.equal((await api.getPreviousInterviewScores(h.scope))[0].score,8.5);assert.equal(query.where.roundId,h.scope.roundId);assert.equal(query.where.slot.roomId,'room');assert.equal(query.where.slot.clubId,h.scope.clubId);assert.equal(query.where.slot.startTime.gte.toISOString(),'2026-10-01T04:00:00.000Z');assert.deepEqual(query.where.applicationId,{not:h.scope.applicationId});assert.doesNotMatch(JSON.stringify(query.select),/draft|questionNotes|additionalNotes/);
- h.as(12);assert.deepEqual(await api.getPreviousInterviewScores(h.scope),[],'unfinished reviewer cannot see peers');h.deny(true);await assert.rejects(api.getPreviousInterviewScores(h.scope),/unavailable/);
+ h.as(12);assert.deepEqual(await api.getPreviousInterviewScores(h.scope),[],'unfinished reviewer cannot see peers');h.deny(true);await assert.rejects(api.getPreviousInterviewScores(h.scope),/no longer have access/);
 });
 test('D9 options are the union of authorized rows and known rounds without adding access capabilities',()=>{
  const {interviewRoomRoundOptions}=harness().load('lib/interview-entry.ts');

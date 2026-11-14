@@ -112,6 +112,7 @@ export async function performAccountDeletion(
     await tx.corkboardClub.deleteMany({ where: { userId } })
     await tx.userTutorial.deleteMany({ where: { userId } })
     await tx.userAvailability.deleteMany({ where: { userId } })
+    await tx.studentInterestProfile.deleteMany({ where: { userId } })
     await tx.editorDraft.deleteMany({ where: { userId } })
     await tx.calendarFeedToken.deleteMany({ where: { userId } })
     // Push endpoints go so the person's devices stop receiving notifications (deliveries cascade).

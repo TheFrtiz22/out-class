@@ -8,6 +8,7 @@ import { applicationAnswersKey } from "@/lib/student-applications"
 import { QuestionField } from "@/components/applications/question-field"
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement, testRequirementLabels } from "@/lib/test-scores"
+import { validPhone } from "@/lib/phone"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Check } from "@/components/icons"
@@ -72,6 +73,7 @@ export function ApplicationForm({
   })
   const missingProfile = !user?.profile
   const missingScores = !meetsTestRequirement(application.club.testRequirement, user?.profile ?? null)
+  const missingPhone = !!user?.profile && !validPhone(user.profile.phone)
   const dirty = autosave.dirty
   // Follow-up questions appear only after the answer they depend on.
   const visible = visibleQuestionIds(questions, answers)
@@ -167,8 +169,8 @@ export function ApplicationForm({
           <AutosaveStatus save={autosave} />
         </div>
       </div>
-      {(missingProfile || missingScores) && <div className="oc-writing-profile-warning" role="note" aria-label="Missing profile requirements">
-        <p>{missingProfile ? "Complete your shared profile before submitting." : `${testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Add the missing scores to your profile before submitting.`}</p>
+      {(missingProfile || missingScores || missingPhone) && <div className="oc-writing-profile-warning" role="note" aria-label="Missing profile requirements">
+        <p>{missingProfile ? "Complete your shared profile before submitting." : missingPhone ? "Add a phone number to your profile before submitting. Clubs call applicants they accept." : `${testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Add the missing scores to your profile before submitting.`}</p>
         <Button type="button" variant="link" className="h-auto px-0 py-1" disabled={busy} onClick={onProfile}>Update profile</Button>
       </div>}
       {error && (

@@ -36,6 +36,7 @@ model User {
   invitationDeliveries InvitationDelivery[]
   matchedRosterRows RosterImportRow[]
   termsAcceptances TermsAcceptance[]
+  interestProfile StudentInterestProfile?
   disabledAt DateTime? @db.Timestamptz(3)
   id         String    @id @default(uuid())
   email      String    @unique // MUST be @virginia.edu
@@ -91,6 +92,8 @@ model StudentProfile {
   gpa         Float?
   satScore    Int?
   linkedinUrl String?
+  // E.164. Shown only to a club's decision managers for applicants they accept (lib/phone.ts).
+  phone       String?
   bio         String?
   resumeUrl   String? // S3 URL
   headshotUrl String? // S3 URL
@@ -433,6 +436,21 @@ model SavedCampusEvent {
 // ==========================================
 
 // Compact wall-clock declarations, not another scheduling/room model.
+// Optional club-interest survey answers (lib/interest-survey.ts). Private to the student: read only by
+// their own session to rank public directory clubs; never in applicant, club, export or search data.
+model StudentInterestProfile {
+  userId      String    @id
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interests   String[]  @default([])
+  goals       String[]  @default([])
+  weeklyHours String?
+  selectivity String?
+  revision    Int       @default(0)
+  completedAt DateTime?
+  dismissedAt DateTime?
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
 model UserAvailability {
   userId String @id
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -132,7 +132,7 @@ test('overview action: member counts only with member-directory access, scoped t
   const clubId = '00000000-0000-4000-8000-000000000001'
   let access = owner, counts = []
   const model = name => ({ findUniqueOrThrow: async () => ({ id: clubId, name: 'Club', tagline: '' }), findFirst: async () => null, findMany: async () => [], groupBy: async () => [], count: async query => { counts.push([name, query]); return 3 } })
-  const prisma = { club: model('club'), meeting: model('meeting'), taskAssignment: model('taskAssignment'), application: model('application'), interviewBooking: model('interviewBooking'), votingSession: model('votingSession'), clubMember: model('clubMember'), clubInvitation: model('clubInvitation') }
+  const prisma = { club: model('club'), meeting: model('meeting'), taskAssignment: model('taskAssignment'), application: model('application'), interviewBooking: model('interviewBooking'), votingSession: model('votingSession'), clubMember: model('clubMember'), clubInvitation: model('clubInvitation'), $queryRaw: async () => [] }
   const api = load('actions/club-overview.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireClubMembership: async () => ({ membership: access }), requireClubPermission: async () => ({}) }, '@/utils/dashboard-summary': { dashboardSummary: async () => ({}), dashboardReviewQueue: async () => [] } })
   assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3, recent: 3 })
   const [members, invitations, recent] = counts.filter(([name]) => name === 'clubMember' || name === 'clubInvitation')

@@ -1,7 +1,9 @@
 "use server";
 import { dashboardSummary, dashboardReviewQueue, type OverviewView } from "@/utils/dashboard-summary";
 import { z } from "zod";
+import type { AppStatus } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
+import { offerTally } from "@/lib/offer-tally";
 import { requireClubMembership, requireClubPermission } from "@/utils/auth";
 import { hasPermission } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -57,18 +59,19 @@ export async function getClubWorkspaceOverview(clubId: string, view: OverviewVie
           },
         })
       : Promise.resolve(null),
+    // One grouped read serves both the outcome counts and the offer tally (application status x current
+    // offer status), so the overview gains no extra query. Same visibility as before: identity viewers see
+    // every round, review-only viewers anonymous rounds only.
     canReview
-      ? prisma.application.groupBy({
-          by: ["status"],
-          where: {
-            clubId,
-            status: { not: "DRAFTING" },
-            ...(hasPermission(membership, "applicants.identify")
-              ? {}
-              : { round: { anonymousReview: true } }),
-          },
-          _count: { _all: true },
-        })
+      ? prisma.$queryRaw<{ status: AppStatus; offer: string | null; count: number }[]>`
+          SELECT a.status,
+            CASE WHEN i.status = 'PENDING' AND i."expiresAt" <= ${now} THEN 'EXPIRED' ELSE i.status::text END AS offer,
+            COUNT(*)::int AS count
+          FROM "Application" a JOIN "PipelineRound" r ON r.id = a."roundId"
+          LEFT JOIN "ClubInvitation" i ON i."applicationId" = a.id AND i."clubId" = a."clubId"
+          WHERE a."clubId" = ${clubId} AND a.status <> 'DRAFTING'
+            AND (${hasPermission(membership, "applicants.identify")} OR r."anonymousReview")
+          GROUP BY 1, 2`
       : Promise.resolve(null),
     recruitingPart && hasPermission(membership, "interviews.manage")
       ? prisma.interviewBooking.count({ where: { slot: { clubId, startTime: { gte: now, lte: new Date(now.getTime() + 7 * 86400000) } } } })
@@ -104,12 +107,14 @@ export async function getClubWorkspaceOverview(clubId: string, view: OverviewVie
     upcomingInterviews,
     votingSessions,
     members,
-    recruitment:
-      recruitment?.map((row) => ({
-        status: row.status,
-        count: row._count._all,
-      })) ?? null,
+    recruitment: recruitment ? recruitmentCounts(recruitment) : null,
+    offerTally: recruitment ? offerTally(recruitment) : null,
   };
+}
+function recruitmentCounts(rows: { status: AppStatus; count: number }[]) {
+  const counts = new Map<AppStatus, number>();
+  for (const row of rows) counts.set(row.status, (counts.get(row.status) ?? 0) + Number(row.count));
+  return [...counts].map(([status, count]) => ({ status, count }));
 }
 export async function getWorkspaceRounds(clubId: string) {
   z.string().uuid().parse(clubId);
