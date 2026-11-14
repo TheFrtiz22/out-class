@@ -36,6 +36,7 @@ model User {
   invitationDeliveries InvitationDelivery[]
   matchedRosterRows RosterImportRow[]
   termsAcceptances TermsAcceptance[]
+  resumeSummaries ResumeSummary[]
   interestProfile StudentInterestProfile?
   disabledAt DateTime? @db.Timestamptz(3)
   id         String    @id @default(uuid())
@@ -1882,4 +1883,19 @@ model TermsAcceptance {
   acceptedAt     DateTime @default(now())
 
   @@unique([userId, termsVersion, privacyVersion])
+}
+
+/// Cached deterministic section summary of a student's résumé PDF (lib/resume-summary.ts).
+/// Server-only; keyed by the PDF's SHA-256 and the parser version, owned by the résumé's student.
+model ResumeSummary {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentHash   String
+  parserVersion Int
+  summary       Json
+  confidence    Float
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, contentHash, parserVersion])
 }

@@ -12,9 +12,11 @@ import { InterviewResumePlaceholder } from "@/components/interview-resume-placeh
 import { scholarNames } from "@/lib/scholar-status";
 import type { InterviewScope } from "@/lib/interview-access";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ResumeSummaryPanel } from "@/components/resume-summary-panel";
 import { FileText, Maximize2, UserRound, X } from "@/components/icons";
 
+// Page preview inside the Document tab; it opens the full viewer (comments and highlights).
 const ResumePreview = dynamic(() => import("@/components/interview-resume-preview"), { ssr: false, loading: () => <LoadingState label="Preparing résumé preview…" layout="inline" /> });
 
 export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>> }) {
@@ -60,6 +62,8 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
   }, [resource]);
   useEffect(() => { setWarm(false); if (!url) return; const timer = setTimeout(() => setWarm(true), 250); return () => clearTimeout(timer); }, [url]);
   const fallback = useMemo(() => resource && url ? <InterviewResumePlaceholder resource={resource} page={initialPage} /> : <LoadingState label="Loading résumé…" layout="inline" />, [resource, url, initialPage]);
+  // One résumé entry point: the summary (default) and the document, which opens the full viewer.
+  const summaryRequest = useMemo(() => ({ kind: "interview" as const, ...scope, documentId }), [scope, documentId]);
   const name = panel?.profile ? `${panel.profile.firstName} ${panel.profile.lastName}` : "Profile not provided";
   const scholarships = scholarNames(panel?.profile?.scholarStatus);
   return <aside id="interview-context" className="oc-room-applicant min-w-0" aria-label="Applicant panel">
@@ -72,11 +76,15 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
       </div>
       <div className="oc-resume-document">
       {warm && resource && <div hidden aria-hidden="true"><InterviewResumeViewer preloadOnly scope={scope} documentId={documentId} isDemo={isDemoEnabled} resource={resource} onAccessLost={() => {}} /></div>}
-      {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-6 text-muted-foreground" aria-hidden="true" />}
+      {documentId ? <ResumeSummaryPanel name={name} request={summaryRequest} document={<>
+        <div className="oc-resume-summary-document-actions">
+          <Button ref={resumeTrigger} type="button" variant="ghost" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); setOpen(true); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>
+            <Maximize2 className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
+        {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <LoadingState label="Loading résumé…" layout="inline" />}
+      </>} /> : !resumeError && <FileText className="size-6 text-muted-foreground" aria-hidden="true" />}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="ghost" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>
-          <Maximize2 className="size-4" aria-hidden="true" />
-        </Button></DialogTrigger>
         <DialogContent showCloseButton={false} aria-describedby={undefined} className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onEscapeKeyDown={event => { if ((event.target as Element)?.closest('[role="dialog"]')?.querySelector('[data-resume-comment-draft]')) event.preventDefault(); }} onCloseAutoFocus={e => { e.preventDefault(); (openedFromPreview.current ? previewFocus.current : resumeTrigger.current)?.focus(); }}>
           <DialogHeader className="pr-10"><DialogTitle className="text-base font-medium">{name} · Résumé</DialogTitle></DialogHeader>
           <DialogClose asChild><Button type="button" variant="ghost" size="icon" className="absolute right-3 top-3 size-9" aria-label="Close résumé"><X className="size-4" aria-hidden="true" /></Button></DialogClose>

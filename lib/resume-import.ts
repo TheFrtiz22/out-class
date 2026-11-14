@@ -2,6 +2,17 @@ import { z } from "zod"
 import { profileSectionSchema, storagePathSchema, type FullStudentProfile } from "@/lib/student-profile"
 
 export const MAX_RESUME_TEXT = 60_000
+// Shared with the deterministic section summary (lib/resume-summary.ts).
+export const RESUME_MONTHS = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
+export const RESUME_GPA_SOURCE = String.raw`\bGPA\s*[:\-]?\s*(\d+(?:\.\d+)?)\b(?![\d.])`
+/** En and em dash, for ranges like "2024–2025". */
+const RANGE_DASHES = String.fromCharCode(0x2013, 0x2014)
+/** A line that is only a year range, e.g. "May 2024 – Present". */
+export const resumeYearRangeLine = new RegExp(String.raw`^(?:(?:${RESUME_MONTHS})[a-z]*\s+)?(?:19|20)\d{2}\s*[-${RANGE_DASHES}]\s*(?:(?:[A-Za-z]+\s+)?(?:19|20)\d{2}|present|current)$`, "i")
+export const EXPERIENCE_HEADINGS = ["work experience", "professional experience", "experience", "internships", "research", "projects"] as const
+export const OTHER_SECTION_HEADINGS = ["education", "skills", "campus involvement", "activities", "leadership", "volunteering", "awards", "certifications", "interests"] as const
+const headingLine = (names: readonly string[]) => new RegExp(`^(?:${names.join("|")})\\s*:?\\s*$`, "i")
+const experienceHeading = headingLine(EXPERIENCE_HEADINGS), otherHeading = headingLine(OTHER_SECTION_HEADINGS)
 export const resumeFields = ["firstName", "lastName", "highSchool", "major", "gradYear", "gpa", "satScore", "actScore"] as const
 export type ResumeField = typeof resumeFields[number]
 export const resumeLabels: Record<ResumeField, string> = { firstName: "First name", lastName: "Last name", highSchool: "High school", major: "Major", gradYear: "Graduation year", gpa: "GPA", satScore: "SAT", actScore: "ACT composite" }
@@ -65,7 +76,7 @@ export function extractResumeProposal(text: string): ResumeExtraction {
   propose("major", matches(/\bmajor\s*:\s*([^\n|;]{1,200})/gi))
   propose("highSchool", matches(/\bhigh school\s*[:\-]\s*([^\n]{1,200})/gi))
   propose("gradYear", matches(/\b(?:graduation(?:\s+year)?|expected graduation|class of)\s*[:\-]?\s*(?:[A-Za-z]+\s+)?(20\d{2})\b/gi))
-  propose("gpa", matches(/\bGPA\s*[:\-]?\s*(\d+(?:\.\d+)?)\b(?![\d.])/gi))
+  propose("gpa", matches(new RegExp(RESUME_GPA_SOURCE, "gi")))
   const scales = [...text.matchAll(/\bGPA\s*[:\-]?\s*\d+(?:\.\d+)?\s*\/\s*(\d+(?:\.\d+)?)/gi)];
   if (scales.some(match => Number(match[1]) !== 4)) {
     const gpa = fields.find(v => v.field === "gpa")!; gpa.status = "uncertain"; gpa.value = null; gpa.note = "A non-4.0 GPA scale was found. Enter a verified value on the supported scale manually."
@@ -76,11 +87,11 @@ export function extractResumeProposal(text: string): ResumeExtraction {
   let inExperience = false
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
-    if (/^(?:work experience|professional experience|experience|internships|research|projects)\s*:?\s*$/i.test(line)) { inExperience = true; continue }
-    if (/^(?:education|skills|campus involvement|activities|leadership|volunteering|awards|certifications|interests)\s*:?\s*$/i.test(line)) { inExperience = false; continue }
+    if (experienceHeading.test(line)) { inExperience = true; continue }
+    if (otherHeading.test(line)) { inExperience = false; continue }
     if (!inExperience) continue
     const parts = line.split(/\s*[|•]\s*/)
-    if (parts.length === 1 && lines[i + 1] && /^(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+)?(?:19|20)\d{2}\s*[-–—]\s*(?:(?:[A-Za-z]+\s+)?(?:19|20)\d{2}|present|current)$/i.test(lines[i + 2] || "")) {
+    if (parts.length === 1 && lines[i + 1] && resumeYearRangeLine.test(lines[i + 2] || "")) {
       const entry = { title: line, subtitle: lines[i + 1], period: lines[i + 2] }
       if (importExperienceSchema.safeParse([entry]).success && experiences.length < 50) { experiences.push(entry); i += 2 }
       continue

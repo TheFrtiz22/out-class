@@ -1,0 +1,39 @@
+/* One résumé panel: section summary and document (components/resume-summary-panel.tsx). Tokens only. */
+.oc-resume-summary-panel { display: flex; flex-direction: column; gap: .5rem; min-width: 0; width: 100%; }
+/* Tabs are the shared UnderlineTabs (styles/filter-controls.css). */
+.oc-resume-summary-panel .oc-resume-summary-tabs { gap: 1.25rem; }
+.oc-resume-summary-body { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.oc-resume-summary-body:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.oc-resume-summary-document { display: flex; flex-direction: column; min-height: 0; }
+.oc-resume-summary-document[hidden], .oc-resume-summary-body[hidden] { display: none; }
+.oc-resume-summary-note, .oc-resume-summary-error p { font-size: .8125rem; color: var(--muted-foreground); }
+.oc-resume-summary-error { display: grid; gap: .5rem; padding: .75rem 0; }
+.oc-resume-summary { display: grid; gap: 1rem; padding: .25rem .125rem .75rem; }
+.oc-resume-summary-provenance { display: flex; align-items: center; gap: .375rem; font-size: .75rem; color: var(--muted-foreground); }
+.oc-resume-summary-section { display: grid; gap: .5rem; }
+.oc-resume-summary-section > h3 { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.oc-resume-summary-section > ul { display: grid; gap: .75rem; }
+.oc-resume-summary-item { display: grid; gap: .125rem; min-width: 0; }
+.oc-resume-summary-line { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .125rem .75rem; }
+.oc-resume-summary-org { font-size: .875rem; font-weight: 600; color: var(--foreground); overflow-wrap: anywhere; }
+.oc-resume-summary-dates { font-size: .75rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.oc-resume-summary-role { font-size: .8125rem; color: var(--foreground); overflow-wrap: anywhere; }
+.oc-resume-summary-bullets { display: grid; gap: .125rem; margin-top: .25rem; padding-left: 1rem; list-style: disc; font-size: .8125rem; line-height: 1.45; color: var(--muted-foreground); }
+.oc-resume-summary-bullets li { overflow-wrap: anywhere; }
+.oc-resume-summary-metrics { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .375rem; }
+.oc-resume-summary-metrics li { padding: .0625rem .5rem; border: 1px solid var(--border); border-radius: var(--oc-radius-full); font-size: .75rem; line-height: 1.5; color: var(--foreground); background: var(--muted); }
+/* Interview room: same footprint as the former inline preview. */
+.oc-resume-document .oc-resume-summary-body { height: clamp(360px, 65dvh, 760px); }
+.oc-resume-document .oc-resume-summary-document-actions { display: flex; justify-content: flex-end; margin-bottom: .25rem; }
+/* Review dialog: the panel fills the dialog body. */
+.oc-resume-viewer-body .oc-resume-summary-panel { height: 100%; gap: 0; background: var(--card); }
+.oc-resume-viewer-body .oc-resume-summary-tabs { padding: 0 1rem; }
+.oc-resume-viewer-body .oc-resume-summary-body { flex: 1; padding: 1rem 1.25rem; }
+.oc-resume-viewer-body .oc-resume-summary { max-width: 44rem; margin-inline: auto; }
+.oc-resume-viewer-body .oc-resume-summary-document { flex: 1; background: var(--muted); }
+.oc-resume-viewer-body .oc-resume-summary-note { padding: .75rem 1.25rem; }
+.oc-resume-viewer-body [data-state="document-only"] .oc-resume-summary-document { flex: 1; }
+@media (max-width: 639.98px) {
+  .oc-resume-document .oc-resume-summary-body { height: clamp(220px, 42dvh, 360px); }
+  .oc-resume-viewer-body .oc-resume-summary-body { padding: .75rem 1rem; }
+}
