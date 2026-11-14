@@ -124,7 +124,7 @@ async function dismissInterviewInvitationCommand(input: z.infer<typeof inputSche
 }
 
 /** Issues an expiring receipt; no invitation until destination UI confirms arrival. */
-export async function prepareInterviewAdvance(input: z.infer<typeof inputSchema> & { invitationId?: string }) {
+async function prepareInterviewAdvanceCommand(input: z.infer<typeof inputSchema> & { invitationId?: string }) {
   const data = inputSchema.extend({ invitationId: z.string().uuid().optional() }).parse(input); const { user } = await requireAuth();
   await prisma.$transaction(async tx => { const { record } = await collaborationSession(tx, data, user.id); if (!record.completedAt) throw Error("Finish your current review before joining."); }, transactionOptions);
   const workspace = data.invitationId ? null : await getInterviewWorkspace(data.clubId);
@@ -143,7 +143,7 @@ export async function prepareInterviewAdvance(input: z.infer<typeof inputSchema>
   }, transactionOptions);
 }
 
-export async function confirmInterviewAdvance(input: { moveId: string; clientId: string }) {
+async function confirmInterviewAdvanceCommand(input: { moveId: string; clientId: string }) {
   const data = z.object({ moveId: z.string().uuid(), clientId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     let move = await tx.interviewMove.findUniqueOrThrow({ where: { id: data.moveId } });
@@ -191,4 +191,10 @@ export async function leaveInterviewCollaboration(...args: Parameters<typeof lea
 }
 export async function dismissInterviewInvitation(...args: Parameters<typeof dismissInterviewInvitationCommand>) {
   return interviewActionResult(() => dismissInterviewInvitationCommand(...args), "dismissInterviewInvitation");
+}
+export async function prepareInterviewAdvance(...args: Parameters<typeof prepareInterviewAdvanceCommand>) {
+  return interviewActionResult(() => prepareInterviewAdvanceCommand(...args), "prepareInterviewAdvance");
+}
+export async function confirmInterviewAdvance(...args: Parameters<typeof confirmInterviewAdvanceCommand>) {
+  return interviewActionResult(() => confirmInterviewAdvanceCommand(...args), "confirmInterviewAdvance");
 }

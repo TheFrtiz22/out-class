@@ -22,13 +22,14 @@ export function isInterviewAccessDenial(e: unknown) {
   return e instanceof Error && [/^Interview access unavailable/, /^Identified interview unavailable/, /^Current panel assignment or explicit leadership permission required/].some(p => p.test(e.message));
 }
 
-// Room-level denials from collaborationAccess: removed from a booked room's approved panel.
+// Room-level denials from collaborationAccess: removed from a booked room's approved panel; and
+// authorizeQuestionBank's denial (no current assignment in the round) for the room's question library.
 // A recusal (stepping out of this applicant, possibly from another tab) also ends room access.
-const roomAccessDenial = [/^Current room panel approval required/, /^Current room assignment required/];
+const roomAccessDenial = [/^Current room panel approval required/, /^Current room assignment required/, /^Question bank access denied/];
 
 /**
  * actionResult for interview-room actions. Any expected access denial (membership, privacy,
- * panel or booked-room assignment, recusal) becomes one uniform ACCESS_REVOKED refusal, so a viewer
+ * panel or booked-room assignment, question bank, recusal) becomes one uniform ACCESS_REVOKED refusal, so a viewer
  * removed while the room is open gets a typed result instead of a masked 500, and the message
  * does not reveal which check failed. The refusal carries no interview data. Every other
  * error is handled exactly as actionResult does.
