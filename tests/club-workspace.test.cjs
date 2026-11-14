@@ -99,11 +99,17 @@ function setup(permissions = [], isOwner = false) {
         return 2;
       },
     },
-    application: {
-      groupBy: async (args) => {
-        queries.recruitment = args;
-        return [{ status: "SUBMITTED", _count: { _all: 3 } }];
-      },
+    // Outcome counts and the offer tally share one grouped read: (application status, current offer status).
+    $queryRaw: async (strings, ...values) => {
+      queries.recruitment = { sql: strings.join("?"), values };
+      return [
+        { status: "SUBMITTED", offer: null, count: 3 },
+        { status: "ACCEPTED", offer: "ACCEPTED", count: 2 },
+        { status: "ACCEPTED", offer: "PENDING", count: 1 },
+        { status: "ACCEPTED", offer: "EXPIRED", count: 1 },
+        { status: "ACCEPTED", offer: "REVOKED", count: 1 },
+        { status: "REJECTED", offer: "DECLINED", count: 1 },
+      ];
     },
     interviewBooking: { count: async (args) => { queries.interviews = args; return 2; } },
     votingSession: { findMany: async (args) => { queries.voting = args; return [{ id: "session", state: "OPEN" }]; } },
@@ -148,6 +154,7 @@ test("member overview reads personal outstanding work and sends no recruitment o
     result = await h.api.getClubWorkspaceOverview(clubId);
   assert.equal(result.awaitingReview, null);
   assert.equal(result.recruitment, null);
+  assert.equal(result.offerTally, null);
   assert.equal(result.upcomingInterviews, null);
   assert.equal(result.votingSessions, null);
   assert.equal(h.queries.interviews, undefined);
@@ -166,15 +173,24 @@ test("member overview reads personal outstanding work and sends no recruitment o
 test("review-only overview restricts recruitment counts to anonymous rounds and round settings require their own capability", async () => {
   const h = setup(["applications.review"]),
     result = await h.api.getClubWorkspaceOverview(clubId);
-  assert.deepEqual(h.queries.recruitment.where.round, {
-    anonymousReview: true,
-  });
-  assert.deepEqual(result.recruitment, [{ status: "SUBMITTED", count: 3 }]);
-  assert.equal(h.queries.recruitment.include, undefined);
+  // Review-only viewers count anonymous rounds only; the identity flag is a bound parameter, never spliced SQL.
+  assert.match(h.queries.recruitment.sql, /a\."clubId" = \? AND a\.status <> 'DRAFTING'/);
+  assert.match(h.queries.recruitment.sql, /\(\? OR r\."anonymousReview"\)/);
+  assert.match(h.queries.recruitment.sql, /LEFT JOIN "ClubInvitation" i ON i\."applicationId" = a\.id AND i\."clubId" = a\."clubId"/);
+  assert.equal(h.queries.recruitment.values[1], clubId);
+  assert.equal(h.queries.recruitment.values[2], false);
+  assert.doesNotMatch(h.queries.recruitment.sql, /firstName|lastName|email|"StudentProfile"/);
+  assert.deepEqual(result.recruitment, [
+    { status: "SUBMITTED", count: 3 },
+    { status: "ACCEPTED", count: 5 },
+    { status: "REJECTED", count: 1 },
+  ]);
+  // Sent = pending + accepted + declined + expired; revoked offers were never delivered as live offers.
+  assert.deepEqual(result.offerTally, { sent: 5, accepted: 2, awaiting: 1, declined: 1, expired: 1 });
   await assert.rejects(h.api.getWorkspaceRounds(clubId), /Denied/);
   const owner = setup([], true);
   await owner.api.getClubWorkspaceOverview(clubId);
-  assert.equal(owner.queries.recruitment.where.round, undefined);
+  assert.equal(owner.queries.recruitment.values[2], true);
   assert.equal(owner.queries.review.where.task.clubId, clubId);
   assert.equal(owner.queries.interviews.where.slot.clubId, clubId);
   assert.equal(owner.queries.voting.where.clubId, clubId);

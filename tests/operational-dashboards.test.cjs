@@ -92,3 +92,27 @@ test('Club home links into the same club workspace switch views client-side and 
   for(const modifier of [{metaKey:true},{ctrlKey:true},{button:1}]){let modified=0;link.props.onClick({button:0,defaultPrevented:false,preventDefault:()=>modified++,...modifier});assert.equal(modified,0,`${name}: ${JSON.stringify(modifier)} opens normally`)}
  }}finally{Object.assign(globalThis,saved)}
 })
+test('Decisions delivered: accepted of sent offers in words, a bar that only echoes it, a calm line before any offer is sent',()=>{
+ const {overview}=require('./fixtures/club-home/data.cjs'),{offerTally,offerTallySummary}=load('lib/offer-tally.ts')
+ // Sent counts pending, accepted, declined and expired current offers; revoked offers and applications without one do not count.
+ assert.deepEqual(offerTally([{offer:'ACCEPTED',count:2},{offer:'PENDING',count:1},{offer:'DECLINED',count:1},{offer:'EXPIRED',count:1},{offer:'REVOKED',count:4},{offer:null,count:30}]),{sent:5,accepted:2,awaiting:1,declined:1,expired:1})
+ assert.equal(offerTallySummary({sent:20,accepted:12,awaiting:5,declined:2,expired:1}),'12 of 20 offers accepted')
+ assert.equal(offerTallySummary({sent:1,accepted:0,awaiting:1,declined:0,expired:0}),'0 of 1 offer accepted')
+ assert.equal(offerTallySummary({sent:0,accepted:0,awaiting:0,declined:0,expired:0}),null);assert.equal(offerTallySummary(null),null)
+ const mocks={'@/lib/club-colors':require('./helpers/component-module.cjs').loadComponent('lib/club-colors.ts'),react:{useState:v=>[typeof v==='function'?v():v,()=>{}],useEffect(){},useRef:current=>({current}),useMemo:fn=>fn(),useCallback:fn=>fn},'next/dynamic':{__esModule:true,default:()=> 'Lazy'},'next/link':{__esModule:true,default:'a'},'@/components/ui/button':{Button:'button'},'@/components/ui/page-header':{PageHeader:'Header'},'@/components/icons':new Proxy({},{get:(_,key)=>key==='__esModule'?false:String(key)}),'@/components/member-overview':{memberDate:v=>new Date(v).toISOString()},'@/components/product/dashboard-drawer':{DashboardDrawer:'Drawer'},'@/components/product/dashboard-presentation':{DashboardDate:'Date',DashboardLoading:'Loading'},'@/lib/workspace-api':{}}
+ const {RecruitingOverview}=load('components/recruiting-overview.tsx',mocks)
+ const club={id:'00000000-0000-4000-8000-000000000001',name:'Fixture Club'},owner={id:'member',isOwner:true,permissions:[],interviewOffices:[],status:'ACTIVE'}
+ const render=data=>{const hosts=[],walk=n=>{if(Array.isArray(n))return n.forEach(walk);if(!n||typeof n!=='object'||!('props' in n))return;if(n.props.id==='dashboard-outcomes'&&typeof n.type==='function')hosts.card=n;if(typeof n.type==='function')return walk(n.type(n.props));hosts.push(n);for(const value of Object.values(n.props))walk(value)};walk(RecruitingOverview({data}));return hosts}
+ const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):''
+ const card=hosts=>hosts.card&&{props:{children:[hosts.card.props.title,hosts.card.props.children]}}
+ let hosts=render(overview('large',club,owner)),section=card(hosts)
+ assert.ok(section&&hosts.some(n=>n.props.id==='dashboard-outcomes'),'the anchor id stays dashboard-outcomes');assert.match(text(section),/Decisions delivered/);assert.doesNotMatch(text(section),/Outcomes/)
+ assert.match(text(section),/7 of 12 offers accepted/);assert.match(text(section),/3 awaiting response · 1 declined · 1 expired/)
+ const bar=hosts.find(n=>n.type==='progress'&&n.props.max===12);assert.equal(bar.props.value,7);assert.equal(bar.props['aria-label'],'7 of 12 offers accepted')
+ // No offers yet: a calm line, never 0 of 0 and no empty bar.
+ const none=overview('large',club,owner);none.offerTally={sent:0,accepted:0,awaiting:0,declined:0,expired:0};hosts=render(none);section=card(hosts)
+ assert.match(text(section),/No offers sent yet\./);assert.doesNotMatch(text(section),/0 of 0/);assert.ok(!hosts.some(n=>n.type==='progress'&&n.props.max===0))
+ // Viewers without recruitment counts (null from the reader) never get the card.
+ const member={id:'member',isOwner:false,permissions:['interviews.manage'],interviewOffices:[],status:'ACTIVE'},plain=overview('large',club,member)
+ assert.equal(plain.offerTally,null);assert.equal(card(render(plain)),undefined)
+})
