@@ -6,11 +6,19 @@ import { ActionError, actionResult } from "@/lib/action-result"
 import { canConfirmGraduation, confirmedGraduationAt, isAlumniProfile, postGradDetailsSchema, type PostGradDetails } from "@/lib/graduation"
 import { boundedSafeParse } from "@/lib/bounded-input"
 import { shareGraduatePlacement } from "@/utils/graduation"
+import { limitAction } from "@/lib/rate-limit-action"
+import { RATE_LIMITS, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit-core"
+
+/** Confirmation and later edits can change public placements, so each account is rate limited. */
+async function limitDetails(userId: string) {
+  if (!(await limitAction(RATE_LIMITS.alumniDetails, { userId })).ok) throw new ActionError(RATE_LIMIT_MESSAGE, "RATE_LIMITED")
+}
 
 /** Home prompt answers (lib/graduation.ts). Only the account holder answers; a support session cannot. */
-async function ownProfile(work: (tx: AppTransactionClient, userId: string) => Promise<string[] | void>) {
+async function ownProfile(work: (tx: AppTransactionClient, userId: string) => Promise<string[] | void>, options: { limited?: boolean } = {}) {
   const { user, impersonation } = await requireAuth()
   if (impersonation) throw new ActionError("Only the account holder can answer this.", "FORBIDDEN")
+  if (options.limited) await limitDetails(user.id)
   const clubIds = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     return work(tx, user.id)
@@ -45,14 +53,16 @@ async function confirmGraduationCommand(input: unknown = {}) {
     await tx.auditLog.create({ data: { actorId: userId, targetId: profile.id, action: "student.graduation.confirm", details: { gradYear: profile.gradYear, graduatedAt: graduatedAt.toISOString(), employer: !!details.employer, showInAlumniList: details.showInAlumniList, shareEmployer: details.shareEmployer } } })
     // Same transaction: the employer name (never the student's) joins each club's placements.
     return (await shareGraduatePlacement(tx, userId, now)).clubIds
-  })
+  }, { limited: true })
   return result
 }
 
 /**
  * Settings: edit the employer, role and alumni privacy choices later. Available once the student has
- * confirmed graduation or is alumni. A new employer is shared to their clubs' placements once
- * (utils/graduation.ts); turning sharing off never removes names already listed (they are anonymous).
+ * confirmed graduation or is alumni. Each club receives the graduate's employer at most once, ever
+ * (utils/graduation.ts shareGraduatePlacement): a later edit only reaches clubs that never received
+ * one, and otherwise changes the profile and the Alumni tab only. Turning sharing off never removes
+ * names already listed (they are anonymous).
  */
 async function saveAlumniDetailsCommand(input: unknown) {
   const details = parseDetails(input)
@@ -63,7 +73,7 @@ async function saveAlumniDetailsCommand(input: unknown) {
     await tx.studentProfile.update({ where: { id: profile.id }, data: detailsData(details) })
     await tx.auditLog.create({ data: { actorId: userId, targetId: profile.id, action: "student.alumni.details", details: { employer: !!details.employer, showInAlumniList: details.showInAlumniList, shareEmployer: details.shareEmployer } } })
     return (await shareGraduatePlacement(tx, userId)).clubIds
-  })
+  }, { limited: true })
   return { saved: true }
 }
 

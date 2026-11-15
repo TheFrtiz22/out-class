@@ -27,7 +27,7 @@ export function AlumniDetailsFields({ value, onChange, disabled, focusOnMount }:
         <Input id={`${id}-role`} value={value.role} maxLength={POST_GRAD_TEXT_MAX} autoComplete="organization-title" disabled={disabled} onChange={e => set({ role: e.target.value })} /></div>
     </div>
     <label className="flex min-h-11 items-start gap-3 text-sm"><Checkbox className="mt-0.5" checked={value.shareEmployer} disabled={disabled} onCheckedChange={v => set({ shareEmployer: v === true })} />
-      <span>Add the company name (not your name) to my clubs’ “Where members go” list</span></label>
+      <span>Add the company name (not your name) to my clubs’ “Where members go” list <span className="block text-xs text-muted-foreground">Added once to each club, without your name. In a small club, members may be able to tell it’s you. You can turn this off.</span></span></label>
     <label className="flex min-h-11 items-start gap-3 text-sm"><Checkbox className="mt-0.5" checked={value.showInAlumniList} disabled={disabled} onCheckedChange={v => set({ showInAlumniList: v === true })} />
       <span>Show me in my clubs’ alumni list <span className="block text-xs text-muted-foreground">Current members see your name, email, employer, role and class year.</span></span></label>
   </div>

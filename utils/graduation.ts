@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client"
 import type { AppTransactionClient } from "@/utils/prisma"
-import { ALUMNI_REFUSALS, ALUMNI_REFUSED, graduationDefaultAt, graduationYearChange, isAlumniProfile, lastDefaultedGradYear, mergePlacement, placementKey, type AlumniAction } from "@/lib/graduation"
+import { ALUMNI_REFUSALS, ALUMNI_REFUSED, graduationDefaultAt, graduationYearChange, isAlumniProfile, lastDefaultedGradYear, mergePlacement, placementListed, type AlumniAction } from "@/lib/graduation"
 import { ActionError } from "@/lib/action-result"
 
 /** Audit actor for scheduled lifecycle changes; not a User id. */
@@ -150,36 +150,47 @@ export async function alumniRefusal(db: Pick<AppTransactionClient, "studentProfi
 /** Audit action for an employer added to a club's "Where members go" list. The row names no person. */
 export const ALUMNI_PLACEMENT_AUDIT = "club.placement.alumni"
 const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value)
+/** Bound on alumniPlacementClubIds (CHECK in 20261115180000_alumni_employer). */
+export const PLACEMENT_CLUBS_MAX = 1000
 
 /**
- * Adds a graduate's employer (company name only) to the "Where members go" placements of every
- * club they are on the roster of (current or alumni), inside the caller's transaction. Runs when the
+ * Adds a graduate's employer (company name only) to the "Where members go" placements of the clubs
+ * they are on the roster of (current or alumni), inside the caller's transaction. Runs when the
  * student has confirmed graduation or is alumni, shares placements (alumniPlacementShare) and named
- * an employer. Idempotent: postGradPlacementKey records the employer last shared, so a repeat save,
- * or a leader removing the entry, never re-adds the same name; a different employer is added once.
+ * an employer.
+ *
+ * At most once per graduate per club, ever: StudentProfile.alumniPlacementClubIds records each club
+ * that received (or already listed) the graduate's employer, and those clubs are skipped from then
+ * on. So a repeat save, a later employer change (A, then B, then A again) or a leader removing the
+ * entry never adds anything to that club again; later edits change only the profile and the Alumni
+ * tab. A suspended club is skipped and not recorded. A club whose list is full is not recorded
+ * either (nothing was added; leader entries are never evicted).
+ *
  * The placement and its audit row carry no identity: the actor is the system actor and the details
  * hold only the company name. Clubs are locked in id order. Leaders edit or remove entries in the
  * club profile editor, whose snapshot check sees this change.
  */
 export async function shareGraduatePlacement(tx: Pick<AppTransactionClient, "$queryRaw" | "studentProfile" | "clubMember" | "club" | "auditLog">, userId: string, now = new Date()) {
-  const profile = await tx.studentProfile.findUnique({ where: { userId }, select: { id: true, graduatedAt: true, graduationConfirmedAt: true, postGradEmployer: true, alumniPlacementShare: true, postGradPlacementKey: true } })
+  const profile = await tx.studentProfile.findUnique({ where: { userId }, select: { id: true, graduatedAt: true, graduationConfirmedAt: true, postGradEmployer: true, alumniPlacementShare: true, alumniPlacementClubIds: true } })
   if (!profile?.postGradEmployer || !profile.alumniPlacementShare) return { clubIds: [] as string[] }
   if (!profile.graduationConfirmedAt && !isAlumniProfile(profile, now)) return { clubIds: [] as string[] }
-  const key = placementKey(profile.postGradEmployer)
-  if (profile.postGradPlacementKey === key) return { clubIds: [] as string[] }
-  const memberships = await tx.clubMember.findMany({ where: { userId, status: "ACTIVE" }, select: { clubId: true }, orderBy: { clubId: "asc" } })
-  const clubIds: string[] = []
+  const shared = new Set(profile.alumniPlacementClubIds)
+  const memberships = await tx.clubMember.findMany({ where: { userId, status: "ACTIVE", clubId: { notIn: [...shared] } }, select: { clubId: true }, orderBy: { clubId: "asc" } })
+  const clubIds: string[] = [], recorded: string[] = []
   for (const { clubId } of memberships) {
+    if (shared.has(clubId) || shared.size + recorded.length >= PLACEMENT_CLUBS_MAX) continue
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`
-    const club = await tx.club.findUnique({ where: { id: clubId }, select: { marketing: true } })
-    if (!club) continue
+    const club = await tx.club.findUnique({ where: { id: clubId }, select: { marketing: true, suspendedAt: true } })
+    // Suspended clubs take no club writes (lib/club-suspension.ts); the graduate's save still succeeds.
+    if (!club || club.suspendedAt) continue
     const marketing = isRecord(club.marketing) ? club.marketing : {}
+    if (placementListed(marketing.placements, profile.postGradEmployer)) { recorded.push(clubId); continue }
     const placements = mergePlacement(marketing.placements, profile.postGradEmployer)
     if (!placements) continue
     await tx.club.update({ where: { id: clubId }, data: { marketing: { ...marketing, placements } as Prisma.InputJsonObject } })
     await tx.auditLog.create({ data: { actorId: GRADUATION_JOB_ACTOR, action: ALUMNI_PLACEMENT_AUDIT, clubId, targetId: clubId, details: { source: "graduation", placement: placements[placements.length - 1] } } })
-    clubIds.push(clubId)
+    clubIds.push(clubId); recorded.push(clubId)
   }
-  await tx.studentProfile.update({ where: { id: profile.id }, data: { postGradPlacementKey: key } })
+  if (recorded.length) await tx.studentProfile.update({ where: { id: profile.id }, data: { alumniPlacementClubIds: { push: recorded } } })
   return { clubIds }
 }

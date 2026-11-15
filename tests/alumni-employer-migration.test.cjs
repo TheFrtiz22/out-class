@@ -1,5 +1,5 @@
 // Alumni employer migration on PGlite over the full chain: nullable bounded text columns, two
-// default-on preferences, existing rows unchanged, no browser-role access, deletion still cascades.
+// default-on preferences, a bounded shared-club list (empty by default), existing rows unchanged, no browser-role access, deletion still cascades.
 const { test } = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), { PGlite } = require('@electric-sql/pglite')
 
 const NAME = '20261115180000_alumni_employer'
@@ -23,21 +23,26 @@ test('alumni employer migration: additive, bounded, default-on choices, server-o
     for (const n of names.filter(n => n >= NAME)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
 
     const columns = (await db.query(`SELECT column_name, is_nullable, column_default, data_type FROM information_schema.columns
-      WHERE table_name='StudentProfile' AND column_name IN ('postGradEmployer','postGradRole','postGradPlacementKey','alumniDirectoryVisible','alumniPlacementShare') ORDER BY 1`)).rows
-    assert.deepEqual(columns.map(c => [c.column_name, c.is_nullable, c.column_default, c.data_type]), [
-      ['alumniDirectoryVisible', 'NO', 'true', 'boolean'],
-      ['alumniPlacementShare', 'NO', 'true', 'boolean'],
-      ['postGradEmployer', 'YES', null, 'text'],
-      ['postGradPlacementKey', 'YES', null, 'text'],
-      ['postGradRole', 'YES', null, 'text'],
+      WHERE table_name='StudentProfile' AND column_name IN ('postGradEmployer','postGradRole','alumniPlacementClubIds','alumniDirectoryVisible','alumniPlacementShare') ORDER BY 1`)).rows
+    assert.deepEqual(columns.map(c => [c.column_name, c.is_nullable, c.data_type]), [
+      ['alumniDirectoryVisible', 'NO', 'boolean'],
+      ['alumniPlacementClubIds', 'NO', 'ARRAY'],
+      ['alumniPlacementShare', 'NO', 'boolean'],
+      ['postGradEmployer', 'YES', 'text'],
+      ['postGradRole', 'YES', 'text'],
     ])
-    assert.deepEqual((await db.query(`SELECT "postGradEmployer","postGradRole","postGradPlacementKey","alumniDirectoryVisible","alumniPlacementShare" FROM "StudentProfile"`)).rows,
-      [{ postGradEmployer: null, postGradRole: null, postGradPlacementKey: null, alumniDirectoryVisible: true, alumniPlacementShare: true }], 'existing rows: nothing backfilled, choices default on')
+    assert.deepEqual([columns[0], columns[2], columns[3], columns[4]].map(c => c.column_default), ['true', 'true', null, null])
+    assert.match(String(columns[1].column_default), /ARRAY\[\]|'\{\}'/, 'shared-club list defaults to empty')
+    assert.deepEqual((await db.query(`SELECT "postGradEmployer","postGradRole","alumniPlacementClubIds","alumniDirectoryVisible","alumniPlacementShare" FROM "StudentProfile"`)).rows,
+      [{ postGradEmployer: null, postGradRole: null, alumniPlacementClubIds: [], alumniDirectoryVisible: true, alumniPlacementShare: true }], 'existing rows: nothing backfilled, choices default on, nothing shared')
 
-    await db.exec(`UPDATE "StudentProfile" SET "postGradEmployer"='${'x'.repeat(100)}', "postGradRole"='Analyst', "postGradPlacementKey"='x' WHERE id='p1'`)
-    for (const [column, value] of [['postGradEmployer', 'x'.repeat(101)], ['postGradEmployer', ''], ['postGradRole', 'y'.repeat(101)], ['postGradPlacementKey', '']])
+    await db.exec(`UPDATE "StudentProfile" SET "postGradEmployer"='${'x'.repeat(100)}', "postGradRole"='Analyst', "alumniPlacementClubIds"=ARRAY['c1','c2'] WHERE id='p1'`)
+    for (const [column, value] of [['postGradEmployer', 'x'.repeat(101)], ['postGradEmployer', ''], ['postGradRole', 'y'.repeat(101)]])
       await assert.rejects(db.exec(`UPDATE "StudentProfile" SET "${column}"='${value}' WHERE id='p1'`), new RegExp(`StudentProfile_${column}_length`), `${column} ${value.length}`)
-    await assert.rejects(db.exec(`UPDATE "StudentProfile" SET "alumniDirectoryVisible"=NULL WHERE id='p1'`), /null/i)
+    await db.exec(`UPDATE "StudentProfile" SET "alumniPlacementClubIds"=array_fill('c'::text, ARRAY[1000]) WHERE id='p1'`)
+    await assert.rejects(db.exec(`UPDATE "StudentProfile" SET "alumniPlacementClubIds"=array_fill('c'::text, ARRAY[1001]) WHERE id='p1'`), /StudentProfile_alumniPlacementClubIds_size/)
+    for (const column of ['alumniDirectoryVisible', 'alumniPlacementClubIds'])
+      await assert.rejects(db.exec(`UPDATE "StudentProfile" SET "${column}"=NULL WHERE id='p1'`), /null/i, column)
 
     assert.deepEqual((await db.query(`SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name='StudentProfile' ORDER BY 1,2`)).rows, grantsBefore, 'grants unchanged')
     for (const role of ['anon', 'authenticated'])
