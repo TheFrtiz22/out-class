@@ -94,6 +94,16 @@ model StudentProfile {
   graduatedAt                 DateTime?
   graduationConfirmedAt       DateTime?
   graduationPromptDismissedAt DateTime?
+  // After graduation (lib/graduation.ts postGradDetailsSchema): optional employer and role, each at
+  // most 100 characters. The employer name alone is added to the "Where members go" placements of
+  // the student's clubs (utils/graduation.ts shareGraduatePlacement) unless alumniPlacementShare is
+  // off; postGradPlacementKey is the employer last added, so the merge is idempotent. Current
+  // members of their clubs see them in the club's Alumni tab unless alumniDirectoryVisible is off.
+  postGradEmployer       String?
+  postGradRole           String?
+  postGradPlacementKey   String?
+  alumniDirectoryVisible Boolean @default(true)
+  alumniPlacementShare   Boolean @default(true)
   gpa         Float?
   satScore    Int?
   linkedinUrl String?

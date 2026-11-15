@@ -22,6 +22,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { ActionError, actionResult } from "@/lib/action-result";
+import { alumniRefusal } from "@/utils/graduation";
 const eventSelect = {
   id: true,
   clubId: true,
@@ -492,6 +493,11 @@ export async function setCampusEventRsvp(input: unknown): Promise<RsvpResult> {
       .strict()
       .parse(input),
     { user } = await requireAuth();
+  // Alumni cannot RSVP, public events included; cancelling an earlier RSVP stays available.
+  if (d.going) {
+    const refusal = await alumniRefusal(prisma, user.id, "rsvp");
+    if (refusal) return { ok: false, error: refusal };
+  }
   // Every RSVP for one event waits on its row lock (capacity is exact). A short
   // lock timeout turns a pile-up into a prompt "try again" instead of a 5 s hang.
   let result: { going: boolean; count: number };

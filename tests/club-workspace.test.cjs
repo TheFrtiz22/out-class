@@ -209,7 +209,7 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
 test("product modes preserve scoped URLs and limit manager destinations by capability", () => {
   const { managerNavigation, personalMode } = load("lib/product-navigation.ts");
   const ids = (permissions, mode) => managerNavigation({ permissions }, clubId, mode).map(item => item.id);
-  assert.deepEqual(ids(["members.manage"], "club"), ["overview", "calendar", "tasks", "members", "settings"]);
+  assert.deepEqual(ids(["members.manage"], "club"), ["overview", "calendar", "tasks", "members", "alumni", "settings"]);
   assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "interviews"]);
   assert.deepEqual(ids(["applications.review", "decisions.vote"], "recruiting"), ["overview", "applicants", "interviews", "decisions"]);
   assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews"]);

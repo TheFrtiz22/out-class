@@ -75,6 +75,7 @@ export const privacyPolicy: LegalDocument = {
       "Account information: your name, your university email address, your university computing ID, sign-in credentials (passwords are stored by our authentication provider in hashed form) and, if you use Microsoft sign-in, the identifiers your university account provides.",
       "Profile information you provide: major, expected graduation year, a phone number and, if you choose to add them, a photograph (headshot), a résumé, a LinkedIn profile link, a short bio, prior experience, high school, transfer-student status, scholar program, gender, pronouns, grade point average (GPA), SAT score and ACT composite and section scores. GPA and test scores are self-reported; we do not obtain them from your university or a testing agency.",
       "Optional interests you choose in the club-interest survey, used only to suggest clubs to you; clubs cannot see them.",
+      "If you tell us when you graduate, optionally where you are going to work and your role or title, and your choices about sharing them with your former clubs.",
       "Application information: answers, files and other materials you submit to a Club, interview availability and bookings, offer responses, and the status of your applications.",
       "Recruiting records created by Clubs: interview schedules, evaluations, notes, comments on résumés, scores, votes and decisions recorded by a Club's authorized members about applications submitted to that Club.",
       "Club and membership information: memberships and roles, Club profiles, events, RSVPs and saved events, announcements, messages between you and a Club, tasks and task submissions, meeting attendance recorded by QR check-in, and participation in live voting.",
@@ -99,6 +100,8 @@ export const privacyPolicy: LegalDocument = {
       "Your application answers and files for that Club, your interview bookings, and your attendance at that Club's events and meetings.",
       "Your university email address and computing ID, in the Club's member roster and in applicant lists that its leaders export for their records.",
       "Evaluations, notes, scores and votes are visible to the Club's members according to the roles the Club assigns. They are not shown to applicants.",
+      "After you graduate, your name, university email address, employer, role and graduation year are shown to the current members of the Clubs you were a member of, in each Club's alumni list, unless you turn off \"Show me in my clubs' alumni list\" in your profile. Your phone number is not shown there.",
+      "If you add an employer, its name (without your name or any other detail about you) is added to the public \"Where members go\" list on the profile of each Club you were a member of, unless you turn that off. A Club's leaders can edit or remove entries on that list, and turning the setting off later does not remove a name already listed.",
     ] },
     { heading: "5. How we disclose personal information", paragraphs: ["We do not sell personal information and we do not share it for cross-context behavioral advertising. We disclose personal information only as follows:"], list: [
       "To Clubs you apply to or join, as described in section 4.",

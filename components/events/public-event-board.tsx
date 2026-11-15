@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Check, ChevronDown, Rows3, StickyNote } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
+import { isAlumniProfile } from "@/lib/graduation";
 import {
   getPublicCorkboard,
   getPublicCampusEvent,
@@ -423,6 +424,8 @@ export function RsvpControls({
   identity: string;
   onChanged: (count: number) => void;
 }) {
+  // Alumni accounts cannot RSVP (the server refuses too); an earlier RSVP can still be cancelled.
+  const alumni = isAlumniProfile(useAuth().user?.profile);
   const [going, setGoing] = useState(false),
     [loading, setLoading] = useState(!!identity),
     [busy, setBusy] = useState(false),
@@ -492,6 +495,8 @@ export function RsvpControls({
         </Link>
       </Button>
     );
+  if (alumni && !going && !loading)
+    return <p className="text-sm text-muted-foreground">Alumni accounts can’t RSVP.</p>;
   return (
     <div className="space-y-2" aria-busy={busy || loading} data-saving={busy}>
       {going ? (

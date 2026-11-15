@@ -22,6 +22,8 @@ import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} 
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 import {lockPresentedSlide,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
 import { boundedParse } from "@/lib/bounded-input";
+import { alumniRefusal } from "@/utils/graduation";
+import { ALUMNI_REFUSED } from "@/lib/graduation";
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -181,6 +183,9 @@ async function readLivePresentation(input:unknown) {
 
 export async function castLiveVotingBallot(input:unknown) {
   const d=roomBallotSchema.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review","decisions.vote"]);
+  // Alumni cannot vote (lib/graduation.ts), even a graduate whose ownership the graduation job retained.
+  const alumni=await alumniRefusal(prisma,user.id,"vote");
+  if(alumni)return {ok:false as const,code:ALUMNI_REFUSED,message:alumni};
   return domainResult(()=>clubWriteTransaction(async tx=>{
     // Ballots in one session still serialize on the session row (loadVotingRoom write
     // lock); the shared club lock lets voters' authorization run concurrently.

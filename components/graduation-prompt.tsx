@@ -10,12 +10,15 @@ import { confirmGraduation, dismissGraduationPrompt } from "@/actions/graduation
 import { unwrapAction } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { showGraduationPrompt } from "@/lib/graduation"
+import { AlumniDetailsFields, alumniDetailsInput, emptyAlumniDetails } from "@/components/alumni-details-fields"
 
 /** Home, April–July of the student's graduation year (lib/graduation.ts). Server actions re-check. */
 export function GraduationPrompt({ now }: { now: Date }) {
   const { user, refreshUser } = useAuth(), demo = useDemoMode()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  // "Yes" opens a second step: where they are going to work (optional) and the alumni choices.
+  const [details, setDetails] = useState<typeof emptyAlumniDetails | null>(null)
   // Live accounts only: Demo Mode has no server profile to answer for.
   if (demo.isDemoEnabled || !user || user.impersonating || !showGraduationPrompt(user.profile, now)) return null
   async function run(action: () => Promise<unknown>) {
@@ -27,10 +30,17 @@ export function GraduationPrompt({ now }: { now: Date }) {
   return <DashboardCard id="home-graduation-title" title="Graduating this spring?" className="oc-home-graduation"
     aside={<Button variant="ghost" size="icon" disabled={busy} aria-label="Dismiss graduation question" onClick={() => void run(dismissGraduationPrompt)}><X className="size-4" aria-hidden="true" /></Button>}>
     <p className="text-sm text-muted-foreground">Your account stays as an alumni account from Aug 1, with your profile and history. Clubs list you as alumni.</p>
-    <div className="mt-3 flex flex-wrap gap-2">
-      <Button size="sm" disabled={busy} onClick={() => void run(confirmGraduation)}>Yes, I’m graduating</Button>
+    {details ? <form className="mt-3 space-y-3" aria-label="Where are you going to work?" onSubmit={e => { e.preventDefault(); void run(() => confirmGraduation(alumniDetailsInput(details))) }}>
+      <p className="text-sm font-medium">Where are you going to work?</p>
+      <AlumniDetailsFields value={details} onChange={setDetails} disabled={busy} focusOnMount />
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" type="submit" disabled={busy}>Confirm graduation</Button>
+        <Button size="sm" type="button" variant="ghost" disabled={busy} onClick={() => setDetails(null)}>Back</Button>
+      </div>
+    </form> : <div className="mt-3 flex flex-wrap gap-2">
+      <Button size="sm" disabled={busy} onClick={() => setDetails(emptyAlumniDetails)}>Yes, I’m graduating</Button>
       <EditStudentProfileDialog section="education" onSaved={() => void refreshUser()} trigger={<Button size="sm" variant="outline" disabled={busy}>Update my year</Button>} />
-    </div>
+    </div>}
     {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
   </DashboardCard>
 }

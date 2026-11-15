@@ -1,5 +1,6 @@
+import type { Prisma } from "@prisma/client"
 import type { AppTransactionClient } from "@/utils/prisma"
-import { graduationDefaultAt, graduationYearChange, lastDefaultedGradYear } from "@/lib/graduation"
+import { ALUMNI_REFUSALS, ALUMNI_REFUSED, graduationDefaultAt, graduationYearChange, isAlumniProfile, lastDefaultedGradYear, mergePlacement, placementKey, type AlumniAction } from "@/lib/graduation"
 import { ActionError } from "@/lib/action-result"
 
 /** Audit actor for scheduled lifecycle changes; not a User id. */
@@ -131,3 +132,54 @@ export async function applyGraduationYearChange(tx: Pick<AppTransactionClient, "
 
 /** What a restored membership becomes: a current member with no leadership. */
 export const RESTORED_MEMBER = { isOwner: false, accessRole: "MEMBER" as const, role: "GENERAL_MEMBER" as const, permissions: [] as string[], interviewOffices: [] as string[], title: null, interviewerEligible: null }
+
+/**
+ * Refuses an active feature (apply, RSVP, check-in, vote, join) for an alumni account with a
+ * friendly ActionError (lib/graduation.ts ALUMNI_REFUSALS). Reads the caller's own profile only.
+ */
+export async function assertNotAlumni(db: Pick<AppTransactionClient, "studentProfile">, userId: string, action: AlumniAction, now = new Date()) {
+  const refusal = await alumniRefusal(db, userId, action, now)
+  if (refusal) throw new ActionError(refusal, ALUMNI_REFUSED)
+}
+/** The refusal message for an alumni account, or null for a current student (or no profile). */
+export async function alumniRefusal(db: Pick<AppTransactionClient, "studentProfile">, userId: string, action: AlumniAction, now = new Date()) {
+  const profile = await db.studentProfile.findUnique({ where: { userId }, select: { graduatedAt: true } })
+  return isAlumniProfile(profile, now) ? ALUMNI_REFUSALS[action] : null
+}
+
+/** Audit action for an employer added to a club's "Where members go" list. The row names no person. */
+export const ALUMNI_PLACEMENT_AUDIT = "club.placement.alumni"
+const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value)
+
+/**
+ * Adds a graduate's employer (company name only) to the "Where members go" placements of every
+ * club they are on the roster of (current or alumni), inside the caller's transaction. Runs when the
+ * student has confirmed graduation or is alumni, shares placements (alumniPlacementShare) and named
+ * an employer. Idempotent: postGradPlacementKey records the employer last shared, so a repeat save,
+ * or a leader removing the entry, never re-adds the same name; a different employer is added once.
+ * The placement and its audit row carry no identity: the actor is the system actor and the details
+ * hold only the company name. Clubs are locked in id order. Leaders edit or remove entries in the
+ * club profile editor, whose snapshot check sees this change.
+ */
+export async function shareGraduatePlacement(tx: Pick<AppTransactionClient, "$queryRaw" | "studentProfile" | "clubMember" | "club" | "auditLog">, userId: string, now = new Date()) {
+  const profile = await tx.studentProfile.findUnique({ where: { userId }, select: { id: true, graduatedAt: true, graduationConfirmedAt: true, postGradEmployer: true, alumniPlacementShare: true, postGradPlacementKey: true } })
+  if (!profile?.postGradEmployer || !profile.alumniPlacementShare) return { clubIds: [] as string[] }
+  if (!profile.graduationConfirmedAt && !isAlumniProfile(profile, now)) return { clubIds: [] as string[] }
+  const key = placementKey(profile.postGradEmployer)
+  if (profile.postGradPlacementKey === key) return { clubIds: [] as string[] }
+  const memberships = await tx.clubMember.findMany({ where: { userId, status: "ACTIVE" }, select: { clubId: true }, orderBy: { clubId: "asc" } })
+  const clubIds: string[] = []
+  for (const { clubId } of memberships) {
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`
+    const club = await tx.club.findUnique({ where: { id: clubId }, select: { marketing: true } })
+    if (!club) continue
+    const marketing = isRecord(club.marketing) ? club.marketing : {}
+    const placements = mergePlacement(marketing.placements, profile.postGradEmployer)
+    if (!placements) continue
+    await tx.club.update({ where: { id: clubId }, data: { marketing: { ...marketing, placements } as Prisma.InputJsonObject } })
+    await tx.auditLog.create({ data: { actorId: GRADUATION_JOB_ACTOR, action: ALUMNI_PLACEMENT_AUDIT, clubId, targetId: clubId, details: { source: "graduation", placement: placements[placements.length - 1] } } })
+    clubIds.push(clubId)
+  }
+  await tx.studentProfile.update({ where: { id: profile.id }, data: { postGradPlacementKey: key } })
+  return { clubIds }
+}

@@ -187,6 +187,10 @@ export async function startClubApplication(clubId: string): Promise<{ applicatio
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
     const existing = await currentApplication(tx, user.id, clubId);
     if (existing) return { applicationId: existing.id };
+    // Alumni keep their application history but cannot start a new one (lib/graduation.ts).
+    const { alumniRefusal } = await import("@/utils/graduation");
+    const alumni = await alumniRefusal(tx, user.id, "apply");
+    if (alumni) return { applicationId: null, unavailable: alumni };
     await assertClubOperational(tx, clubId);
     const club = await tx.club.findUnique({
       where: { id: clubId },
