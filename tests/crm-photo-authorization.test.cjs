@@ -160,7 +160,7 @@ test('summary database allowlist excludes detail/offer/member content and reads 
  const f=fixture();await f.crm.getClubPipelineList(clubId);const selected=f.state.pipelineSelect;
  assert.deepEqual(Object.keys(selected).sort(),['evaluations','id','interviewAssignments','round','roundId','status','student','studentId']);
  assert.deepEqual(selected.evaluations,{where:{submittedAt:{not:null}},select:{interviewerId:true,roundId:true,submittedAt:true,score:true}});
- assert.deepEqual(selected.interviewAssignments,{where:{revokedAt:null},select:{memberId:true,roundId:true,member:{select:{status:true,isOwner:true,permissions:true}}}});
+ assert.deepEqual(selected.interviewAssignments,{where:{revokedAt:null},select:{memberId:true,roundId:true,member:{select:{status:true,alumniSince:true,isOwner:true,permissions:true}}}});
  assert.deepEqual(selected.student.select.studentProfile.select,{firstName:true,lastName:true,major:true,gradYear:true,transferStudent:true,gpa:true,satScore:true,actScore:true});
  assert.deepEqual(selected.round,{select:{anonymousReview:true}});
  await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);

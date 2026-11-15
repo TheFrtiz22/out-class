@@ -1,7 +1,7 @@
 import { getSessionUser } from "@/utils/auth"
 import { prisma } from "@/utils/prisma"
 import { isUvaEmail } from "@/lib/auth"
-import { hasWorkspace } from "@/lib/permissions"
+import { hasWorkspace, activeMemberWhere } from "@/lib/permissions"
 
 /** Public authentication entries never infer platform access or grant permissions. */
 export async function getAuthEntryAccount() {
@@ -13,7 +13,7 @@ export async function getAuthEntryAccount() {
       disabledAt: true,
       studentProfile: { select: { id: true } },
       memberships: {
-        where: { status: "ACTIVE", club: { suspendedAt: null } },
+        where: { ...activeMemberWhere, club: { suspendedAt: null } },
         orderBy: { clubId: "asc" },
         select: { clubId: true, status: true, isOwner: true, permissions: true, interviewOffices: true },
       },

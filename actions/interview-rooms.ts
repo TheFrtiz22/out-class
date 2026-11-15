@@ -9,7 +9,7 @@ import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
-import { hasPermission } from "@/lib/permissions"
+import { hasPermission, activeMemberWhere } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { roomInputSchema, roomTimesInputSchema, roomTimeRemovalSchema, slotHasInterviewers, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
@@ -58,7 +58,7 @@ export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const [club, rounds, members, rooms, bookings, cycles] = await Promise.all([
     prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true } }),
     prisma.pipelineRound.findMany({ where: { clubId, archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true, configuration: true, type: true, bookingPublishedAt: true, bookingPaused: true, bookingRevision: true, bookingCycleId: true, bookingAllowCancellation: true, bookingAllowRescheduling: true } }),
-    prisma.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
+    prisma.clubMember.findMany({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
     prisma.interviewRoom.findMany({ where: { clubId }, include: roomInclude, orderBy: { createdAt: "desc" } }),
     prisma.interviewBooking.findMany({ where: { slot: { clubId, roomId: { not: null } } }, include: { slot: true, round: { select: { anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } }),
     prisma.recruitmentCycle.findMany({ where: { clubId, archivedAt: null }, select: { id: true, name: true }, orderBy: { createdAt: "desc" } }),
@@ -75,7 +75,7 @@ async function createInterviewRoomCommand(raw: RoomInput) {
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null } })
     if (!round) throw new ActionError("Choose a recruitment round from this club.")
     const panelIds = [...new Set(input.panelMemberIds)]
-    if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } }) !== panelIds.length) throw new ActionError("Choose interviewers who belong to this club.")
+    if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, ...activeMemberWhere, user: { disabledAt: null } } }) !== panelIds.length) throw new ActionError("Choose interviewers who belong to this club.")
     const existing = await tx.interviewSlot.findMany({ where: { clubId: input.clubId, startTime: { lt: new Date(+slots[slots.length - 1].endTime + 3600000) }, endTime: { gt: new Date(+slots[0].startTime - 3600000) }, OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }, include: { room: true } })
     for (const slot of slots) for (const other of existing) {
       // Names are free-text labels; the location identifies the physical room.
@@ -111,7 +111,7 @@ async function settleRoomApproval(tx: AppTransactionClient, room: RoomRow, newSl
   }
   const legacy = room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id))
   if (!legacy.length) return null
-  const members = await tx.clubMember.findMany({ where: { id: { in: legacy }, clubId: room.clubId, status: "ACTIVE", user: { disabledAt: null } } })
+  const members = await tx.clubMember.findMany({ where: { id: { in: legacy }, clubId: room.clubId, ...activeMemberWhere, user: { disabledAt: null } } })
   if (members.length !== legacy.length || members.some(m => !interviewCapabilities(m).participate)) throw new ActionError("Someone on this room's approved panel can no longer interview. Ask the owner to re-approve the panel first.")
   if (newSlots.length) {
     await lockSchedulingPeople(tx, { exclusive: members.map(m => m.userId) })

@@ -19,10 +19,20 @@ export const clubPermissions = [
   "leaders.manage",
 ] as const
 export type ClubPermission = (typeof clubPermissions)[number]
-export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[]; status?: string; interviewOffices?: readonly string[] }
-export function isActiveMembership(member: ClubAccess | null | undefined) {
+export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[]; status?: string; interviewOffices?: readonly string[]; alumniSince?: Date | string | null }
+/** On the roster (ACTIVE), current member or alumni. Clubs can still remove alumni. */
+export function isRosterMembership(member: ClubAccess | null | undefined) {
   return !!member && (!member.status || member.status === "ACTIVE")
 }
+export function isAlumniMembership(member: ClubAccess | null | undefined) {
+  return isRosterMembership(member) && !!member?.alumniSince
+}
+/** A current member: on the roster and not alumni. Alumni hold no club capabilities (lib/graduation.ts). */
+export function isActiveMembership(member: ClubAccess | null | undefined) {
+  return isRosterMembership(member) && !member?.alumniSince
+}
+/** Prisma filter for current (non-alumni) members: counts, audiences, exports and member-only reads. */
+export const activeMemberWhere = { status: "ACTIVE", alumniSince: null } as const
 export function hasPermission(member: ClubAccess | null | undefined, permission: ClubPermission) {
   return isActiveMembership(member) && (member?.isOwner === true || member?.permissions?.includes(permission) === true)
 }

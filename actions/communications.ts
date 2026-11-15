@@ -1,4 +1,5 @@
 "use server";
+import { activeMemberWhere } from "@/lib/permissions";
 import { ActionError, actionResult } from "@/lib/action-result";
 import { z } from "zod";
 import { recipientAudienceSchema } from "@/lib/recipient-audience";
@@ -117,7 +118,7 @@ export async function setDurableNotificationsArchived(ids: string[], archived: b
 export async function getMessagingClubs() {
   const { user } = await requireAuth();
   return prisma.club.findMany({ where: { suspendedAt: null, OR: [
-    { members: { some: { userId: user.id, status: "ACTIVE" } } },
+    { members: { some: { userId: user.id, ...activeMemberWhere } } },
     { applications: { some: { studentId: user.id, ...identifiableApplication } } },
   ] }, select: { id: true, name: true }, orderBy: { name: "asc" }, take: 100 });
 }

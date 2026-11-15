@@ -3,11 +3,13 @@ import type { Prisma } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { canIdentifyRecipients } from "@/lib/communications-policy";
+import { activeMemberWhere } from "@/lib/permissions";
 import { recipientAudienceSchema, type AudienceRule, type RecipientAudience } from "@/lib/recipient-audience";
 
 const limit = 1000;
 const identified = { submittedAt: { not: null }, status: { not: "DRAFTING" as const }, round: { anonymousReview: false, archivedAt: null } };
-const memberScope = (clubId: string) => ({ clubId, status: "ACTIVE" as const });
+// Alumni are not members for audiences (lib/graduation.ts); clubs reach them only through other sources.
+const memberScope = (clubId: string) => ({ clubId, ...activeMemberWhere });
 const visibleScope = (clubId: string, identify: boolean): Prisma.UserWhereInput => ({ OR: [
   { memberships: { some: memberScope(clubId) } },
   ...(identify ? [{ applications: { some: { clubId, ...identified } } }] : []),
@@ -95,7 +97,7 @@ export async function captureRecipientAudience(tx: AppTransactionClient, clubId:
   const userIds = await resolveRecipientAudience(tx, clubId, actorId, audience);
   // Freeze selection separately from the contact boundary. Former members must
   // not retain member contact authority merely because they once RSVPed to an event.
-  const members = (await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", userId: { in: userIds } }, select: { userId: true } })).map(row => row.userId);
+  const members = (await tx.clubMember.findMany({ where: { clubId, ...activeMemberWhere, userId: { in: userIds } }, select: { userId: true } })).map(row => row.userId);
   const memberIds = new Set(members);
   const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { clubId, userId: actorId } } });
   const apps = actor && canIdentifyRecipients(actor) ? await tx.application.findMany({ where: { clubId, studentId: { in: userIds.filter(id => !memberIds.has(id)) }, ...identified }, select: { studentId: true, status: true } }) : [];

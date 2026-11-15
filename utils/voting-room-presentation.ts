@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import {normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { authorizeInterview } from "@/utils/interview-access";
@@ -93,7 +94,7 @@ export async function votingInterviewEvidence(tx:AppTransactionClient,clubId:str
   // Pending is a count of current, interview-capable assignees only; never names or scores.
   const pendingFor=async(roundId:string|undefined)=>{
     if(!roundId)return [];
-    const assigned=await tx.interviewPanelAssignment.findMany({where:{applicationId,roundId,revokedAt:null,member:{clubId,status:"ACTIVE",user:{disabledAt:null}}},include:{member:true}});
+    const assigned=await tx.interviewPanelAssignment.findMany({where:{applicationId,roundId,revokedAt:null,member:{clubId,...activeMemberWhere,user:{disabledAt:null}}},include:{member:true}});
     // Anyone who submitted (including anonymously recorded reviews) is not pending, matching getInterviewRoundScore.
     const submittedIds=new Set((await tx.evaluation.findMany({where:{applicationId,roundId,submittedAt:{not:null}},select:{interviewerId:true}})).map(e=>e.interviewerId));
     return assigned.filter(a=>interviewCapabilities(a.member).participate&&!submittedIds.has(a.memberId)).map(a=>a.memberId);

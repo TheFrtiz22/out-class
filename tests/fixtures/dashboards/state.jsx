@@ -41,6 +41,8 @@ export function useApplicationState() {
 export function RecruitingInsightsCards() { return null }
 // Self-loading controls that call server actions are outside these fixtures.
 export function CalendarSubscribe() { return null }
+// Live accounts only (server actions); the fixture has none. Covered by tests/graduation.test.cjs.
+export function GraduationPrompt() { return null }
 export function useDemoMode() { return { isDemoEnabled: true, allowed: false } }
 // Home's Suggested clubs: one saved club and a small public directory (the app's root layout provides CorkboardProvider).
 const directory = [

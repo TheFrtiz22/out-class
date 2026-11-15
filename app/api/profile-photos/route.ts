@@ -11,6 +11,7 @@ import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { getInterviewApplicantPanel } from "@/actions/interview-resumes";
 import { getEvaluations } from "@/actions/evaluations";
 import { ProfileFieldHiddenError } from "@/lib/profile-field-visibility";
+import { unwrapAction } from "@/lib/action-result";
 const input = z.object({ path: storagePathSchema.refine(v => !!v), clubId: z.string().uuid().optional(), applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), sessionId: z.string().uuid().optional(), mode: z.enum(["evaluation", "preview", "crm"]).optional() }).strict();
 const headers = { "Cache-Control": "private, no-store", Vary: "Cookie", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" };
 export async function GET(request: Request) {
@@ -31,7 +32,8 @@ export async function GET(request: Request) {
         const result = await getEvaluations(d.clubId, d.applicationId);
         permitted = result.evaluations.some(e => e.interviewer.user.studentProfile?.headshotUrl === expected);
       } else if (d.roundId) {
-        const result = await getInterviewApplicantPanel({ clubId: d.clubId, applicationId: d.applicationId, roundId: d.roundId });
+        // A refusal (e.g. ACCESS_REVOKED) throws here and falls to the 403 below.
+        const result = unwrapAction(await getInterviewApplicantPanel({ clubId: d.clubId, applicationId: d.applicationId, roundId: d.roundId }));
         permitted = result.profile?.headshotUrl === expected;
       } else {
         const result = await getApplicantDisplay({ clubId: d.clubId, applicationId: d.applicationId, ...(d.sessionId ? { sessionId: d.sessionId } : {}), ...(d.mode === "preview" ? { previewConfig: { version: 1, fields: ["photo"] } } : {}) });

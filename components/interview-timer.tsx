@@ -5,16 +5,20 @@ import { clockOffsetMs, freshTimerState, newerTimer, timerPhase, timerRemainingM
 import type { InterviewScope } from "@/lib/interview-access";
 import type { InterviewTiming } from "@/lib/interview-session-timing";
 import { Button } from "@/components/ui/button";
+import { isAccessRevoked } from "@/lib/action-result";
 
 type Shared = SharedTimerView & { clockOffsetMs?: number };
 
 /** The room's shared countdown. State lives on the server (one per interview room);
  * this device only keeps its clock offset and the newest revision it has seen.
  * Own ticking state: the question editor and PDF never rerender on timer ticks. */
-export function InterviewTimer({ scope, paused, timing, shared }: { scope: InterviewScope; paused: boolean; timing?: InterviewTiming | null; shared?: Shared | null }) {
+/** `onAccessRevoked` (optional) takes over when the server refuses with ACCESS_REVOKED: the room shows
+ * its access-removed state instead of "Couldn’t update the timer"; the controls stay disabled. */
+export function InterviewTimer({ scope, paused, timing, shared, onAccessRevoked }: { scope: InterviewScope; paused: boolean; timing?: InterviewTiming | null; shared?: Shared | null; onAccessRevoked?: () => void }) {
   const [state, setState] = useState<Shared | null>(null), [offset, setOffset] = useState(0), [now, setNow] = useState(0);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
-  const mounted = useRef(true);
+  const mounted = useRef(true), revoked = useRef(false), revokedHandler = useRef(onAccessRevoked);
+  revokedHandler.current = onAccessRevoked;
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   // Each collaboration poll brings the room's timer and a fresh clock-offset sample.
   useEffect(() => {
@@ -38,7 +42,7 @@ export function InterviewTimer({ scope, paused, timing, shared }: { scope: Inter
   const seconds = Math.ceil(timerRemainingMs(value, (now || Date.now()) + offset) / 1000), phase = timerPhase(value);
   const changed = value.contextKey !== timing.contextKey;
   async function send(command: TimerCommand) {
-    if (!state || busy) return;
+    if (!state || busy || revoked.current) return;
     setBusy(true); setMessage("");
     try {
       const sentAt = Date.now();
@@ -47,8 +51,12 @@ export function InterviewTimer({ scope, paused, timing, shared }: { scope: Inter
       if (result.timer) { const timer = { ...result.timer, clockOffsetMs: clockOffsetMs(result.timer.serverNow, sentAt, Date.now()) }; setState(old => newerTimer(old, timer) as Shared | null); setOffset(timer.clockOffsetMs); }
       if (result.status === "conflict") setMessage("Timer changed on another device. Showing the current time.");
       setNow(Date.now());
-    } catch { if (mounted.current) setMessage("Couldn’t update the timer. Check your connection and try again."); }
-    finally { if (mounted.current) setBusy(false); }
+    } catch (failure) {
+      // Removed from the panel: hand off once to the room. A refusal arriving after this timer closed is ignored.
+      if (isAccessRevoked(failure) && revokedHandler.current) { if (mounted.current && !revoked.current) { revoked.current = true; revokedHandler.current(); } return; }
+      if (mounted.current) setMessage("Couldn’t update the timer. Check your connection and try again.");
+    }
+    finally { if (mounted.current && !revoked.current) setBusy(false); }
   }
   return <div className="oc-interview-timer" aria-label="Shared interview countdown" aria-busy={busy} data-expired={seconds === 0}>
     <output aria-label="Remaining interview time" aria-live="off">{String(Math.floor(seconds / 60)).padStart(2,"0")}:{String(seconds % 60).padStart(2,"0")}</output>

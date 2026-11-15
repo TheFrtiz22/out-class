@@ -137,7 +137,7 @@ test('overview action: member counts only with member-directory access, scoped t
   assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3, recent: 3 })
   const [members, invitations, recent] = counts.filter(([name]) => name === 'clubMember' || name === 'clubInvitation')
   assert.equal(recent[1].where.clubId, clubId); assert.ok(recent[1].where.joinedAt.gte instanceof Date)
-  assert.deepEqual(members[1].where, { clubId, status: 'ACTIVE', user: { disabledAt: null } })
+  assert.deepEqual(members[1].where, { clubId, status: 'ACTIVE', alumniSince: null, user: { disabledAt: null } })
   assert.equal(invitations[1].where.clubId, clubId); assert.equal(invitations[1].where.status, 'PENDING'); assert.equal(invitations[1].where.applicationId, null)
   assert.equal(invitations[1].where.requestedRole, 'MEMBER'); assert.deepEqual(invitations[1].where.purpose, { in: ['MEMBERSHIP', 'ACCESS_GRANT'] })
   for (const permissions of [[], ['applications.review'], ['meetings.manage', 'tasks.manage']]) {

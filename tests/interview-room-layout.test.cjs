@@ -2,6 +2,8 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const flush=()=>new Promise(r=>setImmediate(r));
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
 const text=n=>typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
+const actionResult=require('./helpers/communications-loader.cjs').loader({})('lib/action-result.ts');
+const revokedError=()=>new actionResult.UserFacingError('You no longer have access to this interview.','ACCESS_REVOKED');
 function harness(opts={}){
  const slots=[],effects=[],cleanups=[],storage=new Map(),confirmations=[],frames=[];let intervals=0;const cleared=[];let index=0,calls=0,denied=false,confirmationDenied=false,exits=0;
  const rows=['a','b','c'].map(id=>({id,name:id.toUpperCase(),roundId:'r',assignedRoundIds:['r'],completedRoundIds:[]}));
@@ -16,8 +18,8 @@ function harness(opts={}){
  const location=new URL(opts.url||"https://out-class.net/club/club/interview?interviewTab=rooms"),history={state:null,replaceState(_s,_t,href){location.href=new URL(href,location).href}};
  const api={resolveInterviewRoomEntry:opts.resolveEntry||(async input=>input),getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
  api.prepareInterviewAdvance=async scope=>{if(denied)throw Error('revoked');const next=queue.nextInterviewApplicant(pipeline.applications,scope.roundId,scope.applicationId);return next?{moveId:'move',scope:{clubId:scope.clubId,roundId:scope.roundId,applicationId:next.id}}:null};
- api.confirmInterviewAdvance=async receipt=>{confirmations.push(receipt);if(confirmationDenied)throw Error('disconnected');return{confirmed:true}};
- new Function('require','module','exports','window','sessionStorage','requestAnimationFrame','setInterval','clearInterval',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/components/shell/focus-frame-context'?{useFocusFrame:details=>frames.push(details)}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{location,history,addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn(),()=>++intervals,id=>cleared.push(id));
+ api.confirmInterviewAdvance=async receipt=>{confirmations.push(receipt);if(confirmationDenied)throw typeof confirmationDenied==='function'?confirmationDenied():Error('disconnected');return{confirmed:true}};
+ new Function('require','module','exports','window','sessionStorage','requestAnimationFrame','setInterval','clearInterval',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/components/shell/focus-frame-context'?{useFocusFrame:details=>frames.push(details)}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n==='@/lib/action-result'?actionResult:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{location,history,addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn(),()=>++intervals,id=>cleared.push(id));
  const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){exits++}};
  return{intervals:()=>intervals,cleared,frames,storage,confirmations,exits:()=>exits,denyConfirmation:v=>confirmationDenied=v,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
 }
@@ -88,4 +90,31 @@ test('an ACCESS_REVOKED refusal from the room switches to the access-removed sta
  assert.equal(kit(t),undefined,'the room (polling, autosave) unmounts');assert.match(text(t),/no longer have access/);assert.match(text(t),/hadn’t saved stay in this browser/,'unsaved notes are not lost silently');
  assert.ok(h.cleared.includes(armed),'the validation interval is cleared');t=h.render();assert.equal(h.intervals(),armed,'and not re-armed while access is removed');
  nodes(t).find(n=>n.type==='Button'&&text(n)==='Try again').props.onClick();h.render();await flush();h.render();assert.equal(h.intervals(),armed+1,'Try again re-checks access');
+});
+test('a refused arrival confirmation shows the access-removed state, drops the receipt and never reports the advance as confirmed',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
+ h.denyConfirmation(revokedError);await kit(t).props.onNextApplicant('tab');h.render();h.render();await flush();t=h.render();t=h.render();
+ assert.equal(kit(t),undefined,'the destination room unmounts');assert.match(text(t),/no longer have access/);assert.doesNotMatch(text(t),/Retry confirmation|invitation could not be confirmed/);
+ assert.deepEqual(JSON.parse(h.storage.get('outclass-interview:club:member')),{roundId:'r',applicationId:'b'},'the refused receipt is not kept for another confirmation');
+ const sent=h.confirmations.length;assert.ok(sent>=1);h.denyConfirmation(false);
+ nodes(t).find(n=>n.type==='Button'&&text(n)==='Try again').props.onClick();h.render();await flush();h.render();h.render();await flush();t=h.render();
+ assert.equal(kit(t).props.applicationId,'b','Try again reopens the applicant if access is current');assert.equal(h.confirmations.length,sent,'without re-sending the refused receipt');
+});
+test('the applicant panel and résumé viewer report ACCESS_REVOKED through the room, with what was not saved',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
+ kit(t).props.onState(true,false);t=h.render();
+ kit(t).props.context.props.onAccessRevoked('Strong leadership example on page 1');t=h.render();t=h.render();
+ assert.equal(kit(t),undefined);assert.match(text(t),/no longer have access/);
+ assert.match(text(t),/résumé comment wasn’t saved/);assert.match(text(t),/Strong leadership example on page 1/,'the refused comment is shown, not silently dropped');
+ assert.match(text(t),/hadn’t saved stay in this browser/,'unsaved interview notes are reported too');
+ nodes(t).find(n=>n.type==='Button'&&text(n)==='Try again').props.onClick();t=h.render();assert.doesNotMatch(text(t),/résumé comment wasn’t saved/);
+ const empty=harness();empty.render();await flush();t=empty.render();t=empty.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=empty.render();
+ kit(t).props.context.props.onAccessRevoked('');t=empty.render();t=empty.render();assert.match(text(t),/résumé highlight wasn’t saved/,'a highlight with no comment yet is still reported');
+ const none=harness();none.render();await flush();t=none.render();t=none.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=none.render();
+ kit(t).props.context.props.onAccessRevoked();t=none.render();t=none.render();assert.match(text(t),/no longer have access/);assert.doesNotMatch(text(t),/wasn’t saved|hadn’t saved/);
+});
+test('an open résumé comment is shown when another room part reports ACCESS_REVOKED first',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange('a');t=h.render();
+ kit(t).props.context.props.onDraftComment('Typed in the viewer');kit(t).props.onAccessRevoked(false);t=h.render();t=h.render();
+ assert.match(text(t),/résumé comment wasn’t saved/);assert.match(text(t),/Typed in the viewer/);
 });
