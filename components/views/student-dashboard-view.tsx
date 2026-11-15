@@ -247,7 +247,7 @@ export function StudentDashboardView({
       {hero}
       {/* Mounted once for both layouts, inside the same dashboard context (no blur, card type) as before. */}
       <Dashboard className="oc-home-availability-slot"><AvailabilityDashboardRequests /></Dashboard>
-      <Dashboard className="oc-home-graduation-slot"><GraduationPrompt now={now} /></Dashboard>
+      {now ? <Dashboard className="oc-home-graduation-slot"><GraduationPrompt now={now} /></Dashboard> : null}
       {/* One-time, private and optional; renders nothing once answered or dismissed. */}
       {authenticated || user ? <Dashboard className="oc-home-availability-slot"><InterestSurveyPrompt /></Dashboard> : null}
       {phone}
