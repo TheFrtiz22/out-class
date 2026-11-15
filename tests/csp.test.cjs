@@ -118,7 +118,7 @@ test('Turnstile origins appear only when Turnstile is enabled', () => {
 })
 
 test('inline scripts carry the request nonce', async () => {
-  for (const file of ['app/page.tsx', 'app/about/page.tsx', 'app/uva/page.tsx']) {
+  for (const file of ['app/page.tsx', 'app/about/page.tsx', 'app/security/page.tsx', 'app/uva/page.tsx']) {
     const source = fs.readFileSync(file, 'utf8')
     const scripts = source.match(/<script\b[^>]*>/g) || []
     assert.ok(scripts.length, file)
@@ -128,7 +128,7 @@ test('inline scripts carry the request nonce', async () => {
   // No other page or component renders an inline executable script or next/script.
   const { execFileSync } = require('node:child_process')
   const files = execFileSync('git', ['ls-files', 'app', 'components', 'contexts', 'hooks'], { encoding: 'utf8' }).split('\n').filter(f => /\.tsx$/.test(f))
-  const offenders = files.filter(f => !['app/page.tsx', 'app/about/page.tsx', 'app/uva/page.tsx', 'app/(workspace)/club/[clubId]/page.tsx'].includes(f) && /<script\b|from ["']next\/script["']/.test(fs.readFileSync(f, 'utf8')))
+  const offenders = files.filter(f => !['app/page.tsx', 'app/about/page.tsx', 'app/security/page.tsx', 'app/uva/page.tsx', 'app/(workspace)/club/[clubId]/page.tsx'].includes(f) && /<script\b|from ["']next\/script["']/.test(fs.readFileSync(f, 'utf8')))
   assert.deepEqual(offenders, [])
   // Club pages emit JSON-LD (data, not executed) for indexable clubs; it still carries the nonce.
   const club = fs.readFileSync('app/(workspace)/club/[clubId]/page.tsx', 'utf8')
