@@ -128,7 +128,7 @@ test("public directory selects explicit public fields and preserves missing fact
 test("starting an existing application never updates or deletes its answers", async () => {
   let writes = 0
   const actions = load("actions/club-directory.ts", {
-    "@/utils/auth": { requireAuth: async () => ({ user: { id: "student" } }) },
+    "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": { requireAuth: async () => ({ user: { id: "student" } }) },
     "@/utils/prisma": {
       prisma: {
         application: {
@@ -150,7 +150,7 @@ test("concurrent starts serialize per student and create an empty draft from ses
   let args
   const queries = []
   const actions = load("actions/club-directory.ts", {
-    "@/utils/auth": { requireAuth: async () => ({ user: { id: "session-user" } }) },
+    "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": { requireAuth: async () => ({ user: { id: "session-user" } }) },
     "@/utils/prisma": {
       prisma: {
         $queryRaw: async (strings, ...values) => { queries.push([strings.join("?"), values]); return [] },

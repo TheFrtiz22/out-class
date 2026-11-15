@@ -64,7 +64,7 @@ function setup() {
   const load = loader({
     '@/utils/verified-email-policy': { ...loader({})('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
     '@/utils/prisma': { prisma },
-    '@/utils/auth': { requireAuth: async () => account(), requireClubPermission: async (_id,permissions) => {
+    '@/utils/graduation':{alumniRefusal:async()=>null,assertNotAlumni:async()=>{}},'@/utils/auth': { requireAuth: async () => account(), requireClubPermission: async (_id,permissions) => {
       assert.deepEqual(permissions,['members.manage']);
       if (!state.recipient?.isOwner && !state.recipient?.permissions.includes('members.manage')) throw Error('Roster access denied');
       return account();
@@ -295,7 +295,7 @@ test('concurrent claiming attempts revalidate after the organization transaction
   // Model the database transaction lock with a queue, including two concurrent callers.
   let tail=Promise.resolve();
   const prisma={...h.tx,$transaction:fn=>{const result=tail.then(()=>fn(h.tx));tail=result.catch(()=>{});return result;}};
-  const load=loader({'@/utils/verified-email-policy':{...loader({})('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}},'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-01'}})},'@/utils/platform-admin':{}});
+  const load=loader({'@/utils/verified-email-policy':{...loader({})('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}},'@/utils/prisma':{prisma},'@/utils/graduation':{alumniRefusal:async()=>null,assertNotAlumni:async()=>{}},'@/utils/auth':{requireAuth:async()=>({user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-01'}})},'@/utils/platform-admin':{}});
   const api=unwrapActions(load('actions/club-onboarding.ts'));
   const results=await Promise.allSettled([api.acceptIdentityClubInvitation(inviteId),api.acceptIdentityClubInvitation(inviteId)]);
   assert.equal(results.filter(result=>result.status==='fulfilled').length,2);

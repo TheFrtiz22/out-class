@@ -39,7 +39,7 @@ test('direct application start rejects suspension under the existing transaction
     pipelineRound: { findFirst: async () => ({ id: 'round' }) },
   };
   const prisma = { $transaction: async fn => { inTransaction = true; try { return await fn(tx); } finally { inTransaction = false; } } };
-  const api = loader({ '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: actorId } }) }, 'next/cache': { unstable_cache: fn => fn } })('actions/club-directory.ts');
+  const api = loader({ '@/utils/prisma': { prisma }, '@/utils/graduation':{alumniRefusal:async()=>null,assertNotAlumni:async()=>{}},'@/utils/auth': { requireAuth: async () => ({ user: { id: actorId } }) }, 'next/cache': { unstable_cache: fn => fn } })('actions/club-directory.ts');
   await assert.rejects(api.startClubApplication(clubId), /club is suspended/);
   assert.equal(created.length, 0); assert.match(queries[0], /FOR UPDATE/);
   suspended = false;
@@ -55,7 +55,7 @@ function workspaceHarness({ demo = true, allowed = true, providerError = false, 
   function Workspace() {} function Boundary() {} function SharedLayout() {}
   const mocks = {
     'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
-    '@/utils/auth': { getSessionUser: async () => { providerReads++; return { data: { user: { email: 'presenter@virginia.edu' } }, error: providerError ? Error('expired') : null }; } },
+    '@/utils/graduation':{alumniRefusal:async()=>null,assertNotAlumni:async()=>{}},'@/utils/auth': { getSessionUser: async () => { providerReads++; return { data: { user: { email: 'presenter@virginia.edu' } }, error: providerError ? Error('expired') : null }; } },
     '@/lib/demo/access': { DEMO_COOKIE: 'outclass-demo-session', canAccessDemo: email => allowed && email === 'presenter@virginia.edu' },
     '@/utils/current-user': { getCurrentUser: async () => { liveReads++; if (liveDenied) throw Error('Live authorization denied'); return { memberships: [{ clubId, club: { name: 'Club', suspendedAt: suspended ? new Date() : null } }] }; } },
     '@/components/club-workspace': { ClubWorkspace: Workspace },
