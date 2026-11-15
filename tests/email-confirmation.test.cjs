@@ -29,12 +29,13 @@ const schemas = load("lib/onboarding-schemas.ts", { "@/lib/student-profile": { g
 // In-memory stand-in for Supabase Auth: one account, its stored password, confirmation, metadata and sessions.
 // `skewMs` sets the Auth server's clock relative to this process.
 // `adminRevokesSessions` models Supabase Auth ending every session when an administrator sets a password.
-function authServer({ confirmedAt = null, password = null, appMetadata = {}, skewMs = 0, adminRevokesSessions = true } = {}) {
+// `factorsInSession: false` models a session response that does not list the account's factors.
+function authServer({ confirmedAt = null, password = null, appMetadata = {}, skewMs = 0, adminRevokesSessions = true, factorsInSession = true } = {}) {
   const account = { id: "user-1", email: EMAIL, password, email_confirmed_at: confirmedAt, app_metadata: { provider: "email", ...appMetadata } }
   const sessions = new Set(), code = "123456", failures = {}, forwardedIps = [], linkTokens = new Set()
   let next = 0
   const authNow = () => new Date(Date.now() + skewMs).toISOString()
-  const user = () => ({ id: account.id, email: account.email, email_confirmed_at: account.email_confirmed_at, app_metadata: { ...account.app_metadata }, factors: account.factors })
+  const user = () => ({ id: account.id, email: account.email, email_confirmed_at: account.email_confirmed_at, app_metadata: { ...account.app_metadata }, ...(factorsInSession ? { factors: account.factors } : {}) })
   const open = () => { const id = `s${++next}`; sessions.add(id); return { access_token: id, user: user() } }
   const server = {
     account, sessions, code, failures, forwardedIps, verifies: 0,
@@ -84,7 +85,14 @@ function authServer({ confirmedAt = null, password = null, appMetadata = {}, ske
       }
     },
     admin: {
-      auth: { admin: { updateUserById: async (id, input) => {
+      auth: { admin: {
+      mfa: { listFactors: async ({ userId }) => {
+        assert.equal(userId, account.id)
+        server.factorReads = (server.factorReads ?? 0) + 1
+        if (failures.listFactors) return { data: null, error: { status: 500 } }
+        return { data: { factors: [...(account.factors ?? [])] }, error: null }
+      } },
+      updateUserById: async (id, input) => {
         assert.equal(id, account.id)
         await server.beforeStep(input.password ? "adminPassword" : "adminRecord")
         if (input.app_metadata && failures.record) return { error: { status: 500 } }
@@ -286,6 +294,31 @@ test("an unfinished account that already has a verified second factor is left un
   assert.equal(server.account.app_metadata.outclass_password_secured, undefined, "nothing recorded")
   assert.ok(server.sessions.has("other"), "no sessions ended")
   assert.deepEqual(attached, [], "no session attached")
+  // The factor is read through the service role even when the session response does not list it.
+  const hidden = authServer({ factorsInSession: false })
+  hidden.signUp("Earlier-Pass-1!")
+  hidden.account.factors = [{ id: "f1", factor_type: "totp", status: "verified" }]
+  hidden.sessions.add("other")
+  const viaAdmin = route(hidden)
+  const blocked = await viaAdmin.send({ email: EMAIL, code: hidden.code, password: "Owner-Pass-22!" })
+  assert.equal(blocked.status, 409)
+  assert.match((await blocked.json()).error, /two-step sign-in/)
+  assert.equal(hidden.factorReads, 1)
+  assert.equal(hidden.account.password, "Earlier-Pass-1!", "no password change")
+  assert.equal(hidden.account.app_metadata.outclass_password_secured, undefined, "nothing recorded")
+  assert.ok(hidden.sessions.has("other"), "no sessions ended")
+  assert.deepEqual(viaAdmin.attached, [])
+  // When the factors cannot be read, nothing changes and the route answers 503.
+  hidden.account.factors = []
+  hidden.failures.listFactors = true
+  const realError = console.error
+  console.error = () => {}
+  try {
+    const unreadable = await route(hidden).send({ email: EMAIL, code: hidden.code, password: "Owner-Pass-22!" })
+    assert.equal(unreadable.status, 503)
+  } finally { console.error = realError }
+  assert.equal(hidden.account.password, "Earlier-Pass-1!", "no password change when factors cannot be read")
+  assert.ok(hidden.sessions.has("other"))
   // An unverified (abandoned) enrollment does not block.
   server.account.factors = [{ id: "f2", factor_type: "totp", status: "unverified" }]
   const again = await route(server).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
@@ -404,38 +437,62 @@ test("a browser signed in to another account gets 409 and keeps its session", as
   assert.equal(same.status, 200, "the same account may verify a code")
 })
 
-test("failed codes are limited per address with a clear message, for unknown addresses too", async () => {
-  const { EMAIL_CODE_LIMIT_PER_EMAIL } = load("lib/email-confirmation.ts")
+test("failed codes are limited per address and network with a clear message, for unknown addresses too", async () => {
+  const { EMAIL_CODE_LIMIT_PER_EMAIL_IP } = load("lib/email-confirmation.ts")
+  assert.equal(EMAIL_CODE_LIMIT_PER_EMAIL_IP, 8)
   const server = authServer()
   server.signUp("Earlier-Pass-1!")
   const db = attemptStore()
   for (const email of [EMAIL, "nobody@virginia.edu"]) {
-    for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL; i++) {
-      const wrong = await route(server, { db }).send({ email, code: "000000" }, `203.0.113.${i}`)
+    for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL_IP; i++) {
+      const wrong = await route(server, { db }).send({ email, code: "000000" }, "203.0.113.1")
       assert.equal(wrong.status, 400)
       assert.deepEqual(await wrong.json(), { error: REJECTED })
     }
     const before = server.verifies
-    const limited = await route(server, { db }).send({ email, code: server.code }, "203.0.113.200")
+    const limited = await route(server, { db }).send({ email, code: server.code }, "203.0.113.1")
     assert.equal(limited.status, 429)
     assert.deepEqual(await limited.json(), { error: LIMITED })
     assert.equal(server.verifies, before, "a limited attempt never reaches Supabase Auth")
   }
   assert.equal(server.account.email_confirmed_at, null)
   assert.ok(db.rows.every(r => !r.targetId.includes(EMAIL) && !r.targetId.includes("203.0.113")), "attempt rows hold digests only")
+  // Failures from one network do not lock the owner out on another network.
+  const owner = await route(server, { db }).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" }, "198.51.100.20")
+  assert.equal(owner.status, 200, "the correct code from another network succeeds")
+  assert.equal(server.account.password, "Owner-Pass-22!")
   const other = authServer()
   other.account.email = "classmate@virginia.edu"
-  const unaffected = await route(other, { db }).send({ email: "classmate@virginia.edu", code: other.code, password: "Owner-Pass-22!" }, "203.0.113.201")
-  assert.equal(unaffected.status, 200, "another address is not limited")
+  const unaffected = await route(other, { db }).send({ email: "classmate@virginia.edu", code: other.code, password: "Owner-Pass-22!" }, "203.0.113.1")
+  assert.equal(unaffected.status, 200, "another address on the same network is not limited")
 })
 
-test("successful codes do not count toward the address limit", async () => {
-  const { EMAIL_CODE_LIMIT_PER_EMAIL } = load("lib/email-confirmation.ts")
+test("failed codes for one address are capped across all networks", async () => {
+  const { EMAIL_CODE_LIMIT_PER_EMAIL, EMAIL_CODE_LIMIT_PER_EMAIL_IP } = load("lib/email-confirmation.ts")
+  assert.equal(EMAIL_CODE_LIMIT_PER_EMAIL, 50)
+  const server = authServer()
+  server.signUp("Earlier-Pass-1!")
+  const db = attemptStore()
+  // Spread across networks, each staying under its own limit.
+  for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL; i++) {
+    const network = `203.0.113.${Math.floor(i / (EMAIL_CODE_LIMIT_PER_EMAIL_IP - 1))}`
+    assert.equal((await route(server, { db }).send({ email: EMAIL, code: "000000" }, network)).status, 400)
+  }
+  const before = server.verifies
+  const limited = await route(server, { db }).send({ email: EMAIL, code: server.code }, "198.51.100.99")
+  assert.equal(limited.status, 429)
+  assert.deepEqual(await limited.json(), { error: LIMITED })
+  assert.equal(server.verifies, before)
+  assert.equal(server.account.email_confirmed_at, null)
+})
+
+test("successful codes do not count toward the address limits", async () => {
+  const { EMAIL_CODE_LIMIT_PER_EMAIL_IP } = load("lib/email-confirmation.ts")
   const server = authServer()
   server.signUp("Earlier-Pass-1!")
   const db = attemptStore()
   const send = (code, password) => route(server, { db }).send({ email: EMAIL, code, ...(password ? { password } : {}) })
-  for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL - 1; i++) assert.equal((await send("000000")).status, 400)
+  for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL_IP - 1; i++) assert.equal((await send("000000")).status, 400)
   for (let i = 0; i < 5; i++) assert.equal((await send(server.code, "Owner-Pass-22!")).status, 200)
   assert.equal((await send("000000")).status, 400, "the last allowed failure")
   assert.equal((await send(server.code)).status, 429)
@@ -469,18 +526,26 @@ test("an invalid forwarded address is treated as no address", async () => {
   assert.ok(db.rows.every(r => !r.targetId.startsWith("ip:")))
 })
 
-test("concurrent wrong codes for one address reach Supabase Auth at most the limit", async () => {
-  const { EMAIL_CODE_LIMIT_PER_EMAIL } = load("lib/email-confirmation.ts")
+test("concurrent wrong codes reach Supabase Auth at most the per-network and per-address limits", async () => {
+  const { EMAIL_CODE_LIMIT_PER_EMAIL, EMAIL_CODE_LIMIT_PER_EMAIL_IP } = load("lib/email-confirmation.ts")
   const server = authServer()
   server.signUp("Earlier-Pass-1!")
+  // One network.
   const db = attemptStore()
-  const responses = await Promise.all(Array.from({ length: 30 }, (_, i) => route(server, { db }).send({ email: EMAIL, code: "000000" }, `203.0.113.${i}`)))
+  const responses = await Promise.all(Array.from({ length: 30 }, () => route(server, { db }).send({ email: EMAIL, code: "000000" }, "203.0.113.5")))
   const bodies = await Promise.all(responses.map(response => response.json()))
-  assert.ok(server.verifies <= EMAIL_CODE_LIMIT_PER_EMAIL, `${server.verifies} verifications`)
-  assert.equal(server.verifies, EMAIL_CODE_LIMIT_PER_EMAIL)
-  assert.equal(bodies.filter(body => body.error === REJECTED).length, EMAIL_CODE_LIMIT_PER_EMAIL)
-  assert.equal(bodies.filter(body => body.error === LIMITED).length, 30 - EMAIL_CODE_LIMIT_PER_EMAIL)
-  assert.equal(db.rows.filter(r => r.targetId.startsWith("email:")).length, EMAIL_CODE_LIMIT_PER_EMAIL, "attempts over the limit are not recorded")
+  assert.equal(server.verifies, EMAIL_CODE_LIMIT_PER_EMAIL_IP)
+  assert.equal(bodies.filter(body => body.error === REJECTED).length, EMAIL_CODE_LIMIT_PER_EMAIL_IP)
+  assert.equal(bodies.filter(body => body.error === LIMITED).length, 30 - EMAIL_CODE_LIMIT_PER_EMAIL_IP)
+  assert.equal(db.rows.filter(r => r.targetId.startsWith("email-ip:")).length, EMAIL_CODE_LIMIT_PER_EMAIL_IP, "attempts over the limit are not recorded")
+  // Many networks.
+  const spread = attemptStore()
+  const before = server.verifies
+  const many = await Promise.all(Array.from({ length: 80 }, (_, i) => route(server, { db: spread }).send({ email: EMAIL, code: "000000" }, `198.51.100.${i}`)))
+  const manyBodies = await Promise.all(many.map(response => response.json()))
+  assert.equal(server.verifies - before, EMAIL_CODE_LIMIT_PER_EMAIL)
+  assert.equal(manyBodies.filter(body => body.error === LIMITED).length, 80 - EMAIL_CODE_LIMIT_PER_EMAIL)
+  assert.equal(spread.rows.filter(r => r.targetId.startsWith("email:")).length, EMAIL_CODE_LIMIT_PER_EMAIL, "attempts over the ceiling are not recorded")
 })
 
 test("attempt digests are keyed with the server secret and need one", () => {
@@ -525,11 +590,12 @@ test("the end-user address is forwarded to Supabase Auth with a secret key", asy
 })
 
 test("attempts older than the window no longer count", async () => {
-  const { recordEmailCodeAttempt, EMAIL_CODE_LIMIT_PER_EMAIL, EMAIL_CODE_WINDOW_MS } = load("lib/email-confirmation.ts")
+  const { recordEmailCodeAttempt, EMAIL_CODE_LIMIT_PER_EMAIL_IP, EMAIL_CODE_WINDOW_MS } = load("lib/email-confirmation.ts")
   const db = attemptStore()
-  for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL; i++) assert.equal(await recordEmailCodeAttempt(db, EMAIL, undefined), true)
+  for (let i = 0; i < EMAIL_CODE_LIMIT_PER_EMAIL_IP; i++) assert.equal(await recordEmailCodeAttempt(db, EMAIL, undefined), true)
   assert.equal(await recordEmailCodeAttempt(db, EMAIL, undefined), false)
-  assert.equal(db.rows.length, EMAIL_CODE_LIMIT_PER_EMAIL, "a refused attempt adds no row")
+  assert.equal(db.rows.length, EMAIL_CODE_LIMIT_PER_EMAIL_IP * 2, "one row per address and per address-and-network; a refused attempt adds none")
+  assert.ok(db.rows.every(r => r.action === "auth.email_code.attempt"), "rows are only inserted")
   assert.equal(await recordEmailCodeAttempt(db, EMAIL, undefined, Date.now() + EMAIL_CODE_WINDOW_MS + 1000), true)
 })
 
@@ -624,4 +690,22 @@ test("Microsoft-only accounts are unaffected and an incomplete update sends the 
   assert.equal(errors.length, 2)
   const { authenticationError } = load("lib/auth.ts")
   assert.match(authenticationError("email-code-required"), /code sent to your UVA email/)
+})
+
+test("a provider sign-in to an unfinished account with a second factor goes to normal sign-in unchanged", async () => {
+  for (const factorsInSession of [true, false]) {
+    const server = authServer({ factorsInSession })
+    server.signUp("Earlier-Pass-1!")
+    server.identities = [{ provider: "email" }, { provider: "azure" }]
+    server.account.factors = [{ id: "f1", factor_type: "totp", status: "verified" }]
+    server.sessions.add("other")
+    const { calls, run } = callback(server)
+    assert.equal(await run(), "https://outclass.test/login?error=two-step-required&next=%2Fhome")
+    assert.deepEqual(calls, ["exchange", "signOut:local"])
+    assert.equal(server.account.password, "Earlier-Pass-1!", "no password change")
+    assert.equal(server.account.app_metadata.outclass_password_secured, undefined)
+    assert.ok(server.sessions.has("other"), "no other sessions ended")
+  }
+  const { authenticationError } = load("lib/auth.ts")
+  assert.match(authenticationError("two-step-required"), /two-step sign-in/)
 })

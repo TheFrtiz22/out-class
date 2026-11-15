@@ -3,7 +3,7 @@ import { setPasswordAfterConfirmation } from "@/lib/signup-password";
 
 // Server-only helpers for /api/auth/confirm-email.
 
-/** One response for a wrong, expired or rate-limited code, so none can be told apart. */
+/** One response for a wrong or expired code, so the two cannot be told apart. Limited attempts get EMAIL_CODE_LIMITED. */
 export const EMAIL_CODE_REJECTED = "That code isn't valid or has expired. Check it or send yourself a new one.";
 
 /** Shown after a valid code when an account that has not finished setup already has a second factor. */
@@ -24,8 +24,8 @@ type ConfirmedUser = {
 };
 
 /** True when the account has a verified second factor (TOTP), which the confirmation steps never change. */
-export function hasVerifiedFactor(user: ConfirmedUser) {
-  return (user.factors ?? []).some(factor => factor.status === "verified");
+export function hasVerifiedFactor(user: Pick<ConfirmedUser, "factors">) {
+  return (user.factors ?? []).some(factor => factor?.status === "verified");
 }
 
 function sameEmail(record: unknown, user: ConfirmedUser) {
@@ -65,6 +65,7 @@ type SessionClient = {
 };
 type AdminClient = {
   auth: { admin: {
+    mfa: { listFactors(input: { userId: string }): Promise<{ data: { factors?: { status?: string }[] | null } | null; error: unknown }> };
     updateUserById(id: string, input: { password?: string; app_metadata?: Record<string, unknown> }): Promise<{ error: unknown }>;
     generateLink(input: { type: "magiclink"; email: string }): Promise<{ data: { properties?: { hashed_token?: string } | null } | null; error: unknown }>;
   } };
@@ -72,6 +73,18 @@ type AdminClient = {
 
 async function succeeded(call: () => Promise<{ error: unknown }>) {
   try { return !(await call()).error; } catch { return false; }
+}
+
+/**
+ * Reads the account's factors with the service role, so the result does not depend on whether the session
+ * response lists them. Returns null when they cannot be read.
+ */
+async function adminHasVerifiedFactor(admin: AdminClient, userId: string) {
+  try {
+    const listed = await admin.auth.admin.mfa.listFactors({ userId });
+    if (listed.error || !Array.isArray(listed.data?.factors)) return null;
+    return hasVerifiedFactor({ factors: listed.data.factors });
+  } catch { return null; }
 }
 
 /**
@@ -87,13 +100,19 @@ async function succeeded(call: () => Promise<{ error: unknown }>) {
  * 5. The record is written last.
  *
  * An account that already has a verified second factor is left unchanged: whether that factor belongs to
- * the address owner cannot be told here, so the caller refuses and the owner uses password recovery.
+ * the address owner cannot be told here, so the caller refuses and the owner uses password recovery. The
+ * factors are read through the service role before any change; if they cannot be read, nothing changes.
  *
  * Each step is safe to repeat, so a later verification finishes an incomplete one. The new session is
  * returned for the caller to attach.
  */
 export async function secureVerifiedAccount(client: SessionClient, admin: AdminClient, user: ConfirmedUser, password: string | undefined) {
-  if (hasVerifiedFactor(user)) return { passwordSaved: false, secured: false, recorded: false, session: null, factorBlocked: true };
+  const blocked = { passwordSaved: false, secured: false, recorded: false, session: null, factorBlocked: true };
+  if (hasVerifiedFactor(user)) return blocked;
+  // Checked again through the service role before anything changes; when the factors cannot be read, nothing changes.
+  const factor = await adminHasVerifiedFactor(admin, user.id);
+  if (factor === null) return { ...blocked, factorBlocked: false };
+  if (factor) return blocked;
   const saved = (await setPasswordAfterConfirmation(client, password)).saved;
   const finalPassword = saved ? password! : unusablePassword();
   const failed = { passwordSaved: saved, secured: false, recorded: false, session: null, factorBlocked: false };
@@ -117,13 +136,18 @@ export async function secureVerifiedAccount(client: SessionClient, admin: AdminC
   return { passwordSaved: saved, secured: true, recorded, session, factorBlocked: false };
 }
 
-// Failed code attempts per address and all code attempts per client network, from append-only audit rows.
+// Failed code attempts per address and client network, failed attempts per address across all networks,
+// and all attempts per client network, from append-only audit rows.
 export const EMAIL_CODE_WINDOW_MS = 15 * 60 * 1000;
-export const EMAIL_CODE_LIMIT_PER_EMAIL = 8;
+/** Failed attempts for one address from one client network. */
+export const EMAIL_CODE_LIMIT_PER_EMAIL_IP = 8;
+/** Failed attempts for one address across all networks: bounds guessing, and is high enough that one network cannot use it up. */
+export const EMAIL_CODE_LIMIT_PER_EMAIL = 50;
+/** All attempts from one client network. */
 export const EMAIL_CODE_LIMIT_PER_IP = 120;
 export const EMAIL_CODE_ATTEMPT_ACTION = "auth.email_code.attempt";
 export const EMAIL_CODE_SUCCESS_ACTION = "auth.email_code.success";
-/** Shown for any address once its limit is reached, whether or not an account exists. */
+/** Shown for any address once a limit is reached, whether or not an account exists. */
 export const EMAIL_CODE_LIMITED = "Too many attempts. Wait 15 minutes, then request a new code.";
 
 function digestKey() {
@@ -133,8 +157,13 @@ function digestKey() {
   return createHash("sha256").update("outclass-email-code-attempt-v1\0" + secret).digest();
 }
 
-export function attemptKey(kind: "email" | "ip", value: string) {
+export function attemptKey(kind: "email" | "ip" | "email-ip", value: string) {
   return `${kind}:${createHmac("sha256", digestKey()).update(`${kind}\0${value.trim().toLowerCase()}`).digest("hex")}`;
+}
+
+/** Requests without a valid client address share one network bucket per address. */
+function pairKey(email: string, ip: string | undefined) {
+  return attemptKey("email-ip", `${email.trim().toLowerCase()}\0${ip ?? "unknown"}`);
 }
 
 type AttemptTransaction = {
@@ -147,26 +176,29 @@ type AttemptTransaction = {
 type AttemptStore = { $transaction<T>(run: (tx: AttemptTransaction) => Promise<T>): Promise<T> };
 
 /**
- * Reserves one attempt when the address has fewer than the limit of unrefunded attempts and the network is
- * under its limit; otherwise records nothing. Database locks on both keys keep the count and the insert
- * together across app instances. A successful verification refunds the address's attempt.
+ * Reserves one attempt when the address has fewer unrefunded attempts than the limit from this network and
+ * than the higher limit across all networks, and the network is under its limit; otherwise records
+ * nothing. Database locks on every key keep the counts and the inserts together across app instances. A
+ * successful verification refunds the attempt for the address and for the address on that network.
  */
 export async function recordEmailCodeAttempt(db: AttemptStore, email: string, ip: string | undefined, now = Date.now()) {
   const since = new Date(now - EMAIL_CODE_WINDOW_MS);
-  const emailKey = attemptKey("email", email), ipKey = ip ? attemptKey("ip", ip) : null;
-  const keys = [emailKey, ...(ipKey ? [ipKey] : [])].sort();
+  const emailKey = attemptKey("email", email), emailIpKey = pairKey(email, ip), ipKey = ip ? attemptKey("ip", ip) : null;
+  const keys = [emailKey, emailIpKey, ...(ipKey ? [ipKey] : [])].sort();
   return db.$transaction(async tx => {
     for (const targetId of keys) await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${targetId}, 0))`;
     const count = (targetId: string, action: string) => tx.auditLog.count({ where: { targetId, action, createdAt: { gt: since } } });
-    const failed = await count(emailKey, EMAIL_CODE_ATTEMPT_ACTION) - await count(emailKey, EMAIL_CODE_SUCCESS_ACTION);
-    if (failed >= EMAIL_CODE_LIMIT_PER_EMAIL) return false;
+    const failed = async (targetId: string) => await count(targetId, EMAIL_CODE_ATTEMPT_ACTION) - await count(targetId, EMAIL_CODE_SUCCESS_ACTION);
+    if (await failed(emailIpKey) >= EMAIL_CODE_LIMIT_PER_EMAIL_IP) return false;
+    if (await failed(emailKey) >= EMAIL_CODE_LIMIT_PER_EMAIL) return false;
     if (ipKey && await count(ipKey, EMAIL_CODE_ATTEMPT_ACTION) >= EMAIL_CODE_LIMIT_PER_IP) return false;
     for (const targetId of keys) await tx.auditLog.create({ data: { actorId: "anonymous", action: EMAIL_CODE_ATTEMPT_ACTION, targetId } });
     return true;
   });
 }
 
-/** A verified code does not count toward the address's limit. */
-export async function recordEmailCodeSuccess(db: { auditLog: AttemptTransaction["auditLog"] }, email: string) {
-  await db.auditLog.create({ data: { actorId: "anonymous", action: EMAIL_CODE_SUCCESS_ACTION, targetId: attemptKey("email", email) } });
+/** A verified code does not count toward the address's limits. */
+export async function recordEmailCodeSuccess(db: { auditLog: AttemptTransaction["auditLog"] }, email: string, ip: string | undefined) {
+  for (const targetId of [attemptKey("email", email), pairKey(email, ip)])
+    await db.auditLog.create({ data: { actorId: "anonymous", action: EMAIL_CODE_SUCCESS_ACTION, targetId } });
 }

@@ -38,6 +38,11 @@ export async function GET(request: Request) {
         const { serviceAuthClient } = await import('@/utils/admin-elevation')
         const admin = serviceAuthClient()
         const result = admin ? await secureVerifiedAccount(supabase, admin, user, undefined) : null
+        // An account with a second factor cannot finish through a code either, so it goes to normal sign-in.
+        if (result?.factorBlocked) {
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${origin}${authFailurePath(next, "two-step-required")}`)
+        }
         if (!result?.secured || !result.recorded) {
           console.error(admin ? "Provider sign-in verified; password or session update incomplete" : "Provider sign-in needs the Supabase secret key")
           await supabase.auth.signOut()

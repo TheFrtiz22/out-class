@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const client = forwardedAuthClient(clientIp);
     const verified = await client.auth.verifyOtp({ email, token: code, type: "email" });
     if (verified.error) return reply({ error: EMAIL_CODE_REJECTED }, 400);
-    await recordEmailCodeSuccess(prisma, email).catch(() => undefined);
+    await recordEmailCodeSuccess(prisma, email, clientIp).catch(() => undefined);
     const user = verified.data.user;
     if (!verified.data.session || !user || !confirmedEmailSession({ session: verified.data.session, user }, email)) {
       await client.auth.signOut({ scope: "local" }).catch(() => undefined);
