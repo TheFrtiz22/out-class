@@ -38,7 +38,7 @@ export function DiscoveryCard({ club, entry, onOpen, action, now = Date.now() }:
         <MemberOutcomes profile={club} compact />
         <div className="oc-explore-card-footer">
           <div className="oc-explore-recruitment"><span data-available={recruitment.available}>{recruitment.label}</span>{recruitment.deadline ? <time dateTime={recruitment.deadline.toISOString()}>{recruitment.expired ? "Closed" : "Deadline"} · {recruitmentDate(recruitment.deadline)}</time> : <small>Deadline not published</small>}{club.timeCommitment && <small>{club.timeCommitment} hours / week</small>}</div>
-          <IconButton size="icon-lg" className="oc-explore-open" aria-label={`View ${club.name} club page`} onClick={onOpen}><ArrowRight size={18} className="size-[18px]" aria-hidden="true" /></IconButton>
+          <IconButton size="icon-lg" className="oc-explore-open" aria-label={`View ${club.name} club page`} onClick={onOpen}><ArrowRight size={20} className="size-5" aria-hidden="true" /></IconButton>
         </div>
         {action && <div className="relative z-10 mt-3">{action}</div>}
       </div>

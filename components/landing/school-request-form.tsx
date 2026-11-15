@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Check } from "@/components/icons"
@@ -9,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
-import { schoolRequestSchema, schoolRequestRoles, schoolRequestRoleLabels } from "@/lib/school-requests"
+import { schoolRequestSchema, schoolRequestRoles, schoolRequestRoleLabels, schoolRequestFormValues, schoolRequestFormError } from "@/lib/school-requests"
 
 export function SchoolRequestForm() {
   const [busy, setBusy] = useState(false)
@@ -33,13 +35,15 @@ export function SchoolRequestForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (busy) return
-    const input = schoolRequestSchema.safeParse(Object.fromEntries(new FormData(event.currentTarget)))
+    const input = schoolRequestSchema.safeParse(schoolRequestFormValues(new FormData(event.currentTarget)))
     if (!input.success) {
       const errors: Record<string, string> = {}
-      input.error.issues.forEach(issue => { const name = String(issue.path[0]); if (!errors[name]) errors[name] = issue.message })
+      input.error.issues.forEach(issue => { const name = issue.path[0]; if (typeof name === "string" && !errors[name]) errors[name] = issue.message })
       setFieldErrors(errors)
-      setError("")
       const first = Object.keys(errors)[0]
+      // A problem that belongs to no field still needs a visible message.
+      if (!first) { setError(schoolRequestFormError); return }
+      setError("")
       form.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus()
       return
     }
@@ -50,10 +54,10 @@ export function SchoolRequestForm() {
     try {
       const response = await fetch("/api/school-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...input.data, ...(turnstileToken ? { turnstileToken } : {}) }) })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || "Your request could not be saved.")
+      if (!response.ok) throw new UserFacingError(data.error || "Your request could not be saved.")
       setSubmitted({ university: input.data.university, email: input.data.email })
       setConfirmation(data.message)
-    } catch (e) { setError(e instanceof Error ? e.message : "Unable to submit. Please try again.") }
+    } catch (e) { setError(userMessage(e, "Unable to submit. Please try again.")) }
     finally { setBusy(false); setTurnstileReset(value => value + 1) }
   }
   if (confirmation) return <div ref={success} tabIndex={-1} className="oc-request-success oc-public-glass" aria-labelledby="request-success-title">

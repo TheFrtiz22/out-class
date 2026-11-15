@@ -84,6 +84,8 @@ export function anonymousApplication(
       interviewerId: e.interviewerId,
       round: e.round,
       score: e.score,
+      // The category breakdown stays private in anonymous review, like notes.
+      rubricScores: null,
       notes: null,
       applicantQuestions: null,
       roundId: null,

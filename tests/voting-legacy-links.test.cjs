@@ -48,7 +48,7 @@ test('outsiders, disabled, unconfirmed, non-school, former, signed-out, Demo, su
 test('legacy voting pages redirect only through the shared resolver and keep Demo join links isolated',()=>{
  const live=fs.readFileSync('app/(focus)/live-voting/page.tsx','utf8'),join=fs.readFileSync('app/(focus)/voting/[sessionId]/join/page.tsx','utf8');
  assert.doesNotMatch(live,/^"use client"/);assert.match(live,/liveRoomHrefForLegacyLink\(/);assert.match(live,/redirect\(href\)/);assert.match(live,/<VotingLinkMoved /);
- assert.equal(fs.readFileSync('app/(focus)/vote/page.tsx','utf8').trim(),'export { default } from "@/app/(focus)/live-voting/page"');
+ assert.match(fs.readFileSync('app/(focus)/vote/page.tsx','utf8'),/import LiveVotingPage, \{ metadata as liveVotingMetadata \} from "@\/app\/\(focus\)\/live-voting\/page"[\s\S]*export default LiveVotingPage/);
  assert.match(join,/query\.demo === "1" \? null : await liveRoomHrefForLegacyLink\(sessionId\)/);
  assert.doesNotMatch(fs.readFileSync('components/live-voting/voting-link-moved.tsx','utf8'),/from ["']@\/lib\/demo\/|"use client"/);
 });

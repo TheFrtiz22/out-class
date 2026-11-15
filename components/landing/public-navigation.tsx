@@ -93,7 +93,7 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
             <a className="oc-public-login" href="/login" onClick={close}><RollingNavigationLabel>Sign in</RollingNavigationLabel></a>
             <Button className="oc-public-primary" asChild><Link prefetch={false} href="/signup" onClick={close}><RollingNavigationLabel>Get Started</RollingNavigationLabel></Link></Button>
             <button ref={toggle} type="button" className="oc-public-menu-toggle" aria-expanded={open} aria-controls={mobileMenuId} aria-label={open ? "Close navigation menu" : journey?.merged ? "Open navigation menu and perspective switcher" : "Open navigation menu"} onClick={() => setOpen(value => !value)}>
-              <span className="oc-public-menu-icon" aria-hidden="true"><Menu size={18} /><X size={18} /></span>
+              <span className="oc-public-menu-icon" aria-hidden="true"><Menu size={16} /><X size={16} /></span>
             </button>
           </div>
         </div>

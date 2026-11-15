@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useState } from "react"
 import { Bookmark, BookmarkCheck } from "@/components/icons"
 import { Button } from "@/components/ui/button"
@@ -17,7 +18,7 @@ export function CorkboardButton({ club, onNavigate, mode = "save", className = "
   async function save() {
     setError("")
     try { await saveClub(club, !items.some(item => item.club.id === club.id)) }
-    catch (e) { setError(e instanceof Error ? e.message : "Couldn’t save this change.") }
+    catch (e) { setError(userMessage(e, "Couldn’t save this change.")) }
   }
   if (club.source === "preview") return null
   const saved = items.some(item => item.club.id === club.id)

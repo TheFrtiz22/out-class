@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useAutosave } from "@/hooks/use-autosave"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { useAuth } from "@/contexts/auth-context"
@@ -7,6 +8,7 @@ import { applicationAnswersKey } from "@/lib/student-applications"
 import { QuestionField } from "@/components/applications/question-field"
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement, testRequirementLabels } from "@/lib/test-scores"
+import { validPhone } from "@/lib/phone"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Check } from "@/components/icons"
@@ -60,7 +62,7 @@ export function ApplicationForm({
     response: responses[question.id] || "",
   }))
   const autosave = useAutosave({
-    identity: `${demo.isDemoEnabled ? "demo:" : ""}${user?.id}:application:${application.id}`,
+    identity: `${demo.isDemoEnabled ? "demo:" : ""}${user?.id}:application:${application.id}`, owner: demo.isDemoEnabled ? null : user?.id,
     value: responses, restore: setResponses,
     save: async snapshot => {
       const savedAnswers = questions.map(q => ({ questionId: q.id, response: snapshot[q.id] || "" }))
@@ -71,6 +73,7 @@ export function ApplicationForm({
   })
   const missingProfile = !user?.profile
   const missingScores = !meetsTestRequirement(application.club.testRequirement, user?.profile ?? null)
+  const missingPhone = !!user?.profile && !validPhone(user.profile.phone)
   const dirty = autosave.dirty
   // Follow-up questions appear only after the answer they depend on.
   const visible = visibleQuestionIds(questions, answers)
@@ -117,12 +120,7 @@ export function ApplicationForm({
       setMessage(final ? "Application submitted." : "Draft saved to your account.")
       onSaved(final, answers)
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : ""
-      setError(
-        /already|profile|pipeline|questions|words|response|URL|closed|option/.test(message)
-          ? message
-          : "We couldn’t save your application. Your responses are still here. Please try again.",
-      )
+      setError(userMessage(cause, "We couldn’t save your application. Your responses are still here. Please try again."))
       setConfirm(false)
     } finally {
       setBusy(false)
@@ -171,8 +169,8 @@ export function ApplicationForm({
           <AutosaveStatus save={autosave} />
         </div>
       </div>
-      {(missingProfile || missingScores) && <div className="oc-writing-profile-warning" role="note" aria-label="Missing profile requirements">
-        <p>{missingProfile ? "Complete your shared profile before submitting." : `${testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Add the missing scores to your profile before submitting.`}</p>
+      {(missingProfile || missingScores || missingPhone) && <div className="oc-writing-profile-warning" role="note" aria-label="Missing profile requirements">
+        <p>{missingProfile ? "Complete your shared profile before submitting." : missingPhone ? "Add a phone number to your profile before submitting. Clubs call applicants they accept." : `${testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Add the missing scores to your profile before submitting.`}</p>
         <Button type="button" variant="link" className="h-auto px-0 py-1" disabled={busy} onClick={onProfile}>Update profile</Button>
       </div>}
       {error && (
@@ -205,7 +203,7 @@ export function ApplicationForm({
               <QuestionField question={question} value={responses[question.id] || ""} onChange={value => change(question.id, value)} invalid={!!errors[question.id]} />
               {question.type === "FILE_UPLOAD" && (
                 <div className="space-y-2">
-                  <Label htmlFor={`upload-${question.id}`} className="text-xs">
+                  <Label htmlFor={`upload-${question.id}`} className="text-control">
                     Or upload a PDF (up to 10 MB)
                   </Label>
                   <Input
@@ -223,7 +221,7 @@ export function ApplicationForm({
               )}
               <div
                 id={`help-${question.id}`}
-                className="text-xs leading-relaxed text-muted-foreground"
+                className="text-control leading-relaxed text-muted-foreground"
               >
                 {question.type === "ESSAY"
                   ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`

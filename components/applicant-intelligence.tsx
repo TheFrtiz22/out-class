@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import {AdditionalObservations} from '@/components/additional-observations';
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useRef, useState } from "react";
@@ -27,7 +28,7 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
   useEffect(() => {
     let current = true;
     setData(null); setError(""); setBody(""); setEditing(undefined); setEditorOpen(false);
-    getApplicantDisplay({ clubId, applicationId, sessionId, previewConfig:previewKey?JSON.parse(previewKey):undefined }).then(v => { if (current) setData(v) }).catch(e => { if (current) setError(e instanceof Error ? e.message : "Review information unavailable.") });
+    getApplicantDisplay({ clubId, applicationId, sessionId, previewConfig:previewKey?JSON.parse(previewKey):undefined }).then(v => { if (current) setData(v) }).catch(e => { if (current) setError(userMessage(e, "Review information unavailable.")) });
     return () => { current = false };
   }, [clubId, applicationId, revision, refreshKey, sessionId, previewKey]);
   useEffect(()=>{
@@ -45,7 +46,7 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
       if (remove) await deleteApplicantObservation({ clubId, applicationId, id: remove });
       else await saveApplicantObservation({ clubId, applicationId, id: editing, kind, body });
       setRevision(v => v + 1);
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not save observation.") }
+    } catch (e) { setError(userMessage(e, "Could not save observation.")) }
     finally { setBusy(false) }
   }
   if(layout === "slide") return <section ref={slideRef} aria-label="Live candidate presentation" className="oc-voting-slide" aria-live="polite">
@@ -96,7 +97,7 @@ export function ApplicantDisplaySettings({ clubId, roundId }: { clubId: string; 
   useEffect(() => { let current = true; setValue(null); setError(""); getApplicantDisplayConfiguration(clubId, roundId).then(v => { if (current) setValue(v) }).catch(() => { if (current) setError("Display settings unavailable.") }); return () => { current = false }; }, [clubId, roundId]);
   return <details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Applicant display · Round defaults</summary><p className="my-3 text-sm text-muted-foreground">Choose the shared fields for this round. Each reviewer receives only authorized fields; anonymous review still removes identity, observations, and free text. Voting sessions save their own display snapshot during setup; these defaults do not change an existing session.</p>
     {error && <p role="status" className="text-sm">{error}</p>}
-    {value && <form onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { setValue(await saveApplicantDisplayConfiguration({ clubId, roundId, ...value })); setError("Display configuration saved.") } catch(e) { setError(e instanceof Error ? e.message : "Save failed.") } finally { setBusy(false) } }}><fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">{applicantFields.map(f => <label key={f} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={value.config.fields.includes(f)} onChange={e => setValue({ ...value, config: { version: 1, fields: e.target.checked ? [...value.config.fields, f] : value.config.fields.filter(v => v !== f) } })} />{fieldLabels[f]}</label>)}</fieldset><Button className="mt-4" disabled={busy}>Save display configuration</Button></form>}
+    {value && <form onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { setValue(await saveApplicantDisplayConfiguration({ clubId, roundId, ...value })); setError("Display configuration saved.") } catch(e) { setError(userMessage(e, "Save failed.")) } finally { setBusy(false) } }}><fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">{applicantFields.map(f => <label key={f} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={value.config.fields.includes(f)} onChange={e => setValue({ ...value, config: { version: 1, fields: e.target.checked ? [...value.config.fields, f] : value.config.fields.filter(v => v !== f) } })} />{fieldLabels[f]}</label>)}</fieldset><Button className="mt-4" disabled={busy}>Save display configuration</Button></form>}
   </details>;
 }
 

@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
 const {AsyncLocalStorage}=require('node:async_hooks');
 const {loader}=require('./helpers/communications-loader.cjs');
@@ -10,7 +11,7 @@ test('recipient audiences on bounded native PostgreSQL',{skip:!url,timeout:12000
  const owner=await db.clubMember.create({data:{clubId:club.id,userId:actor.id,isOwner:true}});
  let revoke=false,demo=false;
  const mocks={'@/utils/prisma':{prisma:db},'@/utils/auth':{requireClubPermission:async(id,caps)=>{if(demo)throw Error('Live data unavailable in Demo');const membership=await db.clubMember.findUnique({where:{userId_clubId:{clubId:id,userId:actor.id}}});if(!membership||membership.status!=='ACTIVE'||!caps.every(p=>membership.isOwner||membership.permissions.includes(p)))throw Error('Denied');if(revoke){await operator.clubMember.update({where:{id:owner.id},data:{isOwner:false,permissions:[]}});revoke=false;}return{user:actor,membership};}},'@/utils/support-audit':{supportContext:async()=>null,supportTransactionScope:new AsyncLocalStorage()},'@/utils/admin-elevation':{requireAdminElevation:async()=>{throw Error('Unexpected support');}}};const load=loader(mocks);
- const groups=load('actions/recipient-groups.ts'),communications=load('actions/communications.ts'),resolver=load('utils/recipient-audience.ts');
+ const groups=unwrapActions(load('actions/recipient-groups.ts')),communications=unwrapActions(load('actions/communications.ts')),resolver=load('utils/recipient-audience.ts');
  async function person(year){const user=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}});if(year)await db.studentProfile.create({data:{userId:user.id,firstName:'Synthetic',lastName:'Recipient',computingId:randomUUID(),major:'Undeclared',gradYear:year}});return user;}
  const member=await person(2027),officer=await person(2028),left=await person(),applicant=await person(2027),rejected=await person(2028),anonymous=await person(2027),lead=await person(2027),outsider=await person(2027);
  const membership=await db.clubMember.create({data:{userId:member.id,clubId:club.id,cohort:'Fall 2026',groups:['Finance'],accessRole:'MEMBER'}});
@@ -97,13 +98,13 @@ test('recipient audiences on bounded native PostgreSQL',{skip:!url,timeout:12000
  });
  await t.test('manual edits, stale revisions, dependency deletion and cycle rollback',async()=>{
   manual=await groups.saveRecipientGroup({clubId:club.id,id:manual.id,revision:0,name:'Finance',kind:'MANUAL',userIds:[member.id]});assert.equal(manual.revision,1);
-  await assert.rejects(groups.saveRecipientGroup({clubId:club.id,id:manual.id,revision:0,name:'Stale',kind:'MANUAL',userIds:[]}),/Group changed/);
-  await assert.rejects(groups.deleteRecipientGroup(club.id,manual.id,manual.revision),/other saved rules/);
-  await assert.rejects(groups.saveRecipientGroup({clubId:club.id,id:manual.id,revision:1,name:'Cycle',kind:'RULES',rules:{include:[{source:'GROUP',groupId:ruleGroup.id}]}}),/cycle/);
+  await refused(groups.saveRecipientGroup({clubId:club.id,id:manual.id,revision:0,name:'Stale',kind:'MANUAL',userIds:[]}),/Group changed/);
+  await refused(groups.deleteRecipientGroup(club.id,manual.id,manual.revision),/other saved rules/);
+  await refused(groups.saveRecipientGroup({clubId:club.id,id:manual.id,revision:1,name:'Cycle',kind:'RULES',rules:{include:[{source:'GROUP',groupId:ruleGroup.id}]}}),/cycle/);
   assert.equal((await db.recipientGroup.findUniqueOrThrow({where:{id:manual.id}})).kind,'MANUAL');
  });
  await t.test('foreign, anonymous and disabled people cannot be assigned; denied operations roll back',async()=>{
-  for(const userIds of [[outsider.id],[anonymous.id]])await assert.rejects(groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'Invalid',kind:'MANUAL',userIds}),/unavailable/);
+  for(const userIds of [[outsider.id],[anonymous.id]])await refused(groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'Invalid',kind:'MANUAL',userIds}),/unavailable/);
   await assert.rejects(groups.previewRecipientAudience(foreign.id,{include:[{source:'MEMBERS'}]}),/Denied/);
   await assert.rejects(preview([{source:'GROUP',groupId:randomUUID()}]),/unavailable/);
   await assert.rejects(groups.saveRecipientGroup({clubId:foreign.id,id:manual.id,revision:manual.revision,name:'Foreign overwrite',kind:'MANUAL',userIds:[]}),/Denied/);
@@ -119,7 +120,7 @@ test('recipient audiences on bounded native PostgreSQL',{skip:!url,timeout:12000
   const data={clubId:club.id,title:'Synthetic audience',body:'No external delivery',audience:'CUSTOM',audienceSpec:spec,requestKey:randomUUID()};
   const [x,y]=await Promise.all([communications.publishClubAnnouncement(data),communications.publishClubAnnouncement(data)]);assert.equal(x.id,y.id);assert.equal(x.recipientCount,1);
   assert.equal(await db.userNotification.count({where:{announcementId:x.id}}),1);assert.equal(await db.notificationEmailOutbox.count({where:{notification:{announcementId:x.id}}}),1);
-  await assert.rejects(communications.publishClubAnnouncement({...data,audienceSpec:{include:[{source:'REJECTED'}]}}),/already sent/);
+  await refused(communications.publishClubAnnouncement({...data,audienceSpec:{include:[{source:'REJECTED'}]}}),/already sent/);
   await db.clubMember.update({where:{id:membership.id},data:{status:'LEFT'}});assert.equal((await communications.publishClubAnnouncement(data)).recipientCount,1);await db.clubMember.update({where:{id:membership.id},data:{status:'ACTIVE'}});
  });
  await t.test('failed atomic group audit rolls back edits and recipient assignment',async()=>{

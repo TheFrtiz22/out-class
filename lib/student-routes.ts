@@ -87,9 +87,15 @@ export function legacyStudentRedirect(params: URLSearchParams): string | null {
   return params.get("workspace") === "student" ? studentPath("student-dashboard", null, params) : null
 }
 
-/** Applicant Status, keeping focus ids (/interviews and /decisions redirect here). */
-export function applicantStatusHref(input = new URLSearchParams()) {
-  return studentPath("status", "status", input)
+/**
+ * Applicant Status, keeping focus ids (/interviews and /decisions redirect here). `tab` picks the
+ * Applications stage to open (a decision link opens Decisions, not In review); a tab already in
+ * `input` wins.
+ */
+export function applicantStatusHref(input = new URLSearchParams(), tab?: "in-review" | "interviews" | "decisions") {
+  const params = new URLSearchParams(input)
+  if (tab && !params.has("tab")) params.set("tab", tab)
+  return studentPath("status", "status", params)
 }
 
 /**

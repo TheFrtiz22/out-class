@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
 const {randomUUID}=require('node:crypto');
 function load(file,mocks={}){const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/lib/')?load(n.slice(2)+'.ts',mocks):require(n),mod,mod.exports);return mod.exports;}
@@ -28,7 +29,7 @@ function harness(memberA=leader,memberB=null){
  const prisma={$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}};
  const auth={requireClubPermission:async(clubId,permissions)=>{const m=state.members[clubId];if(!m||!permissions.every(p=>hasPermission(m,p)))throw Error('You do not have permission for this club action.');return{user:{id:state.actor},membership:m};}};
  const mocks={'@/utils/prisma':{prisma},'@/utils/auth':auth,'next/cache':{revalidatePath:()=>{},revalidateTag:()=>{}}};
- return {state,api:load('actions/ranked-review.ts',mocks),settings:load('actions/club-settings.ts',mocks)};
+ return {state,api:load('actions/ranked-review.ts',mocks),settings:unwrapActions(load('actions/club-settings.ts',mocks))};
 }
 const save=(over={})=>({clubId:clubA,roundId:roundA,cycleKey:cycleA,expectedRevision:0,bands,...over});
 

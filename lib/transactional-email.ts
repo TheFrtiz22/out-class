@@ -49,6 +49,27 @@ export function emailNotice(label: string, text: string) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0"><tr><td class="notice" bgcolor="#f5f5f5" style="padding:18px 20px;border-left:3px solid #e85b19;background-color:#f5f5f5"><p class="ink" style="margin:0 0 6px;color:#142d4e;font-size:14px;line-height:22px;font-weight:600">${escapeEmailHtml(label)}</p><p class="copy" style="margin:0;color:#33445a;font-size:14px;line-height:22px">${escapeEmailHtml(text)}</p></td></tr></table>`;
 }
 
+/** CAN-SPAM style business address for email footers, from OUTCLASS_POSTAL_ADDRESS. Unset: no line, one warning. */
+let postalAddressWarned = false;
+export function emailPostalAddress(): string | null {
+  const value = process.env.OUTCLASS_POSTAL_ADDRESS?.trim().replace(/\s+/g, ' ').slice(0, 300) || null;
+  if (!value && !postalAddressWarned) {
+    postalAddressWarned = true;
+    console.warn('OUTCLASS_POSTAL_ADDRESS is not set; email footers omit the mailing address.');
+  }
+  return value;
+}
+export const emailPreferencesPath = '/inbox?tab=preferences';
+export const emailLegalName = 'OutClassPlatforms LLC';
+// No email builder has the recipient's school today (UVA is the only school); callers pass schoolName once they do.
+export const emailDefaultSchoolName = 'University of Virginia';
+
+/** Plain-text counterpart of the HTML footer's compliance lines. */
+export function emailTextFooter(siteUrl: string, options: { preferences?: boolean } = {}) {
+  const origin = emailSiteOrigin(siteUrl), address = emailPostalAddress();
+  return [options.preferences === false ? '' : `Email preferences: ${origin}${emailPreferencesPath}`, `${emailLegalName}${address ? `, ${address}` : ''}`].filter(Boolean).join('\n');
+}
+
 // Double rule echoes the paired sabre strokes under the official wordmark.
 function signatureRule() {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" aria-hidden="true"><tr><td class="brand-rule" height="2" bgcolor="#142d4e" style="height:2px;font-size:0;line-height:2px;background-color:#142d4e">&nbsp;</td><td width="32" height="2" bgcolor="#e85b19" style="width:32px;height:2px;font-size:0;line-height:2px;background-color:#e85b19">&nbsp;</td></tr><tr><td colspan="2" height="3" style="height:3px;font-size:0;line-height:3px">&nbsp;</td></tr><tr><td class="brand-rule" colspan="2" height="1" bgcolor="#142d4e" style="height:1px;font-size:0;line-height:1px;background-color:#142d4e">&nbsp;</td></tr></table>`;
@@ -69,8 +90,8 @@ const darkRules = [
   ['.cta', 'background-color:#f5f0e7!important;color:#142d4e!important;border-color:#ffab7c!important'],
 ];
 
-export function transactionalEmailHtml(input: { title: string; preview: string; body: string; siteUrl: string; footer: string; category?: string; variant?: 'code' | 'welcome' | 'security' | 'invitation'; headingHtml?: string }) {
-  const origin = emailSiteOrigin(input.siteUrl), esc = escapeEmailHtml;
+export function transactionalEmailHtml(input: { title: string; preview: string; body: string; siteUrl: string; footer: string; category?: string; variant?: 'code' | 'welcome' | 'security' | 'invitation'; headingHtml?: string; schoolName?: string }) {
+  const origin = emailSiteOrigin(input.siteUrl), esc = escapeEmailHtml, address = emailPostalAddress();
   const variant = input.variant || 'security';
   const headingFont = ['welcome', 'invitation'].includes(variant) ? "Georgia,'Times New Roman',serif" : emailFonts;
   const headingSize = ['welcome', 'invitation'].includes(variant) ? 36 : 30;
@@ -97,6 +118,6 @@ ${outlookDark}
 <p class="eyebrow" style="margin:0 0 14px;color:#a83d0c;font-size:10px;line-height:16px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase">${esc(input.category || 'Account security')}</p>
 <h1 class="heading ink" style="margin:0 0 18px;color:#142d4e;font-family:${headingFont};font-size:${headingSize}px;line-height:${headingSize + 7}px;letter-spacing:-0.6px;font-weight:${['welcome', 'invitation'].includes(variant) ? 400 : 600};overflow-wrap:anywhere">${input.headingHtml || esc(input.title)}</h1>
 ${input.body}</td></tr>
-<tr><td class="inset footer" style="padding:12px 40px 32px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="divider" style="padding-top:20px;border-top:1px solid #c7ced5"><p class="muted" style="margin:0 0 18px;color:#596575;font-size:12px;line-height:20px">${esc(input.footer)}</p><p class="ink" style="margin:0;color:#142d4e;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:24px">One profile. Every opportunity.</p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px"><a class="text-link" href="${esc(origin)}/" style="color:#142d4e;text-decoration:underline">OutClass</a> &nbsp; / &nbsp; University of Virginia</p></td></tr></table></td></tr>
+<tr><td class="inset footer" style="padding:12px 40px 32px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="divider" style="padding-top:20px;border-top:1px solid #c7ced5"><p class="muted" style="margin:0 0 18px;color:#596575;font-size:12px;line-height:20px">${esc(input.footer)}</p><p class="ink" style="margin:0;color:#142d4e;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:24px">One profile. Every opportunity.</p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px"><a class="text-link" href="${esc(origin)}/" style="color:#142d4e;text-decoration:underline">OutClass</a> &nbsp; / &nbsp; ${esc(input.schoolName || emailDefaultSchoolName)} &nbsp; / &nbsp; <a class="text-link" href="${esc(origin + emailPreferencesPath)}" style="color:#142d4e;text-decoration:underline">Email preferences</a></p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px">${esc(emailLegalName)}${address ? `, ${esc(address)}` : ''}</p></td></tr></table></td></tr>
 </table><!--[if mso]></td></tr></table><![endif]--></td></tr></table></body></html>`;
 }

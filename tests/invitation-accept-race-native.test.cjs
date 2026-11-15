@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 // Two simultaneous accepts of one legacy email invitation on isolated native
 // PostgreSQL, through the real acceptClubInvitation (clubWriteTransaction, club row
 // FOR UPDATE, invitation re-read after the lock). Run: node scripts/run-disposable-postgres.cjs security
@@ -7,7 +8,7 @@ const { databaseUrl, raceFixture } = require('./helpers/race-native.cjs');
 
 test('two simultaneous accepts of one invitation create one membership', { skip: !databaseUrl, timeout: 120000 }, async t => {
   const { operator, load, race, user, club } = await raceFixture(t);
-  const access = load('actions/club-access.ts');
+  const access = unwrapActions(load('actions/club-access.ts'));
   const c = await club();
   const owner = await user('owner'), invitee = await user('invitee');
   await operator.clubMember.create({ data: { clubId: c.id, userId: owner.id, isOwner: true } });
@@ -17,6 +18,7 @@ test('two simultaneous accepts of one invitation create one membership', { skip:
   assert.equal(results.filter(r => r.ok).length, 1, JSON.stringify(results));
   assert.deepEqual(results.find(r => r.ok).value, { clubId: c.id });
   assert.match(results.find(r => !r.ok).error, /unavailable or expired/);
+  assert.equal(results.find(r => !r.ok).refused, true, 'the losing accept is a returned { ok: false } refusal');
 
   const members = await operator.clubMember.findMany({ where: { clubId: c.id, userId: invitee.id } });
   assert.equal(members.length, 1);

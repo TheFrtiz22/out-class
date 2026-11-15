@@ -11,6 +11,7 @@
 @import "../styles/data-table.css";
 @import "../styles/editorial.css";
 @import "../styles/navigation-glass.css";
+@import "../styles/pressed-states.css";
 /* Shared dashboard pieces (components/product/dashboard), global like the other primitives. */
 @import "../components/product/dashboard/dashboard.css";
 /* Club workspace pages at phone width: the OutClass app's look (after the primitives it adjusts). */
@@ -66,6 +67,9 @@
   --text-display--letter-spacing: var(--oc-tracking-display);
   --text-title: var(--oc-text-title);
   --text-caption: var(--oc-text-caption);
+  /* 13px floor for control labels, form errors and helper text (text-control). */
+  --text-control: var(--oc-size-13);
+  --text-control--line-height: calc(1.125 / 0.8125);
   --text-body: var(--oc-text-body);
   --text-body--line-height: var(--oc-leading-body);
   --default-transition-duration: var(--oc-duration-micro);
@@ -187,7 +191,6 @@
 
 /* Restrained product interaction feedback; no layout-affecting motion. */
 @layer components {
-  [data-slot="button"]:not(:disabled):active { opacity: .88; }
   [data-slot="command-item"], [data-slot="dropdown-menu-item"],
   [data-slot="select-item"], [data-slot="tabs-trigger"], [data-slot="table-row"] {
     transition: color var(--oc-duration-micro) var(--oc-ease-out), background-color var(--oc-duration-micro) var(--oc-ease-out), border-color var(--oc-duration-micro) var(--oc-ease-out);
@@ -199,9 +202,6 @@
     outline: 2px solid var(--ring); outline-offset: 3px; border-radius: 3px;
   }
   [data-slot="input"], [data-slot="textarea"] { transition: border-color var(--oc-duration-micro) var(--oc-ease-out), box-shadow var(--oc-duration-micro) var(--oc-ease-out); }
-}
-@media (prefers-reduced-motion: no-preference) {
-  [data-slot="button"]:not(:disabled):not([data-slot="tabs-trigger"]):active { transform: translateY(1px); }
 }
 
 /* Responsive interaction floor: preserve zoom and keep overlays usable with the keyboard. */
@@ -219,7 +219,10 @@ html { scroll-padding-top: 5rem; }
   [data-slot="sheet-content"] {
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
-  input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size: var(--oc-text-body); }
+  /* iOS zooms into focused controls under 16px. :where() keeps this floor at zero specificity so a
+     larger component size (the sign-in code field) still wins; smaller component sizes add their own
+     mobile override (tests/mobile-input-zoom.test.cjs). */
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) { font-size: max(var(--oc-size-16), var(--oc-text-body)); }
   [data-slot="dialog-title"], [data-slot="sheet-title"] { padding-right: 2rem; line-height: 1.35; }
   .dashboard-layout { padding-inline: env(safe-area-inset-left) env(safe-area-inset-right); }
 }

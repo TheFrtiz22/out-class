@@ -29,8 +29,8 @@ Assumptions: credentials continue to belong exclusively to Supabase Auth; requir
 | `prisma/migrations/20260924040000_member_tasks/migration.sql` | groups and requirements now use NOT NULL empty-array defaults; added BEGIN/COMMIT. |
 | `prisma/migrations/20260925000000_platform_view_sessions/migration.sql` | Added BEGIN/COMMIT so failure rolls back this migration's database work. |
 | `prisma/setup_auth_trigger.sql` | Explicitly rejects normalized email collisions with a different public ID; retains UVA validation, normalization, insertion using Auth ID, and same-ID email upsert. Never rewrites an ID. |
-| `db_test9.js` | Retired unsafe email-based ID upsert experiment; now throws before opening any connection. |
-| `db_test10.js` | Retired stale unsafe trigger installer; now throws before opening any connection and points to canonical SQL. |
+| `db_test9.js` | Retired unsafe email-based ID upsert experiment; now throws before opening any connection. Deleted 2026-11-11 (hardening audit); `tests/database-reconciliation.test.cjs` asserts it stays absent. |
+| `db_test10.js` | Retired stale unsafe trigger installer; now throws before opening any connection and points to canonical SQL. Deleted 2026-11-11 (hardening audit). |
 | `tests/platform-admin.test.cjs` | Updated query expectations to verify authenticated ID lookup and absence of obsolete omit configuration. |
 | `tests/database-reconciliation.test.cjs` | Added five database-free checks of generated User fields, mapped indexes, timestamp guard, arrays/transactions, and identity-preserving trigger SQL. |
 | `docs/authorization.md` | Updated migration count and linked this database-specific deployment procedure. |

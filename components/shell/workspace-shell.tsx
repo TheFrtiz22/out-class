@@ -11,7 +11,7 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { hasWorkspace, type ClubAccess } from "@/lib/permissions"
 import { personalDestination } from "@/lib/product-navigation"
 import { personalSettingsSectionFor } from "@/lib/settings-navigation"
-import { adminNavigation } from "@/lib/admin-navigation"
+import { adminNavigation, adminSectionId } from "@/lib/admin-navigation"
 import { adminRailSections, leaderRailSections, memberRailSections, personalRailSections, studentPath, type RailSection } from "@/lib/navigation"
 import type { ViewId } from "@/lib/views"
 
@@ -41,7 +41,7 @@ type Route = {
 /** The workspace for a URL. Club pages that the account cannot open keep the personal rail; the page itself refuses. */
 export function workspaceRoute(pathname: string, params: URLSearchParams, memberships: (ClubAccess & { clubId: string; club: { name: string; suspendedAt?: string | Date | null } })[], demo: boolean): Route {
   if (pathname === "/platform" || pathname.startsWith("/platform/")) {
-    const active = pathname.split("/")[2] || "overview"
+    const active = adminSectionId(pathname.split("/")[2] || "overview")
     return { kind: "admin", clubId: "", manager: true, mode: "platform", sections: adminRailSections(), active, title: adminNavigation.find(item => item.id === active)?.label || "Admin" }
   }
   const workspace = pathname.match(/^\/club\/([^/]+)\/workspace$/)

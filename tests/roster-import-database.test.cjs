@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -30,7 +31,7 @@ test('roster preview, confirmation, rollback and retry respect the complete SQL 
     if(row&&include)row.rows=await all('SELECT * FROM "RosterImportRow" WHERE "importId"=$1 ORDER BY "rowNumber"',[row.id]);return row;
   }
   const tx={
-    $executeRaw:async(strings,...values)=>values.length?db.query(strings.map((text,i)=>text+(i<values.length?`$${i+1}`:'')).join(''),values):db.exec(strings.join('')),
+    $executeRaw:async(strings,...values)=>values.length?(await db.query(strings.map((text,i)=>text+(i<values.length?`$${i+1}`:'')).join(''),values)).affectedRows??0:(await db.exec(strings.join(''))),
     $queryRaw:async(strings,...values)=>(await db.query(strings.map((text,i)=>text+(i<values.length?`$${i+1}`:'')).join(''),values)).rows,
     club:{findUniqueOrThrow:async({where})=>one('SELECT * FROM "Club" WHERE id=$1',[where.id])},
     clubMember:{findUnique:async({where})=>one('SELECT * FROM "ClubMember" WHERE "userId"=$1 AND "clubId"=$2',[where.userId_clubId.userId,where.userId_clubId.clubId]),findMany:async({where})=>all('SELECT * FROM "ClubMember" WHERE "clubId"=$1 AND status=$2',[where.clubId,where.status])},
@@ -48,7 +49,7 @@ test('roster preview, confirmation, rollback and retry respect the complete SQL 
     const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
     new Function('require','module','exports',code)(name=>name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireClubPermission:async()=>({user:{id:actor}})}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;
   }
-  const api=load('actions/roster-import.ts');
+  const api=unwrapActions(load('actions/roster-import.ts'));
   const preview=await api.previewRosterImport({clubId,requestId:randomUUID(),filename:'roster.csv',csv:'name,year,computing_id\nJohn,2028,JMS8XY\nJohn,2028,jms8xy\nSarah,,sl3ab\nBad,2040,bad12'});
   assert.equal(preview.summary.ready,2);
   assert.equal((await one('SELECT count(*)::int AS n FROM "SchoolIdentity"')).n,0);

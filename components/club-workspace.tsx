@@ -1,4 +1,5 @@
 "use client"
+import { LoadingState } from "@/components/ui/loading-state"
 import { PillSelect } from "@/components/ui/pill-select"
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ClubCalendar } from "@/components/events/club-meetings-workspace";
@@ -46,6 +47,7 @@ import { canonicalClubWorkspaceHref } from "@/lib/workspace-routes";
 import { decisionFilter } from "@/lib/application-decisions";
 import { TERMS } from "@/lib/copy/terms";
 import { DecidePage } from "@/components/live-voting/decide-page";
+import { ReviewRubricSettings } from "@/components/applicant-review/review-rubric-settings";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -209,12 +211,12 @@ export function ClubWorkspace({
   const allClubs = <Link className="text-sm text-muted-foreground underline underline-offset-4" href="/clubs">All my clubs</Link>;
   return <ShellState>
     <RecruitmentFocus />
-        {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
+        {loading || needsSelection ? <LoadingState label="Opening club workspace…" layout="workspace" /> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {section === "overview" && allowed
             ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={manager ? <ClubHomeActions clubId={clubId} membership={membership} /> : allClubs} /></DashboardHero>
             : active === "overview" && allowed
             ? <RecruitingHero clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} data={error ? null : current} />
-            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
+            : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" || section === "members" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
           {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}
@@ -241,7 +243,7 @@ export function ClubWorkspace({
 }
 /**
  * Recruiting settings: the two drawers that used to be rail items (Anonymous Review, Auto-Reject Rules), now one
- * drawer with a section per tool. Contents are the same components as before; only the way in changed.
+ * drawer with a section per tool, plus Grading (applicant review categories). Contents are the same components as before; only the way in changed.
  * The sheet traps focus and closes on Escape; focus returns to the control that opened it.
  */
 function RecruitingSettingsDrawer({ open, section, clubId, canIdentify, onSection, onClose, onPrivacyChanged, onReview, returnFocus }: {
@@ -259,6 +261,7 @@ function RecruitingSettingsDrawer({ open, section, clubId, canIdentify, onSectio
         </TabsList>
         <TabsContent value="anonymous" className="mt-5">{open && section === "anonymous" && <RoundSettings key={clubId} clubId={clubId} embedded canIdentify={canIdentify} onChanged={onPrivacyChanged} />}</TabsContent>
         <TabsContent value="rules" className="mt-5">{open && section === "rules" && <ScreeningDashboardView key={clubId} clubId={clubId} onReview={onReview} />}</TabsContent>
+        <TabsContent value="grading" className="mt-5">{open && section === "grading" && <ReviewRubricSettings key={clubId} clubId={clubId} />}</TabsContent>
       </Tabs>
     </SheetContent>
   </Sheet>;
@@ -289,10 +292,6 @@ function RecruitmentWorkspace({
       <div className={initialTool ? "hidden" : "flex flex-wrap items-end justify-between gap-4"}>
         <div>
           <h2 className="oc-section-heading ">Recruitment</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Applicants, rounds, and interviews in one workspace. Decisions
-            remain in the applicant workflow.
-          </p>
         </div>
         <PillSelect label="Recruitment tool" prefix="Tool" active={false} value={active}
             onChange={(value) => value === "interviews" ? onInterview() : setTool(value as typeof tool)}

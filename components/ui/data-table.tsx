@@ -128,7 +128,7 @@ export function DataTable<T>({ caption, rows, rowKey, columns, card, onOpen, isO
               className={cn(widthClass(column), column.className) || undefined}>
               {column.sortKey && sort ? <button type="button" className="oc-dt-sort" onClick={() => sort.toggle(column.sortKey!)}
                 aria-label={`Sort by ${typeof column.header === "string" ? column.header : column.id}${active ? sort.descending ? ", currently descending" : ", currently ascending" : ""}`}>
-                {column.header}{active && sort.descending ? <ArrowDown size={12} aria-hidden="true" /> : <ArrowUp size={12} aria-hidden="true" data-inactive={!active || undefined} />}
+                {column.header}{active && sort.descending ? <ArrowDown size={14} aria-hidden="true" /> : <ArrowUp size={14} aria-hidden="true" data-inactive={!active || undefined} />}
               </button> : column.header}
             </th>
           })}

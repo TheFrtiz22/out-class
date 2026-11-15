@@ -13,7 +13,7 @@ test("every path may be framed only by this origin", async () => {
   assert.equal(value("Content-Security-Policy"), "frame-ancestors 'self'")
   assert.equal(value("X-Frame-Options"), "SAMEORIGIN")
   // 'self', not 'none'/DENY: the leader workspace frames the same-origin résumé PDF route.
-  assert.ok(require("node:fs").readFileSync(path.join(__dirname, "../components/views/leader-dashboard/live-leader-workspace.tsx"), "utf8").includes("<iframe"))
+  assert.ok(require("node:fs").readFileSync(path.join(__dirname, "../components/applicant-review/applicant-review-flow.tsx"), "utf8").includes("<iframe"))
 })
 
 test("no narrower rule sets a second, conflicting framing policy", async () => {

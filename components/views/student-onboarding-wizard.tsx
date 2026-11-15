@@ -1,9 +1,12 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
+import { unwrapAction } from "@/lib/action-result"
 
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { authEmailError, confirmedEmailSession, confirmEmailCode } from "@/lib/auth-email"
 import { passwordNotSavedNotice } from "@/lib/signup-password"
+import { PASSWORD_HINT } from "@/lib/password-policy"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
@@ -21,6 +24,7 @@ import {
   FileText,
   X,
   Check,
+  Compass,
 } from "@/components/icons"
 
 import { Button } from "@/components/ui/button"
@@ -30,9 +34,15 @@ import { Label } from "@/components/ui/label"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
+import { acceptCurrentTerms } from "@/actions/terms"
+import { TermsClickwrap, clickwrapAnswer, saveClickwrapAcceptance, TERMS_SAVE_FAILED } from "@/components/legal/terms-clickwrap"
+import { TERMS_ACCEPTANCE_REQUIRED, TERMS_REQUIRED_MESSAGE } from "@/lib/legal-versions"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { captchaFailed, turnstileMessage, turnstileRequired, TURNSTILE_PENDING, withCaptcha } from "@/lib/turnstile"
 import { upsertStudentProfile } from "@/actions/profile"
+import { dismissInterestSurveyPrompt } from "@/lib/workspace-api"
+import { invalidateInterestSurvey } from "@/hooks/use-interest-survey"
+import { graduationYearOptions } from "@/lib/graduation-years"
 import { uploadProfileFile } from "@/actions/storage"
 import {
   accountBasicsSchema,
@@ -55,9 +65,8 @@ const STEPS = [
   { label: "Verify", icon: Mail },
   { label: "Academic", icon: GraduationCap },
   { label: "Experience", icon: Briefcase },
+  { label: "Interests", icon: Compass },
 ] as const
-
-const GRAD_YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
 
 // Steps 2 and 3 widgets load in their own chunks (server-rendered when visible). The wizard starts
 // both downloads after mount, and each placeholder matches the control's height, so a later step
@@ -66,6 +75,9 @@ const loadVerificationCodeInput = () => import("@/components/onboarding/verifica
 const loadGraduationYearSelect = () => import("@/components/onboarding/graduation-year-select")
 const VerificationCodeInput = dynamic(() => loadVerificationCodeInput().then(module => module.VerificationCodeInput), { loading: () => <div aria-hidden="true" className="h-12 w-[calc(6*clamp(28px,8vw,48px))]" /> })
 const GraduationYearSelect = dynamic(() => loadGraduationYearSelect().then(module => module.GraduationYearSelect), { loading: () => <div aria-hidden="true" className="h-11 w-full rounded-md border border-border" /> })
+// The optional interest survey (last step) loads in its own chunk once the profile is saved.
+const loadInterestSurveyForm = () => import("@/components/interests/interest-survey-form")
+const InterestSurveyForm = dynamic(() => loadInterestSurveyForm().then(module => module.InterestSurveyForm), { loading: () => <div aria-hidden="true" className="h-72 w-full" /> })
 const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10 MB
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -185,7 +197,7 @@ function ResumeDropZone({
       }`}
     >
       <Upload
-        className={`size-8 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
+        className={`size-6 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
       />
       <p className="text-sm font-medium text-foreground">
         Drag & drop your resume here
@@ -205,15 +217,24 @@ function ResumeDropZone({
 // ─── Main Wizard ──────────────────────────────────────────────────────────────
 
 export function StudentOnboardingWizard({
-  onComplete, embedded = false, initialUser, onBack, onSignIn,
+  onComplete, embedded = false, initialUser, onBack, onSignIn, termsAccepted = false,
 }: {
   onComplete: () => void
   embedded?: boolean
   initialUser?: { email?: string; email_confirmed_at?: string | null; user_metadata?: Record<string, any> } | null
   onBack?: () => void
   onSignIn?: () => void
+  /** The signed-in account already accepted the current Terms and Privacy versions (server check). */
+  termsAccepted?: boolean
 }) {
   const { isImpersonating } = useAuth()
+  // Computed per render (Eastern calendar year) so the list never goes stale; the server re-validates.
+  const graduationYears = graduationYearOptions()
+  // Clickwrap: unticked until the person ticks it; asked once, on the account step.
+  const askTerms = TERMS_ACCEPTANCE_REQUIRED && !termsAccepted
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  // Set when the post-verification save failed: step 3 shows the box again and saves before moving on.
+  const [termsUnsaved, setTermsUnsaved] = useState(false)
   const [step, setStep] = useState(1)
   // Warm the later steps' chunks while the visitor fills in step 1.
   useEffect(() => { void loadVerificationCodeInput(); void loadGraduationYearSelect() }, [])
@@ -255,13 +276,24 @@ export function StudentOnboardingWizard({
   async function onStep1Submit(data: AccountBasicsData) {
     if (isImpersonating || loading) return
     setGlobalError("")
+    if (askTerms && !acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
     wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
-    if (accountCreated) { setStep(3); return }
+    if (accountCreated) {
+      // Signed in already (Microsoft or a confirmed email link): record the acceptance now.
+      if (askTerms) {
+        setLoading(true)
+        try {
+          const failed = await saveClickwrapAcceptance(acceptCurrentTerms)
+          if (failed) { setGlobalError(failed); return }
+        } finally { setLoading(false) }
+      }
+      setStep(3); return
+    }
     if (turnstileRequired && !turnstileToken) { setGlobalError(TURNSTILE_PENDING); return }
     setLoading(true)
     try {
       const values = step1Form.getValues()
-      const result = await registerStudent(values, turnstileToken)
+      const result = await registerStudent(values, turnstileToken, clickwrapAnswer(acceptTerms))
       if (result.error) { setGlobalError(result.error); return }
       pendingPassword.current = values.password
       setCodeSent(true)
@@ -304,6 +336,12 @@ export function StudentOnboardingWizard({
       }
       pendingPassword.current = undefined
       setConfirmNotice(!confirmed.passwordUpdated || confirmed.passwordSaved ? "" : passwordNotSavedNotice)
+      // The box was ticked on step 1 (registerStudent refused the account otherwise); now that the
+      // account holder has a session, store it. If that fails, step 3 shows the box again and retries,
+      // since the profile cannot be created without a stored acceptance.
+      if (askTerms && acceptTerms && await saveClickwrapAcceptance(acceptCurrentTerms)) {
+        setTermsUnsaved(true); setAcceptTerms(false); setGlobalError(TERMS_SAVE_FAILED)
+      }
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
@@ -335,7 +373,7 @@ export function StudentOnboardingWizard({
 
   const step3Form = useForm<AcademicProfileData>({
     resolver: zodResolver(academicProfileSchema),
-    defaultValues: { gradYear: "", major: "", gpa: "", satScore: "", actScore: "" },
+    defaultValues: { gradYear: "", major: "", phone: "", gpa: "", satScore: "", actScore: "" },
   })
 
   function applyInvitationDefaults(defaults: InvitationProfileDefaults) {
@@ -349,8 +387,19 @@ export function StudentOnboardingWizard({
     }
   }
 
-  function onStep3Submit(data: AcademicProfileData) {
+  async function onStep3Submit(data: AcademicProfileData) {
     setConfirmNotice("")
+    if (loading) return
+    if (termsUnsaved) {
+      if (!acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
+      setLoading(true); setGlobalError("")
+      try {
+        const failed = await saveClickwrapAcceptance(acceptCurrentTerms)
+        if (failed) { setGlobalError(failed); return }
+        setTermsUnsaved(false)
+      } finally { setLoading(false) }
+    }
+    setGlobalError("")
     wizardData.current.academic = data
     setStep(4)
   }
@@ -399,7 +448,7 @@ export function StudentOnboardingWizard({
 
       // Commit the full profile
       const { accountBasics, academic } = wizardData.current
-      await upsertStudentProfile({
+      unwrapAction(await upsertStudentProfile({
         firstName: accountBasics!.firstName,
         lastName: accountBasics!.lastName,
         computingId,
@@ -411,17 +460,29 @@ export function StudentOnboardingWizard({
           ? parseInt(academic!.satScore, 10)
           : undefined,
         linkedinUrl: data.linkedinUrl || "",
+        phone: academic!.phone,
         experiences: data.experiences,
         resumeUrl: resumeUrl ?? undefined,
-      })
+      }))
 
-      // Navigate to the dashboard
-      onComplete()
-    } catch (err: any) {
-      setGlobalError(err?.message ?? "Failed to save your profile")
+      // Last, optional step: the club-interest survey.
+      setStep(5)
+    } catch (err) {
+      setGlobalError(userMessage(err, "Couldn’t save your profile. Your answers are still here. Try again."))
     } finally {
       setLoading(false)
     }
+  }
+
+  // ── Step 5: Interests (optional, private to the student) ─────────────────
+
+  useEffect(() => { if (step === 4) void loadInterestSurveyForm() }, [step])
+  async function skipInterests() {
+    setLoading(true)
+    // Skipping also retires the one-time Home prompt; a failure here never blocks finishing.
+    try { await dismissInterestSurveyPrompt() } catch { /* the Home prompt simply shows once */ }
+    finally { invalidateInterestSurvey(); setLoading(false) }
+    onComplete()
   }
 
   async function onSkipStep4() {
@@ -482,7 +543,7 @@ export function StudentOnboardingWizard({
                       {...step1Form.register("firstName")}
                     />
                     {step1Form.formState.errors.firstName && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step1Form.formState.errors.firstName.message}
                       </p>
                     )}
@@ -497,7 +558,7 @@ export function StudentOnboardingWizard({
                       {...step1Form.register("lastName")}
                     />
                     {step1Form.formState.errors.lastName && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step1Form.formState.errors.lastName.message}
                       </p>
                     )}
@@ -521,7 +582,7 @@ export function StudentOnboardingWizard({
                     {accountCreated ? "Your sign-in email is kept with your account. Invitations are matched using your verified university identity." : "Only @virginia.edu addresses are accepted."}
                   </p>
                   {step1Form.formState.errors.email && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-control text-red-600">
                       {step1Form.formState.errors.email.message}
                     </p>
                   )}
@@ -530,9 +591,10 @@ export function StudentOnboardingWizard({
                 {!accountCreated && <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" autoComplete="new-password" {...step1Form.register("password")} />
-                  <p className="text-xs text-muted-foreground">At least 8 characters. Use this password to sign in again.</p>
-                  {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
+                  <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
+                  {step1Form.formState.errors.password && <p className="text-control text-red-600">{step1Form.formState.errors.password.message}</p>}
                 </div>}
+                {askTerms && <TermsClickwrap checked={acceptTerms} onCheckedChange={value => { setAcceptTerms(value); if (value && globalError === TERMS_REQUIRED_MESSAGE) setGlobalError("") }} disabled={loading} />}
                 {!accountCreated && <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button
                   type="submit"
@@ -576,7 +638,7 @@ export function StudentOnboardingWizard({
                   />
                 </div>
                 {step2Form.formState.errors.code && (
-                  <p className="text-center text-xs text-red-600">
+                  <p className="text-center text-control text-red-600">
                     {step2Form.formState.errors.code.message}
                   </p>
                 )}
@@ -647,7 +709,7 @@ export function StudentOnboardingWizard({
                   <div className="space-y-1.5">
                     <Label htmlFor="onboarding-grad-year">Graduation year</Label>
                     <GraduationYearSelect
-                      years={GRAD_YEARS}
+                      years={graduationYears}
                       value={step3Form.watch("gradYear")}
                       onValueChange={(v) =>
                         step3Form.setValue("gradYear", v, {
@@ -656,7 +718,7 @@ export function StudentOnboardingWizard({
                       }
                     />
                     {step3Form.formState.errors.gradYear && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.gradYear.message}
                       </p>
                     )}
@@ -671,11 +733,33 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("major")}
                     />
                     {step3Form.formState.errors.major && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.major.message}
                       </p>
                     )}
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(434) 555-0123"
+                    aria-describedby="phone-note"
+                    className="h-11 rounded-md border-border"
+                    {...step3Form.register("phone")}
+                  />
+                  <p id="phone-note" className="text-control text-muted-foreground">
+                    Clubs call applicants they accept. Only a club that accepts you sees it.
+                  </p>
+                  {step3Form.formState.errors.phone && (
+                    <p role="alert" className="text-control text-red-600">
+                      {step3Form.formState.errors.phone.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -695,7 +779,7 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("gpa")}
                     />
                     {step3Form.formState.errors.gpa && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.gpa.message}
                       </p>
                     )}
@@ -704,7 +788,7 @@ export function StudentOnboardingWizard({
                   <div className="space-y-1.5">
                     <Label htmlFor="actScore">ACT composite (optional)</Label>
                     <Input id="actScore" type="number" min={1} max={36} step={1} {...step3Form.register("actScore")} />
-                    {step3Form.formState.errors.actScore && <p role="alert" className="text-xs text-red-600">{step3Form.formState.errors.actScore.message}</p>}
+                    {step3Form.formState.errors.actScore && <p role="alert" className="text-control text-red-600">{step3Form.formState.errors.actScore.message}</p>}
                     <Label htmlFor="satScore">
                       SAT score{" "}
                       <span className="font-normal text-muted-foreground">
@@ -720,15 +804,18 @@ export function StudentOnboardingWizard({
                       {...step3Form.register("satScore")}
                     />
                     {step3Form.formState.errors.satScore && (
-                      <p className="text-xs text-red-600">
+                      <p className="text-control text-red-600">
                         {step3Form.formState.errors.satScore.message}
                       </p>
                     )}
                   </div>
                 </div>
 
+                {termsUnsaved && <TermsClickwrap id="accept-terms-retry" checked={acceptTerms} onCheckedChange={value => { setAcceptTerms(value); if (value && (globalError === TERMS_REQUIRED_MESSAGE || globalError === TERMS_SAVE_FAILED)) setGlobalError("") }} disabled={loading} />}
+
                 <Button
                   type="submit"
+                  disabled={loading}
                   className="mt-2 h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
                   Continue
@@ -747,7 +834,7 @@ export function StudentOnboardingWizard({
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   Add your LinkedIn and resume to strengthen your profile. Both
-                  are optional — you can always add them later.
+                  are optional, and you can add them later.
                 </p>
               </div>
 
@@ -762,7 +849,7 @@ export function StudentOnboardingWizard({
                     <Input aria-label={`Experience ${index + 1} role`} placeholder="Role or title" {...step4Form.register(`experiences.${index}.title`)} />
                     <Input aria-label={`Experience ${index + 1} organization`} placeholder="Club, employer, or organization" {...step4Form.register(`experiences.${index}.subtitle`)} />
                     <Input aria-label={`Experience ${index + 1} dates`} placeholder="e.g. 2025–present" {...step4Form.register(`experiences.${index}.period`)} />
-                    {step4Form.formState.errors.experiences?.[index] && <p className="text-xs text-red-600">Add a title, organization, and dates, or remove this experience.</p>}
+                    {step4Form.formState.errors.experiences?.[index] && <p className="text-control text-red-600">Add a title, organization, and dates, or remove this experience.</p>}
                     <Button type="button" variant="ghost" onClick={() => experienceFields.remove(index)}>Remove experience</Button>
                   </div>)}
                   <Button type="button" variant="outline" disabled={experienceFields.fields.length >= 20} onClick={() => experienceFields.append({ title: "", subtitle: "", period: "" })}>Add experience</Button>
@@ -771,7 +858,7 @@ export function StudentOnboardingWizard({
                   <Label htmlFor="linkedinUrl">
                     LinkedIn profile{" "}
                     <span className="font-normal text-muted-foreground">
-                      — Optional / Skippable
+                      (optional)
                     </span>
                   </Label>
                   <Input
@@ -782,7 +869,7 @@ export function StudentOnboardingWizard({
                     {...step4Form.register("linkedinUrl")}
                   />
                   {step4Form.formState.errors.linkedinUrl && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-control text-red-600">
                       {step4Form.formState.errors.linkedinUrl.message}
                     </p>
                   )}
@@ -818,10 +905,22 @@ export function StudentOnboardingWizard({
                     disabled={loading}
                     className="h-11 flex-1 rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                   >
-                    Finish <Check className="size-4" />
+                    Continue <ArrowRight className="size-4" />
                   </Button>
                 </div>
               </form>
+            </>
+          )}
+          {/* ───── Step 5: Interests ───── */}
+          {step === 5 && (
+            <>
+              <div className="mb-6">
+                <h2 className="oc-section-heading text-foreground">Help us suggest clubs</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">About a minute. Optional.</p>
+              </div>
+              <InterestSurveyForm initial={null} idPrefix="onboarding-interests" submitLabel="Finish"
+                onSaved={() => { invalidateInterestSurvey(); onComplete() }}
+                secondary={busy => <Button type="button" variant="secondary" disabled={busy || loading} onClick={() => void skipInterests()}>Skip for now</Button>} />
             </>
           )}
         </Panel>

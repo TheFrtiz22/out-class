@@ -39,7 +39,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await capture('rail-labelled')
 
   // The club rail: eight destinations in order, every one a plain link (no flyout), Settings pinned at the bottom.
-  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Overview','Applicants','Interviews','Decide','Home','Calendar','Tasks','Members','Settings'])
+  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Recruiting overview','Applicants','Interviews','Decide','Home','Calendar','Tasks','Members','Settings'])
   assert.equal(await rail.locator('button[aria-controls],[aria-haspopup]').count(),0,'no rail item opens a menu')
   const settingsBox=await rail.getByRole('link',{name:'Settings',exact:true}).boundingBox(),railBox=await rail.locator('.oc-dock-rail').boundingBox()
   assert.ok(railBox.y+railBox.height-(settingsBox.y+settingsBox.height)<40,'Settings sits at the bottom of the rail')
@@ -130,7 +130,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
    const drawer=page.getByRole('dialog',{name:'Workspace navigation',exact:true});await drawer.waitFor()
    assert.equal(await drawer.getByRole('navigation',{name:'Workspaces'}).count(),0)
    // More lists the rail items the bar doesn't show directly, in rail order and with rail labels.
-   assert.deepEqual(await drawer.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Overview','Applicants','Interviews','Decide','Tasks','Settings'])
+   assert.deepEqual(await drawer.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Recruiting overview','Applicants','Interviews','Decide','Tasks','Settings'])
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
    if(size===390){await page.waitForTimeout(220);await capture('rail-mobile');axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();assert.deepEqual(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[])}
    await page.keyboard.press('Escape');await drawer.waitFor({state:'hidden'})

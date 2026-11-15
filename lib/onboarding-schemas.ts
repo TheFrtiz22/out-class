@@ -1,5 +1,8 @@
 import { gpaSchema, linkedinUrlSchema } from "@/lib/student-profile"
 import { z } from "zod"
+import { newPasswordSchema } from "@/lib/password-policy"
+import { normalizePhone } from "@/lib/phone"
+import { graduationYearMessage, isSupportedGraduationYear } from "@/lib/graduation-years"
 
 // ─── Step 1: Account Basics ───────────────────────────────────────────────────
 
@@ -23,7 +26,7 @@ export const accountBasicsSchema = z.object({
 })
 
 export const registrationSchema = accountBasicsSchema.extend({
-  password: z.string().min(8, "Use at least 8 characters").max(72, "Use at most 72 characters"),
+  password: newPasswordSchema,
 })
 
 export type AccountBasicsData = z.infer<typeof accountBasicsSchema>
@@ -45,17 +48,21 @@ export const academicProfileSchema = z.object({
   gradYear: z
     .string()
     .min(1, "Graduation year is required")
-    .refine(
-      (v) => {
-        const n = Number(v)
-        return Number.isInteger(n) && n >= 2025 && n <= 2030
-      },
-      "Choose a year between 2025 and 2030"
-    ),
+    .superRefine((v, ctx) => {
+      const now = new Date()
+      if (v && !isSupportedGraduationYear(v, now)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: graduationYearMessage(now) })
+    }),
   major: z
     .string()
     .min(1, "Major is required")
     .max(120, "Major is too long"),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine(
+      (v) => { try { normalizePhone(v); return true } catch { return false } },
+      "Enter a 10-digit US number, or start with + and your country code."
+    ),
   gpa: z
     .string()
     .optional()

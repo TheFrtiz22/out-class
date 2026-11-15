@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { listClubClaims } from "@/actions/club-claims";
 import { ClaimReview } from "@/components/claim-review";
+export const metadata = { title: "Club approvals · Admin", robots: { index: false, follow: false } }
 export default async function Page() {
   const result = await adminPageLoad("/platform/claims", requirePlatformAdmin);
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;

@@ -31,3 +31,47 @@ export async function assertClubImageAssignment(tx: AppTransactionClient, clubId
     if (!rows.length) throw Error("Club image is unavailable. Upload it again before saving.");
   }
 }
+
+type ClubImages = Parameters<typeof clubProfileImages>[0];
+const errorCode = (error: unknown) => error instanceof Error ? error.name : typeof error === "object" && error && "message" in error ? "StorageError" : "Unknown";
+
+/** Storage paths of this club's own uploaded images that a profile references. */
+export function ownedClubAssetPaths(clubId: string, value: ClubImages) {
+  return [...new Set(clubProfileImages(value))]
+    .filter(reference => clubAssetReference.safeParse(reference).success && reference.split('/')[1] === clubId)
+    .map(reference => reference.slice('club-assets/'.length));
+}
+
+/**
+ * Bytes of the images the club profile currently references, for the per-club byte cap.
+ * Runs outside the upload transaction: on any error it logs and returns null, and the caller
+ * skips the byte cap (the hourly audit-row limits still apply).
+ */
+export async function referencedClubAssetBytes(clubId: string): Promise<number | null> {
+  try {
+    const club = await prisma.club.findUnique({ where: { id: clubId }, select: { logoUrl: true, bannerUrl: true, marketing: true } });
+    const paths = club ? ownedClubAssetPaths(clubId, club) : [];
+    if (!paths.length) return 0;
+    const [row] = await prisma.$queryRaw<{ bytes: bigint | number | null }[]>`SELECT COALESCE(SUM((metadata->>'size')::bigint), 0) AS bytes FROM storage.objects WHERE bucket_id='club-assets' AND name = ANY(${paths})`;
+    return Number(row?.bytes ?? 0);
+  } catch (error) {
+    console.error("club.asset.quota.bytes.failure", { clubId, code: errorCode(error) });
+    return null;
+  }
+}
+
+/**
+ * After a profile save commits, deletes this club's images that the previous profile referenced
+ * and the saved one no longer does. Best effort: failures are logged and never fail the save.
+ */
+export async function releaseReplacedClubImages(clubId: string, previous: ClubImages, next: ClubImages) {
+  const kept = new Set(ownedClubAssetPaths(clubId, next));
+  const replaced = ownedClubAssetPaths(clubId, previous).filter(path => !kept.has(path));
+  if (!replaced.length) return;
+  try {
+    const { error } = await (await privateClubAssetStorage()).remove(replaced);
+    if (error) console.error("club.asset.release.failure", { clubId, paths: replaced, code: errorCode(error) });
+  } catch (error) {
+    console.error("club.asset.release.failure", { clubId, paths: replaced, code: errorCode(error) });
+  }
+}

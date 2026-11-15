@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
 import { createClient } from "@/utils/supabase/server";
 import { platformViewSession, viewTokenHash } from "@/utils/platform-view-as";
 import {
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
   const input = await request.json().catch(() => null),
     jar = await cookies();
+  // Ending a support session is never throttled, so an administrator can always leave view-as.
+  if (input?.action !== "end") {
+    const limited = limitRequest(request, RATE_LIMITS.adminViewAs);
+    if (limited) return limited;
+  }
   if (input?.action === "end") {
     try {
       const token = jar.get(PLATFORM_VIEW_COOKIE)?.value;

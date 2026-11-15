@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { SearchField } from "@/components/ui/search-field"
 import { useConfirmOnce } from "@/components/ui/confirm-dialog"
 import { memberAcademicProfile } from "@/lib/recruitment-profile"
@@ -14,7 +15,7 @@ import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { permissionLabels, type ClubPermission } from "@/lib/permissions"
-import { getClubMembers, getClubAccess, addClubMember, removeClubMember } from "@/actions/club-access"
+import { getClubMembers, getClubAccess, addClubMember as addClubMemberAction, removeClubMember as removeClubMemberAction } from "@/actions/club-access"
 import { updateTaskMember } from "@/lib/workspace-api"
 import { RosterCsvImporter } from "@/components/roster-csv-importer"
 import { ClubAccessEditor } from "@/components/club-access-editor"
@@ -22,6 +23,9 @@ import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+import { unwrapped } from "@/lib/action-result"
+const addClubMember = unwrapped(addClubMemberAction)
+const removeClubMember = unwrapped(removeClubMemberAction)
 type Member = Omit<Awaited<ReturnType<typeof getClubMembers>>[number], "status" | "accessRole" | "joinedAt" | "updatedAt">
 const name = (m: Member) => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email
 const role = (m: Member) => m.title || m.role.replaceAll("_", " ").toLowerCase()
@@ -53,7 +57,7 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
   useEffect(() => { if (!dirty && !busy) return; const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = "" }; window.addEventListener("beforeunload",warn); return () => window.removeEventListener("beforeunload",warn) }, [dirty,busy])
   // Demo roster follows the Demo club's profile field setting, as the live roster read does on the server.
   const profileFields = normalizeProfileFieldVisibility(demo.state?.profileFieldVisibility?.[clubId])
-  const demoMembers: Member[] = demo.isDemoEnabled ? (demo.state?.memberships.filter(m => m.clubId === clubId) || []).flatMap(m => { const student = demo.state?.students.find(s => s.id === m.userId); return student ? [{...m,interviewerEligible:null,title:null,isOwner:m.userId === user?.id && !!actor?.isOwner,permissions:m.userId === user?.id ? [...(actor?.permissions || [])] : [],user:{email:student.email,studentProfile:restrictProfileFields(memberAcademicProfile({ firstName:student.profile.firstName,lastName:student.profile.lastName,major:student.profile.major,gradYear:student.profile.gradYear,transferStudent:student.profile.transferStudent }), profileFields)}}] : [] }) : []
+  const demoMembers: Member[] = demo.isDemoEnabled ? (demo.state?.memberships.filter(m => m.clubId === clubId) || []).flatMap(m => { const student = demo.state?.students.find(s => s.id === m.userId); return student ? [{...m,alumniSince:null,interviewerEligible:null,title:null,isOwner:m.userId === user?.id && !!actor?.isOwner,permissions:m.userId === user?.id ? [...(actor?.permissions || [])] : [],user:{email:student.email,studentProfile:restrictProfileFields(memberAcademicProfile({ firstName:student.profile.firstName,lastName:student.profile.lastName,major:student.profile.major,gradYear:student.profile.gradYear,transferStudent:student.profile.transferStudent }), profileFields)}}] : [] }) : []
   const members = demo.isDemoEnabled ? demoMembers : data?.clubId === clubId ? data.members : []
   const active = members.find(m => m.id === activeId)
   const year = (m: Member) => m.user.studentProfile?.academicYear || ""
@@ -68,14 +72,14 @@ export function ClubMembers({ clubId, initialDirectory, onDirectory, validatedIn
     else setData({clubId,members:await getClubMembers(clubId),access:null})
     setDirty(false); await refreshUser()
   }
-  async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await reload() } catch(e) { setError(e instanceof Error ? e.message : "Could not save.") } finally { setBusy(false) } }
+  async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await reload() } catch(e) { setError(userMessage(e, "Could not save.")) } finally { setBusy(false) } }
   if (!canAccess && !canMembers) return <p role="alert">Member management is not available with your current access.</p>
   if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} validatedInitialData={validatedInitialData} />
-  return <div className="oc-workspace-stack" data-unsaved={dirty} data-saving={busy}>
-    <p className="text-sm leading-7 text-muted-foreground">Club roles describe responsibilities. Management access is granted separately, capability by capability.</p>
+  return <div className="oc-workspace-stack oc-dt-scope" data-unsaved={dirty} data-saving={busy}>
+    <p className="text-sm leading-7 text-muted-foreground">Roles describe responsibilities; access is granted separately.</p>
     {demo.isDemoEnabled && <p className="text-sm text-muted-foreground">Fictional demo directory. Membership and access changes are available outside Demo Mode.</p>}
     {!demo.isDemoEnabled && canMembers && <RosterCsvImporter key={clubId} clubId={clubId} />}
-    <div className="oc-list-toolbar"><SearchField aria-label="Search members" placeholder="Search name, role, year, or group" value={query} onChange={e=>setQuery(e.target.value)} onClear={()=>setQuery("")} containerClassName="min-w-0 max-w-md flex-1 basis-60" /><SortControl label="Sort members" options={sortOptions} value={listSort.key} descending={listSort.descending} descendingByDefault={sortsDescending} onChange={listSort.set} /></div>
+    <div className="oc-list-toolbar"><SearchField aria-label="Search members" placeholder="Search name, role, year, or group" value={query} onChange={e=>setQuery(e.target.value)} onClear={()=>setQuery("")} containerClassName="min-w-0 max-w-md flex-1 basis-60" /><SortControl className="oc-dt-cards-sort oc-dt-sort-until-md" label="Sort members" options={sortOptions} value={listSort.key} descending={listSort.descending} descendingByDefault={sortsDescending} onChange={listSort.set} /></div>
     {!demo.isDemoEnabled && canAccess && data?.access && <details className="rounded-lg border p-4"><summary className="cursor-pointer text-sm font-medium">Invite & pending invitations</summary><div className="mt-5"><ClubAccessEditor clubId={clubId} initial={data.access} inviteOnly onSaved={reload} /></div></details>}
     {!demo.isDemoEnabled && canMembers && <details className="border-b pb-4"><summary className="cursor-pointer text-sm">Add an existing member</summary><form className="mt-4 flex flex-wrap gap-3" onSubmit={e=>{e.preventDefault();const email=String(new FormData(e.currentTarget).get("email"));void run(()=>addClubMember(clubId,email))}}><Input name="email" type="email" required aria-label="Existing member UVA email" placeholder="UVA email" className="max-w-sm" /><Button disabled={busy}>Add member</Button></form></details>}
     {error && <div role="alert" className="text-sm text-destructive">{error} <Button variant="outline" disabled={busy} onClick={()=>setRetry(n=>n+1)}>Reload members</Button></div>}

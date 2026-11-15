@@ -1,4 +1,6 @@
 "use client"
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { PageHeader } from "@/components/ui/page-header"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -7,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
+import { AuthenticatorCodeInput, AuthenticatorQr } from "@/components/security/authenticator-setup"
 import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 export default function PlatformLogin() {
   const [password, setPassword] = useState(""),
@@ -25,7 +28,7 @@ export default function PlatformLogin() {
     try {
       await fn()
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not authenticate.")
+      setMessage(userMessage(e, "Could not authenticate."))
     } finally {
       setBusy(false)
     }
@@ -45,8 +48,7 @@ export default function PlatformLogin() {
       <PageHeader title="Platform administrator sign-in" />
       <p className="text-sm font-semibold">Re-authenticating {user.email}</p>
       <p>
-        Verify your current account with your password and authenticator. Admin access lasts for this browser and authentication session. Sensitive actions require password and authenticator verification within the last five minutes. A provisioned platform grant and server allowlist are required.
-        Club ownership does not grant access.
+        Confirm your password and authenticator code to open admin tools in this browser.
       </p>
       <form
         className="space-y-4"
@@ -60,7 +62,7 @@ export default function PlatformLogin() {
               body: JSON.stringify(factor ? { action: "verify", code } : { action: "password", password, ...(turnstileToken ? { turnstileToken } : {}) }),
             })
             const result = await response.json()
-            if (!response.ok) throw Error(result.error || "Could not authenticate.")
+            if (!response.ok) throw new UserFacingError(result.error || "Could not authenticate.")
             if (result.step === "mfa") { setFactor("challenge"); setPassword(""); setQr(result.qr || "") }
             else window.location.assign("/platform")
           })
@@ -81,20 +83,8 @@ export default function PlatformLogin() {
           </>
         ) : (
           <>
-            {qr && (
-              <img src={qr} alt="Scan to enroll your authenticator" width={220} height={220} />
-            )}
-            <label className="block">
-              Authenticator code
-              <Input
-                autoComplete="one-time-code"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                required
-              />
-            </label>
+            {qr && <AuthenticatorQr qr={qr} />}
+            <AuthenticatorCodeInput value={code} onChange={setCode} />
           </>
         )}
         {!factor && <TurnstileWidget action="admin" onToken={setTurnstileToken} resetKey={turnstileReset} />}

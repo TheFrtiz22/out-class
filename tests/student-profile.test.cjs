@@ -2,6 +2,7 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
+const profileTx = require('./helpers/profile-transaction.cjs')
 
 function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
@@ -19,8 +20,10 @@ function action() {
   const calls = []
   const actions = load('actions/profile.ts', {
     '@/lib/student-profile': helpers,
+    '@/utils/terms-acceptance': { hasCurrentTermsAcceptance: async () => { throw Error('Terms acceptance is not consulted while LEGAL_PAGES_PUBLIC is off') } },
     '@/utils/auth': { requireAuth: async () => ({ user: { id: VALID_UUID, email: 'authenticated-student@virginia.edu' } }) },
-    '@/utils/prisma': { prisma: { studentProfile: { update: async args => { calls.push(args); return { id: 'profile', ...args.data, experiences: [] } }, upsert: async args => { calls.push(args); return { id: 'profile', ...args.create } } } } },
+    '@/utils/graduation': profileTx.graduation(),
+    '@/utils/prisma': { prisma: profileTx.withProfileTransaction({ studentProfile: { findUnique: async () => null, update: async args => { calls.push(args); return { id: 'profile', ...args.data, experiences: [] } }, upsert: async args => { calls.push(args); return { id: 'profile', ...args.create } } } }) },
     'next/cache': { revalidatePath: () => {} },
   })
   return { calls, ...actions }
@@ -101,11 +104,11 @@ test('resume ownership authorization during save', async () => {
   assert.ok(res2.error)
 
   // Upsert tests
-  const profileData = { firstName: 'F', lastName: 'L', computingId: 'a', major: 'Math', gradYear: 2028 };
+  const profileData = { firstName: 'F', lastName: 'L', computingId: 'a', major: 'Math', gradYear: 2028, phone: '434-555-0123' };
   
   await assert.rejects(upsertStudentProfile({ ...profileData, resumeUrl: anotherPath }))
   const res3 = await upsertStudentProfile({ ...profileData, resumeUrl: myPath })
-  assert.ok(res3.success)
+  assert.ok(res3.ok && res3.data.success)
 })
 
 test('scholar status section saves persist normalized selections and preserve unanswered legacy profiles', async () => {

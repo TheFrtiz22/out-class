@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ArrowLeft } from "@/components/icons"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { personalSettingsSectionFor, visiblePersonalSettingsSections } from "@/lib/settings-navigation"
@@ -17,15 +17,16 @@ export function PersonalSettingsLayout({ children }: { children: ReactNode }) {
   const section = personalSettingsSectionFor(pathname)
   const value = section?.href ?? "/settings"
   // Personal settings only: club settings are reached from each club workspace. Phones use the
-  // overview list (/settings) and drill in; a section shows a link back instead of a dropdown.
+  // overview list (/settings) and drill in; a section shows breadcrumbs back to it.
+  const guard = (event: { preventDefault(): void }) => { if (!canLeaveWorkspace()) event.preventDefault() }
   return <div data-settings-hub>
+    {section && <Breadcrumbs className="mb-2" items={[{ label: "Settings", href: "/settings" }, { label: section.label }]} onLinkClick={guard} />}
     <PageHeader title={section?.label ?? "Settings"} description={section?.description ?? "Your account, notifications and availability."} />
     <div className="oc-settings-workspace">
-      <aside className="oc-settings-menu">
-        {section && <Link className="oc-settings-mobile-selector inline-flex min-h-11 items-center gap-1 text-sm underline underline-offset-4" href="/settings" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}><ArrowLeft size={16} aria-hidden="true" />All settings</Link>}
+      <aside className="oc-settings-menu oc-personal-settings-menu">
         <nav className="oc-settings-navigation oc-settings-desktop-navigation" aria-label="Personal settings">
           <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">Personal settings</p>
-          {visiblePersonalSettingsSections(demo.isDemoEnabled).map(item => <Link key={item.id} href={item.href} aria-current={value === item.href ? "page" : undefined} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{item.label}</Link>)}
+          {visiblePersonalSettingsSections(demo.isDemoEnabled).map(item => <Link key={item.id} href={item.href} aria-current={value === item.href ? "page" : undefined} onClick={guard}>{item.label}</Link>)}
         </nav>
       </aside>
       <div className="oc-workspace-stack" data-settings-content>{children}</div>

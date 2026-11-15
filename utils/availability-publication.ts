@@ -1,10 +1,11 @@
+import { ActionError } from "@/lib/action-result";
 import type {AppTransactionClient} from "@/utils/prisma";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {loadInterviewerPool} from "@/utils/interviewer-pool";
 import {availabilityHref} from "@/lib/availability";
 export async function activeAvailabilityRound(tx:AppTransactionClient,clubId:string,roundId:string){
  const round=await tx.pipelineRound.findFirst({where:{id:roundId,clubId,archivedAt:null},include:{_count:{select:{interviewRooms:true}}}});
- if(!round||!(round.type==="INTERVIEW"||/interview/i.test(round.name)||round._count.interviewRooms))throw Error("Choose an active interview round from this club.");return round;
+ if(!round||!(round.type==="INTERVIEW"||/interview/i.test(round.name)||round._count.interviewRooms))throw new ActionError("Choose an active interview round from this club.");return round;
 }
 export async function publishAvailabilityRequest(tx:AppTransactionClient,input:{clubId:string;roundId:string;memberIds:string[];reminder:boolean},senderId:string){
     await authorizeClubTransaction(tx, input.clubId, senderId, ["interviews.manage"])
@@ -12,7 +13,7 @@ export async function publishAvailabilityRequest(tx:AppTransactionClient,input:{
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { name: true } })
     const pool = await loadInterviewerPool(tx, input.clubId, input.roundId, input.memberIds)
     const targets = pool.members.filter(m => input.memberIds.includes(m.id))
-    if (new Set(input.memberIds).size !== input.memberIds.length || targets.length !== input.memberIds.length || targets.some(m => !m.eligible || m.disabledAt)) throw new Error("Choose interviewers from this club and round.")
+    if (new Set(input.memberIds).size !== input.memberIds.length || targets.length !== input.memberIds.length || targets.some(m => !m.eligible || m.disabledAt)) throw new ActionError("Choose interviewers from this club and round.")
     let sent = 0
     const now = new Date()
     for (const member of targets) {

@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -8,7 +9,7 @@ function setup() {
   const state={allowed:true,member:{isOwner:true,status:'ACTIVE',permissions:[]},identities:[],users:[],members:[],invitations:[],record:null,audits:[],writes:[],actor:'manager'};
   const config={id:'computing',key:'computing_id',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$',verification:'EMAIL_LOCAL_PART',emailDomain:'virginia.edu',school:{key:'uva',active:true}};
   const tx={
-    $queryRaw:async(strings)=>strings.join("").includes("FROM \"User\"")?state.users:[],$executeRaw:async(strings,...values)=>{if(strings.join("").startsWith('UPDATE "RosterImportRow"'))for(const row of JSON.parse(values[0]))Object.assign(state.record.rows.find(r=>r.id===row.id),{status:"INVITATION_CREATED",schoolIdentityId:row.identity,invitationId:row.invitation,matchedUserId:row.user});return 0;},club:{findUniqueOrThrow:async()=>({id:clubId,schoolId:'school-uva'})},
+    $queryRaw:async(strings)=>strings.join("").includes("FROM \"User\"")?state.users:[],$executeRaw:async(strings,...values)=>{const sql=strings.join("");if(sql.startsWith('UPDATE "RosterImportRow"')){const rows=JSON.parse(values[0]);for(const row of rows)Object.assign(state.record.rows.find(r=>r.id===row.id),{status:sql.includes('x.status')?row.status:"INVITATION_CREATED",...(sql.includes('x.errors')?{errors:row.errors}:{}),schoolIdentityId:row.identity,invitationId:row.invitation,matchedUserId:row.user});state.writes.push('row-batch');return rows.length;}return 0;},club:{findUniqueOrThrow:async()=>({id:clubId,schoolId:'school-uva'})},
     clubMember:{findUnique:async()=>state.member,findMany:async()=>state.members},schoolIdentifierType:{findMany:async()=>[config]},
     user:{findUnique:async()=>({disabledAt:null}),findMany:async()=>state.users,create:()=>{throw Error('Fake user forbidden');}},
     schoolIdentity:{createMany:async({data})=>{for(const identity of data)if(!state.identities.some(i=>i.normalizedIdentifier===identity.normalizedIdentifier))state.identities.push(identity);},findMany:async()=>state.identities,upsert:async({create})=>{const existing=state.identities.find(i=>i.normalizedIdentifier===create.normalizedIdentifier);if(existing)return existing;const identity={id:'identity-'+create.normalizedIdentifier,...create};state.identities.push(identity);state.writes.push('identity');return identity;}},
@@ -23,7 +24,7 @@ function setup() {
     const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
     new Function('require','module','exports',compiled)(name=>name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireClubPermission:async(id,permissions)=>{assert.equal(id,clubId);assert.deepEqual(permissions,['members.manage']);if(!state.allowed)throw Error('Denied');return{user:{id:state.actor}};}}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;
   }
-  return{state,api:load('actions/roster-import.ts'),config};
+  return{state,api:unwrapActions(load('actions/roster-import.ts')),config};
 }
 const input=(overrides={})=>({clubId,requestId:'00000000-0000-4000-8000-000000000003',filename:'roster.csv',csv:'name,year,computing_id\nJohn Smith,2028,JMS8XY\nSarah Lee,,sl3ab',...overrides});
 
@@ -70,7 +71,7 @@ test('explicit confirmation creates only MEMBER invitations, is idempotent, and 
 test('confirmation rechecks uploader/access and skips rows that became active members or invited after preview',async()=>{
   const h=setup();await h.api.previewRosterImport(input());h.state.allowed=false;
   await assert.rejects(h.api.confirmRosterImport(importId),/Denied/);h.state.allowed=true;h.state.actor='different-manager';
-  await assert.rejects(h.api.confirmRosterImport(importId),/Only the uploader/);h.state.actor='manager';
+  await assert.rejects(h.api.confirmRosterImport(importId),/uploaded this preview/);h.state.actor='manager';
   h.state.identities=[{id:'identity-john',normalizedIdentifier:'jms8xy',userId:'john'}];h.state.members=[{userId:'john'}];
   h.state.invitations=[{id:'existing',status:'PENDING',schoolIdentityId:null,email:'sl3ab@virginia.edu',expiresAt:new Date(Date.now()+86400000)}];
   const result=await h.api.confirmRosterImport(importId);assert.equal(result.created,0);assert.equal(result.skipped,2);assert.equal(h.state.invitations.length,1);

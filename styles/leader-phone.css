@@ -10,7 +10,7 @@
 
   /* Recruiting sections: the same pill switch as Explore's Clubs / Events. */
   [data-product-shell="manager"] .oc-recruiting-switch { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 4px; padding: 4px; overflow: visible; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-solid); box-shadow: var(--oc-content-shadow, var(--oc-shadow-surface)); }
-  [data-product-shell="manager"] .oc-recruiting-switch > a { justify-content: center; min-height: 40px; padding-inline: .25rem; border: 0; border-radius: var(--oc-radius-full); color: var(--foreground); font-size: var(--oc-text-caption); font-weight: var(--oc-weight-semibold); white-space: nowrap; }
+  [data-product-shell="manager"] .oc-recruiting-switch > a { justify-content: center; min-height: 40px; padding-inline: .25rem; border: 0; border-radius: var(--oc-radius-full); color: var(--foreground); font-size: var(--oc-size-13); font-weight: var(--oc-weight-semibold); white-space: nowrap; }
   [data-product-shell="manager"] .oc-recruiting-switch > a[aria-current="page"] { background: var(--oc-glass-pill-navy, var(--primary)); box-shadow: var(--oc-glass-pill-navy-depth, none); color: var(--oc-glass-cream); }
   [data-product-shell="manager"] .oc-recruiting-switch > a:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 }
@@ -32,7 +32,7 @@
   [data-product-shell="manager"] .oc-manager-task-list > .oc-manager-task-row { gap: .75rem; padding: .875rem 1rem; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
   [data-product-shell="manager"] .oc-manager-task-list > .oc-manager-task-row + .oc-manager-task-row { border-top: 1px solid var(--oc-content-edge); }
   [data-product-shell="manager"] .oc-manager-task-row .oc-button { min-height: 36px; }
-  [data-product-shell="manager"] .oc-manager-task-next .oc-button { height: 36px; font-size: var(--oc-text-caption); }
+  [data-product-shell="manager"] .oc-manager-task-next .oc-button { height: 36px; font-size: var(--oc-size-13); }
 
   /* Segmented filters and toolbars: slimmer pills that scroll sideways. */
   [data-product-shell="manager"] .oc-workspace-content .oc-segmented-control { min-height: 44px; }

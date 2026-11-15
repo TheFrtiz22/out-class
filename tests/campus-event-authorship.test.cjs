@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -87,7 +88,7 @@ function harness() {
     "@/lib/demo/validate": { readDemoTemplate() {} },
     "next/cache": { revalidatePath() {}, revalidateTag() {} },
   };
-  const api = load("actions/campus-events.ts", mocks);
+  const api = unwrapActions(load("actions/campus-events.ts", mocks));
   const platform = load("actions/platform-admin.ts", mocks);
   return {
     logs, event, audit,

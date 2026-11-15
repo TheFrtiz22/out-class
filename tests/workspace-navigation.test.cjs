@@ -15,6 +15,8 @@ function shell(routeSearch,windowSearch='') {
   '@/lib/student-navigation':navigationModule.exports,
   '@/lib/navigation':require('./helpers/navigation-module.cjs'),
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`},
+  // Lazy views resolve to their export name, as the static `@/` proxy does, so the tree is inspectable.
+  'next/dynamic':{__esModule:true,default:loader=>[...String(loader).matchAll(/module\.(\w+)/g)].pop()[1]},
  }
  const mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync('components/app-shell.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText

@@ -2,6 +2,7 @@ const {test}=require('node:test')
 const assert=require('node:assert/strict')
 const fs=require('node:fs')
 const ts=require('typescript')
+const errorModules=require('./helpers/communications-loader.cjs').loader({})
 const flush=()=>new Promise(resolve=>setImmediate(resolve))
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)]
 const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):''
@@ -11,14 +12,14 @@ function harness(existing, overrides = {}){
  const record=existing || {id:'session',revision:0,completedAt:null,questions:[{id:'q1',prompt:'Snapshot question',guidance:'Listen carefully'}],draft:{questionNotes:[],additionalQuestions:[],overallReview:'',additionalNotes:'',applicantQuestions:'',completedQuestionIds:[],score:null}}
  const react={useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef(initial){const i=index++;return slots[i]??={current:initial}},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}}
  react.useLayoutEffect=react.useEffect
- const api={getPreviousInterviewScores:async()=>[],openInterviewSession:async()=>structuredClone(record),getInterviewKit:async()=>{calls.push(['library']);return{questions:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}]}},saveInterviewSession:async input=>{calls.push(['save',structuredClone(input)]);if(defer)await defer;if(fail)throw Error('Revision changed. Retry before leaving.');if(input.complete && overrides.unacknowledged)return {session:structuredClone(record),evaluation:null};if(overrides.rejectRevision && input.revision!==record.revision)throw Error('Revision conflict');if(record.completedAt){if(!input.complete||input.revision!==record.revision-1||JSON.stringify(input.draft)!==JSON.stringify(record.draft))throw Error('Interview already completed.');return{session:structuredClone(record),evaluation:{id:'evaluation'}};}record.draft=structuredClone(input.draft);record.revision++;if(input.complete)record.completedAt='2026-09-27';if(lost){lost=false;throw Error('Response interrupted after commit');}return{session:structuredClone(record),evaluation:input.complete?{id:'evaluation'}:null}}}
+ const api={getPreviousInterviewScores:async()=>{if(overrides.historyError)throw overrides.historyError();return[]},openInterviewSession:async()=>{if(overrides.openError)throw overrides.openError();return structuredClone(record)},getInterviewKit:async()=>{calls.push(['library']);if(overrides.kitError)throw overrides.kitError();return{questions:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}]}},saveInterviewSession:async input=>{calls.push(['save',structuredClone(input)]);if(overrides.saveError?.())throw overrides.saveError();if(defer)await defer;if(fail)throw Error('Revision changed. Retry before leaving.');if(input.complete && overrides.unacknowledged)return {session:structuredClone(record),evaluation:null};if(overrides.rejectRevision && input.revision!==record.revision)throw Error('Revision conflict');if(record.completedAt){if(!input.complete||input.revision!==record.revision-1||JSON.stringify(input.draft)!==JSON.stringify(record.draft))throw Error('Interview already completed.');return{session:structuredClone(record),evaluation:{id:'evaluation'}};}record.draft=structuredClone(input.draft);record.revision++;if(input.complete)record.completedAt='2026-09-27';if(lost){lost=false;throw Error('Response interrupted after commit');}return{session:structuredClone(record),evaluation:input.complete?{id:'evaluation'}:null}}}
  const mod={exports:{}}
- let sharedView=null;const collab={clientId:'tab',get view(){return sharedView},error:'',refresh:async()=>{},dismiss:async()=>{},select:overrides.select || (async id=>({revision:1,question:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}].find(q=>q.id===id)}))};
+ let sharedView=null;const collab={clientId:'tab',get view(){return sharedView},error:'',refresh:async()=>{},dismiss:overrides.dismiss||(async()=>{}),select:overrides.select || (async id=>({revision:1,question:[...record.questions,{id:'q2',prompt:'New kit question',guidance:'New guidance'}].find(q=>q.id===id)}))};
  const code=ts.transpileModule(fs.readFileSync('components/interview-kit-session.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText
  const motion={exports:{}};new Function('module','exports',ts.transpileModule(fs.readFileSync('lib/interview-question-motion.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(motion,motion.exports)
- new Function('require','module','exports','setTimeout','clearTimeout',code)(name=>name==='react'?react:name==='@/hooks/use-autosave-recovery'?{useAutosaveRecovery:options=>{recoveryOptions=options;return {recovery:null,onBlur(){void options.flush().catch(()=>{})}}}}:name==='@/hooks/use-interview-workspace'?{useInterviewWorkspace:()=>collab}:name==='@/lib/demo/interview-collaboration'?{}:name==='@/lib/interview-question-motion'?motion.exports:name==='@/lib/composer-enter'?require('./helpers/interview-harness.cjs').harness().load('lib/composer-enter.ts'):name==='@/lib/workspace-api'?api:name==='@/lib/interview-final-thoughts'?require('./helpers/interview-harness.cjs').harness().load('lib/interview-final-thoughts.ts'):name==='@/lib/interview-kits'?{emptyInterviewDraft:{questionNotes:[],additionalQuestions:[],overallReview:'',score:null}}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):require(name),mod,mod.exports,fn=>{timers.set(++timerId,fn);return timerId},id=>timers.delete(id))
+ new Function('require','module','exports','setTimeout','clearTimeout',code)(name=>name==='react'?react:name==='@/hooks/use-interview-offline-notes'?{useInterviewOfflineNotes:options=>{recoveryOptions=options;return {recovery:null,onBlur(){void options.flush().catch(()=>{})}}}}:name==='@/hooks/use-interview-workspace'?{useInterviewWorkspace:()=>collab}:name==='@/hooks/use-keep-focused-field-visible'?{useKeepFocusedFieldVisible(){},focusQuietly:node=>node.focus({preventScroll:true})}:name==='@/lib/demo/interview-collaboration'?{}:name==='@/lib/interview-question-motion'?motion.exports:name==='@/lib/autosave-store'?require('./helpers/interview-harness.cjs').harness().load('lib/autosave-store.ts'):name==='@/lib/composer-enter'?require('./helpers/interview-harness.cjs').harness().load('lib/composer-enter.ts'):name==='@/lib/workspace-api'?api:name==='@/lib/interview-final-thoughts'?require('./helpers/interview-harness.cjs').harness().load('lib/interview-final-thoughts.ts'):name==='@/lib/interview-kits'?{emptyInterviewDraft:{questionNotes:[],additionalQuestions:[],overallReview:'',score:null}}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>key}):name==='@/lib/action-result'||name==='@/lib/user-message'?errorModules(name.slice(2)+'.ts'):require(name),mod,mod.exports,fn=>{timers.set(++timerId,fn);return timerId},id=>timers.delete(id))
  const props={clubId:'club',applicationId:'app',roundId:'round',formRef:{current:null},onState(){},onComplete(...args){calls.push(['complete',...args])}, ...overrides}
- return {calls,record,blur(){return recoveryOptions.flush()},shared(value){sharedView=value},fail(value){fail=value},loseResponse(){lost=true},defer(value){defer=value},render(){index=0;const tree=mod.exports.InterviewKitSession(props);while(effects.length)effects.shift()();return tree},tick(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn())}}
+ return {calls,record,unmount(){cleanups.forEach(c=>c?.())},blur(){return recoveryOptions.flush()},shared(value){sharedView=value},fail(value){fail=value},loseResponse(){lost=true},defer(value){defer=value},render(){index=0;const tree=mod.exports.InterviewKitSession(props);while(effects.length)effects.shift()();return tree},tick(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn())}}
 }
 const select=(tree,label)=>nodes(tree).find(n=>n.type==='button'&&(text(n).startsWith(label)||nodes(n).some(c=>c.props?.className==='oc-completed-prompt'&&text(c).startsWith(label)))).props.onClick()
 const edit=(tree,value)=>nodes(tree).find(n=>n.props?.id==='active-notes-q1').props.onChange({target:{value}})
@@ -295,4 +296,59 @@ test('failed pending autosave cannot consume finish; failed submission retains i
 test('an unacknowledged submission never unlocks Next or reports completion',async()=>{
  const h=harness(undefined,{unacknowledged:true});h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();button(t,'End post-interview').props.onClick();await flush();t=h.render();
  assert.equal(h.record.completedAt,null);assert.ok(button(t,'Retry end post-interview'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,0);assert.equal(button(t,'Next candidate'),undefined);assert.equal(scoreInput(t).props.value,6.5);
+});
+// Production QA 2026-11-13: an interviewer removed from the panel mid-interview saw "Couldn't save".
+const revokedError=()=>{const {UserFacingError}=errorModules('lib/action-result.ts');return new UserFacingError('You no longer have access to this interview.','ACCESS_REVOKED')}
+test('an autosave refused with ACCESS_REVOKED hands the room its access-removed state: no "Couldn’t save", no retry, notes kept', async () => {
+ let revoked=false,removed=0;const flags=[];const h=harness(undefined,{saveError:()=>revoked&&revokedError(),onAccessRevoked:unsaved=>{removed++;flags.push(unsaved)}});h.render();await flush();let t=h.render();select(t,'Snapshot question');await flush();t=h.render();edit(t,'Unsaved private note');t=h.render();
+ revoked=true;h.tick();await flush();t=h.render();
+ assert.equal(removed,1,'the room is told access was removed');assert.deepEqual(flags,[true],'with unsaved notes');
+ const header=nodes(t).find(n=>n.type==='header');assert.doesNotMatch(text(header),/Couldn’t save|Couldn’t reach/);assert.equal(button(t,'Retry'),undefined,'no save retry is offered');
+ assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Unsaved private note','the text stays in the editor until the room unmounts (the device copy then keeps it)');
+ const saves=h.calls.filter(c=>c[0]==='save').length;h.tick();await flush();h.render();assert.equal(h.calls.filter(c=>c[0]==='save').length,saves,'no automatic retry');
+});
+test('opening an interview refused with ACCESS_REVOKED shows the room access state instead of an inline error', async () => {
+ let removed=0;const h=harness(undefined,{openError:revokedError,onAccessRevoked:()=>removed++});h.render();await flush();const t=h.render();
+ assert.equal(removed,1);assert.doesNotMatch(text(t),/no longer have access|Could not open interview/);
+});
+test('a Next candidate refused with ACCESS_REVOKED hands the room its access-removed state: no "Could not load", no advance', async () => {
+ let attempts=0;const flags=[];const h=harness(undefined,{onNextApplicant:async()=>{attempts++;throw revokedError()},onReturnToList(){},onAccessRevoked:unsaved=>flags.push(unsaved)});
+ h.render();await flush();let t=h.render();button(t,'End current interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();
+ button(t,'End post-interview').props.onClick();await flush();t=h.render();
+ button(t,'Next candidate').props.onClick();await flush();t=h.render();
+ assert.equal(attempts,1);assert.deepEqual(flags,[false],'reported once; the submitted review left nothing unsaved');
+ assert.doesNotMatch(text(t),/Could not load the next applicant|No more applicants/);assert.ok(button(t,'Next candidate'),'not shown as advanced or empty');
+});
+test('the question library refused with ACCESS_REVOKED hands the room its access-removed state instead of "Current kit unavailable"', async () => {
+ let removed=0;const h=harness(undefined,{kitError:revokedError,onAccessRevoked:()=>removed++});h.render();await flush();let t=h.render();
+ button(t,'Question bank').props.onClick();h.render();await flush();t=h.render();
+ assert.equal(removed,1);assert.doesNotMatch(text(t),/Current kit unavailable/);
+});
+test('score history refused with ACCESS_REVOKED hands the room its access-removed state instead of "Score history unavailable"', async () => {
+ let removed=0;const h=harness(undefined,{historyError:revokedError,onAccessRevoked:()=>removed++});h.render();await flush();let t=h.render();
+ button(t,'End current interview').props.onClick();await flush();t=h.render();await flush();t=h.render();
+ assert.equal(removed,1);assert.doesNotMatch(text(t),/Score history unavailable/);assert.equal(button(t,'Retry history'),undefined);
+ const plain=harness(undefined,{historyError:revokedError});plain.render();await flush();t=plain.render();button(t,'End current interview').props.onClick();await flush();t=plain.render();await flush();t=plain.render();
+ assert.match(text(t),/Score history unavailable/,'without a room handler the inline message stays');
+});
+test('sharing a question refused with ACCESS_REVOKED hands off once and stops: no "could not be shared" or Retry sharing', async () => {
+ let sends=0;const flags=[];const h=harness(undefined,{select:async()=>{sends++;throw revokedError()},onAccessRevoked:unsaved=>flags.push(unsaved)});h.render();await flush();let t=h.render();
+ select(t,'Snapshot question');t=h.render();await flush();t=h.render();
+ assert.equal(sends,1);assert.equal(flags.length,1);assert.doesNotMatch(text(t),/could not be shared/);assert.equal(button(t,'Retry sharing question'),undefined);
+});
+test('Stay here refused with ACCESS_REVOKED hands the room its access-removed state instead of "Could not dismiss"', async () => {
+ let removed=0;const h=harness(undefined,{dismiss:async()=>{throw revokedError()},onAccessRevoked:()=>removed++});h.render();await flush();
+ h.shared({sessionId:'room',revision:0,participants:[],selection:null,invitation:{id:'invite',sender:'Peer',candidate:'Destination'}});let t=h.render();t=h.render();
+ button(t,'Stay here').props.onClick();await flush();t=h.render();
+ assert.equal(removed,1);assert.doesNotMatch(text(t),/Could not dismiss/);
+});
+test('the timer, round score and earlier rounds get the room handoff only when the room handles ACCESS_REVOKED; a late widget report after close is ignored', async () => {
+ const done={id:'session',revision:1,completedAt:'2026-09-27',questions:[{id:'q1',prompt:'Snapshot question',guidance:''}],draft:{questionNotes:[],additionalQuestions:[],overallReview:'',additionalNotes:'',applicantQuestions:'',completedQuestionIds:[],score:7}};
+ const flags=[];const h=harness(structuredClone(done),{onAccessRevoked:unsaved=>flags.push(unsaved)});h.render();await flush();let t=h.render();
+ const widgets=['InterviewTimer','RoundScore','EarlierRounds'].map(type=>nodes(t).find(n=>n.type===type));
+ widgets.forEach((w,i)=>assert.equal(typeof w?.props.onAccessRevoked,'function',['InterviewTimer','RoundScore','EarlierRounds'][i]));
+ widgets[0].props.onAccessRevoked();assert.deepEqual(flags,[false],'reported through the room with the unsaved-notes flag');
+ h.unmount();widgets[1].props.onAccessRevoked();assert.deepEqual(flags,[false],'a report after the session closed is ignored');
+ const plain=harness(structuredClone(done));plain.render();await flush();t=plain.render();
+ for(const type of ['InterviewTimer','RoundScore','EarlierRounds'])assert.equal(nodes(t).find(n=>n.type===type).props.onAccessRevoked,undefined,`${type} keeps its inline message outside the room`);
 });

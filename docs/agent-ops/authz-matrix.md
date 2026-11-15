@@ -137,3 +137,35 @@ Resource: the requester's own Microsoft calendar (start, end, showAs, isCancelle
 | Attacker page / other origin | cannot receive results: postMessage targets the site origin; editor accepts only its own popup, nonce and week | attacker code cannot be injected: state and PKCE verifier are in the victim's httpOnly cookie | `outlook-busy.test` (popup escaping, widget checks) |
 | Account in another Microsoft tenant | refused by Microsoft: single required tenant | n/a | `outlook-busy.test` (config refuses common/organizations) |
 | Unconfigured deployment | 404 popup message; button hidden | 404 | `outlook-busy.test` (config) |
+## 2026-11-10 · S1-1 · Per-club pilot feature switches (branch `feature/club-feature-switches`)
+Resource: `Club.features` (JSON switches). Written only by `setAdminClubFeature` in `actions/admin-clubs.ts`; read on the server by `clubHasFeature` (`utils/club-features.ts`). No client-supplied switch state is trusted; NULL, malformed and unknown keys read as off.
+| Actor | Read switches (admin editor) | Change a switch | Test |
+|---|---|---|---|
+| Platform admin, MFA aal2, fresh elevation, live session | allow | allow, under `FOR UPDATE` + `authorizeAdminTransaction`, compare-and-set on `expected`, audit `platform.club.feature` with reason | `club-features.test` |
+| Platform admin in view-as (impersonation) session | deny (`requirePlatformAdmin`) | deny, nothing written | `club-features.test` (real guard, view cookie) |
+| Signed-in non-admin, club leader of the club, student | deny | deny, nothing written | `club-features.test` (guard throws AdminAccessError) |
+| Logged-out visitor / expired session | deny (`requireAuth`) | deny | existing `platform-admin.test` |
+| Feature code at request time | reads via `clubHasFeature` only | n/a | `club-features.test` |
+## 2026-11-11 · S1-2 · CSV exports gated by the `csvExport` pilot switch (branch `feature/csv-export-gate`)
+Resource: `GET /api/club-exports` (applicants, roster, attendance, RSVPs). Unchanged: request-time `requireClubPermission` and in-snapshot `authorizeClubTransaction` with `clubExportPermissions`, club scoping in every builder, CSV formula neutralizing, one `club.export.<kind>` audit row per export, support view-as audit. New: after both capability checks, `clubHasFeature(tx, clubId, "csvExport")` in the same RepeatableRead snapshot; the switch defaults off (S1-1 registry). UI: `ClubExportLink` reads the switch from the signed-in account's own active memberships (`accountMembershipClubSelect`, display only) and shows a one-line note instead of the link while off.
+| Actor | Feature on | Feature off | Test |
+|---|---|---|---|
+| Leader with the kind's capability (incl. owner) | allow, audited | 403 "CSV export is not enabled for this club.", no rows read, no audit | `club-exports.test` (each kind), `club-exports-native.test` |
+| Platform admin in view-as as such a leader | allow, club audit + `platform.impersonation.club-export.<kind>` | 403, no audits | `club-exports.test` |
+| Leader of a suspended club | allow (`allowSuspendedRead` at both checks) | 403 | `club-exports.test` |
+| Member without the capability, other club's leader, removed member | 403 "Export unavailable" (switch never read, so its state is not revealed) | same | `club-exports.test` |
+| Logged-out visitor | redirect/deny (`requireClubPermission`) | same | existing |
+| UI | link shown | note shown to capable leaders; nothing for others, demo, or before the account loads | `club-exports.test` (render) |
+## 2026-11-12 · PROFILE-PHONE-1 · Applicant phone number (branch `profile/applicant-phone`)
+Resource: `StudentProfile.phone`. Written only by its owner (`upsertStudentProfile`, `updateStudentProfileSection` section `contact`; identity from the session). Read paths for other people: `listStagedDecisions` / `stageDecision` (view field `phone`) and pipeline detail (`offerPhone`, top level, outside the recruiter profile). `recruitmentProfile` omits it by type, so list, summary, voting, interview, search, roster, export and view-as projections cannot carry it.
+| Actor | Read another student's phone | Test |
+|---|---|---|
+| Member with `decisions.manage` + `applicants.identify` (incl. owner), applicant ACCEPTED or staged ACCEPTED, identified round | allow | `applicant-phone.test` |
+| Same member, any other status or staged outcome | deny (null) | `applicant-phone.test` |
+| Same member, anonymous-review round; own application; recused from the applicant | deny (null) | `applicant-phone.test` |
+| Reviewer, interviewer, `decisions.view`, `recruitment.manage` without `decisions.manage`, removed or suspended member | deny (null; staged list refuses outright) | `applicant-phone.test` |
+| Leader of another club | deny (club-scoped reads; `requireClubPermission` + `authorizeClubTransaction`) | existing `authorization.test`, `profile-field-authz.test` |
+| Platform admin view-as | deny (explicit column select without phone) | `applicant-phone.test` (source) |
+| Browser roles via PostgREST | deny (no table privilege; unchanged by the migration) | `student-profile-phone-migration.test`, `test:migrations` |
+| Logged-out visitor | deny (`requireAuth`) | existing |
+Untested cells: a second-club leader against the two new fields on a running stack (covered by code scoping only); include in the next attacker pass.

@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -82,11 +83,11 @@ function harness() {
     auditLog: { create: async q => { state.audits.push(q.data) } },
   }
   const hasPermission = (m, p) => !!m && m.status === 'ACTIVE' && (m.isOwner || m.permissions.includes(p))
-  state.actions = load('actions/club-settings.ts', {
+  state.actions = unwrapActions(load('actions/club-settings.ts', {
     '@/lib/club-suspension': { lockOperationalClub: async (_tx, id) => { state.locks.push(id) } },
     '@/utils/auth': { requireClubPermission: async (id, caps) => { state.request = [id, caps]; const m = state.members[`${state.user}:${id}`]; if (!caps.every(c => hasPermission(m, c))) throw new Error('Forbidden'); return { user: { id: state.user }, membership: m } } },
     '@/utils/prisma': { prisma: { $transaction: fn => fn(tx), club: tx.club } },
-  })
+  }))
   return state
 }
 

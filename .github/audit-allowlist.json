@@ -1,0 +1,13 @@
+{
+  "$comment": "Documented exceptions for `pnpm audit --audit-level=high --prod` (scripts/check-dependency-audit.cjs). Each entry needs a reason, a mitigation link and an expiry no more than 90 days out; an expired entry fails CI. Remove an entry as soon as the patched version ships.",
+  "advisories": [
+    {
+      "id": "GHSA-mrhx-c7xc-m3w5",
+      "package": "zod",
+      "severity": "high",
+      "reason": "Patched only in zod >= 4.6.6; no patched 3.x release exists (latest 3.25.76). Moving to zod 4 touches ~150 modules and needs @hookform/resolvers 5, so it is a separate migration. Mitigated by the bounded-input pre-check (#248): handlers that accept collections from untrusted input measure the raw value with boundedParse (array length, total elements, depth, size) before a schema runs. Re-check new handlers use it until zod 4 lands.",
+      "mitigation": "lib/bounded-input.ts",
+      "expires": "2027-02-01"
+    }
+  ]
+}

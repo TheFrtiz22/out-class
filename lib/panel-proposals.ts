@@ -23,6 +23,9 @@ export const panelSessionSchema = z.object({
   required: z.number().int().min(1).max(8), active: z.boolean(),
   roomRevision: z.number().int().nonnegative(), slotRevision: z.number().int().nonnegative(),
   existingMemberIds: z.array(id).max(1000), originalRequired: z.number().int().min(1).max(8).optional(),
+  /** A future, unbooked session in a closed room that still carries a published panel. It is never offered
+   * and never newly staffed; a draft may only keep or remove its current interviewers. */
+  unstaffOnly: z.literal(true).optional(),
 }).strict()
 export const panelDocumentSchema = z.object({
   version: z.literal(1), window: panelWindowSchema, options: panelOptionsSchema,
@@ -75,6 +78,8 @@ export type PanelProposalView = { id: string; revision: number; status: "UNPUBLI
 export type PanelWorkspace = {
   roundId: string; roundName: string; timezone: string; scene: PanelScene; proposal: PanelProposalView | null
   suggestedWindow: { start: string; end: string } | null; fingerprint: string
+  /** Set by regeneration: locked positions dropped because their session was removed, ended or closed. */
+  droppedLockedPositions?: number
   clubName?: string; canPublish?: boolean; canOverrideAvailability?: boolean; published?: PanelPublishedView | null; history?: PanelPublishedView[]
 }
 export const availabilityOverrideConditions = ["UNCONFIRMED", "UNKNOWN_AVAILABILITY", "UNAVAILABLE"] as const
@@ -86,6 +91,10 @@ export function assignmentBlockReasons(member: PanelMember | undefined, session:
 export const assignmentKey = (a: Pick<PanelAssignment, "slotId" | "memberId">) => `${a.slotId}:${a.memberId}`
 export const sameSessionTime = (a: PanelSession, b: PanelSession) => a.startTime === b.startTime && a.endTime === b.endTime && a.buffer === b.buffer && a.roomId === b.roomId
 export const sessionMinutes = (s: PanelSession) => (+new Date(s.endTime) - +new Date(s.startTime)) / 60000 + s.buffer
+
+/** Problems that stop a current interviewer from staying on a closed session; they mirror the publication guard. */
+const retainedBlockCodes = new Set(["MEMBER_REMOVED", "INELIGIBLE", "UNCONFIRMED", "NO_INTERVIEW_ACCESS"])
+export const closedSessionReason = "Room closed. Applicants aren’t offered this time; you can only remove its interviewers."
 
 export function memberBlockReasons(member: PanelMember | undefined, session: PanelSession): string[] {
   if (!member) return ["MEMBER_REMOVED"]
@@ -136,19 +145,29 @@ export function validatePanelDocument(document: PanelDocument, scene: PanelScene
   for (const a of document.assignments) {
     const session = sessions.get(a.slotId), baseline = baselines.get(a.slotId), key = assignmentKey(a)
     if (seen.has(key)) add(a.slotId, a.memberId, "DUPLICATE"); seen.add(key)
+    if (session?.unstaffOnly && baseline) {
+      // A closed session keeps only interviewers it already has; nobody new is placed there.
+      if (!session.existingMemberIds.includes(a.memberId)) add(a.slotId, a.memberId, "SESSION_UNAVAILABLE")
+      else assignmentBlockReasons(members.get(a.memberId), { ...session, active: true }, a).filter(code => retainedBlockCodes.has(code)).forEach(code => add(a.slotId, a.memberId, code))
+      if (!sameSessionTime(session, baseline)) add(a.slotId, a.memberId, "SESSION_CHANGED")
+      continue
+    }
     if (!session || !session.active || !baseline) add(a.slotId, a.memberId, "SESSION_UNAVAILABLE")
     if (session && baseline && !sameSessionTime(session, baseline)) add(a.slotId, a.memberId, "SESSION_CHANGED")
     if (session) assignmentBlockReasons(members.get(a.memberId), session, a).forEach(code => add(a.slotId, a.memberId, code))
   }
-  for (const memberId of new Set(document.assignments.map(a => a.memberId))) {
-    const own = document.assignments.filter(a => a.memberId === memberId)
+  // Closed sessions hold no interviews, so they never count toward duty, workload or coverage.
+  const held = document.assignments.filter(a => !sessions.get(a.slotId)?.unstaffOnly)
+  for (const memberId of new Set(held.map(a => a.memberId))) {
+    const own = held.filter(a => a.memberId === memberId)
     const duty = own.flatMap(a => { const s = sessions.get(a.slotId) ?? baselines.get(a.slotId); return s ? [s] : [] })
     for (let i = 0; i < duty.length; i++) for (let j = i + 1; j < duty.length; j++) if (duty[i].id !== duty[j].id && sessionsOverlap(duty[i], duty[j])) { add(duty[i].id, memberId, "DOUBLE_BOOKED"); add(duty[j].id, memberId, "DOUBLE_BOOKED") }
     const member = members.get(memberId)
     if (member) longDutySessions(member, duty, document.options).forEach(slotId => add(slotId, memberId, "CONSECUTIVE_LIMIT"))
   }
   const rows = document.sessions.map(baseline => {
-    const session = sessions.get(baseline.id) ?? { ...baseline, active: false }, proposed = document.assignments.filter(a => a.slotId === baseline.id)
+    const session = sessions.get(baseline.id) ?? { ...baseline, active: false, unstaffOnly: undefined }, proposed = document.assignments.filter(a => a.slotId === baseline.id)
+    if (session.unstaffOnly) return { slotId: session.id, status: (issues.some(i => i.slotId === session.id) ? "CONFLICT_DETECTED" : "FULLY_STAFFED") as PanelStatus, proposed: proposed.length, filled: 0, required: 0, unfilled: 0, reasons: [closedSessionReason] }
     if (proposed.length > session.required) add(session.id, undefined, "OVERSTAFFED")
     const filled = Math.min(session.required, proposed.filter(a => !issues.some(i => i.slotId === a.slotId && i.memberId === a.memberId)).length)
     const unfilled = session.required - filled, conflict = issues.some(i => i.slotId === session.id)
@@ -166,7 +185,7 @@ export function validatePanelDocument(document: PanelDocument, scene: PanelScene
   const required = rows.reduce((n, s) => n + s.required, 0), filled = rows.reduce((n, s) => n + s.filled, 0)
   const status: PanelStatus = issues.length ? "CONFLICT_DETECTED" : required && filled === required ? "FULLY_STAFFED" : filled ? "PARTIALLY_STAFFED" : "UNFILLED"
   return { status, filled, required, percentage: required ? Math.round(filled / required * 100) : 0, issues, sessions: rows, workloads: [...members.values()].flatMap(m => {
-    const own = document.assignments.filter(a => a.memberId === m.id), minutes = own.reduce((n, a) => { const s = sessions.get(a.slotId) ?? baselines.get(a.slotId); return n + (s ? sessionMinutes(s) : 0) }, 0)
+    const own = held.filter(a => a.memberId === m.id), minutes = own.reduce((n, a) => { const s = sessions.get(a.slotId) ?? baselines.get(a.slotId); return n + (s ? sessionMinutes(s) : 0) }, 0)
     return own.length ? [{ memberId: m.id, sessions: own.length, minutes }] : []
   }), warnings: [] }
 }
@@ -292,7 +311,27 @@ export function generatePanelAssignments(scene: PanelScene, document: PanelDocum
 
 export type PanelScheduleChange = { kind: "ADDED" | "REMOVED" | "REASSIGNED" | "ROOM_CHANGED" | "TIME_CHANGED" | "REQUIREMENT_CHANGED" | "AVAILABILITY_OVERRIDDEN"; memberId?: string; before?: PanelSession; after?: PanelSession }
 export type PanelPublishedView = { id: string; version: number; previousVersion: number; status: "PUBLISHED" | "SUPERSEDED"; document: PanelDocument; changes: PanelScheduleChange[]; publishedAt: string; author: string; understaffedOverride: boolean; overrideReason: string | null; notifications: Record<string, number> }
-export type PanelApprovalReview = { proposalId: string; revision: number; approvalToken: string; clubName: string; roundName: string; rooms: number; sessions: number; required: number; filled: number; unfilled: number; conflicts: number; canOverride: boolean; overrideWarning: string | null; changes: PanelScheduleChange[]; previousVersion: number }
+export type PanelApprovalReview = { proposalId: string; revision: number; approvalToken: string; clubName: string; roundName: string; rooms: number; sessions: number; required: number; filled: number; unfilled: number; conflicts: number; canOverride: boolean; overrideWarning: string | null; changes: PanelScheduleChange[]; previousVersion: number
+  /** Unbooked sessions this publication empties (they currently have interviewers). */
+  unstaffed: number
+  /** Unbooked sessions left with no interviewers; they are not offered to applicants. */
+  unoffered: number
+  /** Whether unfilled positions still need the understaffing confirmation and reason. */
+  overrideRequired: boolean }
+/**
+ * An unbooked session with no interviewers is not offered to applicants, so it never needs the
+ * understaffing reason, whether it was emptied now or never staffed. Only sessions that will be
+ * offered while understaffed (partially staffed) do. Booked sessions are never exempt:
+ * assertPanelBookingSafety still requires an interviewer. removedSlotIds are the sessions this
+ * publication empties, which need an explicit confirmation.
+ */
+export function panelUnstaffing(document: PanelDocument, scene: PanelScene, bookedSlotIds: ReadonlySet<string>) {
+  const staffed = (id: string) => (scene.sessions.find(s => s.id === id)?.existingMemberIds.length ?? 0) > 0
+  // Closed sessions are not part of the required total, so they are not subtracted from it either.
+  const closed = (id: string) => scene.sessions.find(s => s.id === id)?.unstaffOnly === true
+  const empty = document.sessions.filter(s => !bookedSlotIds.has(s.id) && !document.assignments.some(a => a.slotId === s.id))
+  return { exemptSlotIds: empty.map(s => s.id), exemptRequired: empty.filter(s => !closed(s.id)).reduce((n, s) => n + s.required, 0), removedSlotIds: empty.filter(s => staffed(s.id)).map(s => s.id) }
+}
 export const publishedPanelDocumentSchema = panelDocumentSchema.innerType().extend({ sessions: z.array(panelSessionSchema).max(5000), assignments: z.array(panelAssignmentSchema).max(40000) }).superRefine((d, ctx) => {
   const slots = new Set(d.sessions.map(s => s.id))
   if (slots.size !== d.sessions.length || d.assignments.some(a => !slots.has(a.slotId)) || new Set(d.assignments.map(assignmentKey)).size !== d.assignments.length) ctx.addIssue({code: z.ZodIssueCode.custom, message: "Invalid published session references."})

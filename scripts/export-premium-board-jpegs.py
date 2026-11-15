@@ -28,6 +28,7 @@ ARTWORK = {
     "08_monogram_no_sword": (6, IVORY),
     "09_monochrome_lockup": (5, IVORY),
     "10_hero_transparent": (3, NAVY),
+    "11_app_icon_white": (6, IVORY),
 }
 
 

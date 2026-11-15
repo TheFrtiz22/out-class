@@ -98,3 +98,53 @@ test('a scheduled session reads View details on the landing, and an early member
   await page.getByText(`Scheduled start · ${expected} Eastern Time · 30 minutes expected`,{exact:true}).waitFor({timeout:15000});assert.deepEqual(errors,[]);
  }finally{await browser.close();await f.close()}
 });
+
+test('removing an applicant with prepared highlights asks in-app before saving; Keep editing saves nothing, confirming discards only theirs',{timeout:170000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const saved=()=>f.h.state().sessions[0],prepared=()=>f.h.state().preparations.map(p=>p.applicationId).sort();
+ try{
+  await scheduled(f);const revision=saved().revision;
+  f.h.state().preparations.push(...apps.map(a=>({sessionId,applicationId:a,highlights:[{id:a}],revision:1,updatedBy:leaderId})));
+  await page.goto(editUrl(f));await page.getByRole('textbox',{name:'Session name',exact:true}).waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  const box=page.getByRole('group',{name:/Applicants to review/}).getByRole('checkbox').nth(1);await box.uncheck();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  const save=page.getByRole('button',{name:'Save session changes',exact:true});await save.waitFor({timeout:15000});
+  await save.click();
+  const dialog=page.getByRole('alertdialog',{name:'Discard prepared highlights?'});await dialog.waitFor({timeout:10000});
+  assert.match(await dialog.innerText(),/Removing 1 applicant will discard their prepared slide highlights\./);
+  await dialog.getByRole('button',{name:'Keep editing'}).click();await dialog.waitFor({state:'detached'});
+  assert.equal(saved().revision,revision);assert.equal(saved().candidates.length,3);assert.deepEqual(prepared(),[...apps].sort());
+  await save.click();await dialog.waitFor({timeout:10000});await dialog.getByRole('button',{name:'Remove and save'}).click();
+  const deadline=Date.now()+20000;while(saved().revision===revision&&Date.now()<deadline)await page.waitForTimeout(100);
+  assert.equal(saved().revision,revision+1);assert.equal(saved().candidates.length,2);
+  const kept=saved().candidates.map(c=>c.applicationId).sort();assert.deepEqual(prepared(),kept,'only the removed applicant lost highlights');
+  const audit=f.h.state().audit.filter(a=>a.action==='voting.slides.discarded');assert.equal(audit.length,1);assert.equal(audit[0].details.count,1);
+  assert.deepEqual(errors,[]);
+ }finally{await browser.close();await f.close()}
+});
+
+test('highlights another leader prepares after this page loaded are confirmed from the server list before a removal saves, under a new request',{timeout:170000},async()=>{
+ const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const saved=()=>f.h.state().sessions[0];
+ try{
+  await scheduled(f);const revision=saved().revision;
+  await page.goto(editUrl(f));await page.getByRole('textbox',{name:'Session name',exact:true}).waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await page.getByRole('group',{name:/Applicants to review/}).getByRole('checkbox').nth(1).uncheck();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  const save=page.getByRole('button',{name:'Save session changes',exact:true});await save.waitFor({timeout:15000});
+  // Another leader saves highlights for every applicant after this page loaded.
+  f.h.state().preparations.push(...apps.map(a=>({sessionId,applicationId:a,highlights:[{id:a}],revision:1,updatedBy:voterId})));
+  await save.click();
+  const dialog=page.getByRole('alertdialog',{name:'Discard prepared highlights?'});await dialog.waitFor({timeout:15000});
+  assert.match(await dialog.innerText(),/Removing 1 applicant will discard their prepared slide highlights\./);
+  assert.equal(saved().revision,revision,'nothing saved before the refreshed confirmation');assert.equal(f.h.state().preparations.length,3);
+  await dialog.getByRole('button',{name:'Remove and save'}).click();
+  const deadline=Date.now()+20000;while(saved().revision===revision&&Date.now()<deadline)await page.waitForTimeout(100);
+  assert.equal(saved().revision,revision+1);assert.equal(saved().candidates.length,2);assert.equal(f.h.state().preparations.length,2);
+  assert.equal(f.h.state().receipts.filter(r=>r.sessionId===sessionId&&r.fingerprint).length>=1,true);
+  const [audit]=f.h.state().audit.filter(a=>a.action==='voting.slides.discarded');assert.equal(audit.details.count,1);assert.equal(audit.details.preparations[0].updatedBy,voterId);
+  assert.deepEqual(errors,[]);
+ }finally{await browser.close();await f.close()}
+});

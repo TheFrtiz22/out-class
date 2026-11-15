@@ -4,8 +4,9 @@ const fs=require('node:fs')
 const ts=require('typescript')
 const flush=()=>new Promise(resolve=>setImmediate(resolve))
 function compile(file,mocks={}){const mod={exports:{}};new Function('require','module','exports','window','document',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText)(n=>mocks[n]||(n.startsWith('@/lib/')?compile(n.replace('@/','')+'.ts'):n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n)),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm(){return true}},{querySelector(){return null}});return mod.exports}
-const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)]
-const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):''
+// EmptyState renders its title, description and action from props.
+const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children),...(n.type==='EmptyState'?nodes(n.props.action):[])]
+const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.type==='EmptyState'?[n.props.title,n.props.description,text(n.props.action)].join(' '):n?.props?text(n.props.children):''
 function harness(manage=true,personalOnly=false){
  const slots=[],effects=[],calls=[];let index=0
  const own={id:'a',memberId:'member',revision:2,viewedAt:null,submittedAt:null,reviewedAt:null,member:{user:{email:'member@example.test',studentProfile:null}}}
@@ -18,7 +19,7 @@ const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&text(n)===labe
 // The My Tasks / Manage switch is a SegmentedControl: expose its options like buttons.
 const scope=(tree,label)=>{const group=nodes(tree).find(n=>n.type==='SegmentedControl'&&n.props.label==='Task workspace'),option=group?.props.options.find(o=>o.label===label);return option&&{props:{onClick:()=>group.props.onChange(option.value)}}}
 test('task workspace keeps Team gated and opens a shared detail drawer without changing task revisions',async()=>{
- const h=harness();h.render();await flush();let tree=h.render();assert.ok(scope(tree,'My Tasks'));assert.ok(scope(tree,'Manage'));assert.doesNotMatch(text(tree),/Team project/)
+ const h=harness();h.render();await flush();let tree=h.render();assert.ok(scope(tree,'My tasks'));assert.ok(scope(tree,'Manage'));assert.doesNotMatch(text(tree),/Team project/)
  const row=nodes(tree).find(n=>n.type==='button'&&text(n).includes('Your research'));row.props.onClick({currentTarget:{}});tree=h.render()
  const detail=nodes(tree).find(n=>n.type?.name==='TaskDetail');assert.equal(detail.props.task.revision,3);assert.equal(detail.props.manager,false);assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,true);assert.deepEqual(h.calls,[['view','a']])
  nodes(tree).find(n=>n.type==='Sheet').props.onOpenChange(false);tree=h.render();scope(tree,'Manage').props.onClick();tree=h.render();assert.equal(nodes(tree).find(node=>node.type==='TaskManagerWorkspace').props.workspace.tasks.length,3)

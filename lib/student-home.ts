@@ -1,5 +1,6 @@
 import type { ClubEvent, Notification, TrackedApplication } from "@/lib/data"
 import { eventStart } from "@/lib/calendar"
+import { applicationIntakeClosed } from "@/lib/recruitment-presentation"
 
 export type HomeApplicationSource = {
   id: string
@@ -18,7 +19,10 @@ export type HomeApplication = {
   marketing?: unknown
   status: string
   draft: boolean
+  /** Decided: accepted or rejected. */
   closed: boolean
+  /** A draft the club no longer accepts (intake off or deadline passed): never promoted as work to finish. */
+  intakeClosed: boolean
   deadline?: ClubEvent
   responsesSaved?: number
 }
@@ -48,6 +52,7 @@ export function homeApplications(
           logoUrl: app.club.logoUrl,
           marketing: app.club.marketing,
           status: statusLabels[app.status] || app.status,
+          intakeClosed: applicationIntakeClosed(app.club),
           responsesSaved: app.answers?.filter((answer) => answer.response.trim()).length,
         }))
       : local.map((app) => ({
@@ -58,6 +63,7 @@ export function homeApplications(
           logoUrl: app.logoUrl,
           marketing: app.marketing,
           status: statusLabels[app.status] || app.status,
+          intakeClosed: false,
           responsesSaved: undefined,
         }))
   return rows
@@ -118,9 +124,9 @@ export function nextHomeAction(
   now: Date,
   notifications: Notification[] = [],
 ): NextAction {
-  const draft = apps.find((app) => app.draft)
+  const draft = apps.find((app) => app.draft && !app.intakeClosed)
   const deadline = apps
-    .filter((app) => app.draft && app.deadline && eventStart(app.deadline) >= now)
+    .filter((app) => app.draft && !app.intakeClosed && app.deadline && eventStart(app.deadline) >= now)
     .sort((a, b) => eventStart(a.deadline!).getTime() - eventStart(b.deadline!).getTime())[0]
   const event = agenda[0]
   const urgentUntil = now.getTime() + 48 * 60 * 60 * 1000

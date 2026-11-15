@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result"
 import { z } from "zod"
 import { isActiveMembership } from "@/lib/permissions"
 import { SCHEDULING_TIMEZONE, AVAILABILITY_FIRST_SLOT, AVAILABILITY_END_SLOT, AVAILABILITY_SLOTS } from "@/lib/scheduling-config"
@@ -91,13 +92,13 @@ export function editAvailabilityDays(schedule: AvailabilitySchedule, week: strin
 
 /** Validate additions against saved coverage, so hidden legacy hours remain valid. */
 export function validateAvailabilityEdit(next: AvailabilitySchedule, previous: AvailabilitySchedule) {
-  if (next.timezone !== SCHEDULING_TIMEZONE && next.timezone !== previous.timezone) throw new Error("Availability uses Eastern Time.")
+  if (next.timezone !== SCHEDULING_TIMEZONE && next.timezone !== previous.timezone) throw new ActionError("Availability uses Eastern Time.")
   if (next.timezone !== previous.timezone) {
     // A different recurrence zone changes the meaning of every saved wall-clock range.
-    if (previous.weeklySubmitted || Object.keys(previous.exceptions).length) throw new Error("Keep the saved availability time zone.")
+    if (previous.weeklySubmitted || Object.keys(previous.exceptions).length) throw new ActionError("Keep the saved availability time zone.")
   }
   const sameZone = next.timezone === previous.timezone
-  const error = () => { throw new Error("Choose availability between 8:00 AM and 9:00 PM Eastern Time.") }
+  const error = () => { throw new ActionError("Choose availability between 8:00 AM and 9:00 PM Eastern Time.") }
   for (let day = 0; day < 7; day++) {
     const old = rangesToCells(sameZone ? previous.weekly[day] : [])
     for (const [slot, on] of rangesToCells(next.weekly[day]).entries()) {

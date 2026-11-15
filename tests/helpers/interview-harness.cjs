@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./action-result.cjs');
 ﻿const fs=require('node:fs'),ts=require('typescript'),path=require('node:path');
 const id=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 function harness(){
@@ -38,6 +39,7 @@ function harness(){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),m,m.exports);return m.exports;
  }
 
- return{load,tx,scope:{clubId:id(1),applicationId:id(2),roundId:id(3)},round,app,members,assignments,get state(){return state},as:n=>actor=id(n),deny:v=>denied=v,failAudit:v=>failAudit=v,get historyQuery(){return historyQuery}};
+ // Actions converted to actionResult() resolve to their data and throw marked refusals; see ./action-result.cjs.
+ return{load:file=>/^actions\//.test(file)?unwrapActions(load(file)):load(file),tx,scope:{clubId:id(1),applicationId:id(2),roundId:id(3)},round,app,members,assignments,get state(){return state},as:n=>actor=id(n),deny:v=>denied=v,failAudit:v=>failAudit=v,get historyQuery(){return historyQuery}};
 }
 module.exports={harness,id};

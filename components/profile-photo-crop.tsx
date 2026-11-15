@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { initialPhotoCrop, photoCropRect, type PhotoCrop } from "@/lib/photo-crop";
@@ -29,7 +30,7 @@ export function ProfilePhotoCrop({ source, onSave, onCancel }: { source: string;
     try {
       const blob = await new Promise<Blob>((resolve, reject) => canvas.current!.toBlob(b => b ? resolve(b) : reject(Error("Could not prepare this image.")), "image/png"));
       await onSave(new File([blob], "profile-photo.png", { type: "image/png" }));
-    } catch (e) { setError(e instanceof Error ? e.message : "Unable to save photo."); }
+    } catch (e) { setError(userMessage(e, "Unable to save photo.")); }
     finally { setBusy(false); }
   }
   return <section aria-label="Crop profile photo" className="min-w-0 space-y-3 rounded-lg border p-3">

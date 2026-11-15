@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{AsyncLocalStorage}=require('node:async_hooks');
 const {loader}=require('./helpers/communications-loader.cjs');
 const url=process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL;
@@ -9,7 +10,7 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
  const membership=await db.clubMember.create({data:{clubId:club.id,userId:sender.id,isOwner:true}});await db.clubMember.create({data:{clubId:club.id,userId:recipient.id,isOwner:true}});
  let support=null,failAudit=false,crashAudit=false,terminated=false,actingUser=sender;
  const source={prisma:db};const load=loader({'@/utils/prisma':source,'@/utils/auth':{requireClubPermission:async id=>{assert.equal(id,club.id);return{user:actingUser};}},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()},'@/utils/admin-elevation':{requireAdminElevation:async()=>{throw Error('Unexpected elevation');}}});
- const actions=load('actions/communication-schedules.ts'),worker=load('utils/scheduled-communications.ts');
+ const actions=unwrapActions(load('actions/communication-schedules.ts')),worker=load('utils/scheduled-communications.ts');
  // Inject a real transaction failure after notification writes, without replacing PostgreSQL.
  const actualTransaction=db.$transaction.bind(db);source.prisma=new Proxy(db,{get(target,key){if(key==='$transaction')return (fn,opts)=>actualTransaction(tx=>fn(new Proxy(tx,{get(t,k){if(k==='auditLog'&&(failAudit||crashAudit))return{create:async()=>{if(crashAudit){crashAudit=false;const[{pid}]=await t.$queryRaw`SELECT pg_backend_pid() pid`;const [result]=await op.$queryRaw`SELECT pg_terminate_backend(${pid}::integer) terminated`;terminated=result.terminated;}throw Error('Injected audit failure');}};return Reflect.get(t,k);}})),opts);return Reflect.get(target,key);}});
  const input=(extra={})=>({id:randomUUID(),clubId:club.id,revision:null,title:'Scheduled '+randomUUID(),body:'Immutable inbox intent',audience:{include:[{source:'MEMBERS'}]},recipientMode:'SEND_TIME',localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER',...extra});
@@ -32,9 +33,9 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
   assert.equal((await worker.processScheduledCommunications()).published,0);assert.deepEqual((await actions.getCommunicationSchedules(club.id)).find(r=>r.id===first.id).email,{queued:2,sent:0,suppressed:0,attention:0});
  });
  await t.test('edit revisions, cancellation idempotency and stale commands',async()=>{
-  const data=input();await actions.saveCommunicationSchedule(data);await actions.saveCommunicationSchedule({...data,revision:0,body:'Edited'});await assert.rejects(actions.saveCommunicationSchedule({...data,revision:0,body:'Stale'}),/changed/);
-  await assert.rejects(actions.cancelCommunicationSchedule(club.id,data.id,0),/changed/);await actions.cancelCommunicationSchedule(club.id,data.id,1);await actions.cancelCommunicationSchedule(club.id,data.id,1);await due(data.id);assert.equal((await worker.processScheduledCommunications()).published,0);
-  await assert.rejects(actions.cancelCommunicationSchedule(club.id,first.id,0),/published/);
+  const data=input();await actions.saveCommunicationSchedule(data);await actions.saveCommunicationSchedule({...data,revision:0,body:'Edited'});await refused(actions.saveCommunicationSchedule({...data,revision:0,body:'Stale'}),/changed/);
+  await refused(actions.cancelCommunicationSchedule(club.id,data.id,0),/changed/);await actions.cancelCommunicationSchedule(club.id,data.id,1);await actions.cancelCommunicationSchedule(club.id,data.id,1);await due(data.id);assert.equal((await worker.processScheduledCommunications()).published,0);
+  await refused(actions.cancelCommunicationSchedule(club.id,first.id,0),/published/);
  });
  await t.test('fixed and dynamic groups recheck disabled users and new membership',async()=>{
   const fixed=input({recipientMode:'FIXED'}),dynamic=input();await actions.saveCommunicationSchedule(fixed);await actions.saveCommunicationSchedule(dynamic);
@@ -85,7 +86,7 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
   const data=input();await actions.saveCommunicationSchedule(data);await due(data.id);
   await db.scheduledCommunication.update({where:{id:data.id},data:{status:'PROCESSING',revision:{increment:1}}});
   assert.equal((await actions.getCommunicationSchedules(club.id)).find(r=>r.id===data.id).status,'PROCESSING');
-  await assert.rejects(actions.cancelCommunicationSchedule(club.id,data.id,1),/published/);await assert.rejects(actions.saveCommunicationSchedule({...data,revision:1}),/published/);
+  await refused(actions.cancelCommunicationSchedule(club.id,data.id,1),/published/);await refused(actions.saveCommunicationSchedule({...data,revision:1}),/published/);
   assert.equal((await worker.processScheduledCommunications()).published,0);
   await op.scheduledCommunication.update({where:{id:data.id},data:{updatedAt:new Date(Date.now()-180000)}});
   const outcomes=await Promise.all([worker.processScheduledCommunications(),worker.processScheduledCommunications()]);assert.equal(outcomes.reduce((n,r)=>n+r.published,0),1);
@@ -117,11 +118,11 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
   await assert.rejects(actions.saveCommunicationSchedule(input({audience:{include:[{source:'GROUP',groupId:randomUUID()}]}})));
   const foreign=await db.club.create({data:{slug:randomUUID(),name:'Foreign scheduling',tagline:'',description:'',category:'Other',color:'#142d45'}});const foreignGroup=await db.recipientGroup.create({data:{clubId:foreign.id,name:'Private foreign group',kind:'MANUAL'}});
   await assert.rejects(actions.saveCommunicationSchedule(input({audience:{include:[{source:'GROUP',groupId:foreignGroup.id}]}})));
-  support={id:randomUUID()};await assert.rejects(actions.saveCommunicationSchedule(input()),/Leave support mode/);support=null;
+  support={id:randomUUID()};await refused(actions.saveCommunicationSchedule(input()),/Leave support mode/);support=null;
  });
  await t.test('another authorized manager may cancel but cannot rewrite the original sender intent',async()=>{
   const data=input();await actions.saveCommunicationSchedule(data);actingUser=recipient;
-  try{await assert.rejects(actions.saveCommunicationSchedule({...data,revision:0,body:'Different author'}),/Only the sender/);await actions.cancelCommunicationSchedule(club.id,data.id,0);assert.equal((await db.scheduledCommunication.findUniqueOrThrow({where:{id:data.id}})).status,'CANCELLED');assert.equal((await db.auditLog.findFirstOrThrow({where:{targetId:data.id,action:'communication.schedule.cancel'}})).actorId,recipient.id);}finally{actingUser=sender;}
+  try{await refused(actions.saveCommunicationSchedule({...data,revision:0,body:'Different author'}),/Only the sender/);await actions.cancelCommunicationSchedule(club.id,data.id,0);assert.equal((await db.scheduledCommunication.findUniqueOrThrow({where:{id:data.id}})).status,'CANCELLED');assert.equal((await db.auditLog.findFirstOrThrow({where:{targetId:data.id,action:'communication.schedule.cancel'}})).actorId,recipient.id);}finally{actingUser=sender;}
  });
  await t.test('populated browser CRUD denied even with permissive policies',async()=>{
   for(const role of ['anon','authenticated']){

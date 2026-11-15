@@ -57,7 +57,7 @@ export function ResumeViewerDialog({ href, name, clubId, applicationId, trigger 
           {resource
             ? <ResumePdfPages resource={resource} name={name} unavailableText="This résumé couldn’t be displayed. Use Download to open it." />
             : kind !== "pdf" && <div className="oc-resume-viewer-empty" role="status">
-                <FileText aria-hidden="true" size={32} />
+                <FileText aria-hidden="true" size={24} />
                 <p className="font-medium">{external ? "Preview isn’t available for linked résumés." : "Preview isn’t available for this file type."}</p>
                 <p className="text-sm text-muted-foreground">{external ? "Use Open link to view it on the site where it’s hosted." : "Use Download to open it."}</p>
               </div>}

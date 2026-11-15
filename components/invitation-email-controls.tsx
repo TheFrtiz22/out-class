@@ -1,9 +1,13 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 
 import { useRef, useState } from 'react';
-import { sendRosterInvitations, requestInvitationDelivery } from '@/actions/invitation-emails';
+import { sendRosterInvitations as sendRosterInvitationsAction, requestInvitationDelivery as requestInvitationDeliveryAction } from '@/actions/invitation-emails';
 import {InvitationScheduleComposer,InvitationSchedules} from "@/components/invitation-schedules";
 import { Button } from '@/components/ui/button';
+import { unwrapped } from "@/lib/action-result"
+const sendRosterInvitations = unwrapped(sendRosterInvitationsAction)
+const requestInvitationDelivery = unwrapped(requestInvitationDeliveryAction)
 
 export function InvitationEmailControls({ clubId, importId, onSent }: { clubId: string; importId?: string; onSent?: () => Promise<void> }) {
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [error, setError] = useState('');
@@ -20,7 +24,7 @@ export function InvitationEmailControls({ clubId, importId, onSent }: { clubId: 
         setMessage('Queued invitation delivery requested. You can keep working while emails are sent; delivery status updates in the member list.');
       }
       try { await onSent?.(); } catch { setError('Delivery updated.'); }
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not queue invitations. Saved invitations are retained; retry to continue.'); }
+    } catch (e) { setError(userMessage(e, 'Could not queue invitations. Saved invitations are retained; retry to continue.')); }
     finally { working.current = false; setBusy(false); }
   }
   return <section className="space-y-3 rounded-xl border bg-muted/20 p-4" aria-label="Invitation email delivery" aria-busy={busy} data-saving={busy}>

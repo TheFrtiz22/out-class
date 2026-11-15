@@ -9,6 +9,7 @@ const notificationTypes: Record<string, Notification["type"]> = {
 };
 export function inboxNotification(item: Awaited<ReturnType<typeof getDurableNotifications>>["items"][number]): Notification {
   return { applicationId: item.href.match(/^\/applications\/([^/]+)\/decision/)?.[1], id: `durable-${item.id}`, durableId: item.id, href: item.href, clubId: item.clubId ?? undefined,
+    ...(item.announcementId ? { announcementId: item.announcementId, ownAnnouncement: item.ownAnnouncement } : {}),
     ...(item.type === "TASK" ? { taskHref: item.href } : {}),
     type: notificationTypes[item.type] ?? "OutClass Update", urgent: item.type === "INTERVIEW",
     club: item.club?.name || "OutClass", color: item.club?.color || "#142d45", logoUrl: item.club?.logoUrl, marketing: item.club?.marketing, logoText: (item.club?.name || "OC").slice(0, 2),

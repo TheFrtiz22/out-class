@@ -1,7 +1,7 @@
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
 
 /**
- * The Recruiting settings drawer (Anonymous review, Auto-reject rules). It used to be two rail items; it now opens
+ * The Recruiting settings drawer (Anonymous review, Auto-reject rules, Grading). It used to be two rail items; it now opens
  * from the Applicants toolbar's gear and from club Settings → Application → Recruiting. The drawer is URL-driven
  * (`recruitingSettings=<section>`), so old `tool=rounds|rules` links, notifications and the browser's Back button
  * all reach it. Kept free of UI imports so the server page, redirects and tests share it.
@@ -10,6 +10,7 @@ export const RECRUITING_SETTINGS_PARAM = "recruitingSettings"
 export const recruitingSettingsSections = [
   { id: "anonymous", label: "Anonymous review", description: "Round privacy and requirements for future submissions." },
   { id: "rules", label: "Auto-reject rules", description: "Saved round thresholds, applicant previews, and reversible review flags." },
+  { id: "grading", label: "Grading", description: "The categories reviewers score applicants on, each on its own scale." },
 ] as const
 export type RecruitingSettingsSection = typeof recruitingSettingsSections[number]["id"]
 

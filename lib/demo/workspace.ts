@@ -28,8 +28,10 @@ import * as demoRoomApi from "./interview-rooms"
 import * as demoRecruitingRules from "./recruiting-rules"
 import { demoDashboardSummary } from "./dashboard-summary"
 import * as demoTasks from "./tasks"
+import * as demoReview from "./review-decisions"
 import { anonymousApplication, identifiedApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
+import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone"
 import * as demoInterviews from "./interview-foundation"
 import * as demoCollaboration from "./interview-collaboration"
 import { meetingInputSchema, canReadMeeting, TOKEN_LIFETIME_MS } from "@/lib/meetings"
@@ -42,6 +44,7 @@ import { normalizeProfileFieldVisibility, restrictApplicationProfile, sameProfil
 import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { genderValues, profileSectionSchema } from "@/lib/student-profile"
 import * as api from "@/lib/workspace-api"
+import { offerTally } from "@/lib/offer-tally"
 type Api = typeof api
 type Demo<K extends keyof Api> = (...args: Parameters<Api[K]>) => unknown
 export { demoVoting }
@@ -62,6 +65,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
   if (s.perspective.role !== "student" || !club)
     throw new Error("Switch to the sample student first.")
   if (submit && !meetsTestRequirement(club.testRequirement, demoUser().profile)) throw new Error("Update your profile to meet this club’s SAT/ACT requirement.")
+  if (submit && !validPhone(demoUser().profile.phone)) throw new Error(PHONE_REQUIRED_MESSAGE)
   parsed.answers = normalizeApplicationAttachments(club.questions, parsed.answers)
   assertApplicationAttachmentOwnership(club.questions, parsed.answers, demoUser().id)
   const errors = answerErrors(club.questions, parsed.answers, submit)
@@ -128,6 +132,7 @@ export const getClubPipeline: Demo<"getClubPipeline"> = (clubId, filter = {}) =>
   const profileFields = demoProfileFieldVisibility(clubId)
   return {
     profileFields,
+    rubric: demoReview.demoReviewRubric(clubId),
     genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: scoped.filter(a => s.students.find(u => u.id === a.studentId)?.profile.gender === gender).length })) : null,
     rounds: rounds.map(r => ({ ...r, type: /interview/i.test(r.name) ? "INTERVIEW" : "CUSTOM", genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
     applications: s.applications
@@ -141,7 +146,7 @@ export const getClubPipelinePage: Demo<"getClubPipelinePage"> = async (clubId, i
     const query = pipelinePageQuery.parse(input), member = demoMember()
     const list = await api.getClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts })
     const page = pagePipeline(list, query, member.id, member.userId, `demo:${clubId}:${member.id}:${pipelineSelectionKey(query)}`)
-    return { ...page, profileFields: list.profileFields, coverage: { mode: query.mode, complete: !query.roundId && !query.gender && !query.genderCounts && page.page.start === 0 && page.applications.length === page.page.baseTotal } }
+    return { ...page, profileFields: list.profileFields, rubric: list.rubric, coverage: { mode: query.mode, complete: !query.roundId && !query.gender && !query.genderCounts && page.page.start === 0 && page.applications.length === page.page.baseTotal } }
   }
 export const getClubPipelineSelection: Demo<"getClubPipelineSelection"> = async (clubId, input = {}) => {
     const query = pipelinePageQuery.omit({ cursor: true }).parse(input), member = demoMember()
@@ -226,10 +231,15 @@ export const updateStudentProfileSection: Demo<"updateStudentProfileSection"> = 
     return { profile: user.profile }
   })
 }
+// Interest answers are private to a real account; Demo Mode has none and saves none.
+export const getMyInterestSurvey: Demo<"getMyInterestSurvey"> = () => null
+const noDemoInterestWrite = () => { throw new Error("Exit Demo Mode to save your club interests.") }
+export const saveMyInterestSurvey: Demo<"saveMyInterestSurvey"> = () => noDemoInterestWrite()
+export const dismissInterestSurveyPrompt: Demo<"dismissInterestSurveyPrompt"> = () => noDemoInterestWrite()
 export const uploadProfileFile: Demo<"uploadProfileFile"> = () => {
   throw new Error("Uploads are disabled in Demo Mode. The sample PDF and photos stay isolated from production.")
 }
-export const searchWorkspace: Demo<"searchWorkspace"> = (query, leader = false) => {
+export const searchWorkspace: Demo<"searchWorkspace"> = (query) => {
   const s = demoStore.get(),
     text = query.trim().toLowerCase()
   if (text.length < 2) return []
@@ -254,7 +264,8 @@ export const searchWorkspace: Demo<"searchWorkspace"> = (query, leader = false) 
       detail: a.status,
     }))
   const applicants =
-    leader && s.perspective.role === "leader" && s.perspective.clubId === s.clubs[0].id
+    // Role-based, as in production: the leader perspective finds its applicants from any workspace.
+    s.perspective.role === "leader" && s.perspective.clubId === s.clubs[0].id
       ? s.applications
           .filter((a) => a.clubId === s.perspective.clubId && a.status !== "DRAFTING" && !s.clubs.find(c => c.id === a.clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview)
           .map((a) => {
@@ -303,14 +314,17 @@ export const leaveInterviewCollaboration: Demo<"leaveInterviewCollaboration"> = 
 export const dismissInterviewInvitation: Demo<"dismissInterviewInvitation"> = demoCollaboration.dismissInterviewInvitation
 export const prepareInterviewAdvance: Demo<"prepareInterviewAdvance"> = demoCollaboration.prepareInterviewAdvance
 export const confirmInterviewAdvance: Demo<"confirmInterviewAdvance"> = demoCollaboration.confirmInterviewAdvance
+export const controlInterviewTimer: Demo<"controlInterviewTimer"> = demoCollaboration.controlInterviewTimer
 export const saveInterviewKit: Demo<"saveInterviewKit"> = demoInterviews.saveInterviewKit
 export const openInterviewSession: Demo<"openInterviewSession"> = demoInterviews.openInterviewSession
 export const saveInterviewSession: Demo<"saveInterviewSession"> = demoInterviews.saveInterviewSession
 export const getSubmittedInterviewReview: Demo<"getSubmittedInterviewReview"> = demoInterviews.getSubmittedInterviewReview
 export const getSubmittedInterviewReviews: Demo<"getSubmittedInterviewReviews"> = demoInterviews.getSubmittedInterviewReviews
+export const getSubmittedInterviewReviewPage: Demo<"getSubmittedInterviewReviewPage"> = demoInterviews.getSubmittedInterviewReviewPage
 export const getPreviousInterviewScores: Demo<"getPreviousInterviewScores"> = demoInterviews.getPreviousInterviewScores
 export const getInterviewApplicantPanel: Demo<"getInterviewApplicantPanel"> = demoInterviews.getInterviewApplicantPanel
 export const getInterviewResumeModerationQueue: Demo<"getInterviewResumeModerationQueue"> = demoInterviews.getInterviewResumeModerationQueue
+export const getInterviewResumeModerationPage: Demo<"getInterviewResumeModerationPage"> = demoInterviews.getInterviewResumeModerationPage
 export const pinInterviewResume: Demo<"pinInterviewResume"> = demoInterviews.pinInterviewResume
 export const getInterviewResumeAnnotations: Demo<"getInterviewResumeAnnotations"> = demoInterviews.getInterviewResumeAnnotations
 export const saveInterviewResumeAnnotation: Demo<"saveInterviewResumeAnnotation"> = demoInterviews.saveInterviewResumeAnnotation
@@ -395,6 +409,8 @@ export const getClubWorkspaceOverview: Demo<"getClubWorkspaceOverview"> = (clubI
   work:s.tasks.filter(t=>t.clubId===clubId&&!["DRAFT","DONE"].includes(t.status)).flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&(!a.submittedAt||a.revisionRequestedAt)&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
   awaitingReview:manage?s.tasks.filter(t=>t.clubId===clubId).flatMap(t=>t.assignments).filter(a=>a.submittedAt&&!a.reviewedAt).length:null,
   recruitment:manage?[...new Set(s.applications.filter(a=>a.clubId===clubId&&a.status!=="DRAFTING").map(a=>a.status))].map(status=>({status,count:s.applications.filter(a=>a.clubId===clubId&&a.status===status).length})):null,
+  // Same tally as the live reader: current offers sent (pending, accepted, declined, expired); revoked offers are not sent.
+  offerTally:manage?offerTally(s.recruitmentOffers.flatMap(o=>s.applications.some(a=>a.id===o.applicationId&&a.clubId===clubId)?[{offer:o.status==="PENDING"&&o.expiresAt<=now?"EXPIRED":o.status,count:1}]:[])):null,
  }
 }
 export const getDashboardReviewQueue: Demo<"getDashboardReviewQueue"> = async (clubId, roundId) => { const data = await api.getClubWorkspaceOverview(clubId); return demoDashboardSummary(clubId, data.membership.id, roundId).queue }
@@ -410,6 +426,8 @@ export const getRecruitingRuleFlags: Demo<"getRecruitingRuleFlags"> = demoRecrui
 export const clearRecruitingRuleFlags: Demo<"clearRecruitingRuleFlags"> = demoRecruitingRules.clearRecruitingRuleFlags
 export const getRoomWorkspace: Demo<"getRoomWorkspace"> = demoRoomApi.getRoomWorkspace
 export const createInterviewRoom: Demo<"createInterviewRoom"> = demoRoomApi.createInterviewRoom
+export const addInterviewRoomTimes: Demo<"addInterviewRoomTimes"> = demoRoomApi.addInterviewRoomTimes
+export const removeInterviewRoomTime: Demo<"removeInterviewRoomTime"> = demoRoomApi.removeInterviewRoomTime
 export const setInterviewStaffingRequirement: Demo<"setInterviewStaffingRequirement"> = raw=>demoRoomApi.setInterviewStaffingRequirement(raw as Parameters<typeof demoRoomApi.setInterviewStaffingRequirement>[0])
 export const setInterviewRoomOpen: Demo<"setInterviewRoomOpen"> = demoRoomApi.setInterviewRoomOpen
 export const renameInterviewRoom: Demo<"renameInterviewRoom"> = demoRoomApi.renameInterviewRoom
@@ -445,9 +463,10 @@ export const getApplicantDisplay: Demo<"getApplicantDisplay"> = input => {
   }
   const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id), feedback, demoProfileFieldVisibility(input.clubId));
   // The bundled fictional résumé is a demo asset, never a live private-download request.
-  if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.pdf") {
+  const demoResume = s.students.find(u => u.id === app.studentId)?.profile.resumeUrl;
+  if (!display.anonymous && display.visible.includes("resume") && (demoResume === "/demo/sample-resume.pdf" || demoResume === "/demo/sample-scanned-resume.pdf")) {
     display.links = display.links.filter(link => link.field !== "resume")
-    display.links.push({ field: "resume", label: "Sample résumé", href: "/demo/sample-resume.pdf" })
+    display.links.push({ field: "resume", label: demoResume === "/demo/sample-resume.pdf" ? "Sample résumé" : "Sample scanned résumé", href: demoResume })
   }
   return display;
 }
@@ -589,3 +608,10 @@ export const getRankedReviewSettings: Demo<"getRankedReviewSettings"> = demoRank
 export const saveRankedReviewBands: Demo<"saveRankedReviewBands"> = demoRankedReview.saveRankedReviewBands
 
 export const getRoundTargetSummary: Demo<"getRoundTargetSummary"> = input => demoRoundTargetSummary(input)
+
+export const getReviewRubric: Demo<"getReviewRubric"> = demoReview.getReviewRubric
+export const saveReviewRubric: Demo<"saveReviewRubric"> = demoReview.saveReviewRubric
+export const listStagedDecisions: Demo<"listStagedDecisions"> = demoReview.listStagedDecisions
+export const stageDecision: Demo<"stageDecision"> = demoReview.stageDecision
+export const clearStagedDecision: Demo<"clearStagedDecision"> = demoReview.clearStagedDecision
+export const sendStagedDecisions: Demo<"sendStagedDecisions"> = demoReview.sendStagedDecisions

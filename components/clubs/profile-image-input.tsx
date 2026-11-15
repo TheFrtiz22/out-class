@@ -41,6 +41,6 @@ export function ProfileImageInput({ label, value, onChange, banner = false, onUp
     </label>
     <div className="flex items-center gap-2">{!onUpload && <Input aria-label={`${label} image URL`} placeholder="https://… or click above to upload" value={value?.startsWith("data:") ? "" : value ?? ""} onChange={e => onChange(e.target.value || null)} />}{value && <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${label}`} onClick={() => onChange(null)}><X size={16} /></Button>}</div>
     <p className="text-xs text-muted-foreground">{busy ? "Preparing image…" : value?.startsWith("data:") ? "Image ready to publish." : "Drop an image or click to upload. PNG, JPEG, WebP up to 5 MB."}</p>
-    {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+    {error && <p role="alert" className="text-control text-destructive">{error}</p>}
   </div>
 }

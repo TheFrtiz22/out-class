@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, type MouseEvent } from "react"
-import { publicFaqGroups } from "@/lib/public-faq"
+import { publicFaqGroups, type PublicFaqVideo } from "@/lib/public-faq"
+import { WatchVideoButton } from "@/components/landing/promo-video"
 
-function FaqEntry({ id, question, answer }: { id: string; question: string; answer: string }) {
+function FaqEntry({ id, question, answer, video }: { id: string; question: string; answer: string; video?: PublicFaqVideo }) {
   const details = useRef<HTMLDetailsElement>(null)
   const body = useRef<HTMLDivElement>(null)
   const animation = useRef<Animation | null>(null)
@@ -42,7 +43,7 @@ function FaqEntry({ id, question, answer }: { id: string; question: string; answ
   }
   return <details id={`faq-answer-${id}`} ref={details} className="oc-faq-entry oc-public-glass">
     <summary onClick={toggle}>{question}<span className="oc-faq-indicator" aria-hidden="true" /></summary>
-    <div ref={body} className="oc-faq-answer"><p>{answer}</p></div>
+    <div ref={body} className="oc-faq-answer"><p>{answer}</p>{video && <WatchVideoButton video={video.id} label={video.label} />}</div>
   </details>
 }
 

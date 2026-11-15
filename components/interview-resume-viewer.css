@@ -10,3 +10,14 @@
 .oc-pdf-text ::selection { background:rgb(65 120 225 / 35%); }
 .oc-pdf-highlight { position:absolute; pointer-events:none; background:rgb(250 204 21 / 35%); border-bottom:1px solid rgb(161 98 7 / 70%); }
 .oc-pdf-highlight[data-active=true] { background:rgb(250 204 21 / 55%); outline:1px solid rgb(161 98 7); }
+/* Area highlights: page-relative boxes for scanned (image-only) or any other page region. */
+.oc-pdf-area { position:absolute; z-index:2; pointer-events:none; box-sizing:border-box; background:rgb(250 204 21 / 18%); border:2px solid rgb(161 98 7 / 80%); }
+.oc-pdf-area[data-active=true] { background:rgb(250 204 21 / 32%); border-style:solid; }
+.oc-pdf-area-surface { position:absolute; inset:0; z-index:3; cursor:crosshair; touch-action:none; user-select:none; }
+.oc-pdf-area-editing { pointer-events:auto; cursor:move; border-style:dashed; touch-action:none; }
+.oc-pdf-area-editing:focus-visible { outline:3px solid var(--ring); outline-offset:2px; }
+.oc-pdf-area-handle { position:absolute; width:18px; height:18px; background:white; border:2px solid rgb(161 98 7); border-radius:50%; touch-action:none; }
+.oc-pdf-area-handle[data-corner=start] { left:-10px; top:-10px; cursor:nwse-resize; }
+.oc-pdf-area-handle[data-corner=end] { right:-10px; bottom:-10px; cursor:nwse-resize; }
+@media (pointer:coarse) { .oc-pdf-area-handle { width:28px; height:28px; } .oc-pdf-area-handle[data-corner=start] { left:-15px; top:-15px; } .oc-pdf-area-handle[data-corner=end] { right:-15px; bottom:-15px; } }
+@media (prefers-reduced-motion:no-preference) { .oc-pdf-area { transition:background-color 120ms ease; } }

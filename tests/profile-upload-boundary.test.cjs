@@ -26,7 +26,7 @@ function harness({ account = 'active', signingError = false, uploadError = false
   };
   process.env.SUPABASE_SECRET_KEY = 'test-only-secret';
   const mocks = {
-    '@supabase/supabase-js': { createClient: () => ({storage: {getBucket: async () => ({data:{public:false}})}}) },
+    '@supabase/supabase-js': { createClient: () => ({storage: {getBucket: async () => ({data:{public:false}}), from: () => ({ list: async () => ({ data: [], error: null }) })}}) },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/navigation': { redirect: () => { throw Error('Authentication required'); } },

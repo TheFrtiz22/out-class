@@ -3,6 +3,7 @@ import { AdminRecovery } from "@/components/admin/admin-recovery"
 import { requirePlatformAdmin } from "@/utils/platform-admin"
 import { PageHeader } from "@/components/ui/page-header"
 import { SchoolRequestReview } from "@/components/admin/school-request-review"
+export const metadata = { title: "School requests · Admin", robots: { index: false, follow: false } }
 
 export default async function SchoolRequestsPage() {
   const result = await adminPageLoad("/platform/school-requests", requirePlatformAdmin)

@@ -1,3 +1,4 @@
+import { ActionError } from "@/lib/action-result";
 import type { FrozenLetterSettings } from "@/lib/decision-schedule";
 import { publishDecisionCommunication, offerResponseNotification, declinedOfferLeaderNotification } from "@/utils/decision-communications";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
@@ -16,7 +17,7 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
   await lockOperationalClub(tx, input.clubId);
   const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId }, include: { round: true } });
   if (!app || input.roundId && input.roundId !== app.roundId || input.expectedStatus && input.expectedStatus !== app.status && input.status !== app.status)
-    throw Error("Application changed. Reload the page and try again.");
+    throw new ActionError("Application changed. Reload the page and try again.");
   assertRecruitmentTransition(app.status, input.status, app.round.type);
   if (app.status !== input.status) await tx.application.update({ where: { id: app.id }, data: { status: input.status, ...( ["ACCEPTED","WAITLISTED","REJECTED"].includes(input.status) ? { decisionVersion: { increment: 1 } } : {} ) } });
   const existing = await tx.clubInvitation.findUnique({ where: { applicationId: app.id } });
@@ -50,13 +51,13 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
 /** Recipient comes exclusively from the linked application, never email or client input. */
 export async function respondToRecruitmentOffer(tx: AppTransactionClient, applicationId: string, userId: string, response: "ACCEPT" | "DECLINE") {
   const hint = await tx.application.findFirst({ where: { id: applicationId, studentId: userId } });
-  if (!hint) throw Error("Offer unavailable.");
+  if (!hint) throw new ActionError("Offer unavailable.");
   await lockOperationalClub(tx, hint.clubId);
   await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR SHARE`;
   const user = await tx.user.findUnique({ where: { id: userId } });
   const app = await tx.application.findFirst({ where: { id: applicationId, studentId: userId, clubId: hint.clubId } });
   const offer = await tx.clubInvitation.findUnique({ where: { applicationId } });
-  if (!user || user.disabledAt || !app || !offer || offer.clubId !== app.clubId) throw Error("Offer unavailable.");
+  if (!user || user.disabledAt || !app || !offer || offer.clubId !== app.clubId) throw new ActionError("Offer unavailable.");
   const where = { userId_clubId: { userId, clubId: app.clubId } };
   const existing = await tx.clubMember.findUnique({ where });
   // Retries never reactivate a membership subsequently removed/suspended.
@@ -66,7 +67,7 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
   }
   if (response === "DECLINE" && offer.status === "DECLINED") return { clubId: app.clubId, status: "DECLINED" as const };
   if (app.status !== "ACCEPTED" || offer.status !== "PENDING" || offer.expiresAt <= new Date() || offer.revokedAt || offer.acceptedAt || offer.declinedAt || offer.expiredAt)
-    throw Error("This offer is unavailable or has expired.");
+    throw new ActionError("This offer is unavailable or has expired.");
   if (response === "DECLINE") {
     await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await event(tx, userId, app.clubId, offer.id, "offer.declined", app.id);

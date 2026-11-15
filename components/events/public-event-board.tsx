@@ -1,4 +1,6 @@
 "use client";
+import { EmptyState } from "@/components/ui/empty-state";
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { isUuid } from "@/lib/uuid";
@@ -22,10 +24,12 @@ import {
   type EventFilters,
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
+import { ReportContentButton } from "@/components/reports/report-content-button";
 import { SegmentedControl } from "@/components/product/segmented-control";
 import { SmartEventCard } from "./smart-event-card";
 import { EventCalendarButton, EventSaveButton } from "./event-discovery-actions";
 import { useSavedCampusEvents } from "./use-saved-campus-events";
+import { EventShareButton } from "@/components/share/event-share-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -173,16 +177,6 @@ export function PublicEventBoard() {
       {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
       {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
       <div className="oc-event-toolbar">
-        <SegmentedControl
-          label="Event date range"
-          className="oc-event-periods"
-          value={filters.period ?? "All"}
-          onChange={(period) => filter({ period })}
-          options={(["All", "Today", "This Week", "Weekend"] as const).map((period) => ({
-            value: period,
-            label: period === "All" ? "All Events" : period,
-          }))}
-        />
         <div className="oc-event-toolbar-actions">
         <SearchField
           aria-label="Search events"
@@ -192,7 +186,10 @@ export function PublicEventBoard() {
           onClear={() => filter({ query: "" })}
           containerClassName="oc-event-search"
         />
-        <FilterPopover count={menuFilters} label="Filter" title="Event filters"
+        <PillSelect label="When" prefix="When" size="compact" className="oc-event-when" active={(filters.period ?? "All") !== "All"}
+          value={filters.period ?? "All"} onChange={(period) => filter({ period: period as EventFilters["period"] })}
+          options={(["All", "Today", "This Week", "Weekend"] as const).map((period) => ({ value: period, label: period === "All" ? "Any time" : period === "This Week" ? "This week" : period }))} />
+        <FilterPopover count={menuFilters} title="Event filters"
           footer={<Button type="button" variant="ghost" size="sm" onClick={() => setFilters(initialFilters)}>Reset filters</Button>}>
             {identity && <Toggle label="Saved events" checked={!!filters.savedOnly} onCheckedChange={(savedOnly) => filter({ savedOnly })} />}
             <div className="oc-filter-field"><span className="oc-filter-field-label">Category</span>
@@ -237,15 +234,12 @@ export function PublicEventBoard() {
             setOpen(value);
           }}
         >
-          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
+          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Event board" : "Event list"}>
             {!loading && !events.length ? (
-              (() => { const empty = eventBoardEmpty(filters); return <div className="oc-events-empty">
-                <h2>{empty.title}</h2>
-                <p>{empty.description}</p>
-                {empty.action.kind === "explore-clubs"
+              (() => { const empty = eventBoardEmpty(filters); return <EmptyState className="oc-events-empty" align="start" title={empty.title} description={empty.description}
+                action={empty.action.kind === "explore-clubs"
                   ? <Button variant="outline" asChild><Link href="/explore">{empty.action.label}</Link></Button>
-                  : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>}
-              </div> })()
+                  : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>} /> })()
             ) : view === "list" ? (
               <ul className="oc-smart-event-list">
                 {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id) }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}
@@ -365,14 +359,13 @@ export function PublicEventBoard() {
                 <div className="oc-event-detail-actions">
                   <EventSaveButton event={selected} identity={identity} saved={saves.ids.has(selected.id)} ready={saves.ready} pending={saves.pending.has(selected.id)} onSave={() => void saveEvent(selected.id)} />
                   <EventCalendarButton event={selected} />
+                  <EventShareButton event={selected} clubName={selected.clubName} />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-4">
+                  <ReportContentButton target={{ type: "event", id: selected.id }} label="Report event" ownerClubId={selected.clubId} />
+                  {selected.flyerUrl && <ReportContentButton target={{ type: "event-flyer", eventId: selected.id }} label="Report flyer" ownerClubId={selected.clubId} />}
                 </div>
                 {saves.error && <p role="alert" className="mt-3 text-sm text-destructive">{saves.error}</p>}
-                <Link
-                  className="oc-event-permalink"
-                  href={`/corkboard?event=${selected.id}`}
-                >
-                  Event link
-                </Link>
               </div>
             </DialogContent>
           )}
@@ -460,16 +453,20 @@ export function RsvpControls({
     };
   }, [event.id, identity, retry]);
   async function change(next: boolean) {
+    // Optimistic: show the new RSVP at once; the server's answer (capacity, deadline) confirms or restores it.
+    const previous = going;
+    setGoing(next);
     setBusy(true);
     setError("");
     try {
       const r = await setCampusEventRsvp({ eventId: event.id, going: next });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { setGoing(previous); setError(r.error); return; }
       setGoing(r.going);
       onChanged(r.count);
       window.dispatchEvent(new Event("outclass-event-rsvp"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not update RSVP.");
+      setGoing(previous);
+      setError(userMessage(e, "Could not update RSVP."));
     } finally {
       setBusy(false);
     }
@@ -581,16 +578,20 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     setBusy(true);
     setError("");
     setNotice("");
+    // Optimistic: the row leaves at once and returns to its place if the server refuses.
+    const index = rows.findIndex((e) => e.eventId === id), removed = rows[index];
+    const restore = () => { if (removed) setRows((r) => r.some((e) => e.eventId === id) ? r : [...r.slice(0, index), removed, ...r.slice(index)]); };
+    setRows((r) => r.filter((e) => e.eventId !== id));
     try {
       const r = await setCampusEventRsvp({ eventId: id, going: false });
-      if (!r.ok) { setError(r.error); return; }
+      if (!r.ok) { restore(); setError(r.error); return; }
       ++readVersion.current;
       setLoading(false);
       setError("");
       setNotice("Your RSVP was cancelled.");
-      setRows((r) => r.filter((e) => e.eventId !== id));
       onCancelled(id);
     } catch {
+      restore();
       setError("Could not cancel. Please try again.");
     } finally {
       setBusy(false);

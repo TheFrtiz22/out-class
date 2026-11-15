@@ -2,7 +2,7 @@ import { LoadingIndicator } from "@/components/ui/loading-indicator"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export type LoadingLayout = "inline" | "rows" | "cards" | "applications" | "applicants" | "workspace" | "form" | "document" | "feed" | "table" | "calendar" | "schedule" | "interview" | "voting" | "presentation"
+export type LoadingLayout = "inline" | "rows" | "cards" | "home" | "explore" | "applications" | "applicants" | "workspace" | "form" | "document" | "feed" | "table" | "calendar" | "schedule" | "interview" | "voting" | "presentation"
 
 /**
  * Placeholders follow the shape of the content being fetched, not a generic full-screen
@@ -72,6 +72,21 @@ export function LoadingState({
           <Skeleton className="mt-3 h-3 w-4/5" />
           <Skeleton className="mt-6 h-3 w-2/5" />
         </div>)}
+      </div>}
+      {layout === "home" && <div className="oc-loading-home">
+        <div className="oc-loading-home-greeting"><Skeleton className="h-3 w-40" /><Skeleton className="mt-3 h-9 w-64 max-w-full" /><Skeleton className="mt-3 h-4 w-80 max-w-full" /></div>
+        <Skeleton className="h-36 w-full rounded-[var(--oc-content-radius)]" />
+        <Skeleton className="h-64 w-full rounded-[var(--oc-content-radius)]" />
+      </div>}
+      {layout === "explore" && <div className="oc-loading-explore">
+        <div className="oc-loading-preview-heading"><Skeleton className="h-9 w-56 max-w-full" /><Skeleton className="h-9 w-28 rounded-lg" /></div>
+        <Skeleton className="h-11 w-full rounded-full" />
+        <div className="oc-loading-filters oc-loading-explore-chips">{[0, 1, 2, 3, 4].map(index => <Skeleton key={index} className="h-9 w-20 shrink-0 rounded-full" />)}</div>
+        <Skeleton className="mb-4 h-5 w-40" />
+        <div className="oc-loading-explore-grid">{Array.from({ length: count }, (_, index) => <div className="oc-loading-explore-card" key={index}>
+          <Skeleton className="oc-loading-explore-cover h-44 w-full rounded-none" />
+          <div className="oc-loading-explore-body"><Skeleton className="h-5 w-3/5" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /><Skeleton className="mt-6 h-3 w-2/5" /></div>
+        </div>)}</div>
       </div>}
       {layout === "applications" && <div className="oc-loading-applications">
         <div className="oc-loading-preview-heading"><Skeleton className="h-9 w-48 max-w-full" /><Skeleton className="h-4 w-28" /></div>

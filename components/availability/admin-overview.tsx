@@ -1,5 +1,6 @@
 "use client"
-import { PillGroup } from "@/components/ui/segmented-control"
+import { RoundSelect } from "@/components/ui/round-select"
+import { userMessage } from "@/lib/user-message"
 import { PillSelect } from "@/components/ui/pill-select"
 import { DateField } from "@/components/ui/date-picker"
 
@@ -8,7 +9,9 @@ import { ActionWorkflow } from "@/components/product/action-workflow";
 import {ScheduleAvailabilityRequest,AvailabilitySchedules} from "./scheduled-requests"
 import { useEffect, useMemo, useState } from "react"
 import { useRevalidate } from "@/hooks/use-revalidate"
-import { requestRoundAvailability } from "@/actions/availability"
+import { requestRoundAvailability as requestRoundAvailabilityAction } from "@/actions/availability"
+import { unwrapped } from "@/lib/action-result"
+const requestRoundAvailability = unwrapped(requestRoundAvailabilityAction)
 import { getAvailabilityOverview } from "@/lib/availability-workspace-read"
 import { getRoomWorkspace } from "@/lib/workspace-api"
 import { addDays, monday, today, WEEK_DAYS, responseLabels, type AvailabilityOverview } from "@/lib/availability"
@@ -44,7 +47,7 @@ export function AdminAvailabilityOverview({ clubId, roundId: controlledRound, we
     if (!demo.ready || demo.isDemoEnabled) return
     let active = true
     setLoading(true); setError("")
-    getAvailabilityOverview({ clubId, week, timezone, ...(roundId ? { roundId } : {}), ...(role ? { role } : {}) }).then(value => { if (active) { setData(value); onData?.(value) } }).catch(error => { if (active) setError(error instanceof Error ? error.message : "Could not load availability.") }).finally(() => { if (active) setLoading(false) })
+    getAvailabilityOverview({ clubId, week, timezone, ...(roundId ? { roundId } : {}), ...(role ? { role } : {}) }).then(value => { if (active) { setData(value); onData?.(value) } }).catch(error => { if (active) setError(userMessage(error, "Could not load availability.")) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [clubId, week, timezone, roundId, role, attempt, demo.ready, demo.isDemoEnabled, onData])
   const rawCounts = useMemo(() => Array.from({ length: 7 }, (_, day) => Array.from({ length: 96 }, (_, slot) => data?.members.reduce((sum, member) => sum + Number(member.available[day][slot]), 0) ?? 0)), [data])
@@ -63,13 +66,13 @@ export function AdminAvailabilityOverview({ clubId, roundId: controlledRound, we
     if (!memberIds.length) return
     setBusy(true); setError(""); setNotice("")
     try { const result = await requestRoundAvailability({ clubId, roundId, memberIds, reminder }); setNotice(`${result.sent} ${reminder ? "reminder" : "request"}${result.sent === 1 ? "" : "s"} sent. Email follows each member’s interview notification preferences.`); setChecked([]); setAttempt(v => v + 1) }
-    catch (error) { setError(error instanceof Error ? error.message : "Could not send availability requests.") }
+    catch (error) { setError(userMessage(error, "Could not send availability requests.")) }
     finally { setBusy(false) }
   }
   if (demo.isDemoEnabled) return <p className="text-sm text-muted-foreground">Availability management is available in your signed-in workspace.</p>
   return <section className="oc-availability space-y-4" aria-label="Team availability" aria-busy={busy}>
     <div className="flex flex-wrap items-end gap-3">
-      {controlledRound === undefined && <div className="text-sm"><span className="block">Interview round</span><PillGroup label="Interview round" size="compact" className="mt-1" value={roundId} onChange={setRoundId} options={[{ value: "", label: "Global declarations" }, ...rounds.map(round => ({ value: round.id, label: round.name }))]} /></div>}
+      {controlledRound === undefined && <RoundSelect label="Interview round" allLabel="Global declarations" value={roundId} onChange={setRoundId} rounds={rounds} />}
       <div className="text-sm"><span className="block">Member role</span><PillSelect label="Member role" allLabel="All roles" className="mt-1" value={role} onChange={value => { setRole(value); setChecked([]) }} options={organizationRoles.map(value => ({ value, label: organizationRoleLabels[value] }))} /></div>
       <div className="text-sm"><span className="block">Week of</span><DateField label="Week of" className="mt-1" value={week} onChange={value => { if (value) { const next = monday(value); onWeekChange ? onWeekChange(next) : setWeek(next) } }} /></div><p className="text-xs text-muted-foreground">{SCHEDULING_TIMEZONE_LABEL} · 8:00 AM–9:00 PM</p>
     </div>

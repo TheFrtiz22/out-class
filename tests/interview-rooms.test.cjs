@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -58,7 +59,7 @@ function apiHarness() {
   interviewBooking:{findUnique:async()=>state.existing,findMany:async()=>state.others,findFirst:async({where})=>state.existing?.id===where.id&&state.app.studentId===where.application.studentId?state.existing:null,delete:async({where})=>state.deleted.push(where.id),create:async({data})=>{if(state.failCreate)throw Error('Write failed');state.created.push(data);return{id:id(8),...data}}}
  }
  const load=loader({'@/utils/applicant-booking-notifications':{notifyApplicantBooking:async()=>{}},'@/utils/interview-booking':{interviewBookingCoverage:async()=>[{slotId:state.slot.id,bookable:true}]},'@/utils/auth':{requireAuth:async()=>({user:{id:id(6)}}),requireClubPermission:async()=>{if(!state.permission)throw Error('Denied');return{user:{id:id(6)},membership:{permissions:['interviews.manage']}}}},'@/utils/prisma':{prisma:{$transaction:async(fn,opts)=>{assert.ok(['Serializable','ReadCommitted'].includes(opts.isolationLevel));state.attempts++;if(state.retries-->0)throw{code:'P2034'};const before={created:[...state.created],deleted:[...state.deleted],audit:[...state.audit]};try{return await fn(tx)}catch(e){Object.assign(state,before);throw e}},interviewRoom:{findUnique:async()=>room}}},'next/cache':{revalidatePath(){}}})
- return {state,api:load('actions/interview-rooms.ts')}
+ return {state,api:unwrapActions(load('actions/interview-rooms.ts'))}
 }
 test('booking rejects ownership, invitation, club, round, capacity, past time and paused rooms',async()=>{
  for(const edit of [s=>s.app.studentId=id(7),s=>s.app.status='SUBMITTED',s=>s.slot.clubId=id(9),s=>s.room.roundId=id(9),s=>s.slot._count.bookings=1,s=>s.slot.startTime=new Date(0),s=>s.room.isOpen=false]){
@@ -132,5 +133,5 @@ for(const historical of [false,true])for(const current of [false,true])for(const
  const member={status:'ACTIVE',permissions:['interviews.manage',...(identify?['applicants.identify']:[])]};
  const booking={id:id(8),slotId:id(4),applicationId:id(5),roundId:id(2),round:{anonymousReview:historical},application:{round:{anonymousReview:current},student:{studentProfile:{firstName:'Private',lastName:'Student'}}},slot:{roomId:id(3),startTime:new Date(),endTime:new Date(),location:'Room'}};
  const load=loader({'@/utils/applicant-booking-notifications':{notifyApplicantBooking:async()=>{}},'@/utils/interview-booking':{interviewBookingCoverage:async()=>[{slotId:state.slot.id,bookable:true}]},'@/utils/auth':{requireClubPermission:async()=>({membership:member})},'@/utils/prisma':{prisma:{recruitmentCycle:{findMany:async()=>[]},club:{findUniqueOrThrow:async()=>({name:'Club'})},pipelineRound:{findMany:async()=>[]},clubMember:{findMany:async()=>[]},interviewRoom:{findMany:async()=>[]},interviewBooking:{findMany:async({include})=>{assert.equal(include.application.select.round.select.anonymousReview,true);return[booking]}}}},'next/cache':{revalidatePath(){}}});
- const view=await load('actions/interview-rooms.ts').getRoomWorkspace(id(1));assert.equal(view.bookings[0].candidate,identify&&!historical&&!current?'Private Student':`Applicant ${id(5).slice(-6)}`);
+ const view=await unwrapActions(load('actions/interview-rooms.ts')).getRoomWorkspace(id(1));assert.equal(view.bookings[0].candidate,identify&&!historical&&!current?'Private Student':`Applicant ${id(5).slice(-6)}`);
 });

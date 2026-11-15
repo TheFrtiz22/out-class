@@ -63,7 +63,9 @@ test("every personal and settings page sets a server title; the template adds ' 
     .concat(["page", "account/page", "notifications/page", "organizations/page", "profile/page", "availability/page", "interviews/page"].map(p => `app/(workspace)/settings/${p}.tsx`))
   for (const file of pages) {
     const source = fs.readFileSync(file, "utf8")
-    assert.match(source, /metadata[^=]*=\s*\{\s*title:\s*"[^"|]+"/, file)
+    // Events titles a shared event link after the event and falls back to "Events".
+    if (file.endsWith("/corkboard/page.tsx")) assert.match(source, /generateMetadata[\s\S]*return \{ title: "Events" \}/, file)
+    else assert.match(source, /metadata[^=]*=\s*\{\s*title:\s*"[^"|]+"/, file)
     assert.doesNotMatch(source, /\| OutClass/, file)
   }
   assert.match(fs.readFileSync("app/(workspace)/inbox/page.tsx", "utf8"), /title: "Inbox"/)
@@ -81,4 +83,21 @@ test("retired names do not come back in navigation, search or Home", () => {
   const clubHome = fs.readFileSync("components/club-home/club-home-model.ts", "utf8") + fs.readFileSync("components/club-home/club-home-actions.tsx", "utf8")
   assert.doesNotMatch(clubHome, /Join voting|Open scheduler|Post update|assignment"/)
   assert.match(clubHome, /interviewTab=schedule/)
+})
+
+test("FE-23: no user-facing 'Corkboard Events' label remains; event lists say Events", () => {
+  const offenders = []
+  const walk = dir => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name)
+      if (entry.isDirectory()) walk(file)
+      else if (/\.(tsx?|jsx?|mjs|cjs)$/.test(entry.name) && /\bCorkboard events?\b/i.test(fs.readFileSync(file, "utf8"))) offenders.push(file)
+    }
+  }
+  for (const dir of ["app", "components", "lib"]) walk(dir)
+  assert.deepEqual(offenders, [])
+  const clubEvents = fs.readFileSync("components/events/club-events.tsx", "utf8")
+  assert.match(clubEvents, /aria-label="Events"/)
+  assert.match(clubEvents, /<Plus className="size-4" aria-hidden="true" \/>\{TERMS\.newEvent\}<\/Button>/)
+  assert.doesNotMatch(clubEvents, />\+ Create/)
 })

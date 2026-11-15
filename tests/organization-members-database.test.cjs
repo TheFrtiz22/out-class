@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const {randomUUID}=require('node:crypto'),{PGlite}=require('@electric-sql/pglite');
 
@@ -41,7 +42,7 @@ test('member management uses real migrated constraints, atomic transfer, queued 
  };
  let tail=Promise.resolve();const prisma={$transaction:fn=>{const result=tail.then(async()=>{await db.exec('BEGIN');try{const value=await fn(tx);await db.exec('COMMIT');return value;}catch(error){await db.exec('ROLLBACK');throw error;}});tail=result.catch(()=>{});return result;}};
  const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(name=>name==='@/utils/email'?{invitationEmailConfig:()=>{}}:name==='next/server'?{after:()=>{}}:name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireAuth:async()=>({user:{id:actorId}})}:name==='@/actions/club-onboarding'?{}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;}
- const api=load('actions/organization-members.ts');
+ const api=unwrapActions(load('actions/organization-members.ts'));
  await assert.rejects(db.query('UPDATE "ClubMember" SET "isOwner"=false WHERE id=$1',[ownerMember]),/active owner/);
  const groupTargets=async()=>(await db.query(`SELECT id,"updatedAt" AT TIME ZONE 'UTC' AS "updatedAt" FROM "ClubMember" WHERE "clubId"=$1 ORDER BY id`,[clubId])).rows;
  await api.assignOrganizationMemberGroups({clubId,targets:await groupTargets(),group:'Finance',operation:'ADD'});

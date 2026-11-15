@@ -32,7 +32,7 @@ test('attachment signer binds authorization to the saved answer and preserves an
  assert.deepEqual(where.question,{type:'FILE_UPLOAD'})
  assert.equal(where.application.OR[1].club.members.some.status, 'ACTIVE', 'suspended/former reviewers must never receive a signed attachment')
  assert.deepEqual(where.application.OR[0],{studentId:owner})
- assert.deepEqual(where.application.OR[1],{status:{not:'DRAFTING'},round:{anonymousReview:false},club:{suspendedAt:null,members:{some:{userId:owner,status:'ACTIVE',OR:[{isOwner:true},{permissions:{has:'applicants.identify'}}]}}}})
+ assert.deepEqual(where.application.OR[1],{status:{not:'DRAFTING'},round:{anonymousReview:false},club:{suspendedAt:null,members:{some:{userId:owner,status:'ACTIVE',alumniSince:null,OR:[{isOwner:true},{permissions:{has:'applicants.identify'}}]}}}})
  assert.equal(where.application.OR[1].club.suspendedAt,null,'reviewers of a suspended club must never receive a signed attachment')
  assert.equal(Object.keys(where.application.OR[0]).join(),'studentId','students keep access to their own attachments regardless of club suspension')
 })
@@ -62,7 +62,7 @@ test('resume upload refuses public buckets and issues only an owner-scoped priva
    '@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},
    'next/headers':{cookies:async()=>({})},
    '@/utils/supabase/server':{createClient:async()=>({storage:{from:()=>({createSignedUploadUrl:async path=>{signed=path;return{data:{signedUrl:'https://upload.test',token:'token'}}},uploadToSignedUrl:async()=>({error:null})})}})},
-   '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:isPublic}})}})},
+   '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:isPublic}}),from:()=>({list:async()=>({data:[],error:null})})}})},
   })
   const form=new FormData();form.set('kind','resume');form.set('file',new Blob(['%PDF-fixture'],{type:'application/pdf'}),'application.pdf');
   if(isPublic){await assert.rejects(api.uploadProfileFile(form),/unavailable/);assert.equal(signed,undefined)}

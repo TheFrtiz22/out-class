@@ -9,9 +9,10 @@ import { requireAuth } from '@/utils/auth';
 import { prisma } from '@/utils/prisma';
 import { invitationEmailConfig } from '@/utils/email';
 import { deliveryActor, enqueueInvitationEmail, enqueueInvitationEmails, processInvitationEmails } from '@/utils/invitation-delivery';
+import { ActionError, actionResult } from "@/lib/action-result";
 
 const id = z.string().uuid();
-export async function sendRosterInvitations(importId: string) {
+async function sendRosterInvitationsCommand(importId: string) {
   id.parse(importId);
   const { user } = await requireAuth();
   invitationEmailConfig();
@@ -19,7 +20,7 @@ export async function sendRosterInvitations(importId: string) {
     const record = await tx.rosterImport.findUniqueOrThrow({ where: { id: importId } });
     await lockOperationalClub(tx, record.clubId);
     await deliveryActor(tx, record.clubId, user.id);
-    if (record.status !== 'COMPLETED') throw new Error('Complete and review the import before sending invitations.');
+    if (record.status !== 'COMPLETED') throw new ActionError('Complete and review the import before sending invitations.');
     const rows = await tx.rosterImportRow.findMany({ where: { importId, clubId: record.clubId, status: 'INVITATION_CREATED', invitationId: { not: null } } });
     const { queued, reused, skipped } = await enqueueInvitationEmails(tx, record.clubId, user.id, rows.map(row => ({ invitationId: row.invitationId!, key: `roster:${record.id}:${row.invitationId}` })), true);
     if (queued) await tx.auditLog.create({ data: { actorId: user.id, clubId: record.clubId, targetId: record.id, action: 'club.roster.email.request', details: { queued, reused, skipped } } });
@@ -55,11 +56,19 @@ export async function deliverOrganizationInvitations(clubId: string) {
 }
 
 /** Request a background pass without waiting for SMTP. */
-export async function requestInvitationDelivery(clubId: string) {
+async function requestInvitationDeliveryCommand(clubId: string) {
   id.parse(clubId);
   const { user } = await requireAuth();
   invitationEmailConfig();
   await prisma.$transaction(async tx => { await deliveryActor(tx, clubId, user.id) });
   scheduleInvitationDelivery(clubId);
   return { queued: true };
+}
+
+export async function sendRosterInvitations(...args: Parameters<typeof sendRosterInvitationsCommand>) {
+  return actionResult(() => sendRosterInvitationsCommand(...args), "sendRosterInvitations")
+}
+
+export async function requestInvitationDelivery(...args: Parameters<typeof requestInvitationDeliveryCommand>) {
+  return actionResult(() => requestInvitationDeliveryCommand(...args), "requestInvitationDelivery")
 }

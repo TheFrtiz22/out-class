@@ -24,6 +24,10 @@ Finalize Panels validates and opens an owner review containing club/round, room/
 
 Edit Panels creates a working revision of upcoming official sessions. The editor and confirmation show Currently Published versus Proposed Changes, including additions, cancellations, moves, time changes and staffing changes. The prior version stays authoritative while editing. Restoring history creates another private draft and requires current availability/conflict validation before publication.
 
+### Closed rooms and stale drafts (2026-11-12)
+
+A closed room's future, unbooked time that still has a published panel stays in drafts as a closed session (`unstaffOnly`): it is never offered or newly staffed, it keeps its current interviewers unless a leader removes them, and it adds no required positions. Emptying it is an un-staffing that still needs the explicit confirmation. Booked and past times in a closed room leave the draft and keep their published panel. Every regeneration (Assign available interviewers, Regenerate selected session, Regenerate unlocked assignments) rebuilds the draft against current sessions, so closing or reopening a room, or adding or removing times, never strands a draft. Refusals carry a code: `DRAFT_STALE` shows the server's reason with **Regenerate draft**; `RECHECK_REQUIRED` asks for an availability recheck.
+
 ## Changed file groups
 
 | Area | Main files |

@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./action-result.cjs');
 // Real Prisma + server actions on an explicitly reserved disposable database.
 // Auth supplies a synthetic identity; no provider session or application .env is used.
 const fs = require('node:fs'), path = require('node:path'), ts = require('typescript');
@@ -18,7 +19,7 @@ async function campusEventsNative(url) {
     new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in mocks ? mocks[name] : name.startsWith('@/') ? load(name.slice(2) + '.ts') : require(name), m, m.exports);
     return m.exports;
   }
-  const api = load('actions/campus-events.ts');
+  const api = unwrapActions(load('actions/campus-events.ts'));
   async function seed(count = 1) {
     const titles = ['After Hours at the Art Museum', 'A Night of Jazz on Grounds', 'Meet the Makers', 'Community Supper', 'An Evening in Conversation'];
     const events = [];

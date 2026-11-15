@@ -14,6 +14,7 @@ A separately preserved collection of the nine logo variants from the **OutClass 
 | `08_monogram_no_sword.svg` | Transparent OC monogram |
 | `09_monochrome_lockup.svg` | One-color wordmark and sword |
 | `10_hero_transparent.svg` | Hero artwork without backdrop |
+| `11_app_icon_white.svg` | Rounded-square navy tile with the all-ivory OC monogram (the live app icon; not on the original board, built from the `07_favicon.svg` monogram) |
 
 **Brand palette:** Navy `#0F2E56`, orange `#F26522`, ivory `#FFF9F1`.
 

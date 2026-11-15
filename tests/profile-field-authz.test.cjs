@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 // Authorization review follow-ups: hidden profile fields cannot leak through voting selection,
 // voting academic years, identity reveal, direct file routes, résumé highlights or the viewer.
 const { test } = require('node:test')
@@ -127,11 +128,11 @@ test('identity reveal returns the identity but not profile fields the club hides
   const application = club => ({ id: appId, clubId, roundId, status: 'SUBMITTED', studentId: id(41), submittedAt: new Date(), club, round: { anonymousReview: true, applicantDisplay: {} }, student: { id: id(41), email: 'ada@virginia.edu', createdAt: new Date(), studentProfile: { id: 'p', userId: id(41), firstName: 'Ada', lastName: 'Lee', major: 'Math', computingId: 'al1', gradYear: 2028, gpa: 3.6, satScore: 1500, actScore: 32, actMath: 33, resumeUrl: 'https://example.com/r.pdf', headshotUrl: null, linkedinUrl: 'https://www.linkedin.com/in/ada', bio: null, experiences: [] } }, answers: [], bookings: [], evaluations: [] })
   let row
   const tx = { user: { findUnique: async () => ({ disabledAt: null }) }, clubMember: { findUnique: async () => ({ status: 'ACTIVE', isOwner: true }) }, $queryRaw: async () => [], application: { findFirst: async q => { assert.deepEqual(q.include.club, { select: { profileFieldVisibility: true } }); return row } }, auditLog: { create: async () => {} } }
-  const api = load('actions/crm.ts', {
+  const api = unwrapActions(load('actions/crm.ts', {
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'manager' } }) },
     '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
     '@/utils/club-write-transaction': {}, '@/utils/recruitment-offers': {}, 'next/cache': { revalidatePath() {} },
-  })
+  }))
   row = application(null)
   let result = await api.revealApplicantIdentity(clubId, appId, 'Resolve an application issue')
   assert.equal(result.student.email, 'ada@virginia.edu')

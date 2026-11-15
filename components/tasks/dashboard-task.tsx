@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react"
 import { getTaskWorkspace, viewTask } from "@/lib/workspace-api"
@@ -19,7 +20,7 @@ export function DashboardTask({ clubId, taskId, assignmentId, review = false, on
   async function run(fn: () => Promise<unknown>) {
     setBusy(true); setError(""); setNotice("")
     try { await fn(); onChanged(); try { setWorkspace(await getTaskWorkspace(clubId, { taskId, assignmentId })) } catch { setWorkspace(null); setError("Saved, but the updated task could not load. Retry to check its current state.") } setNotice("Changes saved to your account."); return true }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not save. Your response is still here."); return false }
+    catch (e) { setError(userMessage(e, "Could not save. Your response is still here.")); return false }
     finally { setBusy(false) }
   }
   const task = workspace?.tasks.find(t => t.id === selectedId)

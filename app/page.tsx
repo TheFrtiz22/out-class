@@ -1,11 +1,12 @@
 import { requireAuth } from "@/utils/auth"
+import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { getLaunchClubs } from "@/lib/launch-clubs"
 import { safeReturnPath, isUvaEmail } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { HomeEntry } from "@/components/home-entry"
 import { STUDENT_HOME, isLeaderWorkspaceView, leaderWorkspaceHref, legacyStudentRedirect } from "@/lib/navigation"
-import { hasWorkspace } from "@/lib/permissions"
+import { hasWorkspace, activeMemberWhere } from "@/lib/permissions"
 import { getStudentDashboardData } from "@/actions/applications"
 import { getSessionUser } from "@/utils/auth"
 import { cookies } from "next/headers"
@@ -15,6 +16,7 @@ import { unstable_cache } from "next/cache"
 import { redirect } from "next/navigation"
 import { SITE_TITLE, SITE_DESCRIPTION, publicPageMetadata, privateRobots, privateHomepageParams, websiteStructuredData } from "@/lib/seo"
 import { initialLandingAudience, landingAudienceBootScript, LANDING_AUDIENCE_PREFERENCE } from "@/lib/landing-audience"
+import { cspNonce } from "@/utils/csp-nonce"
 
 const getCachedLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
 
@@ -66,13 +68,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   let hasProfile = false
   if (user) {
     const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
-    if (account?.disabledAt) return <main className="p-8">Your account is unavailable. Contact OutClass support.</main>
+    if (account?.disabledAt) return <AccountUnavailable />
     // Old leader views on the homepage open the matching club workspace section. The club is the
     // first active, unsuspended membership with workspace access (same rule as sign-in); without
     // one the visitor gets Home, as the student view replaced these before.
     const requestedView = typeof params.view === "string" ? params.view : null
     if (isLeaderWorkspaceView(requestedView)) {
-      const leader = await prisma.user.findUnique({ where: { id: user.id }, select: { memberships: { where: { status: "ACTIVE", club: { suspendedAt: null } }, orderBy: { clubId: "asc" }, select: { clubId: true, status: true, isOwner: true, permissions: true, interviewOffices: true } } } })
+      const leader = await prisma.user.findUnique({ where: { id: user.id }, select: { memberships: { where: { ...activeMemberWhere, club: { suspendedAt: null } }, orderBy: { clubId: "asc" }, select: { clubId: true, status: true, isOwner: true, permissions: true, interviewOffices: true } } } })
       const club = leader?.memberships.find(hasWorkspace)
       const focus = { applicantId: typeof params.applicantId === "string" ? params.applicantId : null, roundId: typeof params.roundId === "string" ? params.roundId : null }
       redirect(club ? leaderWorkspaceHref(requestedView, club.clubId, focus) : STUDENT_HOME)
@@ -96,11 +98,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     user ? getStudentDashboardData().catch(e => { console.error(e); return null }) : null,
     getCachedLaunchClubs(),
   ])
+  const nonce = await cspNonce()
   const landingAudience = initialLandingAudience(params.audience, cookieStore.get(LANDING_AUDIENCE_PREFERENCE)?.value)
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />
+    <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />
     <style id="oc-landing-audience-gate" />
-    <script dangerouslySetInnerHTML={{ __html: landingAudienceBootScript }} />
+    <script nonce={nonce} dangerouslySetInnerHTML={{ __html: landingAudienceBootScript }} />
     <HomeEntry initialLandingAudience={landingAudience} launchClubs={launchClubs} initialView={!user && next !== "/" ? "auth" : "landing"} initialSession={user} initialData={initialData} hasProfile={hasProfile} />
   </>
 }

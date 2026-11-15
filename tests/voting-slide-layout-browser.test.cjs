@@ -80,7 +80,7 @@ test('automatic slide layout: short facts as chips, longest evidence leads, list
 
   // The layout follows the content: with a short numbered note, the résumé excerpt leads instead.
   await f.h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[0],passNumber:1,reason:'Synthetic layout test',confirmed:true});
-  await page.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor({timeout:20000});await page.locator('.vr-evidence').waitFor();
+  await page.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor({timeout:20000});await page.locator('.vr-slide-ready').waitFor();await page.locator('.vr-evidence').waitFor();
   assert.deepEqual(await fields(page,'.vr-evidence [data-slide-field]'),['resumeHighlight','interviewFeedback']);
   assert.equal(await page.locator('[data-slide-field="interviewFeedback"] ol>li').count(),2,'numbered lines render as an ordered list');
   assert.ok((await page.locator('[data-evidence-rank="1"]').boundingBox()).width>(await page.locator('[data-evidence-rank="2"]').boundingBox()).width*1.2);

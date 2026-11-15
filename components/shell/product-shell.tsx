@@ -17,7 +17,7 @@ import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react"
-import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, Gauge, Gavel, IdCard } from "@/components/icons"
+import { CalendarStar, Bell, Menu, UserRound, LogOut, Home, Users2, Compass, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, Gauge, Gavel, IdCard } from "@/components/icons"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { WorkspaceSelector, useWorkspaceOptions } from "@/components/shell/workspace-selector"
@@ -26,6 +26,7 @@ import { useWorkspaceAccess } from "@/components/shell/use-workspace-access"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
 import { NavigationSearch } from "@/components/shell/navigation-search"
+import { searchDestinations } from "@/lib/search-destinations"
 import { KeyboardShortcuts } from "@/components/shell/keyboard-shortcuts"
 import { IconButton } from "@/components/ui/icon-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -46,12 +47,15 @@ import { TERMS } from "@/lib/copy/terms"
 import { countShellStart } from "@/lib/shell-metrics"
 import { notificationSettingsHref } from "@/lib/settings-navigation"
 import { RouteChildren } from "@/components/route-content"
+import { prepareSignOut, sealAutosaveDraftsForSignOut } from "@/lib/autosave-store"
+import { flushEditors } from "@/lib/autosave-navigation"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 
 /**
  * Rail icons. Club workspace items each get a distinct glyph: Overview (gauge) vs Home (house), Applicants
  * (ID card) vs Members (people), one Calendar, and Decide (gavel). Exported for the phone bar.
  */
-export const navigationIcons: Record<string, typeof Home> = { rejected: IdCard, resumes: FileText, reviews: FileText, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: Gavel, clubs: Users2, overview: Gauge, meetings: CalendarDays, tasks: ListChecks, applicants: IdCard, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw, recruiting: FileText }
+export const navigationIcons: Record<string, typeof Home> = { rejected: IdCard, resumes: FileText, reviews: FileText, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: CalendarStar, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: Gavel, clubs: Users2, overview: Gauge, meetings: CalendarDays, tasks: ListChecks, applicants: IdCard, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw, recruiting: FileText }
 
 /**
  * One shell for every workspace. `sections` come from lib/navigation; the highlighted
@@ -81,6 +85,19 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications, syncTaskNotifications, syncDurableNotifications, durableUnread } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
+  const confirmSignOut = useConfirm()
+  async function signOut() {
+    // Try to save unsaved edits first; only a confirmed discard clears this device's copies.
+    const outcome = await prepareSignOut({ flush: flushEditors, confirm: () => confirmSignOut({ title: "Sign out and discard unsaved changes?", description: "Some changes have not reached OutClass yet. Signing out removes them from this device.", confirmLabel: "Discard and sign out", tone: "danger" }) })
+    if (outcome === "cancel" || (outcome !== "discard" && !canLeaveWorkspace())) return
+    setSigningOut(true)
+    try {
+      await import("@/lib/push-device").then(async ({ unsubscribeOnSignOut }) => unsubscribeOnSignOut((await import("@/actions/push-subscriptions")).removePushSubscription)).catch(() => {})
+      const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out.")
+      const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error
+      await sealAutosaveDraftsForSignOut(); window.location.assign("/")
+    } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) }
+  }
   const current = (pathname ? activeNavItem(pathname, new URLSearchParams(params?.toString()), { member: !manager && !!clubId }) : null) ?? active
   const contextKey = `${clubId}:${mode}:${current}`
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
@@ -177,7 +194,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     const selected = item.id === current
     const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left", selected ? "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const NavIcon = navigationIcons[item.id] ?? FileText
-    const content = <>{(dock ? <span className="oc-dock-icon">{<NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" size={22} />}</span> : <NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" className="size-[18px] shrink-0" />)}<span className="oc-dock-item-label">{item.label}</span>{item.preview && <span className="oc-dock-preview ml-auto text-[length:var(--oc-size-10)] font-normal text-muted-foreground">Preview</span>}</>
+    const content = <>{(dock ? <span className="oc-dock-icon">{<NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" size={24} />}</span> : <NavIcon weight={selected ? "fill" : "regular"} aria-hidden="true" className="size-4 shrink-0" />)}<span className="oc-dock-item-label">{item.label}</span>{item.preview && <span className="oc-dock-preview ml-auto text-xs font-normal text-muted-foreground">Preview</span>}</>
     const element = item.href ? <Link key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (item.mode && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.mode); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={item.label} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
     return element
   }
@@ -189,7 +206,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   function sidebar() { return <div className="oc-context-sidebar flex h-full flex-col overflow-y-auto px-4 py-6">
     <button type="button" className="oc-rail-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo variant="dark" /></button>
     {sheetSections.map(section => <div key={section.id} className="oc-sheet-section mb-5" data-tour={section.tour}>
-      {section.label && <p className="mb-2 px-3 text-[length:var(--oc-size-11)] text-muted-foreground">{section.label}</p>}
+      {section.label && <p className="mb-2 px-3 text-xs text-muted-foreground">{section.label}</p>}
       <nav aria-label={section.label ?? section.name} className="space-y-1">{section.items.filter(i => !i.hidden).map(item => navLink(item))}</nav>
     </div>)}
   </div> }
@@ -197,6 +214,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   // Meetings, Events and Members of this club, each only when its page would open; one entry per address.
   const clubLinks = allowed && !platform ? clubSearchLinks(member, clubId).filter(link => !railLinks.some(rail => rail.href === link.href)) : []
   const otherClubs = manager && !platform ? access.clubs.filter(club => club.clubId !== clubId) : []
+  // Cmd-K reaches every page the account's roles allow, not only this workspace's: personal pages, each club, the platform.
+  const destinations = user ? searchDestinations({ memberships: user.memberships, admin: access.admin, settings: !demo.isDemoEnabled }) : []
   return <div className="min-h-dvh bg-background text-foreground" data-product-shell={platform ? "admin" : manager ? "manager" : "personal"} data-shell-chrome={chrome ? undefined : "hidden"} style={{ "--oc-club-accent": member?.club.color || "var(--brand-orange)" } as CSSProperties}>
     <a href="#workspace-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-card focus:p-3">Skip to content</a>
     <header className="oc-product-header">
@@ -211,7 +230,7 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
             setTaskLoad({ loading: true, failed: false }); setDurableLoad({ loading: true, failed: false })
             window.dispatchEvent(new Event("outclass:tasks-changed")); window.dispatchEvent(new Event("outclass:communications-changed"))
           }} onNavigate={onNavigate} />
-          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{/* The account menu switches workspace at every width; the header pill is an extra shortcut on wider screens. */}{workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-[length:var(--oc-size-11)] text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out."); const { createClient } = await import("@/utils/supabase/client"); const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}, ${accountInitials(user)}`}><AccountAvatar user={user} /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p>{user && !isImpersonating && <DemoMenuItems />}{/* The account menu switches workspace at every width; the header pill is an extra shortcut on wider screens. */}{workspaceChoices.length > 1 && <div className="oc-account-workspaces" role="group" aria-label="Workspaces"><DropdownMenuSeparator /><p className="px-2 pb-1 pt-2 text-xs text-muted-foreground">Workspace</p>{workspaceChoices.map(option => <DropdownMenuItem key={option.id} aria-current={option.id === workspace ? "page" : undefined} aria-label={workspaceOptionName(option)} onSelect={() => { if (option.id !== workspace && canLeaveWorkspace()) router.push(option.href) }}><span className="min-w-0 flex-1 truncate">{option.label}</span>{option.id === workspace && <CheckCircle2 weight="fill" aria-hidden="true" />}</DropdownMenuItem>)}{otherClubs.map(club => <DropdownMenuItem key={club.clubId} aria-label={`${club.club.name} club workspace`} onSelect={() => { if (canLeaveWorkspace()) router.push(clubWorkspaceHref(club.clubId)) }}><span className="min-w-0 flex-1 truncate">{club.club.name}</span></DropdownMenuItem>)}</div>}<DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}><AccountAvatar user={user} className="size-5" />Your profile</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings") }}><Settings />Settings</DropdownMenuItem>}{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={() => void signOut()}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>
     </header>
@@ -226,10 +245,10 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)
     }} />}
     <KeyboardShortcuts />
-    <NavigationSearch clubId={manager ? clubId : undefined} leader={manager} open={search} onOpenChange={setSearch} onDismissAutoFocus={() => {
+    <NavigationSearch clubId={manager ? clubId : undefined} leader={manager || platform} destinations={destinations} open={search} onOpenChange={setSearch} onDismissAutoFocus={() => {
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])]} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])].map(link => ({ ...link, icon: navigationIcons[link.id] }))} onNavigate={onNavigate} />
   </div>
 }

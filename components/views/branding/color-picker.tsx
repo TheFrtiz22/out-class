@@ -38,7 +38,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
               >
                 {active && <Check className="size-4 text-white drop-shadow" />}
               </span>
-              <span className="text-[length:var(--oc-size-11)] text-muted-foreground">{preset.name}</span>
+              <span className="text-xs text-muted-foreground">{preset.name}</span>
             </button>
           )
         })}

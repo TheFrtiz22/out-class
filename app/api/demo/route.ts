@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { getDemoAccess, DEMO_COOKIE } from "@/lib/demo/access"
+import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit"
 
 async function access() {
   const jar = await cookies()
@@ -25,6 +26,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin)
     return NextResponse.json({ error: "Invalid origin" }, { status: 403 })
+  const limited = limitRequest(request, RATE_LIMITS.demoMode)
+  if (limited) return limited
   const input = await request.json().catch(() => null)
   if (typeof input?.enabled !== "boolean")
     return NextResponse.json({ error: "Invalid mode" }, { status: 400 })

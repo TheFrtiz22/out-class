@@ -5,6 +5,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { InterviewResumeLoader as InterviewResumeViewer } from "@/components/interview-resume-loader";
 import { getInterviewApplicantPanel, pinInterviewResume } from "@/lib/workspace-api";
+import { isAccessRevoked } from "@/lib/action-result";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
 import { InterviewResumeResource } from "@/lib/interview-resume-resource";
@@ -17,7 +18,10 @@ import { FileText, Maximize2, UserRound, X } from "@/components/icons";
 
 const ResumePreview = dynamic(() => import("@/components/interview-resume-preview"), { ssr: false, loading: () => <LoadingState label="Preparing résumé preview…" layout="inline" /> });
 
-export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>> }) {
+/** `onAccessRevoked` runs when the server refuses with ACCESS_REVOKED (e.g. removed from the panel);
+ * the room then shows its "no longer have access" state. `unsavedComment` is a résumé comment that was
+ * open in the viewer and could not be saved (an empty string for a highlight with no text yet). */
+export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel, onAccessRevoked, onDraftComment }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>>; onAccessRevoked?: (unsavedComment?: string) => void; onDraftComment?: (comment: string | undefined) => void }) {
   const scope = useMemo(() => ({ clubId, applicationId, roundId }), [clubId, applicationId, roundId]);
   const { isDemoEnabled } = useDemoMode();
   const { user } = useAuth();
@@ -36,9 +40,12 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
   const [initialPage, setInitialPage] = useState(1);
   const [demoSource, setDemoSource] = useState("/demo/sample-resume.pdf");
   const actorId = user?.id;
+  const accessRevoked = useRef(onAccessRevoked); accessRevoked.current = onAccessRevoked;
   const resource = useMemo(() => { void retry; return actorId && documentId ? new InterviewResumeResource(actorId, scope, documentId, isDemoEnabled, demoSource) : null; }, [actorId, scope, documentId, isDemoEnabled, demoSource, retry]);
   useEffect(() => {
     let current = true;
+    // True when the room took over: no inline "unavailable" message or Retry for a refusal.
+    const reportRevoked = (error: unknown) => { if (!isAccessRevoked(error) || !accessRevoked.current) return false; accessRevoked.current(); return true; };
     setLoading(!initialPanel || retry > 0); setError(""); setResumeError(""); if (!initialPanel || retry) setPanel(null); setDocumentId(""); setImageFailed(false);
     (initialPanel && !retry ? Promise.resolve(initialPanel) : getInterviewApplicantPanel(scope)).then(async value => {
       if (!current) return;
@@ -46,8 +53,8 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
       try {
         const document = value.document || await pinInterviewResume(scope);
         if (current) { setDocumentId(document.id); if ("source" in document) setDemoSource(document.source === "/demo/sample-scanned-resume.pdf" ? "/demo/sample-scanned-resume.pdf" : "/demo/sample-resume.pdf"); }
-      } catch { if (current) setResumeError("No interview résumé is available. A private PDF upload is needed."); }
-    }).catch(() => { if (current) { setError("Applicant panel unavailable. Your access may have changed."); setOpen(false); } }).finally(() => { if (current) setLoading(false); });
+      } catch (e) { if (current && !reportRevoked(e)) setResumeError("No interview résumé is available. A private PDF upload is needed."); }
+    }).catch(e => { if (current && !reportRevoked(e)) { setError("Applicant panel unavailable. Your access may have changed."); setOpen(false); } }).finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
   }, [scope, retry, initialPanel]);
   useEffect(() => {
@@ -67,12 +74,12 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
     <div className="oc-candidate-content">
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
       <div className="oc-applicant-identity">
-        {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={120} height={128} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-9" aria-hidden="true" /></div>}
+        {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={120} height={128} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-6" aria-hidden="true" /></div>}
         <div className="min-w-0"><h1>{name}</h1>{!!scholarships.length && <ul aria-label="Scholar status" className="oc-applicant-scholars">{scholarships.map((s,i) => <li key={`${s}-${i}`}>{s}</li>)}</ul>}</div>
       </div>
       <div className="oc-resume-document">
       {warm && resource && <div hidden aria-hidden="true"><InterviewResumeViewer preloadOnly scope={scope} documentId={documentId} isDemo={isDemoEnabled} resource={resource} onAccessLost={() => {}} /></div>}
-      {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-10 text-muted-foreground" aria-hidden="true" />}
+      {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-6 text-muted-foreground" aria-hidden="true" />}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="ghost" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>
           <Maximize2 className="size-4" aria-hidden="true" />
@@ -80,7 +87,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
         <DialogContent showCloseButton={false} aria-describedby={undefined} className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onEscapeKeyDown={event => { if ((event.target as Element)?.closest('[role="dialog"]')?.querySelector('[data-resume-comment-draft]')) event.preventDefault(); }} onCloseAutoFocus={e => { e.preventDefault(); (openedFromPreview.current ? previewFocus.current : resumeTrigger.current)?.focus(); }}>
           <DialogHeader className="pr-10"><DialogTitle className="text-base font-medium">{name} · Résumé</DialogTitle></DialogHeader>
           <DialogClose asChild><Button type="button" variant="ghost" size="icon" className="absolute right-3 top-3 size-9" aria-label="Close résumé"><X className="size-4" aria-hidden="true" /></Button></DialogClose>
-          {open && resource && <InterviewResumeViewer resource={resource} initialPage={initialPage} fallback={fallback} scope={scope} documentId={documentId} isDemo={isDemoEnabled} onAccessLost={() => { resource.invalidate(); setUrl(""); setResumeError("Document access could not be verified. Retry to check access."); }} />}
+          {open && resource && <InterviewResumeViewer resource={resource} initialPage={initialPage} fallback={fallback} scope={scope} documentId={documentId} isDemo={isDemoEnabled} onAccessLost={() => { resource.invalidate(); setUrl(""); setResumeError("Document access could not be verified. Retry to check access."); }} onAccessRevoked={onAccessRevoked} onDraftComment={onDraftComment} />}
         </DialogContent>
       </Dialog>
       </div>

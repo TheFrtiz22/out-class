@@ -3,7 +3,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import {useDemoMode} from "@/contexts/demo-context";
 import {getVotingSlidePreparation,getVotingSlidePreparationApplicant,saveVotingSlidePreparation} from "@/lib/voting-slide-preparation-api";
 import {getLiveVotingPresentation} from "@/lib/voting-room-api";
-import {maxQuoteLength,maxSlideHighlights,maxSummaryLength,slideSourceTypeLabels,slideSourceTypes,type SlideSource} from "@/lib/voting-slide-preparation";
+import {maxQuoteLength,maxSlideHighlights,maxSummaryLength,quotableSource,slideSourceTypeLabels,slideSourceTypes,slideTimingLabels,slideTimingShort,type SlideSource} from "@/lib/voting-slide-preparation";
 import {liveRoomPath,isStalePresentation} from "@/lib/voting-room";
 import {Button} from "@/components/ui/button";
 import {LoadingState} from "@/components/ui/loading-state";
@@ -27,7 +27,7 @@ function writeBackup(key:string,items:Item[]|null){try{if(items)sessionStorage.s
 
 /** Leader preparation of up to three highlights per applicant. Sources are
  * gathered and authorized by the server; quotes must be verbatim; summaries are
- * labelled as leader writing. Saved progress locks when a voting pass starts. */
+ * labelled as leader writing. Saved highlights lock as each applicant comes up. */
 export function VotingSlidePreparation({clubId,sessionId}:{clubId:string;sessionId:string}){
   const demo=useDemoMode();
   const [overview,setOverview]=useState<Overview|null>(null),[error,setError]=useState(""),[retry,setRetry]=useState(0);
@@ -50,7 +50,7 @@ export function VotingSlidePreparation({clubId,sessionId}:{clubId:string;session
     <header className="vr-prep-header">
       <VotingBackLink clubId={clubId} cycleId={overview.cycleId??undefined} roundId={overview.roundId}/>
       <PageHeader title={<>Prepare slides · {overview.name}</>} />
-      <p className="text-sm text-muted-foreground">{overview.finalized?"Decisions are finalized. Preparation is read only.":overview.cancelled?"This session was cancelled. Preparation is read only.":`Choose up to ${maxSlideHighlights} highlights per applicant; two or three works well when there’s material. Saved highlights lock when ${overview.appliesTo} starts. Missing highlights never block voting.`}</p>
+      <p className="text-sm text-muted-foreground">{overview.finalized?"Decisions are finalized. Preparation is read only.":overview.cancelled?"This session was cancelled. Preparation is read only.":`Choose up to ${maxSlideHighlights} highlights per applicant; two or three works well when there’s material. ${overview.appliesTo} Missing highlights never block voting.`}</p>
       {overview.currentPass>0&&<p className="text-sm"><Link className="vr-link" href={liveRoomPath(clubId,sessionId,"leader")}>Return to the voting room</Link></p>}
     </header>
     <div className="vr-prep-layout">
@@ -58,7 +58,7 @@ export function VotingSlidePreparation({clubId,sessionId}:{clubId:string;session
         <p className="text-sm" role="status">{missing?`${missing} of ${overview.applicants.length} without highlights`:"Every applicant has at least one highlight"}</p>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={missingOnly} onChange={e=>setMissingOnly(e.target.checked)}/> Show only missing</label>
         <ul>{list.map(a=><li key={a.applicationId}><button type="button" aria-current={selected===a.applicationId?"true":undefined} onClick={()=>choose(a.applicationId)} className="vr-prep-applicant">
-          <span>{a.name}</span>
+          <span><span className="block">{a.name}</span>{a.highlightCount>0&&<span className="block text-xs text-muted-foreground" data-slide-timing={a.timing}>{slideTimingShort[a.timing]}</span>}</span>
           <span className={a.highlightCount?"text-muted-foreground":"vr-prep-missing"}>{a.highlightCount?`${a.highlightCount} of ${maxSlideHighlights}`:<><TriangleAlert aria-hidden="true" size={14}/> None</>}</span>
         </button></li>)}</ul>
         {!list.length&&<p className="text-sm text-muted-foreground">No applicants are missing highlights.</p>}
@@ -114,6 +114,7 @@ function ApplicantPreparation({clubId,sessionId,applicationId,name,onSaved}:{clu
     <p ref={announce} className="sr-only" aria-live="polite"/>
     <section aria-labelledby="prep-selected" className="space-y-2">
       <h3 id="prep-selected" className="font-medium">Selected highlights · {items.length+hidden} of {maxSlideHighlights}</h3>
+      {items.length+hidden>0&&<p className="text-sm" data-slide-timing={data.timing}>{slideTimingLabels[data.timing]}</p>}
       {hidden>0&&<p className="text-sm text-muted-foreground">{hidden} saved highlight{hidden===1?" uses a source":"s use sources"} you can’t view. {hidden===1?"It is":"They are"} kept and count toward the limit.</p>}
       {data.gap&&<p className="vr-prep-missing text-sm"><TriangleAlert aria-hidden="true" size={14}/> {data.gap}. Voting can still go ahead.</p>}
       {!items.length?<p className="text-sm text-muted-foreground">No highlights selected. Choose excerpts or write a summary from the sources below.</p>:
@@ -165,16 +166,18 @@ function SourceUpdate({item,current,editable,onUse}:{item:Item;current:SlideSour
 function SourceCard({source,disabled,onAdd}:{source:SlideSource;disabled:boolean;onAdd:(s:SlideSource,mode:"QUOTE"|"SUMMARY",text:string)=>void}){
   const area=useRef<HTMLTextAreaElement>(null),writer=useRef<HTMLTextAreaElement>(null),[selection,setSelection]=useState(""),[summary,setSummary]=useState<string|null>(null);
   const writing=summary!==null;useEffect(()=>{if(writing)writer.current?.focus();},[writing]);
-  const short=source.text.length<=maxQuoteLength;
+  const short=source.text.length<=maxQuoteLength,quotable=quotableSource(source.type);
   const readSelection=()=>{const el=area.current;if(!el)return;setSelection(el.value.slice(el.selectionStart,el.selectionEnd).trim());};
   const meta=[source.label,source.author,source.roundName,source.revision?`Version ${source.revision}`:null].filter(Boolean).join(" · ");
-  return <article className="vr-prep-source">
+  return <article className="vr-prep-source" data-source-type={source.type}>
     <p className="text-xs text-muted-foreground">{meta}</p>
-    {short?<p className="whitespace-pre-wrap break-words">{source.text}</p>:
+    {!quotable?<p className="whitespace-pre-wrap break-words"><span className="font-medium">Interviewer note:</span> {source.text}</p>:
+    short?<p className="whitespace-pre-wrap break-words">{source.text}</p>:
       <><label className="sr-only" htmlFor={`source-${source.id}`}>{meta}. Select text to use as an excerpt.</label>
       <textarea id={`source-${source.id}`} ref={area} readOnly className="vr-prep-textarea" rows={4} value={source.text} onSelect={readSelection} onKeyUp={readSelection} onMouseUp={readSelection}/></>}
+    {!quotable&&<p className="text-xs text-muted-foreground">Marks a region of a résumé page, so there is no résumé text to quote. Write a summary instead.</p>}
     <div className="flex flex-wrap gap-2">
-      {short?<Button type="button" size="sm" variant="outline" disabled={disabled} onClick={()=>onAdd(source,"QUOTE",source.text.trim())}>Use as excerpt</Button>
+      {!quotable?null:short?<Button type="button" size="sm" variant="outline" disabled={disabled} onClick={()=>onAdd(source,"QUOTE",source.text.trim())}>Use as excerpt</Button>
         :<Button type="button" size="sm" variant="outline" disabled={disabled||!selection||selection.length>maxQuoteLength} onClick={()=>{onAdd(source,"QUOTE",selection);setSelection("");}}>{selection.length>maxQuoteLength?`Select under ${maxQuoteLength} characters`:"Use selected text"}</Button>}
       {summary===null?<Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={()=>setSummary("")}>Write a summary</Button>:null}
     </div>

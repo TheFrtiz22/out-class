@@ -68,7 +68,7 @@ test('configuration updates reject unknown fields, duplicate fields, stale versi
  h.member.permissions=['applications.review'];await assert.rejects(h.api.getApplicantDisplayConfiguration(clubId,roundId),/Denied/);
 });
 test('Interview uses a narrow panel and the leader workspace keeps the server-filtered panel; no browser-local voting transport remains',()=>{
- assert.match(fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);assert.doesNotMatch(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/getClubPipeline|ApplicantDisplayPanel/);
+ assert.match(fs.readFileSync('components/applicant-review/applicant-review-flow.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);assert.doesNotMatch(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/getClubPipeline|ApplicantDisplayPanel/);
  assert.match(fs.readFileSync('components/applicant-intelligence.tsx','utf8'),/getApplicantDisplay\(\{ clubId, applicationId, sessionId, previewConfig:/);
  for(const gone of ['components/live-voting/board-decision-mode.tsx','lib/use-live-voting.ts'])assert.equal(fs.existsSync(gone),false,gone);
 });

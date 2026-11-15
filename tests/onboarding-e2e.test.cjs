@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -108,7 +109,8 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   await president.signUp('John Smith',ids.president,2027);
   fs.writeFileSync(path.join(path.dirname(configFile),'ui-fixture.json'),JSON.stringify({clubId,ownerInvitation,name,president:president.credentials}),{mode:0o600});
   const pending=await call(president,'club-onboarding','getOrganizationInvitations',true);assert.equal(pending.length,1);assert.equal(pending[0].invitedName,'John Smith');assert.equal(pending[0].invitedYear,'2027');
-  assert.equal((await db.schoolIdentity.findUniqueOrThrow({where:{id:invitation.schoolIdentityId}})).userId,president.user.id);
+  // Listing is read-only; the identity is bound by the explicit acceptance below.
+  assert.equal((await db.schoolIdentity.findUniqueOrThrow({where:{id:invitation.schoolIdentityId}})).userId,null);
   // Email invitation entry points must guide first-time users through the existing profile wizard.
   assert.equal(await db.studentProfile.count({where:{userId:president.user.id}}),0);
   for(const target of [`/invitations/${ownerInvitation}`,'/settings/organizations']){
@@ -122,6 +124,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   assert.ok(!invitationHtml.includes('id="__next-page-redirect"'),'Completed profile must not redirect away from the invitation');
   await call(president,'club-onboarding','acceptIdentityClubInvitation',ownerInvitation);
   invitation=await db.clubInvitation.findUniqueOrThrow({where:{id:ownerInvitation}});assert.equal(invitation.status,'ACCEPTED');assert.equal(invitation.claimedUserId,president.user.id);assert.ok(invitation.claimedAt);
+  assert.equal((await db.schoolIdentity.findUniqueOrThrow({where:{id:invitation.schoolIdentityId}})).userId,president.user.id);
   const membership=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:president.user.id,clubId}}});assert.equal(membership.isOwner,true);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.status,'ACTIVE');
   await assertEntryRedirect(president,'/login',`/club/${clubId}/workspace`);
   await assertEntryRedirect(president,'/signup',`/club/${clubId}/workspace`);
@@ -182,11 +185,11 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   // Workspace readers use their real HTTP boundary rather than a Server Action worker.
   const recruiter=await existing.request('/api/workspace?'+new URLSearchParams({kind:'rounds',args:JSON.stringify([clubId])}));
   assert.equal(recruiter.status,200);assert.ok(Array.isArray((await recruiter.json()).data));
-  await assert.rejects(call(existing,'roster-import','previewRosterImport',{clubId,requestId:randomUUID(),filename:'attack.csv',csv:'name,computing_id\nVictim,victimabc'}));
+  await refused(call(existing,'roster-import','previewRosterImport',{clubId,requestId:randomUUID(),filename:'attack.csv',csv:'name,computing_id\nVictim,victimabc'}));
   await call(president,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'ADMIN'});
   await call(existing,'organization-members','getOrganizationMemberManagement',clubId);
-  await assert.rejects(call(existing,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'OWNER'}));
-  await assert.rejects(call(existing,'organization-members','transferOrganizationOwnership',{clubId,memberId:sarah.id,confirm:true}));
+  await refused(call(existing,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'OWNER'}));
+  await refused(call(existing,'organization-members','transferOrganizationOwnership',{clubId,memberId:sarah.id,confirm:true}));
   await call(president,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'MEMBER'});
   const session=await existing.client.auth.getSession();
   for(const table of ['SchoolIdentity','ClubInvitation','ClubMember','RosterImport','RosterImportRow','InvitationDelivery']){

@@ -10,6 +10,8 @@ import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
 import { getStudentDashboardData } from "@/lib/workspace-api"
 import { studentPath } from "@/lib/navigation"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+import { clubBreadcrumbs } from "@/lib/seo"
 const emptyPrivateDashboard = { applications: [], attendances: [], meetings: [] }
 export function PublicClubPage({
   club,
@@ -69,6 +71,7 @@ export function PublicClubPage({
             onBack={() => {
               window.location.href = embedded ? "/explore" : "/"
             }}
+            breadcrumbs={<Breadcrumbs className="oc-club-breadcrumbs" items={clubBreadcrumbs(club.name, { signedIn: embedded })} />}
             onNavigate={navigate}
             serverNow={serverNow}
           />

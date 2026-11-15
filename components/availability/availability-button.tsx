@@ -6,8 +6,8 @@ import { flushEditors } from "@/lib/autosave-navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { Button } from "@/components/ui/button"
 
-/** The one link into `/settings/availability`. Calendar shows it as "Availability"; club Scheduling as "Set My Availability". */
-export function AvailabilityButton({ clubId, roundId, complete, label = "Set My Availability", variant = "default" }: { clubId?: string; roundId?: string; complete?: boolean; label?: string; variant?: "default" | "outline" }) {
+/** The one link into `/settings/availability`. Calendar shows it as "Availability"; club Scheduling as "Set my availability". */
+export function AvailabilityButton({ clubId, roundId, complete, label = "Set my availability", variant = "default" }: { clubId?: string; roundId?: string; complete?: boolean; label?: string; variant?: "default" | "outline" }) {
   const router = useRouter(), params = useSearchParams()
   const href = availabilityHref(clubId ?? params.get("clubId") ?? undefined, roundId ?? params.get("roundId") ?? undefined)
   return <div className="space-y-1"><Button type="button" variant={variant} className="min-h-12 gap-2 px-5" onClick={() => {

@@ -152,12 +152,6 @@
    "reason": "Calendar cells, agenda rows, event chips and booking cards are whole-surface targets; navy focus outline."
   },
   {
-   "rule": "raw-button",
-   "file": "components/views/leader-dashboard/live-applicant-views.tsx",
-   "max": 1,
-   "reason": "Applicant table name cell, mobile card and kanban card are whole-row targets in the solid applicant table."
-  },
-  {
    "rule": "raw-toggle",
    "file": "components/interviews/booking-picker.tsx",
    "max": 2,

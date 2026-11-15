@@ -8,9 +8,9 @@ import type { CampusEvent } from "@/lib/campus-events";
 export type EventSaveState = { identity: string; saved: boolean; ready: boolean; pending: boolean; onSave: () => void };
 
 export function EventSaveButton({ event, identity, saved, ready, pending, onSave }: EventSaveState & { event: CampusEvent }) {
-  if (!identity) return <Button asChild variant="outline" size="sm" className="relative z-[2] min-h-11 [.oc-smart-event-actions>&]:max-[700px]:flex-1"><Link href={`/login?next=${encodeURIComponent(`/corkboard?event=${event.id}`)}`} aria-label={`Sign in to save ${event.title}`}><Bookmark size={17} aria-hidden="true" />Save</Link></Button>;
+  if (!identity) return <Button asChild variant="outline" size="sm" className="relative z-[2] min-h-11 [.oc-smart-event-actions>&]:max-[700px]:flex-1"><Link href={`/login?next=${encodeURIComponent(`/corkboard?event=${event.id}`)}`} aria-label={`Sign in to save ${event.title}`}><Bookmark size={16} aria-hidden="true" />Save</Link></Button>;
   return <Button type="button" variant={saved ? "accent" : "outline"} size="sm" className="relative z-[2] min-h-11 [.oc-smart-event-actions>&]:max-[700px]:flex-1" aria-pressed={saved} aria-label={`${pending ? "Saving…" : saved ? "Saved" : "Save"} ${event.title}`} disabled={!ready || pending} onClick={onSave}>
-    <Bookmark size={17} weight={saved ? "fill" : "regular"} aria-hidden="true" />{pending ? "Saving…" : saved ? "Saved" : "Save"}
+    <Bookmark size={16} weight={saved ? "fill" : "regular"} aria-hidden="true" />{pending ? "Saving…" : saved ? "Saved" : "Save"}
   </Button>;
 }
 
@@ -29,5 +29,5 @@ export function EventCalendarButton({ event }: { event: CampusEvent }) {
     // Keep the object alive until the browser has started the download.
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  return <Button type="button" variant="outline" size="sm" className="relative z-[2] min-h-11 [.oc-smart-event-actions>&]:max-[700px]:flex-1" onClick={download} aria-label={`Add to Calendar: ${event.title}`}><CalendarPlus size={17} aria-hidden="true" />Add to Calendar</Button>;
+  return <Button type="button" variant="outline" size="sm" className="relative z-[2] min-h-11 [.oc-smart-event-actions>&]:max-[700px]:flex-1" onClick={download} aria-label={`Add to Calendar: ${event.title}`}><CalendarPlus size={16} aria-hidden="true" />Add to Calendar</Button>;
 }

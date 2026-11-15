@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { requestClubClaim } from "@/actions/club-workspace";
@@ -21,9 +22,7 @@ export function ClaimForm({ clubId }: { clubId: string }) {
           router.refresh();
         } catch (error) {
           setError(
-            error instanceof Error
-              ? error.message
-              : "Could not submit. Please try again.",
+            userMessage(error, "Could not submit. Please try again."),
           );
         } finally {
           setBusy(false);

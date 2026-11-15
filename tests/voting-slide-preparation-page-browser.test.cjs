@@ -39,6 +39,9 @@ test('leader prepares highlights from attributed sources; drafts stay private, p
   assert.equal(saved.highlights[0].text,excerpt);assert.equal(saved.highlights[0].source.author,'Avery Interviewer');assert.equal(saved.highlights[2].writtenBy,'QA Leader');assert.ok(saved.highlights[0].source.version.match(/^[a-f0-9]{64}$/));
   // Refresh restores the saved preparation and the selected applicant.
   await page.reload();await page.getByText('Selected highlights · 3 of 3').waitFor();assert.ok(await page.getByText('2 of 3 without highlights').count());
+  // Before voting starts the page says plainly that saved highlights are not on slides yet, and when they will be.
+  assert.equal(await page.locator('nav[aria-label="Applicants"] [data-slide-timing="AT_START"]').innerText(),'Not yet on slides');
+  assert.ok(await page.getByText('Not yet on slides · shows when voting starts').count());
   // Preview of the resulting slide.
   await page.getByRole('button',{name:'Preview slide'}).click();const preview=page.locator('.vr-prep-preview');await preview.getByRole('region',{name:'Leader-selected highlights'}).waitFor();
   assert.equal(await preview.getByRole('region',{name:'Leader-selected highlights'}).getByRole('listitem').count(),3);assert.ok(await preview.getByText('Leader summary:').count());

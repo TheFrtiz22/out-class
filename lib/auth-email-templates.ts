@@ -1,7 +1,7 @@
-import { emailButton, emailCode, emailFallback, emailNotice, emailParagraph, transactionalEmailHtml } from '@/lib/transactional-email';
+import { emailButton, emailCode, emailFallback, emailNotice, emailParagraph, emailTextFooter, transactionalEmailHtml } from '@/lib/transactional-email';
 
 export const authEmailSubjects = {
-  confirmation: 'Verify your UVA email — OutClass',
+  confirmation: 'Verify your UVA email for OutClass',
   'magic-link': 'Your OutClass sign-in code',
   recovery: 'Reset your password',
   'password-changed': 'Your password was changed',
@@ -16,7 +16,7 @@ export function authEmailTemplates(siteUrl: string) {
   const reset = '{{ .RedirectTo }}#token_hash={{ .TokenHash }}';
   const confirmation = '{{ .ConfirmationURL }}';
   const compose = (title: string, category: string, preview: string, body: string, footer: string, variant: 'code' | 'welcome' | 'security' = 'security') => transactionalEmailHtml({ title, category, preview, body, footer, variant, siteUrl });
-  return {
+  const templates = {
     'magic-link': {
       html: compose('Your sign-in code.', 'Sign in / OutClass', 'Your one-time code for OutClass. Expires in one hour.', emailParagraph('Enter this code in OutClass to pick up where you left off.') + emailCode('{{ .Token }}') + emailParagraph(expiration, true), 'Didn’t request this code? You can safely ignore this email.', 'code'),
       text: `Your OutClass sign-in code\n\nEnter this code in OutClass: {{ .Token }}\n\n${expiration}\n\nDidn’t request this code? Ignore this email.`,
@@ -46,4 +46,7 @@ export function authEmailTemplates(siteUrl: string) {
       text: `Verify your identity in OutClass: {{ .Token }}\n\nUse it once, and never share it. If it has expired, request a new code.\n\nDidn’t request this code? Ignore this email and review your account security.`,
     },
   };
+  const footer = emailTextFooter(siteUrl);
+  for (const template of Object.values(templates)) template.text += `\n\n${footer}`;
+  return templates;
 }

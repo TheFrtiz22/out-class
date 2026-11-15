@@ -5,6 +5,7 @@ const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,.
 const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 function ui(file,name,props,mocks){
+ mocks={'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},...mocks};
  const slots=[],effects=[],cleanups=[];let cursor=0;const cache={};
  const react={useState(value){const i=cursor++;if(!(i in slots))slots[i]=typeof value==='function'?value():value;return[slots[i],next=>slots[i]=typeof next==='function'?next(slots[i]):next]},useRef(value){const i=cursor++;return slots[i]??=( {current:value})},useEffect(fn,deps){const i=cursor++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
  function load(file){if(cache[file])return cache[file];const m={exports:{}};new Function('require','module','exports',compile(file))(n=>n==='react'?react:n==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:n==='@/hooks/use-autosave'?require('./helpers/autosave-ui-harness.cjs').autosaveHook(react):n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='next/link'?{default:'Link'}:n==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):n.startsWith('@/components/')?new Proxy({},{get:(_,k)=>k}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[file]=m.exports;}

@@ -1,4 +1,6 @@
 "use server";
+import { activeMemberWhere } from "@/lib/permissions";
+import { ActionError, actionResult } from "@/lib/action-result";
 import { z } from "zod";
 import { recipientAudienceSchema } from "@/lib/recipient-audience";
 import { publishAnnouncementTransaction } from "@/utils/announcement-publication";
@@ -14,6 +16,7 @@ import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/a
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
 import { boundedParse } from "@/lib/bounded-input";
+import { writeNotificationPreferences } from "@/utils/notification-preferences";
 
 const uuid = z.string().uuid();
 const publishInput = z.object({
@@ -41,10 +44,9 @@ export async function getNotificationPreferences() {
 export async function saveNotificationPreferences(input: unknown) {
   const { user } = await requireAuth();
   const values = preferenceInput.parse(input);
-  return prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
-    return tx.userNotificationPreference.upsert({ where: { userId: user.id }, create: { userId: user.id, ...values }, update: values });
-  });
+  const saved = await writeNotificationPreferences(user.id, values);
+  if (!saved) throw new Error("Your account is unavailable.");
+  return saved;
 }
 
 export async function getDurableNotifications(cursor?: string) {
@@ -56,7 +58,7 @@ export async function getDurableNotifications(cursor?: string) {
     where: { userId: user.id, archivedAt: null, ...(boundary ? { OR: [{ createdAt: { lt: boundary.createdAt } }, { createdAt: boundary.createdAt, id: { lt: boundary.id } }] } : {}) },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: 51,
-    include: { club: { select: { name: true, color: true, logoUrl: true, marketing: true } } },
+    include: { club: { select: { name: true, color: true, logoUrl: true, marketing: true } }, announcement: { select: { authorId: true } } },
   });
   const unread = await prisma.userNotification.count({ where: { userId: user.id, archivedAt: null, readAt: null } });
   const items = await prisma.$transaction(async tx => {
@@ -76,7 +78,8 @@ export async function getDurableNotifications(cursor?: string) {
     return { ...row, ...(context || { title: "Interview assignment changed", body: "This assignment is no longer available. Check your current interview list.", href: `/club/${row.clubId}/workspace?section=recruitment&tool=interviews` }) };
     }));
   }, { maxWait: 10000, timeout: 20000 });
-  return { items, nextCursor: rows.length > 50 ? rows[49].id : null, unread };
+  // Recipients learn only whether they wrote an announcement (to hide Report on it), never its author.
+  return { items: items.map(({ announcement, ...item }) => ({ ...item, ownAnnouncement: !!announcement && announcement.authorId === user.id })), nextCursor: rows.length > 50 ? rows[49].id : null, unread };
 }
 
 export async function setDurableNotificationsRead(ids: string[], read: boolean) {
@@ -98,9 +101,9 @@ export async function getClubAnnouncements(clubId: string) {
 }
 
 /** Publication and its email intent commit atomically. Provider I/O belongs to the worker. */
-export async function publishClubAnnouncement(input: unknown) {
+async function publishClubAnnouncementCommand(input: unknown) {
   const data = boundedParse(publishInput, input);
-  if ((data.audience === "CUSTOM") !== !!data.audienceSpec) throw Error("Custom audience rules are required only for custom recipients.");
+  if ((data.audience === "CUSTOM") !== !!data.audienceSpec) throw new ActionError("Custom audience rules are required only for custom recipients.");
   const { user } = await requireClubPermission(data.clubId, ["meetings.manage"]);
   return clubWriteTransaction(tx => publishAnnouncementTransaction(tx, { ...data, senderId: user.id }));
 }
@@ -115,7 +118,7 @@ export async function setDurableNotificationsArchived(ids: string[], archived: b
 export async function getMessagingClubs() {
   const { user } = await requireAuth();
   return prisma.club.findMany({ where: { suspendedAt: null, OR: [
-    { members: { some: { userId: user.id, status: "ACTIVE" } } },
+    { members: { some: { userId: user.id, ...activeMemberWhere } } },
     { applications: { some: { studentId: user.id, ...identifiableApplication } } },
   ] }, select: { id: true, name: true }, orderBy: { name: "asc" }, take: 100 });
 }
@@ -156,7 +159,7 @@ export async function getDecisionTemplates(clubId:string) {
  const club=await prisma.club.findUniqueOrThrow({where:{id:clubId},select:{name:true,logoUrl:true,marketing:true,color:true,decisionLetterTemplates:true,sendFormalDecisionLetters:true}});
  return {...club,templates:letterTemplatesSchema.parse(club.decisionLetterTemplates ?? {})};
 }
-export async function saveDecisionTemplates(clubId:string,input:unknown,expectedTemplates?:string) {
+async function saveDecisionTemplatesCommand(clubId:string,input:unknown,expectedTemplates?:string) {
  z.string().uuid().parse(clubId);const templates=letterTemplatesSchema.parse(input);
  const {user}=await requireClubPermission(clubId,['recruitment.manage']);
  await clubWriteTransaction(async tx=>{
@@ -165,7 +168,7 @@ export async function saveDecisionTemplates(clubId:string,input:unknown,expected
    z.string().max(50000).parse(expectedTemplates);
    const current=await tx.club.findUniqueOrThrow({where:{id:clubId},select:{decisionLetterTemplates:true}});
    const saved=JSON.stringify(letterTemplatesSchema.parse(current.decisionLetterTemplates??{}));
-   if(saved!==expectedTemplates && saved!==JSON.stringify(templates))throw Error('Letter templates changed in another tab. Your text is retained. Reopen to compare.');
+   if(saved!==expectedTemplates && saved!==JSON.stringify(templates))throw new ActionError("Letter templates changed in another tab. Your text is retained. Reopen to compare.", "STALE");
   }
   await tx.club.update({where:{id:clubId},data:{decisionLetterTemplates:templates as Prisma.InputJsonValue}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:clubId,action:'recruitment.letter.templates.updated',details:{types:Object.keys(templates)}}});
@@ -181,4 +184,12 @@ export async function setFormalDecisionLetters(clubId:string, enabled:boolean) {
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:clubId,action:'recruitment.letter.setting.updated',details:{enabled}}});
   return {success:true};
  });
+}
+
+export async function publishClubAnnouncement(...args: Parameters<typeof publishClubAnnouncementCommand>) {
+  return actionResult(() => publishClubAnnouncementCommand(...args), "publishClubAnnouncement")
+}
+
+export async function saveDecisionTemplates(...args: Parameters<typeof saveDecisionTemplatesCommand>) {
+  return actionResult(() => saveDecisionTemplatesCommand(...args), "saveDecisionTemplates")
 }

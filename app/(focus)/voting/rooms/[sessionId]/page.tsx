@@ -6,6 +6,7 @@ import { votingRoomPageAccess } from "@/utils/voting-room-page-access";
 import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
 import { z } from "zod";
 import "@/components/live-voting/room.css";
+export const metadata = { title: "Voting room", robots: { index: false, follow: false } }
 export default async function Page({params,searchParams}:{params:Promise<{sessionId:string}>;searchParams:Promise<{clubId?:string;view?:string;demo?:string}>}){const p=await params,q=await searchParams;if(!z.string().uuid().safeParse(p.sessionId).success||!z.string().uuid().safeParse(q.clubId).success)return <PageHeader title="Invalid voting session link" />;const view=q.view==="leader"?"leader":q.view==="present"?"present":"member";
 // Leader and presentation views check access before rendering, so a refused viewer sees an access state, not a connection error. The member view has its own join check.
 const access=view!=="member"&&q.demo!=="1"?await votingRoomPageAccess(q.clubId!,p.sessionId):"CONTINUE";

@@ -21,7 +21,7 @@ function harness({ allowed = true } = {}) {
   }
   state.actions = load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, user, capabilities) => { state.checks.push(['transaction', id, user, capabilities]) } },
-    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async (id, capabilities) => { state.checks.push(['request', id, capabilities]); if (!allowed) throw new Error('Denied'); return { user: { id: 'leader' } } } },
     '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
   })

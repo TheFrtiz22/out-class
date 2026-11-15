@@ -1,4 +1,6 @@
 "use client";
+import { UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import Link from "next/link";
 import { notifySupportSessionChanged } from "@/components/support-session-sync";
 import { useEffect, useRef, useState } from "react";
@@ -54,11 +56,11 @@ export function PlatformViewBanner({
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ action: "end" }),
                 });
-                if (!response.ok) throw Error("Could not exit. Please retry.");
+                if (!response.ok) throw new UserFacingError("Could not exit. Please retry.");
                 notifySupportSessionChanged();
                 window.location.assign("/platform");
               } catch (e) {
-                setError(e instanceof Error ? e.message : "Could not exit.");
+                setError(userMessage(e, "Could not exit."));
                 setBusy(false);
               }
             }}

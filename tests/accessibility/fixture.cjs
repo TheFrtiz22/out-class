@@ -53,6 +53,7 @@ window.fixtureVoting={memberId:'member1',canStart:true,canFinish:true,rounds:[{i
 `,
     '@/components/applicant-intelligence': `exports.ApplicantDisplayPanel=()=>require('react').createElement('section',{'aria-label':'Candidate details'},'Fictional candidate for isolated voting UI tests');`,
     '@/actions/platform-admin': `exports.readPlatformResource=async()=>[{id:'fictional-student',email:'student@example.test',status:'Active'}];exports.inspectPlatformRecord=async()=>({});exports.changePlatformResource=async()=>{};`,
+    '@/actions/content-reports': `exports.reportContent=async()=>({ok:true});`,
     '@/actions/admin-workspace': `exports.inspectAdminStudent=exports.inspectAdminClub=async()=>({profile:'Fictional test record'});exports.setAdminClubSuspended=exports.resendAdminStudentInvitation=exports.resendAdminClubInvitation=async()=>{};`,
   });
   const css = (await require('postcss')([require('@tailwindcss/postcss')()]).process('@import "../../app/globals.css";', { from: path.resolve('tests/accessibility/fixture.css') })).css + ['components/availability/availability.css','components/interviews/scheduling.css','components/events/events.css','components/live-voting/room.css'].map(f=>fs.readFileSync(f,'utf8')).join('\n');

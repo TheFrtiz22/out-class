@@ -14,6 +14,9 @@ import { Celebration,prefersReducedMotion,useCelebration } from './decision-cele
 import './decision-letter.css';
 import { useFocusFrame } from '@/components/shell/focus-frame-context';
 import { PageHeader } from "@/components/ui/page-header";
+/** Leaving a letter returns to the Decisions stage of Applications, where this letter lives
+ * (equal to applicantStatusHref(undefined, "decisions"); tests/nav-cleanup-redirects.test.cjs checks both). */
+const decisionsHref = '/applications?tab=decisions';
 const MINOR_WORDS=new Set(['of','the','and','at','for','in','a','an','&']);
 /** Up to three initials for the seal, skipping minor words ("Club of Investing" -> "CI"). */
 export function clubMonogram(name:string){
@@ -71,7 +74,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
  const letterId=useSearchParams().get('letterId')??undefined;
  const letter=data?.letter?.content;
  const celebration=useCelebration(),playCelebration=celebration.play,autoPlayed=useRef<string|null>(null);
- useFocusFrame({exitHref:'/applications/status',club:letter?{name:letter.clubName,color:letter.accent}:null});
+ useFocusFrame({exitHref:decisionsHref,club:letter?{name:letter.clubName,color:letter.accent}:null});
  const load=useCallback(async()=>{
   const version=++requestVersion.current;
   try{
@@ -112,7 +115,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
   finally{setBusy(false);}
  }
  if(loading)return <div className="decision-layout"><LoadingState label="Opening your decision letter…" layout="document" rows={4} /></div>;
- if(!data)return <div className="decision-layout"><PageHeader title="Decision letter unavailable" /><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href="/applications/status">Return to Status</Link></div>;
+ if(!data)return <div className="decision-layout"><PageHeader title="Decision letter unavailable" /><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href={decisionsHref}>Return to Status</Link></div>;
  const active=data.isCurrent&&data.currentStatus==='ACCEPTED'&&(!data.letter||data.letter.decision==='ACCEPTED')&&!data.suspended&&data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)>new Date();
  const offer=data.offer;
  return <div className="decision-layout"><nav className="decision-controls" aria-label="Letter actions"><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>

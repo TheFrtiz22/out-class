@@ -1,9 +1,9 @@
 "use server";
 import {z} from "zod";
-import {Prisma} from "@prisma/client";
+import {Prisma,type AppStatus} from "@prisma/client";
 import {randomUUID} from "node:crypto";
 import {editorDraftKey,editorScopeSchema} from "@/lib/editor-drafts";
-import {prisma} from "@/utils/prisma";
+import {prisma,type AppTransactionClient} from "@/utils/prisma";
 import {requireClubPermission} from "@/utils/auth";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {clubWriteTransaction,votingWriteLimits} from "@/utils/club-write-transaction";
@@ -56,9 +56,15 @@ export async function discardVotingSetupDraft(input:unknown){
 }
 export async function getVotingSessionSetup(input:unknown){
  const d=roomScope.parse(input),{user}=await requireClubPermission(d.clubId,[...permissions]);
- return prisma.$transaction(async tx=>{const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions],{readOnly:true});const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);requireRoomLeader(s,m,'decisions.manage');const options=roomPresentationSchema.safeParse(s.presentationOptions);return {sessionId:s.id,revision:s.revision,leaderMemberIds:s.leaderMemberIds,cycleId:s.cycleId!,roundId:s.roundId,status:s.state,meeting:meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),applicationIds:s.candidates.map(c=>c.applicationId),participantIds:s.participants.map(p=>p.memberId),fields:options.success?options.data.fields:[],highlights:options.success?options.data.highlights:{},rules:options.success?options.data.rules??null:null,targetSize:s.targetUnset?null:s.targetSize};},votingReadLimits);
+ return prisma.$transaction(async tx=>{const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions],{readOnly:true});const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);requireRoomLeader(s,m,'decisions.manage');const options=roomPresentationSchema.safeParse(s.presentationOptions);
+ // Applicants with saved slide highlights, so the editor can confirm before a removal discards them. IDs only, for the same leader.
+ const preparedApplicationIds=(await tx.votingSlidePreparation.findMany({where:{sessionId:s.id,highlights:{not:[]}},select:{applicationId:true}})).map(p=>p.applicationId);
+ return {preparedApplicationIds,sessionId:s.id,revision:s.revision,leaderMemberIds:s.leaderMemberIds,cycleId:s.cycleId!,roundId:s.roundId,status:s.state,meeting:meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),applicationIds:s.candidates.map(c=>c.applicationId),participantIds:s.participants.map(p=>p.memberId),fields:options.success?options.data.fields:[],highlights:options.success?options.data.highlights:{},rules:options.success?options.data.rules??null:null,targetSize:s.targetUnset?null:s.targetSize};},votingReadLimits);
 }
-const editSchema=createRoomSchema.extend({requestId:z.string().uuid(),revision:z.number().int().nonnegative()}).strict();
+// confirmDiscard: the applicants whose prepared highlights the leader saw and agreed to discard. The save is refused if it would discard any others.
+const editSchema=createRoomSchema.extend({requestId:z.string().uuid(),revision:z.number().int().nonnegative(),confirmDiscard:z.array(z.string().uuid()).max(2000).optional()}).strict();
+/** Returned instead of saving when the edit would discard highlights the leader has not confirmed (for example, saved by another leader after this page loaded). */
+export type HighlightsChanged={ok:false;code:'HIGHLIGHTS_CHANGED';applicationIds:string[]};
 export async function updateVotingSessionSetup(input:unknown){
  const d=boundedParse(editSchema, input),{user}=await requireClubPermission(d.clubId,[...permissions]);
  return clubWriteTransaction(async tx=>{
@@ -69,17 +75,49 @@ export async function updateVotingSessionSetup(input:unknown){
   if(s.state!=='DRAFT'||s.startedAt||s.joinOpenedAt||s.finalizedAt)throw Error('Voting has started or ended. Setup is locked; ballots and outcomes are unchanged.');
   if(d.roundId!==s.roundId||d.cycleId!==s.cycleId||JSON.stringify(d.leaderMemberIds)!==JSON.stringify(s.leaderMemberIds))throw Error('The saved recruitment scope and leaders cannot be changed.');
   const {members,apps}=await validateVotingSetup(tx,d,user,{rejectHiddenProfileFields:true}),old=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),meeting=resolveVotingMeeting(d.presentationOptions?.meeting,{announcedUserIds:old?.announcedUserIds??[]});
-  // Delete/recreate only before any pass exists, under the same session/club lock.
+  // Edit only before any pass exists, under the same session/club lock and the confirmed setup-edit flag the database guards require.
   if(s.passes.length)throw Error('A voting pass already exists. Setup is locked.');
+  // Preparation saves do not bump the session revision, so a stale page cannot be trusted to know which highlights a removal discards.
+  const next=new Set(d.applicationIds),removed=s.candidates.filter(c=>!next.has(c.applicationId)).map(c=>c.applicationId).sort();
+  const prepared=removed.length?(await tx.votingSlidePreparation.findMany({where:{sessionId:s.id,applicationId:{in:removed},highlights:{not:[]}},select:{applicationId:true},orderBy:{applicationId:'asc'}})).map(p=>p.applicationId):[];
+  const confirmed=new Set(d.confirmDiscard??[]);
+  if(prepared.some(id=>!confirmed.has(id)))return {ok:false,code:'HIGHLIGHTS_CHANGED',applicationIds:prepared} satisfies HighlightsChanged;
   await tx.$queryRaw`SELECT set_config('outclass.voting_setup_edit','confirmed',true)`;
-  await tx.votingCandidate.deleteMany({where:{sessionId:s.id}});await tx.votingParticipant.deleteMany({where:{sessionId:s.id}});
-  await tx.votingCandidate.createMany({data:d.applicationIds.map((applicationId,position)=>({sessionId:s.id,applicationId,position,expectedStatus:apps.find(a=>a.id===applicationId)!.status}))});
+  // The guard deletes preparations only for these applicants.
+  await tx.$queryRaw`SELECT set_config('outclass.voting_setup_discard',${removed.join(',')},true)`;
+  const discarded=await applyCandidateDiff(tx,s,d.applicationIds,removed,id=>apps.find(a=>a.id===id)!.status);
+  await tx.votingParticipant.deleteMany({where:{sessionId:s.id}});
   await tx.votingParticipant.createMany({data:d.participantIds.map(memberId=>({sessionId:s.id,memberId,joinedAt:s.participants.find(p=>p.memberId===memberId)?.joinedAt??null}))});
   const recipients=d.notifyVoters?[...new Set([...meeting.announcedUserIds,...members.filter(v=>d.participantIds.includes(v.id)).map(v=>v.userId)])]:[];
   const row=await tx.votingSession.update({where:{id:s.id},data:{presentationOptions:{...d.presentationOptions!,meeting:{...meeting,announcedUserIds:[...new Set([...meeting.announcedUserIds,...recipients])]}},displayConfig:roomDisplayConfig(d.presentationOptions!.fields),targetSize:d.targetSize??1,targetUnset:d.targetSize==null,revision:{increment:1}}});
   if(d.notifyVoters)await notifyVotingVoters(tx,d.clubId,s.id,d.requestId,recipients,'updated',meeting.name);
-  const result={sessionId:s.id,revision:row.revision};await tx.votingRoomCommand.create({data:{sessionId:s.id,requestId:d.requestId,actorId:user.id,fingerprint,result}});await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.session.setup_updated',details:{revision:row.revision,applicantCount:d.applicationIds.length,voterCount:d.participantIds.length,notified:recipients.length}}});return result;
+  const result={sessionId:s.id,revision:row.revision};await tx.votingRoomCommand.create({data:{sessionId:s.id,requestId:d.requestId,actorId:user.id,fingerprint,result}});await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.session.setup_updated',details:{revision:row.revision,applicantCount:d.applicationIds.length,voterCount:d.participantIds.length,notified:recipients.length}}});
+  // IDs, revisions and authors only; never highlight text.
+  if(discarded.length)await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.slides.discarded',details:{revision:row.revision,count:discarded.length,applicationIds:discarded.map(p=>p.applicationId),preparations:discarded}}});
+  return result;
  },votingWriteLimits);
+}
+/**
+ * Applies the new applicant list as a diff. Kept applicants keep their candidate row and prepared
+ * highlights (only position and expected status change); added applicants are inserted; removed
+ * applicants' slide preparations are deleted first (the foreign key is RESTRICT), then their rows.
+ * Returns the discarded preparations (application ID, revision, author user ID) for the audit log.
+ */
+async function applyCandidateDiff(tx:AppTransactionClient,s:{id:string;candidates:{applicationId:string;position:number;expectedStatus:AppStatus}[]},applicationIds:string[],removed:string[],status:(id:string)=>AppStatus){
+ const current=new Map(s.candidates.map(c=>[c.applicationId,c]));
+ const discarded=removed.length?await tx.votingSlidePreparation.findMany({where:{sessionId:s.id,applicationId:{in:removed}},select:{applicationId:true,revision:true,updatedBy:true},orderBy:{applicationId:'asc'}}):[];
+ if(discarded.length)await tx.votingSlidePreparation.deleteMany({where:{sessionId:s.id,applicationId:{in:discarded.map(p=>p.applicationId)}}});
+ if(removed.length)await tx.votingCandidate.deleteMany({where:{sessionId:s.id,applicationId:{in:removed}}});
+ const changed=applicationIds.flatMap((applicationId,position)=>{const c=current.get(applicationId),expectedStatus=status(applicationId);return c&&(c.position!==position||c.expectedStatus!==expectedStatus)?[{applicationId,position,expectedStatus}]:[];});
+ if(changed.length){
+  // (sessionId, position) is unique and checked per row: park changed rows above every current and final position, then set final values in one statement.
+  const offset=Math.max(applicationIds.length,...s.candidates.map(c=>c.position+1));
+  await tx.votingCandidate.updateMany({where:{sessionId:s.id,applicationId:{in:changed.map(c=>c.applicationId)}},data:{position:{increment:offset}}});
+  await tx.$executeRaw(Prisma.sql`UPDATE "VotingCandidate" AS c SET position=v.position,"expectedStatus"=CAST(v.status AS "AppStatus") FROM (VALUES ${Prisma.join(changed.map(c=>Prisma.sql`(${c.applicationId},${c.position}::int,${c.expectedStatus})`))}) AS v("applicationId",position,status) WHERE c."sessionId"=${s.id} AND c."applicationId"=v."applicationId"`);
+ }
+ const added=applicationIds.flatMap((applicationId,position)=>current.has(applicationId)?[]:[{sessionId:s.id,applicationId,position,expectedStatus:status(applicationId)}]);
+ if(added.length)await tx.votingCandidate.createMany({data:added});
+ return discarded;
 }
 export async function cancelVotingSession(input:unknown){
  const d=roomScope.extend({revision:z.number().int().nonnegative(),requestId:z.string().uuid(),notify:z.boolean().default(false)}).strict().parse(input),{user}=await requireClubPermission(d.clubId,[...permissions]);

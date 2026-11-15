@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), ts = require('typescript');
@@ -28,11 +29,11 @@ for (const [operation, run] of Object.entries(operations)) for (const revocation
       club: { update: async () => { downstream++; } },
       auditLog: { create: async () => { downstream++; } },
     };
-    const api = load('actions/crm.ts', {
+    const api = unwrapActions(load('actions/crm.ts', {
       '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
       '@/utils/auth': { requireClubPermission: async () => ({ user: { id: id(4) }, membership: { isOwner: true, status: 'ACTIVE' } }) },
       'next/cache': { revalidatePath() {} },
-    });
+    }));
     await assert.rejects(run(api), /access denied/); assert.equal(downstream, 0);
   });
 }

@@ -1,8 +1,12 @@
 "use client";
+import { isAccessRevoked, UserFacingError } from "@/lib/action-result"
+import { userMessage } from "@/lib/user-message"
 import { FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT, interviewThoughtWordCount } from "@/lib/interview-final-thoughts";
 import { LoadingState } from "@/components/ui/loading-state"
-import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery";
+import { useInterviewOfflineNotes } from "@/hooks/use-interview-offline-notes";
+import { focusQuietly, useKeepFocusedFieldVisible } from "@/hooks/use-keep-focused-field-visible";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
+import { connectionMessage, connectionProblem, type ConnectionProblem } from "@/lib/autosave-store";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { animateQuestionCompletion, captureQuestionCompletion, type QuestionCompletionOrigin } from "@/lib/interview-question-motion";
 import {
@@ -38,6 +42,7 @@ export function InterviewKitSession({
   onComplete,
   onNextApplicant,
   onReturnToList,
+  onAccessRevoked,
   context,
   toolbar,
   initialSession,
@@ -60,6 +65,10 @@ export function InterviewKitSession({
   ) => void;
   onNextApplicant?: (clientId: string, invitationId?: string) => Promise<boolean>;
   onReturnToList?: () => void;
+  /** The server refused with ACCESS_REVOKED: the room shows its "no longer have access" state.
+   * Unsaved notes stay on this device through useInterviewOfflineNotes when the room unmounts;
+   * `unsavedNotes` says whether there were any, so the room can say so. */
+  onAccessRevoked?: (unsavedNotes: boolean) => void;
 }) {
   const [session, setSession] = useState<InterviewSessionData | null>(initialSession || null),
     [draft, setDraft] = useState<InterviewDraft>(
@@ -67,12 +76,19 @@ export function InterviewKitSession({
     ),
     [saved, setSaved] = useState(initialSession ? JSON.stringify(initialSession.draft) : ""),
     [saving, setSaving] = useState(false),
+    [connection, setConnection] = useState<ConnectionProblem | null>(null),
     [completing, setCompleting] = useState(false),
     [error, setError] = useState(""),
     [newQuestion, setNewQuestion] = useState(""),
     [retry, setRetry] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState("");
-  const collaboration = useInterviewWorkspace({ clubId, applicationId, roundId }, !!session);
+  const accessRevoked = useRef(onAccessRevoked); accessRevoked.current = onAccessRevoked;
+  const collaboration = useInterviewWorkspace({ clubId, applicationId, roundId }, !!session, reportAccessRevoked);
+  // Hoisted: the refs it reads are set by the time any server response arrives.
+  function reportAccessRevoked() { accessRevoked.current?.(JSON.stringify(draftRef.current) !== savedRef.current); }
+  // For the timer and score/review widgets: passed only when the room handles ACCESS_REVOKED, so outside
+  // the room they keep their inline message. A refusal arriving after this session closed is ignored.
+  const widgetAccessRevoked = onAccessRevoked ? () => { if (mounted.current) reportAccessRevoked(); } : undefined;
   const sharedRevision = useRef(-1);
   const personalQuestion = useRef(false);
   const suppressQuestionFocus = useRef(false);
@@ -112,7 +128,8 @@ export function InterviewKitSession({
     if (closingQuestion || !questionFocusAfterSave.current) return;
     const target = questionFocusAfterSave.current === "bank" ? bankControl.current : activeNotes.current;
     questionFocusAfterSave.current = null;
-    target?.focus({ preventScroll: true });
+    // Quiet: the question completion motion is running; no keyboard reveal scroll may fight it.
+    if (target) focusQuietly(target);
   }, [closingQuestion, activeQuestion]);
   const completionSource = useRef<HTMLDivElement>(null);
   const [completionMotion, setCompletionMotion] = useState<{ id: string; origin: QuestionCompletionOrigin } | null>(null);
@@ -196,7 +213,11 @@ export function InterviewKitSession({
     let current = true;
     setLibraryError("");
     setLibraryLoading(true);
-    getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(() => { if (current) setLibraryError("Current kit unavailable. Your session snapshot is still available.") }).finally(() => { if (current) setLibraryLoading(false); });
+    getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(e => {
+      if (!current) return;
+      if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; }
+      setLibraryError("Current kit unavailable. Your session snapshot is still available.");
+    }).finally(() => { if (current) setLibraryLoading(false); });
     return () => { current = false };
   }, [clubId, roundId, libraryOpen, libraryRetry]);
   useLayoutEffect(() => {
@@ -214,7 +235,11 @@ export function InterviewKitSession({
   useEffect(() => {
     if (!closing || session?.completedAt) return;
     let current = true; setHistory(null); setHistoryError("");
-    getPreviousInterviewScores({ clubId, applicationId, roundId }).then(value => { if (current) setHistory(value); }).catch(() => { if (current) setHistoryError("Score history unavailable."); });
+    getPreviousInterviewScores({ clubId, applicationId, roundId }).then(value => { if (current) setHistory(value); }).catch(e => {
+      if (!current) return;
+      if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; }
+      setHistoryError("Score history unavailable.");
+    });
     return () => { current = false; };
   }, [closing, session?.completedAt, clubId, applicationId, roundId, historyRetry]);
   const closingHeading = useRef<HTMLHeadingElement>(null);
@@ -273,7 +298,9 @@ export function InterviewKitSession({
           const result = await collaboration.select(intent.question.id);
           sharedRevision.current = Math.max(sharedRevision.current, result.revision);
           if (mounted.current && intent.sequence === selectionSequence.current && activeQuestionRef.current === intent.question.id && !draftRef.current.postInterview) setSharedQuestion(result.question);
-        } catch {
+        } catch (e) {
+          // Removed from the panel: stop sharing (no "could not be shared" or retry); the room takes over.
+          if (isAccessRevoked(e) && accessRevoked.current) { selectionIntent.current = null; if (mounted.current) reportAccessRevoked(); return; }
           if (mounted.current && intent.sequence === selectionSequence.current) { setShareFailed(intent.question); setCollaborationMessage("This question is open locally, but could not be shared. Your private draft is retained."); }
         }
       }
@@ -309,9 +336,10 @@ export function InterviewKitSession({
         }
       })
       .catch((e) => {
+        if (current && isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; }
         if (current)
           setError(
-            e instanceof Error ? e.message : "Could not open interview.",
+            userMessage(e, "Could not open interview."),
           );
       });
     return () => {
@@ -347,6 +375,7 @@ export function InterviewKitSession({
       savingRef.current = true;
       setSaving(true);
       setError("");
+      setConnection(null);
       setFailedFinish(false);
       const snapshot = structuredClone({ ...draftRef.current, ...patch });
       const request = (async () => { try {
@@ -371,10 +400,16 @@ export function InterviewKitSession({
           if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
         }
         return true;
-      } catch {
+      } catch (failure) {
+        // Removed from the panel: not a failed save. No retry; the room switches to its access-removed state.
+        if (isAccessRevoked(failure) && accessRevoked.current) { if (mounted.current) reportAccessRevoked(); return false; }
         if (mounted.current) setFailedFinish(complete);
-        if (mounted.current)
-          setError("Your interview could not be saved. Retry, or refresh your access and revision.");
+        // Private notes stay in memory and this tab's sessionStorage only; they save when the connection returns.
+        if (mounted.current) {
+          const problem = connectionProblem(failure);
+          setConnection(problem);
+          setError(problem ? connectionMessage(problem, recoveryRef.current?.copyScope ?? "tab") : userMessage(failure, "Your interview could not be saved. Retry, or refresh your access and revision."));
+        }
         return false;
       } finally {
         savingRef.current = false;
@@ -394,10 +429,16 @@ export function InterviewKitSession({
   async function flushLatest() {
     if (pendingSave.current) await pendingSave.current;
     while (!finishingRef.current && sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
-      if (!(await persist())) throw Error("Your private notes are retained. Retry before leaving.");
+      if (!(await persist())) throw new UserFacingError("Your private notes are retained. Retry before leaving.");
     }
   }
-  const recovery = useAutosaveRecovery({ identity: `interview:${session?.id}`, value: draft, baseline: saved, dirty, enabled: !!session && !session.completedAt, restore: setDraft, flush: flushLatest });
+  // Unsaved private notes also survive a dropped connection and a reload: encrypted on this device (docs/interview-offline-notes.md).
+  const recovery = useInterviewOfflineNotes({ scope: { clubId, applicationId, roundId }, session, draft, saved, dirty, restore: setDraft, flush: flushLatest, reconnect: () => setRetry(v => v + 1) });
+  // The on-screen keyboard must not cover the field being typed in (phones and tablets).
+  useKeepFocusedFieldVisible(formRef);
+  const recoveryRef = useRef(recovery); recoveryRef.current = recovery;
+  const notesKept = recovery.copyScope === false ? "" : recovery.copyScope === "device" ? " · notes kept on this device" : " · notes kept in this tab";
+  useEffect(() => { if (!error) setConnection(null); }, [error]);
   useEffect(() => {
     const form = formRef.current;
     if (!form) return;
@@ -414,7 +455,7 @@ export function InterviewKitSession({
   }, [serialized, saved, session?.id, saving, error, recovery.recovery]);
   if (!session)
     return (
-      error ? <div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div> : <LoadingState label="Preparing your interview…" layout="interview" rows={3} />
+      error ? <div className="space-y-3">{recovery.offlineBanner && <AutosaveStatus save={{ state: "offline", error: recovery.offlineBanner, flush: async () => setRetry(v => v + 1) }} />}<div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div>{recovery.unopenedText && <Textarea readOnly rows={6} aria-label="Your unsaved notes on this device (read-only)" value={recovery.unopenedText} />}</div> : <LoadingState label="Preparing your interview…" layout="interview" rows={3} />
     );
   function note(questionId: string, notes: string) {
     setDraft((d) => ({
@@ -523,7 +564,7 @@ export function InterviewKitSession({
       sessionRef.current = fresh; setSession(fresh);
       setDraft(local => ({ ...local, completedQuestionIds: [...new Set([...(fresh.draft.completedQuestionIds || []), ...(local.completedQuestionIds || [])])], additionalQuestions: [...fresh.draft.additionalQuestions.filter(q => !local.additionalQuestions.some(l => l.id === q.id)), ...local.additionalQuestions] }));
       setError("Revision refreshed. Review your retained text, then choose Retry save.");
-    } catch { setError("Could not refresh access and revision. Your text remains here."); }
+    } catch (e) { setError(userMessage(e, "Could not refresh access and revision.")); }
     finally { savingRef.current = false; setSaving(false); }
   }
   async function nextApplicant() {
@@ -532,7 +573,9 @@ export function InterviewKitSession({
     try {
       const found = await onNextApplicant(collaboration.clientId);
       if (mounted.current) setNoMoreApplicants(!found);
-    } catch {
+    } catch (e) {
+      // Removed from the panel: the room shows its access-removed state; no advance happened.
+      if (isAccessRevoked(e) && accessRevoked.current) { if (mounted.current) reportAccessRevoked(); return; }
       if (mounted.current) setNextError("Could not load the next applicant. Your submitted review is safe. Retry to check your current access and assignments.");
     } finally {
       nextBusyRef.current = false;
@@ -542,9 +585,11 @@ export function InterviewKitSession({
   return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); }}>
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
-      <InterviewTimer key={session.id} recordId={session.id} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
+      <InterviewTimer key={session.id} scope={{ clubId, applicationId, roundId }} shared={collaboration.view?.timer} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} onAccessRevoked={widgetAccessRevoked} />
       {recovery.recovery != null && <AutosaveStatus save={{ ...recovery, state: "idle", error: "", flush: flushLatest }} />}
-      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
+      {recovery.deviceNotice && <p role="status" className="text-xs text-muted-foreground">{recovery.deviceNotice}</p>}
+      {recovery.offlineBanner && !session.completedAt && <AutosaveStatus save={{ state: "offline", error: recovery.offlineBanner, flush: flushLatest }} />}
+      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? (connection === "offline" ? `Offline${notesKept}` : connection === "unreachable" ? `Couldn’t reach OutClass${notesKept}` : "Couldn’t save") : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     <div className="oc-room-collaboration" aria-label="Room participants">
@@ -595,7 +640,7 @@ export function InterviewKitSession({
         </div>
         </> : <section aria-label={session.completedAt ? "Submitted review" : "Post-interview"} className="oc-post-interview space-y-5" style={flights.length ? { opacity: 0 } : undefined}>
           <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
-          {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} />}
+          {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} onAccessRevoked={widgetAccessRevoked} />}
           <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Miscellaneous notes and question review</a>
           <fieldset disabled={disabled} className="space-y-3"><label htmlFor="final-interview-thoughts">Final interview thoughts</label>
             {session.completedAt ? <p className="whitespace-pre-wrap break-words">{draft.finalInterviewThoughts || "None recorded."}</p> : <><p id="final-interview-thoughts-help" className="text-sm text-muted-foreground">Summarize your assessment in 2–3 sentences. Maximum 50 words.</p><Textarea id="final-interview-thoughts" rows={4} aria-describedby="final-interview-thoughts-help final-interview-thoughts-count" aria-invalid={interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT} value={draft.finalInterviewThoughts || ""} onChange={e => setDraft(d => ({ ...d, finalInterviewThoughts: e.target.value }))} /><p id="final-interview-thoughts-count" role="status" className={interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{interviewThoughtWordCount(draft.finalInterviewThoughts)} / 50 words</p>{interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT && <p className="text-sm text-destructive">Shorten your draft to 50 words before submitting. Your text is retained.</p>}</>}
@@ -617,7 +662,7 @@ export function InterviewKitSession({
       <aside id="interview-completed" tabIndex={-1} aria-label="Your notes and completed questions" className="min-w-0">
         <div className="oc-candidate-content">
         <div className="oc-miscellaneous-notes"><label htmlFor="additional-interview-notes">Miscellaneous notes</label><Textarea ref={miscellaneousNotes} id="additional-interview-notes" rows={5} maxLength={20000} disabled={!!session.completedAt || completing || recovery.recovery != null} value={draft.additionalNotes ?? draft.overallReview} onChange={e => setDraft(d => ({ ...d, additionalNotes: e.target.value }))} /></div>
-        <EarlierRounds key={`${applicationId}:${roundId}`} scope={{ clubId, applicationId, roundId }} />
+        <EarlierRounds key={`${applicationId}:${roundId}`} scope={{ clubId, applicationId, roundId }} onAccessRevoked={widgetAccessRevoked} />
         <h2>{closing || session.completedAt ? "Your question notes" : "Completed questions"} <span className="oc-completed-count">{reviewed.length}</span></h2>
         <ul>{reviewed.map(q => { const notes = questionNotes(q.id), open = expandedQuestions.includes(q.id), done = completedIds.includes(q.id); return <li key={q.id} style={flights.some(f => f.id === q.id) ? { opacity: 0 } : undefined} ref={el => { if (el) rowNodes.current.set(q.id, el); else rowNodes.current.delete(q.id); }}>
           <button type="button" aria-expanded={open} aria-controls={`question-review-${q.id}`} onClick={() => setExpandedQuestions(ids => open ? ids.filter(id => id !== q.id) : [...ids, q.id])} className="oc-completed-row">
@@ -639,8 +684,8 @@ export function InterviewKitSession({
       const invitationId = collaboration.view!.invitation!.id;
       if (!onNextApplicant || nextBusyRef.current) return;
       nextBusyRef.current = true; setNextBusy(true);
-      void onNextApplicant(collaboration.clientId, invitationId).catch(() => setCollaborationMessage("Could not join. Retry after checking current assignments; your review is safe.")).finally(() => { nextBusyRef.current = false; if (mounted.current) setNextBusy(false); });
-    }}>Proceed</Button>{!session.completedAt && <Button type="button" variant="outline" disabled={saving || completing || ending} onClick={() => { if (!closing) void endInterview(); else closingHeading.current?.focus({ preventScroll: false }); }}>Finish current review</Button>}<Button type="button" variant="ghost" disabled={nextBusy} onClick={() => void collaboration.dismiss(collaboration.view!.invitation!.id).catch(() => setCollaborationMessage("Could not dismiss the invitation. Retry Stay here."))}>Stay here</Button></div></aside>}
+      void onNextApplicant(collaboration.clientId, invitationId).catch(e => { if (!mounted.current) return; if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; } setCollaborationMessage("Could not join. Retry after checking current assignments; your review is safe."); }).finally(() => { nextBusyRef.current = false; if (mounted.current) setNextBusy(false); });
+    }}>Proceed</Button>{!session.completedAt && <Button type="button" variant="outline" disabled={saving || completing || ending} onClick={() => { if (!closing) void endInterview(); else closingHeading.current?.focus({ preventScroll: false }); }}>Finish current review</Button>}<Button type="button" variant="ghost" disabled={nextBusy} onClick={() => void collaboration.dismiss(collaboration.view!.invitation!.id).catch(e => { if (!mounted.current) return; if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; } setCollaborationMessage("Could not dismiss the invitation. Retry Stay here."); })}>Stay here</Button></div></aside>}
     {flights.map(f => <div key={f.id} ref={el => { if (el) flightNodes.current.set(f.id, el); else flightNodes.current.delete(f.id); }} className="oc-question-flight" aria-hidden="true" inert style={{ left: f.from.left, top: f.from.top, width: f.from.width, height: f.from.height }}><div style={{ width: f.from.width }}><p>{f.prompt}</p>{f.notes && <p className="oc-note-preview">{f.notes}</p>}</div></div>)}
   </form>;
 }

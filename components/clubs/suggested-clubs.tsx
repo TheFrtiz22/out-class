@@ -9,7 +9,7 @@ export function SuggestedClubTiles({ suggestions, onOpen }: { suggestions: ClubS
   return <ul className="oc-explore-suggested-list">{suggestions.map(({ club, reason }) => {
     const entry = `suggested-${club.id}`
     return <li key={club.id}><button type="button" data-directory-entry={entry} onClick={() => onOpen(club, entry)}>
-      <DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>{reason}</small></span><ArrowRight size={18} aria-hidden="true" />
+      <DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>{reason}</small></span><ArrowRight size={16} aria-hidden="true" />
     </button></li>
   })}</ul>
 }

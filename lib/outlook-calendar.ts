@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto"
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto"
 import { OUTLOOK_BUSY_MESSAGE, weekWindow, type BusyInterval } from "@/lib/outlook-busy"
 import { localParts } from "@/lib/availability"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
@@ -65,6 +65,13 @@ export function parsePending(raw: string | undefined, now = Date.now()): Pending
     if (typeof expires !== "number" || expires < now) return null
     return { state, verifier, week, nonce, userId, expires }
   } catch { return null }
+}
+
+/** Compares the returned OAuth state with the pending one in constant time (hashed to equal length). */
+export function stateMatches(returned: string | null, pending: string) {
+  if (typeof returned !== "string" || !returned) return false
+  const digest = (value: string) => createHash("sha256").update(value).digest()
+  return timingSafeEqual(digest(returned), digest(pending))
 }
 
 /** Microsoft returns UTC wall time without a zone when asked for outlook.timezone="UTC". */

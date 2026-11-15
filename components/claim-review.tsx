@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useState } from "react";
 import { listClubClaims } from "@/actions/club-claims";
 import { changePlatformResource } from "@/actions/platform-admin";
@@ -74,9 +75,7 @@ export function ClaimReview({
                   setClaims(await listClubClaims(status, page));
                 } catch (error) {
                   setError(
-                    error instanceof Error
-                      ? error.message
-                      : "Could not review claim.",
+                    userMessage(error, "Could not review claim."),
                   );
                 } finally {
                   setBusy(false);

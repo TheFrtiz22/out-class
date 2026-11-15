@@ -21,6 +21,7 @@ function exportRoute(prisma, userId) {
         return { user: { id: userId }, membership };
       } },
       '@/utils/support-audit': { auditSupportAction: async () => {} },
+      'server-only': {},
     };
     const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
     new Function('require', 'module', 'exports', code)(n => n in mocks ? mocks[n] : n.startsWith('@/') ? load(n.slice(2) + '.ts') : require(n), mod, mod.exports);
@@ -79,6 +80,11 @@ test('native leader CSV exports: cross-club filters return headers only; anonymo
     await prisma.eventRsvp.create({ data: { eventId: eventB.id, userId: plain.id } });
 
     const get = exportRoute(prisma, leader.id);
+    // csvExport pilot switch defaults off (NULL features): refused, nothing audited. Then turned on for club A only.
+    const off = await get(`clubId=${clubA.id}&kind=roster`);
+    assert.equal(off.status, 403);
+    assert.deepEqual(off.lines, ['CSV export is not enabled for this club.']);
+    await prisma.club.update({ where: { id: clubA.id }, data: { features: { csvExport: true } } });
     // A club-A leader passing club-B ids gets a header-only file, never club-B rows.
     for (const [kind, key, id] of [['applicants', 'roundId', roundB.id], ['attendance', 'eventId', meetingB.id], ['rsvps', 'eventId', eventB.id]]) {
       const res = await get(`clubId=${clubA.id}&kind=${kind}&${key}=${id}`);

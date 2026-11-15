@@ -39,8 +39,8 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
     {app.status === "INTERVIEWING" && <section aria-label="Interview scheduling"><h2 className="oc-section-heading">Book your interview</h2><p className="mt-2 text-sm text-muted-foreground">Review the club’s instructions and available times. Change or cancel your interview here.</p><ApplicantBooking key={app.id} applicationId={app.id} onChanged={onBookingChanged} /></section>}
     {history.length > 0 && <details className="rounded-lg border px-4"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Recorded interviews · {history.length}</summary><ul className="divide-y pb-3">{history.map(booking => <li key={booking.id} className="flex gap-3 py-3 text-sm"><CalendarDays size={16} className="mt-1 shrink-0" aria-hidden="true" /><div><p>{applicantDate(booking.slot.startTime)}</p><p className="mt-1 text-xs text-muted-foreground">Ends {applicantDate(booking.slot.endTime)} · {booking.slot.location || "Location not provided"}</p></div></li>)}</ul></details>}
     <div className="flex flex-wrap gap-2 border-t pt-4">
-      <Button variant="outline" onClick={onResponses}>View submitted responses<ArrowRight size={15} /></Button>
-      <Button variant="ghost" onClick={onCalendar}><CalendarDays size={15} />Open calendar</Button>
+      <Button variant="outline" onClick={onResponses}>View submitted responses<ArrowRight size={16} /></Button>
+      <Button variant="ghost" onClick={onCalendar}><CalendarDays size={16} />Open calendar</Button>
     </div>
   </>
 }

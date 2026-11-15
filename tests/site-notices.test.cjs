@@ -101,7 +101,7 @@ function writeHarness({ action = true, maintenance = true } = {}) {
     ...s.mocks,
     '@/utils/prisma': { prisma }, './prisma': { prisma },
     '@/utils/club-write-transaction': { clubWriteTransaction: fn => prisma.$transaction(fn) },
-    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }), headers: async () => new Headers(action ? { 'next-action': 'abc123' } : {}) },
     './supabase/server': { createClient: async () => ({ auth: { getSession: async () => sessionFor(signedIn), getUser: async () => ({ data: { user: { id: signedIn, email: `${signedIn}@virginia.edu`, email_confirmed_at: '2026-01-01' } } }) } }) },
@@ -226,6 +226,7 @@ test('route handlers: every app/api write handler is guarded by the maintenance 
     'app/api/auth/logout/route.ts': 'sign-out must always work',
     'app/api/auth/student-claim/route.ts': 'account claim is an auth flow',
     'app/api/auth/password-recovery/route.ts': 'password recovery is an auth flow',
+    'app/api/auth/two-step/route.ts': 'two-step sign-in and set-up are auth flows',
     'app/api/demo/route.ts': 'demo mode toggle; demo never writes production data',
     'app/api/school-requests/route.ts': 'unauthenticated public marketing form',
     'app/api/platform/view-as/route.ts': 'platform admin only (requirePlatformAdmin)',
@@ -233,6 +234,9 @@ test('route handlers: every app/api write handler is guarded by the maintenance 
     'app/api/internal/scheduled-communications/route.ts': 'cron, bearer secret',
     'app/api/internal/notification-delivery/route.ts': 'cron, bearer secret',
     'app/api/internal/invitation-delivery/route.ts': 'cron, bearer secret',
+    'app/api/internal/graduation/route.ts': 'cron, bearer secret; off unless OUTCLASS_GRADUATION_JOB_ENABLED',
+    'app/api/email/unsubscribe/route.ts': 'legal email opt-out (RFC 8058 one-click) must work during maintenance; signed token, optional email only',
+    'app/api/csp-report/route.ts': 'browser CSP reports; logs a bounded summary, writes no data',
   }
   const routes = []
   const walk = dir => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = `${dir}/${e.name}`; if (e.isDirectory()) walk(f); else if (/^route\.tsx?$/.test(e.name)) routes.push(f) } }

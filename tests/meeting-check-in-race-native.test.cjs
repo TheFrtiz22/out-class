@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 // Two simultaneous QR check-ins by the same member on isolated native PostgreSQL,
 // through the real issueMeetingCheckIn and checkInMeeting (meeting row FOR UPDATE,
 // unique (eventId, studentId)). Run: node scripts/run-disposable-postgres.cjs security
@@ -7,7 +8,7 @@ const { databaseUrl, raceFixture } = require('./helpers/race-native.cjs');
 
 test('two simultaneous check-ins by one member record one attendance', { skip: !databaseUrl, timeout: 120000 }, async t => {
   const { operator, load, as, race, user, club } = await raceFixture(t);
-  const meetings = load('actions/meetings.ts');
+  const meetings = unwrapActions(load('actions/meetings.ts'));
   const c = await club();
   const leader = await user('leader'), member = await user('member');
   await operator.clubMember.create({ data: { clubId: c.id, userId: leader.id, isOwner: true } });

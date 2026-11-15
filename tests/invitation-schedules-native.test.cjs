@@ -1,3 +1,4 @@
+const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{AsyncLocalStorage}=require('node:async_hooks');
 const {loader}=require('./helpers/communications-loader.cjs'),url=process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL;
 test('invitation scheduling and fair worker on actual bounded PostgreSQL',{skip:!url,timeout:120000},async t=>{
@@ -7,7 +8,7 @@ test('invitation scheduling and fair worker on actual bounded PostgreSQL',{skip:
  const backupOwner=await db.user.create({data:{email:randomUUID()+"@demo.invalid"}});await db.clubMember.create({data:{clubId:club.id,userId:backupOwner.id,isOwner:true}});
  let support=null,failAudit=false;
  const actual=db.$transaction.bind(db),source=new Proxy(db,{get(target,key){if(key==='$transaction')return(fn,opts)=>actual(tx=>fn(new Proxy(tx,{get(t,k){if(k==='auditLog'&&failAudit)return{create:async()=>{throw Error('Injected audit failure')}};return Reflect.get(t,k)}})),opts);return Reflect.get(target,key)}});
- const load=loader({'@/utils/prisma':{prisma:source},'@/utils/auth':{requireClubPermission:async()=>({user:sender})},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()}}),actions=load('actions/invitation-schedules.ts'),worker=load('utils/scheduled-communications.ts');
+ const load=loader({'@/utils/prisma':{prisma:source},'@/utils/auth':{requireClubPermission:async()=>({user:sender})},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()}}),actions=unwrapActions(load('actions/invitation-schedules.ts')),worker=load('utils/scheduled-communications.ts');
  const invite=()=>db.clubInvitation.create({data:{clubId:club.id,email:randomUUID()+'@demo.invalid',invitedBy:sender.id,requestedRole:'MEMBER',expiresAt:new Date(Date.now()+7*86400000)}});
  const input=i=>({id:randomUUID(),selection:{clubId:club.id,invitationId:i.id},localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER'});
  const due=id=>db.scheduledCommunication.update({where:{id},data:{scheduledAt:new Date(Date.now()-1000)}});

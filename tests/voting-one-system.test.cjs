@@ -50,7 +50,7 @@ test('/vote and /live-voting redirect a QR-style ?session= link to the voting-ro
  assert.equal(await r(uuid(71)),null);assert.equal(await r('demo-session-1'),null);
  assert.equal(await resolver({user:otherId+'x'})(sessionId),null,'a non-member learns nothing');
  assert.equal(await resolver({demo:true})(sessionId),null,'Demo never resolves production sessions');
- assert.equal(fs.readFileSync('app/(focus)/vote/page.tsx','utf8').trim(),'export { default } from "@/app/(focus)/live-voting/page"');
+ assert.match(fs.readFileSync('app/(focus)/vote/page.tsx','utf8'),/import LiveVotingPage, \{ metadata as liveVotingMetadata \} from "@\/app\/\(focus\)\/live-voting\/page"[\s\S]*export default LiveVotingPage/);
  const mapped=page('app/(focus)/live-voting/page.tsx',id=>`/voting/rooms/${id}/history?clubId=${clubId}`);
  assert.deepEqual(await mapped.render({searchParams:Promise.resolve({session:sessionId})}),{redirected:`/voting/rooms/${sessionId}/history?clubId=${clubId}`});
  assert.deepEqual(mapped.calls[0],['resolve',sessionId],'the QR query value is what gets resolved');

@@ -17,6 +17,9 @@ export function resolveVotingMeeting(value:unknown,{future=true,announcedUserIds
  if(/^https?:/i.test(m.location)){const u=new URL(m.location);if(u.protocol!=='https:'&&u.protocol!=='http:')throw Error('Use an http or https meeting link.');}
  return {...m,status:m.timing==='LATER'?'SCHEDULED' as const:'READY' as const,plannedAt:planned?.toISOString()??null,announcedUserIds};
 }
+/** Pre-join preview for an eligible voter: only name, scheduled start (while unstarted) and location. Never announcement recipients, instructions or cancellation state. */
+export type VotingJoinMeeting={name:string;plannedAt:string|null;location:string};
+export function joinMeetingPreview(value:unknown,unstarted:boolean):VotingJoinMeeting|null{const m=meetingDetails(value);if(!m||m.status==='CANCELLED')return null;return {name:m.name,plannedAt:unstarted?m.plannedAt:null,location:m.location};}
 export function plannedSessionLabel(m:VotingMeeting|null){return !m?'Prepared':m.status==='CANCELLED'?'Cancelled':m.status==='SCHEDULED'?'Scheduled':'Prepared';}
 export function meetingTime(m:VotingMeeting){return m.plannedAt?new Date(m.plannedAt).toLocaleString(undefined,{timeZone:m.timeZone,dateStyle:'medium',timeStyle:'short'})+' · '+m.timeZone:'Start now · '+m.timeZone;}
 /** Saved rule-editor state (RuleDraft): a handful of short form fields, read leniently by readRuleDraft. */

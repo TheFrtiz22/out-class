@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next"
 import { PWA_BACKGROUND_COLOR, PWA_THEME_COLOR } from "@/lib/pwa"
 
-// Installable app (S1-7). Icons are rasterized from premium-board/05_app_icon_primary.svg; the
+// Installable app (S1-7). Icons are rasterized from premium-board/11_app_icon_white.svg; the
 // maskable one keeps the monogram inside the 80% safe zone on the tile's own navy gradient.
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -21,7 +21,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/brand/pwa/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/brand/pwa/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/brand/pwa/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-      { src: "/brand/premium-board/05_app_icon_primary.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/brand/premium-board/11_app_icon_white.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
     ],
   }
 }

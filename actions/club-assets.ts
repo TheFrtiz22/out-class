@@ -6,8 +6,9 @@ import { requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { authorizeAdminTransaction } from "@/utils/admin-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
-import { privateClubAssetStorage } from "@/utils/club-asset-storage";
+import { privateClubAssetStorage, referencedClubAssetBytes } from "@/utils/club-asset-storage";
 import { prepareClubImage } from "@/lib/club-image";
+import { UPLOAD_QUOTA_MESSAGES, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
 
 export async function uploadClubAsset(input: FormData) {
   const keys = ['clubId', 'file', 'admin'];
@@ -25,6 +26,8 @@ export async function uploadClubAsset(input: FormData) {
   if (!extensions.includes(file.name.split('.').pop()!.toLowerCase())) throw Error("Image extension must match its type.");
   const path = `${clubId}/${randomUUID()}.webp`;
   const storage = await privateClubAssetStorage();
+  // Outside the transaction so a failed size read can never abort the upload (null skips the byte cap).
+  const clubBytes = await referencedClubAssetBytes(clubId);
   let uploaded = false;
   try {
     return await prisma.$transaction(async tx => {
@@ -32,6 +35,11 @@ export async function uploadClubAsset(input: FormData) {
       if (admin) await authorizeAdminTransaction(tx, actor.id);
       else await authorizeClubTransaction(tx, clubId, actor.id, ['club.settings']);
       if (!await tx.club.findUnique({ where: { id: clubId }, select: { id: true } })) throw Error("Club unavailable.");
+      const since = uploadWindowStart();
+      const userRecent = await tx.auditLog.count({ where: { actorId: actor.id, action: 'club.asset.upload', createdAt: { gte: since } } });
+      const clubRecent = await tx.auditLog.count({ where: { clubId, action: 'club.asset.upload', createdAt: { gte: since } } });
+      const quota = uploadQuotaError({ userRecent, clubRecent, clubBytes, incomingBytes: image.bytes.length }, UPLOAD_QUOTAS.clubAsset, UPLOAD_QUOTA_MESSAGES.clubAssetStorage);
+      if (quota) throw Error(quota);
       const { error } = await storage.upload(path, image.bytes, { contentType: image.contentType, upsert: false, cacheControl: '0' });
       if (error) throw Error("Image upload failed. Your saved profile has not changed.");
       uploaded = true;

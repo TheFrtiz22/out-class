@@ -14,6 +14,8 @@ const Toaster = ({ style, ...props }: ToasterProps) => {
       offset={{ bottom: "var(--oc-toast-offset, 24px)" }}
       mobileOffset={{ bottom: "var(--oc-toast-offset, 24px)", left: "16px", right: "16px" }}
       className="toaster group"
+      // --normal-bg is a glass material, not a colour, so Sonner's default action (Undo) would draw text the colour of its fill.
+      toastOptions={{ actionButtonStyle: { background: 'var(--primary)', color: 'var(--primary-foreground)', borderRadius: 'var(--oc-radius-full)', fontWeight: 600 }, ...props.toastOptions }}
       style={
         {
           '--normal-bg': 'var(--oc-glass-frosted-material)',

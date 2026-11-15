@@ -11,6 +11,8 @@ import {highlightAttribution} from "@/lib/voting-slide-preparation";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
 import {SLIDE_FACT_MAX,SLIDE_NOTE_CHARS,SLIDE_SHORT_QUERY,slideExcerpt,evidenceExcerpt,feedbackExcerpt} from "@/lib/voting-slide-excerpt";
 import {Button} from "@/components/ui/button";
+import {Check,Pause,XIcon} from "@/components/icons";
+import {resultOutcomeLabel,type RoomResult} from "@/lib/voting-room";
 import {InterviewFeedbackSection,EarlierFeedbackRounds} from "@/components/interview-feedback-section";
 
 export type VotingSlideData=Exclude<Awaited<ReturnType<typeof getLiveVotingPresentation>>,StalePresentation>;
@@ -43,7 +45,12 @@ const useShortProjector=()=>useSyncExternalStore(subscribeShort,()=>window.match
 
 /** One renderer for setup, leader, audience and member views. Only the
  * server-projected fields enter this component, including its details dialog. */
-export function ApplicantSlide({data}:{data:VotingSlideData}){
+/** A confirmed outcome beside the name, shown briefly before the room moves on: colour always paired with text. */
+function OutcomeMark({result}:{result:RoomResult}){
+  const Icon=result.outcome==="ACCEPT"?Check:result.outcome==="HOLD"?Pause:XIcon;
+  return <p className="vr-outcome" data-outcome={result.outcome}><Icon aria-hidden="true" size={16}/>{resultOutcomeLabel(result)}</p>;
+}
+export function ApplicantSlide({data,outcome=null}:{data:VotingSlideData;outcome?:RoomResult|null}){
   const [details,setDetails]=useState(false),origin=useRef<HTMLButtonElement|null>(null),short=useShortProjector();
   const clipFeedback=(text:string,entries:number)=>feedbackExcerpt(text,entries,short);
   const open=(e:React.MouseEvent<HTMLButtonElement>)=>{origin.current=e.currentTarget;setDetails(true);};
@@ -102,7 +109,7 @@ export function ApplicantSlide({data}:{data:VotingSlideData}){
   evidence.sort((a,b)=>b.weight-a.weight||order(a.key==="interviewFeedback"?"finalInterviewThoughts":a.key)-order(b.key==="interviewFeedback"?"finalInterviewThoughts":b.key));
   const balanced=evidence.length>1&&evidence[1].weight>=evidence[0].weight*.85;
   return <section aria-label="Current applicant presentation" className="vr-applicant" data-evidence-count={evidence.length} data-evidence-balance={balanced?"even":"lead"}>
-    <header className="vr-person"><ApplicantIdentity size="lg" announcePhoto name={name} photo={data.visible.includes("photo")?data.photo:null} anonymous={data.anonymous} heading={<h2 tabIndex={-1} data-applicant-heading>{name}</h2>}/>
+    <header className="vr-person"><ApplicantIdentity size="lg" announcePhoto name={name} photo={data.visible.includes("photo")?data.photo:null} anonymous={data.anonymous} heading={<h2 tabIndex={-1} data-applicant-heading>{name}</h2>}>{outcome&&<OutcomeMark result={outcome}/>}</ApplicantIdentity>
     {prepared.length>0&&<section className="vr-highlights" aria-label="Leader-selected highlights"><ul>{prepared.map(h=><li key={h.id} className="vr-highlight" data-highlight-mode={h.mode}>
       <p>{h.mode==="QUOTE"?<q>{highlightPreview(h.text)}</q>:<><span className="vr-highlight-kind">Leader summary:</span> {highlightPreview(h.text)}</>}</p>
       <p className="vr-field-meta">{highlightAttribution(h)}</p></li>)}</ul></section>}</header>

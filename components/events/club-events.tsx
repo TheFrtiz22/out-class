@@ -1,9 +1,12 @@
 "use client";
+import { EmptyState } from "@/components/ui/empty-state";
+import { TERMS } from "@/lib/copy/terms";
+import { userMessage } from "@/lib/user-message"
 import { useEditorDraft } from "@/hooks/use-editor-draft";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "@/components/icons";
+import { ArrowLeft, Plus } from "@/components/icons";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { listClubCampusEvents, saveCampusEvent, commandCampusEvent, uploadEventFlyer, getCampusEventRsvpDashboard } from "@/lib/workspace-api";
 import { eventDay, nyDate, eventSchedule, eventDurations, eventScheduleLabel, eventCategories, flyerTemplates, newYorkInput, newYorkInstant, eventDateLabel, managedEventStatus, eventRsvpSummary, type CampusEvent, type ManagedCampusEvent } from "@/lib/campus-events";
@@ -13,12 +16,13 @@ import { Button } from "@/components/ui/button";
 import { ClubExportLink } from "@/components/club-export-link";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Input } from "@/components/ui/input";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import { PillSelect } from "@/components/ui/pill-select";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "./events.css";
+import { EventShareButton } from "@/components/share/event-share-button";
 import type { ClubAccess } from "@/lib/permissions";
 import { NativeSelect } from "@/components/ui/native-select"
-const tabs = ["Upcoming", "Past", "Pending Approval", "Rejected", "Drafts", "Closed"];
+const tabs = ["Upcoming", "Past", "Pending approval", "Rejected", "Drafts", "Closed"];
 export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { clubId: string; clubName: string; canSeeAttendees: boolean; membership?: ClubAccess | null }) {
   const [rows, setRows] = useState<ManagedCampusEvent[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState(""),
     [tab, setTab] = useState("Upcoming"), [editing, setEditing] = useState<ManagedCampusEvent | null | undefined>(),
@@ -41,28 +45,30 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
       await commandCampusEvent({ eventId: event.id, clubId, revision: event.revision, command: value });
       setNotice(value === "WITHDRAW" ? `Removed “${event.title}” from Corkboard. Event history and RSVPs are preserved.` : "");
       removed.current = value === "WITHDRAW";
-      if (value === "SUBMIT") setTab("Pending Approval");
+      if (value === "SUBMIT") setTab("Pending approval");
       setConfirm(null); setRetry(n => n + 1);
     } catch { setError("Event could not be updated. It may have changed; the list now shows the latest version."); setRetry(n => n + 1) }
     finally { inFlight.current = false; setBusy(false) }
   }
   const event = rows.find(e => e.id === selected);
-  const visible = rows.filter(e => tab === "Upcoming" ? +new Date(e.endDate) > Date.now() && !["ARCHIVED", "CANCELLED"].includes(e.status) : tab === "Past" ? +new Date(e.endDate) <= Date.now() : tab === "Pending Approval" ? e.status === "PENDING" : tab === "Rejected" ? e.status === "REJECTED" : tab === "Closed" ? ["CANCELLED", "ARCHIVED"].includes(e.status) : e.status === "DRAFT");
+  const inTab = (name: string, e: ManagedCampusEvent) => name === "Upcoming" ? +new Date(e.endDate) > Date.now() && !["ARCHIVED", "CANCELLED"].includes(e.status) : name === "Past" ? +new Date(e.endDate) <= Date.now() : name === "Pending approval" ? e.status === "PENDING" : name === "Rejected" ? e.status === "REJECTED" : name === "Closed" ? ["CANCELLED", "ARCHIVED"].includes(e.status) : e.status === "DRAFT";
+  const visible = rows.filter(e => inTab(tab, e));
   if (editing !== undefined) return <EventEditor key={editing?.id || "new"} clubId={clubId} clubName={clubName} event={editing} onClose={() => { setEditing(undefined); setRetry(n => n + 1) }} onSaved={(next = "Drafts") => { setEditing(undefined); setTab(next); setRetry(n => n + 1) }} />;
   function actions(e: ManagedCampusEvent) {
     return <div className="oc-event-actions">
       {selected !== e.id && <Button variant="outline" onClick={() => setSelected(e.id)}>Manage event</Button>}
       {!["CANCELLED", "ARCHIVED"].includes(e.status) && <Button variant="outline" disabled={busy} onClick={() => setEditing(e)}>Edit & preview</Button>}
       {["DRAFT", "REJECTED"].includes(e.status) && <Button disabled={busy || +new Date(e.date) <= Date.now()} onClick={() => void command(e, "SUBMIT")}>Submit for approval</Button>}
+      {e.status === "PUBLISHED" && +new Date(e.endDate) > Date.now() && <EventShareButton event={e} clubName={clubName} />}
       {["PUBLISHED", "PENDING"].includes(e.status) && <Button variant="outline" disabled={busy} onClick={click => { removeOrigin.current = click.currentTarget; removed.current = false; setConfirm(e); }}>Remove from Corkboard</Button>}
     </div>;
   }
-  return <section aria-label="Corkboard Events" className="min-w-0 space-y-5">
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Corkboard Events</h2><p className="mt-2 text-sm text-muted-foreground">Public events, approval, and RSVP intent. Check-in attendance stays in Meetings.</p></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create Corkboard Event</Button></header>
+  return <section aria-label="Events" className="min-w-0 space-y-5">
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Events</h2></div><Button onClick={() => { setSelected(null); setEditing(null) }}><Plus className="size-4" aria-hidden="true" />{TERMS.newEvent}</Button></header>
     {notice && <p role="status" className="rounded-lg border p-3 text-sm">{notice}</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}{!rows.length && !loading && <> <Button variant="outline" size="sm" disabled={busy} onClick={() => setRetry(n => n + 1)}>Try again</Button></>}</p>}
     {event ? <div className="oc-event-management-detail">
-      <div><Button variant="ghost" onClick={() => setSelected(null)}><ArrowLeft size={16} aria-hidden="true" />All Corkboard events</Button><EventFlyer event={event} /></div>
+      <div><Button variant="ghost" onClick={() => setSelected(null)}><ArrowLeft size={16} aria-hidden="true" />All events</Button><EventFlyer event={event} /></div>
       <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><span className="oc-event-status">{managedEventStatus(event)}</span><p>{eventScheduleLabel(event)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
         {event.status === "PENDING" && <p role="status">Waiting for OutClass approval.</p>}
         {event.rejectionReason && <p className="rounded-lg border p-3 text-sm">Review feedback: {event.rejectionReason}</p>}
@@ -71,8 +77,8 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
         {canSeeAttendees ? <RsvpDashboard key={event.id} event={event} membership={membership} /> : <p className="text-sm">{eventRsvpSummary(event.rsvpCount, event.capacity)}. Attendee access requires attendance-management permission.</p>}
       </div>
     </div> : <>
-      <SegmentedControl label="Event filter" className="oc-event-management-tabs" value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t}${t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}` }))} />
-      {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <div className="rounded-lg border p-8"><h3>No Corkboard events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : !visible.length ? <div className="space-y-3 rounded-lg border p-8 text-sm"><p>None of your club’s events are {tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.</p><Button variant="outline" size="sm" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
+      <PillSelect label="Event filter" prefix="Status" size="compact" className="oc-event-management-status" active={false} value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t[0]}${t.slice(1).toLowerCase()} (${rows.filter(e => inTab(t, e)).length})` }))} />
+      {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <EmptyState tone="outlined" title="No events yet." description="Use New event to create a draft, preview it, then submit it for OutClass approval." /> : !visible.length ? <EmptyState tone="outlined" density="compact" align="start" title={`No ${tab === "Upcoming" ? "upcoming" : tab.toLowerCase()} events`} description={`None of your club’s events are ${tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.`} /> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
         <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}
     </>}
@@ -83,7 +89,7 @@ function RsvpDashboard({ event, membership }: { event: ManagedCampusEvent; membe
   const [data, setData] = useState<Awaited<ReturnType<typeof getCampusEventRsvpDashboard>> | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(false), [open, setOpen] = useState(false), [revision, setRevision] = useState(0);
   useEffect(() => { if (!open) return; let active = true; setLoading(true); setError(""); getCampusEventRsvpDashboard(event.clubId, event.id).then(value => { if (active) setData(value) }).catch(() => { if (active) { setData(null); setError("RSVPs could not be loaded.") } }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [open, event.clubId, event.id, revision]);
   useRevalidate(() => setRevision(n => n + 1), { enabled: open, scopes: ["events"] });
-  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><p className="text-xs text-muted-foreground">RSVP intent is separate from recorded check-in attendance.</p><div className="flex flex-wrap items-center gap-2">{!open && <Button variant="outline" onClick={() => setOpen(true)}>View RSVPs</Button>}<ClubExportLink clubId={event.clubId} kind="rsvps" membership={membership} filter={event.id} label="Export CSV" /></div>{open && loading && !data && <LoadingState label="Loading RSVPs…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setRevision(n => n + 1)}>Try again</Button></p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
+  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><div className="flex flex-wrap items-center gap-2">{!open && <Button variant="outline" onClick={() => setOpen(true)}>View RSVPs</Button>}<ClubExportLink clubId={event.clubId} kind="rsvps" membership={membership} filter={event.id} label="Export CSV" /></div>{open && loading && !data && <LoadingState label="Loading RSVPs…" layout="rows" rows={2} />}{error && <p role="alert">{error} <Button variant="outline" size="sm" disabled={loading} onClick={() => setRevision(n => n + 1)}>Try again</Button></p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
 }
 function EventEditor({
   clubId,
@@ -186,7 +192,7 @@ function EventEditor({
       else setNotice("Draft saved. You can now upload a flyer.");
       return result;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save the event.");
+      setError(userMessage(e, "Could not save the event."));
       return null;
     } finally {
       if (!nested) { operation.current = false; setBusy(false); }
@@ -197,7 +203,7 @@ function EventEditor({
     const current = await save(false, true);
     if (!current) { operation.current = false; setBusy(false); return; }
     setBusy(true);
-    try { await commandCampusEvent({ clubId, eventId: current.id, revision: current.revision, command: "SUBMIT" }); await draftSave.clear(); onSaved("Pending Approval") }
+    try { await commandCampusEvent({ clubId, eventId: current.id, revision: current.revision, command: "SUBMIT" }); await draftSave.clear(); onSaved("Pending approval") }
     catch { setError("Draft saved, but submission failed. Refresh and try again.") }
     finally { operation.current = false; setBusy(false) }
   }
@@ -222,7 +228,7 @@ function EventEditor({
       setUseTemplate(false);
       setNotice("Flyer uploaded privately. Apply event changes when ready.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Flyer upload failed.");
+      setError(userMessage(e, "Flyer upload failed."));
     } finally {
       operation.current = false; setBusy(false); setUploading(false);
     }
@@ -231,14 +237,14 @@ function EventEditor({
     <section>
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-serif text-2xl">
-          {event ? "Edit event" : "Create Corkboard Event"}
+          {event ? "Edit event" : TERMS.newEvent}
         </h2>
         <Button variant="ghost" disabled={busy} onClick={() => void draftSave.flush().then(onClose).catch(() => {})}>
           Back to events
         </Button>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        Your private draft saves automatically. Submit when ready for approval.
+        Your private draft saves automatically.
       </p>
       {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-foreground">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
       <AutosaveStatus save={draftSave} />
@@ -279,7 +285,7 @@ function EventEditor({
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
-          <p id="event-description-help" className="text-xs leading-relaxed text-muted-foreground">Include all important flyer information here, including access details and any instructions shown only in the image. Students can read this description in the event details without viewing the flyer.</p>
+          <p id="event-description-help" className="text-control leading-relaxed text-muted-foreground">Include every flyer detail here, including anything shown only in the image.</p>
           <div className="oc-event-editor-pair">
             <label>
               Category
@@ -362,7 +368,7 @@ function EventEditor({
           </label>
           {!useTemplate && saved?.flyerUrl && <Button type="button" variant="outline" disabled={busy} onClick={() => { setUseTemplate(true); setNotice("Flyer removed from this preview. Save the draft to apply."); }}>Remove uploaded flyer</Button>}
           <label className="rounded-xl border-2 border-dashed p-5" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file && !busy && draftSave.ready && !draftSave.recovery) void upload(file); }}>
-            Event Flyer — Optional
+            Event flyer (optional)
             <span className="block text-sm text-muted-foreground">Drop a PNG, JPEG or WebP here, or choose a file. Up to 10 MB.</span>
             <Input
               type="file"

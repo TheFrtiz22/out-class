@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -17,7 +18,7 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
   const tx = {
     $queryRaw: async()=>[],
     club: { findUnique: async () => ({ testRequirement, applicationOpen, applicationDeadline }) },
-    studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? profile : { id: 'profile' }) : null },
+    studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? { phone: '+14345550123', ...profile } : { id: 'profile', phone: '+14345550123' }) : null },
     applicationQuestion: { findMany: async args => { calls.push(['questions', args]); return questions } },
     pipelineRound: { findFirst: async () => ({ id: 'first-round' }) },
     recruitmentCycle: { findMany: async () => [] },
@@ -31,13 +32,13 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
       createMany: async args => calls.push(['answers', args]),
     },
   }
-  const actions = load('actions/applications.ts', {
+  const actions = unwrapActions(load('actions/applications.ts', {
     '@/lib/student-applications': helpers,
     '@/utils/auth': { requireAuth: async () => ({ user: { id: userId } }) },
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     'next/cache': { revalidatePath: () => {} },
-  })
+  }))
   return { ...actions, calls }
 }
 test('draft permits incomplete and over-limit essays; submission enforces requirements', () => {
@@ -128,11 +129,11 @@ test('owned private attachments persist unchanged in drafts and submissions',asy
 
 test('student status projection remains owned and exposes only public round names and booking details', async () => {
   let query
-  const actions = load('actions/applications.ts', {
+  const actions = unwrapActions(load('actions/applications.ts', {
     '@/utils/auth': { requireAuth: async () => ({ user: { id: 'authenticated-student' } }) },
     '@/utils/prisma': { prisma: { application: { findMany: async input => { query = input; return [] } } } },
     'next/cache': { revalidatePath() {} },
-  })
+  }))
   await actions.getStudentApplications()
   assert.deepEqual(query.where, { studentId: 'authenticated-student' })
   assert.deepEqual(query.select.club.select.pipelineRounds, { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: 'asc' } })
@@ -140,4 +141,15 @@ test('student status projection remains owned and exposes only public round name
   assert.deepEqual(query.select.bookings.select, { id: true, roundId: true, slot: { select: { startTime: true, endTime: true, location: true } } })
   assert.equal(query.select.scores, undefined)
   assert.equal(query.select.notes, undefined)
+})
+
+test('submission requires a phone number on the profile; drafts still save without one', async () => {
+  const body = { clubId, answers: [{ questionId, response: 'My answer' }] }
+  for (const phone of [null, '', '4345550123', 'not a number']) {
+    const missing = setup({ profile: { id: 'profile', phone } })
+    await assert.rejects(missing.submitApplication(body), /Add a phone number to your profile before submitting/)
+    assert.equal(missing.calls.some(call => call[0] === 'update'), false)
+    assert.deepEqual(await setup({ profile: { id: 'profile', phone } }).saveApplicationDraft(body), { success: true, applicationId: 'app' })
+  }
+  assert.deepEqual(await setup({ profile: { id: 'profile', phone: '+442079460958' } }).submitApplication(body), { success: true, applicationId: 'app' })
 })

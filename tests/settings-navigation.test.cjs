@@ -12,6 +12,7 @@ test('shared route layout authenticates protected pages and retains public pages
   let checks = 0;
   const mocks = {
     'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
+    '@/components/legal/terms-gate': { TermsGate: 'TermsGate' },
     '@/utils/auth': { getSessionUser: async () => ({ data: { user: null } }), requireAuth: async () => { checks++; throw Error('Sign in'); } },
     '@/components/shell/workspace-shell': { WorkspaceShell: 'Shell' },
     '@/components/landing/public-page-frame': { PublicPageFrame: 'PublicFrame' },
@@ -36,7 +37,7 @@ test('shared route layout authenticates protected pages and retains public pages
   mocks['@/components/shell/workspace-frame'] = load('components/shell/workspace-frame.ts', mocks);
   // Signed-in product routes pass through the maintenance gate, which wraps the shell.
   const shell = await load('app/(workspace)/layout.tsx', mocks).default({ children: 'account' });
-  assert.equal(shell.type, 'MaintenanceGate'); assert.equal(shell.props.children.type, 'Shell');
+  assert.equal(shell.type, 'MaintenanceGate'); assert.equal(shell.props.children.type, 'TermsGate'); assert.equal(shell.props.children.props.children.type, 'Shell');
 });
 test('organization Settings includes only supported configuration and keeps operations reachable', () => {
   const { availableSettings } = load('lib/club-settings.ts');

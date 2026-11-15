@@ -25,7 +25,7 @@ const labels = sections => sections.map(section => [section.label ?? section.nam
 test("rail: Recruiting (Overview, Applicants, Interviews, Decide), Club (Home, Calendar, Tasks, Members), Settings pinned", () => {
   const sections = nav.leaderRailSections(owner, club)
   assert.deepEqual(labels(sections), [
-    ["Recruiting", ["Overview", "Applicants", "Interviews", "Decide"]],
+    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide"]],
     ["Club", ["Home", "Calendar", "Tasks", "Members"]],
     ["Settings", ["Settings"]],
   ])
@@ -60,8 +60,9 @@ test("permissions are unchanged: Decide, Members, Settings and the drawer gates"
   assert.ok(!product.managerNavigation(reviewer, club, "recruiting").some(item => item.id === "decisions"))
   assert.ok(product.managerNavigation({ permissions: ["applications.review", "decisions.vote"] }, club, "recruiting").some(item => item.id === "decisions"))
   assert.ok(product.managerNavigation({ permissions: ["recruitment.manage"] }, club, "recruiting").some(item => item.id === "decisions"))
-  assert.deepEqual(product.decideAccess({ permissions: ["applications.review", "decisions.vote"] }), { canVote: true, canLetters: false, canScheduled: false, canSend: false })
-  assert.deepEqual(product.decideAccess({ permissions: ["decisions.publish", "applicants.identify"] }), { canVote: false, canLetters: false, canScheduled: true, canSend: true })
+  assert.deepEqual(product.decideAccess({ permissions: ["applications.review", "decisions.vote"] }), { canVote: true, canLetters: false, canScheduled: false, canDecide: false, canSend: false })
+  assert.deepEqual(product.decideAccess({ permissions: ["decisions.publish", "applicants.identify"] }), { canVote: false, canLetters: false, canScheduled: true, canDecide: false, canSend: true })
+  assert.deepEqual(product.decideAccess({ permissions: ["decisions.manage", "applicants.identify"] }), { canVote: false, canLetters: true, canScheduled: true, canDecide: true, canSend: true })
   assert.ok(!product.managerNavigation({ permissions: ["meetings.manage"] }, club, "club").some(item => item.id === "members"))
   const settings = load("lib/recruiting-settings.ts")
   assert.equal(settings.canOpenRecruitingSettings({ permissions: ["applications.review"] }), false)
@@ -74,7 +75,7 @@ test("phone bar: Home · Recruiting · Calendar · Members, then More lists the 
   assert.deepEqual(bar.map(item => item.label), ["Home", "Recruiting", "Calendar", "Members"])
   assert.ok(bar[1].matches.includes("decisions") && bar[1].matches.includes("resumes"))
   assert.deepEqual(labels(nav.moreSections(sections, bar)), [
-    ["Recruiting", ["Overview", "Applicants", "Interviews", "Decide"]],
+    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide"]],
     ["Club", ["Tasks"]],
     ["Settings", ["Settings"]],
   ])
@@ -116,27 +117,44 @@ test("every old URL maps to its new home (server redirect and client replace sha
 })
 
 test("Decide: tab choice respects access; counts are per round", () => {
-  assert.equal(decide.decideTab("letters", { canVote: true, canSend: false }), "voting")
-  assert.equal(decide.decideTab(null, { canVote: false, canSend: true }), "letters")
+  // Overview is first and the default; a tab this member may not open falls back to it.
+  assert.deepEqual(decide.decideTabs.map(tab => tab.id), ["overview", "review", "voting", "letters"])
+  // Review (#281) needs decision access; without it the request falls back to Overview.
+  assert.equal(decide.decideTab("review", { canVote: false, canSend: false, canDecide: true }), "review")
+  assert.equal(decide.decideTab(null, { canVote: false, canSend: false, canDecide: true }), "overview")
+  assert.equal(decide.decideTab("review", { canVote: true, canSend: true }), "overview")
+  assert.equal(decide.decideTab(null, { canVote: true, canSend: true }), "overview")
+  assert.equal(decide.decideTab("letters", { canVote: true, canSend: false }), "overview")
+  assert.equal(decide.decideTab("voting", { canVote: true, canSend: false }), "voting")
+  assert.equal(decide.decideTab(null, { canVote: false, canSend: true }), "overview")
+  assert.equal(decide.decideTab("letters", { canVote: false, canSend: true }), "letters")
   assert.equal(decide.decideTab("voting", { canVote: false, canSend: false }), null)
+  assert.equal(decide.decideTab("overview", { canVote: false, canSend: false }), null)
   const rooms = [
-    { roundId: "a", roundName: "A", state: "OPEN", applicantCount: 9 },
-    { roundId: "a", roundName: "A", state: "DRAFT", applicantCount: 3 },
-    { roundId: "b", roundName: "B", state: "COMPLETED", publishedAt: null, applicantCount: 6 },
-    { roundId: "b", roundName: "B", state: "COMPLETED", publishedAt: "2026-11-01T00:00:00Z", applicantCount: 4 },
+    { roundId: "a", roundName: "A", mode: "LIVE", state: "OPEN", applicantCount: 9 },
+    { roundId: "a", roundName: "A", mode: "LIVE", state: "DRAFT", applicantCount: 3 },
+    { roundId: "b", roundName: "B", mode: "LIVE", state: "COMPLETED", publishedAt: null, applicantCount: 6 },
+    { roundId: "b", roundName: "B", mode: "LIVE", state: "COMPLETED", publishedAt: "2026-11-01T00:00:00Z", applicantCount: 4 },
   ]
   assert.deepEqual(decide.decideCounts(rooms), { voting: 2, letters: 6 })
   // Closed board sessions are read-only history, so they never count as waiting to be sent.
   const closedBoard = { roundId: "b", roundName: "B", state: "COMPLETED", mode: "LEGACY", publishedAt: null, applicantCount: 5 }
   assert.equal(decide.readyToSend(closedBoard), false)
   assert.deepEqual(decide.decideCounts([...rooms, closedBoard]), { voting: 2, letters: 6 })
+  // Cancelled meetings and board sessions are history: never counted as sessions to run.
+  const cancelled = { roundId: "a", roundName: "A", mode: "LIVE", state: "DRAFT", meeting: { status: "CANCELLED" }, applicantCount: 2 }
+  const openBoard = { roundId: "a", roundName: "A", mode: "LEGACY", state: "OPEN", applicantCount: 2 }
+  assert.deepEqual(decide.decideCounts([...rooms, cancelled, openBoard]), { voting: 2, letters: 6 })
   assert.deepEqual(decide.roundsFromRooms(rooms), [{ id: "a", name: "A" }, { id: "b", name: "B" }])
 })
 
-test("Overview review card opens Applicants on the busiest round with quick review", () => {
-  const href = home.quickReviewHref("/club/c/workspace?section=recruitment&tool=applicants", [{ id: "r1", pending: 2 }, { id: "r2", pending: 5 }, { id: "r3", pending: 5 }])
-  assert.equal(href, "/club/c/workspace?section=recruitment&tool=applicants&roundId=r2&quickReview=1")
-  assert.match(fs.readFileSync("components/views/leader-dashboard/live-leader-workspace.tsx", "utf8"), />Start quick review<\/Button>/)
+test("Overview review card opens Applicants on the busiest round with the review open", () => {
+  const href = home.reviewApplicantsHref("/club/c/workspace?section=recruitment&tool=applicants", [{ id: "r1", pending: 2 }, { id: "r2", pending: 5 }, { id: "r3", pending: 5 }])
+  assert.equal(href, "/club/c/workspace?section=recruitment&tool=applicants&roundId=r2&review=1")
+  const src = fs.readFileSync("components/views/leader-dashboard/live-leader-workspace.tsx", "utf8")
+  assert.match(src, /"Review applicants"/)
+  assert.match(src, /get\("review"\) === "1"/)
+  assert.doesNotMatch(src, /Start quick review|Quick decisions/)
 })
 
 test("tutorial steps only point at rail items that still exist", () => {

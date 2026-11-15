@@ -12,6 +12,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { isNotificationSettingsOpen } from "@/lib/settings-navigation"
 import { closeStep } from "@/lib/notification-settings-sheet"
+import { PushNotificationsToggle } from "@/components/inbox/push-notifications-toggle"
 
 // The same preferences form Settings used: same server actions, same save behavior. Loaded only when opened.
 const CommunicationsPreferences = dynamic(() => import("@/components/communications-preferences").then(module => module.CommunicationsPreferences), {
@@ -78,12 +79,13 @@ export function InboxNotificationSettings() {
           <SheetTitle>Notification settings</SheetTitle>
           {saving && <p role="status" className="text-xs text-muted-foreground">Saving…</p>}
         </div>
-        <SheetDescription className="sr-only">Choose which club updates reach your email.</SheetDescription>
+        <SheetDescription className="sr-only">Choose which club updates reach your email and this device.</SheetDescription>
         {confirming && <div role="group" aria-labelledby="notification-settings-discard" className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2" data-discard-confirm>
           <p id="notification-settings-discard" className="mr-auto text-sm font-medium">Discard changes?</p>
           <Button ref={keep} size="sm" variant="ghost" onClick={keepEditing}>Keep editing</Button>
           <Button size="sm" variant="destructive" onClick={() => close(true)}>Discard</Button>
         </div>}
+        {open && <PushNotificationsToggle />}
         {open && <CommunicationsPreferences embedded onSave={onSave} />}
       </SheetContent>
     </Sheet>

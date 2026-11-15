@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { DecisionTemplateEditor } from "@/components/communications/template-editor";
 import { useState } from "react";
@@ -32,7 +33,7 @@ export function RecruitmentReviewSettings({
       setMessage("Saved. Existing submissions are preserved.");
       onChanged();
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not save.");
+      setMessage(userMessage(e, "Could not save."));
     } finally {
       setBusy(false);
     }

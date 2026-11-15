@@ -4,9 +4,13 @@ import {z} from "zod";
  * Sources are gathered server-side from already-authorized, submitted/shared
  * material. A QUOTE is a verbatim excerpt of its source; a SUMMARY is clearly
  * labelled leader writing. Nothing here ranks applicants or generates text. */
-export const slideSourceTypes=["PROFILE","INTERVIEW_SCORE","INTERVIEW_THOUGHT","OBSERVATION","RESUME"] as const;
+export const slideSourceTypes=["PROFILE","INTERVIEW_SCORE","INTERVIEW_THOUGHT","OBSERVATION","RESUME","RESUME_AREA"] as const;
 export type SlideSourceType=typeof slideSourceTypes[number];
-export const slideSourceTypeLabels:Record<SlideSourceType,string>={PROFILE:"Application / profile",INTERVIEW_SCORE:"Interview score",INTERVIEW_THOUGHT:"Final interview thoughts",OBSERVATION:"Additional observation",RESUME:"Résumé highlight"};
+export const slideSourceTypeLabels:Record<SlideSourceType,string>={PROFILE:"Application / profile",INTERVIEW_SCORE:"Interview score",INTERVIEW_THOUGHT:"Final interview thoughts",OBSERVATION:"Additional observation",RESUME:"Résumé highlight",RESUME_AREA:"Résumé area highlight"};
+/** A résumé area highlight marks a page region; its text is the panel's note, not résumé
+ * words. It can only back a leader SUMMARY, never an "Original quotation". */
+export const quotableSource=(type:SlideSourceType)=>type!=="RESUME_AREA";
+export const areaQuoteError="Area highlights have no résumé text to quote. Write a leader summary instead.";
 export const maxSlideHighlights=3;
 export const maxQuoteLength=400;
 export const maxSummaryLength=280;
@@ -37,13 +41,14 @@ export const slideSourceSnapshot=z.object({
 export type SlideSource=z.output<typeof slideSourceSnapshot>;
 export const storedSlideHighlight=z.object({id:z.string().uuid(),mode:z.enum(["QUOTE","SUMMARY"]),text:z.string(),source:slideSourceSnapshot,writtenBy:z.string().nullable()}).strict();
 export type StoredSlideHighlight=z.output<typeof storedSlideHighlight>;
-export function storedHighlights(value:unknown):StoredSlideHighlight[]{const v=z.array(storedSlideHighlight).max(maxSlideHighlights).safeParse(value);return v.success?v.data:[];}
+export function storedHighlights(value:unknown):StoredSlideHighlight[]{const v=z.array(storedSlideHighlight).max(maxSlideHighlights).safeParse(value);return v.success?v.data.filter(h=>h.mode==="SUMMARY"||quotableSource(h.source.type)):[];}
 
 /** Validate leader input against the current authorized sources and build the
  * stored form. Throws a user-facing message; never trims or rewrites a quote. */
 export function buildSlideHighlights(input:SlideHighlightInput[],sources:SlideSource[],writtenBy:string,previous:StoredSlideHighlight[]=[]):StoredSlideHighlight[]{
   if(input.length>maxSlideHighlights)throw Error(`Choose up to ${maxSlideHighlights} highlights.`);
   return input.map(h=>{
+    if(h.mode==="QUOTE"&&!quotableSource(h.source.type))throw Error(areaQuoteError);
     const source=sources.find(s=>s.type===h.source.type&&s.id===h.source.id);
     const kept=previous.find(p=>p.id===h.id&&p.source.type===h.source.type&&p.source.id===h.source.id&&p.source.version===h.source.version&&p.mode===h.mode&&p.text===h.text);
     // An unchanged, previously saved highlight may keep an older source version
@@ -66,6 +71,17 @@ export function preparationGap(count:number,sourceCount:number){
   if(count>=2||count>=sourceCount&&count>0)return null;
   if(!sourceCount)return "No source material yet";
   return count?"Consider one more highlight":"No highlights selected";
+}
+/** When saved highlights reach the slide. Each applicant's highlights lock as that
+ * applicant comes up in a pass, so a leader can tell "on slides" from "not yet". */
+export type SlideTiming="AT_START"|"WHEN_PRESENTED"|"ON_SLIDE"|"NEXT_PASS";
+export const slideTimingLabels:Record<SlideTiming,string>={AT_START:"Not yet on slides · shows when voting starts",WHEN_PRESENTED:"Not yet on slides · shows when they come up",ON_SLIDE:"On this pass’s slide · changes show in the next Hold pass",NEXT_PASS:"Not on this pass’s slide · shows in the next Hold pass"};
+export const slideTimingShort:Record<SlideTiming,string>={AT_START:"Not yet on slides",WHEN_PRESENTED:"Not yet on slides",ON_SLIDE:"On slides",NEXT_PASS:"Next Hold pass"};
+export function slideTiming(room:{currentPass:number;activeApplicationId:string|null;passes:{number:number;state:string;candidates:{applicationId:string;ballotState:string}[]}[]},applicationId:string,locked:boolean):SlideTiming{
+  if(room.currentPass===0)return "AT_START";
+  if(locked)return "ON_SLIDE";
+  const pass=room.passes.find(p=>p.number===room.currentPass),entry=pass?.candidates.find(c=>c.applicationId===applicationId);
+  return pass?.state==="OPEN"&&entry?.ballotState==="PENDING"&&room.activeApplicationId!==applicationId?"WHEN_PRESENTED":"NEXT_PASS";
 }
 export function highlightAttribution(h:StoredSlideHighlight){
   return [slideSourceTypeLabels[h.source.type],h.source.author,h.source.roundName].filter(Boolean).join(" · ");

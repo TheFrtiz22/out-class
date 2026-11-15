@@ -37,7 +37,7 @@
   .oc-metric-strip > div:nth-child(odd) { padding-left: .75rem; border-left: 1px solid var(--oc-content-edge); }
   .oc-metric-strip dd { font-size: 1.5rem; }
 }
-.oc-profile-link { display: inline-flex; align-items: center; min-height: var(--oc-control-height); font-size: var(--oc-text-caption); color: var(--muted-foreground); text-decoration: underline; text-underline-offset: .25em; }
+.oc-profile-link { display: inline-flex; align-items: center; min-height: var(--oc-control-height); font-size: var(--oc-size-13); color: var(--muted-foreground); text-decoration: underline; text-underline-offset: .25em; }
 [data-product-shell] .oc-club-identity { position: relative; padding: var(--oc-density-inset); border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); margin-bottom: 1.5rem; }
 [data-product-shell] .oc-club-identity h1 { font-family: var(--oc-font-display); font-weight: 500; }
 [data-product-shell] .oc-club-recruitment { border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); padding: var(--oc-density-inset); }

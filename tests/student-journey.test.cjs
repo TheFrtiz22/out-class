@@ -85,11 +85,15 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   dependencies['@/components/landing/public-navigation'] = { PublicNavigation: 'PublicNavigation' }
   dependencies['@/components/views/landing.css'] = {}
   dependencies['@/lib/navigation'] = require('./helpers/navigation-module.cjs')
+  dependencies['@/components/ui/breadcrumbs'] = { Breadcrumbs: 'Breadcrumbs' }
+  dependencies['@/lib/seo'] = { clubBreadcrumbs: (name, { signedIn } = {}) => signedIn ? [{ label: 'Explore' }, { label: name }] : [{ label: 'OutClass' }, { label: 'UVA' }, { label: name }] }
   new Function('require', 'module', 'exports', 'window', code)(name => dependencies[name] || require(name), mod, mod.exports, window)
   function nodes(node) { return !node || typeof node !== 'object' ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)] }
   const render = () => { cursor = 0; return nodes(mod.exports.PublicClubPage({ club: { id: 'club' } })) }
   const profile = render().find(node => node.type === 'ClubProfile')
   assert.equal(profile.props.backLabel, 'Back to OutClass')
+  assert.equal(profile.props.breadcrumbs.type, 'Breadcrumbs')
+  assert.deepEqual(profile.props.breadcrumbs.props.items.map(item => item.label), ['OutClass', 'UVA', undefined])
   profile.props.onNavigate('auth')
   assert.equal(window.location.href, '/login?next=%2Fclub%2Fclub%3Fref%3Dcampus%23apply')
   profile.props.onNavigate('student-onboarding')

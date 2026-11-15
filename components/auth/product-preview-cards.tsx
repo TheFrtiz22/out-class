@@ -18,7 +18,7 @@ export function ProductPreviewCards() {
       <ol className="oc-login-example-steps" aria-label="Example application progress">
         <li><span className="oc-login-example-step-mark"><Check size={14} aria-hidden="true" /></span><span>Application submitted</span></li>
         <li aria-current="step"><span className="oc-login-example-step-mark" /><span>Club review in progress</span></li>
-        <li><span className="oc-login-example-step-mark"><CalendarDays size={13} aria-hidden="true" /></span><span>Interview details, if invited</span></li>
+        <li><span className="oc-login-example-step-mark"><CalendarDays size={14} aria-hidden="true" /></span><span>Interview details, if invited</span></li>
       </ol>
       <p className="oc-login-example-footnote">Sample data, not a real student’s application.</p>
     </div>

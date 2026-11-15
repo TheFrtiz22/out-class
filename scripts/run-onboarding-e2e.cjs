@@ -12,6 +12,9 @@ const releaseRepair=process.argv.includes('--pipeline-release-repair');
 const shellSuite=process.argv.includes('--shell');
 const selectedNavigation=process.argv.includes('--selected-navigation')||releaseRepair;
 if(selectedNavigation&&(writing||!process.argv.includes('--club-integration')))throw Error('--selected-navigation requires --club-integration on the onboarding fixture.');
+// --active-interviews: four reviewers in owner-attested Interview Rooms, concurrent reads and immediate grant revocation.
+const activeInterviews=process.argv.includes('--active-interviews');
+if(activeInterviews&&!selectedNavigation)throw Error('--active-interviews requires --selected-navigation on the onboarding fixture.');
 if(!/^[1-5]\d{2}$|^6[0-4]\d$/.test(portPrefix))throw Error('A disposable port prefix must reserve a valid three-digit local range.');
 const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),projectId);
 const keep=process.argv.includes('--keep');let app,stackTouched=false;
@@ -126,12 +129,13 @@ async function ready(url,headers={}){
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
  // --club-integration runs all tests gated by the reserved onboarding project,
+ // ending with the attacker pass (writes test-results/attacker-pass.json),
  // including settings/navigation and real built PDF import (which needs the
  // ui-fixture.json written by onboarding). Keep files serialized.
  const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/student-paths-e2e.test.cjs','tests/focus-frame-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs','tests/share-card-production-e2e.test.cjs'];
  const testFiles=dashboards?['tests/operational-dashboards-e2e.test.cjs']:process.argv.includes('--application-writing')?['tests/application-writing-e2e.test.cjs']:
    process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
-   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
+   process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs','tests/resume-import-runtime.test.cjs','tests/attacker-pass-e2e.test.cjs']:
    process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs',...onboardingTests]:shellSuite?[]:onboardingTests;
  const result=testFiles.length===0?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
@@ -156,6 +160,14 @@ async function ready(url,headers={}){
    const repairResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/pipeline-release-e2e.test.cjs','tests/navigation-phase5-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
    if(repairResult.status!==0)throw Error('Pipeline release integration failed; inspect the disposable test log.');
   }finally{fs.copyFileSync(path.join(root,'pipeline-release-100.json'),fixture);}
+ }
+ // After release repair, which asserts the template club's untouched 61-member baseline; the
+ // active fixture then adds three reviewers, three rooms and 24 bookings to that same club.
+ if(activeInterviews){
+  const seedResult=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--active-rooms','--seed'],{cwd:repo,env,stdio:'inherit'});
+  if(seedResult.status!==0)throw Error('Active Interview Rooms fixture seeding failed; inspect the disposable test log.');
+  const activeResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/active-interview-navigation-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+  if(activeResult.status!==0)throw Error('Active Interview Rooms reviewer and revocation integration failed; inspect the disposable test log.');
  }
  if(keep){app.unref();console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{

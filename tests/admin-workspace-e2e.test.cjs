@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{randomUUID}=require('node:crypto');
 const{Actor,totp}=require('./helpers/onboarding-e2e.cjs'),{PrismaClient}=require('@prisma/client'),{createClient}=require('@supabase/supabase-js');
 const filename=process.env.OUTCLASS_ADMIN_E2E_CONFIG;
@@ -48,7 +49,7 @@ test('disposable real Auth/password/MFA elevation, Admin routes/actions, invitat
  try {
   await t.test('suspended leader cannot manage recruitment through direct server action',()=>assert.rejects(leader.action('actions/crm.ts','setClubTestRequirement',[c.clubId,requirement])));
   await t.test('suspended leader cannot manage club settings through direct server action',()=>assert.rejects(leader.action('actions/club-workspace.ts','updateClubSettings',[{clubId:c.clubId,name:'Suspension must reject this change',tagline:'Blocked',description:'Blocked mutation'}])));
-  await t.test('suspended club rejects new applications and leaves no new record',async()=>{const outsider=new Actor(c);await outsider.signIn(c.identities.outsider.email,c.identities.outsider.password);const count=await db.application.count({where:{clubId:c.clubId,studentId:c.identities.outsider.id}});await assert.rejects(outsider.action('actions/applications.ts','submitApplication',[{clubId:c.clubId,answers:[]}]));assert.equal(await db.application.count({where:{clubId:c.clubId,studentId:c.identities.outsider.id}}),count);});
+  await t.test('suspended club rejects new applications and leaves no new record',async()=>{const outsider=new Actor(c);await outsider.signIn(c.identities.outsider.email,c.identities.outsider.password);const count=await db.application.count({where:{clubId:c.clubId,studentId:c.identities.outsider.id}});await refused(outsider.action('actions/applications.ts','submitApplication',[{clubId:c.clubId,answers:[]}]));assert.equal(await db.application.count({where:{clubId:c.clubId,studentId:c.identities.outsider.id}}),count);});
   await t.test('existing application remains readable by its student',async()=>assert.ok((await student.action('actions/applications.ts','getStudentApplications',[])).some(a=>a.id===application.id)));
   await t.test('authorized historical pipeline read remains available',()=>leader.action('actions/crm.ts','getClubPipeline',[c.clubId]));
   await t.test('existing memberships, applications, answers, rounds, evaluations, bookings, events, flyers and RSVPs are unchanged',async()=>assert.equal(await snapshot(),before));

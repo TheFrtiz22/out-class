@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  calendarFeedToken CalendarFeedToken?
   interviewAvailabilityOverrides InterviewAvailabilityOverride[]
   editorDrafts EditorDraft[]
   scheduledCommunications ScheduledCommunication[]
@@ -34,6 +35,8 @@ model User {
   claimedInvitations ClubInvitation[] @relation("ClaimedInvitation")
   invitationDeliveries InvitationDelivery[]
   matchedRosterRows RosterImportRow[]
+  termsAcceptances TermsAcceptance[]
+  interestProfile StudentInterestProfile?
   disabledAt DateTime? @db.Timestamptz(3)
   id         String    @id @default(uuid())
   email      String    @unique // MUST be @virginia.edu
@@ -58,6 +61,7 @@ model User {
   conversations ClubConversation[]
   sentClubMessages ClubMessage[]
   notificationEmails NotificationEmailDelivery[]
+  pushSubscriptions WebPushSubscription[]
 }
 
 enum AppRole {
@@ -85,9 +89,16 @@ model StudentProfile {
   computingId String  @unique
   major       String
   gradYear    Int
+  // Alumni lifecycle (lib/graduation.ts). graduatedAt is the instant the student becomes alumni:
+  // Aug 1 (America/New_York) of gradYear by default, or when the student confirms after it.
+  graduatedAt                 DateTime?
+  graduationConfirmedAt       DateTime?
+  graduationPromptDismissedAt DateTime?
   gpa         Float?
   satScore    Int?
   linkedinUrl String?
+  // E.164. Shown only to a club's decision managers for applicants they accept (lib/phone.ts).
+  phone       String?
   bio         String?
   resumeUrl   String? // S3 URL
   headshotUrl String? // S3 URL
@@ -126,7 +137,9 @@ model Club {
   pipelineVersion Int @default(0)
   isDiscoverable Boolean @default(true)
   invitationEmailEnabled Boolean @default(true)
+  features Json? // Pilot feature switches set by platform admins; NULL or unknown keys read as off. See lib/club-features.ts.
   profileFieldVisibility Json? // Leader-facing applicant profile fields; NULL uses defaults (GPA and LinkedIn off). See lib/profile-field-visibility.ts.
+  reviewRubric Json? // Grading categories for applicant review; NULL = one Overall /10 category. See lib/review-rubric.ts.
   corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
   schoolId            String           @default("school-uva")
@@ -169,6 +182,7 @@ model Club {
 
 model ClubMember {
   recusals ApplicantRecusal[]
+  stagedDecisions StagedDecision[]
   availabilityOverrides InterviewAvailabilityOverride[]
   interviewerEligible Boolean?
   interviewParticipation InterviewRoundParticipation[]
@@ -178,6 +192,9 @@ model ClubMember {
   votingParticipants VotingParticipant[]
   accessRole       MembershipAccessRole @default(MEMBER)
   status           MembershipStatus     @default(ACTIVE)
+  // Set when the member graduated (lib/graduation.ts). An alumni membership stays ACTIVE on the
+  // roster but carries no club capabilities and is excluded from active-member counts and audiences.
+  alumniSince      DateTime?
   joinedAt         DateTime             @default(now())
   updatedAt        DateTime             @default(now()) @updatedAt
   groups           String[]          @default([])
@@ -284,6 +301,7 @@ enum QuestionType {
 
 model Application {
   recusals ApplicantRecusal[]
+  stagedDecision StagedDecision?
   decisionStateRevision Int @default(0)
   recruitmentCycleId String?
   recruitmentCycle RecruitmentCycle? @relation(fields: [recruitmentCycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
@@ -346,6 +364,7 @@ model ApplicationAnswer {
 
 model Evaluation {
   roundId String?
+  rubricScores Json? // Per-category scores behind `score` (lib/review-rubric.ts); NULL for a plain overall score.
   stableRound PipelineRound? @relation("EvaluationRound", fields: [roundId], references: [id], onDelete: Restrict)
   submittedAt DateTime?
   applicantQuestions String?
@@ -425,6 +444,21 @@ model SavedCampusEvent {
 // ==========================================
 
 // Compact wall-clock declarations, not another scheduling/room model.
+// Optional club-interest survey answers (lib/interest-survey.ts). Private to the student: read only by
+// their own session to rank public directory clubs; never in applicant, club, export or search data.
+model StudentInterestProfile {
+  userId      String    @id
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interests   String[]  @default([])
+  goals       String[]  @default([])
+  weeklyHours String?
+  selectivity String?
+  revision    Int       @default(0)
+  completedAt DateTime?
+  dismissedAt DateTime?
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
 model UserAvailability {
   userId String @id
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -640,6 +674,19 @@ model InterviewCollaboration {
   revision Int @default(0)
   @@unique([applicationId, roundId, roomKey])
   @@index([clubId, roundId])
+}
+
+model InterviewTimer {
+  sessionId String @id
+  durationMs Int
+  contextKey String
+  startedAt DateTime?
+  pausedAt DateTime?
+  pausedMs Int @default(0)
+  revision Int @default(1)
+  lastRequestId String?
+  updatedBy String?
+  updatedAt DateTime @default(now())
 }
 
 model InterviewPresence {
@@ -1542,6 +1589,7 @@ model UserNotification {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now()) @updatedAt
   emailOutbox    NotificationEmailOutbox?
+  pushDeliveries WebPushDelivery[]
 
   @@unique([userId, eventKey])
   @@index([userId, createdAt])
@@ -1628,6 +1676,37 @@ model NotificationEmailDelivery {
   updatedAt DateTime @default(now()) @updatedAt
   @@index([status, nextAttemptAt])
   @@index([userId, createdAt])
+}
+
+// Web Push (S1-8): one row per browser push endpoint, server-only. An extra
+// delivery channel on top of the notification email outbox; never a replacement.
+model WebPushSubscription {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+  failureCount  Int       @default(0)
+  deliveries    WebPushDelivery[]
+  @@index([userId, createdAt])
+}
+
+// At most one push per (notification, subscription): the primary key is the
+// idempotency key, and a row is claimed PENDING -> SENDING exactly once.
+model WebPushDelivery {
+  notificationId String
+  notification   UserNotification    @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  subscription   WebPushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  status         String              @default("PENDING")
+  createdAt      DateTime            @default(now())
+  attemptedAt    DateTime?
+  @@id([notificationId, subscriptionId])
+  @@index([status, createdAt])
+  @@index([subscriptionId])
 }
 
 model DecisionLetter {
@@ -1764,4 +1843,51 @@ model ApplicantRecusal {
 
   @@unique([applicationId, memberId])
   @@index([clubId, memberId])
+}
+
+// A decision recorded during applicant review but not yet sent. Application status,
+// offers, letters and notifications change only when Decide > Send applies it.
+// One per application; expected status/round make a stale decision skip instead of apply.
+model StagedDecision {
+  id              String      @id @default(uuid())
+  clubId          String
+  applicationId   String      @unique
+  application     Application @relation(fields: [applicationId, clubId], references: [id, clubId], onDelete: Cascade)
+  outcome         String // ADVANCE | HOLD | REJECT | WAITLIST | ACCEPT | ROUND
+  targetStatus    AppStatus
+  targetRoundId   String?
+  expectedStatus  AppStatus
+  expectedRoundId String
+  stagedById      String
+  stagedBy        ClubMember  @relation(fields: [stagedById, clubId], references: [id, clubId], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([applicationId, clubId])
+  @@index([clubId])
+}
+
+// Private calendar subscription (webcal). Only a SHA-256 hash of the secret is
+// stored; creating a new link replaces it, so old links stop working.
+model CalendarFeedToken {
+  userId     String    @id
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+}
+
+/// Clickwrap acceptance of the Terms of Service and Privacy Policy (lib/legal-versions.ts).
+/// Append-only evidence: one row per user and version pair. Server-only (RLS on, no browser roles).
+model TermsAcceptance {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  termsVersion   String
+  privacyVersion String
+  /// SIGNUP (sign-up form), CLAIM (invitation claim) or PROMPT (returning-user screen).
+  source         String
+  acceptedAt     DateTime @default(now())
+
+  @@unique([userId, termsVersion, privacyVersion])
 }

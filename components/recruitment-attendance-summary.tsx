@@ -8,7 +8,7 @@ export function RecruitmentAttendanceSummary({
 }: {
   clubId: string;
   applicationId: string;
-  /** "Interest meetings 1/3": a short fact for the quick review header. */
+  /** "Interest meetings 1/3": a short fact for the applicant review header. */
   compact?: boolean;
 }) {
   const [value, setValue] = useState<{ held: number; attended: number } | null>(

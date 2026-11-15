@@ -65,5 +65,33 @@ export const finalizeRoomInput=finalizationPreviewInput.extend({requestId:z.stri
 
 export const outcomeLabels={ACCEPT:"Pass",HOLD:"Hold",REJECT:"Do not pass",UNREVIEWED:"Unreviewed"} as const;
 export const savedOutcomeLabels={ACCEPT:"Passed",HOLD:"Held",REJECT:"Not passed"} as const;
+export type RoomResult={outcome:keyof typeof savedOutcomeLabels;withoutVote:boolean};
+/** The between-applicant result slide: outcome only, never ballot totals. Without-vote wording matches the pass history. */
+export function resultOutcomeLabel({outcome,withoutVote}:RoomResult){
+  // Hold is the club's private marker for a later voting session, never an applicant-facing decision.
+  if(outcome==="HOLD")return "Held for another vote";
+  return withoutVote?`${savedOutcomeLabels[outcome]} without a vote`:savedOutcomeLabels[outcome];
+}
+/** A candidate's confirmed outcome as every room viewer already receives it (room.history), or null while undecided. */
+export function confirmedResult(history:readonly {number:number;candidates:readonly {applicationId:string;ballotState:string;outcome:string;withoutVote?:boolean}[]}[],passNumber:number,applicationId:string):RoomResult|null{
+  const c=history.find(p=>p.number===passNumber)?.candidates.find(c=>c.applicationId===applicationId);
+  if(!c||c.ballotState!=="CONFIRMED"||!(c.outcome in savedOutcomeLabels))return null;
+  return {outcome:c.outcome as RoomResult["outcome"],withoutVote:!!c.withoutVote};
+}
+/**
+ * Whether a viewer moving from the applicant it last showed to the room's current one should animate: only between
+ * neighbours in the same pass (one advance, or one Undo back), or from a pass's last applicant to its end.
+ * Anything else (several advances missed while a tab was hidden or offline, a new pass) is reconciled directly to the
+ * current applicant, never by replaying the transitions this viewer missed.
+ */
+export function adjacentApplicants(history:readonly {number:number;candidates:readonly {applicationId:string;position:number}[]}[],from:{passNumber:number;applicationId:string},to:{passNumber:number;applicationId:string|null}){
+  if(from.passNumber!==to.passNumber)return false;
+  const candidates=history.find(p=>p.number===from.passNumber)?.candidates??[];
+  const a=candidates.find(c=>c.applicationId===from.applicationId);
+  if(!a)return false;
+  if(to.applicationId===null)return a.position===Math.max(...candidates.map(c=>c.position));
+  const b=candidates.find(c=>c.applicationId===to.applicationId);
+  return !!b&&Math.abs(b.position-a.position)===1;
+}
 export const decisionReceiptSchema=z.object({requestId:z.string().uuid(),applicationId:z.string().uuid(),passNumber:z.number().int().positive(),choice:roomChoice,nextApplicationId:z.string().uuid().nullable(),withoutVote:z.boolean()}).strict();
 export const roomCommandResultSchema=z.object({revision:z.number().int().nonnegative(),decision:decisionReceiptSchema.optional(),undone:z.boolean().optional()}).strict();

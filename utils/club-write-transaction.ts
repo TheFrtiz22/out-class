@@ -1,6 +1,9 @@
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { supportContext, supportTransactionScope } from "@/utils/support-audit";
 import { requireAdminElevation } from "@/utils/admin-elevation";
+import { TRANSACTION_CONFLICT_MESSAGE, WRITE_TIMEOUT_MESSAGE, type ContentionFailure } from "@/lib/write-contention";
+
+export { TRANSACTION_CONFLICT_MESSAGE, WRITE_TIMEOUT_MESSAGE };
 
 // Acquisition, lock and execution budgets are separate. Never retry a timed-out
 // transaction automatically: callers may retry their idempotent command.
@@ -58,5 +61,76 @@ export function isWriteContention(error: unknown) {
   if (!e || typeof e !== "object") return false;
   if (e.code === "P2028" || e.code === "P2034") return true;
   if (e.meta?.code === "55P03" || e.meta?.code === "40001" || e.meta?.code === "40P01") return true;
-  return typeof e.message === "string" && /lock timeout|could not obtain lock|could not serialize access/i.test(e.message);
+  return typeof e.message === "string" && /lock timeout|could not obtain lock|could not serialize access|deadlock detected/i.test(e.message);
+}
+
+/** Retries ran out. The database error stays on `cause` for server logs only. */
+export class TransactionConflictError extends Error {
+  constructor(cause?: unknown) {
+    super(TRANSACTION_CONFLICT_MESSAGE, { cause });
+    this.name = "TransactionConflictError";
+  }
+}
+
+/** PostgreSQL aborted the whole transaction (deadlock 40P01 or serialization
+ * failure 40001) and rolled it back, so re-running it from the start is safe.
+ * Lock and statement timeouts (55P03, 57014) and Prisma's transaction timeout
+ * (P2028) are deliberately excluded: they signal sustained load, not a race. */
+export function isTransactionConflict(error: unknown) {
+  const e = error as { code?: unknown; meta?: { code?: unknown }; message?: unknown } | null;
+  if (!e || typeof e !== "object") return false;
+  if (e.code === "P2034" || e.meta?.code === "40P01" || e.meta?.code === "40001") return true;
+  return typeof e.message === "string" && /deadlock detected|could not serialize access/i.test(e.message);
+}
+
+type ConflictRetryOptions = { attempts?: number; baseDelayMs?: number; sleep?: (ms: number) => Promise<void>; random?: () => number };
+
+/** Re-runs a whole transaction that PostgreSQL aborted as a deadlock or
+ * serialization victim, at most `attempts` times with a short jittered backoff.
+ * `run` must start a fresh transaction each call. Any other error is rethrown
+ * unchanged; exhausted retries throw TransactionConflictError. */
+export async function retryTransactionConflict<T>(run: () => Promise<T>, options: ConflictRetryOptions = {}): Promise<T> {
+  const { attempts = 3, baseDelayMs = 25, sleep = ms => new Promise<void>(resolve => setTimeout(resolve, ms)), random = Math.random } = options;
+  for (let attempt = 1; ; attempt++) {
+    try { return await run(); }
+    catch (error) {
+      if (!isTransactionConflict(error)) throw error;
+      if (attempt >= attempts) throw new TransactionConflictError(error);
+      // Exponential base plus jitter so the two victims of a cycle do not collide again in step.
+      await sleep(baseDelayMs * 2 ** (attempt - 1) + Math.floor(random() * baseDelayMs));
+    }
+  }
+}
+
+const SAFE_CODE = /^(P\d{4}|[0-9A-Z]{5})$/;
+/** The Prisma or SQLSTATE code only, never the message (it can name rows or values). */
+export function contentionCode(error: unknown): string {
+  for (let e = error as { code?: unknown; meta?: { code?: unknown }; cause?: unknown } | null, depth = 0; e && typeof e === "object" && depth < 3; e = e.cause as typeof e, depth++) {
+    for (const code of [e.meta?.code, e.code]) if (typeof code === "string" && SAFE_CODE.test(code)) return code;
+  }
+  return "unknown";
+}
+
+/** Structured server warning when a write gives up on contention. Path and code only: no IDs, PII or messages. */
+export function logContentionExhausted(path: string, error: unknown, kind: "conflict" | "timeout" = error instanceof TransactionConflictError ? "conflict" : "timeout") {
+  console.warn(JSON.stringify({ event: "write.contention.exhausted", path, kind, code: contentionCode(error) }));
+}
+
+/** Runs a retried write and returns contention as a typed failure, so the real
+ * wording survives production's masking of thrown server-action messages.
+ * Exhausted conflict retries and lock/transaction timeouts get distinct wording;
+ * every other error is rethrown unchanged. */
+export async function contentionResult<T>(path: string, run: () => Promise<T>): Promise<T | ContentionFailure> {
+  try { return await run(); }
+  catch (error) {
+    if (error instanceof TransactionConflictError) {
+      logContentionExhausted(path, error, "conflict");
+      return { ok: false, contention: "conflict", error: TRANSACTION_CONFLICT_MESSAGE };
+    }
+    if (isWriteContention(error)) {
+      logContentionExhausted(path, error, "timeout");
+      return { ok: false, contention: "timeout", error: WRITE_TIMEOUT_MESSAGE };
+    }
+    throw error;
+  }
 }

@@ -1,4 +1,5 @@
 "use server";
+import { ActionError, actionResult } from "@/lib/action-result";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { scheduleInput, resolveScheduleTime, requireFutureSchedule } from "@/lib/communication-schedule";
@@ -11,25 +12,25 @@ import { captureRecipientAudience } from "@/utils/recipient-audience";
 import { boundedParse } from "@/lib/bounded-input";
 
 const uuid=z.string().uuid();
-export async function saveCommunicationSchedule(input: unknown) {
+async function saveCommunicationScheduleCommand(input: unknown) {
  const data=boundedParse(scheduleInput, input);
  const scheduledAt=resolveScheduleTime(data.localTime,data.timeZone,data.occurrence);
  const {user}=await requireClubPermission(data.clubId,["meetings.manage"]);
  // A temporary support session must not mint authority that outlives that session.
- if(await supportContext()) throw Error("Leave support mode before scheduling.");
+ if(await supportContext()) throw new ActionError("Leave support mode before scheduling.", "FORBIDDEN");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,data.clubId,user.id,["meetings.manage"]);
   const previous=await tx.scheduledCommunication.findFirst({where:{id:data.id,clubId:data.clubId,kind:"ANNOUNCEMENT"}});
-  if(previous && previous.senderId!==user.id) throw Error("Only the sender can edit this scheduled send.");
+  if(previous && previous.senderId!==user.id) throw new ActionError("Only the sender can edit this scheduled send.", "FORBIDDEN");
   const values={title:data.title,body:data.body,audience:data.audience,recipientMode:data.recipientMode,scheduledAt,timeZone:data.timeZone,localTime:data.localTime,occurrence:data.occurrence};
   // Response-loss retries do not recapture a fixed snapshot or increment revision.
   if(previous && previous.status==="SCHEDULED" && audienceKey({title:previous.title,body:previous.body,audience:previous.audience,recipientMode:previous.recipientMode,scheduledAt:previous.scheduledAt.toISOString(),timeZone:previous.timeZone,localTime:previous.localTime,occurrence:previous.occurrence})===audienceKey({...values,scheduledAt:scheduledAt.toISOString()}) && previous.revision===(data.revision===null?0:data.revision+1)) return {id:previous.id,revision:previous.revision,scheduledAt:previous.scheduledAt};
   requireFutureSchedule(scheduledAt);
-  if(previous && (previous.revision!==data.revision || !["SCHEDULED","FAILED"].includes(previous.status))) throw Error("Scheduled send changed or already published. Reload the page and try again.");
-  if(!previous && data.revision!==null) throw Error("Scheduled send unavailable.");
-  if(!previous && await tx.scheduledCommunication.count({where:{clubId:data.clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100) throw Error("This club has 100 queued sends. Cancel unused sends first.");
+  if(previous && (previous.revision!==data.revision || !["SCHEDULED","FAILED"].includes(previous.status))) throw new ActionError("Scheduled send changed or already published. Reload the page and try again.", "STALE");
+  if(!previous && data.revision!==null) throw new ActionError("Scheduled send unavailable.", "NOT_FOUND");
+  if(!previous && await tx.scheduledCommunication.count({where:{clubId:data.clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100) throw new ActionError("This club has 100 queued sends. Cancel unused sends first.");
   const snapshot=await captureRecipientAudience(tx,data.clubId,user.id,data.audience);
-  if(!snapshot.userIds.length) throw Error("No one in this audience can receive this.");
+  if(!snapshot.userIds.length) throw new ActionError("No one in this audience can receive this.");
   const json=snapshot as unknown as Prisma.InputJsonValue;
   const saved=previous?await tx.scheduledCommunication.update({where:{id:previous.id},data:{...values,snapshot:json,revision:{increment:1},status:"SCHEDULED",failureCode:null}}):await tx.scheduledCommunication.create({data:{...values,id:data.id,clubId:data.clubId,senderId:user.id,actorId:user.id,requestKey:data.id,snapshot:json}});
   await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,targetId:saved.id,action:"communication.schedule.save",details:{revision:saved.revision,recipientMode:data.recipientMode,scheduledAt:scheduledAt.toISOString(),count:snapshot.userIds.length}}});
@@ -64,17 +65,25 @@ export async function getCommunicationSchedules(clubId:string) {
   });
  });
 }
-export async function cancelCommunicationSchedule(clubId:string,id:string,revision:number) {
+async function cancelCommunicationScheduleCommand(clubId:string,id:string,revision:number) {
  uuid.parse(clubId);uuid.parse(id);z.number().int().nonnegative().parse(revision);
  const {user}=await requireClubPermission(clubId,["meetings.manage"]);
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,["meetings.manage"]);
   const row=await tx.scheduledCommunication.findFirst({where:{id,clubId,kind:"ANNOUNCEMENT"}});
-  if(!row) throw Error("Scheduled send unavailable.");
+  if(!row) throw new ActionError("Scheduled send unavailable.", "NOT_FOUND");
   if(row.status==="CANCELLED"&&row.revision===revision+1) return {cancelled:true};
-  if(row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status)) throw Error("Scheduled send changed or already published. Reload the page and try again.");
+  if(row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status)) throw new ActionError("Scheduled send changed or already published. Reload the page and try again.", "STALE");
   await tx.scheduledCommunication.update({where:{id},data:{status:"CANCELLED",revision:{increment:1},failureCode:null}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:id,action:"communication.schedule.cancel",details:{revision}}});
   return {cancelled:true};
  });
+}
+
+export async function saveCommunicationSchedule(...args: Parameters<typeof saveCommunicationScheduleCommand>) {
+  return actionResult(() => saveCommunicationScheduleCommand(...args), "saveCommunicationSchedule")
+}
+
+export async function cancelCommunicationSchedule(...args: Parameters<typeof cancelCommunicationScheduleCommand>) {
+  return actionResult(() => cancelCommunicationScheduleCommand(...args), "cancelCommunicationSchedule")
 }

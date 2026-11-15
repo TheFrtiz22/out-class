@@ -6,7 +6,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { liveRoomFields, roomScope } from "@/lib/voting-room";
@@ -14,6 +14,7 @@ import { allowedByProfileCeiling, normalizeProfileFieldVisibility } from "@/lib/
 import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { votingHighlightChoices } from "@/utils/voting-room-presentation";
 import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
+import { joinMeetingPreview } from "@/lib/voting-session-setup";
 
 export async function getLiveVotingSetup(input:unknown){
   const d=z.object({clubId:z.string().uuid(),cycleId:z.string().uuid().optional(),roundId:z.string().uuid().optional()}).strict().parse(input);
@@ -29,7 +30,7 @@ export async function getLiveVotingSetup(input:unknown){
     if(d.roundId&&!round||d.cycleId&&!cycle)throw Error("The selected cycle or round is unavailable in this club.");
     if(round&&!round.anonymousReview&&!hasPermission(m,"applicants.identify"))throw Error("Identified review permission required.");
     const apps=round&&cycle?await tx.application.findMany({where:{clubId:d.clubId,roundId:round.id,recruitmentCycleId:cycle.id,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}},select:{id:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}},orderBy:[{submittedAt:"asc"},{id:"asc"}]}):[];
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,status:"ACTIVE",user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const voters=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(!round||round.anonymousReview||hasPermission(v,"applicants.identify")));
     const evidence=interviewCapabilities(m);
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});
@@ -66,7 +67,8 @@ export async function getLiveVotingJoinInfo(input:unknown){
     if(round.archivedAt||cycle?.archivedAt)return {status:"EXPIRED" as const};
     try{if(!roomAuthority(s,m,round.anonymousReview).voter)return {status:"DENIED" as const};}catch{return {status:"DENIED" as const};}
     if(s.state==="COMPLETED"||s.finalizedAt)return {status:"ENDED" as const};
-    return {status:s.participants.find(p=>p.memberId===m.id)?.joinedAt?"JOINED" as const:"READY" as const};
+    const meeting=joinMeetingPreview((s.presentationOptions as {meeting?:unknown}|null)?.meeting,s.state==="DRAFT"&&!s.startedAt);
+    return {status:s.participants.find(p=>p.memberId===m.id)?.joinedAt?"JOINED" as const:"READY" as const,meeting};
   },votingReadLimits);
 }
 export async function joinLiveVotingRoom(input:unknown){

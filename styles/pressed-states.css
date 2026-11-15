@@ -1,0 +1,90 @@
+/* Pressed states: the one home for :active feedback on clickable controls (polish pass, item 4).
+   - Tone: a press shade painted as a full inset shadow over the control's own fill (tokens in
+     styles/navigation-glass.css): --oc-glass-press-shade on light controls, --oc-glass-navy-press-shade on navy
+     and solid fills, --oc-glass-on-navy-press-shade on transparent controls over navy glass.
+   - Settle: standalone pills, buttons and cards scale to --oc-press-scale (large cards --oc-press-scale-large).
+     Items inside a track or list (tabs, segments, menu items, nav items, rows) take the tone only.
+   - Reduced motion keeps the tone and drops every transform; the scale rules live in a no-preference block.
+   - Disabled, aria-disabled and loading controls never press. Tone rules skip :focus-visible, so focus rings
+     and their halos are unchanged while a key is held.
+   - Touch: nothing here depends on (hover: hover). iOS Safari applies :active only when a touchstart listener
+     exists; React's root listener (the app hydrates on document) provides it. */
+
+/* Button and IconButton: every variant. Layered with the variant visuals so call-site utilities still win. */
+@layer components {
+  [data-button]:not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+  [data-button]:is([data-variant="default"], [data-variant="glass-primary"], [data-variant="destructive"]):not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade); }
+  [data-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="glass"], [data-variant="ghost"], [data-variant="accent"]):not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+  [data-variant="glass-navy"] [data-button][data-variant="ghost"]:not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-on-navy-press-shade); }
+  [data-button][data-variant="link"]:not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):active { box-shadow: none; opacity: .72; }
+  :is([data-theme="present"], .oc-focus-frame:has(.oc-present-surface) .oc-focus-bar) [data-button]:not([data-variant="link"]):not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade); }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-button]:not([data-variant="link"]):not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):active { transform: scale(var(--oc-press-scale)); }
+  }
+}
+
+/* Shared primitives in a track or list: tabs, menu, select and command items, fields and toggles. Unlayered:
+   their resting shadows come from utilities and unlayered rules. */
+:is([data-slot="tabs-trigger"], [data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-checkbox-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"], [data-slot="select-item"], [data-slot="command-item"], [data-slot="select-trigger"], [data-slot="checkbox"], [data-slot="switch"]:not(.oc-toggle-switch), .oc-toggle):not(:disabled):not([data-disabled=""]):not([data-disabled="true"]):not([aria-disabled="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+[data-slot="tabs-list"][data-variant="segmented"] [data-slot="tabs-trigger"][data-state="active"]:not(:disabled):not([data-disabled=""]):not([data-disabled="true"]):not([aria-disabled="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade); }
+:is([data-slot="checkbox"]:is([data-state="checked"], [data-state="indeterminate"]), [data-slot="switch"][data-state="checked"]):not(:disabled):not([data-disabled=""]):not([data-disabled="true"]):not([aria-disabled="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade); }
+input[type="checkbox"].oc-checkbox:not(:disabled):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+
+/* Chips, filter pills and section tabs (SegmentedControl, FilterChips, SectionTabs), the stepper and the search clear. */
+:is(.oc-segmented-control button, .oc-segmented-control .oc-filter-chips-more, .oc-section-tabs > a[data-segment], button.oc-stepper-step, .oc-search-field-clear):not(:disabled):not([aria-disabled="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+:is(.oc-segmented-control button[data-selected], .oc-section-tabs > a[data-segment][data-selected]):not(:disabled):not([aria-disabled="true"]):not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade); }
+
+/* List rows and cards that act as links. */
+.oc-dt tbody tr[data-openable]:active > td { box-shadow: var(--oc-glass-press-shade); }
+.oc-dt-cards > li:has(button.oc-dt-card-open:active) { box-shadow: var(--oc-glass-press-shade); }
+[data-product-shell] .oc-membership-card article > a:not(:focus-visible):active,
+[data-product-shell] .oc-calendar-workspace section > ul > li > button:not(:disabled):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+:is(a, button):is([data-slot="card"], [data-slot="panel"]):not(:disabled):not(:focus-visible):active,
+[data-product-shell] .oc-applicant-board button[data-applicant-id]:not(:disabled):not(:focus-visible):active,
+.oc-explore-card article:has(:is(h3 button, .oc-explore-open):active),
+:is(.oc-explore-available, .oc-explore-suggested-list) button:not(:disabled):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade), var(--oc-content-shadow); }
+.oc-home-furthest-card:not(:disabled):not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade), var(--oc-glass-navy-depth); }
+.oc-directory-recruitment button:not(:disabled):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+.oc-directory-recruitment button[aria-pressed="true"]:not(:disabled):not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade); }
+
+/* Navigation: rail and dock items, the context sidebar and the phone bar sit on navy glass. */
+.oc-dock-rail nav :is(a, button):not(:disabled):not(:focus-visible):active,
+.oc-context-sidebar nav :is(a, button):not(:disabled):not(:focus-visible):active,
+.oc-mobile-destination:not(:disabled):not(:focus-visible):active { box-shadow: var(--oc-glass-on-navy-press-shade); }
+
+/* Glass header: utility circles, the search pill, workspace segments, the club switch and its menus. */
+.oc-product-header .oc-floating-circle:not(:disabled):not(:focus-visible):active,
+button.oc-header-club:not(:disabled):not(:focus-visible):active,
+.oc-evolving-toggle .oc-evolving-segments .oc-workspace-option:not([aria-current="page"]):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+.oc-evolving-toggle .oc-evolving-segments .oc-workspace-option[aria-current="page"]:not(:focus-visible):active { box-shadow: var(--oc-glass-navy-press-shade); }
+.oc-product-header .oc-floating-search:not(:disabled):active::before { box-shadow: var(--oc-glass-press-shade), var(--oc-floating-shadow); }
+:is(.oc-header-club-menu, .oc-floating-account-menu, .oc-notification-item-menu) [role="menuitem"]:not([data-disabled]):not(:focus-visible):active { box-shadow: var(--oc-glass-press-shade); }
+
+/* Corkboard: a pressed flyer sinks back toward the board and its shadow tightens. */
+.oc-pinned-flyer:not(:disabled):not([data-selected="true"]):active { box-shadow: 1px 2px 4px color-mix(in srgb, var(--oc-glass-navy-solid) 30%, transparent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(a, button):is([data-slot="card"], [data-slot="panel"]):not(:disabled):active,
+  [data-product-shell] .oc-applicant-board button[data-applicant-id]:not(:disabled):active,
+  .oc-explore-card article:has(:is(h3 button, .oc-explore-open):active),
+  .oc-home-furthest-card:not(:disabled):active { transform: scale(var(--oc-press-scale-large)); }
+  :is(.oc-explore-available, .oc-explore-suggested-list) button:not(:disabled):active,
+  .oc-directory-recruitment button:not(:disabled):active,
+  .oc-product-header .oc-floating-circle:not(:disabled):active,
+  .oc-product-header .oc-floating-search:not(:disabled):active,
+  button.oc-header-club:not(:disabled):active { transform: scale(var(--oc-press-scale)); }
+  .oc-pinned-flyer:not(:disabled):not([data-selected="true"]):active { transform: rotate(0deg) translateY(-1px) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-button]:active,
+  :is(a, button):is([data-slot="card"], [data-slot="panel"]):active,
+  [data-product-shell] .oc-applicant-board button[data-applicant-id]:active,
+  .oc-explore-card article:has(:is(h3 button, .oc-explore-open):active),
+  .oc-home-furthest-card:active,
+  :is(.oc-explore-available, .oc-explore-suggested-list) button:active,
+  .oc-directory-recruitment button:active,
+  .oc-product-header :is(.oc-floating-circle, .oc-floating-search):active,
+  button.oc-header-club:active { transform: none !important; }
+  /* The flyer keeps its pinned tilt; only the shadow changes. */
+  .oc-pinned-flyer:active { transform: rotate(var(--flyer-rotation)) !important; }
+}

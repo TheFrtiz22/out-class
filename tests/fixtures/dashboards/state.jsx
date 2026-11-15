@@ -39,6 +39,10 @@ export function useApplicationState() {
 }
 // Self-loading cards that call server actions are outside these fixtures.
 export function RecruitingInsightsCards() { return null }
+// Self-loading controls that call server actions are outside these fixtures.
+export function CalendarSubscribe() { return null }
+// Live accounts only (server actions); the fixture has none. Covered by tests/graduation.test.cjs.
+export function GraduationPrompt() { return null }
 export function useDemoMode() { return { isDemoEnabled: true, allowed: false } }
 // Home's Suggested clubs: one saved club and a small public directory (the app's root layout provides CorkboardProvider).
 const directory = [
@@ -47,5 +51,8 @@ const directory = [
 ]
 export function useCorkboard() { return { items: scenario() === 'full' ? [{ club: directory[0], savedAt: iso(at(-day)) }] : [], loading: false, authenticated: true, error: '', pending: new Set(), refresh: async () => {}, saveClub: async () => {} } }
 export async function getClubDirectory() { return { clubs: directory } }
+export async function getMyInterestSurvey() { return null }
 export async function getDashboardReviewQueue(clubId, roundId) { await new Promise(resolve => setTimeout(resolve, 200)); return [{ id: 'queue-r1', label: 'Applicant 7Q2K', round: 'Written review', anonymous: true }] }
 export function ApplicantReviewPreview() { return null }
+// The Report control reaches server-only modules (support audit, crypto); fixtures have no session to report from.
+export function ReportContentButton() { return null }

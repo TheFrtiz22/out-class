@@ -1,7 +1,7 @@
 "use server"
 
 import { lockSchedulingPeople } from "@/utils/panel-publication"
-import { isWriteContention } from "@/utils/club-write-transaction"
+import { isWriteContention, logContentionExhausted, retryTransactionConflict, TransactionConflictError } from "@/utils/club-write-transaction"
 import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts"
 import { lockOperationalClub, assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -9,16 +9,19 @@ import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
-import { hasPermission } from "@/lib/permissions"
+import { hasPermission, activeMemberWhere } from "@/lib/permissions"
+import { interviewCapabilities } from "@/lib/interview-access"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
-import { roomInputSchema, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
+import { roomInputSchema, roomTimesInputSchema, roomTimeRemovalSchema, slotHasInterviewers, roomRenameSchema, roomExternalBookingSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type InterviewRoom, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms";
 import { revalidatePath } from "next/cache"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
 
 import { syncBookingPanel } from "@/utils/interview-scheduling-access"
 import { notifyInterviewBookingChange } from "@/utils/interview-assignment-notifications"
 import { interviewBookingCoverage } from "@/utils/interview-booking"
 import { boundedParse } from "@/lib/bounded-input"
+import { ActionError, actionResult } from "@/lib/action-result";
 
 const uuid = z.string().uuid()
 const roomInclude = { slots: { include: { _count: { select: { bookings: true } } }, orderBy: { startTime: "asc" as const } } }
@@ -29,21 +32,24 @@ function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
     slots: room.slots.filter(s => !applicant || +s.startTime > Date.now() && (!s.panelScheduleVersionId || s.publishedPanelMemberIds.length>0)).map(s => ({ id: s.id, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), capacity: s.capacity, booked: s._count.bookings, ...(!applicant ? { interviewersNeeded: s.interviewersNeeded, staffingRevision: s.staffingRevision, publishedPanelMemberIds:s.publishedPanelMemberIds,panelScheduleVersionId:s.panelScheduleVersionId } : {}) })) }
 }
 async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshReads=false): Promise<T> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await prisma.$transaction(async tx => {
-        // Fail fast under a burst instead of holding a pooled connection for a minute.
-        await tx.$queryRaw`SELECT set_config('lock_timeout', '8000', true)`
-        return fn(tx)
-      }, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable, timeout: 20000, maxWait: 10000 })
+  try {
+    // A deadlock (e.g. with a manual panel grant locking the same people in another order)
+    // or a serialization failure rolls the whole transaction back; it is re-run from the start.
+    return await retryTransactionConflict(() => prisma.$transaction(async tx => {
+      // Fail fast under a burst instead of holding a pooled connection for a minute.
+      await tx.$queryRaw`SELECT set_config('lock_timeout', '8000', true)`
+      return fn(tx)
+    }, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable, timeout: 20000, maxWait: 10000 }))
+  }
+  catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? error.code : ""
+    if (error instanceof TransactionConflictError) logContentionExhausted("interview.rooms", error)
+    if (error instanceof TransactionConflictError || code === "P2002") throw new ActionError("The schedule changed while saving. Reload the page and try again.")
+    if (isWriteContention(error)) {
+      logContentionExhausted("interview.rooms", error, "timeout")
+      throw new ActionError("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
     }
-    catch (error) {
-      const code = error && typeof error === "object" && "code" in error ? error.code : ""
-      if (code === "P2034" && attempt < 2) continue
-      if (code === "P2034" || code === "P2002") throw new Error("The schedule changed while saving. Reload the page and try again.")
-      if (isWriteContention(error)) throw new Error("Many people are scheduling right now. Your current reservation is unchanged. Please try again.")
-      throw error
-    }
+    throw error
   }
 }
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
@@ -52,14 +58,14 @@ export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const [club, rounds, members, rooms, bookings, cycles] = await Promise.all([
     prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true } }),
     prisma.pipelineRound.findMany({ where: { clubId, archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true, configuration: true, type: true, bookingPublishedAt: true, bookingPaused: true, bookingRevision: true, bookingCycleId: true, bookingAllowCancellation: true, bookingAllowRescheduling: true } }),
-    prisma.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
+    prisma.clubMember.findMany({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
     prisma.interviewRoom.findMany({ where: { clubId }, include: roomInclude, orderBy: { createdAt: "desc" } }),
     prisma.interviewBooking.findMany({ where: { slot: { clubId, roomId: { not: null } } }, include: { slot: true, round: { select: { anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } }),
     prisma.recruitmentCycle.findMany({ where: { clubId, archivedAt: null }, select: { id: true, name: true }, orderBy: { createdAt: "desc" } }),
   ])
   return { clubName: club.name, cycles, rounds: rounds.map(r=>({id:r.id,name:r.name,type:r.type,configuration:r.configuration,booking:{...r,bookingPublishedAt:r.bookingPublishedAt?.toISOString()??null}})), members: members.map(m => ({ id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email })), rooms: rooms.map(r => presentRoom(r)), bookings: bookings.map(b => ({ id: b.id, slotId: b.slotId, roomId: b.slot.roomId!, roundId: b.roundId!, applicationId: b.applicationId, candidate: hasPermission(membership, "applicants.identify") && b.round?.anonymousReview === false && b.application.round.anonymousReview === false && b.application.student.studentProfile ? `${b.application.student.studentProfile.firstName} ${b.application.student.studentProfile.lastName}` : `Applicant ${b.applicationId.slice(-6)}`, startTime: b.slot.startTime.toISOString(), endTime: b.slot.endTime.toISOString(), location: b.slot.location })) }
 }
-export async function createInterviewRoom(raw: RoomInput) {
+async function createInterviewRoomCommand(raw: RoomInput) {
   const input = boundedParse(roomInputSchema, raw)
   const { user } = await requireClubPermission(input.clubId, ["interviews.manage"])
   const slots = roomSlots(input)
@@ -67,14 +73,15 @@ export async function createInterviewRoom(raw: RoomInput) {
     // Serialize competing room creation and overlap checks within this club.
     await lockOperationalClub(tx, input.clubId)
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null } })
-    if (!round) throw new Error("Choose a recruitment round from this club.")
+    if (!round) throw new ActionError("Choose a recruitment round from this club.")
     const panelIds = [...new Set(input.panelMemberIds)]
-    if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } }) !== panelIds.length) throw new Error("Choose interviewers who belong to this club.")
+    if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, ...activeMemberWhere, user: { disabledAt: null } } }) !== panelIds.length) throw new ActionError("Choose interviewers who belong to this club.")
     const existing = await tx.interviewSlot.findMany({ where: { clubId: input.clubId, startTime: { lt: new Date(+slots[slots.length - 1].endTime + 3600000) }, endTime: { gt: new Date(+slots[0].startTime - 3600000) }, OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }, include: { room: true } })
     for (const slot of slots) for (const other of existing) {
-      const sameRoom = other.location.trim().toLowerCase() === input.location.toLowerCase() || other.room?.name.trim().toLowerCase() === input.name.toLowerCase()
+      // Names are free-text labels; the location identifies the physical room.
+      const sameRoom = other.location.trim().toLowerCase() === input.location.toLowerCase()
       const sharedPanel = other.room?.panelMemberIds.some(id => panelIds.includes(id))
-      if ((sameRoom || sharedPanel) && overlaps(slot, other, Math.max(input.buffer, other.room?.buffer ?? 0))) throw new Error(sharedPanel ? "An interviewer already has an overlapping room schedule." : "This room or location already has overlapping interview slots.")
+      if ((sameRoom || sharedPanel) && overlaps(slot, other, Math.max(input.buffer, other.room?.buffer ?? 0))) throw new ActionError(sharedPanel ? "An interviewer already has an overlapping room schedule." : "This room or location already has overlapping interview slots.")
     }
     const room = await tx.interviewRoom.create({ data: { clubId: input.clubId, roundId: input.roundId, name: input.name, location: input.location, kind: input.kind, timezone: input.timezone, duration: input.duration, buffer: input.buffer, interviewersNeeded: input.interviewersNeeded ?? 2, panelMemberIds: panelIds, slots: { create: slots.map(s => ({ ...s, clubId: input.clubId, location: input.location })) } } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.create" } })
@@ -83,23 +90,114 @@ export async function createInterviewRoom(raw: RoomInput) {
   revalidatePath(`/club/${input.clubId}/workspace`)
   return result
 }
-export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean }) {
+type RoomRow = Prisma.InterviewRoomGetPayload<object>
+/**
+ * Slots without a published panel fall back to the room-level approval in every reader. In a room
+ * that also uses panel publication that approval is outdated, so it is retired: slots without a
+ * published panel stay unstaffed until a publication staffs them. Retiring revokes booking access
+ * that still rests on the approval, so it refuses instead when any such booking exists. In a room
+ * that only uses the room approval, every approved panelist must still be able to interview
+ * (same rule as approveInterviewRoomPanel) and is held to their other official commitments.
+ */
+async function settleRoomApproval(tx: AppTransactionClient, room: RoomRow, newSlots: { startTime: Date; endTime: Date }[], bookedMessage: string) {
+  if (!room.panelApprovedBy) return null
+  if (await tx.interviewSlot.count({ where: { roomId: room.id, panelScheduleVersionId: { not: null } } })) {
+    if (await tx.interviewBooking.count({ where: { slot: { roomId: room.id, panelScheduleVersionId: null } } })) throw new ActionError(bookedMessage)
+    const unstaffedSlotIds = (await tx.interviewSlot.findMany({ where: { roomId: room.id, panelScheduleVersionId: null }, select: { id: true } })).map(s => s.id)
+    const round = await tx.pipelineRound.findFirst({ where: { id: room.roundId, clubId: room.clubId }, select: { bookingSlots: true, bookingPublishedAt: true } })
+    const offered = round?.bookingPublishedAt && Array.isArray(round.bookingSlots) ? new Set((round.bookingSlots as { id?: unknown }[]).map(s => s?.id)) : new Set<unknown>()
+    await tx.interviewRoom.update({ where: { id: room.id }, data: { approvedPanelMemberIds: [], panelApprovedBy: null, panelApprovalRevision: { increment: 1 } } })
+    return { previousApprovedBy: room.panelApprovedBy, approvedPanelMemberIds: room.approvedPanelMemberIds, unstaffedSlotIds, noLongerOfferedSlotIds: unstaffedSlotIds.filter(id => offered.has(id)) }
+  }
+  const legacy = room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id))
+  if (!legacy.length) return null
+  const members = await tx.clubMember.findMany({ where: { id: { in: legacy }, clubId: room.clubId, ...activeMemberWhere, user: { disabledAt: null } } })
+  if (members.length !== legacy.length || members.some(m => !interviewCapabilities(m).participate)) throw new ActionError("Someone on this room's approved panel can no longer interview. Ask the owner to re-approve the panel first.")
+  if (newSlots.length) {
+    await lockSchedulingPeople(tx, { exclusive: members.map(m => m.userId) })
+    await assertOfficialPanelConflicts(tx, members.map(m => m.userId), newSlots.map((s, i) => ({ id: `new:${i}`, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), buffer: room.buffer })))
+  }
+  return null
+}
+/**
+ * "Add dates" from Manage room. Adds times to this room instead of creating a same-named copy.
+ * New times start without an official panel; staffing them goes through panel publication.
+ */
+async function addInterviewRoomTimesCommand(raw: unknown) {
+  const input = boundedParse(roomTimesInputSchema, raw)
+  const { user } = await requireAuth()
+  const result = await atomic(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    // Same club-wide serialization as room creation, so overlap checks see every competing write.
+    await lockOperationalClub(tx, input.clubId)
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId } })
+    if (!room) throw new ActionError("Room unavailable.")
+    if (!await tx.pipelineRound.findFirst({ where: { id: room.roundId, clubId: input.clubId, archivedAt: null } })) throw new ActionError("Archived rounds cannot add interview times.")
+    let slots: ReturnType<typeof roomSlots>
+    try { slots = roomSlots({ ...input, timezone: SCHEDULING_TIMEZONE, duration: room.duration, buffer: room.buffer }) }
+    catch (error) { throw new ActionError(error instanceof Error ? error.message : "Check the interview times.") }
+    const existing = await tx.interviewSlot.findMany({ where: { clubId: input.clubId, startTime: { lt: new Date(+slots[slots.length - 1].endTime + 3600000) }, endTime: { gt: new Date(+slots[0].startTime - 3600000) }, OR: [{ roomId: room.id }, { roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }, include: { room: true } })
+    for (const slot of slots) for (const other of existing) {
+      const sameRoom = other.roomId === room.id || other.location.trim().toLowerCase() === room.location.trim().toLowerCase()
+      const sharedPanel = other.roomId !== room.id && other.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))
+      if ((sameRoom || sharedPanel) && overlaps(slot, other, Math.max(room.buffer, other.room?.buffer ?? 0))) throw new ActionError(sharedPanel ? "An interviewer already has an overlapping room schedule." : "This room already has interview times that overlap these.")
+    }
+    const approval = await settleRoomApproval(tx, room, slots, "Some interviews in this room still use its earlier interviewer approval, so dates can't be added here. Add them as a new room.")
+    await tx.interviewSlot.createMany({ data: slots.map(s => ({ ...s, clubId: input.clubId, roomId: room.id, location: room.location })) })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.times.add", details: { count: slots.length, dates: [...new Set(input.dates)].sort(), ...(approval ? { retiredRoomApproval: approval } : {}) } } })
+    return { id: room.id, count: slots.length, noLongerOffered: approval?.noLongerOfferedSlotIds.length ?? 0 }
+  })
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
+}
+/**
+ * "Remove time" from Manage room. Hard-deletes one time that nobody booked and nobody staffs.
+ * Published panel history keeps its immutable record of the session; times with availability
+ * exceptions (append-only, ON DELETE RESTRICT) cannot be removed.
+ */
+async function removeInterviewRoomTimeCommand(raw: unknown) {
+  const input = roomTimeRemovalSchema.parse(raw)
+  const { user } = await requireAuth()
+  const result = await atomic(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    // Club row exclusively (reservations hold it FOR SHARE), then the same slot row lock a
+    // reservation takes before counting bookings, so no booking can land in between.
+    await lockOperationalClub(tx, input.clubId)
+    await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${input.slotId} AND "clubId"=${input.clubId} FOR UPDATE`
+    const slot = await tx.interviewSlot.findFirst({ where: { id: input.slotId, clubId: input.clubId, roomId: input.roomId }, include: { room: true } })
+    if (!slot?.room || slot.room.clubId !== input.clubId) throw new ActionError("Time unavailable.")
+    if (await tx.interviewBooking.count({ where: { slotId: slot.id } })) throw new ActionError("This time has been booked, so it can't be removed.")
+    if (slotHasInterviewers(slot, slot.room)) throw new ActionError("Remove this time's interviewers in Edit Panels first, then remove the time.")
+    if (await tx.interviewAvailabilityOverride.count({ where: { slotId: slot.id } })) throw new ActionError("This time has an availability exception on record, so it can't be removed. With no interviewers it isn't offered to applicants.")
+    await tx.interviewSlot.delete({ where: { id: slot.id } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: slot.room.id, action: "interview.room.time.remove", details: { slotId: slot.id, startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), panelScheduleVersionId: slot.panelScheduleVersionId } } })
+    return { removed: slot.id }
+  })
+  revalidatePath(`/club/${input.clubId}/workspace`)
+  return result
+}
+async function setInterviewRoomOpenCommand(raw: { roomId: string; open: boolean }) {
   const input = z.object({ roomId: uuid, open: z.boolean() }).parse(raw)
   const room = await prisma.interviewRoom.findUnique({ where: { id: input.roomId } })
-  if (!room) throw new Error("Room not found.")
+  if (!room) throw new ActionError("Room not found.")
   const { user } = await requireClubPermission(room.clubId, ["interviews.manage"])
-  await atomic(async tx => {
+  const result = await atomic(async tx => {
     await authorizeClubTransaction(tx,room.clubId,user.id,["interviews.manage"])
+    let approval: Awaited<ReturnType<typeof settleRoomApproval>> = null
     if (input.open) {
       const round = await tx.pipelineRound.findFirst({ where: { id: room.roundId, clubId: room.clubId, archivedAt: null } })
-      if (!round) throw new Error("Archived rounds cannot reopen interview rooms.")
+      if (!round) throw new ActionError("Archived rounds cannot reopen interview rooms.")
+      // Reopening must not revive an outdated room approval (see settleRoomApproval); read it in-transaction.
+      Object.assign(room, await tx.interviewRoom.findUniqueOrThrow({ where: { id: room.id } }))
+      approval =await settleRoomApproval(tx, room, [], "Some interviews in this room still use its earlier interviewer approval. Ask the owner to review the room's panel before reopening.")
+      if (approval) Object.assign(room, { approvedPanelMemberIds: [], panelApprovedBy: null })
       const slots = await tx.interviewSlot.findMany({ where: { roomId: room.id, startTime: { gt: new Date() } } })
       const members=await tx.clubMember.findMany({where:{id:{in:[...new Set(slots.flatMap(s=>s.panelScheduleVersionId?s.publishedPanelMemberIds:room.approvedPanelMemberIds))]},clubId:room.clubId},select:{id:true,userId:true}})
       // Reopening adds these panelists' official commitments across clubs.
       await lockSchedulingPeople(tx,{exclusive:members.map(m=>m.userId)})
       await assertOfficialPanelConflicts(tx,members.map(m=>m.userId),slots.map(s=>({id:s.id,startTime:s.startTime.toISOString(),endTime:s.endTime.toISOString(),buffer:room.buffer,userIds:members.filter(m=>(s.panelScheduleVersionId?s.publishedPanelMemberIds:room.approvedPanelMemberIds).includes(m.id)).map(m=>m.userId)})))
       const others = await tx.interviewSlot.findMany({ where: { clubId: room.clubId, AND: [{ OR: [{ roomId: null }, { roomId: { not: room.id } }] }, { OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }] }, include: { room: true } })
-      if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.name.toLowerCase() === room.name.toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new Error("Another room now overlaps this schedule. Create a new time window instead.")
+      if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new ActionError("Another room now overlaps this schedule. Create a new time window instead.")
     }
     await tx.interviewRoom.update({ where: { id: room.id }, data: { isOpen: input.open } })
     const bookings = await tx.interviewBooking.findMany({ where: { slot: { roomId: room.id }, roundId: room.roundId } });
@@ -107,23 +205,23 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
       await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${booking.applicationId} FOR UPDATE`;
       await syncBookingPanel(tx, booking.applicationId, room.roundId, user.id);
     }
-    await tx.auditLog.create({ data: { actorId: user.id, clubId: room.clubId, targetId: room.id, action: input.open ? "interview.room.open" : "interview.room.close" } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: room.clubId, targetId: room.id, action: input.open ? "interview.room.open" : "interview.room.close", ...(approval ? { details: { retiredRoomApproval: approval } } : {}) } })
+    return { noLongerOffered: approval?.noLongerOfferedSlotIds.length ?? 0 }
   })
   revalidatePath(`/club/${room.clubId}/workspace`)
+  return result
 }
 /** Rename only. Slots keep their stored location, so confirmed reservations are unchanged. */
-export async function renameInterviewRoom(raw: unknown) {
+async function renameInterviewRoomCommand(raw: unknown) {
   const input = roomRenameSchema.parse(raw)
   const { user } = await requireAuth()
   const result = await atomic(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
-    // Room names also identify a physical room in overlap checks; serialize with room creation.
+    // Names are free-text labels (duplicates allowed); overlap checks use location and panel, not name.
     await lockOperationalClub(tx, input.clubId)
-    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, include: { slots: true } })
-    if (!room) throw new Error("Room unavailable.")
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, select: { id: true, name: true } })
+    if (!room) throw new ActionError("Room unavailable.")
     if (room.name === input.name) return { name: room.name }
-    const others = await tx.interviewRoom.findMany({ where: { clubId: input.clubId, id: { not: room.id }, name: { equals: input.name, mode: "insensitive" }, OR: [{ isOpen: true }, { slots: { some: { bookings: { some: {} } } } }] }, include: { slots: true } })
-    if (others.some(other => other.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(room.buffer, other.buffer)))))) throw new Error("Another room with this name has overlapping interview times. Choose a different name.")
     await tx.interviewRoom.update({ where: { id: room.id }, data: { name: input.name } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.rename" } })
     return { name: input.name }
@@ -132,14 +230,14 @@ export async function renameInterviewRoom(raw: unknown) {
   return result
 }
 /** Tracking only: records that the leader reserved the room in the school's system (UVA: 25Live). */
-export async function setInterviewRoomExternallyBooked(raw: unknown) {
+async function setInterviewRoomExternallyBookedCommand(raw: unknown) {
   const input = roomExternalBookingSchema.parse(raw)
   const { user } = await requireAuth()
   const result = await atomic(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     await lockOperationalClub(tx, input.clubId)
     const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId }, select: { id: true, externallyBookedAt: true } })
-    if (!room) throw new Error("Room unavailable.")
+    if (!room) throw new ActionError("Room unavailable.")
     if (!!room.externallyBookedAt === input.booked) return { externallyBookedAt: room.externallyBookedAt?.toISOString() ?? null }
     const externallyBookedAt = input.booked ? new Date() : null
     await tx.interviewRoom.update({ where: { id: room.id }, data: { externallyBookedAt } })
@@ -154,7 +252,7 @@ export async function getApplicantSchedule(applicationId: string): Promise<Appli
   const { user } = await requireAuth()
   return prisma.$transaction(async tx => {
     const application = await tx.application.findFirst({ where: { id: applicationId, studentId: user.id }, include: { club: { select: { name: true, suspendedAt: true } }, round: { include: { bookingCycle: true } } } })
-    if (!application || application.status !== "INTERVIEWING" || application.club.suspendedAt) throw new Error("An interview invitation is required to book a time.")
+    if (!application || application.status !== "INTERVIEWING" || application.club.suspendedAt) throw new ActionError("An interview invitation is required to book a time.")
     const round = application.round
     const published = !!round.bookingPublishedAt && !round.archivedAt && !round.anonymousReview && ["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) && round.bookingCycleId === application.recruitmentCycleId && !round.bookingCycle?.archivedAt
     const publicationState = !published ? "NOT_PUBLISHED" as const : round.bookingPaused ? "PAUSED" as const : "PUBLISHED" as const
@@ -174,14 +272,14 @@ export async function getApplicantSchedule(applicationId: string): Promise<Appli
     return { applicationId, clubName: application.club.name, roundName: round.name, publicationState, allowCancellation: round.bookingAllowCancellation, allowRescheduling: round.bookingAllowRescheduling, conflictingTimes, rooms: bookable, booking: booking ? { id: booking.id, applicationId, slotId: booking.slotId, roomId: booking.slot.roomId!, roundId: booking.roundId!, candidate: "You", startTime: booking.slot.startTime.toISOString(), endTime: booking.slot.endTime.toISOString(), location: booking.slot.location } : null }
   }, { timeout: 60000 })
 }
-export async function reserveInterview(raw: { applicationId: string; slotId: string }) {
+async function reserveInterviewCommand(raw: { applicationId: string; slotId: string }) {
   const input = z.object({ applicationId: uuid, slotId: uuid }).parse(raw)
   const { user } = await requireAuth()
   const booking = await atomic(async tx => {
     const initial = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } });
-    if (!initial) throw new Error("Application unavailable.");
+    if (!initial) throw new ActionError("Application unavailable.");
     // Refuse before taking any lock on other people or sessions; re-checked under lock below.
-    if (initial.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
+    if (initial.status !== "INTERVIEWING") throw new ActionError("An interview invitation is required to book a time.")
     // Club-wide scheduling changes (panels, rooms, booking policy, membership) lock the
     // club row exclusively; a reservation only needs them excluded, so reservations in
     // one club no longer wait for each other here.
@@ -195,25 +293,25 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     await lockSchedulingPeople(tx, { exclusive: [user.id], shared: panelUsers })
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${input.applicationId} FOR UPDATE`;
     const application = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } })
-    if (!application || application.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
+    if (!application || application.status !== "INTERVIEWING") throw new ActionError("An interview invitation is required to book a time.")
     // Capacity is read only after the session row is locked (concurrent reservations).
     await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${input.slotId} AND "clubId"=${application.clubId} FOR UPDATE`
     const slot = await tx.interviewSlot.findUnique({ where: { id: input.slotId }, include: { room: true, _count: { select: { bookings: true } } } })
-    if (!slot?.room || slot.clubId !== application.clubId || slot.room.roundId !== application.roundId) throw new Error("Choose a slot for your invited club and round.")
+    if (!slot?.room || slot.clubId !== application.clubId || slot.room.roundId !== application.roundId) throw new ActionError("Choose a slot for your invited club and round.")
     const existing = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: application.id, roundId: application.roundId } }, include: { slot: true } })
     if (existing?.slotId === slot.id) { await syncBookingPanel(tx, application.id, application.roundId, user.id); return { id: existing.id } }
-    if (existing && +existing.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
-    if (!slot.room.isOpen || +slot.startTime <= Date.now()) throw new Error("This slot is no longer available.")
+    if (existing && +existing.slot.startTime <= Date.now()) throw new ActionError("This interview has already started. Contact the club to change it.")
+    if (!slot.room.isOpen || +slot.startTime <= Date.now()) throw new ActionError("This slot is no longer available.")
     const round = await tx.pipelineRound.findUniqueOrThrow({ where: { id: application.roundId }, include: { bookingCycle: true } })
-    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Interview times aren’t open for your round right now.")
-    if (existing && !round.bookingAllowRescheduling) throw new Error("This club does not allow self-service rescheduling. Your original reservation is retained; contact the club.")
+    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new ActionError("Interview times aren’t open for your round right now.")
+    if (existing && !round.bookingAllowRescheduling) throw new ActionError("This club does not allow self-service rescheduling. Your original reservation is retained; contact the club.")
     const coverage = await interviewBookingCoverage(tx, application.clubId, round.id, application)
-    if (!coverage.some(s => s.slotId === slot.id && s.bookable)) throw new Error("This time can no longer provide an approved, fully staffed interview. Your current reservation is retained. Choose another time or contact the club.")
+    if (!coverage.some(s => s.slotId === slot.id && s.bookable)) throw new ActionError("This time can no longer provide an approved, fully staffed interview. Your current reservation is retained. Choose another time or contact the club.")
     await assertOfficialPanelConflicts(tx,[user.id],[{id:slot.id,startTime:slot.startTime.toISOString(),endTime:slot.endTime.toISOString(),buffer:slot.room.buffer}])
-    if (slot._count.bookings >= slot.capacity) throw new Error("That time was just booked. Choose another slot.")
+    if (slot._count.bookings >= slot.capacity) throw new ActionError("That time was just booked. Choose another slot.")
     const others = await tx.interviewBooking.findMany({ where: { application: { studentId: user.id }, ...(existing ? { id: { not: existing.id } } : {}), slot: { endTime: { gt: new Date() } } }, include: { slot: true } })
-    if (others.some(b => overlaps(slot, b.slot))) throw new Error("You already have an interview at that time.")
-    if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new Error("You already have an interview with this club. Contact the club before booking another time.")
+    if (others.some(b => overlaps(slot, b.slot))) throw new ActionError("You already have an interview at that time.")
+    if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new ActionError("You already have an interview with this club. Contact the club before booking another time.")
     if (existing) {
       await notifyInterviewBookingChange(tx, existing)
       await tx.interviewBooking.delete({ where: { id: existing.id } })
@@ -226,20 +324,20 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
   revalidatePath("/", "layout")
   return booking
 }
-export async function cancelRoomBooking(bookingId: string) {
+async function cancelRoomBookingCommand(bookingId: string) {
   uuid.parse(bookingId)
   const { user } = await requireAuth()
   await atomic(async tx => {
     const initial = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } });
-    if (!initial) throw new Error("We couldn’t find that interview.");
+    if (!initial) throw new ActionError("We couldn’t find that interview.");
     await lockOperationalClub(tx, initial.slot.clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${initial.applicationId} FOR UPDATE`;
     const booking = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } })
-    if (!booking) throw new Error("We couldn’t find that interview.")
-    if (+booking.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
+    if (!booking) throw new ActionError("We couldn’t find that interview.")
+    if (+booking.slot.startTime <= Date.now()) throw new ActionError("This interview has already started. Contact the club to change it.")
     const policy = booking.roundId ? await tx.pipelineRound.findUnique({ where: { id: booking.roundId } }) : null
-    if (policy && !policy.bookingAllowCancellation) throw new Error("This club does not allow self-service cancellation. Contact the club; your reservation is retained.")
+    if (policy && !policy.bookingAllowCancellation) throw new ActionError("This club does not allow self-service cancellation. Contact the club; your reservation is retained.")
     await notifyInterviewBookingChange(tx, booking)
     await tx.interviewBooking.delete({ where: { id: bookingId } })
     if (booking.roundId) await syncBookingPanel(tx, booking.applicationId, booking.roundId, user.id);
@@ -260,20 +358,54 @@ export async function getBookingApplication(clubId: string, roundId: string) {
 }
 
 /** Staffing metadata only. Never calls panel sync, approval or notification code. */
-export async function setInterviewStaffingRequirement(raw: unknown) {
+async function setInterviewStaffingRequirementCommand(raw: unknown) {
   const input = z.object({ clubId: uuid, roomId: uuid, slotId: uuid.optional(), revision: z.number().int().nonnegative(), needed: z.number().int().min(1).max(8).nullable() }).strict().parse(raw)
-  if (!input.slotId && input.needed === null) throw new Error("Choose 1–8 interviewers for this room.")
+  if (!input.slotId && input.needed === null) throw new ActionError("Choose 1–8 interviewers for this room.")
   const { user } = await requireAuth()
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId } })
-    if (!room) throw new Error("Room unavailable.")
-    if(await tx.interviewSlot.findFirst({where:{roomId:room.id,panelScheduleVersionId:{not:null},startTime:{gt:new Date()}}}))throw new Error("Edit staffing in a working panel revision and explicitly publish the changes.")
+    if (!room) throw new ActionError("Room unavailable.")
+    if(await tx.interviewSlot.findFirst({where:{roomId:room.id,panelScheduleVersionId:{not:null},startTime:{gt:new Date()}}}))throw new ActionError("Edit staffing in a working panel revision and explicitly publish the changes.")
     const result = input.slotId
       ? await tx.interviewSlot.updateMany({ where: { id: input.slotId, roomId: room.id, clubId: input.clubId, staffingRevision: input.revision }, data: { interviewersNeeded: input.needed, staffingRevision: { increment: 1 } } })
       : await tx.interviewRoom.updateMany({ where: { id: room.id, clubId: input.clubId, staffingRevision: input.revision }, data: { interviewersNeeded: input.needed!, staffingRevision: { increment: 1 } } })
-    if (result.count !== 1) throw new Error("Staffing requirement changed. Reload before saving.")
+    if (result.count !== 1) throw new ActionError("Staffing requirement changed. Reload before saving.")
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, action: "interview.staffing.requirement", targetId: input.slotId ?? room.id, details: { needed: input.needed } } })
     return { revision: input.revision + 1 }
   })
+}
+
+export async function reserveInterview(...args: Parameters<typeof reserveInterviewCommand>) {
+  return actionResult(() => reserveInterviewCommand(...args), "reserveInterview")
+}
+
+export async function cancelRoomBooking(...args: Parameters<typeof cancelRoomBookingCommand>) {
+  return actionResult(() => cancelRoomBookingCommand(...args), "cancelRoomBooking")
+}
+
+export async function createInterviewRoom(...args: Parameters<typeof createInterviewRoomCommand>) {
+  return actionResult(() => createInterviewRoomCommand(...args), "createInterviewRoom")
+}
+
+export async function addInterviewRoomTimes(...args: Parameters<typeof addInterviewRoomTimesCommand>) {
+  return actionResult(() => addInterviewRoomTimesCommand(...args), "addInterviewRoomTimes")
+}
+export async function removeInterviewRoomTime(...args: Parameters<typeof removeInterviewRoomTimeCommand>) {
+  return actionResult(() => removeInterviewRoomTimeCommand(...args), "removeInterviewRoomTime")
+}
+export async function setInterviewRoomOpen(...args: Parameters<typeof setInterviewRoomOpenCommand>) {
+  return actionResult(() => setInterviewRoomOpenCommand(...args), "setInterviewRoomOpen")
+}
+
+export async function renameInterviewRoom(...args: Parameters<typeof renameInterviewRoomCommand>) {
+  return actionResult(() => renameInterviewRoomCommand(...args), "renameInterviewRoom")
+}
+
+export async function setInterviewRoomExternallyBooked(...args: Parameters<typeof setInterviewRoomExternallyBookedCommand>) {
+  return actionResult(() => setInterviewRoomExternallyBookedCommand(...args), "setInterviewRoomExternallyBooked")
+}
+
+export async function setInterviewStaffingRequirement(...args: Parameters<typeof setInterviewStaffingRequirementCommand>) {
+  return actionResult(() => setInterviewStaffingRequirementCommand(...args), "setInterviewStaffingRequirement")
 }

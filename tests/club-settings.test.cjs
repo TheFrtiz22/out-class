@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
 const {randomUUID}=require('node:crypto');
 const clubId=randomUUID(), q1=randomUUID(),q2=randomUUID(),r1=randomUUID(),r2=randomUUID();
@@ -7,7 +8,7 @@ function harness() {
  const tx={evaluation:{findMany:async()=>state.historicalNames.map(value=>typeof value==='string'?{round:value,roundId:null}:value),updateMany:async({where,data})=>{state.renamedReviews={where,data};}},$queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:state.disabled?new Date():null})},clubMember:{findUnique:async()=>state.member},club:{findUniqueOrThrow:async()=>state.club,update:async({data})=>{for(const[k,v]of Object.entries(data))state.club[k]=v?.increment?state.club[k]+v.increment:v;}},application:{count:async()=>state.activeApplicants},interviewRoom:{count:async()=>state.openRooms},votingSession:{count:async()=>state.voting},auditLog:{create:async({data})=>state.audits.push(data)}};
  for(const[model,key]of [['applicationQuestion','questions'],['pipelineRound','rounds']])tx[model]={findMany:async()=>state[key].filter(r=>!r.archivedAt),create:async({data})=>{if(state[key].some(r=>r.id===data.id))throw Error('Unique ID');state[key].push({...data,_count:{answers:0}});},update:async({where,data})=>Object.assign(state[key].find(r=>r.id===where.id),data),delete:async({where})=>{state[key]=state[key].filter(r=>r.id!==where.id);}};
  const prisma={$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}};
- const api=load('actions/club-settings.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async()=>{if(!state.allowed)throw Error('Denied');return{user:{id:'actor'}};}},'next/cache':{revalidatePath:path=>state.invalidated.push(path),revalidateTag:()=>{}}});
+ const api=unwrapActions(load('actions/club-settings.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async()=>{if(!state.allowed)throw Error('Denied');return{user:{id:'actor'}};}},'next/cache':{revalidatePath:path=>state.invalidated.push(path),revalidateTag:()=>{}}}));
  return{state,api};
 }
 const question=(id,prompt,type='ESSAY')=>({id,prompt,type,required:true,wordLimit:100,options:[]});

@@ -1,12 +1,14 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs'), ts = require('typescript');
+const fs = require('node:fs'), ts = require('typescript'), profileTx = require('./helpers/profile-transaction.cjs');
 function load(file, mocks = {}) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop:true } }).outputText;
   new Function('require','module','exports',code)(n => n in mocks ? mocks[n] : n.startsWith('@/lib/') ? load(n.slice(2)+'.ts',mocks) : require(n),mod,mod.exports);
   return mod.exports;
 }
+// Profile saves must not consult Terms acceptance while LEGAL_PAGES_PUBLIC is off.
+const TERMS = { hasCurrentTermsAcceptance: async () => { throw Error('Terms acceptance is not consulted while LEGAL_PAGES_PUBLIC is off') } };
 const profile = load('lib/student-profile.ts');
 const display = load('lib/applicant-display.ts');
 const owner='123e4567-e89b-12d3-a456-426614174000';
@@ -44,7 +46,7 @@ test('canonical interview/voting projection hides historical Bio/subsections and
 });
 test('identity updates persist the headshot while leaving historical bio and academic data untouched',async()=>{
   let stored={headshotUrl:null,bio:'Historical',actEnglish:34};
-  const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/prisma':{prisma:{studentProfile:{update:async({where,data})=>{assert.equal(where.userId,owner);stored={...stored,...data};return stored},findUnique:async()=>stored}}},'next/cache':{revalidatePath(){}}});
+  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/graduation':profileTx.graduation(),'@/utils/prisma':{prisma:profileTx.withProfileTransaction({studentProfile:{update:async({where,data})=>{assert.equal(where.userId,owner);stored={...stored,...data};return stored},findUnique:async()=>stored}})},'next/cache':{revalidatePath(){}}});
   await api.updateStudentProfileSection({section:'identity',firstName:'Jordan',lastName:'Avery',headshotUrl:`${owner}/new.png`,bio:'Forged'});
   assert.equal(stored.headshotUrl,`${owner}/new.png`);assert.equal(stored.bio,'Historical');assert.equal(stored.actEnglish,34);
   const refreshed=await api.getStudentProfile();assert.equal(refreshed.profile.headshotUrl,stored.headshotUrl);
@@ -55,7 +57,7 @@ function uploads({deny=false,publicBucket=false,error=false}={}) {
   process.env.SUPABASE_SECRET_KEY='test-only';
   const bucket={createSignedUploadUrl:async(path)=>({data:{signedUrl:'https://signed',token:'token',path}}),getPublicUrl:path=>({data:{publicUrl:`https://storage.example.com/${path}`}}),uploadToSignedUrl:async(path,token,bytes,opts)=>{writes.push({path,token,bytes,opts});return{error:error?{}:null}}};
   const client={storage:{from:()=>bucket}};
-  const api=load('actions/storage.ts',{'@/utils/auth':{requireAuth:async()=>{if(deny)throw Error('Denied');return{user:{id:owner}}}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'@/utils/supabase/server':{createClient:async()=>client},'next/headers':{cookies:async()=>({})},'@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}})}})}});
+  const api=load('actions/storage.ts',{'@/utils/auth':{requireAuth:async()=>{if(deny)throw Error('Denied');return{user:{id:owner}}}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'@/utils/supabase/server':{createClient:async()=>client},'next/headers':{cookies:async()=>({})},'@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}}),from:()=>({list:async()=>({data:[],error:null})})}})}});
   return {api,writes};
 }
 function form(bytes=fs.readFileSync('public/demo/sample-resume.pdf'),kind='resume',mime='application/pdf') {const data=new FormData();data.set('kind',kind);data.set('file',new Blob([bytes],{type:mime}),kind==='resume'?'resume.pdf':'photo.png');return data}
@@ -71,13 +73,13 @@ test('headshots use the existing owner storage flow and return a private owner r
 });
 test('interview uses a narrow panel while the leader workspace retains the shared image fallback; profile overview excludes retired sections',()=>{
   const panel=fs.readFileSync('components/applicant-intelligence.tsx','utf8');assert.match(panel,/AvatarFallback/);assert.match(panel,/AvatarImage/);assert.match(panel,/!data.anonymous/);assert.match(panel,/size-24/);
-  assert.match(fs.readFileSync('components/views/leader-dashboard/live-leader-workspace.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);
+  assert.match(fs.readFileSync('components/applicant-review/applicant-review-flow.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);
   const overview=fs.readFileSync('components/views/unified-student-profile-view.tsx','utf8');assert.doesNotMatch(overview,/profile\.bio|actEnglish|actMath|Campus involvement|TestScoreDetail/);assert.match(overview,/size-24/);
 });
 
 test('profile link edits store normalized external URLs without weakening private-key ownership',async()=>{
   let saved;
-  const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/prisma':{prisma:{studentProfile:{update:async({data})=>{saved=data;return data}}}},'next/cache':{revalidatePath(){}}});
+  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/graduation':profileTx.graduation(),'@/utils/prisma':{prisma:profileTx.withProfileTransaction({studentProfile:{update:async({data})=>{saved=data;return data}}})},'next/cache':{revalidatePath(){}}});
   const result=await api.updateStudentProfileSection({section:'links',linkedinUrl:'linkedin.com/in/example',resumeUrl:'example.com/resume.pdf'});assert.ok(!result.error);assert.equal(saved.resumeUrl,'https://example.com/resume.pdf');assert.equal(saved.linkedinUrl,'https://linkedin.com/in/example');
   assert.ok((await api.updateStudentProfileSection({section:'links',linkedinUrl:null,resumeUrl:'00000000-0000-4000-8000-000000000001/private.pdf'})).error);
 });

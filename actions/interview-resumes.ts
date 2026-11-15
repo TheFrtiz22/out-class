@@ -6,29 +6,54 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
+import { authorizeInterview, interviewActionResult, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, annotationContentSchema } from "@/lib/interview-access";
 import { isPrivateResume, validateProfileFile } from "@/lib/student-profile";
-import { validateResumeAnchor } from "@/lib/resume-anchor-validation";
+import { validateResumeAnchor, validateResumeArea } from "@/lib/resume-anchor-validation";
+import { isAreaAnchor } from "@/lib/resume-anchors";
 import { boundedParse } from "@/lib/bounded-input";
+import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
+import { STALE_INTERVIEW_LIST_CURSOR, decodeInterviewListCursor, interviewListFiltersSchema, interviewListLimitSchema, interviewListPage, interviewListScope } from "@/lib/interview-list-page";
 
 const documentSelect = { id: true, contentHash: true, mimeType: true, createdAt: true } as const;
 /** Explicit moderation entry point includes only preserved documents, never private question drafts. */
-export async function getInterviewResumeModerationQueue(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+async function readInterviewResumeModeration(clubId: string, filters: ApplicantInterviewFilters, cursor: unknown, withTotal: boolean, limit?: unknown) {
   z.string().uuid().parse(clubId); const { user } = await requireAuth();
-  const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
+  const selected = interviewListFiltersSchema.parse(filters), take = interviewListLimitSchema.parse(limit);
+  const listScope = interviewListScope(clubId, selected);
+  const position = decodeInterviewListCursor(cursor, "resumes", listScope);
   return prisma.$transaction(async tx => {
+    // Every page re-checks live moderation access before reading anything.
     const { caps } = await interviewActor(tx, clubId, user.id);
     if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
+    const where: Prisma.InterviewResumeDocumentWhereInput = { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } };
+    let page = where;
+    if (position) {
+      // The anchor must satisfy this request's own authorized filters; a cursor never widens scope.
+      const anchor = await tx.interviewResumeDocument.findFirst({ where: { AND: [where, { id: position.id }] }, select: { createdAt: true } });
+      if (!anchor) throw new Error(STALE_INTERVIEW_LIST_CURSOR);
+      page = { AND: [where, { OR: [{ createdAt: { lt: anchor.createdAt } }, { createdAt: anchor.createdAt, id: { lt: position.id } }] }] };
+    }
     const documents = await tx.interviewResumeDocument.findMany({
-      where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100,
+      where: page,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: take + 1,
       select: { id: true, applicationId: true, roundId: true, round: { select: { name: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
     });
-    return documents.map(d => ({ documentId: d.id, clubId, applicationId: d.applicationId, roundId: d.roundId, roundName: d.round.name, applicantName: d.application.student.studentProfile ? `${d.application.student.studentProfile.firstName} ${d.application.student.studentProfile.lastName}` : "Profile not provided" }));
+    const total = withTotal ? await tx.interviewResumeDocument.count({ where }) : 0;
+    const rows = documents.map(d => ({ documentId: d.id, clubId, applicationId: d.applicationId, roundId: d.roundId, roundName: d.round.name, applicantName: d.application.student.studentProfile ? `${d.application.student.studentProfile.firstName} ${d.application.student.studentProfile.lastName}` : "Profile not provided" }));
+    return interviewListPage(rows, r => r.documentId, "resumes", listScope, total, take);
   }, interviewTransactionOptions);
 }
-export async function getInterviewApplicantPanel(input: z.infer<typeof scope>) {
+/** One page (50) of preserved documents, newest first. `cursor` is the previous page's `nextCursor`;
+ * `limit` (up to 500) lets a refresh re-read everything already loaded in one request. */
+export async function getInterviewResumeModerationPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {
+  return readInterviewResumeModeration(clubId, filters, cursor, true, limit);
+}
+/** Earlier array contract: the first page only. The moderation UI pages with getInterviewResumeModerationPage. */
+export async function getInterviewResumeModerationQueue(clubId: string, filters: ApplicantInterviewFilters = {}) {
+  return (await readInterviewResumeModeration(clubId, filters, null, false)).items;
+}
+async function getInterviewApplicantPanelCommand(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { app } = await authorizeInterview(tx, data, user.id, "panel", "share");
@@ -38,7 +63,7 @@ export async function getInterviewApplicantPanel(input: z.infer<typeof scope>) {
   }, interviewTransactionOptions);
 }
 /** Snapshot bytes once; neither profile replacement nor student object deletion changes this version. */
-export async function pinInterviewResume(input: z.infer<typeof scope>) {
+async function pinInterviewResumeCommand(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
   const initial = await prisma.$transaction(async tx => {
     const { app } = await authorizeInterview(tx, data, user.id, "resume");
@@ -71,7 +96,7 @@ export async function pinInterviewResume(input: z.infer<typeof scope>) {
   }, interviewTransactionOptions);
 }
 const documentScope = scope.extend({ documentId: z.string().uuid() });
-export async function getInterviewResumeAnnotations(input: z.infer<typeof documentScope>) {
+async function getInterviewResumeAnnotationsCommand(input: z.infer<typeof documentScope>) {
   const data = documentScope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { member, caps } = await authorizeInterview(tx, data, user.id, "resume", "share");
@@ -81,7 +106,7 @@ export async function getInterviewResumeAnnotations(input: z.infer<typeof docume
     return { document, annotations: annotations.map(({ author, ...a }) => ({ ...a, authorName: author.user.studentProfile ? `${author.user.studentProfile.firstName} ${author.user.studentProfile.lastName}` : "Club interviewer", canEdit: a.authorId === member.id || caps.moderateResume })) };
   }, interviewTransactionOptions);
 }
-export async function saveInterviewResumeAnnotation(input: unknown) {
+async function saveInterviewResumeAnnotationCommand(input: unknown) {
   const data = boundedParse(documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0).optional(), content: annotationContentSchema }).strict(), input);
   const { user } = await requireAuth();
   if (data.content.anchor) {
@@ -92,7 +117,9 @@ export async function saveInterviewResumeAnnotation(input: unknown) {
       return document.content;
     });
     // PDF parsing holds no database locks; the write transaction reauthorizes afterward.
-    await validateResumeAnchor(bytes, data.content.anchor);
+    // An area highlight has no text to verify; its page must exist in the pinned document.
+    const anchor = data.content.anchor;
+    if (isAreaAnchor(anchor)) await validateResumeArea(bytes, anchor); else await validateResumeAnchor(bytes, anchor);
   }
   return prisma.$transaction(async tx => {
     const { member, caps } = await authorizeInterview(tx, data, user.id, "resume");
@@ -115,7 +142,7 @@ export async function saveInterviewResumeAnnotation(input: unknown) {
     return { id: data.id, revision: old ? old.revision + 1 : 0 };
   }, interviewTransactionOptions);
 }
-export async function deleteInterviewResumeAnnotation(input: unknown) {
+async function deleteInterviewResumeAnnotationCommand(input: unknown) {
   const data = documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0) }).strict().parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { member, caps } = await authorizeInterview(tx, data, user.id, "resume");
@@ -138,4 +165,23 @@ export async function getInterviewAnnotationHistory(input: unknown) {
     if (!annotation || (annotation.authorId !== member.id && !caps.moderateResume)) throw new Error("Annotation history unavailable.");
     return tx.interviewAnnotationRevision.findMany({ where: { annotationId: annotation.id }, orderBy: { revision: "asc" } });
   }, interviewTransactionOptions);
+}
+
+// Polled every few seconds by the open résumé viewer.
+export async function getInterviewResumeAnnotations(...args: Parameters<typeof getInterviewResumeAnnotationsCommand>) {
+  return interviewActionResult(() => getInterviewResumeAnnotationsCommand(...args), "getInterviewResumeAnnotations");
+}
+// Room calls from the applicant panel and résumé viewer: an access denial (e.g. removed from the
+// panel mid-interview) is the same uniform ACCESS_REVOKED refusal, with no data and no write.
+export async function getInterviewApplicantPanel(...args: Parameters<typeof getInterviewApplicantPanelCommand>) {
+  return interviewActionResult(() => getInterviewApplicantPanelCommand(...args), "getInterviewApplicantPanel");
+}
+export async function pinInterviewResume(...args: Parameters<typeof pinInterviewResumeCommand>) {
+  return interviewActionResult(() => pinInterviewResumeCommand(...args), "pinInterviewResume");
+}
+export async function saveInterviewResumeAnnotation(...args: Parameters<typeof saveInterviewResumeAnnotationCommand>) {
+  return interviewActionResult(() => saveInterviewResumeAnnotationCommand(...args), "saveInterviewResumeAnnotation");
+}
+export async function deleteInterviewResumeAnnotation(...args: Parameters<typeof deleteInterviewResumeAnnotationCommand>) {
+  return interviewActionResult(() => deleteInterviewResumeAnnotationCommand(...args), "deleteInterviewResumeAnnotation");
 }

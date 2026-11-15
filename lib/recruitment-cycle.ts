@@ -95,13 +95,16 @@ export async function cycleVotingBlocker(tx: ArchiveClient, clubId: string, cycl
   return sessions ? `${cycle.name} has ${plural(sessions, "voting session")} in progress or awaiting finalization. End and finalize voting before archiving this cycle.` : null;
 }
 
-/** Null when every application in the cycle has a final decision; waitlisted applications cannot be voted on once it is archived. */
-export async function cycleDecisionBlocker(tx: ArchiveClient, clubId: string, cycle: { id: string; name: string }) {
+/**
+ * Null when every application in the cycle has a final decision; waitlisted applications cannot be voted on once it is archived.
+ * Both ways a cycle ends (Archive, and starting the next cycle) use this, so no applicant is left without a decision.
+ */
+export async function cycleDecisionBlocker(tx: ArchiveClient, clubId: string, cycle: { id: string; name: string }, closing: "archive" | "start") {
   const undecided = await tx.application.count({ where: { clubId, recruitmentCycleId: cycle.id, status: { in: [...undecidedApplicationStatuses] } } });
   const waitlisted = await tx.application.count({ where: { clubId, recruitmentCycleId: cycle.id, status: "WAITLISTED" } });
   if (!undecided && !waitlisted) return null;
   const parts = [undecided ? plural(undecided, "undecided application") : "", waitlisted ? plural(waitlisted, "waitlisted application") : ""].filter(Boolean).join(" and ");
-  return `${cycle.name} still has ${parts}. Record final decisions before starting the next cycle.`;
+  return `${cycle.name} still has ${parts}. Record final decisions before ${closing === "archive" ? "archiving this cycle" : "starting the next cycle"}.`;
 }
 
 /** A passed deadline is not carried into the next cycle: it is left unset for the leader to choose. */

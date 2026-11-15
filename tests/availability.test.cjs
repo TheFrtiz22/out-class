@@ -179,7 +179,7 @@ test('new demo interviews use the same Eastern wall clock in winter and summer',
 test('an availability save the server always rejects keeps the schedule and stops at an error state without retrying', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   let calls = 0
-  const queue = new AvailabilitySaveQueue({ schedule: declared(), revision: 2 }, async () => { calls++; throw Error('Too many items.') }, () => {}, 650)
+  const queue = new AvailabilitySaveQueue({ schedule: declared(), revision: 2 }, async () => { calls++; throw Object.assign(Error('Too many items.'), { userFacing: true }) }, () => {}, 650)
   const edit = declared(); edit.weekly[1] = [[600, 660]]
   queue.change(edit); t.mock.timers.tick(650); await new Promise(resolve => setImmediate(resolve))
   assert.equal(calls, 1); assert.equal(queue.state, 'error'); assert.equal(queue.error, 'Too many items.')

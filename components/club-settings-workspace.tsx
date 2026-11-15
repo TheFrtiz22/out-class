@@ -1,4 +1,7 @@
 "use client";
+import { Toggle } from "@/components/ui/toggle"
+import { TERMS } from "@/lib/copy/terms"
+import { userMessage } from "@/lib/user-message"
 
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
@@ -16,7 +19,7 @@ import { canLeaveWorkspace } from "@/lib/product-navigation";
 import { canOpenRecruitingSettings, recruitingSettingsSections, withRecruitingSettings } from "@/lib/recruiting-settings";
 import { hasPermission, permissionLabels } from "@/lib/permissions";
 import { organizationRoleLabels, organizationRolePermissions, organizationRoles } from "@/lib/organization-authorization";
-import { saveClubPreferences } from "@/actions/club-settings";
+import { saveClubPreferences as saveClubPreferencesAction } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
 import { ProfileFieldSettings } from "@/components/profile-field-settings";
 
@@ -24,6 +27,8 @@ import "@/components/clubs/club-settings.css";
 import { VotingRuleDefaults } from "@/components/live-voting/voting-rule-defaults";
 import { NativeSelect } from "@/components/ui/native-select"
 import { Button } from "@/components/ui/button"
+import { unwrapped } from "@/lib/action-result"
+const saveClubPreferences = unwrapped(saveClubPreferencesAction)
 const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(
     (m) => m.ApplicationBuilderView,
@@ -94,7 +99,7 @@ export function ClubSettingsWorkspace({
       await refreshUser();
       onSaved?.();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save preference.");
+      setError(userMessage(e, "Could not save preference."));
     } finally {
       setBusy(false);
     }
@@ -127,7 +132,7 @@ export function ClubSettingsWorkspace({
           </Link>
         ))}
       </nav>
-      <Link href="/settings" className="oc-settings-personal-link" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={18} /></Link>
+      <Link href="/settings" className="oc-settings-personal-link" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={16} /></Link>
       </aside>
       <div className="oc-workspace-stack" data-saving={busy}>
         {error && (
@@ -146,17 +151,13 @@ export function ClubSettingsWorkspace({
             {!demo.isDemoEnabled && (
               <section className="oc-form-section mt-6">
                 <h2 className="oc-section-heading">Profile visibility</h2>
-                <label className="mt-3 inline-flex min-h-11 items-center gap-3 text-sm">
-                  <input
-                    type="checkbox"
-                    disabled={busy}
-                    checked={member.club.isDiscoverable !== false}
-                    onChange={(e) =>
-                      void preference({ isDiscoverable: e.target.checked })
-                    }
-                  />
-                  Show this club in Discover
-                </label>
+                <Toggle
+                  className="mt-3"
+                  label={`Show this club in ${TERMS.explore}`}
+                  disabled={busy}
+                  checked={member.club.isDiscoverable !== false}
+                  onCheckedChange={(checked) => void preference({ isDiscoverable: checked })}
+                />
                 <p className="text-xs text-muted-foreground">
                   Your public profile remains accessible by its direct link.
                 </p>
@@ -166,7 +167,7 @@ export function ClubSettingsWorkspace({
         )}
         {visible("application") && (
           <div hidden={active !== "application"}>
-            {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></div>}
+            {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Button asChild variant="link" size="sm"><Link href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link></Button><Button asChild variant="link" size="sm"><Link href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></Button></div>}
             {/* Recruiting: opens the Recruiting settings drawer in place (the same drawer as the Applicants gear). */}
             {canOpenRecruitingSettings(member) && <section aria-labelledby="settings-recruiting-heading" className="mb-5 space-y-2 border-b pb-4"><h2 id="settings-recruiting-heading" className="oc-section-heading">Recruiting</h2><div className="flex flex-wrap gap-2">{recruitingSettingsSections.map(item => <Button key={item.id} type="button" variant="outline" size="sm" aria-haspopup="dialog" onClick={() => { if (canLeaveWorkspace()) router.push(`/club/${encodeURIComponent(clubId)}/workspace?${withRecruitingSettings(params.toString(), item.id)}`, { scroll: false }) }}>{item.label}</Button>)}</div></section>}
             <ApplicationBuilder clubId={clubId} />
@@ -186,10 +187,9 @@ export function ClubSettingsWorkspace({
         )}
         {visible("members") && (
           <div hidden={active !== "members"} className="space-y-5">
-            <section aria-labelledby="interviewer-eligibility-heading" className="space-y-3"><h2 id="interviewer-eligibility-heading" className="oc-section-heading">Interviewer eligibility</h2><p className="text-sm text-muted-foreground">Choose which roles can interview. Kits, panels and interviewer offices are in Interviews.</p><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></section>
+            <section aria-labelledby="interviewer-eligibility-heading" className="space-y-3"><h2 id="interviewer-eligibility-heading" className="oc-section-heading">Interviewer eligibility</h2><p className="text-sm text-muted-foreground">Kits, panels and interviewer offices are in Interviews.</p><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></section>
             <section aria-labelledby="role-permissions-heading" className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="role-permissions-heading" className="oc-section-heading">Roles and permissions</h2><Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=members`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage members</Link></div>
-              <p className="text-sm text-muted-foreground">Each member’s role sets what they can do. Change a member’s role, title or groups from Members.</p>
               <dl className="divide-y rounded-lg border">{organizationRoles.map(role => <div key={role} className="grid gap-1 p-3 sm:grid-cols-[12rem_1fr]"><dt className="font-medium">{organizationRoleLabels[role]}</dt><dd className="text-sm text-muted-foreground">{role === "OWNER" || role === "ADMIN" ? "Every club permission" : organizationRolePermissions[role].length ? organizationRolePermissions[role].map(permission => permissionLabels[permission]).join(" · ") : "Member pages only (meetings, tasks, announcements)"}</dd></div>)}</dl>
             </section>
           </div>
@@ -198,9 +198,7 @@ export function ClubSettingsWorkspace({
           <div hidden={active !== "notifications"} className="space-y-5">
             <h2 className="oc-section-heading">Communications</h2>
             <p className="text-sm text-muted-foreground">
-              Invitation emails are requested explicitly and delivered in the
-              background. Application review and decision changes are saved
-              without sending automatic emails.
+              Saving a review or staging a decision sends nothing. Sending decisions from Decide › Send notifies each applicant in OutClass and by email.
             </p>
             {!demo.isDemoEnabled && (
               <>
@@ -234,9 +232,7 @@ export function ClubSettingsWorkspace({
                 : "This club has not yet completed its ownership claim."}
             </p>
             <p className="text-sm text-muted-foreground">
-              Owners control all settings. Ownership transfer is available in a
-              current member’s details and retains membership history. The last
-              active owner is protected.
+              Transfer ownership from a member’s details; the last active owner is protected.
             </p>
             {member.isOwner && (
               <Link

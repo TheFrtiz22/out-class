@@ -57,13 +57,13 @@ export function rgba(color: string, alpha: number) {
 
 /**
  * The site-wide OutClass card (homepage and every page without its own): the same glass panel
- * over the sunset Rotunda from the homepage opening. Served prerendered from /og/outclass.png.
+ * over the Rotunda from the homepage opening (CC BY 2.0, credited in lib/photo-credits.ts). Served prerendered from /og/outclass.png.
  */
 export async function renderSiteShareCard(cacheControl = CACHE) {
   const [photo, wordmark, [serif, serifBold]] = await Promise.all([
-    readFile(join(process.cwd(), "public/images/campus/sunset-rotunda-1600.webp")), loadWordmark(), loadType(),
+    readFile(join(process.cwd(), "public/images/campus/rotunda-1600.webp")), loadWordmark(), loadType(),
   ])
-  // Sharp Rotunda on the left, fading into a blurred wash of the same sunset behind the glass.
+  // Sharp Rotunda on the left, fading into a blurred wash of the same photograph behind the glass.
   const fade = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="630"><defs><linearGradient id="f"><stop offset="0.62" stop-color="white" stop-opacity="1"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient></defs><rect width="760" height="630" fill="url(#f)"/></svg>')
   const [wash, rotunda] = await Promise.all([
     sharp(photo).resize(1200, 630, { fit: "cover" }).blur(28).modulate({ saturation: 1.15 }).jpeg({ quality: 80 }).toBuffer(),

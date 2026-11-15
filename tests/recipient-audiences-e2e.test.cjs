@@ -1,3 +1,4 @@
+const {refused}=require('./helpers/action-result.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{randomUUID}=require('node:crypto');
 const {Actor}=require('./helpers/onboarding-e2e.cjs');
 const configFile=process.env.OUTCLASS_AUDIENCE_E2E_CONFIG;
@@ -19,8 +20,8 @@ test('recipient groups through real local Auth and production Next server action
   group=await action('saveRecipientGroup',{clubId:club.id,id:group.id,revision:group.revision,name:'Finance',kind:'MANUAL',userIds:[c.identities.student.id]});assert.equal(group.revision,1);
  });
  await t.test('member, cross-club and Demo attempts are rejected through normal authorization',async()=>{
-  await assert.rejects(student.action('actions/recipient-groups.ts','saveRecipientGroup',[{clubId:club.id,id:randomUUID(),revision:null,name:'Forbidden',kind:'MANUAL',userIds:[]}]));
-  await assert.rejects(action('previewRecipientAudience',randomUUID(),{include:[{source:'MEMBERS'}]}));
+  await refused(student.action('actions/recipient-groups.ts','saveRecipientGroup',[{clubId:club.id,id:randomUUID(),revision:null,name:'Forbidden',kind:'MANUAL',userIds:[]}]));
+  await refused(action('previewRecipientAudience',randomUUID(),{include:[{source:'MEMBERS'}]}));
   const demo=new Actor(c);demo.cookies=new Map(leader.cookies);demo.cookies.set('outclass-demo-session','1');
   await assert.rejects(demo.action('actions/recipient-groups.ts','getRecipientGroups',[club.id]));
  });

@@ -14,36 +14,37 @@ import {clubWriteTransaction} from "@/utils/club-write-transaction";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {roundPublicationKey} from "@/utils/decision-scheduling";
 import { boundedParse } from "@/lib/bounded-input";
+import { ActionError, actionResult } from "@/lib/action-result";
 const uuid=z.string().uuid();
-export async function scheduleDecisionPublication(input:unknown){
+async function scheduleDecisionPublicationCommand(input:unknown){
  const d=boundedParse(decisionScheduleInput, input),scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence);
  const caps=d.selection.kind==="VOTING"?["applications.review","decisions.publish","applicants.identify"] as const:["decisions.manage","applicants.identify"] as const;
  const {user}=await requireClubPermission(d.clubId,[...caps]);
- if(await supportContext())throw Error("Exit temporary support impersonation before scheduling decisions.");
+ if(await supportContext())throw new ActionError("Exit temporary support impersonation before scheduling decisions.");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,d.clubId,user.id,[...caps]);
   const existing=await tx.scheduledCommunication.findUnique({where:{id:d.id}});
   const request=JSON.stringify(d);
-  if(existing){if(existing.clubId===d.clubId&&existing.senderId===user.id&&existing.kind==="DECISION"&&existing.body===request)return {id:existing.id,status:existing.status};throw Error("Schedule identifier already used.");}
+  if(existing){if(existing.clubId===d.clubId&&existing.senderId===user.id&&existing.kind==="DECISION"&&existing.body===request)return {id:existing.id,status:existing.status};throw new ActionError("Schedule identifier already used.");}
   requireFutureSchedule(scheduledAt);
-  if(await tx.scheduledCommunication.count({where:{clubId:d.clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100)throw Error("Cancel unused scheduled work first.");
+  if(await tx.scheduledCommunication.count({where:{clubId:d.clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100)throw new ActionError("Cancel unused scheduled work first.");
   let voting:{id:string;revision:number}|null=null,votingRoundId:string|null=null;
   const expectedStatuses=new Map<string,string>();
   let decisions:{id:string;passNumber:number;decision:"ACCEPTED"|"WAITLISTED"|"REJECTED"}[];
   const selection=d.selection;
   if(selection.kind==="VOTING"){
-   if(new Set(selection.applicationIds).size!==selection.applicationIds.length)throw Error("Duplicate candidates.");
+   if(new Set(selection.applicationIds).size!==selection.applicationIds.length)throw new ActionError("Duplicate candidates.");
    await tx.$queryRaw`SELECT id FROM "VotingSession" WHERE id=${selection.sessionId} AND "clubId"=${d.clubId} FOR UPDATE`;
    const session=await tx.votingSession.findFirst({where:{id:selection.sessionId,clubId:d.clubId,mode:{not:"LIVE"}},include:{_count:{select:{participants:true}}}});
-   if(!session||session.revision!==selection.revision||session.state!=="COMPLETED"||session.publishedAt)throw Error("Review the completed session before scheduling.");
+   if(!session||session.revision!==selection.revision||session.state!=="COMPLETED"||session.publishedAt)throw new ActionError("Review the completed session before scheduling.");
    // Fetch only selected candidates and their latest pass. Historical ballot
    // volume and unrelated applicants cannot make a queued intent unbounded.
    const candidates=await tx.votingCandidate.findMany({where:{sessionId:session.id,applicationId:{in:selection.applicationIds}},take:50,include:{passes:{orderBy:{passNumber:"desc"},take:1,include:{ballots:{select:{decision:true},take:501}}}}});
    decisions=selection.applicationIds.map(id=>{
     const candidate=candidates.find(c=>c.applicationId===id),entry=candidate?.passes[0];
-    if(!candidate||!entry||entry.ballots.length>500)throw Error("Candidate outcome unavailable.");
+    if(!candidate||!entry||entry.ballots.length>500)throw new ActionError("Candidate outcome unavailable.");
     const outcome=entry.override??ballotOutcome(entry.ballots,session._count.participants,session.autoAdvance,session.threshold).outcome;
-    if(!["PASS","HOLD","NOT_PASS"].includes(outcome))throw Error("Select resolved candidates.");
+    if(!["PASS","HOLD","NOT_PASS"].includes(outcome))throw new ActionError("Select resolved candidates.");
     return {id,passNumber:entry.passNumber,decision:outcome==="PASS"?"ACCEPTED":outcome==="HOLD"?"WAITLISTED":"REJECTED"};
    });
    for(const c of candidates)expectedStatuses.set(c.applicationId,c.expectedStatus);
@@ -53,7 +54,7 @@ export async function scheduleDecisionPublication(input:unknown){
   const apps=await tx.application.findMany({where:{clubId:d.clubId,id:{in:decisions.map(a=>a.id)}},include:{round:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
   const applications=decisions.sort((a,b)=>a.id.localeCompare(b.id)).map(item=>{
    const app=apps.find(a=>a.id===item.id);
-   if(!app||voting&&(app.roundId!==votingRoundId||app.status!==expectedStatuses.get(app.id))||app.round.archivedAt||app.status==="DRAFTING"||app.status===item.decision||selection.kind==="DIRECT"&&decisionPublicationGuard(app)!==selection.expectedGuard)throw Error("Application changed or unavailable.");
+   if(!app||voting&&(app.roundId!==votingRoundId||app.status!==expectedStatuses.get(app.id))||app.round.archivedAt||app.status==="DRAFTING"||app.status===item.decision||selection.kind==="DIRECT"&&decisionPublicationGuard(app)!==selection.expectedGuard)throw new ActionError("Application changed or unavailable.");
    assertRecruitmentTransition(app.status,item.decision,app.round.type);
    return {id:app.id,status:app.status,firstName:app.student.studentProfile?.firstName||"Student",fullName:app.student.studentProfile?`${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}`:"Student",version:app.decisionVersion,stateRevision:app.decisionStateRevision,roundId:app.roundId,roundKey:roundPublicationKey(app.round),passNumber:item.passNumber,decision:item.decision};
   });
@@ -68,7 +69,7 @@ export async function getDecisionSchedules(clubId:string){
  uuid.parse(clubId);const {user}=await requireClubPermission(clubId,["applicants.identify"]);
  return clubWriteTransaction(async tx=>{
   const member=await authorizeClubTransaction(tx,clubId,user.id,["applicants.identify"],{readOnly:true});
-  if(!hasPermission(member,"decisions.manage")&&!hasPermission(member,"decisions.publish"))throw Error("Decision management access required.");
+  if(!hasPermission(member,"decisions.manage")&&!hasPermission(member,"decisions.publish"))throw new ActionError("Decision management access required.");
   // Detailed intent/outcomes remain restricted to identified recruitment managers.
   const rows=await tx.scheduledCommunication.findMany({where:{clubId,kind:"DECISION"},select:{id:true,title:true,status:true,revision:true,scheduledAt:true,timeZone:true,recipientCount:true,failureCode:true,snapshot:true},orderBy:{createdAt:"desc"},take:150});
   const keys=(snapshot:unknown)=>decisionSnapshotSchema.parse(snapshot).applications.map(a=>`decision:${a.id}:${a.version+1}`);
@@ -88,19 +89,27 @@ export async function getDecisionSchedules(clubId:string){
   });
  });
 }
-export async function cancelDecisionSchedule(clubId:string,id:string,revision:number){
+async function cancelDecisionScheduleCommand(clubId:string,id:string,revision:number){
  uuid.parse(clubId);uuid.parse(id);z.number().int().nonnegative().parse(revision);
  const {user}=await requireClubPermission(clubId,["applicants.identify"]);
  return clubWriteTransaction(async tx=>{
   const member=await authorizeClubTransaction(tx,clubId,user.id,["applicants.identify"]);
   const row=await tx.scheduledCommunication.findFirst({where:{id,clubId,kind:"DECISION"}});
-  if(!row)throw Error("Scheduled decision unavailable.");
+  if(!row)throw new ActionError("Scheduled decision unavailable.");
   const snapshot=decisionSnapshotSchema.parse(row.snapshot);
-  if(!hasPermission(member,"decisions.manage")){if(!snapshot.voting)throw Error("Decision management access required.");await authorizeClubTransaction(tx,clubId,user.id,["applications.review","decisions.publish","applicants.identify"]);}
+  if(!hasPermission(member,"decisions.manage")){if(!snapshot.voting)throw new ActionError("Decision management access required.");await authorizeClubTransaction(tx,clubId,user.id,["applications.review","decisions.publish","applicants.identify"]);}
   if(row.status==="CANCELLED"&&row.revision===revision+1)return {success:true};
-  if(!row||row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status))throw Error("Decision intent changed or already processing/published.");
+  if(!row||row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status))throw new ActionError("Decision intent changed or already processing/published.");
   await tx.scheduledCommunication.update({where:{id},data:{status:"CANCELLED",revision:{increment:1}}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:id,action:"recruitment.decision.schedule.cancelled"}});
   return {success:true};
  });
+}
+
+export async function scheduleDecisionPublication(...args: Parameters<typeof scheduleDecisionPublicationCommand>) {
+  return actionResult(() => scheduleDecisionPublicationCommand(...args), "scheduleDecisionPublication")
+}
+
+export async function cancelDecisionSchedule(...args: Parameters<typeof cancelDecisionScheduleCommand>) {
+  return actionResult(() => cancelDecisionScheduleCommand(...args), "cancelDecisionSchedule")
 }

@@ -5,6 +5,14 @@ export function recruitmentDeadline(value?: Date | string | null) {
   const date = new Date(value)
   return Number.isFinite(+date) ? date : null
 }
+/**
+ * A club that no longer takes applications: intake switched off, or the deadline has passed. A draft there cannot
+ * be submitted, so it is never promoted as "Continue draft" or "finish your application".
+ */
+export function applicationIntakeClosed(club: { applicationOpen?: boolean | null; applicationDeadline?: Date | string | null }, now: number = Date.now(), deadline?: Date | string | null) {
+  const due = recruitmentDeadline(deadline || club.applicationDeadline)
+  return club.applicationOpen === false || !!due && +due <= now
+}
 export function recruitmentDate(value: Date | string) {
   return `${schedulingDateTime(value)} · ${SCHEDULING_TIMEZONE_LABEL}`
 }

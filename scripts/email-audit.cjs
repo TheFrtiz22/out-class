@@ -9,7 +9,7 @@ function load(file) {
   new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(path.join(ROOT, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText)(name => name.startsWith('@/') ? load(name.slice(2) + '.ts') : require(name), mod, mod.exports);
   return mod.exports;
 }
-const subjects = { confirmation: 'Verify your UVA email — OutClass', 'magic-link': 'Your OutClass sign-in code', recovery: 'Reset your password', 'password-changed': 'Your password was changed', invite: "You've been invited", 'email-change': 'Confirm your new email address', reauthentication: 'Your verification code' };
+const subjects = { confirmation: 'Verify your UVA email for OutClass', 'magic-link': 'Your OutClass sign-in code', recovery: 'Reset your password', 'password-changed': 'Your password was changed', invite: "You've been invited", 'email-change': 'Confirm your new email address', reauthentication: 'Your verification code' };
 function samples(html) {
   return html.replaceAll('{{ .Token }}', '246810').replaceAll('{{ .RedirectTo }}', SITE + '/reset-password').replaceAll('{{ .TokenHash }}', 'audit-preview-not-a-valid-token').replaceAll('{{ .ConfirmationURL }}', SITE + '/login').replaceAll('{{ .SiteURL }}', SITE).replaceAll('{{ .NewEmail }}', RECIPIENT).replaceAll('{{ .Email }}', RECIPIENT);
 }

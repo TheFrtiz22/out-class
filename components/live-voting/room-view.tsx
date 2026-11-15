@@ -11,16 +11,19 @@ import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useLiveVotingRoom } from "@/hooks/use-live-voting-room";
 import { castLiveVotingBallot,commandLiveVotingRoom,getLiveVotingJoinInfo,joinLiveVotingRoom } from "@/lib/voting-room-api";
-import { liveRoomPath,roomBallotSchema,outcomeLabels } from "@/lib/voting-room";
+import { liveRoomPath,roomBallotSchema,outcomeLabels,confirmedResult,adjacentApplicants } from "@/lib/voting-room";
 import { z } from "zod";
 import { QrCodeCard } from "@/components/qr/qr-code-card";
 import {Check,Pause,XIcon,ChevronDown} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog,DialogContent,DialogTitle } from "@/components/ui/dialog";
-import { ApplicantTransition } from "./applicant-transition";
+import { ApplicantTransition,type Motion } from "./applicant-transition";
 import { RoomPresentation } from "./room-presentation";
 import {LeaderControls,OutcomeCounts} from "./room-meeting";
 import {SessionDetails} from './session-details';
+import {formatDateTime} from '@/lib/copy/terms';
+import {SCHEDULING_TIMEZONE,SCHEDULING_TIMEZONE_LABEL} from '@/lib/scheduling-config';
+import type {VotingJoinMeeting} from '@/lib/voting-session-setup';
 import {BallotPrivacyNote} from "@/components/live-voting/ballot-privacy-note";
 import {DiscussionLeader,DiscussionMember} from "@/components/live-voting/discussion-panel";
 import "./room.css";
@@ -46,11 +49,52 @@ function MemberJoin(props:RoomProps){
  if(info?.status==="JOINED"||info?.status==="ENDED")return <VotingRoom {...props}/>;
  return <div className="vr-page vr-member"><PageHeader title="Join live voting" />{error&&<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry</Button></div>}
  {!info&&!error&&<LoadingState label="Checking session and membership…" layout="inline" rows={3} />}
- {info?.status==="READY"&&<><p>You can vote. Join and wait for the leader to start.</p><Button disabled={busy} onClick={()=>void join()}>{busy?"Joining…":"Join session"}</Button></>}
+ {info?.status==="READY"&&<>{info.meeting&&<JoinMeetingPreview meeting={info.meeting}/>}<p>You can vote. Join and wait for the leader to start.</p><Button disabled={busy} onClick={()=>void join()}>{busy?"Joining…":"Join session"}</Button></>}
  {info?.status==="DENIED"&&<p role="alert">You can’t vote in this session. Ask a club leader if you think that’s wrong.</p>}
  {info?.status==="EXPIRED"&&<p role="status">This session link is expired or unavailable.</p>}
 
  <Link className="vr-link" href="/">Return to OutClass</Link></div>;
+}
+/** Pre-join schedule for an eligible voter, in the same Eastern format the session details use. */
+function JoinMeetingPreview({meeting}:{meeting:VotingJoinMeeting}){
+ const until=meeting.plannedAt?+new Date(meeting.plannedAt)-Date.now():0,minutes=Math.max(1,Math.round(until/60000));
+ return <section aria-label="Session details" className="space-y-1"><h2>{meeting.name}</h2>{meeting.plannedAt&&<p>{`Scheduled start · ${formatDateTime(meeting.plannedAt,{timeZone:SCHEDULING_TIMEZONE})} ${SCHEDULING_TIMEZONE_LABEL}`}</p>}{until>0&&until<3600000&&<p>{`Starts in about ${minutes} ${minutes===1?"minute":"minutes"}`}</p>}{meeting.location&&<p className="break-words">{meeting.location}</p>}</section>;
+}
+type RoomSnapshot=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
+/**
+ * What the stage shows when no applicant is current: before the start, between passes, and once voting has ended.
+ * Counts come from the room's canonical outcomes (each applicant's latest confirmed decision), so moving someone from
+ * Hold to Pass shifts each count by one. Choosing what happens next stays with the leader's existing controls.
+ */
+function Intermission({room,view}:{room:RoomSnapshot;view:View}){
+ const count=(kind:string)=>room.outcomes.filter(o=>o.outcome===kind).length,label=(id:string)=>`Applicant ${room.outcomes.findIndex(o=>o.applicationId===id)+1}`;
+ // Leaders already have the decision totals and the named summary below, so their card stays to the essentials.
+ const counts=view!=="leader"&&<dl className="vr-intermission-counts">{([["Passed","ACCEPT"],["Held","HOLD"],["Not passed","REJECT"],["Unreviewed","UNREVIEWED"]] as const).map(([name,kind])=><div key={kind}><dt>{name}</dt><dd>{count(kind)}</dd></div>)}</dl>;
+ if(room.status==="COMPLETED"){
+  const passed=room.outcomes.filter(o=>o.outcome==="ACCEPT");
+  // Passed applicants first; held, not passed and unreviewed stay distinct counts (ending never turns them into Do not pass).
+  return <section className="vr-applicant vr-intermission" aria-label={view==="leader"?"Voting result":"Voting summary"}>
+   <p className="vr-intermission-kicker">Voting ended</p><h2 data-applicant-heading tabIndex={-1}>{passed.length?`${passed.length} passed`:"No applicants passed"}</h2>
+   {view!=="leader"&&passed.length>0&&<ul className="vr-intermission-passed" aria-label="Passed applicants">{passed.map(o=><li key={o.applicationId}>{label(o.applicationId)}</li>)}</ul>}
+   {counts}</section>;
+ }
+ const held=count("HOLD");
+ // Members see "Waiting for the leader" in their ballot line; the projector says it here.
+ return <div className="vr-applicant vr-intermission">
+  <p className="vr-intermission-kicker">Pass {room.passNumber} complete</p>
+  <h2 data-applicant-heading tabIndex={-1}>{held?"Review held applicants":"Review complete"}</h2>
+  <p>{held?`${held} held applicant${held===1?"":"s"} remaining`:"No held applicants remain."}{view==="present"&&" · Waiting for the leader"}</p>
+  {counts}</div>;
+}
+/**
+ * Which motion a viewer uses from what it last showed to what the room shows now: the horizontal transition between
+ * neighbouring applicants; a crossfade into or out of an intermission (a new pass, the end of voting); otherwise
+ * directly, never replaying missed advances.
+ */
+function motionFor(room:RoomSnapshot,appId:string|null,from:{passNumber:number;applicationId:string|null}):Motion{
+ if(appId===null&&room.status==="COMPLETED")return "fade";
+ if(from.applicationId===null)return appId?"fade":"none";
+ return adjacentApplicants(room.history,{passNumber:from.passNumber,applicationId:from.applicationId},{passNumber:room.passNumber,applicationId:appId})?"slide":"none";
 }
 export function VotingRoom(props:RoomProps){
  const {clubId,sessionId,view,demoScoped,identity,member}=props,{room,error,refresh}=useLiveVotingRoom(clubId,sessionId,identity,member),[qr,setQr]=useState(false),[preview,setPreview]=useState(""),[voteError,setVoteError]=useState(""),[voteBusy,setVoteBusy]=useState(false),[attempt,setAttempt]=useState<Ballot|null>(null),[ack,setAck]=useState<{key:string;choice:string;revision:number}|null>(null);
@@ -71,18 +115,17 @@ export function VotingRoom(props:RoomProps){
  {view!=="present"&&<VotingBackLink clubId={clubId} cycleId={room.cycleId} roundId={room.roundId}/>}<header className="vr-header"><PageHeader title={view==="leader"?"Lead voting":view==="member"?"Your vote":"Live voting"} /><div className="vr-actions">{view==="leader"&&<Popover><PopoverTrigger asChild><Button ref={sessionButton} className="vr-session-trigger" variant="ghost" size="sm">Session options <ChevronDown aria-hidden="true" size={16}/></Button></PopoverTrigger><PopoverContent align="end" aria-label="Session options" className="vr-session-options"><Link target="_blank" rel="noopener" className="vr-link" href={liveRoomPath(clubId,sessionId,"present",demoScoped)}>Open audience presentation</Link><Link className="vr-link" href={liveRoomPath(clubId,sessionId,"member",demoScoped)}>My voting device</Link>{!demoScoped&&<Link className="vr-link" href={`/voting/rooms/${encodeURIComponent(sessionId)}/prepare?clubId=${encodeURIComponent(clubId)}`}>Prepare slides</Link>}<Button ref={qrButton} variant="outline" size="sm" onClick={()=>setQr(true)}>Join QR</Button>{room.meeting&&<SessionDetails clubId={clubId} sessionId={sessionId} revision={room.revision} meeting={room.meeting} leader={room.permissions.leader} demo={demoScoped} status={room.status} refresh={refresh}/>}</PopoverContent></Popover>}{view==="present"&&<Button ref={qrButton} variant="outline" size="sm" onClick={()=>setQr(true)}>Join QR</Button>}</div></header>
  <div className="vr-stats" aria-label="Session progress"><span>{room.status==="COMPLETED"?"Session ended":entry?.ballotState==="OPEN"?"Voting open":entry?.ballotState==="CLOSED"||entry?.ballotState==="CONFIRMED"?"Voting closed":"Waiting for voting"}</span><span>{room.participation.voted} of {room.participation.eligible} eligible voters voted</span><span>Reviewed {pass?.candidates.filter(c=>c.ballotState==="CONFIRMED").length??0} of {pass?.candidates.length??room.outcomes.length} this pass · Pass {room.passNumber||1}</span></div>
  {room.meeting&&view==="member"&&room.status==="DRAFT"&&<SessionDetails clubId={clubId} sessionId={sessionId} revision={room.revision} meeting={room.meeting} leader={false} demo={demoScoped} status={room.status} refresh={refresh}/>}
- {view==="leader"?<OutcomeCounts room={room}/>:view==="present"&&<section className="vr-stats" aria-label="Passed and target"><span>Passed {room.targetSummary.decisions.pass}</span><span>{room.targetSummary.target.value===null?"No target set":`${room.targetSummary.target.label} ${room.targetSummary.target.value} · Guidance`}</span>{room.targetSummary.progress.over>0&&<span>{room.targetSummary.progress.detail}</span>}</section>}
+ {view==="leader"?<OutcomeCounts room={room}/>:view==="present"&&<section className="vr-stats" aria-label="Passed and target"><span>Passed {room.targetSummary.decisions.pass}</span><span>{room.targetSummary.target.value===null?"No target set":`${room.targetSummary.target.label} ${room.targetSummary.target.value} · Guidance`}</span>{room.targetSummary.progress.over>0&&<span>{room.targetSummary.progress.detail}</span>}<span className="vr-pass-meaning" data-pass-meaning={room.targetSummary.pass.kind}>{room.targetSummary.pass.label}</span></section>}
  {room.status==="DRAFT"&&<section aria-label="Waiting room"><h2>Ready when your leader is</h2><p>Voting has not started.</p>{view!=="member"&&qrCard}</section>}
  {view==="leader"&&room.status==="DRAFT"&&<label className="block my-4">Preview applicant<NativeSelect className="ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</NativeSelect></label>}
- <ApplicantTransition key={`${identity}:${room.accessVersion}`} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member} onStale={refresh} presenting={view!=="member"}/></ApplicantTransition>
+ <ApplicantTransition key={`${identity}:${room.accessVersion}`} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"} ended={room.status==="COMPLETED"} idle={room.status==="PAUSED"||room.status==="COMPLETED"?<Intermission room={room} view={view}/>:undefined} resultFor={(n,id)=>confirmedResult(room.history,n,id)} motionFrom={(n,id)=>motionFor(room,appId,{passNumber:n,applicationId:id})} release={!!entry&&entry.ballotState!=="PENDING"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member} onStale={refresh} presenting={view!=="member"}/></ApplicantTransition>
 
  {room.status==="COMPLETED"&&<p role="status">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}
  {view==="member"&&room.discussion&&!demoScoped&&room.permissions.voter&&<DiscussionMember clubId={clubId} sessionId={sessionId} discussion={room.discussion} anonymous={room.discussion.anonymous} refresh={refresh}/>}
- {view==="member"&&<section className="vr-ballot"><p role="status" className="py-1">{voteBusy?`Saving ${attempt?.choice?outcomeLabels[attempt.choice]:"vote"}…`:room.status==="OPEN"&&entry?.ballotState==="OPEN"&&room.votingPaused?"Voting paused · The leader is reviewing a change in who can vote":currentChoice?`Saved: ${outcomeLabels[currentChoice as keyof typeof outcomeLabels].toLowerCase()}`:room.status==="OPEN"&&entry?.ballotState==="OPEN"?"Choose your vote":room.status==="COMPLETED"?"Voting ended":room.status==="DRAFT"?"Waiting for the leader":room.status==="OPEN"&&entry?.ballotState==="PENDING"?"Waiting for the leader to open voting":"Voting closed · Waiting for the leader"}</p>{voteError&&<div role="alert" className="vr-error">{voteError}{pendingVote.current?<Button variant="outline" disabled={voteBusy} onClick={()=>void vote()}>Retry vote</Button>:<Button variant="outline" onClick={()=>void refresh()}>Try again</Button>}</div>}{room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<div className="vr-votes" aria-label="Your ballot">{(["ACCEPT","HOLD","REJECT"] as const).map(c=><Button key={c} variant={currentChoice===c?"default":"outline"} aria-pressed={currentChoice===c} aria-describedby={c==="ACCEPT"?"vr-pass-meaning":undefined} disabled={readyApplicant!==`${room.passNumber}:${appId}`||voteBusy||!!room.votingPaused||!!pendingVote.current||!room.permissions.voter||entry?.ballotState!=="OPEN"||room.status!=="OPEN"} onClick={()=>void vote(c)}>{c==="ACCEPT"?<Check aria-hidden="true" size={18}/>:c==="HOLD"?<Pause aria-hidden="true" size={18}/>:<XIcon aria-hidden="true" size={18}/>} {outcomeLabels[c]}</Button>)}</div>}{room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<p id="vr-pass-meaning" className="vr-field-meta" data-pass-meaning={room.targetSummary.pass.kind}>{room.targetSummary.pass.label}</p>}{room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<BallotPrivacyNote/>}</section>}
+ {view==="member"&&<section className="vr-ballot"><p role="status" className="py-1">{voteBusy?`Saving ${attempt?.choice?outcomeLabels[attempt.choice]:"vote"}…`:room.status==="OPEN"&&entry?.ballotState==="OPEN"&&room.votingPaused?"Voting paused · The leader is reviewing a change in who can vote":currentChoice?<><span className="block">{`Vote recorded · ${outcomeLabels[currentChoice as keyof typeof outcomeLabels]}`}</span>{entry?.ballotState!=="CONFIRMED"&&room.status==="OPEN"&&<span className="vr-field-meta block">Waiting for the group decision</span>}</>:room.status==="OPEN"&&entry?.ballotState==="OPEN"?"Choose your vote":room.status==="COMPLETED"?"Voting ended":room.status==="DRAFT"||room.status==="PAUSED"?"Waiting for the leader":room.status==="OPEN"&&entry?.ballotState==="PENDING"?"Waiting for the leader to open voting":"Voting closed · Waiting for the leader"}</p>{voteError&&<div role="alert" className="vr-error">{voteError}{pendingVote.current?<Button variant="outline" disabled={voteBusy} onClick={()=>void vote()}>Retry vote</Button>:<Button variant="outline" onClick={()=>void refresh()}>Try again</Button>}</div>}{room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<div className="vr-votes" aria-label="Your ballot">{(["ACCEPT","HOLD","REJECT"] as const).map(c=><Button key={c} variant={currentChoice===c?"default":"outline"} aria-pressed={currentChoice===c} aria-describedby={c==="ACCEPT"?"vr-pass-meaning":undefined} disabled={readyApplicant!==`${room.passNumber}:${appId}`||voteBusy||!!room.votingPaused||!!pendingVote.current||!room.permissions.voter||entry?.ballotState!=="OPEN"||room.status!=="OPEN"} onClick={()=>void vote(c)}>{c==="ACCEPT"?<Check aria-hidden="true" size={18}/>:c==="HOLD"?<Pause aria-hidden="true" size={18}/>:<XIcon aria-hidden="true" size={18}/>} {outcomeLabels[c]}</Button>)}</div>}{room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<p id="vr-pass-meaning" className="vr-field-meta" data-pass-meaning={room.targetSummary.pass.kind}>{room.targetSummary.pass.label}</p>}{room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<BallotPrivacyNote/>}</section>}
  {view!=="leader"&&entry&&"totals"in entry&&entry.totals&&<section aria-label="Closed ballot totals" className="py-4"><h2>Closed voting</h2><p>Pass {entry.totals.ACCEPT} · Hold {entry.totals.HOLD} · Do not pass {entry.totals.REJECT}</p>{room.ruleResult&&<p>{room.ruleResult.summary}{room.ruleResult.outcome?" The leader confirms the rule’s outcome.":""}</p>}</section>}
- {view!=="leader"&&room.status==="COMPLETED"&&<section aria-label="Voting summary"><h2>Voting summary</h2>{(["ACCEPT","HOLD","REJECT","UNREVIEWED"] as const).map(kind=><section key={kind}><h3>{kind==="UNREVIEWED"?"Unreviewed":outcomeLabels[kind]}</h3><ul>{room.outcomes.filter(o=>o.outcome===kind).map(o=><li key={o.applicationId}>Applicant {room.outcomes.findIndex(v=>v.applicationId===o.applicationId)+1}</li>)}</ul></section>)}</section>}
  {view==="leader"&&room.discussion&&!demoScoped&&<DiscussionLeader clubId={clubId} sessionId={sessionId} discussion={room.discussion} refresh={refresh}/>}
- {view==="leader"&&room.meeting?.status!=='CANCELLED'&&<LeaderControls room={room} refresh={refresh} member={member} transitioning={!!appId&&readyApplicant!==`${room.passNumber}:${appId}`}/>}
+ {view==="leader"&&room.meeting?.status!=='CANCELLED'&&<LeaderControls room={room} refresh={refresh} member={member} transitioning={readyApplicant!==`${room.passNumber}:${appId??(room.status==="COMPLETED"?"end":"null")}`}/>}
  <p className="sr-only">{entry?`Applicant ${entry.position+1} of ${pass?.candidates.length}. ${entry.ballotState==="OPEN"?"Voting open":"Voting closed or waiting"}.`:"Waiting for the leader."}</p>
  <Dialog open={qr} onOpenChange={setQr}><DialogContent onCloseAutoFocus={e=>{e.preventDefault();(qrButton.current??sessionButton.current)?.focus();}} aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto"><DialogTitle>Join live voting</DialogTitle>{qrCard}</DialogContent></Dialog>
  </div>;

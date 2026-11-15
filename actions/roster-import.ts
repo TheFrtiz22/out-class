@@ -1,4 +1,5 @@
 "use server";
+import { ActionError, actionResult } from "@/lib/action-result";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 
@@ -15,10 +16,10 @@ async function authorize(tx: AppTransactionClient, clubId: string, userId: strin
   await lockOperationalClub(tx, clubId);
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
   const actor = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
-  if (!actor || actor.disabledAt || !hasPermission(member, "members.manage")) throw new Error("Roster upload requires member-management access.");
+  if (!actor || actor.disabledAt || !hasPermission(member, "members.manage")) throw new ActionError("Roster upload requires member-management access. Ask a club owner to grant it.", "FORBIDDEN");
   const club = await tx.club.findUniqueOrThrow({ where: { id: clubId } });
   const configs = await tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, verification: "EMAIL_LOCAL_PART", emailDomain: { not: null }, school: { active: true } }, include: { school: true } });
-  if (configs.length !== 1) throw new Error("This school needs an unambiguous university identifier/email configuration before CSV imports.");
+  if (configs.length !== 1) throw new ActionError("CSV imports are not set up for this school yet. Invite members one at a time, or contact OutClass support.", "UNAVAILABLE");
   const config = configs[0];
   return { ...config, validationRegex: onboardingIdentifierPattern(config) };
 }
@@ -55,12 +56,12 @@ async function classify(tx: AppTransactionClient, clubId: string, inputs: Roster
     return { ...row, existingUser: !!matchedUserId, matchedUserId, schoolIdentityId: invitation ? invitation.schoolIdentityId : identity?.id ?? null, invitationId: invitation?.id ?? null };
   });
 }
-const databaseStatus = (row: RosterRow): RosterRowStatus => ({ READY: "VALID", INVALID: "INVALID", DUPLICATE: "DUPLICATE_ROW", ALREADY_MEMBER: "ALREADY_MEMBER", ALREADY_INVITED: "INVITATION_REUSED" } as const)[row.status];
+const databaseStatus = (row: Pick<RosterRow, "status">): RosterRowStatus => ({ READY: "VALID", INVALID: "INVALID", DUPLICATE: "DUPLICATE_ROW", ALREADY_MEMBER: "ALREADY_MEMBER", ALREADY_INVITED: "INVITATION_REUSED" } as const)[row.status];
 const publicRows = (rows: RosterRow[]) => rows.map(({ rowNumber, name, year, identifier, status, errors, warnings, existingUser }) => ({ rowNumber, name, year, identifier, status, errors, warnings, existingUser }));
 const inputSchema = z.object({ clubId: z.string().uuid(), requestId: z.string().uuid(), filename: z.string().trim().min(1).max(255).regex(/\.csv$/i, "Choose a CSV file."), csv: z.string().max(ROSTER_MAX_BYTES) }).strict();
 
 /** Preview persists input/audit only. No invitation, identity, User or membership is created. */
-export async function previewRosterImport(input: unknown) {
+async function previewRosterImportCommand(input: unknown) {
   const data = inputSchema.parse(input);
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
   const inputs = parseRosterCsv(data.csv);
@@ -68,7 +69,7 @@ export async function previewRosterImport(input: unknown) {
   return prisma.$transaction(async tx => {
     const config = await authorize(tx, data.clubId, user.id);
     const existing = await tx.rosterImport.findUnique({ where: { clubId_idempotencyKey: { clubId: data.clubId, idempotencyKey: data.requestId } }, include: { rows: { orderBy: { rowNumber: "asc" } } } });
-    if (existing && (existing.fileHash !== fileHash || existing.filename !== data.filename || existing.uploadedById !== user.id || existing.status !== "VALIDATED")) throw new Error("Upload key already used. Reupload with a new request.");
+    if (existing && (existing.fileHash !== fileHash || existing.filename !== data.filename || existing.uploadedById !== user.id || existing.status !== "VALIDATED")) throw new ActionError("This upload was already used for a different file. Choose the file again to start a new preview.", "STALE");
     const rows = await classify(tx, data.clubId, inputs, config);
     if (existing) {
       for (let i = 0; i < rows.length; i++) {
@@ -81,16 +82,13 @@ export async function previewRosterImport(input: unknown) {
     }
     const summary = rosterSummary(rows);
     if (existing) {
-      let changed = false;
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i], saved = existing.rows[i];
-        if (databaseStatus(row) !== saved.status) {
+      const changes = rows.flatMap((row, i) => databaseStatus(row) !== existing.rows[i].status ? [{ saved: existing.rows[i], row }] : []);
+      if (changes.length && !await settleRosterRows(tx, existing, changes)) {
+        for (const { saved, row } of changes)
           await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: databaseStatus(row), errors: [...row.errors, ...row.warnings],
             matchedUserId: row.matchedUserId, schoolIdentityId: row.schoolIdentityId, invitationId: row.invitationId } });
-          changed = true;
-        }
       }
-      if (changed) {
+      if (changes.length) {
         await tx.rosterImport.update({ where: { id: existing.id }, data: { failedRows: summary.invalid } });
         await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.repreview", targetId: existing.id, clubId: data.clubId, details: summary } });
       }
@@ -163,18 +161,42 @@ async function bulkReadyRows(tx: AppTransactionClient, record: { id: string; clu
   return new Set(entries.map(({ saved }) => saved.id));
 }
 
+type SettledRow = Pick<RosterRow, "status" | "errors" | "warnings"> & { matchedUserId: string | null; schoolIdentityId: string | null; invitationId: string | null };
+/** Records the outcome of rows that get no invitation in one statement. Returns false (nothing written)
+ * when a row constraint fails, so the caller records each row on its own as before. */
+async function settleRosterRows(tx: AppTransactionClient, record: { id: string; clubId: string }, entries: { saved: RosterImportRow; row: SettledRow }[]) {
+  if (!entries.length) return true;
+  const payload = JSON.stringify(entries.map(({ saved, row }) => ({ id: saved.id, status: databaseStatus(row), errors: [...row.errors, ...row.warnings],
+    user: row.matchedUserId, identity: row.schoolIdentityId, invitation: row.invitationId })));
+  await tx.$executeRaw`SAVEPOINT roster_settle`;
+  try {
+    const count = await tx.$executeRaw`UPDATE "RosterImportRow" r SET status = x.status::"RosterRowStatus", errors = x.errors, "matchedUserId" = x."user",
+      "schoolIdentityId" = x.identity, "invitationId" = x.invitation, "updatedAt" = CURRENT_TIMESTAMP
+      FROM jsonb_to_recordset(${payload}::jsonb) AS x(id text, status text, errors jsonb, "user" text, identity text, invitation text)
+      WHERE r.id = x.id AND r."importId" = ${record.id} AND r."clubId" = ${record.clubId}`;
+    if (count !== entries.length) throw new ActionError("Some rows in this import changed. Upload the file again to review them.", "STALE");
+  } catch (error) {
+    if (!rowDataError(error)) throw error;
+    await tx.$executeRaw`ROLLBACK TO SAVEPOINT roster_settle`;
+    await tx.$executeRaw`RELEASE SAVEPOINT roster_settle`;
+    return false;
+  }
+  await tx.$executeRaw`RELEASE SAVEPOINT roster_settle`;
+  return true;
+}
+
 /** One resumable transaction of at most 50 ready rows. Creates MEMBER invitations only; no email. */
-export async function confirmRosterImport(importId: string) {
+async function confirmRosterImportCommand(importId: string) {
   z.string().uuid().parse(importId);
   const hint = await prisma.rosterImport.findUniqueOrThrow({ where: { id: importId } });
   const { user } = await requireClubPermission(hint.clubId, ["members.manage"]);
   return prisma.$transaction(async tx => {
     const config = await authorize(tx, hint.clubId, user.id);
     const record = await tx.rosterImport.findUniqueOrThrow({ where: { id: importId }, include: { rows: { orderBy: { rowNumber: "asc" } } } });
-    if (record.clubId !== hint.clubId || record.uploadedById !== user.id) throw new Error("Only the uploader can confirm this preview.");
+    if (record.clubId !== hint.clubId || record.uploadedById !== user.id) throw new ActionError("Only the person who uploaded this preview can confirm it. Upload the file again to import it yourself.", "FORBIDDEN");
     if (record.status === "COMPLETED") return importResult(record.rows, true, true);
-    if (!["VALIDATED", "PROCESSING"].includes(record.status)) throw new Error("Import is not ready to confirm.");
-    if (record.rows.length > ROSTER_MAX_ROWS || record.rows.some(row => row.clubId !== record.clubId || row.importId !== record.id || row.status === "PENDING")) throw new Error("Import rows require review.");
+    if (!["VALIDATED", "PROCESSING"].includes(record.status)) throw new ActionError("This import is not ready to confirm. Upload the file again to start a new preview.", "STALE");
+    if (record.rows.length > ROSTER_MAX_ROWS || record.rows.some(row => row.clubId !== record.clubId || row.importId !== record.id || row.status === "PENDING")) throw new ActionError("Some rows in this import changed. Upload the file again to review them.", "STALE");
     if (record.status === "VALIDATED") {
       await tx.rosterImport.update({ where: { id: importId }, data: { status: "PROCESSING" } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.start", targetId: importId, clubId: record.clubId } });
@@ -199,13 +221,19 @@ export async function confirmRosterImport(importId: string) {
       return inputs[index].success && row.status === "READY" && saved.normalizedIdentifier === row.normalizedIdentifier ? [{ saved, row }] : [];
     });
     const completedIds = await bulkReadyRows(tx, record, ready, config, user.id);
-    for (const saved of selected.filter(row => !completedIds.has(row.id))) {
+    const remaining = selected.filter(row => !completedIds.has(row.id)).map(saved => {
       const index = indexById.get(saved.id)!;
       const row = classified[index];
       if (!inputs[index].success) { row.status = "INVALID"; row.errors = ["Malformed saved roster input; reupload this row"]; }
       if (saved.normalizedIdentifier !== row.normalizedIdentifier && row.status === "READY") {
         row.status = "INVALID"; row.errors.push("School identifier mapping changed; reupload this row");
       }
+      return { saved, row };
+    });
+    // Rows that get no invitation are recorded together; on a row constraint failure each is recorded below.
+    const settled = await settleRosterRows(tx, record, remaining.filter(({ row }) => row.status !== "READY"));
+    for (const { saved, row } of remaining) {
+      if (settled && row.status !== "READY") continue;
       await tx.$executeRaw`SAVEPOINT roster_import_row`;
       const expiredIds: string[] = [];
       let createdInvitationId = "";
@@ -258,4 +286,12 @@ export async function confirmRosterImport(importId: string) {
       details: { created: result.created, alreadyMember: result.alreadyMember, alreadyInvited: result.alreadyInvited, invalid: result.invalid, duplicates: result.duplicates, failed: result.failed, processed: result.processed } } });
     return result;
   }, { timeout: 60000 });
+}
+
+export async function previewRosterImport(...args: Parameters<typeof previewRosterImportCommand>) {
+  return actionResult(() => previewRosterImportCommand(...args), "previewRosterImport")
+}
+
+export async function confirmRosterImport(...args: Parameters<typeof confirmRosterImportCommand>) {
+  return actionResult(() => confirmRosterImportCommand(...args), "confirmRosterImport")
 }

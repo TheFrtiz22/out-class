@@ -71,8 +71,6 @@ test('canonical Auth SQL rejects cross-ID email collisions and stale installers 
   assert.match(sql, /RAISE EXCEPTION 'Email belongs to a different public user/);
   assert.ok(sql.includes('ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email'));
   assert.doesNotMatch(sql, /ON CONFLICT \(email\)|SET\s+"?id"?\s*=|DELETE FROM/i);
-  for (const file of ['db_test9.js', 'db_test10.js']) {
-    assert.match(read(file), /throw new Error/);
-    assert.doesNotMatch(read(file), /PrismaClient|executeRaw|fetch\(/);
-  }
+  // The retired email-matching installers were deleted; they must not come back.
+  for (const file of ['db_test9.js', 'db_test10.js']) assert.equal(fs.existsSync(file), false, file);
 });

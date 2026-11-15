@@ -41,20 +41,21 @@
   .oc-dock-navigation-content { position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100%; padding-block: 2px; }
   .oc-dock-section[data-pinned] { margin-top: auto; }
   .oc-dock-section { border-top: 1px solid rgb(255 255 255 / 13%); margin-top: 8px; padding-top: 6px; }
-  .oc-dock-section-heading { display: flex; align-items: center; height: 25px; margin: 0; padding-left: 19px; color: var(--oc-rail-muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+  .oc-dock-section-heading { display: flex; align-items: center; height: 25px; margin: 0; padding-left: 19px; color: var(--oc-rail-muted); font-size: var(--oc-size-12); font-weight: 400; white-space: nowrap; }
   .oc-dock-section nav { display: flex; flex-direction: column; gap: 4px; }
   .oc-dock-rail nav :is(a,button) {
     display: flex; position: relative; align-items: center; gap: 0; flex-shrink: 0;
     width: 100%; min-width: 60px; height: 48px; min-height: 48px; padding: 0; margin: 0;
     border-radius: 13px; color: var(--oc-rail-muted); background: transparent;
-    text-align: left; font-size: 14px; font-weight: 500; white-space: nowrap;
+    text-align: left; font-size: var(--oc-size-14); font-weight: 500; white-space: nowrap;
     transition: color 160ms ease;
   }
   .oc-dock-rail nav :is(a,button):is(:hover,[aria-current="page"],[data-active="true"]) { color: var(--oc-rail-text); background: transparent; }
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
   .oc-dock-rail nav [aria-current="page"]::after { display: none; }
   .oc-dock-icon { display: grid; place-items: center; width: 60px; flex: 0 0 60px; transform: scale(1); transform-origin: center; transition: transform 240ms var(--oc-floating-ease); }
-  .oc-dock-icon > :is(svg,[data-slot="avatar"]) { width: 22px; height: 22px; }
+  .oc-dock-icon > svg { width: 24px; height: 24px; }
+  .oc-dock-icon > [data-slot="avatar"] { width: 22px; height: 22px; }
   .oc-dock-rail nav :is([aria-current="page"],[data-active="true"]) .oc-dock-icon > svg { color: var(--brand-orange); }
   .oc-dock-item-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .oc-dock-preview { margin-inline: auto 10px; }

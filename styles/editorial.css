@@ -6,7 +6,7 @@
 }
 .oc-page-header[data-density="editorial"] h1 em { font-weight: 400; }
 .oc-page-header[data-density="editorial"] .oc-eyebrow, .oc-editorial-label {
-  color: var(--brand-ink); font-family: var(--oc-font-sans); font-size: .6875rem;
+  color: var(--brand-ink); font-family: var(--oc-font-sans); font-size: var(--oc-size-12);
   font-weight: 600; letter-spacing: .065em; line-height: 1.5; text-transform: uppercase;
 }
 .oc-page-header[data-density="editorial"] .oc-page-description { margin-top: 1.25rem; font-size: 1rem; line-height: 1.6; }

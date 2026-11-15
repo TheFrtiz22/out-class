@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { storagePathSchema, validateProfileFile } from "@/lib/student-profile";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { recentObjectCount, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
 
 const fileNameSchema = z.string().min(1).max(255).refine(
   name => !/[\\/\x00-\x1f\x7f%?#]/.test(name) && name !== "." && name !== "..",
@@ -53,6 +54,17 @@ export async function uploadProfileFile(input: FormData) {
     {
       const { data: storedBucket, error } = await admin.storage.getBucket(bucket);
       if (error || !storedBucket || storedBucket.public) throw new Error("Private document storage is unavailable.");
+    }
+    {
+      // Replacement frequency: count this owner's objects created in the last hour (Storage metadata).
+      const since = uploadWindowStart();
+      const { data: recent, error } = await admin.storage.from(bucket).list(user.id, {
+        limit: UPLOAD_QUOTAS.profile.perUserHour + 1,
+        sortBy: { column: "created_at", order: "desc" },
+      });
+      if (error) throw new Error("Private document storage is unavailable.");
+      const quota = uploadQuotaError({ userRecent: recentObjectCount(recent, since) }, UPLOAD_QUOTAS.profile);
+      if (quota) throw new Error(quota);
     }
     if (impersonation) client = admin;
   }

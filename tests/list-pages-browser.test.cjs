@@ -19,7 +19,11 @@ async function measure(page) {
       sortOnScreen = r.left >= 0 && r.right <= innerWidth && hits.every(hit => hit && control.contains(hit)); window.scrollTo(0, 0)
     }
     const cards = [...document.querySelectorAll('main [data-list-card]')].filter(shown)
+    // Wide lists sort from their column headers; the toolbar SortControl beside them is for the card layout only.
+    const sortableHeaders = [...document.querySelectorAll('main .oc-dt thead th button')].some(shown)
+    const cardsOnlySortShown = [...document.querySelectorAll('main .oc-dt-cards-sort')].some(shown)
     return {
+      sortableHeaders, cardsOnlySortShown,
       pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       sortOnScreen,
       rows: [...document.querySelectorAll('main .oc-dt tbody tr')].filter(shown).map(r => r.getBoundingClientRect().height),
@@ -29,18 +33,22 @@ async function measure(page) {
   })
 }
 
-test('browser: every list keeps a visible sort, one-line rows or two-line cards, and no page scroll at five widths; the quick review fits', { timeout: 600000 }, async t => {
+test('browser: every list keeps a visible sort (control or headers), one-line rows or two-line cards, and no page scroll at five widths; the quick review fits', { timeout: 600000 }, async t => {
   const fixtures = { leader: await startLeaderScreens(), list: await startListPages() }
   t.after(async () => { for (const f of Object.values(fixtures)) await f.close() })
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close())
   for (const width of widths) {
     const context = await browser.newContext({ viewport: { width, height: 764 }, reducedMotion: 'reduce' })
+    // The leader-screens fixture seeds Demo data from 2026-11-09; pin the page clock there so its
+    // interviews stay upcoming (a real clock aged them into the past on Nov 13 and the list emptied).
+    await context.clock.setFixedTime(new Date('2026-11-09T15:00:00-05:00'))
     const page = await context.newPage(), errors = []; page.on('pageerror', error => errors.push(error.message))
     for (const [name, fixture, query] of pages) {
       await page.goto(fixtures[fixture].url(query)); await page.locator('main h1').first().waitFor(); await page.waitForTimeout(500)
       const m = await measure(page), at = `${name} at ${width}px`
       assert.ok(m.pageOverflow <= 0, `${at}: the page never scrolls sideways (${m.pageOverflow}px)`)
-      assert.ok(m.sortOnScreen, `${at}: a Sort control is fully on screen`)
+      assert.ok(m.sortOnScreen || m.sortableHeaders, `${at}: a Sort control or sortable column headers are on screen`)
+      if (m.rows.length && m.sortableHeaders) assert.equal(m.cardsOnlySortShown, false, `${at}: no second sort control beside sortable headers`)
       assert.ok(m.rows.length || m.cards.length, `${at}: renders rows or cards`)
       for (const h of m.rows) assert.ok(h <= 48, `${at}: table rows are 48px or less (${h})`)
       for (const h of m.cards) assert.ok(h <= 72, `${at}: cards are 72px or less (${h})`)
@@ -60,20 +68,19 @@ test('browser: every list keeps a visible sort, one-line rows or two-line cards,
     await context.close()
   }
 
-  // Quick review at 1126×764: the applicant's responses and the decision footer fit without scrolling,
-  // ←/→ move between applicants, typing in the note does not, and Esc closes.
+  // The applicant review at 1126×764: responses lead, Advance / Hold / Reject are on screen without scrolling,
+  // ←/→ move between applicants, typing does not, and Esc closes.
   const page = await browser.newPage({ viewport: { width: 1126, height: 764 } })
   await page.goto(fixtures.leader.url('section=recruitment&tool=applicants&sort=name&order=asc')); await page.locator('main h1').first().waitFor()
   await page.getByRole('button', { name: 'Open Amara Merritt' }).first().click()
   const dialog = page.getByRole('dialog'); await dialog.waitFor()
+  await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).waitFor()
   assert.ok(await page.locator('.oc-quick-answer').count() >= 1, 'responses are the main content')
-  const fit = await page.locator('.oc-applicant-drawer-scroll').evaluate(el => el.scrollHeight - el.clientHeight)
-  assert.ok(fit <= 0, `the quick review fits without scrolling (${fit}px over)`)
-  await page.locator('.oc-quick-footer').evaluate(el => { const r = el.getBoundingClientRect(); if (r.bottom > innerHeight + 1 || r.top < 0) throw Error('footer off screen') })
+  await page.locator('.oc-review-decision-buttons').evaluate(el => { const r = el.getBoundingClientRect(); if (r.bottom > innerHeight + 1 || r.top < 0) throw Error('decisions off screen') })
   assert.equal(await dialog.getByText(/Read thoughtfully|Applicant dossier|Jump to review workspace|not a score/).count(), 0, 'no editorial clutter')
-  await page.locator('body').press('ArrowRight'); await page.getByRole('heading', { name: 'Amara Solano', exact: true }).waitFor()
-  await page.locator('body').press('ArrowLeft'); await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).waitFor()
-  await page.getByRole('textbox', { name: 'Overall evaluation feedback' }).focus(); await page.keyboard.press('ArrowRight')
+  await page.locator('#review-applicant-name').press('ArrowRight'); await page.getByRole('heading', { name: 'Amara Solano', exact: true }).waitFor()
+  await page.locator('#review-applicant-name').press('ArrowLeft'); await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).waitFor()
+  await page.getByRole('textbox', { name: 'Comment (optional)' }).focus(); await page.keyboard.press('ArrowRight')
   await page.waitForTimeout(300); assert.equal(await page.getByRole('heading', { name: 'Amara Merritt', exact: true }).count(), 1, 'arrows are ignored while typing')
   await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' })
   // The sort chosen in the URL is still applied after a reload.

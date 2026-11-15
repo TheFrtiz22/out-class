@@ -19,7 +19,7 @@ const statusIcons: Record<string, IconComponent> = {
 export function StatusPill({ status, className }: { status: string; className?: string }) {
   const code = applicationStatusCode(status)
   const Icon = statusIcons[code] ?? Circle
-  return <span data-slot="status-pill" data-status={code} className={cn("oc-status-pill", className)}><Icon size={15} />{applicationStatusLabel(status)}</span>
+  return <span data-slot="status-pill" data-status={code} className={cn("oc-status-pill", className)}><Icon size={16} />{applicationStatusLabel(status)}</span>
 }
 
 export type StatusTone = "neutral" | "active" | "done" | "strong"
@@ -34,5 +34,5 @@ export function StatusMark({ label, tone = "neutral", icon, className, title, ch
   const code = applicationStatusCode(label)
   if (applicationStatusLabels[code]) return <StatusPill status={code} className={className} />
   const Icon = icon ?? toneIcons[tone]
-  return <span data-slot="status-pill" data-tone={tone} className={cn("oc-status-pill", className)} title={title}><Icon size={15} weight={tone === "strong" ? "fill" : "regular"} />{label}{children}</span>
+  return <span data-slot="status-pill" data-tone={tone} className={cn("oc-status-pill", className)} title={title}><Icon size={16} weight={tone === "strong" ? "fill" : "regular"} />{label}{children}</span>
 }

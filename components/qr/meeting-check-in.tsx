@@ -1,10 +1,13 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { PageHeader } from "@/components/ui/page-header";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-mode";
-import { checkInMeeting as checkInLive, getMeeting as getMeetingLive } from "@/actions/meetings";
+import { checkInMeeting as checkInMeetingAction, getMeeting as getMeetingAction } from "@/actions/meetings";
+import { unwrapped } from "@/lib/action-result";
+const checkInLive = unwrapped(checkInMeetingAction), getMeetingLive = unwrapped(getMeetingAction);
 
 // Students open this page on a phone right after scanning. Import the two live
 // Server Actions directly; the full workspace adapter (every feature plus the
@@ -47,8 +50,8 @@ export function MeetingCheckIn() {
         .then((m) => {
           if (current) setTitle(m.title);
         })
-        .catch(() => {
-          if (current) setError("Meeting unavailable or access denied.");
+        .catch((e) => {
+          if (current) setError(userMessage(e, "Meeting unavailable or access denied. Check the link or ask the club for a new one."));
         });
     return () => {
       current = false;
@@ -107,9 +110,7 @@ export function MeetingCheckIn() {
                 setResult(await checkInMeeting(demo.isDemoEnabled, id, token));
               } catch (e) {
                 setError(
-                  e instanceof Error
-                    ? e.message
-                    : "Check-in failed. Please try again.",
+                  userMessage(e, "Check-in failed. Please try again."),
                 );
               } finally {
                 setBusy(false);

@@ -1,8 +1,9 @@
+const { unwrapActions, refused } = require('./helpers/action-result.cjs')
 const { test } = require('node:test'), assert = require('node:assert/strict')
 const { harness } = require('./helpers/interview-sql-harness.cjs')
 async function fixture(t) {
   const h = await harness({permissiveDefaults:true}); t.after(() => h.db.close())
-  const api = h.load('actions/availability.ts'), core = h.load('lib/availability.ts')
+  const api = unwrapActions(h.load('actions/availability.ts')), core = h.load('lib/availability.ts')
   const schedule = core.emptySchedule('America/New_York'); schedule.weeklySubmitted = true; schedule.weekly[0] = [[540, 600]]
   await h.db.query('UPDATE "ClubMember" SET "accessRole"=\'INTERVIEWER\' WHERE id=$1', [h.ids.panelMember])
   return { ...h, api, core, schedule }
@@ -12,9 +13,9 @@ test('global availability is account-bound, revision-safe and shared across club
   h.as(ids.panel)
   assert.equal((await api.getMyAvailability()).document.revision, 0)
   const saved = await api.saveMyAvailability({ schedule, revision: 0 }); assert.equal(saved.revision, 1)
-  await assert.rejects(api.saveMyAvailability({ schedule, revision: 0 }), /another tab/)
+  await refused(api.saveMyAvailability({ schedule, revision: 0 }), /another tab/)
   await assert.rejects(api.saveMyAvailability({ schedule, revision: 1, userId: ids.owner }))
-  await assert.rejects(api.saveMyAvailability({ schedule, revision: 1, accountId: ids.owner }), /Account changed/)
+  await refused(api.saveMyAvailability({ schedule, revision: 1, accountId: ids.owner }), /Account changed/)
   const scope = { clubId: ids.club, roundId: ids.round }
   const initial = await api.getMyRoundAvailability(scope); assert.deepEqual(initial.document.schedule, schedule); assert.equal(initial.confirmed, false)
   const confirmed = await api.saveMyRoundAvailability({ ...scope, ...initial.document, confirm: true }); assert.equal(confirmed.confirmed, true)
@@ -55,7 +56,7 @@ test('admin overview and pool count only eligible confirmed participants and who
   assert.deepEqual(await api.getEligibleInterviewerPool({ ...scope, start: '2026-10-12T13:45:00Z', end: '2026-10-12T14:01:00Z' }), [])
   h.as(ids.peer); await assert.rejects(api.getAvailabilityOverview({ ...scope, week: '2026-10-12', timezone: 'UTC' }), /access denied/)
   h.as(ids.panel); await assert.rejects(api.getAvailabilityOverview({ ...scope, week: '2026-10-12', timezone: 'UTC' }), /access denied/)
-  h.as(ids.scheduler); await assert.rejects(api.setInterviewerEligibility({ clubId: ids.club, revision: 0, targets: [{ memberId: ids.peerMember, eligible: true }] }), /access denied/)
+  h.as(ids.scheduler); await refused(api.setInterviewerEligibility({ clubId: ids.club, revision: 0, targets: [{ memberId: ids.peerMember, eligible: true }] }), /access denied/)
   h.as(ids.owner); await assert.rejects(api.getAvailabilityOverview({ clubId: require('node:crypto').randomUUID(), week: '2026-10-12', timezone: 'UTC' }), /access denied/)
   assert.equal((await h.db.query('SELECT count(*)::int AS n FROM "InterviewPanelAssignment"')).rows[0].n, 0)
 })
@@ -64,7 +65,7 @@ test('bulk and role defaults, membership overrides, round overrides, and revocat
   h.as(ids.owner)
   await api.setInterviewerEligibility({ clubId: ids.club, revision: 0, roles: ['INTERVIEWER', 'MEMBER'] })
   await api.setInterviewerEligibility({ clubId: ids.club, revision: 1, targets: [{ memberId: ids.peerMember, eligible: false }, { memberId: ids.schedulerMember, eligible: true }] })
-  await assert.rejects(api.setInterviewerEligibility({ clubId: ids.club, revision: 1, roles: [] }), /changed/)
+  await refused(api.setInterviewerEligibility({ clubId: ids.club, revision: 1, roles: [] }), /changed/)
   const before = (await h.db.query('SELECT permissions,"isOwner","interviewOffices" FROM "ClubMember" WHERE id=$1', [ids.schedulerMember])).rows[0]
   h.as(ids.peer); await assert.rejects(api.getMyRoundAvailability({ clubId: ids.club, roundId: ids.round }), /aren.t an interviewer/)
   h.as(ids.owner); await api.setInterviewerEligibility({ clubId: ids.club, revision: 2, roundId: ids.round, targets: [{ memberId: ids.peerMember, eligible: true }] })
@@ -72,10 +73,10 @@ test('bulk and role defaults, membership overrides, round overrides, and revocat
   await api.saveMyRoundAvailability({ ...initial.document, clubId: ids.club, roundId: ids.round, schedule, confirm: true })
   h.as(ids.owner); await api.setInterviewerEligibility({ clubId: ids.club, revision: 3, roundId: ids.round, targets: [{ memberId: ids.peerMember, eligible: false }] })
   assert.equal((await h.db.query('SELECT "confirmedAt" FROM "InterviewRoundParticipation" WHERE "memberId"=$1', [ids.peerMember])).rows[0].confirmedAt, null)
-  h.as(ids.peer); await assert.rejects(api.saveMyRoundAvailability({ clubId: ids.club, roundId: ids.round, revision: 2, schedule, confirm: true }), /aren.t an interviewer/)
+  h.as(ids.peer); await refused(api.saveMyRoundAvailability({ clubId: ids.club, roundId: ids.round, revision: 2, schedule, confirm: true }), /aren.t an interviewer/)
   const after = (await h.db.query('SELECT permissions,"isOwner","interviewOffices" FROM "ClubMember" WHERE id=$1', [ids.schedulerMember])).rows[0]
   assert.deepEqual(after, before)
-  h.as(ids.owner); await assert.rejects(api.setInterviewerEligibility({ clubId: ids.club, revision: 4, targets: [{ memberId: require('node:crypto').randomUUID(), eligible: true }] }), /active members/)
+  h.as(ids.owner); await refused(api.setInterviewerEligibility({ clubId: ids.club, revision: 4, targets: [{ memberId: require('node:crypto').randomUUID(), eligible: true }] }), /active members/)
   await api.setInterviewerEligibility({ clubId: ids.club, revision: 4, targets: [{ memberId: ids.peerMember, eligible: null }] })
   await h.db.query('UPDATE "ClubMember" SET status=\'LEFT\',permissions=\'{}\',\"accessRole\"=\'MEMBER\' WHERE id=$1', [ids.panelMember])
   h.as(ids.panel); await assert.rejects(api.getMyRoundAvailability({ clubId: ids.club, roundId: ids.round }), /access denied/)
@@ -123,8 +124,8 @@ test('both save actions reject new hidden hours atomically and retain saved hist
   const h = await fixture(t), { api, core, ids } = h, scope = { clubId: ids.club, roundId: ids.round }
   h.as(ids.panel)
   const hidden = core.emptySchedule(); hidden.weeklySubmitted = true; hidden.weekly[0] = [[465, 495]]
-  await assert.rejects(api.saveMyAvailability({ revision: 0, schedule: hidden }), /8:00 AM and 9:00 PM/)
-  await assert.rejects(api.saveMyRoundAvailability({ ...scope, revision: 0, schedule: hidden, confirm: true }), /8:00 AM and 9:00 PM/)
+  await refused(api.saveMyAvailability({ revision: 0, schedule: hidden }), /8:00 AM and 9:00 PM/)
+  await refused(api.saveMyRoundAvailability({ ...scope, revision: 0, schedule: hidden, confirm: true }), /8:00 AM and 9:00 PM/)
   assert.equal(await h.prisma.userAvailability.count({ where: {} }), 0)
   assert.equal(await h.prisma.interviewRoundParticipation.count({ where: {} }), 0)
   const legacy = core.emptySchedule(); legacy.weeklySubmitted = true; legacy.weekly[0] = [[0, 60], [480, 1260], [1380, 1440]]
@@ -140,7 +141,7 @@ test('both save actions reject new hidden hours atomically and retain saved hist
   assert.deepEqual((await api.getMyRoundAvailability(scope)).document.schedule, legacy)
   assert.deepEqual(await Promise.all(['interviewRoom', 'interviewSlot', 'interviewBooking', 'interviewPanelAssignment', 'interviewPanelScheduleVersion'].map(model => h.prisma[model].findMany({}))), snapshot)
   const bad = structuredClone(saved.schedule); bad.exceptions['2026-10-13'] = [[1260, 1275]]
-  await assert.rejects(api.saveMyAvailability({ ...saved, schedule: bad }), /8:00 AM and 9:00 PM/)
+  await refused(api.saveMyAvailability({ ...saved, schedule: bad }), /8:00 AM and 9:00 PM/)
   assert.deepEqual((await api.getMyAvailability()).document, saved)
 })
 

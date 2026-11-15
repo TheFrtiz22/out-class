@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require("node:test")
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
@@ -149,7 +150,7 @@ function accessHarness(actor, target, invitation, options = {}) {
     },
   }
   return {
-    api: load("actions/club-access.ts", {
+    api: unwrapActions(load("actions/club-access.ts", {
       "@/utils/verified-email-policy": { ...load('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
       "@/utils/prisma": { prisma: { $transaction: async (fn) => fn(tx) } },
       "@/utils/auth": {
@@ -157,7 +158,7 @@ function accessHarness(actor, target, invitation, options = {}) {
       },
       "@/lib/permissions": permissions,
       "@/lib/auth": authPolicy,
-    }),
+    })),
     writes: () => writes,
     logs: () => logs,
   }

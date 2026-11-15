@@ -83,9 +83,9 @@ async function verify(config, root) {
       if (url.pathname !== '/api/workspace' || url.searchParams.get('kind') !== 'staffingCoverage') return false;
       return JSON.parse(url.searchParams.get('args') || '[]')[0]?.roundId === roundId;
     });
-    await page.getByRole('group', { name: 'Recruitment round', exact: true }).locator(`button[data-value="${roundId}"]`).click();
+    await page.getByRole('combobox', { name: 'Recruitment round', exact: true }).click(); await page.locator(`[role=option][data-value="${roundId}"]`).click();
     assert.equal((await coverage).status(), 200);
-    await page.waitForFunction(id => document.querySelector('[aria-label="Recruitment round"] [aria-pressed="true"]')?.dataset.value === id && new URL(location.href).searchParams.get('roundId') === id, roundId);
+    await page.waitForFunction(id => document.querySelector('[aria-label="Recruitment round"]')?.dataset.value === id && new URL(location.href).searchParams.get('roundId') === id, roundId);
   }
   async function saved(page) { await page.getByText('All changes saved', { exact: true }).waitFor(); await page.waitForFunction(() => !document.querySelector('[data-unsaved="true"], [data-saving="true"]')) }
   const snapshot = async () => Object.fromEntries(await Promise.all(['interviewSlot', 'interviewPanelAssignment', 'interviewPanelScheduleVersion', 'userNotification', 'notificationEmailOutbox'].map(async model => [model, await db[model].findMany({ orderBy: model === 'notificationEmailOutbox' ? { notificationId: 'asc' } : { id: 'asc' } })])))

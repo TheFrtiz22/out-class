@@ -1,4 +1,6 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
+import { UserFacingError } from "@/lib/action-result"
 import { useEffect, useState, type ReactNode } from "react"
 import { DemoContext, useDemoMode } from "@/contexts/demo-mode"
 export { useDemoMode }
@@ -125,7 +127,7 @@ export function DemoDataProvider({
           "sign-in-required": "Sign in with your authorized UVA account, then enable Demo Mode.",
           "not-allowlisted": "This account is not on the demo presenter allowlist.",
         }
-        throw new Error(reasons[result?.reason] || "Demo mode could not be changed. Check your access and try again.")
+        throw new UserFacingError(reasons[result?.reason] || "Demo mode could not be changed. Check your access and try again.")
       }
       if (enabled) {
         setDemoRequested(false)
@@ -138,7 +140,7 @@ export function DemoDataProvider({
       }
       window.location.assign("/")
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Please try again.")
+      setError(userMessage(e, "Please try again."))
     }
   }
   function viewAs(role: "student" | "leader", clubId = state?.clubs[0].id) {
@@ -155,7 +157,7 @@ export function DemoDataProvider({
         return
       }
       demoStore.mutate((s) => {
-        if (clubId !== s.clubs[0].id) throw new Error("Demo management is limited to MII.")
+        if (clubId !== s.clubs[0].id) throw new UserFacingError("Demo management is limited to MII.")
         s.perspective = { role, clubId }
       })
       const requestedStudentView = role === "student" && (!!studentRouteForPath(url.pathname) || url.searchParams.get("workspace") === "student" && resolveStudentView(url.searchParams.get("view")))

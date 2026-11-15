@@ -30,7 +30,7 @@ test('shared selection is ordered and narrow; private notes, phase, completion r
  h.as(h.ids.panel);await h.api.selectSharedInterviewQuestion({...h.one,questionId:h.ids.question});assert.equal((await h.api.getInterviewCollaboration(h.one)).revision,2);
  await h.db.query('UPDATE "InterviewPanelAssignment" SET "revokedAt"=NOW() WHERE "memberId"=$1',[h.ids.peerMember]);
  assert.equal((await h.api.getInterviewCollaboration(h.one)).participants.length,1);
- h.as(h.ids.peer);await assert.rejects(h.api.getInterviewCollaboration(h.two),/assignment/);
+ h.as(h.ids.peer);await assert.rejects(h.api.getInterviewCollaboration(h.two),/no longer have access/);
  }finally{await h.db.close();}
 });
 test('same member tabs deduplicate presence; distinct candidate sessions isolate; shared snapshots cannot be rewritten; browser roles denied',async()=>{

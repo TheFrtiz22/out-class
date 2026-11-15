@@ -1,6 +1,8 @@
 import type { ClubEvent, Notification } from "@/lib/data"
 import type { HomeApplicationSource } from "@/lib/student-home"
 import { eventStart } from "@/lib/calendar"
+import { pluralize } from "@/lib/copy/terms"
+import { applicationIntakeClosed } from "@/lib/recruitment-presentation"
 import { hasPermission, isActiveMembership, type ClubAccess } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
@@ -75,9 +77,11 @@ export function welcomeSubtitle(context: WelcomeContext, now: Date | null) {
       if (!confirmed && !memberMeeting) continue
       schedule(event.id, +eventStart(event), event.type === "Interview" ? "interview" : memberMeeting ? "meeting" : "club event", event.allDay)
     }
-    const drafts = context.applications.filter(a => a.status === "DRAFTING").length
-    if (drafts) add("drafts", 3, Infinity, `You have ${drafts} ${drafts === 1 ? "application" : "applications"} to finish.`)
-    const active = context.applications.filter(a => ["DRAFTING", "SUBMITTED", "IN_REVIEW", "INTERVIEWING"].includes(a.status)).length
+    // A draft for a club that stopped taking applications cannot be finished or progress, so it is not counted.
+    const live = context.applications.filter(a => a.status !== "DRAFTING" || !applicationIntakeClosed(a.club, +now))
+    const drafts = live.filter(a => a.status === "DRAFTING").length
+    if (drafts) add("drafts", 3, Infinity, `You have ${pluralize(drafts, "application")} to finish.`)
+    const active = live.filter(a => ["DRAFTING", "SUBMITTED", "IN_REVIEW", "INTERVIEWING"].includes(a.status)).length
     if (active) add("applications", 5, Infinity, `You have ${active} ${active === 1 ? "application" : "applications"} in progress.`)
   } else {
     const { data, membership, clubId } = context

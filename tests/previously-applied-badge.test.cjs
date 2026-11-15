@@ -127,8 +127,8 @@ test('the chip reuses StatusMark with a Phosphor icon and short copy', () => {
 test('StatusMark keeps the custom icon and children for "Previously applied" instead of falling back to StatusPill', () => {
   const { StatusMark } = loadAny('components/ui/status-pill.tsx', { '@/components/icons': icons, '@/lib/utils': { cn: (...c) => c.filter(Boolean).join(' ') } })
   const html = renderToStaticMarkup(React.createElement(StatusMark, { label: 'Previously applied', icon: icons.History }, React.createElement('span', { className: 'sr-only' }, ': Spring 2026')))
-  const historyGlyph = renderToStaticMarkup(React.createElement(icons.History, { size: 15 }))
-  const circleGlyph = renderToStaticMarkup(React.createElement(icons.Circle, { size: 15 }))
+  const historyGlyph = renderToStaticMarkup(React.createElement(icons.History, { size: 16 }))
+  const circleGlyph = renderToStaticMarkup(React.createElement(icons.Circle, { size: 16 }))
   assert.ok(html.includes(historyGlyph), 'renders the History glyph')
   assert.ok(!html.includes(circleGlyph), 'not the default tone glyph')
   assert.match(html, /data-tone="neutral"/, 'StatusMark path, not StatusPill (which has data-status)')

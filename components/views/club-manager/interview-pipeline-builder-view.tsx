@@ -1,4 +1,5 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { editorValue } from "@/lib/editor-value"
@@ -127,9 +128,7 @@ export function InterviewPipelineBuilderView({
       return true;
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : "Could not save. Your edits are still here.",
+        userMessage(e, "Could not save. Your edits are still here."),
       );
       return false;
     } finally {

@@ -1,6 +1,7 @@
 "use client"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, minuteLabel } from "@/lib/scheduling-config"
 import { AvailabilityButton } from "@/components/availability/availability-button"
+import { CalendarSubscribe } from "@/components/calendar-subscribe"
 import { localParts } from "@/lib/availability"
 import Link from "next/link";
 
@@ -177,7 +178,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
             Times shown in {SCHEDULING_TIMEZONE_LABEL}.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" />{bookingDates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" /><CalendarSubscribe />{bookingDates.length > 0 && (
           <Button variant="outline" onClick={() => setBooking(true)}>
             Book / change interview
           </Button>
@@ -213,7 +214,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
         </div>
       )}
       {/* Phones, as in the app: search and filters sit behind a Filter button. */}
-      {events.length > 0 && <FilterButton size="sm" label="Filter" count={phoneActive} className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)} />}
+      {events.length > 0 && <FilterButton size="sm" count={phoneActive} className="oc-calendar-filter-toggle" aria-expanded={phoneFilters} aria-controls="calendar-tools" onClick={() => setPhoneFilters(open => !open)} />}
       {events.length > 0 && <div id="calendar-tools" className="oc-toolbar oc-calendar-tools" data-phone-open={phoneFilters || undefined}>
         <SearchField
           aria-label="Search calendar"
@@ -358,7 +359,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                                "block w-full rounded p-1.5 text-left text-control leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}

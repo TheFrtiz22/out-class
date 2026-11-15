@@ -32,7 +32,7 @@ test('size, row and per-cell limits apply before persistence',()=>{
 });
 
 test('required fields, normalized computing IDs, optional years and duplicate identifiers produce actionable row results',()=>{
-  const rows=api.validateRosterRows([row({computing_id:' JMS8XY '}),row(),row({name:'Sarah',year:'',computing_id:'sl3ab'}),row({name:''}),row({computing_id:''}),row({computing_id:'jms8xy@virginia.edu'}),row({computing_id:'mc4de',year:'2031'})],config);
+  const rows=api.validateRosterRows([row({computing_id:' JMS8XY '}),row(),row({name:'Sarah',year:'',computing_id:'sl3ab'}),row({name:''}),row({computing_id:''}),row({computing_id:'jms8xy@virginia.edu'}),row({computing_id:'mc4de',year:'2099'})],config);
   assert.equal(rows[0].normalizedIdentifier,'jms8xy');assert.equal(rows[0].status,'READY');assert.equal(rows[1].status,'DUPLICATE');
   assert.equal(rows[2].status,'READY');assert.deepEqual(rows[2].warnings,['Missing year']);
   assert.ok(rows[3].errors.includes('Missing name'));assert.ok(rows[4].errors.includes('Missing computing ID'));

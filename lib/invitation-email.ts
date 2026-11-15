@@ -1,5 +1,5 @@
 import { clubAssetSource } from "@/lib/club-assets";
-import { emailArtworkUrl, emailButton, emailFallback, emailNotice, emailParagraph, emailSiteOrigin, escapeEmailHtml, transactionalEmailHtml } from '@/lib/transactional-email';
+import { emailArtworkUrl, emailButton, emailFallback, emailNotice, emailParagraph, emailSiteOrigin, emailTextFooter, escapeEmailHtml, transactionalEmailHtml } from '@/lib/transactional-email';
 
 /** Optional organization artwork never becomes a link or a delivery attachment. */
 export function invitationLogoUrl(value: string | null | undefined, origin: string) {
@@ -23,7 +23,7 @@ export function invitationEmail(input: { organizationName: string; organizationL
   const logoHtml = logo ? `<img src="${escapeEmailHtml(logo)}" alt="" width="48" height="48" style="display:block;width:48px;height:48px;object-fit:contain;background-color:#ffffff;border:1px solid #c7ced5;margin-bottom:18px">` : '';
   return {
     subject: `You’re invited to ${name} on OutClass`,
-    text: `${role}\n${intro}\n\n${input.owner ? 'Review your administrator designation before taking on this role.\n\n' : ''}${identity}\n\nReview invitation: ${href}\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.`,
+    text: `${role}\n${intro}\n\n${input.owner ? 'Review your administrator designation before taking on this role.\n\n' : ''}${identity}\n\nReview invitation: ${href}\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\n${emailTextFooter(origin)}`,
     html: transactionalEmailHtml({
       title: name, headingHtml: logoHtml + escapeEmailHtml(name), category: input.owner ? 'An invitation to lead' : 'An invitation to belong', variant: 'invitation',
       preview: input.owner ? `Review your administrator invitation to ${name}.` : `A place for you in ${name}.`, siteUrl: origin,

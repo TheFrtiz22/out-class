@@ -1,4 +1,6 @@
 "use client";
+import { Toggle } from "@/components/ui/toggle"
+import { userMessage } from "@/lib/user-message"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
@@ -8,7 +10,7 @@ import { getApplicationSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
 import { Plus, ArrowUp, ArrowDown, Trash2, Eye } from "@/components/icons";
 import {
-  saveApplicationSettings,
+  saveApplicationSettings as saveApplicationSettingsAction,
 } from "@/actions/club-settings";
 import {
   applicationSettingsSchema,
@@ -32,6 +34,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import "@/components/clubs/club-settings.css";
+import { unwrapped } from "@/lib/action-result"
+const saveApplicationSettings = unwrapped(saveApplicationSettingsAction)
 const localDate = (date: Date | string | null) => {
   if (!date) return "";
   const d = new Date(date);
@@ -150,9 +154,7 @@ export function ApplicationBuilderView({
       );
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : "Could not save. Your edits are still here.",
+        userMessage(e, "Could not save. Your edits are still here."),
       );
     } finally {
       working.current = false;
@@ -223,14 +225,7 @@ export function ApplicationBuilderView({
             disabled={busy || !draftSave.ready || draftSave.recovery != null}
             className="grid gap-4 border-b pb-6 sm:grid-cols-2"
           >
-            <label className="inline-flex min-h-11 items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={open}
-                onChange={(e) => setOpen(e.target.checked)}
-              />
-              Applications open
-            </label>
+            <Toggle label="Applications open" checked={open} onCheckedChange={setOpen} className="self-start" />
             <label className="space-y-2 text-sm">
               Deadline (optional, your local time)
               <Input
@@ -380,7 +375,7 @@ export function ApplicationBuilderView({
                               })
                             }
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={16} />
                           </Button>
                         </div>
                       ))}
@@ -481,7 +476,7 @@ export function ApplicationBuilderView({
                 />
                 <p
                   id={`help-${q.id}`}
-                  className="text-xs text-muted-foreground"
+                  className="text-control text-muted-foreground"
                 >
                   {q.type === "ESSAY" && q.wordLimit
                     ? `Up to ${q.wordLimit} words`

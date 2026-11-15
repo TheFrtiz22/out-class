@@ -1,3 +1,4 @@
+const {unwrapActions}=require('./helpers/action-result.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -21,11 +22,11 @@ function harness() {
       {createdAt:new Date('2026-10-02'),user:{email:'private@virginia.edu',studentProfile:{firstName:'Private',lastName:'Applicant'},applications:[{id:'app'}]}},
     ]}},
   };
-  const api=load('actions/campus-events.ts',{
+  const api=unwrapActions(load('actions/campus-events.ts',{
     '@/utils/prisma':{prisma:{$transaction:async fn=>fn(tx)}},
     '@/utils/auth':{requireClubPermission:async()=>({user:{id:'leader'}})},
     '@/utils/platform-admin':{},'next/cache':{},'@/utils/club-write-transaction':{},
-  });
+  }));
   return {state,api};
 }
 test('leader overview scopes and projects event data without fetching attendees or recruitment graphs',async()=>{

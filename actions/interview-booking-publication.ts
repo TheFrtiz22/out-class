@@ -35,9 +35,12 @@ export async function setInterviewBookingPublication(raw: unknown) {
     if (input.action === "PUBLISH") {
       const coverage = await interviewBookingCoverage(tx, input.clubId, input.roundId)
       if (!coverage.length) throw new Error("Add upcoming interview times before publishing the schedule.")
-      const blocked = coverage.find(s => !s.bookable)
+      // Times with no interviewers and no bookings are left out of the offered times instead of blocking.
+      const offered = coverage.filter(s => !s.unoffered)
+      if (!offered.length) throw new Error("Add interviewers to at least one time before publishing the schedule.")
+      const blocked = offered.find(s => !s.bookable)
       if (blocked) throw new Error(`The schedule can't be published yet: ${blocked.reasons.join(" ")} Check this session's interviewers.`)
-      const slots = await tx.interviewSlot.findMany({ where: { id: { in: coverage.map(s => s.slotId) }, clubId: input.clubId }, include: { room: true } })
+      const slots = await tx.interviewSlot.findMany({ where: { id: { in: offered.map(s => s.slotId) }, clubId: input.clubId }, include: { room: true } })
       bookingSlots = slots.map(s => bookingSlotSnapshot(s, s.room!))
     }
     const saved = await tx.pipelineRound.update({ where: { id: round.id }, data: { bookingCycleId: input.cycleId, bookingAllowCancellation: input.allowCancellation, bookingAllowRescheduling: input.allowRescheduling, bookingRevision: { increment: 1 }, ...(input.action === "PUBLISH" ? { bookingPublishedAt: round.bookingPublishedAt ?? new Date(), bookingPaused: false, bookingSlots } : input.action === "PAUSE" ? { bookingPaused: true } : {}) } })

@@ -4,6 +4,8 @@ import { votingDisplaySchema } from "@/lib/voting-presentation"
 import { z } from "zod"
 import { displayConfigSchema } from "@/lib/applicant-display"
 import { profileFieldVisibilitySchema } from "@/lib/profile-field-visibility"
+import { reviewRubricSchema } from "@/lib/review-rubric"
+import { stagedOutcomes } from "@/lib/staged-decisions"
 // Reject damaged or unrelated saved records before they reach UI adapters.
 const id = z.string().min(1)
 const profile = z
@@ -34,6 +36,8 @@ export const demoSnapshotSchema = z
     observations: z.array(z.object({ id, applicationId: id, kind: z.enum(["PRO", "CON"]), body: z.string().min(1).max(3000), author: z.string(), own: z.boolean(), createdAt: z.union([z.string().datetime(), z.date()]), updatedAt: z.union([z.string().datetime(), z.date()]) })).optional(),
     applicantDisplay: z.record(z.object({ config: displayConfigSchema, version: z.number().int().min(0) })).optional(),
     profileFieldVisibility: z.record(profileFieldVisibilitySchema).optional(),
+    reviewRubric: z.record(reviewRubricSchema).optional(),
+    stagedDecisions: z.array(z.object({ id, clubId: id, applicationId: id, outcome: z.enum(stagedOutcomes), targetStatus: z.enum(["IN_REVIEW", "INTERVIEWING", "WAITLISTED", "ACCEPTED", "REJECTED"]), targetRoundId: id.nullable(), expectedStatus: z.string(), expectedRoundId: id, stagedById: id, createdAt: z.string() })).optional(),
     interviewRooms: z.array(z.object({ id, clubId: id, roundId: id, panelMemberIds: z.array(id), slots: z.array(z.object({ id, startTime: z.union([z.string().datetime(), z.date()]), endTime: z.union([z.string().datetime(), z.date()]), capacity: z.number().int().positive() })) }).passthrough()).optional(),
     roomBookings: z.array(z.object({ id, applicationId: id, slotId: id, roomId: id, roundId: id, startTime: z.union([z.string().datetime(), z.date()]), endTime: z.union([z.string().datetime(), z.date()]) }).passthrough()).optional(),
     version: z.literal(1),

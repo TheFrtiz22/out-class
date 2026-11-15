@@ -8,6 +8,7 @@ import { privateFlyerStorage } from "@/utils/event-flyer-storage";
 import { validateProfileFile } from "@/lib/student-profile";
 import { auditSupportAction } from "@/utils/support-audit";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { UPLOAD_QUOTA_MESSAGES, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
 export async function uploadEventFlyer(input: FormData) {
   if (
     [...input.keys()].some(
@@ -51,6 +52,16 @@ export async function uploadEventFlyer(input: FormData) {
           throw Error(
             "Event changed or is unavailable. Reload before uploading.",
           );
+        const since = uploadWindowStart();
+        const userRecent = await tx.auditLog.count({ where: { actorId: user.id, action: "event.flyer.upload", createdAt: { gte: since } } });
+        const clubRecent = await tx.auditLog.count({ where: { clubId, action: "event.flyer.upload", createdAt: { gte: since } } });
+        const stored = await tx.eventFlyer.aggregate({ where: { event: { clubId } }, _sum: { size: true } });
+        const quota = uploadQuotaError(
+          { userRecent, clubRecent, clubBytes: stored._sum.size ?? 0, incomingBytes: bytes.length },
+          UPLOAD_QUOTAS.flyer,
+          UPLOAD_QUOTA_MESSAGES.flyerStorage,
+        );
+        if (quota) throw Error(quota);
         const storage = await privateFlyerStorage();
         await auditSupportAction(
           "platform.impersonation.event-flyer-upload",

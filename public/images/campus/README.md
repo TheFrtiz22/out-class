@@ -1,52 +1,23 @@
 # UVA campus photographs
 
-## "Built at UVA" band: project-supplied Rotunda at dusk
+Only openly licensed photographs are kept here. Every file below is credited on the
+site (the "Photo credits" line in the shared public footer, sourced from
+`lib/photo-credits.ts`). Do not add a photograph without a license record in this
+file and an entry in `lib/photo-credits.ts`.
 
-`rotunda-dusk-{960,1206}.webp` is the close-up photograph of the Rotunda at dusk
-(pink clouds, lit windows) supplied by the project owner on November 9, 2026 to
-replace the colonnade photo in the homepage "Built at UVA" band. Converted to WebP
-(quality 86 / 84) at its native 1206 × 1604 and a 960-wide variant; no cropping,
-upscaling or generative alteration. The band crops it with CSS and anchors it to
-the right so the copy card never covers the building.
+## Where each photograph is used
 
-## UVA information page: project-requested Lawn photograph
-
-`lawn-aerial.jpg` is the 675 × 450 aerial Lawn photograph requested by the project
-owner on October 12, 2026. The attached reference was matched to this published
-file and copied locally without cropping, upscaling, or generative alteration:
-
-- Source image: https://howardrideoutarch.wordpress.com/wp-content/uploads/2019/07/2-university-of-virginia.jpg
-- Source page: https://howardrideoutarch.wordpress.com/tag/quest-art-gallery/
-
-The legacy Creative Commons credits below do not apply to this photograph. The
-UVA information page serves it locally through Next.js Image, preserving the full
-3:2 composition and its dimensions during loading.
-
-## Current opening: project-supplied images
-
-These three files were supplied by the project owner on October 4, 2026 and are
-used as requested: football on the left, trees on the right, sunset Rotunda beneath
-the opening panels. No photographer or license metadata was supplied with them;
-the legacy Creative Commons credits below do not apply to these images.
-
-| Local asset | Supplied source | Original dimensions |
+| Placement | File | CSS treatment |
 | --- | --- | --- |
-| `football-{960,1600,2500}.webp` | `header_uva_football_vs._william_mary_090421_0613.jpg` | 2500 × 1666 |
-| `autumn-lawn-{960,1600,2074}.webp` | `il_fullxfull.3489818577_jiun.jpeg` | 2074 × 2092 |
-| `sunset-rotunda-{960,1600,2500}.webp` | `Header-SF-Sunset-Rotunda-Big-Pic-EE.jpg` | 2500 × 1667 |
+| Homepage opening backdrop (`components/landing/landing-intro.tsx`) | `rotunda-1600.webp` | cover, `center 35%`, navy gradient overlay |
+| Public footer, every public page (`components/landing/public-footer.tsx`) | `rotunda-1600.webp` | cover, `center 35%`, navy gradient overlay |
+| Site share card `/og/outclass.png` (`lib/share-card.tsx`) | `rotunda-1600.webp` | sharp left crop over a blurred wash of the same photo |
+| /uva hero (`app/uva/page.tsx`) | `rotunda-1600.webp` | full 3:2 frame, uncropped |
+| About, "Built by students at UVA" (`app/about/page.tsx`) | `rotunda-1600.webp` | 4:5 crop at `40% center` (5:4 on phones) |
+| About hero (`app/about/page.tsx`) | `colonnade-1600.webp` | 4:4.6 crop (5:4 on phones) |
+| Homepage "Built at UVA" band (`components/landing/campus-band.tsx`) | `colonnade-1600.webp` | right 68%, cover, navy gradient from the left |
 
-Adaptations: converted to WebP at quality 83, with downscaled responsive variants
-for all three sources, CSS cropping, and translucent navy overlays. The current
-right-hand photo replaces the former 300 × 381 tree image with the newly supplied
-2074 × 2092 autumn Lawn photograph. No artificial upscaling or generative
-alteration was applied.
-The revealed Rotunda loads at normal priority while the opening panels load at
-high priority. All assets are served locally.
-
-## Retained legacy assets and credits
-
-`trees-300.webp` is the earlier project-supplied `55c97e28cde8e786c5b8d2caf3a283cb.jpg`
-(300 × 381); it is no longer used in the opening.
+## Credits and licenses
 
 **Rotunda UVa from the south east** by **terren in Virginia**, photographed November 3, 2007.
 
@@ -54,7 +25,7 @@ high priority. All assets are served locally.
 - License: [Creative Commons Attribution 2.0 Generic](https://creativecommons.org/licenses/by/2.0/)
 - Download: https://upload.wikimedia.org/wikipedia/commons/b/bf/Rotunda_UVa_from_the_south_east.jpg
 - Upstream border crop by Beao (2023).
-- OutClass adaptations: resized to 960px and 1592px wide, converted to WebP; responsive cropping and translucent color overlays in CSS. No endorsement by the photographer or University of Virginia is implied.
+- OutClass adaptations: resized to 960px and 1592px wide, converted to WebP; responsive cropping, blur (share card) and translucent navy overlays. No endorsement by the photographer or the University of Virginia is implied.
 
 **Colonnade UVa academical village** by **Eli Pousson**, photographed March 15, 2009.
 
@@ -62,7 +33,17 @@ high priority. All assets are served locally.
 - Original Flickr source: https://www.flickr.com/photos/59179756@N00/3430071535/
 - License: [Creative Commons Attribution-ShareAlike 2.0 Generic](https://creativecommons.org/licenses/by-sa/2.0/)
 - Download: https://upload.wikimedia.org/wikipedia/commons/c/cb/Colonnade_UVa_academical_village.jpg
-- OutClass adaptations: resized to 960px and 1600px wide, converted to WebP at quality 80; responsive cropping and translucent color overlays in CSS. The colonnade image adaptations are distributed under **CC BY-SA 2.0**, the same license as the source image. No endorsement is implied.
+- OutClass adaptations: resized to 960px and 1600px wide, converted to WebP at quality 80; responsive cropping and translucent navy overlays. These adaptations (the files here and their cropped/tinted renderings) are distributed under **CC BY-SA 2.0**, the same license as the source image. No endorsement is implied.
 
-The legacy images remain in the repository with their original credits, but are
-not rendered in the current opening. They are locally served assets, not hotlinked images.
+## Removed on November 13, 2026
+
+Earlier owner-supplied photographs with no license record were deleted from
+`public/` so they can no longer be served: `football-*`, `autumn-lawn-*`,
+`sunset-rotunda-*`, `rotunda-dusk-*`, `lawn-aerial.jpg` and `trees-300.webp`.
+They remain only in git history; do not restore them.
+
+## Swapping in UVA photography later
+
+To use official UVA photographs (for example from UVA Communications, with written
+permission), replace the files above or add new ones, record the permission or
+license here, and update `lib/photo-credits.ts` and the placements in the table.

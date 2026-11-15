@@ -1,12 +1,17 @@
 "use client";
+import { userMessage } from "@/lib/user-message"
 import { useRef, useState } from "react";
 import {
-  acceptClubInvitation,
-  declineClubInvitation,
+  acceptClubInvitation as acceptClubInvitationAction,
+  declineClubInvitation as declineClubInvitationAction,
 } from "@/actions/club-access";
-import { acceptIdentityClubInvitation } from "@/actions/club-onboarding";
+import { acceptIdentityClubInvitation as acceptIdentityClubInvitationAction } from "@/actions/club-onboarding";
 import { clubWorkspaceHref } from "@/lib/club-workspace";
 import { Button } from "@/components/ui/button";
+import { unwrapped } from "@/lib/action-result"
+const acceptIdentityClubInvitation = unwrapped(acceptIdentityClubInvitationAction)
+const acceptClubInvitation = unwrapped(acceptClubInvitationAction)
+const declineClubInvitation = unwrapped(declineClubInvitationAction)
 export function InvitationResponse({ id, owner = false }: { id: string; owner?: boolean }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
@@ -32,9 +37,7 @@ export function InvitationResponse({ id, owner = false }: { id: string; owner?: 
       }
     } catch (error) {
       setMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not respond. Try again.",
+        userMessage(error, "Could not respond. Try again."),
       );
       responding.current = false;
       setBusy(false);

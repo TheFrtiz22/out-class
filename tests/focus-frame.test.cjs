@@ -37,7 +37,9 @@ test("every focus screen lives in app/(focus), keeps its URL, and has a task nam
   assert.deepEqual(routes.votingRoomFocus("leader"), { task: "Voting controls", width: "content" })
   assert.deepEqual(routes.votingRoomFocus("member"), { task: "Live voting", width: "reading" })
   assert.match(fs.readFileSync("components/live-voting/room-view.tsx", "utf8"), /useFocusFrame\(votingRoomFocus\(view\)\)/, "the room names its task per view, so query-only navigation updates it")
-  assert.equal(fs.readFileSync("app/(focus)/vote/page.tsx", "utf8").trim(), 'export { default } from "@/app/(focus)/live-voting/page"')
+  const vote = fs.readFileSync("app/(focus)/vote/page.tsx", "utf8")
+  assert.match(vote, /import LiveVotingPage, \{ metadata as liveVotingMetadata \} from "@\/app\/\(focus\)\/live-voting\/page"/)
+  assert.match(vote, /export const metadata = liveVotingMetadata\nexport default LiveVotingPage/, "/vote reuses the live-voting page and keeps its title")
 })
 
 test("Exit only returns to same-site product pages", () => {

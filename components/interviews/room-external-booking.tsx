@@ -1,6 +1,7 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
-import { ExternalLink, Info, Pencil } from "@/components/icons"
+import { Check, ExternalLink, Info, Pencil } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { Input } from "@/components/ui/input"
@@ -44,7 +45,7 @@ export function EditableRoomName({ room, disabled, onRename, className = "text-s
     setSaving(true); setError("")
     try { await onRename(name); finish(refocus) }
     // Keep the editor open with the typed name so the user can fix it, retry, or press Escape.
-    catch (e) { setError(e instanceof Error ? e.message : "Could not rename room."); settled.current = false; requestAnimationFrame(() => input.current?.focus()) }
+    catch (e) { setError(userMessage(e, "Could not rename room.")); settled.current = false; requestAnimationFrame(() => input.current?.focus()) }
     finally { setSaving(false) }
   }
   function key(event: KeyboardEvent<HTMLInputElement>) {
@@ -55,16 +56,16 @@ export function EditableRoomName({ room, disabled, onRename, className = "text-s
     {editing
       ? <Input ref={input} aria-label="Room name" maxLength={ROOM_NAME_MAX_LENGTH} disabled={saving} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={key} onBlur={() => void commit(false)} className="h-8 px-2" />
       : <span className="inline-flex min-w-0 items-center gap-1"><button ref={trigger} type="button" disabled={disabled || saving} onClick={start} title="Rename room" className={`${className} min-w-0 cursor-text break-words text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default`}>{room.name}<span className="sr-only"> (rename)</span></button><IconButton size="icon-sm" tabIndex={-1} disabled={disabled || saving} onClick={start} aria-label={`Edit name of ${room.name}`} className="text-muted-foreground"><Pencil size={14} aria-hidden /></IconButton></span>}
-    {error && <span role="alert" className="mt-1 text-xs text-destructive">{error}</span>}
+    {error && <span role="alert" className="mt-1 text-control text-destructive">{error}</span>}
   </span>
 }
 
 /** Tracking only: lets leaders record that they also reserved the room in 25Live. */
 export function ExternalBookingToggle({ room, disabled, onChange }: { room: Pick<InterviewRoom, "id" | "name" | "externallyBookedAt">; disabled?: boolean; onChange: (booked: boolean) => void }) {
   const id = `room-25live-${room.id}`
-  return <label htmlFor={id} className="inline-flex min-h-9 items-center gap-2 text-xs">
+  return <label htmlFor={id} className="inline-flex min-h-9 items-center gap-2 text-control">
     <input id={id} type="checkbox" checked={!!room.externallyBookedAt} disabled={disabled} onChange={e => onChange(e.target.checked)} />
-    Booked on 25Live
+    Booked on 25Live{room.externallyBookedAt && <Check size={14} weight="bold" aria-hidden className="text-emerald-700" />}
   </label>
 }
 

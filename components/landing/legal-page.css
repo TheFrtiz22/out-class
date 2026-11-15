@@ -1,11 +1,11 @@
 /* One readable light-glass card. */
 .oc-legal { --oc-public-glass-radius: 1.625rem; padding: clamp(24px, 4vw, 48px); }
-.oc-legal-eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.oc-legal-eyebrow { font-size: var(--oc-size-13); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
 .oc-legal h1 { margin-top: 12px; font-family: var(--oc-font-display); font-size: clamp(2rem, 1.5rem + 2vw, 3rem); line-height: 1.1; font-weight: 400; letter-spacing: -.03em; }
-.oc-legal-summary { margin-top: 16px; font-size: 18px; line-height: 1.6; color: var(--muted-foreground); }
-.oc-legal-updated { margin-top: 8px; font-size: 14px; color: var(--muted-foreground); }
+.oc-legal-summary { margin-top: 16px; font-size: var(--oc-size-18); line-height: 1.6; color: var(--muted-foreground); }
+.oc-legal-updated { margin-top: 8px; font-size: var(--oc-size-14); color: var(--muted-foreground); }
 .oc-legal section { margin-top: 36px; }
 .oc-legal h2 { font-family: var(--oc-font-display); font-size: 1.5rem; line-height: 1.25; font-weight: 500; }
-.oc-legal section p, .oc-legal li { margin-top: 12px; font-size: 16px; line-height: 1.7; }
+.oc-legal section p, .oc-legal li { margin-top: 12px; font-size: var(--oc-size-16); line-height: 1.7; }
 .oc-legal ul { padding-left: 1.25rem; list-style: disc; }
 .oc-legal a { text-decoration: underline; text-underline-offset: 4px; display: inline-flex; min-height: 44px; align-items: center; }

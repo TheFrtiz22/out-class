@@ -10,6 +10,15 @@ export function authEmailError(error: { code?: string; status?: number }, operat
   return "Unable to send a code. Please try again in a moment."
 }
 
+/** Password sign-in failures in our own words; Supabase's message text is never shown. */
+export function passwordSignInError(error: { code?: string; status?: number }) {
+  if (error.status === 429 || ["over_request_rate_limit", "over_email_send_rate_limit"].includes(error.code || "")) return "Too many attempts. Wait a few minutes before trying again."
+  if (error.code === "invalid_credentials" || (error.status === 400 && !error.code)) return "That email and password don’t match. Check them and try again."
+  if (error.code === "email_not_confirmed") return "Confirm your UVA email before signing in. Send yourself a sign-in code instead."
+  if (error.code === "user_banned") return "This account is unavailable. Contact OutClass support."
+  return "Unable to sign in. Please try again."
+}
+
 // Sign-in codes are requested with shouldCreateUser:false, so Supabase Auth answers an address with no
 // account with otp_disabled (422). The sign-in screen treats that exactly like a sent code.
 export function isNoAccountCodeError(error: { code?: string; status?: number }) {
