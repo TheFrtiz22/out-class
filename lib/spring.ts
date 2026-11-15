@@ -55,3 +55,24 @@ export function liveTranslate(element: Element): { x: number; y: number } {
   const values = m[2].split(",").map(Number);
   return m[1] ? { x: values[12] || 0, y: values[13] || 0 } : { x: values[4] || 0, y: values[5] || 0 };
 }
+
+/**
+ * A spring from `from` to `to` that starts at the gesture's velocity (px/s), as a Web Animations easing + duration.
+ * The velocity is normalised by the distance left (apple-design §5), so a flick hands off with no visible seam.
+ * damping 1 settles without overshoot; .8 adds the small bounce reserved for motion a gesture threw.
+ */
+export function springCurve({ from, to, velocity = 0, response = 0.3, damping = 1, points = 40 }: { from: number; to: number; velocity?: number; response?: number; damping?: number; points?: number }): { easing: string; duration: number } {
+  const distance = to - from;
+  if (!distance) return { easing: "linear", duration: 0 };
+  const omega = (2 * Math.PI) / response, v = velocity / distance;
+  // Displacement from the target, as a fraction of the distance: 1 at the start, 0 at rest.
+  const y = damping >= 1
+    ? (t: number) => (1 + (omega - v) * t) * Math.exp(-omega * t)
+    : (() => { const wd = omega * Math.sqrt(1 - damping * damping), c2 = (damping * omega - v) / wd;
+      return (t: number) => Math.exp(-damping * omega * t) * (Math.cos(wd * t) + c2 * Math.sin(wd * t)); })();
+  let end = 0;
+  for (let t = 0; t < 3; t += 0.002) if (Math.abs(y(t)) > 0.001) end = t;
+  end += 0.002;
+  const stops = Array.from({ length: points + 1 }, (_, i) => i === points ? 1 : Math.round((1 - y(end * i / points)) * 10000) / 10000);
+  return { easing: `linear(${stops.join(", ")})`, duration: Math.round(end * 1000) };
+}

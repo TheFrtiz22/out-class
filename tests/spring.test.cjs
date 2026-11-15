@@ -43,3 +43,21 @@ test('velocity uses only the last 100ms, so a pause before release reads as stil
   v.add(30, 300)
   assert.equal(v.velocity(), 0)
 })
+
+test('springCurve starts at the gesture velocity: the first step matches the hand-off speed', () => {
+  const still = s.springCurve({ from: 0, to: 300 }), flick = s.springCurve({ from: 0, to: 300, velocity: 1500 })
+  const first = c => Number(c.easing.slice(7, -1).split(',')[1])
+  assert.ok(first(flick) > first(still) * 2, 'a flick leaves faster than a spring from rest')
+  const step = flick.duration / 1000 / 40, expected = 1500 * step / 300
+  assert.ok(Math.abs(first(flick) - expected) < expected * 0.35, `first step ${first(flick)} ~ ${expected}`)
+  assert.ok(flick.easing.endsWith(', 1)'))
+  assert.deepEqual(s.springCurve({ from: 5, to: 5 }), { easing: 'linear', duration: 0 })
+})
+
+test('springCurve overshoots only when damped below 1, and a velocity against the target is absorbed', () => {
+  const max = c => Math.max(...c.easing.slice(7, -1).split(',').map(Number))
+  assert.ok(max(s.springCurve({ from: 0, to: 100, damping: 1 })) <= 1)
+  assert.ok(max(s.springCurve({ from: 0, to: 100, damping: 0.8, velocity: 800 })) > 1)
+  const back = s.springCurve({ from: 0, to: 100, velocity: -600 })
+  assert.ok(Number(back.easing.slice(7, -1).split(',')[1]) < 0, 'it keeps moving the way it was thrown before turning')
+})
