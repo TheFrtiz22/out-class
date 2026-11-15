@@ -131,6 +131,13 @@
   --oc-leading-heading: 1.14;
   --oc-leading-compact: 1.45;
   --oc-tracking-heading: -.03em;
+  /* Tracking by size (apple-design §15): large type tightens, small type stays near 0, all-caps opens up. */
+  --oc-tracking-title: -.022em;
+  --oc-tracking-section: -.016em;
+  --oc-tracking-card: -.01em;
+  --oc-tracking-small: 0em;
+  --oc-tracking-caps: .06em;
+  --oc-leading-subheading: 1.3;
   --oc-text-section: clamp(1.25rem, 1.6vw, 1.5rem);
   --oc-text-card: 1.0625rem;
   --oc-text-modal: 1.375rem;
