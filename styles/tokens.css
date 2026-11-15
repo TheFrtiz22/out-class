@@ -178,6 +178,16 @@
   --oc-duration-signature: 900ms;
   --oc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --oc-ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  /* Springs (docs: .claude/skills/apple-design §4, lib/spring.ts). A critically damped spring has one shape at every
+     speed, so one curve serves all durations: --oc-spring with --oc-spring-ui (response .35s) or --oc-spring-quick
+     (response .24s). --oc-spring-bounce (damping .8) is only for motion a gesture threw: a flick, a drag release.
+     Browsers without linear() keep the cubic fallback from the @supports block below. */
+  --oc-spring: var(--oc-ease-out);
+  --oc-spring-bounce: var(--oc-ease-out);
+  --oc-spring-ui: 515ms;
+  --oc-spring-quick: 355ms;
+  --oc-spring-bounce-duration: 475ms;
+  --oc-press-in: 90ms;
   /* Pressed feedback (styles/pressed-states.css): controls settle slightly; large cards settle less.
      Reduced motion keeps only the tone (the glass press shades in styles/navigation-glass.css). */
   --oc-press-scale: .98;
@@ -261,3 +271,10 @@
      --school-ring: #...;         >= 3:1 on canvas, cards, --school-primary and the projector theme
    }
    tests/school-theme-tokens.test.cjs checks these ratios for every school defined here. */
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --oc-spring: linear(0, 0.0576, 0.1806, 0.3213, 0.4558, 0.5736, 0.6717, 0.7507, 0.8127, 0.8606, 0.897, 0.9243, 0.9447, 0.9598, 0.9709, 0.979, 0.9849, 0.9892, 0.9923, 0.9945, 0.9961, 0.9972, 0.998, 0.9986, 1);
+    --oc-spring-bounce: linear(0, 0.0518, 0.1708, 0.3169, 0.4644, 0.5988, 0.7131, 0.8051, 0.8758, 0.9277, 0.964, 0.988, 1.0028, 1.0109, 1.0145, 1.0151, 1.0141, 1.0121, 1.0099, 1.0077, 1.0057, 1.004, 1.0027, 1.0017, 1);
+  }
+}
