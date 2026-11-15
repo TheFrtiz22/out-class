@@ -17,6 +17,22 @@ export const schoolRequestSchema = z.object({
   website: z.string().max(200).default(""), // Honeypot, never persisted.
 }).strict()
 
+/**
+ * Reads only the request's own fields from the form. Third-party widgets (such as the
+ * bot check) may add hidden inputs to the form; the strict schema would refuse them.
+ */
+export function schoolRequestFormValues(form: { get(name: string): unknown }) {
+  const values: Record<string, string> = {}
+  for (const name of schoolRequestSchema.keyof().options) {
+    const value = form.get(name)
+    if (typeof value === "string") values[name] = value
+  }
+  return values
+}
+
+/** Shown when a problem cannot be tied to one field, so a submission never fails silently. */
+export const schoolRequestFormError = "Check your request details and try again."
+
 export const reviewSchoolRequestSchema = z.object({
   id: z.string().uuid(),
   revision: z.number().int().min(0),

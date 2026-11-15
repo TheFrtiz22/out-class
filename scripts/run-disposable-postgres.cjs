@@ -23,6 +23,7 @@ const suites = {
       "tests/invitation-accept-race-native.test.cjs",
       "tests/meeting-check-in-race-native.test.cjs",
       "tests/club-claim-race-native.test.cjs",
+      "tests/voting-ballot-race-native.test.cjs",
       "tests/mock-recruiting-cycle-native.test.cjs",
       // Last: its bursts create their own clubs and users; earlier suites never see them.
       "tests/interview-booking-contention-native.test.cjs",

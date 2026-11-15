@@ -11,7 +11,7 @@ import { CLUB_SUSPENDED_MESSAGE, lockOperationalClub } from "@/lib/club-suspensi
 import { z } from "zod"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireClubPermission } from "@/utils/auth"
-import { hasPermission, type ClubPermission } from "@/lib/permissions"
+import { hasPermission, type ClubPermission, activeMemberWhere } from "@/lib/permissions"
 import { summarizeVoting, projectLegacyVoting, votingCommandSchema } from "@/lib/voting-engine"
 import { readVotingDisplay } from "@/lib/voting-presentation"
 import { boundedParse } from "@/lib/bounded-input"
@@ -42,7 +42,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     const s = await tx.votingSession.findFirst({ where: { clubId, mode: {not:"LIVE"}, ...(sessionId ? {id:sessionId} : !leadershipView ? {participants:{some:{memberId:m.id}}} : {}) }, orderBy: {createdAt:"desc"}, include })
     if (s && !leadershipView && !s.participants.some(p=>p.memberId===m.id)) throw Error("You are not a session participant.")
     const sessions = await tx.votingSession.findMany({where:{clubId,mode:{not:"LIVE"},...(!leadershipView?{participants:{some:{memberId:m.id}}}:{})},select:{id:true,state:true,currentPass:true,createdAt:true},orderBy:{createdAt:"desc"}})
-    const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,status:"ACTIVE"},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
+    const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,...activeMemberWhere},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
     const allRounds = await tx.pipelineRound.findMany({where:{clubId},orderBy:{order:"asc"}})
     const rounds = allRounds.filter(round => round.archivedAt == null)

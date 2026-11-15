@@ -132,12 +132,12 @@ test('overview action: member counts only with member-directory access, scoped t
   const clubId = '00000000-0000-4000-8000-000000000001'
   let access = owner, counts = []
   const model = name => ({ findUniqueOrThrow: async () => ({ id: clubId, name: 'Club', tagline: '' }), findFirst: async () => null, findMany: async () => [], groupBy: async () => [], count: async query => { counts.push([name, query]); return 3 } })
-  const prisma = { club: model('club'), meeting: model('meeting'), taskAssignment: model('taskAssignment'), application: model('application'), interviewBooking: model('interviewBooking'), votingSession: model('votingSession'), clubMember: model('clubMember'), clubInvitation: model('clubInvitation') }
+  const prisma = { club: model('club'), meeting: model('meeting'), taskAssignment: model('taskAssignment'), application: model('application'), interviewBooking: model('interviewBooking'), votingSession: model('votingSession'), clubMember: model('clubMember'), clubInvitation: model('clubInvitation'), $queryRaw: async () => [] }
   const api = load('actions/club-overview.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireClubMembership: async () => ({ membership: access }), requireClubPermission: async () => ({}) }, '@/utils/dashboard-summary': { dashboardSummary: async () => ({}), dashboardReviewQueue: async () => [] } })
   assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3, recent: 3 })
   const [members, invitations, recent] = counts.filter(([name]) => name === 'clubMember' || name === 'clubInvitation')
   assert.equal(recent[1].where.clubId, clubId); assert.ok(recent[1].where.joinedAt.gte instanceof Date)
-  assert.deepEqual(members[1].where, { clubId, status: 'ACTIVE', user: { disabledAt: null } })
+  assert.deepEqual(members[1].where, { clubId, status: 'ACTIVE', alumniSince: null, user: { disabledAt: null } })
   assert.equal(invitations[1].where.clubId, clubId); assert.equal(invitations[1].where.status, 'PENDING'); assert.equal(invitations[1].where.applicationId, null)
   assert.equal(invitations[1].where.requestedRole, 'MEMBER'); assert.deepEqual(invitations[1].where.purpose, { in: ['MEMBERSHIP', 'ACCESS_GRANT'] })
   for (const permissions of [[], ['applications.review'], ['meetings.manage', 'tasks.manage']]) {

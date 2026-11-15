@@ -1,5 +1,6 @@
 import type { AppTransactionClient } from "@/utils/prisma"
 import type { ClubAccess } from "@/lib/permissions"
+import { activeMemberWhere } from "@/lib/permissions"
 import { pipelineSummarySelect, pipelineSummaryProjection } from "@/lib/pipeline-summary"
 import { applicationStatusLabel } from "@/lib/application-status"
 import type { CsvCell } from "@/lib/csv"
@@ -93,7 +94,7 @@ export async function applicantExport(tx: AppTransactionClient, clubId: string, 
 /** Active members only: the pilot column set has no status column. */
 export async function rosterExport(tx: AppTransactionClient, clubId: string, profileFields: ProfileFieldVisibility = defaultProfileFieldVisibility()): Promise<ExportTable> {
   const members = await tx.clubMember.findMany({
-    where: { clubId, status: "ACTIVE" },
+    where: { clubId, ...activeMemberWhere },
     select: { ...memberRoleSelect, cohort: true,
       user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, gradYear: true, computingId: true } }, applications: memberCycleSelect(clubId) } } },
     orderBy: [{ joinedAt: "asc" }, { id: "asc" }],

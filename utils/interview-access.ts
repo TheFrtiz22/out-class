@@ -1,7 +1,8 @@
-import { assertNotRecused } from "@/lib/recusal";
+import { assertNotRecused, RecusedError } from "@/lib/recusal";
 import { assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
-import { interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
+import { ACCESS_REVOKED, ActionError, actionResult, type ActionResult } from "@/lib/action-result";
+import { INTERVIEW_ACCESS_REVOKED_MESSAGE, interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
 
 export async function interviewActor(tx: AppTransactionClient, clubId: string, userId: string) {
   // Membership management serializes on Club. Hold this through authorization and mutation.
@@ -10,7 +11,7 @@ export async function interviewActor(tx: AppTransactionClient, clubId: string, u
   await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR SHARE`;
   await tx.$queryRaw`SELECT id FROM "ClubMember" WHERE "userId" = ${userId} AND "clubId" = ${clubId} FOR SHARE`;
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } }, include: { user: { select: { disabledAt: true } } } });
-  if (!member || member.status !== "ACTIVE" || member.user.disabledAt) throw new Error("Interview access unavailable.");
+  if (!member || member.status !== "ACTIVE" || member.alumniSince || member.user.disabledAt) throw new Error("Interview access unavailable.");
   return { member, caps: interviewCapabilities(member) };
 }
 
@@ -19,6 +20,34 @@ export const interviewTransactionOptions = { maxWait: 10000, timeout: 20000 };
 /** The expected denials authorizeInterview raises for a viewer without current access. */
 export function isInterviewAccessDenial(e: unknown) {
   return e instanceof Error && [/^Interview access unavailable/, /^Identified interview unavailable/, /^Current panel assignment or explicit leadership permission required/].some(p => p.test(e.message));
+}
+
+// Room-level denials from collaborationAccess: removed from a booked room's approved panel; and
+// authorizeQuestionBank's denial (no current assignment in the round) for the room's question library.
+// A recusal (stepping out of this applicant, possibly from another tab) also ends room access.
+const roomAccessDenial = [/^Current room panel approval required/, /^Current room assignment required/, /^Question bank access denied/];
+
+/**
+ * actionResult for interview-room actions. Any expected access denial (membership, privacy,
+ * panel or booked-room assignment, question bank, recusal) becomes one uniform ACCESS_REVOKED refusal, so a viewer
+ * removed while the room is open gets a typed result instead of a masked 500, and the message
+ * does not reveal which check failed. The refusal carries no interview data. Every other
+ * error is handled exactly as actionResult does.
+ */
+/** True for every denial interviewActionResult turns into ACCESS_REVOKED. */
+export function isInterviewRoomAccessDenial(error: unknown) {
+  return isInterviewAccessDenial(error) || error instanceof RecusedError || (error instanceof Error && roomAccessDenial.some(p => p.test(error.message)));
+}
+
+export function interviewActionResult<T>(work: () => Promise<T>, action: string): Promise<ActionResult<T>> {
+  return actionResult(async () => {
+    try { return await work(); }
+    catch (error) {
+      if (isInterviewRoomAccessDenial(error))
+        throw new ActionError(INTERVIEW_ACCESS_REVOKED_MESSAGE, ACCESS_REVOKED);
+      throw error;
+    }
+  }, action);
 }
 
 export async function authorizeInterview(tx: AppTransactionClient, scope: InterviewScope, userId: string, mode: "panel" | "resume" | "closing" | "closingReview" = "panel", applicationLock: "share" | "update" = "update") {

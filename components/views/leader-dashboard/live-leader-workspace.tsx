@@ -19,6 +19,7 @@ import { SortControl } from "@/components/ui/sort-control"
 import { useDemoMode } from "@/contexts/demo-context"
 import { hasPermission } from "@/lib/permissions"
 import { canExport, clubExportHref } from "@/lib/club-exports-access"
+import { isFeatureEnabled } from "@/lib/club-features"
 import { useRouter } from "next/navigation"
 import { saveVotingSelection, votingSetupHref, decisionsHref } from "@/lib/voting-navigation"
 import { RankedReviewList, type RankedReviewApi } from "@/components/ranked-review-list"
@@ -392,7 +393,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         </Button>
       </div>
     )
-  const exportable = !demo.isDemoEnabled && canExport(membership, "applicants")
+  // Same display rule as ClubExportLink: the server re-checks access and the club's csvExport switch,
+  // so the menu item is only offered when the download would succeed.
+  const exportable = !demo.isDemoEnabled && canExport(membership, "applicants") && isFeatureEnabled(membership.club?.features, "csvExport")
   const settingsAllowed = canOpenRecruitingSettings(membership)
   const reviewButton = (canReview || canDecide) && !rejectedOnly && <Button disabled={busy} onClick={() => void startReview()}>{opening ? "Loading…" : decisionsOnly ? "Review applicants needing a decision" : "Review applicants"}</Button>
   const statusSelect = view !== "ranked" && !decisionsOnly && !rejectedOnly && <PillSelect label="Decision" prefix="Status" size="compact" className="oc-status-select" active={decisionGroup !== "all"} value={decisionGroup} onChange={value => setDecisionGroup(value as DecisionFilter)} options={decisionFilters.map(group => ({ value: group.id, label: `${group.label} (${group.id === "all" ? listData?.page.baseTotal ?? 0 : listData?.facets.decisions[group.id] ?? 0})` }))} />

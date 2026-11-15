@@ -29,6 +29,7 @@ const overview: ComponentProps<typeof RecruitingOverview>["data"] = {
   membership: { id: "reference-member", isOwner: true, permissions: [], interviewOffices: [], status: "ACTIVE" },
   meeting: null, work: [], awaitingReview: 3, upcomingInterviews: 2, votingSessions: [{ id: "reference-session", state: "OPEN" }], members: { active: 28, pendingInvitations: 3, recent: 4 },
   recruitment: [{ status: "SUBMITTED", count: 24 }, { status: "IN_REVIEW", count: 12 }, { status: "INTERVIEWING", count: 8 }, { status: "ACCEPTED", count: 5 }, { status: "WAITLISTED", count: 3 }],
+  offerTally: { sent: 5, accepted: 3, awaiting: 1, declined: 1, expired: 0 },
 }
 const managerOverview: ComponentProps<typeof ManagerOverview>["data"] = {
   ...overview,

@@ -6,7 +6,7 @@ import { requireAuth } from "@/utils/auth";
 import { interviewScopeSchema } from "@/lib/interview-access";
 import { interviewDraftSchema } from "@/lib/interview-kits";
 import { collaborationSession } from "@/utils/interview-collaboration";
-import { interviewTransactionOptions } from "@/utils/interview-access";
+import { interviewActionResult, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { applyTimerCommand, freshTimerState, presentTimer, timerCommandSchema, type TimerControlResult } from "@/lib/interview-shared-timer";
 
@@ -22,7 +22,7 @@ const controlSchema = interviewScopeSchema.extend({
  * application, round and booked room (collaborationSession), re-checked on every
  * call under the application lock, which also orders simultaneous presses.
  * A stale revision is not an error: the caller gets the current timer back. */
-export async function controlInterviewTimer(input: z.infer<typeof controlSchema>): Promise<TimerControlResult> {
+async function controlInterviewTimerCommand(input: z.infer<typeof controlSchema>): Promise<TimerControlResult> {
   const data = controlSchema.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async (tx): Promise<TimerControlResult> => {
     const { member, session, round, booking, app, record } = await collaborationSession(tx, data, user.id);
@@ -47,4 +47,8 @@ export async function controlInterviewTimer(input: z.infer<typeof controlSchema>
     } else saved = await tx.interviewTimer.create({ data: { sessionId: session.id, ...values, revision: 1 } });
     return { status: "ok", timer: presentTimer(saved, timing, now) };
   }, interviewTransactionOptions);
+}
+
+export async function controlInterviewTimer(...args: Parameters<typeof controlInterviewTimerCommand>) {
+  return interviewActionResult(() => controlInterviewTimerCommand(...args), "controlInterviewTimer");
 }

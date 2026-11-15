@@ -125,7 +125,7 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
   for (let i = 0; i < APPLICANTS; i++) {
     const n = String(i).padStart(2, '0');
     const user = await person(`applicant-${n}`);
-    await operator.studentProfile.create({ data: { userId: user.id, firstName: 'Testfirst', lastName: `Fakeperson${n}`, computingId: `mock${tag}${n}`, major: 'Undeclared', gradYear: 2029 } });
+    await operator.studentProfile.create({ data: { userId: user.id, firstName: 'Testfirst', lastName: `Fakeperson${n}`, computingId: `mock${tag}${n}`, major: 'Undeclared', gradYear: 2029, phone: '+14345550123' } });
     applicants.push({ index: i, user, applicationId: null });
   }
   const applicantText = /Testfirst|Fakeperson|mock-applicant-/;

@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import type { AppTransactionClient } from "@/utils/prisma"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { validatePanelDocument, panelOptionsSchema, sameSessionTime, type PanelAssignment, type PanelSession } from "@/lib/panel-proposals"
@@ -5,7 +6,7 @@ import { validatePanelDocument, panelOptionsSchema, sameSessionTime, type PanelA
 export async function interviewBookingCoverage(tx: AppTransactionClient, clubId: string, roundId: string, applicant?: { id: string; studentId: string }) {
   const live = await loadPanelPlanningScene(tx, { clubId, roundId })
   const slots = await tx.interviewSlot.findMany({ where: { clubId, room: { roundId, isOpen: true }, startTime: { gt: new Date() } }, include: { room: true, panelScheduleVersion: true, _count: { select: { bookings: true } } } })
-  const owners = await tx.clubMember.findMany({ where: { clubId, isOwner: true, status: "ACTIVE", user: { disabledAt: null } }, select: { userId: true } })
+  const owners = await tx.clubMember.findMany({ where: { clubId, isOwner: true, ...activeMemberWhere, user: { disabledAt: null } }, select: { userId: true } })
   const revocations = applicant ? await tx.interviewPanelAssignment.findMany({ where: { applicationId: applicant.id, roundId, bookingManaged: false, revokedAt: { not: null } } }) : []
   const assignments: PanelAssignment[] = []
   const approved = new Set<string>(), staffed = new Set<string>()

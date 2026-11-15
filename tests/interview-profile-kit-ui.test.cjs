@@ -39,7 +39,7 @@ test('actual interview actions isolate two panel members, persist completion and
  h.as(12);const b=await api.openInterviewSession(h.scope);assert.deepEqual(b.draft.completedQuestionIds || [],[]);assert.deepEqual(b.draft.questionNotes,[]);await assert.rejects(api.saveInterviewKit(h.scope.clubId,h.scope.roundId,0,[{id:id(4),prompt:'Denied',guidance:''}]),/denied/);
  h.as(10);await api.saveInterviewKit(h.scope.clubId,h.scope.roundId,0,[{id:id(4),prompt:'Master edited',guidance:''}]);
  h.as(11);const reloaded=await api.openInterviewSession(h.scope);assert.equal(reloaded.questions[0].prompt,'Original');assert.deepEqual(reloaded.draft.completedQuestionIds,[id(4)]);assert.equal(reloaded.draft.questionNotes[0].notes,'Only interviewer A');
- h.assignments[1].revokedAt=new Date();await assert.rejects(api.openInterviewSession(h.scope),/panel/);
+ h.assignments[1].revokedAt=new Date();await assert.rejects(api.openInterviewSession(h.scope),/no longer have access/);
 });
 test('workspace queue query scopes identity to current panel and projects no academic, answer, or private review fields',async()=>{
  const {harness,id}=require('./helpers/interview-harness.cjs');const h=harness(),api=h.load('actions/interview-kits.ts');let query;

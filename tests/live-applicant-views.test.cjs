@@ -14,7 +14,7 @@ function compile(file, mocks = {}) {
 const actionResult = compile('lib/action-result.ts')
 const lifecycle = compile('lib/recruitment-lifecycle.ts', { '@prisma/client': {}, '@/lib/action-result': actionResult })
 const staged = compile('lib/staged-decisions.ts', { '@/lib/recruitment-lifecycle': lifecycle, '@/lib/action-result': actionResult })
-const board = compile('lib/applicant-board.ts')
+const board = compile('lib/applicant-board.ts', { '@/lib/staged-decisions': staged })
 const zod = require('zod')
 const rubric = compile('lib/review-rubric.ts', { zod })
 const read = file => fs.readFileSync(file, 'utf8')
@@ -55,6 +55,13 @@ test('board columns follow rounds and outcomes, and staged decisions place the c
   assert.deepEqual(board.boardDrop({ status: 'IN_REVIEW', roundId: 'r1' }, 'accepted', false), { kind: 'stage', outcome: 'ACCEPT' })
   assert.deepEqual(board.boardDrop({ status: 'IN_REVIEW', roundId: 'r1' }, 'round:r1', true), { kind: 'unstage' }, 'dropping back home removes the staged decision')
   assert.equal(board.boardDrop({ status: 'ACCEPTED', roundId: 'r1' }, 'rejected', false).kind, 'none')
+  // A sent decision names only actions that exist: Reconsider for a rejection, Rescind for a pending offer.
+  assert.equal(board.boardDrop({ status: 'REJECTED', roundId: 'r1' }, 'accepted', false).reason, 'The decision has been sent. Open the applicant to reconsider it.')
+  assert.equal(board.boardDrop({ status: 'ACCEPTED', roundId: 'r1' }, 'rejected', false).reason, 'The decision has been sent.')
+  assert.equal(staged.sentDecisionHint('REJECTED', 'review'), 'The decision has been sent. To revisit it, choose Reconsider application in ⋯.')
+  assert.equal(staged.sentDecisionHint('ACCEPTED', 'review', true), 'The decision has been sent. The pending offer can be rescinded from ⋯.')
+  assert.equal(staged.sentDecisionHint('ACCEPTED', 'review', false), 'The decision has been sent.', 'no correction is promised once an offer is answered')
+  assert.doesNotMatch(require('node:fs').readFileSync('components/applicant-review/applicant-review-flow.tsx', 'utf8'), /correct it/)
 })
 
 test('grading: any number of categories on their own scales, averaged out of 10; the stored score stays in half points', () => {
@@ -114,7 +121,7 @@ test('server: staging needs decision access, refuses self and recused reviewers,
   for (const check of ['requireClubPermission(data.clubId, [...decideCaps])', 'authorizeClubTransaction(tx, data.clubId, user.id, decideCaps', 'app.studentId === user.id', 'app.status !== data.expectedStatus || app.roundId !== data.expectedRoundId', 'assertNotRecused(tx, app.id, member.id)', 'resolveStagedTarget(']) assert.ok(stage.includes(check), check)
   const send = src.slice(src.indexOf('async function sendStagedDecisionsCommand'), src.indexOf('export async function sendStagedDecisions'))
   assert.match(src, /export async function sendStagedDecisions\([^)]*\) \{\n  return actionResult\(\(\) => sendStagedDecisionsCommand\(input\), "sendStagedDecisions"\)/, 'Send refusals reach the user (#292)')
-  for (const check of ['supportContext()', 'stagedIsStale(item, app)', 'publishRecruitmentDecision(tx,', 'hasPermission(member, "recruitment.manage")', 'tx.stagedDecision.delete(']) assert.ok(send.includes(check), check)
+  for (const check of ['supportContext()', 'stagedIsStale(item, app)', 'publishRecruitmentDecision(tx,', 'hasPermission(member, "recruitment.manage")', 'tx.stagedDecision.deleteMany(', 'recused.has(app.id)', 'tx.auditLog.createMany(']) assert.ok(send.includes(check), check)
   assert.match(read('actions/evaluations.ts'), /boundedParse\(evaluateSchema, data\)/)
   assert.match(read('actions/evaluations.ts'), /validateRubricScores\(value, normalizeReviewRubric\(club\.reviewRubric\)\)/)
   const sql = read('prisma/migrations/20261111150000_review_rubric_staged_decisions/migration.sql')

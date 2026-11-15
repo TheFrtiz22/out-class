@@ -126,7 +126,7 @@ test('Privacy Policy names every processor in use, every profile data category, 
   }
   // Every collected profile field is disclosed (StudentProfile columns, by their policy wording).
   const schema = fs.readFileSync('prisma/schema.prisma', 'utf8').match(/model StudentProfile \{([\s\S]*?)\n\}/)[1]
-  const disclosed = { highSchool: 'high school', gender: 'gender', pronouns: 'pronouns', transferStudent: 'transfer-student', scholarStatus: 'scholar program', actScore: 'ACT', actEnglish: 'ACT', actMath: 'ACT', actReading: 'ACT', actScience: 'ACT', firstName: 'name', lastName: 'name', computingId: 'computing ID', major: 'major', gradYear: 'graduation year', gpa: 'GPA', satScore: 'SAT', linkedinUrl: 'LinkedIn', bio: 'bio', resumeUrl: 'résumé', headshotUrl: 'headshot' }
+  const disclosed = { highSchool: 'high school', gender: 'gender', pronouns: 'pronouns', transferStudent: 'transfer-student', scholarStatus: 'scholar program', actScore: 'ACT', actEnglish: 'ACT', actMath: 'ACT', actReading: 'ACT', actScience: 'ACT', firstName: 'name', lastName: 'name', computingId: 'computing ID', major: 'major', gradYear: 'graduation year', gpa: 'GPA', satScore: 'SAT', linkedinUrl: 'LinkedIn', bio: 'bio', resumeUrl: 'résumé', headshotUrl: 'headshot', phone: 'phone number' }
   for (const field of [...schema.matchAll(/^\s+(\w+)\s+(?:String|Int|Float|Boolean|Json)\??/gm)].map(m => m[1]).filter(f => !['id', 'userId'].includes(f))) {
     assert.ok(disclosed[field], `StudentProfile.${field} has no policy wording`)
     assert.ok(text.includes(disclosed[field]), `${field}: ${disclosed[field]}`)

@@ -26,6 +26,8 @@ export type StagedDecisionView = {
   stagedBy: string; stagedByMe: boolean; createdAt: string
   /** Display only: the applicant (anonymized in anonymous-review rounds) and round names at read time. */
   applicant: string; roundName: string; targetRoundName: string | null
+  /** The applicant's phone (E.164), only on a decision that accepts an identified applicant: for the offer call. */
+  phone?: string | null
 }
 
 export const pendingDecisionStatuses: readonly DecisionStatus[] = ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"]
@@ -34,6 +36,18 @@ export const isPendingDecision = (status: string) => (pendingDecisionStatuses as
 /** Statuses that may receive a staged decision at all. */
 export function canStage(status: string) {
   return isPendingDecision(status) || status === "WAITLISTED"
+}
+
+/**
+ * What a reviewer can still do about a decision that has been sent, naming only actions that exist:
+ * a rejection can be reconsidered, and a pending membership offer can be rescinded (both in the review's ⋯ menu).
+ * `where` is the surface asking: the review dialog has the menu; the board sends people to the applicant.
+ */
+export function sentDecisionHint(status: string, where: "review" | "board", offerPending = false) {
+  const sent = "The decision has been sent."
+  if (status === "REJECTED") return where === "review" ? `${sent} To revisit it, choose Reconsider application in ⋯.` : `${sent} Open the applicant to reconsider it.`
+  if (status === "ACCEPTED" && offerPending && where === "review") return `${sent} The pending offer can be rescinded from ⋯.`
+  return sent
 }
 
 /** Resolve an outcome into the status and round it will apply on send. Throws a reader-facing reason. */

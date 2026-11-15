@@ -137,6 +137,11 @@
 .oc-dashboard-progress::-webkit-progress-bar { border-radius: var(--oc-radius-full); background: var(--oc-surface-glass-track); }
 .oc-dashboard-progress::-webkit-progress-value { border-radius: var(--oc-radius-full); background: var(--primary); box-shadow: var(--oc-glass-fill-highlight); }
 .oc-dashboard-progress::-moz-progress-bar { border-radius: var(--oc-radius-full); background: var(--primary); }
+/* Decisions delivered: accepted / sent offers. The sentence carries the meaning; the bar only echoes it. */
+.oc-offer-tally { display: grid; gap: .5rem; }
+.oc-offer-tally-summary { margin: 0; font-size: var(--oc-text-small); color: var(--foreground); }
+.oc-offer-tally-summary strong { font-size: 1.125rem; margin-right: .125rem; }
+.oc-offer-tally-detail { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-caption); }
 .oc-dashboard-note { margin: 0; color: var(--muted-foreground); font-size: var(--oc-text-caption); line-height: var(--oc-leading-compact); }
 
 /* States: loading placeholders and errors in the same glass. */

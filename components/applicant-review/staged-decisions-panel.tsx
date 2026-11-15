@@ -9,6 +9,8 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { useStagedDecisions } from "@/hooks/use-staged-decisions"
 import { stagedLabel, type StagedDecisionView } from "@/lib/staged-decisions"
 import { pluralize } from "@/lib/copy/terms"
+import { formatPhone, phoneHref } from "@/lib/phone"
+import { Phone } from "@/components/icons"
 
 const order: Record<string, number> = { ACCEPTED: 0, INTERVIEWING: 1, IN_REVIEW: 1, WAITLISTED: 2, REJECTED: 3 }
 
@@ -60,6 +62,7 @@ export function StagedDecisionsPanel({ clubId, roundId }: { clubId: string; roun
             return <li key={row.id} className="flex flex-wrap items-center gap-3 py-2">
               <input type="checkbox" className="oc-checkbox" aria-label={`Send decision for ${row.applicant}`} checked={chosen.includes(row.applicationId)} onChange={() => toggle(row.applicationId)} disabled={busy} />
               <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{row.applicant}</p><p className="text-xs text-muted-foreground">{row.roundName} · saved by {row.stagedByMe ? "you" : row.stagedBy}{skipped && <span className="text-destructive"> · Not sent: {skipped.reason}</span>}</p></div>
+              {phoneHref(row.phone) && <a className="inline-flex items-center gap-1.5 text-sm tabular-nums underline underline-offset-4" href={phoneHref(row.phone)} aria-label={`Call ${row.applicant} at ${formatPhone(row.phone)}`} data-testid="offer-phone"><Phone size={14} aria-hidden="true" />{formatPhone(row.phone)}</a>}
               <Button variant="ghost" size="sm" disabled={busy} onClick={() => void staged.unstage({ id: row.applicationId, status: row.expectedStatus, roundId: row.expectedRoundId })}>Remove</Button>
             </li>
           })}</ul>

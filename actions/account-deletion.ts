@@ -14,7 +14,7 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { providerAuthFailure } from "@/lib/admin-failure"
 import { captchaFailed, turnstileMessage, turnstileRemoteIp, withCaptcha } from "@/lib/turnstile"
-import { hasPermission } from "@/lib/permissions"
+import { activeMemberWhere, hasPermission } from "@/lib/permissions"
 import {
   ACCOUNT_DELETION_IP_ATTEMPTS,
   ACCOUNT_DELETION_PASSWORD_ATTEMPTS,
@@ -58,12 +58,12 @@ async function emailStatus(reportIds: string[]) {
 
 /** Clubs where leaving would remove the only holder of a key role. Never blocks the request. */
 async function leadershipWarnings(userId: string) {
-  const mine = await prisma.clubMember.findMany({ where: { userId, status: "ACTIVE" }, select: { clubId: true, role: true, isOwner: true, permissions: true, status: true, club: { select: { name: true } } } })
+  const mine = await prisma.clubMember.findMany({ where: { userId, ...activeMemberWhere }, select: { clubId: true, role: true, isOwner: true, permissions: true, status: true, club: { select: { name: true } } } })
   const warnings: string[] = []
   for (const member of mine) {
     const holds = { decisions: hasPermission(member, "decisions.start"), president: member.role === "PRESIDENT", lead: member.role === "RECRUITMENT_LEAD" }
     if (!holds.decisions && !holds.president && !holds.lead) continue
-    const others = await prisma.clubMember.findMany({ where: { clubId: member.clubId, userId: { not: userId }, status: "ACTIVE", user: { disabledAt: null } }, select: { role: true, isOwner: true, permissions: true, status: true } })
+    const others = await prisma.clubMember.findMany({ where: { clubId: member.clubId, userId: { not: userId }, ...activeMemberWhere, user: { disabledAt: null } }, select: { role: true, isOwner: true, permissions: true, status: true } })
     const lost = [
       holds.decisions && !others.some(o => hasPermission(o, "decisions.start")) && "starting decisions",
       holds.president && !others.some(o => o.role === "PRESIDENT") && "president",
@@ -123,9 +123,10 @@ async function verifyFreshAuthentication(user: { id: string; email: string }, pa
 
 /** Refuse when the person is a club's sole active owner, or every other owner is also leaving. */
 async function assertOwnershipCovered(userId: string) {
-  const owned = await prisma.clubMember.findMany({ where: { userId, isOwner: true, status: "ACTIVE" }, select: { clubId: true, club: { select: { name: true } } } })
+  // An alumni owner holds no capabilities; their leaving cannot strand the club.
+  const owned = await prisma.clubMember.findMany({ where: { userId, isOwner: true, ...activeMemberWhere }, select: { clubId: true, club: { select: { name: true } } } })
   for (const membership of owned) {
-    const others = await prisma.clubMember.findMany({ where: { clubId: membership.clubId, userId: { not: userId }, isOwner: true, status: "ACTIVE", user: { disabledAt: null } }, select: { userId: true } })
+    const others = await prisma.clubMember.findMany({ where: { clubId: membership.clubId, userId: { not: userId }, isOwner: true, ...activeMemberWhere, user: { disabledAt: null } }, select: { userId: true } })
     if (!others.length) throw Error(`Transfer ownership of ${membership.club.name} before deleting your account.`)
     const leaving = await prisma.platformReport.count({ where: { kind: ACCOUNT_DELETION_REPORT_KIND, status: { in: OPEN }, targetId: { in: others.map(o => o.userId) } } })
     if (leaving >= others.length) throw Error(`The other owner of ${membership.club.name} has also asked to delete their account. Add another owner before deleting yours.`)

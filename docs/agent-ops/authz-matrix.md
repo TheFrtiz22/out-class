@@ -156,3 +156,16 @@ Resource: `GET /api/club-exports` (applicants, roster, attendance, RSVPs). Uncha
 | Member without the capability, other club's leader, removed member | 403 "Export unavailable" (switch never read, so its state is not revealed) | same | `club-exports.test` |
 | Logged-out visitor | redirect/deny (`requireClubPermission`) | same | existing |
 | UI | link shown | note shown to capable leaders; nothing for others, demo, or before the account loads | `club-exports.test` (render) |
+## 2026-11-12 · PROFILE-PHONE-1 · Applicant phone number (branch `profile/applicant-phone`)
+Resource: `StudentProfile.phone`. Written only by its owner (`upsertStudentProfile`, `updateStudentProfileSection` section `contact`; identity from the session). Read paths for other people: `listStagedDecisions` / `stageDecision` (view field `phone`) and pipeline detail (`offerPhone`, top level, outside the recruiter profile). `recruitmentProfile` omits it by type, so list, summary, voting, interview, search, roster, export and view-as projections cannot carry it.
+| Actor | Read another student's phone | Test |
+|---|---|---|
+| Member with `decisions.manage` + `applicants.identify` (incl. owner), applicant ACCEPTED or staged ACCEPTED, identified round | allow | `applicant-phone.test` |
+| Same member, any other status or staged outcome | deny (null) | `applicant-phone.test` |
+| Same member, anonymous-review round; own application; recused from the applicant | deny (null) | `applicant-phone.test` |
+| Reviewer, interviewer, `decisions.view`, `recruitment.manage` without `decisions.manage`, removed or suspended member | deny (null; staged list refuses outright) | `applicant-phone.test` |
+| Leader of another club | deny (club-scoped reads; `requireClubPermission` + `authorizeClubTransaction`) | existing `authorization.test`, `profile-field-authz.test` |
+| Platform admin view-as | deny (explicit column select without phone) | `applicant-phone.test` (source) |
+| Browser roles via PostgREST | deny (no table privilege; unchanged by the migration) | `student-profile-phone-migration.test`, `test:migrations` |
+| Logged-out visitor | deny (`requireAuth`) | existing |
+Untested cells: a second-club leader against the two new fields on a running stack (covered by code scoping only); include in the next attacker pass.

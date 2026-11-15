@@ -26,7 +26,7 @@ test('decision managers hear about a declined offer with the waitlist count for 
   const s = tx()
   assert.equal(await declinedOfferLeaderNotification(s.tx, { id: 'app', clubId: 'club' }, 'offer'), 2)
   assert.deepEqual(s.queries.count, { clubId: 'club', status: 'WAITLISTED', recruitmentCycleId: 'cycle-1' })
-  assert.deepEqual(s.queries.leaders, { clubId: 'club', status: 'ACTIVE', OR: [{ isOwner: true }, { permissions: { hasEvery: ['decisions.manage', 'applicants.identify'] } }] })
+  assert.deepEqual(s.queries.leaders, { clubId: 'club', status: 'ACTIVE', alumniSince: null, OR: [{ isOwner: true }, { permissions: { hasEvery: ['decisions.manage', 'applicants.identify'] } }] })
   assert.deepEqual(s.notes.map(n => n.userId), ['lead1', 'owner'])
   const note = s.notes[0]
   assert.equal(note.title, 'An offer to join Test Club was declined')

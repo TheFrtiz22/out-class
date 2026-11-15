@@ -9,7 +9,7 @@ import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged } from "@/lib/voting-room";
 import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, undoableDecision, roomFingerprint, signRoomView, verifyRoomView, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
@@ -124,7 +124,7 @@ export async function getLiveVotingRoom(input:unknown) {
     const decider=receipt&&receipt.actorId!==user.id?await tx.clubMember.findFirst({where:{clubId:d.clubId,userId:receipt.actorId},select:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}):null;
     const deciderProfile=decider?.user.studentProfile;
     const undo=receipt?.decision?{...receipt.decision,decidedBy:receipt.actorId===user.id?null:deciderProfile?`${deciderProfile.firstName} ${deciderProfile.lastName}`:"Another leader"}:null;
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},status:"ACTIVE",user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     const options=roomPresentationSchema.safeParse(s.presentationOptions);

@@ -1,4 +1,5 @@
 "use server";
+import { activeMemberWhere } from "@/lib/permissions";
 
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
@@ -8,7 +9,7 @@ import { interviewCapabilities, interviewScopeSchema, type InterviewScope } from
 import { kitSchema, interviewDraftSchema } from "@/lib/interview-kits";
 import { PRESENCE_TTL_MS, INVITATION_TTL_MS, type CollaborationView } from "@/lib/interview-collaboration";
 import { CollaborationInitializationRequired, collaborationAccess, collaborationScope, collaborationSession, eligibleDestination, memberName } from "@/utils/interview-collaboration";
-import { interviewTransactionOptions } from "@/utils/interview-access";
+import { interviewActionResult, interviewTransactionOptions, isInterviewRoomAccessDenial } from "@/utils/interview-access";
 import { getInterviewWorkspace } from "@/actions/interview-kits";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
 import { interviewTiming } from "@/lib/interview-session-timing";
@@ -36,7 +37,7 @@ async function validInvite(tx: AppTransactionClient, id: string, sourceId: strin
 
 /** Authorized polling replaces the old unauthenticated shared-notes broadcast.
  * No browser SQL/realtime subscription exists; every refresh checks current access. */
-export async function getInterviewCollaboration(input: z.infer<typeof inputSchema>): Promise<CollaborationView> {
+async function getInterviewCollaborationCommand(input: z.infer<typeof inputSchema>): Promise<CollaborationView> {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
   const read = (readOnly: boolean) => prisma.$transaction(async tx => {
     const { member, session, roomKey, app, round, booking, panelIds } = await collaborationSession(tx, data, user.id, readOnly);
@@ -51,7 +52,7 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
     // for every name (which blocked private saves on hosted pooler connections).
     const ids = [...new Set([...presentIds, ...(session.selectedBy ? [session.selectedBy] : [])])];
     await tx.$queryRaw`SELECT u.id FROM "User" u JOIN "ClubMember" m ON m."userId" = u.id WHERE m.id = ANY(${ids}::text[]) ORDER BY u.id FOR SHARE OF u, m`;
-    const peers = await tx.clubMember.findMany({ where: { id: { in: ids }, clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null }, interviewAssignments: { some: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null } } }, include: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
+    const peers = await tx.clubMember.findMany({ where: { id: { in: ids }, clubId: data.clubId, ...activeMemberWhere, user: { disabledAt: null }, interviewAssignments: { some: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null } } }, include: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
     const authorized = peers.filter(peer => peer.userId !== app.studentId && interviewCapabilities(peer).participate && (!booking || (roomKey === `booking:${booking.id}:${booking.slot.roomId}` && panelIds?.includes(peer.id))));
     const peerName = (peer: typeof authorized[number]) => peer.user.studentProfile ? `${peer.user.studentProfile.firstName} ${peer.user.studentProfile.lastName}` : "Interviewer";
     const participants: CollaborationView["participants"] = authorized.filter(peer => presentIds.includes(peer.id)).map(peer => ({ id: peer.id, name: peerName(peer) }));
@@ -87,7 +88,7 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
   catch (error) { if (!(error instanceof CollaborationInitializationRequired)) throw error; return read(false); }
 }
 
-export async function selectSharedInterviewQuestion(input: z.infer<typeof inputSchema> & { questionId: string }) {
+async function selectSharedInterviewQuestionCommand(input: z.infer<typeof inputSchema> & { questionId: string }) {
   const data = inputSchema.extend({ questionId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { session, record, member, round, app } = await collaborationSession(tx, data, user.id);
@@ -113,18 +114,25 @@ export async function selectSharedInterviewQuestion(input: z.infer<typeof inputS
   }, transactionOptions);
 }
 
-export async function leaveInterviewCollaboration(input: z.infer<typeof inputSchema>) {
+async function leaveInterviewCollaborationCommand(input: z.infer<typeof inputSchema>) {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => { const { member, session } = await collaborationSession(tx, data, user.id); await tx.interviewPresence.deleteMany({ where: { memberId: member.id, clientId: data.clientId, sessionId: session.id } }); }, transactionOptions);
 }
 
-export async function dismissInterviewInvitation(input: z.infer<typeof inputSchema> & { invitationId: string }) {
+async function dismissInterviewInvitationCommand(input: z.infer<typeof inputSchema> & { invitationId: string }) {
   const data = inputSchema.extend({ invitationId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => { const { member } = await collaborationSession(tx, data, user.id); await tx.interviewInvitation.updateMany({ where: { id: data.invitationId, recipientId: member.id, dismissedAt: null }, data: { dismissedAt: new Date() } }); }, transactionOptions);
 }
 
+/** An advance's destination (or an invitation sender) being unavailable is not this viewer losing
+ * access to the room they are in: it stays an ordinary failure, never ACCESS_REVOKED. */
+async function destinationCheck<T>(work: () => Promise<T>): Promise<T> {
+  try { return await work(); }
+  catch (error) { if (isInterviewRoomAccessDenial(error)) throw new Error("That interview is unavailable."); throw error; }
+}
+
 /** Issues an expiring receipt; no invitation until destination UI confirms arrival. */
-export async function prepareInterviewAdvance(input: z.infer<typeof inputSchema> & { invitationId?: string }) {
+async function prepareInterviewAdvanceCommand(input: z.infer<typeof inputSchema> & { invitationId?: string }) {
   const data = inputSchema.extend({ invitationId: z.string().uuid().optional() }).parse(input); const { user } = await requireAuth();
   await prisma.$transaction(async tx => { const { record } = await collaborationSession(tx, data, user.id); if (!record.completedAt) throw Error("Finish your current review before joining."); }, transactionOptions);
   const workspace = data.invitationId ? null : await getInterviewWorkspace(data.clubId);
@@ -132,10 +140,10 @@ export async function prepareInterviewAdvance(input: z.infer<typeof inputSchema>
   return prisma.$transaction(async tx => {
     const { member, record, session } = await collaborationSession(tx, data, user.id);
     if (!record.completedAt) throw Error("Finish your current review before joining.");
-    const invited = data.invitationId ? await validInvite(tx, data.invitationId, session.id, member.id, user.id) : null;
+    const invited = data.invitationId ? await destinationCheck(() => validInvite(tx, data.invitationId!, session.id, member.id, user.id)) : null;
     if (!invited && !next) return null;
     const scope: InterviewScope = invited ? collaborationScope(invited.destination) : { clubId: data.clubId, applicationId: next!.id, roundId: data.roundId };
-    const dest = await eligibleDestination(tx, scope, user.id);
+    const dest = await destinationCheck(() => eligibleDestination(tx, scope, user.id));
     // Creation does not create/change a private review or pin a résumé.
     const destination = invited?.destination || await tx.interviewCollaboration.upsert({ where: { applicationId_roundId_roomKey: { applicationId: scope.applicationId, roundId: scope.roundId, roomKey: dest.roomKey } }, create: { ...scope, roomKey: dest.roomKey, questions: kitSchema.parse(dest.round.interviewKit) }, update: {} });
     const move = await tx.interviewMove.create({ data: { sourceId: session.id, destinationId: destination.id, memberId: member.id, invited: !!invited, acceptedInvitationId: invited?.invite.id || null, expiresAt: new Date(Date.now() + INVITATION_TTL_MS) } });
@@ -143,7 +151,7 @@ export async function prepareInterviewAdvance(input: z.infer<typeof inputSchema>
   }, transactionOptions);
 }
 
-export async function confirmInterviewAdvance(input: { moveId: string; clientId: string }) {
+async function confirmInterviewAdvanceCommand(input: { moveId: string; clientId: string }) {
   const data = z.object({ moveId: z.string().uuid(), clientId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     let move = await tx.interviewMove.findUniqueOrThrow({ where: { id: data.moveId } });
@@ -156,9 +164,9 @@ export async function confirmInterviewAdvance(input: { moveId: string; clientId:
     if (move.confirmedAt) return { confirmed: true };
     const later = await tx.interviewMove.findFirst({ where: { memberId: member.id, confirmedAt: { not: null }, createdAt: { gt: move.createdAt } } });
     if (later) throw Error("Interviewer has moved again. This arrival receipt is stale.");
-    if (move.acceptedInvitationId) await validInvite(tx, move.acceptedInvitationId, source.id, member.id, user.id);
+    if (move.acceptedInvitationId) await destinationCheck(() => validInvite(tx, move.acceptedInvitationId!, source.id, member.id, user.id));
     const destination = await tx.interviewCollaboration.findUniqueOrThrow({ where: { id: move.destinationId } });
-    const access = await eligibleDestination(tx, collaborationScope(destination), user.id);
+    const access = await destinationCheck(() => eligibleDestination(tx, collaborationScope(destination), user.id));
     if (destination.roomKey !== access.roomKey) throw Error("Destination room changed.");
     const destRecord = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: destination.applicationId, roundId: destination.roundId, interviewerId: member.id } } });
     if (!destRecord) throw Error("Destination must be loaded before confirming.");
@@ -176,4 +184,25 @@ export async function confirmInterviewAdvance(input: { moveId: string; clientId:
     await tx.interviewPresence.upsert({ where: { memberId_clientId: { memberId: member.id, clientId: data.clientId } }, create: { memberId: member.id, clientId: data.clientId, sessionId: destination.id }, update: { sessionId: destination.id, seenAt: new Date() } });
     return { confirmed: true };
   }, transactionOptions);
+}
+
+// The room polls and leaves through these while open. A viewer removed from the panel gets a
+// typed ACCESS_REVOKED refusal (no data) instead of a thrown denial that production reports as 500.
+export async function getInterviewCollaboration(...args: Parameters<typeof getInterviewCollaborationCommand>) {
+  return interviewActionResult(() => getInterviewCollaborationCommand(...args), "getInterviewCollaboration");
+}
+export async function selectSharedInterviewQuestion(...args: Parameters<typeof selectSharedInterviewQuestionCommand>) {
+  return interviewActionResult(() => selectSharedInterviewQuestionCommand(...args), "selectSharedInterviewQuestion");
+}
+export async function leaveInterviewCollaboration(...args: Parameters<typeof leaveInterviewCollaborationCommand>) {
+  return interviewActionResult(() => leaveInterviewCollaborationCommand(...args), "leaveInterviewCollaboration");
+}
+export async function dismissInterviewInvitation(...args: Parameters<typeof dismissInterviewInvitationCommand>) {
+  return interviewActionResult(() => dismissInterviewInvitationCommand(...args), "dismissInterviewInvitation");
+}
+export async function prepareInterviewAdvance(...args: Parameters<typeof prepareInterviewAdvanceCommand>) {
+  return interviewActionResult(() => prepareInterviewAdvanceCommand(...args), "prepareInterviewAdvance");
+}
+export async function confirmInterviewAdvance(...args: Parameters<typeof confirmInterviewAdvanceCommand>) {
+  return interviewActionResult(() => confirmInterviewAdvanceCommand(...args), "confirmInterviewAdvance");
 }

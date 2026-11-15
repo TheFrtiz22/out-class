@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SectionErrorBoundary } from "@/components/ui/section-error-boundary"
 import { useConfirm } from "@/components/ui/confirm-dialog"
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Linkedin, MoreHorizontal, Pause, X } from "@/components/icons"
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Linkedin, MoreHorizontal, Pause, Phone, X } from "@/components/icons"
+import { formatPhone, phoneHref } from "@/lib/phone"
 import { PreviouslyAppliedBadge } from "@/components/previously-applied-badge"
 import { ApplicantRecusal } from "@/components/applicant-recusal"
 import { RevealApplicant } from "@/components/reveal-applicant"
@@ -41,7 +42,7 @@ import { schedulingDateTime, SCHEDULING_TIMEZONE } from "@/lib/scheduling-config
 import { slotTime } from "@/lib/interview-rooms"
 import { defaultProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { defaultReviewRubric } from "@/lib/review-rubric"
-import { advanceLabel, canStage, stagedLabel, type StagedOutcome } from "@/lib/staged-decisions"
+import { advanceLabel, canStage, sentDecisionHint, stagedLabel, type StagedOutcome } from "@/lib/staged-decisions"
 import type { ExtendedMembership } from "@/contexts/auth-context"
 import { ReportContentButton } from "@/components/reports/report-content-button"
 
@@ -93,7 +94,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const anonymous = !!app?.studentId.startsWith("anonymous-")
   const displayName = (value: NonNullable<typeof app>) => profileFields.name || value.studentId.startsWith("anonymous-") ? value.student.studentProfile ? `${value.student.studentProfile.firstName} ${value.student.studentProfile.lastName}` : value.student.email : anonymousApplicantLabel(value.id)
   const current = app ? staged?.get(app.id) : undefined
-  const decideReason = !canDecide ? "Deciding needs decision access." : !app ? "Loading applicant…" : app.studentId === membership.userId ? "You can’t decide your own application." : !canStage(app.status) ? "The decision has been sent. Use ⋯ to correct it." : busy ? "Saving…" : ""
+  const decideReason = !canDecide ? "Deciding needs decision access." : !app ? "Loading applicant…" : app.studentId === membership.userId ? "You can’t decide your own application." : !canStage(app.status) ? sentDecisionHint(app.status, "review", app.recruitmentOffer?.status === "PENDING") : busy ? "Saving…" : ""
   const go = useCallback((direction: -1 | 1) => {
     setIndex(value => { const next = value + direction; if (next < 0) return value; if (next >= ids.length) { setFinished(true); return value } return next })
   }, [ids.length])
@@ -131,6 +132,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const activeRound = app ? rounds.find(round => round.id === app.roundId) : undefined
   const profile = app?.student.studentProfile
   const resumeUrl = app && !anonymous && profileFields.resume ? resolveRecruitingResumeUrl(profile?.resumeUrl, clubId, app.id) : undefined
+  const offerPhone = !anonymous && app && "offerPhone" in app && phoneHref(app.offerPhone) ? app.offerPhone : null
   const linkedinUrl = !anonymous && profileFields.linkedin ? safeProfileUrl(profile?.linkedinUrl) : undefined
   const observationsEligible = !!app && canReview && hasPermission(membership, "applicants.identify") && !anonymous && !!app.recruitmentCycleId && app.studentId !== membership.userId && !activeRound?.anonymousReview
   const evaluateReason = !app || app.canEvaluate ? "" : app.studentId === membership.userId ? "You can’t grade your own application." : "Grading needs a panel assignment for this round; recruiting leads assign panels in Interviews › Scheduling. Submitted grades are read-only."
@@ -176,6 +178,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {resumeUrl && <ResumeViewerDialog href={resumeUrl} name={displayName(app)} clubId={clubId} applicationId={app.id} trigger="Résumé" />}
+              {offerPhone && <a className="inline-flex items-center gap-1.5 whitespace-nowrap px-1 text-sm tabular-nums underline underline-offset-4" href={phoneHref(offerPhone)} aria-label={`Call ${displayName(app)} at ${formatPhone(offerPhone)}`} data-testid="offer-phone"><Phone size={16} aria-hidden="true" />{formatPhone(offerPhone)}</a>}
               {linkedinUrl && <a className="oc-quick-icon-action" href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)" title="LinkedIn"><Linkedin size={16} aria-hidden="true" /></a>}
               {anonymous && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={app.id} clubId={clubId} applicationId={app.id} />}
               <ReportContentButton target={{ type: "student", clubId, applicationId: app.id }} label="Report this profile" hidden={app.studentId === membership.userId || !canReview} ownerUserId={app.studentId} />

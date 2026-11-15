@@ -49,16 +49,16 @@ test('client and server schemas share the rule and use the clock at parse time',
   t.after(() => mock.timers.reset())
   mock.timers.enable({ apis: ['Date'], now: NOV_2026.getTime() })
   const education = gradYear => profileSectionSchema.safeParse({ section: 'education', major: 'Math', gradYear, satScore: null })
-  assert.equal(academicProfileSchema.safeParse({ gradYear: '2031', major: 'Math' }).success, true)
+  assert.equal(academicProfileSchema.safeParse({ phone: '434-555-0123', gradYear: '2031', major: 'Math' }).success, true)
   assert.equal(education(2031).success, true)
-  const rejected = academicProfileSchema.safeParse({ gradYear: '2033', major: 'Math' })
+  const rejected = academicProfileSchema.safeParse({ phone: '434-555-0123', gradYear: '2033', major: 'Math' })
   assert.equal(rejected.success, false)
   assert.deepEqual(rejected.error.issues.map(i => i.message), ['Choose a graduation year between 2025 and 2032'])
   assert.equal(education(2033).error.issues.find(i => i.path[0] === 'gradYear').message, 'Choose a graduation year between 2025 and 2032')
-  assert.deepEqual(academicProfileSchema.safeParse({ gradYear: '', major: 'Math' }).error.issues.map(i => i.message), ['Graduation year is required'])
+  assert.deepEqual(academicProfileSchema.safeParse({ phone: '434-555-0123', gradYear: '', major: 'Math' }).error.issues.map(i => i.message), ['Graduation year is required'])
 
   mock.timers.setTime(MAR_2027.getTime()) // same schema instances, a year later
-  assert.equal(academicProfileSchema.safeParse({ gradYear: '2033', major: 'Math' }).success, true)
+  assert.equal(academicProfileSchema.safeParse({ phone: '434-555-0123', gradYear: '2033', major: 'Math' }).success, true)
   assert.equal(education(2033).success, true)
   assert.equal(education(2025).success, false)
 })
@@ -97,11 +97,13 @@ test('profile edits keep the stored year (alumni) but cannot move to another out
       'next/cache': { revalidatePath() {} },
       '@/utils/auth': { requireAuth: async () => ({ user: { id: owner, email: 'owner@virginia.edu' } }) },
       '@/utils/terms-acceptance': { hasCurrentTermsAcceptance: async () => true },
-      '@/utils/prisma': { prisma: { studentProfile: {
+      // Year changes run in the profile transaction and through utils/graduation.ts (tests/graduation.test.cjs).
+      '@/utils/graduation': require('./helpers/profile-transaction.cjs').graduation(),
+      '@/utils/prisma': { prisma: require('./helpers/profile-transaction.cjs').withProfileTransaction({ studentProfile: {
         findUnique: async q => { if (q.select?.gradYear) reads++; return stored === null ? null : { id: 'profile', gradYear: stored } },
         update: async q => { writes.push(q.data); if (q.data.gradYear !== undefined) stored = q.data.gradYear; return { ...q.data, experiences: [] } },
         upsert: async q => { writes.push(q.create); return q.create },
-      } } },
+      } }) },
     }
     new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith('@/lib/') ? load(name.slice(2) + '.ts') : require(name), mod, mod.exports)
     return mod.exports
@@ -127,7 +129,7 @@ test('profile edits keep the stored year (alumni) but cannot move to another out
 
   // Onboarding (no profile yet) keeps the strict range.
   stored = null
-  const base = { firstName: 'A', lastName: 'B', computingId: 'x', major: 'Math' }
+  const base = { firstName: 'A', lastName: 'B', computingId: 'x', major: 'Math', phone: '434-555-0123' }
   await assert.rejects(api.upsertStudentProfile({ ...base, gradYear: 2024 }), /between 2025 and 2032/)
   await api.upsertStudentProfile({ ...base, gradYear: 2031 })
   assert.equal(writes.at(-1).gradYear, 2031)

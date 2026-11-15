@@ -43,7 +43,7 @@ function route({ deny = false, denyInTx = false, features = on } = {}) {
   const member = { id: 'm1', userId: 'u1', isOwner: true, status: 'ACTIVE' }
   const tx = {
     club: { findUniqueOrThrow: async () => ({ name: 'Test Club' }), findUnique: async q => { state.featureReads.push(q); return { features } } },
-    clubMember: { findMany: async q => { assert.deepEqual(q.where, { clubId, status: 'ACTIVE' }); return [{ title: '=evil', cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', gradYear: 2028, computingId: 'al1x' }, applications: [] } }] } },
+    clubMember: { findMany: async q => { assert.deepEqual(q.where, { clubId, status: 'ACTIVE', alumniSince: null }); return [{ title: '=evil', cohort: null, isOwner: false, accessRole: 'MEMBER', role: 'GENERAL_MEMBER', interviewOffices: [], user: { email: 'ada@virginia.edu', studentProfile: { firstName: 'Ada', lastName: 'Lee', gradYear: 2028, computingId: 'al1x' }, applications: [] } }] } },
     eventAttendance: { findMany: async q => { assert.deepEqual(q.where, { event: { clubId } }); return [] } },
     auditLog: { create: async q => { state.audits.push(q.data) } },
   }

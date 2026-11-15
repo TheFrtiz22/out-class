@@ -198,7 +198,7 @@ export function ClubSettingsWorkspace({
           <div hidden={active !== "notifications"} className="space-y-5">
             <h2 className="oc-section-heading">Communications</h2>
             <p className="text-sm text-muted-foreground">
-              Review and decision changes don’t send automatic emails.
+              Saving a review or staging a decision sends nothing. Sending decisions from Decide › Send notifies each applicant in OutClass and by email.
             </p>
             {!demo.isDemoEnabled && (
               <>

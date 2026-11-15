@@ -87,7 +87,7 @@ async function loadPipelineDetails(tx: AppTransactionClient, where: Prisma.Appli
   return applications.map(raw => {
     // The club's profile field choice is applied on the server: hidden values never leave it.
     const projected = restrictApplicationProfile(pipelineDetailProjection(raw, membership, prior.get(raw.id) ?? []), profileFields);
-    return recused.has(raw.id) ? { ...projected, evaluations: [], answers: [], roundScore: null, priorApplications: [], canEvaluate: false, recused: true } : projected;
+    return recused.has(raw.id) ? { ...projected, evaluations: [], answers: [], roundScore: null, priorApplications: [], offerPhone: null, canEvaluate: false, recused: true } : projected;
   });
 }
 

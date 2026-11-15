@@ -6,6 +6,7 @@ import { extractPdfText } from "@/lib/resume-pdf"
 import { extractResumeProposal, confirmImportSchema, importBaseline } from "@/lib/resume-import"
 import { uploadProfileFile } from "@/actions/storage"
 import { revalidatePath } from "next/cache"
+import { applyGraduationYearChange, SUPPORT_YEAR_CHANGE_MESSAGE } from "@/utils/graduation"
 import { boundedSafeParse } from "@/lib/bounded-input"
 
 const failure = (code: string, message: string) => ({ ok: false as const, code, message })
@@ -34,7 +35,7 @@ export async function prepareResumeImport(input: FormData) {
   }
 }
 export async function confirmResumeImport(input: unknown) {
-  const { user } = await requireAuth()
+  const { user, impersonation } = await requireAuth()
   const parsed = boundedSafeParse(confirmImportSchema, input)
   if (!parsed.success) return failure("INVALID_PROFILE", "Check the selected profile values before saving.")
   const { patch, experiences, baseline, resumeReference } = parsed.data
@@ -42,6 +43,8 @@ export async function confirmResumeImport(input: unknown) {
   if (!Object.keys(patch).length && !experiences.length && !resumeReference) return failure("NO_CHANGES", "Select at least one change to save.")
   try {
     const profile = await prisma.$transaction(async tx => {
+      // User, then profile: the lock order of every profile save and applyGraduationYearChange.
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`
       await tx.$queryRaw`SELECT id FROM "StudentProfile" WHERE "userId"=${user.id} FOR UPDATE`
       const current = await tx.studentProfile.findUnique({ where: { userId: user.id }, include: { experiences: true } })
       if (!current) throw Error("PROFILE_MISSING")
@@ -52,6 +55,7 @@ export async function confirmResumeImport(input: unknown) {
       const seen = new Set(current.experiences.map(key))
       const additions = experiences.filter(v => { const k = key(v); if (seen.has(k)) return false; seen.add(k); return true })
       if (current.experiences.length + additions.length > 50) throw Error("EXPERIENCE_LIMIT")
+      if (patch.gradYear !== undefined) await applyGraduationYearChange(tx, user.id, patch.gradYear, { supportSession: !!impersonation })
       return tx.studentProfile.update({ where: { userId: user.id }, data: { ...patch, ...(resumeReference ? { resumeUrl: resumeReference } : {}), ...(additions.length ? { experiences: { create: additions } } : {}) }, include: { experiences: true } })
     }, { isolationLevel: "Serializable" })
     revalidatePath("/", "layout")
@@ -59,6 +63,7 @@ export async function confirmResumeImport(input: unknown) {
   } catch (error) {
     const reason = error instanceof Error ? error.message : ""
     if (reason === "PROFILE_CHANGED") return failure("PROFILE_CHANGED", "Your profile changed since extraction. Close this review and import again before replacing values.")
+    if (reason === SUPPORT_YEAR_CHANGE_MESSAGE) return failure("FORBIDDEN", SUPPORT_YEAR_CHANGE_MESSAGE)
     if (reason === "EXPERIENCE_LIMIT") return failure("EXPERIENCE_LIMIT", "Your profile can contain up to 50 experience entries. Remove some proposed entries.")
     return failure("SAVE_FAILED", "Your changes could not be saved. No imported profile changes were applied; retry or reload your profile.")
   }

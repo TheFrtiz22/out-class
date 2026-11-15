@@ -111,6 +111,7 @@ const POST_EXEMPT = {
   "app/api/internal/invitation-delivery/route.ts": "cron",
   "app/api/internal/notification-delivery/route.ts": "cron",
   "app/api/internal/scheduled-communications/route.ts": "cron",
+  "app/api/internal/graduation/route.ts": "cron",
   // Signing out must always work; it only tears down the caller's own session.
   "app/api/auth/logout/route.ts": "sign-out",
   // Browser CSP violation reports: body capped at CSP_REPORT_MAX_BYTES, nothing stored, and lib/csp-report

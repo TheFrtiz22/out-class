@@ -6,11 +6,11 @@ export const memberGroupSplitSchema = z.object({
   seed: z.string().uuid(),
 }).strict()
 export type MemberGroupSplit = z.infer<typeof memberGroupSplitSchema>
-export type GroupableMember = { id: string; status: string; joinedAt: Date | string; accessRole: string; isOwner: boolean; groups: string[]; user: { disabledAt: Date | string | null; studentProfile: { academicYear?: string } | null } }
+export type GroupableMember = { id: string; status: string; alumniSince?: Date | string | null; joinedAt: Date | string; accessRole: string; isOwner: boolean; groups: string[]; user: { disabledAt: Date | string | null; studentProfile: { academicYear?: string } | null } }
 export type MemberGroupCriteria = { everyone: boolean; years: string[]; roles: string[]; groups: string[]; recent: boolean; people: string[]; match: "ANY" | "ALL" }
 export function selectGroupMembers<T extends GroupableMember>(members: T[], criteria: MemberGroupCriteria, now = Date.now()): T[] {
   return members.filter(member => {
-    if (member.status !== "ACTIVE" || member.user.disabledAt) return false
+    if (member.status !== "ACTIVE" || member.alumniSince || member.user.disabledAt) return false
     if (criteria.everyone) return true
     const tests = [
       criteria.years.length ? criteria.years.includes(member.user.studentProfile?.academicYear?.replace(/\*$/, "") ?? "") : null,

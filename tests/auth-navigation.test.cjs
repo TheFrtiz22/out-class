@@ -30,7 +30,7 @@ function entry({ session = user, account = { studentProfile: { id: 'profile' }, 
     '@/utils/auth': { getSessionUser: async () => ({ data: { user: session }, error }) },
     '@/utils/prisma': { prisma: { user: { findUnique: async query => {
       reads++
-      assert.deepEqual(query.select.memberships.where, { status: 'ACTIVE', club: { suspendedAt: null } })
+      assert.deepEqual(query.select.memberships.where, { status: 'ACTIVE', alumniSince: null, club: { suspendedAt: null } })
       return account
     } } } },
     'next/navigation': { redirect: path => { throw Object.assign(Error('redirect'), { destination: path }) } },

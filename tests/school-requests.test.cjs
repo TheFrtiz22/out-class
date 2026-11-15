@@ -77,6 +77,45 @@ test('honeypot, durable limits and storage failures never report a real unsaved 
   assert.equal(response.headers.get('Cache-Control'), 'no-store')
   assert.doesNotMatch(JSON.stringify(await response.json()), /private connection/)
 })
+test('with the bot check on, a form carrying the widget hidden input still submits and is saved', async () => {
+  // What the browser's FormData holds when Cloudflare's widget sits inside the form.
+  const form = new FormData()
+  for (const [key, value] of Object.entries({ ...input, website: '' })) form.set(key, value)
+  form.set('cf-turnstile-response', 'widget-token')
+  assert.equal(schemas.schoolRequestSchema.safeParse(Object.fromEntries(form)).success, false, 'the strict schema refuses foreign inputs')
+  const values = schemas.schoolRequestFormValues(form)
+  assert.deepEqual(Object.keys(values).sort(), Object.keys(input).sort())
+  const parsed = schemas.schoolRequestSchema.safeParse(values)
+  assert.equal(parsed.success, true)
+
+  const saved = { ...process.env }, savedFetch = global.fetch, calls = []
+  Object.assign(process.env, { TURNSTILE_ENABLED: '1', NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' })
+  global.fetch = async (url, init) => { calls.push(init.body.get('response')); return { ok: true, status: 200, json: async () => ({ success: true, action: 'school-request' }) } }
+  try {
+    const api = endpoint()
+    const response = await api.route.POST(request({ ...parsed.data, turnstileToken: 'widget-token' }))
+    assert.equal(response.status, 201)
+    assert.deepEqual(calls, ['widget-token'])
+    assert.equal(api.records.length, 1)
+    assert.equal('turnstileToken' in api.records[0], false)
+    const missing = endpoint()
+    const refused = await missing.route.POST(request(parsed.data))
+    assert.equal(refused.status, 400, 'the bot check still runs')
+    assert.match((await refused.json()).error, /security check/)
+    assert.equal(missing.records.length, 0)
+  } finally {
+    for (const key of ['TURNSTILE_ENABLED', 'NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'TURNSTILE_SECRET_KEY']) if (key in saved) process.env[key] = saved[key]; else delete process.env[key]
+    global.fetch = savedFetch
+  }
+})
+test('the form reads only its own fields and never fails without a visible message', () => {
+  const form = fs.readFileSync('components/landing/school-request-form.tsx', 'utf8')
+  assert.match(form, /schoolRequestSchema\.safeParse\(schoolRequestFormValues\(new FormData\(event\.currentTarget\)\)\)/)
+  assert.doesNotMatch(form, /Object\.fromEntries\(new FormData/)
+  assert.match(form, /if \(!first\) \{ setError\(schoolRequestFormError\); return \}/)
+  const widget = fs.readFileSync('components/security/turnstile-widget.tsx', 'utf8')
+  assert.match(widget, /"response-field": false/, 'the widget adds no hidden input to host forms')
+})
 test('superadmin list and review require live elevation; stale reviews cannot mutate requests', async () => {
   const operations = []
   let denied = true

@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import { randomUUID } from "node:crypto";
 import type { Prisma, InterviewPanelAssignment, ClubMember } from "@prisma/client";
 export type BookingPanelBatch={grants:Prisma.InterviewPanelAssignmentCreateManyInput[];audits:Prisma.AuditLogCreateManyInput[]};
@@ -16,9 +17,9 @@ export async function syncBookingPanel(tx: AppTransactionClient, applicationId: 
   const booking = context?.booking ?? await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId, roundId } }, include: { slot: { include: { room: true, panelScheduleVersion: true } } } });
   const room = booking?.slot.room;
   const approvedBy = context?.approvedBy ?? booking?.slot.panelScheduleVersion?.publishedBy ?? room?.panelApprovedBy;
-  const owner = context ? true : approvedBy ? await tx.clubMember.findFirst({ where: { userId: approvedBy, clubId: app.clubId, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } }) : null;
+  const owner = context ? true : approvedBy ? await tx.clubMember.findFirst({ where: { userId: approvedBy, clubId: app.clubId, isOwner: true, ...activeMemberWhere, user: { disabledAt: null } } }) : null;
   const allowed = owner && room?.isOpen && room.clubId === app.clubId && room.roundId === roundId && booking?.roundId === roundId && app.roundId === roundId && app.status === "INTERVIEWING" && !app.round.anonymousReview ? (booking?.slot.panelScheduleVersionId ? booking.slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id))) : [];
-  const members = context?.members ?? (allowed.length ? await tx.clubMember.findMany({ where: { id: { in: allowed }, clubId: app.clubId, status: "ACTIVE", user: { disabledAt: null } } }) : []);
+  const members = context?.members ?? (allowed.length ? await tx.clubMember.findMany({ where: { id: { in: allowed }, clubId: app.clubId, ...activeMemberWhere, user: { disabledAt: null } } }) : []);
   const pool = !context && booking?.slot.panelScheduleVersionId ? await loadInterviewerPool(tx,app.clubId,roundId) : null;
   const eligible = members.filter(m => allowed.includes(m.id) && m.userId !== app.studentId && interviewCapabilities(m).participate && (!pool || pool.members.some(p=>p.id===m.id&&p.eligible)));
   for (const old of existing.filter(a => a.bookingManaged && !a.revokedAt && !eligible.some(m => m.id === a.memberId))) {

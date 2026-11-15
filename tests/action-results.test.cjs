@@ -23,7 +23,7 @@ function applications({ applicationOpen = true, profile = true, status = 'DRAFTI
   const tx = {
     $queryRaw: async () => [],
     club: { findUnique: async () => { if (failure) throw failure; return { testRequirement: 'OPTIONAL', applicationOpen, applicationDeadline: null } } },
-    studentProfile: { findUnique: async () => profile ? { id: 'profile' } : null },
+    studentProfile: { findUnique: async () => profile ? { id: 'profile', phone: '+14345550123' } : null },
     applicationQuestion: { findMany: async () => [{ id: questionId, prompt: 'Why?', type: 'ESSAY', required: true, wordLimit: 50 }] },
     pipelineRound: { findFirst: async () => ({ id: 'round' }) },
     recruitmentCycle: { findMany: async () => [] },

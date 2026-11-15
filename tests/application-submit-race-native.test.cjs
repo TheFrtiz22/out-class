@@ -16,7 +16,7 @@ test('two simultaneous submits create one application', { skip: !databaseUrl, ti
     const question = await operator.applicationQuestion.create({ data: { clubId: c.id, prompt: 'Why?', type: 'ESSAY', required: true, order: 0 } });
     await operator.recruitmentCycle.create({ data: { clubId: c.id, name: 'Fall' } });
     const student = await user('student');
-    await operator.studentProfile.create({ data: { userId: student.id, firstName: 'Race', lastName: 'Student', computingId: student.email.split('@')[0], major: 'Economics', gradYear: 2028 } });
+    await operator.studentProfile.create({ data: { userId: student.id, firstName: 'Race', lastName: 'Student', computingId: student.email.split('@')[0], major: 'Economics', gradYear: 2028, phone: '+14345550123' } });
     return { club: c, student, input: { clubId: c.id, answers: [{ questionId: question.id, response: 'Same answer' }] } };
   }
   async function assertOne(f, results) {

@@ -73,7 +73,7 @@ export const privacyPolicy: LegalDocument = {
     ] },
     { heading: "2. Information we collect", paragraphs: ["We collect the following categories of personal information. Fields marked optional in the product are optional: you can leave them blank, and a blank field is never shared."], list: [
       "Account information: your name, your university email address, your university computing ID, sign-in credentials (passwords are stored by our authentication provider in hashed form) and, if you use Microsoft sign-in, the identifiers your university account provides.",
-      "Profile information you provide: major, expected graduation year and, if you choose to add them, a photograph (headshot), a résumé, a LinkedIn profile link, a short bio, prior experience, high school, transfer-student status, scholar program, gender, pronouns, grade point average (GPA), SAT score and ACT composite and section scores. GPA and test scores are self-reported; we do not obtain them from your university or a testing agency.",
+      "Profile information you provide: major, expected graduation year, a phone number and, if you choose to add them, a photograph (headshot), a résumé, a LinkedIn profile link, a short bio, prior experience, high school, transfer-student status, scholar program, gender, pronouns, grade point average (GPA), SAT score and ACT composite and section scores. GPA and test scores are self-reported; we do not obtain them from your university or a testing agency.",
       "Optional interests you choose in the club-interest survey, used only to suggest clubs to you; clubs cannot see them.",
       "Application information: answers, files and other materials you submit to a Club, interview availability and bookings, offer responses, and the status of your applications.",
       "Recruiting records created by Clubs: interview schedules, evaluations, notes, comments on résumés, scores, votes and decisions recorded by a Club's authorized members about applications submitted to that Club.",
@@ -94,6 +94,7 @@ export const privacyPolicy: LegalDocument = {
       "When you apply to or join a Club, that Club's authorized members can see the information needed to run its recruiting and membership, and nothing about your applications to other Clubs. Specifically:",
     ], list: [
       "Profile fields: your name, photo, major, academic year, GPA, SAT and ACT scores, experience, résumé and LinkedIn link, but only the fields the Club has chosen to show its reviewers and only fields you filled in. A Club may also apply minimum GPA or test-score rules it sets to applications submitted to it.",
+      "Your phone number is required to submit an application. It is shown only to a Club that accepts you, and only to the members of that Club who manage its decisions, so they can call you about the offer. Reviewers and interviewers do not see it. We do not use it to send text messages.",
       "Gender is shown only in rounds where the Club has explicitly turned it on. In anonymous review rounds, your name and photo are hidden from reviewers.",
       "Your application answers and files for that Club, your interview bookings, and your attendance at that Club's events and meetings.",
       "Your university email address and computing ID, in the Club's member roster and in applicant lists that its leaders export for their records.",

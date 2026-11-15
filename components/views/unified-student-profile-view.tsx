@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { ResumeImportDialog } from "@/components/resume-import-dialog"
+import { formatPhone } from "@/lib/phone"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
 import { Panel } from "@/components/ui/panel"
 
@@ -91,7 +92,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   // One entry point: "Edit profile" opens every section; "Import from résumé" lives inside it.
   const editProfile = <EditStudentProfileDialog
     profile={profile!}
-    sections={["identity", "education", "experience", "links"]}
+    sections={["identity", "education", "experience", "links", "contact"]}
     extra={sync => <ResumeImportDialog key={profile!.userId} profile={profile!} label="Import from résumé" onSaved={value => { setProfile(value); setSaved(true); sync(value) }} />}
     onSaved={(value) => { setProfile(value); setSaved(true) }}
     trigger={<Button size="sm"><Pencil className="size-3.5" aria-hidden="true" />Edit profile</Button>}
@@ -196,6 +197,12 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                 </dl>
               )}
             </div>,
+          )}
+          {section(
+            "Phone",
+            "contact",
+            <p className="text-sm tabular-nums">{formatPhone(profile.phone) || <span className="text-muted-foreground">Not added. Required before you submit an application.</span>}</p>,
+            "Clubs call applicants they accept. Only a club that accepts you sees your number.",
           )}
         </div>
         <Panel as="aside">

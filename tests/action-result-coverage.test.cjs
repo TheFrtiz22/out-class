@@ -28,6 +28,8 @@ const exclusions = new Map([
   ['actions/crm.ts#getRankedReviewRound', 'read through /api/workspace'],
   ['actions/interview-rooms.ts#getApplicantSchedule', 'read; failures show the load fallback'],
   ['actions/organization-members.ts#getOrganizationMemberManagement', 'read through /api/workspace'],
+  ['actions/profile.ts#updateStudentProfileSection', 'already returns { error }; the graduation-year support refusal is returned as that message'],
+  ['actions/resume-import.ts#confirmResumeImport', 'already returns { ok, code, message }; the graduation-year support refusal is returned as FORBIDDEN'],
   ['actions/campus-events.ts#setCampusEventRsvp', 'already returns { ok, error } through RsvpResult'],
   ['actions/campus-events.ts#getCampusEventAttendees', 'read; failures show the load fallback'],
   ['actions/club-overview.ts#getClubWorkspaceOverview', 'read; failures show the load fallback'],
@@ -100,7 +102,8 @@ function throwersOf(file) {
   return result;
 }
 
-const wrapped = body => /^\{\s*return\s+actionResult\(/.test(body);
+// interviewActionResult (utils/interview-access) is actionResult plus the uniform ACCESS_REVOKED mapping.
+const wrapped = body => /^\{\s*return\s+(?:interviewActionResult|actionResult)\(/.test(body);
 
 test('every exported action that can throw ActionError returns through actionResult', () => {
   const unwrapped = [], stale = [];

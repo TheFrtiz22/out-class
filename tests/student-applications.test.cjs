@@ -18,7 +18,7 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
   const tx = {
     $queryRaw: async()=>[],
     club: { findUnique: async () => ({ testRequirement, applicationOpen, applicationDeadline }) },
-    studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? profile : { id: 'profile' }) : null },
+    studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? { phone: '+14345550123', ...profile } : { id: 'profile', phone: '+14345550123' }) : null },
     applicationQuestion: { findMany: async args => { calls.push(['questions', args]); return questions } },
     pipelineRound: { findFirst: async () => ({ id: 'first-round' }) },
     recruitmentCycle: { findMany: async () => [] },
@@ -141,4 +141,15 @@ test('student status projection remains owned and exposes only public round name
   assert.deepEqual(query.select.bookings.select, { id: true, roundId: true, slot: { select: { startTime: true, endTime: true, location: true } } })
   assert.equal(query.select.scores, undefined)
   assert.equal(query.select.notes, undefined)
+})
+
+test('submission requires a phone number on the profile; drafts still save without one', async () => {
+  const body = { clubId, answers: [{ questionId, response: 'My answer' }] }
+  for (const phone of [null, '', '4345550123', 'not a number']) {
+    const missing = setup({ profile: { id: 'profile', phone } })
+    await assert.rejects(missing.submitApplication(body), /Add a phone number to your profile before submitting/)
+    assert.equal(missing.calls.some(call => call[0] === 'update'), false)
+    assert.deepEqual(await setup({ profile: { id: 'profile', phone } }).saveApplicationDraft(body), { success: true, applicationId: 'app' })
+  }
+  assert.deepEqual(await setup({ profile: { id: 'profile', phone: '+442079460958' } }).submitApplication(body), { success: true, applicationId: 'app' })
 })

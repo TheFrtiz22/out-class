@@ -2,7 +2,7 @@ import { cookies } from "next/headers"
 import { NextResponse, type NextRequest } from "next/server"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
-import { OUTLOOK_COOKIE, OUTLOOK_COOKIE_PATH, lookupBusy, outlookConfig, parsePending, popupResult, redirectOrigin } from "@/lib/outlook-calendar"
+import { OUTLOOK_COOKIE, OUTLOOK_COOKIE_PATH, lookupBusy, outlookConfig, parsePending, popupResult, redirectOrigin, stateMatches } from "@/lib/outlook-calendar"
 import { getSessionUser, requireAuth } from "@/utils/auth"
 
 export const dynamic = "force-dynamic"
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   if (!pending) return page(null, 400)
   const fail = (error: string, status = 400) => page({ nonce: pending.nonce, week: pending.week, error }, status)
   const params = request.nextUrl.searchParams
-  if (params.get("state") !== pending.state) return fail("expired")
+  if (!stateMatches(params.get("state"), pending.state)) return fail("expired")
   if (cookieStore.has(PLATFORM_VIEW_COOKIE) || cookieStore.get(DEMO_COOKIE)?.value === "1") return fail("unavailable", 403)
   const providerError = params.get("error")
   if (providerError) {

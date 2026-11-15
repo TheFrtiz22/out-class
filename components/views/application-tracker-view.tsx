@@ -57,7 +57,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   const applicationId = useSearchParams().get("applicationId")
   const now = useServerAnchoredNow(serverNow)
   const demo = useDemoMode()
-  useEffect(() => { setActiveId(null); setFilter("All"); setDirty(false) }, [scope])
+  useEffect(() => { setActiveId(null); setStatusId(null); setFilter("All"); setDirty(false) }, [scope])
   const demoDeadline = (clubId: string) => demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === clubId)?.deadline : undefined
   const { user, loading, refreshUser } = useAuth()
   const { focusApplicationClubId, clearApplicationFocus, syncApplications, focusApplication, syncApplicationBookings } = useApplicationState()
@@ -66,6 +66,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
+  // A stage card ("Review offer", "Review interview", "View details") opens that application's status, where
+  // booking and offer responses live; every other way of opening an application keeps its existing view.
+  const [statusId, setStatusId] = useState<string | null>(null)
   const [, setDirty] = useState(false)
   const [working, setWorking] = useState(false)
   const [filter, setFilter] = useState("")
@@ -73,10 +76,11 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   const [notice, setNotice] = useState("")
   const content = useRef<HTMLDivElement>(null)
   const lastOpened = useRef<string | null>(null)
+  // statusId: switching between an application's status and its answers keeps activeId, so focus follows the new heading.
   useEffect(() => {
     if (activeId) content.current?.querySelector<HTMLElement>("h1")?.focus()
     else if (lastOpened.current) content.current?.querySelector<HTMLButtonElement>(`[data-application-id="${CSS.escape(lastOpened.current)}"]`)?.focus({ preventScroll: true })
-  }, [activeId, pending])
+  }, [activeId, statusId, pending])
 
   const sync = useCallback(
     (apps: StudentApplication[]) => {
@@ -215,7 +219,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   function bookingChanged() {
     void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && statusView) return <div ref={content} className="oc-application-detail max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  if (app && (statusView || statusId === app.id)) return <div ref={content} className="oc-application-detail max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setStatusId(null); setNotice("") }} onResponses={() => statusView ? openRelated("tracker") : setStatusId(null)} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
       <div ref={content} className={`oc-application-detail pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-[var(--oc-reading-width)] space-y-7"}`}>
@@ -227,6 +231,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
           onClick={() =>
             leave(() => {
               setActiveId(null)
+              setStatusId(null)
               setNotice("")
             })
           }
@@ -344,7 +349,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
           <p role="status" className="sr-only">{pluralize(visible.length, "application")} shown</p>
           {syncNote && <p role="status" className="text-xs text-muted-foreground">{syncNote}</p>}
           <ul className={stage === "drafts" ? "oc-application-management-list" : "oc-status-list"}>
-            {visible.map(item => <li key={item.id}>{stage === "drafts" ? <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} /> : <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} />}</li>)}
+            {visible.map(item => <li key={item.id}>{stage === "drafts" ? <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} /> : <ApplicationStatusCard application={item} now={now} onOpen={() => { open(item); setStatusId(item.id) }} />}</li>)}
           </ul>
           {!visible.length && <EmptyState role="status" density="compact" tone="outlined" title={`No applications in ${applicationStages.find(item => item.id === stage)!.label}.`} description={stage === "drafts" ? "You have no drafts in progress." : "None of your applications are at this stage right now."} />}
         </>

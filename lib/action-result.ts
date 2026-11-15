@@ -32,6 +32,16 @@ export function isActionError(error: unknown): error is ActionError {
   return error instanceof Error && (error as unknown as Record<symbol, unknown>)[actionErrorBrand] === true
 }
 
+/** Refusal code for a viewer whose access was removed while the page was open (for example an
+ * interviewer taken off the panel). Clients treat it as "access removed": stop polling and
+ * autosave retries and show the access state, never "Couldn't save". */
+export const ACCESS_REVOKED = "ACCESS_REVOKED"
+/** True for a failure whose code is ACCESS_REVOKED: a returned refusal unwrapped into a
+ * `UserFacingError`, or the result itself. */
+export function isAccessRevoked(error: unknown): boolean {
+  return !!error && typeof error === "object" && (error as { code?: unknown }).code === ACCESS_REVOKED
+}
+
 export type ActionSuccess<T> = { $action: typeof ACTION_RESULT_BRAND; ok: true; data: T }
 export type ActionFailure = { $action: typeof ACTION_RESULT_BRAND; ok: false; error: string; code: string }
 export type ActionResult<T> = ActionSuccess<T> | ActionFailure

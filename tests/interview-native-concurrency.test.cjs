@@ -14,7 +14,7 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {entries:load('actions/interview-entry.ts'),kits:unwrapActions(load('actions/interview-kits.ts')),resume:load('actions/interview-resumes.ts'),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:unwrapActions(load('actions/interview-kits.ts')),resume:unwrapActions(load('actions/interview-resumes.ts')),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
 }
 // Actions return through actionResult (#292): read the action's own value inside the envelope.
 const innerValue=r=>r.value&&r.value.$action?r.value.data:r.value;
@@ -110,12 +110,12 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  await prisma.interviewRecord.create({data:{applicationId:foreignApp.id,interviewerId:foreignMember.id,roundId:foreignRound.id,anonymousReview:false,questions:[],draft:{...first.draft,score:10},completedAt:new Date(),evaluationId:foreignEvaluation.id}});
  assert.deepEqual((await a.kits.getPreviousInterviewScores(scope)).map(r=>r.id),expected);
  await own.members.setInterviewPanelAssignment({...scope,memberId:twoMember.id,assigned:false});
- await assert.rejects(b.kits.openInterviewSession(scope),/panel/);await assert.rejects(b.resume.getInterviewResumeAnnotations(ds),/panel/);
+ await assert.rejects(b.kits.openInterviewSession(scope),/no longer have access/);await assert.rejects(b.resume.getInterviewResumeAnnotations(ds),/no longer have access/);
  // A revocation holds the same club serialization lock as grants. A pending read
  // must recheck after commit, rather than use an authorization captured beforehand.
  let release,locked;const ready=new Promise(resolve=>locked=resolve),hold=new Promise(resolve=>release=resolve);
  const revoke=prisma.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;locked();await hold;await tx.interviewPanelAssignment.update({where:{applicationId_roundId_memberId:{applicationId:app.id,roundId:round.id,memberId:oneMember.id}},data:{revokedAt:new Date()}});});
- await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/panel/);
+ await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/no longer have access/);
  const remaining=await pendingList;assert.equal(remaining.some(row=>row.applicationId===app.id),false,'the revoked applicant disappears even when other valid history assignments remain');
  const retainedGrants=await prisma.interviewPanelAssignment.findMany({where:{memberId:oneMember.id,roundId:round.id,revokedAt:null},select:{applicationId:true}});
  assert.ok(remaining.length>0);assert.ok(remaining.every(row=>row.clubId===club.id&&row.roundId===round.id&&retainedGrants.some(g=>g.applicationId===row.applicationId)),'all remaining candidate rows still require their own active grant');

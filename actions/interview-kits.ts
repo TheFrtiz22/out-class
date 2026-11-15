@@ -8,9 +8,9 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
+import { authorizeInterview, authorizeQuestionBank, interviewActionResult, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilities } from "@/lib/interview-access";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { profilePhotoSource } from "@/lib/profile-photo";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord, Prisma } from "@prisma/client";
@@ -164,7 +164,7 @@ async function getInterviewRoundScoreCommand(input: unknown) {
     const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: data.applicationId, roundId: data.roundId, memberId: access.member.id } } });
     if (!canReadRoundScore({ readClosing: access.caps.readClosing, currentRound: access.app.roundId === data.roundId, assigned: !!assignment && !assignment.revokedAt, ownSubmitted: !!own?.submittedAt })) throw new ActionError("Submit your own review before viewing round scores.");
     const evaluations = await tx.evaluation.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, submittedAt: { not: null }, stableRound: { clubId: data.clubId }, interviewer: { clubId: data.clubId } }, orderBy: [{ submittedAt: "desc" }, { id: "desc" }] });
-    const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null, member: { clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null } } }, include: { member: true } });
+    const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null, member: { clubId: data.clubId, ...activeMemberWhere, user: { disabledAt: null } } }, include: { member: true } });
     return submittedScoreSummary(evaluations, assignments.filter(a => interviewCapabilities(a.member).participate).map(a => a.memberId));
   }, interviewTransactionOptions);
 }
@@ -303,28 +303,30 @@ async function getPreviousInterviewScoresCommand(input: z.infer<typeof scope>) {
   }, interviewTransactionOptions);
 }
 
+// Read by the room's question library and the leader kit editor; a lost question-bank grant is ACCESS_REVOKED.
 export async function getInterviewKit(...args: Parameters<typeof getInterviewKitCommand>) {
-  return actionResult(() => getInterviewKitCommand(...args), "getInterviewKit")
+  return interviewActionResult(() => getInterviewKitCommand(...args), "getInterviewKit")
 }
 
 export async function saveInterviewKit(...args: Parameters<typeof saveInterviewKitCommand>) {
   return actionResult(() => saveInterviewKitCommand(...args), "saveInterviewKit")
 }
 
+// Room actions: an access denial (e.g. removed from the panel mid-interview) is a typed ACCESS_REVOKED refusal.
 export async function openInterviewSession(...args: Parameters<typeof openInterviewSessionCommand>) {
-  return actionResult(() => openInterviewSessionCommand(...args), "openInterviewSession")
+  return interviewActionResult(() => openInterviewSessionCommand(...args), "openInterviewSession")
 }
 
 export async function saveInterviewSession(...args: Parameters<typeof saveInterviewSessionCommand>) {
-  return actionResult(() => saveInterviewSessionCommand(...args), "saveInterviewSession")
+  return interviewActionResult(() => saveInterviewSessionCommand(...args), "saveInterviewSession")
 }
 
 export async function getEarlierInterviewReviews(...args: Parameters<typeof getEarlierInterviewReviewsCommand>) {
-  return actionResult(() => getEarlierInterviewReviewsCommand(...args), "getEarlierInterviewReviews")
+  return interviewActionResult(() => getEarlierInterviewReviewsCommand(...args), "getEarlierInterviewReviews")
 }
 
 export async function getInterviewRoundScore(...args: Parameters<typeof getInterviewRoundScoreCommand>) {
-  return actionResult(() => getInterviewRoundScoreCommand(...args), "getInterviewRoundScore")
+  return interviewActionResult(() => getInterviewRoundScoreCommand(...args), "getInterviewRoundScore")
 }
 
 export async function getSubmittedInterviewReviewPage(...args: Parameters<typeof getSubmittedInterviewReviewPageCommand>) {
@@ -335,9 +337,9 @@ export async function getSubmittedInterviewReviews(...args: Parameters<typeof ge
 }
 
 export async function getSubmittedInterviewReview(...args: Parameters<typeof getSubmittedInterviewReviewCommand>) {
-  return actionResult(() => getSubmittedInterviewReviewCommand(...args), "getSubmittedInterviewReview")
+  return interviewActionResult(() => getSubmittedInterviewReviewCommand(...args), "getSubmittedInterviewReview")
 }
 
 export async function getPreviousInterviewScores(...args: Parameters<typeof getPreviousInterviewScoresCommand>) {
-  return actionResult(() => getPreviousInterviewScoresCommand(...args), "getPreviousInterviewScores")
+  return interviewActionResult(() => getPreviousInterviewScoresCommand(...args), "getPreviousInterviewScores")
 }

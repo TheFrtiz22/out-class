@@ -21,6 +21,8 @@ export function interviewCapabilities(member: InterviewAccess | null | undefined
 
 export const interviewScopeSchema = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), roundId: z.string().uuid() });
 export type InterviewScope = z.infer<typeof interviewScopeSchema>;
+/** Shown with an ACCESS_REVOKED refusal (lib/action-result) for any interview access denial. */
+export const INTERVIEW_ACCESS_REVOKED_MESSAGE = "You no longer have access to this interview.";
 export const interviewScoreSchema = z.number().finite().min(1).max(10).multipleOf(0.5);
 export const textAnchorSchema = z.object({
   page: z.number().int().min(1).max(10000),
