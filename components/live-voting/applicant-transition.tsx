@@ -88,10 +88,16 @@ export function ApplicantTransition({applicantId,passNumber,children,onReady,sum
   if(phase!=="ready")return;
   if(incoming===key)onScreen.current=key;
   if(!track.outgoing)restHeight.current=root.current?.getBoundingClientRect().height??restHeight.current;
-  const frame=requestAnimationFrame(()=>{const h=root.current?.querySelector<HTMLElement>(".vr-slide-in [data-applicant-heading]");if(!h)return; // e.g. a failed load: wait for Retry
+  let frame=0,waited=0;
+  const place=()=>{const h=root.current?.querySelector<HTMLElement>(".vr-slide-in [data-applicant-heading]");if(!h)return; // e.g. a failed load: wait for Retry
+   const active=document.activeElement;
+   // The confirm that asked for this change (End voting, Close voting…) may still be closing and returning focus to a
+   // button that is about to go: wait for it to leave (up to ~1s) before deciding where focus belongs.
+   if(active?.closest('[data-slot="alert-dialog-content"]')&&waited++<60){frame=requestAnimationFrame(place);return;}
    // Focus the new applicant's name (never a decision button), unless focus was deliberately moved elsewhere (e.g. Undo).
-   const active=document.activeElement;if(shouldFocus.current&&(!active||active===document.body||root.current?.contains(active)))h?.focus();shouldFocus.current=false;
-   setAnnounce(h?.textContent??"");});
+   if(shouldFocus.current&&(!active||active===document.body||root.current?.contains(active)))h?.focus();shouldFocus.current=false;
+   setAnnounce(h?.textContent??"");};
+  frame=requestAnimationFrame(place);
   return()=>cancelAnimationFrame(frame);
  },[phase,key,incoming,track.outgoing]);
  // Controls unlock only for an applicant that is on screen and loaded (also after a Retry following a failed load).
