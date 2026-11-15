@@ -5,6 +5,7 @@ import * as SheetPrimitive from '@radix-ui/react-dialog'
 import { XIcon } from '@/components/icons'
 
 import { cn } from '@/lib/utils'
+import { useSheetDrag } from '@/hooks/use-sheet-drag'
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -48,14 +49,28 @@ function SheetContent({
   className,
   children,
   side = 'right',
+  draggable = side === 'bottom',
+  ref,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: 'top' | 'right' | 'bottom' | 'left'
+  /** Bottom sheets can be dragged down to dismiss by their grabber. Pass false where closing must be guarded. */
+  draggable?: boolean
 }) {
+  const close = React.useRef<HTMLButtonElement>(null)
+  // Dismissal goes through the sheet's own Close, so focus return and onOpenChange behave as for the X button.
+  const { sheet, handle } = useSheetDrag(() => close.current?.click())
+  const grabber = draggable && side === 'bottom'
+  const setRef = React.useCallback((node: HTMLDivElement | null) => {
+    sheet.current = node
+    if (typeof ref === 'function') ref(node)
+    else if (ref) ref.current = node
+  }, [ref, sheet])
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
+        ref={setRef}
         data-slot="sheet-content"
         className={cn(
           'bg-card data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-[var(--oc-z-modal)] flex flex-col gap-4 shadow-modal [--tw-ease:var(--oc-spring)] data-[state=open]:[--tw-animation-duration:var(--oc-spring-ui)] data-[state=closed]:[--tw-animation-duration:var(--oc-spring-quick)] motion-reduce:animate-none',
@@ -71,8 +86,9 @@ function SheetContent({
         )}
         {...props}
       >
+        {grabber && <div data-slot="sheet-grabber" aria-hidden="true" className="absolute inset-x-0 top-0 z-10 flex h-7 cursor-grab touch-none items-center justify-center active:cursor-grabbing" {...handle}><span className="h-1.5 w-10 rounded-full bg-muted-foreground/35" /></div>}
         {children}
-        <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-2 right-2 flex size-11 items-center justify-center rounded-md opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+        <SheetPrimitive.Close ref={close} className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-2 right-2 flex size-11 items-center justify-center rounded-md opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
