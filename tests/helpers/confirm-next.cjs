@@ -1,9 +1,34 @@
 // Answer the next OutClass confirm (components/ui/confirm-dialog.tsx, an AlertDialog) the way page.once('dialog')
-// answered window.confirm: arm it before the click that asks. The footer is Cancel then the action (whose variant
-// depends on tone), so accept clicks the last button and dismiss the first. A confirm that never appears is ignored.
+// answered window.confirm: arm it before the click that asks. Unlike window.confirm, the in-app dialog opens after
+// the click returns, so a test may arm the next answer before this one's dialog appears: answers are used in the
+// order they were armed, one per dialog, and expire after 15s if nothing asks. Only an open dialog counts (an answered
+// one animates closed in the DOM). The footer is Cancel then the action (its variant depends on tone): accept clicks
+// the last button, dismiss the first. The promise settles once the dialog has fully gone (a modal hides the page
+// from role queries while it is open).
+const queues = new WeakMap()
 module.exports = function confirmNext(page, accept = true) {
-  const footer = page.locator('[data-slot="alert-dialog-content"] [data-slot="alert-dialog-footer"]')
-  footer.waitFor({ timeout: 15000 })
-    .then(() => (accept ? footer.locator('button').last() : footer.locator('button').first()).click())
-    .catch(() => {})
+  const queue = queues.get(page) ?? []
+  queues.set(page, queue)
+  const me = {}
+  queue.push(me)
+  const any = page.locator('[data-slot="alert-dialog-content"]')
+  const open = page.locator('[data-slot="alert-dialog-content"][data-state="open"]')
+  const footer = open.locator('[data-slot="alert-dialog-footer"]')
+  const deadline = Date.now() + 15000
+  const left = () => Math.max(1, deadline - Date.now())
+  return (async () => {
+    try {
+      for (;;) {
+        await footer.waitFor({ timeout: left() })
+        if (queue[0] !== me) { await open.waitFor({ state: 'detached', timeout: left() }); continue }
+        queue.shift()
+        await (accept ? footer.locator('button').last() : footer.locator('button').first()).click()
+        await any.waitFor({ state: 'detached', timeout: 5000 })
+        return
+      }
+    } catch { /* nothing asked in time */ } finally {
+      const i = queue.indexOf(me)
+      if (i >= 0) queue.splice(i, 1)
+    }
+  })()
 }

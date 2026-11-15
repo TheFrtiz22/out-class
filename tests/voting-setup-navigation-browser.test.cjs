@@ -51,7 +51,7 @@ test('two tabs editing one scheduled session: the second save never overwrites, 
   assert.equal(await b.getByText(/draft changed in another tab/i).count(),0);
   for(const name of ['Retry session','Retry draft','Retry'])assert.equal(await b.getByRole('button',{name,exact:true}).count(),0,name);
   // Unsaved edits are only discarded after a confirm: dismissing keeps the conflict and the form.
-  confirmNext(b,false);await b.getByRole('button',{name:'Load latest session',exact:true}).click();await b.waitForTimeout(300);assert.equal(await alert.count(),1);
+  const kept=confirmNext(b,false);await b.getByRole('button',{name:'Load latest session',exact:true}).click();await kept;assert.equal(await alert.count(),1);
   confirmNext(b);await b.getByRole('button',{name:'Load latest session',exact:true}).click();await alert.waitFor({state:'detached'});
   await b.getByRole('button',{name:'Back',exact:true}).click();await b.getByRole('button',{name:'Back',exact:true}).click();assert.equal(await bName.inputValue(),'Saved by tab A');
   // After loading the latest session the tab saves normally against the new revision.
