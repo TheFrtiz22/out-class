@@ -1,9 +1,12 @@
 "use client";
 import {cloneElement,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactElement} from "react";
 import {resultOutcomeLabel,type RoomResult} from "@/lib/voting-room";
+import {liveTranslate,springDuration,springEasing} from "@/lib/spring";
 
-/** How long a confirmed outcome shows beside the name before the room moves on, and the move itself. */
-export const OUTCOME_HOLD_MS=200,SLIDE_MS=520,FADE_MS=320,REDUCED_FADE_MS=150;
+/** How long a confirmed outcome shows beside the name before the room moves on, and the move itself (a critically
+ * damped spring with a .3s response: most of the travel lands in the first ~200ms). */
+export const OUTCOME_HOLD_MS=200,SLIDE_MS=springDuration(0.3),FADE_MS=320,REDUCED_FADE_MS=150;
+type Leg="out"|"in"|"rest";
 type Slide=ReactElement<{onReady?:()=>void;onFailed?:()=>void;paused?:boolean;outcome?:RoomResult|null}>;
 /** slide: the horizontal applicant transition; fade: a gentle crossfade (intermission, new pass, end of voting); none: direct. */
 export type Motion="slide"|"fade"|"none";
@@ -93,6 +96,29 @@ export function ApplicantTransition({applicantId,passNumber,children,onReady,sum
  },[phase,key,incoming,track.outgoing]);
  // Controls unlock only for an applicant that is on screen and loaded (also after a Retry following a failed load).
  useEffect(()=>{if(phase==="ready"&&incoming===key)onReady(key);},[phase,incoming,key,onReady]);
+ // The slide runs on a spring through the Web Animations API so it can be interrupted: when an Undo or a newer snapshot
+ // lands mid-slide, each layer continues from where it is on screen instead of snapping back (apple-design §3).
+ // A layer still leaving keeps leaving; the leaving layer an Undo brings back springs home from its live position.
+ // Crossfades and reduced motion stay on the CSS keyframes in room.css. Runs after every commit; it is idempotent.
+ const motion=useRef(new WeakMap<Element,{leg:Leg;animation:Animation}>());
+ useLayoutEffect(()=>{
+  const stage=root.current;if(!stage)return;
+  const sliding=phase==="sliding"&&out?.mode!=="fade"&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for(const layer of Array.from(stage.children) as HTMLElement[]){
+   if(typeof layer.animate!=="function")return;
+   const role:Leg=layer.classList.contains("vr-slide-out")?"out":"in",current=motion.current.get(layer);
+   const leg:Leg|null=sliding?role:role==="in"&&current?.leg==="out"?"rest":null;
+   if(!leg||current?.leg===leg||current&&leg==="in")continue;
+   // Read the live value before cancelling, so the next leg starts exactly where this one is.
+   const live={transform:`translateX(${liveTranslate(layer).x}px)`,opacity:getComputedStyle(layer).opacity};
+   current?.animation.cancel();
+   const from=current?live:leg==="in"?{transform:"translateX(100%)",opacity:"0"}:live;
+   const animation=layer.animate([from,leg==="out"?{transform:"translateX(-100%)",opacity:"0"}:{transform:"translateX(0px)",opacity:"1"}],{duration:SLIDE_MS,easing:springEasing(),fill:"forwards"});
+   // Arrivals hand the element back to its stylesheet once settled; a leaving layer holds its end state until removed.
+   if(leg!=="out")animation.onfinish=()=>{if(motion.current.get(layer)?.animation!==animation)return;motion.current.delete(layer);animation.cancel();};
+   motion.current.set(layer,{leg,animation});
+  }
+ });
  // Pending from the very render that creates the outgoing layer (before the phase update), so the next slide's
  // placeholder never enters the flow or the stage's height.
  const pending=!!out&&phase!=="sliding";
