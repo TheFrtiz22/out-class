@@ -3,6 +3,7 @@
 // transition; duplicates, stale screens and catch-up after missed advances behave; other viewers never get a
 // member's choice. Synthetic accounts and applicants only.
 const {test}=require('node:test'),assert=require('node:assert/strict');
+const confirmNext=require('./helpers/confirm-next.cjs');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
 const {sessionId,apps,leaderId,voterId}=require('./helpers/voting-room-harness.cjs');
 
@@ -50,7 +51,7 @@ test('multi-user voting: ballots never advance; finalization advances every view
   // 2. The leader finalizes: every viewer advances once, even with duplicated refresh events during the slide.
   for(const p of all)await watch(p);
   await leader.getByRole('button',{name:'Close voting',exact:true}).click().catch(()=>{});
-  leader.once('dialog',d=>d.accept());
+  confirmNext(leader);
   await leader.getByRole('textbox',{name:'Decision reason'}).waitFor({timeout:5000}).catch(async()=>{await leader.getByRole('button',{name:'Close voting',exact:true}).click();});
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic group decision');
   await leader.getByRole('button',{name:'Pass',exact:true}).click();

@@ -1,5 +1,6 @@
 // Loopback UI fixture: synthetic identities and in-memory Prisma doubles only.
 const {test}=require('node:test'),assert=require('node:assert/strict');
+const confirmNext=require('./helpers/confirm-next.cjs');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
 const {clubId,cycleId,roundId,sessionId,leaderId,voterId,apps,uuid}=require('./helpers/voting-room-harness.cjs');
 const later=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(Date.now()+2*86400000)).replace(' ','T');
@@ -50,8 +51,8 @@ test('two tabs editing one scheduled session: the second save never overwrites, 
   assert.equal(await b.getByText(/draft changed in another tab/i).count(),0);
   for(const name of ['Retry session','Retry draft','Retry'])assert.equal(await b.getByRole('button',{name,exact:true}).count(),0,name);
   // Unsaved edits are only discarded after a confirm: dismissing keeps the conflict and the form.
-  b.once('dialog',d=>d.dismiss());await b.getByRole('button',{name:'Load latest session',exact:true}).click();await b.waitForTimeout(300);assert.equal(await alert.count(),1);
-  b.once('dialog',d=>d.accept());await b.getByRole('button',{name:'Load latest session',exact:true}).click();await alert.waitFor({state:'detached'});
+  confirmNext(b,false);await b.getByRole('button',{name:'Load latest session',exact:true}).click();await b.waitForTimeout(300);assert.equal(await alert.count(),1);
+  confirmNext(b);await b.getByRole('button',{name:'Load latest session',exact:true}).click();await alert.waitFor({state:'detached'});
   await b.getByRole('button',{name:'Back',exact:true}).click();await b.getByRole('button',{name:'Back',exact:true}).click();assert.equal(await bName.inputValue(),'Saved by tab A');
   // After loading the latest session the tab saves normally against the new revision.
   await bName.fill('Edited after loading latest');await toReview(b);await b.getByRole('button',{name:'Save session changes',exact:true}).click();

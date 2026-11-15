@@ -1,10 +1,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');const {sessionId,leaderId,uuid}=require('./helpers/voting-room-harness.cjs');const AxeBuilder=require('@axe-core/playwright').default;
+const confirmNext=require('./helpers/confirm-next.cjs');
 test('rendered complete meeting through tied decision, early end, correction, repeated Hold passes and explicit finalization retry',{timeout:180000},async()=>{
  const f=await fixture(),browser=await chromium.launch({headless:true}),leaderContext=await browser.newContext({viewport:{width:1280,height:800}}),memberContext=await browser.newContext({viewport:{width:390,height:844}}),leader=await leaderContext.newPage(),member=await memberContext.newPage();const errors=[];leader.on('pageerror',e=>errors.push(e.message));member.on('pageerror',e=>errors.push(e.message));
  const base=`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}`;
  const ready=()=>leader.waitForFunction(()=>{const controls=document.querySelector('.vr-leader fieldset');return controls&&!controls.disabled&&!!document.querySelector('.vr-slide-ready')});
  const click=async name=>{await ready();const button=leader.getByRole('button',{name,exact:true});if(name==='End voting'&&!await button.isVisible())await leader.getByText('More actions',{exact:true}).click();await button.click()};
- const confirmClick=async name=>{leader.once('dialog',d=>d.accept());await click(name)};
+ const confirmClick=async name=>{confirmNext(leader);await click(name)};
  const accept=async()=>{await ready();await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('textbox',{name:'Reason for deciding without a vote'}).fill('Synthetic discussion resolved concerns');await confirmClick('Pass without vote')};
  try{
   await f.h.create();await leader.goto(`${base}&view=leader&actor=leader`);await click('Start session');await click('Open voting');

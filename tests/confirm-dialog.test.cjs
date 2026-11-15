@@ -5,14 +5,14 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { loadComponent } = require('./helpers/component-module.cjs')
 
-// The voting system is being consolidated on another branch; its confirms move separately.
-const excluded = ['components/live-voting/', 'app/(focus)/live-voting/', 'app/(focus)/voting/']
+// No exclusions: the voting room's confirms moved to useConfirm too.
+const excluded = []
 const sourceFiles = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
   const file = path.join(dir, entry.name)
   return entry.isDirectory() ? sourceFiles(file) : /\.(tsx?|jsx?)$/.test(entry.name) ? [file] : []
 })
 
-test('no window.confirm remains in app/ or components/ outside the excluded voting paths', () => {
+test('no window.confirm remains in app/ or components/', () => {
   const offenders = ['app', 'components'].flatMap(sourceFiles)
     .map(file => file.split(path.sep).join('/'))
     .filter(file => !excluded.some(prefix => file.startsWith(prefix)))
