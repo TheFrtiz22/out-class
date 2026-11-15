@@ -97,4 +97,4 @@ export function readInterestAnswers(row: { interests?: readonly string[] | null;
 /** The directory's own time field (filter values "1-3" | "3-5" | "5+") closest to each answer. */
 export const weeklyHoursCommitment: Record<WeeklyHours, TimeCommitment> = { "1-2": "1-3", "3-5": "3-5", "6+": "5+" }
 /** A published acceptance rate at or below this percentage counts as selective. */
-export const SELECTIVE_ACCEPTANCE_RATE = 25
+export const SELECTIVE_ACCEPTANCE_RATE = 10
