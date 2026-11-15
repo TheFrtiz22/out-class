@@ -34,7 +34,7 @@ function authServer({ confirmedAt = null, password = null, appMetadata = {}, ske
   const sessions = new Set(), code = "123456", failures = {}, forwardedIps = [], linkTokens = new Set()
   let next = 0
   const authNow = () => new Date(Date.now() + skewMs).toISOString()
-  const user = () => ({ id: account.id, email: account.email, email_confirmed_at: account.email_confirmed_at, app_metadata: { ...account.app_metadata } })
+  const user = () => ({ id: account.id, email: account.email, email_confirmed_at: account.email_confirmed_at, app_metadata: { ...account.app_metadata }, factors: account.factors })
   const open = () => { const id = `s${++next}`; sessions.add(id); return { access_token: id, user: user() } }
   const server = {
     account, sessions, code, failures, forwardedIps, verifies: 0,
@@ -247,12 +247,55 @@ for (const adminRevokesSessions of [true, false]) {
     const { send, attached } = route(server)
     const response = await send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
     assert.deepEqual(await response.json(), { success: true, passwordUpdated: true, passwordSaved: true })
-    assert.deepEqual(events, ["adminPassword", "signOut", "adminRecord"], "server password, new session, sign-out, record last")
+    assert.deepEqual(events, ["adminPassword", "signOut", "signOut", "adminRecord"], "server password, new session, sign-out, password again, sign-out, record last")
     assert.equal(server.account.password, "Owner-Pass-22!", "the owner's password wins")
     assert.equal(server.signInWithPassword("Other-Pass-33!").error?.message, "Invalid login credentials")
     assert.deepEqual([...server.sessions], attached, "the attached session is the only one, and it is valid")
   })
 }
+
+test("a password change from a session that outlives the server password update does not remain", async () => {
+  // If setting the password as administrator did not end sessions, another session could change it again
+  // before the first sign-out; the password is set again from the only remaining session.
+  const server = authServer({ adminRevokesSessions: false })
+  server.signUp("Earlier-Pass-1!")
+  server.sessions.add("other")
+  let changed = false
+  server.beforeStep = async step => {
+    if (step === "signOut" && !changed && server.sessions.has("other")) { changed = true; server.account.password = "Other-Pass-33!" }
+  }
+  const { send, attached } = route(server)
+  const response = await send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
+  assert.deepEqual(await response.json(), { success: true, passwordUpdated: true, passwordSaved: true })
+  assert.ok(changed)
+  assert.equal(server.account.password, "Owner-Pass-22!")
+  assert.equal(server.signInWithPassword("Other-Pass-33!").error?.message, "Invalid login credentials")
+  assert.deepEqual([...server.sessions], attached)
+})
+
+test("an unfinished account that already has a verified second factor is left unchanged", async () => {
+  const server = authServer()
+  server.signUp("Earlier-Pass-1!")
+  server.account.factors = [{ id: "f1", factor_type: "totp", status: "verified" }]
+  server.sessions.add("other")
+  const { send, attached } = route(server)
+  const response = await send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
+  assert.equal(response.status, 409)
+  assert.match((await response.json()).error, /two-step sign-in/)
+  assert.equal(server.account.password, "Earlier-Pass-1!", "no password change")
+  assert.equal(server.account.app_metadata.outclass_password_secured, undefined, "nothing recorded")
+  assert.ok(server.sessions.has("other"), "no sessions ended")
+  assert.deepEqual(attached, [], "no session attached")
+  // An unverified (abandoned) enrollment does not block.
+  server.account.factors = [{ id: "f2", factor_type: "totp", status: "unverified" }]
+  const again = await route(server).send({ email: EMAIL, code: server.code, password: "Owner-Pass-22!" })
+  assert.equal(again.status, 200)
+})
+
+test("code verification is behind the shared per-address limiter", () => {
+  const source = fs.readFileSync(path.join(root, "app/api/auth/confirm-email/route.ts"), "utf8")
+  assert.ok(source.indexOf("limitRequest(request, RATE_LIMITS.emailCode)") < source.indexOf("recordEmailCodeAttempt("))
+})
 
 test("without the Supabase secret key the route refuses before using the code", async () => {
   const server = authServer()
@@ -547,7 +590,7 @@ test("a Microsoft sign-in to an email-and-password account without a recorded pa
   server.sessions.add("other")
   const { calls, run } = callback(server)
   assert.equal(await run(), "https://outclass.test/home")
-  assert.deepEqual(calls, ["exchange", "new session", "signOut:others", "upsert"])
+  assert.deepEqual(calls, ["exchange", "new session", "signOut:others", "signOut:others", "upsert"])
   assert.equal(server.signInWithPassword("Earlier-Pass-1!").error?.message, "Invalid login credentials")
   assert.ok(!server.sessions.has("other"))
   assert.equal(server.sessions.size, 1, "the browser keeps one valid session")

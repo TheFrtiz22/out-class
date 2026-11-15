@@ -6,6 +6,9 @@ import { setPasswordAfterConfirmation } from "@/lib/signup-password";
 /** One response for a wrong, expired or rate-limited code, so none can be told apart. */
 export const EMAIL_CODE_REJECTED = "That code isn't valid or has expired. Check it or send yourself a new one.";
 
+/** Shown after a valid code when an account that has not finished setup already has a second factor. */
+export const EMAIL_CODE_FACTOR_BLOCKED = "This account uses two-step sign-in. Sign in with your password and authenticator, or reset your password.";
+
 /** Accounts confirmed before the confirmation route shipped keep their password and sessions. */
 export const PASSWORD_REVIEW_START = "2026-11-10T00:00:00.000Z";
 
@@ -17,7 +20,13 @@ type ConfirmedUser = {
   email_confirmed_at?: string | null;
   invited_at?: string | null;
   app_metadata?: Record<string, unknown> | null;
+  factors?: { status?: string }[] | null;
 };
+
+/** True when the account has a verified second factor (TOTP), which the confirmation steps never change. */
+export function hasVerifiedFactor(user: ConfirmedUser) {
+  return (user.factors ?? []).some(factor => factor.status === "verified");
+}
 
 function sameEmail(record: unknown, user: ConfirmedUser) {
   if (!record || typeof record !== "object") return false;
@@ -73,15 +82,21 @@ async function succeeded(call: () => Promise<{ error: unknown }>) {
  *    administrator sets a password, so a change made from another session before this step does not remain.
  * 3. The same client receives a new session through a one-time server-generated sign-in token (no email is
  *    sent) and signs out any other session that remains.
- * 4. The record is written last.
+ * 4. That session sets the final password again (Auth answers same_password when nothing changed it) and
+ *    signs out other sessions once more, so the result does not depend on step 2 ending sessions.
+ * 5. The record is written last.
+ *
+ * An account that already has a verified second factor is left unchanged: whether that factor belongs to
+ * the address owner cannot be told here, so the caller refuses and the owner uses password recovery.
  *
  * Each step is safe to repeat, so a later verification finishes an incomplete one. The new session is
  * returned for the caller to attach.
  */
 export async function secureVerifiedAccount(client: SessionClient, admin: AdminClient, user: ConfirmedUser, password: string | undefined) {
+  if (hasVerifiedFactor(user)) return { passwordSaved: false, secured: false, recorded: false, session: null, factorBlocked: true };
   const saved = (await setPasswordAfterConfirmation(client, password)).saved;
   const finalPassword = saved ? password! : unusablePassword();
-  const failed = { passwordSaved: saved, secured: false, recorded: false, session: null };
+  const failed = { passwordSaved: saved, secured: false, recorded: false, session: null, factorBlocked: false };
   if (!user.email || !(await succeeded(() => admin.auth.admin.updateUserById(user.id, { password: finalPassword })))) return failed;
   let session: Session | null = null;
   try {
@@ -93,10 +108,13 @@ export async function secureVerifiedAccount(client: SessionClient, admin: AdminC
     }
   } catch { session = null; }
   if (!session || !(await succeeded(() => client.auth.signOut({ scope: "others" })))) return failed;
+  // Set the final password again from the only remaining session, then sign out any other session again.
+  if (!(await setPasswordAfterConfirmation(client, finalPassword)).saved) return failed;
+  if (!(await succeeded(() => client.auth.signOut({ scope: "others" })))) return failed;
   const recorded = await succeeded(() => admin.auth.admin.updateUserById(user.id, {
     app_metadata: { [PASSWORD_SECURED_KEY]: { userId: user.id, email: user.email?.trim().toLowerCase(), securedAt: new Date().toISOString() } },
   }));
-  return { passwordSaved: saved, secured: true, recorded, session };
+  return { passwordSaved: saved, secured: true, recorded, session, factorBlocked: false };
 }
 
 // Failed code attempts per address and all code attempts per client network, from append-only audit rows.
@@ -138,7 +156,7 @@ export async function recordEmailCodeAttempt(db: AttemptStore, email: string, ip
   const emailKey = attemptKey("email", email), ipKey = ip ? attemptKey("ip", ip) : null;
   const keys = [emailKey, ...(ipKey ? [ipKey] : [])].sort();
   return db.$transaction(async tx => {
-    for (const targetId of keys) await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${targetId}, 0))::text`;
+    for (const targetId of keys) await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${targetId}, 0))`;
     const count = (targetId: string, action: string) => tx.auditLog.count({ where: { targetId, action, createdAt: { gt: since } } });
     const failed = await count(emailKey, EMAIL_CODE_ATTEMPT_ACTION) - await count(emailKey, EMAIL_CODE_SUCCESS_ACTION);
     if (failed >= EMAIL_CODE_LIMIT_PER_EMAIL) return false;

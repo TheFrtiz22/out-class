@@ -32,6 +32,7 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | `POST /api/school-requests` | IP | 10 / h (plus the existing 100/h global and 3/day per email in Postgres) |
 | `POST /api/auth/password-recovery` | IP | 30 / 15 min |
 | `POST /api/auth/two-step` | IP (plus per-account attempts) | 30 / 15 min |
+| `POST /api/auth/confirm-email` | IP (plus per-email and per-network attempts in Postgres) | 120 / 15 min (campus networks share addresses) |
 | `POST /api/auth/student-claim` | IP | 30 / 15 min |
 | Signup server action (`registerStudent`) | IP | 60 / h |
 | `POST /api/platform/elevation` | IP | 20 / 15 min |
@@ -50,7 +51,6 @@ Turnstile, Supabase Auth limits and the existing per-feature quotas (invitations
 ### Not covered in the app
 
 - **Signup code resend.** `supabase.auth.resend` and the email-code sign-in are called from the browser directly to Supabase Auth, so the app never handles them. They are bounded by Supabase's auth rate limits and by Turnstile or captcha. Owner: review **Authentication → Rate Limits** (email sent, OTP, verify) and enable Bot and Abuse Protection.
-- **Email confirmation** (`app/api/auth/confirm-email`, `lib/email-confirmation.ts`) is handled by #247.
 - **Other authenticated server actions** are not limited individually. They require a session, and the Firewall rule on server-action POSTs below covers them.
 
 ## Vercel Firewall rules for the owner to add

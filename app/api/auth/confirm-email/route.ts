@@ -7,9 +7,8 @@ import { confirmedEmailSession } from "@/lib/auth-email";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { registrationSchema } from "@/lib/onboarding-schemas";
-import { turnstileRemoteIp } from "@/lib/turnstile";
-import { isIP } from "node:net";
-import { EMAIL_CODE_LIMITED, EMAIL_CODE_REJECTED, passwordAlreadySecured, recordEmailCodeAttempt, recordEmailCodeSuccess, secureVerifiedAccount } from "@/lib/email-confirmation";
+import { RATE_LIMITS, clientIp, limitRequest, nodeIsIp } from "@/lib/rate-limit";
+import { EMAIL_CODE_FACTOR_BLOCKED, EMAIL_CODE_LIMITED, EMAIL_CODE_REJECTED, passwordAlreadySecured, recordEmailCodeAttempt, recordEmailCodeSuccess, secureVerifiedAccount } from "@/lib/email-confirmation";
 import { forwardedAuthClient, serviceAuthClient } from "@/utils/admin-elevation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/utils/prisma";
@@ -27,12 +26,14 @@ const reply = (body: object, status = 200) =>
   NextResponse.json(body, { status, headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
 
 function clientAddress(request: NextRequest) {
-  const address = turnstileRemoteIp(request.headers.get("x-forwarded-for"));
-  return address && isIP(address) ? address : undefined;
+  return clientIp(request.headers.get("x-forwarded-for"), nodeIsIp) ?? undefined;
 }
 
 export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return reply({ error: "Request not allowed." }, 403);
+  // Per-instance burst limit before any database or Auth work; the durable limits are below.
+  const limited = limitRequest(request, RATE_LIMITS.emailCode);
+  if (limited) return limited;
   const jar = await cookies();
   if (jar.has(PLATFORM_VIEW_COOKIE) || jar.get(DEMO_COOKIE)?.value === "1")
     return reply({ error: "Exit demo or administrator view before changing authentication." }, 403);
@@ -70,6 +71,10 @@ export async function POST(request: NextRequest) {
       passwordUpdated = true;
       const result = await secureVerifiedAccount(client, admin, user, password);
       passwordSaved = result.passwordSaved;
+      if (result.factorBlocked) {
+        await client.auth.signOut({ scope: "local" }).catch(() => undefined);
+        return reply({ error: EMAIL_CODE_FACTOR_BLOCKED }, 409);
+      }
       if (!result.secured || !result.recorded) {
         console.error(result.secured ? "Email code verified; password state not recorded" : "Email code verified; password or session update incomplete");
         await client.auth.signOut({ scope: "local" }).catch(() => undefined);
