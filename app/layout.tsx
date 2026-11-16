@@ -7,6 +7,7 @@ import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { WebVitalsReporter } from "@/components/web-vitals-reporter"
 import { Toaster } from "@/components/ui/sonner"
 import { ConfirmProvider } from "@/components/ui/confirm-dialog"
 import "./globals.css"
@@ -127,6 +128,7 @@ export default async function RootLayout({
           </AuthProvider>
           <Toaster />
           {process.env.VERCEL && <><Analytics /><SpeedInsights /></>}
+          {process.env.NEXT_PUBLIC_SENTRY_DSN && <WebVitalsReporter />}
           {/* Kill switch (docs/service-worker.md): OUTCLASS_SERVICE_WORKER=off unregisters instead of registering. */}
           {process.env.NODE_ENV === "production" && (process.env.OUTCLASS_SERVICE_WORKER === "off"
             ? <ServiceWorkerRegistration disabled />

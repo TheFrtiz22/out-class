@@ -14,7 +14,7 @@ import { hasPermission } from "@/lib/permissions";
 import { normalizeReviewRubric, reviewRubricSchema } from "@/lib/review-rubric";
 import { resolveStagedTarget, stagedIsStale, stagedOutcomes, type StagedDecisionView } from "@/lib/staged-decisions";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
-import { actionResult } from "@/lib/action-result";
+import { ActionError, actionResult } from "@/lib/action-result";
 import { validPhone } from "@/lib/phone";
 
 /**
@@ -88,15 +88,18 @@ const stageInput = z.object({
 }).strict();
 /** Record (or replace) the staged decision for one applicant. Changes nothing the applicant can see. */
 export async function stageDecision(input: z.input<typeof stageInput>) {
+  return actionResult(() => stageDecisionCommand(input), "stageDecision");
+}
+async function stageDecisionCommand(input: z.input<typeof stageInput>) {
   const data = boundedParse(stageInput, input);
   const { user } = await requireClubPermission(data.clubId, [...decideCaps]);
   return clubWriteTransaction(async tx => {
     const member = await authorizeClubTransaction(tx, data.clubId, user.id, decideCaps, { sharedClubLock: true });
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} AND "clubId"=${data.clubId} FOR UPDATE`;
     const app = await tx.application.findFirst({ where: { id: data.applicationId, clubId: data.clubId }, select: { id: true, status: true, roundId: true, studentId: true } });
-    if (!app || app.status === "DRAFTING") throw new Error("Application unavailable.");
-    if (app.studentId === user.id) throw new Error("You can't decide your own application.");
-    if (app.status !== data.expectedStatus || app.roundId !== data.expectedRoundId) throw new Error("Application changed. Reload the page and try again.");
+    if (!app || app.status === "DRAFTING") throw new ActionError("Application unavailable.", "NOT_FOUND");
+    if (app.studentId === user.id) throw new ActionError("You can't decide your own application.", "FORBIDDEN");
+    if (app.status !== data.expectedStatus || app.roundId !== data.expectedRoundId) throw new ActionError("Application changed. Reload the page and try again.", "STALE");
     await assertNotRecused(tx, app.id, member.id);
     const rounds = await tx.pipelineRound.findMany({ where: { clubId: data.clubId, archivedAt: null }, select: { id: true, name: true, order: true, type: true } });
     const target = resolveStagedTarget(app, rounds, data.outcome, data.roundId);

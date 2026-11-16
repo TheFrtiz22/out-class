@@ -26,6 +26,7 @@ import * as recruitingRules from "@/actions/recruiting-rules"
 import * as clubOverview from "@/actions/club-overview"
 import * as tasksApi from "@/actions/tasks"
 import * as interviewResumes from "@/actions/interview-resumes"
+import * as resumeSummaries from "@/actions/resume-summary"
 import * as interviewGrants from "@/actions/organization-members"
 import * as interviewKits from "@/actions/interview-kits"
 import * as collaboration from "@/actions/interview-collaboration"
@@ -43,8 +44,10 @@ import * as search from "@/actions/workspace-search"
 import * as rankedReview from "@/actions/ranked-review"
 import * as interviewFeedbackApi from "@/actions/interview-feedback"
 import * as votingTargetSummary from "@/actions/voting-target-summary"
+import * as feedbackReports from "@/actions/feedback-reports"
+import { getAdminReportsPulse as adminReportsPulse } from "@/actions/admin-workspace"
 import { demoGate, loadDemoWorkspace, type DemoWorkspaceModule } from "@/lib/demo/loader"
-import { browserRefusal, unwrapAction, UserFacingError, type Unwrapped } from "@/lib/action-result"
+import { browserRefusal, unwrapAction, unwrapped, UserFacingError, type Unwrapped } from "@/lib/action-result"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 // The sole client data boundary: demo operations never invoke a server action,
 // and demo implementations load only while Demo Mode is active.
@@ -152,6 +155,7 @@ export const getInterviewApplicantPanel = adapt(interviewResumes.getInterviewApp
 export const getInterviewResumeModerationQueue = adapt(interviewResumes.getInterviewResumeModerationQueue, "getInterviewResumeModerationQueue")
 export const getInterviewResumeModerationPage = adapt(interviewResumes.getInterviewResumeModerationPage, "getInterviewResumeModerationPage")
 export const pinInterviewResume = adapt(interviewResumes.pinInterviewResume, "pinInterviewResume")
+export const getResumeSummary = adapt(resumeSummaries.getResumeSummary, "getResumeSummary")
 export const getInterviewResumeAnnotations = adapt(interviewResumes.getInterviewResumeAnnotations, "getInterviewResumeAnnotations")
 export const saveInterviewResumeAnnotation = adapt(interviewResumes.saveInterviewResumeAnnotation, "saveInterviewResumeAnnotation")
 export const deleteInterviewResumeAnnotation = adapt(interviewResumes.deleteInterviewResumeAnnotation, "deleteInterviewResumeAnnotation")
@@ -295,3 +299,11 @@ export const getRankedReviewSettings = adapt((...args: Parameters<typeof rankedR
 export const saveRankedReviewBands = adapt(rankedReview.saveRankedReviewBands, "saveRankedReviewBands")
 /** Entire-round target and decision counts (counts only). Demo implementation loads only in Demo Mode. */
 export const getRoundTargetSummary = adapt(votingTargetSummary.getRoundTargetSummary, "getRoundTargetSummary")
+
+// Issue reports and feedback: live accounts only, so no demo implementation (the server refuses
+// Demo Mode and support sessions; the shell hides the entry point there).
+export const prepareFeedbackScreenshot = unwrapped(feedbackReports.prepareFeedbackScreenshot)
+export const submitFeedbackReport = unwrapped(feedbackReports.submitFeedbackReport)
+export const getFeedbackScreenshot = unwrapped(feedbackReports.getFeedbackScreenshot)
+/** Admin shell: open issue/feedback count and a queue fingerprint (no report content). */
+export const getAdminReportsPulse = adminReportsPulse

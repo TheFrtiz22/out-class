@@ -20,7 +20,8 @@ const ALLOWLIST = new Map([
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue
+    // app/.well-known holds real routes (security.txt); other dot folders are tooling.
+    if (entry.name === 'node_modules' || (entry.name.startsWith('.') && entry.name !== '.well-known')) continue
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) walk(full, out)
     else out.push(full)

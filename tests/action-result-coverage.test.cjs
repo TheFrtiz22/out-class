@@ -37,7 +37,6 @@ const exclusions = new Map([
   ['actions/club-overview.ts#getDashboardReviewQueue', 'read; failures show the load fallback'],
   ['actions/tasks.ts#getTaskWorkspace', 'read; failures show the load fallback'],
   ['actions/admin-workspace.ts#changeAdminDesignatedLeader', 'platform admin tool, not yet converted; shows its fallback'],
-  ['actions/platform-admin.ts#changePlatformResource', 'platform admin tool, not yet converted; shows its fallback'],
   ['actions/voting-room-finalization.ts#finalizeLiveVotingRoom', 'live voting is out of scope for this change'],
   ['actions/voting-room-finalization.ts#previewLiveVotingFinalization', 'live voting is out of scope for this change'],
 ]);
@@ -103,8 +102,9 @@ function throwersOf(file) {
   return result;
 }
 
-// interviewActionResult (utils/interview-access) is actionResult plus the uniform ACCESS_REVOKED mapping.
-const wrapped = body => /^\{\s*return\s+(?:interviewActionResult|actionResult)\(/.test(body);
+// interviewActionResult (utils/interview-access) is actionResult plus the uniform ACCESS_REVOKED mapping;
+// adminActionResult (lib/admin-failure) is actionResult plus returning AdminAccessError refusals.
+const wrapped = body => /^\{\s*return\s+(?:interviewActionResult|adminActionResult|actionResult)\(/.test(body);
 
 test('every exported action that can throw ActionError returns through actionResult', () => {
   const unwrapped = [], stale = [];

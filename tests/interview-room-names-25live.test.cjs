@@ -157,19 +157,21 @@ test("migration only adds the nullable tracking column", () => {
   assert.doesNotMatch(migration, /DROP|GRANT|POLICY|UPDATE "InterviewRoom"|NOT NULL|DEFAULT/)
 })
 
-test("room manager shows the 25Live notice, link, post-create reminder and per-room tracking", () => {
+test("room manager shows the 25Live link, post-create reminder and per-room tracking once, on the room card", () => {
   const ui = fs.readFileSync("components/interviews/room-external-booking.tsx", "utf8")
   assert.match(ui, /Booking a room here only saves it in OutClass\. It does not reserve the room with UVA\. You still need to book it through 25Live\./)
   assert.match(ui, /Saved in OutClass\. Don’t forget to book this room on 25Live\./)
   assert.match(ui, /href=\{UVA_ROOM_BOOKING_URL\} target="_blank" rel="noopener noreferrer"/)
-  assert.match(ui, /Not booked on 25Live yet/)
   assert.match(ui, /event\.key === "Enter"/); assert.match(ui, /event\.key === "Escape"/); assert.match(ui, /onBlur=/)
   const manager = fs.readFileSync("components/interviews/room-manager.tsx", "utf8")
-  // The notice stays on every scheduling step, and every room kind gets the reminder and tracking.
-  assert.match(manager, /<RoomBookingNotice \/>/); assert.doesNotMatch(manager, /&& <RoomBookingNotice/)
+  // 25Live is mentioned once, on the room card: the tracking box, and the booking link until it is ticked.
+  assert.doesNotMatch(manager, /RoomBookingNotice|NotBookedTag/)
+  assert.match(manager, /<ExternalBookingToggle room=\{room\} disabled=\{props\.busy\} onChange=\{onExternalBooked\} \/>\{!room\.externallyBookedAt && <RoomBookingLink \/>\}/)
   assert.match(manager, /setRoomReminder\(true\)/); assert.doesNotMatch(manager, /inPerson|kind === "IN_PERSON"/)
   // Rename from the room card, the Manage room sheet heading and the bookings list, through one handler.
   assert.equal(manager.match(/<EditableRoomName /g).length, 3)
+  // The sheet names the room once: its title says what the sheet is, the heading is the name.
+  assert.match(manager, /<ActionWorkflow title="Manage room"/)
   assert.equal(manager.match(/renameInterviewRoom\(/g).length, 1)
   assert.match(ui, /Booked on 25Live\{room\.externallyBookedAt && <Check /)
 })

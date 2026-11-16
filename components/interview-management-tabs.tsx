@@ -5,7 +5,9 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { hasPermission } from "@/lib/permissions"
-import { CalendarDays, DoorOpen, ListChecks, UserCog } from "@/components/icons"
+import { CalendarDays, DoorOpen, ListChecks } from "@/components/icons"
+import { TERMS } from "@/lib/copy/terms"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ClubInterviewKitSettings } from "@/components/interview-kit-editor"
 import { RoomManager } from "@/components/interviews/room-manager"
@@ -24,9 +26,14 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
   const canSchedule = hasPermission(member, "interviews.manage")
   const canManageGrants = capabilities.manageGrants
   const canOpenOperations = canSchedule || hasPermission(member, "applications.review") || capabilities.editKit
-  const allowedTabs = [...(canEnter && !settingsOnly ? ["rooms"] : []), "kits", ...(canSchedule && !settingsOnly ? ["schedule"] : []), ...(canManageGrants ? ["access"] : [])]
-  const requested = initialTab === "availability" ? "schedule" : initialTab
-  const nextTab = requested && allowedTabs.includes(requested) ? requested : canEnter && !settingsOnly ? "rooms" : canSchedule && !settingsOnly ? "schedule" : "kits"
+  // Organizers get tabs. Someone who only interviews sees My interviews and nothing to learn.
+  const organizer = canSchedule || canManageGrants || capabilities.editKit
+  const canOpenSchedule = (canSchedule || canManageGrants) && !settingsOnly
+  const allowedTabs = [...(canEnter && !settingsOnly ? ["rooms"] : []), ...(canOpenSchedule ? ["schedule"] : []), "kits"]
+  // Interviewer access now lives in Schedule; old links to the Interviewers tab still land on it.
+  const requested = initialTab === "availability" || initialTab === "access" ? "schedule" : initialTab
+  const fallbackTab = canEnter && !settingsOnly ? "rooms" : canOpenSchedule ? "schedule" : "kits"
+  const nextTab = requested && allowedTabs.includes(requested) ? requested : initialTab === "access" && canManageGrants ? "kits" : fallbackTab
   const [tab, setTab] = useState(nextTab)
   const scheduler = useRef<HTMLDivElement>(null)
   const [scheduleVisited, setScheduleVisited] = useState(tab === "schedule")
@@ -34,20 +41,23 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
     setTab(nextTab)
     if (nextTab === "schedule") setScheduleVisited(true)
   }, [nextTab])
-  return <InterviewReadScope clubId={clubId}><div className="oc-workspace-stack">{settingsOnly && canOpenOperations && <Link href={interviewSetupHref(clubId, initialRoundId, "schedule")} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set my availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
-    if (value !== tab && canLeaveWorkspace(scheduler.current)) {
-      setTab(value)
-      if (value === "schedule") setScheduleVisited(true)
-      if (window.location && window.history) {
-        const url = new URL(window.location.href); url.searchParams.set("interviewTab", value)
-        window.history.replaceState(null, "", url.pathname + url.search)
-      }
+  function select(value: string) {
+    if (value === tab || !canLeaveWorkspace(scheduler.current)) return
+    setTab(value)
+    if (value === "schedule") setScheduleVisited(true)
+    if (window.location && window.history) {
+      const url = new URL(window.location.href); url.searchParams.set("interviewTab", value)
+      window.history.replaceState(null, "", url.pathname + url.search)
     }
-  }} activationMode="manual">
-    <TabsList variant="underline" aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms"><DoorOpen aria-hidden="true" />Rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canManageGrants && <TabsTrigger value="access"><UserCog aria-hidden="true" />Interviewers</TabsTrigger>}</TabsList>
+  }
+  const access = canManageGrants ? <InterviewAccessSetup key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} /> : null
+  return <InterviewReadScope clubId={clubId}><div className="oc-workspace-stack">{settingsOnly && canOpenOperations && <Link href={interviewSetupHref(clubId, initialRoundId, "schedule")} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open interview schedule</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={select} activationMode="manual">
+    {organizer
+      ? <TabsList variant="underline" aria-label="Interviews">{canEnter && !settingsOnly && <TabsTrigger value="rooms"><DoorOpen aria-hidden="true" />{TERMS.myInterviewsTab}</TabsTrigger>}{canOpenSchedule && <TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />{TERMS.scheduleTab}</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />{TERMS.questionsTab}</TabsTrigger></TabsList>
+      : canEnter && !settingsOnly && <nav aria-label="Interviews" className="flex flex-wrap gap-x-5 text-sm">{tab === "rooms" ? <><Button type="button" variant="link" className="h-auto min-h-11 p-0" onClick={() => select("kits")}>View {TERMS.questionsTab.toLowerCase()}</Button><Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Set my availability</Link></> : <Button type="button" variant="link" className="h-auto min-h-11 p-0" onClick={() => select("rooms")}>Back to {TERMS.myInterviewsTab.toLowerCase()}</Button>}</nav>}
+    {organizer && !canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set my availability</Link>}
     {canEnter && !settingsOnly && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
-    <TabsContent value="kits"><ClubInterviewKitSettings key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
-    {canSchedule && !settingsOnly && (scheduleVisited || tab === "schedule") && <TabsContent ref={scheduler} value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} active={tab === "schedule"} /></TabsContent>}
-    {canManageGrants && <TabsContent value="access"><InterviewAccessSetup key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>}
+    {canOpenSchedule && (scheduleVisited || tab === "schedule") && <TabsContent ref={scheduler} value="schedule" forceMount hidden={tab !== "schedule"}>{canSchedule ? <RoomManager clubId={clubId} active={tab === "schedule"} interviewerAccess={access} /> : access}</TabsContent>}
+    <TabsContent value="kits"><ClubInterviewKitSettings key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} />{settingsOnly && access}</TabsContent>
   </Tabs></div></InterviewReadScope>
 }

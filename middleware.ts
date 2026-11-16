@@ -69,8 +69,8 @@ async function route(request: NextRequest): Promise<Response> {
   if (request.method === "POST" && request.nextUrl.pathname === "/api/csp-report") return NextResponse.next()
   // The internal delivery route checks its independent bearer secret. Cron needs no Supabase session refresh.
   if (["/api/internal/invitation-delivery", "/api/internal/notification-delivery"].includes(request.nextUrl.pathname)) return NextResponse.next()
-  // Metadata routes, the service worker and its offline page contain only public content and need no session refresh.
-  if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/llms.txt", "/manifest.webmanifest", "/icon", "/apple-icon", "/sw.js", "/offline.html"].includes(request.nextUrl.pathname)) return NextResponse.next()
+  // Metadata routes, security.txt, the service worker and its offline page contain only public content and need no session refresh.
+  if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/llms.txt", "/.well-known/security.txt", "/manifest.webmanifest", "/icon", "/apple-icon", "/sw.js", "/offline.html"].includes(request.nextUrl.pathname)) return NextResponse.next()
   // Club link-preview cards (opengraph-image / twitter-image) are public and CDN-cached.
   if (["GET", "HEAD"].includes(request.method) && /^\/club\/[^/]+\/(?:opengraph|twitter)-image(?:-[\w-]+)?$/.test(request.nextUrl.pathname)) return NextResponse.next()
   // Static GETs can skip auth refresh; POSTs must never bypass read-only guards by using an image-like URL.

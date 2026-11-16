@@ -4,8 +4,8 @@ import { unwrapAction } from "@/lib/action-result"
 
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
-import { passwordNotSavedNotice, setPasswordAfterConfirmation } from "@/lib/signup-password"
+import { authEmailError, confirmedEmailSession, confirmEmailCode } from "@/lib/auth-email"
+import { passwordNotSavedNotice } from "@/lib/signup-password"
 import { PASSWORD_HINT } from "@/lib/password-policy"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
@@ -321,25 +321,21 @@ export function StudentOnboardingWizard({
     setLoading(true)
     try {
       const email = wizardData.current.accountBasics!.email
-      const { data: verified, error } = await supabase.auth.verifyOtp({
-        email,
-        token: data.code,
-        type: "email",
-      })
-      if (error) {
-        setGlobalError(authEmailError(error, "verify"))
+      // The server verifies the code and, until the password is recorded as set, sets the signup password again.
+      const confirmed = await confirmEmailCode(email, data.code, pendingPassword.current)
+      if (!confirmed.ok) {
+        setGlobalError(confirmed.error)
         return
       }
       const { data: current, error: identityError } = await supabase.auth.getUser()
-      if (identityError || !confirmedEmailSession({ session: verified.session, user: current.user }, email)) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (identityError || !confirmedEmailSession({ session, user: current.user }, email)) {
         await supabase.auth.signOut()
         setGlobalError("Unable to confirm your email. Please verify again.")
         return
       }
-      // The signup password was stored while the address was unconfirmed; set it again as the verified owner.
-      const password = await setPasswordAfterConfirmation(supabase, pendingPassword.current)
       pendingPassword.current = undefined
-      setConfirmNotice(password.saved ? "" : passwordNotSavedNotice)
+      setConfirmNotice(!confirmed.passwordUpdated || confirmed.passwordSaved ? "" : passwordNotSavedNotice)
       // The box was ticked on step 1 (registerStudent refused the account otherwise); now that the
       // account holder has a session, store it. If that fails, step 3 shows the box again and retries,
       // since the profile cannot be created without a stored acceptance.

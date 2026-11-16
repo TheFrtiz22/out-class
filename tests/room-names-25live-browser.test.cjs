@@ -9,22 +9,20 @@ test('browser: 25Live notice, post-save reminder, inline rename (Enter/Escape/bl
   browser=await launch();const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message))
   await page.route('**/*',route=>route.request().url().startsWith(f.url)?route.continue():route.abort())
   await page.goto(`${f.url}/?roundId=${f.scope.roundId}&schedule=rooms`)
-  const note=page.getByRole('note',{name:'Room reservations'});await note.waitFor()
-  assert.match(await note.innerText(),/only saves it in OutClass\. It does not reserve the room with UVA/)
-  const link=note.getByRole('link',{name:/Book on 25Live/})
-  assert.equal(await link.getAttribute('href'),'https://25live.collegenet.com/pro/virginia#!/home/dash');assert.equal(await link.getAttribute('target'),'_blank')
+  // 25Live is mentioned once, on the room card, not in a banner on every step.
+  await page.getByRole('button',{name:'Add interview times',exact:true}).waitFor()
+  assert.equal(await page.getByRole('note',{name:'Room reservations'}).count(),0)
 
   await page.getByRole('button',{name:'Add interview times',exact:true}).click()
-  const dialog=page.getByRole('dialog');await dialog.getByRole('textbox',{name:'Room name',exact:true}).fill('Synthetic Hall A')
+  const dialog=page.getByRole('dialog');await dialog.getByRole('textbox',{name:'Where',exact:true}).fill('Synthetic Hall A')
   await dialog.getByRole('button',{name:'Save times & continue',exact:true}).click()
   const reminder=page.getByRole('status').filter({hasText:'Saved in OutClass. Don’t forget to book this room on 25Live.'});await reminder.waitFor()
   assert.equal(await reminder.getByRole('link',{name:/Book on 25Live/}).getAttribute('href'),'https://25live.collegenet.com/pro/virginia#!/home/dash')
-  // Saving lands on Confirm interviewers; the Heads up notice stays visible there too.
-  assert.ok(await note.isVisible(),'notice persists on Confirm interviewers')
 
   const roomId=f.state().interviewRooms.find(r=>r.name==='Synthetic Hall A').id,room=()=>f.state().interviewRooms.find(r=>r.id===roomId)
   await page.getByRole('navigation',{name:'Scheduling workflow'}).getByRole('button',{name:/Set interview times/}).click()
-  await page.getByText('Not booked on 25Live yet',{exact:true}).waitFor()
+  const link=page.locator('article',{has:page.locator('#room-25live-'+roomId)}).getByRole('link',{name:/Book on 25Live/});await link.waitFor()
+  assert.equal(await link.getAttribute('href'),'https://25live.collegenet.com/pro/virginia#!/home/dash');assert.equal(await link.getAttribute('target'),'_blank')
   await shot(page,'room-25live-notice-desktop')
 
   // Click the name, type, Enter saves (trimmed).
@@ -40,7 +38,7 @@ test('browser: 25Live notice, post-save reminder, inline rename (Enter/Escape/bl
   await page.getByRole('button',{name:'Rice Hall 340 (rename)',exact:true}).waitFor();assert.equal(room().name,'Rice Hall 340')
   // Blur saves; length is capped.
   await page.getByRole('button',{name:'Rice Hall 340 (rename)',exact:true}).click();assert.equal(await input.getAttribute('maxlength'),'60')
-  await input.fill('Clark Library Study Room B');await page.getByRole('heading',{name:'Interview times',exact:true}).click()
+  await input.fill('Clark Library Study Room B');await page.getByRole('heading',{name:'Rooms and time slots',exact:true}).click()
   await page.getByRole('button',{name:'Clark Library Study Room B (rename)',exact:true}).waitFor()
   assert.equal(room().name,'Clark Library Study Room B')
   assert.equal(room().location,'Synthetic Hall A','renaming never changes the location')
@@ -63,12 +61,12 @@ test('browser: 25Live notice, post-save reminder, inline rename (Enter/Escape/bl
   await sheet.getByRole('button',{name:'Zoom backup (rename)',exact:true}).waitFor();assert.equal(f.state().interviewRooms.find(r=>r.id===overflowId).name,'Zoom backup')
   await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'})
   await page.getByRole('button',{name:'Zoom backup (rename)',exact:true}).waitFor()
-  // Optimistic: while the save is held, the box, check mark and amber tag already show the new state.
-  const box=page.locator('#room-25live-'+roomId),tag=page.locator('article',{has:box}).getByText('Not booked on 25Live yet',{exact:true}),isToggle=route=>route.request().postDataJSON()?.name==='setInterviewRoomExternallyBooked'
+  // Optimistic: while the save is held, the box and check mark already show the new state and the 25Live link is gone.
+  const box=page.locator('#room-25live-'+roomId),tag=page.locator('article',{has:box}).getByRole('link',{name:/Book on 25Live/}),isToggle=route=>route.request().postDataJSON()?.name==='setInterviewRoomExternallyBooked'
   let release;const held=new Promise(r=>release=r)
   await page.route('**/action',async route=>{if(isToggle(route))await held;await route.continue()})
   await box.click()
-  assert.equal(await box.isChecked(),true,'ticks before the save returns');assert.equal(await tag.count(),0,'amber tag clears immediately')
+  assert.equal(await box.isChecked(),true,'ticks before the save returns');assert.equal(await tag.count(),0,'the 25Live link clears immediately')
   assert.equal(await page.locator('label[for="room-25live-'+roomId+'"] svg').count(),1,'check mark shows immediately')
   assert.ok(await box.isDisabled(),'locked while saving, so a second click cannot undo it');assert.ok(!room().externallyBookedAt,'save still held')
   release();await page.waitForFunction(id=>!document.getElementById(id)?.disabled,'room-25live-'+roomId);await page.unroute('**/action')

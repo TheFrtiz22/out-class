@@ -326,6 +326,7 @@ export const getInterviewApplicantPanel: Demo<"getInterviewApplicantPanel"> = de
 export const getInterviewResumeModerationQueue: Demo<"getInterviewResumeModerationQueue"> = demoInterviews.getInterviewResumeModerationQueue
 export const getInterviewResumeModerationPage: Demo<"getInterviewResumeModerationPage"> = demoInterviews.getInterviewResumeModerationPage
 export const pinInterviewResume: Demo<"pinInterviewResume"> = demoInterviews.pinInterviewResume
+export const getResumeSummary: Demo<"getResumeSummary"> = demoInterviews.getResumeSummary
 export const getInterviewResumeAnnotations: Demo<"getInterviewResumeAnnotations"> = demoInterviews.getInterviewResumeAnnotations
 export const saveInterviewResumeAnnotation: Demo<"saveInterviewResumeAnnotation"> = demoInterviews.saveInterviewResumeAnnotation
 export const deleteInterviewResumeAnnotation: Demo<"deleteInterviewResumeAnnotation"> = demoInterviews.deleteInterviewResumeAnnotation

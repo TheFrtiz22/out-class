@@ -4,12 +4,12 @@ import { z } from "zod";
 import { boundedParse } from "@/lib/bounded-input";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, interviewActor } from "@/utils/interview-access";
+import { authorizeInterview, interviewActionResult, interviewActor } from "@/utils/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { assertNotRecused } from "@/lib/recusal";
 import { interviewScoreSchema } from "@/lib/interview-access";
 import { openInterviewSession, saveInterviewSession } from "@/actions/interview-kits";
-import { unwrapAction } from "@/lib/action-result";
+import { ActionError, actionResult, type ActionResult } from "@/lib/action-result";
 import { canonicalEvaluationScore, normalizeReviewRubric, rubricScoresSchema, validateRubricScores, type RubricScores } from "@/lib/review-rubric";
 import type { AppTransactionClient } from "@/utils/prisma";
 
@@ -22,14 +22,24 @@ async function checkedRubric(tx: AppTransactionClient, clubId: string, score: nu
   if (canonicalEvaluationScore(value.overall) !== score) throw new Error("The score does not match the overall grade.");
   return value;
 }
-/** Compatibility endpoint uses the same session finalization; it cannot overwrite finals. */
+/** A refusal returned by the kit actions stays a returned refusal of this action. */
+function passOn<T>(result: ActionResult<T>): T {
+  if (!result.ok) throw new ActionError(result.error, result.code);
+  return result.data;
+}
+/** Compatibility endpoint uses the same session finalization; it cannot overwrite finals.
+ * Refusals (unknown application, no current panel access) are returned, not thrown, so production
+ * does not report them as unhandled Server Action errors. */
 export async function submitEvaluation(data: z.infer<typeof evaluateSchema>) {
+  return interviewActionResult(() => submitEvaluationCommand(data), "submitEvaluation");
+}
+async function submitEvaluationCommand(data: z.infer<typeof evaluateSchema>) {
   const input = boundedParse(evaluateSchema, data); const { user } = await requireAuth();
   const anonymousResult = await prisma.$transaction(async tx => {
     const { member } = await interviewActor(tx, input.clubId, user.id);
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${input.applicationId} FOR UPDATE`;
     const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId, status: { not: "DRAFTING" } }, include: { round: true } });
-    if (!app || app.studentId === user.id) throw new Error("Application unavailable.");
+    if (!app || app.studentId === user.id) throw new ActionError("Application unavailable.", "NOT_FOUND");
     if (!app.round.anonymousReview) return null;
     await assertNotRecused(tx, app.id, member.id);
     if (!hasPermission(member, "applications.review") || (input.roundId ? input.roundId !== app.roundId : input.roundName !== app.round.name)) throw new Error("Anonymous review unavailable.");
@@ -43,7 +53,7 @@ export async function submitEvaluation(data: z.infer<typeof evaluateSchema>) {
   if (anonymousResult) return { success: true, evaluation: anonymousResult };
   const roundId = await prisma.$transaction(async tx => {
     const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId }, select: { roundId: true } });
-    if (!app) throw new Error("Application unavailable.");
+    if (!app) throw new ActionError("Application unavailable.", "NOT_FOUND");
     const scope = { ...input, roundId: input.roundId || app.roundId };
     const { round } = await authorizeInterview(tx, scope, user.id);
     if (!input.roundId && round.name !== input.roundName) throw new Error("Provide the stable round ID.");
@@ -51,18 +61,20 @@ export async function submitEvaluation(data: z.infer<typeof evaluateSchema>) {
     return round.id;
   });
   const scope = { clubId: input.clubId, applicationId: input.applicationId, roundId };
-  // The kit actions return refusals as results; this action still throws them, as before.
-  const session = unwrapAction(await openInterviewSession(scope));
+  const session = passOn(await openInterviewSession(scope));
   if (session.completedAt) throw new Error("Submitted evaluation is immutable.");
-  const result = unwrapAction(await saveInterviewSession({ ...scope, revision: session.revision, draft: { ...session.draft, score: input.score, ...(input.rubricScores ? { rubricScores: input.rubricScores } : {}), additionalNotes: input.notes ?? session.draft.additionalNotes ?? session.draft.overallReview, overallReview: input.notes ?? session.draft.overallReview }, complete: true }));
+  const result = passOn(await saveInterviewSession({ ...scope, revision: session.revision, draft: { ...session.draft, score: input.score, ...(input.rubricScores ? { rubricScores: input.rubricScores } : {}), additionalNotes: input.notes ?? session.draft.additionalNotes ?? session.draft.overallReview, overallReview: input.notes ?? session.draft.overallReview }, complete: true }));
   return { success: true, evaluation: result.evaluation! };
 }
 export async function getEvaluations(clubId: string, applicationId: string) {
+  return actionResult(() => getEvaluationsCommand(clubId, applicationId), "getEvaluations");
+}
+async function getEvaluationsCommand(clubId: string, applicationId: string) {
   z.string().uuid().parse(clubId); z.string().uuid().parse(applicationId);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const app = await tx.application.findFirst({ where: { id: applicationId, clubId }, select: { roundId: true } });
-    if (!app) throw new Error("Application unavailable.");
+    if (!app) throw new ActionError("Application unavailable.", "NOT_FOUND");
     const { member, caps, panel } = await authorizeInterview(tx, { clubId, applicationId, roundId: app.roundId }, user.id, "closing");
     const own = await tx.evaluation.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId, interviewerId: member.id, roundId: app.roundId } } });
     const leadership = caps.readClosing && (!panel || !!own?.submittedAt);

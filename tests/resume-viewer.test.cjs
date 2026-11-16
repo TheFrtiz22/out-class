@@ -40,6 +40,10 @@ test('the dialog uses the shared primitives, Phosphor icons, pdf.js lazily, and 
   assert.match(src, /<a href=\{href\} download=\{resumeDownloadName\(name\)\}/)
   assert.match(src, /useEffect\(\(\) => \(\) => resource\?\.invalidate\(\), \[resource\]\)/, 'object URL and pdf.js document released on close')
   assert.match(src, /Preview isn’t available for this file type\./)
+  // One panel: the section summary (default) and these PDF pages; only PDFs from the authorized route have a summary.
+  assert.match(src, /<ResumeSummaryPanel name=\{name\} request=\{summaryRequest\} document=\{<ResumePdfPages /)
+  assert.match(src, /kind: "recruiting" as const, clubId, applicationId/)
+  assert.match(src, /if \(kind !== "pdf"\) return;[\s\S]*loadResumeSummary\(summaryRequest, isDemoEnabled\)\.catch/, 'review prefetch is best-effort')
   const css = fs.readFileSync('components/resume-viewer.css', 'utf8')
   assert.match(css, /prefers-reduced-motion: reduce/)
   assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b|box-shadow/i)

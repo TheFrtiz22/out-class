@@ -12,6 +12,7 @@ import {
 } from "@/lib/platform-console";
 import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
+import { adminActionResult } from "@/lib/admin-failure";
 import { readDemoTemplate } from "@/lib/demo/validate";
 import { clubPermissions } from "@/lib/permissions";
 import { boundedParse } from "@/lib/bounded-input";
@@ -452,6 +453,9 @@ const operations = z.discriminatedUnion("kind", [
   }),
 ]);
 export async function changePlatformResource(input: unknown, reason: string) {
+  return adminActionResult(() => changePlatformResourceCommand(input, reason), "changePlatformResource");
+}
+async function changePlatformResourceCommand(input: unknown, reason: string) {
   const actor = await requirePlatformAdmin({ fresh: true });
   const data = boundedParse(operations, input);
   const justification = z.string().trim().min(10).max(1000).parse(reason);

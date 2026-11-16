@@ -54,14 +54,19 @@ export function authEntryHref(route: "/login" | "/signup", query: string): strin
   return `${route}${query ? `?${query.replace(/^\?/, "")}` : ""}`
 }
 
+export const EMAIL_CODE_REQUIRED_MESSAGE = "Sign in with the code sent to your UVA email to finish setting up your account."
+export const TWO_STEP_REQUIRED_MESSAGE = "This account uses two-step sign-in. Sign in with your password and authenticator, or reset your password."
+
 export function authenticationError(code: unknown): string {
   if (code === "uva_only") return "Please sign in using your UVA email (@virginia.edu)."
   if (code === "auth-code-expired") return "Your sign-in link has expired. Please try again."
+  if (code === "email-code-required") return EMAIL_CODE_REQUIRED_MESSAGE
+  if (code === "two-step-required") return TWO_STEP_REQUIRED_MESSAGE
   return ""
 }
 
 /** Failed OAuth exchanges retain the same signup or invitation/claim context. */
-export function authFailurePath(next: string, error: "uva_only" | "auth-code-expired"): string {
+export function authFailurePath(next: string, error: "uva_only" | "auth-code-expired" | "email-code-required" | "two-step-required"): string {
   const target = new URL(next, "https://outclass.invalid")
   if (target.pathname === "/signup") {
     target.searchParams.set("error", error)

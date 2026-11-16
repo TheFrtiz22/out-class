@@ -48,6 +48,7 @@ test('every public page has a unique title and none repeats "OutClass"', () => {
     'app/page.tsx': 'OutClass · UVA club applications and recruitment',
     'app/uva/page.tsx': 'Club recruitment at UVA · OutClass',
     'app/about/page.tsx': 'About · OutClass',
+    'app/security/page.tsx': 'Security and student data · OutClass',
     'app/request-school/page.tsx': 'Request your school · OutClass',
     'app/login/page.tsx': 'Sign in · OutClass',
     'app/signup/page.tsx': 'Create your profile · OutClass',

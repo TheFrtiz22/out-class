@@ -20,12 +20,23 @@ function releaseTarget(env, args) {
   return { datasourceUrl: productionBuild ? env.POSTGRES_PRISMA_URL || env.DATABASE_URL : env.OUTCLASS_DATABASE_CHECK_URL, productionBuild }
 }
 
+// Email-code verification needs the Supabase secret key, and Supabase Auth counts each visitor's address
+// only for requests made with a new-format secret key. Checks the prefix only; never prints the value.
+function authKeyWarning(env) {
+  const key = env.SUPABASE_SECRET_KEY
+  if (!key) return 'Warning: SUPABASE_SECRET_KEY is not set. Email-code sign-in returns 503 until it is configured.'
+  if (!key.startsWith('sb_secret_')) return 'Warning: SUPABASE_SECRET_KEY is not a Supabase secret key (sb_secret_ prefix). Supabase Auth will count email-code verifications against the server address instead of each visitor.'
+  return null
+}
+
 async function main() {
   const { datasourceUrl, skip, productionBuild } = releaseTarget(process.env, process.argv.slice(2))
   if (skip) {
     console.log('Release database check applies only to Vercel production builds; skipping in this environment.')
     return
   }
+  const authWarning = authKeyWarning(process.env)
+  if (authWarning) console.warn(authWarning)
   if (!datasourceUrl) {
     console.error(productionBuild
       ? 'Production release blocked: the runtime database connection is missing. Configure POSTGRES_PRISMA_URL or DATABASE_URL before publishing.'
@@ -61,5 +72,5 @@ async function main() {
   }
 }
 
-module.exports = { catalogQuery, missingColumns, releaseTarget }
+module.exports = { authKeyWarning, catalogQuery, missingColumns, releaseTarget }
 if (require.main === module) void main()

@@ -9,6 +9,8 @@ import { Download, ExternalLink, FileText, XIcon } from "@/components/icons";
 import { InterviewResumeResource } from "@/lib/interview-resume-resource";
 import type { InterviewScope } from "@/lib/interview-access";
 import { resumeDownloadName, resumePreviewKind } from "@/lib/resume-preview-kind";
+import { loadResumeSummary, ResumeSummaryPanel } from "@/components/resume-summary-panel";
+import { useDemoMode } from "@/contexts/demo-context";
 import "@/components/resume-viewer.css";
 
 // pdf.js loads only when a PDF résumé is opened (public/pdfjs, copied by scripts/copy-pdfjs-assets.cjs).
@@ -32,6 +34,15 @@ export function ResumeViewerDialog({ href, name, clubId, applicationId, trigger 
     ? new InterviewResumeResource("recruiting", { clubId, applicationId, roundId: applicationId } as InterviewScope, "resume", false, undefined, href)
     : null, [open, kind, clubId, applicationId, href]);
   useEffect(() => () => resource?.invalidate(), [resource]);
+  // The summary and the document are one panel; external links and other files have no summary.
+  const summaryRequest = useMemo(() => ({ kind: "recruiting" as const, clubId, applicationId }), [clubId, applicationId]);
+  const { isDemoEnabled } = useDemoMode();
+  // Opening a review prepares the summary in the background (cached on the server), so the dialog opens on it.
+  useEffect(() => {
+    if (kind !== "pdf") return;
+    const timer = setTimeout(() => { loadResumeSummary(summaryRequest, isDemoEnabled).catch(() => {}); }, 400);
+    return () => clearTimeout(timer);
+  }, [kind, summaryRequest, isDemoEnabled]);
   const title = `Résumé · ${name}`;
   const external = kind === "external";
   return (
@@ -55,7 +66,7 @@ export function ResumeViewerDialog({ href, name, clubId, applicationId, trigger 
         </header>
         <div className="oc-resume-viewer-body">
           {resource
-            ? <ResumePdfPages resource={resource} name={name} unavailableText="This résumé couldn’t be displayed. Use Download to open it." />
+            ? <ResumeSummaryPanel name={name} request={summaryRequest} document={<ResumePdfPages resource={resource} name={name} unavailableText="This résumé couldn’t be displayed. Use Download to open it." />} />
             : kind !== "pdf" && <div className="oc-resume-viewer-empty" role="status">
                 <FileText aria-hidden="true" size={24} />
                 <p className="font-medium">{external ? "Preview isn’t available for linked résumés." : "Preview isn’t available for this file type."}</p>

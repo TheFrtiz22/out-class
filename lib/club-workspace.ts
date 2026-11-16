@@ -40,7 +40,7 @@ export function recruitmentTools(member: ClubAccess) {
   if (hasPermission(member, "applications.review"))
     tools.push({ id: "interviews", label: "Interview mode" });
   if (hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate)
-    tools.push({ id: "kits", label: "Interview master kit" });
+    tools.push({ id: "kits", label: "Interview questions" });
   return tools;
 }
 export const clubSectionLabels: Record<ClubSection, string> = {

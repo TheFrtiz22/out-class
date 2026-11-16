@@ -7,7 +7,9 @@ import { annotationContentSchema, interviewCapabilities, interviewOfficesSchema,
 import { emptyInterviewDraft, interviewDraftSchema, kitSchema, validateQuestionNotes, validateAdditionalQuestionSnapshots } from "@/lib/interview-kits";
 import { z } from "zod";
 import { anchorMatchesText, isAreaAnchor } from "@/lib/resume-anchors";
-import { demoResumeText } from "./resume-fixture";
+import { demoResumeSummaryLines, demoResumeText } from "./resume-fixture";
+import { resumeSummaryResult, summarizeResumeLines, type ResumeSummaryResult } from "@/lib/resume-summary";
+import { hasPermission } from "@/lib/permissions";
 import { canReadRoundScore, snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary, type ListRoundScore } from "@/lib/interview-review-summary";
 import { demoAssignmentNotice } from "./interview-improvements";
 import { interviewTiming } from "@/lib/interview-session-timing";
@@ -231,6 +233,20 @@ export function setInterviewPanelAssignment(input: unknown) {
 export function pinInterviewResume(input: InterviewScope) {
   const { app } = access(input, "resume");
   return demoStore.mutate(s => { const f = s.interviewFoundation; let d = f.documents.find(d => d.applicationId === input.applicationId && d.roundId === input.roundId); if (!d) { if(app.roundId !== input.roundId) throw new Error("Past round snapshot unavailable."); const scanned = s.students.find(p => p.id === app.studentId)?.profile.resumeUrl === "/demo/sample-scanned-resume.pdf"; d = { id: crypto.randomUUID(), applicationId: app.id, roundId: input.roundId, source: scanned ? "/demo/sample-scanned-resume.pdf" : "/demo/sample-resume.pdf", createdAt: new Date().toISOString() }; f.documents.push(d); } return structuredClone(d); });
+}
+/** Demo counterpart of actions/resume-summary.ts: the same access rules, summarized from the fictional Demo résumé text. */
+export function getResumeSummary(input: { kind: "interview"; clubId: string; applicationId: string; roundId: string; documentId: string } | { kind: "recruiting"; clubId: string; applicationId: string }): ResumeSummaryResult {
+  let source: string | undefined;
+  if (input.kind === "interview") source = documentAccess(input).document.source;
+  else {
+    const { s, member } = actor(input.clubId);
+    const app = s.applications.find(a => a.id === input.applicationId && a.clubId === input.clubId && a.status !== "DRAFTING");
+    const round = s.clubs.find(c => c.id === input.clubId)?.rounds.find(r => r.id === app?.roundId);
+    if (!app || !round || round.anonymousReview || !hasPermission(member, "applications.review") || !hasPermission(member, "applicants.identify")) throw new Error("Résumé summary unavailable.");
+    source = s.students.find(p => p.id === app.studentId)?.profile.resumeUrl ?? undefined;
+  }
+  // The scanned sample has no text layer, like a real image-only PDF.
+  return source === "/demo/sample-resume.pdf" ? resumeSummaryResult(summarizeResumeLines(demoResumeSummaryLines)) : { status: "unreadable" };
 }
 function documentAccess(input: InterviewScope & { documentId: string }) {
   const a = access(input, "resume"), d = a.s.interviewFoundation.documents.find(d => d.id === input.documentId && d.applicationId === input.applicationId && d.roundId === input.roundId);

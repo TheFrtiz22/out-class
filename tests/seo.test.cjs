@@ -48,7 +48,7 @@ test('public SEO fails closed during a database outage without loading sample cl
 })
 test('sitemap emits canonical public pages without query strings or fabricated timestamps', async () => {
   const { default: sitemap } = load('app/sitemap.ts', { '@/lib/seo': seo, '@/lib/public-club-seo': { getIndexableClubs: async () => [club] } })
-  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/request-school', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
+  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/security', '/request-school', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
 })
 test('robots permits marketing and public clubs while excluding actual product interfaces', () => {
   const result = load('app/robots.ts', { '@/lib/seo': seo }).default()
@@ -153,7 +153,7 @@ test('shared public footer connects all public pages with real HTML links', () =
   // CC attribution for the campus photographs: title, author, source and license links on every public page.
   for (const href of ['https://creativecommons.org/licenses/by/2.0/', 'https://creativecommons.org/licenses/by-sa/2.0/', 'https://commons.wikimedia.org/wiki/File:Rotunda_UVa_from_the_south_east.jpg', 'https://commons.wikimedia.org/wiki/File:Colonnade_UVa_academical_village.jpg']) assert.ok(html.includes(`href="${href}"`), href)
   assert.match(html, /Photo credits:.*terren in Virginia.*Eli Pousson.*adaptations shared under CC BY-SA 2\.0/s)
-  for (const path of ['/', '/about', '/uva', '/uva#faq', '/request-school', '/signup', '/login', '/?audience=student#students', '/?audience=leader#club-leaders', '#top']) assert.ok(html.includes(`href="${path}"`))
+  for (const path of ['/', '/about', '/security', '/uva', '/uva#faq', '/request-school', '/signup', '/login', '/?audience=student#students', '/?audience=leader#club-leaders', '#top']) assert.ok(html.includes(`href="${path}"`))
   assert.ok(html.includes('<span class="sr-only">OutClass</span>'))
   assert.ok(html.includes('class="oc-footer-letters" aria-hidden="true"'))
   assert.ok(html.includes('OutClass is operated by OutClassPlatforms LLC'))
@@ -249,7 +249,7 @@ test('llms.txt lists only the public pages and indexable clubs, and robots lets 
   assert.match(response.headers.get('content-type'), /^text\/plain/)
   const text = await response.text()
   assert.match(text, /^# OutClass\n\n> /)
-  for (const path of ['/', '/uva', '/about', '/request-school', '/club/real-club', '/sitemap.xml']) assert.ok(text.includes(`(https://www.out-class.net${path})`), path)
+  for (const path of ['/', '/uva', '/about', '/security', '/request-school', '/club/real-club', '/sitemap.xml']) assert.ok(text.includes(`(https://www.out-class.net${path})`), path)
   assert.match(text, /- \[Real Club\]\(https/, 'club names cannot break the link syntax')
   assert.doesNotMatch(text, /\/privacy|\/terms|\/platform|\/settings|workspace|—/)
   const robots = load('app/robots.ts', { '@/lib/seo': seo }).default()

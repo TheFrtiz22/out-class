@@ -32,6 +32,7 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | `POST /api/school-requests` | IP | 10 / h (plus the existing 100/h global and 3/day per email in Postgres) |
 | `POST /api/auth/password-recovery` | IP | 30 / 15 min |
 | `POST /api/auth/two-step` | IP (plus per-account attempts) | 30 / 15 min |
+| `POST /api/auth/confirm-email` | IP, plus attempt counts in Postgres (see below) | 120 / 15 min per instance (campus networks share addresses) |
 | `POST /api/auth/student-claim` | IP | 30 / 15 min |
 | Signup server action (`registerStudent`) | IP | 60 / h |
 | `POST /api/platform/elevation` | IP | 20 / 15 min |
@@ -40,8 +41,23 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | `POST /api/demo` | IP | 30 / 10 min |
 | `POST /api/email/unsubscribe` (RFC 8058 one-click; `GET` only shows a button) | IP | 300 / min (mail providers post from shared servers) |
 | Graduation confirmation and alumni details server actions (`confirmGraduation`, `saveAlumniDetails`) | account | 20 / 10 min |
+| Feedback screenshot upload URLs (`prepareFeedbackScreenshot`) | account | 10 / h (plus 10 platform reports / h per account in Postgres) |
 
 Turnstile, Supabase Auth limits and the existing per-feature quotas (invitations, task files, platform reports) still apply on top of these limits.
+
+### Email code verification (`POST /api/auth/confirm-email`)
+
+Across instances, `lib/email-confirmation.ts` counts attempts in `AuditLog` (insert-only rows keyed by keyed digests of the address and network, never the raw values), under a transaction-scoped advisory lock on each key, in 15-minute windows:
+
+| Key | Counts | Limit |
+|---|---|---|
+| Address and client network | failed attempts (a verified code refunds one) | 8 |
+| Address, all networks | failed attempts (a verified code refunds one) | 50 |
+| Client network | all attempts | 120 |
+
+Failures from one network therefore do not stop the address owner on another network, and guessing against one address stays bounded across all networks. Requests without a valid client address share one network bucket per address. Over a limit the route answers `429` with `{"error":"Too many attempts. Wait 15 minutes, then request a new code."}` (`EMAIL_CODE_LIMITED`), before calling Supabase Auth.
+
+These limits apply only to requests that come through this route. A client can also call Supabase Auth's verify endpoint directly with the publishable key; those calls are bounded by Supabase Auth's own verification rate limits (**Authentication → Rate Limits**), which remain the backstop.
 
 ### Caching that absorbs load
 
@@ -51,7 +67,6 @@ Turnstile, Supabase Auth limits and the existing per-feature quotas (invitations
 ### Not covered in the app
 
 - **Signup code resend.** `supabase.auth.resend` and the email-code sign-in are called from the browser directly to Supabase Auth, so the app never handles them. They are bounded by Supabase's auth rate limits and by Turnstile or captcha. Owner: review **Authentication → Rate Limits** (email sent, OTP, verify) and enable Bot and Abuse Protection.
-- **Email confirmation** (`app/api/auth/confirm-email`, `lib/email-confirmation.ts`) is handled by #247.
 - **Other authenticated server actions** are not limited individually. They require a session, and the Firewall rule on server-action POSTs below covers them.
 
 ## Vercel Firewall rules for the owner to add

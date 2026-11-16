@@ -83,3 +83,23 @@ test('signup privacy on real Next, Auth, SMTP and desktop/mobile browsers',{skip
   assert.deepEqual(errors,[],'Keep all browser runtime errors visible');
  });
 });
+
+test('email-code confirmation through the server route on real Next and Supabase Auth',{skip:!filename,timeout:90000},async()=>{
+ const c=readConfig(filename);
+ const service=createClient(c.status.API_URL,c.status.SECRET_KEY,{auth:{persistSession:false}});
+ const actor=new Actor(c),email=`confirm.route.${randomUUID()}@virginia.edu`,password='Confirmed-fixture!'+randomUUID();
+ assert.deepEqual(await actor.action('actions/onboarding.ts','registerStudent',[{firstName:'Route',lastName:'Student',email,password}]),{authenticated:false});
+ const message=await confirmationMessage(c,email),code=message.Text.match(/\b(\d{6})\b/)?.[1];assert.ok(code,'Confirmation email supplies a code');
+ const response=await actor.request('/api/auth/confirm-email',{method:'POST',headers:{origin:new URL(c.appUrl).origin,'content-type':'application/json'},body:JSON.stringify({email,code,password})});
+ const body=await response.json();
+ assert.equal(response.status,200,JSON.stringify(body));
+ assert.deepEqual(body,{success:true,passwordUpdated:true,passwordSaved:true});
+ // The session attached by the route stays valid after the server sets the password and signs out other sessions.
+ const me=await actor.request('/api/users/me');assert.notEqual(me.status,401,'The app accepts the confirming browser session');
+ const current=await actor.client.auth.getUser();assert.equal(current.error,null);assert.equal(current.data.user.email,email);
+ const signedIn=await new Actor(c).client.auth.signInWithPassword({email,password});assert.equal(signedIn.error,null,'The signup password signs in');
+ const stored=(await service.auth.admin.getUserById(current.data.user.id)).data.user;
+ assert.equal(stored.app_metadata.outclass_password_secured?.email,email,'The password state is recorded');
+ const again=await new Actor(c).request('/api/auth/confirm-email',{method:'POST',headers:{origin:new URL(c.appUrl).origin,'content-type':'application/json'},body:JSON.stringify({email,code:'000000'})});
+ assert.equal(again.status,400,'A wrong code is refused');
+});

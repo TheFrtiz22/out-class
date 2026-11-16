@@ -1,8 +1,8 @@
 const {unwrapActions}=require('./action-result.cjs');
 ﻿const fs=require('node:fs'),ts=require('typescript'),path=require('node:path');
 const id=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-function harness(){
- let state={records:[],evaluations:[],annotations:[],history:[],documents:[],audits:[]}, actor=id(10), denied=false, failAudit=false;
+function harness(extraMocks={}){
+ let state={records:[],evaluations:[],annotations:[],history:[],documents:[],audits:[],summaries:[]}, actor=id(10), denied=false, failAudit=false;
  const members=[10,11,12].map((n,i)=>({id:id(n+10),userId:id(n),clubId:id(1),status:'ACTIVE',isOwner:i===0,permissions:['applications.review','applicants.identify'],interviewOffices:i===0?['PRESIDENT']:[],user:{disabledAt:null}}));
  const round={id:id(3),clubId:id(1),name:'Interview',anonymousReview:false,interviewKit:[{id:id(4),prompt:'Original',guidance:''}],kitVersion:0};
  const app={id:id(2),clubId:id(1),studentId:id(99),roundId:round.id,status:'INTERVIEWING',round};
@@ -23,6 +23,7 @@ function harness(){
   interviewResumeAnnotation:{findUnique:async({where})=>state.annotations.find(a=>a.id===where.id),findFirst:async({where})=>state.annotations.find(a=>a.id===where.id&&a.documentId===where.documentId&&state.documents.some(d=>d.id===a.documentId&&matches(d,where.document))),findMany:async({where})=>state.annotations.filter(a=>matches(a,where)).map(a=>({...a,author:{user:{studentProfile:{firstName:'Author',lastName:a.authorId}}}})),create:async({data})=>{const a={...data,anchor:data.anchor?.constructor?.name==='DbNull'?null:data.anchor,revision:0,deletedAt:null,createdAt:new Date(),updatedAt:new Date()};state.annotations.push(a);return a},updateMany:async({where,data})=>{const a=state.annotations.find(a=>matches(a,where));if(!a)return{count:0};Object.assign(a,{...data,revision:a.revision+1});return{count:1}}},
   interviewAnnotationRevision:{create:async({data})=>{state.history.push(data);return data},findMany:async({where})=>state.history.filter(h=>h.annotationId===where.annotationId)},
   auditLog:{create:async({data})=>{if(failAudit)throw Error('Audit unavailable');state.audits.push(data)}},
+  resumeSummary:{findUnique:async({where})=>state.summaries.find(r=>matches(r,where.userId_contentHash_parserVersion))||null,createMany:async({data})=>{let count=0;for(const row of data)if(!state.summaries.some(r=>r.userId===row.userId&&r.contentHash===row.contentHash&&r.parserVersion===row.parserVersion)){state.summaries.push(structuredClone(row));count++}return{count}},deleteMany:async({where})=>{const before=state.summaries.length;state.summaries=state.summaries.filter(r=>!(r.userId===where.userId&&r.contentHash===where.contentHash&&r.parserVersion<where.parserVersion.lt));return{count:before-state.summaries.length}}},
  };
  let queue=Promise.resolve();const prisma={...tx,$transaction(fn){const p=queue.then(async()=>{const before=structuredClone(state);try{return await fn(tx)}catch(e){state=before;throw e}});queue=p.catch(()=>{});return p}};
 
@@ -33,7 +34,8 @@ function harness(){
   const mocks={
    '@/utils/prisma':{prisma}, '@/utils/auth':{requireAuth:async()=>({user:{id:actor}})},
    '@/actions/club-onboarding':{}, '@/actions/organization-invitations':{}, 'next/cache':{revalidatePath(){}},
-   '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:false}}),from:()=>({download:async()=>({data:new Blob(['%PDF-1.7 fixture'],{type:'application/pdf'})})})}})}
+   '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:false}}),from:()=>({download:async()=>({data:new Blob(['%PDF-1.7 fixture'],{type:'application/pdf'})})})}})},
+   ...extraMocks
   };
   const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),m,m.exports);return m.exports;

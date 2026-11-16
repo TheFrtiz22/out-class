@@ -14,7 +14,7 @@ import { ActionError, actionResult, type ActionResult } from "@/lib/action-resul
 
 const changed = "The draft changed in another tab. Reload before editing again."
 /** Codes `generatePanelProposal` returns for expected refusals; the workspace acts on NO_OPEN_SESSIONS. */
-export type PanelGenerateRefusal = "DRAFT_CHANGED" | "PUBLICATION_CHANGED" | "WINDOW_CHANGED" | "NO_OPEN_SESSIONS" | "INVALID_EDIT"
+export type PanelGenerateRefusal = "DRAFT_CHANGED" | "PUBLICATION_CHANGED" | "WINDOW_CHANGED" | "NO_OPEN_SESSIONS" | "INVALID_EDIT" | "INVALID_MEMBER_RECORD"
 const refuse = (message: string, code: PanelGenerateRefusal) => new ActionError(message, code)
 const editSchema = panelScopeSchema.extend({ proposalId: z.string().uuid(), revision: z.number().int().positive(), assignments: panelAssignmentsSchema, requirements: z.array(z.object({slotId:z.string().uuid(),required:z.number().int().min(1).max(8)}).strict()).max(500).optional() }).strict()
 const generateSchema = panelScopeSchema.extend({ revision: z.number().int().nonnegative(), window: panelWindowSchema, options: panelOptionsSchema, mode: z.enum(["REGENERATE", "FILL_MISSING"]), assignments: panelAssignmentsSchema.optional(), selectedSlotIds:z.array(z.string().uuid()).min(1).max(500).optional() }).strict()
@@ -121,6 +121,14 @@ async function generatePanelProposalCommand(raw: unknown): Promise<PanelWorkspac
     const kept = new Set(generated.document.assignments.map(assignmentKey)), droppedLockedPositions = edited?.assignments.filter(a => a.locked && !kept.has(assignmentKey(a))).length ?? 0
     const validation = validatePanelDocument(generated.document, panelDraftScene(generated.document,live.scene))
     validation.search = generated.validation.search; validation.warnings = generated.validation.warnings
+    // Check the document before it is stored. Every id here comes from the database, so a failure is a
+    // data problem (an id the panel schema can't hold), not the leader's input: refuse with a message and
+    // log the paths without ids, instead of an unhandled ZodError after the write.
+    const checked = panelDocumentSchema.safeParse(generated.document)
+    if (!checked.success) {
+      console.error(JSON.stringify({ event: "panel.proposal.invalid-generated-document", clubId: input.clubId, roundId: input.roundId, paths: checked.error.issues.slice(0, 20).map(i => i.path.join(".")) }))
+      throw refuse("Some interviewers in this club have member records the planner can't use. Nothing was saved; contact OutClass support.", "INVALID_MEMBER_RECORD")
+    }
     const values = { ...draftApprovalReset,basePublishedVersion:active?.version??0, document: generated.document, validation, sourceFingerprint: live.fingerprint, modifiedBy: actorId }
     const row = old ? await tx.interviewPanelProposal.update({ where: { id: old.id }, data: { ...values, revision: { increment: 1 } } }) : await tx.interviewPanelProposal.create({ data: { clubId: input.clubId, roundId: input.roundId, createdBy: actorId, ...values } })
     await tx.auditLog.create({ data: { clubId: input.clubId, actorId, targetId: row.id, action: "interview.panel-proposal.generate", details: { mode: input.mode, revision: row.revision } } })

@@ -9,6 +9,16 @@ export function journeyNavigationMerged(current: boolean, start: number, end: nu
   return current ? start <= edge + HYSTERESIS && end > endEdge : start <= edge && end > endEdge + HYSTERESIS
 }
 
+/**
+ * A valid IntersectionObserver rootMargin for a boundary `top` px from the viewport top. The header can sit above
+ * the viewport (iOS rubber-band scrolling, a scrolled-away header), so `top` may be negative or fractional; a
+ * literal "-" prefix then produced "--12px", which Safari rejects with a SyntaxError and the homepage crashed.
+ */
+export function journeyObserverMargin(top: number, below: number) {
+  const px = (value: number) => `${Number.isFinite(value) ? Math.round(value) || 0 : 0}px`
+  return `${px(-top)} 0px ${px(Math.max(0, below))} 0px`
+}
+
 /** Observe boundary half-planes so even a jump across the whole viewport is detected. */
 export function useJourneyNavigation() {
   const headerRef = useRef<HTMLElement>(null)
@@ -62,7 +72,7 @@ export function useJourneyNavigation() {
       const below = document.documentElement.scrollHeight + window.innerHeight
       const boundaries: [Element, number][] = [[controls, edge], [controls, edge + HYSTERESIS], [end, endEdge], [end, endEdge + HYSTERESIS]]
       observers = boundaries.map(([target, top]) => {
-        const observer = new IntersectionObserver(update, { rootMargin: `-${Math.round(top)}px 0px ${below}px 0px`, threshold: 0 })
+        const observer = new IntersectionObserver(update, { rootMargin: journeyObserverMargin(top, below), threshold: 0 })
         observer.observe(target)
         return observer
       })
