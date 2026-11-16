@@ -9,9 +9,11 @@ import "./availability.css"
 type Position = { day: number; slot: number }
 export { minuteLabel } from "@/lib/scheduling-config"
 
-export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSelect, readOnly = false }: {
+export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSelect, readOnly = false, countLabel = "available interviewers", gridLabel, countMax, selected }: {
   days: boolean[][]; dates?: string[]; knownDays?: boolean[]; onChange?: (days: boolean[][], changedDays: number[]) => void
   counts?: number[][]; onSelect?: (day: number, slot: number) => void; readOnly?: boolean
+  /** Heatmap wording and scale: what a count means, the grid's name, and the count that reads as full. */
+  countLabel?: string; gridLabel?: string; countMax?: number; selected?: { day: number; slot: number } | null
 }) {
   const [mobileDay, setMobileDay] = useState(0), [touchEdit, setTouchEdit] = useState(false), [mobile, setMobile] = useState(false)
   const [focus, setFocus] = useState<Position>({ day: 0, slot: AVAILABILITY_FIRST_SLOT })
@@ -51,7 +53,7 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
         options={WEEK_DAYS.map((day, i) => ({ value: String(i), label: day.slice(0, 3) }))} />
     </div>
     <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><p id={instructionsId}>{readOnly ? "Arrow keys move between times. Home and End move to the first and last time." : "Click or tap a time to add or remove it. Arrow keys move; Space or Enter toggles; Shift + arrows extends. You can also drag; Escape cancels a drag."}</p>{!readOnly && <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={touchEdit} onChange={e => setTouchEdit(e.target.checked)} />Enable touch dragging (turn off to scroll)</label>}</div>
-    <div ref={grid} className="oc-av-scroll" role="grid" aria-label={counts ? "Interviewer availability by quarter hour" : "Weekly availability by quarter hour"} aria-describedby={instructionsId} aria-multiselectable="true" aria-readonly={readOnly && !onSelect} aria-rowcount={AVAILABILITY_SLOTS.length + 1} aria-colcount={mobile ? 2 : 8}
+    <div ref={grid} className="oc-av-scroll" role="grid" aria-label={gridLabel ?? (counts ? "Interviewer availability by quarter hour" : "Weekly availability by quarter hour")} aria-describedby={instructionsId} aria-multiselectable="true" aria-readonly={readOnly && !onSelect} aria-rowcount={AVAILABILITY_SLOTS.length + 1} aria-colcount={mobile ? 2 : 8}
       style={{ touchAction: touchEdit && !readOnly ? "none" : "pan-y" }}
       onPointerMove={event => {
         const active = drag.current
@@ -65,10 +67,10 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
       {AVAILABILITY_SLOTS.map(slot => <div key={slot} role="row" className="oc-av-row">
         <span className="oc-av-time" role="rowheader" aria-colindex={1}><span className={slot % 4 === 0 || mobile ? undefined : "sr-only"}>{minuteLabel(slot * 15)}</span></span>
         {WEEK_DAYS.map((day, i) => <button key={day} type="button" role="gridcell" aria-colindex={mobile ? 2 : i + 2} aria-selected={displayed[i][slot]} aria-readonly={readOnly && !onSelect} data-av-cell={`${i}:${slot}`}
-          aria-label={`${day}${dates ? ` ${dates[i]}` : ""}, ${minuteLabel(slot * 15)}–${minuteLabel((slot + 1) * 15)}: ${counts ? `${counts[i][slot]} available interviewers` : displayed[i][slot] ? "available" : knownDays?.[i] === false ? "unknown" : "unavailable"}`}
+          aria-label={`${day}${dates ? ` ${dates[i]}` : ""}, ${minuteLabel(slot * 15)}–${minuteLabel((slot + 1) * 15)}: ${counts ? `${counts[i][slot]} ${countLabel}` : displayed[i][slot] ? "available" : knownDays?.[i] === false ? "unknown" : "unavailable"}`}
           tabIndex={(mobile ? mobileDay === i : focus.day === i) && focus.slot === slot ? 0 : -1}
-          className={`oc-av-cell oc-av-day ${mobileDay === i ? "is-mobile-day" : ""} ${displayed[i][slot] ? "is-available" : knownDays?.[i] === false ? "is-unknown" : ""} ${slot % 4 === 0 ? "is-hour" : ""}`}
-          style={counts && counts[i][slot] > 0 ? { backgroundColor: `rgba(232, 91, 25, ${Math.min(.7, .15 + counts[i][slot] * .1)})`, color: "var(--foreground)", fontWeight: 600 } : undefined}
+          className={`oc-av-cell oc-av-day ${mobileDay === i ? "is-mobile-day" : ""} ${displayed[i][slot] ? "is-available" : knownDays?.[i] === false ? "is-unknown" : ""} ${slot % 4 === 0 ? "is-hour" : ""} ${selected?.day === i && selected.slot === slot ? "is-selected" : ""}`}
+          style={counts && counts[i][slot] > 0 ? { backgroundColor: `rgba(232, 91, 25, ${countMax ? .15 + .55 * Math.min(1, counts[i][slot] / countMax) : Math.min(.7, .15 + counts[i][slot] * .1)})`, color: "var(--foreground)", fontWeight: 600 } : undefined}
           onFocus={() => { setFocus({ day: i, slot }); setMobileDay(i) }}
           onPointerDown={event => {
             suppressClick.current = false

@@ -169,3 +169,16 @@ Resource: `StudentProfile.phone`. Written only by its owner (`upsertStudentProfi
 | Browser roles via PostgREST | deny (no table privilege; unchanged by the migration) | `student-profile-phone-migration.test`, `test:migrations` |
 | Logged-out visitor | deny (`requireAuth`) | existing |
 Untested cells: a second-club leader against the two new fields on a running stack (covered by code scoping only); include in the next attacker pass.
+
+## 2026-11-16 · AVAIL-REQUIRED · Required weekly availability and "Find a meeting time" (branch `feature/availability-required`)
+
+Resources: the caller's own `UserAvailability` (requirement gate and completion) and a club's active members' saved availability, projected to per-start-time free counts and, for one chosen time, names in free / busy / no-availability groups (no contact details, no member's full week). Reads: `getMeetingTimePlanner`, `getMeetingTimeRoster` (workspace read kinds `meetingPlanner`, `meetingPlannerRoster`). Write: `completeAvailabilityRequirement` (own account; declaration is an audit row).
+
+| Actor | Workspace gate | Complete requirement | Planner heatmap / roster | Test |
+|---|---|---|---|---|
+| Student, no saved time | ask (server, layout) | own row only; empty week needs explicit choice | n/a | `availability-requirement.test` |
+| Alumni, active platform admin, disabled account | pass (exempt) | n/a | n/a | same |
+| Demo Mode, support (view-as) session | pass | refused in a support session | n/a | same |
+| Member with `meetings.manage`, operational club | n/a | n/a | allow (active, enabled members of that club only) | same |
+| Member without `meetings.manage`, alumni member, other club's leader | n/a | n/a | deny "Club access denied" | same |
+| Leader of a suspended club | n/a | n/a | deny `CLUB_SUSPENDED` | same |

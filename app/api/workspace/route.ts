@@ -32,7 +32,7 @@ const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1
   z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(value => value ?? undefined)]))
 
 // Every `case` below, so logs carry only a known constant, never a raw query value.
-const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rankedReviewRound", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "invitations", "tutorial", "applicantDisplay", "attendance"])
+const workspaceReadKinds = new Set(["myAvailability", "roundAvailability", "availabilityOverview", "meetingPlanner", "meetingPlannerRoster", "staffingCoverage", "panelWorkspace", "assignedRooms", "interviewWorkspace", "interviewRounds", "roomWorkspace", "bookingPublication", "tasks", "meetings", "announcements", "notifications", "dashboardReviews", "overview", "members", "pipeline", "pipelineList", "pipelinePage", "pipelineSelection", "rankedReviewSettings", "rankedReviewRound", "rounds", "applicationSettings", "pipelineSettings", "directory", "publicClub", "corkboard", "taskNotifications", "studentDashboard", "voting", "invitations", "tutorial", "applicantDisplay", "attendance"])
 const loggedReadKind = (kind: string | null) => kind && workspaceReadKinds.has(kind) ? kind : "unknown"
 
 // An explicit read allowlist. Each private loader still runs its original live
@@ -53,6 +53,8 @@ export async function GET(request: Request) {
       case "myAvailability": noArgs.parse(args); data = await (await import("@/actions/availability")).getMyAvailability(); break
       case "roundAvailability": data = await (await import("@/actions/availability")).getMyRoundAvailability(z.tuple([z.unknown()]).parse(args)[0]); break
       case "availabilityOverview": data = await (await import("@/actions/availability")).getAvailabilityOverview(z.tuple([z.unknown()]).parse(args)[0]); break
+      case "meetingPlanner": data = await (await import("@/actions/availability")).getMeetingTimePlanner(z.tuple([z.unknown()]).parse(args)[0]); break
+      case "meetingPlannerRoster": data = await (await import("@/actions/availability")).getMeetingTimeRoster(z.tuple([z.unknown()]).parse(args)[0]); break
       case "staffingCoverage": data = await (await import("@/actions/availability")).getRoundStaffingCoverage(z.tuple([z.unknown()]).parse(args)[0]); break
       case "panelWorkspace": data = await (await import("@/actions/panel-proposals")).getPanelProposalWorkspace(z.tuple([z.unknown()]).parse(args)[0]); break
       case "assignedRooms": data = await (await import("@/actions/interview-entry")).getAssignedInterviewRooms(...clubArgs.parse(args)); break
