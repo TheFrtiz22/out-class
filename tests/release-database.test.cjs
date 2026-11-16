@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const { PGlite } = require('@electric-sql/pglite')
-const { catalogQuery, missingColumns, releaseTarget } = require('../scripts/check-release-database.cjs')
+const { authKeyWarning, catalogQuery, missingColumns, releaseTarget } = require('../scripts/check-release-database.cjs')
 const { spawnSync } = require('node:child_process')
 
 test('production build gate uses the same runtime connection as the app and fails closed on missing configuration', () => {
@@ -57,4 +57,19 @@ test('release check rejects the production schema that breaks authenticated acco
       assert.equal((await db.query(`SELECT has_table_privilege('${role}', '"DecisionLetter"', 'SELECT,INSERT,UPDATE,DELETE') AS allowed`)).rows[0].allowed, false)
     }
   } finally { await db.close() }
+})
+
+test('release check warns, without printing it, when the Supabase secret key is missing or not a new-format secret key', () => {
+  assert.match(authKeyWarning({}), /SUPABASE_SECRET_KEY is not set/)
+  const legacy = 'eyJlegacy-service-role-value'
+  const warning = authKeyWarning({ SUPABASE_SECRET_KEY: legacy })
+  assert.match(warning, /sb_secret_ prefix/)
+  assert.ok(!warning.includes(legacy))
+  assert.equal(authKeyWarning({ SUPABASE_SECRET_KEY: 'sb_secret_value' }), null)
+  const script = path.resolve(__dirname, '../scripts/check-release-database.cjs')
+  const env = { ...process.env, VERCEL: '1', VERCEL_ENV: 'production', POSTGRES_PRISMA_URL: '', DATABASE_URL: '', OUTCLASS_DATABASE_CHECK_URL: '', SUPABASE_SECRET_KEY: legacy }
+  const run = spawnSync(process.execPath, [script, '--vercel-production-build'], { env, encoding: 'utf8' })
+  assert.match(run.stderr, /Warning: SUPABASE_SECRET_KEY/)
+  assert.ok(!run.stderr.includes(legacy) && !run.stdout.includes(legacy))
+  assert.match(run.stderr, /runtime database connection is missing/, 'the warning does not change the database check result')
 })

@@ -19,6 +19,8 @@ import { PLATFORM_SETTINGS_KEY, SITE_SETTINGS_TAG, platformSettingsSchema } from
 import { createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
 import { boundedParse } from "@/lib/bounded-input";
 import { reportTargetContext } from "@/lib/content-reports";
+import { ADMIN_REPORT_KIND_FILTERS, FEEDBACK_KINDS, adminReportContext } from "@/lib/feedback-reports";
+import { signalAdminReportsChanged } from "@/lib/admin-reports-signal";
 const reasonSchema = z.string().trim().min(10).max(1000);
 const uuid = z.string().uuid();
 const statuses = z.enum(["OPEN", "INVESTIGATING", "RESOLVED", "DISMISSED"]);
@@ -41,17 +43,32 @@ export async function getAdminOverview() {
 }
 export async function listAdminReports(input: unknown) {
   const actor = await requirePlatformAdmin();
-  const f = z.object({ query: z.string().trim().max(200).default(""), status: z.union([statuses, z.literal("")]).default(""), support: z.boolean().default(false) }).strict().parse(input);
-  const rows = await prisma.platformReport.findMany({ where: { kind: f.support ? "SUPPORT" : { notIn: ["SUPPORT", "ACCOUNT_DELETION"] }, ...(f.status ? { status: f.status } : {}), ...(f.query ? { OR: [{ summary: { contains: f.query, mode: "insensitive" } }, { targetId: { contains: f.query, mode: "insensitive" } }] } : {}) }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, include: { reporter: { select: { id: true, email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } });
-  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.reports.read", targetId: "reports", details: { support: f.support, result: "success" } } });
+  const f = z.object({ query: z.string().trim().max(200).default(""), status: z.union([statuses, z.literal("")]).default(""), support: z.boolean().default(false), kind: z.enum(ADMIN_REPORT_KIND_FILTERS).default("") }).strict().parse(input);
+  const rows = await prisma.platformReport.findMany({ where: { kind: f.support ? "SUPPORT" : f.kind ? f.kind : { notIn: ["SUPPORT", "ACCOUNT_DELETION"] }, ...(f.status ? { status: f.status } : {}), ...(f.query ? { OR: [{ summary: { contains: f.query, mode: "insensitive" } }, { targetId: { contains: f.query, mode: "insensitive" } }] } : {}) }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, include: { reporter: { select: { id: true, email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } });
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.reports.read", targetId: "reports", details: { support: f.support, kind: f.kind || null, result: "success" } } });
   // Reported announcements are only readable here: carry the title so the admin sees what was reported.
   const announcementIds = rows.flatMap(r => r.kind === "CONTENT" && r.targetId.startsWith("announcement:") ? [r.targetId.split(":")[2]] : []).filter(id => uuid.safeParse(id).success);
   const announcements = announcementIds.length ? new Map((await prisma.clubAnnouncement.findMany({ where: { id: { in: announcementIds } }, select: { id: true, title: true, club: { select: { name: true } } } })).map(a => [a.id, `${a.club.name}: ${a.title}`])) : new Map<string, string>();
-  return rows.map(({ reporter, ...row }) => {
+  return rows.map(({ reporter, context, ...row }) => {
     const target = reportTargetContext(row.kind, row.targetId), title = announcements.get(row.targetId.split(":")[2] ?? "");
     const name = [reporter.studentProfile?.firstName, reporter.studentProfile?.lastName].filter(Boolean).join(" ");
-    return { ...row, target: title ? { ...target, label: `${target.label} · ${title}` } : target, reporter: { id: reporter.id, email: reporter.email, name } };
+    // Captured page/device/build details for issues and feedback; the screenshot's storage path never leaves the server.
+    return { ...row, context: (FEEDBACK_KINDS as readonly string[]).includes(row.kind) ? adminReportContext(context) : null, target: title ? { ...target, label: `${target.label} · ${title}` } : target, reporter: { id: reporter.id, email: reporter.email, name } };
   });
+}
+/**
+ * Cheap change check for the live Reports queue and the nav badge: open issue/feedback count and a
+ * fingerprint of the visible queue. No report content; not audited (it runs every 20 s while an admin
+ * page is visible), and the page reads content only through the audited listAdminReports.
+ */
+export async function getAdminReportsPulse() {
+  await requirePlatformAdmin();
+  const visible = { kind: { notIn: ["SUPPORT", "ACCOUNT_DELETION"] } };
+  const [openFeedback, latest] = await Promise.all([
+    prisma.platformReport.count({ where: { kind: { in: [...FEEDBACK_KINDS] }, status: "OPEN" } }),
+    prisma.platformReport.aggregate({ where: visible, _max: { updatedAt: true }, _count: { _all: true } }),
+  ]);
+  return { openFeedback, fingerprint: `${latest._count._all}:${latest._max.updatedAt?.getTime() ?? 0}` };
 }
 // Support requests only. Reports about users, clubs, events and content go through
 // reportContent (actions/content-reports.ts), which checks the reporter can see the target.
@@ -79,7 +96,7 @@ export async function resolveAdminReport(input: unknown) {
     await tx.platformReport.update({ where: { id: d.id }, data: { status: d.status, resolution: d.reason, revision: { increment: 1 }, resolvedAt: closed ? new Date() : null, resolvedBy: closed ? actor.id : null } });
     await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.report.resolve", targetId: d.id, reason: d.reason, details: { from: row.status, to: d.status, result: "success" } } });
     return { success: true };
-  });
+  }).then(async result => { await signalAdminReportsChanged(); return result; });
 }
 export async function inspectAdminClub(clubId: string, reason: string) {
   const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(clubId); reasonSchema.parse(reason);

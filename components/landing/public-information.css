@@ -283,3 +283,22 @@
 .oc-faq-next h2 { margin: 0 0 8px; font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
 /* The framed main is width-limited, so it must not paint its own panel over the page background. */
 .oc-information main.oc-public-frame-main { background: transparent; }
+
+/* Security: compact topic rows (each a kicker and heading beside its prose) and one card grid. */
+.oc-security-page .oc-public-section.oc-security-topic { padding-block: clamp(40px, 5vw, 64px); border-top: 1px solid var(--border); }
+.oc-security-page .oc-security-topic:first-child { border-top: 0; }
+.oc-security-list { display: grid; gap: 12px; margin: 0 0 20px; padding-left: 20px; list-style: disc; }
+.oc-security-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 32px 0 0; padding: 0; list-style: none; }
+.oc-security-card { padding: 24px; background: var(--background); border: 1px solid var(--border); border-radius: var(--oc-radius-lg); }
+.oc-security-card .oc-icon { color: var(--primary); }
+.oc-security-page .oc-public-section .oc-security-card h3 { margin: 16px 0 8px; font-size: var(--oc-size-18); }
+.oc-security-card p { font-size: 0.9375rem; color: var(--muted-foreground); }
+.oc-security-link { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
+.oc-security-updated { width: min(var(--oc-public-width), calc(100% - var(--oc-public-gutter) * 2)); margin: 0 auto var(--oc-public-space); padding-top: 24px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.oc-security-updated p { font-size: var(--oc-size-13); color: var(--muted-foreground); }
+@media (max-width: 800px) {
+  .oc-security-cards { grid-template-columns: minmax(0, 1fr); }
+}
+@media (min-width: 801px) and (max-width: 1040px) {
+  .oc-security-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

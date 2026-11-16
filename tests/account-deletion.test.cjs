@@ -232,7 +232,7 @@ function procedureHarness({ apps = [], members = [], authFails = 0, txFails = fa
     $transaction: async fn => {
       // Snapshot so a thrown transaction rolls back like Postgres would.
       const before = JSON.stringify({ user, apps, store, audit });
-      const tx = { $queryRaw: async () => [], auditLog: auditModel, user: { update: async ({ data }) => { if (txFails) throw Error('trigger refused'); events.push('tombstone'); Object.assign(user, data); } } };
+      const tx = { $queryRaw: async () => [], $executeRaw: async (strings, ...values) => { calls.push(['$executeRaw', strings.join('?'), values]); return 1; }, auditLog: auditModel, user: { update: async ({ data }) => { if (txFails) throw Error('trigger refused'); events.push('tombstone'); Object.assign(user, data); } } };
       for (const m of models) tx[m] = new Proxy({}, { get: (_, name) => op(m, name) });
       try { return await fn(tx); } catch (error) {
         const old = JSON.parse(before); Object.assign(user, old.user); apps.splice(0, apps.length, ...old.apps); Object.assign(store, old.store); audit.splice(0, audit.length, ...old.audit);
@@ -263,8 +263,11 @@ test('deletion procedure deletes personal data, anonymizes club records and dele
   });
   h.store.evaluations.push({ applicationId: 'decided' });
   const result = await h.run();
-  assert.deepEqual(result, { userId, storageObjects: 3, deletedApplications: 1, anonymizedApplications: 1, deletedMemberships: 1, anonymizedMemberships: 1, retainedDecisionLetters: 0, retainedResumeSnapshots: 0, authDeleted: true });
-  assert.deepEqual(h.removed, [['resumes', [`${userId}/resume.pdf`]], ['headshots', [`${userId}/face.png`]], ['task-submissions', ['assignment-1/file']]]);
+  assert.deepEqual(result, { userId, storageObjects: 4, deletedApplications: 1, anonymizedApplications: 1, deletedMemberships: 1, anonymizedMemberships: 1, retainedDecisionLetters: 0, retainedResumeSnapshots: 0, authDeleted: true });
+  assert.deepEqual(h.removed, [['resumes', [`${userId}/resume.pdf`]], ['headshots', [`${userId}/face.png`]], ['task-submissions', ['assignment-1/file']], ['task-submissions', [`reports/${userId}/face.png`]]]);
+  const scrub = h.calls.find(c => c[0] === '$executeRaw');
+  assert.match(scrub[1], /"context" - 'screenshotPath' WHERE "reporterId" = \? AND "context" \? 'screenshotPath'/, 'retained feedback reports lose the screenshot reference');
+  assert.deepEqual(scrub[2], [userId]);
   const find = (model, name) => h.calls.filter(c => c[0] === model && c[1] === name).map(c => c[2]);
   assert.deepEqual(find('application', 'deleteMany')[0].where.id.in, ['draft']);
   assert.deepEqual(find('clubMember', 'deleteMany')[0].where.id.in, ['quiet']);
