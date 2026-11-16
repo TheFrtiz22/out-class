@@ -10,6 +10,7 @@ import { demoSnapshotSchema } from "./validate"
 import { createDemoSeed, type DemoState } from "./seed"
 import { ensureInterviewRoomEntries, ensureInterviewImprovements } from "./interview-improvements"
 import { emptyDemoBookingFlow } from "./interview-booking"
+import { schedulingDateTime } from "@/lib/scheduling-config"
 export const DEMO_KEY = "outclass.presentation.v1"
 let state: DemoState | null = null
 let enabled = false
@@ -363,7 +364,9 @@ export function demoNotifications() {
     const app = s.applications.find(a => a.id === n.applicationId), club = s.clubs.find(c => c.id === app?.clubId), round = club?.rounds.find(r => r.id === n.roundId), p = s.students.find(p => p.id === app?.studentId)?.profile;
     const allowed = !!app && app.roundId === n.roundId && !round?.anonymousReview && s.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === n.roundId && a.memberId === member?.id && !a.revokedAt);
     const booking = s.roomBookings.find(b => b.applicationId === n.applicationId && b.roundId === n.roundId);
-    return { id: n.id, clubId: club?.id, club: club?.name || "MII", color: club?.color || "#142d45", logoText: club?.logoText || "MII", senderName: "Sample recruitment team", senderTitle: "Interview assignment", urgent: false, type: "Interview Invite" as const, title: n.title, preview: allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list.", body: [allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list."], timestamp: "Demo", fullDate: n.createdAt, createdAt: n.createdAt, read: s.readNotifications.includes(n.id), cta: "Open interview room", href: allowed && booking ? interviewEntryHref({ clubId: club!.id, applicationId: n.applicationId, roundId: n.roundId, bookingId: booking.id, slotId: booking.slotId, roomId: booking.roomId }) : (allowed ? clubInterviewHref(club?.id || "", `interviewTab=rooms&applicationId=${n.applicationId}&roundId=${n.roundId}`) : `/club/${club?.id}/workspace?section=recruitment&tool=interviews`) };
+    // Saved snapshots revive ISO strings as Dates. Notifications carry strings: the Inbox renders fullDate as text.
+    const createdAt = new Date(n.createdAt).toISOString();
+    return { id: n.id, clubId: club?.id, club: club?.name || "MII", color: club?.color || "#142d45", logoText: club?.logoText || "MII", senderName: "Sample recruitment team", senderTitle: "Interview assignment", urgent: false, type: "Interview Invite" as const, title: n.title, preview: allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list.", body: [allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list."], timestamp: "Demo", fullDate: schedulingDateTime(createdAt), createdAt, read: s.readNotifications.includes(n.id), cta: "Open interview room", href: allowed && booking ? interviewEntryHref({ clubId: club!.id, applicationId: n.applicationId, roundId: n.roundId, bookingId: booking.id, slotId: booking.slotId, roomId: booking.roomId }) : (allowed ? clubInterviewHref(club?.id || "", `interviewTab=rooms&applicationId=${n.applicationId}&roundId=${n.roundId}`) : `/club/${club?.id}/workspace?section=recruitment&tool=interviews`) };
   });
   return [...demoCommunicationRows(s).map(inboxNotification),...recruiting,...work,...assignments]
 }
