@@ -25,7 +25,7 @@ export function interviewEntryHref(entry: Pick<InterviewRoomEntry, "clubId" | "a
  */
 /** The only parameters the room and the interview list understand. Anything else (for example
  * `setting=members` from the page the user came from) is dropped, so links start from a clean URL. */
-const INTERVIEW_PARAMS = ["applicationId", "applicantId", "roundId", "cycleId", "slotId", "sessionId", "bookingId", "roomId", "reviewId", "documentId", "interviewTab", "interviewDate", "interviewDays", "interviewTiming", "schedule", "date", "dates", "week", "demo"];
+const INTERVIEW_PARAMS = ["applicationId", "applicantId", "roundId", "cycleId", "slotId", "sessionId", "bookingId", "roomId", "reviewId", "documentId", "interviewTab", "interviewRound", "interviewDate", "interviewDays", "interviewTiming", "schedule", "date", "dates", "week", "demo"];
 function interviewQuery(search: string) {
   const source = new URLSearchParams(search), query = new URLSearchParams();
   for (const [key, value] of source) if (INTERVIEW_PARAMS.includes(key)) query.append(key, value);
@@ -108,4 +108,37 @@ export function interviewRoomRoundOptions(rounds: { id: string; name: string }[]
   const options = new Map(rounds.map(round => [round.id, { id: round.id, name: round.name }]));
   for (const row of rows) if (!options.has(row.roundId)) options.set(row.roundId, { id: row.roundId, name: row.roundName });
   return [...options.values()];
+}
+
+/** "1:00–1:20 PM", or "11:30 AM–12:10 PM" when the period changes. The list states the time zone once. */
+export function interviewTimeRange(row: Pick<InterviewRoomEntry, "startTime" | "endTime" | "timezone">) {
+  const parts = (value: string) => new Intl.DateTimeFormat("en-US", { timeZone: row.timezone, hour: "numeric", minute: "2-digit" }).formatToParts(new Date(value));
+  const pick = (p: Intl.DateTimeFormatPart[], type: string) => p.find(x => x.type === type)?.value ?? "";
+  const a = parts(row.startTime), b = parts(row.endTime), clock = (p: Intl.DateTimeFormatPart[]) => `${pick(p, "hour")}:${pick(p, "minute")}`;
+  return `${clock(a)}${pick(a, "dayPeriod") === pick(b, "dayPeriod") ? "" : ` ${pick(a, "dayPeriod")}`}–${clock(b)} ${pick(b, "dayPeriod")}`;
+}
+/** One short line for My interviews: "1:00–1:20 PM · In 10 minutes", "· Now" or "· Ended". */
+export function interviewTimingShort(row: Pick<InterviewRoomEntry, "startTime" | "endTime" | "timezone" | "completed" | "cancelled">, now = Date.now()) {
+  const range = interviewTimeRange(row), start = +new Date(row.startTime), end = +new Date(row.endTime);
+  if (row.cancelled) return `${range} · Cancelled`;
+  if (row.completed) return range;
+  if (start > now) return `${range} · In ${relative(start - now)}`;
+  return end >= now ? `${range} · Now` : `${range} · Ended`;
+}
+/** The button label on My interviews. Wording only: entry is still never decided by the clock. */
+export function interviewEntryLabel(row: Pick<InterviewRoomEntry, "completed" | "started" | "endTime">, now = Date.now()) {
+  return !row.completed && +new Date(row.endTime) < now ? "Finish notes" : interviewEntryAction(row);
+}
+/**
+ * My interviews shows each interview once: what is coming up, what still needs notes, and what is done.
+ * A past time slot nobody booked is left out; there is nothing to do with it.
+ */
+export function myInterviewSections(rows: InterviewRoomEntry[], now = Date.now()) {
+  const byStart = (a: InterviewRoomEntry, b: InterviewRoomEntry) => +new Date(a.startTime) - +new Date(b.startTime) || a.id.localeCompare(b.id);
+  const needsNotes = unfinishedInterviewEntries(rows, now), pending = new Set(needsNotes.map(row => row.id));
+  const rest = rows.filter(row => !pending.has(row.id));
+  const ended = (row: InterviewRoomEntry) => +new Date(row.endTime) < now;
+  const done = rest.filter(row => row.completed || row.cancelled || ended(row) && !!row.bookingId).sort((a, b) => -byStart(a, b));
+  const upNext = rest.filter(row => !row.completed && !row.cancelled && !ended(row)).sort(byStart);
+  return { upNext, needsNotes, done };
 }

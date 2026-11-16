@@ -48,7 +48,7 @@ test("items 3 and 8: count labels name what they count, with the shared pluraliz
 
 test("items 5 and 6: open slots are not candidates; the palette counts every row it shows", () => {
   const list = read("components/interviews/interview-rooms-list.tsx")
-  assert.match(list, /<span className="oc-dt-muted">Open slot<\/span>/)
+  assert.match(list, /applicant \?\? <span className="font-normal text-muted-foreground">Open time slot<\/span>/)
   assert.doesNotMatch(list, /cell: row => <span className="oc-dt-name"[^>]*>\{row\.candidate \|\| row\.roomName\}/)
   assert.match(read("components/shell/navigation-search.tsx"), /pluralize\(pages\.length \+ linkPages\.length \+ elsewhere\.length \+ results\.length, "result"\)/)
 })
@@ -132,7 +132,7 @@ test("items 22, 23, 24 and 25: Members action in the header, shared empty states
     const source = read(file)
     if (/sortKey: "[a-z]+", showFrom: "md"/.test(source)) assert.match(source, /<SortControl className="oc-dt-cards-sort oc-dt-sort-until-md"/, file)
   }
-  for (const file of ["components/club-members.tsx", "components/club-announcements.tsx", "components/organization-member-management.tsx", "components/interviews/interview-rooms-list.tsx"]) {
+  for (const file of ["components/club-members.tsx", "components/club-announcements.tsx", "components/organization-member-management.tsx"]) {
     const source = read(file)
     assert.match(source, /oc-dt-scope/, file); assert.match(source, /<SortControl className="oc-dt-cards-sort[ "]/, file)
   }
@@ -147,7 +147,7 @@ test("item 26: Events has its own icon everywhere; palette links and interview t
   for (const file of ["components/shell/product-shell.tsx", "components/shell/mobile-navigation.tsx"]) assert.match(read(file), /corkboard: CalendarStar/, file)
   assert.match(read("components/shell/navigation-search.tsx"), /link\.icon \? <link\.icon className="size-4" aria-hidden="true" \/>/)
   const tabs = read("components/interview-management-tabs.tsx")
-  assert.equal((tabs.match(/<TabsTrigger value="[a-z]+"><[A-Z][A-Za-z]+ aria-hidden="true" \/>/g) || []).length, 4)
+  assert.equal((tabs.match(/<TabsTrigger value="[a-z]+"><[A-Z][A-Za-z]+ aria-hidden="true" \/>/g) || []).length, 3)
 })
 
 test("items 27, 28, 30, 31 and 34: steady tab widths, settings links, review modal, one status panel, board scroll cue", () => {

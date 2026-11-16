@@ -66,7 +66,7 @@ test("empty states say why and offer one different next step", () => {
     ["components/views/explore-view.tsx", /onNavigate\("corkboard"\)\}>See campus events/],
     ["components/views/calendar-view.tsx", /function CalendarEmptyAction/],
     ["components/views/inbox-view.tsx", /href=\{notificationSettingsHref\} scroll=\{false\}>Notification settings/],
-    ["components/interviews/interview-rooms-list.tsx", />Show all dates</],
+    ["components/interviews/interview-rooms-list.tsx", />Back to recruiting overview</],
     ["components/shell/notification-center.tsx", /Show all updates/],
     ["components/views/leader-dashboard/live-leader-workspace.tsx", /onClick=\{clearApplicantFilters\}>Clear filters/],
     ["components/club-members.tsx", /Clear search/],
@@ -84,9 +84,11 @@ test("interview day rows show the first and last slot time", () => {
   const [day] = dates.groupInterviewDates([row("b", "2026-11-10T21:30:00Z"), row("a", "2026-11-10T14:00:00Z"), row("c", "2026-11-10T17:00:00Z")])
   assert.equal(day.span, "First 9:00 AM · last 4:30 PM EST")
   assert.equal(dates.interviewDaySpan([row("a", "2026-11-10T14:00:00Z")], "America/New_York"), "9:00 AM EST")
-  assert.match(read("components/interviews/interview-rooms-list.tsx"), /\{span && <span className="oc-interview-day-span">\{span\}<\/span>\}/)
-  assert.doesNotMatch(read("components/interviews/interview-rooms-list.tsx"), /type="date"/)
-  assert.match(read("components/interviews/interview-rooms-list.tsx"), /<DateField label="Filter assigned interview date"/)
+  // My interviews shows each day as "1:00–1:50 PM · 1 interview" (open time slots are not counted as interviews) and picks a day with buttons, not a calendar.
+  const list = read("components/interviews/interview-rooms-list.tsx")
+  assert.match(list, /interviewTimeRange\(\{ startTime: first\.startTime, endTime: last\.endTime, timezone: group\.timezone \}\)\} · \{booked \? pluralize\(booked, "interview"\) : "No bookings yet"\}/)
+  assert.doesNotMatch(list, /type="date"|<DateField/)
+  assert.match(list, /<SegmentedControl label="Show one day"/)
 })
 
 test("date picker math works on plain days, independent of the browser time zone", () => {

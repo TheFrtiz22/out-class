@@ -193,13 +193,14 @@ test('settings and authenticated navigation across roles, saves, history and res
     // Settings → Interviews only repeated the Interviews tool; it redirects there (kits tab).
     await open(page, `/club/${first.id}/workspace?section=settings&setting=interviews`);
     await page.waitForURL(url => url.searchParams.get('tool') === 'interviews' && url.searchParams.get('interviewTab') === 'kits');
-    await page.getByRole('tab', { name: 'Interview master kit', exact: true }).waitFor();
+    // Someone who only interviews has no tab bar; the questions open as a page with a way back.
+    await page.getByRole('heading', { name: 'Questions', exact: true }).waitFor();
     await open(page, `/club/${first.id}/workspace?section=settings&setting=general`);
     await page.getByText(/isn’t available with your current access/).first().waitFor();
     assert.equal(await page.getByRole('button', { name: 'Publish profile', exact: true }).count(), 0);
     await db.clubMember.update({ where: { userId_clubId: { userId: interviewer.user.id, clubId: first.id } }, data: { permissions: ['interviews.manage'] } });
     await open(page, `/club/${first.id}/workspace?section=recruitment&tool=interviews&interviewTab=schedule`);
-    await page.getByRole('tab', { name: 'Scheduling', exact: true }).waitFor();
+    await page.getByRole('tab', { name: 'Schedule', exact: true }).waitFor();
   });
   await t.test('remaining detail routes retain shell, while interview schedules stay operational', async () => {
     for (const route of ['/meetings', `/meetings/${meeting.id}`, '/settings/availability', '/settings/interviews', '/corkboard', '/saved-clubs', `/club/${first.id}`, `/invitations/${invitation.id}`]) {
