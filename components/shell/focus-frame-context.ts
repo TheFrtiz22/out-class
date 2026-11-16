@@ -12,6 +12,8 @@ export type FocusDetails = {
   /** Runs instead of navigating, e.g. to confirm unsaved work. */
   onExit?: () => void
   width?: FocusWidth
+  /** Short save state shown beside Exit, e.g. "All changes saved". Announced politely. */
+  status?: string
 }
 
 type FrameContext = { set: (owner: symbol, details: FocusDetails | null) => void }
@@ -29,11 +31,16 @@ export function useFocusFrame(details: FocusDetails) {
   const latest = useRef(details)
   useIsomorphicLayoutEffect(() => { latest.current = details })
   const exit = useCallback(() => latest.current.onExit?.(), [])
-  const { task, club, exitHref, width } = details, hasExit = !!details.onExit
+  const { task, club, exitHref, width, status } = details, hasExit = !!details.onExit
   useIsomorphicLayoutEffect(() => {
-    context?.set(owner, { task, club: club ? { name: club.name, color: club.color } : club, exitHref, width, onExit: hasExit ? exit : undefined })
-  }, [context, owner, task, club?.name, club?.color, exitHref, width, hasExit, exit])
+    context?.set(owner, { task, club: club ? { name: club.name, color: club.color } : club, exitHref, width, status, onExit: hasExit ? exit : undefined })
+  }, [context, owner, task, club?.name, club?.color, exitHref, width, status, hasExit, exit])
   useEffect(() => () => context?.set(owner, null), [context, owner])
+}
+
+/** Whether this screen renders inside a focus frame (so it can leave chrome, like save status, to the bar). */
+export function useInFocusFrame() {
+  return useContext(FocusFrameContext) !== null
 }
 
 /**
