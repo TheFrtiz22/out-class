@@ -32,6 +32,8 @@ export const RATE_LIMITS = {
   studentClaim: { name: "student-claim", limit: 30, windowMs: 15 * minute },
   // Per address, on top of the per-account attempt count the two-step route keeps in the database.
   twoStep: { name: "two-step", limit: 30, windowMs: 15 * minute },
+  // Per address, before the per-email and per-network attempt counts the email-code route keeps in the database.
+  emailCode: { name: "email-code", limit: 120, windowMs: 15 * minute },
   signup: { name: "signup", limit: 60, windowMs: 60 * minute },
   adminElevation: { name: "admin-elevation", limit: 20, windowMs: 15 * minute },
   adminViewAs: { name: "admin-view-as", limit: 60, windowMs: 10 * minute },

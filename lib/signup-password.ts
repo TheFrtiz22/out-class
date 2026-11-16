@@ -9,7 +9,7 @@ export async function setPasswordAfterConfirmation(client: PasswordClient, passw
   if (!password) return { saved: false as const }
   try {
     const { error } = await client.auth.updateUser({ password })
-    // Until the confirmation step clears the stored password, it still equals the typed one.
+    // The stored password may already equal the typed one; Supabase Auth then answers same_password.
     if (!error || error.code === "same_password") return { saved: true as const }
     return { saved: false as const }
   } catch {
