@@ -101,7 +101,10 @@ export async function POST(request: NextRequest) {
       const session = await client.auth.setSession(decryptChallenge(challenge.encryptedCredentials));
       if (session.error && !providerAuthFailure(session.error)) throw session.error;
       if (session.error) return { error: "Authentication challenge unavailable." };
-      const verified = await client.auth.mfa.verify({ factorId: challenge.factorId, challengeId: challenge.providerChallengeId, code: input.code });
+      // Supabase requires the challenge and verify calls to come from the same IP. Serverless requests
+      // can leave from different IPs, so a challenge created during the password step can't be verified
+      // here. Create and verify a fresh challenge in this request instead.
+      const verified = await client.auth.mfa.challengeAndVerify({ factorId: challenge.factorId, code: input.code });
       if (verified.error && !providerAuthFailure(verified.error)) throw verified.error;
       if (verified.error) return { error: "Authenticator verification failed." };
       const identity = await client.auth.getUser(verified.data.access_token);
