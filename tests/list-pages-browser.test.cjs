@@ -6,7 +6,8 @@ const { startLeaderScreens } = require('./helpers/leader-screens-fixture.cjs')
 const { startListPages } = require('./helpers/list-pages-fixture.cjs')
 
 const widths = [375, 614, 1126, 1280, 1512]
-const pages = [['Applicants', 'leader', 'section=recruitment&tool=applicants'], ['Members (Demo)', 'leader', 'section=members'], ['Interviews', 'leader', 'section=recruitment&tool=interviews'], ['Members', 'list', 'page=members'], ['Announcements', 'list', 'page=announcements']]
+// My interviews is an agenda in time order (Up next, Needs notes, Done), not a sortable list; interview-date-sections-browser covers its widths.
+const pages = [['Applicants', 'leader', 'section=recruitment&tool=applicants'], ['Members (Demo)', 'leader', 'section=members'], ['Members', 'list', 'page=members'], ['Announcements', 'list', 'page=announcements']]
 
 async function measure(page) {
   return page.evaluate(() => {

@@ -18,11 +18,17 @@ export const TERMS = {
   yourTasks: "Your tasks",
   teamTasks: "Team tasks",
   createTask: "Create task",
-  /** Every link into interview scheduling, always to the Scheduling tab. */
+  /** Every link into interview scheduling, always to the Schedule tab. */
   scheduleInterviews: "Schedule interviews",
-  /** The live interview page. The Interviews tab that lists rooms is "Rooms". */
+  /**
+   * Interviews has one word per thing: a Room is a place with its time slots and interviewers,
+   * the people asking are Interviewers, what they ask is Questions, and the student is the Applicant.
+   * Tab URL values stay rooms / schedule / kits.
+   */
   interviewRoom: "Interview room",
-  roomsTab: "Rooms",
+  myInterviewsTab: "My interviews",
+  scheduleTab: "Schedule",
+  questionsTab: "Questions",
   /** Every link into voting goes to the Voting room. Session rows say "Open session". */
   openVoting: "Open voting",
   openSession: "Open session",

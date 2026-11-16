@@ -41,3 +41,6 @@
 .oc-office-option { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; font-size: var(--oc-text-small); cursor: pointer; }
 /* At least 16px on phones so iOS does not zoom into the focused field. */
 @media (max-width: 767px) { .oc-kit-question textarea { font-size: var(--oc-size-16); } }
+/* Questions someone can read but not edit look like text, not like a broken form. */
+.oc-kit-builder fieldset[data-readonly="true"] :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) { border-color: transparent; background: transparent; box-shadow: none; opacity: 1; color: var(--foreground); -webkit-text-fill-color: var(--foreground); padding-inline: 0; resize: none; cursor: default; appearance: none; }
+.oc-kit-builder fieldset[data-readonly="true"] button { display: none; }
