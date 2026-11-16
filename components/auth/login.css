@@ -155,7 +155,7 @@
 .oc-auth-page .oc-login-password-label .oc-login-text-link { min-height: 44px; font-size: var(--oc-size-14); }
 .oc-auth-page .oc-login-field input { border-radius: var(--oc-glass-row-radius); box-shadow: var(--oc-glass-field-depth); }
 .oc-auth-page .oc-login-brand { position: relative; padding: clamp(24px, 3vw, 36px); border-radius: var(--oc-overlay-radius); border: 1px solid var(--oc-glass-navy-edge); background: var(--oc-glass-navy-material); box-shadow: var(--oc-glass-navy-depth); }
-.oc-auth-sample-chip { display: inline-flex; width: fit-content; padding: 2px 12px; border-radius: var(--oc-radius-full); border: 1px solid rgb(255 247 236 / 35%); color: var(--oc-glass-cream); font-size: var(--oc-size-12); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.oc-auth-sample-chip { display: inline-flex; width: fit-content; padding: 2px 12px; border-radius: var(--oc-radius-full); border: 1px solid rgb(255 247 236 / 35%); color: var(--oc-glass-cream); font-size: var(--oc-size-12); font-weight: 600; letter-spacing: var(--oc-tracking-caps); text-transform: uppercase; }
 .oc-login-brand-title { margin-top: 16px; font-family: var(--oc-font-display); font-size: clamp(1.375rem, 1.6vw + 0.5rem, 1.875rem); line-height: 1.25; color: var(--primary-foreground); }
 .oc-auth-page .oc-login-example { margin-top: 24px; max-width: none; }
 .oc-login-example-name { margin-top: 7px; font-size: clamp(1.0625rem, 2vw, 1.3125rem); font-weight: 600; line-height: 1.3; }

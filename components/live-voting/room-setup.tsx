@@ -122,7 +122,7 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  }
  async function loadLatest(){
   if(!editConflict)return;
-  if(editConflict.unsaved&&!window.confirm('Discard your unsaved changes and load the latest saved session?'))return;
+  if(editConflict.unsaved&&!await confirm({title:'Discard unsaved changes?',description:'This loads the latest saved session in their place.',confirmLabel:'Discard and load latest',cancelLabel:'Keep editing',tone:'danger'}))return;
   applySavedSession(editConflict.latest);setEditConflict(null);setError('');pending.current=null;updateSent.current=false;renewRequest();confirmedDiscard.current=[];setTouched(true);
   // The working copy now follows the latest saved session, so later autosaves supersede the other tab's copy instead of conflicting forever.
   await draft.rebase().catch(()=>{});

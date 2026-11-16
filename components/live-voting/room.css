@@ -13,17 +13,14 @@
 
 /* Applicant-to-applicant motion. Only the stage moves; header, progress, counts and controls stay put.
    The outgoing applicant keeps its real slide (outcome beside the name), the next one loads hidden and out of flow
-   beneath it, then both move left together: out slides and fades, in arrives from the right and eases to rest. */
+   beneath it, then both move left together: out slides and fades, in arrives from the right and eases to rest.
+   The slide itself is a spring in applicant-transition.tsx (interruptible); crossfades and reduced motion live here. */
 .vr-slide-stage{position:relative;overflow:hidden;min-height:300px;display:grid;align-items:start;isolation:isolate}
 .vr-slide-stage>div{grid-area:1/1;min-width:0;width:100%}.vr-slide-out{pointer-events:none}.vr-slide-stage .vr-slide-in{position:relative}
 .vr-slide-pending .vr-slide-in{position:absolute;top:0;left:0;right:0;visibility:hidden}
 /* Descendants too: anything that sets its own visibility must not show through before its turn. */
 .vr-slide-pending .vr-slide-in *{visibility:hidden!important}
-.vr-slide-sliding .vr-slide-out{animation:vr-out 520ms cubic-bezier(.22,1,.36,1) both}
-.vr-slide-sliding .vr-slide-in{animation:vr-in 520ms cubic-bezier(.22,1,.36,1) both}
 .vr-decision-saved{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px;margin:8px 0;color:var(--primary)}
-@keyframes vr-out{from{transform:translateX(0);opacity:1}to{transform:translateX(-100%);opacity:0}}
-@keyframes vr-in{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 /* Reduced motion: a short crossfade, no movement. */
 @keyframes vr-fade-out{from{opacity:1}to{opacity:0}}@keyframes vr-fade-in{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.vr-slide-sliding .vr-slide-out{animation:vr-fade-out 150ms ease-out both}.vr-slide-sliding .vr-slide-in{animation:vr-fade-in 150ms ease-out both}}

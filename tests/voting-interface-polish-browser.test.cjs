@@ -1,4 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const confirmNext=require('./helpers/confirm-next.cjs');
 const {chromium}=require('playwright'),AxeBuilder=require('@axe-core/playwright').default;
 const {fixture}=require('./helpers/voting-room-ui-fixture.cjs'),{sessionId}=require('./helpers/voting-room-harness.cjs');
 
@@ -35,7 +36,7 @@ test('phase-focused leader/member controls retain safe saves, secondary actions,
   await leader.setViewportSize({width:390,height:844});await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('button',{name:'End voting',exact:true}).waitFor();
   assert.ok(await leader.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await leader.getByText('More actions',{exact:true}).click();
   if(out)await leader.screenshot({path:path.join(out,'leader-phone.png'),fullPage:true});
-  await leader.reload();await leader.getByRole('button',{name:'Close voting',exact:true}).waitFor();leader.once('dialog',d=>d.accept());await leader.getByRole('button',{name:'Close voting',exact:true}).click();
+  await leader.reload();await leader.getByRole('button',{name:'Close voting',exact:true}).waitFor();confirmNext(leader);await leader.getByRole('button',{name:'Close voting',exact:true}).click();
   await member.getByRole('region',{name:'Closed ballot totals'}).waitFor();assert.equal(await member.getByRole('button',{name:'Hold',exact:true}).count(),0,'closed ballot controls are replaced, not merely disabled');
   await member.getByText('Vote recorded · Hold',{exact:true}).waitFor();assert.equal(await member.getByRole('region',{name:'Leader controls'}).count(),0);
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic discussion');f.failCommand();await leader.getByRole('button',{name:'Hold',exact:true}).click();

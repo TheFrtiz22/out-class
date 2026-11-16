@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
 const {sessionId,apps,leaderId}=require('./helpers/voting-room-harness.cjs');
 // Applicant-to-applicant motion: the confirmed outcome shows beside the outgoing applicant's name (~200 ms), then the
-// outgoing applicant moves left and fades while the next arrives from the right (~520 ms), with no blank frame.
+// outgoing applicant moves left and fades while the next arrives from the right (a ~440 ms spring), with no blank frame.
 // Synthetic applicants only. The fixture's applicants have no photos, so every slide uses the reserved placeholder.
 
 const roomUrl=(f,view,actor)=>`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=${view}&actor=${actor}`;
@@ -62,7 +62,7 @@ test('decision motion: outcome beside the name, then a same-direction slide on e
    assert.deepEqual(r.outcomes,['Passed'],`${name}: outcome shown beside the name`);
    assert.equal(r.blank,0,`${name}: no blank frame`);assert.equal(r.loading,0,`${name}: no loading placeholder between applicants`);
    assert.ok(r.slideStart-r.firstOutcome>=150,`${name}: outcome holds ~200 ms (${Math.round(r.slideStart-r.firstOutcome)} ms)`);
-   assert.ok(r.slideEnd-r.slideStart>=400&&r.slideEnd-r.slideStart<=900,`${name}: slide ~520 ms (${Math.round(r.slideEnd-r.slideStart)} ms)`);
+   assert.ok(r.slideEnd-r.slideStart>=400&&r.slideEnd-r.slideStart<=900,`${name}: slide ~440 ms spring (${Math.round(r.slideEnd-r.slideStart)} ms)`);
    assert.ok(r.outX.some(v=>v<-1)&&r.outX.every(v=>v<=0.5),`${name}: outgoing moves left only`);
    assert.ok(r.inX.some(v=>v>1)&&r.inX.every(v=>v>=-0.5),`${name}: incoming arrives from the right and settles without overshoot`);
   }

@@ -2,19 +2,19 @@
 @layer base {
   body { font-family: var(--oc-font-sans); font-size: var(--oc-text-body); line-height: var(--oc-leading-body); font-weight: var(--oc-weight-regular); }
   h1, h2, h3, h4, h5, h6 { font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
-  h1 { font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); }
-  h2 { font-size: var(--oc-text-section); }
-  h3 { font-size: var(--oc-text-card); }
-  h4, h5, h6 { font-size: var(--oc-text-small); }
+  h1 { font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); letter-spacing: var(--oc-tracking-title); }
+  h2 { font-size: var(--oc-text-section); letter-spacing: var(--oc-tracking-section); }
+  h3 { font-size: var(--oc-text-card); letter-spacing: var(--oc-tracking-card); }
+  h4, h5, h6 { font-size: var(--oc-text-small); line-height: var(--oc-leading-subheading); letter-spacing: var(--oc-tracking-small); }
   button, label, nav, th { font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); line-height: var(--oc-leading-compact); }
   button { font-weight: var(--oc-weight-bold); }
   table { font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); }
   input, textarea, select { font-family: inherit; font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); }
   small { font-size: var(--oc-text-caption); }
 }
-@utility oc-section-heading { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
-@utility oc-card-heading { font-family: var(--oc-font-display); font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
-@utility oc-modal-title { font-size: var(--oc-text-modal); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
+@utility oc-section-heading { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-section); }
+@utility oc-card-heading { font-family: var(--oc-font-display); font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-card); }
+@utility oc-modal-title { font-size: var(--oc-text-modal); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-section); }
 @utility oc-body { font-size: var(--oc-text-body); font-weight: var(--oc-weight-regular); line-height: var(--oc-leading-body); }
 @utility oc-body-small { font-size: var(--oc-text-small); font-weight: var(--oc-weight-regular); line-height: var(--oc-leading-body); }
 @utility oc-caption { font-size: var(--oc-text-caption); line-height: var(--oc-leading-compact); }

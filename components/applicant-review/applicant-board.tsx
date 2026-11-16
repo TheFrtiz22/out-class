@@ -1,6 +1,6 @@
 "use client"
 import { useMemo, useState } from "react"
-import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type Announcements, type CollisionDetection, type DragEndEvent, type DragStartEvent, type KeyboardCoordinateGetter } from "@dnd-kit/core"
+import { DndContext, DragOverlay, defaultDropAnimationSideEffects, type DropAnimation, KeyboardSensor, PointerSensor, closestCenter, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type Announcements, type CollisionDetection, type DragEndEvent, type DragStartEvent, type KeyboardCoordinateGetter } from "@dnd-kit/core"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { MoreHorizontal, ShieldCheck } from "@/components/icons"
 import { boardColumnFor, boardColumns, boardDrop, type BoardColumn, type BoardColumnId } from "@/lib/applicant-board"
 import { advanceLabel, canStage, stagedLabel, type StageRound } from "@/lib/staged-decisions"
 import { formatAverage } from "@/lib/interview-review-summary"
+import { springDuration, springEasing } from "@/lib/spring"
 import type { StagedDecisions } from "@/hooks/use-staged-decisions"
 
 type BoardApp = { id: string; status: string; roundId: string; studentId: string; student: { email?: string; studentProfile?: { firstName: string; lastName: string; academicYear?: string | null } | null }; roundScore?: { average: number | null; submitted: number; required: number } | null }
@@ -70,6 +71,10 @@ export function ApplicantBoard({ applicants, rounds, counts, staged, canDecide, 
     if (app && event.over) void drop(app, event.over.id as BoardColumnId)
   }
   const active = dragging ? appFor(dragging) : undefined
+  // Staging moves the card synchronously in onDragEnd, so the overlay springs to the card's new slot (or home again
+  // when nothing changed) instead of vanishing at release. Reduced motion drops straight in place.
+  const dropAnimation = useMemo<DropAnimation | null>(() => typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? null
+    : { duration: springDuration(0.26), easing: springEasing(), sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0" } } }) }, [])
 
   return <DndContext sensors={sensors} collisionDetection={collision} accessibility={{ announcements, screenReaderInstructions: { draggable: "Press Enter to open this applicant. Press Space to pick up the card, then use the left and right arrows to choose a column and Space to drop it." } }}
     onDragStart={(event: DragStartEvent) => setDragging(String(event.active.id))} onDragCancel={() => setDragging(null)} onDragEnd={onDragEnd}>
@@ -79,7 +84,7 @@ export function ApplicantBoard({ applicants, rounds, counts, staged, canDecide, 
         {(byColumn.get(column.id) ?? []).map(app => <Card key={app.id} app={app} rounds={rounds} staged={staged} name={name(app)} draggable={draggable(app)} canDecide={canDecide && !!staged} open={() => open(app)} />)}
       </Column>)}
     </div>
-    <DragOverlay dropAnimation={null}>{active ? <CardBody app={active} rounds={rounds} staged={staged} name={name(active)} overlay /> : null}</DragOverlay>
+    <DragOverlay dropAnimation={dropAnimation}>{active ? <CardBody app={active} rounds={rounds} staged={staged} name={name(active)} overlay /> : null}</DragOverlay>
   </DndContext>
 }
 

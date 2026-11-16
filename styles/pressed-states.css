@@ -75,6 +75,14 @@ button.oc-header-club:not(:disabled):not(:focus-visible):active,
   button.oc-header-club:not(:disabled):active { transform: scale(var(--oc-press-scale)); }
   .oc-pinned-flyer:not(:disabled):not([data-selected="true"]):active { transform: rotate(0deg) translateY(-1px) scale(1); }
 }
+/* Press timing: the settle lands in --oc-press-in (fast, ease-out) and the release springs back on the element's own
+   transition (--oc-spring-quick). The lists below mirror each element's transition-property order position for position. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-button]:not([data-variant="link"]):not(:disabled):not([aria-disabled="true"]):not([data-loading="true"]):active { transition-duration: var(--oc-glass-quick), var(--oc-glass-quick), var(--oc-press-in), var(--oc-press-in), var(--oc-glass-quick); transition-timing-function: var(--oc-glass-ease), var(--oc-glass-ease), ease-out, ease-out, ease; }
+  .oc-explore-card article:has(:is(h3 button, .oc-explore-open):active) { transition-duration: var(--oc-press-in), var(--oc-content-motion), var(--oc-press-in); transition-timing-function: ease-out, ease, ease-out; }
+  .oc-explore-suggested-list button:not(:disabled):active { transition-duration: var(--oc-content-motion), var(--oc-content-motion), var(--oc-press-in); transition-timing-function: ease, ease, ease-out; }
+  .oc-product-header .oc-floating-circle:not(:disabled):active { transition-duration: 180ms, 180ms, var(--oc-press-in), var(--oc-press-in); transition-timing-function: ease, ease, ease-out, ease-out; }
+}
 @media (prefers-reduced-motion: reduce) {
   [data-button]:active,
   :is(a, button):is([data-slot="card"], [data-slot="panel"]):active,

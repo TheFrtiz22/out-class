@@ -1,4 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
+const confirmNext=require('./helpers/confirm-next.cjs');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
 const {sessionId}=require('./helpers/voting-room-harness.cjs');
 const AxeBuilder=require('@axe-core/playwright').default;
@@ -27,7 +28,7 @@ test('target summary stays stationary through slide transitions, syncs to the au
   // The audience screen picks up the counts through the room's polling path, without reload.
   await audience.getByText('Passed 1',{exact:true}).waitFor({timeout:15000});
   // Target reached: Pass remains available and nobody is rejected automatically.
-  await leader.getByRole('button',{name:'Open voting',exact:true}).click();leader.once('dialog',d=>d.accept());await leader.getByRole('button',{name:'Close voting',exact:true}).click();
+  await leader.getByRole('button',{name:'Open voting',exact:true}).click();confirmNext(leader);await leader.getByRole('button',{name:'Close voting',exact:true}).click();
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Also strong');const pass=leader.getByRole('button',{name:'Pass',exact:true});assert.equal(await pass.isDisabled(),false);await pass.click();
   await leader.getByText('1 over target',{exact:true}).first().waitFor();assert.match(await summary.innerText(),/2 passed · Target 1/);
   assert.equal(f.h.state().sessions[0].passes[0].candidates.filter(c=>c.confirmedDecision==='NOT_PASS').length,0,'no automatic rejection');
