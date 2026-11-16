@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { hasPermission, hasWorkspace } from "@/lib/permissions"
 import { interviewListHref } from "@/lib/interview-entry"
+import { clubShortLabel } from "@/lib/navigation"
 import { ApplicationStateProvider } from "@/lib/application-state"
 import { RecruitmentFocus } from "@/components/recruitment-focus"
 import { WorkspaceLoading } from "@/components/workspace-loading"
@@ -31,6 +32,6 @@ export function ClubInterviewRoom({ clubId }: { clubId: string }) {
   if (!membership || !hasPermission(membership, "applications.review")) return <div className="space-y-4 p-[var(--oc-space-page)]"><PageHeader title="Interview room unavailable" description={user ? "You need a current club role with interview access to open this room." : "Sign in with your club account to open this interview room."} /><Link className="underline" href={membership ? back : "/home"}>{membership ? "Back to interviews" : "Return to OutClass"}</Link></div>
   return <ApplicationStateProvider initialData={{ applications: [], attendances: [] }} persistLocalState={false}>
     <RecruitmentFocus />
-    <InterviewWorkspaceView key={`${clubId}:${params.get("applicationId") || ""}:${params.get("roundId") || ""}:${params.get("bookingId") || ""}`} scoped onExit={() => router.push(back)} />
+    <InterviewWorkspaceView key={`${clubId}:${params.get("applicationId") || ""}:${params.get("roundId") || ""}:${params.get("bookingId") || ""}`} scoped badge={clubShortLabel(membership.club)} demo={demo.isDemoEnabled} onExit={() => router.push(back)} />
   </ApplicationStateProvider>
 }
