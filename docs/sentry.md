@@ -59,7 +59,9 @@ cannot publish maps. Without the token (local, CI) the config is unchanged and n
 
 Browser timings depend on `NEXT_PUBLIC_VERCEL_ENV` being `production`, which needs Vercel's
 "Automatically expose System Environment Variables" setting (on by default). Without it the browser
-reports errors only. Navigations and the page load before the SDK finishes loading are not timed.
+reports errors only. Web vitals (components/web-vitals-reporter.tsx) do not read the variable
+again: they use the environment the browser SDK was initialized with, so they follow the same
+production decision as performance sampling. Navigations and the page load before the SDK finishes loading are not timed.
 
 Error reports keep the trace and span IDs, so an error links to the timed request it happened in.
 Both error and performance reports keep a reduced trace header (IDs, sample rate, environment,

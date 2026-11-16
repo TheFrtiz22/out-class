@@ -109,7 +109,7 @@ export const userRelationDeletionPlan: Record<string, { model: string; onDelete:
   adminElevations: { model: "AdminElevation", onDelete: "Cascade", treatment: "retain", note: "Admin security audit trail." },
   resumeSummaries: { model: "ResumeSummary", onDelete: "Cascade", treatment: "delete", note: "Cached section summaries of the person's résumé PDFs." },
   termsAcceptances: { model: "TermsAcceptance", onDelete: "Cascade", treatment: "retain", note: "Clickwrap acceptance evidence is kept (owner decision): the User row stays as an anonymized tombstone, so the cascade never fires and the rows hold only versions, source and time." },
-  platformReports: { model: "PlatformReport", onDelete: "Restrict", treatment: "retain", note: "Moderation history, including this deletion request." },
+  platformReports: { model: "PlatformReport", onDelete: "Restrict", treatment: "retain", note: "Moderation history, including this deletion request. Feedback screenshots are deleted and their reference cleared." },
   schoolRequestReviews: { model: "SchoolRequest", onDelete: "Restrict", treatment: "retain", note: "Admin review history." },
   reviewObservations: { model: "ApplicantObservation", onDelete: "Restrict", treatment: "retain", note: "Club review notes this person wrote as a reviewer." },
   clubInvitations: { model: "ClubInvitation", onDelete: "Restrict", treatment: "retain", note: "Invitations this person sent for a club." },
