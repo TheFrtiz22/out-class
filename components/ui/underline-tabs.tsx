@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
  */
 export type UnderlineTab<T extends string> = { id: T; label: ReactNode; count?: number; href?: string; disabled?: boolean; ariaLabel?: string }
 
-export function UnderlineTabs<T extends string>({ label, items, value, onChange, onNavigate, className, id }: {
+export function UnderlineTabs<T extends string>({ label, items, value, onChange, onNavigate, className, id, panelId }: {
   label: string
   items: UnderlineTab<T>[]
   value: T | null | undefined
@@ -20,6 +20,8 @@ export function UnderlineTabs<T extends string>({ label, items, value, onChange,
   onNavigate?: (event: MouseEvent<HTMLAnchorElement>, href: string) => void
   className?: string
   id?: string
+  /** In-page tab panels: the panel element id for a tab. Each tab gets `aria-controls` and the id `${panelId}-tab`. */
+  panelId?: (value: T) => string
 }) {
   const list = useRef<HTMLDivElement>(null)
   const enabled = items.map((item, i) => item.disabled ? -1 : i).filter(i => i >= 0)
@@ -42,6 +44,7 @@ export function UnderlineTabs<T extends string>({ label, items, value, onChange,
         role: "tab" as const, "aria-selected": selected, "aria-label": item.ariaLabel, tabIndex: i === stop ? 0 : -1,
         className: "oc-underline-tab", "data-value": item.id, "data-empty": item.count === 0 || undefined,
         onKeyDown: (event: KeyboardEvent<HTMLElement>) => onKeyDown(event, i),
+        ...(panelId ? { id: `${panelId(item.id)}-tab`, "aria-controls": panelId(item.id) } : {}),
       }
       return item.href && !item.disabled
         ? <Link key={item.id} href={item.href} prefetch={false} {...common} aria-current={selected ? "page" : undefined}

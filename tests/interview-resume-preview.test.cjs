@@ -22,3 +22,10 @@ test('first page is prioritized without loading all pages; the scroll region sta
 test('overlay rerenders preserve PDF and scroll node; resize redraws without downloading or owning another worker',async()=>{
  const h=harness();h.render();await flush();await flush();h.host.scrollTop=630;const sheets=h.host.children;h.render();assert.equal(h.loads(),1);assert.equal(h.host.children,sheets);assert.equal(h.host.scrollTop,630);h.resize(410);await flush();assert.equal(h.draws(),2);assert.equal(h.host.children[0].firstElementChild.width,820);h.close();
 });
+test('interview room shows one résumé panel: summary first, this preview and the full viewer inside its Document tab',()=>{
+ const src=fs.readFileSync('components/interview-applicant-panel.tsx','utf8');
+ assert.equal((src.match(/<ResumeSummaryPanel /g)||[]).length,1);
+ assert.match(src,/request=\{summaryRequest\} document=\{<>[\s\S]*aria-label=\{`Open résumé for \$\{name\}`\}[\s\S]*<ResumePreview resource=\{resource\}[\s\S]*<\/>\} \/>/,'preview and the full-viewer button live in the Document tab');
+ assert.equal((src.match(/<ResumePreview /g)||[]).length,1);assert.doesNotMatch(src,/DialogTrigger/,'no second, always-visible résumé entry point');
+ assert.match(src,/kind: "interview" as const, \.\.\.scope, documentId/);
+});

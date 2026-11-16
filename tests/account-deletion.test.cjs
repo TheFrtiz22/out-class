@@ -226,7 +226,7 @@ function procedureHarness({ apps = [], members = [], authFails = 0, txFails = fa
     if (model === 'clubMember' && name === 'findMany') return members;
     return { count: 1 };
   };
-  const models = ['studentProfile', 'eventRsvp', 'savedCampusEvent', 'corkboardClub', 'userTutorial', 'userAvailability', 'studentInterestProfile', 'editorDraft', 'calendarFeedToken', 'webPushSubscription', 'recipientGroupEntry', 'userNotification', 'notificationEmailDelivery', 'userNotificationPreference', 'clubConversation', 'taskAssignment', 'clubTask', 'clubClaim', 'adminElevationChallenge', 'platformAdmin', 'rosterImportRow', 'application', 'applicationAnswer', 'clubMember', 'platformReport'];
+  const models = ['studentProfile', 'eventRsvp', 'savedCampusEvent', 'corkboardClub', 'userTutorial', 'userAvailability', 'studentInterestProfile', 'resumeSummary', 'editorDraft', 'calendarFeedToken', 'webPushSubscription', 'recipientGroupEntry', 'userNotification', 'notificationEmailDelivery', 'userNotificationPreference', 'clubConversation', 'taskAssignment', 'clubTask', 'clubClaim', 'adminElevationChallenge', 'platformAdmin', 'rosterImportRow', 'application', 'applicationAnswer', 'clubMember', 'platformReport'];
   const auditModel = { create: async ({ data }) => { audit.push(data); }, findMany: async ({ where }) => audit.filter(r => r.targetId === where.targetId && r.action === where.action) };
   const db = {
     $transaction: async fn => {
