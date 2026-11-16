@@ -40,7 +40,7 @@ function harness(faults = {}) {
     signInWithPassword:async()=>{attempts++;return passwordOk?{data:{user:{id:identity},session:{access_token:'fresh-access',refresh_token:'fresh-refresh'}}}:{error:Object.assign(Error('bad password'),{status:providerStatus,code:'invalid_credentials'})};},
     setSession:async()=>({error:null}),
     getUser:async()=>({data:{user:{id:verifiedActor}}}),getClaims:async()=>({data:{claims:{session_id:'fresh-session'}}}),
-    mfa:{listFactors:async()=>({data:{totp:[{id:'factor',status:'verified'}]}}),challenge:async()=>({data:{id:'provider-challenge'}}),verify:async()=>mfaOk?{data:{access_token:'verified-access',refresh_token:'verified-refresh'}}:{error:Object.assign(Error('bad MFA'),{status:providerStatus,code:'mfa_verification_failed'})},getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal2'}})},
+    mfa:{listFactors:async()=>({data:{totp:[{id:'factor',status:'verified'}]}}),challenge:async()=>({data:{id:'provider-challenge'}}),verify:async()=>mfaOk?{data:{access_token:'verified-access',refresh_token:'verified-refresh'}}:{error:Object.assign(Error('bad MFA'),{status:providerStatus,code:'mfa_verification_failed'})},challengeAndVerify:async()=>mfaOk?{data:{access_token:'verified-access',refresh_token:'verified-refresh'}}:{error:Object.assign(Error('bad MFA'),{status:providerStatus,code:'mfa_verification_failed'})},getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal2'}})},
   }};
   const load=loader({
     'node:crypto':{...require('node:crypto'),randomUUID:()=>{if(faults.uuid)throw Error('private UUID failure');return require('node:crypto').randomUUID();}},

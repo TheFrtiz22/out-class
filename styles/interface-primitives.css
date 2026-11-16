@@ -137,7 +137,7 @@ fieldset { min-inline-size: 0; }
 @layer components {
   [data-button] {
     position: relative; isolation: isolate; border: 1px solid transparent; border-radius: var(--oc-radius-full); outline-offset: 2px;
-    transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease), box-shadow var(--oc-glass-quick) var(--oc-glass-ease), transform var(--oc-glass-quick) var(--oc-glass-ease), opacity var(--oc-glass-quick) ease;
+    transition: background-color var(--oc-glass-quick) var(--oc-glass-ease), border-color var(--oc-glass-quick) var(--oc-glass-ease), box-shadow var(--oc-glass-quick) var(--oc-glass-ease), transform var(--oc-spring-quick) var(--oc-spring), opacity var(--oc-glass-quick) ease;
   }
   [data-button]::after { content: ""; position: absolute; inset-block: min(0px, calc((100% - 2.75rem) / 2)); inset-inline: min(0px, calc((100% - 2.75rem) / 2)); }
   [data-button]:is([data-variant="default"], [data-variant="glass-primary"]) {
