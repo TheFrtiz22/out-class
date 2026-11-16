@@ -1,4 +1,5 @@
 const {refused}=require('./helpers/action-result.cjs');
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -227,7 +228,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const identifier='legacy'+suffix,email=identifier+'@virginia.edu',password='Legacy-local-only!123',nextPassword='Recovered-local-only!123';
   const created=await provider.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{email_verification_skipped:true}});assert.equal(created.error,null);
   assert.equal(created.data.user.confirmation_sent_at,undefined);
-  await db.user.create({data:{id:created.data.user.id,email}});
+  await db.user.create({data:{id:created.data.user.id,email}});await satisfyAvailabilityRequirement(db,created.data.user.id);
   const legacy=new Actor(config);await legacy.signIn(email,password);await legacy.profile('Legacy Student',2028);
   const invitation=await call(president,'club-onboarding','createClubIdentityInvitation',{clubId,identifierTypeId:'school-uva-computing-id',identifier,requestedRole:'MEMBER',invitedName:'Legacy Student',invitedYear:'2028'});
   await assert.rejects(call(legacy,'club-onboarding','getOrganizationInvitations',true));

@@ -1,4 +1,5 @@
 const { test } = require('node:test');
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const assert = require('node:assert/strict');
 const { PrismaClient } = require('@prisma/client');
 const { createClient } = require('@supabase/supabase-js');
@@ -15,7 +16,7 @@ test('real account HTTP and RSC keep internal templates behind recruiting permis
     const email = `projection.${label}.${randomUUID()}@virginia.edu`, password = 'Disposable-only!' + randomUUID();
     const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
     assert.ok(!error, 'Local fixture account creation');
-    await db.user.create({ data: { id: data.user.id, email, studentProfile: { create: { firstName: 'Synthetic', lastName: label, computingId: email.split('@')[0], major: 'Economics', gradYear: 2028 } } } });
+    await db.user.create({ data: { id: data.user.id, email, studentProfile: { create: { firstName: 'Synthetic', lastName: label, computingId: email.split('@')[0], major: 'Economics', gradYear: 2028 } } } });await satisfyAvailabilityRequirement(db,data.user.id);
     const actor = new Actor(config); await actor.signIn(email, password); people.push({ id: data.user.id, actor });
   }
   const schools = await Promise.all(['a', 'b'].map(label => db.school.create({ data: { key: 'projection-' + randomUUID(), name: 'Synthetic campus ' + label } })));

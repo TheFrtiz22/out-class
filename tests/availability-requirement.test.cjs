@@ -259,3 +259,8 @@ test('the planner sits beside New meeting, behind meetings.manage, and reads thr
   assert.match(actions, /authorizeClubTransaction\(tx, clubId, userId, \["meetings\.manage"\], \{ readOnly: true \}\)/)
   assert.doesNotMatch(actions.slice(actions.indexOf('async function plannerMembers'), actions.indexOf('export async function completeAvailabilityRequirement')), /email|phone/)
 })
+
+test('browser fixtures pass the step with the same declaration the app records', () => {
+  assert.equal(require('./helpers/availability-requirement-fixture.cjs').NO_REGULAR_AVAILABILITY_ACTION, req.NO_REGULAR_AVAILABILITY_ACTION)
+  assert.match(read('tests/helpers/onboarding-e2e.cjs'), /'completeAvailabilityRequirement',\[\{noRegularTime:true\}\]/)
+})

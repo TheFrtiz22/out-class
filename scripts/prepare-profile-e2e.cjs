@@ -4,6 +4,7 @@ const fs = require("node:fs"),
   os = require("node:os"),
   { spawnSync } = require("node:child_process"),
   { randomUUID } = require("node:crypto");
+const { satisfyAvailabilityRequirement } = require('../tests/helpers/availability-requirement-fixture.cjs')
 const { createClient } = require("@supabase/supabase-js"),
   { PrismaClient } = require("@prisma/client");
 const root = path.join(os.tmpdir(), "outclass-profile-p2-e2e"),
@@ -107,7 +108,7 @@ function run(binary, args, env = process.env) {
     });
     if (error) throw error;
     const id = data.user.id;
-    await db.user.create({ data: { id, email } });
+    await db.user.create({ data: { id, email } });await satisfyAvailabilityRequirement(db,id);
     await db.studentProfile.create({
       data: {
         userId: id,

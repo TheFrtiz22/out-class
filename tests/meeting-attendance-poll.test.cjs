@@ -17,7 +17,7 @@ function harness() {
     useEffect(fn, deps) { const i = index++; if (!slots[i] || deps.some((v, j) => v !== slots[i][j])) { slots[i] = deps; effects.push([i, fn]) } },
   }
   const api = { meetingAttendance: () => new Promise((resolve, reject) => reads.push({ resolve: count => resolve(Array.from({ length: count }, (_, id) => ({ id }))), reject })) }
-  const mocks = { react, '@/lib/workspace-api': api, '@/hooks/use-revalidate': { useRevalidate(fn, options) { revalidate = { fn, options } } } }
+  const mocks = { react, 'next/dynamic': { default: () => () => null }, '@/lib/workspace-api': api, '@/hooks/use-revalidate': { useRevalidate(fn, options) { revalidate = { fn, options } } } }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/meeting-workspace.tsx', 'utf8') + '\nexports.MeetingAttendanceState = MeetingAttendanceState;', { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   new Function('require', 'module', 'exports', 'document', 'setInterval', 'clearInterval', code)(

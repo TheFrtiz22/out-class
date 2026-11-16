@@ -1,4 +1,5 @@
 const {refused}=require('./helpers/action-result.cjs');
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const { test } = require('node:test'), assert = require('node:assert/strict');
 const { PrismaClient } = require('@prisma/client');
 const { createClient } = require('@supabase/supabase-js');
@@ -16,7 +17,7 @@ test('announcements over real Next HTTP, verified local Auth and PostgreSQL; pro
     const email = `${role}-${suffix}@virginia.edu`, password = 'Local-only!' + randomUUID();
     const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
     if (error) throw error; assert.ok(data.user.email_confirmed_at);
-    users[role] = await db.user.upsert({ where: { id: data.user.id }, create: { id: data.user.id, email }, update: {} });
+    users[role] = await db.user.upsert({ where: { id: data.user.id }, create: { id: data.user.id, email }, update: {} });await satisfyAvailabilityRequirement(db,data.user.id);
     const actor = new Actor(config); await actor.signIn(email, password); actors[role] = actor;
   }
   const club = await db.club.create({ data: { slug: 'announcement-' + suffix, name: 'Announcement Fixture', tagline: '', description: '', category: 'Academic', color: '#142d4e' } });
