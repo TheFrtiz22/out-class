@@ -178,6 +178,7 @@ Resources: the caller's own `UserAvailability` (requirement gate and completion)
 |---|---|---|---|---|
 | Student, no saved time | ask (server, layout) | own row only; empty week needs explicit choice | n/a | `availability-requirement.test` |
 | Alumni, active platform admin, disabled account | pass (exempt) | n/a | n/a | same |
+| Signed in, no student profile yet | pass (pages send it to the signup wizard first; asked once the profile exists) | own row only | n/a | same, `onboarding-e2e` scenario A |
 | Demo Mode, support (view-as) session | pass | refused in a support session | n/a | same |
 | Member with `meetings.manage`, operational club | n/a | n/a | allow (active, enabled members of that club only) | same |
 | Member without `meetings.manage`, alumni member, other club's leader | n/a | n/a | deny "Club access denied" | same |

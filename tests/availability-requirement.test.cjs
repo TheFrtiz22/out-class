@@ -45,7 +45,7 @@ test('an empty save does not meet the requirement; any saved time or an explicit
   assert.equal(req.availabilityRequirementMet({ schedule: null, declaredNone: false }), false)
 })
 
-const account = patch => ({ disabled: false, platformAdmin: false, alumni: false, schedule: null, declaredNone: false, ...patch })
+const account = patch => ({ disabled: false, platformAdmin: false, alumni: false, onboarded: true, schedule: null, declaredNone: false, ...patch })
 const decide = (patch, opts = {}) => req.availabilityGateDecision({ demo: false, impersonating: false, userId: 'u1', load: async () => account(patch), ...opts })
 
 test('gate asks a student with no saved availability, and passes once a time is saved', async () => {
@@ -59,6 +59,7 @@ test('gate exemptions: alumni, platform admins, disabled, demo, support sessions
   assert.equal(await decide({ alumni: true }), 'pass', 'alumni')
   assert.equal(await decide({ platformAdmin: true }), 'pass')
   assert.equal(await decide({ disabled: true }), 'pass')
+  assert.equal(await decide({ onboarded: false }), 'pass', 'no student profile yet: the signup wizard comes first')
   assert.equal(await decide({}, { demo: true }), 'pass')
   assert.equal(await decide({}, { impersonating: true }), 'pass')
   assert.equal(await decide({}, { userId: null }), 'pass')
@@ -89,8 +90,12 @@ test('requirement loader: exemptions and the declaration read only when the sche
   const db = row => ({ user: { findUnique: async () => row }, auditLog: { findFirst: async () => { auditReads++; return { id: 'a1' } } } })
   const filled = await loadAvailabilityRequirement(db({ disabledAt: null, platformAdmin: null, studentProfile: { graduatedAt: null }, availability: { schedule: weekly(0, [[540, 600]]), revision: 3 } }), 'u1')
   assert.equal(auditReads, 0); assert.equal(filled.revision, 3); assert.equal(filled.declaredNone, false)
-  const empty = await loadAvailabilityRequirement(db({ disabledAt: null, platformAdmin: { active: true }, studentProfile: null, availability: null }), 'u1')
-  assert.equal(auditReads, 1); assert.equal(empty.declaredNone, true); assert.equal(empty.platformAdmin, true); assert.equal(empty.revision, 0)
+  const empty = await loadAvailabilityRequirement(db({ disabledAt: null, platformAdmin: null, studentProfile: { graduatedAt: null }, availability: null }), 'u1')
+  assert.equal(auditReads, 1); assert.equal(empty.declaredNone, true); assert.equal(empty.onboarded, true); assert.equal(empty.revision, 0)
+  const admin = await loadAvailabilityRequirement(db({ disabledAt: null, platformAdmin: { active: true }, studentProfile: { graduatedAt: null }, availability: null }), 'u1')
+  assert.equal(auditReads, 1, 'an exempt account skips the declaration read'); assert.equal(admin.platformAdmin, true)
+  const unonboarded = await loadAvailabilityRequirement(db({ disabledAt: null, platformAdmin: null, studentProfile: null, availability: null }), 'u1')
+  assert.equal(auditReads, 1, 'no profile yet skips the declaration read'); assert.equal(unonboarded.onboarded, false)
   assert.equal(await loadAvailabilityRequirement(db(null), 'u1'), null)
   const now = new Date('2026-11-16T12:00:00Z')
   const graduated = await loadAvailabilityRequirement(db({ disabledAt: null, platformAdmin: null, studentProfile: { graduatedAt: new Date('2026-05-20T12:00:00Z') }, availability: null }), 'u1', now)

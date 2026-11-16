@@ -13,7 +13,8 @@ import type { AvailabilitySchedule } from "@/lib/availability"
  * shape is fixed; it stays valid until the account is deleted.
  *
  * Exempt: alumni (read-only accounts), active platform administrators, Demo Mode and support
- * (view-as) sessions. Pure and browser-safe; the database read is utils/availability-requirement.ts.
+ * (view-as) sessions. An account without a student profile has not finished the signup wizard yet:
+ * the gate lets its pages send it to onboarding first, and asks once the profile exists. Pure and browser-safe; the database read is utils/availability-requirement.ts.
  */
 export const NO_REGULAR_AVAILABILITY_ACTION = "availability.requirement.declare_none"
 export const AVAILABILITY_REQUIRED_MESSAGE = "Mark at least one time you’re usually free, or confirm that you have no regular free time."
@@ -29,6 +30,8 @@ export type AvailabilityRequirementAccount = {
   platformAdmin: boolean
   /** Alumni accounts are read-only (lib/graduation.ts isAlumniProfile, decided by the loader). */
   alumni: boolean
+  /** A student profile exists (the signup wizard finished). Before that, onboarding comes first. */
+  onboarded: boolean
   schedule: AvailabilitySchedule | null
   declaredNone: boolean
   /** The saved schedule's revision (0 before the first save), for the editor's conflict check. */
@@ -55,7 +58,7 @@ export async function availabilityGateDecision(deps: {
   if (deps.demo || deps.impersonating || !deps.userId) return "pass"
   try {
     const account = await deps.load(deps.userId)
-    if (!account || availabilityRequirementExempt(account)) return "pass"
+    if (!account || availabilityRequirementExempt(account) || !account.onboarded) return "pass"
     return availabilityRequirementMet(account) ? "pass" : "ask"
   } catch (error) {
     // A database fault must not take the product down; the next request asks again.
