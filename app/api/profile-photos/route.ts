@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         if (d.roundId || d.sessionId) return new NextResponse("Forbidden", { status: 403, headers });
         permitted = await prisma.$transaction(tx => authorizeCrmPhoto(tx, user.id, d.clubId!, d.applicationId!, d.path));
       } else if (d.mode === "evaluation") {
-        const result = await getEvaluations(d.clubId, d.applicationId);
+        const result = unwrapAction(await getEvaluations(d.clubId, d.applicationId));
         permitted = result.evaluations.some(e => e.interviewer.user.studentProfile?.headshotUrl === expected);
       } else if (d.roundId) {
         // A refusal (e.g. ACCESS_REVOKED) throws here and falls to the 403 below.

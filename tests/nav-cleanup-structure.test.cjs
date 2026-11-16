@@ -46,7 +46,7 @@ test("Decide is a stepper, phone Recruiting tabs stay segmented, Interviews uses
   assert.match(decide, /<div className="oc-decide-header">\s*<Stepper[\s\S]*?<RoundSelect /, "the round dropdown shares the header row with the stepper")
   assert.match(decide, /<StepperNav /)
   assert.match(fs.readFileSync("components/club-workspace.tsx", "utf8"), /<SectionTabs label="Recruiting sections"/)
-  assert.match(fs.readFileSync("components/interview-management-tabs.tsx", "utf8"), /<TabsList variant="underline" aria-label="Interview management">/, "Interviews tabs are underlined page tabs")
+  assert.match(fs.readFileSync("components/interview-management-tabs.tsx", "utf8"), /<TabsList variant="underline" aria-label="Interviews">/, "Interviews tabs are underlined page tabs")
 })
 
 test("Settings is configuration only and Members has one Add members menu", () => {

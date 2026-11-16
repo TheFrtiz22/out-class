@@ -114,3 +114,16 @@ test('every authorizeInterview denial message is recognised as an expected acces
  assert.ok(messages.length>=3&&start>0);for(const m of messages)assert.ok(isInterviewAccessDenial(new Error(m)),m);
  assert.equal(isInterviewAccessDenial(new Error('Database offline')),false);
 });
+
+test('My interviews lists each interview once, hides past unbooked slots, and words past work as notes',()=>{
+ const api=harness().load('lib/interview-entry.ts'),now=Date.parse('2026-10-20T17:00:00Z'),zone='America/New_York';
+ const row=(rowId,start,extra={})=>({id:rowId,slotId:rowId,roomId:'room',clubId:id(1),roundId:id(3),roundName:'Round 2',roomName:'Room A',location:'Room A',timezone:zone,startTime:start,endTime:new Date(Date.parse(start)+20*60000).toISOString(),applicationId:id(2),bookingId:'b-'+rowId,candidate:'Ada',interviewers:[],completed:false,started:false,cancelled:false,canOpen:true,...extra});
+ const soon=row('soon','2026-10-20T17:10:00Z'),unfinished=row('unfinished','2026-10-19T17:00:00Z',{started:true}),reviewed=row('reviewed','2026-10-18T17:00:00Z',{completed:true}),emptyPast=row('empty-past','2026-10-19T18:00:00Z',{bookingId:null,applicationId:null,candidate:null}),emptyFuture=row('empty-future','2026-10-21T18:00:00Z',{bookingId:null,applicationId:null,candidate:null}),cancelled=row('cancelled','2026-10-21T19:00:00Z',{cancelled:true});
+ const sections=api.myInterviewSections([reviewed,emptyPast,cancelled,emptyFuture,unfinished,soon],now),ids=list=>list.map(entry=>entry.id);
+ assert.deepEqual(ids(sections.upNext),['soon','empty-future']);assert.deepEqual(ids(sections.needsNotes),['unfinished']);assert.deepEqual(ids(sections.done),['cancelled','reviewed']);
+ const shown=[...sections.upNext,...sections.needsNotes,...sections.done];assert.equal(new Set(ids(shown)).size,shown.length,'no interview appears in two sections');assert.equal(ids(shown).includes('empty-past'),false);
+ assert.equal(api.interviewEntryLabel(soon,now),'Enter interview');assert.equal(api.interviewEntryLabel(unfinished,now),'Finish notes');assert.equal(api.interviewEntryLabel({...unfinished,started:false},now),'Finish notes');assert.equal(api.interviewEntryLabel(reviewed,now),'View review');assert.equal(api.interviewEntryLabel({...soon,started:true},now),'Resume interview');
+ assert.equal(api.interviewTimingShort(soon,now),'1:10–1:30 PM · In 10 minutes');assert.equal(api.interviewTimingShort(unfinished,now),'1:00–1:20 PM · Ended');assert.equal(api.interviewTimingShort({...soon,startTime:'2026-10-20T16:55:00Z'},now),'12:55–1:30 PM · Now');assert.equal(api.interviewTimeRange(reviewed),'1:00–1:20 PM');
+ // The round filter is My interviews' own; Schedule's roundId never changes it, and it survives a trip into the room.
+ assert.equal(new URL(api.clubInterviewHref(id(1),'interviewTab=rooms&interviewRound=x&setting=members'),'https://out-class.net').searchParams.get('interviewRound'),'x');
+});

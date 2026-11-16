@@ -87,7 +87,7 @@ test('mock recruiting cycle: 50 synthetic applicants from application to roster 
   t.after(() => { if (previousBase === undefined) delete global.outclassPrismaBase; else global.outclassPrismaBase = previousBase; });
   const load = loader(mocks);
   ({ hasPermission } = load('lib/permissions.ts'));
-  const applications = unwrapActions(load('actions/applications.ts')), evaluations = load('actions/evaluations.ts'), crm = unwrapActions(load('actions/crm.ts'));
+  const applications = unwrapActions(load('actions/applications.ts')), evaluations = unwrapActions(load('actions/evaluations.ts')), crm = unwrapActions(load('actions/crm.ts'));
   const display = load('actions/applicant-intelligence.ts'), rooms = unwrapActions(load('actions/interview-rooms.ts'));
   const proposals = unwrapActions(load('actions/panel-proposals.ts')), publication = load('actions/panel-publication.ts'), booking = load('actions/interview-booking-publication.ts');
   const voting = { ...load('actions/voting-room.ts'), ...load('actions/voting-room-setup.ts'), ...load('actions/voting-room-finalization.ts') };

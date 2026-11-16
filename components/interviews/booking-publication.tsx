@@ -11,20 +11,24 @@ import { Button } from "@/components/ui/button"
 import { NativeSelect } from "@/components/ui/native-select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
-export function InterviewBookingPublication({ clubId, roundId, settings, cycles, rooms, onChanged, onPublished, onFixSlot, onTimes }: { clubId: string; roundId: string; settings: BookingSettings; cycles: { id: string; name: string }[]; rooms: InterviewRoom[]; onChanged: () => void; onPublished?: () => void; onFixSlot?: (id: string) => void; onTimes?: () => void }) {
+export function InterviewBookingPublication({ clubId, roundId, settings, cycles, rooms, onChanged, onPublished, onFixSlot, onTimes, settingsOpen, onSettingsOpenChange }: { clubId: string; roundId: string; settings: BookingSettings; cycles: { id: string; name: string }[]; rooms: InterviewRoom[]; onChanged: () => void; onPublished?: () => void; onFixSlot?: (id: string) => void; onTimes?: () => void; settingsOpen?: boolean; onSettingsOpenChange?: (open: boolean) => void }) {
   const [coverage, setCoverage] = useState<Awaited<ReturnType<typeof getInterviewBookingPublication>> | null>(null), [error, setError] = useState(""), [busy, setBusy] = useState(false), [retry, setRetry] = useState(0), [notice, setNotice] = useState("")
   const [cycleId, setCycle] = useState(settings.bookingCycleId || ""), [cancel, setCancel] = useState(settings.bookingAllowCancellation), [reschedule, setReschedule] = useState(settings.bookingAllowRescheduling), [pause, setPause] = useState(false)
   const saving = useRef(false)
   useEffect(() => { let current = true; setCoverage(null); getInterviewBookingPublication({ clubId, roundId }).then(value => { if (current) { setCoverage(value); setError("") } }).catch(() => { if (current) setError("Could not check booking readiness. Retry before publishing.") }); return () => { current = false } }, [clubId, roundId, retry])
   useEffect(() => { const refresh = () => setRetry(v => v + 1); for (const name of ["outclass:panels-changed", "outclass:staffing-changed", "outclass:availability-changed"]) window.addEventListener(name, refresh); return () => { for (const name of ["outclass:panels-changed", "outclass:staffing-changed", "outclass:availability-changed"]) window.removeEventListener(name, refresh) } }, [])
-  async function save(action: "PUBLISH" | "PAUSE" | "POLICY") {
+  async function save(action: "PUBLISH" | "PAUSE" | "POLICY", policy = { cancel, reschedule }) {
     if (saving.current) return
     saving.current = true; setBusy(true); setError(""); setNotice("")
     try {
-      await setInterviewBookingPublication({ clubId, roundId, revision: settings.bookingRevision, action, cycleId: cycleId || null, allowCancellation: cancel, allowRescheduling: reschedule })
+      await setInterviewBookingPublication({ clubId, roundId, revision: settings.bookingRevision, action, cycleId: cycleId || null, allowCancellation: policy.cancel, allowRescheduling: policy.reschedule })
       setNotice(action === "PUBLISH" ? "Schedule published." : action === "PAUSE" ? "Booking paused. Existing interviews are kept." : "Booking settings saved.")
       setPause(false); onChanged(); if (action === "PUBLISH") onPublished?.()
-    } catch (e) { setError(userMessage(e, "Couldn't save booking settings. Your choices are still here. Try again.")) }
+    } catch (e) {
+      // A setting that did not save goes back to what is stored, so the boxes never show something untrue.
+      if (action === "POLICY") { setCancel(settings.bookingAllowCancellation); setReschedule(settings.bookingAllowRescheduling) }
+      setError(userMessage(e, action === "POLICY" ? "Couldn't save that setting. Try again." : "Couldn't save booking settings. Your choices are still here. Try again."))
+    }
     finally { saving.current = false; setBusy(false) }
   }
   const unoffered = coverage?.slots.filter(s => s.unoffered).length ?? 0, offered = coverage?.slots.filter(s => !s.unoffered) ?? []
@@ -32,15 +36,14 @@ export function InterviewBookingPublication({ clubId, roundId, settings, cycles,
   return <section aria-label="Publish schedule" className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-base font-medium">Publish schedule</h3><span className="text-sm text-muted-foreground">{bookingState(settings, rooms)}</span></header>
     {!coverage && !error && <LoadingState label="Checking interviewer coverage…" layout="inline" rows={3} />}
-    {coverage && <p role="status" className="text-sm">{offered.length - blocked.length} {offered.length - blocked.length === 1 ? "slot" : "slots"} ready{blocked.length ? ` · ${blocked.length} need attention` : ""}</p>}
-    {!!unoffered && <p className="text-sm text-muted-foreground">{unoffered} {unoffered === 1 ? "time has" : "times have"} no interviewers and won&apos;t be offered.</p>}
+    {coverage && <p role="status" className="text-sm">{offered.length - blocked.length} {offered.length - blocked.length === 1 ? "time slot" : "time slots"} ready{blocked.length ? ` · ${blocked.length} need attention` : ""}</p>}
+    {!!unoffered && <p className="text-sm text-muted-foreground">{unoffered} {unoffered === 1 ? "time slot has" : "time slots have"} no interviewers and won&apos;t be offered.</p>}
     {!!blocked.length && <section><h4 className="text-sm font-medium">Resolve booking issues ({blocked.length})</h4><ul className="mt-2 divide-y text-sm">{blocked.map(row => { const room = rooms.find(r => r.slots.some(s => s.id === row.slotId)), slot = room?.slots.find(s => s.id === row.slotId); return <li key={row.slotId} className="py-2"><Button type="button" variant="link" className="h-auto min-h-11 whitespace-normal p-0 text-left font-medium" onClick={() => onFixSlot?.(row.slotId)}>{room?.name || "Interview"} · {slot ? schedulingDateTime(slot.startTime) : "Time"}</Button><p className="text-muted-foreground">{row.reasons.join(" ")}</p></li> })}</ul></section>}
-    {coverage && !coverage.slots.length && <div className="space-y-2 text-sm"><p>No upcoming interview times.</p>{onTimes && <Button variant="outline" onClick={onTimes}>Set interview times</Button>}</div>}
+    {coverage && !coverage.slots.length && <div className="space-y-2 text-sm"><p>No upcoming time slots.</p>{onTimes && <Button variant="outline" onClick={onTimes}>Set interview times</Button>}</div>}
     <label className="ir-field max-w-sm">Recruiting cycle<NativeSelect aria-label="Recruiting cycle" disabled={busy} value={cycleId} onChange={e => setCycle(e.target.value)}><option value="">Applications without a cycle</option>{cycles.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</NativeSelect></label>
     <Button disabled={busy || !coverage || !offered.length || !!blocked.length} onClick={() => void save("PUBLISH")}>{busy ? "Saving…" : settings.bookingPublishedAt && settings.bookingPaused ? "Resume booking" : "Publish schedule"}</Button>
-    <ActionWorkflow title="Booking settings" description="Choose whether applicants may cancel or reschedule before their interview starts." trigger="Booking settings"><div className="space-y-3" data-saving={busy} data-unsaved={cancel !== settings.bookingAllowCancellation || reschedule !== settings.bookingAllowRescheduling}>
-      <fieldset disabled={busy} className="flex flex-wrap gap-4 text-sm"><legend className="mb-2 text-muted-foreground">Applicant changes before the interview starts</legend><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={cancel} onChange={e => setCancel(e.target.checked)}/>Allow cancellation</label><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={reschedule} onChange={e => setReschedule(e.target.checked)}/>Allow rescheduling</label></fieldset>
-      <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={busy} onClick={() => void save("POLICY")}>Save settings</Button><Button size="sm" variant="ghost" disabled={busy} onClick={() => setRetry(v => v + 1)}>Recheck readiness</Button></div>
+    <ActionWorkflow title="Booking settings" description="What applicants may do before their interview starts. Changes save as you make them." trigger="Booking settings" open={settingsOpen} onOpenChange={onSettingsOpenChange}><div className="space-y-3" data-saving={busy}>
+      <fieldset disabled={busy} className="flex flex-wrap gap-4 text-sm"><legend className="sr-only">Applicant changes before the interview starts</legend><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={cancel} onChange={e => { setCancel(e.target.checked); void save("POLICY", { cancel: e.target.checked, reschedule }) }}/>Allow cancellation</label><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={reschedule} onChange={e => { setReschedule(e.target.checked); void save("POLICY", { cancel, reschedule: e.target.checked }) }}/>Allow rescheduling</label></fieldset>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{notice && <p role="status" className="text-sm">{notice}</p>}
     </div></ActionWorkflow>
     {settings.bookingPublishedAt && !settings.bookingPaused && <Button variant="outline" disabled={busy} onClick={() => setPause(true)}>Pause booking</Button>}

@@ -82,5 +82,5 @@ test('demo Remove time mirrors the live rules without server calls; Manage room 
  assert.equal(h.calls(),0)
  const manager=fs.readFileSync('components/interviews/room-manager.tsx','utf8')
  assert.match(manager,/title: "Remove this time\?", description: "It hasn't been booked\."/)
- assert.match(manager,/s\.booked===0&&!slotHasInterviewers\(s,room\)&&<Button/)
+ assert.match(manager,/s\.booked === 0 && !slotHasInterviewers\(s, room\) && <Button/)
 })

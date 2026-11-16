@@ -5,6 +5,7 @@ import { requireClubPermission } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { hasPermission, activeMemberWhere } from "@/lib/permissions"
 import { profileName } from "@/lib/recusal-presentation"
+import { ActionError, actionResult } from "@/lib/action-result"
 
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid() }).strict()
 const setSchema = scope.extend({ memberId: z.string().uuid().optional(), recused: z.boolean() }).strict()
@@ -14,15 +15,22 @@ const setSchema = scope.extend({ memberId: z.string().uuid().optional(), recused
  * - recruitment leads (recruitment.manage) can recuse anyone and undo any recusal.
  * Members cannot undo their own recusal, so it can't be toggled to game a vote. */
 export async function getApplicantRecusals(input: unknown) {
-  const d = scope.parse(input)
+  return actionResult(() => getApplicantRecusalsCommand(input), "getApplicantRecusals")
+}
+// Every refusal reads the same, so a reader learns nothing about whether the application exists.
+const unavailable = () => new ActionError("Application unavailable.", "NOT_FOUND")
+async function getApplicantRecusalsCommand(input: unknown) {
+  const parsed = scope.safeParse(input)
+  if (!parsed.success) throw unavailable()
+  const d = parsed.data
   const { user } = await requireClubPermission(d.clubId, [], { allowSuspendedRead: true })
   return prisma.$transaction(async tx => {
     const member = await authorizeClubTransaction(tx, d.clubId, user.id, [], { readOnly: true, allowSuspendedRead: true })
     // Same roles that can step out; other members learn nothing, not even whether the application exists.
     if (!hasPermission(member, "recruitment.manage") && !hasPermission(member, "applications.review") && !member.interviewOffices.length && !member.interviewerEligible)
-      throw new Error("Application unavailable.")
+      throw unavailable()
     const app = await tx.application.findFirst({ where: { id: d.applicationId, clubId: d.clubId, status: { not: "DRAFTING" } }, select: { studentId: true } })
-    if (!app || app.studentId === user.id) throw new Error("Application unavailable.")
+    if (!app || app.studentId === user.id) throw unavailable()
     const lead = hasPermission(member, "recruitment.manage")
     const rows = await tx.applicantRecusal.findMany({
       where: { applicationId: d.applicationId, clubId: d.clubId, liftedAt: null, ...(lead ? {} : { memberId: member.id }) },
