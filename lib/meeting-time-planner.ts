@@ -1,5 +1,5 @@
 import { AVAILABILITY_END_SLOT, AVAILABILITY_FIRST_SLOT, SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
-import { dayKnown, dayRanges, intervalAvailability, localParts, type AvailabilitySchedule, type AvailabilityState, type WeekCell } from "@/lib/availability"
+import { addDays, dayKnown, dayRanges, intervalAvailability, localParts, monday, type AvailabilitySchedule, type AvailabilityState, type WeekCell } from "@/lib/availability"
 
 /**
  * "Find a meeting time": how many of a club's active members are free for a whole meeting starting at
@@ -11,6 +11,23 @@ export const MEETING_DURATIONS = [30, 45, 60, 90, 120] as const
 export type MeetingDuration = (typeof MEETING_DURATIONS)[number]
 export const DEFAULT_MEETING_DURATION: MeetingDuration = 60
 export const durationLabel = (minutes: number) => minutes < 60 ? `${minutes} min` : `${minutes / 60} hr`
+
+/**
+ * Weeks a leader can plan: this week (Eastern) through MEETING_PLANNER_WEEKS_AHEAD weeks ahead. Planning
+ * never needs the past or the far future, and the bound keeps repeated roster reads from rebuilding
+ * members' weeks across the calendar.
+ */
+export const MEETING_PLANNER_WEEKS_AHEAD = 8
+export function plannerWeekRange(now: Date | number = Date.now()) {
+  const first = monday(localParts(+new Date(now), SCHEDULING_TIMEZONE).date)
+  return { first, last: addDays(first, 7 * MEETING_PLANNER_WEEKS_AHEAD) }
+}
+/** The Monday of `week` when it is a plannable week, else null. */
+export function plannerWeek(week: string, now: Date | number = Date.now()) {
+  const start = monday(week), { first, last } = plannerWeekRange(now)
+  return start >= first && start <= last ? start : null
+}
+export const PLANNER_WEEK_MESSAGE = `Choose a week from this week to ${MEETING_PLANNER_WEEKS_AHEAD} weeks ahead.`
 
 export type MeetingPlannerHeatmap = { week: string; duration: number; members: number; withAvailability: number; free: number[][] }
 export type MeetingSlotRoster = { date: string; start: number; end: number; free: string[]; busy: string[]; unknown: string[] }

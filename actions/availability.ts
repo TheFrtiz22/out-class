@@ -15,9 +15,10 @@ import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
 import { availabilityResponse, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, validateAvailabilityEdit, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability";
 import { boundedParse } from "@/lib/bounded-input";
+import { RATE_LIMIT_MESSAGE, RATE_LIMITS, rateLimiter } from "@/lib/rate-limit-core"
 import { AVAILABILITY_END_SLOT, AVAILABILITY_FIRST_SLOT } from "@/lib/scheduling-config"
 import { AVAILABILITY_REQUIRED_MESSAGE, NO_REGULAR_AVAILABILITY_ACTION, scheduleHasAvailability } from "@/lib/availability-requirement"
-import { MEETING_DURATIONS, memberCellStates, plannerFreeCounts, slotRoster, type MeetingPlannerHeatmap, type MeetingSlotRoster } from "@/lib/meeting-time-planner"
+import { MEETING_DURATIONS, memberCellStates, plannerFreeCounts, plannerWeek, PLANNER_WEEK_MESSAGE, slotRoster, type MeetingPlannerHeatmap, type MeetingSlotRoster } from "@/lib/meeting-time-planner"
 
 const id = z.string().uuid()
 const scopeSchema = z.object({ clubId: id, roundId: id }).strict()
@@ -246,6 +247,8 @@ async function completeAvailabilityRequirementCommand(raw: unknown): Promise<{ m
     const schedule = old ? parseSchedule(old.schedule) : null
     if (scheduleHasAvailability(schedule)) return { met: true as const }
     if (!input.noRegularTime) throw new ActionError(AVAILABILITY_REQUIRED_MESSAGE)
+    // One declaration per account: finishing the step again (another tab, a retry) writes nothing.
+    if (await tx.auditLog.findFirst({ where: { targetId: user.id, actorId: user.id, action: NO_REGULAR_AVAILABILITY_ACTION }, select: { id: true } })) return { met: true as const }
     const declared = { ...(schedule ?? emptySchedule()), weeklySubmitted: true }
     if (!old) await tx.userAvailability.create({ data: { userId: user.id, schedule: declared } })
     else if (!schedule?.weeklySubmitted) await tx.userAvailability.update({ where: { userId: user.id }, data: { schedule: declared, revision: { increment: 1 } } })
@@ -262,6 +265,7 @@ const rosterSchema = plannerSchema.extend({ day: z.number().int().min(0).max(6),
  */
 async function plannerMembers(tx: AppTransactionClient, clubId: string, userId: string, week: string, names: boolean) {
   await authorizeClubTransaction(tx, clubId, userId, ["meetings.manage"], { readOnly: true })
+  if (!plannerWeek(week)) throw new ActionError(PLANNER_WEEK_MESSAGE)
   const members = await tx.clubMember.findMany({
     where: { clubId, ...activeMemberWhere, user: { disabledAt: null } },
     orderBy: { id: "asc" },
@@ -288,6 +292,8 @@ export async function getMeetingTimePlanner(raw: unknown): Promise<MeetingPlanne
 /** Names only for one start time: free, busy, or no availability saved. */
 export async function getMeetingTimeRoster(raw: unknown): Promise<MeetingSlotRoster> {
   const input = rosterSchema.parse(raw), { user } = await requireAuth()
+  // Per leader and club: browsing times is quick, sweeping every slot of every week is not.
+  if (!rateLimiter.check(RATE_LIMITS.meetingPlannerRoster, `user:${user.id}:club:${input.clubId}`).ok) throw new ActionError(RATE_LIMIT_MESSAGE, "RATE_LIMITED")
   return prisma.$transaction(async tx => {
     const data = await plannerMembers(tx, input.clubId, user.id, input.week, true)
     const cell = data.cells[input.day][input.slot]

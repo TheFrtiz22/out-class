@@ -20,6 +20,9 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
   const [preview, setPreview] = useState<boolean[][] | null>(null)
   const instructionsId = useId()
   const displayed = preview ?? days
+  // A heatmap with a chosen time (`selected` passed) is single-select: only that cell reads as selected.
+  const choosing = !!onSelect && selected !== undefined
+  const cellSelected = (day: number, slot: number) => choosing ? selected?.day === day && selected.slot === slot : displayed[day][slot]
   const grid = useRef<HTMLDivElement>(null), suppressClick = useRef(false)
   const drag = useRef<{ pointer: number; from: Position; base: boolean[][]; on: boolean; to: Position } | null>(null)
   useEffect(() => {
@@ -52,8 +55,8 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
       <SegmentedControl label="Day to edit" size="compact" value={String(mobileDay)} onChange={value => { const i = Number(value); setMobileDay(i); setFocus({ day: i, slot: focus.slot }) }}
         options={WEEK_DAYS.map((day, i) => ({ value: String(i), label: day.slice(0, 3) }))} />
     </div>
-    <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><p id={instructionsId}>{readOnly ? "Arrow keys move between times. Home and End move to the first and last time." : "Click or tap a time to add or remove it. Arrow keys move; Space or Enter toggles; Shift + arrows extends. You can also drag; Escape cancels a drag."}</p>{!readOnly && <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={touchEdit} onChange={e => setTouchEdit(e.target.checked)} />Enable touch dragging (turn off to scroll)</label>}</div>
-    <div ref={grid} className="oc-av-scroll" role="grid" aria-label={gridLabel ?? (counts ? "Interviewer availability by quarter hour" : "Weekly availability by quarter hour")} aria-describedby={instructionsId} aria-multiselectable="true" aria-readonly={readOnly && !onSelect} aria-rowcount={AVAILABILITY_SLOTS.length + 1} aria-colcount={mobile ? 2 : 8}
+    <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><p id={instructionsId}>{readOnly ? `Arrow keys move between times. Home and End move to the first and last time.${onSelect ? " Enter or Space chooses a time." : ""}` : "Click or tap a time to add or remove it. Arrow keys move; Space or Enter toggles; Shift + arrows extends. You can also drag; Escape cancels a drag."}</p>{!readOnly && <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={touchEdit} onChange={e => setTouchEdit(e.target.checked)} />Enable touch dragging (turn off to scroll)</label>}</div>
+    <div ref={grid} className="oc-av-scroll" role="grid" aria-label={gridLabel ?? (counts ? "Interviewer availability by quarter hour" : "Weekly availability by quarter hour")} aria-describedby={instructionsId} aria-multiselectable={!choosing} aria-readonly={readOnly && !onSelect} aria-rowcount={AVAILABILITY_SLOTS.length + 1} aria-colcount={mobile ? 2 : 8}
       style={{ touchAction: touchEdit && !readOnly ? "none" : "pan-y" }}
       onPointerMove={event => {
         const active = drag.current
@@ -66,7 +69,7 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
       <div role="row" className="oc-av-row oc-av-header"><span role="columnheader" aria-colindex={1}>Time</span>{WEEK_DAYS.map((day, i) => <div key={day} role="columnheader" aria-colindex={mobile ? 2 : i + 2} className={`oc-av-day ${mobileDay === i ? "is-mobile-day" : ""}`}>{day.slice(0, 3)}{dates && <small>{dates[i].slice(5)}</small>}</div>)}</div>
       {AVAILABILITY_SLOTS.map(slot => <div key={slot} role="row" className="oc-av-row">
         <span className="oc-av-time" role="rowheader" aria-colindex={1}><span className={slot % 4 === 0 || mobile ? undefined : "sr-only"}>{minuteLabel(slot * 15)}</span></span>
-        {WEEK_DAYS.map((day, i) => <button key={day} type="button" role="gridcell" aria-colindex={mobile ? 2 : i + 2} aria-selected={displayed[i][slot]} aria-readonly={readOnly && !onSelect} data-av-cell={`${i}:${slot}`}
+        {WEEK_DAYS.map((day, i) => <button key={day} type="button" role="gridcell" aria-colindex={mobile ? 2 : i + 2} aria-selected={cellSelected(i, slot)} aria-readonly={readOnly && !onSelect} data-av-cell={`${i}:${slot}`}
           aria-label={`${day}${dates ? ` ${dates[i]}` : ""}, ${minuteLabel(slot * 15)}–${minuteLabel((slot + 1) * 15)}: ${counts ? `${counts[i][slot]} ${countLabel}` : displayed[i][slot] ? "available" : knownDays?.[i] === false ? "unknown" : "unavailable"}`}
           tabIndex={(mobile ? mobileDay === i : focus.day === i) && focus.slot === slot ? 0 : -1}
           className={`oc-av-cell oc-av-day ${mobileDay === i ? "is-mobile-day" : ""} ${displayed[i][slot] ? "is-available" : knownDays?.[i] === false ? "is-unknown" : ""} ${slot % 4 === 0 ? "is-hour" : ""} ${selected?.day === i && selected.slot === slot ? "is-selected" : ""}`}

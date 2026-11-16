@@ -32,10 +32,9 @@ export type AvailabilityRequirementAccount = {
   alumni: boolean
   /** A student profile exists (the signup wizard finished). Before that, onboarding comes first. */
   onboarded: boolean
-  schedule: AvailabilitySchedule | null
+  /** The saved schedule has at least one available time (scheduleHasAvailability, decided in SQL). */
+  hasAvailability: boolean
   declaredNone: boolean
-  /** The saved schedule's revision (0 before the first save), for the editor's conflict check. */
-  revision?: number
 }
 
 export function availabilityRequirementExempt(account: Pick<AvailabilityRequirementAccount, "disabled" | "platformAdmin" | "alumni">) {
@@ -43,8 +42,30 @@ export function availabilityRequirementExempt(account: Pick<AvailabilityRequirem
   return account.disabled || account.platformAdmin || account.alumni
 }
 
-export function availabilityRequirementMet(account: Pick<AvailabilityRequirementAccount, "schedule" | "declaredNone">) {
-  return scheduleHasAvailability(account.schedule) || account.declaredNone
+export function availabilityRequirementMet(account: Pick<AvailabilityRequirementAccount, "hasAvailability" | "declaredNone">) {
+  return account.hasAvailability || account.declaredNone
+}
+
+/**
+ * Who the gate is deciding for. Demo Mode is the same cookie test requireAuth uses. A support (view-as)
+ * session counts only when platformViewSession() validates it; a cookie alone never skips the gate.
+ * Any verified account of any school can be asked: whether it is a student is the loader's question.
+ */
+export async function availabilityGateIdentity(deps: {
+  demoCookie: string | undefined
+  hasViewCookie: boolean
+  viewSession: () => Promise<unknown>
+  sessionUser: () => Promise<{ id: string; email_confirmed_at?: string | null } | null>
+}): Promise<{ demo: boolean; impersonating: boolean; userId: string | null }> {
+  if (deps.demoCookie === "1") return { demo: true, impersonating: false, userId: null }
+  if (deps.hasViewCookie) {
+    let session: unknown = null
+    try { session = await deps.viewSession() } catch { session = null }
+    if (session) return { demo: false, impersonating: true, userId: null }
+  }
+  let user: Awaited<ReturnType<typeof deps.sessionUser>> = null
+  try { user = await deps.sessionUser() } catch { user = null }
+  return { demo: false, impersonating: false, userId: user?.email_confirmed_at ? user.id : null }
 }
 
 /** Server decision for the workspace gate; exported for tests. */
@@ -53,6 +74,8 @@ export async function availabilityGateDecision(deps: {
   impersonating: boolean
   userId: string | null
   load: (userId: string) => Promise<AvailabilityRequirementAccount | null>
+  /** Reports a failed check (Sentry on the server); the page still loads. */
+  onError?: (error: unknown) => void
 }): Promise<"pass" | "ask"> {
   // Demo Mode has no live account; a support session must never be shown, or answer, the user's prompt.
   if (deps.demo || deps.impersonating || !deps.userId) return "pass"
@@ -63,6 +86,7 @@ export async function availabilityGateDecision(deps: {
   } catch (error) {
     // A database fault must not take the product down; the next request asks again.
     console.error("Availability requirement check failed", error instanceof Error ? error.name : "unknown")
+    try { deps.onError?.(error) } catch { /* reporting is best effort */ }
     return "pass"
   }
 }

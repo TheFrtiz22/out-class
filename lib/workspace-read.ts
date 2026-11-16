@@ -1,5 +1,6 @@
 "use client"
 import { UserFacingError } from "@/lib/action-result"
+import { RATE_LIMIT_MESSAGE } from "@/lib/rate-limit-core"
 import { workspaceReadQueue } from "@/lib/workspace-read-queue"
 import type * as communications from "@/actions/communications"
 import { decodeWorkspaceData, type WorkspaceWire } from "@/lib/workspace-wire"
@@ -22,6 +23,7 @@ export async function readWorkspace<T>(kind: string, args: unknown[] = []): Prom
         if (body?.error === "UNIVERSITY_VERIFICATION_REQUIRED") throw new UserFacingError("Verify your university email through the normal email verification or password recovery flow before responding to invitations.")
         if (body?.error === "UNIVERSITY_VERIFICATION_UNAVAILABLE") throw new UserFacingError("University email verification is temporarily unavailable. Try again later.")
       }
+      if (response.status === 429) throw new UserFacingError(RATE_LIMIT_MESSAGE)
       throw new UserFacingError(response.status === 401 || response.status === 403 ? "Your access changed. Reload to check your current permissions." : "Could not load this workspace. Try again.")
     }
     return decodeWorkspaceData<T>(await response.json() as WorkspaceWire)

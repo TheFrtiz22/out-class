@@ -176,10 +176,12 @@ Resources: the caller's own `UserAvailability` (requirement gate and completion)
 
 | Actor | Workspace gate | Complete requirement | Planner heatmap / roster | Test |
 |---|---|---|---|---|
-| Student, no saved time | ask (server, layout) | own row only; empty week needs explicit choice | n/a | `availability-requirement.test` |
+| Student of any school with a profile, no saved time | ask (rendered on the server in place of the workspace) | own row only; empty week needs explicit choice; one declaration per account | n/a | `availability-requirement.test` |
 | Alumni, active platform admin, disabled account | pass (exempt) | n/a | n/a | same |
 | Signed in, no student profile yet | pass (pages send it to the signup wizard first; asked once the profile exists) | own row only | n/a | same, `onboarding-e2e` scenario A |
-| Demo Mode, support (view-as) session | pass | refused in a support session | n/a | same |
-| Member with `meetings.manage`, operational club | n/a | n/a | allow (active, enabled members of that club only) | same |
-| Member without `meetings.manage`, alumni member, other club's leader | n/a | n/a | deny "Club access denied" | same |
+| Demo Mode (requireAuth's cookie test), support session validated by `platformViewSession()` | pass | refused in a support session | n/a | same |
+| Signed-in student with a forged or invalid view-as cookie | ask | own row only | n/a | same |
+| Member with `meetings.manage`, operational club | n/a | n/a | allow (active, enabled members of that club only; this week through 8 weeks ahead; roster 30 reads / min per leader and club) | same |
+| Member without `meetings.manage`, alumni member, leader of another club (same school or another school) | n/a | n/a | deny "Club access denied" | same |
 | Leader of a suspended club | n/a | n/a | deny `CLUB_SUSPENDED` | same |
+Responses: heatmap = counts only; roster = names only (no emails, user or member ids, phones). Repeated roster reads can still reveal one member's week for planned weeks; the week window and rate limit bound that, by the owner's choice to show names per time.

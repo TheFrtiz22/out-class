@@ -1,6 +1,7 @@
 import { workspaceJsonResponse } from "@/lib/workspace-response"
 import { serverPhase, traceWorkspaceRequest } from "@/lib/server-phase-trace"
 import { UniversityVerificationError } from "@/utils/verified-email-policy"
+import { RATE_LIMIT_MESSAGE } from "@/lib/rate-limit-core"
 import { getVotingWorkspace } from "@/actions/voting"
 import { genderValues } from "@/lib/student-profile"
 import { z } from "zod"
@@ -93,6 +94,8 @@ export async function GET(request: Request) {
     }
     return await serverPhase("serialization", () => workspaceJsonResponse(encodeWorkspaceData(data), request, headers))
   } catch (error) {
+    // A rate-limited read (ActionError code RATE_LIMITED) says so, so the browser can say "try again shortly".
+    if (error && typeof error === "object" && "code" in error && error.code === "RATE_LIMITED") return Response.json({ error: RATE_LIMIT_MESSAGE }, { status: 429, headers })
     if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
