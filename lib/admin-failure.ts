@@ -15,7 +15,10 @@ export function adminActionResult<T>(work: () => Promise<T>, action: string): Pr
   return actionResult(async () => {
     try { return await work(); }
     catch (error) {
-      if (error instanceof AdminAccessError && ADMIN_REVERIFY_CODES.includes(error.code)) throw new ActionError(error.message, error.code);
+      if (error instanceof AdminAccessError && ADMIN_REVERIFY_CODES.includes(error.code)) {
+        const { message, code } = error;
+        throw new ActionError(message, code);
+      }
       throw error;
     }
   }, action);
