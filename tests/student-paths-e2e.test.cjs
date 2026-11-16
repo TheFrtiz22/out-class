@@ -38,7 +38,9 @@ test("student workspace paths: old URLs redirect, back/forward and reload stay o
       ["/?workspace=student&view=inbox&tab=preferences", "/inbox?tab=preferences"],
       ["/settings/notifications", "/inbox?tab=preferences"],
       ["/?workspace=student&view=student-profile", "/profile"],
-      ["/interviews?applicationId=a", "/applications?applicationId=a&tab=in-review"],
+      // /interviews and /decisions open their own Applications stage tab (PR #358), not In review.
+      ["/interviews?applicationId=a", "/applications?applicationId=a&tab=interviews"],
+      ["/decisions?applicationId=a", "/applications?applicationId=a&tab=decisions"],
       ["/applications/status?applicationId=a", "/applications?applicationId=a&tab=in-review"],
       ["/clubs/meetings", "/calendar?type=meeting"],
       ["/", "/home"],
