@@ -11,7 +11,7 @@ export const PAGE_ROUTE_TEMPLATES = [
   "/invitations/[id]", "/legal", "/live-voting", "/login", "/meetings", "/meetings/[id]",
   "/platform", "/platform/[section]", "/platform/claims", "/platform/clubs", "/platform/events", "/platform/login",
   "/platform/school-requests", "/platform/view-as", "/preview", "/privacy", "/profile", "/q/[code]",
-  "/request-school", "/reset-password", "/saved-clubs", "/settings", "/settings/account", "/settings/availability",
+  "/request-school", "/reset-password", "/saved-clubs", "/security", "/settings", "/settings/account", "/settings/availability",
   "/settings/interests", "/settings/interviews", "/settings/notifications", "/settings/organizations", "/settings/profile", "/signup",
   "/terms", "/universities", "/uva", "/vote", "/voting/[sessionId]/join", "/voting/rooms/[sessionId]",
   "/voting/rooms/[sessionId]/history", "/voting/rooms/[sessionId]/prepare", "/voting/rooms/new",
