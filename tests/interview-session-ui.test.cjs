@@ -7,6 +7,8 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve))
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)]
 const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):''
 const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
+// The original-question form's submit; the header's "Add question" toggle is named "Add original question".
+const submitOriginal=tree=>nodes(tree).find(n=>n.type==='Button'&&text(n)==='Add question'&&n.props?.['aria-label']!=='Add original question')
 function harness(existing, overrides = {}){
  const slots=[],effects=[],cleanups=[],timers=new Map(),calls=[];let index=0,timerId=0,fail=false,defer=null,lost=false,recoveryOptions=null
  const record=existing || {id:'session',revision:0,completedAt:null,questions:[{id:'q1',prompt:'Snapshot question',guidance:'Listen carefully'}],draft:{questionNotes:[],additionalQuestions:[],overallReview:'',additionalNotes:'',applicantQuestions:'',completedQuestionIds:[],score:null}}
@@ -97,9 +99,9 @@ test('plus button adds an original question to this interview (shared with the r
  const shared=[];const h=harness(undefined,{select:async id=>{shared.push(id);return{revision:1,question:{id,prompt:'Follow-up',guidance:''}}}});h.render();await flush();let t=h.render();
  assert.ok(plus(t));assert.equal(field(t),undefined);assert.equal(button(t,'+ Off-script question'),undefined,'the old entry point is replaced');
  plus(t).props.onClick();t=h.render();assert.ok(field(t));assert.equal(plus(t).props['aria-expanded'],true);
- await button(t,'Add question').props.onClick();t=h.render();assert.match(text(t),/Enter a question before adding it/);assert.equal(saves(h),0);
+ await submitOriginal(t).props.onClick();t=h.render();assert.match(text(t),/Enter a question before adding it/);assert.equal(saves(h),0);
  field(t).props.onChange({target:{value:'Follow-up'}});t=h.render();h.fail(true);
- const add=button(t,'Add question').props.onClick;const first=add(),second=add();await Promise.all([first,second]);await flush();t=h.render();
+ const add=submitOriginal(t).props.onClick;const first=add(),second=add();await Promise.all([first,second]);await flush();t=h.render();
  assert.equal(saves(h),1,'repeated clicks send one save');assert.equal(h.record.draft.additionalQuestions.length,0);
  assert.equal(field(t).props.value,'Follow-up','the typed question survives a failed save');assert.match(text(t),/Couldn.t save your question/);assert.doesNotMatch(text(t),/Original question added/);
  assert.equal(nodes(t).find(n=>n.props?.['aria-label']==='Active question'),undefined,'nothing opens before the save succeeds');assert.deepEqual(shared,[],'nothing is shared before the save succeeds');

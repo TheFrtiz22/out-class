@@ -17,7 +17,7 @@ function mount(file,api){
  const window={addEventListener:(k,fn)=>k==='focus'&&listeners.add(fn),removeEventListener:(k,fn)=>k==='focus'&&listeners.delete(fn)};
  const document={hidden:false,addEventListener(){},removeEventListener(){}};
  const mod={exports:{}},code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
- new Function('require','module','exports','setInterval','clearInterval','window','document',code)(n=>n==='react'?react:n==='@/lib/workspace-api'?api:n==='@/lib/action-result'?actionResult:n==='@/components/ui/button'?{Button:'Button'}:n==='@/components/ui/loading-state'?{LoadingState:'LoadingState'}:n.startsWith('@/lib/')?loadComponent(n.slice(2)+'.ts'):require(n),mod,mod.exports,fn=>{intervals.set(++id,fn);return id},i=>intervals.delete(i),window,document);
+ new Function('require','module','exports','setInterval','clearInterval','window','document',code)(n=>n==='react'?react:n==='@/lib/workspace-api'?api:n==='@/lib/action-result'?actionResult:n==='@/components/ui/button'?{Button:'Button'}:n==='@/components/icons'?{ChevronRight:'ChevronRight'}:n==='@/components/ui/loading-state'?{LoadingState:'LoadingState'}:n.startsWith('@/lib/')?loadComponent(n.slice(2)+'.ts'):require(n),mod,mod.exports,fn=>{intervals.set(++id,fn);return id},i=>intervals.delete(i),window,document);
  return {exports:mod.exports,intervals,listeners,render(component,props){index=0;const t=component(props);while(effects.length)effects.shift()();return t},unmount(){cleanups.forEach(c=>c?.())},poll(){[...intervals.values()].forEach(fn=>fn())}};
 }
 

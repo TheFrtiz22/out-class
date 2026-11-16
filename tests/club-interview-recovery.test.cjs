@@ -54,6 +54,7 @@ function room(search,{permission=true,selected=true,loading=false,suspendedAt=nu
   '@/lib/permissions':{hasWorkspace:()=>true,hasPermission:(m,p)=>m.permissions.includes(p)},
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
   '@/components/shell/focus-frame-context':{useFocusFrame:details=>frames.push(details)},
+  '@/lib/navigation':{clubShortLabel:club=>club.shortName||club.name},
  };
  const mod={exports:{}};new Function('require','module','exports',compile('components/interviews/club-interview-room.tsx'))(name=>mocks[name]||(name==='@/components/ui/confirm-dialog'?require('./helpers/confirm-stub.cjs'):name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
  const tree=mod.exports.ClubInterviewRoom({clubId:'club'});
@@ -62,7 +63,7 @@ function room(search,{permission=true,selected=true,loading=false,suspendedAt=nu
 }
 test('the interview route restores the room on a fresh mount without assigning phase or score; Exit returns to the filtered list',()=>{
  const resumed=room('interviewTab=rooms&applicationId=a&roundId=r'),screen=resumed.nodes.find(node=>node.type==='Dynamic');
- assert.equal(screen.props.scoped,true);assert.equal(screen.props.postInterview,undefined);assert.equal(screen.props.score,undefined);
+ assert.equal(screen.props.scoped,true);assert.equal(screen.props.badge,'Synthetic');assert.equal(screen.props.demo,false);assert.equal(screen.props.postInterview,undefined);assert.equal(screen.props.score,undefined);
  screen.props.onExit();assert.deepEqual(resumed.pushes,['/club/club/workspace?interviewTab=rooms&roundId=r&section=recruitment&tool=interviews']);
  assert.equal(resumed.frames[0].exitHref,resumed.pushes[0]);assert.deepEqual(resumed.frames[0].club,{name:'Synthetic',color:'#123456'});
 });

@@ -17,14 +17,15 @@ import { getInterviewWorkspace, resolveInterviewRoomEntry, openInterviewSession,
 import { captureInterviewCandidate, animateInterviewCandidate } from "@/lib/interview-candidate-motion"
 import { interviewQueue } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
-import { DemoInterviewGuide } from "@/components/demo-workspace"
+import { DemoInterviewGuide, DemoInterviewGuideContent } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { useConfirm } from "@/components/ui/confirm-dialog"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
 
 type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
-export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: () => void; scoped?: boolean }) {
+/** `badge` and `demo` come from the route: the room header's club badge and whether to show the demo guide. */
+export function InterviewWorkspaceView({ onExit, scoped = false, badge, demo = false }: { onExit?: () => void; scoped?: boolean; badge?: string; demo?: boolean }) {
   const { user, loading, activeClubId, selectClub } = useAuth()
   const confirm = useConfirm()
   const { leaderFocus } = useApplicationState()
@@ -67,7 +68,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <PillSelect label="Interview club" disabled={locked} active={false} value={membership.clubId} onChange={value => setClubId(value)} options={memberships.map(item => ({ value: item.clubId, label: item.club.name }))} />} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} badge={badge} demo={demo} onLock={handleLock} onExit={exit} clubSelector={!scoped && <PillSelect label="Interview club" disabled={locked} active={false} value={membership.clubId} onChange={value => setClubId(value)} options={memberships.map(item => ({ value: item.clubId, label: item.club.name }))} />} />
         )}
       </div>
     </div>
@@ -76,17 +77,25 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
 
 function InterviewSession({
   membership,
+  badge,
+  demo = false,
   onLock,
   onExit,
   clubSelector,
 }: {
   onExit: () => void
   membership: ExtendedMembership
+  /** The club badge in the room header (short name or abbreviation). */
+  badge?: string
+  /** Demo mode: the room header shows the sample interview guide. */
+  demo?: boolean
   onLock: (locked: boolean, saving?: boolean) => void
   clubSelector?: ReactNode
 }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const confirm = useConfirm()
+  // The toolbar spot where the applicant panel shows the candidate's photo and name.
+  const [candidateSlot, setCandidateSlot] = useState<HTMLDivElement | null>(null)
   const [data, setData] = useState<Pipeline | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -372,8 +381,9 @@ function InterviewSession({
         <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList} onAccessRevoked={accessRevoked}
 
-toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button></>}
-context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} onAccessRevoked={panelAccessRevoked} onDraftComment={trackComment} />}
+room={{ club: membership.club.name, badge: badge || Array.from(membership.club.name.trim())[0]?.toUpperCase() || "", round: round.name }} onExitRoom={onExit} demoGuide={demo ? <DemoInterviewGuideContent /> : undefined}
+toolbar={() => <><Button type="button" variant="outline" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button><span className="oc-room-divider" aria-hidden="true" /><div ref={setCandidateSlot} className="oc-room-candidate" /></>}
+context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} onAccessRevoked={panelAccessRevoked} onDraftComment={trackComment} identitySlot={candidateSlot} />}
             onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)
               setKitDirty(false)

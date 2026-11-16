@@ -14,14 +14,17 @@ import { scholarNames } from "@/lib/scholar-status";
 import type { InterviewScope } from "@/lib/interview-access";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Maximize2, UserRound, X } from "@/components/icons";
+import { FileText, UserRound, X } from "@/components/icons";
+import { createPortal } from "react-dom";
 
 const ResumePreview = dynamic(() => import("@/components/interview-resume-preview"), { ssr: false, loading: () => <LoadingState label="Preparing résumé preview…" layout="inline" /> });
 
 /** `onAccessRevoked` runs when the server refuses with ACCESS_REVOKED (e.g. removed from the panel);
  * the room then shows its "no longer have access" state. `unsavedComment` is a résumé comment that was
  * open in the viewer and could not be saved (an empty string for a highlight with no text yet). */
-export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel, onAccessRevoked, onDraftComment }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>>; onAccessRevoked?: (unsavedComment?: string) => void; onDraftComment?: (comment: string | undefined) => void }) {
+/** `identitySlot`: where the room shows the candidate's photo and name (its toolbar). Omitted, the identity
+ * stays at the top of this panel; null means the slot is not mounted yet, so nothing is shown. */
+export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel, onAccessRevoked, onDraftComment, identitySlot }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>>; onAccessRevoked?: (unsavedComment?: string) => void; onDraftComment?: (comment: string | undefined) => void; identitySlot?: Element | null }) {
   const scope = useMemo(() => ({ clubId, applicationId, roundId }), [clubId, applicationId, roundId]);
   const { isDemoEnabled } = useDemoMode();
   const { user } = useAuth();
@@ -69,21 +72,24 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
   const fallback = useMemo(() => resource && url ? <InterviewResumePlaceholder resource={resource} page={initialPage} /> : <LoadingState label="Loading résumé…" layout="inline" />, [resource, url, initialPage]);
   const name = panel?.profile ? `${panel.profile.firstName} ${panel.profile.lastName}` : "Profile not provided";
   const scholarships = scholarNames(panel?.profile?.scholarStatus);
+  const identity = panel && !error ? <div className="oc-applicant-identity">
+    {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={120} height={128} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-6" aria-hidden="true" /></div>}
+    <div className="min-w-0"><h1>{name}</h1><p className="oc-applicant-role">Candidate</p>{!!scholarships.length && <ul aria-label="Scholar status" className="oc-applicant-scholars">{scholarships.map((s,i) => <li key={`${s}-${i}`}>{s}</li>)}</ul>}</div>
+  </div> : null;
   return <aside id="interview-context" className="oc-room-applicant min-w-0" aria-label="Applicant panel">
     {loading && <LoadingState label="Loading applicant details…" layout="rows" rows={2} />}
     <div className="oc-candidate-content">
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
-      <div className="oc-applicant-identity">
-        {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={120} height={128} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-6" aria-hidden="true" /></div>}
-        <div className="min-w-0"><h1>{name}</h1>{!!scholarships.length && <ul aria-label="Scholar status" className="oc-applicant-scholars">{scholarships.map((s,i) => <li key={`${s}-${i}`}>{s}</li>)}</ul>}</div>
-      </div>
+      {identitySlot === undefined ? identity : identitySlot ? createPortal(identity, identitySlot) : null}
       <div className="oc-resume-document">
-      {warm && resource && <div hidden aria-hidden="true"><InterviewResumeViewer preloadOnly scope={scope} documentId={documentId} isDemo={isDemoEnabled} resource={resource} onAccessLost={() => {}} /></div>}
-      {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-6 text-muted-foreground" aria-hidden="true" />}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="ghost" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>
-          <Maximize2 className="size-4" aria-hidden="true" />
-        </Button></DialogTrigger>
+        <div className="oc-resume-head"><span>Résumé</span>
+          <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="outline" size="sm" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>Open</Button></DialogTrigger>
+        </div>
+        <div className="oc-resume-body">
+          {warm && resource && <div hidden aria-hidden="true"><InterviewResumeViewer preloadOnly scope={scope} documentId={documentId} isDemo={isDemoEnabled} resource={resource} onAccessLost={() => {}} /></div>}
+          {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-6 text-muted-foreground" aria-hidden="true" />}
+        </div>
         <DialogContent showCloseButton={false} aria-describedby={undefined} className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onEscapeKeyDown={event => { if ((event.target as Element)?.closest('[role="dialog"]')?.querySelector('[data-resume-comment-draft]')) event.preventDefault(); }} onCloseAutoFocus={e => { e.preventDefault(); (openedFromPreview.current ? previewFocus.current : resumeTrigger.current)?.focus(); }}>
           <DialogHeader className="pr-10"><DialogTitle className="text-base font-medium">{name} · Résumé</DialogTitle></DialogHeader>
           <DialogClose asChild><Button type="button" variant="ghost" size="icon" className="absolute right-3 top-3 size-9" aria-label="Close résumé"><X className="size-4" aria-hidden="true" /></Button></DialogClose>
