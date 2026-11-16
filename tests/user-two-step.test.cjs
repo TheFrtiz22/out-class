@@ -1,5 +1,5 @@
 // Optional two-step sign-in (OUTCLASS_USER_MFA). Supabase SDKs are mocked: no provider is contacted.
-const {test,afterEach}=require('node:test');
+const {test,afterEach,after}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const {NextRequest}=require('next/server');
@@ -12,6 +12,7 @@ const id='00000000-0000-4000-8000-000000000001',target='00000000-0000-4000-8000-
 const enrolled={id,email:'two@virginia.edu',email_confirmed_at:'2026-01-01',factors:[{id:'f1',status:'verified',factor_type:'totp'}]};
 const plain={id,email:'two@virginia.edu',email_confirmed_at:'2026-01-01'};
 const original=process.env.OUTCLASS_USER_MFA;
+after(async()=>{if(database)await (await database).close();});
 afterEach(()=>{if(original===undefined)delete process.env.OUTCLASS_USER_MFA;else process.env.OUTCLASS_USER_MFA=original;});
 
 function authHarness({user=enrolled,aal='aal1',action=false,viewAs=false,returnPath=null}={}){
@@ -90,12 +91,32 @@ test('middleware: enrolled aal1 pages redirect, APIs and writes 401, allowed pat
  assert.equal((await createClient(new NextRequest('https://outclass.test/home'))).status,200);
 });
 
-function routeHarness({pending=false,user=enrolled,cookies={},verifyOk=true,aal='aal2',factors=enrolled.factors,rows=[],passwordOk=true,amr=[{method:'password',timestamp:Math.floor(Date.now()/1000)}],mailFails=false}={}){
- const calls=[];
+// Attempt rows go to an isolated PGlite database built from the full migration chain, so the
+// append-only AuditLog trigger and the real counting SQL run exactly as in production.
+let database;
+const auditDb=()=>database??=(async()=>{const {PGlite}=require('@electric-sql/pglite');const db=new PGlite();await db.exec('CREATE ROLE anon;CREATE ROLE authenticated;');
+ for(const name of fs.readdirSync('prisma/migrations').sort()){const file=`prisma/migrations/${name}/migration.sql`;if(fs.existsSync(file))await db.exec(fs.readFileSync(file,'utf8'));}
+ return db;})();
+// Test-only bypass of row triggers: clears or ages rows to simulate a fresh account or elapsed time.
+async function asReplica(sql){const db=await auditDb();await db.exec(`SET session_replication_role = replica;${sql};RESET session_replication_role;`);}
+const resetAudit=()=>asReplica('DELETE FROM "AuditLog"');
+const ageAudit=minutes=>asReplica(`UPDATE "AuditLog" SET "createdAt"="createdAt"-interval '${minutes} minutes'`);
+const auditRows=async()=>(await (await auditDb()).query('SELECT action,details FROM "AuditLog" ORDER BY "createdAt",action')).rows;
+// Prisma-shaped adapter over one PGlite connection: tagged-template $queryRaw becomes a parameterized
+// query; create/update issue the INSERT/UPDATE Prisma would (createdAt set client-side in UTC).
+function prismaOver(q,log){
+ return {
+  $queryRaw:async(strings,...values)=>{const sql=strings.reduce((out,part,i)=>out+'$'+i+part);log?.push(sql.replace(/\s+/g,' ').trim());return (await q.query(sql,values)).rows;},
+  auditLog:{
+   create:async({data})=>(await q.query(`INSERT INTO "AuditLog"(id,"actorId",action,"targetId",details,"createdAt")VALUES($1,$2,$3,$4,$5::jsonb,$6)RETURNING *`,[require('node:crypto').randomUUID(),data.actorId,data.action,data.targetId,JSON.stringify(data.details??null),new Date().toISOString()])).rows[0],
+   update:async({where,data})=>(await q.query(`UPDATE "AuditLog" SET details=$2::jsonb WHERE id=$1 RETURNING *`,[where.id,JSON.stringify(data.details)])).rows[0]}};
+}
+function routeHarness({pending=false,user=enrolled,cookies={},verifyOk=true,aal='aal2',factors=enrolled.factors,passwordOk=true,amr=[{method:'password',timestamp:Math.floor(Date.now()/1000)}],mailFails=false,successWriteFails=false,verifyDelay=0}={}){
+ const calls=[],transactions=[];
  const mfa={listFactors:async()=>({data:{totp:factors.filter(f=>f.status==='verified'),all:factors},error:null}),
   enroll:async()=>{calls.push('enroll');return{data:{id:'new',totp:{qr_code:'data:image/svg+xml;utf-8,<svg/>',secret:'SECRET'}},error:null};},
   unenroll:async({factorId})=>{calls.push(['unenroll',factorId]);return{error:null};},
-  challengeAndVerify:async({code})=>{calls.push(['verify',code]);return verifyOk?{data:{},error:null}:{data:null,error:Object.assign(Error('bad'),{status:422,code:'mfa_verification_failed'})};},
+  challengeAndVerify:async({code})=>{calls.push(['verify',code]);if(verifyDelay)await new Promise(r=>setTimeout(r,verifyDelay));return verifyOk?{data:{},error:null}:{data:null,error:Object.assign(Error('bad'),{status:422,code:'mfa_verification_failed'})};},
   getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:aal},error:null})};
  const route=loader({'next/headers':{cookies:async()=>({has:n=>n in cookies,get:n=>n in cookies?{value:cookies[n]}:undefined})},
   '@/utils/auth':{getSessionState:async()=>pending?{identity:{data:{user:null},error:null},secondFactorPending:true,pendingUser:user}:{identity:{data:{user},error:null},secondFactorPending:false}},
@@ -103,14 +124,14 @@ function routeHarness({pending=false,user=enrolled,cookies={},verifyOk=true,aal=
   '@/utils/admin-elevation':{freshAuthClient:()=>({auth:{signInWithPassword:async({email,password})=>{calls.push(['password',email]);return passwordOk?{data:{session:{access_token:'t'},user:{id:user.id}},error:null}:{data:{session:null,user:null},error:Object.assign(Error('Invalid login credentials'),{status:400,code:'invalid_credentials'})};},signOut:async()=>({error:null})}})},
   '@/utils/email':{sendTwoStepNoticeEmail:async input=>{calls.push(['notice',input.recipient,input.enabled]);if(mailFails)throw Error('smtp down');return{messageId:'m'};}},
   '@/utils/prisma':{prisma:{
-   $transaction:async fn=>fn({$queryRaw:async()=>[{locked:1}],auditLog:{
-    count:async({where})=>rows.filter(r=>r.actorId===where.actorId&&r.action===where.action&&r.createdAt>=where.createdAt.gte&&r.details.result===where.details.equals).length,
-    create:async({data})=>{const row={id:'a'+rows.length,createdAt:new Date(),...data};rows.push(row);return row;}}}),
-   auditLog:{create:async({data})=>calls.push(['audit',data.action]),update:async({where,data})=>{rows.find(r=>r.id===where.id).details=data.details;}}}}})('app/api/auth/two-step/route.ts');
+   $transaction:async fn=>(await auditDb()).transaction(async tx=>{const log=[];transactions.push(log);return fn(prismaOver(tx,log));}),
+   auditLog:{create:async args=>{calls.push(['audit',args.data.action]);if(successWriteFails&&args.data.action==='user.two_step.success')throw Error('db down');return prismaOver(await auditDb()).auditLog.create(args);},
+    update:async args=>prismaOver(await auditDb()).auditLog.update(args),upsert:async()=>{throw Error('unexpected');},delete:async()=>{throw Error('unexpected');}}}}})('app/api/auth/two-step/route.ts');
  const post=body=>route.POST(new NextRequest('https://outclass.test/api/auth/two-step',{method:'POST',headers:{origin:'https://outclass.test',host:'outclass.test','content-type':'application/json'},body:JSON.stringify(body)}));
- return {post,calls,rows};
+ return {post,calls,transactions};
 }
 test('route: flag off is 404; impersonation and demo refused; pending session may only answer the challenge',async()=>{
+ await resetAudit();
  delete process.env.OUTCLASS_USER_MFA;
  assert.equal((await routeHarness().post({action:'enroll'})).status,404);
  process.env.OUTCLASS_USER_MFA='1';
@@ -120,22 +141,24 @@ test('route: flag off is 404; impersonation and demo refused; pending session ma
   assert.equal((await routeHarness({pending:true}).post(body)).status,401);
  const h=routeHarness({pending:true});
  assert.equal((await h.post({action:'challenge',code:'123456'})).status,200);
- assert.deepEqual(h.calls,[['verify','123456']]);
+ assert.deepEqual(h.calls,[['verify','123456'],['audit','user.two_step.success']]);
  assert.equal((await routeHarness({pending:true,verifyOk:false}).post({action:'challenge',code:'000000'})).status,400);
 });
 test('route: enrollment returns the provider QR and secret, then a verified code turns it on',async()=>{
  process.env.OUTCLASS_USER_MFA='1';
+ await resetAudit();
  let h=routeHarness({user:plain,factors:[{id:'stale',status:'unverified',factor_type:'totp'}]});
  const res=await h.post({action:'enroll'});assert.equal(res.status,200,'university sign-in account with a recent sign-in');
  const body=await res.json();assert.equal(body.secret,'SECRET');assert.match(body.qr,/^data:image\/svg/);
  assert.deepEqual(h.calls,[['unenroll','stale'],'enroll']);
  h=routeHarness({user:plain,factors:[{id:'new',status:'unverified',factor_type:'totp'}]});
  assert.equal((await h.post({action:'confirm',factorId:'new',code:'123456'})).status,200);
- assert.deepEqual(h.calls,[['verify','123456'],['audit','account.two-step.enable'],['notice',plain.email,true],['audit','account.two-step.email']]);
+ assert.deepEqual(h.calls,[['verify','123456'],['audit','user.two_step.success'],['audit','account.two-step.enable'],['notice',plain.email,true],['audit','account.two-step.email']]);
  assert.equal((await routeHarness().post({action:'enroll'})).status,409,'already on');
 });
 test('route: turning off needs a fresh valid code and an aal2 session; admins keep their authenticator',async()=>{
  process.env.OUTCLASS_USER_MFA='1';
+ await resetAudit();
  let h=routeHarness({verifyOk:false});
  assert.equal((await h.post({action:'disable',code:'000000'})).status,400);
  assert.ok(!h.calls.some(c=>c[0]==='unenroll'));
@@ -144,7 +167,7 @@ test('route: turning off needs a fresh valid code and an aal2 session; admins ke
  assert.ok(!h.calls.some(c=>c[0]==='unenroll'));
  h=routeHarness();
  assert.equal((await h.post({action:'disable',code:'123456'})).status,200);
- assert.deepEqual(h.calls,[['verify','123456'],['unenroll','f1'],['audit','account.two-step.disable'],['notice',enrolled.email,false],['audit','account.two-step.email']]);
+ assert.deepEqual(h.calls,[['verify','123456'],['audit','user.two_step.success'],['unenroll','f1'],['audit','account.two-step.disable'],['notice',enrolled.email,false],['audit','account.two-step.email']]);
  const prior=process.env.OUTCLASS_PLATFORM_ADMIN_IDS;process.env.OUTCLASS_PLATFORM_ADMIN_IDS=id;
  try{h=routeHarness();assert.equal((await h.post({action:'disable',code:'123456'})).status,403);assert.deepEqual(h.calls,[]);}
  finally{if(prior===undefined)delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS;else process.env.OUTCLASS_PLATFORM_ADMIN_IDS=prior;}
@@ -166,26 +189,80 @@ test('settings: the section is hidden when the flag is off and shows state when 
 
 test('route: the sixth wrong code in 15 minutes is refused before the provider is called',async()=>{
  process.env.OUTCLASS_USER_MFA='1';
- const rows=[];
- for(let i=0;i<5;i++){const h=routeHarness({pending:true,verifyOk:false,rows});assert.equal((await h.post({action:'challenge',code:'000000'})).status,400);}
- const h=routeHarness({pending:true,rows});
+ await resetAudit();
+ for(let i=0;i<5;i++){const h=routeHarness({pending:true,verifyOk:false});assert.equal((await h.post({action:'challenge',code:'000000'})).status,400);}
+ const h=routeHarness({pending:true});
  const res=await h.post({action:'challenge',code:'123456'});
  assert.equal(res.status,429);assert.match((await res.json()).error,/15 minutes/);
  assert.deepEqual(h.calls,[],'provider not called');
- const off=routeHarness({rows});
+ const off=routeHarness();
  assert.equal((await off.post({action:'disable',code:'123456'})).status,429,'turning off shares the cap');
  assert.deepEqual(off.calls,[]);
- rows.forEach(r=>{r.createdAt=new Date(Date.now()-16*60000);});
- assert.equal((await routeHarness({pending:true,rows}).post({action:'challenge',code:'123456'})).status,200,'window expires');
- const ok=[];
- for(let i=0;i<6;i++)assert.equal((await routeHarness({pending:true,rows:ok}).post({action:'challenge',code:'123456'})).status,200);
- assert.ok(ok.every(r=>r.details.result==='success'),'successful codes do not count toward the cap');
+ await ageAudit(16);
+ assert.equal((await routeHarness({pending:true}).post({action:'challenge',code:'123456'})).status,200,'window expires');
  const source=fs.readFileSync('app/api/auth/two-step/route.ts','utf8');
  assert.ok(source.indexOf('recordAttempt(userId, CODE_ATTEMPT)')<source.lastIndexOf('challengeAndVerify'),'attempt recorded first');
  assert.match(source,/pg_advisory_xact_lock/);
 });
+test('route: verified codes are appended as success rows on the append-only AuditLog and never count as failures',async()=>{
+ process.env.OUTCLASS_USER_MFA='1';
+ await resetAudit();
+ const db=await auditDb();
+ for(let i=0;i<8;i++)assert.equal((await routeHarness({pending:true}).post({action:'challenge',code:'123456'})).status,200,'success never throws');
+ let rows=await auditRows();
+ const attempts=rows.filter(r=>r.action==='user.two_step.attempt'),successes=rows.filter(r=>r.action==='user.two_step.success');
+ assert.equal(attempts.length,8);assert.equal(successes.length,8);
+ assert.ok(attempts.every(r=>r.details.result==='attempt'),'attempt rows are never rewritten');
+ assert.ok(successes.every(r=>r.details.result==='success'&&typeof r.details.attempt==='string'));
+ const [first]=(await db.query(`SELECT id FROM "AuditLog" WHERE action='user.two_step.attempt' LIMIT 1`)).rows;
+ await assert.rejects(prismaOver(db).auditLog.update({where:{id:first.id},data:{details:{result:'success'}}}),/append-only/,'rewriting an attempt (the previous approach) is rejected by the trigger');
+ // Successes mixed with failures: only the unmatched attempts count, so a sixth failure is still refused.
+ for(let i=0;i<4;i++)assert.equal((await routeHarness({pending:true,verifyOk:false}).post({action:'challenge',code:'000000'})).status,400);
+ assert.equal((await routeHarness({pending:true}).post({action:'challenge',code:'123456'})).status,200,'four failures leave room');
+ assert.equal((await routeHarness({pending:true,verifyOk:false}).post({action:'challenge',code:'000000'})).status,400,'fifth failure reaches the provider');
+ const h=routeHarness({pending:true});
+ assert.equal((await h.post({action:'challenge',code:'123456'})).status,429,'limit enforced after five failures');
+ assert.deepEqual(h.calls,[]);
+ // A success row naming another account's attempt does not clear it.
+ await resetAudit();
+ for(let i=0;i<5;i++)await routeHarness({verifyOk:false}).post({action:'disable',code:'000000'});
+ const other={...enrolled,id:'00000000-0000-4000-8000-000000000003'};
+ for(const r of (await db.query(`SELECT id FROM "AuditLog" WHERE action='user.two_step.attempt'`)).rows)
+  await db.query(`INSERT INTO "AuditLog"(id,"actorId",action,"targetId",details)VALUES(gen_random_uuid()::text,$1,'user.two_step.success',$1,$2::jsonb)`,[other.id,JSON.stringify({result:'success',attempt:r.id})]);
+ assert.equal((await routeHarness().post({action:'disable',code:'123456'})).status,429);
+ assert.equal((await routeHarness({user:other}).post({action:'disable',code:'123456'})).status,200,'limits are per account');
+});
+test('route: a failed success write still returns the verified result and fails closed on the limit',async()=>{
+ process.env.OUTCLASS_USER_MFA='1';
+ await resetAudit();
+ const errors=[],original=console.error;console.error=line=>errors.push(String(line));
+ try{
+  for(let i=0;i<5;i++)assert.equal((await routeHarness({pending:true,successWriteFails:true}).post({action:'challenge',code:'123456'})).status,200);
+ }finally{console.error=original;}
+ assert.equal(errors.length,5);assert.ok(errors.every(e=>JSON.parse(e).event==='two-step.audit-failure'));
+ assert.equal((await routeHarness({pending:true}).post({action:'challenge',code:'123456'})).status,429,'unconfirmed attempts keep counting');
+});
+test('route: concurrent wrong codes for one account cannot pass the limit',async()=>{
+ process.env.OUTCLASS_USER_MFA='1';
+ await resetAudit();
+ const hs=Array.from({length:9},()=>routeHarness({pending:true,verifyOk:false,verifyDelay:5}));
+ const statuses=(await Promise.all(hs.map(h=>h.post({action:'challenge',code:'000000'})))).map(r=>r.status);
+ assert.equal(statuses.filter(s=>s===400).length,5);assert.equal(statuses.filter(s=>s===429).length,4);
+ assert.equal(hs.reduce((n,h)=>n+h.calls.filter(c=>c[0]==='verify').length,0),5,'the provider saw at most the limit');
+ const log=hs.find(h=>h.transactions.length).transactions[0];
+ assert.match(log[0],/pg_advisory_xact_lock\(hashtext\(\$1\)\)/,'the per-account lock is taken first');
+ assert.match(log[1],/count\(\*\)/,'then counted inside the same transaction');
+ assert.equal((await auditRows()).filter(r=>r.action==='user.two_step.attempt').length,5);
+});
+test('no code path rewrites or removes AuditLog rows',()=>{
+ const offenders=[];
+ const walk=dir=>{for(const e of fs.readdirSync(dir,{withFileTypes:true})){const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(ts|tsx|js|cjs|mjs)$/.test(e.name)){const src=fs.readFileSync(f,'utf8');if(/auditLog\.(update|updateMany|upsert|delete|deleteMany)\b|(UPDATE|DELETE\s+FROM)\s+(public\.)?"AuditLog"/i.test(src))offenders.push(f);}}};
+ for(const dir of ['app','actions','lib','utils','components','scripts'])if(fs.existsSync(dir))walk(dir);
+ assert.deepEqual(offenders,[]);
+});
 test('route: enrolling needs fresh re-authentication (password re-check or a recent university sign-in)',async()=>{
  process.env.OUTCLASS_USER_MFA='1';
+ await resetAudit();
  const pw={...plain,app_metadata:{provider:'email',providers:['email']}};
  let h=routeHarness({user:pw,factors:[]});
  assert.equal((await h.post({action:'enroll'})).status,403,'password account without a password');
@@ -196,9 +273,9 @@ test('route: enrolling needs fresh re-authentication (password re-check or a rec
  h=routeHarness({user:pw,factors:[]});
  assert.equal((await h.post({action:'enroll',password:'right'})).status,200);
  assert.deepEqual(h.calls,[['password',pw.email],'enroll']);
- const rows=[];
- for(let i=0;i<5;i++)await routeHarness({user:pw,factors:[],passwordOk:false,rows}).post({action:'enroll',password:'wrong'});
- h=routeHarness({user:pw,factors:[],rows});
+ await resetAudit();
+ for(let i=0;i<5;i++)await routeHarness({user:pw,factors:[],passwordOk:false}).post({action:'enroll',password:'wrong'});
+ h=routeHarness({user:pw,factors:[]});
  assert.equal((await h.post({action:'enroll',password:'right'})).status,429);assert.deepEqual(h.calls,[]);
  const sso={...plain,app_metadata:{provider:'azure',providers:['azure']}};
  h=routeHarness({user:sso,factors:[],amr:[{method:'oauth',timestamp:Math.floor(Date.now()/1000)-3600}]});
@@ -212,6 +289,7 @@ test('route: enrolling needs fresh re-authentication (password re-check or a rec
 });
 test('route: a mail outage after the change is audited, not surfaced',async()=>{
  process.env.OUTCLASS_USER_MFA='1';
+ await resetAudit();
  const h=routeHarness({mailFails:true});
  assert.equal((await h.post({action:'disable',code:'123456'})).status,200);
  assert.deepEqual(h.calls.slice(-2),[['notice',enrolled.email,false],['audit','account.two-step.email']]);
