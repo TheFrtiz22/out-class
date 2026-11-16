@@ -1,6 +1,27 @@
+import { ActionError, actionResult, type ActionResult } from "@/lib/action-result";
 export type AdminDenialCode = "ADMIN_AUTH_REQUIRED" | "ADMIN_ACCESS_DENIED" | "ADMIN_ELEVATION_REQUIRED" | "ADMIN_MFA_REQUIRED" | "ADMIN_GRANT_REVOKED" | "ADMIN_SESSION_EXPIRED" | "ADMIN_SUPPORT_SESSION_CONFLICT";
 export class AdminAccessError extends Error {
   constructor(public readonly code: AdminDenialCode, message: string) { super(message); }
+}
+/** Admin denials the console answers by sending the administrator back to /platform/login. */
+export const ADMIN_REVERIFY_CODES: readonly string[] = ["ADMIN_ELEVATION_REQUIRED", "ADMIN_MFA_REQUIRED", "ADMIN_SESSION_EXPIRED"];
+/**
+ * actionResult for platform admin Server Actions. An AdminAccessError that only asks an administrator
+ * to verify again (stale password/MFA check, missing MFA, expired session) becomes a returned refusal
+ * carrying its safe message and code, so the console can offer re-verification instead of production
+ * masking it as a 500. Other denials (not an admin, revoked grant) still throw, so they keep alerting.
+ */
+export function adminActionResult<T>(work: () => Promise<T>, action: string): Promise<ActionResult<T>> {
+  return actionResult(async () => {
+    try { return await work(); }
+    catch (error) {
+      if (error instanceof AdminAccessError && ADMIN_REVERIFY_CODES.includes(error.code)) {
+        const { message, code } = error;
+        throw new ActionError(message, code);
+      }
+      throw error;
+    }
+  }, action);
 }
 const providerDenialCodes = new Set([
   "bad_jwt", "invalid_jwt", "no_authorization", "not_admin", "invalid_credentials",
