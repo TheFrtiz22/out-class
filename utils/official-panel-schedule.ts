@@ -24,17 +24,39 @@ export function panelScheduleLine(s:{roomName:string;timezone:string;startTime:s
  const date=new Intl.DateTimeFormat("en-US",{timeZone:SCHEDULING_TIMEZONE,weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(s.startTime)),time=(value:string)=>new Intl.DateTimeFormat("en-US",{timeZone:SCHEDULING_TIMEZONE,hour:"numeric",minute:"2-digit",hour12:true}).format(new Date(value))
  return `${date} · ${s.roomName} · ${time(s.startTime)}–${time(s.endTime)} (${SCHEDULING_TIMEZONE_LABEL})`
 }
-export async function currentPanelScheduleNotification(tx:AppTransactionClient,notification:{eventKey:string;clubId:string|null;href:string},userId:string){
+type PanelScheduleVersionRow=Awaited<ReturnType<typeof findPanelScheduleVersions>>[number]
+function findPanelScheduleVersions(tx:AppTransactionClient,ids:string[]){
+ return tx.interviewPanelScheduleVersion.findMany({where:{id:{in:ids}},include:{round:{select:{name:true,anonymousReview:true,archivedAt:true}},publisher:{select:{disabledAt:true}}}})
+}
+/**
+ * Per-request memo for resolving many panel-schedule notifications for one user (the Inbox page, a digest).
+ * Without it each notification re-ran the member, version, owner and full assignment queries (Sentry N+1 on
+ * GET /api/workspace?kind=notifications). Only reads are shared; every authorization check still runs per row.
+ */
+export type PanelScheduleLookups={members:Map<string,Promise<Awaited<ReturnType<AppTransactionClient["clubMember"]["findFirst"]>>>>;versions:Map<string,Promise<PanelScheduleVersionRow|null>>;owners:Map<string,Promise<boolean>>;own?:Promise<OwnPanelAssignment[]>}
+export function panelScheduleLookups():PanelScheduleLookups{return{members:new Map(),versions:new Map(),owners:new Map()}}
+/** Loads every referenced schedule version in one query. Rows keep their own club check in currentPanelScheduleNotification. */
+export async function prefetchPanelScheduleVersions(tx:AppTransactionClient,lookups:PanelScheduleLookups,notifications:{eventKey:string|null}[]){
+ const ids=[...new Set(notifications.flatMap(n=>n.eventKey?.startsWith(panelScheduleNotificationPrefix)?[n.eventKey.split(":")[1]]:[]).filter(id=>id&&!lookups.versions.has(id)))]
+ if(!ids.length)return
+ const rows=findPanelScheduleVersions(tx,ids)
+ for(const id of ids){const version=rows.then(found=>found.find(v=>v.id===id)??null);version.catch(()=>{});lookups.versions.set(id,version)}
+ await rows
+}
+function memo<T>(map:Map<string,Promise<T>>,key:string,load:()=>Promise<T>){let value=map.get(key);if(!value){value=load();map.set(key,value)}return value}
+export async function currentPanelScheduleNotification(tx:AppTransactionClient,notification:{eventKey:string;clubId:string|null;href:string},userId:string,lookups:PanelScheduleLookups=panelScheduleLookups()){
  if(!notification.eventKey.startsWith(panelScheduleNotificationPrefix)||!notification.clubId)return null
  const [,versionId,memberId]=notification.eventKey.split(":")
- const member=await tx.clubMember.findFirst({where:{id:memberId,clubId:notification.clubId,userId,...activeMemberWhere,user:{disabledAt:null},club:{suspendedAt:null}}})
+ const member=await memo(lookups.members,`${notification.clubId}:${memberId}`,()=>tx.clubMember.findFirst({where:{id:memberId,clubId:notification.clubId!,userId,...activeMemberWhere,user:{disabledAt:null},club:{suspendedAt:null}}}))
  if(!member||!interviewCapabilities(member).participate)return null
- const version=await tx.interviewPanelScheduleVersion.findFirst({where:{id:versionId,clubId:member.clubId},include:{round:{select:{name:true,anonymousReview:true,archivedAt:true}},publisher:{select:{disabledAt:true}}}})
+ const found=await memo(lookups.versions,versionId,()=>findPanelScheduleVersions(tx,[versionId]).then(rows=>rows[0]??null))
+ const version=found&&found.clubId===member.clubId?found:null
  if(!version||version.round.anonymousReview||version.round.archivedAt||version.publisher.disabledAt)return null
- if(!await tx.clubMember.findFirst({where:{clubId:member.clubId,userId:version.publishedBy,isOwner:true,...activeMemberWhere,user:{disabledAt:null}},select:{id:true}}))return null
+ if(!await memo(lookups.owners,`${member.clubId}:${version.publishedBy}`,async()=>!!await tx.clubMember.findFirst({where:{clubId:member.clubId,userId:version.publishedBy,isOwner:true,...activeMemberWhere,user:{disabledAt:null}},select:{id:true}})))return null
  const changes=(version.changes as PanelScheduleChange[]).filter(c=>c.memberId===member.id)
  const cancelled=changes.length>0&&changes.every(c=>c.kind==="REMOVED")
- const own=(await ownPanelAssignments(tx,userId)).filter(s=>s.clubId===member.clubId&&s.roundId===version.roundId&&+new Date(s.endTime)>Date.now())
+ lookups.own??=ownPanelAssignments(tx,userId)
+ const own=(await lookups.own).filter(s=>s.clubId===member.clubId&&s.roundId===version.roundId&&+new Date(s.endTime)>Date.now())
  if(!cancelled&&!own.length)return null
  const lines=cancelled?changes.flatMap(c=>c.before?[`Cancelled: ${panelScheduleLine(c.before)}`]:[]):own.map(panelScheduleLine)
  const href=`/settings/interviews?clubId=${member.clubId}&roundId=${version.roundId}`,details=[...lines.slice(0,24),...(lines.length>24?[`${lines.length-24} more sessions are available in your interview schedule.`]:[])],signature=createHash("sha256").update(JSON.stringify({cancelled,lines})).digest("hex")

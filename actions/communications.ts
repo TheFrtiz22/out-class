@@ -11,7 +11,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { identifiableApplication, notificationDefaults } from "@/lib/communications-policy";
-import { panelScheduleNotificationPrefix,currentPanelScheduleNotification } from "@/utils/official-panel-schedule";
+import { panelScheduleNotificationPrefix,currentPanelScheduleNotification,panelScheduleLookups,prefetchPanelScheduleVersions } from "@/utils/official-panel-schedule";
 import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/availability-request-notifications";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
@@ -63,13 +63,16 @@ export async function getDurableNotifications(cursor?: string) {
   const unread = await prisma.userNotification.count({ where: { userId: user.id, archivedAt: null, readAt: null } });
   const items = await prisma.$transaction(async tx => {
     const contexts = new Map<string, ReturnType<typeof currentAssignmentNotification>>();
+    // One read of each panel-schedule version and of the viewer's official assignments for the whole page.
+    const panelLookups = panelScheduleLookups();
+    await prefetchPanelScheduleVersions(tx, panelLookups, rows.slice(0, 50));
     return Promise.all(rows.slice(0, 50).map(async row => {
     if (row.eventKey.startsWith(applicantBookingNotificationPrefix)) {
       const context = await currentApplicantBookingNotification(tx, row, user.id);
       return { ...row, ...(context ?? { title: "Interview update", body: "Open your current application to review its interview details.", href: "/applications" }) };
     }
     if (row.eventKey.startsWith(availabilityRequestPrefix)) { const context = await currentAvailabilityRequest(tx, row, user.id); return { ...row, ...(context ?? { title: "Availability response recorded or request closed", body: "View your current round responses in My Availability.", href: "/settings/availability" }) } }
-    if(row.eventKey?.startsWith(panelScheduleNotificationPrefix)){const context=await currentPanelScheduleNotification(tx,row,user.id);return {...row,...(context?{title:context.title,body:context.body,href:context.href}:{title:"Interview panel schedule changed",body:"Your assignment is no longer available. Check your current official interview schedule.",href:"/settings/interviews"})}}
+    if(row.eventKey?.startsWith(panelScheduleNotificationPrefix)){const context=await currentPanelScheduleNotification(tx,row,user.id,panelLookups);return {...row,...(context?{title:context.title,body:context.body,href:context.href}:{title:"Interview panel schedule changed",body:"Your assignment is no longer available. Check your current official interview schedule.",href:"/settings/interviews"})}}
     if (!row.eventKey?.startsWith(assignmentNotificationPrefix)) return row;
     // Several reschedule notices can refer to the same current authorized context.
     const key = `${row.clubId}:${row.href}:${row.eventKey.includes(":cancelled:")}`;
