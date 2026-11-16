@@ -41,7 +41,13 @@ const eventSelect = {
 export type EventRecord = Prisma.MeetingGetPayload<{
   select: typeof eventSelect;
 }>;
-function present(e: EventRecord, preview = false): CampusEvent {
+/** What the public board shows and eventIsPublished checks: no reviewer, submitter or rejection fields. */
+const publicEventSelect = {
+  ...eventSelect,
+  publication: { select: { status: true, category: true, contact: true, rsvpEnabled: true, rsvpRequired: true, capacity: true, rsvpDeadline: true, template: true, flyerId: true, approvedRevision: true } },
+} as const;
+type PublicEventRecord = Prisma.MeetingGetPayload<{ select: typeof publicEventSelect }>;
+function present(e: PublicEventRecord, preview = false): CampusEvent {
   const p = e.publication!;
   return {
     id: e.id,
@@ -157,7 +163,7 @@ export async function getPublicCorkboard(input: EventFilters = {}) {
   const [records, total, clubs] = await Promise.all([
     prisma.meeting.findMany({
       where,
-      select: eventSelect,
+      select: publicEventSelect,
       orderBy:
         f.sort === "name"
           ? [{ title: "asc" }, { id: "asc" }]
@@ -192,7 +198,7 @@ export async function getPublicCampusEvent(eventId: string) {
   z.string().uuid().parse(eventId);
   const e = await prisma.meeting.findUnique({
     where: { id: eventId },
-    select: eventSelect,
+    select: publicEventSelect,
   });
   return e && eventIsPublished(e) ? present(e) : null;
 }
