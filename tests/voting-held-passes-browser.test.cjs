@@ -2,6 +2,7 @@
 // projector): a compact intermission instead of wrapping back; the leader chooses; a crossfade into each new pass and
 // into the summary; the horizontal transition inside a pass; fresh ballots; counts move once; target is guidance.
 const {test}=require('node:test'),assert=require('node:assert/strict');
+const confirmNext=require('./helpers/confirm-next.cjs');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
 const {sessionId,apps,leaderId}=require('./helpers/voting-room-harness.cjs');
 
@@ -78,7 +79,7 @@ test('full session across devices: intermission, held passes with fresh ballots,
 
   // End voting: the leader's explicit action; every device fades to the summary with passed applicants first.
   for(const p of all)await watch(p);
-  leader.once('dialog',d=>d.accept());await leader.getByRole('button',{name:'End voting',exact:true}).click();
+  confirmNext(leader);await leader.getByRole('button',{name:'End voting',exact:true}).click();
   const poll3=setInterval(()=>void focus([member,projector]),300);
   try{for(const p of all)await p.locator('.vr-intermission-kicker',{hasText:'Voting ended'}).waitFor({timeout:20000});}finally{clearInterval(poll3);}
   await member.getByRole('region',{name:'Voting summary',exact:true}).waitFor();
@@ -104,7 +105,7 @@ test('ending early from an applicant: crossfade to the summary; Hold and Unrevie
   for(const p of all)await watch(p);
   // End voting while applicant 3 is current and undecided (More actions → End voting).
   await leader.getByText('More actions',{exact:true}).click();
-  leader.once('dialog',d=>d.accept());await leader.getByRole('button',{name:'End voting',exact:true}).click();
+  confirmNext(leader);await leader.getByRole('button',{name:'End voting',exact:true}).click();
   const poll=setInterval(()=>void focus([member,projector]),300);
   try{for(const p of all){await p.locator('.vr-intermission-kicker',{hasText:'Voting ended'}).waitFor({timeout:20000});await p.locator('.vr-slide-ready').waitFor();}}finally{clearInterval(poll);}
   for(const [i,p] of all.entries()){const w=await stop(p);assert.deepEqual(w.modes,['fade'],`device ${i}: a gentle crossfade to the summary`);assert.equal(w.fadeMoved,0);assert.equal(new Set(w.header).size,1);}

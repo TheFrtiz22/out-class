@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import { auditSupportAction } from "@/utils/support-audit";
 import { NextResponse } from "next/server"
 import { z } from "zod"
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
           { studentId: user.id },
           // Reviewers of a suspended club lose access like every other club workspace route.
           { status: { not: "DRAFTING" }, round: { anonymousReview: false }, club: { suspendedAt: null, members: { some: {
-            userId: user.id, status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }],
+            userId: user.id, ...activeMemberWhere, OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }],
           } } } },
         ] },
       },

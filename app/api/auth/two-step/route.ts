@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       if (!attempt) return tooMany();
       const result = await client.auth.mfa.challengeAndVerify({ factorId: pending.id, code: input.code });
       if (result.error) { if (providerAuthFailure(result.error)) return reply({ error: "That code didn't work. Try the current one." }, 400); throw result.error; }
-      await attemptSucceeded(attempt);
+      await attemptSucceeded(userId, attempt);
       await audit(userId, "account.two-step.enable", pending.id);
       await notice(userId, signedIn!.email, true);
       return reply({ success: true });
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     if (!attempt) return tooMany();
     const result = await client.auth.mfa.challengeAndVerify({ factorId: factor.id, code: input.code });
     if (result.error) { if (providerAuthFailure(result.error)) return reply({ error: "That code didn't work. Try the current one." }, 400); throw result.error; }
-    await attemptSucceeded(attempt);
+    await attemptSucceeded(userId, attempt);
     if (input.action === "challenge") return reply({ success: true });
 
     const assurance = await client.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -117,24 +117,39 @@ async function audit(actorId: string, action: string, factorId: string | null, e
 }
 
 const CODE_ATTEMPT = "user.two_step.attempt", PASSWORD_ATTEMPT = "user.two_step.password-attempt";
+const CODE_SUCCESS = "user.two_step.success";
 
 /**
  * Durable per-account attempt record, written before any provider call (the Admin elevation pattern,
  * on AuditLog rows). A transaction-scoped advisory lock serializes concurrent attempts for one account.
- * Only attempts that never succeeded count toward the limit. Returns null when the account is over it.
+ * AuditLog is append-only, so a verified code is recorded as a separate success row that names its
+ * attempt; only attempts in the window without a matching success count toward the limit.
+ * Returns the attempt row id, or null when the account is over the limit.
  */
 async function recordAttempt(userId: string, action: string): Promise<string | null> {
-  const since = new Date(Date.now() - TWO_STEP_ATTEMPT_WINDOW);
+  const since = new Date(Date.now() - TWO_STEP_ATTEMPT_WINDOW).toISOString();
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${"outclass-two-step:" + userId}))`;
-    const failed = await tx.auditLog.count({ where: { actorId: userId, action, createdAt: { gte: since }, details: { path: ["result"], equals: "attempt" } } });
+    // AuditLog."createdAt" is a UTC timestamp without time zone.
+    const [{ failed }] = await tx.$queryRaw<{ failed: number }[]>`
+      SELECT count(*)::int AS failed FROM "AuditLog" a
+      WHERE a."actorId" = ${userId} AND a.action = ${action}
+        AND a."createdAt" >= (${since}::timestamptz AT TIME ZONE 'UTC')
+        AND a.details->>'result' = 'attempt'
+        AND NOT EXISTS (
+          SELECT 1 FROM "AuditLog" s
+          WHERE s."actorId" = ${userId} AND s.action = ${CODE_SUCCESS}
+            AND s."createdAt" >= (${since}::timestamptz AT TIME ZONE 'UTC')
+            AND s.details->>'attempt' = a.id)`;
     if (failed >= TWO_STEP_ATTEMPT_LIMIT) return null;
     const row = await tx.auditLog.create({ data: { actorId: userId, action, targetId: userId, details: { result: "attempt" } } });
     return row.id;
   });
 }
-async function attemptSucceeded(id: string) {
-  await prisma.auditLog.update({ where: { id }, data: { details: { result: "success" } } });
+/** The provider has already accepted the code: a failed write is logged, never surfaced, and the
+ * attempt then simply keeps counting toward the limit (fails closed). */
+async function attemptSucceeded(userId: string, attemptId: string) {
+  await audit(userId, CODE_SUCCESS, null, { result: "success", attempt: attemptId });
 }
 
 type VerifiedUser = { id: string; email?: string | null; app_metadata?: Record<string, unknown> };

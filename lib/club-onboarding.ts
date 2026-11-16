@@ -1,5 +1,5 @@
 import type { MembershipAccessRole, SchoolIdentifierType } from "@prisma/client";
-import { clubPermissions, hasPermission, type ClubAccess, type ClubPermission } from "@/lib/permissions";
+import { clubPermissions, hasPermission, isActiveMembership, type ClubAccess, type ClubPermission } from "@/lib/permissions";
 
 /** Roles are membership-local templates. Stored capabilities remain authoritative. */
 export const onboardingRolePermissions: Record<MembershipAccessRole, ClubPermission[]> = {
@@ -20,7 +20,7 @@ export function normalizeSchoolIdentifier(value: string, config: Pick<SchoolIden
 }
 
 export function canGrantOnboardingRole(actor: ClubAccess | null, role: MembershipAccessRole) {
-  if (!actor || (actor.status && actor.status !== "ACTIVE")) return false;
+  if (!actor || !isActiveMembership(actor)) return false;
   if (role === "OWNER") return actor.isOwner === true;
   if (role === "MEMBER") return hasPermission(actor, "members.manage") || hasPermission(actor, "leaders.manage");
   return hasPermission(actor, "leaders.manage") && onboardingRolePermissions[role].every(p => hasPermission(actor, p));

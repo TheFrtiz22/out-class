@@ -91,7 +91,7 @@ body > .oc-loading-screen {
   color: var(--muted-foreground);
   font-size: .75rem;
   font-weight: 600;
-  letter-spacing: .06em;
+  letter-spacing: var(--oc-tracking-caps);
   line-height: 1.2;
 }
 .oc-loading-screen[data-variant="navy"] .oc-loading-caption {

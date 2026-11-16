@@ -63,7 +63,7 @@
 .oc-filter-panel-body > * { min-width: 0; }
 .oc-filter-panel-body .oc-segmented-control { width: 100%; }
 .oc-filter-panel-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding: .875rem 1.25rem; border-top: 1px solid var(--border); }
-[data-slot="sheet-content"].oc-filter-sheet { max-height: 88dvh; gap: 0; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)); border-radius: var(--oc-radius-lg) var(--oc-radius-lg) 0 0; }
+[data-slot="sheet-content"].oc-filter-sheet { max-height: 88dvh; gap: 0; padding: 1.75rem 1rem calc(1rem + env(safe-area-inset-bottom)); border-radius: var(--oc-radius-lg) var(--oc-radius-lg) 0 0; }
 .oc-filter-sheet .oc-filter-panel-body { padding-inline: 0; }
 .oc-filter-sheet .oc-filter-panel-footer { padding-inline: 0; }
 .oc-filter-field { display: grid; gap: .5rem; }

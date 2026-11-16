@@ -24,8 +24,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { composerEnter } from "@/lib/composer-enter";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, CheckCircle2, Plus } from "@/components/icons";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowRight, CheckCircle2, Plus, X } from "@/components/icons";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useInterviewWorkspace } from "@/hooks/use-interview-workspace";
 import type { KitQuestion } from "@/lib/interview-kits";
 // Demo-only simulation helpers load on demand so live interview sessions do not ship the demo store.
@@ -47,7 +48,16 @@ export function InterviewKitSession({
   toolbar,
   initialSession,
   advancing = false,
+  room,
+  onExitRoom,
+  demoGuide,
 }: {
+  /** The room's own header (club badge, round, presence, Exit). Without it the participants show in a plain row. */
+  room?: { club: string; badge: string; round?: string };
+  /** The room header's Exit: the same unsaved-work check as the focus frame's Exit. */
+  onExitRoom?: () => void;
+  /** Demo mode's sample interview guide, shown with the collaboration simulation in one demo chip. */
+  demoGuide?: ReactNode;
   context?: ReactNode;
   toolbar?: (completed: boolean) => ReactNode;
   initialSession?: InterviewSessionData;
@@ -86,6 +96,9 @@ export function InterviewKitSession({
   const collaboration = useInterviewWorkspace({ clubId, applicationId, roundId }, !!session, reportAccessRevoked);
   // Hoisted: the refs it reads are set by the time any server response arrives.
   function reportAccessRevoked() { accessRevoked.current?.(JSON.stringify(draftRef.current) !== savedRef.current); }
+  // For the timer and score/review widgets: passed only when the room handles ACCESS_REVOKED, so outside
+  // the room they keep their inline message. A refusal arriving after this session closed is ignored.
+  const widgetAccessRevoked = onAccessRevoked ? () => { if (mounted.current) reportAccessRevoked(); } : undefined;
   const sharedRevision = useRef(-1);
   const personalQuestion = useRef(false);
   const suppressQuestionFocus = useRef(false);
@@ -210,7 +223,11 @@ export function InterviewKitSession({
     let current = true;
     setLibraryError("");
     setLibraryLoading(true);
-    getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(() => { if (current) setLibraryError("Current kit unavailable. Your session snapshot is still available.") }).finally(() => { if (current) setLibraryLoading(false); });
+    getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(e => {
+      if (!current) return;
+      if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; }
+      setLibraryError("Current kit unavailable. Your session snapshot is still available.");
+    }).finally(() => { if (current) setLibraryLoading(false); });
     return () => { current = false };
   }, [clubId, roundId, libraryOpen, libraryRetry]);
   useLayoutEffect(() => {
@@ -228,7 +245,11 @@ export function InterviewKitSession({
   useEffect(() => {
     if (!closing || session?.completedAt) return;
     let current = true; setHistory(null); setHistoryError("");
-    getPreviousInterviewScores({ clubId, applicationId, roundId }).then(value => { if (current) setHistory(value); }).catch(() => { if (current) setHistoryError("Score history unavailable."); });
+    getPreviousInterviewScores({ clubId, applicationId, roundId }).then(value => { if (current) setHistory(value); }).catch(e => {
+      if (!current) return;
+      if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; }
+      setHistoryError("Score history unavailable.");
+    });
     return () => { current = false; };
   }, [closing, session?.completedAt, clubId, applicationId, roundId, historyRetry]);
   const closingHeading = useRef<HTMLHeadingElement>(null);
@@ -287,7 +308,9 @@ export function InterviewKitSession({
           const result = await collaboration.select(intent.question.id);
           sharedRevision.current = Math.max(sharedRevision.current, result.revision);
           if (mounted.current && intent.sequence === selectionSequence.current && activeQuestionRef.current === intent.question.id && !draftRef.current.postInterview) setSharedQuestion(result.question);
-        } catch {
+        } catch (e) {
+          // Removed from the panel: stop sharing (no "could not be shared" or retry); the room takes over.
+          if (isAccessRevoked(e) && accessRevoked.current) { selectionIntent.current = null; if (mounted.current) reportAccessRevoked(); return; }
           if (mounted.current && intent.sequence === selectionSequence.current) { setShareFailed(intent.question); setCollaborationMessage("This question is open locally, but could not be shared. Your private draft is retained."); }
         }
       }
@@ -560,28 +583,43 @@ export function InterviewKitSession({
     try {
       const found = await onNextApplicant(collaboration.clientId);
       if (mounted.current) setNoMoreApplicants(!found);
-    } catch {
+    } catch (e) {
+      // Removed from the panel: the room shows its access-removed state; no advance happened.
+      if (isAccessRevoked(e) && accessRevoked.current) { if (mounted.current) reportAccessRevoked(); return; }
       if (mounted.current) setNextError("Could not load the next applicant. Your submitted review is safe. Retry to check your current access and assignments.");
     } finally {
       nextBusyRef.current = false;
       if (mounted.current) setNextBusy(false);
     }
   }
+  const simulation = collaboration.view?.simulated ? <><p>Alex is simulated. This does not demonstrate real multi-user behavior.</p><Button type="button" variant="ghost" onClick={async () => { (await demoCollaboration()).simulateDemoInterviewSelection({ clubId, applicationId, roundId }); void collaboration.refresh(); }}>Simulate question selection</Button><Button type="button" variant="ghost" onClick={async () => { const simulation = await demoCollaboration(); try { simulation.simulateDemoInterviewAdvance({ clubId, applicationId, roundId }); void collaboration.refresh(); } catch { setCollaborationMessage("No sample candidates left."); } }}>Simulate next-candidate invitation</Button></> : null;
   return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); }}>
+    {room && <div className="oc-room-topbar">
+      <div className="oc-room-title"><span className="oc-room-badge" aria-hidden="true">{room.badge}</span><span className="oc-room-title-text"><span className="sr-only">{room.club} · </span>{room.round || room.club}</span></div>
+      {(demoGuide || simulation) && <Popover><PopoverTrigger asChild><Button type="button" variant="accent" size="sm" className="oc-room-demo-chip">{demoGuide ? `Demo mode · ${room.badge} interview guide` : "Demo collaboration simulation"}</Button></PopoverTrigger>
+        <PopoverContent align="start" className="oc-room-demo-guide w-96 max-w-[calc(100vw-2rem)] space-y-4">{demoGuide}{simulation && <section aria-label="Demo collaboration simulation" className="space-y-2 border-t pt-3 text-sm"><h3 className="font-medium">Demo collaboration simulation</h3>{simulation}</section>}</PopoverContent></Popover>}
+      <div className="oc-room-topbar-end">
+        <div className="oc-room-presence" role="group" aria-label="Room participants">
+          {collaboration.view ? <><span className="oc-room-avatars" aria-hidden="true">{collaboration.view.participants.slice(0, 4).map(p => <Avatar key={p.id} className="oc-room-avatar" title={p.name}><AvatarFallback>{participantInitials(p.name)}</AvatarFallback></Avatar>)}</span><span className="sr-only">{collaboration.view.participants.map(p => p.name).join(", ")}</span><span>In this room</span></> : <span>Connecting to panel…</span>}
+          {collaboration.error && <span role="status">{collaboration.error} <Button type="button" variant="ghost" size="sm" onClick={() => void collaboration.refresh()}>Retry connection</Button></span>}
+        </div>
+        {onExitRoom && <Button type="button" variant="outline" className="oc-room-exit" onClick={onExitRoom}><X aria-hidden="true" />Exit</Button>}
+      </div>
+    </div>}
     <header className="oc-room-header">
-      {toolbar?.(!!session.completedAt)}
-      <InterviewTimer key={session.id} scope={{ clubId, applicationId, roundId }} shared={collaboration.view?.timer} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
+      <div className="oc-room-toolbar-start">{toolbar?.(!!session.completedAt)}</div>
+      <InterviewTimer key={session.id} scope={{ clubId, applicationId, roundId }} shared={collaboration.view?.timer} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} onAccessRevoked={widgetAccessRevoked} />
       {recovery.recovery != null && <AutosaveStatus save={{ ...recovery, state: "idle", error: "", flush: flushLatest }} />}
       {recovery.deviceNotice && <p role="status" className="text-xs text-muted-foreground">{recovery.deviceNotice}</p>}
       {recovery.offlineBanner && !session.completedAt && <AutosaveStatus save={{ state: "offline", error: recovery.offlineBanner, flush: flushLatest }} />}
-      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? (connection === "offline" ? `Offline${notesKept}` : connection === "unreachable" ? `Couldn’t reach OutClass${notesKept}` : "Couldn’t save") : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
+      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? (connection === "offline" ? `Offline${notesKept}` : connection === "unreachable" ? `Couldn’t reach OutClass${notesKept}` : "Couldn’t save") : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
-    <div className="oc-room-collaboration" aria-label="Room participants">
+    {!room && <div className="oc-room-collaboration" aria-label="Room participants">
       <span>{collaboration.view ? `${collaboration.view.participants.map(p => p.name).join(" · ")} · In this room` : "Connecting to panel…"}</span>
       {collaboration.error && <span role="status">{collaboration.error} <Button type="button" variant="ghost" onClick={() => void collaboration.refresh()}>Retry connection</Button></span>}
-      {collaboration.view?.simulated && <details><summary>Demo collaboration simulation</summary><p>Alex is simulated. This does not demonstrate real multi-user behavior.</p><Button type="button" variant="ghost" onClick={async () => { (await demoCollaboration()).simulateDemoInterviewSelection({ clubId, applicationId, roundId }); void collaboration.refresh(); }}>Simulate question selection</Button><Button type="button" variant="ghost" onClick={async () => { const simulation = await demoCollaboration(); try { simulation.simulateDemoInterviewAdvance({ clubId, applicationId, roundId }); void collaboration.refresh(); } catch { setCollaborationMessage("No sample candidates left."); } }}>Simulate next-candidate invitation</Button></details>}
-    </div>
+      {simulation && <details><summary>Demo collaboration simulation</summary>{simulation}</details>}
+    </div>}
     <div className="oc-interview-columns grid items-start">
       {context}
       <div className="oc-question-workspace min-w-0">
@@ -593,7 +631,7 @@ export function InterviewKitSession({
         {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Load latest version, keep my text</Button></div></div>}
         {(!closing && !session.completedAt) || (session.completedAt && activeQuestion) ? <>
         {session.completedAt && <Button type="button" variant="ghost" onClick={() => setActiveQuestion("")}>Back to submitted review</Button>}
-        <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><div className="oc-question-heading-actions"><Button ref={bankControl} type="button" variant="ghost" disabled={closingQuestion || ending} aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button>{!session.completedAt && <Tooltip><TooltipTrigger asChild><Button ref={originalControl} type="button" variant="ghost" size="icon" className="oc-add-original" aria-label="Add original question" aria-expanded={offScriptOpen} aria-controls="interview-original-question" disabled={disabled || ending || addingOriginal} onClick={() => { if (offScriptOpen) cancelOriginal(); else { setOriginalError(""); setOffScriptOpen(true); } }}><Plus aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>Add original question</TooltipContent></Tooltip>}</div></div>
+        <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><div className="oc-question-heading-actions"><Button ref={bankControl} type="button" variant="outline" disabled={closingQuestion || ending} aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button>{!session.completedAt && <Button ref={originalControl} type="button" variant="outline" className="oc-add-original" aria-label="Add original question" aria-expanded={offScriptOpen} aria-controls="interview-original-question" disabled={disabled || ending || addingOriginal} onClick={() => { if (offScriptOpen) cancelOriginal(); else { setOriginalError(""); setOffScriptOpen(true); } }}><Plus aria-hidden="true" />Add question</Button>}</div></div>
         {offScriptOpen && !session.completedAt && <fieldset id="interview-original-question" disabled={completing || closingQuestion || ending || addingOriginal} className="oc-original-question space-y-2"><label htmlFor="new-interview-question" className="text-sm font-medium">Original question</label>
           {/* eslint-disable-next-line jsx-a11y/no-autofocus -- The interviewer explicitly opened the question field; focus enters its labelled field. */}
           <Textarea ref={originalField} id="new-interview-question" autoFocus rows={2} maxLength={3000} aria-describedby="original-question-keyboard" aria-invalid={!!originalError} value={newQuestion} onChange={e => { setNewQuestion(e.target.value); if (originalError) setOriginalError(""); }} onKeyDown={e => { if (e.key === "Escape") { e.preventDefault(); cancelOriginal(); return; } composerEnter(e, () => void submitOffScript()); }} />
@@ -611,7 +649,7 @@ export function InterviewKitSession({
           {!libraryLoading && !libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching questions in this bank.</p>}
         </Panel>}
         <div ref={completionSource} className="oc-question-completion-source">
-        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => void selectBankQuestion(q)} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
+        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ol>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => void selectBankQuestion(q)} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ol>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
         {active ? <section ref={el => { if (el) questionNodes.current.set(active.id, el); else questionNodes.current.delete(active.id); }} className="oc-active-question space-y-4" aria-label="Active question">
           <Button type="button" variant="ghost" onClick={() => { setActiveQuestion(""); setLibraryOpen(false); bankControl.current?.focus(); }}>Back to question bank</Button>
           <h3 ref={activeHeading} tabIndex={-1} className="break-words">{active.prompt}</h3>
@@ -625,7 +663,7 @@ export function InterviewKitSession({
         </div>
         </> : <section aria-label={session.completedAt ? "Submitted review" : "Post-interview"} className="oc-post-interview space-y-5" style={flights.length ? { opacity: 0 } : undefined}>
           <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
-          {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} />}
+          {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} onAccessRevoked={widgetAccessRevoked} />}
           <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Miscellaneous notes and question review</a>
           <fieldset disabled={disabled} className="space-y-3"><label htmlFor="final-interview-thoughts">Final interview thoughts</label>
             {session.completedAt ? <p className="whitespace-pre-wrap break-words">{draft.finalInterviewThoughts || "None recorded."}</p> : <><p id="final-interview-thoughts-help" className="text-sm text-muted-foreground">Summarize your assessment in 2–3 sentences. Maximum 50 words.</p><Textarea id="final-interview-thoughts" rows={4} aria-describedby="final-interview-thoughts-help final-interview-thoughts-count" aria-invalid={interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT} value={draft.finalInterviewThoughts || ""} onChange={e => setDraft(d => ({ ...d, finalInterviewThoughts: e.target.value }))} /><p id="final-interview-thoughts-count" role="status" className={interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{interviewThoughtWordCount(draft.finalInterviewThoughts)} / 50 words</p>{interviewThoughtWordCount(draft.finalInterviewThoughts) > FINAL_INTERVIEW_THOUGHTS_WORD_LIMIT && <p className="text-sm text-destructive">Shorten your draft to 50 words before submitting. Your text is retained.</p>}</>}
@@ -647,7 +685,7 @@ export function InterviewKitSession({
       <aside id="interview-completed" tabIndex={-1} aria-label="Your notes and completed questions" className="min-w-0">
         <div className="oc-candidate-content">
         <div className="oc-miscellaneous-notes"><label htmlFor="additional-interview-notes">Miscellaneous notes</label><Textarea ref={miscellaneousNotes} id="additional-interview-notes" rows={5} maxLength={20000} disabled={!!session.completedAt || completing || recovery.recovery != null} value={draft.additionalNotes ?? draft.overallReview} onChange={e => setDraft(d => ({ ...d, additionalNotes: e.target.value }))} /></div>
-        <EarlierRounds key={`${applicationId}:${roundId}`} scope={{ clubId, applicationId, roundId }} />
+        <EarlierRounds key={`${applicationId}:${roundId}`} scope={{ clubId, applicationId, roundId }} onAccessRevoked={widgetAccessRevoked} />
         <h2>{closing || session.completedAt ? "Your question notes" : "Completed questions"} <span className="oc-completed-count">{reviewed.length}</span></h2>
         <ul>{reviewed.map(q => { const notes = questionNotes(q.id), open = expandedQuestions.includes(q.id), done = completedIds.includes(q.id); return <li key={q.id} style={flights.some(f => f.id === q.id) ? { opacity: 0 } : undefined} ref={el => { if (el) rowNodes.current.set(q.id, el); else rowNodes.current.delete(q.id); }}>
           <button type="button" aria-expanded={open} aria-controls={`question-review-${q.id}`} onClick={() => setExpandedQuestions(ids => open ? ids.filter(id => id !== q.id) : [...ids, q.id])} className="oc-completed-row">
@@ -660,7 +698,7 @@ export function InterviewKitSession({
             {!closing && !session.completedAt && <Button type="button" variant="ghost" onClick={() => { personalQuestion.current = true; setSharedQuestion(null); setActiveQuestion(q.id); setExpandedQuestions([]); }}>Reopen question</Button>}
           </div></div></div>
         </li>; })}</ul>
-        {!reviewed.length && <p className="text-sm text-muted-foreground">{closing || session.completedAt ? "No question notes recorded." : "Saved questions appear here."}</p>}
+        {!reviewed.length && <p className="oc-completed-empty text-sm text-muted-foreground">{closing || session.completedAt ? "No question notes recorded." : "Saved questions appear here."}</p>}
         </div>
       </aside>
     </div>
@@ -669,8 +707,14 @@ export function InterviewKitSession({
       const invitationId = collaboration.view!.invitation!.id;
       if (!onNextApplicant || nextBusyRef.current) return;
       nextBusyRef.current = true; setNextBusy(true);
-      void onNextApplicant(collaboration.clientId, invitationId).catch(() => setCollaborationMessage("Could not join. Retry after checking current assignments; your review is safe.")).finally(() => { nextBusyRef.current = false; if (mounted.current) setNextBusy(false); });
-    }}>Proceed</Button>{!session.completedAt && <Button type="button" variant="outline" disabled={saving || completing || ending} onClick={() => { if (!closing) void endInterview(); else closingHeading.current?.focus({ preventScroll: false }); }}>Finish current review</Button>}<Button type="button" variant="ghost" disabled={nextBusy} onClick={() => void collaboration.dismiss(collaboration.view!.invitation!.id).catch(() => setCollaborationMessage("Could not dismiss the invitation. Retry Stay here."))}>Stay here</Button></div></aside>}
+      void onNextApplicant(collaboration.clientId, invitationId).catch(e => { if (!mounted.current) return; if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; } setCollaborationMessage("Could not join. Retry after checking current assignments; your review is safe."); }).finally(() => { nextBusyRef.current = false; if (mounted.current) setNextBusy(false); });
+    }}>Proceed</Button>{!session.completedAt && <Button type="button" variant="outline" disabled={saving || completing || ending} onClick={() => { if (!closing) void endInterview(); else closingHeading.current?.focus({ preventScroll: false }); }}>Finish current review</Button>}<Button type="button" variant="ghost" disabled={nextBusy} onClick={() => void collaboration.dismiss(collaboration.view!.invitation!.id).catch(e => { if (!mounted.current) return; if (isAccessRevoked(e) && accessRevoked.current) { reportAccessRevoked(); return; } setCollaborationMessage("Could not dismiss the invitation. Retry Stay here."); })}>Stay here</Button></div></aside>}
     {flights.map(f => <div key={f.id} ref={el => { if (el) flightNodes.current.set(f.id, el); else flightNodes.current.delete(f.id); }} className="oc-question-flight" aria-hidden="true" inert style={{ left: f.from.left, top: f.from.top, width: f.from.width, height: f.from.height }}><div style={{ width: f.from.width }}><p>{f.prompt}</p>{f.notes && <p className="oc-note-preview">{f.notes}</p>}</div></div>)}
   </form>;
+}
+
+/** Up to two initials for a room participant's avatar (the full names are read out beside it). */
+function participantInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts).map(part => Array.from(part)[0] ?? "").join("").toLocaleUpperCase();
 }

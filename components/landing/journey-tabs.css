@@ -1,7 +1,7 @@
 /* "Sound familiar?" and "How OutClass works" (docs/public-site/redesign/Main.mockup.html).
    Light glass on the warm canvas via .oc-public-glass; Caslon for headings and the step number only. */
 .oc-scattered, .oc-product-stories { --oc-journey-width: 1136px; --oc-journey-side: max(16px, calc((100% - var(--oc-journey-width)) / 2)); }
-.oc-journey-kicker { margin: 0; font-size: var(--oc-text-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.oc-journey-kicker { margin: 0; font-size: var(--oc-text-small); font-weight: 600; letter-spacing: var(--oc-tracking-caps); text-transform: uppercase; color: var(--muted-foreground); }
 .oc-scattered h2, .oc-how-introduction h2 { margin: 0; font-family: var(--oc-font-display); font-size: clamp(var(--oc-size-32), 3.4vw, 2.75rem); /* type-literal-ok: display clamp cap, between --oc-size-36 and --oc-size-48 */ font-weight: 400; line-height: 1.12; letter-spacing: -.025em; color: var(--primary); text-wrap: balance; }
 
 /* Sound familiar? */

@@ -48,6 +48,8 @@ export function TurnstileWidget({ action, onToken, resetKey = 0, className }: {
       if (cancelled || !container.current) return
       widget.current = api.render(container.current, {
         sitekey: TURNSTILE_SITE_KEY, action, appearance: "interaction-only", size: "flexible", theme: "auto",
+        // Tokens reach forms only through `callback`; no hidden input is added to the host form.
+        "response-field": false,
         callback: (token: string) => { setFailed(false); callback.current(token) },
         "expired-callback": () => callback.current(null),
         "error-callback": () => { callback.current(null); setFailed(true) },

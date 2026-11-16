@@ -1,7 +1,7 @@
 import type { MembershipAccessRole } from "@prisma/client";
 import { membershipRoleLabels } from "@/lib/copy/terms";
 import { canGrantOnboardingRole, onboardingRolePermissions } from "@/lib/club-onboarding";
-import { hasPermission, isActiveMembership, type ClubAccess, type ClubPermission } from "@/lib/permissions";
+import { hasPermission, isActiveMembership, isRosterMembership, type ClubAccess, type ClubPermission } from "@/lib/permissions";
 
 export const organizationRoles = ["OWNER", "ADMIN", "RECRUITING_ADMIN", "INTERVIEWER", "MEMBER"] as const;
 export const organizationRoleLabels: Record<MembershipAccessRole, string> = membershipRoleLabels;
@@ -33,7 +33,8 @@ export function canChangeOrganizationRole(actor: ClubAccess | null | undefined, 
 }
 
 export function canRemoveOrganizationMember(actor: ClubAccess | null | undefined, target: ClubAccess & { accessRole?: string }) {
-  return organizationCapabilities(actor).canManageMembers && isActiveMembership(target) && canControlOrganizationAccess(actor, target);
+  // Alumni stay removable (isRosterMembership), unlike role changes, which need a current member.
+  return organizationCapabilities(actor).canManageMembers && isRosterMembership(target) && canControlOrganizationAccess(actor, target);
 }
 
 export function canManageOrganizationInvitation(actor: ClubAccess | null | undefined, invitation: { requestedRole: MembershipAccessRole; permissions: readonly string[] }) {

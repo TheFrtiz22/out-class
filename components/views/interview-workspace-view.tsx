@@ -1,5 +1,5 @@
 "use client"
-import { UserFacingError } from "@/lib/action-result"
+import { isAccessRevoked, UserFacingError } from "@/lib/action-result"
 import { PillSelect } from "@/components/ui/pill-select"
 import { PillGroup } from "@/components/ui/segmented-control"
 import { InterviewApplicantPanel } from "@/components/interview-applicant-panel"
@@ -17,14 +17,15 @@ import { getInterviewWorkspace, resolveInterviewRoomEntry, openInterviewSession,
 import { captureInterviewCandidate, animateInterviewCandidate } from "@/lib/interview-candidate-motion"
 import { interviewQueue } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
-import { DemoInterviewGuide } from "@/components/demo-workspace"
+import { DemoInterviewGuide, DemoInterviewGuideContent } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { useConfirm } from "@/components/ui/confirm-dialog"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
 
 type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
-export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: () => void; scoped?: boolean }) {
+/** `badge` and `demo` come from the route: the room header's club badge and whether to show the demo guide. */
+export function InterviewWorkspaceView({ onExit, scoped = false, badge, demo = false }: { onExit?: () => void; scoped?: boolean; badge?: string; demo?: boolean }) {
   const { user, loading, activeClubId, selectClub } = useAuth()
   const confirm = useConfirm()
   const { leaderFocus } = useApplicationState()
@@ -67,7 +68,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <PillSelect label="Interview club" disabled={locked} active={false} value={membership.clubId} onChange={value => setClubId(value)} options={memberships.map(item => ({ value: item.clubId, label: item.club.name }))} />} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} badge={badge} demo={demo} onLock={handleLock} onExit={exit} clubSelector={!scoped && <PillSelect label="Interview club" disabled={locked} active={false} value={membership.clubId} onChange={value => setClubId(value)} options={memberships.map(item => ({ value: item.clubId, label: item.club.name }))} />} />
         )}
       </div>
     </div>
@@ -76,21 +77,34 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
 
 function InterviewSession({
   membership,
+  badge,
+  demo = false,
   onLock,
   onExit,
   clubSelector,
 }: {
   onExit: () => void
   membership: ExtendedMembership
+  /** The club badge in the room header (short name or abbreviation). */
+  badge?: string
+  /** Demo mode: the room header shows the sample interview guide. */
+  demo?: boolean
   onLock: (locked: boolean, saving?: boolean) => void
   clubSelector?: ReactNode
 }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const confirm = useConfirm()
+  // The toolbar spot where the applicant panel shows the candidate's photo and name.
+  const [candidateSlot, setCandidateSlot] = useState<HTMLDivElement | null>(null)
   const [data, setData] = useState<Pipeline | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [revokedNotes, setRevokedNotes] = useState(false)
+  // A résumé comment the server refused with ACCESS_REVOKED. It cannot be kept, so it is shown once.
+  const [revokedComment, setRevokedComment] = useState<string | null>(null)
+  // The résumé comment open in the viewer, so a refusal reported by any room part can still show it.
+  const openComment = useRef<string | undefined>(undefined)
+  const trackComment = useCallback((comment: string | undefined) => { openComment.current = comment }, [])
   const [retry, setRetry] = useState(0)
   const [roundId, setRoundId] = useState("")
   const [activeId, setActiveId] = useState("")
@@ -111,7 +125,8 @@ function InterviewSession({
   const form = useRef<HTMLFormElement>(null)
   // The server refused a room call with ACCESS_REVOKED (e.g. removed from the panel mid-interview).
   // Unmounting the room stops its polling and autosave; unsaved notes stay on this device.
-  const accessRevoked = useCallback((unsavedNotes: boolean) => { setData(null); setActiveId(""); setPrepared(null); setRevokedNotes(unsavedNotes); setLoadError(true) }, [])
+  // Several room parts can report it; what each knows about unsaved work is combined until Try again.
+  const accessRevoked = useCallback((unsavedNotes: boolean, unsavedComment?: string) => { setData(null); setActiveId(""); setPrepared(null); setArrival(null); setRevokedNotes(value => value || unsavedNotes); const comment = unsavedComment ?? openComment.current; if (comment !== undefined) setRevokedComment(comment); setLoadError(true) }, [])
   const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
   const recoveredApplicant = useCallback(() => {
     try { return JSON.parse(sessionStorage.getItem(recoveryKey) || "null") as { roundId: string; applicationId: string; moveId?: string; clientId?: string } | null }
@@ -124,9 +139,14 @@ function InterviewSession({
   useEffect(() => {
     if (!arrival || arrival.applicationId !== activeId) return
     let current = true
-    confirmInterviewAdvance({ moveId: arrival.moveId, clientId: arrival.clientId }).then(() => { if (current) { setArrival(null); rememberApplicant(activeId); setMessage("") } }).catch(() => { if (current) { setFailed(true); setMessage("Your destination is open, but the panel invitation could not be confirmed. Retry confirmation.") } })
+    confirmInterviewAdvance({ moveId: arrival.moveId, clientId: arrival.clientId }).then(() => { if (current) { setArrival(null); rememberApplicant(activeId); setMessage("") } }).catch((error) => {
+      if (!current) return
+      // Refused: the receipt is dropped (Try again reopens this applicant without re-confirming) and no arrival is reported.
+      if (isAccessRevoked(error)) { rememberApplicant(activeId); accessRevoked(dirtyRef.current); return }
+      setFailed(true); setMessage("Your destination is open, but the panel invitation could not be confirmed. Retry confirmation.")
+    })
     return () => { current = false }
-  }, [arrival, activeId, arrivalRetry, rememberApplicant])
+  }, [arrival, activeId, arrivalRetry, rememberApplicant, accessRevoked])
   const round = data?.rounds.find((item) => item.id === roundId)
   useFocusFrame({ task: round ? `Interview · ${round.name}` : undefined })
   const queue = interviewQueue(data?.applications || [], roundId)
@@ -134,6 +154,9 @@ function InterviewSession({
   const [kitDirty, setKitDirty] = useState(false)
   const handleKitState = useCallback((changed: boolean, pending: boolean) => { setKitDirty(changed); setBusy(pending) }, [])
   const dirty = kitDirty
+  const dirtyRef = useRef(dirty); dirtyRef.current = dirty
+  // The applicant panel and résumé viewer do not see the notes; this view does.
+  const panelAccessRevoked = useCallback((unsavedComment?: string) => accessRevoked(dirtyRef.current, unsavedComment), [accessRevoked])
   const progress = { total: queue.length, completed: queue.filter(app => app.completedRoundIds.includes(roundId)).length }
   useEffect(() => () => { navigation.current++ }, [])
   useEffect(() => { navigation.current++ }, [roundId])
@@ -300,7 +323,8 @@ function InterviewSession({
       <div role="alert" className="space-y-4 py-12">
         <p>We couldn’t open this interview. It may have changed, or you may no longer have access. Use Exit to return to your interviews.</p>
         {revokedNotes && <p className="text-sm text-muted-foreground">Notes you hadn’t saved stay in this browser and return if you reopen this interview. Re-enter any unsaved score.</p>}
-        <Button variant="outline" onClick={() => { setRevokedNotes(false); setRetry((value) => value + 1) }}>
+        {revokedComment !== null && <div className="space-y-2"><p className="text-sm text-muted-foreground">{revokedComment.trim() ? "Your résumé comment wasn’t saved. Copy it if you need it:" : "Your résumé highlight wasn’t saved."}</p>{revokedComment.trim() && <blockquote className="whitespace-pre-wrap break-words rounded-md border p-3 text-sm">{revokedComment}</blockquote>}</div>}
+        <Button variant="outline" onClick={() => { setRevokedNotes(false); setRevokedComment(null); setRetry((value) => value + 1) }}>
           Try again
         </Button>
       </div>
@@ -357,8 +381,9 @@ function InterviewSession({
         <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList} onAccessRevoked={accessRevoked}
 
-toolbar={() => <><Button type="button" variant="ghost" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button></>}
-context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} />}
+room={{ club: membership.club.name, badge: badge || Array.from(membership.club.name.trim())[0]?.toUpperCase() || "", round: round.name }} onExitRoom={onExit} demoGuide={demo ? <DemoInterviewGuideContent /> : undefined}
+toolbar={() => <><Button type="button" variant="outline" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button><span className="oc-room-divider" aria-hidden="true" /><div ref={setCandidateSlot} className="oc-room-candidate" /></>}
+context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} onAccessRevoked={panelAccessRevoked} onDraftComment={trackComment} identitySlot={candidateSlot} />}
             onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)
               setKitDirty(false)

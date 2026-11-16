@@ -41,16 +41,14 @@ export function DemoRoundTarget() {
     </section>
   )
 }
-export function DemoInterviewGuide() {
+/** The sample interview guide's questions and rubric; the interview room shows it in its demo chip. */
+export function DemoInterviewGuideContent() {
   const { state, isDemoEnabled } = useDemoMode()
   if (!isDemoEnabled || !state) return null
   const club = state.clubs.find((c) => c.id === state.perspective.clubId)!
   return (
-    <details className="mx-5 my-4 rounded-md border border-border p-4 sm:mx-8">
-      <summary className="cursor-pointer text-sm font-medium">
-        Demo Mode · {club.name} interview guide
-      </summary>
-      <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm">
+    <>
+      <ol className="list-decimal space-y-2 pl-5 text-sm">
         {club.interviewQuestions.map((q) => (
           <li key={q}>{q}</li>
         ))}
@@ -60,6 +58,19 @@ export function DemoInterviewGuide() {
         1–10 score: 1–3 developing, 4–6 promising, 7–8 strong, 9–10 exceptional. This guide does not
         claim a real club’s rubric.
       </p>
+    </>
+  )
+}
+export function DemoInterviewGuide() {
+  const { state, isDemoEnabled } = useDemoMode()
+  if (!isDemoEnabled || !state) return null
+  const club = state.clubs.find((c) => c.id === state.perspective.clubId)!
+  return (
+    <details className="mx-5 my-4 rounded-md border border-border p-4 sm:mx-8">
+      <summary className="cursor-pointer text-sm font-medium">
+        Demo Mode · {club.name} interview guide
+      </summary>
+      <div className="mt-4"><DemoInterviewGuideContent /></div>
     </details>
   )
 }

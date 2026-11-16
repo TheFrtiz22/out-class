@@ -1,4 +1,5 @@
 "use server"
+import { activeMemberWhere } from "@/lib/permissions";
 
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
@@ -25,7 +26,7 @@ export async function searchWorkspace(
   const text = query.trim().slice(0, 120)
   if (text.length < 2) return []
   const memberships = await prisma.clubMember.findMany({
-    where: { userId: user.id, status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
+    where: { userId: user.id, ...activeMemberWhere, OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
     select: { clubId: true },
   })
   const clubIds = memberships.map((item) => item.clubId)

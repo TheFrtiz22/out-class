@@ -121,7 +121,7 @@
 /* Two workspaces: a light-glass student card and a navy-glass leader card. */
 .oc-about-perspectives { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 40px 0 32px; }
 .oc-about-perspective { --oc-public-glass-radius: 1.25rem; padding: 32px; }
-.oc-about-margin-label { display: block; margin-bottom: 16px; font-size: var(--oc-size-13); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.oc-about-margin-label { display: block; margin-bottom: 16px; font-size: var(--oc-size-13); font-weight: 600; letter-spacing: var(--oc-tracking-caps); text-transform: uppercase; color: var(--muted-foreground); }
 .oc-about-perspectives h3 { max-width: 24ch; }
 .oc-about-perspectives p { max-width: 42ch; font-size: var(--oc-size-16); color: var(--muted-foreground); }
 .oc-about-perspective.oc-public-glass-navy :is(h3, .oc-about-margin-label, p) { color: inherit; }
@@ -208,7 +208,7 @@
 .oc-request-page .oc-information-hero { background: var(--oc-public-linen); padding-block: 64px; }
 /* The campus note is a navy glass card; upright, no line art, no orange. */
 .oc-campus-letter { --oc-public-glass-radius: 1.625rem; padding: 28px; max-width: 440px; margin-left: auto; }
-.oc-campus-letter-top, .oc-campus-letter-bottom { display: flex; justify-content: space-between; gap: 20px; font-size: var(--oc-size-12); letter-spacing: .06em; color: var(--oc-rail-muted); }
+.oc-campus-letter-top, .oc-campus-letter-bottom { display: flex; justify-content: space-between; gap: 20px; font-size: var(--oc-size-12); letter-spacing: var(--oc-tracking-caps); color: var(--oc-rail-muted); }
 .oc-campus-letter-art { display: none; }
 .oc-campus-letter > p { font-family: var(--oc-font-display); font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.25; text-align: center; margin: 32px 0; }
 .oc-campus-letter > p > em { font-style: normal; color: var(--oc-rail-muted); }

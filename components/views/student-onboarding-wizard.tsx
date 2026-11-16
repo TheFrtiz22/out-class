@@ -1,5 +1,6 @@
 "use client"
 import { userMessage } from "@/lib/user-message"
+import { unwrapAction } from "@/lib/action-result"
 
 import Link from "next/link"
 import dynamic from "next/dynamic"
@@ -451,7 +452,7 @@ export function StudentOnboardingWizard({
 
       // Commit the full profile
       const { accountBasics, academic } = wizardData.current
-      await upsertStudentProfile({
+      unwrapAction(await upsertStudentProfile({
         firstName: accountBasics!.firstName,
         lastName: accountBasics!.lastName,
         computingId,
@@ -466,7 +467,7 @@ export function StudentOnboardingWizard({
         phone: academic!.phone,
         experiences: data.experiences,
         resumeUrl: resumeUrl ?? undefined,
-      })
+      }))
 
       // Last, optional step: the club-interest survey.
       setStep(5)

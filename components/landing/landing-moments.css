@@ -5,7 +5,7 @@
    Caslon for headings and numerals only; no orange. No hover effects: nothing here is interactive. */
 .oc-moments-section { --oc-moment-radius: 2.5rem; padding: 0 max(16px, calc((100% - 1136px) / 2)) 112px; }
 .oc-moments-section h2 { margin: 0; font-family: var(--oc-font-display); font-size: clamp(2rem, 3.4vw, 2.75rem); font-weight: 400; line-height: 1.12; letter-spacing: -.025em; color: var(--primary); text-wrap: balance; }
-.oc-moments-kicker, .oc-moment-kicker { margin: 0; font-size: var(--oc-size-14); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.oc-moments-kicker, .oc-moment-kicker { margin: 0; font-size: var(--oc-size-14); font-weight: 600; letter-spacing: var(--oc-tracking-caps); text-transform: uppercase; color: var(--muted-foreground); }
 
 /* Navy decision moment */
 .oc-moment { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 56px; padding: 64px; border-radius: var(--oc-moment-radius); background: var(--primary); color: var(--oc-glass-cream); }

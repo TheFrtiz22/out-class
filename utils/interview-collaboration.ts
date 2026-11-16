@@ -1,3 +1,4 @@
+import { activeMemberWhere } from "@/lib/permissions";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { authorizeInterview } from "@/utils/interview-access";
 import type { InterviewScope } from "@/lib/interview-access";
@@ -17,7 +18,7 @@ function bookingPanelApproval(scope: InterviewScope, booking: PanelBooking) {
  * legacy room attestations, while the approving owner must still be active. */
 export async function approvedBookingPanel(tx: AppTransactionClient, scope: InterviewScope, booking: PanelBooking): Promise<string[] | null> {
   const approval = bookingPanelApproval(scope, booking);
-  if (!approval || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: approval.approvedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } })) return null;
+  if (!approval || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: approval.approvedBy, isOwner: true, ...activeMemberWhere, user: { disabledAt: null } } })) return null;
   return approval.panel;
 }
 
@@ -31,7 +32,7 @@ export async function approvedBookingPanels(tx: AppTransactionClient, entries: {
     });
     if (!approvals.length) continue;
     const ownerScopes = new Map(approvals.map(a => [`${a.clubId}:${a.approvedBy}`, { clubId: a.clubId, userId: a.approvedBy }]));
-    const owners = await tx.clubMember.findMany({ where: { isOwner: true, status: "ACTIVE", user: { disabledAt: null }, OR: [...ownerScopes.values()] }, select: { clubId: true, userId: true } });
+    const owners = await tx.clubMember.findMany({ where: { isOwner: true, ...activeMemberWhere, user: { disabledAt: null }, OR: [...ownerScopes.values()] }, select: { clubId: true, userId: true } });
     const active = new Set(owners.map(owner => `${owner.clubId}:${owner.userId}`));
     for (const approval of approvals) if (active.has(`${approval.clubId}:${approval.approvedBy}`)) panels.set(approval.bookingId, approval.panel);
   }

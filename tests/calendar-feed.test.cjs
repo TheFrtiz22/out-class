@@ -91,7 +91,7 @@ test('feed contents: own bookings, member-club meetings, RSVPs and own panels; d
   assert.deepEqual(events.map(e => e.id), ['meeting-m1', 'booking-b1', 'panel-s1'])
   assert.equal(events[0].title, 'GBM · TAMID')
   assert.equal(+events[0].end - +events[0].start, 3600000, 'meetings without an end default to an hour')
-  assert.deepEqual(queries.members, { userId: 'u1', status: 'ACTIVE', club: { suspendedAt: null } })
+  assert.deepEqual(queries.members, { userId: 'u1', status: 'ACTIVE', alumniSince: null, club: { suspendedAt: null } })
   assert.equal(queries.bookings.application.studentId, 'u1')
   assert.deepEqual(queries.meetings.clubId, { in: ['c1'] })
   // Bounded: nothing more than 180 days ahead, and capped row counts.
@@ -152,8 +152,9 @@ test('feed contents: RSVP\'d events follow event visibility (public+published, o
     { ...base, id: 'private', isPublic: false },
     { ...base, id: 'suspended', clubSuspended: true },
   ]
-  for (const [memberStatus, expected] of [[null, ['meeting-published']], ['INACTIVE', ['meeting-published']], ['ACTIVE', ['meeting-members-only', 'meeting-private', 'meeting-published', 'meeting-withdrawn']]]) {
-    const membership = memberStatus ? [{ userId: 'u1', status: memberStatus }] : []
+  for (const [memberStatus, expected] of [[null, ['meeting-published']], ['INACTIVE', ['meeting-published']], ['ALUMNI', ['meeting-published']], ['ACTIVE', ['meeting-members-only', 'meeting-private', 'meeting-published', 'meeting-withdrawn']]]) {
+    // Alumni stay ACTIVE on the roster but see only public events (lib/graduation.ts).
+    const membership = memberStatus === 'ALUMNI' ? [{ userId: 'u1', status: 'ACTIVE', alumniSince: new Date('2026-08-01T04:00:00Z') }] : memberStatus ? [{ userId: 'u1', status: memberStatus, alumniSince: null }] : []
     const events = rows.map(r => ({ ...r, club: { ...club(membership), suspendedAt: r.clubSuspended ? new Date() : null } }))
     const tx = {
       clubMember: { findMany: async () => [] },

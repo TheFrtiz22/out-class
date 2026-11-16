@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
-import { schoolRequestSchema, schoolRequestRoles, schoolRequestRoleLabels } from "@/lib/school-requests"
+import { schoolRequestSchema, schoolRequestRoles, schoolRequestRoleLabels, schoolRequestFormValues, schoolRequestFormError } from "@/lib/school-requests"
 
 export function SchoolRequestForm() {
   const [busy, setBusy] = useState(false)
@@ -35,13 +35,15 @@ export function SchoolRequestForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (busy) return
-    const input = schoolRequestSchema.safeParse(Object.fromEntries(new FormData(event.currentTarget)))
+    const input = schoolRequestSchema.safeParse(schoolRequestFormValues(new FormData(event.currentTarget)))
     if (!input.success) {
       const errors: Record<string, string> = {}
-      input.error.issues.forEach(issue => { const name = String(issue.path[0]); if (!errors[name]) errors[name] = issue.message })
+      input.error.issues.forEach(issue => { const name = issue.path[0]; if (typeof name === "string" && !errors[name]) errors[name] = issue.message })
       setFieldErrors(errors)
-      setError("")
       const first = Object.keys(errors)[0]
+      // A problem that belongs to no field still needs a visible message.
+      if (!first) { setError(schoolRequestFormError); return }
+      setError("")
       form.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus()
       return
     }
