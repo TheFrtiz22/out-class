@@ -14,7 +14,7 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {entries:load('actions/interview-entry.ts'),kits:unwrapActions(load('actions/interview-kits.ts')),resume:unwrapActions(load('actions/interview-resumes.ts')),members:unwrapActions(load('actions/organization-members.ts')),evaluations:load('actions/evaluations.ts'),setup:load('actions/interview-access-setup.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:unwrapActions(load('actions/interview-kits.ts')),resume:unwrapActions(load('actions/interview-resumes.ts')),members:unwrapActions(load('actions/organization-members.ts')),evaluations:unwrapActions(load('actions/evaluations.ts')),setup:load('actions/interview-access-setup.ts')};
 }
 // Actions return through actionResult (#292): read the action's own value inside the envelope.
 const innerValue=r=>r.value&&r.value.$action?r.value.data:r.value;
