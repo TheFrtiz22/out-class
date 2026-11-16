@@ -5,6 +5,7 @@ import { z } from "zod";
 import { inspectPlatformRecord } from "@/actions/platform-admin";
 import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
+import { adminActionResult } from "@/lib/admin-failure";
 import { requireAuth } from "@/utils/auth";
 import { isUvaEmail } from "@/lib/auth";
 import { createClient as providerClient } from "@supabase/supabase-js";
@@ -163,6 +164,9 @@ export async function createAdminStudent(input: unknown) {
   return { id: userId, email: d.email, status: "INVITED" };
 }
 export async function resendAdminStudentInvitation(userId: string, reason: string) {
+  return adminActionResult(() => resendAdminStudentInvitationCommand(userId, reason), "resendAdminStudentInvitation");
+}
+async function resendAdminStudentInvitationCommand(userId: string, reason: string) {
   const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(userId); reasonSchema.parse(reason);
   const config = invitationEmailConfig(), client = adminAuth();
   const { data, error } = await client.auth.admin.getUserById(userId);
@@ -242,6 +246,9 @@ export async function listAdminPendingOwnerInvitations(clubId: string) {
 }
 
 export async function inspectAdminStudent(userId: string, reason: string) {
+  return adminActionResult(() => inspectAdminStudentCommand(userId, reason), "inspectAdminStudent");
+}
+async function inspectAdminStudentCommand(userId: string, reason: string) {
   await requirePlatformAdmin({ fresh: true }); uuid.parse(userId); reasonSchema.parse(reason);
   const profile = await inspectPlatformRecord("users", userId, reason);
   const { data, error } = await adminAuth().auth.admin.getUserById(userId);

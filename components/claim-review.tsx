@@ -3,6 +3,7 @@ import { userMessage } from "@/lib/user-message"
 import { useState } from "react";
 import { listClubClaims } from "@/actions/club-claims";
 import { changePlatformResource } from "@/actions/platform-admin";
+import { unwrapAction } from "@/lib/action-result";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect } from "@/components/ui/native-select"
@@ -64,13 +65,15 @@ export function ClaimReview({
                 setBusy(true);
                 setError("");
                 try {
-                  await changePlatformResource(
-                    {
-                      kind: "claim",
-                      id: claim.id,
-                      approved: submitter.value === "approve",
-                    },
-                    String(form.get("reason")),
+                  unwrapAction(
+                    await changePlatformResource(
+                      {
+                        kind: "claim",
+                        id: claim.id,
+                        approved: submitter.value === "approve",
+                      },
+                      String(form.get("reason")),
+                    ),
                   );
                   setClaims(await listClubClaims(status, page));
                 } catch (error) {
