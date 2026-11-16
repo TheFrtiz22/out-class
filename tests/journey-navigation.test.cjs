@@ -9,7 +9,7 @@ function load(file, mocks = {}, globals = {}) {
   new Function('require', 'module', 'exports', ...Object.keys(globals), code)(name => name in mocks ? mocks[name] : require(name), mod, mod.exports, ...Object.values(globals))
   return mod.exports
 }
-const { journeyNavigationMerged } = load('hooks/use-journey-navigation.ts')
+const { journeyNavigationMerged, journeyObserverMargin } = load('hooks/use-journey-navigation.ts')
 test('handoff enters at the navbar edge and requires 24px of upward travel to reverse', () => {
   assert.equal(journeyNavigationMerged(false, 101, 500, 100), false)
   assert.equal(journeyNavigationMerged(false, 100, 500, 100), true)
@@ -94,4 +94,15 @@ test('original and compact controls expose the same state and invoke the same sw
     assert.equal(tree.props['aria-label'], compact ? 'Showcase perspective' : undefined)
   }
   assert.deepEqual(changed, ['student', 'leader', 'student', 'leader'])
+})
+
+// OUT-CLASS-A: Safari threw "rootMargin must be specified as an absolute length or a percentage" when the header
+// edge was above the viewport and the margin read "--12px".
+test('observer margins stay valid CSS lengths when the header edge is above the viewport or not finite', () => {
+  const valid = /^-?\d+px 0px \d+px 0px$/
+  assert.equal(journeyObserverMargin(98, 6900), '-98px 0px 6900px 0px')
+  assert.equal(journeyObserverMargin(-12, 6900), '12px 0px 6900px 0px')
+  assert.equal(journeyObserverMargin(0, 6900), '0px 0px 6900px 0px')
+  assert.equal(journeyObserverMargin(98.6, 6900.4), '-99px 0px 6900px 0px')
+  for (const [top, below] of [[NaN, 100], [Infinity, 100], [-0.2, 100], [10, NaN], [10, -5]]) assert.match(journeyObserverMargin(top, below), valid)
 })
