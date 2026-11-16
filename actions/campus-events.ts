@@ -22,7 +22,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { ActionError, actionResult } from "@/lib/action-result";
-import { alumniRefusal } from "@/utils/graduation";
+import { alumniRefusal, assertNotAlumni } from "@/utils/graduation";
 const eventSelect = {
   id: true,
   clubId: true,
@@ -221,6 +221,8 @@ async function setSavedCampusEventCommand(input: unknown) {
     await prisma.savedCampusEvent.deleteMany({ where: { userId: user.id, eventId } });
     return { saved: false };
   }
+  // Alumni accounts are read-only (lib/graduation.ts): no new saves; removing one stays available.
+  await assertNotAlumni(prisma, user.id, "save");
   return prisma.$transaction(async tx => {
     const event = await locked(tx, eventId);
     if (!eventIsPublished(event)) throw new ActionError("This event is no longer available.");

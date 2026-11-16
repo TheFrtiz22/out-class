@@ -11,7 +11,7 @@ function load(file, mocks) {
 }
 test('claim requests reject managed clubs, reuse pending requests, and audit new requests', async () => {
   let claimedAt = new Date(), existing = null, created = 0, audited = 0
-  const tx = { $queryRaw: async () => [], club: { findUnique: async () => ({ claimedAt }) }, clubMember: { count: async () => 0 }, clubClaim: { findFirst: async () => existing, create: async ({ data }) => { created++; return { ...data, id: 'claim' } } }, auditLog: { create: async () => { audited++ } } }
+  const tx = { $queryRaw: async () => [], studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, club: { findUnique: async () => ({ claimedAt }) }, clubMember: { count: async () => 0 }, clubClaim: { findFirst: async () => existing, create: async ({ data }) => { created++; return { ...data, id: 'claim' } } }, auditLog: { create: async () => { audited++ } } }
   const api = load('actions/club-workspace.ts', { '@/utils/prisma': { prisma: { ...tx, $transaction: fn => fn(tx) } }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }) } })
   await assert.rejects(api.requestClubClaim(clubId, 'I am the current president.'), /already managed/)
   claimedAt = null; existing = { id: 'pending' }

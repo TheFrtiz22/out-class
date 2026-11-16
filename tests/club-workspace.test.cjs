@@ -36,12 +36,14 @@ test("workspace navigation follows explicit capabilities and never changes ident
     "overview",
     "calendar",
     "tasks",
+    "alumni",
   ]);
   assert.deepEqual(clubWorkspaceSections({ isOwner: true }), [
     "overview",
     "members",
     "calendar",
     "tasks",
+    "alumni",
     "recruitment",
     "settings",
   ]);
@@ -50,12 +52,14 @@ test("workspace navigation follows explicit capabilities and never changes ident
     "members",
     "calendar",
     "tasks",
+    "alumni",
     "settings",
   ]);
   assert.deepEqual(clubWorkspaceSections({ permissions: ["club.settings"] }), [
     "overview",
     "calendar",
     "tasks",
+    "alumni",
     "settings",
   ]);
   assert.deepEqual(

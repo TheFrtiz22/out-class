@@ -10,7 +10,8 @@
  * - Alumni can sign in and see their own account, profile and history, export their data and delete
  *   their account. They cannot do anything active: apply (drafts included), RSVP (public events
  *   included), check in, vote, accept an offer or invitation, book or move an interview (cancelling
- *   stays available), submit tasks. They can still report content (actions/content-reports.ts).
+ *   stays available), submit tasks, save clubs or events (removing a saved item stays available), or
+ *   request to claim a club. They can still report content (actions/content-reports.ts).
  *   Direct messaging no longer exists (actions/communications.ts refuses every caller). Each server action refuses with a
  *   friendly message (ALUMNI_REFUSALS, utils/graduation.ts assertNotAlumni) and the UI hides those
  *   controls. Their club memberships stay on rosters as Alumni (ClubMember.alumniSince) without club
@@ -43,6 +44,7 @@ export const ALUMNI_REFUSALS = {
   join: "Alumni accounts can’t join clubs. Your past memberships stay in your history.",
   book: "Alumni accounts can’t book or move interviews. You can still cancel a booked interview.",
   task: "Alumni accounts can’t submit tasks. Your past submissions stay in your history.",
+  save: "Alumni accounts can’t save clubs or events. You can still remove items you saved before.",
   review: "Alumni accounts can’t review applicants, record evaluations or vote on decisions. Hand ownership to a current member.",
 } as const
 export type AlumniAction = keyof typeof ALUMNI_REFUSALS

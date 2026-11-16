@@ -94,6 +94,10 @@ export async function requestClubClaim(clubId: string, explanation: string) {
     throw new Error("Club unavailable.");
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, data.clubId);
+    // Alumni cannot join clubs or take club roles, so they cannot claim one (lib/graduation.ts).
+    const { alumniRefusal } = await import("@/utils/graduation");
+    const alumni = await alumniRefusal(tx, user.id, "join");
+    if (alumni) throw new Error(alumni);
     const club = await tx.club.findUnique({ where: { id: data.clubId } });
     if (
       !club ||

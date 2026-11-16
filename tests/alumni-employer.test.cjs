@@ -296,7 +296,11 @@ test('kept-owner graduate: the in-transaction recheck and interview access (eval
     '@/lib/club-suspension': { assertClubOperational: async () => {} },
     '@/actions/interview-kits': {},
   })
-  await assert.rejects(evaluations.submitEvaluation({ clubId: OWNER_CLUB, applicationId: '00000000-0000-4000-8000-0000000000a1', roundName: 'Interview', score: 4 }), refusedJudgment)
+  // submitEvaluation returns its refusals (interviewActionResult) rather than throwing them.
+  const refused = await evaluations.submitEvaluation({ clubId: OWNER_CLUB, applicationId: '00000000-0000-4000-8000-0000000000a1', roundName: 'Interview', score: 4 })
+  assert.equal(refused.ok, false)
+  assert.equal(refused.code, g.ALUMNI_REFUSED)
+  assert.equal(refused.error, g.ALUMNI_REFUSALS.review)
   // One shared path: the three checks call the same helper.
   assert.match(src('utils/auth.ts'), /await assertGraduateMayJudge\(prisma, user\.id, permissions\);\n\s*if \(!options\.allowSuspendedRead\)/)
   assert.match(src('lib/club-transaction-authorization.ts'), /await assertGraduateMayJudge\(tx, userId, permissions\);/)
@@ -327,6 +331,50 @@ test('alumni: interview booking and moving, and task submissions and uploads are
   const prisma = { studentProfile: { findUnique: async () => ({ graduatedAt: ALUMNI_AT }) }, $transaction: async () => assert.fail('no booking transaction') }
   const scheduling = load('actions/scheduling.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'grad' } }), requireClubPermission: async () => assert.fail() }, 'next/cache': { revalidatePath() {} }, '@prisma/client': { Prisma: { TransactionIsolationLevel: { ReadCommitted: 'ReadCommitted' } } } })
   await assert.rejects(scheduling.bookInterviewSlot({ slotId: '00000000-0000-4000-8000-0000000000b1', applicationId: '00000000-0000-4000-8000-0000000000a1' }), e => e.code === g.ALUMNI_REFUSED && e.message === g.ALUMNI_REFUSALS.book)
+})
+
+// ---- Owner decision (Nov 16): alumni are fully read-only, bookmarks included ----
+
+test('alumni: saving a club or an event is refused before any write; removing a saved item stays available', async () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+  const writes = []
+  const prisma = {
+    studentProfile: { findUnique: async ({ where }) => { assert.equal(where.userId, 'grad'); return { graduatedAt: ALUMNI_AT } } },
+    club: { findUnique: async () => assert.fail('no club lookup for an alumni save') },
+    corkboardClub: { upsert: async () => assert.fail('no club save'), deleteMany: async ({ where }) => { writes.push(['unsave-club', where]); return { count: 1 } } },
+    savedCampusEvent: { upsert: async () => assert.fail('no event save'), deleteMany: async ({ where }) => { writes.push(['unsave-event', where]); return { count: 1 } } },
+    $transaction: async () => assert.fail('no save transaction for alumni'),
+  }
+  const auth = { requireAuth: async () => ({ user: { id: 'grad' } }), requireClubPermission: async () => assert.fail() }
+  const directory = load('actions/club-directory.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': auth, 'next/cache': { unstable_cache: fn => fn, revalidatePath() {}, revalidateTag() {} } })
+  await assert.rejects(directory.setCorkboardClub({ clubId: id(1), saved: true }), e => e.message === g.ALUMNI_REFUSALS.save)
+  assert.deepEqual(await directory.setCorkboardClub({ clubId: id(1), saved: false }), { saved: false, savedAt: null })
+  const events = load('actions/campus-events.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': auth, 'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/club-write-transaction': { clubWriteTransaction: async () => assert.fail(), isWriteContention: () => false }, '@/utils/platform-admin': {}, '@/lib/club-transaction-authorization': {} })
+  assert.deepEqual(await events.setSavedCampusEvent({ eventId: id(2), saved: true }), { $action: 'outclass.action/v1', ok: false, error: g.ALUMNI_REFUSALS.save, code: g.ALUMNI_REFUSED })
+  assert.deepEqual(await events.setSavedCampusEvent({ eventId: id(2), saved: false }), { $action: 'outclass.action/v1', ok: true, data: { saved: false } })
+  assert.deepEqual(writes, [['unsave-club', { userId: 'grad', clubId: id(1) }], ['unsave-event', { userId: 'grad', eventId: id(2) }]])
+  // A current student still saves.
+  const student = { ...prisma, studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, club: { findUnique: async () => ({ id: id(1) }) }, corkboardClub: { upsert: async () => ({ savedAt: new Date('2026-10-03T12:00:00Z') }) } }
+  const current = load('actions/club-directory.ts', { '@/utils/prisma': { prisma: student }, '@/utils/auth': auth, 'next/cache': { unstable_cache: fn => fn } })
+  assert.deepEqual(await current.setCorkboardClub({ clubId: id(1), saved: true }), { saved: true, savedAt: '2026-10-03T12:00:00.000Z' })
+  // The save button is hidden for alumni unless the club is already saved (so it can be removed).
+  assert.match(src('components/clubs/corkboard-button.tsx'), /if \(authenticated && !saved && isAlumniProfile\(user\?\.profile\)\) return null/)
+})
+
+test('alumni: requesting to claim a club and accepting an emailed club invitation are refused', async () => {
+  const clubId = '00000000-0000-4000-8000-0000000000d1'
+  const tx = {
+    $queryRaw: async strings => strings.join('').includes('"suspendedAt"') ? [] : [{ id: clubId }],
+    studentProfile: { findUnique: async () => ({ graduatedAt: ALUMNI_AT }) },
+    club: { findUnique: async () => assert.fail('refused before reading the club') },
+    clubClaim: { findFirst: async () => assert.fail(), create: async () => assert.fail('no claim') },
+    auditLog: { create: async () => assert.fail() },
+  }
+  const prisma = { club: { findUnique: async () => ({ id: clubId }) }, $transaction: fn => fn(tx) }
+  const workspace = load('actions/club-workspace.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'grad' } }), requireClubPermission: async () => assert.fail() }, 'next/cache': { revalidatePath() {}, revalidateTag() {} } })
+  await assert.rejects(workspace.requestClubClaim(clubId, 'I am the president of this club.'), e => e.message === g.ALUMNI_REFUSALS.join)
+  // Email invitations (not identity or offer invitations, which share the existing guards) recheck too.
+  assert.match(src('actions/club-access.ts'), /if \(existing && !isActiveMembership\(existing\)\) throw new ActionError\("Membership is inactive\. Request a new identity invitation\."\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "join"\);\n[\s\S]{0,200}const permissions/)
 })
 
 // ---- Profile fields stay out of club reads ----
