@@ -291,7 +291,7 @@ export async function getMeetingTimeRoster(raw: unknown): Promise<MeetingSlotRos
   return prisma.$transaction(async tx => {
     const data = await plannerMembers(tx, input.clubId, user.id, input.week, true)
     const cell = data.cells[input.day][input.slot]
-    if (cell.start === null) throw new ActionError("This time is skipped or repeated by a daylight saving change. Choose another time.")
+    if (cell.start === null) throw new Error("This time is skipped or repeated by a daylight saving change. Choose another time.")
     return { date: cell.date, start: cell.start, end: cell.start + input.duration * 60_000, ...slotRoster(data.members, input.day, input.slot, input.duration) }
   }, { timeout: 20000 })
 }
