@@ -44,13 +44,13 @@ test('a reviewer can step out of an applicant but cannot undo it or recuse other
   await assert.rejects(s.actions.setApplicantRecusal({ clubId, applicationId, memberId: otherId, recused: true }), /Only recruitment leads/)
   assert.deepEqual(s.audits.map(a => [a.action, a.details.memberId]), [['recruitment.recusal.add', 'm-rev']])
   const view = await s.actions.getApplicantRecusals({ clubId, applicationId })
-  assert.deepEqual(view, { selfRecused: true, canManage: false, recused: [] }, 'non-leads never see who else stepped out')
+  assert.deepEqual(view.data, { selfRecused: true, canManage: false, recused: [] }, 'non-leads never see who else stepped out')
 })
 
 test('a recruitment lead can recuse others and lift a recusal, keeping the row', async () => {
   const s = harness(lead)
   await s.actions.setApplicantRecusal({ clubId, applicationId, memberId: otherId, recused: true })
-  assert.deepEqual((await s.actions.getApplicantRecusals({ clubId, applicationId })).recused, [{ memberId: otherId, name: 'Ada Lee' }])
+  assert.deepEqual((await s.actions.getApplicantRecusals({ clubId, applicationId })).data.recused, [{ memberId: otherId, name: 'Ada Lee' }])
   await s.actions.setApplicantRecusal({ clubId, applicationId, memberId: otherId, recused: false })
   assert.equal(s.rows.length, 1); assert.ok(s.rows[0].liftedAt); assert.equal(s.rows[0].liftedById, 'u-m-lead')
   assert.deepEqual(s.audits.map(a => a.action), ['recruitment.recusal.add', 'recruitment.recusal.lift'])
@@ -59,7 +59,15 @@ test('a recruitment lead can recuse others and lift a recusal, keeping the row',
 test('members with no review role cannot recuse themselves; unknown applications are refused', async () => {
   await assert.rejects(harness(plain).actions.setApplicantRecusal({ clubId, applicationId, recused: true }), /reviewers and interviewers/)
   await assert.rejects(harness(reviewer).actions.setApplicantRecusal({ clubId, applicationId: otherId, recused: true }), /unavailable/)
-  await assert.rejects(harness(plain).actions.getApplicantRecusals({ clubId, applicationId }), /unavailable/)
+  assert.deepEqual(pick(await harness(plain).actions.getApplicantRecusals({ clubId, applicationId })), { ok: false, error: 'Application unavailable.', code: 'NOT_FOUND' })
+})
+
+const pick = r => ({ ok: r.ok, error: r.error, code: r.code })
+test('a malformed id is a quiet refusal, not an unhandled ZodError (OUT-CLASS-7)', async () => {
+  const s = harness(lead)
+  for (const input of [{ clubId, applicationId: 'not-a-uuid' }, { clubId, applicationId: '' }, { clubId: 'x', applicationId }, null])
+    assert.deepEqual(pick(await s.actions.getApplicantRecusals(input)), { ok: false, error: 'Application unavailable.', code: 'NOT_FOUND' })
+  assert.deepEqual(s.audits, [], 'nothing is read or written for a refused id')
 })
 
 test('assertNotRecused refuses only active recusals', async () => {

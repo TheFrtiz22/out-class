@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { UserCog } from "@/components/icons"
 import { useDemoMode } from "@/contexts/demo-context"
 import { getApplicantRecusals, setApplicantRecusal } from "@/actions/recusals"
+import { unwrapAction, type Unwrapped } from "@/lib/action-result"
 
-type State = Awaited<ReturnType<typeof getApplicantRecusals>>
+type State = Unwrapped<Awaited<ReturnType<typeof getApplicantRecusals>>>
 
 /** One quiet line in the applicant dossier. Reviewers can step out of an
  * applicant they know; recruitment leads see who stepped out and can undo it. */
@@ -20,7 +21,7 @@ export function ApplicantRecusal({ clubId, applicationId, anonymous, onChanged }
     if (demo.isDemoEnabled) return
     let current = true
     // Never let this optional line break the dossier: any failure just hides it.
-    Promise.resolve().then(() => getApplicantRecusals({ clubId, applicationId })).then(next => { if (current) setState(next ?? null) }).catch(() => { if (current) setState(null) })
+    Promise.resolve().then(() => getApplicantRecusals({ clubId, applicationId })).then(unwrapAction).then(next => { if (current) setState(next ?? null) }).catch(() => { if (current) setState(null) })
     return () => { current = false }
   }, [clubId, applicationId, reload, demo.isDemoEnabled])
   if (demo.isDemoEnabled || !state) return null
