@@ -260,9 +260,25 @@ async function setInterviewRoomExternallyBookedCommand(raw: unknown) {
   revalidatePath(`/club/${input.clubId}/workspace`)
   return result
 }
-export async function getApplicantSchedule(applicationId: string): Promise<ApplicantSchedule> {
+export async function getApplicantSchedule(applicationId: string) {
+  // Returned, not thrown, so the "many people are booking" message survives the server action boundary.
+  return actionResult(() => getApplicantScheduleCommand(applicationId), "getApplicantSchedule")
+}
+async function getApplicantScheduleCommand(applicationId: string): Promise<ApplicantSchedule> {
   uuid.parse(applicationId)
   const { user } = await requireAuth()
+  try { return await applicantScheduleRead(applicationId, user.id) }
+  catch (error) {
+    // When booking opens, many finalists load their times at once. Waiting for a pooled
+    // connection is allowed longer than Prisma's two-second default; if it still runs out,
+    // the applicant gets a calm retry message instead of a server error.
+    if (!isWriteContention(error)) throw error
+    logContentionExhausted("interview.applicant-schedule", error, "timeout")
+    throw new ActionError("Many people are booking right now. Please try again in a moment.")
+  }
+}
+async function applicantScheduleRead(applicationId: string, userId: string): Promise<ApplicantSchedule> {
+  const user = { id: userId }
   return prisma.$transaction(async tx => {
     const application = await tx.application.findFirst({ where: { id: applicationId, studentId: user.id }, include: { club: { select: { name: true, suspendedAt: true } }, round: { include: { bookingCycle: true } } } })
     if (!application || application.status !== "INTERVIEWING" || application.club.suspendedAt) throw new ActionError("An interview invitation is required to book a time.")
@@ -283,7 +299,7 @@ export async function getApplicantSchedule(applicationId: string): Promise<Appli
       return true
     }) })).filter(r => r.slots.length)
     return { applicationId, clubName: application.club.name, roundName: round.name, publicationState, allowCancellation: round.bookingAllowCancellation, allowRescheduling: round.bookingAllowRescheduling, conflictingTimes, rooms: bookable, booking: booking ? { id: booking.id, applicationId, slotId: booking.slotId, roomId: booking.slot.roomId!, roundId: booking.roundId!, candidate: "You", startTime: booking.slot.startTime.toISOString(), endTime: booking.slot.endTime.toISOString(), location: booking.slot.location } : null }
-  }, { timeout: 60000 })
+  }, { timeout: 60000, maxWait: 10000 })
 }
 async function reserveInterviewCommand(raw: { applicationId: string; slotId: string }) {
   const input = z.object({ applicationId: uuid, slotId: uuid }).parse(raw)
