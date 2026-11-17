@@ -376,3 +376,49 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Reviewers: the authz, failure-path, test-gap and migration reviewer checklists (.claude/agents) were applied by the builder directly; no subagent tool was available in this session.
 - Not verified: authenticated E2E against a real club, Safari/iOS, performance numbers (the room read adds two small indexed lookups per poll for the applicant-self exclusion).
 - Review follow-up (2026-11-17): own-application hiding (room, presentation, applicant display, discussion), anonymous-round counts, recusal exclusion (open sessions), notice dedupe and eligibility recheck, support-session refusal; migration renamed to `20261117090000_voting_open_electorate` (not applied anywhere) with a presentation-lock assertion. `tests/voting-open-electorate.test.cjs` 13/13, `tests/voting-display-snapshot.test.cjs` new case, migration test 1/1; related suites rerun file by file (see the handback).
+## 2026-11-17 V1-TEST-RECONSIDER-MESSAGES (V1 testing, round 2)
+
+- Source: V1 test sweep of server-action refusals. Both actions threw plain `Error`s, which production replaces with a generic message, and the applicant review flow's `run()` discarded every error for a fixed fallback ("Reconsideration failed. Check your access and try again."), so a leader reopening a student who had already re-applied was told to check their access.
+- Change: the two actions are wrapped with `actionResult`; their refusals are `ActionError`s with plain wording (STALE for a cycle archived or an application/decision changed meanwhile, REAPPLIED for a re-applied student). `run()` in `components/applicant-review/applicant-review-flow.tsx` and the cycle assignment in `components/recruitment-cycles.tsx` show `userMessage(error, fallback)`, which also surfaces `moveApplicantRound`'s existing returned refusals.
+- Tests: `tests/decision-publication-native.test.cjs` and `tests/application-reapplication-native.test.cjs` read the module through `unwrapActions` and assert the refusals are returned results (`refused`) with the new text and the REAPPLIED code.
+- Local gates: `tsc --noEmit` clean; eslint clean on changed files; action-result coverage, recruitment-cycle-start and ranked-review suites pass. The two native suites need the CI PostgreSQL fixture; the two browser suites need Chromium (not installable here); both run in CI.
+
+## 2026-11-17 V1-TEST-ANSWER-TOO-LONG
+
+- Source: V1 finish testing round 3 edge suite: submitting a 1 MB essay answered HTTP 500 and the student saw the generic error, with autosave failing the same way.
+- `tests/action-results.test.cjs` new case (draft and submit, 100,001 refused with TOO_LONG, 100,000 saves): fails on main, passes here. action-results, action-result-coverage, applicant-phone: 18 pass. eslint and `tsc --noEmit` clean.
+
+## 2026-11-17 V1-TEST-APPLY-CLOSED
+
+- Source: V1 finish testing round 2 (thrown refusals are redacted in production). A student who opens a club page just after its deadline and taps Start application saw the generic failure.
+- `tests/club-directory.test.cjs` new case (closed flag, passed deadline, no round): fails on main, passes here; club-directory, club-suspension-p2, action-result-coverage, action-results: 27 pass. eslint and `tsc --noEmit` clean.
+
+## 2026-11-17 V1-TEST-CLUB-PROFILE-MESSAGES (V1 testing, round 2)
+
+- Source: V1 test sweep of server-action refusals. `updateClubSettings` threw a plain `Error` when the profile changed in another tab ("Your private draft is retained…"), and `requestClubClaim` threw plain errors for an already managed club or an alumni account; production replaces those messages, so the editor and claim form showed only their fallbacks.
+- Change: both actions run through `actionResult` and throw `ActionError` (STALE, ALREADY_MANAGED, ALUMNI, NOT_FOUND). `components/club-profile-settings.tsx` and `components/claim-form.tsx` call `unwrapAction`; both already display `userMessage(error, fallback)`.
+- Tests: the module is read through `unwrapActions` in the eight suites that load it; club-marketing and club-claims assert the conflict and managed-club refusals arrive as returned results with their codes. Locally: 83 pass, 0 fail across the seven non-native suites; action-result coverage passes; `tsc --noEmit` and eslint clean. `tests/club-claim-race-native.test.cjs` and the browser e2e suites run in CI.
+
+## 2026-11-17 V1-TEST-EMAIL-QUOTA
+
+- Source: V1 finish testing round 2. The production Resend team is on the free plan (100 emails/day, 3,000/month, 10 requests/s). A 1,000-decision send would hit the daily quota after 100 and every later delivery would retry into UNCERTAIN.
+- `tests/notification-worker-native.test.cjs` new subtest (quota stub returns 429 `daily_quota_exceeded`): 1 request made, 0 sent, 1 failed; all 3 rows stay QUEUED with attemptCount 0 and no firstAttemptAt; nextAttemptAt is at or after the next UTC midnight; after the reset all 3 send. 7/7 with the fix, 5/7 on main.
+- `tests/communications.test.cjs`: quota 429 maps to RESEND_DAILY_QUOTA (retryable, notAccepted); a rate-limit 429 stays RESEND_429; reset maths checked. communications, email-compliance, web-push: 40 pass. eslint and `tsc --noEmit` clean.
+- Not verified: Resend's live quota response (shape taken from Resend's documented error names); the account's plan is the owner's decision.
+
+## 2026-11-17 V1-TEST-REVIEW-TOOL-MESSAGES
+
+- Source: V1 finish testing round 2 (thrown refusals are redacted in production). Two leaders editing the same round's screening rules or discussion bands got a generic error with no hint that the other had saved first.
+- recruiting-rules and ranked-review-actions suites now read results through `unwrapActions`/`refused`: 4 cases fail on main and pass here. 71 pass across recruiting-rules, recruiting-rules-ui, ranked-review*, round-scoped-*, action-result-coverage, demo-mode, club-suspension, attacker-pass-e2e; filter-controls and ui-audit-fixes 22 pass. eslint and `tsc --noEmit` clean.
+
+## 2026-11-17 V1-TEST account deletion messages
+
+- Found by the V1 feature test (production build of main 3eb1aff9 on a disposable local stack): `requestAccountDeletion({ confirmation: "nope" })` and a wrong password both came back as a thrown server error (no action result), so the Settings screen could only show its fallback.
+- Gates: `tests/account-deletion.test.cjs` 20/20 (new test: refusals are returned results; the attempt limit carries RATE_LIMITED); `tests/action-result-coverage.test.cjs` 2/2 (`getAccountDeletionRequest` recorded as a reviewed read); neighbouring suites (graduation, alumni-employer, turnstile, user-two-step, security-page, interest-survey) pass; eslint and `tsc --noEmit` clean.
+- Not verified locally: browser tests (no Chromium here) and `next build`; CI runs both.
+
+## 2026-11-17 V1-TEST upload messages
+
+- Found by the V1 feature test: the profile, club image and event flyer upload actions threw plain errors, which production replaces with a generic message, so "Choose a valid PDF", "Choose a JPEG, PNG or WebP up to 10 MB" and the hourly upload limit never reached the person. Résumé import also turned an upload-limit refusal into "Could not read this PDF".
+- Gates: profile-upload-boundary 14/14, profile-presentation-cleanup 10/10, api-application-attachments 5/5, upload-quotas 8/8, resume-import 16/16, action-result-coverage 2/2 (`prepareResumeImport` recorded: it already returns its own result), demo-mode, product-integration, support-tutorials, admin-clubs, admin-editorial-ui, task-file-content, event-scheduling pass; eslint and `tsc --noEmit` clean. Unit tests that load these actions directly now unwrap them; e2e tests already go through the unwrapping actor.
+- Not verified locally: event-storage-native (needs the isolated database and Supabase from CI), browser tests and `next build`; CI runs them.

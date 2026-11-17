@@ -152,7 +152,7 @@ test('security.txt skips session middleware and CSP, and robots allows it and /s
   })
   const response = await middleware(new NextRequest('https://www.out-class.net/.well-known/security.txt', { headers: { cookie: 'sb-x-auth-token=1' } }))
   assert.equal(sessions, 0)
-  assert.equal(response.headers.get('content-security-policy'), null)
+  assert.equal(response.headers.get('content-security-policy'), "frame-ancestors 'self'", 'framing policy only, no document policy')
   assert.equal(response.headers.get('content-security-policy-report-only'), null)
   assert.equal(response.headers.get('location'), null)
   const robots = load('app/robots.ts', { '@/lib/seo': seo }).default()

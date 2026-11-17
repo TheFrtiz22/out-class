@@ -5,7 +5,8 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
  const url=new URL('https://example.test/club/club/workspace?'+search),browser={location:{href:url.href},history:{replaceState:(_s,_t,href)=>changes.push(href)}};
  const nav={exports:{}};new Function('module','exports','window',compile('lib/workspace-navigation.ts'))(nav,nav.exports,browser);
  const mocks={
-  react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useEffect:()=>{}},
+  react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useEffect:()=>{},useMemo:f=>f()},
+  '@/lib/graduation':{isAlumniProfile:()=>false},
   'next/navigation':{useRouter:()=>({replace:href=>redirects.push(href)}),useSearchParams:()=>new URLSearchParams(search)},
   'next/dynamic':{default:()=> 'Dynamic'},
   '@/contexts/auth-context':{useAuth:()=>({user:{id:'one',memberships:[member]},loading,activeClubId:selected?'club':'elsewhere',selectClub(){}})},

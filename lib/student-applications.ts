@@ -1,11 +1,14 @@
 import { z } from "zod"
 import { storagePathSchema, resumeReferenceSchema } from "@/lib/student-profile"
 
+/** Longest answer one question accepts; the essay box stops typing at the same length. */
+export const MAX_ANSWER_CHARACTERS = 100000
+export const ANSWER_TOO_LONG_MESSAGE = "One of your answers is longer than 100,000 characters. Shorten it and try again."
 export const applicationInputSchema = z.object({
   clubId: z.string().uuid(),
   expectedAnswers: z.string().max(300000).optional(),
   answers: z
-    .array(z.object({ questionId: z.string().uuid(), response: z.string().max(100000) }))
+    .array(z.object({ questionId: z.string().uuid(), response: z.string().max(MAX_ANSWER_CHARACTERS) }))
     .max(200),
 })
 export type ApplicationQuestion = {

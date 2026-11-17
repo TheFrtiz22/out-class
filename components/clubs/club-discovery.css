@@ -603,6 +603,9 @@
 .oc-club-profile { max-width: var(--oc-reading-width, 52rem); }
 .oc-club-back { min-height: 44px; margin: 0 0 16px -12px; }
 .oc-club-breadcrumbs { margin: 0 0 12px; }
+/* Signed out, the public header sits in the page flow, so the frame's phone top padding left a
+   blank band above the breadcrumbs; the club page starts just under the header instead. */
+@media (max-width: 767px) { .oc-public-frame-main:has(.oc-club-profile .oc-club-breadcrumbs) { padding-top: 16px; } }
 .oc-club-preview-note { font-size: var(--oc-size-12); }
 .oc-club-action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
 .oc-club-profile .oc-club-apply { width: auto; min-height: 48px; padding-inline: 24px; }

@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { PillSelect } from "@/components/ui/pill-select"
 import { RoundSelect } from "@/components/ui/round-select"
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
@@ -243,7 +244,7 @@ const RankedRow = memo(function RankedRow({ row: r, tied, selected, voting, chec
     <button type="button" data-applicant-id={r.id} aria-current={selected ? "true" : undefined} className="oc-ranked-open" onClick={() => onSelect(r.id)}>
       <span className="oc-ranked-rank">{r.rank !== undefined ? <><span aria-hidden="true">{r.rank}</span><span className="sr-only">Rank {r.rank}{tied ? ", tied" : ""}</span>{tied && <span className="oc-ranked-tied" aria-hidden="true">Tied</span>}</> : <span aria-hidden="true">–</span>}</span>
       <ApplicantIdentity name={r.name} photo={r.photo} anonymous={r.anonymous} className="oc-ranked-identity"><span className="text-xs text-muted-foreground">{applicationStatusLabels[r.status as keyof typeof applicationStatusLabels] ?? r.status}</span></ApplicantIdentity>
-      <span className="oc-ranked-score">{!r.visible ? <span className="oc-ranked-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span> : <><strong>{formatAverage(r.average)}{r.average !== null && <span className="text-muted-foreground"> / 10</span>}</strong><span className="text-xs text-muted-foreground">{r.average === null ? `${r.submitted} of ${r.required} reviews submitted` : scoredEvaluationsLabel(r.submitted)}</span></>}</span>
+      <span className="oc-ranked-score">{!r.visible ? <span className="oc-ranked-hidden"><Lock aria-hidden="true" size={14} />Hidden until you review</span> : <><strong>{formatAverage(r.average)}{r.average !== null && <span className="text-muted-foreground"> / 10</span>}</strong><span className="text-xs text-muted-foreground">{r.average === null ? (r.required || r.submitted ? `${r.submitted} of ${r.required} reviews submitted` : "Not scored yet") : scoredEvaluationsLabel(r.submitted)}</span></>}</span>
       {r.band && <span className="oc-ranked-band" data-band={r.band}>{rankedBandLabels[r.band]}</span>}
       <span className="sr-only"> · Open applicant review and interviewer feedback</span>
     </button>
@@ -260,7 +261,7 @@ function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, a
   async function save(next: RankedBands | null) {
     setSaving(true); setMessage("")
     try { const result = await api.saveBands({ clubId, roundId, cycleKey, expectedRevision: revision, bands: next }); onSaved(result.bands, result.revision) }
-    catch { setMessage("Couldn’t save discussion bands. Someone may have changed them; refresh the ranking and try again.") }
+    catch (error) { setMessage(userMessage(error, "Couldn’t save discussion bands. Someone may have changed them; refresh the ranking and try again.")) }
     finally { setSaving(false) }
   }
   return <div className="oc-ranked-settings text-sm">

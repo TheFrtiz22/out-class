@@ -49,7 +49,11 @@ const localDate = (date: Date) => {
   copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
   return copy.toISOString().slice(0, 16);
 };
-export function MeetingList({ clubId, embedded = false, initialAudience = "ALL", personalOnly = false, openCreate = false }: { clubId?: string; embedded?: boolean; initialAudience?: string; personalOnly?: boolean; openCreate?: boolean }) {
+/**
+ * `clubIds` keeps an all-clubs list (no `clubId`) to those clubs, e.g. only clubs the person belongs to.
+ * `filters` adds controls at the start of the filter row, so a page with its own club filter keeps one toolbar.
+ */
+export function MeetingList({ clubId, clubIds, filters, embedded = false, initialAudience = "ALL", personalOnly = false, openCreate = false }: { clubId?: string; clubIds?: string[]; filters?: ReactNode; embedded?: boolean; initialAudience?: string; personalOnly?: boolean; openCreate?: boolean }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -78,12 +82,13 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   }, [clubId, refresh]);
   const { user } = useAuth(),
     member = user?.memberships.find((m) => m.clubId === clubId);
-  const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
+  const visible = meetings.filter(m => (clubId || !clubIds || clubIds.includes(m.clubId)) && (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
     {notice && <p role="status" className="text-sm">{notice}</p>}
     <div className="oc-meeting-toolbar flex flex-wrap items-center gap-3 border-b pb-4">
       <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-3">
+        {filters}
         <Toggle label="Show past" checked={period === "past"} onCheckedChange={past => setPeriod(past ? "past" : "upcoming")} />
         <PillSelect label="Audience" prefix="Audience" size="compact" active={audience !== "ALL"} value={audience} onChange={value => setAudience(value as typeof audience)} options={[{ value: "ALL", label: "All" }, { value: "RECRUITMENT", label: "Recruitment / Interest" }, { value: "MEMBERS", label: "Members" }]} />
       </div>
@@ -93,8 +98,8 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} />}
-    <ul className="oc-meeting-list grid gap-3">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
-      <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-4 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` – ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
+    <ul className="oc-meeting-list grid gap-2">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
+      <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-3 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-5 sm:py-4"><CalendarDays aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}{meeting.recap?.trim() ? " · Recap available" : ""}</p><h3 className="oc-card-heading mt-1 break-words">{meeting.title}</h3><p className="mt-1.5 flex flex-wrap items-start gap-x-4 gap-y-1 text-sm"><span>{meetingDate(meeting.date)}{meeting.endDate && ` – ${meetingDate(meeting.endDate)}`}</span><span className="flex min-w-0 items-start gap-1.5 break-words text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</span></p><span className="sr-only">Open agenda, resources and attendance</span></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}
     </li>)}</ul>
     <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-[var(--oc-reading-width)]"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
@@ -379,50 +384,52 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
   }, [id, refresh]);
   if (error)
     return (
-      <div role="alert">
-        {error}{" "}
-        <Button variant="outline" onClick={() => setRefresh((v) => v + 1)}>
+      <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-destructive">
+        {error}
+        <Button variant="outline" size="sm" onClick={() => setRefresh((v) => v + 1)}>
           Retry
         </Button>
       </div>
     );
   if (!meeting) return <LoadingState label="Loading meeting…" layout="form" rows={3} />;
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
-    resources = resourceSchema.array().safeParse(meeting.resources);
+    resources = resourceSchema.array().safeParse(meeting.resources),
+    canManage = hasPermission(member, "meetings.manage");
   return (
-    <article className="max-w-[var(--oc-content-width)] space-y-8">
-      <header className="space-y-4 border-b pb-7">
+    <article className="max-w-[var(--oc-content-width)] space-y-6">
+      <header className="space-y-3 border-b pb-5">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}
           {meeting.audience === "MEMBERS"
             ? "Member meeting"
             : "Recruitment / Interest"}
         </p>
-        <PageHeader title={meeting.title} action={headerAction} />
-        <p>
+        {/* Managers edit from the title row, not from the bottom of a long page. */}
+        <PageHeader title={meeting.title} action={headerAction || canManage ? <div className="flex flex-wrap items-center gap-3">{headerAction}{canManage && <ActionWorkflow showCloseAction={false} title="Edit meeting" description="Update the meeting details, agenda, recap, or shared resources." trigger="Edit meeting">{done => <MeetingEditor key={meeting.revision} clubId={meeting.clubId} meeting={meeting} onCancel={done} onSaved={() => { done(); setRefresh(v => v + 1); onUpdated?.() }} />}</ActionWorkflow>}</div> : undefined} />
+        <p className="text-sm font-medium">
           {meetingDate(meeting.date)}
           {meeting.endDate &&
             ` – ${meetingDate(meeting.endDate)}`}{" "}
           · {meeting.location}
         </p>
-        <p className="whitespace-pre-wrap">{meeting.description}</p>
+        {meeting.description && <p className="whitespace-pre-wrap text-sm leading-6">{meeting.description}</p>}
       </header>
-      {hasPermission(member, "meetings.manage") && <MeetingGroupInvitation meeting={meeting} />}
+      {canManage && <MeetingGroupInvitation meeting={meeting} />}
       {(["agenda", "recap"] as const).map((key) => (
-        <section key={key} className="space-y-3 border-t pt-5">
+        <section key={key} className="space-y-2 border-t pt-4">
           <h2 className="oc-section-heading capitalize">{key}</h2>
           <p className="whitespace-pre-wrap text-sm leading-7">
             {meeting[key] || `No ${key} has been added yet.`}
           </p>
         </section>
       ))}
-      <section className="space-y-3 border-t pt-5">
-        <h2 className="oc-section-heading ">Resources</h2>
+      <section className="space-y-2 border-t pt-4">
+        <h2 className="oc-section-heading">Resources</h2>
         {resources.success && resources.data.length ? (
           resources.data.map((r) => (
             <a
               key={r.id}
-              className="block min-h-11 break-words rounded-md border bg-card p-4 text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+              className="flex min-h-11 items-center break-words text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
               href={r.url}
               target="_blank"
               rel="noreferrer"
@@ -438,9 +445,6 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
       </section>
       {hasPermission(member, "meetings.attendance") && (
         <MeetingAttendance meeting={meeting} member={member} />
-      )}
-      {hasPermission(member, "meetings.manage") && (
-        <ActionWorkflow showCloseAction={false} title="Edit meeting" description="Update the meeting details, agenda, recap, or shared resources." trigger="Edit meeting">{done => <MeetingEditor key={meeting.revision} clubId={meeting.clubId} meeting={meeting} onCancel={done} onSaved={() => { done(); setRefresh(v => v + 1); onUpdated?.() }} />}</ActionWorkflow>
       )}
     </article>
   );

@@ -125,6 +125,7 @@ function setup(permissions = [], isOwner = false) {
         return [];
       },
     },
+    application: { findMany: async (args) => { (queries.waiting ??= []).push(args); return []; } },
   };
   const auth = {
     requireClubMembership: async (id) => {
@@ -208,6 +209,12 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
     name: true,
     anonymousReview: true,
   });
+  // Waiting applicants are counted for the cycle Decide is showing, or across cycles when none is chosen.
+  assert.equal(owner.queries.waiting.at(-1).where.recruitmentCycleId, undefined);
+  const cycleId = "00000000-0000-4000-8000-000000000099";
+  await owner.api.getWorkspaceRounds(clubId, { cycleId });
+  assert.equal(owner.queries.waiting.at(-1).where.recruitmentCycleId, cycleId);
+  await assert.rejects(owner.api.getWorkspaceRounds(clubId, { cycleId: "not-a-cycle" }));
 });
 
 test("product modes preserve scoped URLs and limit manager destinations by capability", () => {

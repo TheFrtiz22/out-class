@@ -1,5 +1,5 @@
 /* The rail reserves its own width: icons only from 1024px, icon + label from 1280px.
-   Nothing overlays the page. Settings is pinned to the bottom of the rail. */
+   Nothing overlays the page. Inbox and Settings are pinned to the bottom of the rail. */
 @media (min-width: 1024px) {
   [data-product-shell] { --oc-shell-rail-width: 108px; }
   [data-product-shell] > div > aside.oc-expanding-dock {

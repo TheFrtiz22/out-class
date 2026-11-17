@@ -87,7 +87,7 @@ export function NavigationRail({ sections, active, renderItem, onHome }: {
       <RailTip label="OutClass home" enabled={!labelled}><button type="button" className="oc-dock-brand" aria-label="OutClass home" onClick={onHome}><DockBrand /></button></RailTip>
       <div className="oc-dock-navigation"><div className="oc-dock-navigation-content" ref={content}>
         <span className="oc-dock-marker" aria-hidden="true" />
-        {/* Every rail item is a page link: no flyouts. A pinned section (Settings) sits at the bottom of the rail. */}
+        {/* Every rail item is a page link: no flyouts. The pinned section (Inbox and Settings) sits at the bottom of the rail. */}
         {sections.filter(section => section.items.length).map(section => <section key={section.id} className="oc-dock-section" data-tour={section.tour} data-pinned={section.pinned || undefined}>
           {section.label && <p className="oc-dock-section-heading" aria-hidden="true">{section.label}</p>}
           <nav aria-label={section.label ?? section.name}>{section.items.map(item => <RailTip key={item.id} label={item.label} enabled={!labelled}>{renderItem(item, "rail")}</RailTip>)}</nav>

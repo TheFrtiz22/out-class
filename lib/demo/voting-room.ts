@@ -35,7 +35,7 @@ export async function getSetup(input:unknown):Promise<Awaited<ReturnType<typeof 
  const r=c.club.rounds.find(r=>r.id===d.roundId),anonymous=!!r?.anonymousReview;
  const ceiling=normalizeProfileFieldVisibility(c.state.profileFieldVisibility?.[d.clubId]);
  const permitted=liveRoomFields.filter(f=>(!anonymous||["academicYear","gpa","sat","act"].includes(f))&&(!["interviewScore","finalInterviewThoughts"].includes(f)||interviewCapabilities(c.m).readClosing||c.state.interviews.some(r=>r.clubId===d.clubId&&r.interviewerId===c.m.id&&r.completedAt)));
- return {memberId:c.m.id,timeZone:"America/New_York",defaultRules:{mode:"LEADER_CONFIRMS" as const},defaultRulesSource:null,cycles:[{id:c.club.id,name:"Demo recruitment cycle"}],rounds:c.club.rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview??false})),
+ return {memberId:c.m.id,timeZone:"America/New_York",defaultRules:{mode:"LEADER_CONFIRMS" as const},defaultRulesSource:null,cycles:[{id:c.club.id,name:"Demo recruitment cycle"}],rounds:c.club.rounds.map(r=>({id:r.id,name:r.name,type:r.type,anonymousReview:r.anonymousReview??false})),
  allowedFields:permitted.filter(f=>allowedByProfileCeiling(f,ceiling)),hiddenProfileFields:permitted.filter(f=>!allowedByProfileCeiling(f,ceiling)),canEditProfileFields:hasPermission(c.m,"club.settings"),
  applicants:c.state.applications.filter(a=>a.clubId===d.clubId&&a.roundId===d.roundId&&d.cycleId===c.club.id&&["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"].includes(a.status)).map(a=>({id:a.id,label:anonymous?anonymousApplicantLabel(a.id):label(c.state,a.studentId)})),
  joinableVoterCount:joinable(c.state,d.clubId,anonymous).length};

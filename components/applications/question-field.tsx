@@ -1,6 +1,6 @@
 "use client";
 import { NativeSelect } from "@/components/ui/native-select"
-import { encodeSelections, selectedOptions, type ApplicationQuestion } from "@/lib/student-applications";
+import { MAX_ANSWER_CHARACTERS, encodeSelections, selectedOptions, type ApplicationQuestion } from "@/lib/student-applications";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,7 @@ export function QuestionField({
       <Textarea
         {...props}
         rows={9}
+        maxLength={MAX_ANSWER_CHARACTERS}
         className="oc-writing-textarea min-h-56 resize-y text-base leading-7 sm:min-h-64"
         value={value}
         onChange={(e) => onChange(e.target.value)}

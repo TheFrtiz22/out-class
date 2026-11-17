@@ -52,3 +52,12 @@ test('cumulative score uses canonical submitted reviews, weighted across authori
  let score=await helper.votingInterviewSummary(tx,clubId,apps[0],leaderId);assert.equal(score.average,7.75);assert.equal(score.submitted,2);assert.equal(score.rounds,2);
  rows=[];score=await helper.votingInterviewSummary(tx,clubId,apps[0],leaderId);assert.equal(score.average,null);
 });
+test('setup counts current eligible members without an interviewer selection list',async()=>{
+ const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);
+ const before=await api.getLiveVotingSetup(selection);
+ assert.equal(before.joinableVoterCount,3);assert.ok(!('voters' in before));
+ h.state().interviewRecords.push({interviewerId:voterId,roundId,completedAt:new Date()});
+ assert.equal((await api.getLiveVotingSetup(selection )).joinableVoterCount,3);
+ h.members[1].user.studentProfile={graduatedAt:new Date('2020-01-01')};
+ assert.equal((await api.getLiveVotingSetup(selection )).joinableVoterCount,2);
+});

@@ -1,4 +1,5 @@
 "use server";
+import {isGraduatedMember} from "@/lib/graduation";
 import {readVotingRules} from "@/lib/voting-rules";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { z } from "zod";
@@ -24,7 +25,7 @@ export async function getLiveVotingSetup(input:unknown){
   return prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.manage","decisions.start"],{readOnly:true});
     const cycles=await tx.recruitmentCycle.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true},orderBy:{createdAt:"desc"}});
-    const roundRows=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true,anonymousReview:true,club:{select:{profileFieldVisibility:true}}},orderBy:{order:"asc"}});
+    const roundRows=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true,type:true,anonymousReview:true,club:{select:{profileFieldVisibility:true}}},orderBy:{order:"asc"}});
     // The club's applicant profile setting is the ceiling for slide fields (read with the rounds, same snapshot).
     const profileFields=normalizeProfileFieldVisibility(roundRows[0]?.club?.profileFieldVisibility);
     const rounds=roundRows.map(({club:_club,...r})=>r);
@@ -33,8 +34,8 @@ export async function getLiveVotingSetup(input:unknown){
     if(round&&!round.anonymousReview&&!hasPermission(m,"applicants.identify"))throw Error("Identified review permission required.");
     const apps=round&&cycle?await tx.application.findMany({where:{clubId:d.clubId,roundId:round.id,recruitmentCycleId:cycle.id,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}},select:{id:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}},orderBy:[{submittedAt:"asc"},{id:"asc"}]}):[];
     // Count only: any of these members can join with the join QR or link (no saved voter list).
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null}},select:{status:true,alumniSince:true,isOwner:true,permissions:true}});
-    const joinableVoterCount=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(!round||round.anonymousReview||hasPermission(v,"applicants.identify"))).length;
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null}},select:{status:true,alumniSince:true,isOwner:true,permissions:true,user:{select:{studentProfile:{select:{graduatedAt:true}}}}}});
+    const joinableVoterCount=members.filter(v=>!isGraduatedMember(v)&&hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(!round||round.anonymousReview||hasPermission(v,"applicants.identify"))).length;
     const evidence=interviewCapabilities(m);
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});
     const panel=await tx.interviewPanelAssignment.findFirst({where:{memberId:m.id,revokedAt:null,application:{clubId:d.clubId}},select:{id:true}});

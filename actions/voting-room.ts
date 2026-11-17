@@ -1,4 +1,5 @@
 "use server";
+import {isGraduatedMember} from "@/lib/graduation";
 import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 import {isRecused} from "@/lib/recusal";
 import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
@@ -143,8 +144,8 @@ export async function getLiveVotingRoom(input:unknown) {
     const deciderProfile=decider?.user.studentProfile;
     const undo=receipt?.decision?{...receipt.decision,decidedBy:receipt.actorId===user.id?null:deciderProfile?`${deciderProfile.firstName} ${deciderProfile.lastName}`:"Another leader"}:null;
     const open=isOpenElectorate(s.presentationOptions);
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:roomRosterIds(s)},...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
-    const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:roomRosterIds(s)},...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true,graduatedAt:true}}}}}});
+    const eligible=members.filter(v=>!isGraduatedMember(v)&&hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     // "X of Y in the room voted": the applicant on screen never counts as one of their own voters.
     const ownCurrent=!!current&&ownIds.has(current.applicationId);

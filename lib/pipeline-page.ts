@@ -5,6 +5,7 @@ import { compareApplicants } from "@/lib/live-applicant-sorting"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { applicationDecisionGroup, decisionGroups } from "@/lib/application-decisions"
 import { genderValues } from "@/lib/student-profile"
+import { matchesScholarFilter, scholarFilterPrograms, scholarFilterStates } from "@/lib/scholar-status"
 
 // Cursor scope is an equality check, never authorization. Every page and full
 // selection runs the original live guard and canonical privacy projection.
@@ -21,7 +22,9 @@ export const pipelinePageQuery = z.object({
   gpa: z.number().finite().min(0).max(4).optional(),
   sat: z.number().int().min(0).max(1600).optional(), act: z.number().int().min(0).max(36).optional(),
   rating: z.number().finite().min(0).max(10).optional(),
-  sort: z.enum(["name", "round", "year", "gpa", "sat", "act", "status", "score"]).default("name"),
+  scholar: z.enum(scholarFilterStates).optional(),
+  scholarPrograms: z.array(z.enum(scholarFilterPrograms)).max(scholarFilterPrograms.length).optional(),
+  sort: z.enum(["name", "round", "year", "gpa", "sat", "act", "status", "score", "scholar"]).default("name"),
   descending: z.boolean().default(false), cursor: cursorSchema.optional(),
 }).strict()
 export type PipelinePageQuery = z.input<typeof pipelinePageQuery>
@@ -53,6 +56,8 @@ function selectPipeline<T extends Candidate>(data: Omit<List, "applications"> & 
       (q.sat === undefined || profile?.satScore != null && profile.satScore > q.sat) &&
       (q.act === undefined || profile?.actScore != null && profile.actScore > q.act) &&
       (q.rating === undefined || app.roundScore?.average != null && app.roundScore.average >= q.rating) &&
+      // An anonymous applicant's scholar status is unknown to the viewer: never a match for a scholar filter.
+      matchesScholarFilter(profile?.scholarStatus, !!profile && !app.studentId.startsWith("anonymous-"), q.scholar, q.scholarPrograms) &&
       (!q.review || (q.review === "unreviewed" ? app.evaluations.length === 0 : app.evaluations.some(e => e.interviewerId === reviewerId)))
   }).sort((a, b) => compareApplicants(a, b, q.sort, q.descending, data.rounds))
   return { q, base, filtered }

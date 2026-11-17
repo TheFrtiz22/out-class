@@ -111,3 +111,6 @@ export function adjacentApplicants(history:readonly {number:number;candidates:re
 }
 export const decisionReceiptSchema=z.object({requestId:z.string().uuid(),applicationId:z.string().uuid(),passNumber:z.number().int().positive(),choice:roomChoice,nextApplicationId:z.string().uuid().nullable(),withoutVote:z.boolean()}).strict();
 export const roomCommandResultSchema=z.object({revision:z.number().int().nonnegative(),decision:decisionReceiptSchema.optional(),undone:z.boolean().optional()}).strict();
+// Voting after an interview round starts with what the interviews found; other rounds start without it. Either can be changed.
+const interviewEvidence:LiveRoomField[]=["interviewScore","finalInterviewThoughts"];
+export function interviewRoundFields(fields:LiveRoomField[],type?:string|null):LiveRoomField[]{const interview=type==="INTERVIEW"||type==="GROUP_INTERVIEW";return interview?[...fields,...interviewEvidence.filter(f=>!fields.includes(f))]:fields.filter(f=>!interviewEvidence.includes(f));}

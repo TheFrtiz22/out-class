@@ -3,6 +3,7 @@ import { userMessage } from "@/lib/user-message"
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { requestClubClaim } from "@/actions/club-workspace";
+import { unwrapAction } from "@/lib/action-result";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 export function ClaimForm({ clubId }: { clubId: string }) {
@@ -18,7 +19,7 @@ export function ClaimForm({ clubId }: { clubId: string }) {
         setBusy(true);
         setError("");
         try {
-          await requestClubClaim(clubId, String(data.get("evidence")));
+          unwrapAction(await requestClubClaim(clubId, String(data.get("evidence"))));
           router.refresh();
         } catch (error) {
           setError(

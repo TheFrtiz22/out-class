@@ -1,4 +1,5 @@
 "use server"
+import { isGraduatedMember } from "@/lib/graduation";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
@@ -24,7 +25,7 @@ async function session(tx: AppTransactionClient, clubId: string, id: string) {
 }
 export async function getVotingWorkspace(clubId: string, sessionId?: string, selectionQuery?: PipelinePageQuery) {
   z.string().uuid().parse(clubId); if (sessionId) z.string().uuid().parse(sessionId)
-  const query = selectionQuery === undefined ? undefined : pipelinePageQuery.omit({ cursor: true }).parse(selectionQuery);
+  const query = selectionQuery === undefined ? undefined : boundedParse(pipelinePageQuery.omit({ cursor: true }), selectionQuery);
   const { membership } = await requireClubPermission(clubId, ["applications.review"])
   // Polling is a consistent, read-only snapshot, not a club mutation. Holding
   // Club FOR SHARE throughout its queries prevents SKIP LOCKED workers claiming
@@ -42,7 +43,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string, sel
     const s = await tx.votingSession.findFirst({ where: { clubId, mode: {not:"LIVE"}, ...(sessionId ? {id:sessionId} : !leadershipView ? {participants:{some:{memberId:m.id}}} : {}) }, orderBy: {createdAt:"desc"}, include })
     if (s && !leadershipView && !s.participants.some(p=>p.memberId===m.id)) throw Error("You are not a session participant.")
     const sessions = await tx.votingSession.findMany({where:{clubId,mode:{not:"LIVE"},...(!leadershipView?{participants:{some:{memberId:m.id}}}:{})},select:{id:true,state:true,currentPass:true,createdAt:true},orderBy:{createdAt:"desc"}})
-    const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,...activeMemberWhere},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
+    const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,...activeMemberWhere},include:{user:{select:{email:true,studentProfile:{select:{graduatedAt:true}}}}}})).filter(v=>!isGraduatedMember(v)&&hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
     const allRounds = await tx.pipelineRound.findMany({where:{clubId},orderBy:{order:"asc"}})
     const rounds = allRounds.filter(round => round.archivedAt == null)

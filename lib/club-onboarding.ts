@@ -21,6 +21,8 @@ export function normalizeSchoolIdentifier(value: string, config: Pick<SchoolIden
 
 export function canGrantOnboardingRole(actor: ClubAccess | null, role: MembershipAccessRole) {
   if (!actor || !isActiveMembership(actor)) return false;
+  // A graduate kept as owner may only name a new owner (lib/graduation.ts).
+  if (actor.handOverOnly) return role === "OWNER" && actor.isOwner === true;
   if (role === "OWNER") return actor.isOwner === true;
   if (role === "MEMBER") return hasPermission(actor, "members.manage") || hasPermission(actor, "leaders.manage");
   return hasPermission(actor, "leaders.manage") && onboardingRolePermissions[role].every(p => hasPermission(actor, p));

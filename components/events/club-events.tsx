@@ -22,6 +22,13 @@ import "./events.css";
 import { EventShareButton } from "@/components/share/event-share-button";
 import type { ClubAccess } from "@/lib/permissions";
 import { NativeSelect } from "@/components/ui/native-select"
+import { StatusMark, type StatusTone } from "@/components/ui/status-pill"
+
+const eventStatusTones: Record<string, StatusTone> = { DRAFT: "neutral", PENDING: "active", PUBLISHED: "done", REJECTED: "neutral", CANCELLED: "neutral", ARCHIVED: "neutral" };
+/** The one status label on a managed event: the shared status mark, glyph and tone included. */
+function EventStatus({ event }: { event: ManagedCampusEvent }) {
+  return <StatusMark className="mt-2" literal label={managedEventStatus(event)} tone={eventStatusTones[event.status] ?? "neutral"} />;
+}
 const tabs = ["Upcoming", "Past", "Pending approval", "Rejected", "Drafts", "Closed"];
 export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { clubId: string; clubName: string; canSeeAttendees: boolean; membership?: ClubAccess | null }) {
   const [rows, setRows] = useState<ManagedCampusEvent[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState(""),
@@ -69,7 +76,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
     {error && <p role="alert" className="text-sm text-destructive">{error}{!rows.length && !loading && <> <Button variant="outline" size="sm" disabled={busy} onClick={() => setRetry(n => n + 1)}>Try again</Button></>}</p>}
     {event ? <div className="oc-event-management-detail">
       <div><Button variant="ghost" onClick={() => setSelected(null)}><ArrowLeft size={16} aria-hidden="true" />All events</Button><EventFlyer event={event} /></div>
-      <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><span className="oc-event-status">{managedEventStatus(event)}</span><p>{eventScheduleLabel(event)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
+      <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><EventStatus event={event} /><p>{eventScheduleLabel(event)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
         {event.status === "PENDING" && <p role="status">Waiting for OutClass approval.</p>}
         {event.rejectionReason && <p className="rounded-lg border p-3 text-sm">Review feedback: {event.rejectionReason}</p>}
         <dl className="text-sm text-muted-foreground">{event.submittedAt && <><dt>Last submitted</dt><dd>{eventDateLabel(event.submittedAt)}</dd></>}{event.reviewedAt && <><dt>Last reviewed</dt><dd>{eventDateLabel(event.reviewedAt)}</dd></>}</dl>
@@ -79,7 +86,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { 
     </div> : <>
       <PillSelect label="Event filter" prefix="Status" size="compact" className="oc-event-management-status" active={false} value={tab} onChange={setTab} options={tabs.map(t => ({ value: t, label: `${t[0]}${t.slice(1).toLowerCase()} (${rows.filter(e => inTab(t, e)).length})` }))} />
       {loading && !rows.length ? <LoadingState label="Loading club events…" layout="cards" rows={3} /> : !rows.length ? <EmptyState tone="outlined" title="No events yet." description="Use New event to create a draft, preview it, then submit it for OutClass approval." /> : !visible.length ? <EmptyState tone="outlined" density="compact" align="start" title={`No ${tab === "Upcoming" ? "upcoming" : tab.toLowerCase()} events`} description={`None of your club’s events are ${tab === "Upcoming" ? "upcoming" : `in ${tab.toLowerCase()}`}.`} /> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
-        <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
+        <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><div className="flex flex-wrap items-center gap-x-2"><EventStatus event={e} />{+new Date(e.endDate) <= Date.now() && <span className="mt-2 text-xs text-muted-foreground">Ended</span>}</div><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}
     </>}
     <Dialog open={!!confirm} onOpenChange={open => { if (!open && !busy) setConfirm(null) }}><DialogContent onCloseAutoFocus={e => { e.preventDefault(); const target = removed.current ? detailHeading.current || overviewHeading.current : removeOrigin.current; if (target?.isConnected) target.focus(); }}><DialogTitle>Remove from Corkboard?</DialogTitle><DialogDescription>{confirm?.title} will leave the public Corkboard. Its event history and RSVP records will remain. Publishing again requires approval.</DialogDescription>{error && <p role="alert">{error}</p>}<div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(null)}>Keep event</Button><Button disabled={busy} onClick={() => confirm && void command(confirm, "WITHDRAW")}>Remove from Corkboard</Button></div></DialogContent></Dialog>
@@ -246,7 +253,7 @@ function EventEditor({
       <p className="mb-5 text-sm text-muted-foreground">
         Your private draft saves automatically.
       </p>
-      {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-foreground">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
+      {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-warning/40 bg-warning-subtle p-4 text-sm text-foreground">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
       <AutosaveStatus save={draftSave} />
       <form data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
         className="oc-event-editor"

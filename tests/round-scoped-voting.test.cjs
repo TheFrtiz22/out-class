@@ -107,3 +107,12 @@ test('Demo Mode: application review, Interview 1 and Interview 2 run the same ro
   assert.equal(h.calls(),0,'Demo never invokes a live server action');
  }finally{demoStore.stop()}
 });
+test('voting after an interview round starts with the interview score and final thoughts shown; other rounds start without them',()=>{
+ const {interviewRoundFields}=load('lib/voting-room.ts',{});
+ assert.deepEqual(interviewRoundFields(['name','photo'],'INTERVIEW'),['name','photo','interviewScore','finalInterviewThoughts']);
+ assert.deepEqual(interviewRoundFields(['name','interviewScore'],'GROUP_INTERVIEW'),['name','interviewScore','finalInterviewThoughts']);
+ assert.deepEqual(interviewRoundFields(['name','photo','interviewScore','finalInterviewThoughts'],'APPLICATION_REVIEW'),['name','photo']);
+ const src=fs.readFileSync('components/live-voting/room-setup.tsx','utf8');
+ assert.match(src,/setFields\(old=>interviewRoundFields\(old,v\.rounds\.find\(r=>r\.id===round\)\?\.type\)\)/);
+ assert.match(fs.readFileSync('actions/voting-room-setup.ts','utf8'),/select:\{id:true,name:true,type:true,anonymousReview:true/);
+});

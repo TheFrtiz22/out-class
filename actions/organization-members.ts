@@ -22,6 +22,8 @@ import { resendOrganizationInvitation } from "@/actions/invitation-emails";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
+import { ALUMNI_REFUSALS, ALUMNI_REFUSED } from "@/lib/graduation";
 import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOrganizationInvitation, organizationCapabilities, organizationRoles, organizationRolePermissions } from "@/lib/organization-authorization";
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
@@ -134,7 +136,8 @@ async function actorFor(tx: AppTransactionClient, clubId: string, userId: string
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
   }
   const account = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
-  const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
+  // A graduate kept as owner comes back handOverOnly: only transfer and naming a new owner pass below.
+  const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } }));
   const caps = organizationCapabilities(actor);
   if (!account || account.disabledAt || (!caps.canManageMembers && !caps.canChangeRoles)) throw new ActionError("Member management access denied.");
   return actor!;
@@ -244,6 +247,7 @@ async function bulkOrganizationMembersCommand(input: unknown) {
     const actor = await actorFor(tx, data.clubId, user.id);
     const targets = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(t => t.id) } }, include: { user: { select: { disabledAt: true, email: true } } } });
     if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new ActionError("Selected memberships changed. Reload the page and try again.");
+    if (actor.handOverOnly && !(data.action === "ROLE" && data.role === "OWNER")) throw new ActionError(ALUMNI_REFUSALS.manage, ALUMNI_REFUSED);
     if (data.action === "ROLE" && (!data.role || targets.some(t => !canChangeOrganizationRole(actor, t, data.role!)))) throw new ActionError("You cannot grant this role to the complete selection.");
     if (data.action === "REMOVE" && targets.some(t => !canRemoveOrganizationMember(actor, t))) throw new ActionError("You cannot remove the complete selection.");
     if (data.action === "PERMISSIONS" && targets.some(t => t.alumniSince)) throw new ActionError("Alumni keep no club permissions. Remove alumni from the selection.");

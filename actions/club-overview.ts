@@ -116,14 +116,21 @@ function recruitmentCounts(rows: { status: AppStatus; count: number }[]) {
   for (const row of rows) counts.set(row.status, (counts.get(row.status) ?? 0) + Number(row.count));
   return [...counts].map(([status, count]) => ({ status, count }));
 }
-export async function getWorkspaceRounds(clubId: string) {
+export async function getWorkspaceRounds(clubId: string, scope: { cycleId?: string } = {}) {
   z.string().uuid().parse(clubId);
+  const { cycleId } = z.object({ cycleId: z.string().uuid().optional() }).strict().parse(scope);
   await requireClubPermission(clubId, ["recruitment.manage"]);
-  return prisma.pipelineRound.findMany({
-    where: { clubId, archivedAt: null },
-    orderBy: { order: "asc" },
-    select: { id: true, name: true, anonymousReview: true },
-  });
+  const [rounds, open] = await Promise.all([
+    prisma.pipelineRound.findMany({
+      where: { clubId, archivedAt: null },
+      orderBy: { order: "asc" },
+      select: { id: true, name: true, anonymousReview: true },
+    }),
+    // Applicants still waiting on a decision, so Decide can open on the round where they are.
+    // Scoped to the cycle Decide is showing, like its sessions and decision counts.
+    prisma.application.findMany({ where: { clubId, status: { in: ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"] }, ...(cycleId ? { recruitmentCycleId: cycleId } : {}) }, select: { roundId: true } }),
+  ]);
+  return rounds.map(round => ({ ...round, active: open.filter(app => app.roundId === round.id).length }));
 }
 
 export async function getDashboardReviewQueue(clubId: string, roundId: string) {

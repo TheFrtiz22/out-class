@@ -8,4 +8,4 @@ test('interview PDF proxy scopes each download/range and revocation denies cache
  h.as(12);h.members[2].interviewOffices=['BOARD'];h.assignments[2].revokedAt=new Date();result=await route.GET(new Request(url));assert.equal(result.status,403);
  h.as(10);h.round.anonymousReview=true;result=await route.GET(new Request(url));assert.equal(result.status,403);
 });
-test('resume annotations never appear in compact applicant payload',async()=>{const h=harness(),api=h.load('actions/interview-resumes.ts');const result=await api.getInterviewApplicantPanel(h.scope);assert.deepEqual(Object.keys(result).sort(),['document','profile']);assert.doesNotMatch(JSON.stringify(result),/annotation|questionNotes|gpa/);});
+test('resume annotations never appear in compact applicant payload',async()=>{const h=harness(),api=h.load('actions/interview-resumes.ts');const result=await api.getInterviewApplicantPanel(h.scope);assert.deepEqual(Object.keys(result).sort(),['document','profile','resumeOnFile']);assert.equal(typeof result.resumeOnFile,'boolean');assert.doesNotMatch(JSON.stringify(result),/annotation|questionNotes|gpa/);});

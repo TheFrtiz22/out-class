@@ -69,7 +69,8 @@ test("Club home creates directly: New announcement opens the composer, New meeti
 
 test("⌘K offers every rail destination once and no removed page", () => {
   const shell = fs.readFileSync("components/shell/product-shell.tsx", "utf8")
-  assert.match(shell, /const railLinks = railItems\(railSections\)\.filter\(item => item\.href\)/)
+  // The pinned Inbox/Settings foot is left out: search already lists Inbox and Settings once each.
+  assert.match(shell, /const railLinks = railItems\(railSections\.filter\(section => section\.id !== foot\.id\)\)\.filter\(item => item\.href\)/)
   assert.match(shell, /links=\{\[\.\.\.railLinks,/)
   assert.match(shell, /item\.id === "leader-dashboard"\) return false/)
   const search = fs.readFileSync("components/shell/navigation-search.tsx", "utf8")

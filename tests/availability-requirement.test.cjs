@@ -178,6 +178,8 @@ function harness({ caller = 'lead', impersonation = null, memberships = {}, susp
         return (members[where.clubId] ?? []).map((m, i) => ({ id: `member-${i}`, userId: `user-id-${i}`, user: { id: `user-id-${i}`, email: `member${i}@virginia.edu`, availability: m.schedule ? { schedule: m.schedule } : null, ...(select.user.select.studentProfile ? { studentProfile: m.profile ?? null } : {}) } }))
       },
     },
+    // A current student (alumni are read-only and exempt: tests/alumni-read-only.test.cjs).
+    studentProfile: { findUnique: async () => ({ graduatedAt: null }) },
     userAvailability: {
       findUnique: async ({ where }) => rows[where.userId] ?? null,
       create: async ({ data }) => { writes.push(['create', data]); rows[data.userId] = { userId: data.userId, schedule: data.schedule, revision: 1 }; return rows[data.userId] },
