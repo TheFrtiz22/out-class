@@ -6,11 +6,12 @@ function harness(extraMocks={}){
  const members=[10,11,12].map((n,i)=>({id:id(n+10),userId:id(n),clubId:id(1),status:'ACTIVE',isOwner:i===0,permissions:['applications.review','applicants.identify'],interviewOffices:i===0?['PRESIDENT']:[],user:{disabledAt:null}}));
  const round={id:id(3),clubId:id(1),name:'Interview',anonymousReview:false,interviewKit:[{id:id(4),prompt:'Original',guidance:''}],kitVersion:0};
  const app={id:id(2),clubId:id(1),studentId:id(99),roundId:round.id,status:'INTERVIEWING',round};
- const assignments=members.map(m=>({id:id(500+members.indexOf(m)),grantedAt:new Date(),applicationId:app.id,roundId:round.id,memberId:m.id,revokedAt:null}));let historyQuery;
+ const assignments=members.map(m=>({id:id(500+members.indexOf(m)),grantedAt:new Date(),applicationId:app.id,roundId:round.id,memberId:m.id,revokedAt:null}));let historyQuery,clubProfileFields=null;
  const matches=(o,w)=>Object.entries(w).every(([k,v])=>v&&typeof v==='object'&&!Array.isArray(v)?('not'in v?o[k]!==v.not:('in'in v?v.in.includes(o[k]):true)):o[k]===v);
  const tx={
   interviewBooking:{findUnique:async()=>null},interviewCollaboration:{findUnique:async()=>null},
   $queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:null})},
+  club:{findUnique:async()=>({profileFieldVisibility:clubProfileFields})},
   userNotification:{createMany:async()=>({count:1})},
   clubMember:{findUniqueOrThrow:async({where})=>members.find(m=>m.id===where.id),findUnique:async({where})=>denied?null:members.find(m=>m.userId===where.userId_clubId.userId&&m.clubId===where.userId_clubId.clubId),findFirst:async({where})=>members.find(m=>m.id===where.id&&m.clubId===where.clubId),update:async({where,data})=>Object.assign(members.find(m=>m.id===where.id),data)},
   application:{findFirst:async({where})=>where.id===app.id&&where.clubId===app.clubId&&app.status!=='DRAFTING'?app:null},
@@ -42,6 +43,6 @@ function harness(extraMocks={}){
  }
 
  // Actions converted to actionResult() resolve to their data and throw marked refusals; see ./action-result.cjs.
- return{load:file=>/^actions\//.test(file)?unwrapActions(load(file)):load(file),tx,scope:{clubId:id(1),applicationId:id(2),roundId:id(3)},round,app,members,assignments,get state(){return state},as:n=>actor=id(n),deny:v=>denied=v,failAudit:v=>failAudit=v,get historyQuery(){return historyQuery}};
+ return{load:file=>/^actions\//.test(file)?unwrapActions(load(file)):load(file),tx,scope:{clubId:id(1),applicationId:id(2),roundId:id(3)},round,app,members,assignments,get state(){return state},as:n=>actor=id(n),deny:v=>denied=v,failAudit:v=>failAudit=v,get historyQuery(){return historyQuery},profileFields:v=>clubProfileFields=v};
 }
 module.exports={harness,id};

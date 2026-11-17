@@ -466,6 +466,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           options={[{ value: "", label: "Any" }, ...scholarFilterStates.map(value => ({ value, label: scholarFilterLabels[value] }))]} />
         {scholar === "scholar" && <FilterChips<ScholarFilterProgram> multiple label="Filter scholar program" value={scholarPrograms} onChange={setScholarPrograms} visible={4}
           options={scholarFilterPrograms.map(value => ({ value, label: scholarLabels[value] }))} />}
+        {(scholar || scholarPrograms.length > 0) && !round && data?.rounds.some(r => r.anonymousReview) && <p className="text-xs text-muted-foreground">Applicants in blind rounds aren’t included.</p>}
       </div>}
         </FilterPopover>}
         {!decisionsOnly && (exportable || settingsAllowed) && <DropdownMenu>
