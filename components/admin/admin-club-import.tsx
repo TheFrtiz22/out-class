@@ -1,5 +1,5 @@
 "use client"
-import { UserFacingError } from "@/lib/action-result"
+import { UserFacingError, unwrapAction } from "@/lib/action-result"
 import { userMessage } from "@/lib/user-message"
 import { useState } from "react"
 import { getAdminClub, getAdminClubs, saveAdminClub } from "@/actions/admin-clubs"
@@ -49,7 +49,7 @@ export function AdminClubImport({ schools, onComplete }: { schools: { id: string
         load: async id => (await getAdminClub(id)).value ?? null,
         upload: async (id, file) => {
           const body = new FormData(); body.set('clubId', id); body.set('file', file); body.set('admin', 'true')
-          return (await uploadClubAsset(body)).reference
+          return unwrapAction(await uploadClubAsset(body)).reference
         },
         progress: name => setMessage(`Importing ${name}…`),
       })

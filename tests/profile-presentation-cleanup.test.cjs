@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const { unwrapActions } = require('./helpers/action-result.cjs')
 const fs = require('node:fs'), ts = require('typescript'), profileTx = require('./helpers/profile-transaction.cjs');
 function load(file, mocks = {}) {
   const mod = { exports: {} };
@@ -57,7 +58,7 @@ function uploads({deny=false,publicBucket=false,error=false}={}) {
   process.env.SUPABASE_SECRET_KEY='test-only';
   const bucket={createSignedUploadUrl:async(path)=>({data:{signedUrl:'https://signed',token:'token',path}}),getPublicUrl:path=>({data:{publicUrl:`https://storage.example.com/${path}`}}),uploadToSignedUrl:async(path,token,bytes,opts)=>{writes.push({path,token,bytes,opts});return{error:error?{}:null}}};
   const client={storage:{from:()=>bucket}};
-  const api=load('actions/storage.ts',{'@/utils/auth':{requireAuth:async()=>{if(deny)throw Error('Denied');return{user:{id:owner}}}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'@/utils/supabase/server':{createClient:async()=>client},'next/headers':{cookies:async()=>({})},'@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}}),from:()=>({list:async()=>({data:[],error:null})})}})}});
+  const api=unwrapActions(load('actions/storage.ts',{'@/utils/auth':{requireAuth:async()=>{if(deny)throw Error('Denied');return{user:{id:owner}}}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'@/utils/supabase/server':{createClient:async()=>client},'next/headers':{cookies:async()=>({})},'@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}}),from:()=>({list:async()=>({data:[],error:null})})}})}}));
   return {api,writes};
 }
 function form(bytes=fs.readFileSync('public/demo/sample-resume.pdf'),kind='resume',mime='application/pdf') {const data=new FormData();data.set('kind',kind);data.set('file',new Blob([bytes],{type:mime}),kind==='resume'?'resume.pdf':'photo.png');return data}

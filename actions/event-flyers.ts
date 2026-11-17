@@ -9,7 +9,8 @@ import { validateProfileFile } from "@/lib/student-profile";
 import { auditSupportAction } from "@/utils/support-audit";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { UPLOAD_QUOTA_MESSAGES, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
-export async function uploadEventFlyer(input: FormData) {
+import { ActionError, actionResult } from "@/lib/action-result";
+async function uploadEventFlyerCommand(input: FormData) {
   if (
     [...input.keys()].some(
       (k) => !["eventId", "clubId", "revision", "file"].includes(k),
@@ -18,14 +19,14 @@ export async function uploadEventFlyer(input: FormData) {
       (k) => input.getAll(k).length !== 1,
     )
   )
-    throw Error("Provide one event, revision, club and file.");
+    throw new ActionError("Provide one event, revision, club and file.");
   const eventId = z.string().uuid().parse(input.get("eventId")),
     clubId = z.string().uuid().parse(input.get("clubId")),
     revision = z.coerce.number().int().min(0).parse(input.get("revision"));
   const { user } = await requireClubPermission(clubId, ["meetings.manage"]);
   const file = input.get("file");
   if (!file || typeof file === "string" || !file.size || file.size > 10485760)
-    throw Error("Choose a JPEG, PNG or WebP up to 10 MB.");
+    throw new ActionError("Choose a JPEG, PNG or WebP up to 10 MB.");
   const bytes = new Uint8Array(await file.arrayBuffer()),
     mime = validateProfileFile(bytes, file.type, "flyer");
   const ext =
@@ -49,7 +50,7 @@ export async function uploadEventFlyer(input: FormData) {
           e.revision !== revision ||
           ["CANCELLED", "ARCHIVED"].includes(e.publication.status)
         )
-          throw Error(
+          throw new ActionError(
             "Event changed or is unavailable. Reload before uploading.",
           );
         const since = uploadWindowStart();
@@ -61,7 +62,7 @@ export async function uploadEventFlyer(input: FormData) {
           UPLOAD_QUOTAS.flyer,
           UPLOAD_QUOTA_MESSAGES.flyerStorage,
         );
-        if (quota) throw Error(quota);
+        if (quota) throw new ActionError(quota);
         const storage = await privateFlyerStorage();
         await auditSupportAction(
           "platform.impersonation.event-flyer-upload",
@@ -73,7 +74,7 @@ export async function uploadEventFlyer(input: FormData) {
           cacheControl: "0",
         });
         if (error)
-          throw Error(
+          throw new ActionError(
             "Could not upload flyer. Your saved event has not changed.",
           );
         uploadedStorage = storage;
@@ -134,4 +135,10 @@ export async function uploadEventFlyer(input: FormData) {
   revalidatePath("/", "layout");
   revalidateTag("club-directory");
   return result;
+}
+
+// Returned through actionResult so the reason (file type, size, upload limit) reaches the person:
+// production replaces a thrown message with a generic one.
+export async function uploadEventFlyer(input: FormData) {
+  return actionResult(() => uploadEventFlyerCommand(input), "uploadEventFlyer")
 }

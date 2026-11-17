@@ -1,5 +1,6 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
+const { unwrapActions } = require('./helpers/action-result.cjs')
 const fs = require('node:fs')
 const ts = require('typescript')
 
@@ -39,7 +40,7 @@ function profileHarness(recentCount, listError = null) {
     getBucket: async () => ({ data: { public: false } }),
     from: bucket => ({ list: async (folder, options) => { calls.push({ step: 'list', bucket, folder, options }); return listError ? { data: null, error: listError } : { data: recent, error: null } } }),
   } }
-  const api = load('actions/storage.ts', {
+  const api = unwrapActions(load('actions/storage.ts', {
     '@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }) },
     '@/utils/support-audit': { auditSupportAction: async () => {} },
     'next/headers': { cookies: async () => ({}) },
@@ -48,7 +49,7 @@ function profileHarness(recentCount, listError = null) {
       createSignedUploadUrl: async path => { calls.push({ step: 'sign', path }); return { data: { token: 't' } } },
       uploadToSignedUrl: async () => ({ error: null }),
     }) } }) },
-  })
+  }))
   const form = new FormData(); form.set('kind', 'headshot'); form.set('file', new Blob([new Uint8Array(png)], { type: 'image/png' }), 'portrait.png')
   return { api, calls, form }
 }
@@ -85,7 +86,7 @@ function flyerHarness({ userRecent = 0, clubRecent = 0, clubBytes = 0 } = {}) {
     },
     eventPublication: { update: async () => ({}) },
   }
-  const api = load('actions/event-flyers.ts', {
+  const api = unwrapActions(load('actions/event-flyers.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: owner } }) },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx), $executeRaw: async () => {} } },
@@ -93,7 +94,7 @@ function flyerHarness({ userRecent = 0, clubRecent = 0, clubBytes = 0 } = {}) {
     '@/utils/support-audit': { auditSupportAction: async () => {} },
     '@/utils/event-flyer-cleanup': { cleanupEventFlyers: async () => {} },
     'next/cache': { revalidatePath() {}, revalidateTag() {} },
-  })
+  }))
   const form = new FormData()
   form.set('eventId', eventId); form.set('clubId', clubId); form.set('revision', '1')
   form.set('file', new Blob([new Uint8Array(png)], { type: 'image/png' }), 'flyer.png')
@@ -159,11 +160,11 @@ function clubHarness({ failSum = false } = {}) {
     '@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }), requireClubPermission: async () => ({ user: { id: owner } }) },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
   }
-  const assets = load('actions/club-assets.ts', { ...common,
+  const assets = unwrapActions(load('actions/club-assets.ts', { ...common,
     '@/utils/platform-admin': { requirePlatformAdmin: async () => ({ id: owner }) },
     '@/utils/admin-transaction': { authorizeAdminTransaction: async () => {} },
     '@/lib/club-image': { prepareClubImage: async () => ({ bytes: new Uint8Array(SIX_MB), mime: 'image/png', contentType: 'image/webp' }) },
-  })
+  }))
   const workspace = load('actions/club-workspace.ts', { ...common,
     '@/lib/club-suspension': { lockOperationalClub: async () => {} },
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
