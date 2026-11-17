@@ -36,14 +36,14 @@ test('real local Admin session survives elevation, navigation and refresh and re
       assert.match(html, /http-equiv="refresh"|NEXT_REDIRECT/);
       assert.match(html, /platform\/login/);
     }
-    assert.ok(!html.includes('Needs Attention'), 'Denied requests must not render protected overview data');
+    assert.ok(!html.includes('Needs attention'), 'Denied requests must not render protected overview data');
   }
   async function allowed(route) {
     const response = await admin.request(route), html = await response.text();
     assert.equal(response.status, 200, route);
     assert.ok(!/http-equiv="refresh"|NEXT_REDIRECT/.test(html), route + ' must not silently redirect');
     assert.match(html, /data-product-shell="admin"/, 'Allowed requests must render the authenticated Admin shell');
-    if (route === '/platform') assert.match(html, /Needs Attention/);
+    if (route === '/platform') assert.match(html, /Needs attention/);
     return html;
   }
   await t.test('non-Admin and unelevated Admin are denied', async () => {

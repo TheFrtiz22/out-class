@@ -7,6 +7,7 @@ import { prisma } from "@/utils/prisma"
 import { requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
+import { ActionError, actionResult } from "@/lib/action-result"
 import { applyRuleSchema, buildRulePreview, ruleEligibleStatuses, ruleLabel, ruleScopeSchema, saveRuleSchema, validateRuleRequirement } from "@/lib/recruiting-rules"
 import type { z } from "zod"
 
@@ -15,7 +16,7 @@ async function scopedRound(tx: AppTransactionClient, scope: z.infer<typeof ruleS
     where: { id: scope.roundId, clubId: scope.clubId, archivedAt: null },
     include: { screeningRule: true, club: { select: { testRequirement: true } } },
   })
-  if (!round) throw new Error("Round is not available for this club.")
+  if (!round) throw new ActionError("This round was archived or removed. Refresh and choose another round.", "STALE")
   return round
 }
 
@@ -31,13 +32,17 @@ export async function getRecruitingRules(clubId: string) {
 }
 
 export async function saveRecruitingRule(input: z.infer<typeof saveRuleSchema>) {
+  return actionResult(() => saveRecruitingRuleCommand(input), "saveRecruitingRule")
+}
+
+async function saveRecruitingRuleCommand(input: z.infer<typeof saveRuleSchema>) {
   const parsed = saveRuleSchema.parse(input)
   const { user } = await requireClubPermission(parsed.clubId, ["recruitment.manage"])
   const saved = await prisma.$transaction(async tx => {
     await lockOperationalClub(tx, parsed.clubId);
     const round = await scopedRound(tx, parsed)
     validateRuleRequirement(parsed.thresholds, round.club.testRequirement)
-    if ((round.screeningRule?.revision ?? 0) !== parsed.expectedRevision) throw new Error("Rules changed. Reload before saving.")
+    if ((round.screeningRule?.revision ?? 0) !== parsed.expectedRevision) throw new ActionError("Someone else changed this round's rules. Refresh to see them, then save again.", "STALE")
     const data = { ...parsed.thresholds, revision: parsed.expectedRevision + 1 }
     const rule = round.screeningRule
       ? await tx.recruitingRule.update({ where: { roundId: parsed.roundId }, data })
@@ -54,7 +59,7 @@ export async function saveRecruitingRule(input: z.infer<typeof saveRuleSchema>) 
 async function preview(tx: AppTransactionClient, scope: z.infer<typeof ruleScopeSchema>, canIdentify: boolean) {
   const round = await scopedRound(tx, scope)
   if (!round.anonymousReview && !canIdentify) throw new Error("Applicant identity permission is required for this round.")
-  if (!round.screeningRule) throw new Error("Save this round's rules before previewing.")
+  if (!round.screeningRule) throw new ActionError("Save this round's rules before previewing.", "NO_RULE")
   const { minGpa, minSat, minAct, revision } = round.screeningRule
   const applications = await tx.application.findMany({
     where: { clubId: scope.clubId, roundId: scope.roundId, status: { in: ruleEligibleStatuses as ("SUBMITTED" | "IN_REVIEW" | "INTERVIEWING")[] } },
@@ -65,18 +70,26 @@ async function preview(tx: AppTransactionClient, scope: z.infer<typeof ruleScope
 }
 
 export async function previewRecruitingRule(input: z.infer<typeof ruleScopeSchema>) {
+  return actionResult(() => previewRecruitingRuleCommand(input), "previewRecruitingRule")
+}
+
+async function previewRecruitingRuleCommand(input: z.infer<typeof ruleScopeSchema>) {
   const scope = ruleScopeSchema.parse(input)
   const { membership } = await requireClubPermission(scope.clubId, ["recruitment.manage", "applications.review"])
   return prisma.$transaction(tx => preview(tx, scope, hasPermission(membership, "applicants.identify")), { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead })
 }
 
 export async function applyRecruitingRuleFlags(input: z.infer<typeof applyRuleSchema>) {
+  return actionResult(() => applyRecruitingRuleFlagsCommand(input), "applyRecruitingRuleFlags")
+}
+
+async function applyRecruitingRuleFlagsCommand(input: z.infer<typeof applyRuleSchema>) {
   const parsed = applyRuleSchema.parse(input)
   const { user, membership } = await requireClubPermission(parsed.clubId, ["recruitment.manage", "applications.review", "decisions.manage"])
   const result = await prisma.$transaction(async tx => {
     await lockOperationalClub(tx, parsed.clubId);
     const fresh = await preview(tx, { clubId: parsed.clubId, roundId: parsed.roundId }, hasPermission(membership, "applicants.identify"))
-    if (fresh.fingerprint !== parsed.fingerprint) throw new Error("Applicants or rules changed. Preview again before applying flags.")
+    if (fresh.fingerprint !== parsed.fingerprint) throw new ActionError("Applicants or rules changed since your preview. Preview again before applying flags.", "STALE")
     const matches = fresh.results.filter(result => result.outcome === "flag")
     await tx.recruitingRuleFlag.deleteMany({ where: { roundId: parsed.roundId } })
     if (matches.length) await tx.recruitingRuleFlag.createMany({ data: matches.map(result => ({ roundId: parsed.roundId, applicationId: result.id, ruleRevision: fresh.revision, reasons: result.reasons, flaggedBy: user.id })) })
@@ -101,6 +114,10 @@ export async function getRecruitingRuleFlags(input: z.infer<typeof ruleScopeSche
 }
 
 export async function clearRecruitingRuleFlags(input: z.infer<typeof ruleScopeSchema>) {
+  return actionResult(() => clearRecruitingRuleFlagsCommand(input), "clearRecruitingRuleFlags")
+}
+
+async function clearRecruitingRuleFlagsCommand(input: z.infer<typeof ruleScopeSchema>) {
   const scope = ruleScopeSchema.parse(input)
   const { user } = await requireClubPermission(scope.clubId, ["recruitment.manage", "applications.review", "decisions.manage"])
   await prisma.$transaction(async tx => {

@@ -135,7 +135,7 @@ async function sendStagedDecisionsCommand(input: z.input<typeof sendInput>): Pro
   const data = boundedParse(sendInput, input);
   const ids = [...new Set(data.applicationIds)].sort();
   const { user } = await requireClubPermission(data.clubId, [...decideCaps]);
-  if (await supportContext()) throw new Error("Exit temporary support impersonation before sending decisions.");
+  if (await supportContext()) throw new ActionError("Exit temporary support impersonation before sending decisions.", "FORBIDDEN");
   const result = await clubWriteTransaction(async tx => {
     const member = await authorizeClubTransaction(tx, data.clubId, user.id, decideCaps);
     const canMoveRounds = hasPermission(member, "recruitment.manage");
@@ -169,7 +169,7 @@ async function sendStagedDecisionsCommand(input: z.input<typeof sendInput>): Pro
       audits.push({ actorId: user.id, clubId: data.clubId, targetId: app.id, action: "recruitment.decision.staged.sent", details: { staged: item.id, outcome: item.outcome, targetStatus: item.targetStatus, targetRoundId: item.targetRoundId } });
       out.sent++;
     }
-    if (sentIds.length && (await tx.stagedDecision.deleteMany({ where: { id: { in: sentIds }, clubId: data.clubId } })).count !== sentIds.length) throw new Error("Staged decisions changed. Nothing was sent.");
+    if (sentIds.length && (await tx.stagedDecision.deleteMany({ where: { id: { in: sentIds }, clubId: data.clubId } })).count !== sentIds.length) throw new ActionError("Another leader sent or changed these decisions at the same time. Nothing was sent; refresh to see where they stand.", "STALE");
     if (audits.length) await tx.auditLog.createMany({ data: audits });
     return out;
   });

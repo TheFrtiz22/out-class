@@ -144,7 +144,7 @@ test('settings and authenticated navigation across roles, saves, history and res
     await open(studentPage, `/club-claims/${unclaimed.id}`);
     await studentPage.getByLabel('Your role and supporting evidence').fill('I am the elected president. The university organization directory lists my leadership role.');
     await studentPage.getByRole('button', { name: 'Submit for review', exact: true }).click();
-    await studentPage.getByText('Your latest request: pending.', { exact: true }).waitFor();
+    await studentPage.getByText('Your request is pending review. No management access is granted until an administrator approves it.', { exact: true }).waitFor();
     assert.equal(await db.clubClaim.count({ where: { clubId: unclaimed.id, userId: student.user.id, status: 'PENDING' } }), 1);
   });
   await t.test('ordinary members cannot see configuration via navigation or direct URLs/actions', async () => {

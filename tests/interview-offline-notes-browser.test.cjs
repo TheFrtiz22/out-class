@@ -125,7 +125,7 @@ test('submitted evaluations, scores, Demo Mode and support sessions are never st
     assert.equal('score' in copy.value, false); assert.equal(copy.value.postInterview, true)
     await r.offline(false)
     await until(() => r.server.record.draft.additionalNotes === 'Final notes. Last thought offline.' && r.server.record.draft.score === 10)
-    await page.getByRole('button', { name: 'End post-interview', exact: true }).click()
+    await page.getByRole('button', { name: 'Submit review', exact: true }).click()
     await page.waitForSelector('body[data-submitted="true"]')
     await until(async () => (await vault(page)).records.length === 0)
     assert.ok(r.server.record.completedAt)

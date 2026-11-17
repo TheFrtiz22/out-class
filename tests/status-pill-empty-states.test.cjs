@@ -106,3 +106,9 @@ test("date picker math works on plain days, independent of the browser time zone
 test("Meetings empty state does not repeat the Upcoming / Past toggle", () => {
   assert.doesNotMatch(require("node:fs").readFileSync("components/meeting-workspace.tsx", "utf8"), /See past meetings|See upcoming meetings/)
 })
+test("a rating with no reviews assigned or submitted reads Not scored yet, never 0/0 reviews", () => {
+  const leader = read("components/views/leader-dashboard/live-applicant-views.tsx"), ranked = read("components/ranked-review-list.tsx")
+  assert.match(leader, /if \(summary\.average === null && !summary\.required && !summary\.submitted\) return <span className="oc-dt-muted" title="No reviews yet">Not scored yet<\/span>/)
+  assert.match(leader, /app\.roundScore\.required \|\| app\.roundScore\.submitted \? `\$\{app\.roundScore\.submitted\}\/\$\{app\.roundScore\.required\} reviews` : "Not scored yet"/)
+  assert.match(ranked, /r\.required \|\| r\.submitted \? `\$\{r\.submitted\} of \$\{r\.required\} reviews submitted` : "Not scored yet"/)
+})

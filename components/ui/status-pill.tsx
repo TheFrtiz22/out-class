@@ -28,11 +28,12 @@ const toneIcons: Record<StatusTone, IconComponent> = { neutral: Circle, active: 
 /**
  * A free-text status in the same style (public site samples, setup steps). A label that names an
  * application state ("Interview", "In review") renders exactly as StatusPill; anything else takes
- * its glyph and color from `tone`.
+ * its glyph and color from `tone`. Pass `literal` for a status that isn't an application's (an event's
+ * "Rejected" or "Draft"), so the label and tone are kept as given.
  */
-export function StatusMark({ label, tone = "neutral", icon, className, title, children }: { label: string; tone?: StatusTone; icon?: IconComponent; className?: string; title?: string; children?: ReactNode }) {
+export function StatusMark({ label, tone = "neutral", icon, className, title, literal = false, children }: { label: string; tone?: StatusTone; icon?: IconComponent; className?: string; title?: string; literal?: boolean; children?: ReactNode }) {
   const code = applicationStatusCode(label)
-  if (applicationStatusLabels[code]) return <StatusPill status={code} className={className} />
+  if (!literal && applicationStatusLabels[code]) return <StatusPill status={code} className={className} />
   const Icon = icon ?? toneIcons[tone]
   return <span data-slot="status-pill" data-tone={tone} className={cn("oc-status-pill", className)} title={title}><Icon size={16} weight={tone === "strong" ? "fill" : "regular"} />{label}{children}</span>
 }

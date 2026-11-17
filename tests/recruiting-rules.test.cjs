@@ -1,3 +1,4 @@
+const { unwrapActions, refused } = require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -45,7 +46,7 @@ function harness(permissions=['recruitment.manage','applications.review','decisi
   auditLog:{create:async({data})=>{calls.push(data.action);assert.equal(data.actorId,'actor');assert.equal(data.clubId,clubId)}},
  }
  prisma.$transaction=async(fn,options)=>{calls.push(options?.isolationLevel);return fn(prisma)}
- const api=load('actions/recruiting-rules.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async(club,caps)=>{assert.equal(club,clubId);if(!caps.every(p=>permissions.includes(p)))throw Error('Denied');return {user:{id:'actor'},membership:{permissions}}}},'next/cache':{revalidatePath(){}}})
+ const api=unwrapActions(load('actions/recruiting-rules.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async(club,caps)=>{assert.equal(club,clubId);if(!caps.every(p=>permissions.includes(p)))throw Error('Denied');return {user:{id:'actor'},membership:{permissions}}}},'next/cache':{revalidatePath(){}}}))
  return {api,state,calls}
 }
 test('explicit apply flags only and audits; stale previews cannot delete or create flags',async()=>{
@@ -53,7 +54,7 @@ test('explicit apply flags only and audits; stale previews cannot delete or crea
  assert.equal(preview.results[0].outcome,'flag')
  assert.deepEqual(h.state.flags,[])
  h.state.apps[0].gpa=4
- await assert.rejects(h.api.applyRecruitingRuleFlags({...scope,fingerprint:preview.fingerprint}),/changed/)
+ await refused(h.api.applyRecruitingRuleFlags({...scope,fingerprint:preview.fingerprint}),/changed since your preview/)
  assert.ok(!h.calls.includes('delete'))
  h.state.apps[0].gpa=3
  const result=await h.api.applyRecruitingRuleFlags({...scope,fingerprint:preview.fingerprint})
@@ -64,7 +65,7 @@ test('explicit apply flags only and audits; stale previews cannot delete or crea
 })
 test('save is versioned and audited, clears obsolete flags and never evaluates applicants',async()=>{
  const h=harness()
- await assert.rejects(h.api.saveRecruitingRule({...scope,expectedRevision:0,thresholds}),/changed/)
+ await refused(h.api.saveRecruitingRule({...scope,expectedRevision:0,thresholds}),/changed this round's rules/)
  assert.ok(!h.calls.includes('delete'))
  const result=await h.api.saveRecruitingRule({...scope,expectedRevision:1,thresholds:{...thresholds,minGpa:3.6}})
  assert.equal(result.revision,2);assert.ok(h.calls.includes('recruiting.rules.save'))
@@ -72,8 +73,8 @@ test('save is versioned and audited, clears obsolete flags and never evaluates a
 })
 test('server enforces scope, granular permissions and anonymous-only reviewer restrictions',async()=>{
  const h=harness();h.state.foreign=true
- await assert.rejects(h.api.previewRecruitingRule(scope),/Round/)
- await assert.rejects(h.api.saveRecruitingRule({...scope,expectedRevision:1,thresholds}),/Round/)
+ await refused(h.api.previewRecruitingRule(scope),/round was archived/)
+ await refused(h.api.saveRecruitingRule({...scope,expectedRevision:1,thresholds}),/round was archived/)
  assert.ok(!h.calls.includes('delete'))
  for(const permissions of [[],['applications.review'],['recruitment.manage']]) {
   const limited=harness(permissions)
