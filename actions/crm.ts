@@ -12,7 +12,7 @@ import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from 
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
-import { assertRecruitmentRoundMove, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
+import { assertRecruitmentRoundMove, statusAfterRoundMove } from "@/lib/recruitment-lifecycle";
 import { genderValues } from "@/lib/student-profile";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import { normalizeProfileFieldVisibility, restrictApplicationProfile, type ProfileFieldVisibility } from "@/lib/profile-field-visibility";
@@ -202,10 +202,11 @@ async function moveApplicantRoundCommand(
       where: {
         id: parsed.applicationId,
         clubId: parsed.clubId,
-        status: { not: "DRAFTING" },
+        // The new status is derived from this one, so the move applies only to the state it was computed from.
+        status: current.status,
         ...(parsed.expectedRoundId ? { roundId: parsed.expectedRoundId } : {}),
       },
-      data: { roundId: parsed.newRoundId, ...(current.status === "INTERVIEWING" && !isInterviewRecruitmentRound(round.type) ? { status: "IN_REVIEW" as const } : {}) },
+      data: { roundId: parsed.newRoundId, status: statusAfterRoundMove(current.status, round.type) },
     });
     if (result.count !== 1)
       throw new ActionError("Application changed or is not available for this club. Reload the page and try again.");

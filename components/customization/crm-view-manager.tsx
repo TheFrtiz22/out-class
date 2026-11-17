@@ -25,7 +25,7 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
     setName(""); setError("")
   }
   return <fieldset disabled={!ready} className="min-w-0 space-y-3 font-sans">
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-white p-3">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3">
       <div className="flex flex-wrap gap-1" aria-label="Saved CRM views">
         <Button variant="ghost" className="shadow-none hover:bg-muted" aria-pressed={crm.activeView === "all"} onClick={() => update(p => ({ ...p, crm: { ...p.crm, activeView: "all", filters: emptyFilters } }))}>All applicants</Button>
         {crm.views.map(view => <div key={view.id} className="flex items-center rounded-xl border border-border">
@@ -35,7 +35,7 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
       </div>
       <div className="ml-auto flex flex-wrap gap-2">
         <Popover><PopoverTrigger asChild><Button variant="outline" className="shadow-none"><SlidersHorizontal className="size-4" />View Settings</Button></PopoverTrigger>
-          <PopoverContent className="w-60 rounded-xl border-border bg-white shadow-none" align="end">
+          <PopoverContent className="w-60 rounded-xl border-border bg-popover shadow-none" align="end">
             <p className="mb-3 text-sm font-semibold">Visible columns</p>
             {crmColumns.map(column => <label key={column.id} className="flex items-center gap-2 rounded p-2 text-sm hover:bg-muted">
               <Checkbox checked={!crm.hidden.includes(column.id)} onCheckedChange={checked => update(p => ({ ...p, crm: { ...p.crm, hidden: checked ? p.crm.hidden.filter(id => id !== column.id) : [...p.crm.hidden, column.id] } }))} />{column.label}
@@ -44,17 +44,17 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
         </Popover>
         <SegmentedControl label="CRM layout" value={crm.layout} onChange={layout => update(p => ({ ...p, crm: { ...p.crm, layout } }))} options={[{ value: "table", label: <span className="inline-flex items-center gap-2"><Rows3 className="size-4" />Table View</span> }, { value: "pipeline", label: <span className="inline-flex items-center gap-2"><LayoutGrid className="size-4" />Board View</span> }]} />
         <Popover><PopoverTrigger asChild><Button variant="outline" className="shadow-none">Save view</Button></PopoverTrigger>
-          <PopoverContent className="rounded-xl border-border bg-white shadow-none" align="end">
+          <PopoverContent className="rounded-xl border-border bg-popover shadow-none" align="end">
             <form className="space-y-3" onSubmit={event => { event.preventDefault(); saveView() }}>
               <label className="space-y-1 text-sm">View name<Input value={name} onChange={event => setName(event.target.value)} placeholder="Target Sophomores" maxLength={60} /></label>
               <p className="text-xs text-muted-foreground">Saves your current search, stage, and all applied filters. Changes to filters are temporary until saved.</p>
-              {error && <p role="alert" className="text-control text-red-700">{error}</p>}
+              {error && <p role="alert" className="text-control text-destructive">{error}</p>}
               <Button type="submit" className="shadow-none">Save as new view</Button>
             </form>
           </PopoverContent>
         </Popover>
       </div>
     </div>
-    {storageError && <p role="status" className="text-xs text-amber-800">Browser storage is unavailable or was invalid. Changes remain available during this visit.</p>}
+    {storageError && <p role="status" className="text-xs text-warning">Browser storage is unavailable or was invalid. Changes remain available during this visit.</p>}
   </fieldset>
 }

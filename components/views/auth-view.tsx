@@ -15,13 +15,15 @@ import Link from "next/link"
 import { authEmailError, passwordSignInError, confirmedEmailSession, confirmEmailCode, isNoAccountCodeError, signInCodeNotice } from "@/lib/auth-email"
 import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 
-export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student", initialError = "" }: {
+export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student", initialError = "", description }: {
   onEnter: (view: ViewId) => void
   onBack: () => void
   onCreateAccount?: () => void
   initialRole?: "student" | "leader"
   /** Pre-populated error message, e.g. from an OAuth redirect error. */
   initialError?: string
+  /** Replaces "Sign in with your UVA account." (e.g. the club the visitor is returning to). */
+  description?: string
 }) {
   const { isImpersonating } = useAuth()
   const [email, setEmail] = useState("")
@@ -151,6 +153,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         onDifferentEmail={() => { setStep("email"); setEmailExpanded(true); setCode(""); setError(""); setNotice("") }}
         onBack={onBack}
         onCreateAccount={onCreateAccount}
+        description={description}
       />
       <LoginBrandPanel />
     </div>

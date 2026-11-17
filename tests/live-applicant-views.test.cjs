@@ -21,7 +21,11 @@ const read = file => fs.readFileSync(file, 'utf8')
 const rounds = [{ id: 'r1', name: 'Application review', order: 0, type: 'APPLICATION_REVIEW' }, { id: 'r2', name: 'Interview', order: 1, type: 'INTERVIEW' }, { id: 'r3', name: 'Final round', order: 2, type: 'CUSTOM' }]
 
 test('Advance moves to the next round, and to Accepted from the last round or the waitlist', () => {
-  assert.deepEqual(staged.resolveStagedTarget({ status: 'SUBMITTED', roundId: 'r1' }, rounds, 'ADVANCE'), { targetStatus: 'IN_REVIEW', targetRoundId: 'r2' })
+  // Entering an interview round is the interview invitation: booking a time requires INTERVIEWING.
+  assert.deepEqual(staged.resolveStagedTarget({ status: 'SUBMITTED', roundId: 'r1' }, rounds, 'ADVANCE'), { targetStatus: 'INTERVIEWING', targetRoundId: 'r2' })
+  assert.deepEqual(staged.resolveStagedTarget({ status: 'IN_REVIEW', roundId: 'r1' }, rounds, 'ADVANCE'), { targetStatus: 'INTERVIEWING', targetRoundId: 'r2' })
+  assert.deepEqual(staged.resolveStagedTarget({ status: 'IN_REVIEW', roundId: 'r1' }, rounds, 'ROUND', 'r2'), { targetStatus: 'INTERVIEWING', targetRoundId: 'r2' })
+  assert.deepEqual(staged.resolveStagedTarget({ status: 'IN_REVIEW', roundId: 'r2' }, rounds, 'ROUND', 'r1'), { targetStatus: 'IN_REVIEW', targetRoundId: 'r1' })
   assert.deepEqual(staged.resolveStagedTarget({ status: 'INTERVIEWING', roundId: 'r2' }, rounds, 'ADVANCE'), { targetStatus: 'IN_REVIEW', targetRoundId: 'r3' }, 'leaving an interview round returns to review, as the CRM does')
   assert.deepEqual(staged.resolveStagedTarget({ status: 'IN_REVIEW', roundId: 'r3' }, rounds, 'ADVANCE'), { targetStatus: 'ACCEPTED', targetRoundId: null })
   assert.deepEqual(staged.resolveStagedTarget({ status: 'WAITLISTED', roundId: 'r2' }, rounds, 'ADVANCE'), { targetStatus: 'ACCEPTED', targetRoundId: null })
@@ -29,6 +33,21 @@ test('Advance moves to the next round, and to Accepted from the last round or th
   assert.deepEqual(staged.resolveStagedTarget({ status: 'IN_REVIEW', roundId: 'r1' }, [...rounds].reverse(), 'ADVANCE').targetRoundId, 'r2')
   assert.equal(staged.advanceLabel({ status: 'IN_REVIEW', roundId: 'r1' }, rounds), 'Advance to Interview')
   assert.equal(staged.advanceLabel({ status: 'IN_REVIEW', roundId: 'r3' }, rounds), 'Advance to Accepted')
+})
+
+test('Round moves invite to interview on entering an interview round and return to review on leaving one', () => {
+  for (const type of ['INTERVIEW', 'GROUP_INTERVIEW']) {
+    assert.equal(lifecycle.statusAfterRoundMove('SUBMITTED', type), 'INTERVIEWING')
+    assert.equal(lifecycle.statusAfterRoundMove('IN_REVIEW', type), 'INTERVIEWING')
+    assert.equal(lifecycle.statusAfterRoundMove('INTERVIEWING', type), 'INTERVIEWING')
+    assert.equal(lifecycle.statusAfterRoundMove('WAITLISTED', type), 'WAITLISTED')
+  }
+  assert.equal(lifecycle.statusAfterRoundMove('INTERVIEWING', 'CUSTOM'), 'IN_REVIEW')
+  assert.equal(lifecycle.statusAfterRoundMove('IN_REVIEW', 'APPLICATION_REVIEW'), 'IN_REVIEW')
+  assert.equal(lifecycle.statusAfterRoundMove('SUBMITTED', 'CUSTOM'), 'SUBMITTED')
+  // Every live move path uses the shared rule, so no path can put a finalist in an interview round they cannot book.
+  assert.match(read('actions/crm.ts'), /status: statusAfterRoundMove\(current\.status, round\.type\)/)
+  assert.match(read('lib/voting-finalization.ts'), /statusAfterRoundMove\(status,target\.type\)/)
 })
 
 test('Hold keeps the applicant in review; Reject, Waitlist and Accept map to their statuses; final decisions are not staged', () => {
@@ -121,6 +140,7 @@ test('server: staging needs decision access, refuses self and recused reviewers,
   for (const check of ['requireClubPermission(data.clubId, [...decideCaps])', 'authorizeClubTransaction(tx, data.clubId, user.id, decideCaps', 'app.studentId === user.id', 'app.status !== data.expectedStatus || app.roundId !== data.expectedRoundId', 'assertNotRecused(tx, app.id, member.id)', 'resolveStagedTarget(']) assert.ok(stage.includes(check), check)
   const send = src.slice(src.indexOf('async function sendStagedDecisionsCommand'), src.indexOf('export async function sendStagedDecisions'))
   assert.match(src, /export async function sendStagedDecisions\([^)]*\) \{\n  return actionResult\(\(\) => sendStagedDecisionsCommand\(input\), "sendStagedDecisions"\)/, 'Send refusals reach the user (#292)')
+  assert.doesNotMatch(send, /throw new Error\("/, 'every Send refusal is an ActionError, so production shows it, including the concurrent-send race')
   for (const check of ['supportContext()', 'stagedIsStale(item, app)', 'publishRecruitmentDecision(tx,', 'hasPermission(member, "recruitment.manage")', 'tx.stagedDecision.deleteMany(', 'recused.has(app.id)', 'tx.auditLog.createMany(']) assert.ok(send.includes(check), check)
   assert.match(read('actions/evaluations.ts'), /boundedParse\(evaluateSchema, data\)/)
   assert.match(read('actions/evaluations.ts'), /validateRubricScores\(value, normalizeReviewRubric\(club\.reviewRubric\)\)/)

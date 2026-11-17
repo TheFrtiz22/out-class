@@ -126,15 +126,15 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       : initialView
   )
   const [appMode, setAppMode] = useState<AppMode>(initialAuthRole ? initialAuthRole === "leader" ? "admin" : "student" : demo.isDemoEnabled ? (!wantsStudent && demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
-  function navigate(next: ViewId, section?: PersonalSection) {
+  function navigate(next: ViewId, section?: PersonalSection, carry?: Record<string, string>) {
     if (isImpersonating && next === "auth") return
     if (demo.isDemoEnabled && ["auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return }
     if (resolveStudentView(next)) {
       const nextSection = sectionForStudentView(next, section ?? (next === "calendar" ? personalSection : null))
       setPersonalSection(nextSection)
-      const params = new URLSearchParams({ workspace: "student", view: next })
+      const params = new URLSearchParams({ ...carry, workspace: "student", view: next })
       if (!["explore", "corkboard"].includes(nextSection)) params.set("section", nextSection)
-      const href = embedded ? `/preview?${params}` : studentPath(next, nextSection)
+      const href = embedded ? `/preview?${params}` : studentPath(next, nextSection, carry)
       // Already-open student workspaces share a persistent client shell. Native
       // history keeps URL/back navigation in sync without reloading homepage data.
       if (user && resolveStudentView(view)) window.history.pushState(null, "", href)

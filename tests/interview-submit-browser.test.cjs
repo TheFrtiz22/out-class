@@ -15,7 +15,7 @@ test('real focusout plus pending autosave cannot swallow one explicit review sub
   await page.waitForFunction(()=>window.interviewFixture.saves.length>window.interviewFixture.before);
   await score.press('ArrowLeft');const questions=page.getByRole('textbox',{name:'Final interview thoughts',exact:true});await questions.fill('Latest question immediately before finishing');
   const notes=page.getByRole('textbox',{name:'Miscellaneous notes',exact:true});await notes.fill('Latest discussion and own assessment');
-  await page.getByRole('button',{name:'End post-interview',exact:true}).click();await page.getByRole('button',{name:/Submitting/ }).waitFor();
+  await page.getByRole('button',{name:'Submit review',exact:true}).click();await page.getByRole('button',{name:/Submitting/ }).waitFor();
   await page.evaluate(()=>{const f=window.interviewFixture;f.saveGate=null;f.release()});
   await page.waitForFunction(()=>{const f=window.interviewFixture;return f.saves.length>f.before+1});
   await page.getByRole('region',{name:'Submitted review',exact:true}).waitFor({timeout:4000});

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
+const { unwrapActions, refused } = require('./helpers/action-result.cjs');
 
 const root = path.resolve(__dirname, '..');
 function loader(mocks) {
@@ -57,8 +58,8 @@ function harness(opts = {}) {
     '@/utils/email': { sendAccountDeletionEmail: async input => { state.emails.push(input); if (state.emailFails) throw Error('smtp down'); return { messageId: 'm' }; } },
     '@/utils/account-deletion': { OWNER_GUARD_MESSAGE: 'only active owner', ownerGuardError: e => /Assign another active owner/.test(e.message), performAccountDeletion: async (_db, id, ctx) => { state.deletions.push({ id, ctx }); if (state.deletionError) throw state.deletionError; return { userId: id, storageObjects: 2, deletedApplications: 1, anonymizedApplications: 1, deletedMemberships: 0, anonymizedMemberships: 1, retainedDecisionLetters: 0, retainedResumeSnapshots: 0, authDeleted: true }; } },
   });
-  const actions = load('actions/account-deletion.ts');
-  return { actions, state, reports, logs };
+  const raw = load('actions/account-deletion.ts');
+  return { actions: unwrapActions(raw), raw, state, reports, logs };
 }
 
 test('password accounts always re-enter the password; only password-less accounts may use a recent sign-in', async () => {
@@ -387,4 +388,14 @@ test('the settings section hides itself in Demo Mode and support sessions', () =
   assert.match(ui, /Your profile, résumé, headshot, files and in-progress applications are deleted\./);
   assert.match(ui, /the club keeps its own review notes and the decision, linked to an anonymized placeholder\. Your answers are removed\./);
   assert.match(ui, /Decision letters and interview copies of your résumé that a club already holds stay/);
+});
+
+test('refusals come back as action results so production shows the reason, not a generic error', async () => {
+  const h = harness({ passwordOk: false });
+  await refused(h.raw.requestAccountDeletion({ confirmation: 'DELETE', password: 'wrong' }), /password isn’t right/);
+  await refused(h.raw.requestAccountDeletion({ confirmation: 'delete me' }), /Type your university email or DELETE/);
+  await refused(h.raw.cancelAccountDeletion(), /no pending deletion request/);
+  const limited = harness({ passwordOk: false });
+  for (let i = 0; i < 5; i++) await refused(limited.raw.requestAccountDeletion({ confirmation: 'DELETE', password: 'x' }));
+  assert.equal((await refused(limited.raw.requestAccountDeletion({ confirmation: 'DELETE', password: 'x' }), /Too many attempts/)).code, 'RATE_LIMITED');
 });

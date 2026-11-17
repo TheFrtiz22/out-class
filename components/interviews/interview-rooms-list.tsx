@@ -41,7 +41,7 @@ function InterviewRow({ row, withDay, primary }: { row: InterviewRoomEntry; with
 }
 
 /** My interviews: what is coming up, what still needs notes, and what is done. Nothing appears twice. */
-export function InterviewRoomsList({ clubId }: { clubId: string }) {
+export function InterviewRoomsList({ clubId, onSchedule }: { clubId: string; onSchedule?: () => void }) {
   const demo = useDemoMode();
   const assignedRooms = useAssignedInterviewRooms(clubId);
   const [rows, setRows] = useState<InterviewRoomEntry[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [unbooked, setUnbooked] = useState(false);
@@ -78,14 +78,18 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
     <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">My interviews</h2>{usedRounds.length > 1 && <RoundSelect label="Filter my interviews by round" value={activeRound} onChange={value => { setRoundId(value); setParam("interviewRound", value); }} rounds={usedRounds} />}</header>
     {loading && <LoadingState label="Loading your interviews…" layout="schedule" rows={3} />}
     {error && <div role="alert">{error} <Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div>}
-    {!loading && !error && empty && <div role="status" className="space-y-2 rounded-lg border border-dashed p-5 text-sm text-muted-foreground"><p>{rows.length ? "Nothing here right now. Past time slots nobody booked are hidden." : "You aren’t assigned to any interviews yet. Club leaders add you when they schedule interviews."}</p>{!rows.length && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=overview`}>Back to recruiting overview</Link>}</div>}
+    {!loading && !error && empty && <div role="status" className="space-y-2 rounded-lg border border-dashed p-5 text-sm text-muted-foreground"><p>{rows.length ? "Nothing here right now. Past time slots nobody booked are hidden." : onSchedule ? "You aren’t assigned to any interviews yet. Set interview times and interviewers on Schedule." : "You aren’t assigned to any interviews yet. Club leaders add you when they schedule interviews."}</p>{!rows.length && onSchedule && <Button onClick={onSchedule}>Open schedule</Button>}{!rows.length && !onSchedule && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=overview`}>Back to recruiting overview</Link>}</div>}
     {!loading && !error && upNext.length > 0 && <section aria-labelledby="my-interviews-up-next" className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><h3 id="my-interviews-up-next" className="text-sm font-medium">Up next</h3>
         {days.length > 1 && <SegmentedControl label="Show one day" value={activeDate} onChange={day => { setDate(day); setParam("interviewDate", day); }} options={[{ value: "", label: "All days" }, ...days.map(group => ({ value: group.day, label: group.day === today(group.timezone) ? "Today" : shortDay(group.entries[0]) }))]} />}
       </div>
       {shownDays.map(group => { const first = group.entries[0], last = group.entries.reduce((latest, row) => +new Date(row.endTime) > +new Date(latest.endTime) ? row : latest, first), booked = group.entries.filter(row => row.bookingId).length; return <section key={group.day} aria-label={group.label} className="space-y-1.5">
         <h4 className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-muted-foreground"><span className="font-medium text-foreground">{group.day === today(group.timezone) ? "Today" : group.label}</span><span className="tabular-nums">{interviewTimeRange({ startTime: first.startTime, endTime: last.endTime, timezone: group.timezone })} · {booked ? pluralize(booked, "interview") : "No bookings yet"}</span></h4>
-        <ul className="oc-my-interviews">{group.entries.map(row => <InterviewRow key={row.id} row={row} primary={row.id === firstAction} />)}</ul>
+        {(() => { const interviews = group.entries.filter(row => row.bookingId), open = group.entries.length - interviews.length; return <ul className="oc-my-interviews">
+          {interviews.map(row => <InterviewRow key={row.id} row={row} primary={row.id === firstAction} />)}
+          {/* Unbooked times are one quiet line, so the booked interviews are what stands out. */}
+          {open > 0 && <li className="oc-my-interview text-sm text-muted-foreground" data-open-times="">{interviews.length ? `${pluralize(open, "more open time")} nobody has booked yet` : `${pluralize(open, "open time")}, none booked yet`}</li>}
+        </ul>; })()}
       </section>; })}
     </section>}
     {!loading && !error && needsNotes.length > 0 && <section aria-labelledby="my-interviews-needs-notes" className="space-y-2">

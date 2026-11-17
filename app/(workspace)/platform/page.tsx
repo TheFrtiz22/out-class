@@ -16,8 +16,9 @@ async function PlatformOverview() {
   const result = await adminPageLoad("/platform", getAdminOverview, "ADMIN_DATA_LOAD_FAILED");
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
   const metrics = result.value!;
-  const labels = { students: "Students", clubs: "Clubs", eventApprovals: "Pending event approvals", clubApprovals: "Pending club approvals", reports: "Open reports", upcomingEvents: "Upcoming approved events", supportItems: "Support items" };
-  const attention = [{ key: "eventApprovals" as const, label: "Review pending events", noun: "event approval", href: "/platform/events" }, { key: "clubApprovals" as const, label: "Review club claims", noun: "club claim", href: "/platform/claims" }, { key: "reports" as const, label: "Investigate reports", noun: "open report", href: "/platform/reports" }, { key: "supportItems" as const, label: "Help with support requests", noun: "support request", href: "/platform/support" }];
+  // Queue counts live in Needs attention and Queues; the tiles carry only what those don't.
+  const labels = { students: "Students", clubs: "Clubs", upcomingEvents: "Upcoming approved events" };
+  const attention = [{ key: "eventApprovals" as const, label: "Review pending events", noun: "event approval", detail: "Club events waiting to go public", href: "/platform/events" }, { key: "clubApprovals" as const, label: "Review club claims", noun: "club claim", detail: "Leaders asking to manage a club", href: "/platform/claims" }, { key: "reports" as const, label: "Investigate reports", noun: "open report", detail: "Flagged content and accounts", href: "/platform/reports" }, { key: "supportItems" as const, label: "Help with support requests", noun: "support request", detail: "People waiting on a reply", href: "/platform/support" }];
   const open = attention.filter(i => metrics[i.key] > 0);
   const queues = [...attention, { key: null, label: "School requests", noun: "", href: "/platform/school-requests" }];
   return <div className="oc-workspace-stack oc-admin-workspace">
@@ -25,8 +26,8 @@ async function PlatformOverview() {
       <PageHeader density="expressive" eyebrow="OutClass · Administration" title="What needs your attention?" description="Review requests, help people, and keep Grounds connected." />
     </DashboardHero>
     <Dashboard className="oc-admin-dashboard">
-      <NeedsYouRow headingId="admin-attention" heading="Needs Attention" className="oc-admin-attention"
-        items={open.map(i => ({ id: i.key, title: `${metrics[i.key]} ${i.noun}${metrics[i.key] === 1 ? "" : "s"}`, detail: "Approvals, reports and support", action: <NeedsAction href={i.href}>{i.label}</NeedsAction> }))}
+      <NeedsYouRow headingId="admin-attention" heading="Needs attention" className="oc-admin-attention"
+        items={open.map(i => ({ id: i.key, title: `${metrics[i.key]} ${i.noun}${metrics[i.key] === 1 ? "" : "s"}`, detail: i.detail, action: <NeedsAction href={i.href}>{i.label}</NeedsAction> }))}
         clear={<><strong>No open approvals, reports, or support requests need attention.</strong> New requests will show up here.</>} />
       <div className="oc-dashboard-grid">
         <div className="oc-dashboard-main">

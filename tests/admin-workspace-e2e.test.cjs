@@ -12,7 +12,7 @@ test('disposable real Auth/password/MFA elevation, Admin routes/actions, invitat
  await admin.signIn(c.identities.admin.email,c.identities.admin.password);await student.signIn(c.identities.student.email,c.identities.student.password);await leader.signIn(c.identities.leader.email,c.identities.leader.password);
  const existingAal=await admin.client.auth.mfa.challengeAndVerify({factorId:c.identities.admin.factorId,code:totp(c.identities.admin.totpSecret)});assert.equal(existingAal.error,null);
  const post=(actor,body)=>actor.request('/api/platform/elevation',{method:'POST',headers:{origin:c.appUrl,'Content-Type':'application/json'},body:JSON.stringify(body)});
- const denied = async actor => { const response = await actor.request('/platform'); if(response.status === 307) assert.equal(response.headers.get('location'),'/platform/login'); else { assert.equal(response.status,200); const html=await response.text(); assert.match(html,/NEXT_REDIRECT|http-equiv="refresh"/); assert.match(html,/platform\/login/); assert.ok(!html.includes('Needs Attention')); } };
+ const denied = async actor => { const response = await actor.request('/platform'); if(response.status === 307) assert.equal(response.headers.get('location'),'/platform/login'); else { assert.equal(response.status,200); const html=await response.text(); assert.match(html,/NEXT_REDIRECT|http-equiv="refresh"/); assert.match(html,/platform\/login/); assert.ok(!html.includes('Needs attention')); } };
  for(const actor of[student,leader,admin])await denied(actor);
  assert.equal((await(await student.request('/api/platform/eligibility')).json()).eligible,false);
  assert.equal((await(await admin.request('/api/platform/eligibility')).json()).eligible,true);
