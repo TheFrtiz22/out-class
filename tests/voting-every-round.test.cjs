@@ -24,12 +24,12 @@ test('application review before interviews: voting, repeated Hold passes, explic
  const admission=await f.previewLiveVotingFinalization({...h.scope,mapping:{kind:'ADMISSION'}});assert.equal(admission.laterRounds,1);assert.equal(admission.roundType,'APPLICATION_REVIEW');
  const mapping={kind:'ADVANCE',roundId:interview.id},plan=await f.previewLiveVotingFinalization({...h.scope,mapping});
  assert.deepEqual(plan.stale,[]);assert.equal(plan.targetRoundName,'First interview');
- assert.deepEqual(plan.changes.map(c=>[c.outcome,c.fromStatus,c.toStatus,c.toRoundId===interview.id]),[['ACCEPT','SUBMITTED','SUBMITTED',true],['HOLD','SUBMITTED','SUBMITTED',false],['REJECT','SUBMITTED','REJECTED',false]]);
+ assert.deepEqual(plan.changes.map(c=>[c.outcome,c.fromStatus,c.toStatus,c.toRoundId===interview.id]),[['ACCEPT','SUBMITTED','INTERVIEWING',true],['HOLD','SUBMITTED','SUBMITTED',false],['REJECT','SUBMITTED','REJECTED',false]]);
  const body={...h.scope,mapping,requestId:uuid(70),revision:plan.revision,guard:plan.guard,confirmed:true};
  ok(await f.finalizeLiveVotingRoom(body));const moves=h.state().audit.filter(a=>a.action==='club.round.move').length;
  ok(await f.finalizeLiveVotingRoom(body));assert.equal(h.state().audit.filter(a=>a.action==='club.round.move').length,moves,'retry does not move twice');
  const [passed,held,rejected]=h.state().apps;
- assert.equal(passed.roundId,interview.id);assert.equal(passed.status,'SUBMITTED','advancing is not admission');
+ assert.equal(passed.roundId,interview.id);assert.equal(passed.status,'INTERVIEWING','advancing into an interview round invites to interview; it is not admission');
  assert.equal(held.roundId,roundId);assert.equal(held.status,'SUBMITTED','Hold is preserved');assert.equal(rejected.status,'REJECTED');
  // Prior votes and outcomes stay with the original session and round.
  const s=h.state().sessions[0];assert.equal(s.roundId,roundId);assert.equal(s.passes.length,3);assert.equal(s.passes[0].candidates[0].ballots.length,2);
