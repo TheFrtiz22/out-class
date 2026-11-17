@@ -136,12 +136,11 @@ export function lastDefaultedGradYear(now: Instant = Date.now()) {
 }
 
 /**
- * Prisma User filter for people who have not graduated at `now` (or have no student profile). Voter
- * eligibility uses it, so a graduate kept as owner is never counted in an electorate.
+ * Voter eligibility: a member whose account has graduated (a graduate kept as owner included) is
+ * never counted in an electorate. Reads the member row's user.studentProfile.graduatedAt.
  */
-export function notGraduatedUserWhere(now: Instant = Date.now()) {
-  const at = new Date(now)
-  return { OR: [{ studentProfile: { is: null } }, { studentProfile: { is: { OR: [{ graduatedAt: null }, { graduatedAt: { gt: at } }] } } }] }
+export function isGraduatedMember(member: { user?: { studentProfile?: { graduatedAt?: Instant | null } | null } | null }, now: Instant = Date.now()) {
+  return isAlumniProfile(member.user?.studentProfile, now)
 }
 
 export function isAlumniProfile(profile: Pick<GraduationProfile, "graduatedAt"> | null | undefined, now: Instant = Date.now()) {

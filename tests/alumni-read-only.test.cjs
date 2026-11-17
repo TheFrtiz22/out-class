@@ -254,15 +254,17 @@ test('kept-owner graduate: direct membership loads mark the actor too', () => {
 
 test('voting: a graduate (kept owner included) is never an eligible voter', async () => {
   const at = new Date('2026-09-01T00:00:00Z')
-  assert.deepEqual(g.notGraduatedUserWhere(at), { OR: [{ studentProfile: { is: null } }, { studentProfile: { is: { OR: [{ graduatedAt: null }, { graduatedAt: { gt: at } }] } } }] })
-  let where
+  assert.equal(g.isGraduatedMember({ user: { studentProfile: { graduatedAt: ALUMNI_AT } } }, at), true)
+  for (const member of [{ user: { studentProfile: { graduatedAt: null } } }, { user: { studentProfile: { graduatedAt: new Date('2027-08-01T04:00:00Z') } } }, { user: { studentProfile: null } }, {}])
+    assert.equal(g.isGraduatedMember(member, at), false, JSON.stringify(member))
+  let args
   const rules = load('utils/voting-rules.ts')
-  const tx = { clubMember: { findMany: async args => { where = args.where; return [{ id: 'm2', isOwner: true, status: 'ACTIVE', alumniSince: null, permissions: [] }] } } }
-  assert.deepEqual(await rules.currentEligibleVoterIds(tx, CLUB, ['m1', 'm2'], true), ['m2'])
-  assert.deepEqual(where.user.disabledAt, null)
-  assert.equal(where.user.OR.length, 2, 'the graduation filter is part of the eligibility query')
-  assert.deepEqual(where.user.OR[0], { studentProfile: { is: null } })
-  // The setup electorate and the live room use the same filter.
-  assert.match(src('actions/voting-room-setup.ts'), /const members=await tx\.clubMember\.findMany\(\{where:\{clubId:d\.clubId,\.\.\.activeMemberWhere,user:\{disabledAt:null,\.\.\.notGraduatedUserWhere\(\)\}\}/)
-  assert.match(src('actions/voting-room.ts'), /const members=await tx\.clubMember\.findMany\(\{where:\{clubId:d\.clubId,id:\{in:s\.participants\.map\(p=>p\.memberId\)\},\.\.\.activeMemberWhere,user:\{disabledAt:null,\.\.\.notGraduatedUserWhere\(\)\}\}/)
+  const voter = (id, graduatedAt) => ({ id, isOwner: true, status: 'ACTIVE', alumniSince: null, permissions: [], user: { studentProfile: { graduatedAt } } })
+  const tx = { clubMember: { findMany: async a => { args = a; return [voter('m1', ALUMNI_AT), voter('m2', null)] } } }
+  assert.deepEqual(await rules.currentEligibleVoterIds(tx, CLUB, ['m1', 'm2'], true), ['m2'], 'the kept-owner graduate is excluded')
+  assert.deepEqual(args.include, { user: { select: { studentProfile: { select: { graduatedAt: true } } } } })
+  // The setup electorate and the live room apply the same predicate.
+  assert.match(src('actions/voting-room-setup.ts'), /const voters=members\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
+  assert.match(src('actions/voting-room.ts'), /const eligible=members\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
+  for (const file of ['actions/voting-room-setup.ts', 'actions/voting-room.ts']) assert.match(src(file), /studentProfile:\{select:\{firstName:true,lastName:true,graduatedAt:true\}\}/, file)
 })

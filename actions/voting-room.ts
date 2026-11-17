@@ -1,5 +1,5 @@
 "use server";
-import {notGraduatedUserWhere} from "@/lib/graduation";
+import {isGraduatedMember} from "@/lib/graduation";
 import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 import {isRecused} from "@/lib/recusal";
 import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
@@ -127,8 +127,8 @@ export async function getLiveVotingRoom(input:unknown) {
     const decider=receipt&&receipt.actorId!==user.id?await tx.clubMember.findFirst({where:{clubId:d.clubId,userId:receipt.actorId},select:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}):null;
     const deciderProfile=decider?.user.studentProfile;
     const undo=receipt?.decision?{...receipt.decision,decidedBy:receipt.actorId===user.id?null:deciderProfile?`${deciderProfile.firstName} ${deciderProfile.lastName}`:"Another leader"}:null;
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},...activeMemberWhere,user:{disabledAt:null,...notGraduatedUserWhere()}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
-    const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true,graduatedAt:true}}}}}});
+    const eligible=members.filter(v=>!isGraduatedMember(v)&&hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     const options=roomPresentationSchema.safeParse(s.presentationOptions);
     // Rule wording for everyone; its counts only after the leader closes this ballot (totals are hidden while open).
