@@ -70,6 +70,43 @@ test('one bad notification or suspended club cannot stop other recipients\' emai
     assert.equal((await outbox(blocked[0].id)).status, 'ASSIGNED', 'restored club email is delivered');
   });
 
+  await t.test('a drained run sends a large decision batch in one cron run; a single pass stays bounded', async () => {
+    const c = await club(false), rows = [];
+    for (let i = 0; i < 40; i++) rows.push(await notify((await user()).id, c.id));
+    const savedRate = process.env.RESEND_MAX_REQUESTS_PER_SECOND;
+    process.env.RESEND_MAX_REQUESTS_PER_SECOND = '50';
+    try {
+      sentTo.length = 0;
+      const single = await worker.processNotificationEmails(10);
+      assert.equal(single.sent, 10, 'one pass sends at most the batch size');
+      const drained = await worker.processNotificationEmails(25, { drain: true });
+      assert.equal(drained.sent, 30, 'the drained run sends everything that is left');
+      assert.equal(sentTo.length, 40);
+      for (const row of rows) assert.equal((await outbox(row.id)).status, 'ASSIGNED');
+      const again = await worker.processNotificationEmails(25, { drain: true });
+      assert.deepEqual([again.sent, again.failed], [0, 0], 'an empty queue ends after one pass');
+    } finally {
+      if (savedRate === undefined) delete process.env.RESEND_MAX_REQUESTS_PER_SECOND; else process.env.RESEND_MAX_REQUESTS_PER_SECOND = savedRate;
+    }
+  });
+
+  await t.test('a tiny configured send rate is clamped, so no claimed delivery waits out its lease', async () => {
+    const c = await club(false), rows = [];
+    for (let i = 0; i < 3; i++) rows.push(await notify((await user()).id, c.id));
+    const savedRate = process.env.RESEND_MAX_REQUESTS_PER_SECOND;
+    process.env.RESEND_MAX_REQUESTS_PER_SECOND = '0.01';
+    try {
+      sentTo.length = 0;
+      const begun = Date.now();
+      const result = await worker.processNotificationEmails(10);
+      assert.equal(result.sent, 3);
+      assert.ok(Date.now() - begun < 10000, 'three sends at the 1/s floor take seconds, not minutes');
+      assert.equal(await db.notificationEmailDelivery.count({ where: { status: 'SENDING' } }), 0, 'nothing is left mid-send');
+    } finally {
+      if (savedRate === undefined) delete process.env.RESEND_MAX_REQUESTS_PER_SECOND; else process.env.RESEND_MAX_REQUESTS_PER_SECOND = savedRate;
+    }
+  });
+
   await t.test('an undeliverable notification is suppressed alone; the rest of the queue is delivered', async () => {
     const c = await club(false), poisoned = await user(), next = await user();
     // A DECISION notification whose link is not a canonical decision path cannot become an email.
