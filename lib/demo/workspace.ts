@@ -9,7 +9,7 @@ import * as demoInterviewEntry from "./interview-entry";
 import * as demoBookingApi from "./interview-booking";
 import * as demoDecisionCommunications from "./communications";
 import * as demoOffers from "./recruitment-offers";
-import { assertRecruitmentRoundMove } from "@/lib/recruitment-lifecycle";
+import { assertRecruitmentRoundMove, statusAfterRoundMove } from "@/lib/recruitment-lifecycle";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -168,7 +168,7 @@ export const moveApplicantRound: Demo<"moveApplicantRound"> = (input) => {
       throw new Error("Application changed. Reload the page and try again.")
     assertRecruitmentRoundMove(app.status)
     const round = s.clubs.find(c=>c.id===input.clubId)!.rounds.find(r=>r.id===input.newRoundId)!
-    if(app.status === "INTERVIEWING" && !/interview/i.test(round.name)) app.status = "IN_REVIEW"
+    app.status = statusAfterRoundMove(app.status, (round as { type?: string }).type ?? (/interview/i.test(round.name) ? "INTERVIEW" : "CUSTOM"))
     app.roundId = input.newRoundId
     return { success: true, application: app }
   })
