@@ -335,7 +335,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                             }}
                             className={cn(
                               "mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                              key === today && "bg-primary text-white",
+                              key === today && "bg-primary text-primary-foreground",
                             )}
                           >
                             {day.getDate()}
@@ -493,7 +493,6 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
             <>
               <DialogHeader>
                 <DialogTitle>{selected.title}</DialogTitle>
-                {selected.id.startsWith("meeting-") && <a className="text-sm underline" href={`/meetings/${selected.id.slice(8)}`}>Agenda, resources, and recap</a>}
                 <DialogDescription>
                   {selected.club} · {selected.type}
                 </DialogDescription>
@@ -584,6 +583,11 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                     }}
                   >
                     Change interview time
+                  </Button>
+                )}
+                {selected.id.startsWith("meeting-") && (
+                  <Button variant="outline" asChild>
+                    <Link href={`/meetings/${selected.id.slice(8)}`}>Open agenda and recap</Link>
                   </Button>
                 )}
                 {application && (
