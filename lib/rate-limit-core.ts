@@ -41,6 +41,8 @@ export const RATE_LIMITS = {
   demoMode: { name: "demo-mode", limit: 30, windowMs: 10 * minute },
   // Screenshot upload URLs for issue reports and feedback, per account; reports themselves also count in Postgres.
   feedbackScreenshots: { name: "feedback-screenshots", limit: 10, windowMs: 60 * minute },
+  // "Find a meeting time" names per start time, per leader and club (actions/availability.ts getMeetingTimeRoster).
+  meetingPlannerRoster: { name: "meeting-planner-roster", limit: 30, windowMs: minute },
   // RFC 8058 one-click POSTs come from mail providers' shared servers, so this only bounds a flood of writes;
   // the signed token, not the limit, is what stops forged requests.
   emailUnsubscribe: { name: "email-unsubscribe", limit: 300, windowMs: minute },

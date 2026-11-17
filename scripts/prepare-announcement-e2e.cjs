@@ -1,5 +1,6 @@
 // Dedicated local Auth/DB and a production Next build; never reads application .env.
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
+const { satisfyAvailabilityRequirement } = require('../tests/helpers/availability-requirement-fixture.cjs')
 const { spawnSync, spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
 const { createClient } = require('@supabase/supabase-js');
@@ -42,7 +43,7 @@ async function main() {
       const { data, error } = await auth.auth.admin.createUser({ email, password, email_confirm: true });
       if (error) throw error;
       if (!data.user.email_confirmed_at) throw Error('Fixture email not confirmed');
-      const user = await db.user.upsert({ where: { id: data.user.id }, create: { id: data.user.id, email }, update: {} });
+      const user = await db.user.upsert({ where: { id: data.user.id }, create: { id: data.user.id, email }, update: {} });await satisfyAvailabilityRequirement(db,data.user.id);
       await db.studentProfile.create({ data: { userId: user.id, computingId: role === 'recipient' ? 'bsb4rd' : 'announcement-admin', firstName: role === 'recipient' ? 'Test' : 'Club', lastName: role === 'recipient' ? 'Recipient' : 'Administrator', major: 'Economics', gradYear: 2028 } });
       settings.actors[role] = { id: user.id, email, password };
     }

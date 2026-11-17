@@ -121,6 +121,9 @@ class Actor {
   this.user=verified.data.user;assert.ok(this.user.confirmation_sent_at&&this.user.email_confirmed_at);
   this.credentials={email,password};this.year=year;return this.user;
  }
- async profile(name,year){const [firstName,...last]=name.split(' ');return this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,phone:'434-555-0123',experiences:[]}]);}
+ async profile(name,year,{availability=true}={}){const [firstName,...last]=name.split(' ');const profile=await this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,phone:'434-555-0123',experiences:[]}]);if(availability)await this.availability();return profile;}
+ // Weekly availability is required before the signed-in workspace (components/availability/availability-gate.tsx);
+ // signed-up fixtures complete that step through the real action with "no regular free time", so no schedule is invented.
+ async availability(){return this.action('actions/availability.ts','completeAvailabilityRequirement',[{noRegularTime:true}]);}
 }
 module.exports={Actor,totp,readConfig,readStagingImportConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect,redirectDestination,actionSourceMatches};

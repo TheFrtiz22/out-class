@@ -142,7 +142,7 @@ function meetingHarness(issue) {
   class FakeDate extends Date { constructor(...a) { super(...(a.length ? a : [clock])) } static now() { return clock } }
   const api = { meetingAttendance: async () => [], issueMeetingCheckIn: (...a) => issue(...a), closeMeetingCheckIn: async () => {} }
   const errors = require('./helpers/communications-loader.cjs').loader({})
-  const mocks = { react, '@/lib/workspace-api': api, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/user-message': errors('lib/user-message.ts'), '@/lib/action-result': errors('lib/action-result.ts') }
+  const mocks = { react, 'next/dynamic': { default: () => () => null }, '@/lib/workspace-api': api, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/user-message': errors('lib/user-message.ts'), '@/lib/action-result': errors('lib/action-result.ts') }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/meeting-workspace.tsx', 'utf8') + '\nexports.MeetingAttendance = MeetingAttendance;', { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   new Function('require', 'module', 'exports', 'window', 'Date', 'setInterval', 'clearInterval', code)(

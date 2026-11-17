@@ -22,6 +22,8 @@ const exclusions = new Map([
   ['actions/campus-events.ts#toggleCampusEventRsvp', 'already returns { ok, error } through RsvpResult'],
   ['actions/decision-schedules.ts#getDecisionSchedules', 'read; failures show the load fallback'],
   ['actions/crm.ts#getClubPipeline', 'read through /api/workspace'],
+  ['actions/availability.ts#getMeetingTimePlanner', 'read through /api/workspace'],
+  ['actions/availability.ts#getMeetingTimeRoster', 'read through /api/workspace; RATE_LIMITED answers 429'],
   ['actions/crm.ts#getClubPipelineList', 'read through /api/workspace'],
   ['actions/crm.ts#getClubPipelinePage', 'read through /api/workspace'],
   ['actions/crm.ts#getClubPipelineSelection', 'read through /api/workspace'],

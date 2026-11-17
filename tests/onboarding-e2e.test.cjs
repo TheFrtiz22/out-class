@@ -1,4 +1,5 @@
 const {refused}=require('./helpers/action-result.cjs');
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -116,10 +117,20 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   for(const target of [`/invitations/${ownerInvitation}`,'/settings/organizations']){
    await assertProfileCompletionRedirect(await president.request(target),config.appUrl,target,[name,'Your organization access','Settings → Organizations']);
   }
-  await president.profile('John Smith',2027);assert.equal((await db.studentProfile.findUniqueOrThrow({where:{userId:president.user.id}})).computingId,ids.president);
+  await president.profile('John Smith',2027,{availability:false});assert.equal((await db.studentProfile.findUniqueOrThrow({where:{userId:president.user.id}})).computingId,ids.president);
+  // Required weekly availability comes right after the profile wizard: workspace pages show that step until it is met.
+  const gated=await president.request(`/invitations/${ownerInvitation}`);assert.equal(gated.status,200);const gatedHtml=await gated.text();
+  assert.ok(gatedHtml.includes('id="availability-requirement"'),'A new profile is asked for weekly availability before workspace pages');
+  assert.ok(!gatedHtml.includes('id="__next-page-redirect"'),'The availability step does not send a completed profile back to onboarding');
+  await refused(call(president,'availability','completeAvailabilityRequirement',{noRegularTime:false}),/usually free/);
+  assert.equal(await db.userAvailability.count({where:{userId:president.user.id}}),0,'A refused completion writes nothing');
+  await call(president,'availability','saveMyAvailability',{revision:0,schedule:{timezone:'America/New_York',weekly:[[[1080,1200]],[],[],[],[],[],[]],weeklySubmitted:true,exceptions:{}}});
+  assert.deepEqual(await call(president,'availability','completeAvailabilityRequirement',{noRegularTime:false}),{met:true});
+  assert.equal(await db.auditLog.count({where:{actorId:president.user.id,action:'availability.requirement.declare_none'}}),0,'Saved times meet the requirement without a declaration');
   const invitationPage=await president.request(`/invitations/${ownerInvitation}`);
   assert.equal(invitationPage.status,200);
   const invitationHtml=await invitationPage.text();
+  assert.ok(!invitationHtml.includes('id="availability-requirement"'),'Saved availability opens the workspace');
   assert.ok(invitationHtml.includes(name)&&invitationHtml.includes('Your organization access'),'Completed profile can access the invitation flow');
   assert.ok(!invitationHtml.includes('id="__next-page-redirect"'),'Completed profile must not redirect away from the invitation');
   await call(president,'club-onboarding','acceptIdentityClubInvitation',ownerInvitation);
@@ -227,7 +238,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const identifier='legacy'+suffix,email=identifier+'@virginia.edu',password='Legacy-local-only!123',nextPassword='Recovered-local-only!123';
   const created=await provider.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{email_verification_skipped:true}});assert.equal(created.error,null);
   assert.equal(created.data.user.confirmation_sent_at,undefined);
-  await db.user.create({data:{id:created.data.user.id,email}});
+  await db.user.create({data:{id:created.data.user.id,email}});await satisfyAvailabilityRequirement(db,created.data.user.id);
   const legacy=new Actor(config);await legacy.signIn(email,password);await legacy.profile('Legacy Student',2028);
   const invitation=await call(president,'club-onboarding','createClubIdentityInvitation',{clubId,identifierTypeId:'school-uva-computing-id',identifier,requestedRole:'MEMBER',invitedName:'Legacy Student',invitedYear:'2028'});
   await assert.rejects(call(legacy,'club-onboarding','getOrganizationInvitations',true));

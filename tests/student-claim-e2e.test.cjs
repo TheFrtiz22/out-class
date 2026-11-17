@@ -1,4 +1,5 @@
 const {test}=require('node:test');
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {PrismaClient}=require('@prisma/client');
@@ -42,7 +43,7 @@ test('student invitations claim and resend through the compatibility runtime wit
  });
  await t.test('unbound signup hashes and arbitrary hashes cannot consume a provider token',async()=>{
   const email=`signup${randomUUID()}@virginia.edu`,generated=await service.auth.admin.generateLink({type:'signup',email,password:'Original-signup!'+randomUUID()});assert.equal(generated.error,null);
-  await db.user.upsert({where:{id:generated.data.user.id},create:{id:generated.data.user.id,email},update:{}});
+  await db.user.upsert({where:{id:generated.data.user.id},create:{id:generated.data.user.id,email},update:{}});await satisfyAvailabilityRequirement(db,generated.data.user.id);
   const f={id:generated.data.user.id,email,tokenHash:generated.data.properties.hashed_token,password:'Unwanted-password!'+randomUUID()};
   assert.equal((await claim(f)).status,400);
   const verify=createClient(c.status.API_URL,c.status.PUBLISHABLE_KEY,{auth:{persistSession:false}});
@@ -66,7 +67,7 @@ test('student invitations claim and resend through the compatibility runtime wit
   // earlier audit events. The pre-existing resend cooldown is asserted below.
   await assert.rejects(admin.action('actions/admin-workspace.ts','resendAdminStudentInvitation',[f.id,'Verify that the invitation cooldown is preserved.']));
   const email=`resendlegacy${randomUUID()}@virginia.edu`,old=await service.auth.admin.generateLink({type:'invite',email});assert.equal(old.error,null);
-  const id=old.data.user.id;await db.user.upsert({where:{id},create:{id,email},update:{}});
+  const id=old.data.user.id;await db.user.upsert({where:{id},create:{id,email},update:{}});await satisfyAvailabilityRequirement(db,id);
   assert.equal(Number((await readiness()).pending_without_binding),1,'Operator preflight must detect a legacy unbound invitation');
   await db.$executeRaw`UPDATE auth.users SET confirmation_sent_at=clock_timestamp()-interval '16 minutes' WHERE id=${id}::uuid`;
   assert.deepEqual(await admin.action('actions/admin-workspace.ts','resendAdminStudentInvitation',[id,'Renew the disposable legacy invitation through supported APIs.']),{success:true});
