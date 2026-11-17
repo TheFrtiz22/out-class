@@ -24,7 +24,7 @@ async function session(tx: AppTransactionClient, clubId: string, id: string) {
 }
 export async function getVotingWorkspace(clubId: string, sessionId?: string, selectionQuery?: PipelinePageQuery) {
   z.string().uuid().parse(clubId); if (sessionId) z.string().uuid().parse(sessionId)
-  const query = selectionQuery === undefined ? undefined : pipelinePageQuery.omit({ cursor: true }).parse(selectionQuery);
+  const query = selectionQuery === undefined ? undefined : boundedParse(pipelinePageQuery.omit({ cursor: true }), selectionQuery);
   const { membership } = await requireClubPermission(clubId, ["applications.review"])
   // Polling is a consistent, read-only snapshot, not a club mutation. Holding
   // Club FOR SHARE throughout its queries prevents SKIP LOCKED workers claiming
