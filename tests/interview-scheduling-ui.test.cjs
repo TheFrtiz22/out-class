@@ -2,6 +2,12 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),{harness}
 const {schedulingEntry,bookingState}=harness().load('lib/interview-scheduling-ui.ts')
 const settings={bookingPublishedAt:null,bookingPaused:false,bookingRevision:0,bookingCycleId:null,bookingAllowCancellation:true,bookingAllowRescheduling:true}
 const data={rounds:[{id:'one',booking:{...settings}},{id:'two',booking:{...settings}}],rooms:[]}
+test('booking progress reads the counts for one cohort',()=>{
+ const {bookingProgress}=harness().load('lib/interview-scheduling-ui.ts')
+ assert.equal(bookingProgress({invited:12,booked:1,open:1}),'1 of 12 invited applicants have booked. 1 open time left.')
+ assert.equal(bookingProgress({invited:1,booked:1,open:0}),'Every invited applicant has booked. 0 open times left.')
+ assert.equal(bookingProgress({invited:0,booked:0,open:3}),'No applicants are invited to this round yet. 3 open times left.')
+})
 test('new, configured and published rounds open their appropriate screen within the selected round',()=>{
  assert.equal(schedulingEntry(data,'one'),'rooms');data.rooms.push({roundId:'two'});assert.equal(schedulingEntry(data,'one'),'rooms');assert.equal(schedulingEntry(data,'two'),'review');data.rounds[1].booking.bookingPublishedAt='2026-01-01';assert.equal(schedulingEntry(data,'two'),'bookings');assert.equal(schedulingEntry(data,'one'),'rooms')
  assert.equal(schedulingEntry(data,'two','rooms'),'rooms');assert.equal(schedulingEntry(data,'two','fill'),'review');assert.equal(schedulingEntry(data,'two','nonsense'),'bookings')
