@@ -5,7 +5,7 @@ import { votingRoomFocus } from "@/lib/focus-routes";
 import { VotingBackLink } from "./room-back-link";
 import { LoadingState } from "@/components/ui/loading-state"
 import Link from "next/link";
-import { useEffect,useRef,useState } from "react";
+import { Suspense,lazy,useEffect,useRef,useState } from "react";
 import { pollWhileVisible } from "@/hooks/use-revalidate";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -13,16 +13,17 @@ import { useLiveVotingRoom } from "@/hooks/use-live-voting-room";
 import { castLiveVotingBallot,commandLiveVotingRoom,getLiveVotingJoinInfo,joinLiveVotingRoom } from "@/lib/voting-room-api";
 import { liveRoomPath,roomBallotSchema,outcomeLabels,confirmedResult,adjacentApplicants,type RoomResult } from "@/lib/voting-room";
 import { z } from "zod";
-import { QrCodeCard } from "@/components/qr/qr-code-card";
+// The downloadable QR card (export and presenter dialog) loads only when the join dialog or the leader's waiting room asks for it.
+const QrCodeCard=lazy(()=>import("@/components/qr/qr-code-card").then(m=>({default:m.QrCodeCard})));
 import {Check,Pause,XIcon,ChevronDown} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog,DialogContent,DialogTitle } from "@/components/ui/dialog";
 import { ApplicantTransition,type Motion } from "./applicant-transition";
 import { RoomPresentation } from "./room-presentation";
 import {LeaderControls,useVotingSummary,type VotingSummaryState} from "./room-meeting";
-import {AudienceRoom,JoinCode,VoteResult,applicantPosition,nextApplicant} from "./audience-room";
+import {AudienceRoom,AudienceSkeleton,JoinCode,VoteResult,applicantPosition,nextApplicant} from "./audience-room";
 import {LeaderRoom} from "./leader-room";
-import {SessionDetails} from './session-details';
+const SessionDetails=lazy(()=>import('./session-details').then(m=>({default:m.SessionDetails})));
 import {formatDateTime} from '@/lib/copy/terms';
 import {SCHEDULING_TIMEZONE,SCHEDULING_TIMEZONE_LABEL} from '@/lib/scheduling-config';
 import type {VotingJoinMeeting} from '@/lib/voting-session-setup';
@@ -134,10 +135,11 @@ export function VotingRoom(props:RoomProps){
   const body=pendingVote.current??{clubId,sessionId,requestId:crypto.randomUUID(),applicationId:room.currentApplicantId!,passNumber:room.passNumber,choice:choice!,ballotRevision:ownRevision};pendingVote.current=body;setAttempt(body);
   try{const response=await castLiveVotingBallot(body,member);if(!response.ok){pendingVote.current=null;setVoteError(response.message);await refresh();return;}setAck({key:`${body.passNumber}:${body.applicationId}`,choice:body.choice,revision:response.result.ballotRevision});pendingVote.current=null;setAttempt(null);await refresh();}catch{setVoteError("Your vote could not be confirmed. Retry sends the same vote safely.");}finally{voteLock.current=false;setVoteBusy(false);}
  }
+ if(!room&&view==="present")return <AudienceSkeleton sessionId={sessionId}>{error?<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>void refresh()}>Retry connection</Button></div>:<p role="status" className="vr-aud-meta">Restoring voting session…</p>}</AudienceSkeleton>;
  if(!room)return <div className="vr-page"><PageHeader title="Live voting" />{error?<div role="alert" className="vr-error">{error}<Button variant="outline" onClick={()=>void refresh()}>Retry connection</Button></div>:<LoadingState label="Restoring voting session…" layout={view === "present" ? "presentation" : "voting"} rows={3} />}</div>;
  if(view==="leader"&&!room.permissions.leader)return <div className="vr-page"><PageHeader title="Leader controls unavailable" /><Link href={liveRoomPath(clubId,sessionId,"member",demoScoped)}>Open member view</Link></div>;
  const appId=room.status==="OPEN"?room.currentApplicantId:view==="leader"&&room.status==="DRAFT"?(preview||room.outcomes[0]?.applicationId):null,currentChoice=ack?.key===key&&ack.revision>=(entry?.ownBallot?.revision??-1)?ack.choice:entry?.ownBallot?.choice;
- const qrCard=<QrCodeCard title="Join this voting session" description="Sign in with your club account." path={liveRoomPath(clubId,sessionId,"member",demoScoped)} filename="outclass-voting-session"/>;
+ const qrCard=<Suspense fallback={<div className="vr-qr-card-placeholder" aria-hidden="true"/>}><QrCodeCard title="Join this voting session" description="Sign in with your club account." path={liveRoomPath(clubId,sessionId,"member",demoScoped)} filename="outclass-voting-session"/></Suspense>;
  const qrDialog=<Dialog open={qr} onOpenChange={setQr}><DialogContent onCloseAutoFocus={e=>{e.preventDefault();(qrButton.current??sessionButton.current)?.focus();}} aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto"><DialogTitle>Join live voting</DialogTitle>{qrCard}</DialogContent></Dialog>;
  const transition=(variant:"audience"|"leader",extra:{aside?:(o:RoomResult|null)=>React.ReactNode;position?:string;idle?:React.ReactElement})=><ApplicantTransition key={`${identity}:${room.accessVersion}`} fill={variant==="audience"} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"} ended={room.status==="COMPLETED"} idle={extra.idle??(room.status==="PAUSED"||room.status==="COMPLETED"?<Intermission room={room} view={view}/>:undefined)} resultFor={(n,id)=>confirmedResult(room.history,n,id)} motionFrom={(n,id)=>motionFor(room,appId,{passNumber:n,applicationId:id})} release={!!entry&&entry.ballotState!=="PENDING"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member} onStale={refresh} presenting variant={variant} aside={extra.aside} position={extra.position}/></ApplicantTransition>;
  if(view==="present")return <AudienceView room={room} entry={entry} clubId={clubId} sessionId={sessionId} demoScoped={demoScoped} stage={transition("audience",{
@@ -148,7 +150,7 @@ export function VotingRoom(props:RoomProps){
  return <div className="vr-page vr-member">
  <VotingBackLink clubId={clubId} cycleId={room.cycleId} roundId={room.roundId}/><header className="vr-header"><PageHeader title="Your vote" /></header>
  <div className="vr-stats" aria-label="Session progress"><span>{room.status==="COMPLETED"?"Session ended":entry?.ballotState==="OPEN"?"Voting open":entry?.ballotState==="CLOSED"||entry?.ballotState==="CONFIRMED"?"Voting closed":"Waiting for voting"}</span><span>{room.participation.voted} of {room.participation.eligible} eligible voters voted</span><span>Reviewed {pass?.candidates.filter(c=>c.ballotState==="CONFIRMED").length??0} of {pass?.candidates.length??room.outcomes.length} this pass · Pass {room.passNumber||1}</span></div>
- {room.meeting&&room.status==="DRAFT"&&<SessionDetails clubId={clubId} sessionId={sessionId} revision={room.revision} meeting={room.meeting} leader={false} demo={demoScoped} status={room.status} refresh={refresh}/>}
+ {room.meeting&&room.status==="DRAFT"&&<Suspense fallback={null}><SessionDetails clubId={clubId} sessionId={sessionId} revision={room.revision} meeting={room.meeting} leader={false} demo={demoScoped} status={room.status} refresh={refresh}/></Suspense>}
  {room.status==="DRAFT"&&<section aria-label="Waiting room"><h2>Ready when your leader is</h2><p>Voting has not started.</p></section>}
  <ApplicantTransition key={`${identity}:${room.accessVersion}`} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"} ended={room.status==="COMPLETED"} idle={room.status==="PAUSED"||room.status==="COMPLETED"?<Intermission room={room} view={view}/>:undefined} resultFor={(n,id)=>confirmedResult(room.history,n,id)} motionFrom={(n,id)=>motionFor(room,appId,{passNumber:n,applicationId:id})} release={!!entry&&entry.ballotState!=="PENDING"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member} onStale={refresh} presenting={false}/></ApplicantTransition>
 

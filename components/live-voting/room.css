@@ -399,3 +399,4 @@ p.vr-aud-title{display:flex;align-items:baseline;gap:.8em;margin:0}
 .vr-aud-result:not([data-outcome]) .vr-aud-word{font-size:calc(3em * (.5 + .5 * var(--vr-fit)))}
 .vr-vote-left{display:flex;flex-direction:column;gap:.2em;min-width:0}
 .vr-vote-status .vr-pass-meaning{margin:0;font-size:.7em;color:var(--muted-foreground)}
+.vr-qr-card-placeholder{min-height:232px;border:1px solid var(--border);border-radius:var(--oc-radius-2xl)}

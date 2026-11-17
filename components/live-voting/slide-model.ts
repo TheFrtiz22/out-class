@@ -61,7 +61,7 @@ export function slideModel(data:VotingSlideData):SlideModel{
  const prepared="preparedHighlights"in data?data.preparedHighlights??[]:[];
  if(prepared.length)notes.push(note("preparedHighlights","Leader-selected highlights",prepared.map(h=>({text:h.mode==="QUOTE"?h.text:`Leader summary: ${h.text}`,quote:h.mode==="QUOTE",meta:highlightAttribution(h)}))));
  const observations=data.requestedFields?.includes("additionalObservations")?data.additionalObservations:undefined;
- if(observations)notes.push(note("additionalObservations","Additional observations",observations.length?observations.map(o=>({text:o.body,meta:o.interactionContext||undefined})):[{text:"No shared additional observations."}]));
+ if(observations)notes.push(note("additionalObservations","Additional observations",observations.length?observations.map(o=>({text:o.body,meta:[o.interactionContext,o.author].filter(Boolean).join(" · ")||undefined})):[{text:"No shared additional observations."}]));
  return {name,anonymous:data.anonymous,photo:data.visible.includes("photo")?data.photo:null,showPhoto:data.visible.includes("photo")||data.anonymous,profile,facts,notes};
 }
 

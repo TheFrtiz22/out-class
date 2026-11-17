@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
-import type {ReactNode} from "react";
+import {Suspense,lazy,type ReactNode} from "react";
 import {Popover,PopoverContent,PopoverTrigger} from "@/components/ui/popover";
 import {Button} from "@/components/ui/button";
 import {PageHeader} from "@/components/ui/page-header";
 import {ChevronDown} from "@/components/icons";
 import {liveRoomPath,savedOutcomeLabels} from "@/lib/voting-room";
-import {SessionDetails} from "./session-details";
+// Session details (edit and cancel) open from More only: loaded on demand.
+const SessionDetails=lazy(()=>import("./session-details").then(m=>({default:m.SessionDetails})));
 import {OutcomeCounts,type VotingSummaryState} from "./room-meeting";
 import {RoundTracker,useRoundSummary} from "./round-tracker";
 import {ProjectorThemeSwitch,useProjectorTheme} from "./projector-theme";
@@ -39,7 +40,7 @@ export function LeaderRoom({room,entry,clubId,sessionId,demoScoped,stage,control
    <Popover><PopoverTrigger asChild><Button ref={moreButton} className="vr-session-trigger" variant="ghost" size="sm">More <ChevronDown aria-hidden="true" size={16}/></Button></PopoverTrigger><PopoverContent align="end" aria-label="More session options" className="vr-session-options">
     {!demoScoped&&<Link className="vr-link" href={`/voting/rooms/${encodeURIComponent(sessionId)}/prepare?clubId=${encodeURIComponent(clubId)}`}>Prepare slides</Link>}
     <Button variant="outline" size="sm" onClick={onShowQr}>Join QR</Button>
-    {room.meeting&&<SessionDetails clubId={clubId} sessionId={sessionId} revision={room.revision} meeting={room.meeting} leader={room.permissions.leader} demo={demoScoped} status={room.status} refresh={refresh as ()=>Promise<void>}/>}
+    {room.meeting&&<Suspense fallback={null}><SessionDetails clubId={clubId} sessionId={sessionId} revision={room.revision} meeting={room.meeting} leader={room.permissions.leader} demo={demoScoped} status={room.status} refresh={refresh as ()=>Promise<void>}/></Suspense>}
    </PopoverContent></Popover>
   </div>}/>
   <div className="vr-lead-grid">
