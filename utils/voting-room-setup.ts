@@ -1,3 +1,4 @@
+import {isGraduatedMember} from "@/lib/graduation";
 import {Prisma} from "@prisma/client";
 import type {AppTransactionClient} from "@/utils/prisma";
 import {hasPermission} from "@/lib/permissions";
@@ -21,8 +22,9 @@ export async function validateVotingSetup(tx:AppTransactionClient,d:z.output<typ
     if(apps.length!==d.applicationIds.length)throw Error("Select applicants from this cycle and round.");
     const memberIds=[...new Set([...d.participantIds,...d.leaderMemberIds])].sort();
     await tx.$queryRaw(Prisma.sql`SELECT id FROM "ClubMember" WHERE "clubId"=${d.clubId} AND id IN (${Prisma.join(memberIds)}) ORDER BY id FOR SHARE`);
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:memberIds}},include:{user:{select:{disabledAt:true}}}});
-    if(members.length!==memberIds.length||members.some(m=>m.user.disabledAt||!hasPermission(m,"applications.review")||(!round.anonymousReview&&!hasPermission(m,"applicants.identify"))||(d.participantIds.includes(m.id)&&!hasPermission(m,"decisions.vote"))||(d.leaderMemberIds.includes(m.id)&&!hasPermission(m,"decisions.start"))))throw Error("Current voter and leader permissions required.");
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:memberIds}},include:{user:{select:{disabledAt:true,studentProfile:{select:{graduatedAt:true}}}}}});
+    // A graduate (one kept as owner included) is never seated as a voter or leader (lib/graduation.ts).
+    if(members.length!==memberIds.length||members.some(m=>m.user.disabledAt||isGraduatedMember(m)||!hasPermission(m,"applications.review")||(!round.anonymousReview&&!hasPermission(m,"applicants.identify"))||(d.participantIds.includes(m.id)&&!hasPermission(m,"decisions.vote"))||(d.leaderMemberIds.includes(m.id)&&!hasPermission(m,"decisions.start"))))throw Error("Current voter and leader permissions required.");
     for(const [appId,id] of Object.entries(d.presentationOptions?.highlights??{}))if(!(await votingHighlightChoices(tx,d.clubId,appId,user.id)).some(q=>q.id===id))throw Error("Selected résumé highlight is unavailable.");
  return {apps,members,round,cycle};
 }

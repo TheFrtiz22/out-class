@@ -73,6 +73,8 @@ function harness() {
     writes: [], audits: [], locks: [], user: 'leaderA',
   }
   const tx = {
+    // Leaders here are current students: no graduation date (lib/graduate-access.ts).
+    $queryRaw: async () => [],
     clubMember: { findUnique: async q => state.members[`${q.where.userId_clubId.userId}:${q.where.userId_clubId.clubId}`] ?? null },
     user: { findUnique: async () => ({ disabledAt: null }) },
     club: {

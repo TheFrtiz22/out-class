@@ -6,7 +6,7 @@ import { createClient as createAdminClient, type User as AuthUser } from "@supab
 import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
-import { assertGraduateMayJudge } from "@/lib/graduate-judgment";
+import { graduateMemberFor, readGraduation } from "@/lib/graduate-access";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail, safeReturnPath } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
@@ -122,15 +122,18 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
   return { supabaseUser: user, user: prismaUser, impersonation: null };
 }
 
+/** The caller's graduation date, read at most once per request (React cache). */
+const requestGraduation = cache((userId: string) => readGraduation(prisma)(userId));
+
 /** Every sensitive club operation checks the current database membership. */
 export async function requireClubPermission(clubId: string, permissions: ClubPermission[], options: { allowSuspendedRead?: boolean } = {}) {
   const { user } = await requireAuth();
-  const membership = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
-  if (!membership || !isActiveMembership(membership) || !permissions.every(permission => hasPermission(membership, permission))) {
+  const found = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
+  if (!found || !isActiveMembership(found) || !permissions.every(permission => hasPermission(found, permission))) {
     throw new ActionError("You do not have permission for this club action.", "FORBIDDEN");
   }
-  // A graduate kept as owner may hand the club over but not review or decide (lib/graduation.ts).
-  await assertGraduateMayJudge(prisma, user.id, permissions);
+  // A graduate kept as owner is read-only here except for handing the club over (lib/graduation.ts).
+  const membership = await graduateMemberFor(prisma, found, permissions, requestGraduation);
   if (!options.allowSuspendedRead) await assertClubOperational(prisma, clubId);
   return { user, membership };
 }

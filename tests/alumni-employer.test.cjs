@@ -197,11 +197,11 @@ test('alumniRefusal / assertNotAlumni: friendly ActionError for alumni only', as
   assert.equal(await alumniRefusal(db(ALUMNI_AT), 'u', 'rsvp', now), g.ALUMNI_REFUSALS.rsvp)
 })
 
-test('server: alumni cannot apply (drafts too), RSVP (public events too), check in, vote or join', () => {
+test('server: alumni cannot apply (drafts too), RSVP or cancel an RSVP (public events too), check in, vote or join', () => {
   const pins = {
     'actions/applications.ts': /FOR UPDATE`\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "apply"\)\n\s*const configuration/,
     'actions/club-directory.ts': /if \(existing\) return \{ applicationId: existing\.id \};[\s\S]{0,300}alumniRefusal\(tx, user\.id, "apply"\);\n\s*if \(alumni\) return \{ applicationId: null, unavailable: alumni \};\n\s*await assertClubOperational/,
-    'actions/campus-events.ts': /if \(d\.going\) \{\n\s*const refusal = await alumniRefusal\(prisma, user\.id, "rsvp"\);\n\s*if \(refusal\) return \{ ok: false, error: refusal \};/,
+    'actions/campus-events.ts': /\{ user \} = await requireAuth\(\);\n\s*\/\/[^\n]*\n\s*const refusal = await alumniRefusal\(prisma, user\.id, "rsvp"\);\n\s*if \(refusal\) return \{ ok: false, error: refusal \};/,
     'actions/meetings.ts': /const \{ user \} = await requireAuth\(\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(prisma, user\.id, "checkIn"\);/,
     'actions/voting-room.ts': /\{sharedClubLock:true\}\);\n\s*\/\/[^\n]*\n\s*const alumni=await alumniRefusal\(tx,user\.id,"vote"\);\n\s*if\(alumni\)throw new RoomConflict\(ALUMNI_REFUSED,alumni\);\n\s*const \{s,round\}=await loadVotingRoom/,
     'utils/recruitment-offers.ts': /\/\/ Alumni cannot join[^\n]*\n\s*await assertNotAlumni\(tx, userId, "join"\);\n\s*if \(!existing\) await tx\.clubMember\.create/,
@@ -223,13 +223,14 @@ test('RSVP and check-in actions refuse alumni before any write', async () => {
   const events = load('actions/campus-events.ts', { ...common, '@/utils/club-write-transaction': { clubWriteTransaction: async () => assert.fail('no RSVP write'), isWriteContention: () => false }, '@/utils/platform-admin': {}, '@/lib/club-transaction-authorization': {} })
   const eventId = '00000000-0000-4000-8000-000000000001'
   assert.deepEqual(await events.setCampusEventRsvp({ eventId, going: true }), { ok: false, error: g.ALUMNI_REFUSALS.rsvp })
-  await assert.rejects(events.setCampusEventRsvp({ eventId, going: false }), /no RSVP write/, 'cancelling is still allowed (reaches the write)')
+  assert.deepEqual(await events.setCampusEventRsvp({ eventId, going: false }), { ok: false, error: g.ALUMNI_REFUSALS.rsvp }, 'cancelling an RSVP is refused too')
   const meetings = load('actions/meetings.ts', { ...common, '@/lib/short-link-store': {} })
   assert.deepEqual(await meetings.checkInMeeting(eventId, 'a'.repeat(64)), { $action: 'outclass.action/v1', ok: false, error: g.ALUMNI_REFUSALS.checkIn, code: g.ALUMNI_REFUSED })
 })
 
 test('UI: RSVP, check-in and Start application are replaced for alumni', () => {
-  assert.match(src('components/events/public-event-board.tsx'), /if \(alumni && !going && !loading\)\n\s*return <p[^>]*>Alumni accounts can’t RSVP\.<\/p>;/)
+  // An earlier RSVP shows as "You’re going" with no Cancel button.
+  assert.match(src('components/events/public-event-board.tsx'), /if \(alumni && !loading\)\n\s*return going\n\s*\? <p role="status" className="oc-youre-going">You’re going[^\n]*\n\s*: <p[^>]*>Alumni accounts can’t RSVP\.<\/p>;/)
   assert.match(src('components/qr/meeting-check-in.tsx'), /isAlumniProfile\(user\.profile\) \? \(\n\s*<p role="status">\{ALUMNI_REFUSALS\.checkIn\}<\/p>/)
   assert.match(src('components/views/club-profile-view.tsx'), /const applyDisabled = preview \|\| busy \|\| alumni \|\|/)
 })
@@ -261,35 +262,57 @@ function authApi(graduatedAt) {
   })
   return { api, queries }
 }
-const refusedJudgment = e => e?.code === g.ALUMNI_REFUSED && e.message === g.ALUMNI_REFUSALS.review
+const refusedManage = e => e?.code === g.ALUMNI_REFUSED && e.message === g.ALUMNI_REFUSALS.manage
+const perms = load('lib/permissions.ts')
+// Every club operation except handing the club over (owner decision, Nov 16: alumni are purely read-only).
+const OPERATIONS = [['applications.review', 'decisions.vote'], ['applications.review', 'decisions.start'], ['decisions.manage'], ['applications.review'], ['applicants.identify'], ['recruitment.manage'], ['interviews.manage'], ['members.manage'], ['club.settings'], ['meetings.manage'], ['meetings.attendance'], ['tasks.manage'], ['application.manage'], ['decisions.publish'], ['leaders.manage', 'members.manage']]
 
-test('kept-owner graduate: requireClubPermission refuses decision votes and reviews, keeps member management', async () => {
-  const { api, queries } = authApi(ALUMNI_AT)
-  // Decision votes outside the live room (e.g. raising a discussion, closing a board session) and reviews.
-  for (const caps of [['applications.review', 'decisions.vote'], ['applications.review', 'decisions.start'], ['decisions.manage'], ['applications.review']])
-    await assert.rejects(api.requireClubPermission(OWNER_CLUB, caps), refusedJudgment, caps.join())
-  // Hand-over: members, roles, settings, and plain membership checks.
-  for (const caps of [['members.manage'], ['leaders.manage'], ['club.settings'], []]) {
-    const before = queries.filter(q => q.includes('StudentProfile')).length
-    assert.equal((await api.requireClubPermission(OWNER_CLUB, caps)).membership, keptOwner, caps.join())
-    assert.equal(queries.filter(q => q.includes('StudentProfile')).length, before, 'no graduation read for non-judgment checks')
+test('kept-owner graduate: requireClubPermission refuses every club operation; hand-over and plain reads stay, marked handOverOnly', async () => {
+  const { api } = authApi(ALUMNI_AT)
+  for (const caps of OPERATIONS) await assert.rejects(api.requireClubPermission(OWNER_CLUB, caps), refusedManage, caps.join())
+  // Hand-over (naming a new owner needs leaders.manage) and plain membership reads.
+  for (const caps of [['leaders.manage'], []]) {
+    const { membership } = await api.requireClubPermission(OWNER_CLUB, caps)
+    assert.equal(membership.handOverOnly, true, caps.join())
+    assert.equal(membership.id, 'm-owner')
+    // Later checks on the returned membership see the same limits.
+    assert.equal(perms.hasPermission(membership, 'leaders.manage'), true)
+    for (const p of perms.clubPermissions.filter(p => p !== 'leaders.manage')) assert.equal(perms.hasPermission(membership, p), false, p)
   }
-  // A current student owner is unaffected.
-  const student = authApi(new Date('2027-08-01T04:00:00Z'))
-  await student.api.requireClubPermission(OWNER_CLUB, ['applications.review', 'decisions.vote'])
-  await authApi(undefined).api.requireClubPermission(OWNER_CLUB, ['applications.review'])
+  // A current student owner is unaffected and gets the stored row back unchanged.
+  for (const graduatedAt of [new Date('2027-08-01T04:00:00Z'), null, undefined]) {
+    const student = authApi(graduatedAt)
+    assert.equal((await student.api.requireClubPermission(OWNER_CLUB, ['applications.review', 'decisions.vote'])).membership, keptOwner)
+  }
 })
 
-test('kept-owner graduate: the in-transaction recheck and interview access (evaluations) refuse judgment too', async () => {
+test('graduate access: plain members add no graduation read; leaders and interviewers are checked', async () => {
+  const access = load('lib/graduate-access.ts')
+  let reads = 0
+  const db = { $queryRaw: async (strings, ...values) => { reads++; return profileRows(ALUMNI_AT)(strings, ...values) } }
+  const plain = { userId: 'owner', status: 'ACTIVE', alumniSince: null, isOwner: false, permissions: [], interviewOffices: [], interviewerEligible: null }
+  assert.equal(await access.graduateClubAccess(db, plain), plain)
+  assert.equal(reads, 0, 'no capability, no query')
+  assert.equal(await access.graduateClubAccess(db, { ...plain, alumniSince: ALUMNI_AT, isOwner: true }).then(m => m.handOverOnly), undefined, 'alumni memberships already hold nothing')
+  for (const member of [{ ...plain, permissions: ['tasks.manage'] }, { ...plain, interviewOffices: ['BOARD'] }, { ...plain, interviewerEligible: true }, { ...plain, isOwner: true }])
+    assert.equal((await access.graduateClubAccess(db, member)).handOverOnly, true, JSON.stringify(member))
+  assert.equal(await access.graduateClubAccessOrNull(db, null), null)
+  assert.deepEqual([...perms.HAND_OVER_PERMISSIONS], ['leaders.manage'])
+})
+
+test('kept-owner graduate: the in-transaction recheck and interview access (evaluations) refuse club operations too', async () => {
   const { authorizeClubTransaction } = load('lib/club-transaction-authorization.ts', { '@/lib/club-suspension': { assertClubOperational: async () => {} } })
   const tx = graduatedAt => ({ $queryRaw: profileRows(graduatedAt), user: { findUnique: async () => ({ disabledAt: null }) }, clubMember: { findUnique: async () => ({ ...keptOwner, user: { disabledAt: null } }) } })
-  await assert.rejects(authorizeClubTransaction(tx(ALUMNI_AT), OWNER_CLUB, 'owner', ['applications.review', 'decisions.vote']), refusedJudgment)
-  assert.equal((await authorizeClubTransaction(tx(ALUMNI_AT), OWNER_CLUB, 'owner', ['members.manage'])).id, 'm-owner', 'member management still allowed')
-  assert.equal((await authorizeClubTransaction(tx(null), OWNER_CLUB, 'owner', ['applications.review'])).id, 'm-owner', 'current student owner')
+  for (const caps of OPERATIONS) await assert.rejects(authorizeClubTransaction(tx(ALUMNI_AT), OWNER_CLUB, 'owner', caps), refusedManage, caps.join())
+  const marked = await authorizeClubTransaction(tx(ALUMNI_AT), OWNER_CLUB, 'owner', ['leaders.manage'])
+  assert.equal(marked.id, 'm-owner'); assert.equal(marked.handOverOnly, true)
+  assert.equal((await authorizeClubTransaction(tx(ALUMNI_AT), OWNER_CLUB, 'owner', [])).handOverOnly, true)
+  const current = await authorizeClubTransaction(tx(null), OWNER_CLUB, 'owner', ['applications.review'])
+  assert.equal(current.id, 'm-owner'); assert.equal(current.handOverOnly, undefined, 'current student owner')
 
   // Evaluation saves go through interviewActor (submitEvaluation, interview kits and rooms).
   const access = load('utils/interview-access.ts', { '@/lib/club-suspension': { assertClubOperational: async () => {} } })
-  await assert.rejects(access.interviewActor(tx(ALUMNI_AT), OWNER_CLUB, 'owner'), refusedJudgment)
+  await assert.rejects(access.interviewActor(tx(ALUMNI_AT), OWNER_CLUB, 'owner'), refusedManage)
   assert.equal((await access.interviewActor(tx(null), OWNER_CLUB, 'owner')).member.id, 'm-owner')
   const evaluations = load('actions/evaluations.ts', {
     '@/utils/auth': { requireAuth: async () => ({ user: { id: 'owner' } }) },
@@ -301,29 +324,32 @@ test('kept-owner graduate: the in-transaction recheck and interview access (eval
   const refused = await evaluations.submitEvaluation({ clubId: OWNER_CLUB, applicationId: '00000000-0000-4000-8000-0000000000a1', roundName: 'Interview', score: 4 })
   assert.equal(refused.ok, false)
   assert.equal(refused.code, g.ALUMNI_REFUSED)
-  assert.equal(refused.error, g.ALUMNI_REFUSALS.review)
+  assert.equal(refused.error, g.ALUMNI_REFUSALS.manage)
   // One shared path: the three checks call the same helper.
-  assert.match(src('utils/auth.ts'), /await assertGraduateMayJudge\(prisma, user\.id, permissions\);\n\s*if \(!options\.allowSuspendedRead\)/)
-  assert.match(src('lib/club-transaction-authorization.ts'), /await assertGraduateMayJudge\(tx, userId, permissions\);/)
-  assert.match(src('utils/interview-access.ts'), /await assertGraduateMayJudge\(tx, userId\);\n\s*return \{ member, caps/)
-  assert.deepEqual([...g.RECRUITING_JUDGMENT_PERMISSIONS].sort(), ['applications.review', 'decisions.finish', 'decisions.manage', 'decisions.publish', 'decisions.reopen', 'decisions.start', 'decisions.vote'])
+  assert.match(src('utils/auth.ts'), /const membership = await graduateMemberFor\(prisma, found, permissions, requestGraduation\);\n\s*if \(!options\.allowSuspendedRead\)/)
+  assert.match(src('lib/club-transaction-authorization.ts'), /const marked = await graduateMemberFor\(tx, member!, permissions\);/)
+  assert.match(src('utils/interview-access.ts'), /assertGraduateMayOperate\(await graduateClubAccess\(tx, member\)\);\n\s*return \{ member, caps/)
 })
 
 test('kept-owner graduate: club workspace shows the hand-over notice linking to member management', () => {
   const w = src('components/club-workspace.tsx')
-  assert.match(w, /const graduatedOwner = !demo\.isDemoEnabled && !!membership\?\.isOwner && !membership\.alumniSince && isAlumniProfile\(user\?\.profile\);/)
-  assert.match(w, /\{graduatedOwner && <p role="status"[^>]*>You’ve graduated\. Hand ownership to a current member\. <Link href=\{clubWorkspaceHref\(clubId, "members"\)\}[^>]*>Manage members<\/Link><\/p>\}/)
+  assert.match(w, /const graduatedMember = !demo\.isDemoEnabled && !!storedMembership && !storedMembership\.alumniSince && isAlumniProfile\(user\?\.profile\);/)
+  // The workspace reads the membership as handOverOnly, so leader controls hide (the server refuses them too).
+  assert.match(w, /const membership = useMemo\(\(\) => storedMembership && graduatedMember \? \{ \.\.\.storedMembership, handOverOnly: true \} : storedMembership, \[storedMembership, graduatedMember\]\);/)
+  assert.match(w, /const graduatedOwner = graduatedMember && !!membership\?\.isOwner;/)
+  assert.match(w, /\{graduatedOwner && <p role="status"[^>]*>You’ve graduated\. Hand this club to a current member to keep it running\. <Link href=\{clubWorkspaceHref\(clubId, "members"\)\}[^>]*>Transfer ownership<\/Link><\/p>\}/)
+  assert.equal(w.match(/You’ve graduated\./g).length, 1, 'one note')
 })
 
-test('alumni: interview booking and moving, and task submissions and uploads are refused; cancelling and reporting stay', async () => {
+test('alumni: interview booking, moving and cancelling, and task submissions and uploads are refused; reporting stays', async () => {
   assert.match(src('actions/interview-rooms.ts'), /if \(!initial\) throw new ActionError\("Application unavailable\."\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "book"\)\n\s*\/\/ Refuse before/)
   assert.match(src('actions/scheduling.ts'), /const parsed = bookSlotSchema\.parse\(data\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(prisma, user\.id, "book"\);/)
   const tasks = src('actions/tasks.ts')
   assert.match(tasks, /const \{ user, assignment \} = await ownedAssignment\(data\.assignmentId\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(prisma, user\.id, "task"\);\n\s*validateTaskSubmission/)
   assert.match(tasks, /const \{ user, assignment \} = await ownedAssignment\(data\.assignmentId\);\n\s*await assertNotAlumni\(prisma, user\.id, "task"\);\n\s*if \(\n\s*assignment\.reviewedAt/)
-  // Cancelling a booked interview and reporting content are not refused.
+  // Cancelling a booked interview is refused before the club lock; reporting content is not refused.
   const rooms = src('actions/interview-rooms.ts')
-  assert.doesNotMatch(rooms.slice(rooms.indexOf('async function cancelRoomBookingCommand'), rooms.indexOf('async function cancelRoomBookingCommand') + 1500), /assertNotAlumni/)
+  assert.match(rooms.slice(rooms.indexOf('async function cancelRoomBookingCommand'), rooms.indexOf('async function cancelRoomBookingCommand') + 1500), /if \(!initial\) throw new ActionError\("We couldn’t find that interview\."\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "book"\)\n\s*await lockOperationalClub/)
   assert.doesNotMatch(src('actions/content-reports.ts'), /assertNotAlumni|alumniRefusal/)
   // Direct messaging no longer exists for anyone.
   for (const fn of ['startClubConversation', 'sendClubMessage']) assert.match(src('actions/communications.ts'), new RegExp(`export async function ${fn}\\([^)]*\\): Promise<never> \\{\\n\\s*throw new Error\\("Direct messaging is not available in OutClass\\."\\);`))
@@ -336,7 +362,7 @@ test('alumni: interview booking and moving, and task submissions and uploads are
 
 // ---- Owner decision (Nov 16): alumni are fully read-only, bookmarks included ----
 
-test('alumni: saving a club or an event is refused before any write; removing a saved item stays available', async () => {
+test('alumni: saving or removing a club or an event is refused before any write', async () => {
   const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
   const writes = []
   const prisma = {
@@ -349,17 +375,22 @@ test('alumni: saving a club or an event is refused before any write; removing a 
   const auth = { requireAuth: async () => ({ user: { id: 'grad' } }), requireClubPermission: async () => assert.fail() }
   const directory = load('actions/club-directory.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': auth, 'next/cache': { unstable_cache: fn => fn, revalidatePath() {}, revalidateTag() {} } })
   await assert.rejects(directory.setCorkboardClub({ clubId: id(1), saved: true }), e => e.message === g.ALUMNI_REFUSALS.save)
-  assert.deepEqual(await directory.setCorkboardClub({ clubId: id(1), saved: false }), { saved: false, savedAt: null })
+  await assert.rejects(directory.setCorkboardClub({ clubId: id(1), saved: false }), e => e.message === g.ALUMNI_REFUSALS.save)
   const events = load('actions/campus-events.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': auth, 'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/club-write-transaction': { clubWriteTransaction: async () => assert.fail(), isWriteContention: () => false }, '@/utils/platform-admin': {}, '@/lib/club-transaction-authorization': {} })
   assert.deepEqual(await events.setSavedCampusEvent({ eventId: id(2), saved: true }), { $action: 'outclass.action/v1', ok: false, error: g.ALUMNI_REFUSALS.save, code: g.ALUMNI_REFUSED })
-  assert.deepEqual(await events.setSavedCampusEvent({ eventId: id(2), saved: false }), { $action: 'outclass.action/v1', ok: true, data: { saved: false } })
-  assert.deepEqual(writes, [['unsave-club', { userId: 'grad', clubId: id(1) }], ['unsave-event', { userId: 'grad', eventId: id(2) }]])
+  assert.deepEqual(await events.setSavedCampusEvent({ eventId: id(2), saved: false }), { $action: 'outclass.action/v1', ok: false, error: g.ALUMNI_REFUSALS.save, code: g.ALUMNI_REFUSED })
+  assert.deepEqual(writes, [], 'no unsave writes for alumni')
   // A current student still saves.
   const student = { ...prisma, studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, club: { findUnique: async () => ({ id: id(1) }) }, corkboardClub: { upsert: async () => ({ savedAt: new Date('2026-10-03T12:00:00Z') }) } }
   const current = load('actions/club-directory.ts', { '@/utils/prisma': { prisma: student }, '@/utils/auth': auth, 'next/cache': { unstable_cache: fn => fn } })
   assert.deepEqual(await current.setCorkboardClub({ clubId: id(1), saved: true }), { saved: true, savedAt: '2026-10-03T12:00:00.000Z' })
-  // The save button is hidden for alumni unless the club is already saved (so it can be removed).
-  assert.match(src('components/clubs/corkboard-button.tsx'), /if \(authenticated && !saved && isAlumniProfile\(user\?\.profile\)\) return null/)
+  // A current student still removes a saved item.
+  const removing = { ...student, corkboardClub: { deleteMany: async () => ({ count: 1 }) } }
+  assert.deepEqual(await load('actions/club-directory.ts', { '@/utils/prisma': { prisma: removing }, '@/utils/auth': auth, 'next/cache': { unstable_cache: fn => fn } }).setCorkboardClub({ clubId: id(1), saved: false }), { saved: false, savedAt: null })
+  // The save button is hidden for alumni; a saved event shows as Saved without a control.
+  assert.match(src('components/clubs/corkboard-button.tsx'), /if \(authenticated && isAlumniProfile\(user\?\.profile\)\) return null/)
+  assert.match(src('components/events/event-discovery-actions.tsx'), /if \(identity && readOnly\) return saved \? <span[^>]*><Bookmark[^>]*\/>Saved<\/span> : null;/)
+  assert.equal(src('components/events/public-event-board.tsx').match(/readOnly(: |=\{)alumni/g).length, 2)
 })
 
 test('alumni: requesting to claim a club and accepting an emailed club invitation are refused', async () => {

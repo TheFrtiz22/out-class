@@ -35,7 +35,7 @@ test('approving claims is atomic and cannot replace existing club ownership', as
 })
 test('decline only closes a pending invitation belonging to the signed-in email and is audited', async () => {
   let available = true, audited = 0
-  const tx = { $queryRaw: async () => [], clubInvitation: { findUnique: async () => ({ clubId }), updateMany: async ({ where, data }) => {
+  const tx = { $queryRaw: async () => [], studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, clubInvitation: { findUnique: async () => ({ clubId }), updateMany: async ({ where, data }) => {
     assert.equal(where.email, 'student@virginia.edu'); assert.equal(where.acceptedAt, null); assert.equal(where.revokedAt, null); assert.equal(where.declinedAt, null); assert.ok(where.expiresAt.gt instanceof Date); assert.ok(data.declinedAt instanceof Date)
     const count = available ? 1 : 0; available = false; return { count }
   } }, auditLog: { create: async ({ data }) => { assert.equal(data.action, 'club.invite.decline'); audited++ } } }

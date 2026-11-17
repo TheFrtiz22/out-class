@@ -10,7 +10,7 @@ function load(api){
  const h=hooks(),file=path.resolve('components/interviews/applicant-booking.tsx'),mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText
  const jsx=(type,props)=>({type:typeof type==='function'?type.name||'fn':type,props})
- new Function('require','module','exports',code)(n=>n==='react'?h.react:n==='react/jsx-runtime'?{jsx,jsxs:jsx,Fragment:'Fragment'}:n==='@/lib/workspace-api'?api:n==='@/lib/user-message'?{userMessage:(_e,f)=>f}:n==='./booking-picker'?{BookingPicker:'BookingPicker'}:{LoadingState:'LoadingState',Button:'Button'},mod,mod.exports)
+ new Function('require','module','exports',code)(n=>n==='react'?h.react:n==='react/jsx-runtime'?{jsx,jsxs:jsx,Fragment:'Fragment'}:n==='@/lib/workspace-api'?api:n==='@/lib/user-message'?{userMessage:(_e,f)=>f}:n==='./booking-picker'?{BookingPicker:'BookingPicker'}:n==='@/contexts/auth-context'?{useAuth:()=>({user:null})}:n==='@/lib/graduation'?{isAlumniProfile:()=>false,ALUMNI_REFUSALS:{}}:{LoadingState:'LoadingState',Button:'Button'},mod,mod.exports)
  return {h,C:mod.exports.ApplicantBooking}
 }
 const room={id:'room',roundId:'round',name:'A',location:'Rice Hall 120',slots:[{id:'s1',startTime:'2099-01-01T15:00:00Z',endTime:'2099-01-01T15:30:00Z'},{id:'s2',startTime:'2099-01-01T16:00:00Z',endTime:'2099-01-01T16:30:00Z'}]}

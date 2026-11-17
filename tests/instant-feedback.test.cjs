@@ -87,7 +87,7 @@ test('cancelling from “Your RSVPs” removes the row at once and restores it i
 // ---------- (a) Invitation “Not now” ----------
 function invitationHarness(dismiss) {
   const h = hooks(), changes = []
-  const { OrganizationInvitationCard } = load('components/organization-invitation-card.tsx', { react: h.react, '@/actions/club-onboarding': { setOrganizationInvitationDismissed: dismiss, acceptIdentityClubInvitation: async () => ({}), declineIdentityClubInvitation: async () => ({}) } })
+  const { OrganizationInvitationCard } = load('components/organization-invitation-card.tsx', { react: h.react, '@/lib/graduation': { isAlumniProfile: () => false, ALUMNI_REFUSALS: {} }, '@/contexts/auth-context': { useAuth: () => ({ user: null }) }, '@/actions/club-onboarding': { setOrganizationInvitationDismissed: dismiss, acceptIdentityClubInvitation: async () => ({}), declineIdentityClubInvitation: async () => ({}) } })
   const invitation = { id: 'inv', requestedRole: 'MEMBER', dismissedAt: null, club: { id: 'club', name: 'Consulting Club', logoUrl: null, marketing: null, color: null } }
   return { changes, render() { h.reset(); return OrganizationInvitationCard({ invitation, onChanged: async c => { changes.push(c) } }) }, flush: h.flush }
 }

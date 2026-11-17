@@ -1,4 +1,5 @@
 "use server";
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { ActionError, actionResult, isActionError } from "@/lib/action-result";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
@@ -479,11 +480,11 @@ async function downloadTaskFileCommand(fileId: string) {
     include: { assignment: { include: { member: true, task: true } } },
   });
   if (!file || !file.submitted) throw new ActionError("File unavailable. Reload the task to see its current files.", "NOT_FOUND");
-  const membership = await prisma.clubMember.findUnique({
+  const membership = await graduateClubAccessOrNull(prisma, await prisma.clubMember.findUnique({
     where: {
       userId_clubId: { userId: user.id, clubId: file.assignment.task.clubId },
     },
-  });
+  }));
   if (
     !membership ||
     !isActiveMembership(membership) ||

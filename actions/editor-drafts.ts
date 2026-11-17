@@ -1,4 +1,5 @@
 "use server"
+import { assertGraduateMayOperate } from "@/lib/graduate-access"
 import { Prisma } from "@prisma/client"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
@@ -13,6 +14,8 @@ const editorDraftLimits = { maxWait: 2_000, timeout: 5_000 } as const
 async function authorize(tx: AppTransactionClient, scope: ReturnType<typeof editorScopeSchema.parse>, userId: string) {
   if (scope.kind === "task-submission") {
     const member = scope.clubId ? await authorizeClubTransaction(tx, scope.clubId, userId, []) : null
+    // A graduate kept as owner is read-only in the club (lib/graduation.ts).
+    assertGraduateMayOperate(member)
     const assignment = member && await tx.taskAssignment.findFirst({ where: { id: scope.resourceId, memberId: member.id, task: { clubId: scope.clubId, status: { not: "DRAFT" } } }, select: { id: true } })
     if (!assignment) throw Error("Task assignment unavailable.")
   } else if (scope.kind === "profile") {

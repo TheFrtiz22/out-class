@@ -242,16 +242,16 @@ export async function setCorkboardClub(input: unknown) {
   const data = corkboardInput.parse(input);
   const { requireAuth } = await import("@/utils/auth");
   const { user } = await requireAuth();
+  // Alumni accounts are read-only (lib/graduation.ts): saved clubs are neither added nor removed.
+  const { alumniRefusal } = await import("@/utils/graduation");
+  const alumni = await alumniRefusal(prisma, user.id, "save");
+  if (alumni) throw new Error(alumni);
   if (!data.saved) {
     await prisma.corkboardClub.deleteMany({
       where: { userId: user.id, clubId: data.clubId },
     });
     return { saved: false, savedAt: null };
   }
-  // Alumni accounts are read-only (lib/graduation.ts): no new saves; removing one stays available.
-  const { alumniRefusal } = await import("@/utils/graduation");
-  const alumni = await alumniRefusal(prisma, user.id, "save");
-  if (alumni) throw new Error(alumni);
   const club = await prisma.club.findUnique({
     where: { id: data.clubId },
     select: { id: true },

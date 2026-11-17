@@ -9,6 +9,8 @@ import { acceptIdentityClubInvitation as acceptIdentityClubInvitationAction } fr
 import { clubWorkspaceHref } from "@/lib/club-workspace";
 import { Button } from "@/components/ui/button";
 import { unwrapped } from "@/lib/action-result"
+import { useAuth } from "@/contexts/auth-context";
+import { ALUMNI_REFUSALS, isAlumniProfile } from "@/lib/graduation";
 const acceptIdentityClubInvitation = unwrapped(acceptIdentityClubInvitationAction)
 const acceptClubInvitation = unwrapped(acceptClubInvitationAction)
 const declineClubInvitation = unwrapped(declineClubInvitationAction)
@@ -16,6 +18,8 @@ export function InvitationResponse({ id, owner = false }: { id: string; owner?: 
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const responding = useRef(false);
+  // Alumni accounts are read-only (lib/graduation.ts): invitations can be neither accepted nor declined.
+  const alumni = isAlumniProfile(useAuth().user?.profile);
   async function respond(accept: boolean) {
     if (responding.current) return;
     responding.current = true;
@@ -43,6 +47,7 @@ export function InvitationResponse({ id, owner = false }: { id: string; owner?: 
       setBusy(false);
     }
   }
+  if (alumni) return <p role="status" className="text-sm text-muted-foreground">{ALUMNI_REFUSALS.respond}</p>;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">

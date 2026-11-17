@@ -1,4 +1,5 @@
 "use server"
+import { assertNotAlumni } from "@/utils/graduation"
 import { activeMemberWhere } from "@/lib/permissions";
 import { ActionError, actionResult } from "@/lib/action-result";
 
@@ -57,6 +58,8 @@ async function saveMyAvailabilityCommand(raw: unknown): Promise<AvailabilityDocu
   if (input.accountId && input.accountId !== user.id) throw new ActionError("Account changed. Reload your availability before saving.", "STALE")
   return prisma.$transaction(async tx => {
     await accountLock(tx, user.id)
+    // Alumni accounts are read-only (lib/graduation.ts); they are also exempt from the requirement.
+    await assertNotAlumni(tx, user.id, "availability")
     const old = await tx.userAvailability.findUnique({ where: { userId: user.id } })
     if ((old?.revision ?? 0) !== input.revision) throw new ActionError(changed, "STALE")
     validateAvailabilityEdit(input.schedule, old ? parseSchedule(old.schedule) : emptySchedule())
@@ -82,6 +85,8 @@ async function saveMyRoundAvailabilityCommand(raw: unknown) {
   if (input.accountId && input.accountId !== user.id) throw new ActionError("Account changed. Reload your availability before saving.", "STALE")
   return prisma.$transaction(async tx => {
     const member = await authorizeClubTransaction(tx, input.clubId, user.id, [])
+    // A graduate kept as owner is read-only in the club (lib/graduation.ts).
+    await assertNotAlumni(tx, user.id, "availability")
     const round = await roundFor(tx, input.clubId, input.roundId)
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
     const key = { memberId: member.id, roundId: round.id }
@@ -203,6 +208,8 @@ async function declineRoundParticipationCommand(raw: unknown) {
   if (input.accountId !== user.id) throw new ActionError("Account changed. Reload before responding.", "STALE")
   return prisma.$transaction(async tx => {
     const member = await authorizeClubTransaction(tx, input.clubId, user.id, [])
+    // A graduate kept as owner is read-only in the club (lib/graduation.ts).
+    await assertNotAlumni(tx, user.id, "respond")
     await roundFor(tx, input.clubId, input.roundId)
     const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
     const key = { memberId: member.id, roundId: input.roundId }
@@ -243,6 +250,8 @@ async function completeAvailabilityRequirementCommand(raw: unknown): Promise<{ m
   if (impersonation) throw new ActionError("Availability is completed by the account holder, not in a support session.", "FORBIDDEN")
   return prisma.$transaction(async tx => {
     await accountLock(tx, user.id)
+    // Alumni are exempt from the requirement (lib/availability-requirement.ts) and read-only.
+    await assertNotAlumni(tx, user.id, "availability")
     const old = await tx.userAvailability.findUnique({ where: { userId: user.id } })
     const schedule = old ? parseSchedule(old.schedule) : null
     if (scheduleHasAvailability(schedule)) return { met: true as const }

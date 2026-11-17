@@ -19,7 +19,14 @@ export const clubPermissions = [
   "leaders.manage",
 ] as const
 export type ClubPermission = (typeof clubPermissions)[number]
-export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[]; status?: string; interviewOffices?: readonly string[]; alumniSince?: Date | string | null }
+/**
+ * handOverOnly: set by the shared membership checks (lib/graduate-access.ts) on a graduate whose
+ * membership is still current, usually an owner the graduation job kept so the club has one. Such a
+ * member keeps only what handing the club over needs (HAND_OVER_PERMISSIONS, making someone owner).
+ */
+export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[]; status?: string; interviewOffices?: readonly string[]; alumniSince?: Date | string | null; handOverOnly?: boolean }
+/** The only permission a graduate kept as owner still holds: assigning a new owner (lib/graduation.ts). */
+export const HAND_OVER_PERMISSIONS: readonly ClubPermission[] = ["leaders.manage"]
 /** On the roster (ACTIVE), current member or alumni. Clubs can still remove alumni. */
 export function isRosterMembership(member: ClubAccess | null | undefined) {
   return !!member && (!member.status || member.status === "ACTIVE")
@@ -34,6 +41,7 @@ export function isActiveMembership(member: ClubAccess | null | undefined) {
 /** Prisma filter for current (non-alumni) members: counts, audiences, exports and member-only reads. */
 export const activeMemberWhere = { status: "ACTIVE", alumniSince: null } as const
 export function hasPermission(member: ClubAccess | null | undefined, permission: ClubPermission) {
+  if (member?.handOverOnly && !HAND_OVER_PERMISSIONS.includes(permission)) return false
   return isActiveMembership(member) && (member?.isOwner === true || member?.permissions?.includes(permission) === true)
 }
 export function hasWorkspace(member: ClubAccess) {

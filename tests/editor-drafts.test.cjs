@@ -3,7 +3,7 @@ const {PGlite}=require('@electric-sql/pglite'),{loader}=require('./helpers/commu
 const clubId=randomUUID(),userId=randomUUID(),otherId=randomUUID()
 async function setup(t){
  const db=new PGlite();t.after(()=>db.close())
- await db.exec('CREATE ROLE anon;CREATE ROLE authenticated;CREATE TABLE "User"(id TEXT PRIMARY KEY,"disabledAt" TIMESTAMPTZ);CREATE TABLE "Club"(id TEXT PRIMARY KEY,"suspendedAt" TIMESTAMPTZ);CREATE TABLE "ClubMember"(id TEXT PRIMARY KEY,"clubId" TEXT,"userId" TEXT,status TEXT,"isOwner" BOOLEAN,permissions TEXT[]);')
+ await db.exec('CREATE ROLE anon;CREATE ROLE authenticated;CREATE TABLE "User"(id TEXT PRIMARY KEY,"disabledAt" TIMESTAMPTZ);CREATE TABLE "Club"(id TEXT PRIMARY KEY,"suspendedAt" TIMESTAMPTZ);CREATE TABLE "ClubMember"(id TEXT PRIMARY KEY,"clubId" TEXT,"userId" TEXT,status TEXT,"isOwner" BOOLEAN,permissions TEXT[]);CREATE TABLE "StudentProfile"("userId" TEXT PRIMARY KEY,"graduatedAt" TIMESTAMPTZ);')
  await db.exec(fs.readFileSync('prisma/migrations/20261015010000_editor_drafts/migration.sql','utf8'))
  await db.query('INSERT INTO "User"(id) VALUES ($1),($2)',[userId,otherId]);await db.query('INSERT INTO "Club"(id) VALUES ($1)',[clubId]);await db.query('INSERT INTO "ClubMember" VALUES ($1,$2,$3,\'ACTIVE\',false,$4)',[randomUUID(),clubId,userId,['meetings.manage','tasks.manage','club.settings','application.manage','recruitment.manage']])
  let actor=userId

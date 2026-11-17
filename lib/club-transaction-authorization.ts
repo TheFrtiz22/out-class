@@ -2,7 +2,7 @@ import { ActionError } from "@/lib/action-result";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
-import { assertGraduateMayJudge } from "@/lib/graduate-judgment";
+import { graduateMemberFor } from "@/lib/graduate-access";
 
 /** Recheck live grants after waiting on the club serialization lock. */
 export async function authorizeClubTransaction(
@@ -22,8 +22,8 @@ export async function authorizeClubTransaction(
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
   if (!user || user.disabledAt || !isActiveMembership(member) || !permissions.every(p => hasPermission(member, p)))
     throw new ActionError("Club access denied. Membership or permissions changed.", "FORBIDDEN");
-  // A graduate kept as owner may hand the club over but not review or decide (lib/graduation.ts).
-  await assertGraduateMayJudge(tx, userId, permissions);
+  // A graduate kept as owner is read-only here except for handing the club over (lib/graduation.ts).
+  const marked = await graduateMemberFor(tx, member!, permissions);
   if (!options.allowSuspendedRead) await assertClubOperational(tx, clubId);
-  return member!;
+  return marked;
 }
