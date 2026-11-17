@@ -2,6 +2,7 @@
 import {useRef,useState,useSyncExternalStore} from "react";
 import {ApplicantIdentity} from "@/components/applicant-identity";
 import type {getLiveVotingPresentation,StalePresentation} from "@/actions/voting-room";
+import type {OwnApplicationPresentation} from "@/lib/voting-room";
 import {fieldLabels} from "@/lib/applicant-display";
 import {anonymousApplicantLabel} from "@/lib/anonymous-review";
 import {liveRoomFields} from "@/lib/voting-room";
@@ -15,7 +16,7 @@ import {Check,Pause,XIcon} from "@/components/icons";
 import {resultOutcomeLabel,type RoomResult} from "@/lib/voting-room";
 import {InterviewFeedbackSection,EarlierFeedbackRounds} from "@/components/interview-feedback-section";
 
-export type VotingSlideData=Exclude<Awaited<ReturnType<typeof getLiveVotingPresentation>>,StalePresentation>;
+export type VotingSlideData=Exclude<Awaited<ReturnType<typeof getLiveVotingPresentation>>,StalePresentation|OwnApplicationPresentation>;
 // Highlights share the header row on projectors; full text stays in Applicant details.
 const highlightPreview=(text:string)=>text.length>110?`${text.slice(0,107)}…`:text;
 

@@ -10,7 +10,8 @@ import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission, activeMemberWhere } from "@/lib/permissions";
-import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged, isOpenElectorate, OPEN_ELECTORATE, MAX_ROOM_VOTERS } from "@/lib/voting-room";
+import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged, isOpenElectorate, OPEN_ELECTORATE, MAX_ROOM_VOTERS, type OwnApplicationPresentation } from "@/lib/voting-room";
+import { supportContext } from "@/utils/support-audit";
 import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, undoableDecision, roomFingerprint, signRoomView, verifyRoomView, onRoomRoster, roomRosterIds, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
@@ -18,7 +19,7 @@ import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-r
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
 import {votingDiscussion} from '@/utils/voting-discussion';
-import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules,ballotElectorate,applicantMemberId,joinableVoters} from '@/utils/voting-rules';
+import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules,ballotElectorate,applicantMemberId,joinableVoters,recusedMemberIds} from '@/utils/voting-rules';
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 import {lockPresentedSlide,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
 import { boundedParse } from "@/lib/bounded-input";
@@ -121,7 +122,15 @@ export async function getLiveVotingRoom(input:unknown) {
     const viewedAt=(clock?.[0]?.now?new Date(clock[0].now):new Date()).toISOString();
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);
     const later=await tx.pipelineRound.count({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}}});
-    const snapshot=projectVotingRoom(s,m,round.anonymousReview,{name:round.name,final:later===0});
+    const projected=projectVotingRoom(s,m,round.anonymousReview,{name:round.name,final:later===0});
+    // Nobody sees their own application here: no slide, tally, rule result or discussion, and (unless they lead
+    // the session) no outcome either, matching how review keeps reviewers off their own application.
+    const ownIds=new Set((await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId:d.clubId,studentId:user.id},select:{id:true}})).map(a=>a.id));
+    const hideOutcome=(id:string)=>ownIds.has(id)&&!projected.permissions.leader;
+    const snapshot=ownIds.size?{...projected,
+      outcomes:projected.outcomes.map(o=>hideOutcome(o.applicationId)?{...o,outcome:"UNREVIEWED" as const}:o),
+      queue:projected.queue.map(o=>hideOutcome(o.applicationId)?{...o,outcome:"UNREVIEWED" as const}:o),
+      history:projected.history.map(p=>({...p,candidates:p.candidates.map(c=>{if(!ownIds.has(c.applicationId))return c;const {totals:_hidden,...rest}=c as typeof c&{totals?:unknown};return hideOutcome(c.applicationId)?{...rest,outcome:"UNREVIEWED" as const,withoutVote:false}:rest;})}))}:projected;
     // Server-backed Undo: the command that produced this revision is the latest room activity. Leaders see its
     // decision only while UNDO_DECISION would accept it (same rule), after any refresh or on any device.
     // Other receipts in this table (slide preparation, setup) carry their own `revision` numbers, so check each match.
@@ -136,7 +145,14 @@ export async function getLiveVotingRoom(input:unknown) {
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
     // "X of Y in the room voted": the applicant on screen never counts as one of their own voters.
-    const applicantSelf=current?await applicantMemberId(tx,d.clubId,current.applicationId):null,counted=eligible.filter(v=>v.id!==applicantSelf);
+    const ownCurrent=!!current&&ownIds.has(current.applicationId);
+    // Leaders (and identified rounds) see the corrected count: never the applicant on screen and, in open sessions,
+    // nobody who stepped out of this applicant. Other viewers of an anonymous round see the plain room count, so the
+    // count cannot hint that the anonymous applicant is in the room.
+    const corrected=!!current&&(snapshot.permissions.leader||!round.anonymousReview);
+    const applicantSelf=corrected?await applicantMemberId(tx,d.clubId,current!.applicationId):null;
+    const recused=corrected&&open?new Set(await recusedMemberIds(tx,current!.applicationId,eligible.map(v=>v.id))):new Set<string>();
+    const counted=eligible.filter(v=>v.id!==applicantSelf&&!recused.has(v.id));
     const options=roomPresentationSchema.safeParse(s.presentationOptions);
     // Rule wording for everyone; its counts only after the leader closes this ballot (totals are hidden while open).
     const rules=sessionRules(s.presentationOptions);
@@ -144,9 +160,9 @@ export async function getLiveVotingRoom(input:unknown) {
     const openRule=rules.mode==="THRESHOLD"&&current?.ballotState==="OPEN"&&s.state==="OPEN"?await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}):null;
     // Open electorate: who counts is snapshotted as each ballot closes, so nothing pauses voting.
     const removedVoters=!open&&openRule?.rules.mode==="THRESHOLD"?openRule.electorate.filter(id=>!eligible.some(v=>v.id===id)).length:0;
-    const ruled=rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
-    const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
-    return {snapshot:{...snapshot,undo,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
+    const ruled=!ownCurrent&&rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
+    const discussion=current&&!ownCurrent&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
+    return {snapshot:{...snapshot,undo,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,ownApplicant:ownCurrent,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>counted.some(m=>m.id===b.memberId)).length??0,eligible:counted.length},
       votingPaused:removedVoters>0,viewedAt,viewToken:snapshot.permissions.leader?signRoomView({sessionId:s.id,revision:s.revision,viewedAt,memberId:m.id}):null,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
@@ -160,8 +176,13 @@ export async function getLiveVotingRoom(input:unknown) {
  * refreshes the room instead of the server action failing with a 500; carries no applicant data. */
 export type StalePresentation={stale:true};
 export async function getLiveVotingPresentation(input:unknown) {
-  try { return await readLivePresentation(input); }
+  try { if(await ownApplicationOnScreen(input))return {ownApplication:true} as OwnApplicationPresentation; return await readLivePresentation(input); }
   catch(e) { if(e instanceof VotingPresentationChanged)return {stale:true} as StalePresentation; throw e; }
+}
+/** The requested applicant is the viewer's own application (any role): nothing about it is read or returned. */
+async function ownApplicationOnScreen(input:unknown){
+  const d=roomScope.extend({applicationId:roomBallotSchema.shape.applicationId,preparation:z.boolean().optional()}).parse(input),{user}=await requireClubPermission(d.clubId,["applications.review"]);
+  return !!await prisma.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,studentId:user.id},select:{id:true}});
 }
 async function readLivePresentation(input:unknown) {
   const d=roomScope.extend({applicationId:roomBallotSchema.shape.applicationId,preparation:z.boolean().optional()}).parse(input);
@@ -196,6 +217,8 @@ export async function castLiveVotingBallot(input:unknown) {
     // Ballots in one session still serialize on the session row (loadVotingRoom write
     // lock); the shared club lock lets voters' authorization run concurrently.
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"],{sharedClubLock:true});
+    // A support session acts as the member but never votes for them (checked against this transaction's live support authority).
+    if(await supportContext())throw new RoomConflict("SUPPORT_SESSION","Voting isn’t available in a support session. Your vote was not recorded.");
     // Alumni cannot vote (lib/graduation.ts), even a graduate whose ownership the graduation job retained.
     const alumni=await alumniRefusal(tx,user.id,"vote");
     if(alumni)throw new RoomConflict(ALUMNI_REFUSED,alumni);
@@ -259,7 +282,7 @@ export async function commandLiveVotingRoom(input:unknown) {
     const closingSnapshot=async(entry:NonNullable<typeof current>)=>{
       const key={sessionId:s.id,passNumber:s.currentPass,applicationId:entry.applicationId},rule=await latestBallotRule(tx,key);
       if(!open||rule?.rules.mode!=="THRESHOLD")return rule;
-      const electorate=await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,entry.applicationId);
+      const electorate=await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,entry.applicationId,{excludeRecused:true});
       await tx.votingBallotRule.create({data:{...key,version:rule.version+1,rules:rule.rules,electorate,reason:CLOSING_SNAPSHOT_REASON,createdBy:user.id}});
       return {...rule,version:rule.version+1,electorate};
     };
@@ -294,7 +317,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         // Threshold rooms capture the rule and current eligible electorate for this ballot instance.
         const rules=sessionRules(s.presentationOptions);
         if(rules.mode==="THRESHOLD"){
-          const electorate=await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,current.applicationId);
+          const electorate=await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,current.applicationId,{excludeRecused:open});
           await tx.votingBallotRule.create({data:{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,version:1,rules,electorate,createdBy:user.id}});
           ruleAudit={mode:rules.mode,electorate:electorate.length};
         }
@@ -320,7 +343,7 @@ export async function commandLiveVotingRoom(input:unknown) {
           ruleAudit={mode:"THRESHOLD",outcome:evaluated?.result.outcome??null,noResult:evaluated?.result.noResult??null,passVotes:evaluated?.result.passVotes,cast:evaluated?.result.cast,eligible:evaluated?.result.eligible,requiredPass:evaluated?.result.requiredPass};
         }
         // Missing ballots count against the (possibly recounted) electorate, not voters removed from it.
-        const roster=snapshot?.rules.mode==="THRESHOLD"?snapshot.electorate:open?await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,current.applicationId):s.participants.map(p=>p.memberId);
+        const roster=snapshot?.rules.mode==="THRESHOLD"?snapshot.electorate:open?await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,current.applicationId,{excludeRecused:true}):s.participants.map(p=>p.memberId);
         missingBallots=Math.max(0,roster.length-current.ballots.filter(b=>roster.includes(b.memberId)).length);
         if(missingBallots>0&&!d.confirmed)throw new RoomConflict("EARLY_CLOSE_CONFIRMATION",`${missingBallots} ${missingBallots===1?"ballot is":"ballots are"} missing. Confirm early closure; missing votes are not Reject votes.`);
         await updateEntry({ballotState:"CLOSED",closedAt:new Date()});break;

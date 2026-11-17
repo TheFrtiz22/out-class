@@ -16,9 +16,16 @@ export async function applicantMemberId(tx:AppTransactionClient,clubId:string,ap
   return member?.id??null;
 }
 /** Who counts for one applicant's ballot right now: roster members who may still vote, never the applicant themself. */
-export async function ballotElectorate(tx:AppTransactionClient,clubId:string,participantIds:string[],anonymous:boolean,applicationId:string){
+export async function ballotElectorate(tx:AppTransactionClient,clubId:string,participantIds:string[],anonymous:boolean,applicationId:string,{excludeRecused=false}:{excludeRecused?:boolean}={}){
   const self=await applicantMemberId(tx,clubId,applicationId);
-  return currentEligibleVoterIds(tx,clubId,participantIds.filter(id=>id!==self),anonymous);
+  // Open-electorate sessions: a member who stepped out of this applicant (recusal) is not eligible for it either.
+  const recused=excludeRecused?new Set((await recusedMemberIds(tx,applicationId,participantIds))):new Set<string>();
+  return currentEligibleVoterIds(tx,clubId,participantIds.filter(id=>id!==self&&!recused.has(id)),anonymous);
+}
+/** Members with an active (not lifted) recusal from this application, among the given members. */
+export async function recusedMemberIds(tx:AppTransactionClient,applicationId:string,memberIds:string[]){
+  if(!memberIds.length)return [];
+  return (await tx.applicantRecusal.findMany({where:{applicationId,liftedAt:null,memberId:{in:memberIds}},select:{memberId:true}})).map(r=>r.memberId);
 }
 /** Members who may join an open-electorate session in this club now: current (non-alumni) members on enabled
  * accounts who hold the club's voting permissions (and may identify applicants, for identified rounds). */

@@ -1,7 +1,7 @@
 const {load,uuid}=require('./voting-harness.cjs');
 const clubId=uuid(1),roundId=uuid(2),cycleId=uuid(3),sessionId=uuid(4),leaderId=uuid(5),voterId=uuid(6),apps=[uuid(10),uuid(11),uuid(12)];
 function harness(){
- let actor=leaderId,sequence=100,state={preparations:[],hands:[],interviewRecords:[],ballotRules:[],sessions:[],receipts:[],audit:[],drafts:[],offers:[],notifications:[],apps:apps.map(id=>({id,clubId,roundId,recruitmentCycleId:cycleId,status:'IN_REVIEW',decisionVersion:0,decisionStateRevision:0,studentId:uuid(90),student:{studentProfile:{firstName:'Synthetic',lastName:id.slice(-2)}}}))};
+ let actor=leaderId,support=null,sequence=100,state={preparations:[],hands:[],interviewRecords:[],ballotRules:[],sessions:[],receipts:[],audit:[],drafts:[],offers:[],notifications:[],apps:apps.map(id=>({id,clubId,roundId,recruitmentCycleId:cycleId,status:'IN_REVIEW',decisionVersion:0,decisionStateRevision:0,studentId:uuid(90),student:{studentProfile:{firstName:'Synthetic',lastName:id.slice(-2)}}}))};
  const members=[leaderId,voterId,uuid(7)].map((id,i)=>({id,userId:id,clubId,status:'ACTIVE',alumniSince:null,interviewOffices:[],permissions:['applications.review','applicants.identify','decisions.vote',...(i===0?['decisions.manage','decisions.start','decisions.finish','decisions.publish']:[])],user:{disabledAt:null}}));
  // The club has turned GPA and LinkedIn on; the default ceiling is covered in profile-field-voting tests.
  const round={id:roundId,clubId,name:'Interview',type:'INTERVIEW',order:0,archivedAt:null,anonymousReview:false,club:{profileFieldVisibility:{gpa:true,linkedin:true}}},cycle={id:cycleId,clubId,archivedAt:null},rounds=[round];
@@ -39,7 +39,7 @@ function harness(){
   auditLog:{findFirst:async({where})=>copy([...state.audit].reverse().find(a=>matches(a,where))),create:async({data})=>{state.audit.push(copy(data));return data}},
  };
  let chain=Promise.resolve();const prisma={...tx,$transaction:work=>{const op=chain.then(async()=>{const before=copy(state);try{return copy(await work(tx))}catch(e){state=before;throw e}});chain=op.catch(()=>{});return op;}};
- const mocks={'@/utils/prisma':{prisma},'@/utils/club-write-transaction':{votingWriteLimits:{},clubWriteTransaction:work=>prisma.$transaction(work)},'@/utils/auth':{requireAuth:async()=>({user:{id:actor}}),requireClubPermission:async(c,caps)=>{const m=members.find(m=>m.userId===actor);if(!m||c!==m.clubId||m.status!=='ACTIVE'||m.user.disabledAt||!caps.every(p=>m.permissions.includes(p)))throw Error('Denied');return{user:{id:actor},membership:copy(m)}}},'@/actions/applicant-intelligence':{getApplicantDisplay:()=>{throw Error('Use canonical display harness for presentation tests')}}};
+ const mocks={'@/utils/prisma':{prisma},'@/utils/club-write-transaction':{votingWriteLimits:{},clubWriteTransaction:work=>prisma.$transaction(work)},'@/utils/auth':{requireAuth:async()=>({user:{id:actor}}),requireClubPermission:async(c,caps)=>{const m=members.find(m=>m.userId===actor);if(!m||c!==m.clubId||m.status!=='ACTIVE'||m.user.disabledAt||!caps.every(p=>m.permissions.includes(p)))throw Error('Denied');return{user:{id:actor},membership:copy(m)}}},'@/actions/applicant-intelligence':{getApplicantDisplay:()=>{throw Error('Use canonical display harness for presentation tests')}},'@/utils/support-audit':{supportContext:async()=>support,auditSupportAction:async()=>{}}};
  const api=load('actions/voting-room.ts',mocks),scope={clubId,sessionId};
  // Open electorate: nobody is preselected; the leader and the voter then join with the join link (joinLiveVotingRoom),
  // modelled here as their joined roster rows. `joined` lists who has joined (default both); `legacyVoters` instead models a session saved with a voter list before the picker was retired.
@@ -49,6 +49,6 @@ function harness(){
   return r;};
  const command=(action,extra={})=>api.commandLiveVotingRoom({...scope,requestId:uuid(sequence++),revision:sess(sessionId).revision,action,...(['CLOSE_VOTING','END'].includes(action)?{confirmed:true}:{}),...extra});
  const vote=(choice,extra={})=>{const s=sess(sessionId),own=entry({sessionId,passNumber:s.currentPass,applicationId:s.activeApplicationId}).ballots.find(b=>b.memberId===actor);return api.castLiveVotingBallot({...scope,requestId:uuid(sequence++),passNumber:s.currentPass,applicationId:s.activeApplicationId,ballotRevision:own?.revision??null,choice,...extra})};
- return{api,create,command,vote,read:()=>api.getLiveVotingRoom(scope),state:()=>state,members,round,rounds,cycle,as:id=>actor=id,scope,mocks,tx};
+ return{api,create,command,vote,read:()=>api.getLiveVotingRoom(scope),state:()=>state,members,round,rounds,cycle,as:id=>actor=id,support:v=>support=v,scope,mocks,tx};
 }
 module.exports={harness,uuid,clubId,cycleId,roundId,sessionId,leaderId,voterId,apps,load};

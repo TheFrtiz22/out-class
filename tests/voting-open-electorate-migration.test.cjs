@@ -1,5 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{PGlite}=require('@electric-sql/pglite');
-const dir='prisma/migrations',target='20261116120000_voting_open_electorate';
+const dir='prisma/migrations',target='20261117090000_voting_open_electorate';
 const sql=n=>fs.readFileSync(path.join(dir,n,'migration.sql'),'utf8');
 
 test('open-electorate sessions take late joiners and a closing snapshot; saved-list sessions keep the frozen roster',{timeout:240000},async()=>{
@@ -71,6 +71,8 @@ test('open-electorate sessions take late joiners and a closing snapshot; saved-l
   // Saved-list (legacy) session: unchanged. No joins after start; resolutions only remove voters, with a reason.
   await room('legacy',false);
   await assert.rejects(join('legacy','late'),/frozen/);
+  // A started saved-list session cannot be switched to the open electorate (the existing presentation lock).
+  await assert.rejects(db.exec(`UPDATE "VotingSession" SET "presentationOptions"='{"electorate":"OPEN"}' WHERE id='legacy'`),/presentation setup is locked/);
   await db.exec(`UPDATE "VotingParticipant" SET "joinedAt"=NOW() WHERE "sessionId"='legacy' AND "memberId"='early'`);
   await snap('legacy',1,['early','lead']);
   await assert.rejects(snap('legacy',2,['early','late','lead'],'add'),/only remove voters/);

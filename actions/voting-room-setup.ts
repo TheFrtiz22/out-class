@@ -11,6 +11,7 @@ import { interviewCapabilities } from "@/lib/interview-access";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { liveRoomFields, roomScope, isOpenElectorate, MAX_ROOM_VOTERS } from "@/lib/voting-room";
 import { alumniRefusal } from "@/utils/graduation";
+import { supportContext } from "@/utils/support-audit";
 import { allowedByProfileCeiling, normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { votingHighlightChoices } from "@/utils/voting-room-presentation";
@@ -80,6 +81,8 @@ export async function joinLiveVotingRoom(input:unknown){
     // Current membership in this session's club (and so its school), an enabled account and the club's voting
     // permissions; alumni are refused (lib/graduation.ts). The session row lock serializes joins with a ballot closing.
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"]);
+    // A support session acts as the member but never joins a vote for them.
+    if(await supportContext())throw Error("Joining a vote isn’t available in a support session.");
     if(await alumniRefusal(tx,user.id,"vote"))throw Error("Session ended or joining is unavailable.");
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
     if(!roomAuthority(s,m,round.anonymousReview).voter||s.state==="COMPLETED"||s.finalizedAt)throw Error("Session ended or joining is unavailable.");

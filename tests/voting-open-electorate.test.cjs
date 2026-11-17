@@ -111,3 +111,72 @@ test('the setup page shows the open-electorate text instead of a voter picker',(
  assert.match(src,/\{pluralize\(applicants\.length,"applicant"\)\} · any member who joins votes · \{target\?`target \$\{target\}`:'no target'\}/);
  assert.match(fs.readFileSync('components/live-voting/room-view.tsx','utf8'),/\{room\.participation\.voted\} of \{room\.participation\.eligible\} in the room voted/);
 });
+
+test('a member who is also the applicant on screen sees no slide, tally, rule result, discussion or outcome for it',async()=>{
+ const r=room();r.h.state().apps[0].studentId=voterId;await r.h.create(options(allEligible));r.h.as(leaderId);
+ ok(await r.h.command('START'));ok(await r.h.command('OPEN_VOTING'));
+ r.h.as(voterId);const presentation=await r.h.api.getLiveVotingPresentation({...scope,applicationId:apps[0]});
+ assert.deepEqual(presentation,{ownApplication:true});
+ let view=await r.h.read();assert.equal(view.ownApplicant,true);assert.equal(view.discussion,null);
+ const discussion=load('actions/voting-discussion.ts',r.h.mocks);
+ await assert.rejects(discussion.setDiscussionRequest({...scope,passNumber:1,applicationId:apps[0],raised:true}),/own application/);
+ assert.equal(r.h.state().hands.length,0);
+ r.h.as(leaderId);ok(await r.h.vote('ACCEPT'));ok(await r.h.command('CLOSE_VOTING'));
+ r.h.as(voterId);view=await r.h.read();const own=view.history[0].candidates[0];
+ assert.equal('totals'in own,false);assert.equal(view.ruleResult,null);assert.doesNotMatch(JSON.stringify(view.history),/"totals"/);
+ r.h.as(leaderId);ok(await r.h.command('CONFIRM',{choice:'ACCEPT'}));
+ r.h.as(voterId);view=await r.h.read();
+ assert.equal(view.history[0].candidates[0].outcome,'UNREVIEWED');assert.equal(view.outcomes.find(o=>o.applicationId===apps[0]).outcome,'UNREVIEWED');
+ // Everyone else, and the next applicant for this member, is unaffected.
+ r.h.as(leaderId);view=await r.h.read();assert.equal(view.ownApplicant,false);assert.equal(view.history[0].candidates[0].outcome,'ACCEPT');assert.ok(view.history[0].candidates[0].totals);
+ ok(await r.h.command('ADVANCE'));r.h.as(voterId);view=await r.h.read();assert.equal(view.ownApplicant,false);
+});
+
+test('anonymous rounds: other viewers see the plain room count; leaders see it without the applicant',async()=>{
+ const r=room();r.h.round.anonymousReview=true;r.h.state().apps[0].studentId=third;await r.h.create({joined:[leaderId,voterId,third],presentationOptions:{fields:['gpa'],highlights:{}}});r.h.as(leaderId);
+ ok(await r.h.command('START'));ok(await r.h.command('OPEN_VOTING'));
+ assert.deepEqual((await r.h.read()).participation,{voted:0,eligible:2},'leader: corrected');
+ r.h.as(voterId);assert.deepEqual((await r.h.read()).participation,{voted:0,eligible:3},'member: uncorrected, so the count cannot point at the applicant');
+ r.h.round.anonymousReview=false;assert.deepEqual((await r.h.read()).participation,{voted:0,eligible:2},'identified round: corrected for everyone');
+});
+
+test('a member who stepped out of an applicant is not counted for that applicant in an open session',async()=>{
+ const r=room(),recusal={applicationId:apps[0],memberId:third};
+ r.h.tx.applicantRecusal.findFirst=async({where})=>where.applicationId===recusal.applicationId&&where.memberId===recusal.memberId?{id:'recusal'}:null;
+ r.h.tx.applicantRecusal.findMany=async({where})=>where.applicationId===recusal.applicationId&&(!where.memberId?.in||where.memberId.in.includes(recusal.memberId))?[{memberId:recusal.memberId}]:[];
+ await r.h.create({joined:[leaderId,voterId,third],...options(allEligible)});r.h.as(leaderId);ok(await r.h.command('START'));ok(await r.h.command('OPEN_VOTING'));
+ assert.deepEqual(r.h.state().ballotRules[0].electorate,[leaderId,voterId].sort());
+ r.h.as(third);assert.equal((await r.h.vote('ACCEPT')).code,'RECUSED');
+ r.h.as(leaderId);assert.deepEqual((await r.h.read()).participation,{voted:0,eligible:2});ok(await r.h.vote('ACCEPT'));r.h.as(voterId);ok(await r.h.vote('ACCEPT'));r.h.as(leaderId);
+ ok(await r.h.command('CLOSE_VOTING'));assert.deepEqual(r.h.state().ballotRules.at(-1).electorate,[leaderId,voterId].sort());
+ assert.equal((await r.h.read()).ruleResult.eligible,2);
+ // Saved-list sessions keep counting them, as before.
+ const l=room();l.h.tx.applicantRecusal.findMany=r.h.tx.applicantRecusal.findMany;await l.h.create({legacyVoters:[leaderId,voterId,third],...options(allEligible)});l.h.as(leaderId);ok(await l.h.command('START'));ok(await l.h.command('OPEN_VOTING'));
+ assert.equal(l.h.state().ballotRules[0].electorate.length,3);
+});
+
+test('support sessions cannot join, vote or raise a hand for the member',async()=>{
+ const r=room();await r.h.create({joined:[leaderId,voterId],...options()});r.h.as(leaderId);ok(await r.h.command('START'));ok(await r.h.command('OPEN_VOTING'));
+ r.h.support({id:'support',actorId:'admin',targetUserId:third});await assert.rejects(r.join(third),/support session/);
+ r.h.support({id:'support',actorId:'admin',targetUserId:voterId});r.h.as(voterId);const vote=await r.h.vote('ACCEPT');assert.equal(vote.code,'SUPPORT_SESSION');
+ const discussion=load('actions/voting-discussion.ts',r.h.mocks);await assert.rejects(discussion.setDiscussionRequest({...scope,passNumber:1,applicationId:apps[0],raised:true}),/support session/);
+ assert.equal(r.h.state().sessions[0].passes[0].candidates[0].ballots.length,0);assert.ok(!r.h.state().sessions[0].participants.some(p=>p.memberId===third));
+ r.h.support(null);ok(await r.h.vote('ACCEPT'));
+});
+
+test('scheduled-session notices reach each member who can join once, and only while they still can',async()=>{
+ const later=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(Date.now()+2*86400000)).replace(' ','T');
+ const meeting={version:1,name:'Synthetic notice',timing:'LATER',localTime:later,timeZone:'America/New_York',occurrence:'EARLIER',plannedAt:null,duration:30,location:'',instructions:'',status:'SCHEDULED',announcedUserIds:[]};
+ const r=room(),plans=load('actions/voting-session-setup.ts',r.h.mocks);
+ const kept=r.h.members[2].permissions;r.h.members[2].permissions=kept.filter(p=>p!=='decisions.vote');
+ await r.h.create({joined:[],notifyVoters:true,presentationOptions:{fields:['name'],highlights:{},meeting}});
+ assert.deepEqual(r.h.state().notifications.map(n=>n.userId).sort(),[leaderId,voterId].sort());
+ const base={clubId,sessionId,cycleId:r.h.cycle.id,roundId:r.h.round.id,leaderMemberIds:[leaderId],applicationIds:apps,targetSize:1,notifyVoters:true,presentationOptions:{fields:['name'],highlights:{},meeting}};
+ // An edit tells only a member who can now join and was not told before.
+ r.h.members[2].permissions=kept;await plans.updateVotingSessionSetup({...base,requestId:uuid(3001),revision:0});
+ assert.deepEqual(r.h.state().notifications.map(n=>n.userId).sort(),[leaderId,voterId,third].sort());
+ await plans.updateVotingSessionSetup({...base,requestId:uuid(3002),revision:1});assert.equal(r.h.state().notifications.length,3,'nobody is told twice');
+ // Cancelling tells only those told before who can still join.
+ r.h.members[1].permissions=[];await plans.cancelVotingSession({clubId,sessionId,revision:2,requestId:uuid(3003),notify:true});
+ assert.deepEqual(r.h.state().notifications.slice(3).map(n=>n.userId).sort(),[leaderId,third].sort());
+});

@@ -3,11 +3,11 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect,useRef,useState } from "react";
 import { pollWhileVisible } from "@/hooks/use-revalidate";
 import { getLiveVotingPresentation as read } from "@/lib/voting-room-api";
-import { isStalePresentation,type RoomResult } from "@/lib/voting-room";
+import { isStalePresentation,isOwnApplicationPresentation,OWN_APPLICATION_MESSAGE,type RoomResult } from "@/lib/voting-room";
 import { ApplicantSlide,type VotingSlideData } from "./applicant-slide";
 import { Button } from "@/components/ui/button";
 
-type Data=VotingSlideData;
+type Data=VotingSlideData|{ownApplication:true};
 /** `paused` keeps the loaded slide on screen without reading or polling (the outgoing applicant during a transition);
  *  `outcome` shows that applicant's confirmed result beside the name. */
 export function RoomPresentation({clubId,sessionId,applicationId,identity,refreshKey,member,onReady,onFailed,onStale,paused=false,presenting=false,outcome=null}:{clubId:string;sessionId:string;applicationId:string;identity:string;refreshKey:number;member?:string;onReady?:()=>void;onFailed?:()=>void;onStale?:()=>unknown;paused?:boolean;presenting?:boolean;outcome?:RoomResult|null}){
@@ -22,5 +22,6 @@ export function RoomPresentation({clubId,sessionId,applicationId,identity,refres
   const data=state.key===key?state.data:null;
   if(state.key===key&&state.error)return <div role="alert">Applicant information unavailable. <Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry presentation</Button></div>;
   if(!data)return <LoadingState label="Loading applicant presentation…" layout="presentation" rows={3} />;
+  if(isOwnApplicationPresentation(data))return <p role="status" className="vr-own-application">{OWN_APPLICATION_MESSAGE}</p>;
   return <ApplicantSlide key={key} data={data} outcome={outcome}/>;
 }
