@@ -1,4 +1,5 @@
 "use client"
+import { EmptyState } from "@/components/ui/empty-state"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, minuteLabel } from "@/lib/scheduling-config"
 import { AvailabilityButton } from "@/components/availability/availability-button"
 import { CalendarSubscribe } from "@/components/calendar-subscribe"
@@ -169,18 +170,13 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
   }
   return (
     <div className="oc-calendar-workspace oc-workspace-stack">
-      <header className="flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Meetings, interviews, and recruiting dates, together.
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Times shown in {SCHEDULING_TIMEZONE_LABEL}.
-          </p>
-        </div>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Times shown in {SCHEDULING_TIMEZONE_LABEL}.
+        </p>
         <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" /><CalendarSubscribe />{bookingDates.length > 0 && (
           <Button variant="outline" onClick={() => setBooking(true)}>
-            Book / change interview
+            Book or change interview
           </Button>
         )}</div>
       </header>
@@ -247,7 +243,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
           }
         >
           {view === "agenda" ? (
-            <div className="space-y-8">
+            <div className="space-y-6">
               {agenda.map((group) => (
                 <section key={group.label} aria-label={group.label}>
                   <h3 className="oc-card-heading border-b border-border pb-3">
@@ -259,7 +255,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                         <button
                           type="button"
                           onClick={() => open(event)}
-                          className="flex w-full items-start gap-4 rounded-sm py-5 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:gap-7"
+                          className="flex w-full items-start gap-4 rounded-sm py-3 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:gap-5"
                         >
                           <div className="w-16 shrink-0 text-sm">
                             <p className="font-medium tabular-nums">
@@ -298,20 +294,12 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                 </section>
               ))}
               {!agenda.length && (
-                <div className="space-y-3 border-y border-border py-12">
-                  <CalendarDays className="size-6 text-muted-foreground" />
-                  <h3 className="oc-card-heading ">
-                    {query || filter !== "all" || hiddenClubs.size
-                      ? "No events match these filters"
-                      : "A little breathing room"}
-                  </h3>
-                  <p className="max-w-md text-sm leading-7 text-muted-foreground">
-                    {query || filter !== "all" || hiddenClubs.size
-                      ? "Your search, type filter or hidden club calendars leave nothing to show."
-                      : "You have no interviews or RSVP’d events coming up."}
-                  </p>
-                  <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
-                </div>
+                <EmptyState density="compact" align="start" icon={<CalendarDays />}
+                  title={query || filter !== "all" || hiddenClubs.size ? "No events match these filters" : "Nothing coming up"}
+                  description={query || filter !== "all" || hiddenClubs.size
+                    ? "Your search, type filter or hidden club calendars leave nothing to show."
+                    : "You have no interviews or RSVP’d events coming up."}
+                  action={<CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />} />
               )}
             </div>
           ) : (
@@ -393,8 +381,8 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                     const key = dateKey(day),
                       dayEvents = visible.filter((event) => eventOccursOn(event, key))
                     return (
-                      <section key={key} className="p-5">
-                        <h3 className="oc-card-heading mb-3">
+                      <section key={key} className="px-5 py-4">
+                        <h3 className="oc-card-heading mb-2">
                           {day.toLocaleDateString("en-US", {
                             weekday: "long",
                             month: "short",
@@ -427,9 +415,10 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                             ))}
                           </div>
                         ) : (
+                          // One quiet line per empty day; the action shows once (day view), not on every day of a week.
                           <div className="space-y-2 text-sm text-muted-foreground">
-                            <p>{query || filter !== "all" || hiddenClubs.size ? "No events on this day match your filters." : "Nothing is scheduled on this day."}</p>
-                            <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />
+                            <p>{query || filter !== "all" || hiddenClubs.size ? "No events on this day match your filters." : "Nothing scheduled."}</p>
+                            {view === "day" && <CalendarEmptyAction filtered={!!(query || filter !== "all" || hiddenClubs.size)} onClear={clearCalendarFilters} onNavigate={onNavigate} />}
                           </div>
                         )}
                       </section>
@@ -649,7 +638,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
       <Dialog open={booking} onOpenChange={setBooking}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Virginia Venture Fund interview</DialogTitle>
+            <DialogTitle>Book an interview</DialogTitle>
             <DialogDescription>
               Available times from the club&#39;s interview scheduler. Booking another slot replaces
               your previous reservation.
