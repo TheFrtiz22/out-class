@@ -1,6 +1,5 @@
 import { adminPageLoad } from "@/utils/admin-page";
 import { AdminRecovery } from "@/components/admin/admin-recovery";
-import Link from "next/link";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventApprovals } from "@/components/events/event-approvals";
@@ -11,9 +10,8 @@ export default async function EventApprovalsPage() {
   return (
     <section className="oc-workspace-stack">
       <PageHeader
-        action={<Link href="/platform" className="underline underline-offset-4">Admin workspace</Link>}
         eyebrow="OutClass · Administration"
-        title="Event Approvals"
+        title="Event approvals"
         description="Review public campus events before their flyers appear on Corkboard."
       />
       <EventApprovals />

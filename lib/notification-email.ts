@@ -53,7 +53,14 @@ export function buildNotificationEmail(input: { from: string; to: string; siteUr
   };
 }
 export class NotificationDeliveryError extends Error {
-  constructor(public code: string, public retryable: boolean, public retryAfterMs = 0) { super(code); }
+  /** `notAccepted`: the provider refused the request before accepting it (a sending quota), so the
+   * attempt sent nothing and must not use up the delivery's retry budget or 24-hour window. */
+  constructor(public code: string, public retryable: boolean, public retryAfterMs = 0, public notAccepted = false) { super(code); }
+}
+/** Milliseconds until the next midnight UTC, when Resend's daily quota resets, plus a minute of slack. */
+export function untilDailyQuotaReset(now = Date.now()) {
+  const next = new Date(now); next.setUTCHours(24, 1, 0, 0);
+  return next.getTime() - now;
 }
 export async function sendNotificationEmail(payload: NotificationEmailPayload, deliveryId: string, key: string) {
   const { categories: _categories, digest: _digest, panelSchedules:_panelSchedules, ...message } = notificationEmailPayload.parse(payload);
@@ -62,6 +69,12 @@ export async function sendNotificationEmail(payload: NotificationEmailPayload, d
     response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "Idempotency-Key": `outclass-notification/${deliveryId}` }, body: JSON.stringify(message), signal: AbortSignal.timeout(10000) });
   } catch { throw new NotificationDeliveryError("PROVIDER_UNAVAILABLE", true); }
   if (!response.ok) {
+    // A daily or monthly sending quota (Resend's 429 daily_quota_exceeded / monthly_quota_exceeded) is a
+    // definite refusal: wait for the reset instead of spending retries that cannot succeed.
+    if (response.status === 429) {
+      const name = await Promise.resolve().then(() => response.json()).then((body: { name?: unknown } | null) => body?.name, () => undefined);
+      if (name === "daily_quota_exceeded" || name === "monthly_quota_exceeded") throw new NotificationDeliveryError(name === "daily_quota_exceeded" ? "RESEND_DAILY_QUOTA" : "RESEND_MONTHLY_QUOTA", true, untilDailyQuotaReset(), true);
+    }
     const retry = [408, 409, 425, 429].includes(response.status) || response.status >= 500;
     const delay = Number(response.headers.get("retry-after"));
     throw new NotificationDeliveryError(`RESEND_${response.status}`, retry, Number.isFinite(delay) ? Math.max(0, Math.min(delay * 1000, 3600000)) : 0);

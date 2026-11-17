@@ -11,8 +11,9 @@ import { advanceLabel, canStage, stagedLabel, type StageRound } from "@/lib/stag
 import { formatAverage } from "@/lib/interview-review-summary"
 import { springDuration, springEasing } from "@/lib/spring"
 import type { StagedDecisions } from "@/hooks/use-staged-decisions"
+import { scholarSummary } from "@/lib/scholar-status"
 
-type BoardApp = { id: string; status: string; roundId: string; studentId: string; student: { email?: string; studentProfile?: { firstName: string; lastName: string; academicYear?: string | null } | null }; roundScore?: { average: number | null; submitted: number; required: number } | null }
+type BoardApp = { id: string; status: string; roundId: string; studentId: string; student: { email?: string; studentProfile?: { firstName: string; lastName: string; academicYear?: string | null; scholarStatus?: unknown } | null }; roundScore?: { average: number | null; submitted: number; required: number } | null }
 
 /** ←/→ jump a lifted card to the neighbouring column (Space lifts and drops, Esc cancels). */
 const columnKeys: KeyboardCoordinateGetter = (event, { context: { droppableRects, droppableContainers, collisionRect, over } }) => {
@@ -33,9 +34,11 @@ const collision: CollisionDetection = args => { const hits = pointerWithin(args)
  * menu to stage Advance / Hold / Reject. Moves are staged through the shared decision hook: the card moves at once,
  * and rolls back with an error toast if the save fails. Nothing is sent until Decide › Send.
  */
-export function ApplicantBoard({ applicants, rounds, counts, staged, canDecide, name, open, note }: {
+export function ApplicantBoard({ applicants, rounds, counts, staged, canDecide, name, open, note, showScholar = false }: {
   applicants: BoardApp[]; rounds: readonly StageRound[]; counts: Map<BoardColumnId, number> | null
   staged: StagedDecisions | null; canDecide: boolean; name: (app: BoardApp) => string; open: (app: BoardApp) => void; note?: string
+  /** Scholar status on cards: only when the club shows it and the viewer may identify applicants. */
+  showScholar?: boolean
 }) {
   const columns = useMemo(() => boardColumns(rounds), [rounds])
   const [dragging, setDragging] = useState<string | null>(null)
@@ -81,10 +84,10 @@ export function ApplicantBoard({ applicants, rounds, counts, staged, canDecide, 
     {note && <p className="text-xs text-muted-foreground">{note}</p>}
     <div className="oc-board" role="list" aria-label="Applicants by stage">
       {columns.map(column => <Column key={column.id} column={column} count={counts?.get(column.id) ?? byColumn.get(column.id)?.length ?? 0}>
-        {(byColumn.get(column.id) ?? []).map(app => <Card key={app.id} app={app} rounds={rounds} staged={staged} name={name(app)} draggable={draggable(app)} canDecide={canDecide && !!staged} open={() => open(app)} />)}
+        {(byColumn.get(column.id) ?? []).map(app => <Card key={app.id} app={app} rounds={rounds} staged={staged} name={name(app)} showScholar={showScholar} draggable={draggable(app)} canDecide={canDecide && !!staged} open={() => open(app)} />)}
       </Column>)}
     </div>
-    <DragOverlay dropAnimation={dropAnimation}>{active ? <CardBody app={active} rounds={rounds} staged={staged} name={name(active)} overlay /> : null}</DragOverlay>
+    <DragOverlay dropAnimation={dropAnimation}>{active ? <CardBody app={active} rounds={rounds} staged={staged} name={name(active)} showScholar={showScholar} overlay /> : null}</DragOverlay>
   </DndContext>
 }
 
@@ -96,7 +99,7 @@ function Column({ column, count, children }: { column: BoardColumn; count: numbe
   </section>
 }
 
-function Card({ app, rounds, staged, name, draggable, canDecide, open }: { app: BoardApp; rounds: readonly StageRound[]; staged: StagedDecisions | null; name: string; draggable: boolean; canDecide: boolean; open: () => void }) {
+function Card({ app, rounds, staged, name, draggable, canDecide, open, showScholar }: { app: BoardApp; rounds: readonly StageRound[]; staged: StagedDecisions | null; name: string; draggable: boolean; canDecide: boolean; open: () => void; showScholar: boolean }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: app.id, disabled: !draggable })
   const stage = (outcome: "ADVANCE" | "HOLD" | "REJECT") => void staged?.stage(app, outcome)
   const pending = staged?.get(app.id)
@@ -107,7 +110,7 @@ function Card({ app, rounds, staged, name, draggable, canDecide, open }: { app: 
       className="oc-board-card" data-dragging={isDragging || undefined} data-locked={!draggable || undefined} data-staged={!!pending || undefined} data-has-menu={canDecide && canStage(app.status) || undefined}
       title={pending ? `Staged: ${stagedLabel(pending, rounds)} · not sent yet` : undefined}
       onClick={open} onKeyDown={event => { listeners?.onKeyDown?.(event); if (event.key === "Enter" && !event.defaultPrevented) { event.preventDefault(); open() } }}>
-      <CardBody app={app} rounds={rounds} staged={staged} name={name} />
+      <CardBody app={app} rounds={rounds} staged={staged} name={name} showScholar={showScholar} />
     </div>
     {canDecide && canStage(app.status) && <DropdownMenu>
       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="oc-board-card-menu size-8" aria-label={`Decide ${name}`}><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
@@ -121,8 +124,9 @@ function Card({ app, rounds, staged, name, draggable, canDecide, open }: { app: 
   </li>
 }
 
-function CardBody({ app, rounds, staged, name, overlay = false }: { app: BoardApp; rounds: readonly StageRound[]; staged: StagedDecisions | null; name: string; overlay?: boolean }) {
+function CardBody({ app, rounds, staged, name, overlay = false, showScholar = false }: { app: BoardApp; rounds: readonly StageRound[]; staged: StagedDecisions | null; name: string; overlay?: boolean; showScholar?: boolean }) {
   const anonymous = app.studentId.startsWith("anonymous-")
+  const scholar = showScholar && !anonymous ? scholarSummary(app.student.studentProfile?.scholarStatus) : null
   const pending = staged?.get(app.id)
   const round = rounds.find(item => item.id === app.roundId)?.name
   const score = app.roundScore
@@ -135,6 +139,7 @@ function CardBody({ app, rounds, staged, name, overlay = false }: { app: BoardAp
         {score?.average != null && <span className="oc-score-badge" title={`Average ${formatAverage(score.average)} of 10`}>{formatAverage(score.average)}</span>}
         {score && <span className="flex-none" title={`${score.submitted} of ${score.required} reviews submitted`}>{score.submitted}/{score.required}</span>}
       </p>
+      {scholar && <p className="oc-board-card-meta" data-scholar=""><span className="min-w-0 truncate" title={scholar}>{scholar}</span></p>}
       {pending && <span className="sr-only">Staged: {stagedLabel(pending, rounds)}. Sent from Decide › Send.</span>}
     </div>
   </>

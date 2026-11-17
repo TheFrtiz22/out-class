@@ -5,7 +5,7 @@ OutClass limits abusable endpoints at two layers. Each layer covers a gap the ot
 | Layer | Where | Scope | Purpose |
 |---|---|---|---|
 | Global | Vercel Firewall custom rules (owner configures them in the dashboard) | All instances, before any function runs | Stops floods and enumeration across the fleet, at no function cost |
-| Per instance | `lib/rate-limit-core.ts` (edge-safe core), `lib/rate-limit.ts` (route handlers), `lib/rate-limit-action.ts` (server actions), `middleware.ts` (`/q/*`) | One serverless instance | Bounds the cost of a burst that reaches one instance, returns a proper 429, works locally and on previews |
+| Per instance | `lib/rate-limit-core.ts` (edge-safe core), `lib/rate-limit.ts` (route handlers), `lib/rate-limit-action.ts` (server actions), `middleware.ts` (`/q/*`, `/api/csp-report`) | One serverless instance | Bounds the cost of a burst that reaches one instance, returns a proper 429, works locally and on previews |
 | Database (exports only) | `app/api/club-exports/route.ts` reads the caller's last `club.export.*` audit rows (at most 10) | All instances | Each export opens a snapshot transaction of up to 20 s, so the limit has to hold across instances. No new table or migration: every export already writes one `AuditLog` row, and `[actorId, createdAt]` is indexed |
 
 The in-memory limits apply per instance. Vercel runs many instances and starts new ones under load, so an attacker spread across instances can make up to roughly (instances × limit) calls. The Firewall rules below are the global limit. The in-app limits are a second layer, not a replacement for the Firewall rules.
@@ -27,6 +27,7 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | Club search server action (`actions/typesense-search.ts`) | account when signed in / IP when not | 120 / min per account; 300 / min per IP |
 | `GET /api/club-exports` | account | 10 / 10 min per instance, **and** 10 / 10 min across instances (audit rows) |
 | `/q/[code]` short links (middleware) | IP | 600 / min (a 200-person check-in on one campus address must work) |
+| `POST /api/csp-report` (middleware) | IP | 20 / min; over the limit middleware answers 204 itself (no 429: browsers do not retry reports), so a burst does not invoke the report function |
 | `GET /api/club-assets` | IP | 300 / min |
 | `GET /api/calendar-feed/[token]` | IP, then token | 300 / min per IP (before the lookup; calendar services poll many feeds from shared addresses), 30 / 10 min per token |
 | `POST /api/school-requests` | IP | 10 / h (plus the existing 100/h global and 3/day per email in Postgres) |

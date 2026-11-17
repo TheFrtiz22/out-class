@@ -1,0 +1,17 @@
+/* Join prompt (components/clubs/join-prompt-dialog.tsx). Tokens only; matches the share sheet. */
+.oc-join-prompt { max-width: 26rem; gap: 1.25rem; }
+.oc-join-prompt-head { display: grid; gap: .375rem; padding-right: 2.5rem; }
+.oc-join-prompt-title { font-family: var(--oc-font-display); font-size: var(--oc-text-modal); line-height: 1.2; overflow-wrap: anywhere; }
+.oc-join-prompt-description { color: var(--muted-foreground); font-size: var(--oc-text-body); }
+.oc-join-prompt-actions { display: grid; gap: .625rem; }
+.oc-join-prompt-note { margin: -.25rem 0 0; color: var(--muted-foreground); font-size: var(--oc-text-small); text-align: center; }
+
+/* Phones: a bottom sheet within thumb reach, like the share sheet. */
+@media (max-width: 640px) {
+  [data-slot="dialog-content"].oc-join-prompt {
+    top: auto; bottom: 0; left: 0; right: 0; translate: none; transform: none;
+    width: 100%; max-width: none;
+    border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+}

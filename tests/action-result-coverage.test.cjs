@@ -10,7 +10,7 @@ const root = path.join(__dirname, '..');
 // Shared guards used by nearly every action. Their refusals are safe, but an
 // unwrapped action that hits one shows the screen's fallback, which is the
 // accepted behaviour until that action is converted.
-const sharedGuards = new Set(['requireAuth', 'requireClubPermission', 'assertClubOperational', 'lockOperationalClub', 'authorizeClubTransaction', 'assertGraduateMayJudge']);
+const sharedGuards = new Set(['requireAuth', 'requireClubPermission', 'assertClubOperational', 'lockOperationalClub', 'authorizeClubTransaction', 'graduateMemberFor', 'assertGraduateMayUse', 'assertGraduateMayOperate']);
 
 // Reviewed exclusions: exported actions that can throw ActionError but are
 // intentionally not wrapped. Reads surface failures as the screen's load
@@ -32,12 +32,15 @@ const exclusions = new Map([
   ['actions/scheduling.ts#bookInterviewSlot', 'legacy endpoint with no screen caller; throws plain errors for old clients, and its alumni refusal is a refusal either way'],
   ['actions/organization-members.ts#getOrganizationMemberManagement', 'read through /api/workspace'],
   ['actions/profile.ts#updateStudentProfileSection', 'already returns { error }; the graduation-year support refusal is returned as that message'],
+  ['actions/resume-import.ts#prepareResumeImport', 'already returns { ok, code, message }; file-check and upload refusals are caught and returned as INVALID_PDF or IMPORT_REJECTED'],
   ['actions/resume-import.ts#confirmResumeImport', 'already returns { ok, code, message }; the graduation-year support refusal is returned as FORBIDDEN'],
   ['actions/campus-events.ts#setCampusEventRsvp', 'already returns { ok, error } through RsvpResult'],
   ['actions/campus-events.ts#getCampusEventAttendees', 'read; failures show the load fallback'],
+  ['actions/recruiting-rules.ts#getRecruitingRuleFlags', 'read; failures show the screen\'s load message'],
   ['actions/club-overview.ts#getClubWorkspaceOverview', 'read; failures show the load fallback'],
   ['actions/club-overview.ts#getDashboardReviewQueue', 'read; failures show the load fallback'],
   ['actions/tasks.ts#getTaskWorkspace', 'read; failures show the load fallback'],
+  ['actions/account-deletion.ts#getAccountDeletionRequest', 'read by the Settings page on the server, which skips it for support sessions; its only refusals are those guards'],
   ['actions/admin-workspace.ts#changeAdminDesignatedLeader', 'platform admin tool, not yet converted; shows its fallback'],
   ['actions/voting-room-finalization.ts#finalizeLiveVotingRoom', 'live voting is out of scope for this change'],
   ['actions/voting-room-finalization.ts#previewLiveVotingFinalization', 'live voting is out of scope for this change'],

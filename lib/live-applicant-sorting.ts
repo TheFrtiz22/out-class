@@ -1,7 +1,8 @@
 import { compareAcademicYears } from "@/lib/recruitment-profile"
+import { scholarRank } from "@/lib/scholar-status"
 
-export type ApplicantSort = "name" | "round" | "year" | "gpa" | "sat" | "act" | "status" | "score"
-type SortableApplicant = { id: string; roundId: string; status: string; student: { email: string; studentProfile: { firstName: string; lastName: string; academicYear?: string; gpa?: number | null; satScore?: number | null; actScore?: number | null } | null }; roundScore?: { average: number | null } | null }
+export type ApplicantSort = "name" | "round" | "year" | "gpa" | "sat" | "act" | "status" | "score" | "scholar"
+type SortableApplicant = { id: string; roundId: string; status: string; studentId?: string; student: { email: string; studentProfile: { firstName: string; lastName: string; academicYear?: string; gpa?: number | null; satScore?: number | null; actScore?: number | null; scholarStatus?: unknown } | null }; roundScore?: { average: number | null } | null }
 export function compareApplicants(a: SortableApplicant, b: SortableApplicant, key: ApplicantSort, descending: boolean, rounds: { id: string; order: number }[] = []) {
   const name = (app: SortableApplicant) => app.student.studentProfile ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}` : app.student.email
   let left: number | string | null | undefined, right: typeof left
@@ -11,6 +12,11 @@ export function compareApplicants(a: SortableApplicant, b: SortableApplicant, ke
   } else if (key === "year") { left = a.student.studentProfile?.academicYear; right = b.student.studentProfile?.academicYear }
   else if (key === "round") { left = rounds.find(round => round.id === a.roundId)?.order; right = rounds.find(round => round.id === b.roundId)?.order }
   else if (key === "status") { left = a.status; right = b.status }
+  // Scholars first, then "Not a scholar", then "Not provided"; anonymous applicants sort last.
+  else if (key === "scholar") {
+    const rank = (app: SortableApplicant) => !app.student.studentProfile || app.studentId?.startsWith("anonymous-") ? null : scholarRank(app.student.studentProfile.scholarStatus)
+    left = rank(a); right = rank(b)
+  }
   else { left = name(a); right = name(b) }
   // Missing values remain at the bottom in both directions; hidden scores stay hidden.
   if (left == null || left === "" || right == null || right === "") return left == null || left === "" ? right == null || right === "" ? name(a).localeCompare(name(b)) || a.id.localeCompare(b.id) : 1 : -1

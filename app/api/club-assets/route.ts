@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
 import { clubAssetReference, clubProfileImages } from "@/lib/club-assets";
 import { privateClubAssetStorage } from "@/utils/club-asset-storage";
+import { SANDBOXED_FILE_POLICY } from "@/lib/csp";
 import { requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
@@ -32,6 +33,6 @@ export async function GET(request: NextRequest) {
     const { data, error } = await storage.download(reference.slice('club-assets/'.length));
     if (error || !data || !await allowed()) return missing();
     const mime = reference.endsWith('.jpg') ? 'image/jpeg' : reference.endsWith('.png') ? 'image/png' : 'image/webp';
-    return new NextResponse(await data.arrayBuffer(), { headers: { 'Content-Type': mime, 'Cache-Control': preview ? 'private, no-store' : publicImageCache, 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" } });
+    return new NextResponse(await data.arrayBuffer(), { headers: { 'Content-Type': mime, 'Cache-Control': preview ? 'private, no-store' : publicImageCache, 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': SANDBOXED_FILE_POLICY } });
   } catch { return missing(); }
 }

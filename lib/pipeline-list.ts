@@ -1,4 +1,5 @@
 import type { getClubPipeline } from "@/actions/crm"
+import { scholarStatusValue } from "@/lib/scholar-status"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 
@@ -26,6 +27,9 @@ export function pipelineListProjection(data: Pipeline) {
             firstName: profile.firstName, lastName: profile.lastName, major: profile.major,
             academicYear: profile.academicYear, gpa: profile.gpa,
             satScore: profile.satScore, actScore: profile.actScore,
+            // Same validated value as the database summary; anonymous projections carry null.
+            // Typed as unknown so detail rows (stored JSON) and summary rows share one paging contract.
+            scholarStatus: scholarStatusValue(profile.scholarStatus) as unknown,
           } : null,
         },
         evaluations: pipelineReviewerReferences(app.evaluations),

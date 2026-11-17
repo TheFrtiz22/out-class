@@ -35,6 +35,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [resumeError, setResumeError] = useState("");
+  const [noResume, setNoResume] = useState(false);
   const [open, setOpen] = useState(false);
   const [warm, setWarm] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -51,10 +52,12 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
     let current = true;
     // True when the room took over: no inline "unavailable" message or Retry for a refusal.
     const reportRevoked = (error: unknown) => { if (!isAccessRevoked(error) || !accessRevoked.current) return false; accessRevoked.current(); return true; };
-    setLoading(!initialPanel || retry > 0); setError(""); setResumeError(""); if (!initialPanel || retry) setPanel(null); setDocumentId(""); setImageFailed(false);
+    setLoading(!initialPanel || retry > 0); setError(""); setResumeError(""); setNoResume(false); if (!initialPanel || retry) setPanel(null); setDocumentId(""); setImageFailed(false);
     (initialPanel && !retry ? Promise.resolve(initialPanel) : getInterviewApplicantPanel(scope)).then(async value => {
       if (!current) return;
       setPanel(value);
+      // Nothing to pin: say so plainly instead of showing an error and Retry.
+      if (!value.document && value.resumeOnFile === false) { setNoResume(true); return; }
       try {
         const document = value.document || await pinInterviewResume(scope);
         if (current) { setDocumentId(document.id); if ("source" in document) setDemoSource(document.source === "/demo/sample-scanned-resume.pdf" ? "/demo/sample-scanned-resume.pdf" : "/demo/sample-resume.pdf"); }
@@ -85,7 +88,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
     <div className="oc-candidate-content">
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
       {identitySlot === undefined ? identity : identitySlot ? createPortal(identity, identitySlot) : null}
-      <div className="oc-resume-document">
+      {noResume ? <div className="rounded-xl border border-dashed p-4 text-sm"><FileText className="mb-2 size-5 text-muted-foreground" aria-hidden="true" /><p className="font-medium">No résumé on file</p><p className="mt-1 text-muted-foreground">{panel.profile ? panel.profile.firstName : "This applicant"} didn’t add a PDF résumé to their profile.</p></div> : <div className="oc-resume-document">
       {warm && resource && <div hidden aria-hidden="true"><InterviewResumeViewer preloadOnly scope={scope} documentId={documentId} isDemo={isDemoEnabled} resource={resource} onAccessLost={() => {}} /></div>}
       {documentId ? <ResumeSummaryPanel name={name} request={summaryRequest} document={<>
         <div className="oc-resume-summary-document-actions">
@@ -102,7 +105,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
           {open && resource && <InterviewResumeViewer resource={resource} initialPage={initialPage} fallback={fallback} scope={scope} documentId={documentId} isDemo={isDemoEnabled} onAccessLost={() => { resource.invalidate(); setUrl(""); setResumeError("Document access could not be verified. Retry to check access."); }} onAccessRevoked={onAccessRevoked} onDraftComment={onDraftComment} />}
         </DialogContent>
       </Dialog>
-      </div>
+      </div>}
       {resumeError && <p role="status" className="text-xs text-muted-foreground">{resumeError}</p>}
     </>}
     {(error || resumeError) && <Button type="button" variant="outline" size="sm" onClick={() => setRetry(v => v + 1)}>Retry applicant panel</Button>}

@@ -5,6 +5,7 @@ import { validateProfileFile } from "@/lib/student-profile"
 import { extractPdfText } from "@/lib/resume-pdf"
 import { extractResumeProposal, confirmImportSchema, importBaseline } from "@/lib/resume-import"
 import { uploadProfileFile } from "@/actions/storage"
+import { UserFacingError, unwrapAction } from "@/lib/action-result"
 import { revalidatePath } from "next/cache"
 import { applyGraduationYearChange, SUPPORT_YEAR_CHANGE_MESSAGE } from "@/utils/graduation"
 import { boundedSafeParse } from "@/lib/bounded-input"
@@ -26,11 +27,12 @@ export async function prepareResumeImport(input: FormData) {
     const proposal = extractResumeProposal(await extractPdfText(bytes))
     // Storage remains independent of confirmation, exactly as in the attachment editor.
     const upload = new FormData(); upload.set("kind", "resume"); upload.set("file", file)
-    const { reference } = await uploadProfileFile(upload)
+    const { reference } = unwrapAction(await uploadProfileFile(upload))
     return { ok: true as const, proposal, baseline: importBaseline(profile), reference }
   } catch (error) {
     const message = error instanceof Error ? error.message : ""
-    if (/^(Choose |Provide |Complete your |No meaningful text|The PDF contains|PDF processing|PDF extraction|This PDF is|Password-protected|Private document storage|Support uploads|Upload failed|Could not prepare upload)/.test(message)) return failure("IMPORT_REJECTED", message)
+    // A refusal from the upload (file checks, the hourly upload limit) is already written for the person.
+    if (error instanceof UserFacingError || /^(Choose |Provide |Complete your |No meaningful text|The PDF contains|PDF processing|PDF extraction|This PDF is|Password-protected|Private document storage|Support uploads|Upload failed|Could not prepare upload)/.test(message)) return failure("IMPORT_REJECTED", message)
     return failure("EXTRACTION_FAILED", "Could not read this PDF. Export a new text-based résumé PDF and try again.")
   }
 }

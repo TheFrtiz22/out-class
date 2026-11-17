@@ -18,7 +18,7 @@ import { canLeaveWorkspace, managerNavigation, mobileDestinations } from "@/lib/
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" rows={3} /> });
 import { HomeAnnouncements } from "@/components/club-home/home-announcements";
 import type { ViewId } from "@/lib/views";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
@@ -108,9 +108,13 @@ export function ClubWorkspace({
   }, [settingsSection]);
   const { user, loading, activeClubId, selectClub } = useAuth(),
     demo = useDemoMode();
-  const membership = user?.memberships.find((m) => m.clubId === clubId);
+  const storedMembership = user?.memberships.find((m) => m.clubId === clubId);
+  // A graduate whose membership is still current (an owner kept so the club has one) sees the club
+  // read-only, with only the hand-over controls (lib/graduation.ts); the server enforces the same.
+  const graduatedMember = !demo.isDemoEnabled && !!storedMembership && !storedMembership.alumniSince && isAlumniProfile(user?.profile);
+  const membership = useMemo(() => storedMembership && graduatedMember ? { ...storedMembership, handOverOnly: true } : storedMembership, [storedMembership, graduatedMember]);
   const manager = !!membership && hasWorkspace(membership);
-  const graduatedOwner = !demo.isDemoEnabled && !!membership?.isOwner && !membership.alumniSince && isAlumniProfile(user?.profile);
+  const graduatedOwner = graduatedMember && !!membership?.isOwner;
   const preferenceKey = user ? clubWorkspacePreferenceKey(user.id, clubId, demo.isDemoEnabled ? "demo" : user.impersonating ? "preview" : "live") : "";
   const suspended = !demo.isDemoEnabled && !!membership?.club.suspendedAt;
   // Resolve only general entries. Explicit page URLs always retain their destination.
@@ -231,7 +235,7 @@ export function ClubWorkspace({
             ? <RecruitingHero clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} data={error ? null : current} />
             : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" || section === "members" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
           {/* A graduate the graduation job kept as owner can hand over the club, not review or decide (lib/graduation.ts). */}
-          {graduatedOwner && <p role="status" className="mb-4 rounded-md border border-border bg-info-subtle px-3 py-2 text-sm">You’ve graduated. Hand ownership to a current member. <Link href={clubWorkspaceHref(clubId, "members")} className="font-medium underline">Manage members</Link></p>}
+          {graduatedOwner && <p role="status" className="mb-4 rounded-md border border-border bg-info-subtle px-3 py-2 text-sm">You’ve graduated. Hand this club to a current member to keep it running. <Link href={clubWorkspaceHref(clubId, "members")} className="font-medium underline">Transfer ownership</Link></p>}
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
           {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}
@@ -362,7 +366,7 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
       {!rounds.length && (
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>Recruiting has no rounds yet, so there is nothing to review or schedule.</p>
-          <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=cycles`}>Set up recruitment rounds</Link>
+          <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=pipeline`}>Set up recruitment rounds</Link>
         </div>
       )}
       <RecruitmentReviewSettings

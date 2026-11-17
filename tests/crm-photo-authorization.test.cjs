@@ -161,7 +161,7 @@ test('summary database allowlist excludes detail/offer/member content and reads 
  assert.deepEqual(Object.keys(selected).sort(),['evaluations','id','interviewAssignments','round','roundId','status','student','studentId']);
  assert.deepEqual(selected.evaluations,{where:{submittedAt:{not:null}},select:{interviewerId:true,roundId:true,submittedAt:true,score:true}});
  assert.deepEqual(selected.interviewAssignments,{where:{revokedAt:null},select:{memberId:true,roundId:true,member:{select:{status:true,alumniSince:true,isOwner:true,permissions:true}}}});
- assert.deepEqual(selected.student.select.studentProfile.select,{firstName:true,lastName:true,major:true,gradYear:true,transferStudent:true,gpa:true,satScore:true,actScore:true});
+ assert.deepEqual(selected.student.select.studentProfile.select,{firstName:true,lastName:true,major:true,gradYear:true,transferStudent:true,gpa:true,satScore:true,actScore:true,scholarStatus:true});
  assert.deepEqual(selected.round,{select:{anonymousReview:true}});
  await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
 });
@@ -179,7 +179,7 @@ test('narrow database summaries match canonical full privacy across viewer, prof
  const member={status:'ACTIVE',isOwner:false,permissions:['applications.review','applicants.identify']};
  const originalProfile=structuredClone(f.app.student.studentProfile);
  let comparisons=0;
- for(const anonymous of [false,true])for(const profile of [originalProfile,null,{...originalProfile,gpa:5,transferStudent:true}])for(const self of [false,true])for(const role of ['identified','reviewer','participant','president'])for(const submitted of [false,true]){
+ for(const anonymous of [false,true])for(const profile of [originalProfile,null,{...originalProfile,gpa:5,transferStudent:true},{...originalProfile,scholarStatus:{selections:['ECHOLS'],other:''}}])for(const self of [false,true])for(const role of ['identified','reviewer','participant','president'])for(const submitted of [false,true]){
   f.state.actor=self?owner:reader;f.state.permissions=role==='identified'?['applicants.identify']:role==='reviewer'?['applications.review']:['applications.review','applicants.identify'];f.state.offices=role==='president'?['PRESIDENT']:[];
   f.app.round.anonymousReview=anonymous;f.app.student.studentProfile=profile;
   f.app.interviewAssignments=[{roundId,memberId:id(7),member},{roundId,memberId:id(9),member:{...member,status:'SUSPENDED'}},{roundId:id(99),memberId:id(7),member}];
@@ -187,7 +187,7 @@ test('narrow database summaries match canonical full privacy across viewer, prof
   const canonical=project(await f.crm.getClubPipeline(clubId));assert.deepEqual(await f.crm.getClubPipelineList(clubId),canonical);
   assert.deepEqual((await f.crm.getClubPipelinePage(clubId)).applications,(await f.crm.getClubPipeline(clubId)).applications);comparisons++;
  }
- assert.equal(comparisons,96);
+ assert.equal(comparisons,128);
 });
 
 test('summary scores preserve submission barrier, self exclusion, inactive assignments and historical review visibility',async()=>{

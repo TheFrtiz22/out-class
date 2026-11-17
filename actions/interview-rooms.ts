@@ -56,15 +56,27 @@ async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshRead
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   uuid.parse(clubId)
   const { membership } = await requireClubPermission(clubId, ["interviews.manage"])
-  const [club, rounds, members, rooms, bookings, cycles] = await Promise.all([
+  const [club, rounds, members, rooms, bookings, cycles, finalists] = await Promise.all([
     prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true } }),
-    prisma.pipelineRound.findMany({ where: { clubId, archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true, configuration: true, type: true, bookingPublishedAt: true, bookingPaused: true, bookingRevision: true, bookingCycleId: true, bookingAllowCancellation: true, bookingAllowRescheduling: true } }),
+    prisma.pipelineRound.findMany({ where: { clubId, archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true, configuration: true, type: true, bookingPublishedAt: true, bookingPaused: true, bookingRevision: true, bookingCycleId: true, bookingAllowCancellation: true, bookingAllowRescheduling: true, bookingSlots: true } }),
     prisma.clubMember.findMany({ where: { clubId, ...activeMemberWhere, user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
     prisma.interviewRoom.findMany({ where: { clubId }, include: roomInclude, orderBy: { createdAt: "desc" } }),
     prisma.interviewBooking.findMany({ where: { slot: { clubId, roomId: { not: null } } }, include: { slot: true, round: { select: { anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } }),
     prisma.recruitmentCycle.findMany({ where: { clubId, archivedAt: null }, select: { id: true, name: true }, orderBy: { createdAt: "desc" } }),
+    prisma.application.findMany({ where: { clubId, status: "INTERVIEWING", student: { disabledAt: null } }, select: { id: true, roundId: true, recruitmentCycleId: true } }),
   ])
-  return { clubName: club.name, cycles, rounds: rounds.map(r=>({id:r.id,name:r.name,type:r.type,configuration:r.configuration,booking:{...r,bookingPublishedAt:r.bookingPublishedAt?.toISOString()??null}})), members: members.map(m => ({ id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email })), rooms: rooms.map(r => presentRoom(r)), bookings: bookings.map(b => ({ id: b.id, slotId: b.slotId, roomId: b.slot.roomId!, roundId: b.roundId!, applicationId: b.applicationId, candidate: hasPermission(membership, "applicants.identify") && b.round?.anonymousReview === false && b.application.round.anonymousReview === false && b.application.student.studentProfile ? `${b.application.student.studentProfile.firstName} ${b.application.student.studentProfile.lastName}` : `Applicant ${b.applicationId.slice(-6)}`, startTime: b.slot.startTime.toISOString(), endTime: b.slot.endTime.toISOString(), location: b.slot.location })) }
+  // Booking progress counts one cohort: finalists invited to the round in the cycle its booking is published for,
+  // and how many of them hold a booking. Open seats are only the times applicants can actually pick: published,
+  // staffed, still ahead, in open rooms.
+  const progress = (r: (typeof rounds)[number]) => {
+    if (!r.bookingPublishedAt) return undefined
+    const cohort = new Set(finalists.filter(a => a.roundId === r.id && a.recruitmentCycleId === r.bookingCycleId).map(a => a.id))
+    const booked = new Set(bookings.filter(b => b.roundId === r.id && cohort.has(b.applicationId)).map(b => b.applicationId)).size
+    const now = Date.now()
+    const open = rooms.filter(room => room.roundId === r.id && room.isOpen).flatMap(room => room.slots.filter(s => +s.startTime > now && (!s.panelScheduleVersionId || s.publishedPanelMemberIds.length > 0) && isPublishedBookingSlot(r.bookingSlots, s, room)).map(s => Math.max(0, s.capacity - s._count.bookings))).reduce((n, v) => n + v, 0)
+    return { invited: cohort.size, booked, open }
+  }
+  return { clubName: club.name, cycles, rounds: rounds.map(({ bookingSlots: _published, ...r })=>({id:r.id,name:r.name,type:r.type,configuration:r.configuration,booking:{...r,bookingPublishedAt:r.bookingPublishedAt?.toISOString()??null},progress:progress({ ...r, bookingSlots: _published })})), members: members.map(m => ({ id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email })), rooms: rooms.map(r => presentRoom(r)), bookings: bookings.map(b => ({ id: b.id, slotId: b.slotId, roomId: b.slot.roomId!, roundId: b.roundId!, applicationId: b.applicationId, candidate: hasPermission(membership, "applicants.identify") && b.round?.anonymousReview === false && b.application.round.anonymousReview === false && b.application.student.studentProfile ? `${b.application.student.studentProfile.firstName} ${b.application.student.studentProfile.lastName}` : `Applicant ${b.applicationId.slice(-6)}`, startTime: b.slot.startTime.toISOString(), endTime: b.slot.endTime.toISOString(), location: b.slot.location })) }
 }
 async function createInterviewRoomCommand(raw: RoomInput) {
   const input = boundedParse(roomInputSchema, raw)
@@ -248,9 +260,25 @@ async function setInterviewRoomExternallyBookedCommand(raw: unknown) {
   revalidatePath(`/club/${input.clubId}/workspace`)
   return result
 }
-export async function getApplicantSchedule(applicationId: string): Promise<ApplicantSchedule> {
+export async function getApplicantSchedule(applicationId: string) {
+  // Returned, not thrown, so the "many people are booking" message survives the server action boundary.
+  return actionResult(() => getApplicantScheduleCommand(applicationId), "getApplicantSchedule")
+}
+async function getApplicantScheduleCommand(applicationId: string): Promise<ApplicantSchedule> {
   uuid.parse(applicationId)
   const { user } = await requireAuth()
+  try { return await applicantScheduleRead(applicationId, user.id) }
+  catch (error) {
+    // When booking opens, many finalists load their times at once. Waiting for a pooled
+    // connection is allowed longer than Prisma's two-second default; if it still runs out,
+    // the applicant gets a calm retry message instead of a server error.
+    if (!isWriteContention(error)) throw error
+    logContentionExhausted("interview.applicant-schedule", error, "timeout")
+    throw new ActionError("Many people are booking right now. Please try again in a moment.")
+  }
+}
+async function applicantScheduleRead(applicationId: string, userId: string): Promise<ApplicantSchedule> {
+  const user = { id: userId }
   return prisma.$transaction(async tx => {
     const application = await tx.application.findFirst({ where: { id: applicationId, studentId: user.id }, include: { club: { select: { name: true, suspendedAt: true } }, round: { include: { bookingCycle: true } } } })
     if (!application || application.status !== "INTERVIEWING" || application.club.suspendedAt) throw new ActionError("An interview invitation is required to book a time.")
@@ -271,7 +299,7 @@ export async function getApplicantSchedule(applicationId: string): Promise<Appli
       return true
     }) })).filter(r => r.slots.length)
     return { applicationId, clubName: application.club.name, roundName: round.name, publicationState, allowCancellation: round.bookingAllowCancellation, allowRescheduling: round.bookingAllowRescheduling, conflictingTimes, rooms: bookable, booking: booking ? { id: booking.id, applicationId, slotId: booking.slotId, roomId: booking.slot.roomId!, roundId: booking.roundId!, candidate: "You", startTime: booking.slot.startTime.toISOString(), endTime: booking.slot.endTime.toISOString(), location: booking.slot.location } : null }
-  }, { timeout: 60000 })
+  }, { timeout: 60000, maxWait: 10000 })
 }
 async function reserveInterviewCommand(raw: { applicationId: string; slotId: string }) {
   const input = z.object({ applicationId: uuid, slotId: uuid }).parse(raw)
@@ -333,6 +361,8 @@ async function cancelRoomBookingCommand(bookingId: string) {
   await atomic(async tx => {
     const initial = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } });
     if (!initial) throw new ActionError("We couldn’t find that interview.");
+    // Alumni accounts are read-only (lib/graduation.ts): a booked interview stays as it is.
+    await assertNotAlumni(tx, user.id, "book")
     await lockOperationalClub(tx, initial.slot.clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${initial.applicationId} FOR UPDATE`;

@@ -81,7 +81,7 @@ test("application code links to student paths, not the old homepage workspace UR
   const offenders = files.filter(file => !allowed.has(file) && /workspace=student|[?&]view=(student-|explore|tracker|status|inbox|calendar|my-clubs|corkboard|categories)/.test(fs.readFileSync(file, "utf8")))
   assert.deepEqual(offenders, [])
   const shell = fs.readFileSync("components/app-shell.tsx", "utf8")
-  assert.match(shell, /const href = embedded \? `\/preview\?\$\{params\}` : studentPath\(next, nextSection\)/)
+  assert.match(shell, /const href = embedded \? `\/preview\?\$\{params\}` : studentPath\(next, nextSection, carry\)/)
 })
 
 // Authorization: every student path gates exactly as the homepage did for each actor.

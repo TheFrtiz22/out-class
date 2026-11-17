@@ -16,11 +16,35 @@ const SEND_BUDGET_MS = 35000;
 // Push enqueueing runs after every email send and stops starting work at this point, so it can
 // neither delay an email nor push the cron past the push worker's own budget (40 s of 60 s).
 const PUSH_ENQUEUE_BUDGET_MS = 38000;
-export async function processNotificationEmails(limit = 10) {
+// A drained run repeats group-then-send passes until the send budget is used or a pass makes no progress.
+const MAX_DRAIN_PASSES = 200;
+// A new pass starts only before this point, so its grouping, sends and push enqueueing finish inside the budgets below.
+const DRAIN_PASS_START_MS = 28000;
+// Resend's API limit is 10 requests per second per team (all accounts start there; OutClass's team reported
+// 10/s on 2026-11-17). Sends default to 8/s so a large decision batch drains quickly while Auth email sharing
+// the same team keeps headroom. RESEND_MAX_REQUESTS_PER_SECOND overrides it (1 to 50).
+const DEFAULT_SENDS_PER_SECOND = 8;
+function sendIntervalMs() {
+  const rate = Number(process.env.RESEND_MAX_REQUESTS_PER_SECOND);
+  // At least 1/s, so one wait is never longer than a second and can't outlast a delivery's lease.
+  return 1000 / (Number.isFinite(rate) && rate > 0 ? Math.min(Math.max(rate, 1), 50) : DEFAULT_SENDS_PER_SECOND);
+}
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Groups pending notifications into deliveries and sends them. `limit` bounds each pass (max 25 recipients and 25 sends).
+ * One pass by default; `drain` keeps passing (new passes start before DRAIN_PASS_START_MS) so a 1,000-recipient decision send finishes in a few
+ * cron runs instead of one run per 10 recipients.
+ */
+export async function processNotificationEmails(limit = 10, options: { drain?: boolean } = {}) {
   const config = communicationEmailConfig();
   if (!config) return { enabled: false, sent: 0, failed: 0, suppressed: 0, invalid: 0 };
   const batchSize = Math.max(1, Math.min(limit, 25)), started = Date.now();
-  let sent = 0, failed = 0, suppressed = 0, invalid = 0;
+  let sent = 0, failed = 0, suppressed = 0, invalid = 0, assigned = 0, lastSendAt = 0, pushDeferred = 0, quotaReached = false;
+  const interval = sendIntervalMs();
+  for (let pass = 0; pass < (options.drain ? MAX_DRAIN_PASSES : 1); pass++) {
+  if (pass > 0 && Date.now() - started > DRAIN_PASS_START_MS) break;
+  const progressBefore = sent + suppressed + invalid + assigned;
   // Capture recipients with pending intent, even if instant email is disabled now.
   // Preferences are evaluated before grouping and again on every send/retry.
   const pending = await prisma.$queryRaw<{ userId: string }[]>`
@@ -94,6 +118,7 @@ export async function processNotificationEmails(limit = 10) {
         const payload = built.data;
         const delivery = await tx.notificationEmailDelivery.create({ data: { userId, payload } });
         await tx.notificationEmailOutbox.updateMany({ where: { notificationId: { in: group.map(row => row.notificationId) }, status: "PENDING" }, data: { status: "ASSIGNED", deliveryId: delivery.id } });
+        assigned++;
         if (!digest) instant.push(...group.map(row => ({ id: row.notification.id, createdAt: row.notification.createdAt })));
       }
     }, { timeout: 15000 }); } catch (error) {
@@ -106,7 +131,13 @@ export async function processNotificationEmails(limit = 10) {
   const now = new Date();
   const candidates = await prisma.notificationEmailDelivery.findMany({ where: { OR: [{ status: "QUEUED", nextAttemptAt: { lte: now } }, { status: "SENDING", leaseUntil: { lt: now } }] }, select: { id: true }, orderBy: { createdAt: "asc" }, take: batchSize });
   for (const candidate of candidates) {
-    if (Date.now() - started > SEND_BUDGET_MS) break;
+    if (quotaReached || Date.now() - started > SEND_BUDGET_MS) break;
+    // Pace before claiming, so a claimed delivery is sent straight away and never waits out its lease.
+    const wait = lastSendAt + interval - Date.now();
+    if (wait > 0) {
+      if (Date.now() + wait - started > SEND_BUDGET_MS) break;
+      await sleep(wait);
+    }
     let claim;
     try { claim = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "NotificationEmailDelivery" WHERE id=${candidate.id} FOR UPDATE`;
@@ -142,11 +173,20 @@ export async function processNotificationEmails(limit = 10) {
       continue;
     }
     if (!claim) continue;
+    lastSendAt = Date.now();
     try {
       const receipt = await sendNotificationEmail(claim.payload, claim.id, config.key);
       await prisma.notificationEmailDelivery.updateMany({ where: { id: claim.id, status: "SENDING", leaseToken: claim.token }, data: { status: "SENT", sentAt: new Date(), providerMessageId: receipt.id, failureCode: null, leaseToken: null, leaseUntil: null } });
       sent++;
     } catch (error) {
+      if (error instanceof NotificationDeliveryError && error.notAccepted) {
+        // Nothing was sent: put the delivery back as it was before this claim (same attempt count and
+        // first-attempt time) and hold it until the quota resets. Every later send would be refused too.
+        await prisma.notificationEmailDelivery.updateMany({ where: { id: claim.id, status: "SENDING", leaseToken: claim.token }, data: { status: "QUEUED", nextAttemptAt: new Date(Date.now() + error.retryAfterMs), attemptCount: claim.attemptCount, firstAttemptAt: claim.firstAttemptAt, failureCode: error.code, leaseToken: null, leaseUntil: null } });
+        console.error("notification-email quota reached; sends paused until reset", { code: error.code });
+        quotaReached = true; failed++;
+        break;
+      }
       const retryable = !(error instanceof NotificationDeliveryError) || error.retryable;
       const exhausted = claim.attemptCount + 1 >= 8;
       const delay = Math.max(30000 * 2 ** claim.attemptCount + Math.floor(Math.random() * 5000), error instanceof NotificationDeliveryError ? error.retryAfterMs : 0);
@@ -154,12 +194,14 @@ export async function processNotificationEmails(limit = 10) {
       failed++;
     }
   }
-  // Web Push rides on the instant-delivery decision above (no-op unless VAPID is configured).
+  // Web Push rides on the instant-delivery decision above (no-op unless VAPID is configured), after this pass's sends.
   // enqueueNotificationPushes never throws; a run out of time leaves those pushes unsent (logged).
-  let pushDeferred = 0;
   for (const entry of pushQueue) {
     if (Date.now() - started > PUSH_ENQUEUE_BUDGET_MS) { pushDeferred += entry.notifications.length; continue; }
     await enqueueNotificationPushes(entry.userId, entry.notifications);
+  }
+  // Stop when a pass changed nothing (only failures or work that is not due), so a stuck row can't spin the run.
+  if (quotaReached || sent + suppressed + invalid + assigned === progressBefore) break;
   }
   if (pushDeferred) console.error("notification-push enqueue skipped at deadline", { count: pushDeferred });
   return { enabled: true, sent, failed, suppressed, invalid };

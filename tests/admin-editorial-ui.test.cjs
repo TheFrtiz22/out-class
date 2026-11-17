@@ -104,7 +104,7 @@ test('onboarding forms use searchable club and invitation pickers instead of raw
   globalThis.crypto ??= require('node:crypto').webcrypto
   const draw = () => nodes(h.render(h.exported.AdminOnboarding, {}))
   draw(); await h.flush()
-  draw().find(n => n.type === 'Button' && text(n) === 'Change designated leader').props.onClick()
+  draw().find(n => n.type === 'SegmentedControl' && n.props.label === 'Onboarding actions').props.onChange('leader')
   let tree = draw()
   const picker = tree.find(n => n.props?.label === 'Club')
   assert.ok(picker, 'leader form uses the club picker')

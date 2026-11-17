@@ -62,14 +62,14 @@ test('overview actually renders recovery instead of login when its loader throws
   const html = require('react-dom/server').renderToStaticMarkup(await Page());
   assert.match(html, /ADMIN_DATA_LOAD_FAILED:/);
   assert.ok(!html.includes('private database details'));
-  assert.ok(!html.includes('Needs Attention'));
+  assert.ok(!html.includes('Needs attention'));
   assert.ok(!html.includes('/platform/login'));
 });
 test('overview actually renders protected metrics on loader success', async () => {
   const metrics = { students: 2, clubs: 1, eventApprovals: 0, clubApprovals: 0, reports: 0, upcomingEvents: 0, supportItems: 0 };
   const h = harness({ '@/actions/admin-workspace': { getAdminOverview: async () => metrics }, '@/components/ui/page-header': { PageHeader: ({ title }) => require('react').createElement('h1', null, title) } });
   const html = require('react-dom/server').renderToStaticMarkup(await platformOverview(h.load('app/(workspace)/platform/page.tsx'))());
-  assert.match(html, /Needs Attention/);
+  assert.match(html, /Needs attention/);
   assert.ok(!html.includes('temporarily unavailable'));
 });
 
@@ -108,7 +108,7 @@ for (const faults of [{ logger: true }, { uuid: true }, { logger: true, uuid: tr
     const html = require('react-dom/server').renderToStaticMarkup(await Page());
     assert.match(html, /Admin temporarily unavailable/);
     assert.match(html, /ADMIN_DATA_LOAD_FAILED:/);
-    assert.ok(!/Needs Attention|private|platform\/login/.test(html));
+    assert.ok(!/Needs attention|private|platform\/login/.test(html));
     const first = await h.adminPageLoad('/platform', async () => { throw Error('private original'); }, 'ADMIN_DATA_LOAD_FAILED');
     const second = await h.adminPageLoad('/platform', async () => { throw Error('private original'); }, 'ADMIN_DATA_LOAD_FAILED');
     assert.equal(first.value, undefined);

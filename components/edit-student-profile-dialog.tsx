@@ -259,6 +259,7 @@ export function EditStudentProfileDialog({
                     <NativeSelect aria-label="Are you a scholar?"  value={scholarYes ? "yes" : draft.scholarStatus ? "no" : ""} onChange={e => { setScholarYes(e.target.value === "yes"); setDraft({ ...draft, scholarStatus: e.target.value === "no" ? { selections: ["NOT_APPLICABLE"], other: "" } : null }) }}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></NativeSelect>
                     {scholarYes && <div className="grid gap-3 sm:grid-cols-2">{([...scholarPrograms, "OTHER"] as const).map(selection => <label key={selection} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={!!(draft.scholarStatus as { selections?: string[] } | null)?.selections?.includes(selection)} onChange={e => setDraft({ ...draft, scholarStatus: toggleScholar(draft.scholarStatus, selection, e.target.checked) })} />{scholarLabels[selection]}</label>)}</div>}
                     {scholarYes && scholarship?.selections.includes("OTHER") && <label className="block space-y-2 text-sm">Scholarship name<Input aria-label="Other scholarship name" maxLength={200} value={scholarship.other || ""} onChange={e => setDraft({ ...draft, scholarStatus: { ...scholarship!, other: e.target.value } })} /></label>}
+                    <p className="text-xs text-muted-foreground">Clubs you apply to may see this.</p>
                   </fieldset>
                   <div className="grid grid-cols-2 gap-4">
                     {(
