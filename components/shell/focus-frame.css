@@ -9,6 +9,7 @@
 .oc-focus-accent { width: .5rem; height: .5rem; flex-shrink: 0; border-radius: 999px; background: var(--oc-club-accent, var(--brand-orange)); }
 .oc-focus-club + .oc-focus-task { padding-left: .75rem; border-left: 1px solid var(--border); }
 .oc-focus-task { min-width: 0; overflow: hidden; color: var(--foreground); font-weight: var(--oc-weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
+.oc-focus-status { min-width: 0; flex-shrink: 1; overflow: hidden; color: var(--muted-foreground); font-size: var(--oc-text-small); text-overflow: ellipsis; white-space: nowrap; }
 .oc-focus-exit { display: inline-flex; min-height: 2.75rem; flex-shrink: 0; align-items: center; gap: .375rem; padding: 0 .875rem; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); }
 .oc-focus-exit svg { width: 1rem; height: 1rem; }
 .oc-focus-exit:hover { background: var(--accent); }

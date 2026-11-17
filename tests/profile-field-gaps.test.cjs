@@ -122,7 +122,9 @@ test('the setup read offers only allowed fields and names the hidden ones; previ
 
 test('setup step 3 does not offer hidden fields, explains them and links leaders to the setting', () => {
   const src = fs.readFileSync('components/live-voting/room-setup.tsx', 'utf8')
-  assert.match(src, /\{data\.allowedFields\.map\(f=><label key=\{f\}><input type="checkbox"/)
+  // Only allowed fields become switches; every switch is one of them.
+  assert.match(src, /const offered=list\.filter\(f=>data\.allowedFields\.includes\(f\)\)/)
+  assert.match(src, /offered\.map\(f=><label key=\{f\} className="vr-setup-switch"><span>\{label\(f\)\}<\/span><Switch aria-label=\{label\(f\)\}/)
   assert.match(src, /: hidden by club profile settings\./)
   assert.match(src, /data\.canEditProfileFields&&<> <Link className="underline underline-offset-4" href=\{`\/club\/\$\{encodeURIComponent\(clubId\)\}\/workspace\?section=settings&setting=profiles`\}>/)
   assert.match(src, /setFields\(old=>old\.some\(f=>hidden\.includes\(f\)\)\?old\.filter\(f=>!hidden\.includes\(f\)\):old\)/)

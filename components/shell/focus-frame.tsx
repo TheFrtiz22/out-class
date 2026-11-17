@@ -9,7 +9,7 @@ import { X } from "@/components/icons"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { FOCUS_EXIT_FALLBACK, focusRouteFor, safeExitHref } from "@/lib/focus-routes"
 import { FocusFrameContext, productRouteAccount, storedProductRoute, type FocusDetails } from "@/components/shell/focus-frame-context"
-export { useFocusFrame, rememberProductRoute, productRouteAccount, type FocusDetails } from "@/components/shell/focus-frame-context"
+export { useFocusFrame, useInFocusFrame, rememberProductRoute, productRouteAccount, type FocusDetails } from "@/components/shell/focus-frame-context"
 
 /**
  * The calm full-screen frame for single-task screens: a slim bar with the
@@ -48,6 +48,7 @@ export function FocusFrame({ children, overlay = false, ...props }: FocusDetails
           {details.club?.name && <span className="oc-focus-club"><span className="oc-focus-accent" aria-hidden="true" />{details.club.name}</span>}
           {details.task && <span className="oc-focus-task">{details.task}</span>}
         </div>
+        {details.status && <span className="oc-focus-status" role="status" aria-live="polite">{details.status}</span>}
         {exit
           ? <button type="button" className="oc-focus-exit" onClick={exit}><X aria-hidden="true" />Exit</button>
           : <Link className="oc-focus-exit" href={exitHref}><X aria-hidden="true" />Exit</Link>}
