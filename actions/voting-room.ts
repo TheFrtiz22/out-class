@@ -60,6 +60,8 @@ async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typ
 }
 /** Reason stored on the electorate snapshot an open-electorate session takes as each ballot closes. */
 const CLOSING_SNAPSHOT_REASON="Members in the room when voting closed";
+/** A history entry without its ballot totals (kept typed, so other entries' totals stay typed for the client). */
+function withoutTotals<T extends object>(entry:T):Omit<T,"totals">&{totals?:undefined}{const copy={...entry} as T&{totals?:unknown};delete copy.totals;return copy as Omit<T,"totals">&{totals?:undefined};}
 function electorateChangedMessage(n:number){return `${n} voter${n===1?"":"s"} can no longer vote, so voting is paused. Recount without ${n===1?"this voter":"them"} and give a reason to close, or restore ${n===1?"their":"those voters'"} access to continue.`;}
 function accessFingerprint(m:{id:string;status:string;permissions:string[];accessRole:string;isOwner:boolean}) { return roomFingerprint({id:m.id,status:m.status,permissions:m.permissions,accessRole:m.accessRole,isOwner:m.isOwner}); }
 
@@ -130,7 +132,7 @@ export async function getLiveVotingRoom(input:unknown) {
     const snapshot=ownIds.size?{...projected,
       outcomes:projected.outcomes.map(o=>hideOutcome(o.applicationId)?{...o,outcome:"UNREVIEWED" as const}:o),
       queue:projected.queue.map(o=>hideOutcome(o.applicationId)?{...o,outcome:"UNREVIEWED" as const}:o),
-      history:projected.history.map(p=>({...p,candidates:p.candidates.map(c=>{if(!ownIds.has(c.applicationId))return c;const {totals:_hidden,...rest}=c as typeof c&{totals?:unknown};return hideOutcome(c.applicationId)?{...rest,outcome:"UNREVIEWED" as const,withoutVote:false}:rest;})}))}:projected;
+      history:projected.history.map(p=>({...p,candidates:p.candidates.map(c=>{if(!ownIds.has(c.applicationId))return c;const rest=withoutTotals(c);return hideOutcome(c.applicationId)?{...rest,outcome:"UNREVIEWED" as const,withoutVote:false}:rest;})}))}:projected;
     // Server-backed Undo: the command that produced this revision is the latest room activity. Leaders see its
     // decision only while UNDO_DECISION would accept it (same rule), after any refresh or on any device.
     // Other receipts in this table (slide preparation, setup) carry their own `revision` numbers, so check each match.
@@ -217,12 +219,12 @@ export async function castLiveVotingBallot(input:unknown) {
     // Ballots in one session still serialize on the session row (loadVotingRoom write
     // lock); the shared club lock lets voters' authorization run concurrently.
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"],{sharedClubLock:true});
-    // A support session acts as the member but never votes for them (checked against this transaction's live support authority).
-    if(await supportContext())throw new RoomConflict("SUPPORT_SESSION","Voting isn’t available in a support session. Your vote was not recorded.");
     // Alumni cannot vote (lib/graduation.ts), even a graduate whose ownership the graduation job retained.
     const alumni=await alumniRefusal(tx,user.id,"vote");
     if(alumni)throw new RoomConflict(ALUMNI_REFUSED,alumni);
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
+    // A support session acts as the member but never votes for them (checked against this transaction's live support authority).
+    if(await supportContext())throw new RoomConflict("SUPPORT_SESSION","Voting isn’t available in a support session. Your vote was not recorded.");
     if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Only voters in this session can do that.");
     const open=isOpenElectorate(s.presentationOptions);
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};

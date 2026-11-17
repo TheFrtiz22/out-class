@@ -203,6 +203,8 @@ test('server: alumni cannot apply (drafts too), RSVP (public events too), check 
     'actions/campus-events.ts': /if \(d\.going\) \{\n\s*const refusal = await alumniRefusal\(prisma, user\.id, "rsvp"\);\n\s*if \(refusal\) return \{ ok: false, error: refusal \};/,
     'actions/meetings.ts': /const \{ user \} = await requireAuth\(\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(prisma, user\.id, "checkIn"\);/,
     'actions/voting-room.ts': /\{sharedClubLock:true\}\);\n\s*\/\/[^\n]*\n\s*const alumni=await alumniRefusal\(tx,user\.id,"vote"\);\n\s*if\(alumni\)throw new RoomConflict\(ALUMNI_REFUSED,alumni\);\n\s*const \{s,round\}=await loadVotingRoom/,
+    // Joining a live voting session (open electorate) is refused too, inside the join transaction.
+    'actions/voting-room-setup.ts': /if\(await alumniRefusal\(tx,user\.id,"vote"\)\)throw Error\("Session ended or joining is unavailable\."\);\n\s*const \{s,round\}=await loadVotingRoom\(tx,d\.clubId,d\.sessionId,true\);/,
     'utils/recruitment-offers.ts': /\/\/ Alumni cannot join[^\n]*\n\s*await assertNotAlumni\(tx, userId, "join"\);\n\s*if \(!existing\) await tx\.clubMember\.create/,
     'utils/club-onboarding.ts': /await assertNotAlumni\(tx, account\.user\.id, "join"\);\n\s*const where = \{ userId_clubId/,
   }
