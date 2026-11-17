@@ -14,6 +14,7 @@ import { ClubTasks } from "@/components/club-tasks"
 import { ClubLogo } from "@/components/club-logo"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
+import { EmptyState } from "@/components/ui/empty-state"
 import { memberDate, type MemberOverviewData } from "@/components/member-overview"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { membershipRoleLabel } from "@/lib/copy/terms"
@@ -25,7 +26,7 @@ export function PersonalClubs({ section }: { section: PersonalSection }) {
   const memberships = user?.memberships || []
   const member = memberships.find(m => m.clubId === selected) || memberships[0]
   if (loading) return <LoadingState label="Loading your clubs…" layout="cards" rows={3} />
-  if (!member) return <div className="max-w-xl space-y-3 border-t py-8"><h2 className="oc-section-heading ">You haven’t joined any clubs yet.</h2><p className="text-sm leading-7 text-muted-foreground">Your clubs will appear once you have a membership. An application decision does not automatically create one.</p><Link href="/explore" className="inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4">Explore clubs <ArrowRight size={16} /></Link>{/* Invitations can create a first membership, so they show without one (Settings → Organizations redirects here). */}{section === "clubs" && <OrganizationOwnershipRequests enabled includeDismissed />}</div>
+  if (!member) return <div className="oc-workspace-stack">{/* Invitations can create a first membership, so they show without one (Settings → Organizations redirects here). */}{section === "clubs" && <OrganizationOwnershipRequests enabled includeDismissed />}<EmptyState align="start" tone="outlined" title="You haven’t joined any clubs yet" description="Clubs appear here once you’re a member. An acceptance doesn’t make you a member on its own." action={<Button asChild variant="outline"><Link href="/explore">Explore clubs <ArrowRight size={16} aria-hidden="true" /></Link></Button>} /></div>
   if (section !== "meetings" && section !== "tasks") return <div className="oc-personal-clubs space-y-7"><div className="flex flex-wrap gap-4 text-sm"><Link href="/clubs/tasks" className="inline-flex min-h-11 items-center underline underline-offset-4">Your tasks across clubs</Link></div><OrganizationOwnershipRequests enabled includeDismissed /><ul className="oc-membership-grid">{memberships.map(m => <MembershipRow key={m.id} member={m} />)}</ul><FindOrClaimClub /></div>
   // Meetings and Tasks cover every club by default; the club filter is optional.
   const shown = selected ? memberships.filter(m => m.clubId === selected) : memberships
