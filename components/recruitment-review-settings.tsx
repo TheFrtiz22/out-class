@@ -41,18 +41,17 @@ export function RecruitmentReviewSettings({
   const content = (
       <div className="space-y-4 pt-4" data-saving={busy}>
         <p className="text-sm text-muted-foreground">
-          Anonymous review withholds identity, free text, attachments,
-          experiences, prior notes, and appointments. Numeric metrics, scores,
-          and separately prepared manager-reviewed text remain available.
-          Previously viewed information cannot be recalled; configure rounds
-          before review begins. Disabling anonymity exposes identities to users
-          with identified-applicant access and is audited.
+          Reviewers in an anonymous round see scores and metrics, not names,
+          free text, files or notes. Set it before review begins: what a
+          reviewer has seen can't be hidden again. Turning it off shows names
+          to members who can identify applicants, and is audited.
         </p>
         {!canIdentify && <p className="text-sm text-muted-foreground">Changing anonymity also requires permission to identify applicants.</p>}
         {rounds.map((r) => (
           <label className="flex min-h-11 items-center gap-3" key={r.id}>
             <input
               type="checkbox"
+              className="oc-checkbox"
               disabled={busy || !canIdentify}
               checked={r.anonymousReview}
               onChange={(e) =>

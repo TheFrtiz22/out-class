@@ -204,19 +204,12 @@ export function ClubSettingsWorkspace({
               <>
                 {hasPermission(member, "recruitment.manage") && <DecisionTemplates clubId={clubId} />}
                 {hasPermission(member, "club.settings") && (
-                  <label className="inline-flex min-h-11 items-center gap-3 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={member.club.invitationEmailEnabled !== false}
-                      disabled={busy}
-                      onChange={(e) =>
-                        void preference({
-                          invitationEmailEnabled: e.target.checked,
-                        })
-                      }
-                    />
-                    Allow member invitation emails
-                  </label>
+                  <Toggle
+                    label="Allow member invitation emails"
+                    disabled={busy}
+                    checked={member.club.invitationEmailEnabled !== false}
+                    onCheckedChange={(checked) => void preference({ invitationEmailEnabled: checked })}
+                  />
                 )}
                 {(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage")) && <Link href={`/club/${encodeURIComponent(clubId)}/workspace?section=members`} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage invitation delivery and schedules</Link>}
               </>
