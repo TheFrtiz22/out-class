@@ -12,6 +12,8 @@ const ClubAnnouncements = dynamic(() => import("@/components/club-announcements"
  * The full announcements feed on Home (it used to be its own page): publish, schedule, audiences and history.
  * Old `section=announcements` links land here with `focus=announcements`, which scrolls to and focuses this section;
  * `compose=1` (Home's "New announcement") opens the composer. Rendered only for members who can post.
+ * Home's Announcements card already lists the latest three, so the full feed stays closed until the member asks
+ * for it ("All announcements" or "New announcement"); otherwise Home showed the same announcements twice.
  */
 export function HomeAnnouncements({ clubId, privacyScope }: { clubId: string; privacyScope: string }) {
   const params = useSearchParams(), demo = useDemoMode()
@@ -23,7 +25,8 @@ export function HomeAnnouncements({ clubId, privacyScope }: { clubId: string; pr
     heading.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" })
     heading.current?.focus({ preventScroll: true })
   }, [focus])
-  return <section id="announcements" aria-labelledby="home-announcements-heading" className="oc-home-announcements oc-workspace-stack mt-10 scroll-mt-24">
+  if (params.get("focus") !== "announcements" && params.get("compose") !== "1") return null
+  return <section id="announcements" aria-labelledby="home-announcements-heading" className="oc-home-announcements oc-workspace-stack mt-6 scroll-mt-24">
     <h2 id="home-announcements-heading" ref={heading} tabIndex={-1} className="oc-section-heading outline-none">{TERMS.announcements}</h2>
     {demo.isDemoEnabled ? <ClubAnnouncements key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="announcements" clubId={clubId} privacyScope={privacyScope} />}
   </section>
