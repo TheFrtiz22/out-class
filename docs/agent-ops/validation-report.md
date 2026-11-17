@@ -368,3 +368,8 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Targeted gates per branch: eslint clean on changed files; `tsc --noEmit` clean. #386: 22 test files, 170 pass. #387: notification suites 94 pass; `tests/notification-worker-native.test.cjs` 6/6 on a disposable Postgres (incl. the new drain and rate-floor subtests). #388: 912 pass; new `tests/auth-outage.test.cjs` fails 5/7 on main. #389: 28 pass; new action-results case fails on main. Full CI on each PR.
 - Retest: all four branches merged locally on origin/main ad3b5b5f, production build, same 1,000-applicant cycle. 10/10 stages passed, 0 issues. Finalists reached INTERVIEWING from the decision send itself (60/60, no workaround) and booked 60/84 slots; 3,000/3,000 review scores saved; email drained in 14 delivery runs (~71 sent per run, paced at 2/s) against 102 runs before; 990 sent, 0 failed, 61 suppressed (same as before). Results: /mnt/project-files/e2e-test/retest-after-fixes/.
 - Not verified: the recorded browser tour (no browser download in that workspace); production Supabase behaviour under a real Auth outage (simulated shapes only); Resend's real rate limit for the team.
+
+## 2026-11-17 V1-TEST-APPLY-CLOSED
+
+- Source: V1 finish testing round 2 (thrown refusals are redacted in production). A student who opens a club page just after its deadline and taps Start application saw the generic failure.
+- `tests/club-directory.test.cjs` new case (closed flag, passed deadline, no round): fails on main, passes here; club-directory, club-suspension-p2, action-result-coverage, action-results: 27 pass. eslint and `tsc --noEmit` clean.
