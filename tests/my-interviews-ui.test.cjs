@@ -13,12 +13,12 @@ function ui(file,props,mocks,exportName){
 }
 const zone='America/New_York',soon=Date.now()+10*60000,day=86400000;
 const row=(id,start,extra={})=>({id,slotId:id,roomId:'room',clubId:'c',roundId:'r2',roundName:'Round 2',roomName:'Shannon 318C',location:'Shannon 318C',timezone:zone,startTime:new Date(start).toISOString(),endTime:new Date(start+20*60000).toISOString(),applicationId:'a-'+id,bookingId:'b-'+id,candidate:'Applicant '+id,interviewers:[],completed:false,started:false,cancelled:false,canOpen:true,...extra});
-function list(rows,rounds=[{id:'r1',name:'Round 1'},{id:'r2',name:'Round 2'}]){
+function list(rows,rounds=[{id:'r1',name:'Round 1'},{id:'r2',name:'Round 2'}],props={}){
  const mocks={'@/contexts/demo-context':{useDemoMode:()=>({ready:true})},'./interview-read-scope':{useAssignedInterviewRooms:()=>list.read??=()=>Promise.resolve(rows)},
   '@/lib/workspace-api':{getInterviewWorkspace:()=>Promise.resolve({applications:[]}),getInterviewRounds:()=>Promise.resolve({status:'ready',rounds})},
   '@/lib/serialized-workspace-read':{serializedWorkspaceRead:(read,done,fail)=>({poll:()=>read().then(done,fail),refresh:()=>read().then(done,fail),dispose(){}})}};
  list.read=undefined;global.setInterval=()=>0;global.clearInterval=()=>{};
- return ui('components/interviews/interview-rooms-list.tsx',{clubId:'c'},mocks,'InterviewRoomsList');
+ return ui('components/interviews/interview-rooms-list.tsx',{clubId:'c',...props},mocks,'InterviewRoomsList');
 }
 test('My interviews shows Up next, Needs notes and Done once each, with one clear button per interview',async()=>{
  const h=list([row('next',soon),row('later',soon+day),row('overdue',Date.now()-2*day,{started:true}),row('reviewed',Date.now()-3*day,{completed:true}),row('unbooked',Date.now()-day,{bookingId:null,applicationId:null,candidate:null})]);
@@ -49,4 +49,9 @@ test('My interviews keeps its own round filter and never goes blank because of S
 test('with nothing assigned, My interviews says why and offers one way out',async()=>{
  const h=list([]);h.render();await flush();const words=text(h.render());
  assert.match(words,/You aren’t assigned to any interviews yet\. Club leaders add you when they schedule interviews\./);assert.match(words,/Back to recruiting overview/);
+});
+test('an organizer with nothing assigned is sent to Schedule instead of the overview',async()=>{
+ let opened=0;const h=list([],undefined,{onSchedule:()=>opened++});h.render();await flush();const tree=h.render(),words=text(tree);
+ assert.match(words,/You aren’t assigned to any interviews yet\. Set interview times and interviewers on Schedule\./);assert.doesNotMatch(words,/Back to recruiting overview/);
+ nodes(tree).find(n=>n.props?.children==='Open schedule').props.onClick();assert.equal(opened,1);
 });
