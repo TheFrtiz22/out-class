@@ -361,7 +361,7 @@ test('share links: refused for alumni (every shareable target is club-scoped); t
   await assert.rejects(short.createShortLink({ target: '/club/synthetic-club' }), e => e.message === g.ALUMNI_REFUSALS.share)
   for (const file of ['actions/terms.ts', 'actions/tutorials.ts']) assert.doesNotMatch(src(file), /assertNotAlumni|alumniRefusal/, file)
   // The QR card already falls back to the full address when a short link is refused.
-  assert.match(src('components/qr/qr-code-card.tsx'), /\.catch\(\(\) => \{[^}]*setOptimizedUrl\(`\$\{orig\}\$\{path\}`\);/)
+  assert.match(src('components/qr/use-short-link-url.ts'), /\.catch\(\(\) => \{[^}]*setOptimizedUrl\(`\$\{orig\}\$\{path\}`\);/)
 })
 
 test('in-transaction rechecks and the request-scoped graduation read', async () => {
