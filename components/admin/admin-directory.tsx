@@ -30,7 +30,7 @@ const label = (key: string) => key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/
 export function AdminRecord({ value }: { value: unknown }) {
   if (value == null) return <span className="text-muted-foreground">None</span>;
   if (value instanceof Date) return <span>{value.toLocaleString()}</span>;
-  if (Array.isArray(value)) return value.length ? <ul className="space-y-3">{value.map((v, i) => <li key={i} className="rounded-lg border p-3"><AdminRecord value={v} /></li>)}</ul> : <span className="text-muted-foreground">No records</span>;
+  if (Array.isArray(value)) return value.length ? <ul className="space-y-3">{value.map((v, i) => <li key={i} className="border-l-2 border-border pl-3"><AdminRecord value={v} /></li>)}</ul> : <span className="text-muted-foreground">No records</span>;
   if (typeof value === "object") return <dl className="space-y-3">{Object.entries(value).filter(([key]) => !/token|password|secret|credentials/i.test(key)).map(([key, v]) => <div key={key} className="min-w-0"><dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label(key)}</dt><dd className="mt-1 break-words text-sm"><AdminRecord value={v} /></dd></div>)}</dl>;
   return <span>{typeof value === "boolean" ? value ? "Yes" : "No" : text(value)}</span>;
 }
