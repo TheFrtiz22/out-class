@@ -183,13 +183,13 @@ async function readLivePresentation(input:unknown) {
 
 export async function castLiveVotingBallot(input:unknown) {
   const d=roomBallotSchema.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review","decisions.vote"]);
-  // Alumni cannot vote (lib/graduation.ts), even a graduate whose ownership the graduation job retained.
-  const alumni=await alumniRefusal(prisma,user.id,"vote");
-  if(alumni)return {ok:false as const,code:ALUMNI_REFUSED,message:alumni};
   return domainResult(()=>clubWriteTransaction(async tx=>{
     // Ballots in one session still serialize on the session row (loadVotingRoom write
     // lock); the shared club lock lets voters' authorization run concurrently.
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"],{sharedClubLock:true});
+    // Alumni cannot vote (lib/graduation.ts), even a graduate whose ownership the graduation job retained.
+    const alumni=await alumniRefusal(tx,user.id,"vote");
+    if(alumni)throw new RoomConflict(ALUMNI_REFUSED,alumni);
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
     if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Only voters in this session can do that.");
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};
