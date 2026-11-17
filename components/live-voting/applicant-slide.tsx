@@ -14,6 +14,8 @@ import {Button} from "@/components/ui/button";
 import {Check,Pause,XIcon} from "@/components/icons";
 import {resultOutcomeLabel,type RoomResult} from "@/lib/voting-room";
 import {InterviewFeedbackSection,EarlierFeedbackRounds} from "@/components/interview-feedback-section";
+import {AudienceApplicant,LeaderApplicant} from "./audience-slide";
+import {SlideText} from "./slide-text";
 
 export type VotingSlideData=Exclude<Awaited<ReturnType<typeof getLiveVotingPresentation>>,StalePresentation>;
 // Highlights share the header row on projectors; full text stays in Applicant details.
@@ -25,18 +27,6 @@ const highlightPreview=(text:string)=>text.length>110?`${text.slice(0,107)}…`:
 const isFact=(text:string)=>text.length<=SLIDE_FACT_MAX&&!/\n/.test(text);
 /** Visual weight of an excerpt: its characters, where each line (a bullet, a break) costs at least half a line. */
 const weigh=(text:string)=>text.split("\n").reduce((n,line)=>n+Math.max(line.length,30),0);
-const bullet=/^\s*(?:[-*•‣◦–]|\d{1,2}[.)])\s+/;
-type Block={kind:"p"|"ul"|"ol";lines:string[];start?:number};
-/** Preserves line breaks and renders "-", "*", "•" or "1." lines as real lists. */
-function SlideText({text}:{text:string}){
-  const blocks:Block[]=[];let gap=true;
-  for(const line of text.split(/\r?\n/)){
-    if(!line.trim()){gap=true;continue;}
-    const m=line.match(bullet),kind:Block["kind"]=m?(/\d/.test(m[0])?"ol":"ul"):"p",body=m?line.slice(m[0].length):line,last=blocks[blocks.length-1];
-    if(!gap&&last?.kind===kind)last.lines.push(body);else blocks.push({kind,lines:[body],start:kind==="ol"?Number(m![0].match(/\d+/)![0]):undefined});gap=false;
-  }
-  return <div className="vr-text">{blocks.map((b,i)=>b.kind==="p"?<p key={i}>{b.lines.join("\n")}</p>:b.kind==="ul"?<ul key={i}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ul>:<ol key={i} start={b.start}>{b.lines.map((l,j)=><li key={j}>{l}</li>)}</ol>)}</div>;
-}
 const renderSlideText=(text:string)=><SlideText text={text}/>;
 /** Short projectors (1280×720 up to 767px tall) get smaller excerpt budgets, matching room.css. The server
  *  snapshot is the normal budget; the viewport decides after hydration. Cut text always keeps "Read full …". */
@@ -50,7 +40,15 @@ function OutcomeMark({result}:{result:RoomResult}){
   const Icon=result.outcome==="ACCEPT"?Check:result.outcome==="HOLD"?Pause:XIcon;
   return <p className="vr-outcome" data-outcome={result.outcome}><Icon aria-hidden="true" size={16}/>{resultOutcomeLabel(result)}</p>;
 }
-export function ApplicantSlide({data,outcome=null}:{data:VotingSlideData;outcome?:RoomResult|null}){
+/** `audience`: the projector slide, every field in full and fitted to one screen; `leader`: the condensed leader
+ * column; `default`: member phones and preparation, with the details dialog. `aside` replaces the notes with the
+ * closed vote's result on the projector. */
+export function ApplicantSlide(props:{data:VotingSlideData;outcome?:RoomResult|null;variant?:"default"|"audience"|"leader";aside?:(outcome:RoomResult|null)=>React.ReactNode;position?:string}){
+  if(props.variant==="audience")return <AudienceApplicant data={props.data} outcome={props.outcome??null} aside={props.aside}/>;
+  if(props.variant==="leader")return <LeaderApplicant data={props.data} position={props.position}/>;
+  return <DetailedSlide data={props.data} outcome={props.outcome??null}/>;
+}
+function DetailedSlide({data,outcome}:{data:VotingSlideData;outcome:RoomResult|null}){
   const [details,setDetails]=useState(false),origin=useRef<HTMLButtonElement|null>(null),short=useShortProjector();
   const clipFeedback=(text:string,entries:number)=>feedbackExcerpt(text,entries,short);
   const open=(e:React.MouseEvent<HTMLButtonElement>)=>{origin.current=e.currentTarget;setDetails(true);};

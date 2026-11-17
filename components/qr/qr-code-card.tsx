@@ -8,6 +8,34 @@ import { createShortLink } from "@/actions/short-links";
 
 export { downloadQrPng, downloadQrSvg };
 
+/**
+ * The URL a QR code should carry for an in-app path: the first-party OutClass short link when the server issues one
+ * (server-validated and session-bound), otherwise the direct URL (signed out, Demo, or a path that is not shareable).
+ */
+export function useShortLinkUrl(path: string) {
+  const [origin, setOrigin] = useState("");
+  const [optimizedUrl, setOptimizedUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const orig = window.location.origin;
+    let current = true;
+    setOrigin(orig);
+    setOptimizedUrl("");
+    createShortLink({ target: path })
+      .then((res) => {
+        if (current) setOptimizedUrl(`${orig}${res.shortUrl}`);
+      })
+      .catch(() => {
+        // Graceful fallback to direct URL on local/offline environments
+        if (current) setOptimizedUrl(`${orig}${path}`);
+      });
+    return () => { current = false; };
+  }, [path]);
+
+  return optimizedUrl || (origin ? `${origin}${path}` : "");
+}
+
 export interface QrCodeCardProps {
   title: string;
   description: string;
@@ -23,29 +51,7 @@ export function QrCodeCard({
   filename,
   downloadable = true,
 }: QrCodeCardProps) {
-  const [origin, setOrigin] = useState("");
-  const [optimizedUrl, setOptimizedUrl] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const orig = window.location.origin;
-      setOrigin(orig);
-
-      // Attempt to optimize with an OutClass short link for clean, low-density QR
-      // Server-validated and session-bound; falls back to the direct URL when
-      // signed out (e.g. demo) or when the path is not a shareable destination.
-      createShortLink({ target: path })
-        .then((res) => {
-          setOptimizedUrl(`${orig}${res.shortUrl}`);
-        })
-        .catch(() => {
-          // Graceful fallback to direct URL on local/offline environments
-          setOptimizedUrl(`${orig}${path}`);
-        });
-    }
-  }, [path]);
-
-  const activeUrl = optimizedUrl || (origin ? `${origin}${path}` : "");
+  const activeUrl = useShortLinkUrl(path);
 
   return (
     <OutClassQRCode

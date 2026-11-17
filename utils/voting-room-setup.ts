@@ -13,7 +13,7 @@ export async function validateVotingSetup(tx:AppTransactionClient,d:z.output<typ
     const cycle=await tx.recruitmentCycle.findFirst({where:{id:d.cycleId,clubId:d.clubId,archivedAt:null}});
     if(!round||!cycle)throw Error("Current club, cycle and round required.");
     if(d.presentationOptions){
-      if(round.anonymousReview&&d.presentationOptions.fields.some(f=>["photo","name","major","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f)))throw Error("Identifying fields are unavailable in anonymous rounds.");
+      if(round.anonymousReview&&d.presentationOptions.fields.some(f=>["photo","name","major","scholarStatus","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f)))throw Error("Identifying fields are unavailable in anonymous rounds.");
       if(rejectHiddenProfileFields){const ceiling=normalizeProfileFieldVisibility(round.club?.profileFieldVisibility);if(d.presentationOptions.fields.some(f=>!allowedByProfileCeiling(f,ceiling)))throw Error("A selected field is hidden by the club’s applicant profile settings.");}
       if(Object.keys(d.presentationOptions.highlights).some(id=>!d.applicationIds.includes(id)))throw Error("Highlight applicant scope mismatch.");
     }

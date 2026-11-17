@@ -15,7 +15,7 @@ import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, un
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
-import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
+import {selectedVotingDisplay,selectedScholarStatus} from "@/lib/voting-slide-fields";
 import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
 import {votingDiscussion} from '@/utils/voting-discussion';
 import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
@@ -114,8 +114,11 @@ export async function getLiveVotingRoom(input:unknown) {
     // Database clock at this read's start, before the room loads: bounds the leader's ballot-only drift check.
     const clock=await tx.$queryRaw<{now:Date}[]>`SELECT now() AS now`;
     const viewedAt=(clock?.[0]?.now?new Date(clock[0].now):new Date()).toISOString();
-    const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);
+    const {s,round,cycle}=await loadVotingRoom(tx,d.clubId,d.sessionId);
     const later=await tx.pipelineRound.count({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}}});
+    // Names only, for the room header and "Advances to …": the round and cycle the room already belongs to.
+    const nextRound=later?(await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null,order:{gt:round.order}},orderBy:{order:"asc"},select:{name:true,order:true},take:1})).filter(r=>r.order>round.order).sort((a,b)=>a.order-b.order)[0]??null:null;
+    const names={roundName:round.name,cycleName:cycle?.name??null,nextRoundName:nextRound?.name??null};
     const snapshot=projectVotingRoom(s,m,round.anonymousReview,{name:round.name,final:later===0});
     // Server-backed Undo: the command that produced this revision is the latest room activity. Leaders see its
     // decision only while UNDO_DECISION would accept it (same rule), after any refresh or on any device.
@@ -137,7 +140,7 @@ export async function getLiveVotingRoom(input:unknown) {
     const removedVoters=openRule?.rules.mode==="THRESHOLD"?openRule.electorate.filter(id=>!eligible.some(v=>v.id===id)).length:0;
     const ruled=rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
     const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
-    return {snapshot:{...snapshot,undo,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
+    return {snapshot:{...snapshot,...names,undo,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
       participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
       votingPaused:removedVoters>0,viewedAt,viewToken:snapshot.permissions.leader?signRoomView({sessionId:s.id,revision:s.revision,viewedAt,memberId:m.id}):null,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
@@ -162,7 +165,7 @@ async function readLivePresentation(input:unknown) {
   const result=await prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review"],{readOnly:true});
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);const role=roomAuthority(s,m,round.anonymousReview);
-    const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}},include:{club:{select:{profileFieldVisibility:true}}}});
+    const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:{not:"DRAFTING"}},include:{club:{select:{profileFieldVisibility:true}},student:{select:{studentProfile:{select:{scholarStatus:true}}}}}});
     if(app&&s.candidates.some(c=>c.applicationId===app.id)&&!role.leader&&s.activeApplicationId!==app.id)throw new VotingPresentationChanged();
     if(!app||!s.candidates.some(c=>c.applicationId===app.id)||display.anonymous!==round.anonymousReview)throw Error("Presentation changed. Reload the page to continue.");
     const parsed=roomPresentationSchema.safeParse(s.presentationOptions),options=parsed.success?parsed.data:null;
@@ -170,10 +173,11 @@ async function readLivePresentation(input:unknown) {
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
     const selectedDisplay=selectedVotingDisplay(display,options?.fields);
     const observations=await votingObservations(tx,s,app.id,user.id,!!options?.fields.includes('additionalObservations'),display.anonymous);
+    const scholar=selectedScholarStatus(options?.fields,display.anonymous||round.anonymousReview,app.student?.studentProfile?.scholarStatus);
     // Preparation preview shows the leader's unlocked working copy; everyone else sees the locked pass copy.
     if(d.preparation)requireRoomLeader(s,m,"decisions.manage");
     const prepared=await presentedSlideHighlights(tx,s,app.id,user.id,display.anonymous,!!d.preparation);
-    return {access:accessFingerprint(m),presentation:{...selectedDisplay,...evidence,...highlight,...observations,...prepared,requestedFields:[...selectedDisplay.visible,...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]}};
+    return {access:accessFingerprint(m),presentation:{...selectedDisplay,...evidence,...highlight,...observations,...prepared,...scholar,requestedFields:[...selectedDisplay.visible,...(scholar.scholarStatus?["scholarStatus" as const]:[]),...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]}};
   },votingReadLimits);
   // Same post-read re-check as the room read: evidence computed under since-revoked access is never returned.
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);

@@ -1,5 +1,17 @@
-import type {ApplicantDisplay} from "@/lib/applicant-display";
+import {fieldLabels,type ApplicantDisplay} from "@/lib/applicant-display";
 import {roomDisplayConfig,type LiveRoomField} from "@/lib/voting-room";
+import {scholarNames} from "@/lib/scholar-status";
+
+/** The setup switches, grouped as the slide reads them. Scholar status is off unless a leader turns it on. */
+export const slideFieldGroups:readonly (readonly [string,readonly LiveRoomField[]])[]=[["Profile",["photo","name","major","academicYear","scholarStatus"]],["Scores",["interviewScore","sat","act","gpa"]],["Notes",["resumeHighlight","finalInterviewThoughts","additionalObservations"]]];
+export function slideFieldLabel(f:LiveRoomField){
+  return f==="scholarStatus"?"Scholar status":f==="gpa"?"GPA":f==="resumeHighlight"?"Résumé excerpt":f==="interviewScore"?"Interview score":f==="additionalObservations"?"Additional observations":f==="finalInterviewThoughts"?"Interviewer final thoughts":fieldLabels[f];
+}
+/** Scholar programme names for a voting slide: only when the leader selected the field and the round is identified.
+ * Callers pass the authorized application's profile value; anonymous (blind) rounds never receive it. */
+export function selectedScholarStatus(fields:readonly string[]|undefined,anonymous:boolean,raw:unknown):{scholarStatus?:string[]}{
+  return fields?.includes("scholarStatus")&&!anonymous?{scholarStatus:scholarNames(raw)}:{};
+}
 
 /** Reapply the current selection after the separately authorized display read.
  * A concurrent setup edit must not return a previously selected field. */
@@ -33,5 +45,6 @@ export function narrowVotingSlide<T extends SlideFields>(data:T,fields:readonly 
   if(!(fields.includes("interviewScore")&&fields.includes("finalInterviewThoughts"))){delete next.interviewScore;delete next.finalInterviewThoughts;delete next.interviewFeedback;delete next.earlierInterviewRounds;}
   if(!want.has("resumeHighlight"))delete next.resumeHighlight;
   if(!want.has("additionalObservations"))delete next.additionalObservations;
+  if(!want.has("scholarStatus"))delete next.scholarStatus;
   return next as T;
 }

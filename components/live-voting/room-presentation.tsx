@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 type Data=VotingSlideData;
 /** `paused` keeps the loaded slide on screen without reading or polling (the outgoing applicant during a transition);
  *  `outcome` shows that applicant's confirmed result beside the name. */
-export function RoomPresentation({clubId,sessionId,applicationId,identity,refreshKey,member,onReady,onFailed,onStale,paused=false,presenting=false,outcome=null}:{clubId:string;sessionId:string;applicationId:string;identity:string;refreshKey:number;member?:string;onReady?:()=>void;onFailed?:()=>void;onStale?:()=>unknown;paused?:boolean;presenting?:boolean;outcome?:RoomResult|null}){
+export function RoomPresentation({clubId,sessionId,applicationId,identity,refreshKey,member,onReady,onFailed,onStale,paused=false,presenting=false,outcome=null,variant="default",aside,position}:{clubId:string;sessionId:string;applicationId:string;identity:string;refreshKey:number;member?:string;onReady?:()=>void;onFailed?:()=>void;onStale?:()=>unknown;paused?:boolean;presenting?:boolean;outcome?:RoomResult|null;variant?:"default"|"audience"|"leader";aside?:(outcome:RoomResult|null)=>React.ReactNode;position?:string}){
   // Keyed by club, session (and so cycle and round) and applicant: another room's slide never shows, and late responses are ignored.
   const key=`${identity}:${clubId}:${sessionId}:${applicationId}`, [state,setState]=useState<{key:string;data:Data|null;error:boolean}>({key,data:null,error:false}),[retry,setRetry]=useState(0);
   const stale=useRef(onStale);useEffect(()=>{stale.current=onStale;});
@@ -22,5 +22,5 @@ export function RoomPresentation({clubId,sessionId,applicationId,identity,refres
   const data=state.key===key?state.data:null;
   if(state.key===key&&state.error)return <div role="alert">Applicant information unavailable. <Button variant="outline" onClick={()=>setRetry(v=>v+1)}>Retry presentation</Button></div>;
   if(!data)return <LoadingState label="Loading applicant presentation…" layout="presentation" rows={3} />;
-  return <ApplicantSlide key={key} data={data} outcome={outcome}/>;
+  return <ApplicantSlide key={key} data={data} outcome={outcome} variant={variant} aside={aside} position={position}/>;
 }

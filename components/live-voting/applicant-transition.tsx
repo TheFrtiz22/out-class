@@ -21,7 +21,7 @@ type Track={key:string;outgoing:Outgoing|null};
  * shown for OUTCOME_HOLD_MS (or `release`: voting already opened on it), both move left together. Nothing here
  * decides anything: the transition only follows confirmed room snapshots.
  */
-export function ApplicantTransition({applicantId,passNumber,children,onReady,summary,ended=false,idle,resultFor,motionFrom,release=false}:{applicantId:string|null;passNumber:number;children:Slide;onReady:(key:string|null)=>void;summary:boolean;ended?:boolean;idle?:ReactElement;resultFor?:(passNumber:number,applicationId:string)=>RoomResult|null;motionFrom?:(passNumber:number,applicationId:string|null)=>Motion;release?:boolean}){
+export function ApplicantTransition({applicantId,passNumber,children,onReady,summary,ended=false,idle,resultFor,motionFrom,release=false,fill=false}:{fill?:boolean;applicantId:string|null;passNumber:number;children:Slide;onReady:(key:string|null)=>void;summary:boolean;ended?:boolean;idle?:ReactElement;resultFor?:(passNumber:number,applicationId:string)=>RoomResult|null;motionFrom?:(passNumber:number,applicationId:string|null)=>Motion;release?:boolean}){
  // Ending is its own stage state, so the end of voting goes through the crossfade (with focus and announcement).
  const key=`${passNumber}:${applicantId??(ended?"end":"null")}`,root=useRef<HTMLDivElement>(null);
  // Refs read during render below are written only in effects (deterministic under StrictMode re-renders).
@@ -131,7 +131,7 @@ export function ApplicantTransition({applicantId,passNumber,children,onReady,sum
  // Keyed layers: the outgoing applicant keeps its mounted element (and data) as it changes role.
  const layers=[...(out?[{key:out.key,role:"out" as const,node:typeof out.node.type==="string"?out.node:cloneElement(out.node,{onReady:undefined,onFailed:undefined,paused:true,outcome:out.result})}]:[]),{key,role:"in" as const,node}];
  // The stage keeps its height for intermissions too, so the controls below never jump between passes or at the end.
- return <><div ref={root} style={{minHeight:applicantId||idle||phase!=="ready"?height:0}} className={`vr-slide-stage vr-slide-${phase}${pending?" vr-slide-pending":""}${out?.mode==="fade"?" vr-slide-fade":""}${!applicantId&&idle?" vr-slide-idle":""}`} aria-busy={phase==="loading"&&!pending}>
+ return <><div ref={root} style={fill?undefined:{minHeight:applicantId||idle||phase!=="ready"?height:0}} className={`vr-slide-stage vr-slide-${phase}${pending?" vr-slide-pending":""}${out?.mode==="fade"?" vr-slide-fade":""}${!applicantId&&idle?" vr-slide-idle":""}`} aria-busy={phase==="loading"&&!pending}>
   {layers.map(l=><div key={l.key} className={l.role==="out"?"vr-slide-out":"vr-slide-in"} inert={l.role==="out"||pending||phase==="sliding"} aria-hidden={l.role==="out"||l.role==="in"&&pending||undefined}>{l.node}</div>)}
  </div><p className="sr-only" role="status" aria-live="polite">{announce}</p></>;
 }

@@ -222,6 +222,12 @@
   --oc-shell-rail-width: 15.5rem;
   --oc-shell-header-height: 4rem;
   --oc-shell-mobile-height: 4.75rem;
+  /* Live voting tracker and result bars (outcome segments always paired with text counts). */
+  --oc-vote-pass: var(--school-primary);
+  --oc-vote-fail: #8794a3;
+  --oc-vote-held: var(--school-accent);
+  --oc-vote-track: #e3e6e0;
+  --oc-vote-marker: var(--school-accent-text);
 }
 
 /* Projector theme: only the live-voting presentation sets data-theme="present" (its page wrapper; the
@@ -266,7 +272,57 @@
   /* The live voting slide stays solid: no glass highlight on the projector. */
   --oc-elevation-surface: var(--oc-content-shadow-solid);
   /* Aliases resolve where they are declared, so redeclare them in this scope to pick up the solid level. */
-  --oc-content-shadow: var(--oc-elevation-surface);
+  --oc-content-shadow: var(--oc-elevation-surface);  --oc-vote-pass: #f6f5f1;
+  --oc-vote-fail: #7d8fa0;
+  --oc-vote-held: var(--school-accent-on-dark);
+  --oc-vote-track: #22364b;
+  --oc-vote-marker: var(--school-accent-on-dark);
+}
+
+/* Light projector: the live-voting room's theme switch puts the cream/navy canvas back inside the dark
+   projector wrapper. Every token the projector theme overrides is restated with its :root value
+   (tests/voting-room-theme.test.cjs keeps the two in step); the slide stays solid, never glass. */
+[data-theme="present-light"], .oc-focus-frame:has([data-theme="present-light"]) .oc-focus-bar {
+  color-scheme: light;
+  --background: #f6f5f1;
+  --foreground: var(--school-primary);
+  --card: #fffefa;
+  --card-foreground: var(--foreground);
+  --popover: #fffefa;
+  --popover-foreground: var(--foreground);
+  --primary: var(--school-primary);
+  --primary-foreground: #ffffff;
+  --secondary: #eaece8;
+  --secondary-foreground: #34485a;
+  --muted: #edeee9;
+  --muted-foreground: #52606d;
+  --accent: #e7ebe7;
+  --accent-foreground: var(--school-primary);
+  --brand-subtle: #fceadd;
+  --brand-ink: var(--school-accent-text);
+  --destructive: #ac3544;
+  --destructive-foreground: #ffffff;
+  --error-subtle: #fbeef0;
+  --success: #296448;
+  --success-subtle: #edf5ef;
+  --warning: #795617;
+  --warning-subtle: #fbf3df;
+  --info: #295c88;
+  --info-subtle: #edf3fa;
+  --interview: #655080;
+  --interview-subtle: #f1eef7;
+  --border: #dfe3dd;
+  --input: #8793a0;
+  --ring: var(--school-ring);
+  --oc-content-surface: var(--oc-content-solid);
+  --oc-content-soft: #f1f4f3;
+  --oc-content-soft-blue: #eaf0f2;
+  --oc-content-edge: var(--oc-content-edge-solid);
+  --oc-vote-pass: var(--school-primary);
+  --oc-vote-fail: #8794a3;
+  --oc-vote-held: var(--school-accent);
+  --oc-vote-track: #e3e6e0;
+  --oc-vote-marker: var(--school-accent-text);
 }
 
 /* Another school's colours override only the school layer. Set data-school on <html>: the semantic tokens

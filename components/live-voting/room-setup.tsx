@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { decisionsHref,readVotingSelection,selectionScopes,votingSetupHref } from "@/lib/voting-navigation";
 import { getLiveVotingSetup,getVotingHighlightOptions,createLiveVotingRoom,resolveLiveVotingSelection,getVotingSessionSetup,updateVotingSessionSetup,getLiveVotingRoom,commandLiveVotingRoom } from "@/lib/voting-room-api";
 import { createRoomSchema,liveRoomFields,liveRoomPath,roomDisplayConfig,type LiveRoomField } from "@/lib/voting-room";
-import { fieldLabels } from "@/lib/applicant-display";
+import {slideFieldGroups,slideFieldLabel} from "@/lib/voting-slide-fields";
 // Demo draft persistence loads only when a Demo Mode draft is read or written.
 type SavedSession=Awaited<ReturnType<typeof getVotingSessionSetup>>;
 const demoDrafts=()=>import("@/lib/demo/voting-setup-drafts");
@@ -35,10 +35,10 @@ import { NativeSelect } from "@/components/ui/native-select"
 import { pluralize } from "@/lib/copy/terms"
 import { useConfirm } from "@/components/ui/confirm-dialog"
 type Setup=Awaited<ReturnType<typeof getLiveVotingSetup>>;
-const label=(f:LiveRoomField)=>f==="resumeHighlight"?"Leader-selected résumé excerpt":f==="interviewScore"?"Cumulative interview score":f==="additionalObservations"?"Additional observations":f==="finalInterviewThoughts"?"Submitted final interview thoughts":fieldLabels[f];
-const steps=['Session details','Applicants and voters','Presentation and review'] as const;
-const intros=["Pick the round you’re voting on and when it happens. You can change any of this later.","Choose who’s being voted on, who votes, and how ballots become decisions.","Choose what voters see for each applicant, check the preview, then start."];
-const fieldGroups:[string,LiveRoomField[]][]=[["Profile",["photo","name","major","academicYear"]],["Scores",["gpa","sat","act","interviewScore"]],["Notes",["resumeHighlight","finalInterviewThoughts","additionalObservations"]]];
+const label=slideFieldLabel;
+const steps=['Session details','Applicants and voters','Slide and review'] as const;
+const intros=["Pick the round you’re voting on and when it happens. You can change any of this later.","Choose who’s being voted on, who votes, and how ballots become decisions.","Choose what the room sees for each applicant, check the preview, then start."];
+const fieldGroups=slideFieldGroups;
 /** A control a setup message belongs beside. */
 type SetupField='timing'|'scope'|'name'|'localTime'|'duration'|'timeZone'|'location'|'instructions'|'applicants'|'voters'|'target'|'rule';
 type SetupProblem={field:SetupField;message:string};
@@ -251,14 +251,14 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  <p className="vr-setup-intro" id={`${uid}-intro-3`} tabIndex={-1}>{intros[2]}</p>
  <section className="vr-setup-split" aria-labelledby={`${uid}-fields`}>
   <div>
-   <h2 id={`${uid}-fields`}>Presentation fields</h2><p className="vr-setup-why">Show only what should inform a vote. Changes appear in the preview instantly.</p>
+   <h2 id={`${uid}-fields`}>On the slide</h2><p className="vr-setup-why">Everything you turn on is shown in full. Nothing hides behind a button.</p>
    <div className="vr-setup-switches">{fieldGroups.map(([group,list])=>{const offered=list.filter(f=>data.allowedFields.includes(f));return offered.length?<div key={group} role="group" aria-label={group}><p className="vr-setup-group" aria-hidden="true">{group}</p>{offered.map(f=><label key={f} className="vr-setup-switch"><span>{label(f)}</span><Switch aria-label={label(f)} checked={fields.includes(f)} onCheckedChange={on=>{setTouched(true);setFields(old=>on?[...old.filter(v=>v!==f),f]:old.filter(v=>v!==f));}}/></label>)}</div>:null;})}</div>
    {!!data.hiddenProfileFields?.length&&<p className="vr-setup-help" data-hidden-profile-fields="">{data.hiddenProfileFields.map(label).join(", ")}: hidden by club profile settings.{data.canEditProfileFields&&<> <Link className="underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=profiles`}>Applicant profile settings</Link></>}</p>}
    {fields.includes("resumeHighlight")&&<fieldset className="vr-setup-excerpt"><legend className="vr-setup-label">Choose a preserved résumé excerpt</legend><label className="vr-setup-field">Applicant<NativeSelect aria-label="Excerpt applicant" value={preview} onChange={e=>setPreview(e.target.value)}>{data.applicants.filter(a=>applicants.includes(a.id)).map(a=><option value={a.id} key={a.id}>{a.label}</option>)}</NativeSelect></label><label className="vr-setup-field">Saved text highlight<NativeSelect aria-label="Saved résumé highlight" value={highlights[preview]??""} onChange={e=>setHighlights(v=>({...v,[preview]:e.target.value}))}><option value="">No excerpt for this applicant</option>{quotes.map(q=><option key={q.id} value={q.id}>Page {q.page} · {q.quote.slice(0,160)}</option>)}</NativeSelect></label>{!quotes.length&&<p className="vr-setup-help">No authorized saved text highlights. No résumé claim will be generated.</p>}</fieldset>}
   </div>
-  <aside className="vr-setup-preview" aria-label="Voting room preview">
-   <div className="vr-setup-preview-top"><span className="vr-setup-help" aria-hidden="true">Voting room preview</span><NativeSelect aria-label="Setup preview applicant" density="compact" value={preview} onChange={e=>setPreview(e.target.value)}><option value="">Choose applicant</option>{chosen.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</NativeSelect></div>
-   {step===3&&preview&&applicants.includes(preview)?<div className="vr-setup-preview-frame" aria-live="polite"><p className="vr-setup-help vr-setup-position">{chosen.findIndex(a=>a.id===preview)+1} of {chosen.length}</p><SetupPresentationPreview key={`${preview}:${observationRevision}`} clubId={clubId} cycleId={cycle} roundId={round} applicationId={preview} fields={fields} allowedFields={data.allowedFields} highlights={highlights}/></div>:<p className="vr-setup-help">Choose an applicant to preview.</p>}
+  <aside className="vr-setup-preview" aria-label="Projector preview">
+   <div className="vr-setup-preview-top"><span className="vr-setup-help" aria-hidden="true">Projector preview</span><NativeSelect aria-label="Setup preview applicant" density="compact" value={preview} onChange={e=>setPreview(e.target.value)}><option value="">Choose applicant</option>{chosen.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</NativeSelect></div>
+   {step===3&&preview&&applicants.includes(preview)?<div className="vr-setup-preview-frame" aria-live="polite"><SetupPresentationPreview key={`${preview}:${observationRevision}`} clubId={clubId} cycleId={cycle} roundId={round} applicationId={preview} fields={fields} allowedFields={data.allowedFields} highlights={highlights} roundName={data.rounds.find(r=>r.id===round)?.name??''} position={`Applicant ${chosen.findIndex(a=>a.id===preview)+1} of ${chosen.length}`} target={/^\d+$/.test(target)&&Number(target)>0?Number(target):null}/><p className="vr-setup-help vr-setup-position">Applicant {chosen.findIndex(a=>a.id===preview)+1} of {chosen.length} · Long notes shrink to fit one screen.</p></div>:<p className="vr-setup-help">Choose an applicant to preview.</p>}
   </aside>
  </section>
  {step===3&&preview&&applicants.includes(preview)&&!data.rounds.find(r=>r.id===round)?.anonymousReview&&<SetupRow plain title="Additional observations" why="Firsthand notes from an interaction. Kept separate from interview evaluations."><AdditionalObservations key={preview} embedded clubId={clubId} applicationId={preview} onSaved={()=>setObservationRevision(v=>v+1)}/></SetupRow>}

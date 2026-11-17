@@ -35,7 +35,7 @@ export async function getLiveVotingSetup(input:unknown){
     const evidence=interviewCapabilities(m);
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});
     const panel=await tx.interviewPanelAssignment.findFirst({where:{memberId:m.id,revokedAt:null,application:{clubId:d.clubId}},select:{id:true}});
-    const permittedFields=liveRoomFields.filter(f=>!(round?.anonymousReview&&["name","photo","major","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))&&(f!=="resumeHighlight"||evidence.moderateResume||!!panel)&&(!["interviewScore","finalInterviewThoughts"].includes(f)||evidence.readClosing||!!ownReview));
+    const permittedFields=liveRoomFields.filter(f=>!(round?.anonymousReview&&["name","photo","major","scholarStatus","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))&&(f!=="resumeHighlight"||evidence.moderateResume||!!panel)&&(!["interviewScore","finalInterviewThoughts"].includes(f)||evidence.readClosing||!!ownReview));
     const allowedFields=permittedFields.filter(f=>allowedByProfileCeiling(f,profileFields));
     const hiddenProfileFields=permittedFields.filter(f=>!allowedByProfileCeiling(f,profileFields));
     const ruleRows=await tx.votingRuleDefault.findMany({where:{clubId:d.clubId,OR:[{roundId:null},...(round?[{roundId:round.id}]:[])]}});
