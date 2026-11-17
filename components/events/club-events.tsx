@@ -27,7 +27,7 @@ import { StatusMark, type StatusTone } from "@/components/ui/status-pill"
 const eventStatusTones: Record<string, StatusTone> = { DRAFT: "neutral", PENDING: "active", PUBLISHED: "done", REJECTED: "neutral", CANCELLED: "neutral", ARCHIVED: "neutral" };
 /** The one status label on a managed event: the shared status mark, glyph and tone included. */
 function EventStatus({ event }: { event: ManagedCampusEvent }) {
-  return <StatusMark className="mt-2" label={managedEventStatus(event)} tone={eventStatusTones[event.status] ?? "neutral"} />;
+  return <StatusMark className="mt-2" literal label={managedEventStatus(event)} tone={eventStatusTones[event.status] ?? "neutral"} />;
 }
 const tabs = ["Upcoming", "Past", "Pending approval", "Rejected", "Drafts", "Closed"];
 export function ClubEvents({ clubId, clubName, canSeeAttendees, membership }: { clubId: string; clubName: string; canSeeAttendees: boolean; membership?: ClubAccess | null }) {
