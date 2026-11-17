@@ -52,6 +52,9 @@ const date = (value: Date | string) =>
     hour: "numeric",
     minute: "2-digit",
   })
+// "View submitted responses" asks for the answers, not the status, of the application it focuses.
+let responsesRequested: string | null = null
+
 export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }: { onNavigate?: (view: ViewId) => void; scope?: "all" | "status"; serverNow?: number }) {
   const statusView = scope === "status"
   const applicationId = useSearchParams().get("applicationId")
@@ -136,13 +139,16 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
     if (pending || !focusApplicationClubId && !applicationId) return
     const app = applications.find((item) => applicationId ? item.id === applicationId : item.clubId === focusApplicationClubId)
     if (app && (scope === "all" || app.status !== "DRAFTING")) {
-      // The same link seen again (the list refreshed, e.g. right after submitting) keeps what is on screen.
-      const link = applicationId ?? focusApplicationClubId
-      if (handledLink.current === link) { clearApplicationFocus(); return }
-      handledLink.current = link
+      // The same URL link seen again (the list refreshed, e.g. right after submitting) keeps what is on screen.
+      // An in-app request (Home, Inbox, View submitted responses) is always honored.
+      if (applicationId && handledLink.current === applicationId) { clearApplicationFocus(); return }
+      if (applicationId) handledLink.current = applicationId
+      const wantsResponses = !applicationId && responsesRequested === app.clubId
+      responsesRequested = null
       setActiveId(app.id); lastOpened.current = app.id
-      // A submitted application opens on its status, where interview booking and decisions live, not on its answers.
-      if (app.status !== "DRAFTING") setStatusId(app.id)
+      // A submitted application opens on its status, where interview booking and decisions live, not on its answers,
+      // unless the applicant asked for their submitted responses.
+      if (app.status !== "DRAFTING" && !wantsResponses) setStatusId(app.id)
       // A link to one application (Home's View interview, an email) opens the stage that holds it, not the stage in the URL.
       const appStage = applicationStage(app.status)
       if (appStage) setFilter(appStage)
@@ -228,7 +234,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
       </div>
     )
   function openRelated(view: "tracker" | "status") {
-    if (app) focusApplication(app.clubId)
+    if (app) { responsesRequested = view === "tracker" ? app.clubId : null; focusApplication(app.clubId) }
     leave(() => onNavigate?.(view))
   }
   function bookingChanged() {
