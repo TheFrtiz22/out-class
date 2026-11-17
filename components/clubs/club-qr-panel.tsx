@@ -1,12 +1,7 @@
 "use client"
 import { QrCodeCard } from "@/components/qr/qr-code-card"
 import { clubSharePath } from "@/lib/share-links"
-
-/** File name for the downloaded code, e.g. "mcintire-investment-institute-qr-code". */
-export function clubQrFilename(name: string): string {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "")
-  return `${slug || "club"}-qr-code`
-}
+import { clubQrFilename } from "@/lib/club-qr"
 
 /**
  * The club's own QR code for posters, tables and the club fair, shown to leaders beside the

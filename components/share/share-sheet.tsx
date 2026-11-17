@@ -1,10 +1,11 @@
 "use client"
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react"
-import { Check, Copy, Instagram, Linkedin, Mail, MessageSquareText, MoreHorizontal, Share, WhatsApp, XLogo } from "@/components/icons"
+import { Check, Copy, Instagram, Linkedin, Mail, MessageSquareText, MoreHorizontal, QrCode, Share, WhatsApp, XLogo } from "@/components/icons"
 import type { IconComponent } from "@/components/icons/factory"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { QrPresenterDialog } from "@/components/qr/qr-presenter-dialog"
 import { SHARE_CHANNELS, SHARE_CHANNEL_LABELS, opensWebsite, shareHref, type ShareChannel } from "@/lib/share-links"
 import "./share-sheet.css"
 
@@ -35,6 +36,20 @@ export type ShareSheetProps = {
   size?: ComponentProps<typeof Button>["size"]
   /** Render an icon-only trigger (label becomes its accessible name). */
   iconOnly?: boolean
+  /**
+   * Offer a "QR code" target that presents a scannable code full screen, with PNG and SVG
+   * downloads. The code points at the short path `shortLink` resolves to (a permanent /q/…
+   * link), or at the page itself when there is none or it fails.
+   */
+  qr?: {
+    filename: string
+    description?: string
+    /**
+     * Resolves a same-site short path such as "/q/abc123". Passed by the caller so this sheet
+     * stays free of server actions (it is bundled into isolated UI fixtures).
+     */
+    shortLink?: () => Promise<string>
+  }
 }
 
 /**
@@ -42,12 +57,15 @@ export type ShareSheetProps = {
  * X, copy link, and the device's own share menu where the browser has one. Links always point at
  * the public page, which unfurls as its share card.
  */
-export function ShareSheet({ path, title, text, heading, subtitle, label = "Share", className, variant = "outline", size, iconOnly }: ShareSheetProps) {
+export function ShareSheet({ path, title, text, heading, subtitle, label = "Share", className, variant = "outline", size, iconOnly, qr }: ShareSheetProps) {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState("")
   const [status, setStatus] = useState<{ tone: "ok" | "error"; message: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [nativeShare, setNativeShare] = useState(false)
+  const [qrValue, setQrValue] = useState("")
+  const [qrOpen, setQrOpen] = useState(false)
+  const [qrLoading, setQrLoading] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const targets = useRef<HTMLUListElement>(null)
 
@@ -90,10 +108,27 @@ export function ShareSheet({ path, title, text, heading, subtitle, label = "Shar
     }
   }
 
+  async function presentQr() {
+    if (qrLoading) return
+    setQrLoading(true)
+    // A short link keeps the code sparse enough to scan from across a room. Signed-out sharers
+    // (or a slow network) fall back to the page's own address, which scans the same way.
+    const resolve = qr?.shortLink
+    const short = !resolve ? "" : await Promise.race([
+      resolve().then(shortPath => shortPath.startsWith("/") ? `${window.location.origin}${shortPath}` : "").catch(() => ""),
+      new Promise<string>(resolve => window.setTimeout(() => resolve(""), 4000)),
+    ])
+    setQrValue(short || url)
+    setQrLoading(false)
+    setOpen(false)
+    setQrOpen(true)
+  }
+
   const payload = { url, title, text }
   const triggerLabel = typeof label === "string" ? label : "Share"
 
-  return <Dialog open={open} onOpenChange={onOpenChange}>
+  return <>
+  <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogTrigger asChild>
       <Button type="button" variant={variant} size={iconOnly ? (size ?? "icon") : size} className={className} aria-label={iconOnly ? `${triggerLabel} ${title}` : undefined}>
         <Share className="size-4" aria-hidden="true" />{!iconOnly && label}
@@ -144,6 +179,12 @@ export function ShareSheet({ path, title, text, heading, subtitle, label = "Shar
             <span className="oc-share-label">More</span>
           </button>
         </li>}
+        {qr && <li>
+          <button type="button" className="oc-share-target" aria-busy={qrLoading || undefined} disabled={qrLoading} onClick={() => void presentQr()}>
+            <span className="oc-share-glyph"><QrCode aria-hidden="true" className="size-6" /></span>
+            <span className="oc-share-label">{qrLoading ? "Loading…" : "QR code"}</span>
+          </button>
+        </li>}
       </ul>}
       <div className="oc-share-copy">
         <Input ref={input} readOnly aria-label="Link" value={url} onFocus={event => event.currentTarget.select()} />
@@ -155,4 +196,15 @@ export function ShareSheet({ path, title, text, heading, subtitle, label = "Shar
       <p role="status" aria-live="polite" className={status ? `oc-share-status${status.tone === "error" ? " is-error" : ""}` : "sr-only"}>{status?.message ?? ""}</p>
     </DialogContent>
   </Dialog>
+  {qr && qrValue && <QrPresenterDialog
+    trigger={false}
+    open={qrOpen}
+    onOpenChange={setQrOpen}
+    value={qrValue}
+    title={title}
+    description={qr.description}
+    filename={qr.filename}
+    ariaLabel={`QR code for ${title}`}
+  />}
+  </>
 }
