@@ -36,20 +36,6 @@ test('My interviews shows Up next, Needs notes and Done once each, with one clea
  assert.equal(nodes(tree).filter(n=>n.type==='RoundSelect').length,0);
  assert.equal(nodes(tree).filter(n=>n.type==='SegmentedControl'&&n.props.label==='Show one day').length,1);
 });
-test('My interviews keeps its own round filter and never goes blank because of Schedule\'s round',async()=>{
- // Schedule writes roundId; a round with none of this member's interviews must not hide them.
- window.location.search='?section=recruitment&tool=interviews&roundId=r1';
- const h=list([row('one',soon),row('two',soon+day,{roundId:'r3',roundName:'Round 3'})],[{id:'r1',name:'Round 1'},{id:'r2',name:'Round 2'},{id:'r3',name:'Round 3'}]);
- h.render();await flush();const tree=h.render(),words=text(tree);
- assert.match(words,/Applicant one/);assert.match(words,/Applicant two/);assert.doesNotMatch(words,/no assigned interviews in this round/);
- const filter=nodes(tree).find(n=>n.type==='RoundSelect');assert.equal(filter.props.value,'');assert.deepEqual(filter.props.rounds.map(r=>r.id),['r2','r3']);
- assert.doesNotMatch(fs.readFileSync('components/interviews/interview-rooms-list.tsx','utf8'),/get\("roundId"\)/);
- window.location.search='?section=recruitment&tool=interviews';
-});
-test('with nothing assigned, My interviews says why and offers one way out',async()=>{
- const h=list([]);h.render();await flush();const words=text(h.render());
- assert.match(words,/You aren’t assigned to any interviews yet\. Club leaders add you when they schedule interviews\./);assert.match(words,/Back to recruiting overview/);
-});
 test('My interviews folds a day\'s unbooked times into one line under the booked interviews',async()=>{
  const open=(id,start)=>row(id,start,{bookingId:null,applicationId:null,candidate:null});
  const h=list([row('booked',soon+day),open('o1',soon+day+30*60000),open('o2',soon+day+60*60000),open('o3',soon+2*day)]);
@@ -65,4 +51,18 @@ test('a booked interview whose applicant is withheld stays a booked row, not an 
  h.render();await flush();const words=text(h.render());
  assert.match(words,/Anonymous applicant/);
  assert.match(words,/1 more open time nobody has booked yet/);
+});
+test('My interviews keeps its own round filter and never goes blank because of Schedule\'s round',async()=>{
+ // Schedule writes roundId; a round with none of this member's interviews must not hide them.
+ window.location.search='?section=recruitment&tool=interviews&roundId=r1';
+ const h=list([row('one',soon),row('two',soon+day,{roundId:'r3',roundName:'Round 3'})],[{id:'r1',name:'Round 1'},{id:'r2',name:'Round 2'},{id:'r3',name:'Round 3'}]);
+ h.render();await flush();const tree=h.render(),words=text(tree);
+ assert.match(words,/Applicant one/);assert.match(words,/Applicant two/);assert.doesNotMatch(words,/no assigned interviews in this round/);
+ const filter=nodes(tree).find(n=>n.type==='RoundSelect');assert.equal(filter.props.value,'');assert.deepEqual(filter.props.rounds.map(r=>r.id),['r2','r3']);
+ assert.doesNotMatch(fs.readFileSync('components/interviews/interview-rooms-list.tsx','utf8'),/get\("roundId"\)/);
+ window.location.search='?section=recruitment&tool=interviews';
+});
+test('with nothing assigned, My interviews says why and offers one way out',async()=>{
+ const h=list([]);h.render();await flush();const words=text(h.render());
+ assert.match(words,/You aren’t assigned to any interviews yet\. Club leaders add you when they schedule interviews\./);assert.match(words,/Back to recruiting overview/);
 });
