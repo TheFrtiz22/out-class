@@ -5,7 +5,6 @@ import { ApplicationStatusCard } from "@/components/applications/application-sta
 import { ApplicationStatusDetail } from "@/components/applications/application-status-detail"
 import { useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/ui/page-header"
-import { MetricStrip } from "@/components/product/metric-strip"
 import { UnderlineTabs } from "@/components/ui/underline-tabs"
 import { EmptyState } from "@/components/ui/empty-state"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
@@ -278,10 +277,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
           <>
             <div className="flex flex-wrap items-center justify-between gap-3 border-y py-4"><p className="text-sm text-muted-foreground">Your responses are saved and read-only after submission.</p><Button variant="outline" onClick={() => openRelated("status")}>View status<ArrowRight size={16} /></Button></div>
             <section className="space-y-6" aria-label="Submitted responses">
-              <div>
-                <h2 className="oc-section-heading ">Your submitted responses</h2>
-                <p className="mt-2 text-xs text-muted-foreground">Read-only after submission.</p>
-              </div>
+              <h2 className="oc-section-heading ">Your submitted responses</h2>
               {app.club.questions.map((question, index) => {
                 const response = app.answers.find(
                   (answer) => answer.questionId === question.id,
@@ -315,12 +311,6 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
                 <p className="text-sm text-muted-foreground">No club-specific questions.</p>
               )}
             </section>
-            <div className="flex flex-wrap gap-3 border-t border-border pt-6">
-              <Button variant="ghost" onClick={() => onNavigate?.("explore")}>
-                Explore clubs
-                <ArrowRight className="size-4" />
-              </Button>
-            </div>
           </>
         )}
       </div>
@@ -345,7 +335,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
       ) : (
         <>
           <UnderlineTabs label="Application stage" value={stage} onChange={choose} items={applicationStages.map(item => ({ id: item.id, label: item.label, count: counts[item.id] }))} />
-          {stage !== "drafts" && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
+          {stage !== "drafts" && <p className="text-xs text-muted-foreground">Each club moves you between rounds. Later rounds show what comes next, not an invitation.</p>}
           <p role="status" className="sr-only">{pluralize(visible.length, "application")} shown</p>
           {syncNote && <p role="status" className="text-xs text-muted-foreground">{syncNote}</p>}
           <ul className={stage === "drafts" ? "oc-application-management-list" : "oc-status-list"}>
