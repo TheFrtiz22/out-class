@@ -17,7 +17,7 @@ export * from "@/lib/student-routes"
  * highlighted item always matches the page being shown.
  */
 /** `label` is a visible heading; `name` labels an unheaded group for assistive technology. */
-export type RailSection = { id: string; label?: string; name?: string; tour?: string; items: ProductNavItem[]; /** Sits at the bottom of the rail (Settings). */ pinned?: boolean }
+export type RailSection = { id: string; label?: string; name?: string; tour?: string; items: ProductNavItem[]; /** Sits at the bottom of the rail (Inbox and Settings, accountRailSection). */ pinned?: boolean }
 export type WorkspaceKind = "personal" | "leader" | "admin"
 export type WorkspaceOption = { id: WorkspaceKind; clubId?: string; label: string; shortLabel?: string; href: string }
 
@@ -45,17 +45,27 @@ export function clubShortLabel(club: { name: string; shortName?: string | null }
 
 const personal = (id: string, label: string, path: string): ProductNavItem => ({ id, label, href: path })
 
-/** Personal workspace sections. Notifications and search live only in the header. */
+/**
+ * Personal workspace sections. Status is an Applications tab and Meetings a Calendar filter; Inbox and
+ * Settings are the shared foot every workspace's rail ends with (accountRailSection, added by ProductShell).
+ */
 export function personalRailSections(options: { settings?: boolean } = {}): RailSection[] {
   return [
-    // Seven destinations. Settings is in the account menu, Inbox behind the bell, Status is an
-    // Applications tab, Meetings a Calendar filter, and Tasks is reached from My Clubs and Home.
     { id: "home", name: "Home", items: [personal("student-dashboard", "Home", "/home")] },
     { id: "explore", name: "Explore", items: [personal("explore", "Explore", "/explore"), personal("corkboard", TERMS.events, "/corkboard")] },
-    { id: "apply", name: "Applications", items: [personal("applications", "Applications", "/applications")] },
+    { id: "apply", name: "Applications", items: [personal("applications", "Applications", "/applications"), personal("tasks", "Tasks", "/clubs/tasks")] },
     { id: "clubs", name: "Clubs", items: [personal("clubs", TERMS.myClubs, "/clubs"), personal("calendar", "Calendar", "/calendar")] },
     { id: "account", name: "Account", items: [personal("student-profile", "Profile", "/profile")] },
   ]
+}
+
+/**
+ * Inbox and account Settings, pinned to the bottom of the rail in every workspace: personal, member club,
+ * leader club and admin. ProductShell appends it, so no workspace can leave it out. Its Settings id differs
+ * from a club's own "settings" item, which stays in that club's section.
+ */
+export function accountRailSection(): RailSection {
+  return { id: "account-foot", name: "Inbox and settings", pinned: true, items: [personal("inbox", TERMS.inbox, INBOX_HREF), personal("account-settings", "Settings", "/settings")] }
 }
 
 /** A member (non-leader) club page: personal sections plus that club's own pages. */
@@ -73,21 +83,19 @@ export function memberRailSections(clubId: string, clubName: string | undefined,
 
 /**
  * Club workspace rail: Recruiting (Overview · Applicants · Interviews · Decide), Club (Home · Calendar · Tasks ·
- * Members), then Settings pinned at the bottom. Pages without a rail entry (`hidden`) are left out here but stay
- * reachable, and allowed, through managerNavigation.
+ * Members · Settings). The shell pins Inbox and account Settings below. Pages without a rail entry (`hidden`) are
+ * left out here but stay reachable, and allowed, through managerNavigation.
  */
 export function leaderRailSections(member: ClubAccess, clubId: string, search = ""): RailSection[] {
   const visible = (item: ProductNavItem) => !item.hidden && item.id !== "settings"
   const recruiting = managerNavigation(member, clubId, "recruiting", search).filter(visible)
   const clubItems = managerNavigation(member, clubId, "club", search)
-  const club = clubItems.filter(visible).map(item => item.id === "overview" ? { ...item, id: "club-home" } : item)
-  const settings = clubItems.find(item => item.id === "settings")
+  const club = [...clubItems.filter(visible).map(item => item.id === "overview" ? { ...item, id: "club-home" } : item), ...clubItems.filter(item => item.id === "settings")]
   // Only Overview means the member has no recruiting tools; the overview alone is not a section.
   const hasRecruiting = recruiting.some(item => item.id !== "overview")
   return [
     ...(hasRecruiting ? [{ id: "recruiting", label: "Recruiting", tour: "mode-recruiting", items: recruiting.map(item => ({ ...item, mode: "recruiting" as const })) }] : []),
     { id: "club", label: "Club", tour: "mode-club", items: club.map(item => ({ ...item, mode: "club" as const })) },
-    ...(settings ? [{ id: "pinned", name: "Settings", pinned: true, items: [{ ...settings, mode: "club" as const }] }] : []),
   ]
 }
 
@@ -130,21 +138,20 @@ export function workspaceOptionName(option: WorkspaceOption) {
 const personalPathItems: Record<string, string> = {
   "/home": "student-dashboard", "/explore": "explore", "/explore/categories": "explore", "/corkboard": "corkboard", "/saved-clubs": "corkboard",
   "/applications": "applications", "/applications/status": "applications", "/clubs": "clubs", "/clubs/meetings": "calendar", "/meetings": "calendar",
-  "/clubs/tasks": "clubs", "/calendar": "calendar", "/settings/interviews": "calendar", "/profile": "student-profile",
+  "/clubs/tasks": "tasks", "/calendar": "calendar", "/settings/interviews": "calendar", "/profile": "student-profile",
 }
 
-/**
- * The rail item for the current page, or null when no rail item represents it
- * (Notifications, for example, is reached from the header bell).
- */
+/** The rail item for the current page, or null when no rail item represents it. */
 export function activeNavItem(pathname: string, params: URLSearchParams = new URLSearchParams(), options: { member?: boolean } = {}): string | null {
   if (personalPathItems[pathname]) return personalPathItems[pathname]
-  // Detail pages highlight their parent section; the header bell owns Notifications.
-  if (pathname === "/inbox") return null
+  // Detail pages highlight their parent section.
+  if (pathname === INBOX_HREF) return "inbox"
   if (pathname.startsWith("/meetings/")) return "calendar"
   if (pathname.startsWith("/applications/")) return "applications"
   if (/^\/club\/[^/]+$/.test(pathname)) return "explore"
-  if (pathname.startsWith("/settings") || pathname.startsWith("/club-claims") || pathname.startsWith("/invitations") || pathname.startsWith("/club-access/")) return "settings"
+  if (pathname.startsWith("/settings") || pathname.startsWith("/club-claims") || pathname.startsWith("/invitations")) return "account-settings"
+  // Workspace access renders in the club shell, under that club's Settings.
+  if (pathname.startsWith("/club-access/")) return "settings"
   if (/^\/club\/[^/]+\/workspace$/.test(pathname)) {
     const section = params.get("section") || "overview", tool = params.get("tool")
     // Same mapping the club workspace uses to pick its content. Pages without a rail entry light their parent.
@@ -170,14 +177,16 @@ export function bottomBarItems(sections: RailSection[], kind: WorkspaceKind | "p
     const inClub = sections.some(section => section.id === "member-club")
     const home = find("student-dashboard"), explore = find("explore"), calendar = find("calendar"), profile = find("student-profile")
     return [
-      home && { ...home, matches: ["applications", "clubs"] },
+      home && { ...home, matches: ["applications", "tasks", "clubs"] },
       explore && { ...explore, matches: ["corkboard"] },
       { id: "inbox", label: TERMS.inbox, href: INBOX_HREF },
       calendar, inClub ? undefined : profile,
     ].filter((item): item is ProductNavItem => !!item)
   }
   if (kind === "leader") return leaderBottomBar(sections)
-  const current = sections.find(section => section.items.some(item => item.id === active)) ?? sections[0]
+  // The pinned Inbox/Settings foot is never the phone bar; it stays in the More sheet.
+  const unpinned = sections.filter(section => !section.pinned)
+  const current = unpinned.find(section => section.items.some(item => item.id === active)) ?? unpinned[0]
   return current ? mobileDestinations(current.items).slice(0, 4) : []
 }
 
