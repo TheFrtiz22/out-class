@@ -43,7 +43,7 @@ test('projector slide layout: facts, every note in full, lists render, fits ever
   assert.ok((await page.locator('[data-slide-field="resumeHighlight"]').innerText()).includes('End of preserved excerpt.'),'the whole excerpt');
   // Prepared highlights are shown in full with their attribution.
   const prepared=await page.locator('[data-slide-field="preparedHighlights"]').innerText();
-  assert.match(prepared,/adjusted our pickup schedule/);assert.match(prepared,/Leader summary: Ran a semester-long volunteer drive/);assert.match(prepared,/Application answers/);
+  assert.match(prepared,/adjusted our pickup schedule/);assert.match(prepared,/Leader summary: Ran a semester-long volunteer drive/);assert.match(prepared,/Application \/ profile/);
   assert.equal(await page.getByRole('button',{name:/Read full|Applicant details/}).count(),0);
 
   // No scroll and nothing clipped on the projector at every size.

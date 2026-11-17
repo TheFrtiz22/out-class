@@ -401,3 +401,4 @@ p.vr-aud-title{display:flex;align-items:baseline;gap:.8em;margin:0}
 .vr-vote-status .vr-pass-meaning{margin:0;font-size:.7em;color:var(--muted-foreground)}
 .vr-qr-card-placeholder{min-height:232px;border:1px solid var(--border);border-radius:var(--oc-radius-2xl)}
 .vr-aud-person .vr-outcome{font-size:1em}
+.vr-aud-paras{margin:0;padding:0;list-style:none}

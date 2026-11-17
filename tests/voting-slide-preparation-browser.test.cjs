@@ -7,7 +7,7 @@ const answer='I organized a campus food drive with six volunteers, tracked weekl
 const source=(id,text,label)=>({type:'PROFILE',id,version:hash(text),revision:null,label,author:null,roundId:null,roundName:null,text});
 const quote=(n,id,text,label,excerpt=text)=>({id:uuid(600+n),mode:'QUOTE',text:excerpt,source:source(id,text,label),writtenBy:null});
 
-test('locked highlights render consistently across applicants, keep full sources in details, and fit projector and phone',{timeout:180000},async()=>{
+test('locked highlights render consistently across applicants, in full with attribution, and fit projector and phone',{timeout:180000},async()=>{
  const f=await fixture(),browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1280,height:720}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const preparations=[
   {sessionId,applicationId:apps[0],revision:2,highlights:[quote(1,'profile:answers:0',answer,'Application answers','adjusted our pickup schedule when a partner pantry changed its hours'),{...quote(2,'profile:answers:0',answer,'Application answers'),mode:'SUMMARY',text:'Ran a semester-long volunteer drive and handled a schedule change without missed deliveries.',writtenBy:'QA Leader'},quote(3,'profile:major:0','Economics','Major')]},
@@ -31,21 +31,20 @@ test('locked highlights render consistently across applicants, keep full sources
   const base=`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=present&actor=leader`;
   await page.goto(base);await page.getByRole('heading',{name:'QA Applicant One',exact:true}).waitFor();
   const band=page.getByRole('region',{name:'Leader-selected highlights'});await band.waitFor();
-  assert.equal(await band.getByRole('listitem').count(),3);
+  assert.equal(await band.locator('.vr-aud-para').count(),3);
   assert.ok(await band.getByText('Leader summary:').count(),'summary is labelled as leader writing');
-  assert.equal(await band.locator('q').count(),2,'quotations render as quotations');
+  assert.equal(await band.locator('blockquote').count(),2,'quotations render as quotations');
   assert.ok(await band.getByText('Economics',{exact:true}).count(),'locked copy, not the later edit');assert.equal(await page.getByText('Changed after start').count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),'three highlights plus all selected fields fit a 1280×720 projector');
   const out=path.resolve('test-results/voting-slide-preparation');fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,'projector-highlights.png'),fullPage:true});
-  const axe=await new AxeBuilder({page}).include('.vr-applicant').analyze();assert.deepEqual(axe.violations.map(v=>v.id),[]);
-  await page.getByRole('button',{name:'Applicant details and highlight sources'}).click();const dialog=page.getByRole('dialog');await dialog.waitFor();
-  await dialog.getByText('Full original source').first().click();assert.ok(await dialog.getByText(answer,{exact:true}).count(),'details link to the full source');
-  assert.ok(await dialog.getByText(/Leader summary by QA Leader/).count());await page.keyboard.press('Escape');
+  const axe=await new AxeBuilder({page}).include('.vr-aud-applicant').analyze();assert.deepEqual(axe.violations.map(v=>v.id),[]);
+  // The projector shows each highlight in full with its attribution; nothing hides behind a details button.
+  assert.ok(await band.getByText(/Application \/ profile/).count(),'every highlight is attributed');assert.equal(await page.getByRole('button',{name:/Applicant details/}).count(),0);
   // Same structure for the next applicant, with fewer highlights.
   await f.h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{confirmed:true,reason:'Fixture advance',applicationId:apps[0],passNumber:1});
   await page.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor({timeout:20000});
   const second=page.getByRole('region',{name:'Leader-selected highlights'});
-  assert.equal(await second.getByRole('listitem').count(),2,'highlights saved after START appear when the applicant comes up');
+  assert.equal(await second.locator('.vr-aud-para').count(),2,'highlights saved after START appear when the applicant comes up');
   assert.ok(await second.getByText('Interview score · Interview').count(),'interview-score quotation is on the slide');
   assert.equal(locks.length,2);assert.equal(locks[1].preparationRevision,2);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1));

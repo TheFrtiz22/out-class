@@ -28,13 +28,13 @@ test('target summary stays stationary through slide transitions, syncs to the au
   await leader.waitForFunction(()=>/1 passed · Target 1/.test(document.querySelector('[data-marker="stationary"]')?.textContent??''));
   assert.match(await summary.innerText(),/Target reached/);
   // The audience screen picks up the counts through the room's polling path, without reload.
-  await audience.getByText('Passed 1',{exact:true}).waitFor({timeout:15000});
+  await audience.locator('.vr-tracker [data-count="passed"] dd',{hasText:/^1$/}).waitFor({timeout:15000});
   // Target reached: Pass remains available and nobody is rejected automatically.
   await leader.getByRole('button',{name:'Open voting',exact:true}).click();confirmNext(leader);await leader.getByRole('button',{name:'Close vote',exact:true}).click();
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Also strong');const pass=leader.getByRole('button',{name:'Pass',exact:true});assert.equal(await pass.isDisabled(),false);await pass.click();
   await leader.getByText('1 over target',{exact:true}).first().waitFor();assert.match(await summary.innerText(),/2 passed · Target 1/);
   assert.equal(f.h.state().sessions[0].passes[0].candidates.filter(c=>c.confirmedDecision==='NOT_PASS').length,0,'no automatic rejection');
-  await audience.getByText('1 over target',{exact:true}).waitFor({timeout:15000});
+  await audience.locator('.vr-tracker [data-count="passed"] dd',{hasText:/^2$/}).waitFor({timeout:15000});await audience.getByText('Target of 1 reached · voting can continue',{exact:true}).waitFor();
   assert.doesNotMatch(await summary.innerText(),/QA voter|ballot/i,'counts only');
   await leader.setViewportSize({width:390,height:844});assert.ok(await leader.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'phone layout has no horizontal overflow');
   const a11y=await new AxeBuilder({page:leader}).include('.oc-target-summary').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();assert.deepEqual(a11y.violations.map(v=>v.id),[]);
