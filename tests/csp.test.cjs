@@ -11,6 +11,7 @@ function load(file, mocks = {}) {
   return mod.exports
 }
 const csp = load('lib/csp.ts')
+const { getScriptNonceFromHeader } = require('next/dist/server/app-render/get-script-nonce-from-header')
 const reports = load('lib/csp-report.ts')
 const directive = (policy, name) => policy.split('; ').find(part => part === name || part.startsWith(`${name} `))
 const withEnv = async (patch, fn) => {
@@ -28,7 +29,7 @@ const loadMiddleware = (live = { calls: 0, forwarded: [] }) => load('middleware.
   '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
   '@/utils/supabase/middleware': { createClient: async request => {
     live.calls++
-    live.forwarded.push({ nonce: request.headers.get('x-nonce'), policy: request.headers.get('content-security-policy') || request.headers.get('content-security-policy-report-only') })
+    live.forwarded.push({ nonce: request.headers.get('x-nonce'), policy: request.headers.get('content-security-policy'), reportOnly: request.headers.get('content-security-policy-report-only') })
     return new Response('page')
   } },
   '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
@@ -49,7 +50,9 @@ test('middleware sends a fresh nonce per page request and forwards the same nonc
       const nonce = /'nonce-([^']+)'/.exec(directive(policy, 'script-src'))[1]
       assert.match(nonce, /^[A-Za-z0-9+/]{22}==$/, '128-bit base64 nonce')
       assert.equal(live.forwarded[i].nonce, nonce, 'the layout reads the same nonce through x-nonce')
-      assert.equal(live.forwarded[i].policy, policy, 'Next.js reads the nonce from the forwarded policy')
+      assert.equal(live.forwarded[i].policy, policy, 'Next.js reads the nonce from the forwarded policy under the name it checks first')
+      assert.equal(live.forwarded[i].reportOnly, null)
+      assert.equal(getScriptNonceFromHeader(live.forwarded[i].policy), nonce, "Next.js's own parser finds the nonce for its framework scripts")
       assert.doesNotMatch(live.forwarded[i].policy, /attacker/)
       nonces.push(nonce)
     }
@@ -182,4 +185,48 @@ test('report log is rate limited and bounded per window', () => {
   const rolled = log.accept([v(9)])
   assert.deepEqual(rolled[0], { message: 'CSP violations repeated', data: { distinct: 3, repeats: 1, dropped: 2 } })
   assert.equal(rolled[1].data.blocked, 'https://h9.example')
+})
+
+test('rendering always receives the full policy under the header name Next.js reads first, in both modes', async () => {
+  for (const enforce of [undefined, '1']) {
+    await withEnv({ OUTCLASS_CSP_ENFORCE: enforce, NODE_ENV: 'production' }, async () => {
+      const live = { calls: 0, forwarded: [] }
+      const { middleware } = loadMiddleware(live)
+      // A client-sent policy under either name, and the shape of the config-level frame-ancestors header.
+      const response = await middleware(new NextRequest('https://outclass.example/login', { headers: { 'content-security-policy': "frame-ancestors 'self'", 'content-security-policy-report-only': "script-src 'nonce-attacker'", 'x-nonce': 'attacker' } }))
+      const sent = response.headers.get(enforce ? 'content-security-policy' : 'content-security-policy-report-only')
+      const [forwarded] = live.forwarded
+      assert.equal(forwarded.policy, sent, String(enforce))
+      assert.equal(forwarded.reportOnly, null)
+      assert.equal(getScriptNonceFromHeader(forwarded.policy), forwarded.nonce)
+      assert.notEqual(forwarded.nonce, 'attacker')
+    })
+  }
+  const headers = new Headers({ 'content-security-policy': "frame-ancestors 'self'" })
+  csp.forwardCspToRendering(headers, 'abc', "script-src 'nonce-abc'")
+  assert.equal(headers.get('content-security-policy'), "script-src 'nonce-abc'")
+  assert.equal(headers.get('x-nonce'), 'abc')
+})
+
+test('production policy string: nonce-only scripts, no eval, no wildcard hosts, framing locked', () => {
+  const env = { NODE_ENV: 'production', OUTCLASS_CSP_ENFORCE: '1', TURNSTILE_ENABLED: '1', NEXT_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co', NEXT_PUBLIC_SENTRY_DSN: 'https://key@o1.ingest.us.sentry.io/2' }
+  const policy = csp.buildCsp({ nonce: 'QUJD', env })
+  assert.equal(policy, [
+    "default-src 'self'",
+    "script-src 'self' 'nonce-QUJD' 'strict-dynamic' 'wasm-unsafe-eval' https://challenges.cloudflare.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self'",
+    "connect-src 'self' https://abc.supabase.co wss://abc.supabase.co https://o1.ingest.us.sentry.io",
+    "frame-src 'self' https://challenges.cloudflare.com",
+    "worker-src 'self'", "manifest-src 'self'", "media-src 'self'",
+    "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'self'",
+    'upgrade-insecure-requests', 'report-uri /api/csp-report',
+  ].join('; '))
+  assert.doesNotMatch(policy, /'unsafe-eval'|'unsafe-hashes'|(?:^|\s)\*(?:\s|;|$)|https:\/\/\*/)
+  assert.doesNotMatch(directive(policy, 'script-src'), /'unsafe-inline'|data:|blob:|https:(?!\/\/challenges)/)
+  for (const bad of ['javascript:', 'http://abc.supabase.co ']) assert.ok(!policy.includes(bad), bad)
+  // Malformed or non-http configuration never widens the policy.
+  const odd = csp.buildCsp({ nonce: 'n', env: { NODE_ENV: 'production', NEXT_PUBLIC_SUPABASE_URL: 'javascript:alert(1)', NEXT_PUBLIC_SENTRY_DSN: 'not a url' } })
+  assert.equal(directive(odd, 'connect-src'), "connect-src 'self'")
 })

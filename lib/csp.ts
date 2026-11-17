@@ -13,6 +13,23 @@ type Env = Record<string, string | undefined>
 export const CSP_NONCE_HEADER = "x-nonce"
 export const CSP_REPORT_PATH = "/api/csp-report"
 
+/**
+ * Puts the nonce and policy on the request headers that rendering receives.
+ *
+ * Next.js takes the nonce for its own framework and chunk scripts from the request's
+ * `content-security-policy` header, and reads the Report-Only name only when that header is
+ * absent. Forwarded under the Report-Only name alone, the nonce reached the app (`x-nonce`) but
+ * not Next.js's scripts on Vercel (docs/csp.md, "Rendering header"). The full policy is therefore
+ * always forwarded under the name Next.js reads first. Request headers enforce nothing; the
+ * response header (Report-Only or enforced) is chosen separately by `cspHeaderName`.
+ */
+export function forwardCspToRendering(headers: Headers, nonce: string, policy: string) {
+  // Never trust a client-sent nonce or policy.
+  headers.delete("content-security-policy-report-only")
+  headers.set("content-security-policy", policy)
+  headers.set(CSP_NONCE_HEADER, nonce)
+}
+
 export function cspEnforced(env: Env = process.env) {
   return env.OUTCLASS_CSP_ENFORCE === "1"
 }

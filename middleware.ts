@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/middleware'
 import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 import { RATE_LIMITS, RATE_LIMIT_MESSAGE, rateLimiter, rateLimitHeaders, rateLimitKey } from "@/lib/rate-limit-core"
-import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, CSP_NONCE_HEADER } from "@/lib/csp"
+import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, forwardCspToRendering } from "@/lib/csp"
 
 /**
  * Page requests get a fresh nonce and Content-Security-Policy (docs/csp.md). The nonce and
@@ -19,11 +19,7 @@ export async function middleware(request: NextRequest) {
   try { pathname = decodeURIComponent(pathname) } catch { /* route() answers 400 */ }
   if (!cspAppliesTo(pathname)) return route(request)
   const nonce = createNonce(), policy = buildCsp({ nonce }), header = cspHeaderName()
-  // Never trust a client-sent nonce or policy.
-  request.headers.delete("content-security-policy")
-  request.headers.delete("content-security-policy-report-only")
-  request.headers.set(CSP_NONCE_HEADER, nonce)
-  request.headers.set(header, policy)
+  forwardCspToRendering(request.headers, nonce, policy)
   const response = await route(request)
   response.headers.set(header, policy)
   return response
