@@ -50,3 +50,12 @@ test('with nothing assigned, My interviews says why and offers one way out',asyn
  const h=list([]);h.render();await flush();const words=text(h.render());
  assert.match(words,/You aren’t assigned to any interviews yet\. Club leaders add you when they schedule interviews\./);assert.match(words,/Back to recruiting overview/);
 });
+test('My interviews folds a day\'s unbooked times into one line under the booked interviews',async()=>{
+ const open=(id,start)=>row(id,start,{bookingId:null,applicationId:null,candidate:null});
+ const h=list([row('booked',soon+day),open('o1',soon+day+30*60000),open('o2',soon+day+60*60000),open('o3',soon+2*day)]);
+ h.render();await flush();const tree=h.render(),words=text(tree);
+ assert.doesNotMatch(words,/Open time slot/);
+ assert.match(words,/2 more open times nobody has booked yet/);
+ assert.match(words,/1 open time, none booked yet/);
+ assert.equal(words.split('Applicant booked').length-1,1);
+});

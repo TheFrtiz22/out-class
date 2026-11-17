@@ -85,7 +85,11 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
       </div>
       {shownDays.map(group => { const first = group.entries[0], last = group.entries.reduce((latest, row) => +new Date(row.endTime) > +new Date(latest.endTime) ? row : latest, first), booked = group.entries.filter(row => row.bookingId).length; return <section key={group.day} aria-label={group.label} className="space-y-1.5">
         <h4 className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-muted-foreground"><span className="font-medium text-foreground">{group.day === today(group.timezone) ? "Today" : group.label}</span><span className="tabular-nums">{interviewTimeRange({ startTime: first.startTime, endTime: last.endTime, timezone: group.timezone })} · {booked ? pluralize(booked, "interview") : "No bookings yet"}</span></h4>
-        <ul className="oc-my-interviews">{group.entries.map(row => <InterviewRow key={row.id} row={row} primary={row.id === firstAction} />)}</ul>
+        {(() => { const interviews = group.entries.filter(row => row.applicationId), open = group.entries.length - interviews.length; return <ul className="oc-my-interviews">
+          {interviews.map(row => <InterviewRow key={row.id} row={row} primary={row.id === firstAction} />)}
+          {/* Unbooked times are one quiet line, so the booked interviews are what stands out. */}
+          {open > 0 && <li className="oc-my-interview text-sm text-muted-foreground" data-open-times="">{interviews.length ? `${pluralize(open, "more open time")} nobody has booked yet` : `${pluralize(open, "open time")}, none booked yet`}</li>}
+        </ul>; })()}
       </section>; })}
     </section>}
     {!loading && !error && needsNotes.length > 0 && <section aria-labelledby="my-interviews-needs-notes" className="space-y-2">
