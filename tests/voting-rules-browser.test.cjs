@@ -27,6 +27,8 @@ test('setup requires choosing and reviewing an automatic rule with a plain-langu
   const saved=f.h.state().sessions[0].presentationOptions.rules;assert.deepEqual(saved,{mode:'THRESHOLD',threshold:{numerator:2,denominator:3},denominator:'ELIGIBLE_VOTERS',minimumParticipation:{numerator:1,denominator:2},belowThreshold:'HOLD',reviewed:true});
   // Open electorate: members join with the join link (the real join action) before the leader opens voting.
   {const {load}=require('./helpers/voting-room-harness.cjs'),setup=load('actions/voting-room-setup.ts',f.h.mocks),scope={clubId:f.clubId,sessionId:f.h.state().sessions[0].id};for(const m of f.h.members.filter(m=>m.permissions.includes('decisions.vote'))){f.h.as(m.userId);await setup.joinLiveVotingRoom(scope);}f.h.as(f.h.members[0].userId);}
+  // The joins moved the room on; reload so the leader acts on the current room.
+  await page.reload();await page.getByRole('button',{name:'Open voting',exact:true}).waitFor();
   // Leader opens voting; every eligible voter votes Pass through the real actions; the leader closes and confirms the rule's outcome.
   await page.getByRole('button',{name:'Open voting',exact:true}).click();await page.getByRole('button',{name:'Close voting',exact:true}).waitFor();
   const electorate=f.h.state().ballotRules[0].electorate;assert.ok(electorate.length>=1);
