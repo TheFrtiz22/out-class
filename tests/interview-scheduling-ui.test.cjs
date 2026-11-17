@@ -1,5 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{harness}=require('./helpers/demo-harness.cjs')
-const {schedulingEntry,bookingState}=harness().load('lib/interview-scheduling-ui.ts')
+const {schedulingEntry,bookingState,suggestedCycle}=harness().load('lib/interview-scheduling-ui.ts')
 const settings={bookingPublishedAt:null,bookingPaused:false,bookingRevision:0,bookingCycleId:null,bookingAllowCancellation:true,bookingAllowRescheduling:true}
 const data={rounds:[{id:'one',booking:{...settings}},{id:'two',booking:{...settings}}],rooms:[]}
 test('booking progress reads the counts for one cohort',()=>{
@@ -18,4 +18,15 @@ test('booking presentation distinguishes draft, paused, full and published witho
 })
 test('Demo scheduling exposes saved per-round duration just like the live room workspace',async()=>{
  const h=harness(),store=h.load('lib/demo/store.ts').demoStore;store.start(h.load('lib/demo/seed.ts').createDemoSeed('2099-09-07'));const club=store.get().clubs[0];store.mutate(s=>s.perspective={role:'leader',clubId:club.id});const workspace=await h.load('lib/workspace-api.ts').getRoomWorkspace(club.id),round=workspace.rounds.find(r=>r.name==='Round 2');assert.equal(round.configuration.duration,35);assert.equal(h.calls(),0);store.stop()
+})
+test('publishing suggests the recruiting cycle that holds the invited applicants',()=>{
+ assert.equal(suggestedCycle([{cycleId:'spring',count:6}],''),'spring')
+ assert.equal(suggestedCycle([{cycleId:'spring',count:6},{cycleId:null,count:1}],''),null)
+ assert.equal(suggestedCycle([{cycleId:'spring',count:2},{cycleId:'fall',count:5}],'winter'),'fall')
+ assert.equal(suggestedCycle([{cycleId:null,count:3}],'spring'),'')
+ assert.equal(suggestedCycle([],''),null)
+})
+test('booking settings and pausing save with the stored cycle, so a suggested cycle before the first publish cannot make them fail',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../components/interviews/booking-publication.tsx'),'utf8')
+ assert.match(src,/cycleId: action === "PUBLISH" \? cycleId \|\| null : settings\.bookingCycleId \?\? null/)
 })

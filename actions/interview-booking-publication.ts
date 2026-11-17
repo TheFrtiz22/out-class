@@ -15,7 +15,11 @@ export async function getInterviewBookingPublication(raw: unknown) {
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     const rows = await interviewBookingCoverage(tx, input.clubId, input.roundId)
-    return { slots: rows }
+    // Only invited applications in the published cycle can book, so the publish step shows how many each cycle holds.
+    const apps = await tx.application.findMany({ where: { clubId: input.clubId, roundId: input.roundId, status: "INTERVIEWING", student: { disabledAt: null } }, select: { recruitmentCycleId: true } })
+    const invited = new Map<string | null, number>()
+    for (const app of apps) invited.set(app.recruitmentCycleId, (invited.get(app.recruitmentCycleId) ?? 0) + 1)
+    return { slots: rows, invited: [...invited].map(([cycleId, count]) => ({ cycleId, count })) }
   }, { timeout: 60000 })
 }
 
