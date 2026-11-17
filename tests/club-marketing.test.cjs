@@ -1,3 +1,4 @@
+const { unwrapActions } = require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -29,12 +30,12 @@ test('invalid links, non-raster uploads, oversized images, and impossible stats 
 })
 test('publishing checks club permission and atomically saves every profile field with an audit', async () => {
   let stored, audit, allowed = false, writes = 0
-  const actions = load('actions/club-workspace.ts', {
+  const actions = unwrapActions(load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
     '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async (id, p) => { assert.equal(id, clubId); assert.deepEqual(p, ['club.settings']); if (!allowed) throw new Error('Denied'); return { user: { id: 'editor' } } } },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn({ $queryRaw: async()=>[], club: { findUniqueOrThrow: async () => draft(), update: async q => { writes++; stored = q.data; assert.equal(q.where.id, clubId) } }, auditLog: { create: async q => { audit = q.data } } }) } },
-  })
+  }))
   await assert.rejects(actions.updateClubSettings({ clubId, ...draft() }), /Denied/)
   assert.equal(writes, 0)
   allowed = true
@@ -96,16 +97,16 @@ test('published profile compare tokens reject concurrent authors and recover ide
   let current = clubProfileSchema.parse(draft()), writes = 0
   const expectedProfile = JSON.stringify(current)
   const tx = { club: { findUniqueOrThrow: async () => current, update: async q => { writes++; current = { ...current, ...q.data } } }, auditLog: { create: async () => {} } }
-  const actions = load('actions/club-workspace.ts', {
+  const actions = unwrapActions(load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
     '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'editor' } }) },
     '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
-  })
+  }))
   const next = { ...current, description: 'The acknowledged public description' }
   await actions.updateClubSettings({ clubId, ...next, expectedProfile })
   await actions.updateClubSettings({ clubId, ...next, expectedProfile })
-  await assert.rejects(actions.updateClubSettings({ clubId, ...next, description: 'Stale competing draft', expectedProfile }), /changed while you were editing/)
+  await assert.rejects(actions.updateClubSettings({ clubId, ...next, description: 'Stale competing draft', expectedProfile }), e => e.refused === true && e.code === 'STALE' && /changed while you were editing/.test(e.message))
   assert.equal(current.description, next.description); assert.equal(writes, 2)
 })
 
@@ -192,12 +193,12 @@ test('white logos can retain their original artwork on a brand-color background 
 
 test('logo presentation choices persist through the existing authorized settings update and preserve artwork', async () => {
   let profile = draft(), allowed = true, transactionAllowed = true, writes = 0
-  const actions = load('actions/club-workspace.ts', {
+  const actions = unwrapActions(load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, actor, permissions) => { assert.equal(id, clubId); assert.equal(actor, 'editor'); assert.deepEqual(permissions, ['club.settings']); if (!transactionAllowed) throw Error('Revoked') } },
     '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async () => { if (!allowed) throw Error('Denied'); return { user: { id: 'editor' } } } },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn({ club: { findUniqueOrThrow: async () => profile, update: async ({data}) => { writes++; profile = {...profile,...data} } }, auditLog: {create: async()=>{}} }) } },
-  })
+  }))
   const original = profile.logoUrl
   for (const mode of ['auto','navy','ivory','transparent','custom']) {
     const logoBackground = {mode,...(mode==='custom'?{color:'#3b6149'}:{})}

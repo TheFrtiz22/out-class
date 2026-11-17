@@ -13,14 +13,21 @@ import { activeMemberWhere } from "@/lib/permissions"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
-import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
+import { ANSWER_TOO_LONG_MESSAGE, MAX_ANSWER_CHARACTERS, applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import type { z } from "zod"
 import { boundedParse } from "@/lib/bounded-input"
 import { ActionError, actionResult } from "@/lib/action-result"
 import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone"
 
+/** An over-long answer is the one schema failure a student can cause by typing, so it gets its own message. */
+function answersWithinLimit(input: unknown) {
+  const answers = (input as { answers?: unknown } | null)?.answers
+  return !Array.isArray(answers) || answers.every(answer => typeof (answer as { response?: unknown } | null)?.response !== "string" || (answer as { response: string }).response.length <= MAX_ANSWER_CHARACTERS)
+}
+
 async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
   const { user } = await requireAuth()
+  if (!answersWithinLimit(input)) throw new ActionError(ANSWER_TOO_LONG_MESSAGE, "TOO_LONG")
   const parsed = boundedParse(applicationInputSchema, input)
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction")
   const applicationId = await clubWriteTransaction(async (tx) => {

@@ -1,3 +1,4 @@
+const { unwrapActions } = require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -109,7 +110,7 @@ function writeHarness({ action = true, maintenance = true } = {}) {
   }
   mocks['@/utils/site-settings'] = s.settings
   const auth = load('utils/auth.ts', mocks); mocks['@/utils/auth'] = auth
-  return { auth, writes, settings: s, signIn: id => { signedIn = id; s.newRequest() }, workspace: load('actions/club-workspace.ts', mocks) }
+  return { auth, writes, settings: s, signIn: id => { signedIn = id; s.newRequest() }, workspace: unwrapActions(load('actions/club-workspace.ts', mocks)) }
 }
 const input = { clubId, name: 'Test club', tagline: 'Test', description: 'Description' }
 

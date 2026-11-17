@@ -65,6 +65,12 @@ test('Resend transport keeps one recipient and a stable key and distinguishes re
     assert.equal(calls[0].options.body, calls[1].options.body);
     assert.equal(JSON.parse(calls[1].options.body).to, 'student@virginia.edu');
     status = 422; await assert.rejects(email.sendNotificationEmail(payload, uuid(2), 'fixture'), e => !e.retryable);
+    // A sending quota is a definite refusal that waits for the reset; a plain 429 is still an ordinary retry.
+    global.fetch = async () => Response.json({ statusCode: 429, name: 'daily_quota_exceeded', message: 'quota' }, { status: 429 });
+    await assert.rejects(email.sendNotificationEmail(payload, uuid(3), 'fixture'), e => e.code === 'RESEND_DAILY_QUOTA' && e.retryable && e.notAccepted && e.retryAfterMs > 0 && e.retryAfterMs <= 86460000);
+    global.fetch = async () => Response.json({ statusCode: 429, name: 'rate_limit_exceeded', message: 'slow down' }, { status: 429 });
+    await assert.rejects(email.sendNotificationEmail(payload, uuid(4), 'fixture'), e => e.code === 'RESEND_429' && e.retryable && !e.notAccepted);
+    assert.equal(email.untilDailyQuotaReset(Date.UTC(2026, 10, 17, 23, 30)), 31 * 60000, 'resets a minute after midnight UTC');
   } finally { global.fetch = original; }
 });
 
@@ -105,3 +111,11 @@ test('notification emails link to the student inbox path, not the old homepage q
     if (name !== 'panel') assert.ok(payload.text.includes('Read your updates: https://www.outclass.test/inbox\n'), `${name}: inbox link`)
   }
 })
+
+test('a Book your interview notice says it books, not that it opens the application', () => {
+  const { inboxNotification } = loader({})('lib/communications-client.ts');
+  const base = { id: uuid(1), clubId: uuid(2), club: { name: 'Fixture', color: '#142d4e', logoUrl: null }, title: 'Book your interview', body: 'Interview times are open.', createdAt: new Date('2026-10-10T12:00:00Z'), readAt: null, type: 'INTERVIEW' };
+  assert.equal(inboxNotification({ ...base, eventKey: `applicant-interview-booking:published:a:r:c`, href: `/interviews/book?clubId=${uuid(2)}&roundId=${uuid(3)}` }).cta, 'Book interview');
+  assert.equal(inboxNotification({ ...base, eventKey: `applicant-interview-booking:confirmed:b`, href: `/interviews/book?clubId=${uuid(2)}&roundId=${uuid(3)}` }).cta, 'View interview');
+  assert.equal(inboxNotification({ ...base, eventKey: 'status:x', href: '/applications' }).cta, 'View application');
+});
