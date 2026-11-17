@@ -7,10 +7,12 @@ test('Demo: ballots never advance; one leader finalization advances once; stale 
  const leader=s.memberships.find(m=>m.clubId===clubId&&m.isOwner),voter=s.memberships.find(m=>m.clubId===clubId&&!m.isOwner);
  demoStore.mutate(s=>s.memberships.find(m=>m.id===voter.id).permissions.push('decisions.vote'));
  const api=h.load('lib/voting-room-api.ts'),setup=await api.getLiveVotingSetup({clubId,roundId,cycleId:clubId});
- const ids=setup.applicants.slice(0,3).map(a=>a.id);assert.equal(ids.length,3);
+ // The Demo leader is also an applicant; nobody votes on their own application, so use other applicants here.
+ const ids=setup.applicants.filter(a=>s.applications.find(x=>x.id===a.id)?.studentId!==leader.userId).slice(0,3).map(a=>a.id);assert.equal(ids.length,3);
  const sessionId=crypto.randomUUID(),scope={clubId,sessionId};
- await api.createLiveVotingRoom({...scope,cycleId:clubId,roundId,targetSize:null,applicationIds:ids,leaderMemberIds:[leader.id],participantIds:[leader.id,voter.id],presentationOptions:{fields:['name','sat','interviewScore'],highlights:{}}});
- await api.joinLiveVotingRoom(scope,voter.id);
+ await api.createLiveVotingRoom({...scope,cycleId:clubId,roundId,targetSize:null,applicationIds:ids,leaderMemberIds:[leader.id],presentationOptions:{fields:['name','sat','interviewScore'],highlights:{}}});
+ // Open electorate: both join with the join link; nobody is preselected.
+ await api.joinLiveVotingRoom(scope);await api.joinLiveVotingRoom(scope,voter.id);
  const command=async(action,extra={})=>api.commandLiveVotingRoom({...scope,action,confirmed:true,revision:(await api.getLiveVotingRoom(scope)).revision,requestId:crypto.randomUUID(),...extra});
  await command('START');await command('OPEN_VOTING');
 

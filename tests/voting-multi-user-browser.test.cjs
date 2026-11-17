@@ -44,7 +44,7 @@ test('multi-user voting: ballots never advance; finalization advances every view
   const ballots=()=>f.h.state().sessions[0].passes[0].candidates[0].ballots;
   assert.equal(ballots().filter(b=>b.memberId===voterId).length,1,'one ballot from four clicks');
   for(let i=0;i<4;i++){await focus(all);await leader.waitForTimeout(150);} // duplicate refresh events
-  await leader.getByText('1 of 2 eligible voters voted',{exact:true}).waitFor();
+  await leader.getByText('1 of 2 in the room voted',{exact:true}).waitFor();
   for(const p of all){const w=await stop(p);assert.equal(w.slides,0,'a ballot never starts a transition');assert.deepEqual(w.outcomes,[]);assert.match(await position(p),/^Applicant 1 of 3\./);}
   assert.equal(f.h.state().sessions[0].activeApplicationId,apps[0]);
 

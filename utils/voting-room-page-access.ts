@@ -22,7 +22,7 @@ export async function votingRoomPageAccess(clubId: string, sessionId: string): P
     if (viewer.state === "REFUSED") return "DENIED"
     const [member, session] = await Promise.all([
       prisma.clubMember.findUnique({ where: { userId_clubId: { userId: viewer.userId, clubId } } }),
-      prisma.votingSession.findFirst({ where: { id: sessionId, clubId, mode: "LIVE" }, select: { leaderMemberIds: true, participants: { select: { memberId: true } }, round: { select: { anonymousReview: true } } } }),
+      prisma.votingSession.findFirst({ where: { id: sessionId, clubId, mode: "LIVE" }, select: { leaderMemberIds: true, presentationOptions: true, participants: { select: { memberId: true, joinedAt: true } }, round: { select: { anonymousReview: true } } } }),
     ])
     if (!member || !isActiveMembership(member) || !hasPermission(member, "applications.review")) return "DENIED"
     try { await assertClubOperational(prisma, clubId) } catch { return "SUSPENDED" }

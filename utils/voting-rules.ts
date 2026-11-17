@@ -8,6 +8,24 @@ export async function currentEligibleVoterIds(tx:AppTransactionClient,clubId:str
   const members=await tx.clubMember.findMany({where:{clubId,id:{in:participantIds},...activeMemberWhere,user:{disabledAt:null}}});
   return members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(anonymous||hasPermission(v,"applicants.identify"))).map(v=>v.id).sort();
 }
+/** The applicant's own membership in this club, if they have one: never a voter on their own slide. */
+export async function applicantMemberId(tx:AppTransactionClient,clubId:string,applicationId:string){
+  const app=await tx.application.findFirst({where:{id:applicationId,clubId},select:{studentId:true}});
+  if(!app)return null;
+  const member=await tx.clubMember.findFirst({where:{clubId,userId:app.studentId},select:{id:true}});
+  return member?.id??null;
+}
+/** Who counts for one applicant's ballot right now: roster members who may still vote, never the applicant themself. */
+export async function ballotElectorate(tx:AppTransactionClient,clubId:string,participantIds:string[],anonymous:boolean,applicationId:string){
+  const self=await applicantMemberId(tx,clubId,applicationId);
+  return currentEligibleVoterIds(tx,clubId,participantIds.filter(id=>id!==self),anonymous);
+}
+/** Members who may join an open-electorate session in this club now: current (non-alumni) members on enabled
+ * accounts who hold the club's voting permissions (and may identify applicants, for identified rounds). */
+export async function joinableVoters(tx:AppTransactionClient,clubId:string,anonymous:boolean){
+  const members=await tx.clubMember.findMany({where:{clubId,...activeMemberWhere,user:{disabledAt:null}},select:{id:true,userId:true,status:true,alumniSince:true,isOwner:true,permissions:true}});
+  return members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(anonymous||hasPermission(v,"applicants.identify")));
+}
 export type BallotRuleSnapshot={version:number;rules:VotingRules;electorate:string[]};
 export async function latestBallotRule(tx:AppTransactionClient,key:{sessionId:string;passNumber:number;applicationId:string}):Promise<BallotRuleSnapshot|null>{
   const rows=await tx.votingBallotRule.findMany({where:key,orderBy:{version:"desc"},take:1});

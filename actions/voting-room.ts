@@ -10,15 +10,15 @@ import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission, activeMemberWhere } from "@/lib/permissions";
-import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged } from "@/lib/voting-room";
-import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, undoableDecision, roomFingerprint, signRoomView, verifyRoomView, type LiveRoom } from "@/utils/voting-room";
+import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged, isOpenElectorate, OPEN_ELECTORATE, MAX_ROOM_VOTERS } from "@/lib/voting-room";
+import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, undoableDecision, roomFingerprint, signRoomView, verifyRoomView, onRoomRoster, roomRosterIds, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
 import {selectedVotingDisplay} from "@/lib/voting-slide-fields";
 import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
 import {votingDiscussion} from '@/utils/voting-discussion';
-import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
+import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules,ballotElectorate,applicantMemberId,joinableVoters} from '@/utils/voting-rules';
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 import {lockPresentedSlide,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
 import { boundedParse } from "@/lib/bounded-input";
@@ -57,6 +57,8 @@ async function onlyBallotsSince(tx:AppTransactionClient,s:LiveRoom,d:z.infer<typ
     return saved.success&&saved.data.revision<=d.revision;
   });
 }
+/** Reason stored on the electorate snapshot an open-electorate session takes as each ballot closes. */
+const CLOSING_SNAPSHOT_REASON="Members in the room when voting closed";
 function electorateChangedMessage(n:number){return `${n} voter${n===1?"":"s"} can no longer vote, so voting is paused. Recount without ${n===1?"this voter":"them"} and give a reason to close, or restore ${n===1?"their":"those voters'"} access to continue.`;}
 function accessFingerprint(m:{id:string;status:string;permissions:string[];accessRole:string;isOwner:boolean}) { return roomFingerprint({id:m.id,status:m.status,permissions:m.permissions,accessRole:m.accessRole,isOwner:m.isOwner}); }
 
@@ -71,9 +73,9 @@ export async function listLiveVotingRooms(input:unknown) {
     // from the Applicants ballot used to be missing here because this read only took LIVE rooms.
     const rooms=await tx.votingSession.findMany({where:{clubId:d.clubId,...(d.cycleId?{cycleId:d.cycleId}:{}),...(d.roundId?{roundId:d.roundId}:{}),
       ...(!hasPermission(m,"applicants.identify")?{round:{anonymousReview:true}}:{}),
-      ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}}]:[])]}:{}),
+      ...(!observer?{OR:[...(leader?[{leaderMemberIds:{has:m.id}}]:[]),...(voter?[{participants:{some:{memberId:m.id}}},{presentationOptions:{path:["electorate"],equals:OPEN_ELECTORATE}}]:[])]}:{}),
     },select:{id:true,mode:true,clubId:true,cycleId:true,roundId:true,state:true,createdAt:true,updatedAt:true,finalizedAt:true,publishedAt:true,presentationOptions:true,round:{select:{name:true}},cycle:{select:{name:true}},_count:{select:{candidates:true}},leaderMemberIds:true,participants:{where:{memberId:m.id},select:{joinedAt:true}}},orderBy:[{createdAt:"desc"},{id:"desc"}],take:100});
-    return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,presentationOptions,...room})=>({...room,meeting:(()=>{const m=meetingDetails((presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...visible}=m;return visible;})(),roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:participants?.length&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
+    return {rooms:rooms.map(({leaderMemberIds,participants,round,cycle,_count,presentationOptions,...room})=>({...room,meeting:(()=>{const m=meetingDetails((presentationOptions as {meeting?:unknown})?.meeting);if(!m)return null;const {announcedUserIds,...visible}=m;return visible;})(),roundName:round?.name??"Recruitment round",cycleName:cycle?.name??"Recruitment cycle",applicantCount:_count?.candidates??0,view:leaderMemberIds?.includes(m.id)&&leader?"leader" as const:(participants?.length||isOpenElectorate(presentationOptions))&&voter?"member" as const:"present" as const,joined:!!participants?.[0]?.joinedAt})),access:accessFingerprint(m)};
   },votingReadLimits);
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);
   if(result.access!==accessFingerprint(membership))throw Error("Voting permissions changed. Reconnect to the room.");
@@ -82,7 +84,7 @@ export async function listLiveVotingRooms(input:unknown) {
 
 /** Caller-generated session UUID is also creation's idempotency key. */
 export async function createLiveVotingRoom(input:unknown) {
-  const d=boundedParse(createRoomSchema, input); [d.applicationIds,d.participantIds,d.leaderMemberIds].forEach(uniqueSelection);
+  const d=boundedParse(createRoomSchema, input); [d.applicationIds,d.leaderMemberIds].forEach(uniqueSelection);
   const {user}=await requireClubPermission(d.clubId,["applications.review","decisions.manage","decisions.start"]);
   return clubWriteTransaction(async tx=>{
     const actor=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.manage","decisions.start"]);
@@ -93,15 +95,18 @@ export async function createLiveVotingRoom(input:unknown) {
       if(prior.clubId!==d.clubId||receipt?.actorId!==user.id||receipt.fingerprint!==fingerprint)throw Error("Session ID already used.");
       const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);roomAuthority(s,actor,round.anonymousReview);return {sessionId:s.id};
     }
-    const {apps,members}=await validateVotingSetup(tx,d,user,{rejectHiddenProfileFields:true});
+    // Open electorate: no saved voter list. Members who may vote join with the join QR or link (joinLiveVotingRoom).
+    const {apps,round}=await validateVotingSetup(tx,{...d,participantIds:[]},user,{rejectHiddenProfileFields:true});
     const meeting=d.presentationOptions?.meeting?resolveVotingMeeting(d.presentationOptions.meeting):null;
-    if(d.notifyVoters&&(!meeting||meeting.timing!=="LATER"))throw Error("Notify selected voters is available when scheduling a session.");
-    const presentationOptions=d.presentationOptions?{...d.presentationOptions,...(meeting?{meeting:{...meeting,announcedUserIds:d.notifyVoters?members.filter(m=>d.participantIds.includes(m.id)).map(m=>m.userId):[]}}:{})}:{};
-    await tx.votingSession.create({data:{id:d.sessionId,mode:"LIVE",clubId:d.clubId,cycleId:d.cycleId,roundId:d.roundId,leaderMemberIds:d.leaderMemberIds,targetSize:d.targetSize??1,targetUnset:d.targetSize==null,presentationOptions,displayConfig:d.presentationOptions?roomDisplayConfig(d.presentationOptions.fields):d.displayConfig,autoAdvance:"NONE",createdBy:user.id,participants:{create:d.participantIds.map(memberId=>({memberId}))},candidates:{create:d.applicationIds.map((applicationId,position)=>({applicationId,position,expectedStatus:apps.find(a=>a.id===applicationId)!.status}))}}});
-    if(d.notifyVoters&&meeting)await notifyVotingVoters(tx,d.clubId,d.sessionId,d.sessionId,members.filter(m=>d.participantIds.includes(m.id)).map(m=>m.userId),"scheduled",meeting.name);
+    if(d.notifyVoters&&(!meeting||meeting.timing!=="LATER"))throw Error("Notifying members is available when scheduling a session.");
+    const recipients=d.notifyVoters?(await joinableVoters(tx,d.clubId,round.anonymousReview)).map(v=>v.userId):[];
+    if(recipients.length>MAX_ROOM_VOTERS)throw Error(`Notifications reach at most ${MAX_ROOM_VOTERS} members. Turn off notifying and share the join link instead.`);
+    const presentationOptions={...(d.presentationOptions??{}),...(meeting?{meeting:{...meeting,announcedUserIds:recipients}}:{}),electorate:OPEN_ELECTORATE};
+    await tx.votingSession.create({data:{id:d.sessionId,mode:"LIVE",clubId:d.clubId,cycleId:d.cycleId,roundId:d.roundId,leaderMemberIds:d.leaderMemberIds,targetSize:d.targetSize??1,targetUnset:d.targetSize==null,presentationOptions,displayConfig:d.presentationOptions?roomDisplayConfig(d.presentationOptions.fields):d.displayConfig,autoAdvance:"NONE",createdBy:user.id,candidates:{create:d.applicationIds.map((applicationId,position)=>({applicationId,position,expectedStatus:apps.find(a=>a.id===applicationId)!.status}))}}});
+    if(d.notifyVoters&&meeting)await notifyVotingVoters(tx,d.clubId,d.sessionId,d.sessionId,recipients,"scheduled",meeting.name);
     const result={sessionId:d.sessionId};
     await tx.votingRoomCommand.create({data:{sessionId:d.sessionId,requestId:d.sessionId,actorId:user.id,fingerprint,result}});
-    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.sessionId,action:"voting.room.created",details:{cycleId:d.cycleId,roundId:d.roundId,candidateCount:d.applicationIds.length,voterCount:d.participantIds.length,targetSize:d.targetSize}}});
+    await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.sessionId,action:"voting.room.created",details:{cycleId:d.cycleId,roundId:d.roundId,candidateCount:d.applicationIds.length,electorate:OPEN_ELECTORATE,notified:recipients.length,targetSize:d.targetSize}}});
     return result;
   },votingWriteLimits);
 }
@@ -126,19 +131,23 @@ export async function getLiveVotingRoom(input:unknown) {
     const decider=receipt&&receipt.actorId!==user.id?await tx.clubMember.findFirst({where:{clubId:d.clubId,userId:receipt.actorId},select:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}):null;
     const deciderProfile=decider?.user.studentProfile;
     const undo=receipt?.decision?{...receipt.decision,decidedBy:receipt.actorId===user.id?null:deciderProfile?`${deciderProfile.firstName} ${deciderProfile.lastName}`:"Another leader"}:null;
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:s.participants.map(p=>p.memberId)},...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
+    const open=isOpenElectorate(s.presentationOptions);
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,id:{in:roomRosterIds(s)},...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const eligible=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(round.anonymousReview||hasPermission(v,"applicants.identify")));
     const current=s.passes.find(p=>p.number===s.currentPass)?.candidates.find(c=>c.applicationId===s.activeApplicationId);
+    // "X of Y in the room voted": the applicant on screen never counts as one of their own voters.
+    const applicantSelf=current?await applicantMemberId(tx,d.clubId,current.applicationId):null,counted=eligible.filter(v=>v.id!==applicantSelf);
     const options=roomPresentationSchema.safeParse(s.presentationOptions);
     // Rule wording for everyone; its counts only after the leader closes this ballot (totals are hidden while open).
     const rules=sessionRules(s.presentationOptions);
     // Threshold ballots pause as soon as a captured voter can no longer vote; the leader sees it at once.
     const openRule=rules.mode==="THRESHOLD"&&current?.ballotState==="OPEN"&&s.state==="OPEN"?await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}):null;
-    const removedVoters=openRule?.rules.mode==="THRESHOLD"?openRule.electorate.filter(id=>!eligible.some(v=>v.id===id)).length:0;
+    // Open electorate: who counts is snapshotted as each ballot closes, so nothing pauses voting.
+    const removedVoters=!open&&openRule?.rules.mode==="THRESHOLD"?openRule.electorate.filter(id=>!eligible.some(v=>v.id===id)).length:0;
     const ruled=rules.mode==="THRESHOLD"&&current&&["CLOSED","CONFIRMED"].includes(current.ballotState)?ballotRuleResult(await latestBallotRule(tx,{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId}),current.ballots):null;
     const discussion=current&&s.state==="OPEN"&&(snapshot.permissions.leader||snapshot.permissions.voter)?await votingDiscussion(tx,{clubId:d.clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,roundId:s.roundId,anonymous:round.anonymousReview},{memberId:m.id,userId:user.id,leader:snapshot.permissions.leader},eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))):null;
     return {snapshot:{...snapshot,undo,discussion,rule:{mode:rules.mode,description:describeVotingRules(rules)},ruleResult:ruled?{...ruled.result,summary:ruleResultSummary(ruled.result,ruled.rule)}:null,accessVersion:roomFingerprint({permissions:m.permissions,offices:m.interviewOffices,anonymous:round.anonymousReview}),fields:options.success?options.data.fields:null,joinedSelf:!!s.participants.find(p=>p.memberId===m.id)?.joinedAt,
-      participation:{voted:current?.ballots.filter(b=>eligible.some(m=>m.id===b.memberId)).length??0,eligible:eligible.length},
+      participation:{voted:current?.ballots.filter(b=>counted.some(m=>m.id===b.memberId)).length??0,eligible:counted.length},
       votingPaused:removedVoters>0,viewedAt,viewToken:snapshot.permissions.leader?signRoomView({sessionId:s.id,revision:s.revision,viewedAt,memberId:m.id}):null,electorateChange:snapshot.permissions.leader&&removedVoters>0?{removed:removedVoters}:null,
       joinedParticipants:snapshot.permissions.leader?eligible.map(v=>({id:v.id,label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member",joined:!!s.participants.find(p=>p.memberId===v.id)?.joinedAt})):[]},access:accessFingerprint(m)};
   },votingReadLimits);
@@ -192,14 +201,19 @@ export async function castLiveVotingBallot(input:unknown) {
     if(alumni)throw new RoomConflict(ALUMNI_REFUSED,alumni);
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
     if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Only voters in this session can do that.");
+    const open=isOpenElectorate(s.presentationOptions);
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};
     const receipt=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
     if(receipt){if(receipt.actorId!==user.id||receipt.fingerprint!==fingerprint)throw Error("Request ID reused with different content.");return z.object({accepted:z.literal(true),ballotRevision:z.number().int().nonnegative()}).strict().parse(receipt.result);}
     const entry=s.passes.find(p=>p.number===d.passNumber)?.candidates.find(c=>c.applicationId===d.applicationId);
     if(s.finalizedAt||s.state!=="OPEN"||s.currentPass!==d.passNumber||s.activeApplicationId!==d.applicationId||entry?.ballotState!=="OPEN")throw new RoomConflict("VOTING_CLOSED","Voting is closed or the current applicant changed. Your vote was not recorded.");
-    if(!await tx.application.findFirst({where:{id:d.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===d.applicationId)!.expectedStatus}}))throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Your vote was not recorded.");
-    // A threshold ballot is paused while a captured voter has lost eligibility, until the leader resolves it.
-    const rule=sessionRules(s.presentationOptions).mode==="THRESHOLD"?await latestBallotRule(tx,{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId}):null;
+    // Open electorate: joining the session puts a member on its roster; anyone who joined votes from the applicant on screen onward.
+    if(!onRoomRoster(s,m.id))throw new RoomConflict("JOIN_REQUIRED","Join the session to vote. Your vote was not recorded.");
+    const applicant=await tx.application.findFirst({where:{id:d.applicationId,clubId:s.clubId,roundId:s.roundId,recruitmentCycleId:s.cycleId,status:s.candidates.find(c=>c.applicationId===d.applicationId)!.expectedStatus},select:{studentId:true}});
+    if(!applicant)throw new RoomConflict("APPLICANT_CHANGED","The applicant's recruitment context changed. Your vote was not recorded.");
+    if(applicant.studentId===user.id)throw new RoomConflict("OWN_APPLICATION","You can't vote on your own application. Your vote was not recorded.");
+    // Legacy saved-list sessions: a threshold ballot is paused while a captured voter has lost eligibility, until the leader resolves it.
+    const rule=!open&&sessionRules(s.presentationOptions).mode==="THRESHOLD"?await latestBallotRule(tx,{sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId}):null;
     if(rule?.rules.mode==="THRESHOLD"){
       const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
       if(rule.electorate.some(id=>!eligible.includes(id)))throw new RoomConflict("VOTING_PAUSED","Voting is paused while the leader reviews a change in who can vote. Your vote was not recorded.");
@@ -224,6 +238,7 @@ export async function commandLiveVotingRoom(input:unknown) {
   return domainResult(()=>clubWriteTransaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.start"]);
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);roomAuthority(s,m,round.anonymousReview);
+    const open=isOpenElectorate(s.presentationOptions);
     requireRoomLeader(s,m,d.action==="END"?"decisions.finish":d.action==="FINALIZE"?"decisions.publish":["CORRECT","UNDO_DECISION","DECIDE_WITHOUT_VOTE_AND_ADVANCE"].includes(d.action)?"decisions.manage":"decisions.start");
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};
     const prior=await tx.votingRoomCommand.findUnique({where:{sessionId_requestId:key}});
@@ -238,6 +253,16 @@ export async function commandLiveVotingRoom(input:unknown) {
     let decision:z.infer<typeof roomCommandResultSchema>["decision"];
     const patch:Prisma.VotingSessionUpdateInput={revision:{increment:1}};
     let overridden=false,previousDecision:string|null=null,ruleAudit:Record<string,unknown>|null=null;
+    /** Open electorate, threshold rule: record who counts (members in the room now, never the applicant) while the
+     * ballot is still open, just before it closes. Joins lock this session row too, so a join racing the close
+     * lands before this snapshot or after the ballot closed; the closed result never changes. */
+    const closingSnapshot=async(entry:NonNullable<typeof current>)=>{
+      const key={sessionId:s.id,passNumber:s.currentPass,applicationId:entry.applicationId},rule=await latestBallotRule(tx,key);
+      if(!open||rule?.rules.mode!=="THRESHOLD")return rule;
+      const electorate=await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,entry.applicationId);
+      await tx.votingBallotRule.create({data:{...key,version:rule.version+1,rules:rule.rules,electorate,reason:CLOSING_SNAPSHOT_REASON,createdBy:user.id}});
+      return {...rule,version:rule.version+1,electorate};
+    };
     const updateEntry=async(data:Prisma.VotingPassCandidateUpdateInput,entry=current,number=s.currentPass)=>{
       if(!entry)throw retryConflict();
       return tx.votingPassCandidate.update({where:{sessionId_passNumber_applicationId:{sessionId:s.id,passNumber:number,applicationId:entry.applicationId}},data});
@@ -248,7 +273,7 @@ export async function commandLiveVotingRoom(input:unknown) {
           const meeting=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting);
           if(meeting?.status==='CANCELLED')throw new RoomConflict("CANCELLED","This session was cancelled.");
           if(meeting?.plannedAt&&+new Date(meeting.plannedAt)>Date.now()&&!d.confirmed)throw new RoomConflict("EARLY_CONFIRMATION_REQUIRED","Confirm starting before the planned time.");
-          const validated=await validateVotingSetup(tx,createRoomSchema.parse({clubId:s.clubId,sessionId:s.id,cycleId:s.cycleId,roundId:s.roundId,leaderMemberIds:s.leaderMemberIds,participantIds:s.participants.map(p=>p.memberId),applicationIds:s.candidates.map(c=>c.applicationId),targetSize:s.targetUnset?null:s.targetSize,presentationOptions:roomPresentationSchema.safeParse(s.presentationOptions).success?s.presentationOptions:undefined}),user);
+          const validated=await validateVotingSetup(tx,createRoomSchema.parse({clubId:s.clubId,sessionId:s.id,cycleId:s.cycleId,roundId:s.roundId,leaderMemberIds:s.leaderMemberIds,participantIds:open?[]:s.participants.map(p=>p.memberId),applicationIds:s.candidates.map(c=>c.applicationId),targetSize:s.targetUnset?null:s.targetSize,presentationOptions:roomPresentationSchema.safeParse(s.presentationOptions).success?s.presentationOptions:undefined}),user);
           if(validated.apps.some(a=>s.candidates.find(c=>c.applicationId===a.id)?.expectedStatus!==a.status))throw new RoomConflict("SELECTION_CHANGED","The applicant list changed. Review your selection before starting.");
           if(d.confirmed)await tx.$queryRaw`SELECT set_config('outclass.voting_early_start','confirmed',true)`;
         }
@@ -269,7 +294,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         // Threshold rooms capture the rule and current eligible electorate for this ballot instance.
         const rules=sessionRules(s.presentationOptions);
         if(rules.mode==="THRESHOLD"){
-          const electorate=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
+          const electorate=await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,current.applicationId);
           await tx.votingBallotRule.create({data:{sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId,version:1,rules,electorate,createdBy:user.id}});
           ruleAudit={mode:rules.mode,electorate:electorate.length};
         }
@@ -277,8 +302,8 @@ export async function commandLiveVotingRoom(input:unknown) {
       }
       case "CLOSE_VOTING": {
         if(s.state!=="OPEN"||current?.ballotState!=="OPEN")throw retryConflict();
-        const key={sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId},snapshot=await latestBallotRule(tx,key);
-        if(snapshot?.rules.mode==="THRESHOLD"){
+        const key={sessionId:s.id,passNumber:s.currentPass,applicationId:current.applicationId},snapshot=await closingSnapshot(current);
+        if(snapshot?.rules.mode==="THRESHOLD"&&!open){
           // Eligibility changes pause automatic counting until the leader resolves them explicitly.
           const eligible=await currentEligibleVoterIds(tx,s.clubId,s.participants.map(p=>p.memberId),round.anonymousReview);
           const removed=snapshot.electorate.filter(id=>!eligible.includes(id));
@@ -289,11 +314,13 @@ export async function commandLiveVotingRoom(input:unknown) {
             await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.room.electorate_resolved",reason:d.reason,details:{applicationId:current.applicationId,passNumber:s.currentPass,removed:removed.length,electorate:electorate.length,version:snapshot.version+1}}});
             snapshot.electorate=electorate;
           }
+        }
+        if(snapshot?.rules.mode==="THRESHOLD"){
           const evaluated=ballotRuleResult(snapshot,current.ballots);
           ruleAudit={mode:"THRESHOLD",outcome:evaluated?.result.outcome??null,noResult:evaluated?.result.noResult??null,passVotes:evaluated?.result.passVotes,cast:evaluated?.result.cast,eligible:evaluated?.result.eligible,requiredPass:evaluated?.result.requiredPass};
         }
         // Missing ballots count against the (possibly recounted) electorate, not voters removed from it.
-        const roster=snapshot?.rules.mode==="THRESHOLD"?snapshot.electorate:s.participants.map(p=>p.memberId);
+        const roster=snapshot?.rules.mode==="THRESHOLD"?snapshot.electorate:open?await ballotElectorate(tx,s.clubId,roomRosterIds(s),round.anonymousReview,current.applicationId):s.participants.map(p=>p.memberId);
         missingBallots=Math.max(0,roster.length-current.ballots.filter(b=>roster.includes(b.memberId)).length);
         if(missingBallots>0&&!d.confirmed)throw new RoomConflict("EARLY_CLOSE_CONFIRMATION",`${missingBallots} ${missingBallots===1?"ballot is":"ballots are"} missing. Confirm early closure; missing votes are not Reject votes.`);
         await updateEntry({ballotState:"CLOSED",closedAt:new Date()});break;
@@ -311,6 +338,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         // ballot finds the instance no longer open and is refused.
         if(s.state!=="OPEN"||!current||!["PENDING","OPEN"].includes(current.ballotState)||!d.choice||d.choice==="HOLD"||!d.confirmed||!d.reason)
           throw new RoomConflict("CONFIRMATION_REQUIRED","Confirm Pass or Do not pass without a vote and give a reason.");
+        if(current.ballotState==="OPEN")await closingSnapshot(current);
         const now=new Date(),previousState=current.ballotState,confirmed={ballotState:"CONFIRMED",confirmedDecision:storedChoice[d.choice],confirmedBy:user.id,confirmedAt:now,override:storedChoice[d.choice],overrideBy:user.id,overrideAt:now};
         if(!current.ballots.length)await updateEntry({...confirmed,withoutVote:true,...(previousState==="OPEN"?{closedAt:now}:{})});
         else{
@@ -364,6 +392,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         if(s.state==="COMPLETED")throw retryConflict();
         if(!d.confirmed)throw new RoomConflict("END_CONFIRMATION_REQUIRED","Confirm ending voting with Hold and Unreviewed applicants preserved.");
         if(current?.ballotState==="OPEN"){
+          await closingSnapshot(current);
           await updateEntry({ballotState:"CLOSED",closedAt:new Date()});
           await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.room.close_voting",details:{applicationId:current.applicationId,passNumber:s.currentPass,ended:true}}});
         }

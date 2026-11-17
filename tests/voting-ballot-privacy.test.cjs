@@ -25,8 +25,9 @@ test('live rooms: own ballot only, counts while open, totals after closing — f
   assert.equal(entry.ownBallot.choice,choice,`${who} sees their own ballot`);
   assert.equal('totals'in entry,false,`${who} sees no totals while open`);assert.equal(view.ballotsReceived,2);assert.equal(view.ruleResult,null);
  }
- // A club member who is not a participant, leader or observer; an outsider; a revoked voter.
- h.as(room.uuid(7));await assert.rejects(h.read(),/denied/i);
+ // A member who may vote but has not joined (open electorate) reads the room like a voter but sees no other ballot and cannot vote until joining;
+ // an outsider and a revoked voter are refused.
+ h.as(room.uuid(7));{const view=await h.read();assert.deepEqual(choiceLeaks(view,room.uuid(7)),[]);assert.equal(JSON.stringify(view).includes('"ballots"'),false);assert.equal(view.joinedSelf,false);assert.equal((await h.vote('ACCEPT')).code,'JOIN_REQUIRED');}
  h.as(room.uuid(99));await assert.rejects(h.read(),/Denied/);
  h.members[1].permissions=h.members[1].permissions.filter(p=>p!=='decisions.vote');h.as(room.voterId);await assert.rejects(h.read(),/denied/i);
  h.as(room.leaderId);ok(await h.command('CLOSE_VOTING'));

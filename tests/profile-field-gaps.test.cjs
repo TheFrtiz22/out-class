@@ -105,8 +105,8 @@ test('new and edited voting setups refuse a field the club hides; starting a sto
   await assert.rejects(validateVotingSetup(setupTx({ major: false }), input(['name', 'major']), { id: 'u' }, { rejectHiddenProfileFields: true }), /hidden by the club/)
   await assert.rejects(validateVotingSetup(setupTx({ gpa: true }), input(['name', 'gpa']), { id: 'u' }, { rejectHiddenProfileFields: true }), /past field validation/, 'allowed when the club shows GPA')
   await assert.rejects(validateVotingSetup(setupTx(null), input(['name', 'gpa', 'interviewScore']), { id: 'u' }), /past field validation/, 'start-time revalidation keeps the stored config')
-  assert.match(fs.readFileSync('actions/voting-room.ts', 'utf8'), /validateVotingSetup\(tx,d,user,\{rejectHiddenProfileFields:true\}\)/)
-  assert.match(fs.readFileSync('actions/voting-session-setup.ts', 'utf8'), /validateVotingSetup\(tx,d,user,\{rejectHiddenProfileFields:true\}\)/)
+  assert.match(fs.readFileSync('actions/voting-room.ts', 'utf8'), /validateVotingSetup\(tx,\{\.\.\.d,participantIds:\[\]\},user,\{rejectHiddenProfileFields:true\}\)/)
+  assert.match(fs.readFileSync('actions/voting-session-setup.ts', 'utf8'), /validateVotingSetup\(tx,\{\.\.\.d,participantIds:\[\]\},user,\{rejectHiddenProfileFields:true\}\)/)
 })
 
 test('the setup read offers only allowed fields and names the hidden ones; preview refuses hidden fields', () => {

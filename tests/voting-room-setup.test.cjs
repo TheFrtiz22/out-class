@@ -22,7 +22,7 @@ test('target is optional; exact presentation fields derive canonical config; ano
  await assert.rejects(harness().create({presentationOptions:{fields:['resumeHighlight'],highlights:{[uuid(99)]:uuid(90)}}}),/scope/);
 });
 test('QR eligibility is generic, check-in after start is idempotent, current revocation removes access',async()=>{
- const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create();h.as(voterId);
+ const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create({joined:[]});h.as(voterId);
  assert.equal((await api.getLiveVotingJoinInfo(scope)).status,'READY');h.as(leaderId);await h.command('START');h.as(voterId);
  await api.joinLiveVotingRoom(scope);await api.joinLiveVotingRoom(scope);
  assert.equal(h.state().audit.filter(a=>a.action==='voting.room.joined').length,1);

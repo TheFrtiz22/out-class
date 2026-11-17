@@ -3,7 +3,7 @@ import {z} from "zod";
 import {requireClubPermission} from "@/utils/auth";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {clubWriteTransaction,votingWriteLimits} from "@/utils/club-write-transaction";
-import {loadVotingRoom,requireRoomLeader,roomAuthority} from "@/utils/voting-room";
+import {loadVotingRoom,requireRoomLeader,roomAuthority,onRoomRoster} from "@/utils/voting-room";
 import {currentEligibleVoterIds} from "@/utils/voting-rules";
 
 /** "Something to add": a request for the leader's attention about the applicant
@@ -26,7 +26,7 @@ export async function setDiscussionRequest(input:unknown):Promise<Result>{
   return clubWriteTransaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"]);
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
-    if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Eligible session voter required.");
+    if(!roomAuthority(s,m,round.anonymousReview).voter||!onRoomRoster(s,m.id))throw Error("Eligible session voter required.");
     if(!current(s,d))return moved;
     const key={sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:m.id};
     const row=await tx.votingHandRaise.findUnique({where:{sessionId_passNumber_applicationId_memberId:key}});

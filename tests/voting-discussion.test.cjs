@@ -59,7 +59,8 @@ test('eligibility is enforced; revoked members lose their request and cannot rai
  assert.doesNotMatch(JSON.stringify(view.discussion),/notes|draft|score/i);
  h.members[1].permissions.push('decisions.vote');h.as(voterId);const voterView=await h.read();assert.deepEqual(voterView.discussion.interviewers,[],'voter without interview-review authority sees no interviewer identities');
  h.as(leaderId);
- h.as(third);await assert.rejects(h.read(),/denied/i);
+ // A member who may vote but has not joined sees no requests and no interviewer identities.
+ h.as(third);const unjoined=await h.read();assert.deepEqual(unjoined.discussion.requests??[],[]);assert.deepEqual(unjoined.discussion.interviewers,[]);
 });
 
 test('anonymous rounds show no interviewer identities',async()=>{

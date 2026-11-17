@@ -8,7 +8,8 @@ import {requireClubPermission} from "@/utils/auth";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {clubWriteTransaction,votingWriteLimits} from "@/utils/club-write-transaction";
 import {votingReadLimits} from "@/lib/voting-transaction-limits";
-import {createRoomSchema,roomScope,roomDisplayConfig,roomPresentationSchema} from "@/lib/voting-room";
+import {createRoomSchema,roomScope,roomDisplayConfig,roomPresentationSchema,OPEN_ELECTORATE,MAX_ROOM_VOTERS} from "@/lib/voting-room";
+import {joinableVoters} from "@/utils/voting-rules";
 import {setupDraftSchema,meetingDetails,resolveVotingMeeting} from "@/lib/voting-session-setup";
 import {loadVotingRoom,requireRoomLeader,roomFingerprint} from "@/utils/voting-room";
 import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup";
@@ -59,7 +60,7 @@ export async function getVotingSessionSetup(input:unknown){
  return prisma.$transaction(async tx=>{const m=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions],{readOnly:true});const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId);requireRoomLeader(s,m,'decisions.manage');const options=roomPresentationSchema.safeParse(s.presentationOptions);
  // Applicants with saved slide highlights, so the editor can confirm before a removal discards them. IDs only, for the same leader.
  const preparedApplicationIds=(await tx.votingSlidePreparation.findMany({where:{sessionId:s.id,highlights:{not:[]}},select:{applicationId:true}})).map(p=>p.applicationId);
- return {preparedApplicationIds,sessionId:s.id,revision:s.revision,leaderMemberIds:s.leaderMemberIds,cycleId:s.cycleId!,roundId:s.roundId,status:s.state,meeting:meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),applicationIds:s.candidates.map(c=>c.applicationId),participantIds:s.participants.map(p=>p.memberId),fields:options.success?options.data.fields:[],highlights:options.success?options.data.highlights:{},rules:options.success?options.data.rules??null:null,targetSize:s.targetUnset?null:s.targetSize};},votingReadLimits);
+ return {preparedApplicationIds,sessionId:s.id,revision:s.revision,leaderMemberIds:s.leaderMemberIds,cycleId:s.cycleId!,roundId:s.roundId,status:s.state,meeting:meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),applicationIds:s.candidates.map(c=>c.applicationId),fields:options.success?options.data.fields:[],highlights:options.success?options.data.highlights:{},rules:options.success?options.data.rules??null:null,targetSize:s.targetUnset?null:s.targetSize};},votingReadLimits);
 }
 // confirmDiscard: the applicants whose prepared highlights the leader saw and agreed to discard. The save is refused if it would discard any others.
 const editSchema=createRoomSchema.extend({requestId:z.string().uuid(),revision:z.number().int().nonnegative(),confirmDiscard:z.array(z.string().uuid()).max(2000).optional()}).strict();
@@ -74,7 +75,8 @@ export async function updateVotingSessionSetup(input:unknown){
   if(s.revision!==d.revision)throw Error('This session changed in another tab. Your input is retained. Reload current setup to compare.');
   if(s.state!=='DRAFT'||s.startedAt||s.joinOpenedAt||s.finalizedAt)throw Error('Voting has started or ended. Setup is locked; ballots and outcomes are unchanged.');
   if(d.roundId!==s.roundId||d.cycleId!==s.cycleId||JSON.stringify(d.leaderMemberIds)!==JSON.stringify(s.leaderMemberIds))throw Error('The saved recruitment scope and leaders cannot be changed.');
-  const {members,apps}=await validateVotingSetup(tx,d,user,{rejectHiddenProfileFields:true}),old=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),meeting=resolveVotingMeeting(d.presentationOptions?.meeting,{announcedUserIds:old?.announcedUserIds??[]});
+  // Saved setups use the open electorate: any saved voter list (legacy) is retired here; members who already joined stay joined.
+  const {apps,round}=await validateVotingSetup(tx,{...d,participantIds:[]},user,{rejectHiddenProfileFields:true}),old=meetingDetails((s.presentationOptions as {meeting?:unknown})?.meeting),meeting=resolveVotingMeeting(d.presentationOptions?.meeting,{announcedUserIds:old?.announcedUserIds??[]});
   // Edit only before any pass exists, under the same session/club lock and the confirmed setup-edit flag the database guards require.
   if(s.passes.length)throw Error('A voting pass already exists. Setup is locked.');
   // Preparation saves do not bump the session revision, so a stale page cannot be trusted to know which highlights a removal discards.
@@ -86,12 +88,12 @@ export async function updateVotingSessionSetup(input:unknown){
   // The guard deletes preparations only for these applicants.
   await tx.$queryRaw`SELECT set_config('outclass.voting_setup_discard',${removed.join(',')},true)`;
   const discarded=await applyCandidateDiff(tx,s,d.applicationIds,removed,id=>apps.find(a=>a.id===id)!.status);
-  await tx.votingParticipant.deleteMany({where:{sessionId:s.id}});
-  await tx.votingParticipant.createMany({data:d.participantIds.map(memberId=>({sessionId:s.id,memberId,joinedAt:s.participants.find(p=>p.memberId===memberId)?.joinedAt??null}))});
-  const recipients=d.notifyVoters?[...new Set([...meeting.announcedUserIds,...members.filter(v=>d.participantIds.includes(v.id)).map(v=>v.userId)])]:[];
-  const row=await tx.votingSession.update({where:{id:s.id},data:{presentationOptions:{...d.presentationOptions!,meeting:{...meeting,announcedUserIds:[...new Set([...meeting.announcedUserIds,...recipients])]}},displayConfig:roomDisplayConfig(d.presentationOptions!.fields),targetSize:d.targetSize??1,targetUnset:d.targetSize==null,revision:{increment:1}}});
+  await tx.votingParticipant.deleteMany({where:{sessionId:s.id,joinedAt:null}});
+  const recipients=d.notifyVoters?[...new Set([...meeting.announcedUserIds,...(await joinableVoters(tx,d.clubId,round.anonymousReview)).map(v=>v.userId)])]:[];
+  if(recipients.length>MAX_ROOM_VOTERS)throw Error(`Notifications reach at most ${MAX_ROOM_VOTERS} members. Turn off notifying and share the join link instead.`);
+  const row=await tx.votingSession.update({where:{id:s.id},data:{presentationOptions:{...d.presentationOptions!,electorate:OPEN_ELECTORATE,meeting:{...meeting,announcedUserIds:[...new Set([...meeting.announcedUserIds,...recipients])]}},displayConfig:roomDisplayConfig(d.presentationOptions!.fields),targetSize:d.targetSize??1,targetUnset:d.targetSize==null,revision:{increment:1}}});
   if(d.notifyVoters)await notifyVotingVoters(tx,d.clubId,s.id,d.requestId,recipients,'updated',meeting.name);
-  const result={sessionId:s.id,revision:row.revision};await tx.votingRoomCommand.create({data:{sessionId:s.id,requestId:d.requestId,actorId:user.id,fingerprint,result}});await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.session.setup_updated',details:{revision:row.revision,applicantCount:d.applicationIds.length,voterCount:d.participantIds.length,notified:recipients.length}}});
+  const result={sessionId:s.id,revision:row.revision};await tx.votingRoomCommand.create({data:{sessionId:s.id,requestId:d.requestId,actorId:user.id,fingerprint,result}});await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.session.setup_updated',details:{revision:row.revision,applicantCount:d.applicationIds.length,electorate:OPEN_ELECTORATE,notified:recipients.length}}});
   // IDs, revisions and authors only; never highlight text.
   if(discarded.length)await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:'voting.slides.discarded',details:{revision:row.revision,count:discarded.length,applicationIds:discarded.map(p=>p.applicationId),preparations:discarded}}});
   return result;

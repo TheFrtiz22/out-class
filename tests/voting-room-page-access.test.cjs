@@ -14,7 +14,7 @@ function access({user,email='leader@virginia.edu',confirmed=true,demo=false,supp
    $queryRaw:async strings=>strings.join('?').includes('suspendedAt')&&suspended?[{id:clubId}]:[],
    user:{findUnique:async({where})=>({disabledAt:where.id===disabledUser?new Date():null})},
    clubMember:{findUnique:async({where})=>{if(fail)throw Error('Database unavailable');return members.find(m=>m.userId===where.userId_clubId.userId&&m.clubId===where.userId_clubId.clubId)??null}},
-   votingSession:{findFirst:async({where,select})=>{assert.deepEqual(Object.keys(select).sort(),['leaderMemberIds','participants','round']);return where.id===sessionId&&where.clubId===clubId&&where.mode==='LIVE'?{leaderMemberIds:[uuid(20)],participants:[{memberId:uuid(22)}],round:{anonymousReview:anonymous}}:null}},
+   votingSession:{findFirst:async({where,select})=>{assert.deepEqual(Object.keys(select).sort(),['leaderMemberIds','participants','presentationOptions','round']);return where.id===sessionId&&where.clubId===clubId&&where.mode==='LIVE'?{leaderMemberIds:[uuid(20)],participants:[{memberId:uuid(22)}],round:{anonymousReview:anonymous}}:null}},
   }},
  });
  return id=>mod.votingRoomPageAccess(clubId,id??sessionId);

@@ -21,16 +21,16 @@ test('a future step runs the same checks as Continue; going back is always allow
   const viaStep=await alert.innerText();await page.getByRole('textbox',{name:'Date and start time'}).fill('');
   await page.getByRole('button',{name:'Continue',exact:true}).click();assert.equal(await page.getByRole('alert').filter({hasText:'Choose a date and start time.'}).innerText(),viaStep);
   assert.equal(await current(page),'Session details');
-  // Valid step 1, invalid step 2 (no voters): a jump to step 3 stops on step 2 with that step's message.
+  // Valid step 1, invalid step 2 (no applicants): a jump to step 3 stops on step 2 with that step's message.
   await page.getByRole('radio',{name:'Start now',exact:true}).check();
   await stepButton(page,'Applicants and voters').click();await onStep(page,'Applicants and voters');
-  await page.getByRole('button',{name:'Clear voters',exact:true}).click();
-  await stepButton(page,'Presentation and review').click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();
+  await page.getByRole('button',{name:'Clear applicants',exact:true}).click();
+  await stepButton(page,'Presentation and review').click();await page.getByRole('alert').filter({hasText:'Select at least one applicant.'}).waitFor();
   assert.equal(await current(page),'Applicants and voters');
-  await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('alert').filter({hasText:'Select at least one applicant.'}).waitFor();
   await stepButton(page,'Session details').click();await onStep(page,'Session details');
-  await stepButton(page,'Presentation and review').click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();assert.equal(await current(page),'Applicants and voters');
-  await page.getByRole('button',{name:'Select all voters',exact:true}).click();await stepButton(page,'Presentation and review').click();await onStep(page,'Presentation and review');
+  await stepButton(page,'Presentation and review').click();await page.getByRole('alert').filter({hasText:'Select at least one applicant.'}).waitFor();assert.equal(await current(page),'Applicants and voters');
+  await page.getByRole('button',{name:'Select all applicants',exact:true}).click();await stepButton(page,'Presentation and review').click();await onStep(page,'Presentation and review');
   assert.equal(f.h.state().sessions.length,0,'a step click never creates a session');assert.deepEqual(errors,[]);
  }finally{await browser.close();await f.close()}
 });
@@ -39,7 +39,7 @@ test('a presentation switch updates the room preview and the review Shown row at
  const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const calls=[];await page.route('**/action',async route=>{calls.push(route.request().postDataJSON()?.name);await route.continue();});
  try{
-  await page.goto(f.url+'/voting/rooms/new?actor=leader');await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await page.goto(f.url+'/voting/rooms/new?actor=leader');await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
   const preview=page.getByRole('complementary',{name:'Voting room preview'}),slide=preview.getByRole('region',{name:'Current applicant presentation'}),shown=page.getByRole('region',{name:'Session review'}).locator('div').filter({hasText:/^Shown/});
   await slide.waitFor();await page.waitForLoadState('networkidle');
   const major=page.getByRole('switch',{name:'Major',exact:true});assert.equal(await major.getAttribute('aria-checked'),'false');
@@ -62,7 +62,7 @@ test('inside the focus frame: no Back to Voting room links, save status beside E
   for(const step of ['Session details','Applicants and voters','Presentation and review']){
    assert.equal(await page.getByRole('link',{name:/Back to Voting room/}).count(),0,step);
    assert.equal(await page.getByRole('link',{name:/Exit/}).count(),1,step);
-   if(step!=='Presentation and review'){if(step==='Applicants and voters')await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}
+   if(step!=='Presentation and review')await page.getByRole('button',{name:'Continue',exact:true}).click();
   }
   const bar=page.getByRole('banner');await bar.getByRole('status').filter({hasText:/All changes saved|Unsaved changes|Saving draft…|Draft saved/}).waitFor();
   assert.equal(await page.getByRole('heading',{level:1}).count(),1);
@@ -83,7 +83,7 @@ test('screenshots: all three steps at 1280 and 390 wide, no horizontal overflow'
    await page.goto(f.url+`/voting/rooms/new?actor=leader&frame=1&draft=00000000-0000-4000-8000-${String(width).padStart(12,'0')}`);await page.getByRole('button',{name:'Continue',exact:true}).waitFor();
    await page.getByRole('radio',{name:'Schedule for later',exact:true}).check();
    for(const [i,step] of ['session-details','applicants-voters','presentation-review'].entries()){
-    if(i===1)await page.getByRole('button',{name:'Select all voters',exact:true}).click();
+    if(i===1)await page.getByText(/Any current member who scans the join QR can vote/).waitFor();
     if(i===2){await page.getByRole('complementary',{name:'Voting room preview'}).getByRole('region',{name:'Current applicant presentation'}).waitFor();}
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${step} at ${width}`);
     await page.screenshot({path:path.join(dir,`${i+1}-${step}-${width}.png`),fullPage:true});
@@ -96,7 +96,8 @@ test('screenshots: all three steps at 1280 and 390 wide, no horizontal overflow'
 });
 
 // Recorded on origin/main a0d7225f (old markup) with the same inputs: the polish must save exactly this.
-const expectedPayload={"draft": {"version": 1, "cycle": "00000000-0000-4000-8000-000000000003", "round": "00000000-0000-4000-8000-000000000002", "name": "Payload check", "timing": "LATER", "localTime": "<v>", "timeZone": "America/New_York", "occurrence": "LATER", "duration": "45", "location": "https://example.test/room", "instructions": "Bring notes", "notify": true, "applicants": ["00000000-0000-4000-8000-000000000010", "00000000-0000-4000-8000-000000000011", "00000000-0000-4000-8000-000000000012"], "voters": ["00000000-0000-4000-8000-000000000005", "00000000-0000-4000-8000-000000000006"], "target": "2", "fields": ["name", "photo", "gpa", "major", "sat"], "highlights": {}, "initialized": true, "sessionId": "<v>", "planRevision": null, "startRequestId": "<v>", "updateRequestId": "<v>", "leaderMemberIds": [], "rules": {"mode": "THRESHOLD", "numerator": "2", "denominator": "3", "base": "ELIGIBLE_VOTERS", "pNumerator": "1", "pDenominator": "2", "below": "HOLD", "reviewed": true}}, "session": {"presentationOptions": {"fields": ["name", "photo", "gpa", "major", "sat"], "highlights": {}, "meeting": {"version": 1, "name": "Payload check", "timing": "LATER", "localTime": "<v>", "timeZone": "America/New_York", "occurrence": "LATER", "plannedAt": "<v>", "duration": 45, "location": "https://example.test/room", "instructions": "Bring notes", "status": "SCHEDULED", "announcedUserIds": ["00000000-0000-4000-8000-000000000005", "00000000-0000-4000-8000-000000000006"]}, "rules": {"mode": "THRESHOLD", "threshold": {"numerator": 2, "denominator": 3}, "denominator": "ELIGIBLE_VOTERS", "minimumParticipation": {"numerator": 1, "denominator": 2}, "belowThreshold": "HOLD", "reviewed": true}}, "displayConfig": {"version": 1, "fields": ["photo", "name", "major", "gpa", "sat"]}, "targetSize": 2, "candidates": ["00000000-0000-4000-8000-000000000010", "00000000-0000-4000-8000-000000000011", "00000000-0000-4000-8000-000000000012"], "participants": ["00000000-0000-4000-8000-000000000005", "00000000-0000-4000-8000-000000000006"], "leaderMemberIds": ["00000000-0000-4000-8000-000000000005"], "state": "DRAFT"}};
+// Open electorate: no saved voter list, no preselected participants, and notifying reaches every member who can join.
+const expectedPayload={"draft": {"version": 1, "cycle": "00000000-0000-4000-8000-000000000003", "round": "00000000-0000-4000-8000-000000000002", "name": "Payload check", "timing": "LATER", "localTime": "<v>", "timeZone": "America/New_York", "occurrence": "LATER", "duration": "45", "location": "https://example.test/room", "instructions": "Bring notes", "notify": true, "applicants": ["00000000-0000-4000-8000-000000000010", "00000000-0000-4000-8000-000000000011", "00000000-0000-4000-8000-000000000012"], "target": "2", "fields": ["name", "photo", "gpa", "major", "sat"], "highlights": {}, "initialized": true, "sessionId": "<v>", "planRevision": null, "startRequestId": "<v>", "updateRequestId": "<v>", "leaderMemberIds": [], "rules": {"mode": "THRESHOLD", "numerator": "2", "denominator": "3", "base": "ELIGIBLE_VOTERS", "pNumerator": "1", "pDenominator": "2", "below": "HOLD", "reviewed": true}}, "session": {"presentationOptions": {"fields": ["name", "photo", "gpa", "major", "sat"], "highlights": {}, "meeting": {"version": 1, "name": "Payload check", "timing": "LATER", "localTime": "<v>", "timeZone": "America/New_York", "occurrence": "LATER", "plannedAt": "<v>", "duration": 45, "location": "https://example.test/room", "instructions": "Bring notes", "status": "SCHEDULED", "announcedUserIds": ["00000000-0000-4000-8000-000000000005", "00000000-0000-4000-8000-000000000006", "00000000-0000-4000-8000-000000000007"]}, "rules": {"mode": "THRESHOLD", "threshold": {"numerator": 2, "denominator": 3}, "denominator": "ELIGIBLE_VOTERS", "minimumParticipation": {"numerator": 1, "denominator": 2}, "belowThreshold": "HOLD", "reviewed": true}, "electorate": "OPEN"}, "displayConfig": {"version": 1, "fields": ["photo", "name", "major", "gpa", "sat"]}, "targetSize": 2, "candidates": ["00000000-0000-4000-8000-000000000010", "00000000-0000-4000-8000-000000000011", "00000000-0000-4000-8000-000000000012"], "participants": [], "leaderMemberIds": ["00000000-0000-4000-8000-000000000005"], "state": "DRAFT"}};
 test('the same inputs save the same draft and session payload as before the polish',{timeout:150000},async()=>{
  const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1280,height:900}});
  const local=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(Date.now()+30*86400000)).replace(' ','T').replace(/T\d\d:\d\d$/,'T18:00');
@@ -112,7 +113,7 @@ test('the same inputs save the same draft and session payload as before the poli
  await page.getByRole('textbox',{name:'Location or meeting link'}).fill('https://example.test/room');
  await page.getByRole('textbox',{name:'Participant instructions'}).fill('Bring notes');
  await page.getByRole('button',{name:'Continue',exact:true}).click();
- await page.getByRole('button',{name:'Select all voters',exact:true}).click();
+ 
  await page.getByRole('spinbutton',{name:'Target number to pass',exact:true}).fill('2');
  const rule=page.getByRole('group',{name:'Voting rule'});await rule.getByRole('radio',{name:/Threshold decides/}).check();
  await rule.getByRole('button',{name:'2/3'}).click();await rule.getByRole('radio',{name:/All eligible voters/}).check();
@@ -120,7 +121,7 @@ test('the same inputs save the same draft and session payload as before the poli
  await rule.getByRole('checkbox',{name:/reviewed this rule/}).check();
  await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('region',{name:'Session review'}).waitFor();
  for(const name of ['Major','SAT'])await page.getByRole('switch',{name,exact:true}).click();
- await page.getByRole('checkbox',{name:'Notify selected voters'}).check();
+ await page.getByRole('checkbox',{name:'Notify members who can vote'}).check();
  await page.getByRole('button',{name:'Save draft',exact:true}).click();await page.getByText('Draft saved',{exact:true}).waitFor();
  const draft=JSON.parse(JSON.stringify(f.h.state().drafts.at(-1).content));
  await page.getByRole('button',{name:'Schedule session',exact:true}).click();
@@ -167,7 +168,7 @@ test('a switch shows in the preview while the exact preview read is still in fli
  let hold=false,release;const held=new Promise(r=>release=r);
  await page.route('**/action',async route=>{if(hold&&route.request().postDataJSON()?.name==='previewVotingSetup')await held;await route.continue();});
  try{
-  await page.goto(f.url+'/voting/rooms/new?actor=leader');await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await page.goto(f.url+'/voting/rooms/new?actor=leader');await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
   const slide=page.getByRole('complementary',{name:'Voting room preview'}).getByRole('region',{name:'Current applicant presentation'});await slide.waitFor();await page.waitForLoadState('networkidle');
   hold=true;await page.getByRole('switch',{name:'Major',exact:true}).click();
   await slide.locator('[data-slide-field="major"]').waitFor({timeout:1000});

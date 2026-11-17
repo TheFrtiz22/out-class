@@ -185,3 +185,19 @@ Resources: the caller's own `UserAvailability` (requirement gate and completion)
 | Member without `meetings.manage`, alumni member, leader of another club (same school or another school) | n/a | n/a | deny "Club access denied" | same |
 | Leader of a suspended club | n/a | n/a | deny `CLUB_SUSPENDED` | same |
 Responses: heatmap = counts only; roster = names only (no emails, user or member ids, phones). Repeated roster reads can still reveal one member's week for planned weeks; the week window and rate limit bound that, by the owner's choice to show names per time.
+
+## 2026-11-16 · VOTING-OPEN-ELECTORATE-1 · Live voting voters join instead of being picked (branch `voting/open-electorate`)
+
+Resource: live voting session roster (`VotingParticipant`), ballots (`VotingBallot`) and the threshold electorate snapshot (`VotingBallotRule`). Sessions created or edited from now on carry `presentationOptions.electorate = "OPEN"`; sessions without it keep their saved voter list. Voter = current (`ACTIVE`, non-alumni) member of the session's club on an enabled account with `applications.review` + `decisions.vote` (+ `applicants.identify` in identified rounds), and no graduated profile. Membership is per club and each club belongs to one school, so the club check is the school check.
+
+| Actor | Join (open) | Ballot | Room read | Counted in "all eligible" | Test |
+|---|---|---|---|---|---|
+| Voting member who joined (any time, incl. after start) | allow | allow from the applicant on screen onward | allow | yes, snapshotted as each ballot closes | `tests/voting-open-electorate.test.cjs` (late joiners…, all eligible…) |
+| Voting member, not joined | allow | deny `JOIN_REQUIRED` | allow (may join) | no | `tests/voting-ballot-privacy.test.cjs`, `tests/voting-open-electorate.test.cjs` |
+| The applicant on their own slide (a voting member) | allow | deny `OWN_APPLICATION` | allow (own slide; interview evidence and observations already withheld from self) | no | `tests/voting-open-electorate.test.cjs` (no one votes on their own application) |
+| Alumni (membership `alumniSince` or graduated profile) | deny | deny | deny / DENIED | no | `tests/voting-open-electorate.test.cjs` (join eligibility) |
+| Member without `decisions.vote` | deny | deny | deny | no | same; `tests/voting-room-foundation.test.cjs` |
+| Disabled account | deny | deny | deny | no | same |
+| Other club / other school / applicant-only account | deny (generic DENIED) | deny | deny | no | same; `tests/voting-room-native.test.cjs` (applicant, outsider) |
+| Legacy session, member not on the saved list | deny | deny | deny unless observer | n/a (legacy remove-only resolution) | `tests/voting-open-electorate.test.cjs` (saved voter list) |
+| Database (any client) | roster row after start only for open sessions, only as a join, same club, never after completion; join time immutable | unchanged | n/a | closing snapshot names only joined members, rule unchanged, reason required, only while open | `tests/voting-open-electorate-migration.test.cjs` |
