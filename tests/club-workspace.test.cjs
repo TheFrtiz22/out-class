@@ -125,6 +125,7 @@ function setup(permissions = [], isOwner = false) {
         return [];
       },
     },
+    application: { findMany: async () => [] },
   };
   const auth = {
     requireClubMembership: async (id) => {

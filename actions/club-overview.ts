@@ -119,11 +119,16 @@ function recruitmentCounts(rows: { status: AppStatus; count: number }[]) {
 export async function getWorkspaceRounds(clubId: string) {
   z.string().uuid().parse(clubId);
   await requireClubPermission(clubId, ["recruitment.manage"]);
-  return prisma.pipelineRound.findMany({
-    where: { clubId, archivedAt: null },
-    orderBy: { order: "asc" },
-    select: { id: true, name: true, anonymousReview: true },
-  });
+  const [rounds, open] = await Promise.all([
+    prisma.pipelineRound.findMany({
+      where: { clubId, archivedAt: null },
+      orderBy: { order: "asc" },
+      select: { id: true, name: true, anonymousReview: true },
+    }),
+    // Applicants still waiting on a decision, so Decide can open on the round where they are.
+    prisma.application.findMany({ where: { clubId, status: { in: ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"] } }, select: { roundId: true } }),
+  ]);
+  return rounds.map(round => ({ ...round, active: open.filter(app => app.roundId === round.id).length }));
 }
 
 export async function getDashboardReviewQueue(clubId: string, roundId: string) {
