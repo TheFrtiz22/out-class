@@ -6,6 +6,10 @@ test('a scheduler asks the owners to confirm interviewers once per draft revisio
  const notices=async()=>(await h.db.query(`SELECT * FROM "UserNotification" WHERE "eventKey" LIKE 'interview-panel-approval:%'`)).rows
  let rows=await notices();assert.equal(rows.length,1);assert.equal(rows[0].userId,h.ids.owner);assert.equal(rows[0].title,'Confirm interviewers');assert.match(rows[0].href,/interviewTab=schedule.*schedule=review/)
  await ask();assert.equal((await notices()).length,1)
+ // A discarded and recreated draft starts again at revision 1; its request still reaches the owners.
+ await h.db.query(`DELETE FROM "InterviewPanelProposal" WHERE "roundId"=$1`,[h.scope.roundId]);await h.generate()
+ assert.equal((await h.db.query(`SELECT revision FROM "InterviewPanelProposal" WHERE "roundId"=$1`,[h.scope.roundId])).rows[0].revision,1)
+ await ask();assert.equal((await notices()).length,2)
  h.as(h.ids.owner);await assert.rejects(ask(),/no other owner/)
  h.as(h.ids.student);await assert.rejects(ask())
 })
