@@ -40,7 +40,7 @@ function measure(){if(!pending)return;const p=pending,editor=document.querySelec
 if(p.name.startsWith('Fictional question'))ready=heading===p.name&&editor&&!editor.disabled;
 else if(p.name==='Save & close')ready=!!document.querySelector('.oc-question-agenda')&&![...document.querySelectorAll('.oc-question-agenda button')].some(b=>b.disabled);
 else if(p.name==='End current interview')ready=!!document.querySelector('[aria-label="Post-interview"]');
-else if(p.name==='End post-interview')ready=!!document.querySelector('[aria-label="Submitted review"]');
+else if(p.name==='Submit review')ready=!!document.querySelector('[aria-label="Submitted review"]');
 else if(p.name==='Expand résumé')ready=!!document.querySelector('[role="dialog"]');
 else if(p.name==='Start'||p.name==='Resume')ready=[...document.querySelectorAll('button')].some(b=>b.textContent==='Pause');
 else if(p.name==='Pause')ready=[...document.querySelectorAll('button')].some(b=>b.textContent==='Resume');

@@ -1,3 +1,4 @@
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { randomUUID } from 'node:crypto';
 import { nextDigestAt, optionalEmailAllowed } from '@/lib/communications-policy';
@@ -11,7 +12,7 @@ export const EMAIL_HOURLY_LIMIT = 1000;
 async function resolveDeliveryActor(tx: AppTransactionClient, clubId: string, userId: string, authorizeRequest: boolean) {
   await assertClubOperational(tx, clubId);
   const account = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
-  const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
+  const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } }));
   if (!account || account.disabledAt) throw new Error('Invitation sending access denied.');
   if ((process.env.OUTCLASS_PLATFORM_ADMIN_IDS || '').split(',').map(value => value.trim()).includes(userId) &&
       (await tx.platformAdmin.findUnique({ where: { userId } }))?.active) {
@@ -70,7 +71,8 @@ async function eligible(tx: AppTransactionClient, deliveryId: string) {
     const grant = await tx.platformAdmin.findUnique({ where: { userId: invitation.invitedBy } });
     if (!grant?.active || !(process.env.OUTCLASS_PLATFORM_ADMIN_IDS || '').split(',').map(s => s.trim()).includes(invitation.invitedBy)) return null;
   } else {
-    const inviter = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: invitation.invitedBy, clubId: invitation.clubId } } });
+    // An inviter who has since graduated is handOverOnly, which canManageOrganizationInvitation refuses.
+    const inviter = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: invitation.invitedBy, clubId: invitation.clubId } } }));
     if (!canManageOrganizationInvitation(inviter, invitation)) return null;
   }
   if (invitation.schoolIdentity) {

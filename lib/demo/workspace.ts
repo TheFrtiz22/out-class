@@ -9,7 +9,7 @@ import * as demoInterviewEntry from "./interview-entry";
 import * as demoBookingApi from "./interview-booking";
 import * as demoDecisionCommunications from "./communications";
 import * as demoOffers from "./recruitment-offers";
-import { assertRecruitmentRoundMove } from "@/lib/recruitment-lifecycle";
+import { assertRecruitmentRoundMove, statusAfterRoundMove } from "@/lib/recruitment-lifecycle";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -107,6 +107,7 @@ export const discardPanelProposal: Demo<"discardPanelProposal"> = (scope) => dem
 export const beginPanelScheduleRevision: Demo<"beginPanelScheduleRevision"> = (scope) => demoBookingApi.beginPanelScheduleRevision(scope as Parameters<typeof demoBookingApi.beginPanelScheduleRevision>[0])
 export const revalidatePanelDraft: Demo<"revalidatePanelDraft"> = (scope) => demoBookingApi.revalidatePanelDraft(scope as Parameters<typeof demoBookingApi.revalidatePanelDraft>[0])
 export const reviewPanelPublication: Demo<"reviewPanelPublication"> = (scope) => demoBookingApi.reviewPanelPublication(scope as Parameters<typeof demoBookingApi.reviewPanelPublication>[0])
+export const requestPanelApproval: Demo<"requestPanelApproval"> = (scope) => demoBookingApi.requestPanelApproval(scope as Parameters<typeof demoBookingApi.requestPanelApproval>[0])
 export const publishPanelSchedule: Demo<"publishPanelSchedule"> = (scope) => demoBookingApi.publishPanelSchedule(scope as Parameters<typeof demoBookingApi.publishPanelSchedule>[0])
 export const assignPanelAvailabilityOverride: Demo<"assignPanelAvailabilityOverride"> = (scope) => demoBookingApi.assignPanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.assignPanelAvailabilityOverride>[0])
 export const revokePanelAvailabilityOverride: Demo<"revokePanelAvailabilityOverride"> = (scope) => demoBookingApi.revokePanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.revokePanelAvailabilityOverride>[0])
@@ -168,7 +169,7 @@ export const moveApplicantRound: Demo<"moveApplicantRound"> = (input) => {
       throw new Error("Application changed. Reload the page and try again.")
     assertRecruitmentRoundMove(app.status)
     const round = s.clubs.find(c=>c.id===input.clubId)!.rounds.find(r=>r.id===input.newRoundId)!
-    if(app.status === "INTERVIEWING" && !/interview/i.test(round.name)) app.status = "IN_REVIEW"
+    app.status = statusAfterRoundMove(app.status, (round as { type?: string }).type ?? (/interview/i.test(round.name) ? "INTERVIEW" : "CUSTOM"))
     app.roundId = input.newRoundId
     return { success: true, application: app }
   })
@@ -415,9 +416,10 @@ export const getClubWorkspaceOverview: Demo<"getClubWorkspaceOverview"> = (clubI
  }
 }
 export const getDashboardReviewQueue: Demo<"getDashboardReviewQueue"> = async (clubId, roundId) => { const data = await api.getClubWorkspaceOverview(clubId); return demoDashboardSummary(clubId, data.membership.id, roundId).queue }
-export const getWorkspaceRounds: Demo<"getWorkspaceRounds"> = clubId=>{
+// The isolated sample has no recruiting cycles, so a cycle filter matches no applicants.
+export const getWorkspaceRounds: Demo<"getWorkspaceRounds"> = (clubId,scope={})=>{
  const s=demoStore.get();if(clubId!==s.clubs[0].id)throw new Error("Demo management is limited to MII.")
- return s.clubs[0].rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview}))
+ return s.clubs[0].rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview,active:s.applications.filter(a=>a.clubId===clubId&&a.roundId===r.id&&!scope.cycleId&&["SUBMITTED","IN_REVIEW","INTERVIEWING"].includes(a.status)).length}))
 }
 export const getRecruitingRules: Demo<"getRecruitingRules"> = demoRecruitingRules.getRecruitingRules
 export const saveRecruitingRule: Demo<"saveRecruitingRule"> = demoRecruitingRules.saveRecruitingRule

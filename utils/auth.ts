@@ -6,7 +6,7 @@ import { createClient as createAdminClient, type User as AuthUser } from "@supab
 import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
-import { assertGraduateMayJudge } from "@/lib/graduate-judgment";
+import { graduateMemberFor, readGraduation } from "@/lib/graduate-access";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail, safeReturnPath } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
@@ -45,6 +45,9 @@ export const getSessionState = cache(async () => {
 });
 export const getSessionUser = cache(async () => (await getSessionState()).identity);
 
+export const AUTH_UNAVAILABLE = "AUTH_UNAVAILABLE";
+export const AUTH_UNAVAILABLE_MESSAGE = "We couldn't confirm your sign-in just now, so this wasn't saved. Try again in a moment.";
+
 /**
  * Ensures a user is logged in. Returns the Supabase user and Prisma user.
  * Redirects to /auth (or home) if not authenticated.
@@ -82,6 +85,10 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
   const { data: { user }, error } = state.identity;
 
   if (options.adminDiagnostics && error && !providerAuthFailure(error)) throw error;
+  // An Auth outage (network error, 5xx, unknown response) is not a sign-out. A Server Action that redirected here
+  // would drop the user's change without a word, so it is refused with a retryable reason instead.
+  if (error && !providerAuthFailure(error) && (await headers()).has("next-action"))
+    throw new ActionError(AUTH_UNAVAILABLE_MESSAGE, AUTH_UNAVAILABLE);
   if (error || !user || !user.email || !isUvaEmail(user.email) || !user.email_confirmed_at) {
     if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_AUTH_REQUIRED", "Sign-in required.");
     redirect("/"); // Redirect to login page
@@ -115,15 +122,18 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
   return { supabaseUser: user, user: prismaUser, impersonation: null };
 }
 
+/** The caller's graduation date, read at most once per request (React cache). */
+const requestGraduation = cache((userId: string) => readGraduation(prisma)(userId));
+
 /** Every sensitive club operation checks the current database membership. */
 export async function requireClubPermission(clubId: string, permissions: ClubPermission[], options: { allowSuspendedRead?: boolean } = {}) {
   const { user } = await requireAuth();
-  const membership = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
-  if (!membership || !isActiveMembership(membership) || !permissions.every(permission => hasPermission(membership, permission))) {
+  const found = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
+  if (!found || !isActiveMembership(found) || !permissions.every(permission => hasPermission(found, permission))) {
     throw new ActionError("You do not have permission for this club action.", "FORBIDDEN");
   }
-  // A graduate kept as owner may hand the club over but not review or decide (lib/graduation.ts).
-  await assertGraduateMayJudge(prisma, user.id, permissions);
+  // A graduate kept as owner is read-only here except for handing the club over (lib/graduation.ts).
+  const membership = await graduateMemberFor(prisma, found, permissions, requestGraduation);
   if (!options.allowSuspendedRead) await assertClubOperational(prisma, clubId);
   return { user, membership };
 }

@@ -1,4 +1,5 @@
 "use server";
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { ActionError, actionResult, isActionError } from "@/lib/action-result";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
@@ -67,7 +68,7 @@ async function storage() {
     key =
       process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key)
-    throw new Error(
+    throw new ActionError(
       "Task file storage is unavailable. Contact your club manager.",
     );
   const storage = createClient(url, key, {
@@ -75,7 +76,7 @@ async function storage() {
   }).storage;
   const { data, error } = await storage.getBucket("task-submissions");
   if (error || !data || data.public)
-    throw new Error("File uploads for tasks are unavailable right now.");
+    throw new ActionError("File uploads for tasks are unavailable right now.");
   await auditSupportAction("platform.impersonation.task-storage", "task-submissions");
   return storage.from("task-submissions");
 }
@@ -467,7 +468,7 @@ async function uploadTaskFileCommand(input: z.infer<typeof taskFileSchema>) {
   });
   if (error || !upload) {
     await prisma.taskFile.delete({ where: { id: file.id } });
-    throw new Error("Could not prepare upload. Try again.");
+    throw new ActionError("Could not prepare upload. Try again.");
   }
   return { id: file.id, url: upload.signedUrl };
 }
@@ -479,11 +480,11 @@ async function downloadTaskFileCommand(fileId: string) {
     include: { assignment: { include: { member: true, task: true } } },
   });
   if (!file || !file.submitted) throw new ActionError("File unavailable. Reload the task to see its current files.", "NOT_FOUND");
-  const membership = await prisma.clubMember.findUnique({
+  const membership = await graduateClubAccessOrNull(prisma, await prisma.clubMember.findUnique({
     where: {
       userId_clubId: { userId: user.id, clubId: file.assignment.task.clubId },
     },
-  });
+  }));
   if (
     !membership ||
     !isActiveMembership(membership) ||
@@ -494,7 +495,7 @@ async function downloadTaskFileCommand(fileId: string) {
   const { data, error } = await (
     await storage()
   ).createSignedUrl(file.path, 60, { download: file.name });
-  if (error || !data) throw new Error("Could not download file. Try again.");
+  if (error || !data) throw new ActionError("Could not download file. Try again.");
   return { url: data.signedUrl };
 }
 

@@ -11,6 +11,7 @@ function load(file, mocks = {}) {
   return mod.exports
 }
 const csp = load('lib/csp.ts')
+const { getScriptNonceFromHeader } = require('next/dist/server/app-render/get-script-nonce-from-header')
 const reports = load('lib/csp-report.ts')
 const directive = (policy, name) => policy.split('; ').find(part => part === name || part.startsWith(`${name} `))
 const withEnv = async (patch, fn) => {
@@ -28,7 +29,7 @@ const loadMiddleware = (live = { calls: 0, forwarded: [] }) => load('middleware.
   '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
   '@/utils/supabase/middleware': { createClient: async request => {
     live.calls++
-    live.forwarded.push({ nonce: request.headers.get('x-nonce'), policy: request.headers.get('content-security-policy') || request.headers.get('content-security-policy-report-only') })
+    live.forwarded.push({ nonce: request.headers.get('x-nonce'), policy: request.headers.get('content-security-policy'), reportOnly: request.headers.get('content-security-policy-report-only') })
     return new Response('page')
   } },
   '@/lib/student-routes': require('./helpers/navigation-module.cjs'),
@@ -49,7 +50,9 @@ test('middleware sends a fresh nonce per page request and forwards the same nonc
       const nonce = /'nonce-([^']+)'/.exec(directive(policy, 'script-src'))[1]
       assert.match(nonce, /^[A-Za-z0-9+/]{22}==$/, '128-bit base64 nonce')
       assert.equal(live.forwarded[i].nonce, nonce, 'the layout reads the same nonce through x-nonce')
-      assert.equal(live.forwarded[i].policy, policy, 'Next.js reads the nonce from the forwarded policy')
+      assert.equal(live.forwarded[i].policy, policy, 'Next.js reads the nonce from the forwarded policy under the name it checks first')
+      assert.equal(live.forwarded[i].reportOnly, null)
+      assert.equal(getScriptNonceFromHeader(live.forwarded[i].policy), nonce, "Next.js's own parser finds the nonce for its framework scripts")
       assert.doesNotMatch(live.forwarded[i].policy, /attacker/)
       nonces.push(nonce)
     }
@@ -57,13 +60,13 @@ test('middleware sends a fresh nonce per page request and forwards the same nonc
   })
 })
 
-test('API routes, public files and metadata routes get no document policy; the report endpoint skips session work', async () => {
+test('API routes, public files and metadata routes get only the framing policy; the report endpoint skips session work', async () => {
   const live = { calls: 0, forwarded: [] }
   const { middleware } = loadMiddleware(live)
   for (const path of ['/api/recruiting-resumes?clubId=a', '/api/workspace', '/robots.txt', '/sw.js', '/pdfjs/pdf.worker.min.mjs', '/images/campus/a.webp', '/club/x/opengraph-image']) {
     const response = await middleware(new NextRequest(`https://outclass.example${path}`))
     assert.equal(response.headers.get('content-security-policy-report-only'), null, path)
-    assert.equal(response.headers.get('content-security-policy'), null, path)
+    assert.equal(response.headers.get('content-security-policy'), "frame-ancestors 'self'", `${path} keeps the framing policy`)
   }
   const before = live.calls
   const report = await middleware(new NextRequest('https://outclass.example/api/csp-report', { method: 'POST', headers: { cookie: 'outclass-demo=1' } }))
@@ -182,4 +185,99 @@ test('report log is rate limited and bounded per window', () => {
   const rolled = log.accept([v(9)])
   assert.deepEqual(rolled[0], { message: 'CSP violations repeated', data: { distinct: 3, repeats: 1, dropped: 2 } })
   assert.equal(rolled[1].data.blocked, 'https://h9.example')
+})
+
+test('rendering always receives the full policy under the header name Next.js reads first, in both modes', async () => {
+  for (const enforce of [undefined, '1']) {
+    await withEnv({ OUTCLASS_CSP_ENFORCE: enforce, NODE_ENV: 'production' }, async () => {
+      const live = { calls: 0, forwarded: [] }
+      const { middleware } = loadMiddleware(live)
+      // A client-sent policy under either name, and the shape of the config-level frame-ancestors header.
+      const response = await middleware(new NextRequest('https://outclass.example/login', { headers: { 'content-security-policy': "frame-ancestors 'self'", 'content-security-policy-report-only': "script-src 'nonce-attacker'", 'x-nonce': 'attacker' } }))
+      const sent = response.headers.get(enforce ? 'content-security-policy' : 'content-security-policy-report-only')
+      const [forwarded] = live.forwarded
+      assert.equal(forwarded.policy, sent, String(enforce))
+      assert.equal(forwarded.reportOnly, null)
+      assert.equal(getScriptNonceFromHeader(forwarded.policy), forwarded.nonce)
+      assert.notEqual(forwarded.nonce, 'attacker')
+    })
+  }
+  const headers = new Headers({ 'content-security-policy': "frame-ancestors 'self'" })
+  csp.forwardCspToRendering(headers, 'abc', "script-src 'nonce-abc'")
+  assert.equal(headers.get('content-security-policy'), "script-src 'nonce-abc'")
+  assert.equal(headers.get('x-nonce'), 'abc')
+})
+
+test('production policy string: nonce-only scripts, no eval, no wildcard hosts, framing locked', () => {
+  const env = { NODE_ENV: 'production', OUTCLASS_CSP_ENFORCE: '1', TURNSTILE_ENABLED: '1', NEXT_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co', NEXT_PUBLIC_SENTRY_DSN: 'https://key@o1.ingest.us.sentry.io/2' }
+  const policy = csp.buildCsp({ nonce: 'QUJD', env })
+  assert.equal(policy, [
+    "default-src 'self'",
+    "script-src 'self' 'nonce-QUJD' 'strict-dynamic' 'wasm-unsafe-eval' https://challenges.cloudflare.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self'",
+    "connect-src 'self' https://abc.supabase.co wss://abc.supabase.co https://o1.ingest.us.sentry.io",
+    "frame-src 'self' https://challenges.cloudflare.com",
+    "worker-src 'self'", "manifest-src 'self'", "media-src 'self'",
+    "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'self'",
+    'upgrade-insecure-requests', 'report-uri /api/csp-report',
+  ].join('; '))
+  assert.doesNotMatch(policy, /'unsafe-eval'|'unsafe-hashes'|(?:^|\s)\*(?:\s|;|$)|https:\/\/\*/)
+  assert.doesNotMatch(directive(policy, 'script-src'), /'unsafe-inline'|data:|blob:|https:(?!\/\/challenges)/)
+  for (const bad of ['javascript:', 'http://abc.supabase.co ']) assert.ok(!policy.includes(bad), bad)
+  // Malformed or non-http configuration never widens the policy.
+  const odd = csp.buildCsp({ nonce: 'n', env: { NODE_ENV: 'production', NEXT_PUBLIC_SUPABASE_URL: 'javascript:alert(1)', NEXT_PUBLIC_SENTRY_DSN: 'not a url' } })
+  assert.equal(directive(odd, 'connect-src'), "connect-src 'self'")
+})
+
+test('next.config.mjs sends no Content-Security-Policy, so none can reach rendering ahead of the nonce policy', () => {
+  const config = fs.readFileSync('next.config.mjs', 'utf8')
+  assert.doesNotMatch(config, /key:\s*["']Content-Security-Policy/i)
+  assert.match(config, /key: "X-Frame-Options", value: "SAMEORIGIN"/)
+})
+
+test('report bursts are answered in middleware once an address passes the limit, without reaching the report function', async () => {
+  const { middleware } = loadMiddleware()
+  const post = ip => middleware(new NextRequest('https://outclass.example/api/csp-report', { method: 'POST', headers: { 'x-forwarded-for': ip, 'content-type': 'application/csp-report' } }))
+  const ip = '203.0.113.77'
+  for (let i = 0; i < 20; i++) assert.equal((await post(ip)).headers.get('x-middleware-next'), '1', `report ${i + 1} reaches the route`)
+  const over = await post(ip)
+  assert.equal(over.status, 204)
+  assert.equal(over.headers.get('x-middleware-next'), null, 'answered in middleware')
+  assert.equal((await post('203.0.113.78')).headers.get('x-middleware-next'), '1', 'other addresses are unaffected')
+})
+
+test('requests without the document policy never forward a client-sent policy or nonce', async () => {
+  const live = { calls: 0, forwarded: [] }
+  const { middleware } = loadMiddleware(live)
+  const forged = { 'content-security-policy': "script-src 'nonce-forged'", 'content-security-policy-report-only': "script-src 'nonce-forged'", 'x-nonce': 'forged' }
+  // A dotted last segment still reaches the page renderer (through the session layer).
+  assert.equal(csp.cspAppliesTo('/club/a.b'), false)
+  const page = await middleware(new NextRequest('https://outclass.example/club/a.b', { headers: forged }))
+  assert.deepEqual(live.forwarded.at(-1), { nonce: null, policy: null, reportOnly: null })
+  assert.equal(page.headers.get('content-security-policy'), "frame-ancestors 'self'")
+  // A route that forwards request headers itself (NextResponse.next with request headers).
+  const api = await middleware(new NextRequest('https://outclass.example/api/workspace', { headers: { ...forged, accept: 'application/json' } }))
+  const overridden = (api.headers.get('x-middleware-override-headers') || '').split(',')
+  assert.ok(overridden.includes('accept'), 'other request headers are still forwarded')
+  for (const name of Object.keys(forged)) {
+    assert.ok(!overridden.includes(name), name)
+    assert.equal(api.headers.get(`x-middleware-request-${name}`), null, name)
+  }
+})
+
+test('routes with their own sandboxed policy keep it as the only Content-Security-Policy', async () => {
+  const { middleware } = loadMiddleware()
+  assert.equal(csp.SANDBOXED_FILE_POLICY, "default-src 'none'; sandbox; frame-ancestors 'self'")
+  for (const [path, file] of [['/api/club-assets', 'app/api/club-assets/route.ts'], ['/api/decision-letter-assets', 'app/api/decision-letter-assets/route.ts']]) {
+    assert.equal(csp.routeSetsOwnCsp(path), true, path)
+    const response = await middleware(new NextRequest(`https://outclass.example${path}?reference=x`))
+    assert.equal(response.headers.get('content-security-policy'), null, `${path}: middleware leaves the route's header alone`)
+    const source = fs.readFileSync(file, 'utf8')
+    assert.match(source, /'Content-Security-Policy': ?SANDBOXED_FILE_POLICY/, file)
+    assert.doesNotMatch(source, /default-src 'none'; sandbox"/, `${file} uses the shared value`)
+  }
+  assert.equal(csp.routeSetsOwnCsp('/api/club-assets/x'), false)
+  assert.equal(csp.routeSetsOwnCsp('/api/recruiting-resumes'), false)
 })

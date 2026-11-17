@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingState } from "@/components/ui/loading-state";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { completeAccountDeletion, listAccountDeletionRequests } from "@/actions/account-deletion";
 import { userMessage } from "@/lib/user-message"
@@ -37,6 +38,6 @@ export function AdminDeletionRequests() {
       <p className="text-sm">Requested {day(row.requestedAt)} · Due {day(row.dueAt)}</p>
       <p className="text-sm">{row.emailSent === false ? "Confirmation email failed to send" : row.emailSent ? "Confirmation email sent" : "Confirmation email status unknown"}{row.status === "INVESTIGATING" ? " · A previous run didn’t finish; run it again" : ""}</p>
       <Button variant="destructive" disabled={busy || !row.due || reason.trim().length < 10} onClick={() => void complete(row)}>Complete deletion</Button>
-    </Panel>) : !error && <p className="text-sm text-muted-foreground">No pending deletion requests.</p>}
+    </Panel>) : !error && <EmptyState density="compact" align="start" tone="outlined" title="No pending deletion requests" description="Account deletion requests appear here when someone asks to delete their account." />}
   </section>;
 }

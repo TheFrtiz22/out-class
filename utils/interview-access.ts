@@ -1,6 +1,6 @@
 import { assertNotRecused, RecusedError } from "@/lib/recusal";
 import { assertClubOperational } from "@/lib/club-suspension";
-import { assertGraduateMayJudge } from "@/lib/graduate-judgment";
+import { assertGraduateMayOperate, graduateClubAccess } from "@/lib/graduate-access";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { ACCESS_REVOKED, ActionError, actionResult, type ActionResult } from "@/lib/action-result";
 import { INTERVIEW_ACCESS_REVOKED_MESSAGE, interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
@@ -13,8 +13,8 @@ export async function interviewActor(tx: AppTransactionClient, clubId: string, u
   await tx.$queryRaw`SELECT id FROM "ClubMember" WHERE "userId" = ${userId} AND "clubId" = ${clubId} FOR SHARE`;
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } }, include: { user: { select: { disabledAt: true } } } });
   if (!member || member.status !== "ACTIVE" || member.alumniSince || member.user.disabledAt) throw new Error("Interview access unavailable.");
-  // Interviews and evaluations are recruiting judgment: refused to a graduate kept as owner (lib/graduation.ts).
-  await assertGraduateMayJudge(tx, userId);
+  // Interviews and evaluations are club operations: refused to a graduate kept as owner (lib/graduation.ts).
+  assertGraduateMayOperate(await graduateClubAccess(tx, member));
   return { member, caps: interviewCapabilities(member) };
 }
 

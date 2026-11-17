@@ -7,6 +7,7 @@ import { interviewBookingCoverage } from "@/utils/interview-booking"
 import { notifyBookingPublished } from "@/utils/applicant-booking-notifications"
 import { revalidatePath } from "next/cache"
 import { bookingSlotSnapshot } from "@/lib/interview-rooms"
+import { ActionError, actionResult } from "@/lib/action-result"
 
 export async function getInterviewBookingPublication(raw: unknown) {
   const input = z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }).strict().parse(raw)
@@ -14,32 +15,42 @@ export async function getInterviewBookingPublication(raw: unknown) {
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     const rows = await interviewBookingCoverage(tx, input.clubId, input.roundId)
-    return { slots: rows }
+    // Only invited applications in the published cycle can book, so the publish step shows how many each cycle holds.
+    const apps = await tx.application.findMany({ where: { clubId: input.clubId, roundId: input.roundId, status: "INTERVIEWING", student: { disabledAt: null } }, select: { recruitmentCycleId: true } })
+    const invited = new Map<string | null, number>()
+    for (const app of apps) invited.set(app.recruitmentCycleId, (invited.get(app.recruitmentCycleId) ?? 0) + 1)
+    return { slots: rows, invited: [...invited].map(([cycleId, count]) => ({ cycleId, count })) }
   }, { timeout: 60000 })
 }
 
+// The refusals below are written for the leader, so they return through actionResult: a plain Error is replaced by
+// a generic message in production and the leader would only see "Couldn't save booking settings".
 export async function setInterviewBookingPublication(raw: unknown) {
+  return actionResult(() => setInterviewBookingPublicationCommand(raw), "setInterviewBookingPublication")
+}
+
+async function setInterviewBookingPublicationCommand(raw: unknown) {
   const input = z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), revision: z.number().int().nonnegative(), action: z.enum(["PUBLISH", "PAUSE", "POLICY"]), cycleId: z.string().uuid().nullable(), allowCancellation: z.boolean(), allowRescheduling: z.boolean() }).strict().parse(raw)
   const { user } = await requireAuth()
   const result = await prisma.$transaction(async tx => {
     // Club-exclusive. Panels it checks were conflict-checked across clubs when published.
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null, type: { in: ["INTERVIEW", "GROUP_INTERVIEW"] } } })
-    if (!round || round.anonymousReview) throw new Error("Choose an active identified interview round.")
-    if (input.cycleId && !await tx.recruitmentCycle.findFirst({ where: { id: input.cycleId, clubId: input.clubId, archivedAt: null } })) throw new Error("Choose an active recruitment cycle from this club.")
-    if (input.action !== "PUBLISH" && input.cycleId !== round.bookingCycleId) throw new Error("Publish the schedule to change the recruiting cycle. Existing interviews are kept.")
+    if (!round || round.anonymousReview) throw new ActionError("Choose an active identified interview round.")
+    if (input.cycleId && !await tx.recruitmentCycle.findFirst({ where: { id: input.cycleId, clubId: input.clubId, archivedAt: null } })) throw new ActionError("Choose an active recruitment cycle from this club.")
+    if (input.action !== "PUBLISH" && input.cycleId !== round.bookingCycleId) throw new ActionError("Publish the schedule to change the recruiting cycle. Existing interviews are kept.")
     // Exact retries do not republish or send another notification.
     if (input.action === "PUBLISH" && round.bookingPublishedAt && !round.bookingPaused && round.bookingCycleId === input.cycleId && round.bookingAllowCancellation === input.allowCancellation && round.bookingAllowRescheduling === input.allowRescheduling && round.bookingRevision === input.revision + 1) return { revision: round.bookingRevision }
-    if (round.bookingRevision !== input.revision) throw new Error("Booking settings changed in another tab. Reload and try again.")
+    if (round.bookingRevision !== input.revision) throw new ActionError("Booking settings changed in another tab. Reload and try again.")
     let bookingSlots: ReturnType<typeof bookingSlotSnapshot>[] | undefined
     if (input.action === "PUBLISH") {
       const coverage = await interviewBookingCoverage(tx, input.clubId, input.roundId)
-      if (!coverage.length) throw new Error("Add upcoming interview times before publishing the schedule.")
+      if (!coverage.length) throw new ActionError("Add upcoming interview times before publishing the schedule.")
       // Times with no interviewers and no bookings are left out of the offered times instead of blocking.
       const offered = coverage.filter(s => !s.unoffered)
-      if (!offered.length) throw new Error("Add interviewers to at least one time before publishing the schedule.")
+      if (!offered.length) throw new ActionError("Add interviewers to at least one time before publishing the schedule.")
       const blocked = offered.find(s => !s.bookable)
-      if (blocked) throw new Error(`The schedule can't be published yet: ${blocked.reasons.join(" ")} Check this session's interviewers.`)
+      if (blocked) throw new ActionError(`The schedule can't be published yet: ${blocked.reasons.join(" ")} Check this session's interviewers.`)
       const slots = await tx.interviewSlot.findMany({ where: { id: { in: offered.map(s => s.slotId) }, clubId: input.clubId }, include: { room: true } })
       bookingSlots = slots.map(s => bookingSlotSnapshot(s, s.room!))
     }

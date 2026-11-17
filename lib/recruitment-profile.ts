@@ -1,4 +1,5 @@
 import { supportedGpa } from "@/lib/student-profile";
+import { scholarStatusValue } from "@/lib/scholar-status";
 import type { FullStudentProfile } from "@/lib/student-profile";
 
 const academicYearLabels = ["First Year", "Second Year", "Third Year", "Fourth Year", "Fifth Year", "Sixth Year", "Seventh Year", "Eighth Year"];
@@ -30,7 +31,7 @@ export function recruitmentProfile(p: FullStudentProfile, genderVisible = false)
   const summary = recruitmentListProfile(p);
   return {
     id: p.id, userId: p.userId, firstName: summary.firstName, lastName: summary.lastName, computingId: p.computingId,
-    major: summary.major, scholarStatus: p.scholarStatus, gpa: summary.gpa, satScore: summary.satScore,
+    major: summary.major, scholarStatus: scholarStatusValue(p.scholarStatus), gpa: summary.gpa, satScore: summary.satScore,
     actScore: summary.actScore, actEnglish: p.actEnglish, actMath: p.actMath, actReading: p.actReading, actScience: p.actScience,
     bio: p.bio, linkedinUrl: p.linkedinUrl, resumeUrl: p.resumeUrl, headshotUrl: p.headshotUrl,
     experiences: p.experiences, academicYear: summary.academicYear, gender: genderVisible ? p.gender : null,

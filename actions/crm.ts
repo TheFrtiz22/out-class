@@ -7,11 +7,12 @@ import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-
 import { rankedReviewSelect, rankedReviewProjection } from "@/lib/ranked-review-read";
 import { loadPriorApplications, mayShowPriorApplications, mayShowPriorOutcome, type PriorApplication } from "@/lib/prior-applications";
 import { readPipelineSelection } from "@/lib/pipeline-selection-read";
+import { boundedParse } from "@/lib/bounded-input";
 import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
-import { assertRecruitmentRoundMove, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
+import { assertRecruitmentRoundMove, statusAfterRoundMove } from "@/lib/recruitment-lifecycle";
 import { genderValues } from "@/lib/student-profile";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import { normalizeProfileFieldVisibility, restrictApplicationProfile, type ProfileFieldVisibility } from "@/lib/profile-field-visibility";
@@ -43,7 +44,7 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof 
 }
 
 export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
-  const query = pipelinePageQuery.parse(input);
+  const query = boundedParse(pipelinePageQuery, input);
   const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds, roundPrivacy, profileFields) => {
     // Scope binding only. Both ranking and bounded hydration share this fresh
     // guarded Repeatable Read snapshot; the cursor never grants authority.
@@ -69,7 +70,7 @@ export async function getRankedReviewRound(clubId: string, roundId: string) {
 
 /** Explicit whole-selection read for the review queue, board counts and voting, without identities. */
 export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
-  const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
+  const query = boundedParse(pipelinePageQuery.omit({ cursor: true }), input);
   const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false },
     (tx, where, membership, rounds, roundPrivacy, profileFields) => readPipelineSelection(tx, where, membership, query, rounds, roundPrivacy, profileFields));
   return pipeline.applications;
@@ -201,10 +202,11 @@ async function moveApplicantRoundCommand(
       where: {
         id: parsed.applicationId,
         clubId: parsed.clubId,
-        status: { not: "DRAFTING" },
+        // The new status is derived from this one, so the move applies only to the state it was computed from.
+        status: current.status,
         ...(parsed.expectedRoundId ? { roundId: parsed.expectedRoundId } : {}),
       },
-      data: { roundId: parsed.newRoundId, ...(current.status === "INTERVIEWING" && !isInterviewRecruitmentRound(round.type) ? { status: "IN_REVIEW" as const } : {}) },
+      data: { roundId: parsed.newRoundId, status: statusAfterRoundMove(current.status, round.type) },
     });
     if (result.count !== 1)
       throw new ActionError("Application changed or is not available for this club. Reload the page and try again.");

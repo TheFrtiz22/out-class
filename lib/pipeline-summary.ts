@@ -4,6 +4,7 @@ import { anonymousListProfile } from "@/lib/anonymous-review";
 import { recruitmentListProfile } from "@/lib/recruitment-profile";
 import { applicationReviewVisibility } from "@/lib/application-review-visibility";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
+import { scholarStatusValue } from "@/lib/scholar-status";
 
 /** Database allowlist, independent of future application/profile schema fields.
  * The complete metadata set is still read to preserve global privacy-aware
@@ -13,7 +14,7 @@ export const pipelineSummarySelect = {
   round: { select: { anonymousReview: true } },
   student: { select: { email: true, studentProfile: { select: {
     firstName: true, lastName: true, major: true, gradYear: true,
-    transferStudent: true, gpa: true, satScore: true, actScore: true,
+    transferStudent: true, gpa: true, satScore: true, actScore: true, scholarStatus: true,
   } } } },
   evaluations: { where: { submittedAt: { not: null } }, select: {
     interviewerId: true, roundId: true, submittedAt: true, score: true,
@@ -31,8 +32,9 @@ export function pipelineSummaryProjection(app: Summary, membership: ClubAccess &
     id: app.id, roundId: app.roundId, status: app.status,
     studentId: anonymous ? `anonymous-${app.id}` : app.studentId,
     student: { email: anonymous ? "" : app.student.email,
-      studentProfile: anonymous ? anonymousListProfile(app.id, app.student.studentProfile) :
-        app.student.studentProfile ? recruitmentListProfile(app.student.studentProfile) : null },
+      studentProfile: anonymous ? { ...anonymousListProfile(app.id, app.student.studentProfile), scholarStatus: null } :
+        // Scholar status is profile data: identified rows only, validated, never in anonymous rows.
+        app.student.studentProfile ? { ...recruitmentListProfile(app.student.studentProfile), scholarStatus: scholarStatusValue(app.student.studentProfile.scholarStatus) } : null },
     evaluations: pipelineReviewerReferences(evaluations), roundScore,
   };
 }

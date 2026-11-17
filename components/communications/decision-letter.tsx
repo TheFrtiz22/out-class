@@ -7,6 +7,7 @@ import { ClubLogo } from '@/components/club-logo';
 import { useSearchParams } from 'next/navigation';
 import { getDecisionLetter,respondToOffer,setDecisionNotificationsRead } from '@/lib/workspace-api';
 import { useAuth } from '@/contexts/auth-context';
+import { ALUMNI_REFUSALS, isAlumniProfile } from '@/lib/graduation';
 import { Button } from '@/components/ui/button';
 import { letterCelebration,type CelebrationKind,type LetterContent } from '@/lib/decision-letters';
 import { ArrowRight,PartyPopper,RotateCcw } from '@/components/icons';
@@ -125,7 +126,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
   {((!data.letter||data.letter.decision==='ACCEPTED')||!data.isCurrent||data.suspended||offer?.status==='ACCEPTED'||error)&&<section className="decision-controls decision-response" aria-label="Decision next steps">
    {!data.isCurrent&&<p>This is a historical letter. Your current decision is {data.currentStatus.toLowerCase()}. Offer controls reflect your current record.</p>}
    {data.suspended&&<p>This club is suspended. Offer responses are currently unavailable.</p>}
-   {(!data.letter||data.letter.decision==='ACCEPTED')&&(active?<><h2>Your invitation</h2><p>Please respond by {new Date(offer!.expiresAt).toLocaleDateString()}.</p><div className="flex flex-wrap gap-3"><Button disabled={busy} onClick={()=>void respond('ACCEPT')}>Accept Offer</Button><Button disabled={busy} variant="outline" onClick={()=>void respond('DECLINE')}>Decline Offer</Button></div></>:<p>{offer?.status==='ACCEPTED'?'Your offer was accepted. Your membership is recorded. Current access is managed by the club.':offer?.status==='DECLINED'?'You declined this offer. Your letter remains available.':offer?.status==='REVOKED'?'This offer is no longer active. Contact the club with questions.':offer&&(offer.status==='EXPIRED'||new Date(offer.expiresAt)<=new Date())?'This offer has expired.':'There is no active offer associated with this decision.'}</p>)}
+   {(!data.letter||data.letter.decision==='ACCEPTED')&&(active?<><h2>Your invitation</h2><p>Please respond by {new Date(offer!.expiresAt).toLocaleDateString()}.</p>{isAlumniProfile(user?.profile)?<p role="status">{ALUMNI_REFUSALS.respond}</p>:<div className="flex flex-wrap gap-3"><Button disabled={busy} onClick={()=>void respond('ACCEPT')}>Accept Offer</Button><Button disabled={busy} variant="outline" onClick={()=>void respond('DECLINE')}>Decline Offer</Button></div>}</>:<p>{offer?.status==='ACCEPTED'?'Your offer was accepted. Your membership is recorded. Current access is managed by the club.':offer?.status==='DECLINED'?'You declined this offer. Your letter remains available.':offer?.status==='REVOKED'?'This offer is no longer active. Contact the club with questions.':offer&&(offer.status==='EXPIRED'||new Date(offer.expiresAt)<=new Date())?'This offer has expired.':'There is no active offer associated with this decision.'}</p>)}
    {offer?.status==='ACCEPTED'&&<Link href="/clubs" className="inline-flex items-center gap-1">Open My Clubs<ArrowRight size={16} aria-hidden="true"/></Link>}
    {error&&<p role="alert">{error}</p>}
   </section>}</div>;

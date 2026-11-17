@@ -71,6 +71,8 @@ const VIEW = { id: 'admin-view', targetUserId: 'alice' }
 function harness({ impersonation = null, rows = {} } = {}) {
   const writes = []
   const prisma = {
+    // A current student (alumni are refused: tests/alumni-read-only.test.cjs).
+    studentProfile: { findUnique: async () => ({ graduatedAt: null }) },
     studentInterestProfile: {
       findUnique: async ({ where }) => rows[where.userId] ?? null,
       upsert: async ({ where, create, update }) => {

@@ -12,8 +12,8 @@ function load(file, mocks) {
 test('claim requests reject managed clubs, reuse pending requests, and audit new requests', async () => {
   let claimedAt = new Date(), existing = null, created = 0, audited = 0
   const tx = { $queryRaw: async () => [], studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, club: { findUnique: async () => ({ claimedAt }) }, clubMember: { count: async () => 0 }, clubClaim: { findFirst: async () => existing, create: async ({ data }) => { created++; return { ...data, id: 'claim' } } }, auditLog: { create: async () => { audited++ } } }
-  const api = load('actions/club-workspace.ts', { '@/utils/prisma': { prisma: { ...tx, $transaction: fn => fn(tx) } }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }) } })
-  await assert.rejects(api.requestClubClaim(clubId, 'I am the current president.'), /already managed/)
+  const api = unwrapActions(load('actions/club-workspace.ts', { '@/utils/prisma': { prisma: { ...tx, $transaction: fn => fn(tx) } }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }) } }))
+  await assert.rejects(api.requestClubClaim(clubId, 'I am the current president.'), e => e.refused === true && e.code === 'ALREADY_MANAGED' && /already managed/.test(e.message))
   claimedAt = null; existing = { id: 'pending' }
   assert.equal((await api.requestClubClaim(clubId, 'I am the current president.')).id, 'pending')
   assert.equal(created, 0)
@@ -35,7 +35,7 @@ test('approving claims is atomic and cannot replace existing club ownership', as
 })
 test('decline only closes a pending invitation belonging to the signed-in email and is audited', async () => {
   let available = true, audited = 0
-  const tx = { $queryRaw: async () => [], clubInvitation: { findUnique: async () => ({ clubId }), updateMany: async ({ where, data }) => {
+  const tx = { $queryRaw: async () => [], studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, clubInvitation: { findUnique: async () => ({ clubId }), updateMany: async ({ where, data }) => {
     assert.equal(where.email, 'student@virginia.edu'); assert.equal(where.acceptedAt, null); assert.equal(where.revokedAt, null); assert.equal(where.declinedAt, null); assert.ok(where.expiresAt.gt instanceof Date); assert.ok(data.declinedAt instanceof Date)
     const count = available ? 1 : 0; available = false; return { count }
   } }, auditLog: { create: async ({ data }) => { assert.equal(data.action, 'club.invite.decline'); audited++ } } }

@@ -9,21 +9,22 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { privateClubAssetStorage, referencedClubAssetBytes } from "@/utils/club-asset-storage";
 import { prepareClubImage } from "@/lib/club-image";
 import { UPLOAD_QUOTA_MESSAGES, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
+import { ActionError, actionResult } from "@/lib/action-result";
 
-export async function uploadClubAsset(input: FormData) {
+async function uploadClubAssetCommand(input: FormData) {
   const keys = ['clubId', 'file', 'admin'];
-  if ([...input.keys()].some(k => !keys.includes(k)) || keys.some(k => input.getAll(k).length !== 1)) throw Error("Provide one club, file and upload mode.");
+  if ([...input.keys()].some(k => !keys.includes(k)) || keys.some(k => input.getAll(k).length !== 1)) throw new ActionError("Provide one club, file and upload mode.");
   const clubId = z.string().uuid().parse(input.get('clubId'));
   const admin = z.enum(['true','false']).parse(input.get('admin')) === 'true';
   const actor = admin ? await requirePlatformAdmin({ fresh: true }) : (await requireClubPermission(clubId, ['club.settings'])).user;
   const file = input.get('file');
-  if (!file || typeof file === 'string' || !file.size || file.size > 5242880) throw Error("Choose a PNG, JPEG or WebP up to 5 MB.");
-  if (/[\\/\x00-\x1f\x7f%?#]/.test(file.name)) throw Error("Invalid image filename.");
+  if (!file || typeof file === 'string' || !file.size || file.size > 5242880) throw new ActionError("Choose a PNG, JPEG or WebP up to 5 MB.");
+  if (/[\\/\x00-\x1f\x7f%?#]/.test(file.name)) throw new ActionError("Invalid image filename.");
   const bytes = new Uint8Array(await file.arrayBuffer());
   const image = await prepareClubImage(bytes, file.type);
   const mime = image.mime;
   const extensions = mime === 'image/jpeg' ? ['jpg','jpeg'] : mime === 'image/png' ? ['png'] : ['webp'];
-  if (!extensions.includes(file.name.split('.').pop()!.toLowerCase())) throw Error("Image extension must match its type.");
+  if (!extensions.includes(file.name.split('.').pop()!.toLowerCase())) throw new ActionError("Image extension must match its type.");
   const path = `${clubId}/${randomUUID()}.webp`;
   const storage = await privateClubAssetStorage();
   // Outside the transaction so a failed size read can never abort the upload (null skips the byte cap).
@@ -34,14 +35,14 @@ export async function uploadClubAsset(input: FormData) {
       await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${clubId} FOR UPDATE`;
       if (admin) await authorizeAdminTransaction(tx, actor.id);
       else await authorizeClubTransaction(tx, clubId, actor.id, ['club.settings']);
-      if (!await tx.club.findUnique({ where: { id: clubId }, select: { id: true } })) throw Error("Club unavailable.");
+      if (!await tx.club.findUnique({ where: { id: clubId }, select: { id: true } })) throw new ActionError("Club unavailable.");
       const since = uploadWindowStart();
       const userRecent = await tx.auditLog.count({ where: { actorId: actor.id, action: 'club.asset.upload', createdAt: { gte: since } } });
       const clubRecent = await tx.auditLog.count({ where: { clubId, action: 'club.asset.upload', createdAt: { gte: since } } });
       const quota = uploadQuotaError({ userRecent, clubRecent, clubBytes, incomingBytes: image.bytes.length }, UPLOAD_QUOTAS.clubAsset, UPLOAD_QUOTA_MESSAGES.clubAssetStorage);
-      if (quota) throw Error(quota);
+      if (quota) throw new ActionError(quota);
       const { error } = await storage.upload(path, image.bytes, { contentType: image.contentType, upsert: false, cacheControl: '0' });
-      if (error) throw Error("Image upload failed. Your saved profile has not changed.");
+      if (error) throw new ActionError("Image upload failed. Your saved profile has not changed.");
       uploaded = true;
       if (admin) await authorizeAdminTransaction(tx, actor.id);
       await tx.auditLog.create({ data: { actorId: actor.id, action: 'club.asset.upload', targetId: clubId, clubId, details: { mime, size: bytes.length } } });
@@ -51,4 +52,10 @@ export async function uploadClubAsset(input: FormData) {
     if (uploaded) { try { await storage.remove([path]); } catch { /* An orphan never replaces the authoritative profile. */ } }
     throw error;
   }
+}
+
+// Returned through actionResult so the reason (file type, size, upload limit) reaches the person:
+// production replaces a thrown message with a generic one.
+export async function uploadClubAsset(input: FormData) {
+  return actionResult(() => uploadClubAssetCommand(input), "uploadClubAsset")
 }

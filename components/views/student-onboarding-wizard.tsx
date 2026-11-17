@@ -429,7 +429,7 @@ export function StudentOnboardingWizard({
   async function uploadResume(): Promise<string | null> {
     if (!resumeFile) return null
     const input = new FormData(); input.set("kind", "resume"); input.set("file", resumeFile)
-    return (await uploadProfileFile(input)).reference
+    return unwrapAction(await uploadProfileFile(input)).reference
   }
 
   async function onStep4Submit(data: ExperienceAssetsData, skipAssets = false) {

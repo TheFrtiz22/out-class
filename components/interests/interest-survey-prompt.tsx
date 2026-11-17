@@ -7,6 +7,8 @@ import { IconButton } from "@/components/ui/icon-button"
 import { DashboardCard, DashboardQuiet } from "@/components/product/dashboard/dashboard"
 import { dismissInterestSurveyPrompt } from "@/lib/workspace-api"
 import { useInterestSurvey } from "@/hooks/use-interest-survey"
+import { useAuth } from "@/contexts/auth-context"
+import { isAlumniProfile } from "@/lib/graduation"
 
 // The form loads only when the student opens it.
 const InterestSurveyForm = dynamic(() => import("@/components/interests/interest-survey-form").then(module => module.InterestSurveyForm), { loading: () => <div aria-hidden="true" className="h-72" /> })
@@ -21,7 +23,9 @@ export function InterestSurveyPrompt() {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [hidden, setHidden] = useState(false)
-  if (!enabled || !loaded || !survey || survey.completed || survey.dismissed || hidden) return null
+  // Alumni accounts are read-only (lib/graduation.ts): no survey prompt.
+  const alumni = isAlumniProfile(useAuth().user?.profile)
+  if (alumni || !enabled || !loaded || !survey || survey.completed || survey.dismissed || hidden) return null
 
   async function dismiss() {
     setBusy(true)

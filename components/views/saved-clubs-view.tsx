@@ -36,19 +36,9 @@ export function SavedClubsView({
     <div className="oc-corkboard space-y-6">
       <PageHeader
         title="Saved clubs"
+        description="Saving a club doesn’t apply, join or subscribe you."
         action={headerAction}
       />
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-        <p>Saving a club does not apply, subscribe, or join you.</p>
-        <Button
-          variant="ghost"
-          disabled={loading || !authenticated}
-          onClick={() => void refresh()}
-        >
-          <RefreshCw className="size-4" />
-          Refresh
-        </Button>
-      </div>
       {error && items.length > 0 && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -60,31 +50,24 @@ export function SavedClubsView({
       {loading ? (
         <LoadingState label="Loading Saved clubs…" layout="cards" rows={3} />
       ) : !authenticated ? (
-        <section className="oc-directory-empty">
-          <Bookmark className="size-6" />
-          <h2>Sign in to see your saved clubs.</h2>
-          <p>Sign in to save clubs and revisit them across devices.</p>
-          <Button onClick={() => onNavigate("auth")}>Sign in</Button>
-          <Button variant="outline" onClick={() => onNavigate("explore")}>
-            Browse Explore
-          </Button>
-        </section>
+        <EmptyState density="compact" tone="subtle" icon={<Bookmark />} title="Sign in to see your saved clubs." description="Sign in to save clubs and revisit them across devices." action={<div className="flex flex-wrap justify-center gap-2"><Button onClick={() => onNavigate("auth")}>Sign in</Button><Button variant="outline" onClick={() => onNavigate("explore")}>Browse Explore</Button></div>} />
       ) : error && !items.length ? (
-        <section role="alert" className="rounded-lg border p-5">
-          <p>{error}</p>
-          <Button variant="outline" onClick={() => void refresh()}>
-            Retry Saved clubs
-          </Button>
-        </section>
+        <EmptyState role="alert" density="compact" tone="subtle" icon={<Bookmark />} title="Couldn’t load your saved clubs." description={error} action={<Button variant="outline" onClick={() => void refresh()}>Retry Saved clubs</Button>} />
       ) : items.length ? (
         <>
-          <p
-            role="status"
-            aria-live="polite"
-            className="text-sm text-muted-foreground"
-          >
-            {items.length} saved {items.length === 1 ? "club" : "clubs"}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-sm text-muted-foreground"
+            >
+              {items.length} saved {items.length === 1 ? "club" : "clubs"}
+            </p>
+            <Button variant="ghost" size="sm" disabled={loading} onClick={() => void refresh()}>
+              <RefreshCw className="size-4" />
+              Refresh
+            </Button>
+          </div>
           <ul className="oc-explore-grid">
             {items.map(({ club }) => (
               <DiscoveryCard

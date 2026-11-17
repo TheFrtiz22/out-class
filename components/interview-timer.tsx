@@ -62,10 +62,12 @@ export function InterviewTimer({ scope, paused, timing, shared, onAccessRevoked 
   return <div className="oc-interview-timer" aria-label="Shared interview countdown" aria-busy={busy} data-expired={seconds === 0} data-low={seconds > 0 && seconds <= 60}>
     <output aria-label="Remaining interview time" aria-live="off"><span className="sr-only">{clock(seconds)}</span><TimerDigits text={clock(seconds)} /></output>
     {seconds === 0 && <span role="status">Time’s up</span>}
+    {!paused && <>
     <Button type="button" className="oc-timer-primary" disabled={!ready || busy || paused || (phase !== "running" && seconds === 0)} onClick={() => void send({ type: phase === "ready" ? "start" : phase === "running" ? "pause" : "resume" })}>{phase === "running" ? "Pause" : phase === "ready" ? "Start" : "Resume"}</Button>
     <Button type="button" variant="outline" disabled={!ready || busy || paused || seconds === 0} aria-label="Remove one minute" onClick={() => void send({ type: "adjust", deltaMs: -TIMER_ADJUST_STEP_MS })}>−1 min</Button>
     <Button type="button" variant="outline" disabled={!ready || busy || paused} aria-label="Add one minute" onClick={() => void send({ type: "adjust", deltaMs: TIMER_ADJUST_STEP_MS })}>+1 min</Button>
     <Button type="button" variant="outline" disabled={!ready || busy || paused} onClick={() => void send({ type: "reset" })}>Reset</Button>
+    </>}
     {message && <span role="status" className="oc-timer-change">{message}</span>}
     {changed && <span role="status" className="oc-timer-change">Schedule changed. Reset to use the updated {timing.durationMs / 60000}-minute duration.</span>}
   </div>;

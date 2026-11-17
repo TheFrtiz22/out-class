@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "@/contexts/auth-context";
+import { ALUMNI_REFUSALS, isAlumniProfile } from "@/lib/graduation";
 import { useRef, useState } from "react";
 import { acceptIdentityClubInvitation as acceptIdentityClubInvitationAction, declineIdentityClubInvitation as declineIdentityClubInvitationAction, setOrganizationInvitationDismissed as setOrganizationInvitationDismissedAction, type getOrganizationInvitations } from "@/actions/club-onboarding";
 import { ClubLogo } from "@/components/club-logo";
@@ -29,6 +31,8 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
   const [hidden, setHidden] = useState<boolean | null>(null);
   const dismissed = hidden ?? !!invitation.dismissedAt;
   const working = useRef(false);
+  // Alumni accounts are read-only (lib/graduation.ts): no accept, decline or "Not now".
+  const alumni = isAlumniProfile(useAuth().user?.profile);
   const owner = invitation.requestedRole === "OWNER";
   const actionClass = compact ? "h-auto min-h-11 whitespace-normal px-3" : "h-auto min-h-11 min-w-0 flex-1 whitespace-normal px-3 sm:flex-none";
   const role = ({ ADMIN: "an administrator", RECRUITING_ADMIN: "a recruiting administrator", INTERVIEWER: "an interviewer", MEMBER: "a member", OWNER: "an owner" } as const)[invitation.requestedRole];
@@ -70,13 +74,13 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
       </div>
       <div className={compact ? "flex shrink-0 flex-wrap gap-2" : "flex shrink-0 flex-wrap gap-2 lg:max-w-72"} aria-label={`Respond to ${invitation.club.name}`}>
         {compact && <Button tabIndex={tabIndex} asChild variant="ghost" className="min-h-11 px-3"><Link tabIndex={tabIndex} href={`/invitations/${invitation.id}`}>View invitation</Link></Button>}
-        <Button tabIndex={tabIndex} className={actionClass} disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
+        {alumni ? <p role="status" className="text-sm text-muted-foreground">{ALUMNI_REFUSALS.respond}</p> : <Button tabIndex={tabIndex} className={actionClass} disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
           {busy === "accepted" ? owner ? "Claiming…" : "Accepting…" : owner ? "Claim organization" : "Accept"}
-        </Button>
-        <Button tabIndex={tabIndex} className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(dismissed ? "restored" : "dismissed")}>
+        </Button>}
+        {!alumni && <Button tabIndex={tabIndex} className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(dismissed ? "restored" : "dismissed")}>
           {dismissed ? "Show on dashboard" : "Not now"}
-        </Button>
-        {allowDecline && <Button tabIndex={tabIndex} className="min-h-11" variant="ghost" disabled={!!busy} aria-expanded={confirmDecline} aria-controls={`invitation-decline-${invitation.id}`} onClick={() => setConfirmDecline(true)}>Decline</Button>}
+        </Button>}
+        {allowDecline && !alumni && <Button tabIndex={tabIndex} className="min-h-11" variant="ghost" disabled={!!busy} aria-expanded={confirmDecline} aria-controls={`invitation-decline-${invitation.id}`} onClick={() => setConfirmDecline(true)}>Decline</Button>}
       </div>
     </article>
     {confirmDecline && <div id={`invitation-decline-${invitation.id}`} role="group" aria-label={`Confirm decline from ${invitation.club.name}`} className="mt-4 space-y-3 rounded-lg border bg-muted/30 p-4">

@@ -1,3 +1,4 @@
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { ActionError } from "@/lib/action-result";
 import type { Prisma } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -99,7 +100,8 @@ export async function captureRecipientAudience(tx: AppTransactionClient, clubId:
   // not retain member contact authority merely because they once RSVPed to an event.
   const members = (await tx.clubMember.findMany({ where: { clubId, ...activeMemberWhere, userId: { in: userIds } }, select: { userId: true } })).map(row => row.userId);
   const memberIds = new Set(members);
-  const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { clubId, userId: actorId } } });
+  // A graduate kept as owner is handOverOnly here too (lib/graduate-access.ts).
+  const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { clubId, userId: actorId } } }));
   const apps = actor && canIdentifyRecipients(actor) ? await tx.application.findMany({ where: { clubId, studentId: { in: userIds.filter(id => !memberIds.has(id)) }, ...identified }, select: { studentId: true, status: true } }) : [];
   const applicants = apps.filter(row => row.status !== "REJECTED").map(row => row.studentId);
   const rejected = apps.filter(row => row.status === "REJECTED").map(row => row.studentId);
