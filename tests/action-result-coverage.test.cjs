@@ -40,6 +40,7 @@ const exclusions = new Map([
   ['actions/club-overview.ts#getClubWorkspaceOverview', 'read; failures show the load fallback'],
   ['actions/club-overview.ts#getDashboardReviewQueue', 'read; failures show the load fallback'],
   ['actions/tasks.ts#getTaskWorkspace', 'read; failures show the load fallback'],
+  ['actions/account-deletion.ts#getAccountDeletionRequest', 'read by the Settings page on the server, which skips it for support sessions; its only refusals are those guards'],
   ['actions/admin-workspace.ts#changeAdminDesignatedLeader', 'platform admin tool, not yet converted; shows its fallback'],
   ['actions/voting-room-finalization.ts#finalizeLiveVotingRoom', 'live voting is out of scope for this change'],
   ['actions/voting-room-finalization.ts#previewLiveVotingFinalization', 'live voting is out of scope for this change'],
