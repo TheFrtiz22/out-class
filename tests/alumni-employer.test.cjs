@@ -325,7 +325,7 @@ test('kept-owner graduate: the in-transaction recheck and interview access (eval
   assert.equal(refused.code, g.ALUMNI_REFUSED)
   assert.equal(refused.error, g.ALUMNI_REFUSALS.manage)
   // One shared path: the three checks call the same helper.
-  assert.match(src('utils/auth.ts'), /const membership = await graduateMemberFor\(prisma, found, permissions\);\n\s*if \(!options\.allowSuspendedRead\)/)
+  assert.match(src('utils/auth.ts'), /const membership = await graduateMemberFor\(prisma, found, permissions, requestGraduation\);\n\s*if \(!options\.allowSuspendedRead\)/)
   assert.match(src('lib/club-transaction-authorization.ts'), /const marked = await graduateMemberFor\(tx, member!, permissions\);/)
   assert.match(src('utils/interview-access.ts'), /assertGraduateMayOperate\(await graduateClubAccess\(tx, member\)\);\n\s*return \{ member, caps/)
 })

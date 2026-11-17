@@ -65,6 +65,8 @@ async function inviteClubManagerCommand(
     const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
     }));
+    // A graduate kept as owner hands over by transfer or by making a current member owner, not by invitation.
+    if (actor?.handOverOnly) throw new ActionError(ALUMNI_REFUSALS.manage, ALUMNI_REFUSED);
     if (
       !hasPermission(actor, "leaders.manage") ||
       !actor ||
@@ -118,17 +120,18 @@ async function acceptClubInvitationCommand(invitationId: string) {
       invitation.expiresAt <= new Date()
     )
       throw new ActionError("Invitation unavailable or expired.");
-    const inviter = await tx.clubMember.findUnique({
+    // An inviter who has since graduated no longer grants access (another leader can reissue).
+    const inviter = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({
       where: {
         userId_clubId: {
           userId: invitation.invitedBy,
           clubId: invitation.clubId,
         },
       },
-    });
+    }));
     const inviterAccount = await tx.user.findUnique({ where: { id: invitation.invitedBy }, select: { disabledAt: true } });
     if (
-      !inviterAccount || inviterAccount.disabledAt ||
+      !inviterAccount || inviterAccount.disabledAt || inviter?.handOverOnly ||
       !hasPermission(inviter, "leaders.manage") ||
       invitation.permissions.some(
         (p) => !hasPermission(inviter, p as (typeof clubPermissions)[number]),

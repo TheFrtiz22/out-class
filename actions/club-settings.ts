@@ -1,5 +1,6 @@
 "use server";
 
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { finalRecruitmentStatuses, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod";
@@ -26,7 +27,8 @@ async function authorize(
     tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } }),
     tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } }),
   ]);
-  if (!user || user.disabledAt || !hasPermission(member, permission))
+  // A graduate kept as owner is handOverOnly here too (lib/graduate-access.ts).
+  if (!user || user.disabledAt || !hasPermission(await graduateClubAccessOrNull(tx, member), permission))
     throw new ActionError("Settings access changed. Reload before editing.");
 }
 function invalidate(clubId: string) {

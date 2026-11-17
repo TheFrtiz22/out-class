@@ -71,7 +71,8 @@ async function eligible(tx: AppTransactionClient, deliveryId: string) {
     const grant = await tx.platformAdmin.findUnique({ where: { userId: invitation.invitedBy } });
     if (!grant?.active || !(process.env.OUTCLASS_PLATFORM_ADMIN_IDS || '').split(',').map(s => s.trim()).includes(invitation.invitedBy)) return null;
   } else {
-    const inviter = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: invitation.invitedBy, clubId: invitation.clubId } } });
+    // An inviter who has since graduated is handOverOnly, which canManageOrganizationInvitation refuses.
+    const inviter = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: invitation.invitedBy, clubId: invitation.clubId } } }));
     if (!canManageOrganizationInvitation(inviter, invitation)) return null;
   }
   if (invitation.schoolIdentity) {

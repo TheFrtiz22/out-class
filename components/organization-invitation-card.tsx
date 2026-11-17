@@ -31,7 +31,7 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
   const [hidden, setHidden] = useState<boolean | null>(null);
   const dismissed = hidden ?? !!invitation.dismissedAt;
   const working = useRef(false);
-  // Alumni accounts are read-only (lib/graduation.ts): no accept or decline ("Not now" only hides the card).
+  // Alumni accounts are read-only (lib/graduation.ts): no accept, decline or "Not now".
   const alumni = isAlumniProfile(useAuth().user?.profile);
   const owner = invitation.requestedRole === "OWNER";
   const actionClass = compact ? "h-auto min-h-11 whitespace-normal px-3" : "h-auto min-h-11 min-w-0 flex-1 whitespace-normal px-3 sm:flex-none";
@@ -77,9 +77,9 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
         {alumni ? <p role="status" className="text-sm text-muted-foreground">{ALUMNI_REFUSALS.respond}</p> : <Button tabIndex={tabIndex} className={actionClass} disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
           {busy === "accepted" ? owner ? "Claiming…" : "Accepting…" : owner ? "Claim organization" : "Accept"}
         </Button>}
-        <Button tabIndex={tabIndex} className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(dismissed ? "restored" : "dismissed")}>
+        {!alumni && <Button tabIndex={tabIndex} className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(dismissed ? "restored" : "dismissed")}>
           {dismissed ? "Show on dashboard" : "Not now"}
-        </Button>
+        </Button>}
         {allowDecline && !alumni && <Button tabIndex={tabIndex} className="min-h-11" variant="ghost" disabled={!!busy} aria-expanded={confirmDecline} aria-controls={`invitation-decline-${invitation.id}`} onClick={() => setConfirmDecline(true)}>Decline</Button>}
       </div>
     </article>

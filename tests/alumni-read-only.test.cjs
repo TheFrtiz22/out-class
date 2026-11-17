@@ -244,10 +244,10 @@ test('kept-owner graduate: direct membership loads mark the actor too', () => {
   pins['actions/editor-drafts.ts'] = /assertGraduateMayOperate\(member\)\n\s*const assignment/
   pins['actions/availability.ts'] = /authorizeClubTransaction\(tx, input\.clubId, user\.id, \[\]\)\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "availability"\)/
   for (const [file, pattern] of Object.entries(pins)) assert.match(src(file), pattern, file)
-  assert.equal(src('actions/club-access.ts').match(/graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/g).length, 5)
+  assert.equal(src('actions/club-access.ts').match(/graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/g).length, 6, 'five actor loads and the accept-time inviter')
   // Private task files: a marked actor no longer holds tasks.manage.
   assert.equal(src('actions/tasks.ts').match(/graduateClubAccessOrNull\(prisma, await prisma\.clubMember\.findUnique/g).length, 1)
-  assert.equal(src('actions/club-onboarding.ts').match(/graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/g).length, 2)
+  assert.equal(src('actions/club-onboarding.ts').match(/graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/g).length, 3, 'revoke, roster upload and roster read')
 })
 
 // ---- Voter eligibility ----
@@ -267,4 +267,116 @@ test('voting: a graduate (kept owner included) is never an eligible voter', asyn
   assert.match(src('actions/voting-room-setup.ts'), /const voters=members\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
   assert.match(src('actions/voting-room.ts'), /const eligible=members\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
   for (const file of ['actions/voting-room-setup.ts', 'actions/voting-room.ts']) assert.match(src(file), /studentProfile:\{select:\{firstName:true,lastName:true,graduatedAt:true\}\}/, file)
+})
+
+// ---- Review follow-ups (Nov 17) ----
+
+const INVITE_CLUB = id(1)
+const graduatedProfileRaw = graduated => async strings => strings.join('?').includes('FROM "StudentProfile"') ? [{ graduatedAt: graduated }] : []
+function accessApi(tx, userId = 'owner') {
+  return load('actions/club-access.ts', {
+    '@/utils/prisma': { prisma: { $transaction: async work => work(tx) } },
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: userId, email: 'student@virginia.edu' } }), requireClubPermission: async () => assert.fail() },
+    '@/utils/club-write-transaction': { clubWriteTransaction: async work => work(tx) },
+    '@/utils/school-identity': { prepareVerifiedSchoolAccount: async () => {} },
+    '@/utils/verified-email-policy': { hasConfirmedUniversityEmail: () => true },
+    '@/lib/club-suspension': { lockOperationalClub: async () => {} },
+    'next/cache': { revalidatePath() {}, revalidateTag() {} },
+  })
+}
+
+test('kept-owner graduate cannot invite anyone; nothing is written', async () => {
+  const tx = {
+    $queryRaw: graduatedProfileRaw(ALUMNI_AT),
+    clubMember: { findUnique: async () => ({ ...keptOwner, clubId: INVITE_CLUB }) },
+    clubInvitation: { create: async () => assert.fail('no invitation for a graduate') },
+    auditLog: { create: async () => assert.fail() },
+  }
+  for (const permissions of [[], ['leaders.manage']])
+    assert.deepEqual(await accessApi(tx).inviteClubManager({ clubId: INVITE_CLUB, email: 'new@virginia.edu', permissions }), { $action: 'outclass.action/v1', ok: false, error: g.ALUMNI_REFUSALS.manage, code: g.ALUMNI_REFUSED })
+})
+
+test('an invitation issued before the inviter graduated can no longer be accepted (email and identity) or delivered', async () => {
+  const invitation = { id: id(30), clubId: INVITE_CLUB, status: 'PENDING', email: 'student@virginia.edu', expiresAt: new Date(Date.now() + 86400000), invitedBy: 'inviter', permissions: [], declinedAt: null, acceptedAt: null, revokedAt: null, applicationId: null, schoolIdentityId: null }
+  const inviter = { ...keptOwner, id: 'm-inviter', userId: 'inviter', clubId: INVITE_CLUB }
+  const emailTx = graduated => ({
+    $queryRaw: graduatedProfileRaw(graduated),
+    clubInvitation: { findUnique: async () => invitation },
+    clubMember: { findUnique: async ({ where }) => where.userId_clubId.userId === 'inviter' ? inviter : null, upsert: async () => assert.fail('no membership') },
+    user: { findUnique: async () => ({ disabledAt: null }) },
+    studentProfile: { findUnique: async () => { throw new Error('reached the join check') } },
+  })
+  const refusedEmail = await accessApi(emailTx(ALUMNI_AT), 'student').acceptClubInvitation(invitation.id)
+  assert.equal(refusedEmail.ok, false); assert.match(refusedEmail.error, /inviter no longer has permission/)
+  await assert.rejects(accessApi(emailTx(null), 'student').acceptClubInvitation(invitation.id), /reached the join check/, 'a current inviter still passes')
+
+  const identity = { ...invitation, schoolIdentityId: 'sid', authoritySource: 'CLUB', requestedRole: 'MEMBER', expiredAt: null }
+  const onboarding = load('utils/club-onboarding.ts', {
+    '@/lib/club-suspension': { lockOperationalClub: async () => {} },
+    '@/utils/school-identity': { verifiedSchoolIdentities: async () => [{ id: 'sid' }] },
+  })
+  const identityTx = graduated => ({
+    $queryRaw: graduatedProfileRaw(graduated),
+    clubInvitation: { findUnique: async () => identity, findUniqueOrThrow: async () => identity },
+    clubMember: { findUnique: async () => inviter },
+    user: { findUnique: async () => ({ id: 'inviter', disabledAt: null }) },
+    studentProfile: { findUnique: async () => { throw new Error('reached the join check') } },
+  })
+  const account = { user: { id: 'student' } }
+  await assert.rejects(onboarding.acceptIdentityInvitationInTransaction(identityTx(ALUMNI_AT), identity.id, account), /inviter can no longer grant/)
+  await assert.rejects(onboarding.acceptIdentityInvitationInTransaction(identityTx(null), identity.id, account), /reached the join check/)
+  // Delivery re-reads the inviter the same way (canManageOrganizationInvitation refuses handOverOnly).
+  assert.match(src('utils/invitation-delivery.ts'), /const inviter = await graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique\(\{ where: \{ userId_clubId: \{ userId: invitation\.invitedBy[^\n]*\n\s*if \(!canManageOrganizationInvitation\(inviter, invitation\)\) return null;/)
+  assert.equal(load('lib/organization-authorization.ts').canManageOrganizationInvitation({ ...inviter, handOverOnly: true }, { requestedRole: 'OWNER', permissions: [] }), false)
+})
+
+test('"Not now" on an invitation is refused for alumni and hidden', async () => {
+  const tx = { studentProfile: profile(ALUMNI_AT), clubInvitation: { update: async () => assert.fail('no dismissal') } }
+  const onboarding = load('actions/club-onboarding.ts', {
+    '@/utils/prisma': { prisma: {} },
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'grad' } }), requireClubPermission: async () => assert.fail() },
+    '@/utils/club-write-transaction': { clubWriteTransaction: async work => work(tx) },
+    '@/utils/school-identity': { prepareVerifiedSchoolAccount: async () => {}, previewVerifiedSchoolIdentities: async () => [] },
+    '@/utils/platform-admin': { requirePlatformAdmin: async () => assert.fail() },
+    '@/utils/club-onboarding': { recipientInvitation: async () => assert.fail('refused before reading the invitation') },
+  })
+  assert.deepEqual(await onboarding.setOrganizationInvitationDismissed(id(9), true), envelope('respond'))
+  assert.match(src('components/organization-invitation-card.tsx'), /\{!alumni && <Button[^\n]*respond\(dismissed \? "restored" : "dismissed"\)\}>/)
+})
+
+test('voting: a graduate cannot be seated as a voter or leader; the legacy eligible list skips graduates', () => {
+  assert.match(src('utils/voting-room-setup.ts'), /include:\{user:\{select:\{disabledAt:true,studentProfile:\{select:\{graduatedAt:true\}\}\}\}\}\}\);\n\s*\/\/[^\n]*\n\s*if\(members\.length!==memberIds\.length\|\|members\.some\(m=>m\.user\.disabledAt\|\|isGraduatedMember\(m\)\|\|/)
+  const legacy = src('actions/voting.ts')
+  assert.match(legacy, /include:\{user:\{select:\{email:true,studentProfile:\{select:\{graduatedAt:true\}\}\}\}\}\}\)\)\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
+  assert.match(legacy, /eligible:eligible\.map\(v=>\(\{id:v\.id,label:v\.user\.email\}\)\)/, 'the graduation date is not returned')
+})
+
+test('share links: refused for alumni (every shareable target is club-scoped); terms and tutorials stay allowed', async () => {
+  const short = load('actions/short-links.ts', {
+    '@/utils/prisma': { prisma: { studentProfile: profile(ALUMNI_AT) } },
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'grad' } }) },
+    '@/lib/short-link-store': { findOrCreateReusableShortLink: async () => assert.fail('no link for alumni') },
+  })
+  await assert.rejects(short.createShortLink({ target: '/club/synthetic-club' }), e => e.message === g.ALUMNI_REFUSALS.share)
+  for (const file of ['actions/terms.ts', 'actions/tutorials.ts']) assert.doesNotMatch(src(file), /assertNotAlumni|alumniRefusal/, file)
+  // The QR card already falls back to the full address when a short link is refused.
+  assert.match(src('components/qr/qr-code-card.tsx'), /\.catch\(\(\) => \{[^}]*setOptimizedUrl\(`\$\{orig\}\$\{path\}`\);/)
+})
+
+test('in-transaction rechecks and the request-scoped graduation read', async () => {
+  const pins = {
+    'actions/club-settings.ts': /!hasPermission\(await graduateClubAccessOrNull\(tx, member\), permission\)/,
+    'actions/roster-import.ts': /const member = await graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/,
+    'actions/club-onboarding.ts': /const manager = await graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/,
+    'utils/recipient-audience.ts': /const actor = await graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique\(\{ where: \{ userId_clubId: \{ clubId, userId: actorId \} \} \}\)\);/,
+    'utils/auth.ts': /const requestGraduation = cache\(\(userId: string\) => readGraduation\(prisma\)\(userId\)\);[\s\S]*graduateMemberFor\(prisma, found, permissions, requestGraduation\)/,
+  }
+  for (const [file, pattern] of Object.entries(pins)) assert.match(src(file), pattern, file)
+  // A supplied reader replaces the database read.
+  const access = load('lib/graduate-access.ts')
+  let reads = 0
+  const db = { $queryRaw: async () => assert.fail('the supplied reader is used') }
+  const read = async () => { reads++; return { graduatedAt: ALUMNI_AT } }
+  assert.equal((await access.graduateClubAccess(db, { ...keptOwner }, read)).handOverOnly, true)
+  assert.equal(reads, 1)
 })

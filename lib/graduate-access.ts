@@ -5,6 +5,10 @@ import { HAND_OVER_PERMISSIONS, isActiveMembership, type ClubAccess, type ClubPe
 
 type Db = Pick<AppTransactionClient, "$queryRaw">
 type Member = ClubAccess & { userId: string; interviewerEligible?: boolean | null }
+/** Reads a user's graduation date; a request can pass a cached reader (utils/auth.ts). */
+export type GraduationReader = (userId: string) => Promise<{ graduatedAt: Date | null } | null | undefined>
+export const readGraduation = (db: Db): GraduationReader => async userId =>
+  (await db.$queryRaw<{ graduatedAt: Date | null }[]>`SELECT "graduatedAt" FROM "StudentProfile" WHERE "userId" = ${userId}`)[0]
 /** The membership as the shared checks return it: marked handOverOnly for a graduate. */
 export type GraduateMarked<T> = T & { handOverOnly?: boolean }
 
@@ -19,13 +23,12 @@ const holdsCapabilities = (member: ClubAccess & { interviewerEligible?: boolean 
  * to a current member. Reads the member's own graduation date, and only for a member who holds a
  * capability, so plain members add no query. Returns the same object when nothing changes.
  */
-export async function graduateClubAccess<T extends Member>(db: Db, member: T, now = new Date()): Promise<GraduateMarked<T>> {
+export async function graduateClubAccess<T extends Member>(db: Db, member: T, read: GraduationReader = readGraduation(db), now = new Date()): Promise<GraduateMarked<T>> {
   if (member.handOverOnly || !isActiveMembership(member) || !holdsCapabilities(member)) return member
-  const rows = await db.$queryRaw<{ graduatedAt: Date | null }[]>`SELECT "graduatedAt" FROM "StudentProfile" WHERE "userId" = ${member.userId}`
-  return isAlumniProfile(rows[0], now) ? { ...member, handOverOnly: true } : member
+  return isAlumniProfile(await read(member.userId), now) ? { ...member, handOverOnly: true } : member
 }
-export async function graduateClubAccessOrNull<T extends Member>(db: Db, member: T | null | undefined, now = new Date()): Promise<GraduateMarked<T> | null> {
-  return member ? graduateClubAccess(db, member, now) : null
+export async function graduateClubAccessOrNull<T extends Member>(db: Db, member: T | null | undefined, read?: GraduationReader): Promise<GraduateMarked<T> | null> {
+  return member ? graduateClubAccess(db, member, read) : null
 }
 
 /** Refuses a handOverOnly member any requested permission other than the hand-over ones. */
@@ -40,8 +43,8 @@ export function assertGraduateMayOperate(member: ClubAccess | null | undefined) 
 }
 
 /** The shared permission checks' step: mark the member, then refuse anything beyond hand-over. */
-export async function graduateMemberFor<T extends Member>(db: Db, member: T, permissions: readonly ClubPermission[], now = new Date()): Promise<GraduateMarked<T>> {
-  const marked = await graduateClubAccess(db, member, now)
+export async function graduateMemberFor<T extends Member>(db: Db, member: T, permissions: readonly ClubPermission[], read?: GraduationReader): Promise<GraduateMarked<T>> {
+  const marked = await graduateClubAccess(db, member, read)
   assertGraduateMayUse(marked, permissions)
   return marked
 }

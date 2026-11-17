@@ -79,7 +79,7 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
     return { clubId: app.clubId, status: "DECLINED" as const };
   }
   if (existing && existing.status !== "ACTIVE") return { clubId: app.clubId, status: "INACTIVE_MEMBERSHIP" as const };
-  // Alumni cannot join clubs (lib/graduation.ts); declining stays available.
+  // Alumni cannot join clubs (lib/graduation.ts); declining is refused above too.
   await assertNotAlumni(tx, userId, "join");
   if (!existing) await tx.clubMember.create({ data: { userId, clubId: app.clubId, accessRole: "MEMBER", role: "GENERAL_MEMBER", permissions: [], isOwner: false } });
   // Active existing members keep every role, permission and ownership field untouched.

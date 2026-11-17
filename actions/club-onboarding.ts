@@ -69,6 +69,8 @@ async function setOrganizationInvitationDismissedCommand(invitationId: string, d
   const account = await requireAuth({ verifyEmail: true });
   await prepareVerifiedSchoolAccount(account);
   return clubWriteTransaction(async tx => {
+    // Alumni accounts are read-only (lib/graduation.ts).
+    await assertNotAlumni(tx, account.user.id, "respond");
     const invitation = await recipientInvitation(tx, invitationId, account);
     await tx.clubInvitation.update({ where: { id: invitation.id }, data: { dismissedAt: dismissed ? new Date() : null } });
     await tx.auditLog.create({ data: { actorId: account.user.id, action: dismissed ? "club.invite.dismiss" : "club.invite.restore", targetId: invitation.id, clubId: invitation.clubId } });
@@ -117,7 +119,7 @@ async function recordRosterImportCommand(input: unknown) {
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
   return prisma.$transaction(async tx => {
     await lockOperationalClub(tx, data.clubId);
-    const manager = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: data.clubId } } });
+    const manager = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: data.clubId } } }));
     if (!hasPermission(manager, "members.manage")) throw new ActionError("Roster upload access denied.");
     const fileHash = createHash("sha256").update(serialized).digest("hex");
     const existing = await tx.rosterImport.findUnique({ where: { clubId_idempotencyKey: { clubId: data.clubId, idempotencyKey: data.idempotencyKey } } });

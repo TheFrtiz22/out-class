@@ -10,12 +10,14 @@
  * - Alumni accounts are read-only (owner decision, Nov 16). They can sign in and see their own
  *   account, profile and history. They keep personal account settings only: profile edits and
  *   uploads, account and notification settings, push subscriptions, the calendar feed, graduation
- *   answers ("I'm not graduating" undoes a wrong graduation), data export, account deletion, and
- *   content and feedback reports (actions/content-reports.ts). Everything else is refused: apply
- *   (drafts included), RSVP or cancel an RSVP (public events included), check in, vote, accept or
- *   decline an offer or invitation (any kind), book, move or cancel an interview, submit tasks, save
- *   or remove saved clubs and events, edit the private interest survey or general availability, and
- *   request to claim a club. Alumni are exempt from the required-availability gate.
+ *   answers ("I'm not graduating" undoes a wrong graduation), accepting updated terms, tutorial
+ *   progress, data export, account deletion, and content and feedback reports
+ *   (actions/content-reports.ts). Everything else is refused: apply (drafts included), RSVP or cancel
+ *   an RSVP (public events included), check in, vote, accept, decline or hide ("Not now") an offer or
+ *   invitation (any kind), book, move or cancel an interview, submit tasks, save or remove saved clubs
+ *   and events, edit the private interest survey or general availability, create share links (all
+ *   are club-scoped), and request to claim a club. Alumni are exempt from the required-availability
+ *   gate.
  *   Direct messaging no longer exists (actions/communications.ts refuses every caller). Each server action refuses with a
  *   friendly message (ALUMNI_REFUSALS, utils/graduation.ts assertNotAlumni) and the UI hides those
  *   controls. Their club memberships stay on rosters as Alumni (ClubMember.alumniSince) without club
@@ -31,8 +33,10 @@
  *   read-only in that club too, except for handing it over: transferring ownership or making a
  *   current member owner. The shared membership checks mark such a member handOverOnly
  *   (lib/graduate-access.ts, lib/permissions.ts HAND_OVER_PERMISSIONS) and refuse every other club
- *   operation with ALUMNI_REFUSALS.manage; the club workspace shows one hand-over note. They are
- *   not an eligible voter (utils/voting-rules.ts).
+ *   operation with ALUMNI_REFUSALS.manage; the club workspace shows one hand-over note. They cannot
+ *   invite, and an invitation issued before graduating can no longer be accepted or delivered
+ *   (another leader can reissue it). They are never an eligible voter or seated in a voting session
+ *   (isGraduatedMember below; utils/voting-rules.ts, utils/voting-room-setup.ts).
  */
 import { z } from "zod"
 import { zonedInstant } from "@/lib/interview-rooms"
@@ -54,6 +58,7 @@ export const ALUMNI_REFUSALS = {
   save: "Alumni accounts can’t save or remove clubs and events. Your saved items stay as they are.",
   survey: "Alumni accounts can’t edit the interest survey. Your answers stay as they are.",
   availability: "Alumni accounts can’t edit availability. Your saved availability stays as it is.",
+  share: "Alumni accounts can’t create share links. The full page address still works.",
   manage: "You’ve graduated, so this club is read-only for you. Hand it to a current member to keep it running.",
 } as const
 export type AlumniAction = keyof typeof ALUMNI_REFUSALS

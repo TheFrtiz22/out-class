@@ -40,8 +40,9 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
         throw new ActionError("Organization already has an owner. Request an updated invitation.");
       }
     } else {
-      const inviter = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: invitation.invitedBy, clubId: invitation.clubId } } });
-      if (!canGrantOnboardingRole(inviter, invitation.requestedRole) || invitation.permissions.some(p => !hasPermission(inviter, p as ClubPermission))) {
+      // An inviter who has since graduated no longer grants access (another leader can reissue).
+      const inviter = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: invitation.invitedBy, clubId: invitation.clubId } } }));
+      if (inviter?.handOverOnly || !canGrantOnboardingRole(inviter, invitation.requestedRole) || invitation.permissions.some(p => !hasPermission(inviter, p as ClubPermission))) {
         throw new ActionError("The inviter can no longer grant this access.");
       }
     }
