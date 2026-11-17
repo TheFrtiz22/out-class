@@ -13,7 +13,7 @@ function read(query: Query, key: string) {
 }
 
 const sectionTitles: Record<string, string> = {
-  overview: "Home", calendar: "Calendar", meetings: "Calendar", events: "Calendar", tasks: TERMS.tasks, members: "Members",
+  overview: "Home", calendar: "Calendar", meetings: "Calendar", events: "Calendar", tasks: TERMS.tasks, members: "Members", alumni: "Alumni",
   announcements: "Home", settings: "Settings",
 }
 const toolTitles: Record<string, string> = {

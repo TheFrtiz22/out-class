@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LoadingState } from "@/components/ui/loading-state"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { ALUMNI_REFUSALS, isAlumniProfile } from "@/lib/graduation";
 import { useDemoMode } from "@/contexts/demo-mode";
 import { checkInMeeting as checkInMeetingAction, getMeeting as getMeetingAction } from "@/actions/meetings";
 import { unwrapped } from "@/lib/action-result";
@@ -79,6 +80,8 @@ export function MeetingCheckIn() {
             <a href={`/login?next=${encodeURIComponent(`/check-in${id ? `?meetingId=${encodeURIComponent(id)}` : ""}`)}`}>Sign in</a>
           </Button>
         </>
+      ) : !demo.isDemoEnabled && isAlumniProfile(user.profile) ? (
+        <p role="status">{ALUMNI_REFUSALS.checkIn}</p>
       ) : !id || !token ? (
         <p role="alert">
           This link does not contain a current meeting code. Scan the QR

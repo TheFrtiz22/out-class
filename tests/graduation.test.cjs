@@ -231,6 +231,8 @@ test('graduation cron route: bearer secret required, job result returned, failur
 const src = file => fs.readFileSync(file, 'utf8')
 test('apply: alumni cannot submit, checked server-side with a friendly ActionError', () => {
   const s = src('actions/applications.ts')
+  // Part 2: drafts are refused too, before any write (tests/alumni-employer.test.cjs).
+  assert.match(s, /FOR UPDATE`\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "apply"\)/)
   assert.match(s, /if \(!profile\) throw new ActionError[^\n]*\n\s*\/\/[^\n]*\n\s*if \(isAlumniProfile\(profile\)\) throw new ActionError\(ALUMNI_APPLY_MESSAGE\)/)
   assert.match(s, /return actionResult\(\(\) => persistApplication\(data, true\), "submitApplication"\)/)
   assert.match(g.ALUMNI_APPLY_MESSAGE, /^Congratulations/)
@@ -265,8 +267,9 @@ test('alumni are excluded from member counts, audiences, exports and member-only
   }
   // platform-admin: admin user filters; roster-import and club-onboarding: an alumnus is already on the
   // roster; tasks: the student's own assignment history; account-data: the signed-in user's own memberships
-  // (shown as Alumni). (utils/graduation.ts restores with `status: "ACTIVE" as const`.)
-  assert.deepEqual([...new Set(remaining)].sort(), ['actions/platform-admin.ts', 'actions/roster-import.ts', 'actions/tasks.ts', 'lib/account-data.ts', 'utils/club-onboarding.ts'].sort())
+  // (shown as Alumni). (utils/graduation.ts restores with `status: "ACTIVE" as const`; its placement merge
+  // reads the graduate's own roster memberships, current or alumni, to find their clubs.)
+  assert.deepEqual([...new Set(remaining)].sort(), ['actions/platform-admin.ts', 'actions/roster-import.ts', 'actions/tasks.ts', 'lib/account-data.ts', 'utils/club-onboarding.ts', 'utils/graduation.ts'].sort())
 })
 
 test('a gradYear change runs inside each profile write transaction', () => {
@@ -275,7 +278,7 @@ test('a gradYear change runs inside each profile write transaction', () => {
   assert.match(src('actions/resume-import.ts'), /if \(patch\.gradYear !== undefined\) await applyGraduationYearChange\(tx, user\.id, patch\.gradYear, /)
   const actions = src('actions/graduation.ts')
   assert.match(actions, /if \(impersonation\) throw new ActionError/)
-  assert.match(actions, /actionResult\(confirmGraduationCommand, "confirmGraduation"\)/)
+  assert.match(actions, /actionResult\(\(\) => confirmGraduationCommand\(input\), "confirmGraduation"\)/)
   assert.doesNotMatch(actions + src('utils/graduation.ts'), /sendEmail|enqueue|resend|notification/i, 'this PR sends nothing')
 })
 

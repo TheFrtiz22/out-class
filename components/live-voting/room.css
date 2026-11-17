@@ -109,3 +109,85 @@
  .vr-present .vr-field{padding:10px 14px}.vr-present .vr-field h3{margin-bottom:4px}
  .vr-present .vr-text p,.vr-present .vr-text li,.vr-present .vr-fact-value{font-size:1.125rem;line-height:1.4}
 }
+
+/* Voting setup (/voting/rooms/new): rows of heading + why on the left, controls on the right; a clickable
+   text stepper; a fixed action bar. Same tokens, pills and fields as the rest of OutClass. */
+.vr-setup{padding-bottom:calc(6rem + env(safe-area-inset-bottom))}
+.vr-setup .vr-form{gap:0}
+.vr-steps{border-bottom:1px solid var(--border);margin-top:4px}
+.vr-steps ol{display:flex;margin:0;padding:0;list-style:none}
+.vr-steps li{flex:1;display:flex}.vr-steps li:nth-child(2){justify-content:center}.vr-steps li:nth-child(3){justify-content:flex-end}
+.vr-step{display:inline-flex;align-items:baseline;gap:8px;min-height:44px;padding:12px 0;margin-bottom:-1px;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted-foreground);font-size:var(--oc-text-small);font-weight:var(--oc-weight-medium);cursor:pointer;text-align:left}
+.vr-step:hover{color:var(--foreground)}
+.vr-step[aria-current=step]{color:var(--foreground);font-weight:var(--oc-weight-semibold);border-bottom-color:var(--foreground)}
+.vr-step:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.vr-step:disabled{cursor:default}
+.vr-step-mark{font-variant-numeric:tabular-nums}.vr-step-mark svg{width:.875rem;height:.875rem;vertical-align:-1px}
+.vr-setup-intro{margin:20px 0 4px;color:var(--muted-foreground);font-size:var(--oc-text-body)}
+.vr-setup-intro:focus{outline:none}.vr-setup-intro:focus-visible{outline:2px solid var(--ring);outline-offset:4px}
+.vr-setup-steps{min-width:0;margin:0;padding:0;border:0}
+.vr-setup-row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;padding:24px 0;border-bottom:1px solid var(--border)}
+.vr-setup-row:last-child{border-bottom:0}
+.vr-setup .vr-setup-row h2,.vr-setup .vr-setup-split h2{font-family:var(--oc-font-display);font-size:var(--oc-text-card);font-weight:var(--oc-weight-title);line-height:1.3;letter-spacing:-.01em}
+.vr-setup-why{margin-top:4px;color:var(--muted-foreground);font-size:var(--oc-text-small);line-height:1.45}
+.vr-setup-row-body{display:flex;min-width:0;flex-direction:column;gap:14px}
+.vr-setup .vr-setup-field{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-height:0;font-size:var(--oc-text-small);font-weight:var(--oc-weight-medium)}
+.vr-setup fieldset.vr-setup-field{margin:0;padding:0;border:0}
+.vr-setup-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.vr-setup-narrow{max-width:18rem}
+.vr-setup-optional{color:var(--muted-foreground);font-weight:var(--oc-weight-regular)}
+.vr-setup-help{color:var(--muted-foreground);font-size:var(--oc-text-small);font-weight:var(--oc-weight-regular);line-height:1.45}
+.vr-setup .vr-setup-link{height:auto;min-height:44px;padding:0;vertical-align:baseline}
+.vr-setup-label{font-size:var(--oc-text-small);font-weight:var(--oc-weight-medium)}
+.vr-setup-error{color:var(--destructive);font-size:var(--oc-text-small);line-height:1.45}
+.vr-setup-inline{display:flex;flex-wrap:wrap;column-gap:28px}
+.vr-setup-options{display:flex;flex-direction:column}
+.vr-setup .vr-setup-options label{align-items:flex-start;gap:10px;padding:10px 0;font-weight:var(--oc-weight-regular)}
+.vr-setup .vr-setup-options input{margin-top:3px}
+.vr-setup-option-title{font-weight:var(--oc-weight-semibold)}
+.vr-setup-option-note{display:block;color:var(--muted-foreground);font-weight:var(--oc-weight-regular)}
+.vr-setup-option-aside{color:var(--muted-foreground);font-weight:var(--oc-weight-regular)}
+.vr-setup .vr-rule{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;border:0}
+.vr-rule-detail{display:flex;flex-direction:column;gap:18px;margin-top:10px;padding:4px 0 4px 18px;border-left:1px solid var(--border)}
+.vr-setup-summary{padding:10px 12px;border:1px solid var(--border);border-radius:var(--oc-radius-sm);background:var(--card);color:var(--foreground);font-size:var(--oc-text-small);line-height:1.5}
+.vr-rule-examples{margin:0;padding-left:1.25rem;list-style:disc;font-size:var(--oc-text-small);line-height:1.5}
+.vr-setup .vr-setup-check{gap:10px;font-weight:var(--oc-weight-medium)}
+.vr-setup-tools{display:flex;align-items:center;gap:8px}
+.vr-setup-tools [data-slot=input]{flex:1}
+.vr-setup-count{color:var(--muted-foreground);font-size:var(--oc-text-small);text-align:right}
+.vr-setup-people{max-height:none;padding-top:8px;border-top:1px solid var(--border)}
+.vr-setup .vr-setup-people label{min-height:44px;font-weight:var(--oc-weight-regular)}
+/* Step 3: switches beside the real room slide. The switch and link pills widen their tap areas past their edges, hence the end padding on these rows. */
+.vr-setup-split{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:32px;align-items:start;padding:24px 0;border-bottom:1px solid var(--border)}
+.vr-setup-switches{display:flex;flex-direction:column;gap:16px;margin:14px 0 12px}
+.vr-setup-group{margin-bottom:2px;color:var(--muted-foreground);font-size:var(--oc-text-caption);font-weight:var(--oc-weight-medium);letter-spacing:.05em;text-transform:uppercase}
+.vr-setup .vr-setup-switch{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;padding-inline-end:.5rem;border-bottom:1px solid var(--border);font-weight:var(--oc-weight-regular);cursor:pointer}
+/* .vr-page sets 44px on every button; the switch keeps its own size (its tap area is already 44px). */
+.vr-setup [data-slot=switch]{min-height:0}
+.vr-setup-excerpt{display:flex;flex-direction:column;gap:10px;margin:16px 0 0;padding:0;border:0}
+.vr-setup-preview{position:sticky;top:calc(var(--oc-focus-bar-height,0px) + 1rem);display:flex;min-width:0;flex-direction:column;gap:8px}
+.vr-setup-preview-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.vr-setup-preview-top [data-slot=native-select]{width:auto;max-width:60%}
+.vr-setup-preview-frame{padding:16px;border:1px solid var(--border);border-radius:var(--oc-radius-md);background:var(--card)}
+.vr-setup-position{margin-bottom:8px;text-align:right;font-variant-numeric:tabular-nums}
+.vr-setup-review{display:flex;flex-direction:column;margin:0}
+.vr-setup-review>div{display:grid;grid-template-columns:130px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:6px .75rem 6px 0;border-bottom:1px solid var(--border);font-size:var(--oc-text-small)}
+.vr-setup-review>div:last-child{border-bottom:0}
+.vr-setup-review dt{color:var(--muted-foreground);font-weight:var(--oc-weight-regular)}
+.vr-setup-review dd{margin:0;min-width:0}.vr-setup-review dd .vr-setup-help{display:block}
+.vr-setup-notify{margin-top:8px}
+/* Fixed action bar: translucent page colour with the glass chrome's blur. */
+.vr-setup-footer{position:fixed;inset:auto 0 0;z-index:var(--oc-z-sticky);border-top:1px solid var(--border);background:color-mix(in srgb,var(--background) 90%,transparent);-webkit-backdrop-filter:var(--oc-glass-light-filter);backdrop-filter:var(--oc-glass-light-filter)}
+.vr-setup-footer-inner{display:flex;align-items:center;gap:8px;max-width:calc(920px + 2 * var(--oc-space-page));margin:0 auto;padding:10px var(--oc-space-page) calc(10px + env(safe-area-inset-bottom))}
+.vr-setup-footer-status{min-width:0;margin-right:auto;overflow:hidden;color:var(--muted-foreground);font-size:var(--oc-text-small);text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:720px){
+ .vr-setup-row,.vr-setup-split{grid-template-columns:minmax(0,1fr);gap:12px}
+ .vr-setup-pair{grid-template-columns:minmax(0,1fr)}
+ .vr-setup-preview{position:static}
+ .vr-steps li,.vr-steps li:nth-child(n){justify-content:center}
+ .vr-step-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+ .vr-setup-review>div{grid-template-columns:minmax(0,1fr) auto}.vr-setup-review dt{grid-column:1/-1}
+ .vr-setup-footer-inner{flex-wrap:wrap}
+}
+/* Phones: the stepper already shows the step, so the bar keeps one row; a queued save message takes its own line. */
+@media(max-width:520px){.vr-setup-footer-status:not([data-queued]){display:none}.vr-setup-footer-status[data-queued]{flex-basis:100%;white-space:normal}.vr-setup-footer-inner>:first-of-type:not(p){margin-left:auto}}

@@ -66,7 +66,7 @@ async function getInterviewCollaborationCommand(input: z.infer<typeof inputSchem
     available.sort((a,b) => b.move.confirmedAt!.getTime() - a.move.confirmedAt!.getTime() || b.move.id.localeCompare(a.move.id));
     if (available[0]) {
       const { invite, move, destination } = available[0];
-      const app = await tx.application.findUniqueOrThrow({ where: { id: destination.applicationId }, include: { student: { include: { studentProfile: true } } } });
+      const app = await tx.application.findUniqueOrThrow({ where: { id: destination.applicationId }, select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
       const p = app.student.studentProfile;
       invitation = { id: invite.id, sender: await memberName(tx, move.memberId), candidate: p ? `${p.firstName} ${p.lastName}` : "Candidate" };
     }

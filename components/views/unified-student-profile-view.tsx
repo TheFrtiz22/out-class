@@ -21,6 +21,7 @@ import { ResumeImportDialog } from "@/components/resume-import-dialog"
 import { formatPhone } from "@/lib/phone"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
 import { Panel } from "@/components/ui/panel"
+import { AlumniDetailsPanel } from "@/components/alumni-details-panel"
 
 export type ProfileMembership = StudentMembership
 
@@ -204,6 +205,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             <p className="text-sm tabular-nums">{formatPhone(profile.phone) || <span className="text-muted-foreground">Not added. Required before you submit an application.</span>}</p>,
             "Clubs call applicants they accept. Only a club that accepts you sees your number.",
           )}
+          <AlumniDetailsPanel key={profile.userId} profile={profile} />
         </div>
         <Panel as="aside">
           <h3 className="oc-card-heading ">Profile details</h3>

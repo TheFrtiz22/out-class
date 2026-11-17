@@ -60,6 +60,36 @@ export function describeVotingRules(rules:VotingRules){
   const base=rules.denominator==="BALLOTS_CAST"?"of ballots cast (Pass, Hold and Do not pass ballots all count; missing ballots do not)":"of all eligible voters (missing ballots still count in the total, so not voting has the same effect as not voting Pass)";
   return `Threshold decides: an applicant passes with Pass votes from at least ${frac(rules.threshold)} ${base}. At least ${frac(rules.minimumParticipation)} of eligible voters must vote before a result is calculated. Below the threshold the outcome is ${rules.belowThreshold==="HOLD"?"Hold":"Do not pass"}. If too few vote, nobody is rejected automatically: the leader holds the applicant for another vote or decides explicitly with a reason.`;
 }
+/** Loose input for describeVotingRule: the saved rule, or a partly filled form value. */
+export type VotingRuleSummaryInput={
+  mode?:string|null;
+  threshold?:{numerator?:number|null;denominator?:number|null}|null;
+  denominator?:string|null;
+  minimumParticipation?:{numerator?:number|null;denominator?:number|null}|null;
+  belowThreshold?:string|null;
+}|null|undefined;
+const usableFraction=(f:{numerator?:number|null;denominator?:number|null}|null|undefined)=>{
+  const n=f?.numerator,d=f?.denominator;
+  return typeof n==="number"&&typeof d==="number"&&Number.isInteger(n)&&Number.isInteger(d)&&n>=1&&d>=1&&n<=d&&d<=100?{numerator:n,denominator:d}:null;
+};
+/**
+ * One plain-language sentence for a voting rule, shared by setup, the setup review and the room.
+ * Takes the same shape the form saves; missing or partial values are left out of the sentence,
+ * never rendered as "undefined". Unknown modes read as leader-confirmed, like readVotingRules.
+ */
+export function describeVotingRule(rule:VotingRuleSummaryInput):string{
+  if(rule?.mode!=="THRESHOLD")return "Leader confirms each outcome.";
+  const t=usableFraction(rule.threshold),p=usableFraction(rule.minimumParticipation);
+  const share=t?(t.numerator===t.denominator?"all":`at least ${t.numerator}/${t.denominator}`):"enough";
+  const pass=rule.denominator==="BALLOTS_CAST"?`${share} of ballots cast are Pass`
+    :rule.denominator==="ELIGIBLE_VOTERS"?`${share} of all eligible voters vote Pass`
+    :`${share} of the votes are Pass`;
+  const turnout=p?(p.numerator===p.denominator?" and every eligible voter took part":` and at least ${p.numerator}/${p.denominator} of eligible voters took part`):"";
+  const below=rule.belowThreshold==="HOLD"?" Otherwise they’re held for another vote."
+    :rule.belowThreshold==="REJECT"?" Below the threshold they don’t pass; if too few vote, nobody is rejected automatically."
+    :"";
+  return `An applicant passes if ${pass}${turnout}.${below}`;
+}
 /** Worked examples for the rule preview, computed with the same arithmetic. */
 export function votingRuleExamples(rule:ThresholdRule,eligible:number){
   const n=Math.max(1,eligible),ids=Array.from({length:n},(_,i)=>`v${i}`);

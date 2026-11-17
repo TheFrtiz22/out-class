@@ -117,6 +117,7 @@ function accessHarness(actor, target, invitation, options = {}) {
   const tx = {
     user: { findUnique: async () => ({ email: "target@virginia.edu", disabledAt: options.disabledInviter ? new Date() : null }) },
     $queryRaw: async () => [],
+    studentProfile: { findUnique: async () => ({ graduatedAt: null }) },
     clubMember: {
       findUnique: async () => actor,
       findFirst: async () => target,

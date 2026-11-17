@@ -231,7 +231,7 @@ function platformStore() {
 function loadShortLinkModules(platformContent, authenticatedUser = { id: "leader" }) {
   const mocks = {
     "@/utils/prisma": { prisma: { platformContent } },
-    "@/utils/auth": {
+    "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": {
       requireAuth: async () => {
         if (!authenticatedUser) throw new Error("Authentication required.");
         return { user: authenticatedUser };
@@ -329,7 +329,7 @@ test("14. Authentication and authorization are strictly preserved during check-i
 
   const meetingsAction = unwrapActions(load("actions/meetings.ts", {
     "@/utils/prisma": { prisma: mockPrisma },
-    "@/utils/auth": {
+    "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": {
       requireAuth: async () => {
         if (!authenticatedUser) throw new Error("Authentication required.");
         return { user: authenticatedUser };
@@ -389,7 +389,7 @@ test("15. Duplicate attendance scans do not duplicate credits or change timestam
 
   const meetingsAction = unwrapActions(load("actions/meetings.ts", {
     "@/utils/prisma": { prisma: mockPrisma },
-    "@/utils/auth": {
+    "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": {
       requireAuth: async () => ({ user: { id: "student-123" } }),
     },
     "@/lib/club-suspension": {

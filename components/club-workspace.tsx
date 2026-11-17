@@ -27,6 +27,7 @@ import { clubInterviewHref, legacyInterviewRoomHref } from "@/lib/interview-entr
 import { applicantInterviewHref, legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission, hasWorkspace } from "@/lib/permissions";
+import { isAlumniProfile } from "@/lib/graduation";
 import {
   clubWorkspaceHref,
   recruitmentTools,
@@ -35,6 +36,7 @@ import {
   getClubWorkspaceOverview,
   getWorkspaceRounds,
 } from "@/lib/workspace-api";
+const ClubAlumni = dynamic(() => import("@/components/club-alumni").then(m => m.ClubAlumni), { loading: () => <WorkspaceLoading label="Loading alumni…" layout="table" rows={3} /> });
 const ClubMembers = dynamic(() => import("@/components/club-members").then(m => m.ClubMembers), { loading: () => <WorkspaceLoading label="Loading club members…" layout="table" rows={3} /> });
 import { ClubSettingsWorkspace } from "@/components/club-settings-workspace";
 const ClubTasks = dynamic(() => import("@/components/club-tasks").then(m => m.ClubTasks), { loading: () => <WorkspaceLoading label="Loading club tasks…" layout="rows" rows={3} /> });
@@ -105,6 +107,7 @@ export function ClubWorkspace({
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
   const manager = !!membership && hasWorkspace(membership);
+  const graduatedOwner = !demo.isDemoEnabled && !!membership?.isOwner && !membership.alumniSince && isAlumniProfile(user?.profile);
   const preferenceKey = user ? clubWorkspacePreferenceKey(user.id, clubId, demo.isDemoEnabled ? "demo" : user.impersonating ? "preview" : "live") : "";
   const suspended = !demo.isDemoEnabled && !!membership?.club.suspendedAt;
   // Resolve only general entries. Explicit page URLs always retain their destination.
@@ -180,6 +183,7 @@ export function ClubWorkspace({
     { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId, "overview") },
     { id: "calendar", label: "Meetings", href: `${clubWorkspaceHref(clubId, "calendar")}&type=meetings` },
     { id: "tasks", label: "Tasks", href: clubWorkspaceHref(clubId, "tasks") },
+    { id: "alumni", label: "Alumni", href: clubWorkspaceHref(clubId, "alumni") },
   ];
   // The persistent shell (app/(workspace)/layout.tsx) draws the rail from the URL; this page adds its title and drawers.
   useShellBindings({ title: nav.find(n => n.id === active)?.label || "Club workspace", onSelect: () => {}, onNavigate: navigate,
@@ -217,6 +221,8 @@ export function ClubWorkspace({
             : active === "overview" && allowed
             ? <RecruitingHero clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} data={error ? null : current} />
             : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" || section === "members" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
+          {/* A graduate the graduation job kept as owner can hand over the club, not review or decide (lib/graduation.ts). */}
+          {graduatedOwner && <p role="status" className="mb-4 rounded-md border border-border bg-info-subtle px-3 py-2 text-sm">You’ve graduated. Hand ownership to a current member. <Link href={clubWorkspaceHref(clubId, "members")} className="font-medium underline">Manage members</Link></p>}
           {/* URL-driven tabs live outside the keyed section below, so changing a tab slides its indicator instead of remounting it. */}
           {allowed && !(needsOverview && (error || !current)) && <>
           {/* Phones reach recruiting through one bottom-bar item, so its pages show here as tabs. The rail covers wide screens. */}
@@ -231,6 +237,7 @@ export function ClubWorkspace({
             {section === "tasks" && (demo.isDemoEnabled ? <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} /> : <SelectedClubWorkspace kind="tasks" clubId={clubId} privacyScope={scope} personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />)}
             {section === "calendar" && <ClubCalendar key={clubId} clubId={clubId} clubName={membership.club.name} canManage={hasPermission(membership, "meetings.manage")} canSeeAttendees={hasPermission(membership, "meetings.attendance")} membership={membership} personalOnly={!manager} />}
             {section === "members" && (demo.isDemoEnabled ? <ClubMembers key={clubId} clubId={clubId} /> : <SelectedClubWorkspace kind="members" clubId={clubId} privacyScope={scope} />)}
+            {section === "alumni" && (demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Club alumni are available outside Demo Mode.</p> : <ClubAlumni key={clubId} clubId={clubId} />)}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
             {section === "recruitment" && (active === "decisions" ? <DecidePage clubId={clubId} member={membership} /> : active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "overview" && current ? <RecruitingOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={openInterviewRoom} initialTool="kits" />}</div> : <>{(demo.isDemoEnabled ? <LiveLeaderWorkspace key={privacyRevision} scoped initialDecision={decisionFilter(params.get("decision"))} /> : <SelectedClubWorkspace kind="pipeline" clubId={clubId} privacyScope={scope} decision={decisionFilter(params.get("decision"))} />)}</>)}
           </section>}

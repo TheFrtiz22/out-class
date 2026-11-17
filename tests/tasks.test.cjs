@@ -3,8 +3,15 @@ const { test } = require("node:test"),
   assert = require("node:assert/strict"),
   fs = require("node:fs"),
   ts = require("typescript");
+// The real alumni refusal (utils/graduation.ts); a prisma mock without profiles reads as a current student.
+let graduationUtils;
+function utilsGraduation() {
+  graduationUtils ??= load("utils/graduation.ts");
+  const { assertNotAlumni } = graduationUtils;
+  return { ...graduationUtils, assertNotAlumni: (db, ...rest) => assertNotAlumni(db.studentProfile ? db : { studentProfile: { findUnique: async () => null } }, ...rest) };
+}
 function load(file, mocks = {}) {
-  mocks = { "@/utils/support-audit": { auditSupportAction: async () => {} }, ...mocks };
+  mocks = { "@/utils/support-audit": { auditSupportAction: async () => {} }, ...(file.startsWith("actions/") ? { "@/utils/graduation": utilsGraduation() } : {}), ...mocks };
   const mod = { exports: {} };
   new Function(
     "require",

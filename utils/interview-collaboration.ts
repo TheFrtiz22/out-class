@@ -71,7 +71,7 @@ export async function collaborationSession(tx: AppTransactionClient, scope: Inte
 }
 
 export async function memberName(tx: AppTransactionClient, memberId: string) {
-  const member = await tx.clubMember.findUnique({ where: { id: memberId }, include: { user: { include: { studentProfile: true } } } });
+  const member = await tx.clubMember.findUnique({ where: { id: memberId }, select: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
   const p = member?.user.studentProfile;
   return p ? `${p.firstName} ${p.lastName}` : "Interviewer";
 }
