@@ -52,6 +52,8 @@ import { PillGroup } from "@/components/ui/segmented-control"
 import { RangeSlider } from "@/components/ui/range-slider"
 import { Toggle } from "@/components/ui/toggle"
 import { pluralize } from "@/lib/copy/terms"
+import { FilterChips } from "@/components/ui/filter-chips"
+import { scholarFilterAvailable, scholarFilterLabels, scholarFilterPrograms, scholarFilterStates, scholarLabels, type ScholarFilterProgram, type ScholarFilterState } from "@/lib/scholar-status"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
 type Candidate = Pipeline["applications"][number]
@@ -67,11 +69,11 @@ const name = (app: { student: { email?: string; studentProfile?: { firstName: st
     : app.student.email ?? "Applicant"
 /** The club workspace page header renders an element with this id in its action slot; page actions portal into it. */
 const PAGE_HEADER_ACTIONS_ID = "workspace-page-actions"
-const applicantSortKeys: readonly ApplicantSort[] = ["name", "year", "status", "gpa", "sat", "act", "round", "score"]
+const applicantSortKeys: readonly ApplicantSort[] = ["name", "year", "status", "gpa", "sat", "act", "round", "score", "scholar"]
 /** Numbers and class year read best from the top. */
 const applicantSortsDescending = (key: ApplicantSort) => ["score", "gpa", "sat", "act", "year"].includes(key)
 /** Sorting by a hidden profile field is not offered; its values are withheld by the server. */
-const sortableByProfile = (key: ApplicantSort, fields: ProfileFieldVisibility) => key === "gpa" ? fields.gpa : key === "sat" ? fields.sat : key === "act" ? fields.act : key === "year" ? fields.academicYear : true
+const sortableByProfile = (key: ApplicantSort, fields: ProfileFieldVisibility) => key === "gpa" ? fields.gpa : key === "sat" ? fields.sat : key === "act" ? fields.act : key === "year" ? fields.academicYear : key === "scholar" ? fields.scholarStatus : true
 
 export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialDecision = "all", initialData, onData, validatedInitialData = false }: { validatedInitialData?: boolean; scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialDecision?: DecisionFilter; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
   const { user, activeClubId, selectClub } = useAuth()
@@ -163,7 +165,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [sat, setSat] = useState("")
   const [act, setAct] = useState("")
   const [rating, setRating] = useState("")
-  const clearApplicantFilters = () => { setQuery(""); setRound(""); setStatus(""); setReview(""); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
+  const [scholar, setScholar] = useState<ScholarFilterState | "">("")
+  const [scholarPrograms, setScholarPrograms] = useState<ScholarFilterProgram[]>([])
+  const clearApplicantFilters = () => { setQuery(""); setRound(""); setStatus(""); setReview(""); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating(""); setScholar(""); setScholarPrograms([]) }
   const [compact, setCompact] = useState(false)
   // The layout lives in the URL (`applicantView=`) like the decision filter; Decide's list has no layout choice.
   const [view, setViewState] = useState<ApplicantView>(() => decisionsOnly ? "list" : readApplicantView(initialParams.current))
@@ -195,8 +199,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
     ...(status ? { status: status as PipelinePageQuery["status"] } : {}), ...(review ? { review: review as PipelinePageQuery["review"] } : {}),
     ...(major ? { major } : {}), ...(year ? { year } : {}),
-    ...(gpa ? { gpa: Number(gpa) } : {}), ...(sat ? { sat: Number(sat) } : {}), ...(act ? { act: Number(act) } : {}), ...(rating ? { rating: Number(rating) } : {}), sort, descending,
-  }), [query, decisionGroup, round, gender, showGenderCounts, status, review, major, year, gpa, sat, act, rating, sort, descending])
+    ...(gpa ? { gpa: Number(gpa) } : {}), ...(sat ? { sat: Number(sat) } : {}), ...(act ? { act: Number(act) } : {}), ...(rating ? { rating: Number(rating) } : {}),
+    ...(scholar ? { scholar } : {}), ...(scholarPrograms.length ? { scholarPrograms } : {}), sort, descending,
+  }), [query, decisionGroup, round, gender, showGenderCounts, status, review, major, year, gpa, sat, act, rating, scholar, scholarPrograms, sort, descending])
   const selectionKey = JSON.stringify([membership.clubId, membership.id, membership.userId, readQuery])
   const cursor = position?.key === selectionKey ? position.cursor : undefined
   // A changed filter starts a new selection. Clearing that filter later must
@@ -243,9 +248,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   publish.current = onData
   useEffect(() => { publish.current?.(ready ? listData : null) }, [listData, ready])
   // Everything inside the Filters menu, so its summary can show how many apply.
-  const menuFilters = [round, status, review, gender, major, year, gpa, sat, act, rating].filter(Boolean).length
+  const menuFilters = [round, status, review, gender, major, year, gpa, sat, act, rating, scholar, scholarPrograms.length].filter(Boolean).length
   const anyFilter = !!(query || menuFilters)
-  const clearMenuFilters = () => { setRound(""); setStatus(""); setReview(""); setGender(""); setShowGenderCounts(false); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating("") }
+  const clearMenuFilters = () => { setRound(""); setStatus(""); setReview(""); setGender(""); setShowGenderCounts(false); setMajor(""); setYear(""); setGpa(""); setSat(""); setAct(""); setRating(""); setScholar(""); setScholarPrograms([]) }
   const search = useRef<HTMLInputElement>(null)
   useEffect(() => { setError(""); setRevalidateFailures(0) }, [authority, revision, pageQuery])
   const selectionRequestKey = JSON.stringify([selectionKey, revision])
@@ -282,6 +287,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const baseTotal = pageInfo?.baseTotal ?? applicants.length
   const displayed = { items: ready ? applicants : [], page: pageInfo?.index ?? 0, count: pageInfo?.count ?? 1, start: pageInfo?.start ?? 0 }
   const profileFields = data?.profileFields ?? defaultProfileFieldVisibility()
+  // Scholar status is profile data: hidden with the club's field setting, without identify access, and in anonymous rounds.
+  const scholarVisible = !!data && scholarFilterAvailable(profileFields.scholarStatus, hasPermission(membership, "applicants.identify"), data.rounds, round || undefined)
+  // Bail out when already clear, so a reload never produces a new query object.
+  useEffect(() => { if (data && !scholarVisible) { setScholar(""); setScholarPrograms(value => value.length ? [] : value) } }, [data, scholarVisible])
   function changePage(next: PipelineCursor | null) {
     if (!next || busy) return
     focusPage.current = true
@@ -425,7 +434,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             containerClassName="oc-toolbar-search"
           />
         {/* Sort at every width; the table's column headers drive the same state. */}
-        <div className="oc-toolbar-sort flex items-center"><SortControl label="Sort applicants" options={applicantSortOptions.filter(option => sortableByProfile(option.key, profileFields))} value={sort} descending={descending} descendingByDefault={applicantSortsDescending} onChange={listSort.set} /></div></>}
+        <div className="oc-toolbar-sort flex items-center"><SortControl label="Sort applicants" options={applicantSortOptions.filter(option => sortableByProfile(option.key, profileFields)).filter(option => option.key !== "scholar" || scholarVisible)} value={sort} descending={descending} descendingByDefault={applicantSortsDescending} onChange={listSort.set} /></div></>}
         <div className="oc-toolbar-tools flex items-center gap-2">
         {view !== "ranked" && <FilterPopover count={menuFilters} title="Applicant filters"
           footer={<><Button variant="ghost" size="sm" disabled={!menuFilters} onClick={clearMenuFilters}>Clear filters</Button>{view === "list" && <Button size="sm" variant="ghost" aria-pressed={compact} onClick={() => setCompact((value) => !value)}>Compact rows</Button>}</>}>
@@ -452,6 +461,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           {profileFields.act && <RangeSlider label="ACT greater than" min={1} max={36} step={1} value={numberFilter(act)} onChange={value => setAct(filterText(value))} />}
           <RangeSlider label="Minimum rating (out of 10)" min={0} max={10} step={0.1} value={numberFilter(rating)} onChange={value => setRating(filterText(value))} />
       </section>}
+      {!decisionsOnly && scholarVisible && <div className="oc-filter-field"><span className="oc-filter-field-label">Scholar</span>
+        <PillGroup label="Filter scholar status" size="compact" value={scholar} onChange={value => { setScholar(value as ScholarFilterState | ""); if (value !== "scholar") setScholarPrograms([]) }}
+          options={[{ value: "", label: "Any" }, ...scholarFilterStates.map(value => ({ value, label: scholarFilterLabels[value] }))]} />
+        {scholar === "scholar" && <FilterChips<ScholarFilterProgram> multiple label="Filter scholar program" value={scholarPrograms} onChange={setScholarPrograms} visible={4}
+          options={scholarFilterPrograms.map(value => ({ value, label: scholarLabels[value] }))} />}
+      </div>}
         </FilterPopover>}
         {!decisionsOnly && (exportable || settingsAllowed) && <DropdownMenu>
           <DropdownMenuTrigger asChild><IconButton ref={moreTools} variant="outline" aria-label="More applicant tools" title="More"><MoreHorizontal aria-hidden="true" /></IconButton></DropdownMenuTrigger>
@@ -476,9 +491,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       {decisionGroup === "rejected" && <p className="text-sm text-muted-foreground">Reconsidering returns an application to review; its history is kept.</p>}
       {invalidFilter ? <p role="alert">Enter filters within the displayed numeric ranges.</p> : updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !displayed.items.length ? <div role="status" className="space-y-3 border-y py-10 text-sm text-muted-foreground"><p>{baseTotal ? (decisionsOnly ? "Every applicant here has a decision. Send them from the Send step." : "No applicants match these filters.") : rejectedOnly ? "No applications have been rejected." : decisionsOnly ? "No applications are waiting for a decision." : "No one has submitted an application yet. Student drafts stay private until they submit."}</p>{baseTotal && !decisionsOnly ? <Button variant="outline" size="sm" onClick={clearApplicantFilters}>Clear filters</Button> : !decisionsOnly && <Button variant="outline" size="sm" asChild><Link href={rejectedOnly ? `/club/${encodeURIComponent(membership.clubId)}/workspace?section=recruitment&tool=applicants` : `/club/${encodeURIComponent(membership.clubId)}/workspace?section=settings&setting=application`}>{rejectedOnly ? "View all applicants" : "Review your application form"}</Link></Button>}</div>
         : decisionsOnly ? <LiveDecisionList sort={sort} descending={descending} sortBy={listSort.toggle} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} staged={staged.items} />
-        : view === "kanban" ? <ApplicantBoard applicants={displayed.items} rounds={data.rounds} counts={boardCounts} staged={canDecide ? staged : null} canDecide={canDecide} name={name} open={open}
+        : view === "kanban" ? <ApplicantBoard showScholar={scholarVisible} applicants={displayed.items} rounds={data.rounds} counts={boardCounts} staged={canDecide ? staged : null} canDecide={canDecide} name={name} open={open}
             note={displayed.count > 1 ? `Showing ${displayed.items.length} of ${total} on this page. Column counts cover all ${total}.` : undefined} />
-        : <LiveApplicantList profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={listSort.toggle} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} staged={staged.items} />}
+        : <LiveApplicantList showScholar={scholarVisible} profileFields={profileFields} votingSelection={votingChoice} sort={sort} descending={descending} sortBy={listSort.toggle} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} staged={staged.items} />}
       {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
         <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>

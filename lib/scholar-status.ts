@@ -23,3 +23,51 @@ export const scholarStatusSchema = z.object({
   if (v.selections.includes("OTHER") && !v.other)
     ctx.addIssue({ code: "custom", message: "Describe Other scholar status." });
 }).transform(v => ({ ...v, other: v.selections.includes("OTHER") ? v.other : "" })).nullable();
+
+/** Leader filter on scholar status: a scholar, answered "No", or never answered. */
+export const scholarFilterStates = ["scholar", "none", "unknown"] as const;
+export type ScholarFilterState = typeof scholarFilterStates[number];
+export const scholarFilterLabels: Record<ScholarFilterState, string> = { scholar: "Scholars only", none: "Not a scholar", unknown: "Not provided" };
+/** Programs a leader can filter by: every current program plus Other. */
+export const scholarFilterPrograms = [...scholarPrograms, "OTHER"] as const;
+export type ScholarFilterProgram = typeof scholarFilterPrograms[number];
+
+type ScholarStatus = NonNullable<z.infer<typeof scholarStatusSchema>>;
+/** The validated stored value, or null when unanswered or unreadable. Never passes other keys through. */
+export function scholarStatusValue(value: unknown): ScholarStatus | null {
+  const parsed = scholarStatusSchema.safeParse(value ?? null);
+  return parsed.success ? parsed.data : null;
+}
+/** "Not Applicable" means the student answered No; null means they never answered. */
+export function scholarState(value: unknown): ScholarFilterState {
+  const status = scholarStatusValue(value);
+  return !status ? "unknown" : status.selections.some(v => v !== "NOT_APPLICABLE") ? "scholar" : "none";
+}
+/** Scholars first, then "Not a scholar", then "Not provided". */
+export function scholarRank(value: unknown) {
+  return scholarFilterStates.indexOf(scholarState(value));
+}
+/**
+ * One applicant against the scholar filter. `known` is false when the viewer may not see the
+ * applicant's profile (anonymous review): such an applicant matches only when no scholar filter is set.
+ * Choosing programs implies "Scholars only" and matches any of the chosen programs.
+ */
+export function matchesScholarFilter(value: unknown, known: boolean, state?: ScholarFilterState, programs?: readonly string[]) {
+  if (!state && !programs?.length) return true;
+  if (!known) return false;
+  const status = scholarStatusValue(value);
+  if (state && scholarState(status) !== state) return false;
+  return !programs?.length || !!status?.selections.some(v => programs.includes(v));
+}
+/** Leader-facing summary: program names, "Not a scholar", or null when unanswered. */
+export function scholarSummary(value: unknown) {
+  const state = scholarState(value);
+  return state === "scholar" ? scholarNames(value).join(", ") : state === "none" ? scholarFilterLabels.none : null;
+}
+/**
+ * Whether leaders see the scholar filter, sort and column: the club shows the field, the viewer may
+ * identify applicants, and the list (or the chosen round) includes a round that is not anonymous.
+ */
+export function scholarFilterAvailable(showField: boolean, canIdentify: boolean, rounds: readonly { id: string; anonymousReview: boolean }[], roundId?: string) {
+  return showField && canIdentify && rounds.some(round => !round.anonymousReview && (!roundId || round.id === roundId));
+}

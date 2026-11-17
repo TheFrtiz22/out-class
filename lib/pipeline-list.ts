@@ -26,6 +26,8 @@ export function pipelineListProjection(data: Pipeline) {
             firstName: profile.firstName, lastName: profile.lastName, major: profile.major,
             academicYear: profile.academicYear, gpa: profile.gpa,
             satScore: profile.satScore, actScore: profile.actScore,
+            // Anonymous projections already carry null here; filters also check the anonymous ID.
+            scholarStatus: profile.scholarStatus,
           } : null,
         },
         evaluations: pipelineReviewerReferences(app.evaluations),

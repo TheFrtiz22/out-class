@@ -1,6 +1,6 @@
 "use client"
 import { profilePhotoSource } from "@/lib/profile-photo"
-import { scholarNames } from "@/lib/scholar-status"
+import { scholarSummary } from "@/lib/scholar-status"
 
 import { useEffect, useState, type ReactNode } from "react"
 import { ArrowUpRight, Check, FileText, Linkedin, Pencil, Eye, ChevronDown } from "@/components/icons"
@@ -178,7 +178,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
               {profile.highSchool && <p className="mt-2 text-sm">High school: {profile.highSchool}</p>}
               {(profile.gender || profile.pronouns) && <p className="mt-2 text-sm">{[profile.gender && `Gender: ${profile.gender}`, profile.pronouns && `Pronouns: ${profile.pronouns}`].filter(Boolean).join(" · ")}</p>}
               {profile.transferStudent && <p className="mt-2 text-sm">Transfer student</p>}
-              {!!scholarNames(profile.scholarStatus).length && <p className="mt-2 text-sm"><span className="text-muted-foreground">Scholar status: </span>{scholarNames(profile.scholarStatus).join(", ")}</p>}
+              <p className="mt-2 text-sm"><span className="text-muted-foreground">Scholar status: </span>{scholarSummary(profile.scholarStatus) ?? <span className="text-muted-foreground">Not provided</span>}</p>
               {(profile.gpa != null || profile.satScore != null || profile.actScore != null) && (
                 <dl className="mt-4 flex flex-wrap gap-6 text-sm">
                   {profile.gpa != null && (

@@ -6,13 +6,13 @@ import { z } from "zod";
  * Unknown keys are dropped and missing or malformed keys fall back to the defaults,
  * so adding a field later never exposes it to clubs that saved an older map.
  */
-export const profileFieldKeys = ["name", "photo", "email", "major", "academicYear", "gpa", "sat", "act", "experiences", "resume", "linkedin"] as const;
+export const profileFieldKeys = ["name", "photo", "email", "major", "academicYear", "gpa", "sat", "act", "experiences", "resume", "linkedin", "scholarStatus"] as const;
 export type ProfileFieldKey = typeof profileFieldKeys[number];
 export type ProfileFieldVisibility = Record<ProfileFieldKey, boolean>;
 
 export const profileFieldLabels: Record<ProfileFieldKey, string> = {
   name: "Name", photo: "Photo", email: "Email", major: "Major", academicYear: "Class year",
-  gpa: "GPA", sat: "SAT", act: "ACT", experiences: "Experience", resume: "Résumé", linkedin: "LinkedIn",
+  gpa: "GPA", sat: "SAT", act: "ACT", experiences: "Experience", resume: "Résumé", linkedin: "LinkedIn", scholarStatus: "Scholar status",
 };
 
 /** Off unless a club turns them on. Every other field defaults to on, matching earlier behaviour. */
@@ -69,6 +69,7 @@ export function restrictProfileFields<P extends object>(profile: P, visibility: 
   if (!visibility.experiences) clear(["experiences"], []);
   if (!visibility.resume) clear(["resumeUrl"], null);
   if (!visibility.linkedin) clear(["linkedinUrl"], null);
+  if (!visibility.scholarStatus) clear(["scholarStatus"], null);
   return out as P;
 }
 
@@ -91,7 +92,7 @@ export function rosterMembers<M extends { club?: { profileFieldVisibility?: unkn
   });
 }
 
-type ProfileQuery = { major?: string; year?: string; gpa?: number; sat?: number; act?: number; sort?: string };
+type ProfileQuery = { major?: string; year?: string; gpa?: number; sat?: number; act?: number; scholar?: string; scholarPrograms?: string[]; sort?: string };
 /**
  * Pipeline and voting selection queries: filters on hidden fields are ignored and sorts by
  * hidden fields fall back to name order, so neither the returned IDs nor their order depend
@@ -99,19 +100,20 @@ type ProfileQuery = { major?: string; year?: string; gpa?: number; sat?: number;
  */
 export function withoutHiddenProfileFilters<Q extends ProfileQuery>(query: Q, visibility: ProfileFieldVisibility): Q {
   const out = { ...query };
-  const sortField = { gpa: "gpa", sat: "sat", act: "act", year: "academicYear" } as const;
+  const sortField = { gpa: "gpa", sat: "sat", act: "act", year: "academicYear", scholar: "scholarStatus" } as const;
   if (!visibility.major) delete out.major;
   if (!visibility.academicYear) delete out.year;
   if (!visibility.gpa) delete out.gpa;
   if (!visibility.sat) delete out.sat;
   if (!visibility.act) delete out.act;
+  if (!visibility.scholarStatus) { delete out.scholar; delete out.scholarPrograms; }
   const sorted = out.sort as keyof typeof sortField | undefined;
   if (sorted && sorted in sortField && !visibility[sortField[sorted]]) { out.sort = "name"; if ("descending" in out) (out as { descending?: boolean }).descending = false; }
   return out;
 }
 
 /** Applicant Display and voting-slide fields that the club setting caps. Other fields are unaffected. */
-const cappedDisplayFields = new Set<string>(["name", "photo", "major", "academicYear", "gpa", "sat", "act", "experiences", "resume", "linkedin"]);
+const cappedDisplayFields = new Set<string>(["name", "photo", "major", "academicYear", "gpa", "sat", "act", "experiences", "resume", "linkedin", "scholarStatus"]);
 export function allowedByProfileCeiling(field: string, visibility: ProfileFieldVisibility) {
   // A leader-selected résumé excerpt is résumé content: it follows the résumé setting.
   if (field === "resumeHighlight") return visibility.resume !== false;
