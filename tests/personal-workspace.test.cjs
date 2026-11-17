@@ -153,8 +153,9 @@ test('personal shell keeps page headings in content once, with universal and con
   assert.equal(nodes(shell).some(node=>node.props?.className==='oc-header-context'),false,view);
   // Sections live in the rail and phone sheet only; the pill is a workspace switcher.
   assert.equal(nodes(shell).some(node=>node.props?.['aria-label']==='Product modes'),false,view);
-  assert.deepEqual(nodes(shell).filter(node=>node.type==='nav').map(node=>node.props['aria-label']),['Home','Explore','Applications','Clubs','Account'],view);
-  assert.equal(nodes(shell).some(node=>node.props?.['data-tour']==='nav-inbox'),false,'Notifications live in the header bell');
+  assert.deepEqual(nodes(shell).filter(node=>node.type==='nav').map(node=>node.props['aria-label']),['Home','Explore','Applications','Clubs','Account','Inbox and settings'],view);
+  const foot=sheetLinks(shell).filter(node=>['nav-inbox','nav-account-settings'].includes(node.props?.['data-tour']));
+  assert.deepEqual(foot.map(node=>node.props.href),['/inbox'],'Inbox closes every rail; Settings needs a live session');
  }
  const manager=h.render(()=>ProductShell({mode:'recruiting',manager:true,clubName:'Club name',active:'overview',title:'Overview',sections:[],onSelect(){},onNavigate(){}}));
  assert.equal(nodes(manager).some(node=>node.props?.className==='oc-header-context'),false);assert.equal(nodes(manager).some(node=>node.props?.['aria-label']==='Home'),false);
@@ -194,7 +195,7 @@ test('a member club shell keeps personal sections as real paths beside the club 
  const shell=h.render(()=>ProductShell({mode:'clubs',clubId:'member-club',title:'Overview',sections:memberRailSections('member-club','Member club'),active:'club-home',onSelect:id=>context.push(id),onNavigate:view=>navigation.push(view)}));
  const links=sheetLinks(shell),href=id=>links.find(node=>node.props?.['data-tour']==='nav-'+id)?.props.href;
  assert.deepEqual(['student-dashboard','calendar','student-profile'].map(href),['/home','/calendar','/profile']);
- assert.equal(href('club-home'),'/club/member-club/workspace?section=overview');assert.equal(href('inbox'),undefined);
+ assert.equal(href('club-home'),'/club/member-club/workspace?section=overview');assert.equal(href('inbox'),'/inbox');
  assert.equal(links.find(node=>node.props?.['data-tour']==='nav-club-home').props['aria-current'],'page');
  assert.deepEqual(navigation,[]);assert.deepEqual(context,[]);
 });
