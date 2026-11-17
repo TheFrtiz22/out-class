@@ -31,9 +31,11 @@ test('one bad notification or suspended club cannot stop other recipients\' emai
   const saved = Object.fromEntries(Object.keys(env).map(k => [k, process.env[k]]));
   Object.assign(process.env, env);
   const realFetch = globalThis.fetch, sentTo = [];
+  let quotaExceeded = false;
   globalThis.fetch = async (target, init) => {
     assert.equal(String(target), 'https://api.resend.com/emails');
     sentTo.push(JSON.parse(init.body).to);
+    if (quotaExceeded) return new Response(JSON.stringify({ statusCode: 429, name: 'daily_quota_exceeded', message: 'You have exceeded your daily email sending quota.' }), { status: 429, headers: { 'content-type': 'application/json' } });
     return new Response(JSON.stringify({ id: `resend-${randomUUID()}` }), { status: 200, headers: { 'content-type': 'application/json' } });
   };
   t.after(() => { globalThis.fetch = realFetch; for (const [k, v] of Object.entries(saved)) if (v === undefined) delete process.env[k]; else process.env[k] = v; });
@@ -132,5 +134,33 @@ test('one bad notification or suspended club cannot stop other recipients\' emai
     const failed = await db.notificationEmailDelivery.findUniqueOrThrow({ where: { id: broken.id } });
     assert.deepEqual([failed.status, failed.failureCode], ['FAILED', 'INVALID_PAYLOAD']);
     assert.equal((await outbox(good.id)).status, 'ASSIGNED');
+  });
+
+  await t.test('a daily sending quota pauses the run and keeps every delivery\'s retry budget for the reset', async () => {
+    const c = await club(false), recipients = [];
+    for (let i = 0; i < 3; i++) { const u = await user(); recipients.push(u); await notify(u.id, c.id); }
+    const savedRate = process.env.RESEND_MAX_REQUESTS_PER_SECOND;
+    process.env.RESEND_MAX_REQUESTS_PER_SECOND = '50';
+    try {
+      quotaExceeded = true; sentTo.length = 0;
+      const refused = await worker.processNotificationEmails(10, { drain: true });
+      assert.equal(sentTo.length, 1, 'the run stops at the first quota refusal instead of trying every delivery');
+      assert.deepEqual([refused.sent, refused.failed], [0, 1]);
+      const rows = await db.notificationEmailDelivery.findMany({ where: { userId: { in: recipients.map(u => u.id) } } });
+      assert.equal(rows.length, 3);
+      for (const row of rows) assert.deepEqual([row.status, row.attemptCount, row.firstAttemptAt], ['QUEUED', 0, null], 'a refused or untried delivery keeps its whole retry budget');
+      const held = rows.find(row => row.failureCode === 'RESEND_DAILY_QUOTA');
+      assert.ok(held, 'the refused delivery records why it is waiting');
+      const midnight = new Date(); midnight.setUTCHours(24, 0, 0, 0);
+      assert.ok(+held.nextAttemptAt >= +midnight, 'it waits for the quota to reset at midnight UTC');
+      quotaExceeded = false; sentTo.length = 0;
+      await db.notificationEmailDelivery.updateMany({ where: { id: { in: rows.map(row => row.id) } }, data: { nextAttemptAt: new Date() } });
+      const resumed = await worker.processNotificationEmails(10, { drain: true });
+      assert.equal(resumed.sent, 3, 'after the reset every held delivery sends');
+      assert.deepEqual(sentTo.sort(), recipients.map(u => u.email).sort());
+    } finally {
+      quotaExceeded = false;
+      if (savedRate === undefined) delete process.env.RESEND_MAX_REQUESTS_PER_SECOND; else process.env.RESEND_MAX_REQUESTS_PER_SECOND = savedRate;
+    }
   });
 });

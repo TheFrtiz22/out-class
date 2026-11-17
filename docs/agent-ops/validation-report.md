@@ -368,3 +368,10 @@ note: one earlier full run under machine load average ~23 had 9 Playwright click
 - Targeted gates per branch: eslint clean on changed files; `tsc --noEmit` clean. #386: 22 test files, 170 pass. #387: notification suites 94 pass; `tests/notification-worker-native.test.cjs` 6/6 on a disposable Postgres (incl. the new drain and rate-floor subtests). #388: 912 pass; new `tests/auth-outage.test.cjs` fails 5/7 on main. #389: 28 pass; new action-results case fails on main. Full CI on each PR.
 - Retest: all four branches merged locally on origin/main ad3b5b5f, production build, same 1,000-applicant cycle. 10/10 stages passed, 0 issues. Finalists reached INTERVIEWING from the decision send itself (60/60, no workaround) and booked 60/84 slots; 3,000/3,000 review scores saved; email drained in 14 delivery runs (~71 sent per run, paced at 2/s) against 102 runs before; 990 sent, 0 failed, 61 suppressed (same as before). Results: /mnt/project-files/e2e-test/retest-after-fixes/.
 - Not verified: the recorded browser tour (no browser download in that workspace); production Supabase behaviour under a real Auth outage (simulated shapes only); Resend's real rate limit for the team.
+
+## 2026-11-17 V1-TEST-EMAIL-QUOTA
+
+- Source: V1 finish testing round 2. The production Resend team is on the free plan (100 emails/day, 3,000/month, 10 requests/s). A 1,000-decision send would hit the daily quota after 100 and every later delivery would retry into UNCERTAIN.
+- `tests/notification-worker-native.test.cjs` new subtest (quota stub returns 429 `daily_quota_exceeded`): 1 request made, 0 sent, 1 failed; all 3 rows stay QUEUED with attemptCount 0 and no firstAttemptAt; nextAttemptAt is at or after the next UTC midnight; after the reset all 3 send. 7/7 with the fix, 5/7 on main.
+- `tests/communications.test.cjs`: quota 429 maps to RESEND_DAILY_QUOTA (retryable, notAccepted); a rate-limit 429 stays RESEND_429; reset maths checked. communications, email-compliance, web-push: 40 pass. eslint and `tsc --noEmit` clean.
+- Not verified: Resend's live quota response (shape taken from Resend's documented error names); the account's plan is the owner's decision.
