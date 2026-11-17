@@ -74,7 +74,7 @@ test('full session across devices: intermission, held passes with fresh ballots,
   await decide(f,apps[1],3,'ACCEPT');await settle(all,'Review complete');
   for(const p of all)await p.getByText(/^No held applicants remain\./).waitFor();
   assert.equal(await leader.getByRole('button',{name:'Review held applicants',exact:true}).count(),0);
-  await leader.getByText('1 over target',{exact:true}).first().waitFor();
+  await leader.getByText(/^Target of 1 reached · voting can continue/).first().waitFor();
   assert.match(await member.locator('.vr-intermission-counts').innerText(),/Passed\s*2[\s\S]*Held\s*0[\s\S]*Not passed\s*1[\s\S]*Unreviewed\s*0/);
 
   // End voting: the leader's explicit action; every device fades to the summary with passed applicants first.
