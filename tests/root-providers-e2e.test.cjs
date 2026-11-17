@@ -1,6 +1,7 @@
 // Real Next production build + Supabase Auth + PostgreSQL on the reserved disposable stack only.
 // FE-3: saved clubs load only where a page shows them, and saving still works end to end.
 const { test } = require("node:test")
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
 const path = require("node:path")
@@ -18,7 +19,7 @@ test("saved clubs load only where shown; saving works on club profile, Explore a
   const service = createClient(config.status.API_URL, config.status.SECRET_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
   const email = `saved.${randomUUID()}@virginia.edu`, password = "Disposable-saved!" + randomUUID()
   const created = await service.auth.admin.createUser({ email, password, email_confirm: true }); assert.equal(created.error, null)
-  await db.user.upsert({ where: { id: created.data.user.id }, create: { id: created.data.user.id, email }, update: {} })
+  await db.user.upsert({ where: { id: created.data.user.id }, create: { id: created.data.user.id, email }, update: {} }); await satisfyAvailabilityRequirement(db,created.data.user.id);
   const actor = new Actor(config); await actor.signIn(email, password); await actor.profile("Saved Student", 2028)
 
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close())

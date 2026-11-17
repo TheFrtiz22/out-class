@@ -1,4 +1,5 @@
 const {test}=require('node:test');
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {PrismaClient}=require('@prisma/client');
@@ -13,7 +14,7 @@ test('signup privacy on real Next, Auth, SMTP and desktop/mobile browsers',{skip
  const existingEmail=`privacy.existing.${randomUUID()}@virginia.edu`,originalPassword='Original-fixture!'+randomUUID(),attemptedPassword='Untrusted-attempt!'+randomUUID();
  const seeded=await service.auth.admin.createUser({email:existingEmail,password:originalPassword,email_confirm:true,user_metadata:{first_name:'Original',last_name:'Student'}});assert.equal(seeded.error,null);
  const existingId=seeded.data.user.id;
- await db.user.upsert({where:{id:existingId},create:{id:existingId,email:existingEmail},update:{}});
+ await db.user.upsert({where:{id:existingId},create:{id:existingId,email:existingEmail},update:{}});await satisfyAvailabilityRequirement(db,existingId);
  const before=(await service.auth.admin.getUserById(existingId)).data.user;
  const register=(actor,email)=>actor.action('actions/onboarding.ts','registerStudent',[{firstName:'Attempted',lastName:'Replacement',email,password:attemptedPassword}]);
  const newcomer=new Actor(c),returning=new Actor(c),newEmail=`privacy.new.${randomUUID()}@virginia.edu`;

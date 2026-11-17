@@ -1,6 +1,7 @@
 // Real student UI/Auth/database validation against the dedicated LOCAL Profile project only.
 // Prepare/build/start with scripts/prepare-profile-e2e.cjs and scripts/run-profile-local.cjs.
 const fs=require('fs'),os=require('os'),path=require('path'),assert=require('node:assert/strict');
+const { satisfyAvailabilityRequirement } = require('../tests/helpers/availability-requirement-fixture.cjs')
 const {chromium}=require(process.env.OUTCLASS_PLAYWRIGHT_MODULE || 'playwright');
 const {createServerClient}=require('@supabase/ssr');const {PrismaClient}=require('@prisma/client');
 const c=JSON.parse(fs.readFileSync(path.join(os.tmpdir(),'outclass-profile-p2-e2e/config.json')));
@@ -27,7 +28,7 @@ async function createStudent() {
  const key=randomUUID().replaceAll('-','').slice(0,12),email=`journey-${key}@virginia.edu`,password=`Local-${randomUUID()}!`;
  const result=await admin.auth.admin.createUser({email,password,email_confirm:true});if(result.error)throw result.error;
  const id=result.data.user.id;
- await db.user.upsert({where:{id},create:{id,email},update:{}});
+ await db.user.upsert({where:{id},create:{id,email},update:{}});await satisfyAvailabilityRequirement(db,id);
  await db.studentProfile.create({data:{userId:id,firstName:'Student',lastName:'Journey',computingId:key,major:'Economics',gradYear:new Date().getFullYear()+2}});
  return {id,email,password};
 }

@@ -1,7 +1,7 @@
 "use client";
 import {useId} from "react";
 import {SegmentedControl} from "@/components/ui/segmented-control";
-import {describeVotingRules,votingRuleExamples,votingRulesSchema,type VotingRules} from "@/lib/voting-rules";
+import {describeVotingRule,votingRuleExamples,votingRulesSchema,type VotingRules,type VotingRuleSummaryInput} from "@/lib/voting-rules";
 
 /** Editable form of a rule. Consequential threshold choices start empty so a
  * leader must choose and review them; nothing automatic is a silent default. */
@@ -27,37 +27,54 @@ export function rulesFromDraft(d:RuleDraft,requireReview=true):{rules:VotingRule
   return {rules:parsed.data};
 }
 
+/** The draft as the saved rule's shape, for describeVotingRule; unfinished values stay empty. */
+export function ruleSummaryFromDraft(d:RuleDraft):VotingRuleSummaryInput{
+  if(d.mode==="LEADER_CONFIRMS")return {mode:"LEADER_CONFIRMS"};
+  const n=(s:string)=>/^\d+$/.test(s)?Number(s):null;
+  return {mode:"THRESHOLD",threshold:{numerator:n(d.numerator),denominator:n(d.denominator)},denominator:d.base||null,minimumParticipation:{numerator:n(d.pNumerator),denominator:n(d.pDenominator)},belowThreshold:d.below||null};
+}
+/** Which control a rulesFromDraft message belongs beside. */
+export function ruleErrorTarget(message:string):"base"|"below"|"review"|"fractions"{
+  return /counts against/.test(message)?"base":/below the threshold/.test(message)?"below":/Review/.test(message)?"review":"fractions";
+}
+
 const presets=[[1,2],[3,5],[2,3],[3,4]] as const;
-export function VotingRuleEditor({value,onChange,eligibleCount,disabled=false}:{value:RuleDraft;onChange:(v:RuleDraft)=>void;eligibleCount:number;disabled?:boolean}){
+/** `error` is the message Continue reported for this rule; it is shown beside the control it concerns. */
+export function VotingRuleEditor({value,onChange,eligibleCount,disabled=false,error="",hideLegend=false}:{value:RuleDraft;onChange:(v:RuleDraft)=>void;eligibleCount:number;disabled?:boolean;error?:string;hideLegend?:boolean}){
   const id=useId(),set=(patch:Partial<RuleDraft>)=>onChange({...value,...patch,reviewed:"reviewed"in patch?!!patch.reviewed:false});
   const result=rulesFromDraft(value,false),complete="rules"in result;
-  return <fieldset className="space-y-3" disabled={disabled}><legend className="font-medium">Voting rule</legend>
-    <div className="space-y-1">
-      <label className="flex items-start gap-2"><input type="radio" name={`${id}-mode`} checked={value.mode==="LEADER_CONFIRMS"} onChange={()=>onChange(leaderDraft)}/><span><span className="font-medium">Leader confirms</span> — ballots inform the leader, who confirms each outcome.</span></label>
-      <label className="flex items-start gap-2"><input type="radio" name={`${id}-mode`} checked={value.mode==="THRESHOLD"} onChange={()=>set({mode:"THRESHOLD"})}/><span><span className="font-medium">Threshold decides</span> — when the leader closes voting, a rule you set decides the outcome.</span></label>
+  const target=error?ruleErrorTarget(error):null,errorId=`${id}-error`;
+  const problem=(where:NonNullable<typeof target>)=>target===where?<p id={errorId} role="alert" className="vr-setup-error">{error}</p>:null;
+  const describedBy=(where:NonNullable<typeof target>)=>target===where?errorId:undefined;
+  return <fieldset className="vr-rule" disabled={disabled}><legend className={hideLegend?"sr-only":"font-medium"}>Voting rule</legend>
+    <div className="vr-setup-options">
+      <label><input type="radio" name={`${id}-mode`} checked={value.mode==="LEADER_CONFIRMS"} onChange={()=>onChange(leaderDraft)}/><span className="vr-setup-option-title">Leader confirms<span className="vr-setup-option-note">Ballots inform the leader, who confirms Pass, Hold or Do not pass.</span></span></label>
+      <label><input type="radio" name={`${id}-mode`} checked={value.mode==="THRESHOLD"} onChange={()=>set({mode:"THRESHOLD"})}/><span className="vr-setup-option-title">Threshold decides<span className="vr-setup-option-note">When the leader closes voting, the rule below decides.</span></span></label>
     </div>
-    {value.mode==="THRESHOLD"&&<div className="space-y-3 border-l-2 pl-3">
-      <div><p className="text-sm font-medium" id={`${id}-t`}>Pass votes needed: at least</p>
-        <div className="vr-fraction" role="group" aria-labelledby={`${id}-t`}>
+    {value.mode==="THRESHOLD"&&<div className="vr-rule-detail">
+      <div className="vr-setup-field"><p className="vr-setup-label" id={`${id}-t`}>Pass votes needed: at least</p>
+        <div className="vr-fraction" role="group" aria-labelledby={`${id}-t`} aria-describedby={describedBy("fractions")}>
           <input aria-label="Threshold numerator" className="vr-fraction-input" inputMode="numeric" value={value.numerator} onChange={e=>set({numerator:e.target.value})}/> / <input aria-label="Threshold denominator" className="vr-fraction-input" inputMode="numeric" value={value.denominator} onChange={e=>set({denominator:e.target.value})}/>
           <SegmentedControl label="Threshold presets" size="compact" value={`${value.numerator}/${value.denominator}`} onChange={preset=>{const [numerator,denominator]=preset.split("/");set({numerator,denominator});}} options={presets.map(([a,b])=>({value:`${a}/${b}`,label:`${a}/${b}`}))}/>
         </div></div>
-      <div role="radiogroup" aria-label="Count Pass votes against" className="space-y-1"><p className="text-sm font-medium">Count Pass votes against</p>
-        <label className="flex items-start gap-2"><input type="radio" name={`${id}-base`} checked={value.base==="BALLOTS_CAST"} onChange={()=>set({base:"BALLOTS_CAST"})}/><span>Ballots cast — Pass, Hold and Do not pass ballots all count; members who don’t vote are left out.</span></label>
-        <label className="flex items-start gap-2"><input type="radio" name={`${id}-base`} checked={value.base==="ELIGIBLE_VOTERS"} onChange={()=>set({base:"ELIGIBLE_VOTERS"})}/><span>All eligible voters — members who don’t vote still count in the total, so not voting has the same effect as not voting Pass.</span></label>
-      </div>
-      <div><p className="text-sm font-medium" id={`${id}-p`}>Minimum participation: at least</p>
-        <div className="vr-fraction" role="group" aria-labelledby={`${id}-p`}><input aria-label="Participation numerator" className="vr-fraction-input" inputMode="numeric" value={value.pNumerator} onChange={e=>set({pNumerator:e.target.value})}/> / <input aria-label="Participation denominator" className="vr-fraction-input" inputMode="numeric" value={value.pDenominator} onChange={e=>set({pDenominator:e.target.value})}/><span className="text-sm">of eligible voters must vote</span></div>
-        <p className="text-xs text-muted-foreground">If fewer vote, there’s no automatic result and nobody is rejected; the leader holds the applicant for another vote or decides with a reason.</p></div>
-      <div role="radiogroup" aria-label="Below the threshold" className="space-y-1"><p className="text-sm font-medium">Below the threshold</p>
-        <label className="flex items-center gap-2"><input type="radio" name={`${id}-below`} checked={value.below==="HOLD"} onChange={()=>set({below:"HOLD"})}/>Hold (vote again in a later pass)</label>
-        <label className="flex items-center gap-2"><input type="radio" name={`${id}-below`} checked={value.below==="REJECT"} onChange={()=>set({below:"REJECT"})}/>Do not pass</label>
-      </div>
-      {complete&&result.rules.mode==="THRESHOLD"?<section aria-label="Rule preview" className="vr-prep-update text-sm"><p>{describeVotingRules(result.rules)}</p>
-        <ul className="list-disc pl-5">{votingRuleExamples(result.rules,eligibleCount).map(e=><li key={e}>{e}</li>)}</ul>
-        <p className="text-xs text-muted-foreground">Examples use the {eligibleCount} selected voter{eligibleCount===1?"":"s"}. The rule and eligible voters are saved with each ballot when voting opens.</p>
-        <label className="flex items-center gap-2 font-medium"><input type="checkbox" checked={value.reviewed} onChange={e=>set({reviewed:e.target.checked})}/>I’ve reviewed this rule and its examples</label></section>
-        :<p className="text-sm" role="status">{"error"in result?result.error:""}</p>}
+      <div role="radiogroup" aria-labelledby={`${id}-b`} aria-describedby={describedBy("base")} className="vr-setup-field"><p className="vr-setup-label" id={`${id}-b`}>Count Pass votes against</p>
+        <div className="vr-setup-options">
+          <label><input type="radio" name={`${id}-base`} checked={value.base==="BALLOTS_CAST"} onChange={()=>set({base:"BALLOTS_CAST"})}/><span className="vr-setup-option-title">Ballots cast <span className="vr-setup-option-aside">· members who don’t vote are left out</span></span></label>
+          <label><input type="radio" name={`${id}-base`} checked={value.base==="ELIGIBLE_VOTERS"} onChange={()=>set({base:"ELIGIBLE_VOTERS"})}/><span className="vr-setup-option-title">All eligible voters <span className="vr-setup-option-aside">· not voting counts the same as not voting Pass</span></span></label>
+        </div>{problem("base")}</div>
+      <div className="vr-setup-field"><p className="vr-setup-label" id={`${id}-p`}>Minimum participation: at least</p>
+        <div className="vr-fraction" role="group" aria-labelledby={`${id}-p`} aria-describedby={`${id}-p-help ${describedBy("fractions")??""}`.trim()}><input aria-label="Participation numerator" className="vr-fraction-input" inputMode="numeric" value={value.pNumerator} onChange={e=>set({pNumerator:e.target.value})}/> / <input aria-label="Participation denominator" className="vr-fraction-input" inputMode="numeric" value={value.pDenominator} onChange={e=>set({pDenominator:e.target.value})}/><span className="vr-setup-help">of eligible voters must vote</span></div>
+        <p className="vr-setup-help" id={`${id}-p-help`}>If fewer vote, nobody is rejected. The leader holds the applicant for another vote or decides with a reason.</p>{problem("fractions")}</div>
+      <div role="radiogroup" aria-labelledby={`${id}-o`} aria-describedby={describedBy("below")} className="vr-setup-field"><p className="vr-setup-label" id={`${id}-o`}>Below the threshold</p>
+        <div className="vr-setup-inline">
+          <label><input type="radio" name={`${id}-below`} checked={value.below==="HOLD"} onChange={()=>set({below:"HOLD"})}/>Hold (vote again later)</label>
+          <label><input type="radio" name={`${id}-below`} checked={value.below==="REJECT"} onChange={()=>set({below:"REJECT"})}/>Do not pass</label>
+        </div>{problem("below")}</div>
+      <p className="vr-setup-summary" aria-live="polite">In plain terms: {describeVotingRule(ruleSummaryFromDraft(value)).replace(/^An /,"an ")}</p>
+      {complete&&result.rules.mode==="THRESHOLD"&&<section aria-label="Rule preview" className="vr-setup-field">
+        <ul className="vr-rule-examples">{votingRuleExamples(result.rules,eligibleCount).map(e=><li key={e}>{e}</li>)}</ul>
+        <p className="vr-setup-help">Examples use the {eligibleCount} selected voter{eligibleCount===1?"":"s"}. The rule and eligible voters are saved with each ballot when voting opens.</p>
+        <label className="vr-setup-check"><input type="checkbox" aria-describedby={describedBy("review")} checked={value.reviewed} onChange={e=>set({reviewed:e.target.checked})}/>I’ve reviewed this rule and its examples</label>{problem("review")}</section>}
     </div>}
   </fieldset>;
 }

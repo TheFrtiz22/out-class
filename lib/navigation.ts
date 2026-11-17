@@ -76,6 +76,7 @@ export function memberRailSections(clubId: string, clubName: string | undefined,
     { id: "club-home", label: "Club home", href: `${root}?section=overview` },
     { id: "club-meetings", label: "Meetings", href: `${root}?section=calendar&type=meetings` },
     { id: "club-tasks", label: "Tasks", href: `${root}?section=tasks` },
+    { id: "club-alumni", label: "Alumni", href: `${root}?section=alumni` },
   ] }
   const sections = personalRailSections(options)
   return [...sections.slice(0, -1), club, sections[sections.length - 1]]

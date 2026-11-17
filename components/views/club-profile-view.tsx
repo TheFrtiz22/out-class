@@ -16,6 +16,7 @@ import { useClubCustomization } from "@/lib/club-customization"
 import { useApplicationState } from "@/lib/application-state"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
+import { isAlumniProfile } from "@/lib/graduation"
 import { clubRecruitment, recruitmentDate } from "@/lib/recruitment-presentation"
 import { StatusPill } from "@/components/ui/status-pill"
 import { startClubApplication } from "@/lib/workspace-api"
@@ -113,8 +114,10 @@ export function ClubProfileView({
   const draft = !!application && /draft/i.test(application.status)
   // A rejected student may start a new application in the club's next cycle.
   const reapply = real && actualApplication?.status === "REJECTED" && recruitment.available
-  const applyLabel = busy ? "Opening…" : reapply ? "Apply again" : application ? draft ? "Continue draft" : "View status" : real && !user ? "Sign in to apply" : "Start application"
-  const applyDisabled = preview || busy || (real && !application && !recruitment.available)
+  // Alumni see their own applications but cannot start one (the server refuses too).
+  const alumni = real && (!application || reapply) && isAlumniProfile(user?.profile)
+  const applyLabel = busy ? "Opening…" : alumni && user ? "Alumni can’t apply" : reapply ? "Apply again" : application ? draft ? "Continue draft" : "View status" : real && !user ? "Sign in to apply" : "Start application"
+  const applyDisabled = preview || busy || alumni || (real && !application && !recruitment.available)
   async function apply() {
     if (preview) return
     if (real && !user) {

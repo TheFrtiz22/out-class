@@ -15,6 +15,10 @@ import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
 import { availabilityResponse, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, validateAvailabilityEdit, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability";
 import { boundedParse } from "@/lib/bounded-input";
+import { RATE_LIMIT_MESSAGE, RATE_LIMITS, rateLimiter } from "@/lib/rate-limit-core"
+import { AVAILABILITY_END_SLOT, AVAILABILITY_FIRST_SLOT } from "@/lib/scheduling-config"
+import { AVAILABILITY_REQUIRED_MESSAGE, NO_REGULAR_AVAILABILITY_ACTION, scheduleHasAvailability } from "@/lib/availability-requirement"
+import { MEETING_DURATIONS, memberCellStates, plannerFreeCounts, plannerWeek, PLANNER_WEEK_MESSAGE, slotRoster, type MeetingPlannerHeatmap, type MeetingSlotRoster } from "@/lib/meeting-time-planner"
 
 const id = z.string().uuid()
 const scopeSchema = z.object({ clubId: id, roundId: id }).strict()
@@ -226,6 +230,80 @@ export async function getRoundStaffingCoverage(raw: unknown) {
       slots: planning.scene.sessions.map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, active: s.active, required: s.required, assigned: s.existingMemberIds.length, availableMemberIds: planning.scene.members.filter(m => m.confirmed && m.allowedSlotIds.includes(s.id)).map(m => m.id) })),
     }
   }, { timeout: 20000 })
+}
+
+/**
+ * The signup/next-visit availability requirement (lib/availability-requirement.ts). Re-reads the saved
+ * schedule: any available time meets it. Otherwise only an explicit "no regular free time" choice does,
+ * recorded as an audit row and an explicitly submitted (empty) recurring week. Own account only.
+ */
+async function completeAvailabilityRequirementCommand(raw: unknown): Promise<{ met: true }> {
+  const input = boundedParse(z.object({ noRegularTime: z.boolean() }).strict(), raw)
+  const { user, impersonation } = await requireAuth()
+  if (impersonation) throw new ActionError("Availability is completed by the account holder, not in a support session.", "FORBIDDEN")
+  return prisma.$transaction(async tx => {
+    await accountLock(tx, user.id)
+    const old = await tx.userAvailability.findUnique({ where: { userId: user.id } })
+    const schedule = old ? parseSchedule(old.schedule) : null
+    if (scheduleHasAvailability(schedule)) return { met: true as const }
+    if (!input.noRegularTime) throw new ActionError(AVAILABILITY_REQUIRED_MESSAGE)
+    // One declaration per account: finishing the step again (another tab, a retry) writes nothing.
+    if (await tx.auditLog.findFirst({ where: { targetId: user.id, actorId: user.id, action: NO_REGULAR_AVAILABILITY_ACTION }, select: { id: true } })) return { met: true as const }
+    const declared = { ...(schedule ?? emptySchedule()), weeklySubmitted: true }
+    if (!old) await tx.userAvailability.create({ data: { userId: user.id, schedule: declared } })
+    else if (!schedule?.weeklySubmitted) await tx.userAvailability.update({ where: { userId: user.id }, data: { schedule: declared, revision: { increment: 1 } } })
+    await tx.auditLog.create({ data: { actorId: user.id, action: NO_REGULAR_AVAILABILITY_ACTION, targetId: user.id } })
+    return { met: true as const }
+  })
+}
+
+const plannerSchema = z.object({ clubId: id, week: localDateSchema, duration: z.number().int().refine(value => (MEETING_DURATIONS as readonly number[]).includes(value), "Choose a meeting length.") }).strict()
+const rosterSchema = plannerSchema.extend({ day: z.number().int().min(0).max(6), slot: z.number().int().min(AVAILABILITY_FIRST_SLOT).max(AVAILABILITY_END_SLOT - 1) }).strict()
+/**
+ * Active, enabled members of one operational club with their saved weekly availability. Only callers
+ * who can create this club's meetings (meetings.manage) reach it; names are read only for a roster.
+ */
+async function plannerMembers(tx: AppTransactionClient, clubId: string, userId: string, week: string, names: boolean) {
+  await authorizeClubTransaction(tx, clubId, userId, ["meetings.manage"], { readOnly: true })
+  if (!plannerWeek(week)) throw new ActionError(PLANNER_WEEK_MESSAGE)
+  const members = await tx.clubMember.findMany({
+    where: { clubId, ...activeMemberWhere, user: { disabledAt: null } },
+    orderBy: { id: "asc" },
+    select: { user: { select: { availability: { select: { schedule: true } }, ...(names ? { studentProfile: { select: { firstName: true, lastName: true } } } : {}) } } },
+  })
+  const start = monday(week), cells = weekCells(start, SCHEDULING_TIMEZONE)
+  const cache = new Map<string, ReturnType<typeof localParts>>()
+  const parts = (time: number | Date, zone: string) => { const key = `${zone}:${+time}`; let p = cache.get(key); if (!p) { p = localParts(time, zone); cache.set(key, p) } return p }
+  return { week: start, cells, members: members.map(member => {
+    let schedule: AvailabilitySchedule | null = null
+    try { schedule = member.user.availability ? parseSchedule(member.user.availability.schedule) : null } catch { schedule = null }
+    const profile = (member.user as { studentProfile?: { firstName: string; lastName: string } | null }).studentProfile
+    return { name: profile ? `${profile.firstName} ${profile.lastName}`.trim() || "Member" : "Member", hasAvailability: scheduleHasAvailability(schedule), states: memberCellStates(schedule, cells, parts) }
+  }) }
+}
+/** Counts only: how many active members are free for the whole meeting at each start time. */
+export async function getMeetingTimePlanner(raw: unknown): Promise<MeetingPlannerHeatmap> {
+  const input = plannerSchema.parse(raw), { user } = await requireAuth()
+  return prisma.$transaction(async tx => {
+    const data = await plannerMembers(tx, input.clubId, user.id, input.week, false)
+    return { week: data.week, duration: input.duration, members: data.members.length, withAvailability: data.members.filter(m => m.hasAvailability).length, free: plannerFreeCounts(data.members.map(m => m.states), input.duration) }
+  }, { timeout: 20000 })
+}
+/** Names only for one start time: free, busy, or no availability saved. */
+export async function getMeetingTimeRoster(raw: unknown): Promise<MeetingSlotRoster> {
+  const input = rosterSchema.parse(raw), { user } = await requireAuth()
+  // Per leader and club: browsing times is quick, sweeping every slot of every week is not.
+  if (!rateLimiter.check(RATE_LIMITS.meetingPlannerRoster, `user:${user.id}:club:${input.clubId}`).ok) throw new ActionError(RATE_LIMIT_MESSAGE, "RATE_LIMITED")
+  return prisma.$transaction(async tx => {
+    const data = await plannerMembers(tx, input.clubId, user.id, input.week, true)
+    const cell = data.cells[input.day][input.slot]
+    if (cell.start === null) throw new Error("This time is skipped or repeated by a daylight saving change. Choose another time.")
+    return { date: cell.date, start: cell.start, end: cell.start + input.duration * 60_000, ...slotRoster(data.members, input.day, input.slot, input.duration) }
+  }, { timeout: 20000 })
+}
+
+export async function completeAvailabilityRequirement(...args: Parameters<typeof completeAvailabilityRequirementCommand>) {
+  return actionResult(() => completeAvailabilityRequirementCommand(...args), "completeAvailabilityRequirement")
 }
 
 export async function saveMyAvailability(...args: Parameters<typeof saveMyAvailabilityCommand>) {

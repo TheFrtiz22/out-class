@@ -6,6 +6,7 @@ import { createClient as createAdminClient, type User as AuthUser } from "@supab
 import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
+import { assertGraduateMayJudge } from "@/lib/graduate-judgment";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail, safeReturnPath } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
@@ -121,6 +122,8 @@ export async function requireClubPermission(clubId: string, permissions: ClubPer
   if (!membership || !isActiveMembership(membership) || !permissions.every(permission => hasPermission(membership, permission))) {
     throw new ActionError("You do not have permission for this club action.", "FORBIDDEN");
   }
+  // A graduate kept as owner may hand the club over but not review or decide (lib/graduation.ts).
+  await assertGraduateMayJudge(prisma, user.id, permissions);
   if (!options.allowSuspendedRead) await assertClubOperational(prisma, clubId);
   return { user, membership };
 }

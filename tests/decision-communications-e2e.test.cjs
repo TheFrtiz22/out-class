@@ -1,9 +1,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{randomUUID}=require('node:crypto'),{Actor}=require('./helpers/onboarding-e2e.cjs'),{PrismaClient}=require('@prisma/client');
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const filename=process.env.OUTCLASS_RECONCILE_E2E_CONFIG;
 test('real Auth, RSC, PostgreSQL, private Storage and shared email-provider decision lifecycle',{skip:!filename,timeout:120000},async t=>{
  const c=require('./helpers/reconcile-local.cjs').readReconcileConfig(filename);
  const db=new PrismaClient({datasourceUrl:c.status.DB_URL});t.after(()=>db.$disconnect());const leader=new Actor(c),student=new Actor(c),foreign=new Actor(c);for(const [a,key]of[[leader,'leader'],[student,'student'],[foreign,'outsider']])await a.signIn(c.identities[key].email,c.identities[key].password);
- for(const role of ['leader','student','outsider']) {const identity=c.identities[role];await db.user.upsert({where:{id:identity.id},create:{id:identity.id,email:identity.email},update:{}});await db.studentProfile.upsert({where:{userId:identity.id},create:{userId:identity.id,computingId:role+'reconcile',firstName:role==='leader'?'Leader':role==='student'?'Student':'Outsider',lastName:'Fixture',major:'Economics',gradYear:2028},update:{}});}
+ for(const role of ['leader','student','outsider']) {const identity=c.identities[role];await db.user.upsert({where:{id:identity.id},create:{id:identity.id,email:identity.email},update:{}});await satisfyAvailabilityRequirement(db,identity.id);await db.studentProfile.upsert({where:{userId:identity.id},create:{userId:identity.id,computingId:role+'reconcile',firstName:role==='leader'?'Leader':role==='student'?'Student':'Outsider',lastName:'Fixture',major:'Economics',gradYear:2028},update:{}});}
  const fixtures=[];
  for(const decision of ['ACCEPTED','WAITLISTED','REJECTED']){
   const club=await db.club.create({data:{name:`[Local fixture] ${decision==='ACCEPTED'?'Community Fellows':decision==='WAITLISTED'?'Research Society':'Arts Collective'}`,slug:'decision-fixture-'+randomUUID(),tagline:'Disposable decision-letter verification',description:'Fictional local fixtures only.',category:'Other',color:'#264b43',claimedAt:new Date()}});

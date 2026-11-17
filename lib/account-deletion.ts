@@ -80,7 +80,7 @@ export type DeletionTreatment =
  * `onDelete` records the FK action, i.e. what would happen on a hard delete.
  */
 export const userRelationDeletionPlan: Record<string, { model: string; onDelete: "Cascade" | "Restrict" | "SetNull"; treatment: DeletionTreatment; note: string }> = {
-  studentProfile: { model: "StudentProfile", onDelete: "Cascade", treatment: "delete", note: "Profile, experiences (cascade); résumé and headshot objects removed from Storage." },
+  studentProfile: { model: "StudentProfile", onDelete: "Cascade", treatment: "delete", note: "Profile, experiences (cascade); résumé and headshot objects removed from Storage. Alumni employer, role and choices are profile columns, deleted with it; employer names already in clubs' \"Where members go\" lists carry no identity and stay." },
   applications: { model: "Application", onDelete: "Cascade", treatment: "anonymize", note: "In-progress applications without club records are deleted; others keep the row and the club's own notes, drop answers and review text. Published DecisionLetter content and InterviewResumeDocument snapshots are trigger-immutable (needs migration)." },
   memberships: { model: "ClubMember", onDelete: "Cascade", treatment: "anonymize", note: "Deleted when nothing depends on it; otherwise LEFT with roles, titles and groups cleared (evaluations, ballots, interview records are immutable)." },
   attendances: { model: "EventAttendance", onDelete: "Cascade", treatment: "retain", note: "Attendance counts stay; rows hold no personal fields beyond the tombstone link." },

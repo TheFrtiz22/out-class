@@ -194,7 +194,9 @@ test('settings and authenticated navigation across roles, saves, history and res
     await open(page, `/club/${first.id}/workspace?section=settings&setting=interviews`);
     await page.waitForURL(url => url.searchParams.get('tool') === 'interviews' && url.searchParams.get('interviewTab') === 'kits');
     // Someone who only interviews has no tab bar; the questions open as a page with a way back.
-    await page.getByRole('heading', { name: 'Questions', exact: true }).waitFor();
+    // (This club has no interview round, so the Questions page shows its empty state rather than the editor heading.)
+    await page.getByRole('navigation', { name: 'Interviews', exact: true }).getByRole('button', { name: 'Back to my interviews', exact: true }).waitFor();
+    assert.equal(await page.getByRole('tablist', { name: 'Interviews' }).count(), 0);
     await open(page, `/club/${first.id}/workspace?section=settings&setting=general`);
     await page.getByText(/isn’t available with your current access/).first().waitFor();
     assert.equal(await page.getByRole('button', { name: 'Publish profile', exact: true }).count(), 0);

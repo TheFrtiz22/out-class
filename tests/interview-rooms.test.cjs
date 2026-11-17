@@ -49,6 +49,7 @@ function apiHarness() {
  const state={room,slot,app,existing:null,others:[],created:[],deleted:[],audit:[],permission:true,retries:0,attempts:0,failCreate:false}
  const tx={
   $queryRaw:async()=>[],
+  studentProfile:{findUnique:async()=>({graduatedAt:null})},
   application:{findFirst:async({where})=>state.app && where.id===state.app.id && (!where.studentId||where.studentId===state.app.studentId)?state.app:null},
   interviewSlot:{findUnique:async()=>state.slot,findMany:async()=>state.others},
   pipelineRound:{findUnique:async()=>({bookingAllowCancellation:true}),findUniqueOrThrow:async()=>({id:id(2),type:"INTERVIEW",bookingPublishedAt:new Date(),bookingSlots:[core.bookingSlotSnapshot(state.slot,state.room)],bookingCycleId:null,bookingAllowRescheduling:true}),findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},

@@ -41,7 +41,7 @@ function withWindow(fn) {
 // ---------- (a) RSVP ----------
 function rsvpHarness(setRsvp, event = {}) {
   const h = hooks(), calls = []
-  const { RsvpControls } = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/workspace-api': { getCampusEventRsvp: async () => ({ going: false }), setCampusEventRsvp: input => { calls.push(input); return setRsvp(input) } } })
+  const { RsvpControls } = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/graduation': { isAlumniProfile: () => false }, '@/contexts/auth-context': { useAuth: () => ({ user: null }) }, '@/lib/workspace-api': { getCampusEventRsvp: async () => ({ going: false }), setCampusEventRsvp: input => { calls.push(input); return setRsvp(input) } } })
   const props = { event: { id: 'event', rsvpEnabled: true, date: new Date(Date.now() + 864e5).toISOString(), rsvpDeadline: null, capacity: null, rsvpCount: 3, ...event }, identity: 'student', onChanged: count => calls.push({ count }) }
   return { calls, render() { h.reset(); return RsvpControls(props) }, flush: h.flush }
 }
@@ -72,7 +72,7 @@ test('RSVP rolls back when the server refuses without throwing, and keeps the co
 
 test('cancelling from “Your RSVPs” removes the row at once and restores it in place on failure', () => withWindow(async () => {
   const h = hooks(), pending = deferred()
-  const { MyEventRsvps } = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/workspace-api': { getMyCampusEventRsvps: async () => [{ eventId: 'a', title: 'Alpha', available: true }, { eventId: 'b', title: 'Beta', available: true }], setCampusEventRsvp: () => pending.promise } }, '\nexport { MyEventRsvps as MyEventRsvps };')
+  const { MyEventRsvps } = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/graduation': { isAlumniProfile: () => false }, '@/contexts/auth-context': { useAuth: () => ({ user: null }) }, '@/lib/workspace-api': { getMyCampusEventRsvps: async () => [{ eventId: 'a', title: 'Alpha', available: true }, { eventId: 'b', title: 'Beta', available: true }], setCampusEventRsvp: () => pending.promise } }, '\nexport { MyEventRsvps as MyEventRsvps };')
   const render = () => { h.reset(); return MyEventRsvps({ onCancelled() {} }) }
   render(); await h.flush()
   const cancel = nodes(render()).filter(n => n.type === 'Button' && text(n.props.children).includes('Cancel'))[0]

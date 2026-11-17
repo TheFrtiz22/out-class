@@ -4,6 +4,8 @@ import { useState } from "react"
 import { Bookmark, BookmarkCheck } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { useCorkboard } from "@/contexts/corkboard-context"
+import { useAuth } from "@/contexts/auth-context"
+import { isAlumniProfile } from "@/lib/graduation"
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
 
@@ -14,6 +16,7 @@ import type { ViewId } from "@/lib/views"
  */
 export function CorkboardButton({ club, onNavigate, mode = "save", className = "w-full", variant = "outline" }: { club: DirectoryClub; onNavigate: (view: ViewId) => void; mode?: "save" | "follow"; className?: string; variant?: "outline" | "default" }) {
   const { items, authenticated, loading, pending, saveClub, refresh } = useCorkboard()
+  const { user } = useAuth()
   const [error, setError] = useState("")
   async function save() {
     setError("")
@@ -22,6 +25,8 @@ export function CorkboardButton({ club, onNavigate, mode = "save", className = "
   }
   if (club.source === "preview") return null
   const saved = items.some(item => item.club.id === club.id)
+  // Alumni accounts can't save clubs (the server refuses too); a club saved earlier can still be removed.
+  if (authenticated && !saved && isAlumniProfile(user?.profile)) return null
   const label = mode === "follow"
     ? saved ? "Following" : "Follow"
     : authenticated ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "Sign in to save"

@@ -75,6 +75,7 @@ async function resolveTarget(userId: string, target: ReportTarget): Promise<Reso
  * audit row; never notifies the reported person or club. Errors are returned, not thrown,
  * because production redacts thrown Server Action messages.
  */
+// Alumni may still report content: reporting abuse stays available to every signed-in account (lib/graduation.ts).
 export async function reportContent(input: unknown): Promise<Result> {
   const { user, impersonation } = await requireAuth();
   if (impersonation) return { ok: false, error: "Reports can’t be filed during a support session." };

@@ -11,11 +11,12 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { NativeSelect } from "@/components/ui/native-select"
 import "@/components/shell/responsive-workspace.css"
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ActionWorkflow } from "@/components/product/action-workflow";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { flushEditors } from "@/lib/autosave-navigation";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
-import { CalendarDays, MapPin, ArrowRight, Plus } from "@/components/icons";
+import { CalendarClock, CalendarDays, MapPin, ArrowRight, Plus } from "@/components/icons";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRevalidate } from "@/hooks/use-revalidate";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -40,6 +41,8 @@ import { Toggle } from "@/components/ui/toggle";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
+// The planner (heatmap and its reads) loads only when a leader opens it.
+const MeetingTimePlanner = dynamic(() => import("@/components/availability/meeting-time-planner").then(module => module.MeetingTimePlanner), { loading: () => <LoadingState label="Loading member availability…" layout="calendar" calendarView="week" /> });
 type Meeting = Awaited<ReturnType<typeof getMeeting>>;
 const localDate = (date: Date) => {
   const copy = new Date(date);
@@ -84,7 +87,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
         <Toggle label="Show past" checked={period === "past"} onCheckedChange={past => setPeriod(past ? "past" : "upcoming")} />
         <PillSelect label="Audience" prefix="Audience" size="compact" active={audience !== "ALL"} value={audience} onChange={value => setAudience(value as typeof audience)} options={[{ value: "ALL", label: "All" }, { value: "RECRUITMENT", label: "Recruitment / Interest" }, { value: "MEMBERS", label: "Members" }]} />
       </div>
-      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <div className="ms-auto"><MeetingCreateAction clubId={clubId} initialOpen={openCreate} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} /></div>}
+      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <div className="ms-auto flex flex-wrap items-center gap-2"><ActionWorkflow presentation="sheet" title="Find a meeting time" description="See when your active members are free, from the weekly availability they’ve saved." trigger={<><CalendarClock size={16} aria-hidden="true" />Find a meeting time</>}><MeetingTimePlanner clubId={clubId} /></ActionWorkflow><MeetingCreateAction clubId={clubId} initialOpen={openCreate} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} /></div>}
     </div>
 
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}

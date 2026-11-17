@@ -61,7 +61,7 @@ test('a member inside a club keeps More for the club pages; the personal rail ge
  const nav=require('./helpers/navigation-module.cjs');
  const member=nav.memberRailSections('club-1','Chess Club');
  assert.deepEqual(nav.bottomBarItems(member,'personal','club-home').map(item=>item.id),['student-dashboard','explore','inbox','calendar'],'four tabs, so More opens the sheet');
- assert.deepEqual(member.find(section=>section.id==='member-club').items.map(item=>item.id),['club-home','club-meetings','club-tasks'],'the sheet lists the club pages');
+ assert.deepEqual(member.find(section=>section.id==='member-club').items.map(item=>item.id),['club-home','club-meetings','club-tasks','club-alumni'],'the sheet lists the club pages');
  assert.ok(nav.railItems?nav.railItems(member).some(item=>item.id==='student-profile'):member.some(section=>section.items.some(item=>item.id==='student-profile')),'Profile stays in the sheet');
  assert.deepEqual(nav.bottomBarItems(nav.personalRailSections(),'personal','student-dashboard').map(item=>item.id),['student-dashboard','explore','inbox','calendar','student-profile']);
 });

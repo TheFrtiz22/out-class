@@ -16,7 +16,7 @@ function bookingApi(overrides = {}, status = "INTERVIEWING") {
   const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), endTime:new Date(Date.now()+21*60000),capacity: 1, bookings: [], ...overrides }
   let writes = 0
   const tx = { $queryRaw:async()=>[],clubMember:{findMany:async()=>[]}, application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { findMany: async () => [], create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
-  return { api: load('actions/scheduling.ts', { $transaction: async (fn, options) => { assert.equal(options.isolationLevel, 'ReadCommitted'); return fn(tx) } }), writes: () => writes }
+  return { api: load('actions/scheduling.ts', { studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, $transaction: async (fn, options) => { assert.equal(options.isolationLevel, 'ReadCommitted'); return fn(tx) } }), writes: () => writes }
 }
 test('booking rejects foreign clubs, past slots, and full slots without writes', async () => {
   for (const override of [{ clubId: 'foreign' }, { startTime: new Date(0) }, { bookings: [{ applicationId: 'other' }] }]) {

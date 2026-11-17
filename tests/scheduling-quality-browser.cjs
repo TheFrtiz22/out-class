@@ -1,5 +1,6 @@
 // Real local Supabase Auth, production Next server actions and PostgreSQL. No real recipients.
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), { randomUUID } = require('node:crypto')
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const { PrismaClient, Prisma } = require('@prisma/client'), { createServerClient } = require('@supabase/ssr'), { chromium, devices } = require('playwright')
 const { Actor, actionSourceMatches } = require('./helpers/onboarding-e2e.cjs')
 const { pickDate, pickedDate, long } = require('./helpers/date-picker-browser.cjs')
@@ -21,7 +22,7 @@ async function prepare(db, auth, config) {
       const email = `quality-audit.${key}.${randomUUID().slice(0, 8)}@virginia.edu`, password = 'Disposable-quality!' + randomUUID()
       const { data, error } = await auth.auth.admin.createUser({ email, password, email_confirm: true }); if (error) throw error
       config.actors[key] = { id: data.user.id, email, password }
-      await db.user.create({ data: { id: data.user.id, email, studentProfile: { create: { firstName: 'Audit', lastName: key, computingId: key + randomUUID().slice(0, 8), major: 'Economics', gradYear: 2028 } } } })
+      await db.user.create({ data: { id: data.user.id, email, studentProfile: { create: { firstName: 'Audit', lastName: key, computingId: key + randomUUID().slice(0, 8), major: 'Economics', gradYear: 2028 } } } }); await satisfyAvailabilityRequirement(db,data.user.id);
     }
     const member = await db.clubMember.upsert({ where: { userId_clubId: { userId: config.actors[key].id, clubId: club.id } }, create: { userId: config.actors[key].id, clubId: club.id, accessRole: role, isOwner: role === 'OWNER', interviewerEligible: eligible, permissions: role === 'OWNER' ? [] : ['applications.review', 'applicants.identify'] }, update: { accessRole: role, interviewerEligible: eligible } })
     await db.userAvailability.create({ data: { userId: config.actors[key].id, schedule: schedule(ranges) } })

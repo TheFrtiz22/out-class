@@ -22,6 +22,7 @@ import { notifyInterviewBookingChange } from "@/utils/interview-assignment-notif
 import { interviewBookingCoverage } from "@/utils/interview-booking"
 import { boundedParse } from "@/lib/bounded-input"
 import { ActionError, actionResult } from "@/lib/action-result";
+import { assertNotAlumni } from "@/utils/graduation";
 
 const uuid = z.string().uuid()
 const roomInclude = { slots: { include: { _count: { select: { bookings: true } } }, orderBy: { startTime: "asc" as const } } }
@@ -278,6 +279,8 @@ async function reserveInterviewCommand(raw: { applicationId: string; slotId: str
   const booking = await atomic(async tx => {
     const initial = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } });
     if (!initial) throw new ActionError("Application unavailable.");
+    // Alumni cannot book or move an interview (lib/graduation.ts); cancelling stays available.
+    await assertNotAlumni(tx, user.id, "book")
     // Refuse before taking any lock on other people or sessions; re-checked under lock below.
     if (initial.status !== "INTERVIEWING") throw new ActionError("An interview invitation is required to book a time.")
     // Club-wide scheduling changes (panels, rooms, booking policy, membership) lock the

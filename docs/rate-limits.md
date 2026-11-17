@@ -37,9 +37,11 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | Signup server action (`registerStudent`) | IP | 60 / h |
 | `POST /api/platform/elevation` | IP | 20 / 15 min |
 | `POST /api/platform/view-as` (not `end`) | IP | 60 / 10 min |
+| "Find a meeting time" roster read (`getMeetingTimeRoster`, workspace read `meetingPlannerRoster`) | account and club | 30 / min (answers 429) |
 | `/api/platform/view-as/blocked` (still answers 403 when over, without another audit row) | IP | 60 / min |
 | `POST /api/demo` | IP | 30 / 10 min |
 | `POST /api/email/unsubscribe` (RFC 8058 one-click; `GET` only shows a button) | IP | 300 / min (mail providers post from shared servers) |
+| Graduation confirmation and alumni details server actions (`confirmGraduation`, `saveAlumniDetails`) | account | 20 / 10 min |
 | Feedback screenshot upload URLs (`prepareFeedbackScreenshot`) | account | 10 / h (plus 10 platform reports / h per account in Postgres) |
 
 Turnstile, Supabase Auth limits and the existing per-feature quotas (invitations, task files, platform reports) still apply on top of these limits.

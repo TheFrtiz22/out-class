@@ -4,8 +4,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { sealAutosaveDraftsForSignOut } from "@/lib/autosave-store"
 
-/** Sign-out for the disabled-account notice: the same server then client sign-out as the account menu. */
-export function AccountUnavailableSignOut() {
+/** Sign-out for the disabled-account notice and the required availability step: the same server then client sign-out as the account menu. */
+export function AccountUnavailableSignOut({ variant }: { variant?: "ghost" } = {}) {
   const [state, setState] = useState<"idle" | "pending" | "failed">("idle")
   async function signOut() {
     setState("pending")
@@ -16,7 +16,7 @@ export function AccountUnavailableSignOut() {
     } catch { setState("failed") }
   }
   return <>
-    <Button type="button" className="min-h-12 px-[22px]" loading={state === "pending"} disabled={state === "pending"} onClick={() => void signOut()}>Sign out</Button>
+    <Button type="button" variant={variant} className="min-h-12 px-[22px]" loading={state === "pending"} disabled={state === "pending"} onClick={() => void signOut()}>Sign out</Button>
     {state === "failed" && <p role="alert" className="basis-full text-sm text-destructive">Could not sign out. Try again.</p>}
   </>
 }

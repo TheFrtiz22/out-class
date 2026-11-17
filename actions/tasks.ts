@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/utils/prisma";
+import { assertNotAlumni } from "@/utils/graduation";
 import { checkStoredTaskFile, taskFileCheckMessage } from "@/lib/task-file-content";
 import {
   requireAuth,
@@ -308,6 +309,8 @@ async function viewTaskCommand(assignmentId: string) {
 async function submitTaskCommand(input: z.infer<typeof submissionSchema>) {
   const data = boundedParse(submissionSchema, input);
   const { user, assignment } = await ownedAssignment(data.assignmentId);
+  // Alumni cannot submit tasks (lib/graduation.ts), including a graduate kept as owner.
+  await assertNotAlumni(prisma, user.id, "task");
   validateTaskSubmission(assignment.task.requirements, data);
   const files = await prisma.taskFile.findMany({
     where: { id: { in: data.fileIds }, assignmentId: assignment.id },
@@ -422,7 +425,8 @@ async function reviewTaskCommand(input: {
 }
 async function uploadTaskFileCommand(input: z.infer<typeof taskFileSchema>) {
   const data = taskFileSchema.parse(input);
-  const { assignment } = await ownedAssignment(data.assignmentId);
+  const { user, assignment } = await ownedAssignment(data.assignmentId);
+  await assertNotAlumni(prisma, user.id, "task");
   if (
     assignment.reviewedAt ||
     assignment.task.status === "DONE" ||

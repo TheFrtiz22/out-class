@@ -12,6 +12,8 @@ function harness(){
  const defaults={withoutVote:false,ballotState:'PENDING',openedAt:null,closedAt:null,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null};
  const tx={
   $queryRaw:async()=>[],
+  // Current students: utils/graduation.ts alumniRefusal reads only graduatedAt.
+  studentProfile:{findUnique:async()=>({graduatedAt:null})},
   // Only the setup edit's final renumber is modelled: VALUES (applicationId, position, status)... then sessionId.
   $executeRaw:async q=>{if(!q?.sql?.includes('UPDATE "VotingCandidate"'))return 0;const v=[...q.values],id=v.pop(),s=sess(id);for(let i=0;i<v.length;i+=3)Object.assign(s.candidates.find(c=>c.applicationId===v[i]),{position:v[i+1],expectedStatus:v[i+2]});unique(s);return v.length/3},club:{findUnique:async()=>({suspendedAt:null}),findUniqueOrThrow:async()=>({schoolId:uuid(91)})},
   user:{findUniqueOrThrow:async()=>({email:'synthetic@demo.invalid'}),findUnique:async({where})=>{const m=members.find(m=>m.userId===where.id);return m?{id:m.userId,disabledAt:m.user.disabledAt}:null}},
