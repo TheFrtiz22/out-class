@@ -36,6 +36,22 @@ test('My interviews shows Up next, Needs notes and Done once each, with one clea
  assert.equal(nodes(tree).filter(n=>n.type==='RoundSelect').length,0);
  assert.equal(nodes(tree).filter(n=>n.type==='SegmentedControl'&&n.props.label==='Show one day').length,1);
 });
+test('My interviews folds a day\'s unbooked times into one line under the booked interviews',async()=>{
+ const open=(id,start)=>row(id,start,{bookingId:null,applicationId:null,candidate:null});
+ const h=list([row('booked',soon+day),open('o1',soon+day+30*60000),open('o2',soon+day+60*60000),open('o3',soon+2*day)]);
+ h.render();await flush();const tree=h.render(),words=text(tree);
+ assert.doesNotMatch(words,/Open time slot/);
+ assert.match(words,/2 more open times nobody has booked yet/);
+ assert.match(words,/1 open time, none booked yet/);
+ assert.equal(words.split('Applicant booked').length-1,1);
+});
+test('a booked interview whose applicant is withheld stays a booked row, not an open time',async()=>{
+ const withheld=row('anon',soon+day,{applicationId:null,candidate:'Anonymous applicant',canOpen:false});
+ const h=list([withheld,row('o1',soon+day+30*60000,{bookingId:null,applicationId:null,candidate:null})]);
+ h.render();await flush();const words=text(h.render());
+ assert.match(words,/Anonymous applicant/);
+ assert.match(words,/1 more open time nobody has booked yet/);
+});
 test('My interviews keeps its own round filter and never goes blank because of Schedule\'s round',async()=>{
  // Schedule writes roundId; a round with none of this member's interviews must not hide them.
  window.location.search='?section=recruitment&tool=interviews&roundId=r1';
