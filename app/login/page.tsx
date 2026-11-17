@@ -3,6 +3,8 @@ import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { getAuthEntryAccount } from "@/utils/auth-entry"
 import { safeReturnPath, authEntryHref, authenticationError } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { returnClub } from "@/lib/auth-club-context"
+import { getPublicClubSeo } from "@/lib/public-club-seo"
 
 export const metadata = { title: "Sign in", robots: { index: false, follow: false } }
 
@@ -24,5 +26,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     }
     redirect(next === "/" || next === "/login" ? account.destination : next)
   }
-  return <LoginPageView initialError={authenticationError(params.error)} />
+  const target = returnClub(safeReturnPath(typeof params.next === "string" ? params.next : undefined))
+  const club = target ? await getPublicClubSeo(target.ref) : null
+  return <LoginPageView initialError={authenticationError(params.error)} club={club && target ? { name: club.name, follow: target.follow } : undefined} />
 }
