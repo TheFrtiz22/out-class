@@ -38,7 +38,7 @@ test('audience slide: long notes fit one screen at 1920×1080 and 1280×720; ope
    assert.match(text,/Echols Scholars Program/);
    assert.equal(await page.getByRole('button',{name:/Applicant details|Read full/}).count(),0);
    // Open: only the vote count; no breakdown, no result.
-   assert.match(await page.locator('.vr-aud-footer').innerText(),/Voting open · vote on your phone\s+0 of 2 in the room voted/);
+   assert.match(await page.locator('.vr-aud-footer').innerText(),/Voting open · vote on your phone\s+Pass means a final acceptance recommendation\.\s+0 of 2 in the room voted/);
    assert.equal(await page.getByRole('list',{name:'Closed ballot totals'}).count()+await page.locator('.vr-aud-result').count(),0);
    assert.equal(await page.locator('.vr-aud-footer [aria-live=polite]').count(),1);
    // Round tracker: four counts, the target marker, and the position.
