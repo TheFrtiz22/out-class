@@ -58,9 +58,11 @@ async function getInterviewApplicantPanelCommand(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { app } = await authorizeInterview(tx, data, user.id, "panel", "share");
-    const profile = await tx.studentProfile.findUnique({ where: { userId: app.studentId }, select: { firstName: true, lastName: true, headshotUrl: true, scholarStatus: true } });
+    const profile = await tx.studentProfile.findUnique({ where: { userId: app.studentId }, select: { firstName: true, lastName: true, headshotUrl: true, scholarStatus: true, resumeUrl: true } });
     const document = await tx.interviewResumeDocument.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: data.roundId } }, select: documentSelect });
-    return { profile: profile ? { ...profile, headshotUrl: profilePhotoSource(profile.headshotUrl, data) ?? null } : null, document };
+    // Whether a résumé can be shown at all, so the room shows "none on file" instead of an error and Retry.
+    const resumeOnFile = !!document || (app.roundId === data.roundId && !!profile?.resumeUrl && isPrivateResume(profile.resumeUrl) && profile.resumeUrl.startsWith(`${app.studentId}/`));
+    return { profile: profile ? { firstName: profile.firstName, lastName: profile.lastName, scholarStatus: profile.scholarStatus, headshotUrl: profilePhotoSource(profile.headshotUrl, data) ?? null } : null, document, resumeOnFile };
   }, interviewTransactionOptions);
 }
 /** Snapshot bytes once; neither profile replacement nor student object deletion changes this version. */
