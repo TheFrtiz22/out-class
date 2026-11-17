@@ -67,8 +67,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
 
   let hasProfile = false
   if (user) {
-    const account = await prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } })
-    if (account?.disabledAt) return <AccountUnavailable />
+    // Both reads are keyed only by the account, so they run together (signed-in visits to / redirect to
+    // /home right after them). The disabled check still decides first.
+    // allSettled: a failed profile read must never stop a disabled account from getting AccountUnavailable.
+    const [accountRead, profileRead] = await Promise.allSettled([
+      prisma.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } }),
+      prisma.studentProfile.findUnique({ where: { userId: user.id }, select: { id: true } }),
+    ])
+    if (accountRead.status === "rejected") throw accountRead.reason
+    if (accountRead.value?.disabledAt) return <AccountUnavailable />
+    if (profileRead.status === "rejected") throw profileRead.reason
+    const profile = profileRead.value
     // Old leader views on the homepage open the matching club workspace section. The club is the
     // first active, unsuspended membership with workspace access (same rule as sign-in); without
     // one the visitor gets Home, as the student view replaced these before.
@@ -79,11 +88,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       const focus = { applicantId: typeof params.applicantId === "string" ? params.applicantId : null, roundId: typeof params.roundId === "string" ? params.roundId : null }
       redirect(club ? leaderWorkspaceHref(requestedView, club.clubId, focus) : STUDENT_HOME)
     }
-    // Check if the user has completed onboarding (has a StudentProfile)
-    const profile = await prisma.studentProfile.findUnique({
-      where: { userId: user.id },
-      select: { id: true },
-    })
+    // Onboarding is complete when the account has a StudentProfile (read above).
     hasProfile = !!profile
     // Signed-in visitors skip the marketing page (after the disabled check, before any dashboard
     // read). Without a profile, `/?next=…` is the onboarding hand-off (requireCompletedStudentProfile):

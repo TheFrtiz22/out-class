@@ -69,11 +69,14 @@ const OVERVIEW_SCOPES = ["overview", "tasks", "meetings", "recruiting"];
 
 export function ClubWorkspace({
   clubId,
+  initialOverview = null,
 }: {
   clubId: string;
   section: string;
   taskView?: string;
   tool?: string;
+  /** Dashboard read on the server for this request (app/(workspace)/club/[clubId]/workspace/page.tsx). */
+  initialOverview?: { view: "club" | "recruiting"; userId: string; value: Overview } | null;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -132,7 +135,10 @@ export function ClubWorkspace({
   // Each dashboard reads only what it shows: Club home the club view, the Recruiting Overview the recruiting view.
   // Both stay cached for this mounted workspace, so switching back shows the last read while it refreshes.
   const overviewView = section === "overview" ? "club" : "recruiting";
-  const [cache, setData] = useState<Record<string, { scope: string; value: Overview }>>({}),
+  // A server-read dashboard is shown only for the account it was read for, outside Demo Mode, and under the
+  // scope of this first render; any later account, grant or privacy change replaces it like any other read.
+  const seed = initialOverview && !demo.isDemoEnabled && user?.id === initialOverview.userId && initialOverview.value.club.id === clubId ? initialOverview : null;
+  const [cache, setData] = useState<Record<string, { scope: string; value: Overview }>>(() => seed ? { [seed.view]: { scope, value: seed.value } } : {}),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0),
     [overviewPending, setOverviewPending] = useState(false);
@@ -147,6 +153,9 @@ export function ClubWorkspace({
   }, [clubId, needsSelection]);
   useEffect(() => {
     if (!needsOverview || !demo.ready || loading || !canLoadWorkspace || needsSelection) return;
+    // With a server-read dashboard this is a background refresh (stale-while-revalidate): the page keeps showing
+    // it, marked busy for assistive technology only, so a Back-button restore of an older payload is brought up
+    // to date. A refused read still clears it, as for any refresh, because membership may have changed.
     let current = true;
     setError("");
     setOverviewPending(true);
