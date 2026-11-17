@@ -125,6 +125,7 @@ model Experience {
   title            String
   subtitle         String
   period           String
+  @@index([studentProfileId])
 }
 
 // ==========================================
@@ -190,6 +191,7 @@ model Club {
   conversations ClubConversation[]
   questions      ApplicationQuestion[]
   @@unique([id, schoolId])
+  @@index([schoolId])
 }
 
 model ClubMember {
@@ -283,6 +285,7 @@ model PipelineRound {
   @@index([clubId], map: "PipelineRound_clubId_idx")
   @@unique([id, clubId])
   @@index([clubId, archivedAt, order])
+  @@index([bookingCycleId, clubId])
 }
 
 model ApplicationQuestion {
@@ -351,6 +354,7 @@ model Application {
   @@index([roundId], map: "Application_roundId_idx")
   @@index([studentId], map: "Application_studentId_idx")
   @@index([clubId, status, roundId])
+  @@index([recruitmentCycleId, clubId])
 }
 
 enum AppStatus {
@@ -372,6 +376,7 @@ model ApplicationAnswer {
   response      String // Text or S3 URL for files
 
   @@unique([applicationId, questionId])
+  @@index([questionId])
 }
 
 model Evaluation {
@@ -393,6 +398,8 @@ model Evaluation {
   createdAt DateTime @default(now())
 
   @@unique([applicationId, interviewerId, roundId])
+  @@index([interviewerId])
+  @@index([roundId])
 }
 
 // ==========================================
@@ -500,6 +507,7 @@ model InterviewRoundParticipation {
   @@unique([memberId, roundId])
   @@index([clubId, roundId, confirmedAt])
   @@index([roundId])
+  @@index([memberId, clubId])
 }
 
 // This document is never an active panel assignment or an applicant booking.
@@ -526,6 +534,8 @@ model InterviewPanelProposal {
 
   @@index([clubId, updatedAt])
   @@unique([roundId, clubId])
+  @@index([createdBy])
+  @@index([modifiedBy])
 }
 
 model InterviewPanelScheduleVersion {
@@ -550,6 +560,7 @@ model InterviewPanelScheduleVersion {
   slots InterviewSlot[]
   @@unique([roundId, clubId, version])
   @@index([clubId, publishedAt])
+  @@index([publishedBy])
 }
 
 model InterviewRoom {
@@ -579,6 +590,8 @@ model InterviewRoom {
 
   @@index([approvedPanelMemberIds], type: Gin, map: "InterviewRoom_approved_members_gin")
   @@index([clubId, roundId])
+  @@index([panelApprovedBy])
+  @@index([roundId])
 }
 
 model InterviewSlot {
@@ -623,6 +636,7 @@ model InterviewBooking {
 
   @@unique([slotId, applicationId])
   @@unique([applicationId, roundId])
+  @@index([roundId])
 }
 
 // A president's attestation for one existing session/member, never a change to personal availability.
@@ -646,6 +660,9 @@ model InterviewAvailabilityOverride {
   createdAt DateTime @default(now())
   revokedAt DateTime?
   @@index([clubId, roundId, slotId, revokedAt], map: "InterviewAvailabilityOverride_clubId_roundId_slotId_revokedAt_i")
+  @@index([createdBy])
+  @@index([memberId, clubId])
+  @@index([slotId, clubId])
 }
 
 model InterviewRecord {
@@ -670,6 +687,8 @@ model InterviewRecord {
 
   @@index([evaluationId])
   @@unique([applicationId, interviewerId, roundId])
+  @@index([interviewerId])
+  @@index([roundId])
 }
 
 // Server-only collaboration metadata. Private reviews remain in InterviewRecord.
@@ -686,6 +705,8 @@ model InterviewCollaboration {
   revision Int @default(0)
   @@unique([applicationId, roundId, roomKey])
   @@index([clubId, roundId])
+  @@index([roundId])
+  @@index([selectedBy])
 }
 
 model InterviewTimer {
@@ -699,6 +720,7 @@ model InterviewTimer {
   lastRequestId String?
   updatedBy String?
   updatedAt DateTime @default(now())
+  @@index([updatedBy])
 }
 
 model InterviewPresence {
@@ -722,6 +744,9 @@ model InterviewMove {
   confirmedAt DateTime?
   expiresAt DateTime
   @@index([memberId, confirmedAt])
+  @@index([acceptedInvitationId])
+  @@index([destinationId])
+  @@index([sourceId])
 }
 
 model InterviewInvitation {
@@ -799,6 +824,11 @@ model ClubInvitation {
   @@index([schoolIdentityId, status])
   @@index([clubId, status, createdAt])
   @@unique([id, clubId])
+  @@index([claimedUserId])
+  @@index([clubId, schoolId])
+  @@index([invitedBy])
+  @@index([schoolId])
+  @@index([schoolIdentityId, schoolId])
 }
 
 model ClubClaim {
@@ -812,6 +842,7 @@ model ClubClaim {
   createdAt   DateTime @default(now())
 
   @@index([clubId, status])
+  @@index([userId])
 }
 
 model ClubTask {
@@ -836,6 +867,8 @@ model ClubTask {
   createdAt    DateTime         @default(now())
 
   @@index([clubId, status])
+  @@index([assigneeId])
+  @@index([projectId])
 }
 
 model PlatformContent {
@@ -881,6 +914,7 @@ model TaskAssignment {
   @@unique([taskId, memberId])
   @@index([memberId])
   @@index([taskId, submittedAt, reviewedAt], map: "TaskAssignment_review_queue_idx")
+  @@index([userId])
 }
 
 model TaskFile {
@@ -935,6 +969,7 @@ model RecruitingRuleFlag {
   flaggedAt     DateTime       @default(now())
 
   @@id([roundId, applicationId])
+  @@index([applicationId])
 }
 
 // Separate progress for each experience; server-only, never browser-writable.
@@ -1020,6 +1055,7 @@ model RosterImport {
   @@unique([clubId, idempotencyKey])
   @@unique([id, clubId])
   @@index([clubId, createdAt])
+  @@index([uploadedById])
 }
 
 model RosterImportRow {
@@ -1045,6 +1081,10 @@ model RosterImportRow {
   updatedAt            DateTime @default(now()) @updatedAt
   @@unique([importId, rowNumber])
   @@index([invitationId])
+  @@index([importId, clubId])
+  @@index([invitationId, clubId])
+  @@index([matchedUserId])
+  @@index([schoolIdentityId])
 }
 
 model InvitationDelivery {
@@ -1162,6 +1202,9 @@ model ApplicantObservation {
 
   @@index([applicationId, createdAt])
   @@index([authorId])
+  @@index([clubId])
+  @@index([cycleId])
+  @@index([roundId])
 }
 
 model VotingObservationReference {
@@ -1175,6 +1218,7 @@ model VotingObservationReference {
   createdAt DateTime @default(now())
   @@id([sessionId, observationId])
   @@index([sessionId, applicationId])
+  @@index([observationId])
 }
 
 // Club default (roundId null) or per-round override for live voting rules.
@@ -1187,6 +1231,7 @@ model VotingRuleDefault {
   revision Int @default(1)
   updatedBy String
   updatedAt DateTime @default(now())
+  @@index([roundId])
 }
 
 // Rule and eligible electorate captured for one ballot instance; insert-only.
@@ -1244,6 +1289,7 @@ model VotingHandRaise {
   clearedBy String?
   updatedAt DateTime @default(now())
   @@id([sessionId, passNumber, applicationId, memberId])
+  @@index([sessionId, memberId])
 }
 
 // Durable decisions are separate from published application statuses.
@@ -1282,6 +1328,8 @@ model VotingSession {
   candidates VotingCandidate[]
   passes VotingPass[]
   @@index([clubId, roundId, createdAt])
+  @@index([cycleId, clubId])
+  @@index([roundId])
 }
 model VotingParticipant {
   sessionId String
@@ -1292,6 +1340,7 @@ model VotingParticipant {
   ballots VotingBallot[]
   handRaises VotingHandRaise[]
   @@id([sessionId, memberId])
+  @@index([memberId])
 }
 model VotingCandidate {
   sessionId String
@@ -1305,6 +1354,7 @@ model VotingCandidate {
   slidePreparation VotingSlidePreparation?
   @@id([sessionId, applicationId])
   @@unique([sessionId, position])
+  @@index([applicationId])
 }
 model VotingPass {
   sessionId String
@@ -1339,6 +1389,8 @@ model VotingPassCandidate {
   slideLock VotingSlideLock?
   @@id([sessionId, passNumber, applicationId])
   @@unique([sessionId, passNumber, position])
+  @@index([confirmedBy])
+  @@index([sessionId, applicationId])
 }
 model VotingBallot {
   revision Int @default(0)
@@ -1353,6 +1405,7 @@ model VotingBallot {
   decision String
   createdAt DateTime @default(now())
   @@unique([sessionId, passNumber, applicationId, memberId])
+  @@index([sessionId, memberId])
 }
 
 // Personal revisit-later links to the existing club directory, independent of subscriptions/applications.
@@ -1385,6 +1438,8 @@ model InterviewPanelAssignment {
   @@index([bookingId])
   @@unique([applicationId, roundId, memberId])
   @@index([memberId, roundId, revokedAt])
+  @@index([grantedBy])
+  @@index([roundId])
 }
 model InterviewResumeDocument {
   id String @id @default(uuid())
@@ -1401,6 +1456,7 @@ model InterviewResumeDocument {
   createdAt DateTime @default(now())
   annotations InterviewResumeAnnotation[]
   @@unique([applicationId, roundId])
+  @@index([roundId])
 }
 model InterviewResumeAnnotation {
   id String @id @default(uuid())
@@ -1417,6 +1473,7 @@ model InterviewResumeAnnotation {
   deletedAt DateTime?
   history InterviewAnnotationRevision[]
   @@index([documentId, createdAt])
+  @@index([authorId])
 }
 model InterviewAnnotationRevision {
   id String @id @default(uuid())
@@ -1428,6 +1485,7 @@ model InterviewAnnotationRevision {
   content Json
   createdAt DateTime @default(now())
   @@unique([annotationId, revision])
+  @@index([actorId])
 }
 
 model EventPublication {
@@ -1536,6 +1594,7 @@ model PlatformReport {
   updatedAt DateTime @updatedAt
   @@index([status, createdAt])
   @@index([kind, targetId])
+  @@index([reporterId])
 }
 
 // Public interest only. Never creates a School, identity, or access grant.
@@ -1559,6 +1618,7 @@ model SchoolRequest {
   @@index([status, createdAt])
   @@index([email, createdAt])
   @@index([createdAt])
+  @@index([reviewedBy])
 }
 
 // Durable club communications. Recipient notification rows are the immutable
@@ -1581,6 +1641,7 @@ model ClubAnnouncement {
 
   @@index([clubId, publishedAt])
   @@unique([clubId, requestKey])
+  @@index([authorId])
 }
 
 // The stable inbox record remains after users leave a club. Access always
@@ -1610,6 +1671,7 @@ model UserNotification {
   @@index([userId, readAt])
   @@index([announcementId])
   @@index([userId, updatedAt])
+  @@index([clubId])
 }
 
 // This table controls OPTIONAL email only. Security/identity emails are not
@@ -1760,6 +1822,8 @@ model RecipientGroupEntry {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([groupId, userId])
   @@index([clubId, userId])
+  @@index([groupId, clubId])
+  @@index([userId])
 }
 
 // Server-only publication intent. No notification exists before publication.
@@ -1797,6 +1861,7 @@ model ScheduledCommunication {
   @@index([status, scheduledAt])
   @@index([clubId, createdAt])
   @@index([clubId, updatedAt])
+  @@index([senderId])
 }
 
 model RecruitmentCycle {
@@ -1824,6 +1889,7 @@ model VotingRoomCommand {
   result Json
   createdAt DateTime @default(now())
   @@id([sessionId, requestId])
+  @@index([actorId])
 }
 
 // Private working copies; consequential domain actions remain separate.
@@ -1857,6 +1923,7 @@ model ApplicantRecusal {
 
   @@unique([applicationId, memberId])
   @@index([clubId, memberId])
+  @@index([applicationId, clubId])
 }
 
 // A decision recorded during applicant review but not yet sent. Application status,
@@ -1879,6 +1946,7 @@ model StagedDecision {
 
   @@unique([applicationId, clubId])
   @@index([clubId])
+  @@index([stagedById, clubId])
 }
 
 // Private calendar subscription (webcal). Only a SHA-256 hash of the secret is
