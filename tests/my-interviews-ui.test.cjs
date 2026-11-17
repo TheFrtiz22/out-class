@@ -59,3 +59,10 @@ test('My interviews folds a day\'s unbooked times into one line under the booked
  assert.match(words,/1 open time, none booked yet/);
  assert.equal(words.split('Applicant booked').length-1,1);
 });
+test('a booked interview whose applicant is withheld stays a booked row, not an open time',async()=>{
+ const withheld=row('anon',soon+day,{applicationId:null,candidate:'Anonymous applicant',canOpen:false});
+ const h=list([withheld,row('o1',soon+day+30*60000,{bookingId:null,applicationId:null,candidate:null})]);
+ h.render();await flush();const words=text(h.render());
+ assert.match(words,/Anonymous applicant/);
+ assert.match(words,/1 more open time nobody has booked yet/);
+});
