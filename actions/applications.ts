@@ -8,6 +8,7 @@ import { publicMeetingVisibility } from "@/lib/campus-events";
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement } from "@/lib/test-scores"
 import { ALUMNI_APPLY_MESSAGE, isAlumniProfile } from "@/lib/graduation"
+import { assertNotAlumni } from "@/utils/graduation"
 import { activeMemberWhere } from "@/lib/permissions"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
@@ -30,6 +31,8 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     // (studentId, clubId) application.
     await assertClubOperational(tx, parsed.clubId)
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
+    // Alumni keep their history but cannot apply: no new drafts, edits or submissions (lib/graduation.ts).
+    await assertNotAlumni(tx, user.id, "apply")
     const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
     if (!configuration || submit && !applicationAvailability(configuration)) throw new ActionError("Applications are closed for this club. Your saved draft is retained.")
     if (submit) {

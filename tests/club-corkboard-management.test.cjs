@@ -24,7 +24,7 @@ function harness() {
   };
   const api=unwrapActions(load('actions/campus-events.ts',{
     '@/utils/prisma':{prisma:{$transaction:async fn=>fn(tx)}},
-    '@/utils/auth':{requireClubPermission:async()=>({user:{id:'leader'}})},
+    '@/utils/graduation':{alumniRefusal:async()=>null,assertNotAlumni:async()=>{}},'@/utils/auth':{requireClubPermission:async()=>({user:{id:'leader'}})},
     '@/utils/platform-admin':{},'next/cache':{},'@/utils/club-write-transaction':{},
   }));
   return {state,api};

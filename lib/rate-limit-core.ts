@@ -46,6 +46,8 @@ export const RATE_LIMITS = {
   // RFC 8058 one-click POSTs come from mail providers' shared servers, so this only bounds a flood of writes;
   // the signed token, not the limit, is what stops forged requests.
   emailUnsubscribe: { name: "email-unsubscribe", limit: 300, windowMs: minute },
+  // Graduation confirmation and later alumni employer edits (actions/graduation.ts), per account.
+  alumniDetails: { name: "alumni-details", limit: 20, windowMs: 10 * minute },
 } as const satisfies Record<string, RateLimitPolicy>
 
 export const RATE_LIMIT_MESSAGE = "Too many requests. Please wait a moment and try again."

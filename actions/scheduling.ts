@@ -6,6 +6,7 @@ import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { Prisma } from "@prisma/client";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { prisma } from "@/utils/prisma";
+import { assertNotAlumni } from "@/utils/graduation";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -57,6 +58,8 @@ const bookSlotSchema = z.object({
 export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
   const { user } = await requireAuth();
   const parsed = bookSlotSchema.parse(data);
+  // Alumni cannot book interviews (lib/graduation.ts).
+  await assertNotAlumni(prisma, user.id, "book");
 
   // Row locks (club, student, session) prevent concurrent requests from overbooking a slot.
   let booking;

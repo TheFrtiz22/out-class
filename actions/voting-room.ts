@@ -22,6 +22,8 @@ import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} 
 import {describeVotingRules,ruleResultSummary} from '@/lib/voting-rules';
 import {lockPresentedSlide,presentedSlideHighlights} from '@/utils/voting-slide-preparation';
 import { boundedParse } from "@/lib/bounded-input";
+import { alumniRefusal } from "@/utils/graduation";
+import { ALUMNI_REFUSED } from "@/lib/graduation";
 
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
@@ -185,6 +187,9 @@ export async function castLiveVotingBallot(input:unknown) {
     // Ballots in one session still serialize on the session row (loadVotingRoom write
     // lock); the shared club lock lets voters' authorization run concurrently.
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"],{sharedClubLock:true});
+    // Alumni cannot vote (lib/graduation.ts), even a graduate whose ownership the graduation job retained.
+    const alumni=await alumniRefusal(tx,user.id,"vote");
+    if(alumni)throw new RoomConflict(ALUMNI_REFUSED,alumni);
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
     if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Only voters in this session can do that.");
     const fingerprint=roomFingerprint(d),key={sessionId:s.id,requestId:d.requestId};

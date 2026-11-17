@@ -56,6 +56,8 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
     item("calendar", "Calendar"),
     item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
+    // Every current member sees the club's alumni (actions/club-alumni.ts checks membership again).
+    item("alumni", "Alumni"),
     ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
 }
 

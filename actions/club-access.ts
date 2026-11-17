@@ -3,6 +3,7 @@ import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { respondToRecruitmentOffer } from "@/utils/recruitment-offers";
+import { assertNotAlumni } from "@/utils/graduation";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 import { rosterMembers } from "@/lib/profile-field-visibility";
 
@@ -137,6 +138,8 @@ async function acceptClubInvitationCommand(invitationId: string) {
       where: { userId_clubId: { userId: user.id, clubId: invitation.clubId } },
     });
     if (existing && !isActiveMembership(existing)) throw new ActionError("Membership is inactive. Request a new identity invitation.");
+    // Alumni cannot join clubs or take club roles (lib/graduation.ts).
+    await assertNotAlumni(tx, user.id, "join");
     // Accepting an invite adds access; it never strips existing ownership or capabilities.
     const permissions = Array.from(
       new Set([...(existing?.permissions || []), ...invitation.permissions]),

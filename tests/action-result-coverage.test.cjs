@@ -10,7 +10,7 @@ const root = path.join(__dirname, '..');
 // Shared guards used by nearly every action. Their refusals are safe, but an
 // unwrapped action that hits one shows the screen's fallback, which is the
 // accepted behaviour until that action is converted.
-const sharedGuards = new Set(['requireAuth', 'requireClubPermission', 'assertClubOperational', 'lockOperationalClub', 'authorizeClubTransaction']);
+const sharedGuards = new Set(['requireAuth', 'requireClubPermission', 'assertClubOperational', 'lockOperationalClub', 'authorizeClubTransaction', 'assertGraduateMayJudge']);
 
 // Reviewed exclusions: exported actions that can throw ActionError but are
 // intentionally not wrapped. Reads surface failures as the screen's load
@@ -29,6 +29,7 @@ const exclusions = new Map([
   ['actions/crm.ts#getClubPipelineSelection', 'read through /api/workspace'],
   ['actions/crm.ts#getRankedReviewRound', 'read through /api/workspace'],
   ['actions/interview-rooms.ts#getApplicantSchedule', 'read; failures show the load fallback'],
+  ['actions/scheduling.ts#bookInterviewSlot', 'legacy endpoint with no screen caller; throws plain errors for old clients, and its alumni refusal is a refusal either way'],
   ['actions/organization-members.ts#getOrganizationMemberManagement', 'read through /api/workspace'],
   ['actions/profile.ts#updateStudentProfileSection', 'already returns { error }; the graduation-year support refusal is returned as that message'],
   ['actions/resume-import.ts#confirmResumeImport', 'already returns { ok, code, message }; the graduation-year support refusal is returned as FORBIDDEN'],

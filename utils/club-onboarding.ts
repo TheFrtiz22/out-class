@@ -1,4 +1,5 @@
 import { ActionError } from "@/lib/action-result";
+import { assertNotAlumni } from "@/utils/graduation";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod";
@@ -43,6 +44,8 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
         throw new ActionError("The inviter can no longer grant this access.");
       }
     }
+    // Alumni cannot join clubs or take club roles (lib/graduation.ts).
+    await assertNotAlumni(tx, account.user.id, "join");
     const where = { userId_clubId: { userId: account.user.id, clubId: invitation.clubId } };
     const existing = await tx.clubMember.findUnique({ where });
     // Removed members may rejoin only through a new, currently authorized invitation.

@@ -6,6 +6,7 @@ export const clubSections = [
   "members",
   "calendar",
   "tasks",
+  "alumni",
   "recruitment",
   "settings",
 ] as const;
@@ -48,6 +49,7 @@ export const clubSectionLabels: Record<ClubSection, string> = {
   members: "Members",
   calendar: "Calendar",
   tasks: "Tasks",
+  alumni: "Alumni",
   recruitment: "Recruitment",
   settings: "Settings",
 };

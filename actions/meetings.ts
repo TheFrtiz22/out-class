@@ -11,6 +11,7 @@ import {
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
+import { assertNotAlumni } from "@/utils/graduation";
 import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import {
   meetingInputSchema,
@@ -168,6 +169,8 @@ async function checkInMeetingCommand(
       "Invalid check-in code. Scan the current QR code at the meeting.",
     );
   const { user } = await requireAuth();
+  // Alumni cannot check in (lib/graduation.ts); their past attendance stays in their history.
+  await assertNotAlumni(prisma, user.id, "checkIn");
   // Callers who may not check in to this meeting get the same result as for a
   // meeting that does not exist; club state is reported only to eligible callers.
   const unavailable = () =>
