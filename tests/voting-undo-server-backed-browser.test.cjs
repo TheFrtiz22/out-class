@@ -41,7 +41,7 @@ test('server-backed Undo across refreshes and leader devices; hidden after newer
   // Once the snapshot arrives, Undo is hidden on every leader device.
   f.delay('getLiveVotingRoom',0);
   for(const p of [a,b]){await refresh(p);await undo(p).waitFor({state:'detached',timeout:40000});}
-  await a.reload();await a.getByRole('button',{name:'Close voting',exact:true}).waitFor();assert.equal(await undo(a).count(),0);
+  await a.reload();await a.getByRole('button',{name:'Close vote',exact:true}).waitFor();assert.equal(await undo(a).count(),0);
   assert.deepEqual(errors,[]);
  }finally{for(const c of contexts)await c.close();await browser.close();await f.close();}
 });

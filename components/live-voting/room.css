@@ -158,7 +158,7 @@
 .vr-setup-people{max-height:none;padding-top:8px;border-top:1px solid var(--border)}
 .vr-setup .vr-setup-people label{min-height:44px;font-weight:var(--oc-weight-regular)}
 /* Step 3: switches beside the real room slide. The switch and link pills widen their tap areas past their edges, hence the end padding on these rows. */
-.vr-setup-split{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:32px;align-items:start;padding:24px 0;border-bottom:1px solid var(--border)}
+.vr-setup-split{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:48px;align-items:start;padding:24px 0;border-bottom:1px solid var(--border)}
 .vr-setup-switches{display:flex;flex-direction:column;gap:16px;margin:14px 0 12px}
 .vr-setup-group{margin-bottom:2px;color:var(--muted-foreground);font-size:var(--oc-text-caption);font-weight:var(--oc-weight-medium);letter-spacing:.05em;text-transform:uppercase}
 .vr-setup .vr-setup-switch{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;padding-inline-end:.5rem;border-bottom:1px solid var(--border);font-weight:var(--oc-weight-regular);cursor:pointer}
@@ -397,3 +397,5 @@ p.vr-aud-title{display:flex;align-items:baseline;gap:.8em;margin:0}
 @media(max-width:1023px){.vr-lead-side{padding-inline:10px}}
 .vr-lead-queue li{margin-inline:-10px}
 .vr-aud-result:not([data-outcome]) .vr-aud-word{font-size:calc(3em * (.5 + .5 * var(--vr-fit)))}
+.vr-vote-left{display:flex;flex-direction:column;gap:.2em;min-width:0}
+.vr-vote-status .vr-pass-meaning{margin:0;font-size:.7em;color:var(--muted-foreground)}

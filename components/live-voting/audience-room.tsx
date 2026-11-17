@@ -33,7 +33,8 @@ export function VoteResult({room,entry,outcome,variant="slide"}:{room:RoomSnapsh
  const decided=outcome?.outcome??(entry.ballotState==="CONFIRMED"&&entry.outcome!=="UNREVIEWED"?entry.outcome as keyof typeof resultWords:room.ruleResult?.outcome??null);
  const cast=totals.ACCEPT+totals.HOLD+totals.REJECT,max=Math.max(cast,1);
  const rows=[["Pass","ACCEPT",totals.ACCEPT],["Hold","HOLD",totals.HOLD],["Do not pass","REJECT",totals.REJECT]] as const;
- const rule=room.rule?.description;
+ // The short, plain rule line: the rule's own result once it has counted, otherwise who decides.
+ const rule=room.ruleResult?.summary??(room.rule?.mode==="THRESHOLD"?null:"the leader confirms each outcome");
  return <div className="vr-aud-result" data-variant={variant} data-outcome={decided??undefined} aria-live="polite">
   <div className="vr-aud-result-head">
    <p className="vr-aud-kicker">Result</p>
@@ -54,7 +55,8 @@ export function VoteStatus({room,entry,next,variant}:{room:RoomSnapshot;entry:En
  const label=room.status==="COMPLETED"?"Voting ended":room.status==="DRAFT"?"Voting has not started":room.status==="PAUSED"?"Waiting for the leader":open&&room.votingPaused?"Voting paused":open?"Voting open":entry?.ballotState==="CLOSED"||entry?.ballotState==="CONFIRMED"?"Vote closed":"Waiting for voting";
  const detail=open&&!room.votingPaused?(variant==="slide"?"vote on your phone":""):label==="Vote closed"&&next?`next: ${next}`:"";
  return <div className="vr-vote-status" data-variant={variant} data-state={open?"open":"waiting"}>
-  <p className="vr-vote-state"><strong>{label}</strong>{detail&&<span> · {detail}</span>}</p>
+  <div className="vr-vote-left"><p className="vr-vote-state"><strong>{label}</strong>{detail&&<span> · {detail}</span>}</p>
+  {variant==="slide"&&open&&<p className="vr-pass-meaning" data-pass-meaning={room.targetSummary.pass.kind}>{room.targetSummary.pass.label}</p>}</div>
   {open?<div className="vr-vote-count"><span className="vr-vote-meter" aria-hidden="true"><span style={{width:`${share}%`}}/></span><p aria-live="polite"><strong>{voted}</strong> of {eligible} in the room voted</p></div>
    :<p className="vr-vote-position">{applicantPosition(room)}</p>}
  </div>;

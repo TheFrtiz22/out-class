@@ -15,15 +15,17 @@ test('phase-focused leader/member controls retain safe saves, secondary actions,
   await leader.getByRole('button',{name:'Open voting',exact:true}).waitFor();
   assert.equal(await leader.getByRole('button',{name:'End voting',exact:true}).isVisible(),false);
   assert.equal(await leader.getByRole('textbox',{name:'Reason for deciding without a vote'}).isVisible(),false);
-  assert.equal(await leader.getByRole('link',{name:'My voting device',exact:true}).isVisible(),false);
-  await leader.getByText('Session options',{exact:true}).click();await leader.getByRole('link',{name:'My voting device',exact:true}).waitFor();
-  await leader.keyboard.press('Escape');await leader.getByRole('link',{name:'My voting device',exact:true}).waitFor({state:'hidden'});assert.equal(await leader.getByRole('button',{name:'Session options',exact:true}).getAttribute('aria-expanded'),'false');
-  await leader.getByRole('button',{name:'Session options',exact:true}).click();await leader.getByRole('button',{name:'Join QR',exact:true}).click();await leader.getByRole('dialog',{name:'Join live voting',exact:true}).waitFor();await leader.keyboard.press('Escape');await leader.getByRole('dialog',{name:'Join live voting',exact:true}).waitFor({state:'hidden'});await leader.waitForFunction(()=>['Join QR','Session options'].includes(document.activeElement?.textContent?.trim()));
-  if(await leader.getByRole('button',{name:'Session options',exact:true}).getAttribute('aria-expanded')==='true')await leader.keyboard.press('Escape');
+  // The everyday links sit in the toolbar; rarely used ones are under More.
+  await leader.getByRole('link',{name:'Vote on my phone',exact:true}).waitFor();await leader.getByRole('link',{name:'Show on projector',exact:true}).waitFor();
+  assert.equal(await leader.getByRole('link',{name:'Prepare slides',exact:true}).isVisible(),false);
+  await leader.getByRole('button',{name:'More',exact:true}).click();await leader.getByRole('link',{name:'Prepare slides',exact:true}).waitFor();
+  await leader.keyboard.press('Escape');await leader.getByRole('link',{name:'Prepare slides',exact:true}).waitFor({state:'hidden'});assert.equal(await leader.getByRole('button',{name:'More',exact:true}).getAttribute('aria-expanded'),'false');
+  await leader.getByRole('button',{name:'More',exact:true}).click();await leader.getByRole('button',{name:'Join QR',exact:true}).click();await leader.getByRole('dialog',{name:'Join live voting',exact:true}).waitFor();await leader.keyboard.press('Escape');await leader.getByRole('dialog',{name:'Join live voting',exact:true}).waitFor({state:'hidden'});await leader.waitForFunction(()=>['Join QR','More'].includes(document.activeElement?.textContent?.trim()));
+  if(await leader.getByRole('button',{name:'More',exact:true}).getAttribute('aria-expanded')==='true')await leader.keyboard.press('Escape');
   await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('textbox',{name:'Reason for deciding without a vote'}).waitFor();
   await leader.getByText('More actions',{exact:true}).click();
   await leader.getByRole('button',{name:'Open voting',exact:true}).focus();await leader.keyboard.press('Enter');
-  await leader.getByRole('button',{name:'Close voting',exact:true}).waitFor();
+  await leader.getByRole('button',{name:'Close vote',exact:true}).waitFor();
   await member.goto(`${base}&view=member&actor=member`);await member.getByRole('button',{name:'Join session',exact:true}).click();
   const pass=member.getByRole('button',{name:'Pass',exact:true});await pass.waitFor();await member.waitForFunction(()=>!document.querySelector('[aria-label="Your ballot"] button')?.disabled);
   const gate=new Promise(r=>release=r);let held=false;
@@ -36,7 +38,7 @@ test('phase-focused leader/member controls retain safe saves, secondary actions,
   await leader.setViewportSize({width:390,height:844});await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('button',{name:'End voting',exact:true}).waitFor();
   assert.ok(await leader.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await leader.getByText('More actions',{exact:true}).click();
   if(out)await leader.screenshot({path:path.join(out,'leader-phone.png'),fullPage:true});
-  await leader.reload();await leader.getByRole('button',{name:'Close voting',exact:true}).waitFor();confirmNext(leader);await leader.getByRole('button',{name:'Close voting',exact:true}).click();
+  await leader.reload();await leader.getByRole('button',{name:'Close vote',exact:true}).waitFor();confirmNext(leader);await leader.getByRole('button',{name:'Close vote',exact:true}).click();
   await member.getByRole('region',{name:'Closed ballot totals'}).waitFor();assert.equal(await member.getByRole('button',{name:'Hold',exact:true}).count(),0,'closed ballot controls are replaced, not merely disabled');
   await member.getByText('Vote recorded · Hold',{exact:true}).waitFor();assert.equal(await member.getByRole('region',{name:'Leader controls'}).count(),0);
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Synthetic discussion');f.failCommand();await leader.getByRole('button',{name:'Hold',exact:true}).click();
@@ -46,12 +48,12 @@ test('phase-focused leader/member controls retain safe saves, secondary actions,
   assert.equal(f.h.state().audit.filter(a=>a.action==='voting.room.decide_and_advance').length,1);
   assert.equal(await leader.getByRole('textbox',{name:'Reason for deciding without a vote'}).isVisible(),false,'secondary controls reset after advancing');
   const audience=await browser.newPage({viewport:{width:1280,height:720}});await audience.goto(`${base}&view=present&actor=leader`);await audience.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor();
-  assert.equal(await audience.getByText('Session options',{exact:true}).count(),0);assert.equal(await audience.getByRole('region',{name:'Decision totals'}).count(),0);assert.equal(await audience.getByRole('region',{name:'Passed and target'}).count(),1);
+  assert.equal(await audience.getByRole('button',{name:'More',exact:true}).count(),0);assert.equal(await audience.getByRole('region',{name:'Decision totals'}).count(),0);assert.equal(await audience.getByRole('region',{name:'Round progress'}).count(),1);
   assert.ok(await audience.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1));
   await member.setViewportSize({width:1280,height:800});if(out)await member.screenshot({path:path.join(out,'member-desktop.png'),fullPage:true});
   for(const page of [leader,member]){const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();assert.deepEqual(result.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)})),[]);}
-  await leader.emulateMedia({reducedMotion:'reduce'});await leader.getByText('Session options',{exact:true}).click();assert.equal(await leader.locator('.vr-session-trigger svg').evaluate(e=>getComputedStyle(e).transitionDuration),'0s');
-  await leader.getByText('Session options',{exact:true}).click();await leader.evaluate(()=>document.documentElement.style.zoom='2');assert.ok(await leader.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'zoomed layout stays readable without horizontal overflow');
+  await leader.emulateMedia({reducedMotion:'reduce'});await leader.getByRole('button',{name:'More',exact:true}).click();assert.equal(await leader.locator('.vr-session-trigger svg').evaluate(e=>getComputedStyle(e).transitionDuration),'0s');
+  await leader.keyboard.press('Escape');await leader.evaluate(()=>document.documentElement.style.zoom='2');assert.ok(await leader.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'zoomed layout stays readable without horizontal overflow');
   assert.deepEqual(errors,[]);
  }finally{release?.();await browser.close();await f.close()}
 });

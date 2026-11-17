@@ -72,7 +72,8 @@ test('steps are buttons in a labelled nav; going forward runs the same validatio
 
 test('every presentation field has a group, the old disclosures are gone, and both titles are set',()=>{
  const src=read('components/live-voting/room-setup.tsx'),room=load('lib/voting-room.ts');
- const grouped=[...src.match(/const fieldGroups[^\n]*/)[0].matchAll(/"(\w+)"/g)].map(m=>m[1]).filter(f=>room.liveRoomFields.includes(f));
+ assert.match(src,/const fieldGroups=slideFieldGroups;/);
+ const grouped=slides.slideFieldGroups.flatMap(g=>g[1]);
  assert.deepEqual([...grouped].sort(),[...room.liveRoomFields].sort());
  assert.doesNotMatch(src,/Duration and repeated-hour options|Location and participant instructions · Optional|<details/);
  assert.match(src,/Only matters on the night daylight saving time ends\./);

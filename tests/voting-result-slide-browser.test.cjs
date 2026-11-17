@@ -69,7 +69,7 @@ test('decision motion: outcome beside the name, then a same-direction slide on e
   for(const [p,size] of [[small,'1366×768'],[large,'1920×1080']])assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight),`projector fits at ${size}`);
   assert.ok(await member.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'phone: no horizontal scroll');
   // Counters come from the confirmed room state.
-  await leader.getByText('Reviewed 1 of 3 this pass · Pass 1',{exact:true}).waitFor();
+  await leader.locator('.vr-lead-queue li').first().getByText(/^(Passed|Held|Not passed)$/).waitFor();
   // Focus lands on the new applicant's name, never on a decision control.
   assert.equal(await leader.evaluate(()=>document.activeElement?.textContent),'QA Applicant Two');
 

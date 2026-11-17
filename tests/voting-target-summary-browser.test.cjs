@@ -11,6 +11,8 @@ test('target summary stays stationary through slide transitions, syncs to the au
  try{
   await f.h.create({targetSize:1});await f.h.command('START');await f.h.command('OPEN_VOTING');await f.h.command('CLOSE_VOTING');
   await leader.goto(`${base}&view=leader&actor=leader`);await audience.goto(`${base}&view=present&actor=leader`);
+  // The session and round totals sit in a disclosure under Round progress.
+  await leader.getByText('Session and round totals',{exact:true}).click();
   const summary=leader.getByRole('region',{name:'Decision totals'});await summary.waitFor();
   await leader.locator('.vr-slide-ready').waitFor();
   assert.match(await summary.innerText(),/Final class-size target/);assert.match(await summary.innerText(),/0 passed · Target 1/);
@@ -28,7 +30,7 @@ test('target summary stays stationary through slide transitions, syncs to the au
   // The audience screen picks up the counts through the room's polling path, without reload.
   await audience.getByText('Passed 1',{exact:true}).waitFor({timeout:15000});
   // Target reached: Pass remains available and nobody is rejected automatically.
-  await leader.getByRole('button',{name:'Open voting',exact:true}).click();confirmNext(leader);await leader.getByRole('button',{name:'Close voting',exact:true}).click();
+  await leader.getByRole('button',{name:'Open voting',exact:true}).click();confirmNext(leader);await leader.getByRole('button',{name:'Close vote',exact:true}).click();
   await leader.getByRole('textbox',{name:'Decision reason'}).fill('Also strong');const pass=leader.getByRole('button',{name:'Pass',exact:true});assert.equal(await pass.isDisabled(),false);await pass.click();
   await leader.getByText('1 over target',{exact:true}).first().waitFor();assert.match(await summary.innerText(),/2 passed · Target 1/);
   assert.equal(f.h.state().sessions[0].passes[0].candidates.filter(c=>c.confirmedDecision==='NOT_PASS').length,0,'no automatic rejection');

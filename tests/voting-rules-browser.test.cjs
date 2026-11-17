@@ -26,10 +26,10 @@ test('setup requires choosing and reviewing an automatic rule with a plain-langu
   await page.getByRole('button',{name:'Start session',exact:true}).click();await page.getByRole('button',{name:'Open voting',exact:true}).waitFor();
   const saved=f.h.state().sessions[0].presentationOptions.rules;assert.deepEqual(saved,{mode:'THRESHOLD',threshold:{numerator:2,denominator:3},denominator:'ELIGIBLE_VOTERS',minimumParticipation:{numerator:1,denominator:2},belowThreshold:'HOLD',reviewed:true});
   // Leader opens voting; every eligible voter votes Pass through the real actions; the leader closes and confirms the rule's outcome.
-  await page.getByRole('button',{name:'Open voting',exact:true}).click();await page.getByRole('button',{name:'Close voting',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Open voting',exact:true}).click();await page.getByRole('button',{name:'Close vote',exact:true}).waitFor();
   const electorate=f.h.state().ballotRules[0].electorate;assert.ok(electorate.length>=1);
-  const live=f.h.state().sessions[0];for(const m of f.h.members.filter(m=>electorate.includes(m.id))){f.h.as(m.userId);const r=await f.h.api.castLiveVotingBallot({clubId:f.clubId,sessionId:live.id,requestId:crypto.randomUUID(),passNumber:live.currentPass,applicationId:live.activeApplicationId,ballotRevision:null,choice:'ACCEPT'});assert.equal(r.ok,true,JSON.stringify(r));}f.h.as(f.h.members[0].userId);await page.reload();await page.getByRole('button',{name:'Close voting',exact:true}).waitFor();
-  confirmNext(page);await page.getByRole('button',{name:'Close voting',exact:true}).click();
+  const live=f.h.state().sessions[0];for(const m of f.h.members.filter(m=>electorate.includes(m.id))){f.h.as(m.userId);const r=await f.h.api.castLiveVotingBallot({clubId:f.clubId,sessionId:live.id,requestId:crypto.randomUUID(),passNumber:live.currentPass,applicationId:live.activeApplicationId,ballotRevision:null,choice:'ACCEPT'});assert.equal(r.ok,true,JSON.stringify(r));}f.h.as(f.h.members[0].userId);await page.reload();await page.getByRole('button',{name:'Close vote',exact:true}).waitFor();
+  confirmNext(page);await page.getByRole('button',{name:'Close vote',exact:true}).click();
   const confirm=page.getByRole('region',{name:'Confirm rule outcome'});await confirm.waitFor();assert.ok(await confirm.getByText(/Pass votes? of \d+ eligible voters?; \d+ needed \(2\/3\)/).count());
   assert.equal(await confirm.getByRole('button',{name:/Hold|Do not pass/}).count(),0,'no competing outcome buttons when the rule decided');
   await confirm.getByRole('button',{name:'Confirm Pass'}).click();await page.getByText(/Passed/).first().waitFor();
