@@ -29,9 +29,12 @@ export function PersonalClubs({ section }: { section: PersonalSection }) {
   if (!member) return <div className="oc-workspace-stack">{/* Invitations can create a first membership, so they show without one (Settings → Organizations redirects here). */}{section === "clubs" && <OrganizationOwnershipRequests enabled includeDismissed />}<EmptyState align="start" tone="outlined" title="You haven’t joined any clubs yet" description="Clubs appear here once you’re a member. An acceptance doesn’t make you a member on its own." action={<Button asChild variant="outline"><Link href="/explore">Explore clubs <ArrowRight size={16} aria-hidden="true" /></Link></Button>} /></div>
   if (section !== "meetings" && section !== "tasks") return <div className="oc-personal-clubs space-y-7"><div className="flex flex-wrap gap-4 text-sm"><Link href="/clubs/tasks" className="inline-flex min-h-11 items-center underline underline-offset-4">Your tasks across clubs</Link></div><OrganizationOwnershipRequests enabled includeDismissed /><ul className="oc-membership-grid">{memberships.map(m => <MembershipRow key={m.id} member={m} />)}</ul><FindOrClaimClub /></div>
   // Meetings and Tasks cover every club by default; the club filter is optional.
+  const clubFilter = memberships.length > 1 ? <PillSelect label="Filter by club" allLabel="All clubs" size="compact" active={!!selected} value={selected} onChange={value => { if (canLeaveWorkspace()) setSelected(value) }} options={memberships.map(m => ({ value: m.clubId, label: m.club.name }))} /> : null
+  // One meeting list for every club the person belongs to, so its filters appear once; each row names its club.
+  if (section === "meetings") return <MeetingList clubId={selected || undefined} clubIds={memberships.map(m => m.clubId)} filters={clubFilter} embedded personalOnly initialAudience="MEMBERS" />
   const shown = selected ? memberships.filter(m => m.clubId === selected) : memberships
-  return <div className="space-y-4"><PillSelect label="Filter by club" allLabel="All clubs" value={selected} onChange={value => { if (canLeaveWorkspace()) setSelected(value) }} options={memberships.map(m => ({ value: m.clubId, label: m.club.name }))} />
-    {shown.map(m => <section key={m.clubId} aria-label={m.club.name} className="space-y-2">{shown.length > 1 && <h2 className="oc-section-heading">{m.club.name}</h2>}{section === "meetings" ? <MeetingList clubId={m.clubId} embedded personalOnly initialAudience="MEMBERS" /> : <ClubTasks clubId={m.clubId} embedded personalOnly />}</section>)}
+  return <div className="space-y-4">{clubFilter}
+    {shown.map(m => <section key={m.clubId} aria-label={m.club.name} className="space-y-2">{shown.length > 1 && <h2 className="oc-section-heading">{m.club.name}</h2>}<ClubTasks clubId={m.clubId} embedded personalOnly /></section>)}
   </div>
 }
 /** Moved from Settings → Organizations (now redirected to My Clubs). */
