@@ -7,6 +7,8 @@ import { previewVerifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@
 import { UniversityVerificationError } from "@/utils/verified-email-policy";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 import { PageHeader } from "@/components/ui/page-header";
+import { Panel } from "@/components/ui/panel";
+import { Button } from "@/components/ui/button";
 import { SignInCard } from "@/components/landing/sign-in-card";
 import { invitationPreview } from "@/lib/public-link-preview";
 
@@ -54,7 +56,7 @@ export default async function Invitation({
   })();
   if (verificationError) return <div className="max-w-xl space-y-4">
     <PageHeader title={verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? "Verify your university email" : "Invitation verification unavailable"} />
-    <p role="alert">{verificationError.message}</p><Link className="underline" href="/settings/organizations">View organizations</Link>
+    <p role="alert">{verificationError.message}</p><Button variant="outline" asChild><Link href="/clubs">Go to My Clubs</Link></Button>
   </div>;
   const invitation = await prisma.clubInvitation.findFirst({
     where: {
@@ -74,24 +76,22 @@ export default async function Invitation({
   if (!invitation)
     return (
       <div className="max-w-xl space-y-4">
-      <PageHeader title="Invitation unavailable" />
-        <p>
-          This link may have expired or already been answered. Sign in with the
-          invited UVA account, or ask the club manager for a new invitation.
+        <PageHeader title="Invitation unavailable" />
+        <p className="text-sm leading-7 text-muted-foreground">
+          This link may have expired or already been answered, or it was sent to a
+          different UVA account. Ask the club for a new invitation if you still need one.
         </p>
-        <Link className="underline" href="/settings/organizations">
-          View organizations
-        </Link>
+        <Button variant="outline" asChild><Link href="/clubs">Go to My Clubs</Link></Button>
       </div>
     );
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-xl space-y-5">
       <PageHeader title={<>{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</>} />
       <p className="text-sm leading-7 text-muted-foreground">
         Accept with the UVA account this invitation was sent to. Your personal
         profile and existing memberships stay intact.
       </p>
-      <div className="rounded-xl border oc-glass-surface p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
+      <Panel as="section" aria-labelledby="invitation-access-heading"><h2 id="invitation-access-heading" className="oc-section-heading">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></Panel>
       {(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") && <p className="text-sm leading-7">You’ve been designated as an administrator. Claiming gives you owner access to manage members, roles, applications, recruiting, interviews, and organization settings.</p>}
       <InvitationResponse id={id} owner={!!invitation.schoolIdentityId && invitation.requestedRole === "OWNER"} />
     </div>
