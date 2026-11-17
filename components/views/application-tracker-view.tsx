@@ -76,6 +76,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   const [notice, setNotice] = useState("")
   const content = useRef<HTMLDivElement>(null)
   const lastOpened = useRef<string | null>(null)
+  const handledLink = useRef<string | null>(null)
   // statusId: switching between an application's status and its answers keeps activeId, so focus follows the new heading.
   useEffect(() => {
     if (activeId) content.current?.querySelector<HTMLElement>("h1")?.focus()
@@ -135,14 +136,19 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
     if (pending || !focusApplicationClubId && !applicationId) return
     const app = applications.find((item) => applicationId ? item.id === applicationId : item.clubId === focusApplicationClubId)
     if (app && (scope === "all" || app.status !== "DRAFTING")) {
+      // The same link seen again (the list refreshed, e.g. right after submitting) keeps what is on screen.
+      const link = applicationId ?? focusApplicationClubId
+      if (handledLink.current === link) { clearApplicationFocus(); return }
+      handledLink.current = link
       setActiveId(app.id); lastOpened.current = app.id
       // A submitted application opens on its status, where interview booking and decisions live, not on its answers.
       if (app.status !== "DRAFTING") setStatusId(app.id)
       // A link to one application (Home's View interview, an email) opens the stage that holds it, not the stage in the URL.
       const appStage = applicationStage(app.status)
       if (appStage) setFilter(appStage)
-      // The link is used once: Back from the application stays on the list instead of reopening it on the next reload.
-      if (typeof window !== "undefined" && window.history && window.location?.href) { const url = new URL(window.location.href); if (appStage) url.searchParams.set("tab", appStage); url.searchParams.delete("applicationId"); window.history.replaceState(window.history.state, "", url) }
+      // A submitted application's link is used once: Back stays on the list instead of reopening it on the next reload.
+      // A draft keeps its link, so a reload while writing returns to the same answers.
+      if (app.status !== "DRAFTING" && typeof window !== "undefined" && window.history && window.location?.href) { const url = new URL(window.location.href); if (appStage) url.searchParams.set("tab", appStage); url.searchParams.delete("applicationId"); window.history.replaceState(window.history.state, "", url) }
     }
     clearApplicationFocus()
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
