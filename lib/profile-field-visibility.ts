@@ -92,7 +92,7 @@ export function rosterMembers<M extends { club?: { profileFieldVisibility?: unkn
   });
 }
 
-type ProfileQuery = { major?: string; year?: string; gpa?: number; sat?: number; act?: number; sort?: string };
+type ProfileQuery = { major?: string; year?: string; gpa?: number; sat?: number; act?: number; scholar?: string; scholarPrograms?: string[]; sort?: string };
 /**
  * Pipeline and voting selection queries: filters on hidden fields are ignored and sorts by
  * hidden fields fall back to name order, so neither the returned IDs nor their order depend
@@ -100,12 +100,13 @@ type ProfileQuery = { major?: string; year?: string; gpa?: number; sat?: number;
  */
 export function withoutHiddenProfileFilters<Q extends ProfileQuery>(query: Q, visibility: ProfileFieldVisibility): Q {
   const out = { ...query };
-  const sortField = { gpa: "gpa", sat: "sat", act: "act", year: "academicYear" } as const;
+  const sortField = { gpa: "gpa", sat: "sat", act: "act", year: "academicYear", scholar: "scholarStatus" } as const;
   if (!visibility.major) delete out.major;
   if (!visibility.academicYear) delete out.year;
   if (!visibility.gpa) delete out.gpa;
   if (!visibility.sat) delete out.sat;
   if (!visibility.act) delete out.act;
+  if (!visibility.scholarStatus) { delete out.scholar; delete out.scholarPrograms; }
   const sorted = out.sort as keyof typeof sortField | undefined;
   if (sorted && sorted in sortField && !visibility[sortField[sorted]]) { out.sort = "name"; if ("descending" in out) (out as { descending?: boolean }).descending = false; }
   return out;

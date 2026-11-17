@@ -74,7 +74,8 @@ test('Demo Mode: application review, Interview 1 and Interview 2 run the same ro
   const app=pick(demoStore.get());
   demoStore.mutate(s=>{const a=s.applications.find(v=>v.id===app.id);a.roundId=reviewRound.id;a.evaluations=[];s.interviews=s.interviews.filter(r=>r.applicationId!==app.id);});
   const room=async round=>{const sessionId=crypto.randomUUID(),setup=await setupFor(round);assert.ok(setup.applicants.some(a=>a.id===app.id),round.name);
-   await api.createLiveVotingRoom({clubId:club.id,sessionId,cycleId:club.id,roundId:round.id,leaderMemberIds:[leader.id],participantIds:[leader.id],applicationIds:[app.id],presentationOptions:{fields:['name','interviewScore','finalInterviewThoughts'],highlights:{}}});
+   await api.createLiveVotingRoom({clubId:club.id,sessionId,cycleId:club.id,roundId:round.id,leaderMemberIds:[leader.id],applicationIds:[app.id],presentationOptions:{fields:['name','interviewScore','finalInterviewThoughts'],highlights:{}}});
+   await api.joinLiveVotingRoom({clubId:club.id,sessionId});
    return {clubId:club.id,sessionId,applicationId:app.id};};
   // Application review: voting works, no interview scores, no zeros.
   let scope=await room(reviewRound),p=JSON.parse(JSON.stringify(await api.getLiveVotingPresentation(scope)));
@@ -105,4 +106,13 @@ test('Demo Mode: application review, Interview 1 and Interview 2 run the same ro
   p=JSON.parse(JSON.stringify(await api.getLiveVotingPresentation(scope)));assert.deepEqual(p.earlierInterviewRounds,[]);assert.equal(p.interviewScore.average,8);
   assert.equal(h.calls(),0,'Demo never invokes a live server action');
  }finally{demoStore.stop()}
+});
+test('voting after an interview round starts with the interview score and final thoughts shown; other rounds start without them',()=>{
+ const {interviewRoundFields}=load('lib/voting-room.ts',{});
+ assert.deepEqual(interviewRoundFields(['name','photo'],'INTERVIEW'),['name','photo','interviewScore','finalInterviewThoughts']);
+ assert.deepEqual(interviewRoundFields(['name','interviewScore'],'GROUP_INTERVIEW'),['name','interviewScore','finalInterviewThoughts']);
+ assert.deepEqual(interviewRoundFields(['name','photo','interviewScore','finalInterviewThoughts'],'APPLICATION_REVIEW'),['name','photo']);
+ const src=fs.readFileSync('components/live-voting/room-setup.tsx','utf8');
+ assert.match(src,/setFields\(old=>interviewRoundFields\(old,v\.rounds\.find\(r=>r\.id===round\)\?\.type\)\)/);
+ assert.match(fs.readFileSync('actions/voting-room-setup.ts','utf8'),/select:\{id:true,name:true,type:true,anonymousReview:true/);
 });

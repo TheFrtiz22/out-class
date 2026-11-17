@@ -22,7 +22,7 @@ test('target is optional; exact presentation fields derive canonical config; ano
  await assert.rejects(harness().create({presentationOptions:{fields:['resumeHighlight'],highlights:{[uuid(99)]:uuid(90)}}}),/scope/);
 });
 test('QR eligibility is generic, check-in after start is idempotent, current revocation removes access',async()=>{
- const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create();h.as(voterId);
+ const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create({joined:[]});h.as(voterId);
  assert.equal((await api.getLiveVotingJoinInfo(scope)).status,'READY');h.as(leaderId);await h.command('START');h.as(voterId);
  await api.joinLiveVotingRoom(scope);await api.joinLiveVotingRoom(scope);
  assert.equal(h.state().audit.filter(a=>a.action==='voting.room.joined').length,1);
@@ -51,4 +51,13 @@ test('cumulative score uses canonical submitted reviews, weighted across authori
  const tx={pipelineRound:{findMany:async()=>[{id:'r1'},{id:'r2'}]},evaluation:{findUnique:async()=>null,findMany:async()=>rows},interviewPanelAssignment:{findUnique:async()=>null}};
  let score=await helper.votingInterviewSummary(tx,clubId,apps[0],leaderId);assert.equal(score.average,7.75);assert.equal(score.submitted,2);assert.equal(score.rounds,2);
  rows=[];score=await helper.votingInterviewSummary(tx,clubId,apps[0],leaderId);assert.equal(score.average,null);
+});
+test('setup counts current eligible members without an interviewer selection list',async()=>{
+ const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);
+ const before=await api.getLiveVotingSetup(selection);
+ assert.equal(before.joinableVoterCount,3);assert.ok(!('voters' in before));
+ h.state().interviewRecords.push({interviewerId:voterId,roundId,completedAt:new Date()});
+ assert.equal((await api.getLiveVotingSetup(selection )).joinableVoterCount,3);
+ h.members[1].user.studentProfile={graduatedAt:new Date('2020-01-01')};
+ assert.equal((await api.getLiveVotingSetup(selection )).joinableVoterCount,2);
 });

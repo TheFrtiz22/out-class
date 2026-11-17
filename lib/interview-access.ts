@@ -7,7 +7,8 @@ export const interviewOfficesSchema = z.array(z.enum(interviewOffices)).max(3)
 export type InterviewAccess = ClubAccess & { interviewOffices?: readonly string[] };
 // Deliberately does not use hasPermission's owner bypass for these sensitive rights.
 export function interviewCapabilities(member: InterviewAccess | null | undefined) {
-  const offices = isActiveMembership(member) ? member?.interviewOffices || [] : [];
+  // A graduate kept as owner (handOverOnly) holds no interview rights.
+  const offices = isActiveMembership(member) && !member?.handOverOnly ? member?.interviewOffices || [] : [];
   const leadership = offices.some(v => interviewOffices.includes(v as typeof interviewOffices[number]));
   return {
     editKit: leadership,
@@ -15,7 +16,7 @@ export function interviewCapabilities(member: InterviewAccess | null | undefined
     moderateResume: offices.includes("PRESIDENT") || offices.includes("VICE_PRESIDENT"),
     overrideAvailability: offices.includes("PRESIDENT"),
     participate: hasPermission(member, "applications.review") && hasPermission(member, "applicants.identify"),
-    manageGrants: isActiveMembership(member) && member?.isOwner === true,
+    manageGrants: isActiveMembership(member) && member?.isOwner === true && !member?.handOverOnly,
   };
 }
 

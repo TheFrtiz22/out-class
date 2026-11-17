@@ -70,6 +70,8 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
   if (app.status !== "ACCEPTED" || offer.status !== "PENDING" || offer.expiresAt <= new Date() || offer.revokedAt || offer.acceptedAt || offer.declinedAt || offer.expiredAt)
     throw new ActionError("This offer is unavailable or has expired.");
   if (response === "DECLINE") {
+    // Alumni accounts are read-only (lib/graduation.ts): an offer can be neither accepted nor declined.
+    await assertNotAlumni(tx, userId, "respond");
     await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await event(tx, userId, app.clubId, offer.id, "offer.declined", app.id);
     await offerResponseNotification(tx, app, offer.id, "DECLINE");
@@ -77,7 +79,7 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
     return { clubId: app.clubId, status: "DECLINED" as const };
   }
   if (existing && existing.status !== "ACTIVE") return { clubId: app.clubId, status: "INACTIVE_MEMBERSHIP" as const };
-  // Alumni cannot join clubs (lib/graduation.ts); declining stays available.
+  // Alumni cannot join clubs (lib/graduation.ts); declining is refused above too.
   await assertNotAlumni(tx, userId, "join");
   if (!existing) await tx.clubMember.create({ data: { userId, clubId: app.clubId, accessRole: "MEMBER", role: "GENERAL_MEMBER", permissions: [], isOwner: false } });
   // Active existing members keep every role, permission and ownership field untouched.

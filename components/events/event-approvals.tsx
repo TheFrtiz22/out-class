@@ -11,6 +11,9 @@ import {
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   Dialog,
@@ -139,9 +142,7 @@ export function EventApprovals() {
               </article>
             ))
           ) : (
-            <p className="rounded-lg border p-8 text-sm text-muted-foreground">
-              No {status.toLowerCase()} submissions.
-            </p>
+            <EmptyState density="compact" tone="subtle" title={`No ${status.toLowerCase()} submissions`} description={status === "PENDING" ? "New club events waiting for review will show up here." : "Nothing to show for this status yet."} />
           )}
         </div>
       )}
@@ -220,22 +221,23 @@ export function EventApprovals() {
               )}
               {selected.status === "PENDING" && (
                 <div className="space-y-3">
-                  <label className="block text-sm">
-                    Review note / rejection reason
-                    <textarea
-                      className="mt-2 w-full rounded border bg-background p-2"
+                  <div className="oc-field">
+                    <Label htmlFor="event-review-reason">Review note</Label>
+                    <Textarea
+                      id="event-review-reason"
+                      aria-describedby="event-review-reason-help"
                       maxLength={1000}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
-                      placeholder="A reason is required when rejecting."
                     />
-                  </label>
+                    <p id="event-review-reason-help" className="text-xs text-muted-foreground">Required to reject (at least 5 characters). Optional to approve.</p>
+                  </div>
                   <Button
                     className="w-full"
                     disabled={busy}
                     onClick={() => void decide(true)}
                   >
-                    Approve & Publish
+                    Approve and publish
                   </Button>
                   <Button
                     className="w-full"

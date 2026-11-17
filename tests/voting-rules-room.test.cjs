@@ -3,7 +3,7 @@ const {harness,load,uuid,clubId,leaderId,voterId,apps}=require('./helpers/voting
 const ok=r=>assert.equal(r.ok,true,JSON.stringify(r)),third=uuid(7);
 const twoThirds={mode:'THRESHOLD',threshold:{numerator:2,denominator:3},denominator:'BALLOTS_CAST',minimumParticipation:{numerator:2,denominator:3},belowThreshold:'HOLD',reviewed:true};
 async function room(rules,extra={}){
- const h=harness();await h.create({participantIds:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},...(rules?{rules}:{})},...extra});ok(await h.command('START'));return h;
+ const h=harness();await h.create({joined:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},...(rules?{rules}:{})},...extra});ok(await h.command('START'));return h;
 }
 async function votes(h,choices){for(const [who,choice] of choices){h.as(who);ok(await h.vote(choice));}h.as(leaderId);}
 const decide=(h,choice,extra={})=>{const s=h.state().sessions[0];return h.command('DECIDE_AND_ADVANCE',{applicationId:s.activeApplicationId,passNumber:s.currentPass,choice,...extra});};
@@ -29,7 +29,9 @@ test('threshold rule is snapshotted per ballot, decides on close, and the leader
  assert.equal((await h.read()).ruleResult.outcome,'HOLD');ok(await decide(h,'HOLD'));
  ok(await h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[2],passNumber:1,reason:'Clear fit',confirmed:true}));
  ok(await h.command('NEXT_PASS'));ok(await h.command('OPEN_VOTING'));
- const rows=h.state().ballotRules;assert.deepEqual(rows.map(r=>[r.passNumber,r.applicationId]),[[1,apps[0]],[1,apps[1]],[2,apps[1]]]);assert.deepEqual(rows[0],snap);
+ // Version 1 is captured as each ballot opens; open-electorate sessions add the closing snapshot (version 2) as it closes.
+ const rows=h.state().ballotRules.filter(r=>r.version===1);assert.deepEqual(rows.map(r=>[r.passNumber,r.applicationId]),[[1,apps[0]],[1,apps[1]],[2,apps[1]]]);assert.deepEqual(rows[0],snap);
+ assert.ok(h.state().ballotRules.filter(r=>r.version===2).every(r=>r.reason==='Members in the room when voting closed'&&JSON.stringify(r.rules)===JSON.stringify(twoThirds)));
 });
 
 test('unmet participation or zero ballots never auto-rejects: Hold for another vote, or an explicit reasoned decision',async()=>{
@@ -46,7 +48,8 @@ test('unmet participation or zero ballots never auto-rejects: Hold for another v
 });
 
 test('a voter losing eligibility pauses automatic counting until an audited recount; their ballot no longer counts',async()=>{
- const h=await room(twoThirds);ok(await h.command('OPEN_VOTING'));await votes(h,[[leaderId,'ACCEPT'],[voterId,'REJECT'],[third,'REJECT']]);
+ // Saved-list (legacy) sessions keep this behaviour unchanged.
+ const h=await room(twoThirds,{legacyVoters:[leaderId,voterId,third]});ok(await h.command('OPEN_VOTING'));await votes(h,[[leaderId,'ACCEPT'],[voterId,'REJECT'],[third,'REJECT']]);
  h.members[2].permissions=h.members[2].permissions.filter(p=>p!=='decisions.vote');
  h.as(third);assert.notEqual((await h.vote('ACCEPT').catch(e=>({ok:false,message:e.message}))).ok,true,'revoked access is immediate');h.as(leaderId);
  assert.equal((await h.command('CLOSE_VOTING')).code,'ELECTORATE_CHANGED');assert.equal(h.state().sessions[0].passes[0].candidates[0].ballotState,'OPEN');

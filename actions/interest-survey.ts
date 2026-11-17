@@ -1,4 +1,5 @@
 "use server"
+import { assertNotAlumni } from "@/utils/graduation"
 import { ActionError, actionResult } from "@/lib/action-result"
 import { boundedParse } from "@/lib/bounded-input"
 import { answeredAny, interestSurveySaveSchema, readInterestAnswers, type InterestSurveyDocument } from "@/lib/interest-survey"
@@ -35,6 +36,8 @@ export async function getMyInterestSurvey(): Promise<InterestSurveyDocument | nu
 async function saveMyInterestSurveyCommand(raw: unknown): Promise<InterestSurveyDocument> {
   const input = boundedParse(interestSurveySaveSchema, raw, { maxArrayLength: 20, maxBytes: 4096 })
   const user = await owner()
+  // Alumni accounts are read-only (lib/graduation.ts): the survey stays as it is.
+  await assertNotAlumni(prisma, user.id, "survey")
   const { revision, ...answers } = input
   const any = answeredAny(answers)
   const now = new Date()

@@ -8,7 +8,7 @@ const meeting=()=>({version:1,name:'Synthetic scheduled vote',timing:'LATER',loc
 
 test('an eligible voter reads only the meeting name, scheduled start and location before joining',async()=>{
  const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);
- await h.create({notifyVoters:true,presentationOptions:{fields:['name','gpa'],highlights:{},meeting:meeting()}});
+ await h.create({joined:[],notifyVoters:true,presentationOptions:{fields:['name','gpa'],highlights:{},meeting:meeting()}});
  const stored=h.state().sessions[0].presentationOptions.meeting;assert.ok(stored.plannedAt);assert.ok(stored.announcedUserIds.includes(voterId),'fixture stores private announcement recipients');
  h.as(voterId);const info=await api.getLiveVotingJoinInfo(scope);
  assert.deepEqual(info,{status:'READY',meeting:{name:'Synthetic scheduled vote',plannedAt:stored.plannedAt,location:'QA Hall'}});
@@ -19,8 +19,9 @@ test('an eligible voter reads only the meeting name, scheduled start and locatio
 });
 
 test('denied, outside, expired and ended viewers receive no meeting fields; cancelled sessions follow the room as ended',async()=>{
- const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create({presentationOptions:{fields:['name','gpa'],highlights:{},meeting:meeting()}});
- h.as(uuid(7));assert.deepEqual(await api.getLiveVotingJoinInfo(scope),{status:'DENIED'});
+ const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create({joined:[],presentationOptions:{fields:['name','gpa'],highlights:{},meeting:meeting()}});
+ // Open electorate: any member who may vote sees the preview and can join; a member without voting rights is denied (below).
+ h.as(uuid(7));assert.equal((await api.getLiveVotingJoinInfo(scope)).status,'READY');
  h.as(voterId);assert.deepEqual(await api.getLiveVotingJoinInfo({...scope,sessionId:uuid(99)}),{status:'EXPIRED'});
  h.members[1].permissions=[];assert.deepEqual(await api.getLiveVotingJoinInfo(scope),{status:'DENIED'});
  const c=harness(),cApi=load('actions/voting-room-setup.ts',c.mocks),plans=load('actions/voting-session-setup.ts',c.mocks);await c.create({presentationOptions:{fields:['name','gpa'],highlights:{},meeting:meeting()}});
@@ -28,7 +29,7 @@ test('denied, outside, expired and ended viewers receive no meeting fields; canc
 });
 
 test('a session without meeting details keeps the plain pre-join state',async()=>{
- const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create();h.as(voterId);
+ const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);await h.create({joined:[]});h.as(voterId);
  assert.deepEqual(await api.getLiveVotingJoinInfo(scope),{status:'READY',meeting:null});
 });
 

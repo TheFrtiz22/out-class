@@ -123,7 +123,7 @@ test("letters are counted per applicant: sent means this exact decision version 
   assert.doesNotMatch(source, /Sessions ready to send|overviewSendCounts/)
 })
 
-test("Overview opens on the current round: active, then scheduled, then most recent session, then the first round", () => {
+test("Overview opens on the current round: active, then scheduled, then where applicants wait, then most recent session, then the first round", () => {
   const rounds = [{ id: "r1" }, { id: "r2" }, { id: "r3" }]
   const room = (roundId, over) => ({ roundId, roundName: roundId, applicantCount: 1, mode: "LIVE", state: "COMPLETED", meeting: null, ...over })
   assert.equal(decide.overviewDefaultRound(rounds, [room("r1"), room("r2", { state: "DRAFT", meeting: { status: "SCHEDULED" } }), room("r3", { state: "OPEN" })]), "r3")
@@ -132,6 +132,10 @@ test("Overview opens on the current round: active, then scheduled, then most rec
   assert.equal(decide.overviewDefaultRound(rounds, [room("archived-round", { state: "OPEN" })]), "r1", "only rounds in the picker")
   assert.equal(decide.overviewDefaultRound(rounds, null), "r1")
   assert.equal(decide.overviewDefaultRound([], [room("r1")]), null)
+  const waiting = [{ id: "r1", active: 0 }, { id: "r2", active: 6 }, { id: "r3", active: 2 }]
+  assert.equal(decide.overviewDefaultRound(waiting, [room("r1")]), "r2", "a finished session's round loses to the round where applicants wait")
+  assert.equal(decide.overviewDefaultRound(waiting, [room("r3", { state: "OPEN" })]), "r3", "a running session still wins")
+  assert.equal(decide.overviewDefaultRound([{ id: "r1", active: 0 }, { id: "r2", active: 0 }], [room("r2")]), "r2")
   const page = fs.readFileSync("components/live-voting/decide-page.tsx", "utf8")
   // Only when the URL names no round, written with replace (no extra Back step); "All rounds" is an explicit empty roundId.
   assert.match(page, /const needsDefault = tab === "overview" && !params\.has\("roundId"\);/)

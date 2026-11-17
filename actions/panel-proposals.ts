@@ -1,5 +1,6 @@
 "use server"
 
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { activePanelPublication, panelPublicationViews, draftApprovalReset, publicationDocument } from "@/utils/panel-publication"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { z } from "zod"
@@ -60,7 +61,7 @@ export async function getPanelProposalWorkspace(raw: unknown): Promise<PanelWork
     const document = saved ? panelDocumentSchema.parse(saved.document) : null
     const live = await loadPanelPlanningScene(tx, scope, document?.window ?? scope.window)
     const history=await panelPublicationViews(tx,{clubId:scope.clubId,roundId:scope.roundId}),club=await tx.club.findUniqueOrThrow({where:{id:scope.clubId},select:{name:true}})
-    const member=await tx.clubMember.findUnique({where:{userId_clubId:{userId:actorId,clubId:scope.clubId}}})
+    const member=await graduateClubAccessOrNull(tx,await tx.clubMember.findUnique({where:{userId_clubId:{userId:actorId,clubId:scope.clubId}}}))
     return { clubName:club.name,canPublish:interviewCapabilities(member).manageGrants,canOverrideAvailability:interviewCapabilities(member).overrideAvailability,published:history.find(v=>v.status==="PUBLISHED")??null,history, roundId: scope.roundId, roundName: live.roundName, timezone: live.timezone, scene: publicPanelScene(live.scene), proposal: saved ? proposalView(saved, live.scene, live.fingerprint) : null, suggestedWindow: live.suggestedWindow, fingerprint: live.fingerprint }
   })
 }

@@ -8,7 +8,7 @@ test('rendered complete meeting through tied decision, early end, correction, re
  const confirmClick=async name=>{confirmNext(leader);await click(name)};
  const accept=async()=>{await ready();await leader.getByText('More actions',{exact:true}).click();await leader.getByRole('textbox',{name:'Reason for deciding without a vote'}).fill('Synthetic discussion resolved concerns');await confirmClick('Pass without vote')};
  try{
-  await f.h.create();await leader.goto(`${base}&view=leader&actor=leader`);await click('Start session');await click('Open voting');
+  await f.h.create({joined:[leaderId]});await leader.goto(`${base}&view=leader&actor=leader`);await click('Start session');await click('Open voting');
   await member.goto(`${base}&view=member&actor=member`);await member.getByRole('button',{name:'Join session',exact:true}).click();await member.getByRole('button',{name:'Do not pass',exact:true}).click();await member.getByText('Vote recorded · Do not pass',{exact:true}).waitFor();
   f.h.as(leaderId);assert.equal((await f.h.vote('ACCEPT')).ok,true);await leader.reload();await click('Close vote');
   await leader.getByText('Tie or no ballots. Choose an outcome and record a reason.',{exact:true}).waitFor();assert.ok(await leader.getByRole('button',{name:'Hold',exact:true}).isDisabled());await leader.getByRole('textbox',{name:'Decision reason'}).fill('Tie warrants another discussion');await click('Hold');await accept();

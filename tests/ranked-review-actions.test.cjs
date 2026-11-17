@@ -29,7 +29,7 @@ function harness(memberA=leader,memberB=null){
  const prisma={$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}};
  const auth={requireClubPermission:async(clubId,permissions)=>{const m=state.members[clubId];if(!m||!permissions.every(p=>hasPermission(m,p)))throw Error('You do not have permission for this club action.');return{user:{id:state.actor},membership:m};}};
  const mocks={'@/utils/prisma':{prisma},'@/utils/auth':auth,'next/cache':{revalidatePath:()=>{},revalidateTag:()=>{}}};
- return {state,api:load('actions/ranked-review.ts',mocks),settings:unwrapActions(load('actions/club-settings.ts',mocks))};
+ return {state,api:unwrapActions(load('actions/ranked-review.ts',mocks)),settings:unwrapActions(load('actions/club-settings.ts',mocks))};
 }
 const save=(over={})=>({clubId:clubA,roundId:roundA,cycleKey:cycleA,expectedRevision:0,bands,...over});
 
@@ -67,8 +67,8 @@ test('a reviewer without recruitment.manage can read but not save; invalid bands
 
 test('cross-club rounds, cycles and clubs are denied',async()=>{
  const h=harness();
- await assert.rejects(h.api.saveRankedReviewBands(save({roundId:roundB})),/Round unavailable/);
- await assert.rejects(h.api.saveRankedReviewBands(save({cycleKey:cycleB})),/Cycle unavailable/);
+ await assert.rejects(h.api.saveRankedReviewBands(save({roundId:roundB})),/round was archived/);
+ await assert.rejects(h.api.saveRankedReviewBands(save({cycleKey:cycleB})),/cycle was removed/);
  await assert.rejects(h.api.saveRankedReviewBands(save({clubId:clubB,roundId:roundB})),/permission/);
  await assert.rejects(h.api.getRankedReviewSettings(clubB,roundB),/permission/);
  await assert.rejects(h.api.getRankedReviewSettings(clubA,roundB),/Round unavailable/);

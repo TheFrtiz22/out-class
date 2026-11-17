@@ -397,14 +397,6 @@
 .oc-managed-event .oc-paper-category {
   font-size: 4px; /* type-literal-ok: thumbnail of the flyer artwork */
 }
-.oc-event-status {
-  display: inline-block;
-  font-size: var(--oc-size-12);
-  padding: 3px 7px;
-  background: var(--muted);
-  border-radius: var(--oc-radius-sm);
-  margin-top: 5px;
-}
 .oc-event-actions {
   display: flex;
   gap: 8px;

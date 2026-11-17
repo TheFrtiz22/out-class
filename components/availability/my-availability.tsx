@@ -19,6 +19,7 @@ import { saveAvailabilityWithRecovery } from "@/lib/availability-save-recovery"
 import { AvailabilitySaveQueue } from "@/lib/availability-save-queue"
 import { createDraftStore, validDraftOwner } from "@/lib/autosave-store"
 import { useAuth } from "@/contexts/auth-context"
+import { ALUMNI_REFUSALS, isAlumniProfile } from "@/lib/graduation"
 import { useDemoMode } from "@/contexts/demo-context"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { WeeklyCalendar } from "./weekly-calendar"
@@ -35,6 +36,8 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
   const [mode, setMode] = useState<"recurring" | "week">(scope || initial.schedule.timezone !== SCHEDULING_TIMEZONE ? "week" : "recurring")
   const [week, setWeek] = useState(() => initialWeek ?? monday(today(SCHEDULING_TIMEZONE))), [copyFrom, setCopyFrom] = useState(0), [copyTo, setCopyTo] = useState(1)
   const { user } = useAuth(), demo = useDemoMode(), owner = demo.isDemoEnabled ? null : user?.id
+  // Alumni accounts are read-only (lib/graduation.ts): availability shows but cannot change.
+  const alumni = !demo.isDemoEnabled && isAlumniProfile(user?.profile)
   // Unsaved edits survive a reload or browser restart on this device; the server copy stays authoritative.
   const storeRef = useRef<ReturnType<typeof createDraftStore<AvailabilitySchedule>> | null>(null)
   if (!storeRef.current && validDraftOwner(owner)) storeRef.current = createDraftStore<AvailabilitySchedule>({ owner, identity: `availability:${scope ? `${scope.clubId}:${scope.roundId}` : "global"}`, persistence: "device" })
@@ -74,7 +77,7 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
   const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(week, i)), [week])
   const days = useMemo(() => availabilityEditorDays(schedule, week, mode === "recurring"), [week, mode, schedule])
   const knownDays = useMemo(() => mode === "recurring" ? Array(7).fill(schedule.weeklySubmitted) as boolean[] : availabilityEditorKnownDays(schedule, week), [mode, schedule, week])
-  function change(value: AvailabilitySchedule) { if (confirming || JSON.stringify(value) === JSON.stringify(queue.document.schedule)) return; setConfirmed(false); setDeclined(false); onStatus?.(false, false); setNotice(""); queue.change(value) }
+  function change(value: AvailabilitySchedule) { if (alumni || confirming || JSON.stringify(value) === JSON.stringify(queue.document.schedule)) return; setConfirmed(false); setDeclined(false); onStatus?.(false, false); setNotice(""); queue.change(value) }
   function editDays(next: boolean[][], changedDays: number[]) {
     const current = queue.document.schedule
     change(editAvailabilityDays(current, week, mode === "recurring", next, changedDays))
@@ -91,7 +94,8 @@ export function AvailabilityEditor({ initial, scope, initialConfirmed = false, i
   }
   return <Panel as="section" className="oc-availability space-y-5 sm:p-6" data-unsaved={queue.dirty} data-saving={queue.saving || queue.state === "saving" || confirming} aria-busy={confirming}>
     <header className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="oc-section-heading">{title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{scope ? "Your global schedule is prefilled. Adjust specific dates here and confirm your participation for this club and round." : "Enter your usual free time once. Your schedule follows local clock time, including daylight saving changes."}</p></div><p role="status" aria-live="polite" className={`text-control font-medium ${queue.state === "error" ? "text-destructive" : "text-muted-foreground"}`}>{queue.state === "saving" ? "Saving…" : queue.state === "offline" || queue.state === "unreachable" ? queue.error : queue.state === "unsaved" ? "Unsaved changes" : queue.state === "error" ? "Save failed · edits retained" : queue.document.revision === 0 ? "No schedule saved" : "All changes saved"}</p></header>
-    <fieldset disabled={confirming || !!recovery} className="min-w-0 space-y-5">
+    {alumni && <p role="status" className="text-sm text-muted-foreground">{ALUMNI_REFUSALS.availability}</p>}
+    <fieldset disabled={alumni || confirming || !!recovery} className="min-w-0 space-y-5">
       <p className="text-xs text-muted-foreground">8:00 AM–9:00 PM · {SCHEDULING_TIMEZONE_LABEL}. Daylight saving changes are automatic. Previously saved hours outside this window are retained.</p>
       {!scope && schedule.timezone === SCHEDULING_TIMEZONE && <SegmentedControl label="Availability editing mode" value={mode} onChange={setMode} options={[{ value: "recurring", label: <span className="inline-flex items-center gap-2"><CalendarDays className="size-4" aria-hidden="true" />Recurring week</span> }, { value: "week", label: "Specific dates" }]} />}
       {mode === "week" && <div className="flex flex-wrap items-center gap-2"><Button variant="outline" aria-label="Previous week" onClick={() => setWeek(addDays(week, -7))}><ChevronLeft className="size-4" /></Button><div className="text-sm"><span className="block">Week of</span><DateField label="Week of" className="mt-1" value={week} onChange={value => { if (value) setWeek(monday(value)) }} /></div><Button variant="outline" aria-label="Next week" onClick={() => setWeek(addDays(week, 7))}><ChevronRight className="size-4" /></Button><Button variant="outline" onClick={copyPrevious}><Copy className="size-4" />Copy previous week</Button></div>}

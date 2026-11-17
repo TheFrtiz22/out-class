@@ -216,13 +216,13 @@ export async function getSavedCampusEventIds() {
 async function setSavedCampusEventCommand(input: unknown) {
   const { eventId, saved } = z.object({ eventId: z.string().uuid(), saved: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth();
+  // Alumni accounts are read-only (lib/graduation.ts): saved events are neither added nor removed.
+  await assertNotAlumni(prisma, user.id, "save");
   if (!saved) {
     // Allow removal even after cancellation or withdrawal.
     await prisma.savedCampusEvent.deleteMany({ where: { userId: user.id, eventId } });
     return { saved: false };
   }
-  // Alumni accounts are read-only (lib/graduation.ts): no new saves; removing one stays available.
-  await assertNotAlumni(prisma, user.id, "save");
   return prisma.$transaction(async tx => {
     const event = await locked(tx, eventId);
     if (!eventIsPublished(event)) throw new ActionError("This event is no longer available.");
@@ -501,11 +501,9 @@ export async function setCampusEventRsvp(input: unknown): Promise<RsvpResult> {
       .strict()
       .parse(input),
     { user } = await requireAuth();
-  // Alumni cannot RSVP, public events included; cancelling an earlier RSVP stays available.
-  if (d.going) {
-    const refusal = await alumniRefusal(prisma, user.id, "rsvp");
-    if (refusal) return { ok: false, error: refusal };
-  }
+  // Alumni accounts are read-only (lib/graduation.ts): no RSVP or cancellation, public events included.
+  const refusal = await alumniRefusal(prisma, user.id, "rsvp");
+  if (refusal) return { ok: false, error: refusal };
   // Every RSVP for one event waits on its row lock (capacity is exact). A short
   // lock timeout turns a pile-up into a prompt "try again" instead of a 5 s hang.
   let result: { going: boolean; count: number };

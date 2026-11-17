@@ -254,7 +254,7 @@ function documentAccess(input: InterviewScope & { documentId: string }) {
 }
 export function getInterviewApplicantPanel(input: InterviewScope) {
   const { s, app } = access(input); const p = s.students.find(p => p.id === app.studentId)!.profile;
-  return { profile: { firstName: p.firstName, lastName: p.lastName, headshotUrl: p.headshotUrl, scholarStatus: p.scholarStatus }, document: s.interviewFoundation.documents.find(d => d.applicationId === app.id && d.roundId === input.roundId) || null };
+  return { profile: { firstName: p.firstName, lastName: p.lastName, headshotUrl: p.headshotUrl, scholarStatus: p.scholarStatus }, document: s.interviewFoundation.documents.find(d => d.applicationId === app.id && d.roundId === input.roundId) || null, resumeOnFile: true };
 }
 /** Same contract as the server page: re-checks access and filters on every page; a cursor is only a position. */
 export function getInterviewResumeModerationPage(clubId: string, filters: ApplicantInterviewFilters = {}, cursor: string | null = null, limit?: number) {

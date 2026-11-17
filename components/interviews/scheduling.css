@@ -36,6 +36,7 @@
 .ir-times button span { font-size: var(--oc-size-12); overflow-wrap: anywhere; }
 .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
 .ir-times button:disabled { opacity: .4; border-style: dashed; }
+.ir-times button[data-booked]:not([aria-pressed="true"]) { border-color: var(--success); background: var(--success-subtle); color: var(--success); }
 .ir-calendar button:focus-visible,.ir-times button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .ir-confirmed { display: flex; gap: 12px; margin-bottom: 22px; padding: 16px; border: 1px solid var(--oc-content-edge); background: var(--success-subtle); border-radius: var(--oc-content-radius); color: var(--success); font-size: var(--oc-text-small); }
 .ir-confirmed > svg { flex-shrink: 0; }
@@ -48,9 +49,16 @@
 .oc-application-detail .ir-booking-intro { padding: 20px; }
 .oc-application-detail .ir-select { min-height: 44px; border-radius: var(--oc-radius-md); }
 .oc-application-detail .ir-confirmed { background: var(--success-subtle); color: var(--success); border-color: var(--border); border-radius: var(--oc-radius-md); }
+/* The application page already names the club, so the panel skips its eyebrow. */
+.oc-application-detail .ir-booking-intro .ir-eyebrow { display: none; }
 @media (max-width: 639px) {
-  .oc-application-detail .ir-booking-intro .ir-symbol { margin-bottom: 12px; }
-  .oc-application-detail .ir-booking-intro .ir-detail { margin-top: 10px; }
+  /* On a phone the details sit in one compact block so the calendar starts sooner. */
+  .oc-application-detail .ir-booking-intro { padding: 16px; }
+  .oc-application-detail .ir-booking-intro .ir-symbol { display: none; }
+  .oc-application-detail .ir-booking-intro h2 { margin-top: 0; font-size: var(--oc-text-body); }
+  .oc-application-detail .ir-booking-intro > p:not(.ir-eyebrow) { margin-top: 6px; }
+  .oc-application-detail .ir-booking-intro .ir-detail { display: inline-flex; margin: 10px 16px 0 0; }
+  .oc-application-detail .ir-booking-intro > p.mt-6 { margin-top: 10px; }
   .oc-application-detail .ir-booking-action > button { width: 100%; min-height: 44px; }
 }
 .oc-application-detail .ir-booking-intro :is(.ir-eyebrow, .ir-detail),

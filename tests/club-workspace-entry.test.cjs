@@ -15,7 +15,7 @@ function harness({ search = '', permissions = ['applications.review'], owner = f
   const mocks = {
     // The persistent shell draws the rail; ClubWorkspace registers its callbacks with it.
     '@/components/shell/workspace-shell-context': { useShellBindings: value => { bindings.current = value } },
-    react: { useState: value => [value, () => {}], useRef: value => ({ current: value }), useEffect: effect => effects.push(effect) },
+    react: { useState: value => [value, () => {}], useRef: value => ({ current: value }), useEffect: effect => effects.push(effect), useMemo: compute => compute() },
     'next/navigation': { useRouter: () => router, useSearchParams: () => new URLSearchParams(search) },
     'next/dynamic': { default: () => 'Dynamic' },
     '@/contexts/auth-context': { useAuth: () => auth },

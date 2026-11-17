@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { calendarEventFile } from "@/lib/ical";
 import type { CampusEvent } from "@/lib/campus-events";
 
-export type EventSaveState = { identity: string; saved: boolean; ready: boolean; pending: boolean; onSave: () => void };
+/** readOnly: an alumni account (lib/graduation.ts) sees whether an event is saved but cannot change it. */
+export type EventSaveState = { identity: string; saved: boolean; ready: boolean; pending: boolean; onSave: () => void; readOnly?: boolean };
 
-export function EventSaveButton({ event, identity, saved, ready, pending, onSave }: EventSaveState & { event: CampusEvent }) {
+export function EventSaveButton({ event, identity, saved, ready, pending, onSave, readOnly }: EventSaveState & { event: CampusEvent }) {
+  if (identity && readOnly) return saved ? <span className="relative z-[2] inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground"><Bookmark size={16} weight="fill" aria-hidden="true" />Saved</span> : null;
   if (!identity) return <Button asChild variant="outline" size="sm" className="relative z-[2] min-h-11 [.oc-smart-event-actions>&]:max-[700px]:flex-1"><Link href={`/login?next=${encodeURIComponent(`/corkboard?event=${event.id}`)}`} aria-label={`Sign in to save ${event.title}`}><Bookmark size={16} aria-hidden="true" />Save</Link></Button>;
   return <Button type="button" variant={saved ? "accent" : "outline"} size="sm" className="relative z-[2] min-h-11 [.oc-smart-event-actions>&]:max-[700px]:flex-1" aria-pressed={saved} aria-label={`${pending ? "Saving…" : saved ? "Saved" : "Save"} ${event.title}`} disabled={!ready || pending} onClick={onSave}>
     <Bookmark size={16} weight={saved ? "fill" : "regular"} aria-hidden="true" />{pending ? "Saving…" : saved ? "Saved" : "Save"}

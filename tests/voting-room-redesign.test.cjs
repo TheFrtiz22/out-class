@@ -193,8 +193,8 @@ test('projector: "next" names the applicant in identified rounds and keeps anony
 
 test('own application (#392): no slide, scholar, totals or result; the projector keeps round counts without the access note',()=>{
  const presentation=read('components/live-voting/room-presentation.tsx'),audience=read('components/live-voting/audience-room.tsx'),tracker=read('components/live-voting/round-tracker.tsx');
- assert.match(presentation,/if\(isOwnApplication\(data\)\)return <p role="status" className="vr-own-application">/);
- assert.ok(presentation.indexOf('isOwnApplication(data)')<presentation.indexOf('<ApplicantSlide'),'checked before any slide renders');
+ assert.match(presentation,/if\(isOwnApplicationPresentation\(data\)\)return <p role="status" className="vr-own-application">/);
+ assert.ok(presentation.indexOf('isOwnApplicationPresentation(data)')<presentation.indexOf('<ApplicantSlide'),'checked before any slide renders');
  assert.match(audience,/const aside=!own&&entry/);
  assert.match(tracker,/variant==="panel"&&summary\.partial&&/);
 });

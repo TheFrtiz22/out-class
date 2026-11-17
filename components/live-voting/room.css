@@ -155,7 +155,8 @@
 .vr-setup-tools{display:flex;align-items:center;gap:8px}
 .vr-setup-tools [data-slot=input]{flex:1}
 .vr-setup-count{color:var(--muted-foreground);font-size:var(--oc-text-small);text-align:right}
-.vr-setup-people{max-height:none;padding-top:8px;border-top:1px solid var(--border)}
+/* Long rosters scroll inside the list so the voters, rule and target below stay in reach. */
+.vr-setup-people{max-height:min(22rem,55dvh);overflow-y:auto;overscroll-behavior:contain;padding-top:8px;border-top:1px solid var(--border)}
 .vr-setup .vr-setup-people label{min-height:44px;font-weight:var(--oc-weight-regular)}
 /* Step 3: switches beside the real room slide. The switch and link pills widen their tap areas past their edges, hence the end padding on these rows. */
 .vr-setup-split{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:48px;align-items:start;padding:24px 0;border-bottom:1px solid var(--border)}

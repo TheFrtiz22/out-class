@@ -5,15 +5,20 @@ async function begin(h){await h.create();ok(await h.command('START'));ok(await h
 
 test('creation is scoped, retry safe, and validates current leaders/voters; ID alone is not access',async()=>{
  const h=harness();await h.create();await h.create();assert.equal(h.state().sessions.length,1);assert.equal(h.state().audit.length,1);
- await assert.rejects(h.create({targetSize:2}),/already used/);h.as(uuid(7));await assert.rejects(h.read(),/access denied/);h.as(voterId);await assert.rejects(h.create(),/Denied/);await assert.rejects(h.command('START'),/Denied/);
- for(const change of [{cycleId:uuid(99)},{roundId:uuid(99)},{clubId:uuid(99)},{participantIds:[uuid(99)]},{leaderMemberIds:[voterId]}])await assert.rejects(harness().create(change));
+ await assert.rejects(h.create({targetSize:2}),/already used/);h.members[2].permissions=h.members[2].permissions.filter(p=>p!=='decisions.vote');h.as(uuid(7));await assert.rejects(h.read(),/access denied/);h.members[2].permissions.push('decisions.vote');h.as(voterId);await assert.rejects(h.create(),/Denied/);await assert.rejects(h.command('START'),/Denied/);
+ for(const change of [{cycleId:uuid(99)},{roundId:uuid(99)},{clubId:uuid(99)},{leaderMemberIds:[voterId]}])await assert.rejects(harness().create(change));
+ // A saved voter list from an older client is ignored: nobody is preselected, people join.
+ const legacyList=harness();await legacyList.create({joined:[],participantIds:[uuid(99)]});assert.deepEqual(legacyList.state().sessions[0].participants,[]);assert.equal(legacyList.state().sessions[0].presentationOptions.electorate,'OPEN');
  const wrong=harness();wrong.state().apps[0].recruitmentCycleId=uuid(99);await assert.rejects(wrong.create(),/Select applicants from this cycle and round/);
- const disabled=harness();disabled.members[1].user.disabledAt=new Date();await assert.rejects(disabled.create(),/permissions/);
+ const disabled=harness();disabled.members[0].user.disabledAt=new Date();await assert.rejects(disabled.create(),/Denied|permissions/);
 });
 test('room discovery exposes only authorized club/cycle/round metadata, including anonymous restrictions',async()=>{
  const h=harness();await h.create();h.state().sessions.push({...structuredClone(h.state().sessions[0]),id:uuid(900),clubId:uuid(99)});
  h.as(voterId);let rows=await h.api.listLiveVotingRooms({clubId,cycleId,roundId});assert.deepEqual(rows.map(r=>r.id),[sessionId]);assert.doesNotMatch(JSON.stringify(rows),/participants|displayConfig|ballots|leaderMemberIds/);
- assert.deepEqual(await h.api.listLiveVotingRooms({clubId,cycleId:uuid(99)}),[]);h.as(uuid(7));assert.deepEqual(await h.api.listLiveVotingRooms({clubId}),[]);
+ assert.deepEqual(await h.api.listLiveVotingRooms({clubId,cycleId:uuid(99)}),[]);
+ // Open electorate: a member who may vote finds the room before joining; one without voting rights does not.
+ h.as(uuid(7));assert.deepEqual((await h.api.listLiveVotingRooms({clubId})).map(r=>[r.id,r.view]),[[sessionId,'member']]);
+ h.members[2].permissions=h.members[2].permissions.filter(p=>p!=='decisions.vote');await assert.rejects(h.api.listLiveVotingRooms({clubId}),/access denied/);
  h.as(voterId);h.members[1].permissions=h.members[1].permissions.filter(p=>p!=='applicants.identify');assert.deepEqual(await h.api.listLiveVotingRooms({clubId}),[]);h.round.anonymousReview=true;assert.equal((await h.api.listLiveVotingRooms({clubId})).length,1);
 });
 test('one current ballot is replaceable only while open, retries do not overwrite newer choices, totals never leak',async()=>{
@@ -104,6 +109,6 @@ test('the Voting room lists board (LEGACY) draft sessions alongside live rooms, 
  h.as(leaderId);let rows=await h.api.listLiveVotingRooms({clubId});assert.deepEqual(rows.map(r=>r.id).sort(),[sessionId,uuid(901)].sort());
  assert.equal(rows.find(r=>r.id===uuid(901)).mode,'LEGACY');assert.equal(rows.find(r=>r.id===uuid(901)).state,'DRAFT');assert.equal(rows.find(r=>r.id===sessionId).mode,'LIVE');
  // The draft keeps the room's filters: another cycle, or no access, hides it.
- assert.deepEqual(await h.api.listLiveVotingRooms({clubId,cycleId:uuid(99)}),[]);h.as(uuid(7));assert.deepEqual(await h.api.listLiveVotingRooms({clubId}),[]);
+ assert.deepEqual(await h.api.listLiveVotingRooms({clubId,cycleId:uuid(99)}),[]);h.members[2].permissions=h.members[2].permissions.filter(p=>p!=='decisions.vote');h.as(uuid(7));await assert.rejects(h.api.listLiveVotingRooms({clubId}),/access denied/);
  assert.doesNotMatch(fs.readFileSync('actions/voting-room.ts','utf8').match(/export async function listLiveVotingRooms[\s\S]*?findMany\(\{where:\{[^}]*/)[0],/mode:"LIVE"/);
 });

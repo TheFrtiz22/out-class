@@ -6,7 +6,11 @@ import { changePlatformResource } from "@/actions/platform-admin";
 import { unwrapAction } from "@/lib/action-result";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { NativeSelect } from "@/components/ui/native-select"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { EmptyState } from "@/components/ui/empty-state"
+import { schedulingDateTime } from "@/lib/scheduling-config"
+const claimActionLabels: Record<string, string> = { "club.claim.request": "Claim requested", "platform.claim.change": "Status changed" }
+
 export function ClaimReview({
   initial,
 }: {
@@ -32,21 +36,18 @@ export function ClaimReview({
   }
   return (
     <div className="space-y-6">
-      <label>
-        Status{" "}
-        <NativeSelect
-          className="ml-3"
-          value={status}
-          disabled={busy}
-          onChange={(e) => void load(e.target.value, 0)}
-        >
-          {["PENDING", "APPROVED", "REJECTED"].map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </NativeSelect>
-      </label>
+      <SegmentedControl
+        label="Claim status"
+        value={status}
+        onChange={(value) => { if (!busy) void load(value, 0) }}
+        options={[
+          { value: "PENDING", label: "Pending" },
+          { value: "APPROVED", label: "Approved" },
+          { value: "REJECTED", label: "Rejected" },
+        ]}
+      />
       {error && <p role="alert">{error}</p>}
-      {!claims.length && <p>No {status.toLowerCase()} claims on this page.</p>}
+      {!claims.length && <EmptyState density="compact" tone="subtle" title={`No ${status.toLowerCase()} claims`} description={status === "PENDING" ? "Leaders asking to manage a club will show up here." : "Nothing to show for this status yet."} />}
       {claims.map((claim) => (
         <section key={claim.id} className="space-y-3 border-t py-5">
           <h2 className="oc-section-heading ">{claim.club.name}</h2>
@@ -116,7 +117,7 @@ export function ClaimReview({
             <ul className="space-y-2 py-3 text-sm">
               {claim.history.map((h) => (
                 <li key={h.id}>
-                  {new Date(h.createdAt).toISOString()} · {h.action} · Actor{" "}
+                  {schedulingDateTime(h.createdAt)} · {claimActionLabels[h.action] ?? h.action} · Actor{" "}
                   {h.actorId}
                   {h.reason && <p>{h.reason}</p>}
                 </li>
@@ -125,7 +126,7 @@ export function ClaimReview({
           </details>
         </section>
       ))}
-      <div className="flex gap-3">
+      {(page > 0 || claims.length >= 50) && <div className="flex gap-3">
         <Button
           variant="outline"
           disabled={busy || page === 0}
@@ -140,7 +141,7 @@ export function ClaimReview({
         >
           Next
         </Button>
-      </div>
+      </div>}
     </div>
   );
 }

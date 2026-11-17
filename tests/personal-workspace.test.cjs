@@ -57,7 +57,7 @@ function trackerHarness(records,scope='status',params='') {
  const shared={focusApplicationClubId:null,clearApplicationFocus(){shared.focusApplicationClubId=null},focusApplication:id=>calls.push(['focus',id]),syncApplications:items=>calls.push(['applications',items]),syncApplicationBookings:items=>calls.push(['bookings',items])};
  let server=records,fail=false,query=params;const revalidation={};
  const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-server-now':{useServerAnchoredNow:()=>Date.now()},'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
- return {...h,calls,auth,navigation,revalidation,render:()=>h.render(()=>C({scope,onNavigate:view=>navigation.push(view)})),setRecords:records=>server=records,fail:()=>fail=true,query:value=>query=value,shared};
+ return {...h,calls,auth,navigation,revalidation,setScope:value=>scope=value,render:()=>h.render(()=>C({scope,onNavigate:view=>navigation.push(view)})),setRecords:records=>server=records,fail:()=>fail=true,query:value=>query=value,shared};
 }
 const cards=tree=>nodes(tree).filter(node=>node.type==='ApplicationStatusCard');
 const management=tree=>nodes(tree).filter(node=>node.type==='ApplicationManagementCard');
@@ -153,8 +153,9 @@ test('personal shell keeps page headings in content once, with universal and con
   assert.equal(nodes(shell).some(node=>node.props?.className==='oc-header-context'),false,view);
   // Sections live in the rail and phone sheet only; the pill is a workspace switcher.
   assert.equal(nodes(shell).some(node=>node.props?.['aria-label']==='Product modes'),false,view);
-  assert.deepEqual(nodes(shell).filter(node=>node.type==='nav').map(node=>node.props['aria-label']),['Home','Explore','Applications','Clubs','Account'],view);
-  assert.equal(nodes(shell).some(node=>node.props?.['data-tour']==='nav-inbox'),false,'Notifications live in the header bell');
+  assert.deepEqual(nodes(shell).filter(node=>node.type==='nav').map(node=>node.props['aria-label']),['Home','Explore','Applications','Clubs','Account','Inbox and settings'],view);
+  const foot=sheetLinks(shell).filter(node=>['nav-inbox','nav-account-settings'].includes(node.props?.['data-tour']));
+  assert.deepEqual(foot.map(node=>node.props.href),['/inbox'],'Inbox closes every rail; Settings needs a live session');
  }
  const manager=h.render(()=>ProductShell({mode:'recruiting',manager:true,clubName:'Club name',active:'overview',title:'Overview',sections:[],onSelect(){},onNavigate(){}}));
  assert.equal(nodes(manager).some(node=>node.props?.className==='oc-header-context'),false);assert.equal(nodes(manager).some(node=>node.props?.['aria-label']==='Home'),false);
@@ -194,7 +195,7 @@ test('a member club shell keeps personal sections as real paths beside the club 
  const shell=h.render(()=>ProductShell({mode:'clubs',clubId:'member-club',title:'Overview',sections:memberRailSections('member-club','Member club'),active:'club-home',onSelect:id=>context.push(id),onNavigate:view=>navigation.push(view)}));
  const links=sheetLinks(shell),href=id=>links.find(node=>node.props?.['data-tour']==='nav-'+id)?.props.href;
  assert.deepEqual(['student-dashboard','calendar','student-profile'].map(href),['/home','/calendar','/profile']);
- assert.equal(href('club-home'),'/club/member-club/workspace?section=overview');assert.equal(href('inbox'),undefined);
+ assert.equal(href('club-home'),'/club/member-club/workspace?section=overview');assert.equal(href('inbox'),'/inbox');
  assert.equal(links.find(node=>node.props?.['data-tour']==='nav-club-home').props['aria-current'],'page');
  assert.deepEqual(navigation,[]);assert.deepEqual(context,[]);
 });
@@ -242,3 +243,16 @@ test('background and explicit application refresh failures are surfaced quietly 
  cards(tree)[0].props.onOpen();tree=h.render();await nodes(tree).find(node=>node.type==='ApplicationStatusDetail').props.onRefresh();await h.flush();
  assert.match(nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail').props.notice,/Couldn’t refresh/);
 });
+
+test('View submitted responses from the status page opens the answers, and a later in-app link still opens', async()=>{
+ const h=trackerHarness([app('Interview','INTERVIEWING')],'status');h.render();await h.flush();
+ h.shared.focusApplicationClubId='club-Interview';h.render();await h.flush();
+ const detail=()=>nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail');
+ assert.equal(detail()?.props.application.id,'Interview');
+ detail().props.onResponses();await h.flush();
+ assert.deepEqual(h.calls.filter(c=>c[0]==='focus'),[['focus','club-Interview']]);
+ // The app shell answers the focus request by showing the tracker with the club focused.
+ h.setScope('all');h.render();await h.flush();h.shared.focusApplicationClubId='club-Interview';h.render();await h.flush();
+ assert.equal(detail(),undefined,'the submitted answers show, not the status again');
+ assert.ok(JSON.stringify(nodes(h.render()).filter(n=>typeof n.props?.children==='string').map(n=>n.props.children)).includes('read-only after submission'),'the answers view is open, not the list');
+})

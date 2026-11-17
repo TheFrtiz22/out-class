@@ -13,6 +13,7 @@ import { OWNER_GUARD_MESSAGE, ownerGuardError, performAccountDeletion } from "@/
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { providerAuthFailure } from "@/lib/admin-failure"
+import { ActionError, actionResult } from "@/lib/action-result"
 import { captchaFailed, turnstileMessage, turnstileRemoteIp, withCaptcha } from "@/lib/turnstile"
 import { activeMemberWhere, hasPermission } from "@/lib/permissions"
 import {
@@ -37,10 +38,10 @@ const requestSchema = z.object({
 /** Demo Mode and administrator support sessions never reach a real account's deletion path. */
 async function requireAccountHolder() {
   const jar = await cookies()
-  if (jar.has(PLATFORM_VIEW_COOKIE)) throw Error("Support sessions can’t request or cancel account deletion.")
-  if (jar.get(DEMO_COOKIE)?.value === "1") throw Error("Account deletion is unavailable in Demo Mode.")
+  if (jar.has(PLATFORM_VIEW_COOKIE)) throw new ActionError("Support sessions can’t request or cancel account deletion.")
+  if (jar.get(DEMO_COOKIE)?.value === "1") throw new ActionError("Account deletion is unavailable in Demo Mode.")
   const auth = await requireAuth()
-  if (auth.impersonation) throw Error("Support sessions can’t request or cancel account deletion.")
+  if (auth.impersonation) throw new ActionError("Support sessions can’t request or cancel account deletion.")
   return auth
 }
 
@@ -95,29 +96,29 @@ export async function getAccountDeletionRequest() {
  */
 async function verifyFreshAuthentication(user: { id: string; email: string }, passwordAccount: boolean, password: string | undefined, turnstileToken: string | undefined) {
   if (passwordAccount) {
-    if (!password) throw Error("Enter your current password.")
+    if (!password) throw new ActionError("Enter your current password.")
     const since = new Date(Date.now() - 15 * 60_000)
     const ip = turnstileRemoteIp((await headers()).get("x-forwarded-for"))
     // Only a hash is stored; it serves the per-IP limit and nothing else.
     const ipHash = ip ? createHash("sha256").update("outclass-account-deletion\0" + ip).digest("hex") : null
     await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`
-      if (await tx.auditLog.count({ where: { actorId: user.id, action: accountDeletionAudit.passwordAttempt, createdAt: { gte: since } } }) >= ACCOUNT_DELETION_PASSWORD_ATTEMPTS) throw Error("Too many attempts. Try again in 15 minutes.")
-      if (ipHash && await tx.auditLog.count({ where: { action: accountDeletionAudit.passwordAttempt, createdAt: { gte: since }, details: { path: ["ipHash"], equals: ipHash } } }) >= ACCOUNT_DELETION_IP_ATTEMPTS) throw Error("Too many attempts from this network. Try again in 15 minutes.")
+      if (await tx.auditLog.count({ where: { actorId: user.id, action: accountDeletionAudit.passwordAttempt, createdAt: { gte: since } } }) >= ACCOUNT_DELETION_PASSWORD_ATTEMPTS) throw new ActionError("Too many attempts. Try again in 15 minutes.", "RATE_LIMITED")
+      if (ipHash && await tx.auditLog.count({ where: { action: accountDeletionAudit.passwordAttempt, createdAt: { gte: since }, details: { path: ["ipHash"], equals: ipHash } } }) >= ACCOUNT_DELETION_IP_ATTEMPTS) throw new ActionError("Too many attempts from this network. Try again in 15 minutes.", "RATE_LIMITED")
       await tx.auditLog.create({ data: { actorId: user.id, action: accountDeletionAudit.passwordAttempt, targetId: user.id, details: { result: "attempt", ipHash } } })
     })
     const client = freshAuthClient()
     const signed = await client.auth.signInWithPassword(withCaptcha({ email: user.email, password }, turnstileToken))
-    if (captchaFailed(signed.error)) throw Error(turnstileMessage("rejected"))
-    if (signed.error && !providerAuthFailure(signed.error)) throw Error("Password verification is unavailable right now. Try again later.")
-    if (signed.error || !signed.data.session || signed.data.user?.id !== user.id) throw Error("That password isn’t right.")
+    if (captchaFailed(signed.error)) throw new ActionError(turnstileMessage("rejected"))
+    if (signed.error && !providerAuthFailure(signed.error)) throw new ActionError("Password verification is unavailable right now. Try again later.")
+    if (signed.error || !signed.data.session || signed.data.user?.id !== user.id) throw new ActionError("That password isn’t right.")
     // Close the verification session only; never sign the person out elsewhere.
     await client.auth.signOut({ scope: "local" }).catch(() => undefined)
     return "password"
   }
   const client = await createClient(await cookies())
   const { data, error } = await client.auth.getClaims()
-  if (error || !freshAuthentication(data?.claims?.amr)) throw Error("For your security, sign out and sign back in, then delete your account within 10 minutes.")
+  if (error || !freshAuthentication(data?.claims?.amr)) throw new ActionError("For your security, sign out and sign back in, then delete your account within 10 minutes.")
   return "recent-sign-in"
 }
 
@@ -127,18 +128,18 @@ async function assertOwnershipCovered(userId: string) {
   const owned = await prisma.clubMember.findMany({ where: { userId, isOwner: true, ...activeMemberWhere }, select: { clubId: true, club: { select: { name: true } } } })
   for (const membership of owned) {
     const others = await prisma.clubMember.findMany({ where: { clubId: membership.clubId, userId: { not: userId }, isOwner: true, ...activeMemberWhere, user: { disabledAt: null } }, select: { userId: true } })
-    if (!others.length) throw Error(`Transfer ownership of ${membership.club.name} before deleting your account.`)
+    if (!others.length) throw new ActionError(`Transfer ownership of ${membership.club.name} before deleting your account.`)
     const leaving = await prisma.platformReport.count({ where: { kind: ACCOUNT_DELETION_REPORT_KIND, status: { in: OPEN }, targetId: { in: others.map(o => o.userId) } } })
-    if (leaving >= others.length) throw Error(`The other owner of ${membership.club.name} has also asked to delete their account. Add another owner before deleting yours.`)
+    if (leaving >= others.length) throw new ActionError(`The other owner of ${membership.club.name} has also asked to delete their account. Add another owner before deleting yours.`)
   }
 }
 
-export async function requestAccountDeletion(input: unknown) {
+async function requestAccountDeletionCommand(input: unknown) {
   const { user, supabaseUser } = await requireAccountHolder()
   const d = requestSchema.parse(input)
-  if (!accountDeletionConfirmationMatches(d.confirmation, user.email)) throw Error("Type your university email or DELETE to confirm.")
+  if (!accountDeletionConfirmationMatches(d.confirmation, user.email)) throw new ActionError("Type your university email or DELETE to confirm.")
   const admin = await prisma.platformAdmin.findUnique({ where: { userId: user.id } })
-  if (admin?.active) throw Error("Platform administrators must hand off administrator access before deleting their account.")
+  if (admin?.active) throw new ActionError("Platform administrators must hand off administrator access before deleting their account.")
   await assertOwnershipCovered(user.id)
   const method = await verifyFreshAuthentication(user, hasPassword(supabaseUser as { app_metadata?: Record<string, unknown> }), d.password, d.turnstileToken)
 
@@ -173,19 +174,29 @@ export async function requestAccountDeletion(input: unknown) {
  * Signed-in only, no re-authentication: cancelling restores the status quo, so a
  * stolen session gains nothing by it (docs/account-deletion.md).
  */
-export async function cancelAccountDeletion() {
+async function cancelAccountDeletionCommand() {
   const { user } = await requireAccountHolder()
   await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`
     const row = await tx.platformReport.findFirst({ where: { kind: ACCOUNT_DELETION_REPORT_KIND, targetId: user.id, status: { in: OPEN } } })
-    if (!row) throw Error("There’s no pending deletion request.")
-    if (!accountDeletionCancellable(row.createdAt)) throw Error("This request is past its 14-day window and can no longer be cancelled.")
+    if (!row) throw new ActionError("There’s no pending deletion request.")
+    if (!accountDeletionCancellable(row.createdAt)) throw new ActionError("This request is past its 14-day window and can no longer be cancelled.")
     const updated = await tx.platformReport.updateMany({ where: { id: row.id, revision: row.revision }, data: { status: "DISMISSED", resolution: "Cancelled by the account holder.", resolvedAt: new Date(), resolvedBy: user.id, revision: { increment: 1 } } })
-    if (!updated.count) throw Error("The request changed. Reload and try again.")
+    if (!updated.count) throw new ActionError("The request changed. Reload and try again.")
     await tx.auditLog.create({ data: { actorId: user.id, action: accountDeletionAudit.cancelled, targetId: user.id, details: { reportId: row.id, result: "success" } } })
   })
   revalidatePath("/settings/account")
   return { cancelled: true }
+}
+
+// Returned through actionResult so the reason (wrong password, sole owner, too many attempts)
+// reaches the person: a thrown message is replaced by a generic one in production.
+export async function requestAccountDeletion(...args: Parameters<typeof requestAccountDeletionCommand>) {
+  return actionResult(() => requestAccountDeletionCommand(...args), "requestAccountDeletion")
+}
+
+export async function cancelAccountDeletion() {
+  return actionResult(() => cancelAccountDeletionCommand(), "cancelAccountDeletion")
 }
 
 /** Platform admin queue: pending requests with their due dates and confirmation-email status. */
