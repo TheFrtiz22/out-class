@@ -65,6 +65,12 @@ test('Resend transport keeps one recipient and a stable key and distinguishes re
     assert.equal(calls[0].options.body, calls[1].options.body);
     assert.equal(JSON.parse(calls[1].options.body).to, 'student@virginia.edu');
     status = 422; await assert.rejects(email.sendNotificationEmail(payload, uuid(2), 'fixture'), e => !e.retryable);
+    // A sending quota is a definite refusal that waits for the reset; a plain 429 is still an ordinary retry.
+    global.fetch = async () => Response.json({ statusCode: 429, name: 'daily_quota_exceeded', message: 'quota' }, { status: 429 });
+    await assert.rejects(email.sendNotificationEmail(payload, uuid(3), 'fixture'), e => e.code === 'RESEND_DAILY_QUOTA' && e.retryable && e.notAccepted && e.retryAfterMs > 0 && e.retryAfterMs <= 86460000);
+    global.fetch = async () => Response.json({ statusCode: 429, name: 'rate_limit_exceeded', message: 'slow down' }, { status: 429 });
+    await assert.rejects(email.sendNotificationEmail(payload, uuid(4), 'fixture'), e => e.code === 'RESEND_429' && e.retryable && !e.notAccepted);
+    assert.equal(email.untilDailyQuotaReset(Date.UTC(2026, 10, 17, 23, 30)), 31 * 60000, 'resets a minute after midnight UTC');
   } finally { global.fetch = original; }
 });
 

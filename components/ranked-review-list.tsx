@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { PillSelect } from "@/components/ui/pill-select"
 import { RoundSelect } from "@/components/ui/round-select"
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
@@ -260,7 +261,7 @@ function BandSettings({ clubId, roundId, cycleKey, bands, revision, canManage, a
   async function save(next: RankedBands | null) {
     setSaving(true); setMessage("")
     try { const result = await api.saveBands({ clubId, roundId, cycleKey, expectedRevision: revision, bands: next }); onSaved(result.bands, result.revision) }
-    catch { setMessage("Couldn’t save discussion bands. Someone may have changed them; refresh the ranking and try again.") }
+    catch (error) { setMessage(userMessage(error, "Couldn’t save discussion bands. Someone may have changed them; refresh the ranking and try again.")) }
     finally { setSaving(false) }
   }
   return <div className="oc-ranked-settings text-sm">

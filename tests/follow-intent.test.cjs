@@ -34,3 +34,9 @@ test('signed-out Follow and Apply ask to create an account first, and the save f
   assert.match(profile,/real && !user\) \{[\s\S]{0,200}setJoinPrompt\(/)
   assert.doesNotMatch(profile,/Sign in to apply/)
 })
+
+test('the join prompt opens on its primary action, not the close button', () => {
+  const dialog = require('node:fs').readFileSync('components/clubs/join-prompt-dialog.tsx', 'utf8')
+  assert.match(dialog, /onOpenAutoFocus=\{event => \{[\s\S]*primary\.current\.focus\(\{ preventScroll: true \}\)/)
+  assert.match(dialog, /<a ref=\{primary\} href=\{authEntryWithReturn\("\/signup", returnPath\)\}>/)
+})
