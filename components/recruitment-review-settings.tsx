@@ -1,7 +1,7 @@
 "use client";
 import { userMessage } from "@/lib/user-message"
 import { ActionWorkflow } from "@/components/product/action-workflow";
-import { DecisionTemplateEditor } from "@/components/communications/template-editor";
+import Link from "next/link";
 import { useState } from "react";
 import {
   setRoundAnonymousReview,
@@ -98,7 +98,7 @@ export function RecruitmentReviewSettings({
           </Button>
         </form>
         <p role="status">{message}</p>
-        <DecisionTemplateEditor clubId={clubId} />
+        <p className="text-sm text-muted-foreground">Decision letters are edited in <Link className="underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=notifications`}>Settings › Communications</Link>.</p>
       </div>
   );
   return embedded ? content : <ActionWorkflow title="Review privacy & test requirements" description="Configure round privacy and required applicant test information." trigger="Review privacy & test requirements" presentation="sheet">{content}</ActionWorkflow>;
