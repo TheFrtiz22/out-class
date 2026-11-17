@@ -2,6 +2,7 @@
 import {useLayoutEffect,useMemo,useRef,type ReactNode} from "react";
 import {ApplicantIdentity} from "@/components/applicant-identity";
 import {resultOutcomeLabel,type RoomResult} from "@/lib/voting-room";
+import {Check,Pause,XIcon} from "@/components/icons";
 import type {VotingSlideData} from "./applicant-slide";
 import {SlideText} from "./slide-text";
 import {balanceColumns,slideModel,type SlideModel,type SlideNote} from "./slide-model";
@@ -23,6 +24,12 @@ export function useFit(ref:React.RefObject<HTMLElement|null>,key:unknown){
   let live=true;void document.fonts?.ready.then(()=>{if(live)fit();});
   return()=>{live=false;observer?.disconnect();};
  },[ref,key]);
+}
+
+/** A confirmed outcome beside the name, shown briefly before the room moves on: colour always paired with text. */
+export function OutcomeMark({result}:{result:RoomResult}){
+  const Icon=result.outcome==="ACCEPT"?Check:result.outcome==="HOLD"?Pause:XIcon;
+  return <p className="vr-outcome" data-outcome={result.outcome}><Icon aria-hidden="true" size={16}/>{resultOutcomeLabel(result)}</p>;
 }
 
 function Note({note}:{note:SlideNote}){
@@ -55,7 +62,7 @@ export function AudienceApplicant({data,outcome,aside}:{data:VotingSlideData;out
  const result=aside?.(outcome)??(outcome?<div className="vr-aud-result" data-outcome={outcome.outcome}><p className="vr-aud-kicker">Result</p><p className="vr-aud-word">{resultOutcomeLabel(outcome)}</p></div>:null);
  useFit(root,`${data.applicationId}:${model.notes.length}:${!!result}`);
  return <section ref={root} aria-label="Current applicant presentation" className="vr-aud-applicant" data-state={result?"result":"evidence"}>
-  <div className="vr-aud-left" data-fit-box><Person model={model} heading={<h2 tabIndex={-1} data-applicant-heading>{model.name}</h2>}/></div>
+  <div className="vr-aud-left" data-fit-box><Person model={model} heading={<h2 tabIndex={-1} data-applicant-heading>{model.name}</h2>}>{outcome&&<OutcomeMark result={outcome}/>}</Person></div>
   <div className="vr-aud-right" data-fit-box>
    {result??<>
     <Facts model={model}/>
@@ -67,12 +74,13 @@ export function AudienceApplicant({data,outcome,aside}:{data:VotingSlideData;out
 }
 
 /** The leader's condensed column: the same fields, smaller, in normal page flow (the leader screen may scroll). */
-export function LeaderApplicant({data,position}:{data:VotingSlideData;position?:string}){
+export function LeaderApplicant({data,position,outcome=null}:{data:VotingSlideData;position?:string;outcome?:RoomResult|null}){
  const model=useMemo(()=>slideModel(data),[data]),columns=balanceColumns(model.notes);
  return <section aria-label="Current applicant" className="vr-lead-applicant">
   <div className="vr-lead-person">
    {model.showPhoto?<ApplicantIdentity size="lg" announcePhoto name={model.name} photo={model.photo} anonymous={model.anonymous} heading={<div className="vr-lead-name">{position&&<p className="vr-lead-position">{position}</p>}<h2 tabIndex={-1} data-applicant-heading>{model.name}</h2></div>}/>
     :<div className="vr-lead-name">{position&&<p className="vr-lead-position">{position}</p>}<h2 tabIndex={-1} data-applicant-heading>{model.name}</h2></div>}
+   {outcome&&<OutcomeMark result={outcome}/>}
    {model.profile.length>0&&<p className="vr-lead-profile">{model.profile.map((p,i)=><span key={`${p.field}:${i}`} data-slide-field={p.field} data-accent={p.accent||undefined}>{p.text}</span>)}</p>}
   </div>
   <Facts model={model}/>

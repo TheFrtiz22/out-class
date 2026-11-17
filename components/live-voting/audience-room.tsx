@@ -87,7 +87,7 @@ export function AudienceRoom({room,entry,clubId,sessionId,demo,stage,nextLabel}:
  return <SlideFrame theme={theme} round={roundLine(room)}
   headerEnd={unit=><><ProjectorThemeSwitch value={theme} onChange={setTheme} label="Slide theme" className="vr-aud-theme"/><JoinCode clubId={clubId} sessionId={sessionId} demo={demo} size={Math.round(unit*3.6)}/></>}
   tracker={<RoundTracker summary={summary.round} status={summary.status} variant="slide" position={applicantPosition(room)}/>}
-  stage={stage} footer={<VoteStatus room={room} entry={entry} next={nextLabel} variant="slide"/>}/>;
+  stage={stage} footer={<><VoteStatus room={room} entry={entry} next={nextLabel} variant="slide"/><p className="sr-only">{entry?`${applicantPosition(room)}. ${entry.ballotState==="OPEN"?"Voting open":"Voting closed or waiting"}.`:"Waiting for the leader."}</p></>}/>;
 }
 /** The 16:9 slide frame shared by the projector and the setup preview; sizes follow the frame, not the window. */
 export function SlideFrame({theme,round,headerEnd,tracker,stage,footer,preview=false}:{theme:ProjectorTheme;round:string;headerEnd:(unit:number)=>ReactNode;tracker:ReactNode;stage:ReactNode;footer:ReactNode;preview?:boolean}){

@@ -11,10 +11,9 @@ import {highlightAttribution} from "@/lib/voting-slide-preparation";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
 import {SLIDE_FACT_MAX,SLIDE_NOTE_CHARS,SLIDE_SHORT_QUERY,slideExcerpt,evidenceExcerpt,feedbackExcerpt} from "@/lib/voting-slide-excerpt";
 import {Button} from "@/components/ui/button";
-import {Check,Pause,XIcon} from "@/components/icons";
-import {resultOutcomeLabel,type RoomResult} from "@/lib/voting-room";
+import type {RoomResult} from "@/lib/voting-room";
 import {InterviewFeedbackSection,EarlierFeedbackRounds} from "@/components/interview-feedback-section";
-import {AudienceApplicant,LeaderApplicant} from "./audience-slide";
+import {AudienceApplicant,LeaderApplicant,OutcomeMark} from "./audience-slide";
 import {SlideText} from "./slide-text";
 
 export type VotingSlideData=Exclude<Awaited<ReturnType<typeof getLiveVotingPresentation>>,StalePresentation>;
@@ -36,16 +35,12 @@ const useShortProjector=()=>useSyncExternalStore(subscribeShort,()=>window.match
 /** One renderer for setup, leader, audience and member views. Only the
  * server-projected fields enter this component, including its details dialog. */
 /** A confirmed outcome beside the name, shown briefly before the room moves on: colour always paired with text. */
-function OutcomeMark({result}:{result:RoomResult}){
-  const Icon=result.outcome==="ACCEPT"?Check:result.outcome==="HOLD"?Pause:XIcon;
-  return <p className="vr-outcome" data-outcome={result.outcome}><Icon aria-hidden="true" size={16}/>{resultOutcomeLabel(result)}</p>;
-}
 /** `audience`: the projector slide, every field in full and fitted to one screen; `leader`: the condensed leader
  * column; `default`: member phones and preparation, with the details dialog. `aside` replaces the notes with the
  * closed vote's result on the projector. */
 export function ApplicantSlide(props:{data:VotingSlideData;outcome?:RoomResult|null;variant?:"default"|"audience"|"leader";aside?:(outcome:RoomResult|null)=>React.ReactNode;position?:string}){
   if(props.variant==="audience")return <AudienceApplicant data={props.data} outcome={props.outcome??null} aside={props.aside}/>;
-  if(props.variant==="leader")return <LeaderApplicant data={props.data} position={props.position}/>;
+  if(props.variant==="leader")return <LeaderApplicant data={props.data} position={props.position} outcome={props.outcome??null}/>;
   return <DetailedSlide data={props.data} outcome={props.outcome??null}/>;
 }
 function DetailedSlide({data,outcome}:{data:VotingSlideData;outcome:RoomResult|null}){
