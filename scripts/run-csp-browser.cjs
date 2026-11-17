@@ -5,6 +5,8 @@ const {spawn}=require('node:child_process');
 const fs=require('node:fs');
 const net=require('node:net');
 (async()=>{
+  // Fails unless the test run itself reports success (a killed server must not look green).
+  process.exitCode=1;
   const probe=net.createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r));
   const url=`http://127.0.0.1:${port}`;
   fs.mkdirSync('test-results/csp',{recursive:true});
@@ -22,8 +24,8 @@ const net=require('node:net');
   let timer;
   try{
     const deadline=Date.now()+300000;
-    while(true){if(server.exitCode!==null)throw Error('Local app exited; inspect test-results/csp/server.log');try{const r=await fetch(url+'/login');if(r.ok)break;}catch{}if(Date.now()>deadline)throw Error('Local app did not become ready');await new Promise(r=>{timer=setTimeout(r,1000)});}
+    while(true){if(server.exitCode!==null||server.signalCode!==null)throw Error('Local app exited; inspect test-results/csp/server.log');try{const r=await fetch(url+'/login',{signal:AbortSignal.timeout(60000)});if(r.ok)break;}catch{}if(Date.now()>deadline)throw Error('Local app did not become ready');await new Promise(r=>{timer=setTimeout(r,1000)});}
     const child=spawn(process.execPath,['--test','--test-concurrency=1','tests/csp/csp-browser.test.cjs'],{env,stdio:'inherit'});
     process.exitCode=await new Promise(resolve=>child.on('exit',code=>resolve(code??1)));
-  }finally{clearTimeout(timer);server.kill('SIGTERM');await new Promise(resolve=>server.once('exit',resolve));fs.closeSync(log);}
+  }finally{clearTimeout(timer);if(server.exitCode===null&&server.signalCode===null){server.kill('SIGTERM');await new Promise(resolve=>server.once('exit',resolve));}fs.closeSync(log);}
 })().catch(error=>{console.error(error);process.exitCode=1});
