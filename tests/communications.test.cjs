@@ -105,3 +105,11 @@ test('notification emails link to the student inbox path, not the old homepage q
     if (name !== 'panel') assert.ok(payload.text.includes('Read your updates: https://www.outclass.test/inbox\n'), `${name}: inbox link`)
   }
 })
+
+test('a Book your interview notice says it books, not that it opens the application', () => {
+  const { inboxNotification } = loader({})('lib/communications-client.ts');
+  const base = { id: uuid(1), clubId: uuid(2), club: { name: 'Fixture', color: '#142d4e', logoUrl: null }, title: 'Book your interview', body: 'Interview times are open.', createdAt: new Date('2026-10-10T12:00:00Z'), readAt: null, type: 'INTERVIEW' };
+  assert.equal(inboxNotification({ ...base, eventKey: `applicant-interview-booking:published:a:r:c`, href: `/interviews/book?clubId=${uuid(2)}&roundId=${uuid(3)}` }).cta, 'Book interview');
+  assert.equal(inboxNotification({ ...base, eventKey: `applicant-interview-booking:confirmed:b`, href: `/interviews/book?clubId=${uuid(2)}&roundId=${uuid(3)}` }).cta, 'View interview');
+  assert.equal(inboxNotification({ ...base, eventKey: 'status:x', href: '/applications' }).cta, 'View application');
+});

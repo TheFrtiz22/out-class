@@ -134,7 +134,14 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   useEffect(() => {
     if (pending || !focusApplicationClubId && !applicationId) return
     const app = applications.find((item) => applicationId ? item.id === applicationId : item.clubId === focusApplicationClubId)
-    if (app && (scope === "all" || app.status !== "DRAFTING")) { setActiveId(app.id); lastOpened.current = app.id }
+    if (app && (scope === "all" || app.status !== "DRAFTING")) {
+      setActiveId(app.id); lastOpened.current = app.id
+      // A submitted application opens on its status, where interview booking and decisions live, not on its answers.
+      if (app.status !== "DRAFTING") setStatusId(app.id)
+      // A link to one application (Home's View interview, an email) opens the stage that holds it, not the stage in the URL.
+      const appStage = applicationStage(app.status)
+      if (appStage) { setFilter(appStage); if (typeof window !== "undefined" && window.history) { const url = new URL(window.location.href); url.searchParams.set("tab", appStage); window.history.replaceState(window.history.state, "", url) } }
+    }
     clearApplicationFocus()
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
   const app = applications.find((item) => item.id === activeId)

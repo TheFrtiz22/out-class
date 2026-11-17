@@ -171,7 +171,8 @@ export function StudentDashboardView({
   const upcomingDeadlines = applications.filter(app => app.draft && !app.intakeClosed && app.deadline && eventStart(app.deadline) >= current).sort((a, b) => eventStart(a.deadline!).getTime() - eventStart(b.deadline!).getTime())
   const drafts = applications.filter(app => app.draft && !app.intakeClosed && !upcomingDeadlines.includes(app))
   const interviewing = applications.filter(app => app.status === "Interviewing")
-  const urgentUpdate = updates.find(update => update.urgent && !update.read)
+  // An interview notice for a club already shown as "Interview with …" would be the same ask twice.
+  const urgentUpdate = updates.find(update => update.urgent && !update.read && !(update.type === "Interview Invite" && interviewing.some(app => app.clubId === update.clubId)))
   const readUpdate = (id: string) => { focusNotification(id); onNavigate("inbox") }
   const needs: (NeedsItem & { order: number })[] = []
   if (upcomingDeadlines[0]) { const app = upcomingDeadlines[0]; needs.push({ order: next.kind === "application" && next.application.id === app.id ? 0 : 1, id: "deadline", title: upcomingDeadlines.length === 1 ? `${app.name} application due` : `${plural(upcomingDeadlines.length, "application")} due`, detail: `Application deadline: ${when(app.deadline!)}`, action: <NeedsAction onClick={() => openApplication(app)}>Continue draft</NeedsAction> }) }
