@@ -34,6 +34,7 @@
     "email:templates": "node scripts/email-audit.cjs build",
     "email:previews": "node scripts/email-design.cjs render",
     "test:a11y": "node scripts/run-accessibility.cjs",
+    "test:csp:browser": "node scripts/run-csp-browser.cjs",
     "test:a11y:authenticated": "node scripts/run-onboarding-e2e.cjs --a11y"
   },
   "dependencies": {

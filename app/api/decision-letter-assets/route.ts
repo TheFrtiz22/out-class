@@ -2,6 +2,7 @@ import { NextRequest,NextResponse } from 'next/server';
 import { getDecisionLetter } from '@/actions/communications';
 import { clubAssetReference } from '@/lib/club-assets';
 import { privateClubAssetStorage } from '@/utils/club-asset-storage';
+import { SANDBOXED_FILE_POLICY } from '@/lib/csp';
 export async function GET(request:NextRequest){
  const missing=()=>new NextResponse(null,{status:404,headers:{'Cache-Control':'private, no-store'}});
  try{
@@ -11,6 +12,6 @@ export async function GET(request:NextRequest){
   if(!reference||!clubAssetReference.safeParse(reference).success||reference.split('/')[1]!==letter.clubId)return missing();
   const {data,error}=await(await privateClubAssetStorage()).download(reference.slice(12));
   if(error||!data||(await read())?.letter?.content.logoReference!==reference)return missing();
-  return new NextResponse(await data.arrayBuffer(),{headers:{'Content-Type':reference.endsWith('.jpg')?'image/jpeg':reference.endsWith('.png')?'image/png':'image/webp','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox"}});
+  return new NextResponse(await data.arrayBuffer(),{headers:{'Content-Type':reference.endsWith('.jpg')?'image/jpeg':reference.endsWith('.png')?'image/png':'image/webp','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':SANDBOXED_FILE_POLICY}});
  }catch{return missing();}
 }

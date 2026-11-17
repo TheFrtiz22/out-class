@@ -221,7 +221,9 @@ test('sw.js source: versioned caches, old ones deleted, skipWaiting + clients.cl
   assert.doesNotMatch(source, /pushManager|PushSubscription/, "the worker shows pushes; it never subscribes (tests/web-push.test.cjs)")
   const config = read('next.config.mjs')
   assert.match(config, /source: "\/sw\.js", headers: \[\{ key: "Cache-Control", value: "no-cache" \}/)
-  for (const header of ['X-Content-Type-Options', 'Referrer-Policy', 'Content-Security-Policy', 'X-Frame-Options']) assert.match(config, new RegExp(header))
+  for (const header of ['X-Content-Type-Options', 'Referrer-Policy', 'X-Frame-Options']) assert.match(config, new RegExp(`key: "${header}"`))
+  // The service worker's framing policy comes from middleware (FRAME_ANCESTORS_POLICY in lib/csp.ts).
+  assert.match(read('middleware.ts'), /FRAME_ANCESTORS_POLICY/)
   assert.match(read('middleware.ts'), /"\/sw\.js", "\/offline\.html"\]/)
   const offline = read('public/offline.html')
   assert.doesNotMatch(offline, /<script/i, 'offline page is static, with no user data')

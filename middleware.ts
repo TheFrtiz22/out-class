@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/middleware'
 import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 import { RATE_LIMITS, RATE_LIMIT_MESSAGE, rateLimiter, rateLimitHeaders, rateLimitKey } from "@/lib/rate-limit-core"
-import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, CSP_NONCE_HEADER } from "@/lib/csp"
+import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, forwardCspToRendering, FRAME_ANCESTORS_POLICY, routeSetsOwnCsp, stripCspRequestHeaders } from "@/lib/csp"
 
 /**
  * Page requests get a fresh nonce and Content-Security-Policy (docs/csp.md). The nonce and
@@ -17,13 +17,16 @@ import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, CSP_NONCE_HEADER } 
 export async function middleware(request: NextRequest) {
   let pathname = request.nextUrl.pathname
   try { pathname = decodeURIComponent(pathname) } catch { /* route() answers 400 */ }
-  if (!cspAppliesTo(pathname)) return route(request)
+  if (!cspAppliesTo(pathname)) {
+    stripCspRequestHeaders(request.headers)
+    // API routes, files and metadata get only the framing policy (see FRAME_ANCESTORS_POLICY),
+    // except routes that send their own stricter policy (SANDBOXED_FILE_POLICY).
+    const response = await route(request)
+    if (!routeSetsOwnCsp(pathname)) response.headers.set("Content-Security-Policy", FRAME_ANCESTORS_POLICY)
+    return response
+  }
   const nonce = createNonce(), policy = buildCsp({ nonce }), header = cspHeaderName()
-  // Never trust a client-sent nonce or policy.
-  request.headers.delete("content-security-policy")
-  request.headers.delete("content-security-policy-report-only")
-  request.headers.set(CSP_NONCE_HEADER, nonce)
-  request.headers.set(header, policy)
+  forwardCspToRendering(request.headers, nonce, policy)
   const response = await route(request)
   response.headers.set(header, policy)
   return response
@@ -66,7 +69,12 @@ async function route(request: NextRequest): Promise<Response> {
   }
   // Browser CSP reports carry no identity and change nothing; they skip session refresh and the
   // Demo Mode write guard (a report from a demo page is still a report). The route bounds itself.
-  if (request.method === "POST" && request.nextUrl.pathname === "/api/csp-report") return NextResponse.next()
+  // Over the per-address limit, middleware answers 204 itself (the browser does not retry), so a
+  // report burst costs no function invocations.
+  if (request.method === "POST" && request.nextUrl.pathname === "/api/csp-report") {
+    const limit = rateLimiter.check(RATE_LIMITS.cspReports, rateLimitKey({ forwardedFor: request.headers.get("x-forwarded-for") }))
+    return limit.ok ? NextResponse.next() : new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } })
+  }
   // The internal delivery route checks its independent bearer secret. Cron needs no Supabase session refresh.
   if (["/api/internal/invitation-delivery", "/api/internal/notification-delivery"].includes(request.nextUrl.pathname)) return NextResponse.next()
   // Metadata routes, security.txt, the service worker and its offline page contain only public content and need no session refresh.
