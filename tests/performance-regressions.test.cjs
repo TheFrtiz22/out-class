@@ -224,3 +224,55 @@ test('Auth publishes its opaque epoch fence before React commits, without droppi
  observe('SIGNED_IN',{access_token:'opaque-C'});assert.equal(refreshed.isReadAuthorityCurrent(refreshed.readAuthority),false);const replaced=render();
  observe('SIGNED_OUT',null);assert.equal(replaced.isReadAuthorityCurrent(replaced.readAuthority),false);assert.equal(render().user,identity,'Existing remote identity refresh remains separate');
 });
+
+test('Club home renders the server-read dashboard without a second read, only for the account it was read for', async () => {
+  const member = { id: 'membership', userId: 'user-a', clubId, isOwner: false, status: 'ACTIVE', accessRole: 'MEMBER', permissions: [], interviewOffices: [], club: { id: clubId, name: 'Club' } };
+  const value = { club: { id: clubId, name: 'Club' }, membership: member };
+  function mount({ user = { id: 'user-a', memberships: [member] }, demo = false, initialOverview } = {}) {
+    const h = hooks(); let calls = 0;
+    const load = loader({ react: h.react, 'next/dynamic': { __esModule: true, default: () => 'Dynamic' }, 'next/link': { __esModule: true, default: 'Link' },
+      'next/navigation': { useRouter: () => ({ push() {}, replace() {} }), useSearchParams: () => new URLSearchParams('section=overview') },
+      '@/contexts/auth-context': { useAuth: () => ({ user, loading: false, activeClubId: clubId, selectClub() {} }) },
+      '@/contexts/demo-context': { useDemoMode: () => ({ ready: true, isDemoEnabled: demo }) },
+      '@/lib/workspace-api': { getClubWorkspaceOverview: async (id, view) => { calls++; assert.equal(view, 'club'); return value } },
+      '@/lib/application-state': { ApplicationStateProvider: 'Provider', useApplicationState: () => ({}) },
+      '@/hooks/use-revalidate': { useRevalidate() {} } });
+    const { ClubWorkspace } = load('components/club-workspace.tsx');
+    return { h, calls: () => calls, render: () => h.render(() => ClubWorkspace({ clubId, section: 'overview', initialOverview })) };
+  }
+  const overview = tree => nodes(tree).find(n => n.type === 'ManagerOverview');
+  const seed = { view: 'club', userId: 'user-a', value };
+  const seeded = mount({ initialOverview: seed });
+  assert.equal(overview(seeded.render())?.props.data, value, 'First render already shows the server-read dashboard');
+  await seeded.h.flush(); assert.equal(seeded.calls(), 0, 'No duplicate client read on mount');
+  // Another account, Demo Mode or no seed: the page reads through /api/workspace as before.
+  for (const options of [{ initialOverview: { ...seed, userId: 'user-b' } }, { initialOverview: seed, demo: true }, {}]) {
+    const other = mount(options);
+    assert.equal(overview(other.render()), undefined); await other.h.flush(); assert.equal(other.calls(), 1);
+  }
+});
+
+test('club workspace page reads Club home and Recruiting Overview on the server only for a live, unsuspended member', async () => {
+  function harness({ demo = false, impersonating = false, suspended = false, fails = false } = {}) {
+    const reads = []; function Workspace() {}
+    const page = loader({
+      'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
+      '@/utils/auth': { getSessionUser: async () => ({ data: { user: { email: 'someone@virginia.edu' } }, error: null }) },
+      '@/lib/demo/access': { DEMO_COOKIE: 'outclass-demo-session', canAccessDemo: () => false },
+      '@/utils/current-user': { getCurrentUser: async () => ({ id: 'user-a', memberships: [{ clubId, club: { name: 'Club', suspendedAt: suspended ? new Date() : null } }] }) },
+      '@/actions/club-overview': { getClubWorkspaceOverview: async (id, view) => { reads.push([id, view]); if (fails) throw Error('Access denied'); return { club: { id } } } },
+      '@/components/club-workspace': { ClubWorkspace: Workspace },
+      '@/components/auth-session-boundary': { AuthSessionBoundary: 'Boundary' }, '@/components/shell/authenticated-page-layout': { AuthenticatedPageLayout: 'Layout' },
+      'next/link': { default: () => null }, '@/components/shell/workspace-route-loading': { WorkspaceRouteLoading: () => null },
+    })('app/(workspace)/club/[clubId]/workspace/page.tsx').default;
+    const seed = async query => { const outer = await page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve(query) }); const tree = await outer.props.children.type(outer.props.children.props); return nodes(tree).find(n => n.type === Workspace)?.props.initialOverview; };
+    return { seed, reads };
+  }
+  let h = harness();
+  assert.deepEqual(await h.seed({ section: 'overview' }), { view: 'club', userId: 'user-a', value: { club: { id: clubId } } });
+  assert.equal((await h.seed({ section: 'recruitment', tool: 'overview' })).view, 'recruiting');
+  assert.equal(await h.seed({ section: 'members' }), null, 'Other sections read nothing extra');
+  assert.deepEqual(h.reads, [[clubId, 'club'], [clubId, 'recruiting']]);
+  h = harness({ fails: true }); assert.equal(await h.seed({ section: 'overview' }), null, 'A failed read falls back to the client read');
+  for (const options of [{ demo: true }, { impersonating: true }, { suspended: true }]) { h = harness(options); assert.equal(await h.seed({ section: 'overview' }) ?? null, null); assert.equal(h.reads.length, 0); }
+});

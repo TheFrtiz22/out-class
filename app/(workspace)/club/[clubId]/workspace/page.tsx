@@ -47,6 +47,13 @@ async function Workspace({ clubId, section, taskView, tool }: { clubId: string; 
   }
   const user = demoEnabled ? null : await getCurrentUser();
   const membership = user?.memberships.find(member => member.clubId === clubId);
+  // Club home and the Recruiting Overview read their dashboard on the server, so it streams with the page
+  // instead of waiting for hydration and a second request. Same loader and authorization as /api/workspace;
+  // the client keeps it only for this account and membership, and on any failure reads it as before.
+  const overviewView = section === "overview" ? "club" : section === "recruitment" && tool === "overview" ? "recruiting" : null;
+  const initialOverview = user && membership && !membership.club.suspendedAt && overviewView && !jar.has(PLATFORM_VIEW_COOKIE) && jar.get(DEMO_COOKIE)?.value !== "1"
+    ? await import("@/actions/club-overview").then(({ getClubWorkspaceOverview }) => getClubWorkspaceOverview(clubId, overviewView)).then(value => ({ view: overviewView, userId: user.id, value }), () => null)
+    : null;
   if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
   return (
     <AuthSessionBoundary>
@@ -56,6 +63,7 @@ async function Workspace({ clubId, section, taskView, tool }: { clubId: string; 
         section={section ?? "overview"}
         taskView={taskView}
         tool={tool}
+        initialOverview={initialOverview}
       />
     </AuthSessionBoundary>
   );
