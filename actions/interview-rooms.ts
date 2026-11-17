@@ -248,7 +248,11 @@ async function setInterviewRoomExternallyBookedCommand(raw: unknown) {
   revalidatePath(`/club/${input.clubId}/workspace`)
   return result
 }
-export async function getApplicantSchedule(applicationId: string): Promise<ApplicantSchedule> {
+export async function getApplicantSchedule(applicationId: string) {
+  // Returned, not thrown, so the "many people are booking" message survives the server action boundary.
+  return actionResult(() => getApplicantScheduleCommand(applicationId), "getApplicantSchedule")
+}
+async function getApplicantScheduleCommand(applicationId: string): Promise<ApplicantSchedule> {
   uuid.parse(applicationId)
   const { user } = await requireAuth()
   try { return await applicantScheduleRead(applicationId, user.id) }
