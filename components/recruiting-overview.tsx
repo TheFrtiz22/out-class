@@ -96,7 +96,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
           <PipelineBars stages={op.rounds.map((r, i) => ({ id: r.id, label: `${String(i + 1).padStart(2, "0")} · ${r.name}`, count: r.count }))} />
           <DashboardFoot>{[pluralize(total, "active applicant"), ...(statuses ? statuses.stages.slice(1).map(stage => pluralize(stage.count, ...stage.noun)) : []), `${pluralize(pending, "review")} left for you`].join(" · ")}</DashboardFoot>
         </> : empty(hasPermission(membership, "recruitment.manage") ? "No recruiting rounds yet." : "No rounds are available with your current review access.",
-          hasPermission(membership, "recruitment.manage") ? <DashboardMore {...clubLinkProps(club.id, `/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=cycles`)}>Set up rounds</DashboardMore> : undefined)}
+          hasPermission(membership, "recruitment.manage") ? <DashboardMore {...clubLinkProps(club.id, `/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=pipeline`)}>Set up rounds</DashboardMore> : undefined)}
       </DashboardCard>
       <DashboardCard id="dashboard-reviews" headingTabIndex={-1} index={cards.length + 2} className="oc-review-console"
         title={<>Review queue <span className="oc-section-count oc-dashboard-count" aria-hidden="true">{pending}</span></>}
