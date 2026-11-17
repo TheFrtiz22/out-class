@@ -10,7 +10,7 @@ const root = path.join(__dirname, '..');
 // Shared guards used by nearly every action. Their refusals are safe, but an
 // unwrapped action that hits one shows the screen's fallback, which is the
 // accepted behaviour until that action is converted.
-const sharedGuards = new Set(['requireAuth', 'requireClubPermission', 'assertClubOperational', 'lockOperationalClub', 'authorizeClubTransaction', 'assertGraduateMayJudge']);
+const sharedGuards = new Set(['requireAuth', 'requireClubPermission', 'assertClubOperational', 'lockOperationalClub', 'authorizeClubTransaction', 'graduateMemberFor', 'assertGraduateMayUse', 'assertGraduateMayOperate']);
 
 // Reviewed exclusions: exported actions that can throw ActionError but are
 // intentionally not wrapped. Reads surface failures as the screen's load

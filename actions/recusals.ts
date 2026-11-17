@@ -1,4 +1,5 @@
 "use server"
+import { assertGraduateMayOperate } from "@/lib/graduate-access"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
 import { requireClubPermission } from "@/utils/auth"
@@ -50,6 +51,8 @@ export async function setApplicantRecusal(input: unknown) {
   const { user } = await requireClubPermission(d.clubId, [])
   return prisma.$transaction(async tx => {
     const actor = await authorizeClubTransaction(tx, d.clubId, user.id, [])
+    // A graduate kept as owner is read-only in the club (lib/graduation.ts).
+    assertGraduateMayOperate(actor)
     const targetId = d.memberId ?? actor.id
     const lead = hasPermission(actor, "recruitment.manage")
     if (targetId !== actor.id && !lead) throw new Error("Only recruitment leads can recuse other members.")

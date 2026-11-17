@@ -7,11 +7,15 @@
  *   if Aug 1 has passed), so confirmed and unconfirmed students change over together and keep full
  *   student access through the summer.
  * - Home asks "Graduating this spring?" from April through July of gradYear (Eastern calendar).
- * - Alumni can sign in and see their own account, profile and history, export their data and delete
- *   their account. They cannot do anything active: apply (drafts included), RSVP (public events
- *   included), check in, vote, accept an offer or invitation, book or move an interview (cancelling
- *   stays available), submit tasks, save clubs or events (removing a saved item stays available), or
- *   request to claim a club. They can still report content (actions/content-reports.ts).
+ * - Alumni accounts are read-only (owner decision, Nov 16). They can sign in and see their own
+ *   account, profile and history. They keep personal account settings only: profile edits and
+ *   uploads, account and notification settings, push subscriptions, the calendar feed, graduation
+ *   answers ("I'm not graduating" undoes a wrong graduation), data export, account deletion, and
+ *   content and feedback reports (actions/content-reports.ts). Everything else is refused: apply
+ *   (drafts included), RSVP or cancel an RSVP (public events included), check in, vote, accept or
+ *   decline an offer or invitation (any kind), book, move or cancel an interview, submit tasks, save
+ *   or remove saved clubs and events, edit the private interest survey or general availability, and
+ *   request to claim a club. Alumni are exempt from the required-availability gate.
  *   Direct messaging no longer exists (actions/communications.ts refuses every caller). Each server action refuses with a
  *   friendly message (ALUMNI_REFUSALS, utils/graduation.ts assertNotAlumni) and the UI hides those
  *   controls. Their club memberships stay on rosters as Alumni (ClubMember.alumniSince) without club
@@ -23,12 +27,14 @@
  *   employer edit updates the profile and the Alumni tab only, and an entry a leader removed is never
  *   added back. Current members of those clubs see name, email, employer, role and class year in the
  *   club's Alumni tab unless they opt out (alumniDirectoryVisible).
- * - An owner the job kept current so the club is not left without one (utils/graduation.ts) keeps the
- *   club-management access needed to hand over (members, roles, settings) but, like other alumni, is
- *   refused recruiting judgment: reviews, evaluations and decision votes (RECRUITING_JUDGMENT_PERMISSIONS).
+ * - An owner the job kept current so the club is not left without one (utils/graduation.ts) is
+ *   read-only in that club too, except for handing it over: transferring ownership or making a
+ *   current member owner. The shared membership checks mark such a member handOverOnly
+ *   (lib/graduate-access.ts, lib/permissions.ts HAND_OVER_PERMISSIONS) and refuse every other club
+ *   operation with ALUMNI_REFUSALS.manage; the club workspace shows one hand-over note. They are
+ *   not an eligible voter (utils/voting-rules.ts).
  */
 import { z } from "zod"
-import type { ClubPermission } from "@/lib/permissions"
 import { zonedInstant } from "@/lib/interview-rooms"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
@@ -38,14 +44,17 @@ export const ALUMNI_APPLY_MESSAGE = "Congratulations on graduating. Alumni accou
 /** Server refusals for alumni, one per active feature. Shown as written (ActionError / { ok: false }). */
 export const ALUMNI_REFUSALS = {
   apply: ALUMNI_APPLY_MESSAGE,
-  rsvp: "Alumni accounts can’t RSVP to events. Your past RSVPs stay in your history.",
+  rsvp: "Alumni accounts can’t RSVP to events or change an RSVP. Your past RSVPs stay in your history.",
   checkIn: "Alumni accounts can’t check in to meetings. Your past attendance stays in your history.",
   vote: "Alumni accounts can’t vote. Your vote was not recorded.",
   join: "Alumni accounts can’t join clubs. Your past memberships stay in your history.",
-  book: "Alumni accounts can’t book or move interviews. You can still cancel a booked interview.",
+  respond: "Alumni accounts can’t accept or decline offers or invitations. Your past decisions stay in your history.",
+  book: "Alumni accounts can’t book, move or cancel interviews. Your past interviews stay in your history.",
   task: "Alumni accounts can’t submit tasks. Your past submissions stay in your history.",
-  save: "Alumni accounts can’t save clubs or events. You can still remove items you saved before.",
-  review: "Alumni accounts can’t review applicants, record evaluations or vote on decisions. Hand ownership to a current member.",
+  save: "Alumni accounts can’t save or remove clubs and events. Your saved items stay as they are.",
+  survey: "Alumni accounts can’t edit the interest survey. Your answers stay as they are.",
+  availability: "Alumni accounts can’t edit availability. Your saved availability stays as it is.",
+  manage: "You’ve graduated, so this club is read-only for you. Hand it to a current member to keep it running.",
 } as const
 export type AlumniAction = keyof typeof ALUMNI_REFUSALS
 export const ALUMNI_REFUSED = "ALUMNI_ACCOUNT"
@@ -90,16 +99,6 @@ export function placementListed(placements: unknown, employer: string) {
 }
 
 /**
- * Permissions that carry recruiting judgment: reviewing applicants, evaluations and decisions. A
- * graduate whose ownership was retained (lib/graduation.ts header) is refused these in the shared
- * permission checks (utils/auth.ts requireClubPermission, lib/club-transaction-authorization.ts,
- * utils/interview-access.ts interviewActor), while hand-over permissions (members.manage,
- * leaders.manage, club.settings) keep working.
- */
-export const RECRUITING_JUDGMENT_PERMISSIONS: readonly ClubPermission[] = ["applications.review", "decisions.vote", "decisions.manage", "decisions.publish", "decisions.start", "decisions.reopen", "decisions.finish"]
-export const requiresRecruitingJudgment = (permissions: readonly string[]) => permissions.some(p => (RECRUITING_JUDGMENT_PERMISSIONS as readonly string[]).includes(p))
-
-/**
  * Appends an employer to a club's placements (company name only). Returns null when nothing
  * changes: already listed (any case), blank, or the list is full (leader entries are never evicted).
  */
@@ -134,6 +133,15 @@ export function easternYearMonth(now: Instant = Date.now()) {
 export function lastDefaultedGradYear(now: Instant = Date.now()) {
   const { year } = easternYearMonth(now)
   return +new Date(now) >= +graduationDefaultAt(year) ? year : year - 1
+}
+
+/**
+ * Prisma User filter for people who have not graduated at `now` (or have no student profile). Voter
+ * eligibility uses it, so a graduate kept as owner is never counted in an electorate.
+ */
+export function notGraduatedUserWhere(now: Instant = Date.now()) {
+  const at = new Date(now)
+  return { OR: [{ studentProfile: { is: null } }, { studentProfile: { is: { OR: [{ graduatedAt: null }, { graduatedAt: { gt: at } }] } } }] }
 }
 
 export function isAlumniProfile(profile: Pick<GraduationProfile, "graduatedAt"> | null | undefined, now: Instant = Date.now()) {

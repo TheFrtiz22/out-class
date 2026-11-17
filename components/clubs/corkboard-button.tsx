@@ -25,8 +25,8 @@ export function CorkboardButton({ club, onNavigate, mode = "save", className = "
   }
   if (club.source === "preview") return null
   const saved = items.some(item => item.club.id === club.id)
-  // Alumni accounts can't save clubs (the server refuses too); a club saved earlier can still be removed.
-  if (authenticated && !saved && isAlumniProfile(user?.profile)) return null
+  // Alumni accounts are read-only (lib/graduation.ts): saved clubs are neither added nor removed.
+  if (authenticated && isAlumniProfile(user?.profile)) return null
   const label = mode === "follow"
     ? saved ? "Following" : "Follow"
     : authenticated ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "Sign in to save"

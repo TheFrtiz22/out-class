@@ -63,7 +63,9 @@ export type PublicEventBoardData = { events: CampusEvent[]; clubs: { id: string;
 /** `initialBoard` is the server's read of the unfiltered board, so the first paint shows events, not a placeholder. */
 export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventBoardData } = {}) {
   const { user } = useAuth(),
-    identity = user?.id || "";
+    identity = user?.id || "",
+    // Alumni accounts are read-only (lib/graduation.ts): saved events show but cannot change.
+    alumni = isAlumniProfile(user?.profile);
   const [filters, setFilters] = useState(initialFilters),
     [events, setEvents] = useState<CampusEvent[]>(initialBoard?.events ?? []),
     [clubs, setClubs] = useState<{ id: string; name: string }[]>(initialBoard?.clubs ?? []),
@@ -256,7 +258,7 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
                   : <Button variant="outline" onClick={() => setFilters(empty.action.kind === "clear-filters" ? { ...initialFilters, savedOnly: filters.savedOnly, sort: filters.sort } : { ...filters, savedOnly: false, page: 0 })}>{empty.action.label}</Button>} /> })()
             ) : shown === "list" ? (
               <ul className="oc-smart-event-list">
-                {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id) }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}
+                {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id), readOnly: alumni }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}
               </ul>
             ) : (
               <ul className="oc-flyer-grid">
@@ -372,7 +374,7 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
                   onChanged={(count) => updateEvent(selected.id, count)}
                 />
                 <div className="oc-event-detail-actions">
-                  <EventSaveButton event={selected} identity={identity} saved={saves.ids.has(selected.id)} ready={saves.ready} pending={saves.pending.has(selected.id)} onSave={() => void saveEvent(selected.id)} />
+                  <EventSaveButton event={selected} identity={identity} saved={saves.ids.has(selected.id)} ready={saves.ready} pending={saves.pending.has(selected.id)} onSave={() => void saveEvent(selected.id)} readOnly={alumni} />
                   <EventCalendarButton event={selected} />
                   <EventShareButton event={selected} clubName={selected.clubName} />
                 </div>
@@ -438,7 +440,7 @@ export function RsvpControls({
   identity: string;
   onChanged: (count: number) => void;
 }) {
-  // Alumni accounts cannot RSVP (the server refuses too); an earlier RSVP can still be cancelled.
+  // Alumni accounts cannot RSVP or cancel an RSVP (the server refuses too).
   const alumni = isAlumniProfile(useAuth().user?.profile);
   const [going, setGoing] = useState(false),
     [loading, setLoading] = useState(!!identity),
@@ -509,8 +511,10 @@ export function RsvpControls({
         </Link>
       </Button>
     );
-  if (alumni && !going && !loading)
-    return <p className="text-sm text-muted-foreground">Alumni accounts can’t RSVP.</p>;
+  if (alumni && !loading)
+    return going
+      ? <p role="status" className="oc-youre-going">You’re going <Check size={16} className="inline-block align-text-bottom" /></p>
+      : <p className="text-sm text-muted-foreground">Alumni accounts can’t RSVP.</p>;
   return (
     <div className="space-y-2" aria-busy={busy || loading} data-saving={busy}>
       {going ? (

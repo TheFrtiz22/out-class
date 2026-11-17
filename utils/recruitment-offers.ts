@@ -70,6 +70,8 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
   if (app.status !== "ACCEPTED" || offer.status !== "PENDING" || offer.expiresAt <= new Date() || offer.revokedAt || offer.acceptedAt || offer.declinedAt || offer.expiredAt)
     throw new ActionError("This offer is unavailable or has expired.");
   if (response === "DECLINE") {
+    // Alumni accounts are read-only (lib/graduation.ts): an offer can be neither accepted nor declined.
+    await assertNotAlumni(tx, userId, "respond");
     await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await event(tx, userId, app.clubId, offer.id, "offer.declined", app.id);
     await offerResponseNotification(tx, app, offer.id, "DECLINE");

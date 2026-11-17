@@ -4,6 +4,8 @@ import { FilterChips } from "@/components/ui/filter-chips"
 import { Button } from "@/components/ui/button"
 import { saveMyInterestSurvey } from "@/lib/workspace-api"
 import { userMessage } from "@/lib/user-message"
+import { useAuth } from "@/contexts/auth-context"
+import { ALUMNI_REFUSALS, isAlumniProfile } from "@/lib/graduation"
 import {
   CLUB_GOALS, INTEREST_CHIPS, MAX_INTERESTS, SELECTIVITY, WEEKLY_HOURS, emptyInterestAnswers,
   type GoalId, type InterestAnswers, type InterestId, type InterestSurveyDocument, type Selectivity, type WeeklyHours,
@@ -28,6 +30,8 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
   const [saved, setSaved] = useState(false)
   const set = (patch: Partial<InterestAnswers>) => { setAnswers(value => ({ ...value, ...patch })); setSaved(false) }
   const full = answers.interests.length >= MAX_INTERESTS
+  // Alumni accounts are read-only (lib/graduation.ts): answers show but cannot change.
+  const alumni = isAlumniProfile(useAuth().user?.profile)
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -50,7 +54,7 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
     {control}
   </section>
 
-  return <form onSubmit={submit} className="space-y-6" aria-busy={busy || undefined}>
+  return <form onSubmit={submit} className="space-y-6" aria-busy={busy || undefined}><fieldset disabled={alumni} className="contents">
     {question("into", "What are you into?", `${answers.interests.length} of ${MAX_INTERESTS}`,
       <FilterChips<InterestId> multiple label="What are you into?" value={answers.interests}
         onChange={value => set({ interests: value.slice(0, MAX_INTERESTS) })}
@@ -66,10 +70,11 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
         options={SELECTIVITY.map(option => ({ value: option.id, label: option.label }))} />)}
     <p className="text-xs text-muted-foreground">Only you see these. Clubs never do.</p>
     {error && <p role="alert" className="oc-feedback">{error}</p>}
-    <div className="flex flex-wrap items-center gap-3">
+    </fieldset>
+    {alumni ? <p role="status" className="text-sm text-muted-foreground">{ALUMNI_REFUSALS.survey}</p> : <div className="flex flex-wrap items-center gap-3">
       {secondary?.(busy)}
       <Button type="submit" loading={busy} disabled={busy}>{submitLabel}</Button>
       <span role="status" className="text-sm text-muted-foreground">{saved && !busy ? "Saved" : ""}</span>
-    </div>
+    </div>}
   </form>
 }

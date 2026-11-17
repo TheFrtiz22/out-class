@@ -1,3 +1,4 @@
+import {notGraduatedUserWhere} from "@/lib/graduation";
 import type {AppTransactionClient} from "@/utils/prisma";
 import {hasPermission, activeMemberWhere } from "@/lib/permissions";
 import {evaluateThreshold,readVotingRules,ruleSnapshotSchema,type RuleBallot,type RuleResult,type ThresholdRule,type VotingRules} from "@/lib/voting-rules";
@@ -5,7 +6,7 @@ import {evaluateThreshold,readVotingRules,ruleSnapshotSchema,type RuleBallot,typ
 /** Session participants who may vote right now (same rule as the room projection). */
 export async function currentEligibleVoterIds(tx:AppTransactionClient,clubId:string,participantIds:string[],anonymous:boolean){
   if(!participantIds.length)return [];
-  const members=await tx.clubMember.findMany({where:{clubId,id:{in:participantIds},...activeMemberWhere,user:{disabledAt:null}}});
+  const members=await tx.clubMember.findMany({where:{clubId,id:{in:participantIds},...activeMemberWhere,user:{disabledAt:null,...notGraduatedUserWhere()}}});
   return members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(anonymous||hasPermission(v,"applicants.identify"))).map(v=>v.id).sort();
 }
 export type BallotRuleSnapshot={version:number;rules:VotingRules;electorate:string[]};

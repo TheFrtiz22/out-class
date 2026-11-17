@@ -1,3 +1,4 @@
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { ActionError } from "@/lib/action-result";
 import { assertNotAlumni } from "@/utils/graduation";
 
@@ -83,8 +84,9 @@ export async function createIdentityInvitationInTransaction(tx: AppTransactionCl
     const club = await tx.club.findUniqueOrThrow({ where: { id: data.clubId } });
     const config = await tx.schoolIdentifierType.findUniqueOrThrow({ where: { id: data.identifierTypeId }, include: { school: true } });
     if (config.schoolId !== club.schoolId || !config.school.active) throw new ActionError("Identifier type does not belong to this organization's active school.");
-    const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: actor.id, clubId: club.id } } });
-    if (!data.platformDesignation && !canGrantOnboardingRole(member, data.requestedRole)) throw new ActionError("You cannot grant this organization role.");
+    const member = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: actor.id, clubId: club.id } } }));
+    // A graduate kept as owner hands over by transfer or by making a current member owner, not by invitation.
+    if (!data.platformDesignation && (member?.handOverOnly || !canGrantOnboardingRole(member, data.requestedRole))) throw new ActionError("You cannot grant this organization role.");
     if (data.platformDesignation && data.requestedRole === "OWNER" &&
         (club.claimedAt || await tx.clubMember.count({ where: { clubId: club.id, isOwner: true } }))) {
       throw new ActionError("Organization already claimed. Use existing ownership management.");

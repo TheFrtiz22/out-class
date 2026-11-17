@@ -28,6 +28,8 @@ export function canControlOrganizationAccess(actor: ClubAccess | null | undefine
 }
 
 export function canChangeOrganizationRole(actor: ClubAccess | null | undefined, target: ClubAccess & { accessRole?: string }, role: MembershipAccessRole) {
+  // A graduate kept as owner may only make a current member owner (lib/graduation.ts).
+  if (actor?.handOverOnly && role !== "OWNER") return false;
   return organizationCapabilities(actor).canChangeRoles && isActiveMembership(target) &&
     canControlOrganizationAccess(actor, target) && canGrantOnboardingRole(actor || null, role);
 }
@@ -38,6 +40,8 @@ export function canRemoveOrganizationMember(actor: ClubAccess | null | undefined
 }
 
 export function canManageOrganizationInvitation(actor: ClubAccess | null | undefined, invitation: { requestedRole: MembershipAccessRole; permissions: readonly string[] }) {
+  // A graduate kept as owner hands over by transfer or by making a current member owner, not by invitation.
+  if (actor?.handOverOnly) return false;
   return canGrantOnboardingRole(actor || null, invitation.requestedRole) &&
     invitation.permissions.every(p => hasPermission(actor, p as ClubPermission));
 }

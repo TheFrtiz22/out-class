@@ -1,4 +1,5 @@
 "use server";
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { ActionError, actionResult } from "@/lib/action-result";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
@@ -14,7 +15,7 @@ import { parseRosterCsv, validateRosterRows, rosterSummary, ROSTER_MAX_BYTES, RO
 
 async function authorize(tx: AppTransactionClient, clubId: string, userId: string) {
   await lockOperationalClub(tx, clubId);
-  const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
+  const member = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } }));
   const actor = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
   if (!actor || actor.disabledAt || !hasPermission(member, "members.manage")) throw new ActionError("Roster upload requires member-management access. Ask a club owner to grant it.", "FORBIDDEN");
   const club = await tx.club.findUniqueOrThrow({ where: { id: clubId } });

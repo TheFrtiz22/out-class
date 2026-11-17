@@ -333,6 +333,8 @@ async function cancelRoomBookingCommand(bookingId: string) {
   await atomic(async tx => {
     const initial = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } });
     if (!initial) throw new ActionError("We couldn’t find that interview.");
+    // Alumni accounts are read-only (lib/graduation.ts): a booked interview stays as it is.
+    await assertNotAlumni(tx, user.id, "book")
     await lockOperationalClub(tx, initial.slot.clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${initial.applicationId} FOR UPDATE`;

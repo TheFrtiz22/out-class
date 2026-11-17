@@ -4,6 +4,8 @@ import { prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { respondToRecruitmentOffer } from "@/utils/recruitment-offers";
 import { assertNotAlumni } from "@/utils/graduation";
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
+import { ALUMNI_REFUSALS, ALUMNI_REFUSED } from "@/lib/graduation";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 import { rosterMembers } from "@/lib/profile-field-visibility";
 
@@ -59,9 +61,10 @@ async function inviteClubManagerCommand(
   return prisma.$transaction(async (tx) => {
     // Serialize grants/revocations/ownership changes on the club, including last-owner checks.
     await lockOperationalClub(tx, data.clubId);
-    const actor = await tx.clubMember.findUnique({
+    // A graduate kept as owner comes back handOverOnly (lib/graduate-access.ts).
+    const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
-    });
+    }));
     if (
       !hasPermission(actor, "leaders.manage") ||
       !actor ||
@@ -182,14 +185,17 @@ async function updateClubAccessCommand(input: {
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, data.clubId);
-    const actor = await tx.clubMember.findUnique({
+    // A graduate kept as owner comes back handOverOnly (lib/graduate-access.ts).
+    const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
-    });
+    }));
     const target = await tx.clubMember.findFirst({
       where: { id: data.memberId, clubId: data.clubId },
     });
     if (!actor || !target || !organizationCapabilities(actor).canChangeRoles || (target.status && target.status !== "ACTIVE"))
       throw new ActionError("Access denied.");
+    // A graduate kept as owner may only make a current member owner (lib/graduation.ts).
+    if (actor.handOverOnly && !data.isOwner) throw new ActionError(ALUMNI_REFUSALS.manage, ALUMNI_REFUSED);
     // Alumni hold no club access; they can only be removed (lib/graduation.ts). The target is
     // therefore always a current member, so the last-owner count below (current owners only) includes it.
     if (target.alumniSince) throw new ActionError("This member is an alumnus. Alumni can’t be given club access; remove them or ask them to rejoin.");
@@ -255,7 +261,7 @@ async function revokeClubInvitationCommand(
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, clubId);
-    const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
+    const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } }));
     if (!hasPermission(actor, "leaders.manage")) throw new ActionError("Access denied.");
     const invitation = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
     if (!invitation || invitation.clubId !== clubId || !canManageOrganizationInvitation(actor, invitation)) {
@@ -294,7 +300,7 @@ async function addClubMemberCommand(clubId: string, email: string) {
   ]);
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, parsed.clubId);
-    const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: parsed.clubId } } });
+    const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: parsed.clubId } } }));
     if (!hasPermission(actor, "members.manage")) throw new ActionError("Access denied.");
     const person = await tx.user.findUnique({ where: { email: parsed.email } });
     if (!person || person.disabledAt)
@@ -319,9 +325,9 @@ async function removeClubMemberCommand(clubId: string, memberId: string) {
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, clubId);
-    const actor = await tx.clubMember.findUnique({
+    const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId } },
-    });
+    }));
     const target = await tx.clubMember.findFirst({
       where: { id: memberId, clubId },
     });
@@ -358,6 +364,8 @@ async function declineClubInvitationCommand(invitationId: string) {
   if (!hasConfirmedUniversityEmail(account)) throw new ActionError("Verify your UVA email before responding to an invitation.");
   await prepareVerifiedSchoolAccount(account);
   return clubWriteTransaction(async (tx) => {
+    // Alumni accounts are read-only (lib/graduation.ts): no invitation of any kind can be declined.
+    await assertNotAlumni(tx, user.id, "respond");
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new ActionError("Invitation unavailable.");
     if (hint.applicationId) { await respondToRecruitmentOffer(tx, hint.applicationId, user.id, "DECLINE"); return; }

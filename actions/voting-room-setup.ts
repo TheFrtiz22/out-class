@@ -1,4 +1,5 @@
 "use server";
+import {notGraduatedUserWhere} from "@/lib/graduation";
 import {readVotingRules} from "@/lib/voting-rules";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { z } from "zod";
@@ -30,7 +31,7 @@ export async function getLiveVotingSetup(input:unknown){
     if(d.roundId&&!round||d.cycleId&&!cycle)throw Error("The selected cycle or round is unavailable in this club.");
     if(round&&!round.anonymousReview&&!hasPermission(m,"applicants.identify"))throw Error("Identified review permission required.");
     const apps=round&&cycle?await tx.application.findMany({where:{clubId:d.clubId,roundId:round.id,recruitmentCycleId:cycle.id,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}},select:{id:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}},orderBy:[{submittedAt:"asc"},{id:"asc"}]}):[];
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null,...notGraduatedUserWhere()}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
     const voters=members.filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(!round||round.anonymousReview||hasPermission(v,"applicants.identify")));
     const evidence=interviewCapabilities(m);
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});

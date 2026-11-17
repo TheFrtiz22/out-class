@@ -1,4 +1,6 @@
 "use server";
+import { assertNotAlumni } from "@/utils/graduation";
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
@@ -78,6 +80,8 @@ async function declineIdentityClubInvitationCommand(invitationId: string) {
   const account = await requireAuth({ verifyEmail: true });
   await prepareVerifiedSchoolAccount(account);
   return clubWriteTransaction(async tx => {
+    // Alumni accounts are read-only (lib/graduation.ts).
+    await assertNotAlumni(tx, account.user.id, "respond");
     const invitation = await recipientInvitation(tx, invitationId, account);
     await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await tx.auditLog.create({ data: { actorId: account.user.id, action: "club.invite.decline", targetId: invitation.id, clubId: invitation.clubId } });
@@ -92,7 +96,7 @@ async function revokeIdentityClubInvitationCommand(invitationId: string, platfor
     if (!hint) throw new ActionError("Invitation unavailable.");
     await lockOperationalClub(tx, hint.clubId);
     const invitation = await tx.clubInvitation.findUniqueOrThrow({ where: { id: invitationId } });
-    const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: invitation.clubId } } });
+    const member = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: invitation.clubId } } }));
     if (!platformOperation && (!canGrantOnboardingRole(member, invitation.requestedRole) || invitation.permissions.some(p => !hasPermission(member, p as ClubPermission)))) {
       throw new ActionError("You cannot revoke this invitation's grant.");
     }
@@ -139,7 +143,7 @@ export async function getRosterImport(importId: string) {
   return prisma.$transaction(async tx => {
     const hint = await tx.rosterImport.findUniqueOrThrow({ where: { id: importId } });
     await lockOperationalClub(tx, hint.clubId);
-    const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: hint.clubId } } });
+    const member = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: hint.clubId } } }));
     if (!hasPermission(member, "members.manage")) throw new ActionError("Roster access denied.");
     return tx.rosterImport.findUniqueOrThrow({ where: { id: importId }, include: { rows: { orderBy: { rowNumber: "asc" } } } });
   });
