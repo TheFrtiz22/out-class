@@ -280,7 +280,7 @@ function Submission({
           <strong className="flex items-center gap-2"><CheckCircle2 size={16} />{a.revisionRequestedAt ? "Revisions requested" : "Review feedback"}</strong> {a.feedback}
         </p>
       )}
-      {(submitted || saved) && <p role="status" className="text-sm text-emerald-700">Your submission was saved.</p>}
+      {(submitted || saved) && <p role="status" className="text-sm text-success">Your submission was saved.</p>}
       {!closed && (
         <Button className="w-full sm:w-auto" disabled={busy || uploading}>
           {busy
