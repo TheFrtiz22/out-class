@@ -35,7 +35,7 @@ import {
 import type { ClubEvent } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 import "./student-home.css"
-import { applicationStages as sharedStages, stageCounts } from "@/lib/application-stages"
+import { applicationStage, applicationStages as sharedStages, stageCounts } from "@/lib/application-stages"
 import { TERMS, pluralize as plural } from "@/lib/copy/terms"
 
 function when(event: ClubEvent | Date) {
@@ -79,7 +79,7 @@ export function StudentDashboardView({
   authenticated = false,
   serverNow,
 }: {
-  onNavigate: (view: ViewId) => void
+  onNavigate: (view: ViewId, section?: undefined, carry?: Record<string, string>) => void
   initialData?: ({ applications: HomeApplicationSource[] } & CalendarSource) | null
   authenticated?: boolean
   /** The server's render time: a signed-in Home renders its records in the server HTML, not a placeholder. */
@@ -131,7 +131,9 @@ export function StudentDashboardView({
   const next = bodyNow ? nextHomeAction(applications, agenda, bodyNow, accountNotifications) : { kind: "explore" as const }
   function openApplication(app: HomeApplication) {
     focusApplication(app.clubId)
-    onNavigate(app.draft ? "tracker" : "status")
+    // The id rides in the URL too: the first visit to Applications can mount it twice, and the focus alone is used up by the first.
+    const stage = applicationStage(app.status)
+    onNavigate(app.draft ? "tracker" : "status", undefined, app.draft ? undefined : { applicationId: app.id, ...(stage ? { tab: stage } : {}) })
   }
   function openEvent(event: ClubEvent) {
     focusEvent(event.id)

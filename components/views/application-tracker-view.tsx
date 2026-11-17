@@ -140,7 +140,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
       if (app.status !== "DRAFTING") setStatusId(app.id)
       // A link to one application (Home's View interview, an email) opens the stage that holds it, not the stage in the URL.
       const appStage = applicationStage(app.status)
-      if (appStage) { setFilter(appStage); if (typeof window !== "undefined" && window.history) { const url = new URL(window.location.href); url.searchParams.set("tab", appStage); window.history.replaceState(window.history.state, "", url) } }
+      if (appStage) setFilter(appStage)
+      // The link is used once: Back from the application stays on the list instead of reopening it on the next reload.
+      if (typeof window !== "undefined" && window.history && window.location?.href) { const url = new URL(window.location.href); if (appStage) url.searchParams.set("tab", appStage); url.searchParams.delete("applicationId"); window.history.replaceState(window.history.state, "", url) }
     }
     clearApplicationFocus()
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
