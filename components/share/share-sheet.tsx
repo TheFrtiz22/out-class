@@ -40,9 +40,17 @@ export type ShareSheetProps = {
   /**
    * Offer a "QR code" target that presents a scannable code full screen, with PNG and SVG
    * downloads. The code points at a permanent OutClass short link (/q/…) when the path is a
-   * shareable destination, otherwise at the page itself.
+   * shareable destination and `shortLink` is true, otherwise at the page itself.
    */
-  qr?: { filename: string; description?: string }
+  qr?: {
+    filename: string
+    description?: string
+    /**
+     * Only for a signed-in sharer: createShortLink requires a session and, for anyone else,
+     * redirects the whole page instead of failing, which would take a visitor off the club.
+     */
+    shortLink?: boolean
+  }
 }
 
 /**
@@ -106,7 +114,7 @@ export function ShareSheet({ path, title, text, heading, subtitle, label = "Shar
     setQrLoading(true)
     // A short link keeps the code sparse enough to scan from across a room. Signed-out sharers
     // (or a slow network) fall back to the page's own address, which scans the same way.
-    const short = await Promise.race([
+    const short = !qr?.shortLink ? "" : await Promise.race([
       createShortLink({ target: path }).then(result => `${window.location.origin}${result.shortUrl}`).catch(() => ""),
       new Promise<string>(resolve => window.setTimeout(() => resolve(""), 4000)),
     ])
