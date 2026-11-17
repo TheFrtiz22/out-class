@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const confirmNext=require('./helpers/confirm-next.cjs');
 const {chromium}=require('playwright'),AxeBuilder=require('@axe-core/playwright').default;
-const {fixture}=require('./helpers/voting-room-ui-fixture.cjs'),{sessionId}=require('./helpers/voting-room-harness.cjs');
+const {fixture}=require('./helpers/voting-room-ui-fixture.cjs'),{sessionId,leaderId}=require('./helpers/voting-room-harness.cjs');
 
 test('phase-focused leader/member controls retain safe saves, secondary actions, keyboard and phone access',{timeout:180000},async()=>{
  const f=await fixture(),browser=await chromium.launch({headless:true});
@@ -11,7 +11,7 @@ test('phase-focused leader/member controls retain safe saves, secondary actions,
  const base=`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}`,out=process.env.VOTING_SCREENSHOT_DIR;
  let release;
  try{
-  await f.h.create();await f.h.command('START');await leader.goto(`${base}&view=leader&actor=leader`);
+  await f.h.create({joined:[leaderId]});await f.h.command('START');await leader.goto(`${base}&view=leader&actor=leader`);
   await leader.getByRole('button',{name:'Open voting',exact:true}).waitFor();
   assert.equal(await leader.getByRole('button',{name:'End voting',exact:true}).isVisible(),false);
   assert.equal(await leader.getByRole('textbox',{name:'Reason for deciding without a vote'}).isVisible(),false);

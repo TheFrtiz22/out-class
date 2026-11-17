@@ -106,7 +106,10 @@ export function VotingRoomSetup({clubId,demoScoped,initialCycleId="",initialRoun
  useEffect(()=>{pending.current=null;return()=>{pending.current=null;};},[identity]);
  // A working-copy conflict while editing a saved session usually means another tab saved it; show the session conflict instead of a draft error.
  useEffect(()=>{if(!draft.error||!editSession||planRevision===null||editConflict)return;let current=true;getVotingSessionSetup({clubId,sessionId:editSession}).then(v=>{if(current&&v.status==='DRAFT'&&v.revision!==planRevision){pending.current=null;setEditConflict({latest:v,unsaved:true});}}).catch(()=>{});return()=>{current=false};},[draft.error,editSession,planRevision,editConflict,clubId]);
- function move(next:number){setTouched(true);setStep(next);setError('');setProblem(null);requestAnimationFrame(()=>{window.scrollTo({top:0});(document.getElementById(`${uid}-intro-${next}`)??heading.current)?.focus({preventScroll:true});});}
+ // The step intro takes focus once the new step has rendered (not on a frame that may run before it commits).
+ const focusStep=useRef<number|null>(null);
+ useEffect(()=>{if(focusStep.current!==step)return;focusStep.current=null;window.scrollTo({top:0});(document.getElementById(`${uid}-intro-${step}`)??heading.current)?.focus({preventScroll:true});},[step,uid]);
+ function move(next:number){setTouched(true);setError('');setProblem(null);if(next===step){window.scrollTo({top:0});(document.getElementById(`${uid}-intro-${next}`)??heading.current)?.focus({preventScroll:true});return;}focusStep.current=next;setStep(next);}
  /** Going back is always allowed; going forward runs the same checks as Continue for every step being left behind. */
  function goTo(next:number){if(next===step)return;if(next<step)return move(next);for(let at=step;at<next;at++){try{validate(at);}catch(e){if(e instanceof SetupError&&stepOf(e.field)!==step)move(stepOf(e.field));showProblem(e);return;}}move(next);}
  function showProblem(e:unknown){if(e instanceof SetupError){setProblem({field:e.field,message:e.message});if(e.field==='timeZone')setTzOpen(true);requestAnimationFrame(()=>(document.getElementById(`${uid}-problem`)??document.querySelector('.vr-rule [role=alert]'))?.scrollIntoView({block:'center'}));}else setError(e instanceof Error?e.message:'Check this step.');}
