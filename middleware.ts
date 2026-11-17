@@ -67,7 +67,12 @@ async function route(request: NextRequest): Promise<Response> {
   }
   // Browser CSP reports carry no identity and change nothing; they skip session refresh and the
   // Demo Mode write guard (a report from a demo page is still a report). The route bounds itself.
-  if (request.method === "POST" && request.nextUrl.pathname === "/api/csp-report") return NextResponse.next()
+  // Over the per-address limit, middleware answers 204 itself (the browser does not retry), so a
+  // report burst costs no function invocations.
+  if (request.method === "POST" && request.nextUrl.pathname === "/api/csp-report") {
+    const limit = rateLimiter.check(RATE_LIMITS.cspReports, rateLimitKey({ forwardedFor: request.headers.get("x-forwarded-for") }))
+    return limit.ok ? NextResponse.next() : new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } })
+  }
   // The internal delivery route checks its independent bearer secret. Cron needs no Supabase session refresh.
   if (["/api/internal/invitation-delivery", "/api/internal/notification-delivery"].includes(request.nextUrl.pathname)) return NextResponse.next()
   // Metadata routes, security.txt, the service worker and its offline page contain only public content and need no session refresh.

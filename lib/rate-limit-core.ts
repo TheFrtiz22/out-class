@@ -48,6 +48,9 @@ export const RATE_LIMITS = {
   emailUnsubscribe: { name: "email-unsubscribe", limit: 300, windowMs: minute },
   // Graduation confirmation and later alumni employer edits (actions/graduation.ts), per account.
   alumniDetails: { name: "alumni-details", limit: 20, windowMs: 10 * minute },
+  // Browser CSP reports, per address, answered in middleware so a burst never reaches the report
+  // function. One page with a real problem sends a few distinct reports; the log dedupes the rest.
+  cspReports: { name: "csp-reports", limit: 20, windowMs: minute },
 } as const satisfies Record<string, RateLimitPolicy>
 
 export const RATE_LIMIT_MESSAGE = "Too many requests. Please wait a moment and try again."

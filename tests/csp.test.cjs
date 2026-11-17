@@ -236,3 +236,14 @@ test('next.config.mjs sends no Content-Security-Policy, so none can reach render
   assert.doesNotMatch(config, /key:\s*["']Content-Security-Policy/i)
   assert.match(config, /key: "X-Frame-Options", value: "SAMEORIGIN"/)
 })
+
+test('report bursts are answered in middleware once an address passes the limit, without reaching the report function', async () => {
+  const { middleware } = loadMiddleware()
+  const post = ip => middleware(new NextRequest('https://outclass.example/api/csp-report', { method: 'POST', headers: { 'x-forwarded-for': ip, 'content-type': 'application/csp-report' } }))
+  const ip = '203.0.113.77'
+  for (let i = 0; i < 20; i++) assert.equal((await post(ip)).headers.get('x-middleware-next'), '1', `report ${i + 1} reaches the route`)
+  const over = await post(ip)
+  assert.equal(over.status, 204)
+  assert.equal(over.headers.get('x-middleware-next'), null, 'answered in middleware')
+  assert.equal((await post('203.0.113.78')).headers.get('x-middleware-next'), '1', 'other addresses are unaffected')
+})
