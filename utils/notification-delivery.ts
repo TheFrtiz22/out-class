@@ -24,7 +24,8 @@ const DRAIN_PASS_START_MS = 28000;
 // drains at that rate instead of tripping 429s. Raise RESEND_MAX_REQUESTS_PER_SECOND only after Resend raises the team limit.
 function sendIntervalMs() {
   const rate = Number(process.env.RESEND_MAX_REQUESTS_PER_SECOND);
-  return 1000 / (Number.isFinite(rate) && rate > 0 ? Math.min(rate, 50) : 2);
+  // At least 1/s, so one wait is never longer than a second and can't outlast a delivery's lease.
+  return 1000 / (Number.isFinite(rate) && rate > 0 ? Math.min(Math.max(rate, 1), 50) : 2);
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -129,6 +130,12 @@ export async function processNotificationEmails(limit = 10, options: { drain?: b
   const candidates = await prisma.notificationEmailDelivery.findMany({ where: { OR: [{ status: "QUEUED", nextAttemptAt: { lte: now } }, { status: "SENDING", leaseUntil: { lt: now } }] }, select: { id: true }, orderBy: { createdAt: "asc" }, take: batchSize });
   for (const candidate of candidates) {
     if (Date.now() - started > SEND_BUDGET_MS) break;
+    // Pace before claiming, so a claimed delivery is sent straight away and never waits out its lease.
+    const wait = lastSendAt + interval - Date.now();
+    if (wait > 0) {
+      if (Date.now() + wait - started > SEND_BUDGET_MS) break;
+      await sleep(wait);
+    }
     let claim;
     try { claim = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "NotificationEmailDelivery" WHERE id=${candidate.id} FOR UPDATE`;
@@ -164,8 +171,6 @@ export async function processNotificationEmails(limit = 10, options: { drain?: b
       continue;
     }
     if (!claim) continue;
-    const wait = lastSendAt + interval - Date.now();
-    if (wait > 0) await sleep(wait);
     lastSendAt = Date.now();
     try {
       const receipt = await sendNotificationEmail(claim.payload, claim.id, config.key);

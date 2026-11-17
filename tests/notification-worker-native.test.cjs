@@ -90,6 +90,23 @@ test('one bad notification or suspended club cannot stop other recipients\' emai
     }
   });
 
+  await t.test('a tiny configured send rate is clamped, so no claimed delivery waits out its lease', async () => {
+    const c = await club(false), rows = [];
+    for (let i = 0; i < 3; i++) rows.push(await notify((await user()).id, c.id));
+    const savedRate = process.env.RESEND_MAX_REQUESTS_PER_SECOND;
+    process.env.RESEND_MAX_REQUESTS_PER_SECOND = '0.01';
+    try {
+      sentTo.length = 0;
+      const begun = Date.now();
+      const result = await worker.processNotificationEmails(10);
+      assert.equal(result.sent, 3);
+      assert.ok(Date.now() - begun < 10000, 'three sends at the 1/s floor take seconds, not minutes');
+      assert.equal(await db.notificationEmailDelivery.count({ where: { status: 'SENDING' } }), 0, 'nothing is left mid-send');
+    } finally {
+      if (savedRate === undefined) delete process.env.RESEND_MAX_REQUESTS_PER_SECOND; else process.env.RESEND_MAX_REQUESTS_PER_SECOND = savedRate;
+    }
+  });
+
   await t.test('an undeliverable notification is suppressed alone; the rest of the queue is delivered', async () => {
     const c = await club(false), poisoned = await user(), next = await user();
     // A DECISION notification whose link is not a canonical decision path cannot become an email.
