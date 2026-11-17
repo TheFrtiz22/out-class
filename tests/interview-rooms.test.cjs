@@ -136,3 +136,15 @@ for(const historical of [false,true])for(const current of [false,true])for(const
  const load=loader({'@/utils/applicant-booking-notifications':{notifyApplicantBooking:async()=>{}},'@/utils/interview-booking':{interviewBookingCoverage:async()=>[{slotId:state.slot.id,bookable:true}]},'@/utils/auth':{requireClubPermission:async()=>({membership:member})},'@/utils/prisma':{prisma:{recruitmentCycle:{findMany:async()=>[]},club:{findUniqueOrThrow:async()=>({name:'Club'})},pipelineRound:{findMany:async()=>[]},clubMember:{findMany:async()=>[]},interviewRoom:{findMany:async()=>[]},interviewBooking:{findMany:async({include})=>{assert.equal(include.application.select.round.select.anonymousReview,true);return[booking]}}}},'next/cache':{revalidatePath(){}}});
  const view=await unwrapActions(load('actions/interview-rooms.ts')).getRoomWorkspace(id(1));assert.equal(view.bookings[0].candidate,identify&&!historical&&!current?'Private Student':`Applicant ${id(5).slice(-6)}`);
 });
+
+test('applicant schedule waits longer for a connection under a booking burst, then asks to retry instead of failing',async()=>{
+ const seen=[];let fail={code:'P2028'}
+ const load=loader({'@/utils/applicant-booking-notifications':{notifyApplicantBooking:async()=>{}},'@/utils/interview-booking':{interviewBookingCoverage:async()=>[]},'@/utils/auth':{requireAuth:async()=>({user:{id:id(6)}})},'@/utils/prisma':{prisma:{$transaction:async(fn,opts)=>{seen.push(opts);throw fail}}},'next/cache':{revalidatePath(){}}})
+ const api=unwrapActions(load('actions/interview-rooms.ts'))
+ const warn=console.warn;console.warn=()=>{}
+ try{
+  await assert.rejects(api.getApplicantSchedule(id(5)),/Many people are booking right now/)
+  assert.equal(seen[0].maxWait,10000)
+  fail=Error('Something else');await assert.rejects(api.getApplicantSchedule(id(5)),/Something else/)
+ }finally{console.warn=warn}
+})
