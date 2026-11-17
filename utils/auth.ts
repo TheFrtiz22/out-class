@@ -45,6 +45,9 @@ export const getSessionState = cache(async () => {
 });
 export const getSessionUser = cache(async () => (await getSessionState()).identity);
 
+export const AUTH_UNAVAILABLE = "AUTH_UNAVAILABLE";
+export const AUTH_UNAVAILABLE_MESSAGE = "We couldn't confirm your sign-in just now, so this wasn't saved. Try again in a moment.";
+
 /**
  * Ensures a user is logged in. Returns the Supabase user and Prisma user.
  * Redirects to /auth (or home) if not authenticated.
@@ -82,6 +85,10 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
   const { data: { user }, error } = state.identity;
 
   if (options.adminDiagnostics && error && !providerAuthFailure(error)) throw error;
+  // An Auth outage (network error, 5xx, unknown response) is not a sign-out. A Server Action that redirected here
+  // would drop the user's change without a word, so it is refused with a retryable reason instead.
+  if (error && !providerAuthFailure(error) && (await headers()).has("next-action"))
+    throw new ActionError(AUTH_UNAVAILABLE_MESSAGE, AUTH_UNAVAILABLE);
   if (error || !user || !user.email || !isUvaEmail(user.email) || !user.email_confirmed_at) {
     if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_AUTH_REQUIRED", "Sign-in required.");
     redirect("/"); // Redirect to login page
