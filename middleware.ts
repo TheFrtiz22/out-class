@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/middleware'
 import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 import { RATE_LIMITS, RATE_LIMIT_MESSAGE, rateLimiter, rateLimitHeaders, rateLimitKey } from "@/lib/rate-limit-core"
-import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, forwardCspToRendering } from "@/lib/csp"
+import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, forwardCspToRendering, FRAME_ANCESTORS_POLICY } from "@/lib/csp"
 
 /**
  * Page requests get a fresh nonce and Content-Security-Policy (docs/csp.md). The nonce and
@@ -17,7 +17,12 @@ import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, forwardCspToRenderi
 export async function middleware(request: NextRequest) {
   let pathname = request.nextUrl.pathname
   try { pathname = decodeURIComponent(pathname) } catch { /* route() answers 400 */ }
-  if (!cspAppliesTo(pathname)) return route(request)
+  if (!cspAppliesTo(pathname)) {
+    // API routes, files and metadata get only the framing policy (see FRAME_ANCESTORS_POLICY).
+    const response = await route(request)
+    response.headers.set("Content-Security-Policy", FRAME_ANCESTORS_POLICY)
+    return response
+  }
   const nonce = createNonce(), policy = buildCsp({ nonce }), header = cspHeaderName()
   forwardCspToRendering(request.headers, nonce, policy)
   const response = await route(request)

@@ -60,13 +60,13 @@ test('middleware sends a fresh nonce per page request and forwards the same nonc
   })
 })
 
-test('API routes, public files and metadata routes get no document policy; the report endpoint skips session work', async () => {
+test('API routes, public files and metadata routes get only the framing policy; the report endpoint skips session work', async () => {
   const live = { calls: 0, forwarded: [] }
   const { middleware } = loadMiddleware(live)
   for (const path of ['/api/recruiting-resumes?clubId=a', '/api/workspace', '/robots.txt', '/sw.js', '/pdfjs/pdf.worker.min.mjs', '/images/campus/a.webp', '/club/x/opengraph-image']) {
     const response = await middleware(new NextRequest(`https://outclass.example${path}`))
     assert.equal(response.headers.get('content-security-policy-report-only'), null, path)
-    assert.equal(response.headers.get('content-security-policy'), null, path)
+    assert.equal(response.headers.get('content-security-policy'), "frame-ancestors 'self'", `${path} keeps the framing policy`)
   }
   const before = live.calls
   const report = await middleware(new NextRequest('https://outclass.example/api/csp-report', { method: 'POST', headers: { cookie: 'outclass-demo=1' } }))
@@ -229,4 +229,10 @@ test('production policy string: nonce-only scripts, no eval, no wildcard hosts, 
   // Malformed or non-http configuration never widens the policy.
   const odd = csp.buildCsp({ nonce: 'n', env: { NODE_ENV: 'production', NEXT_PUBLIC_SUPABASE_URL: 'javascript:alert(1)', NEXT_PUBLIC_SENTRY_DSN: 'not a url' } })
   assert.equal(directive(odd, 'connect-src'), "connect-src 'self'")
+})
+
+test('next.config.mjs sends no Content-Security-Policy, so none can reach rendering ahead of the nonce policy', () => {
+  const config = fs.readFileSync('next.config.mjs', 'utf8')
+  assert.doesNotMatch(config, /key:\s*["']Content-Security-Policy/i)
+  assert.match(config, /key: "X-Frame-Options", value: "SAMEORIGIN"/)
 })

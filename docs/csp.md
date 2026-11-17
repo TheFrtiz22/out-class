@@ -5,14 +5,22 @@ Status: shipped in **Report-Only** mode. Nothing is blocked until the owner sets
 ## How it works
 
 - `middleware.ts` makes a 128-bit nonce for every page request (`lib/csp.ts` `createNonce`), builds the policy (`buildCsp`), and puts both on the forwarded request headers with `forwardCspToRendering` (`x-nonce`, and the policy under `Content-Security-Policy`). Client-sent copies of those headers are replaced or deleted.
-
-### Rendering header
-
-Next.js 15.5 takes the nonce for its framework and chunk scripts from the request's `Content-Security-Policy` header and reads `Content-Security-Policy-Report-Only` only when the first is absent. Until November 2026 the policy was forwarded under the Report-Only name. In production the app's own inline scripts got the nonce (through `x-nonce`) but none of Next.js's scripts did, and every page load sent about 20 `script-src-elem` reports (`inline` and the site's own origin). Under enforcement that would have blocked all JavaScript. The full policy is now always forwarded under `Content-Security-Policy`, whatever the response mode. Request headers enforce nothing; the response header name still follows `OUTCLASS_CSP_ENFORCE`. `tests/csp.test.cjs` checks the forwarded header with Next.js's own nonce parser.
 - The same policy goes on the response as `Content-Security-Policy-Report-Only`, or as `Content-Security-Policy` when `OUTCLASS_CSP_ENFORCE=1`.
 - Inline scripts read the nonce with `cspNonce()` (`utils/csp-nonce.ts`): the homepage's audience boot script and the JSON-LD blocks on `/`, `/about` and `/uva`. JSON-LD is not executable, so it is nonced only for consistency. `tests/csp.test.cjs` fails if a page or component adds another `<script>` tag or `next/script`.
 - Vercel Analytics and Speed Insights add their scripts from the bundle, which `'strict-dynamic'` trusts. They load from and post to same-origin `/_vercel/*`.
-- `next.config.mjs` still sends the enforced `Content-Security-Policy: frame-ancestors 'self'` on every path. Browsers ignore `frame-ancestors` in Report-Only policies, so that header still protects framing during rollout.
+- Framing: see "Rendering header" below. Browsers ignore `frame-ancestors` in Report-Only policies, so pages rely on `X-Frame-Options` until enforcement.
+
+### Rendering header
+
+Next.js 15.5 takes the nonce for its framework and chunk scripts from the request's `Content-Security-Policy` header and reads `Content-Security-Policy-Report-Only` only when the first is absent. Until November 2026, `next.config.mjs` sent `Content-Security-Policy: frame-ancestors 'self'` on every path. On Vercel that config-level header also reached the rendered request, so Next.js read a policy with no `script-src` and rendered its scripts without a nonce. The app's own inline scripts were fine (they read `x-nonce`), but every production page load sent about 20 `script-src-elem` reports (`inline` and the site's own origin), and enforcement would have blocked all JavaScript. A preview deployment with the config header removed rendered all 66 scripts on `/about` with the nonce; with it present, none.
+
+Now:
+- `next.config.mjs` sends no `Content-Security-Policy`. It still sends `X-Frame-Options: SAMEORIGIN` on every path.
+- Middleware sends `Content-Security-Policy: frame-ancestors 'self'` (`FRAME_ANCESTORS_POLICY`) on every response that does not get the document policy (API routes, files, metadata, the résumé PDF route). `/_next/static` and `/_next/image`, which middleware does not run on, keep `X-Frame-Options` only.
+- Pages: Report-Only mode sends no enforced CSP, so page framing relies on `X-Frame-Options: SAMEORIGIN` until enforcement. Enforced mode sends the full policy, which includes `frame-ancestors 'self'`. An enforced header without the nonce must never be added to page responses, for the same reason as above.
+- The full policy is always forwarded to rendering under `Content-Security-Policy` (`forwardCspToRendering`), whatever the response mode. Request headers enforce nothing.
+
+`tests/csp.test.cjs` checks the forwarded header with Next.js's own nonce parser and that `next.config.mjs` has no CSP header.
 
 ## Policy (production, Report-Only)
 
@@ -56,7 +64,7 @@ Not needed in the browser policy:
 
 ### Routes without the document policy
 
-`lib/csp.ts` `cspAppliesTo` skips `/api/*`, `/_next/*`, `/_vercel/*`, metadata routes (robots, sitemap, manifest, icons, link-preview images), `/sw.js`, `/offline.html` and any path with a file extension (public files, the pdf.js worker). They are not HTML pages, and a document policy with `object-src 'none'` on the framed résumé PDF (`/api/recruiting-resumes`) could stop the browser's PDF viewer. They keep the `frame-ancestors` header.
+`lib/csp.ts` `cspAppliesTo` skips `/api/*`, `/_next/*`, `/_vercel/*`, metadata routes (robots, sitemap, manifest, icons, link-preview images), `/sw.js`, `/offline.html` and any path with a file extension (public files, the pdf.js worker). They are not HTML pages, and a document policy with `object-src 'none'` on the framed résumé PDF (`/api/recruiting-resumes`) could stop the browser's PDF viewer. Middleware gives them `Content-Security-Policy: frame-ancestors 'self'` only.
 
 ### Static rendering
 
@@ -79,7 +87,7 @@ Nonces need per-request HTML, so a statically prerendered page cannot carry one.
 4. Read the reports in Vercel runtime logs (search `CSP violation`). For each distinct `directive` + `blocked`, either add the origin to `buildCsp` with a reason in the inventory above, or fix the code that caused it. Expected noise: browser extensions (`blocked` values such as `chrome-extension`), which need no change.
 5. Known item to watch: a non-private, external https résumé link opened in the leader workspace frame will report `frame-src`. Under enforcement it would not render inline (the link still opens in a new tab).
 6. When a full day has no reports caused by the app, set `OUTCLASS_CSP_ENFORCE=1` in Vercel Production (and Preview first if you want) and redeploy. Middleware reads it at runtime on Vercel, but a redeploy makes the change explicit. To roll back, unset the variable and redeploy.
-7. Right after enforcing, open a page and confirm the response's `Content-Security-Policy` header contains the full policy (with `script-src` and a nonce), not only `frame-ancestors 'self'` from `next.config.mjs`, and that the page works. Then watch `CSP violation` lines with `disposition: 'enforce'` for 24 hours.
+7. Right after enforcing, open a page and confirm the response's `Content-Security-Policy` header contains the full policy (with `script-src` and a nonce) and that the page works. Then watch `CSP violation` lines with `disposition: 'enforce'` for 24 hours.
 
 ## Verification done
 

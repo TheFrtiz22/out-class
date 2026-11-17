@@ -45,8 +45,9 @@ const nextConfig = {
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         // Pages may be framed only by this origin (the leader workspace frames /api/recruiting-resumes).
-        // X-Frame-Options covers browsers without CSP frame-ancestors support.
-        { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        // No Content-Security-Policy here: on Vercel a config-level one also reaches the rendered
+        // request and hides the nonce from Next.js. middleware.ts sends frame-ancestors instead
+        // (lib/csp.ts, docs/csp.md).
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
       ] },
       ...privateRoutes.map(route => ({ source: `/${route}/:path*`, headers: noindex })),

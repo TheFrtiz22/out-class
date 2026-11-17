@@ -6,7 +6,7 @@
  * Pure and edge-safe: no Node APIs, so middleware and node:test both load it.
  *
  * Rollout: sent as Content-Security-Policy-Report-Only unless OUTCLASS_CSP_ENFORCE=1.
- * The separate, always-enforced `frame-ancestors 'self'` header from next.config.mjs stays.
+ * Framing: `X-Frame-Options` from next.config.mjs everywhere, plus FRAME_ANCESTORS_POLICY below.
  */
 type Env = Record<string, string | undefined>
 
@@ -14,14 +14,21 @@ export const CSP_NONCE_HEADER = "x-nonce"
 export const CSP_REPORT_PATH = "/api/csp-report"
 
 /**
- * Puts the nonce and policy on the request headers that rendering receives.
- *
- * Next.js takes the nonce for its own framework and chunk scripts from the request's
- * `content-security-policy` header, and reads the Report-Only name only when that header is
- * absent. Forwarded under the Report-Only name alone, the nonce reached the app (`x-nonce`) but
- * not Next.js's scripts on Vercel (docs/csp.md, "Rendering header"). The full policy is therefore
- * always forwarded under the name Next.js reads first. Request headers enforce nothing; the
- * response header (Report-Only or enforced) is chosen separately by `cspHeaderName`.
+ * The framing policy for responses that do not get the document policy (API routes, files,
+ * metadata). Middleware sets it, not next.config.mjs: on Vercel a config-level
+ * `Content-Security-Policy` header also reaches the rendered request and replaced the policy that
+ * carries the nonce, so Next.js's own scripts were rendered without one (docs/csp.md, "Rendering
+ * header"). Pages get `frame-ancestors 'self'` from the full policy when it is enforced, and
+ * `X-Frame-Options: SAMEORIGIN` (next.config.mjs) on every response in both modes.
+ */
+export const FRAME_ANCESTORS_POLICY = "frame-ancestors 'self'"
+
+/**
+ * Puts the nonce and policy on the request headers that rendering receives. Next.js takes the
+ * nonce for its framework and chunk scripts from the request's `content-security-policy` header
+ * and reads the Report-Only name only when that header is absent, so the full policy is always
+ * forwarded under the first name. Request headers enforce nothing; the response header
+ * (Report-Only or enforced) is chosen separately by `cspHeaderName`.
  */
 export function forwardCspToRendering(headers: Headers, nonce: string, policy: string) {
   // Never trust a client-sent nonce or policy.
