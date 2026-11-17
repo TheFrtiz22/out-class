@@ -107,6 +107,7 @@ export const discardPanelProposal: Demo<"discardPanelProposal"> = (scope) => dem
 export const beginPanelScheduleRevision: Demo<"beginPanelScheduleRevision"> = (scope) => demoBookingApi.beginPanelScheduleRevision(scope as Parameters<typeof demoBookingApi.beginPanelScheduleRevision>[0])
 export const revalidatePanelDraft: Demo<"revalidatePanelDraft"> = (scope) => demoBookingApi.revalidatePanelDraft(scope as Parameters<typeof demoBookingApi.revalidatePanelDraft>[0])
 export const reviewPanelPublication: Demo<"reviewPanelPublication"> = (scope) => demoBookingApi.reviewPanelPublication(scope as Parameters<typeof demoBookingApi.reviewPanelPublication>[0])
+export const requestPanelApproval: Demo<"requestPanelApproval"> = (scope) => demoBookingApi.requestPanelApproval(scope as Parameters<typeof demoBookingApi.requestPanelApproval>[0])
 export const publishPanelSchedule: Demo<"publishPanelSchedule"> = (scope) => demoBookingApi.publishPanelSchedule(scope as Parameters<typeof demoBookingApi.publishPanelSchedule>[0])
 export const assignPanelAvailabilityOverride: Demo<"assignPanelAvailabilityOverride"> = (scope) => demoBookingApi.assignPanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.assignPanelAvailabilityOverride>[0])
 export const revokePanelAvailabilityOverride: Demo<"revokePanelAvailabilityOverride"> = (scope) => demoBookingApi.revokePanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.revokePanelAvailabilityOverride>[0])

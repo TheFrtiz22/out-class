@@ -128,3 +128,5 @@ export async function setInterviewBookingPublication(input: { clubId: string; ro
   if (input.action === "PUBLISH") for (const app of s.applications.filter(a => a.clubId === input.clubId && a.roundId === input.roundId && a.status === "INTERVIEWING")) demoBookingNotice(app.studentId, input.clubId, `booking-published:${app.id}:${input.roundId}`, "Book your interview", "Choose a time for your invited interview round.", `/interviews/book?clubId=${input.clubId}&roundId=${input.roundId}`)
   return { revision: settings.bookingRevision }
 }
+/** The isolated sample has no other owner to notify; asking succeeds and changes nothing. */
+export async function requestPanelApproval(input: { clubId: string; roundId: string }) { manager(input.clubId); if (!panelState(input.roundId).draft) throw Error("Assign interviewers first, then ask an owner to confirm them."); return { owners: ["Sample owner"] } }
