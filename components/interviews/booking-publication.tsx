@@ -24,7 +24,9 @@ export function InterviewBookingPublication({ clubId, roundId, settings, cycles,
     if (saving.current) return
     saving.current = true; setBusy(true); setError(""); setNotice("")
     try {
-      await setInterviewBookingPublication({ clubId, roundId, revision: settings.bookingRevision, action, cycleId: cycleId || null, allowCancellation: policy.cancel, allowRescheduling: policy.reschedule })
+      // Only publishing changes the cycle; pausing and policy saves keep the stored one, so a suggested cycle
+      // shown before the first publish never makes a settings change fail.
+      await setInterviewBookingPublication({ clubId, roundId, revision: settings.bookingRevision, action, cycleId: action === "PUBLISH" ? cycleId || null : settings.bookingCycleId ?? null, allowCancellation: policy.cancel, allowRescheduling: policy.reschedule })
       setNotice(action === "PUBLISH" ? "Schedule published." : action === "PAUSE" ? "Booking paused. Existing interviews are kept." : "Booking settings saved.")
       setPause(false); onChanged(); if (action === "PUBLISH") onPublished?.()
     } catch (e) {

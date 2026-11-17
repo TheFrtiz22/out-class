@@ -20,3 +20,7 @@ test('publishing suggests the recruiting cycle that holds the invited applicants
  assert.equal(suggestedCycle([{cycleId:null,count:3}],'spring'),'')
  assert.equal(suggestedCycle([],''),null)
 })
+test('booking settings and pausing save with the stored cycle, so a suggested cycle before the first publish cannot make them fail',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../components/interviews/booking-publication.tsx'),'utf8')
+ assert.match(src,/cycleId: action === "PUBLISH" \? cycleId \|\| null : settings\.bookingCycleId \?\? null/)
+})
