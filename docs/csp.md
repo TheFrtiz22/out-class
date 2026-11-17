@@ -16,7 +16,8 @@ Next.js 15.5 takes the nonce for its framework and chunk scripts from the reques
 
 Now:
 - `next.config.mjs` sends no `Content-Security-Policy`. It still sends `X-Frame-Options: SAMEORIGIN` on every path.
-- Middleware sends `Content-Security-Policy: frame-ancestors 'self'` (`FRAME_ANCESTORS_POLICY`) on every response that does not get the document policy (API routes, files, metadata, the résumé PDF route). `/_next/static` and `/_next/image`, which middleware does not run on, keep `X-Frame-Options` only.
+- Middleware sends `Content-Security-Policy: frame-ancestors 'self'` (`FRAME_ANCESTORS_POLICY`) on every response that does not get the document policy (API routes, files, metadata, the résumé PDF route). The two stored-image routes, `/api/club-assets` and `/api/decision-letter-assets`, send their own `default-src 'none'; sandbox; frame-ancestors 'self'` (`SANDBOXED_FILE_POLICY`), and middleware leaves their header alone (`routeSetsOwnCsp`), so the browser gets only that stricter policy.
+- On those requests middleware also drops client-sent `Content-Security-Policy`, `Content-Security-Policy-Report-Only` and `x-nonce` request headers (`stripCspRequestHeaders`). A path with a dotted last segment, such as `/club/a.b`, still reaches the page renderer as a 404. No real page has a dot there: club ids and slugs, short-link codes and the other dynamic segments are dot-free. `/_next/static` and `/_next/image`, which middleware does not run on, keep `X-Frame-Options` only.
 - Pages: Report-Only mode sends no enforced CSP, so page framing relies on `X-Frame-Options: SAMEORIGIN` until enforcement. Enforced mode sends the full policy, which includes `frame-ancestors 'self'`. An enforced header without the nonce must never be added to page responses, for the same reason as above.
 - The full policy is always forwarded to rendering under `Content-Security-Policy` (`forwardCspToRendering`), whatever the response mode. Request headers enforce nothing.
 

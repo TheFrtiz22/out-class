@@ -247,3 +247,37 @@ test('report bursts are answered in middleware once an address passes the limit,
   assert.equal(over.headers.get('x-middleware-next'), null, 'answered in middleware')
   assert.equal((await post('203.0.113.78')).headers.get('x-middleware-next'), '1', 'other addresses are unaffected')
 })
+
+test('requests without the document policy never forward a client-sent policy or nonce', async () => {
+  const live = { calls: 0, forwarded: [] }
+  const { middleware } = loadMiddleware(live)
+  const forged = { 'content-security-policy': "script-src 'nonce-forged'", 'content-security-policy-report-only': "script-src 'nonce-forged'", 'x-nonce': 'forged' }
+  // A dotted last segment still reaches the page renderer (through the session layer).
+  assert.equal(csp.cspAppliesTo('/club/a.b'), false)
+  const page = await middleware(new NextRequest('https://outclass.example/club/a.b', { headers: forged }))
+  assert.deepEqual(live.forwarded.at(-1), { nonce: null, policy: null, reportOnly: null })
+  assert.equal(page.headers.get('content-security-policy'), "frame-ancestors 'self'")
+  // A route that forwards request headers itself (NextResponse.next with request headers).
+  const api = await middleware(new NextRequest('https://outclass.example/api/workspace', { headers: { ...forged, accept: 'application/json' } }))
+  const overridden = (api.headers.get('x-middleware-override-headers') || '').split(',')
+  assert.ok(overridden.includes('accept'), 'other request headers are still forwarded')
+  for (const name of Object.keys(forged)) {
+    assert.ok(!overridden.includes(name), name)
+    assert.equal(api.headers.get(`x-middleware-request-${name}`), null, name)
+  }
+})
+
+test('routes with their own sandboxed policy keep it as the only Content-Security-Policy', async () => {
+  const { middleware } = loadMiddleware()
+  assert.equal(csp.SANDBOXED_FILE_POLICY, "default-src 'none'; sandbox; frame-ancestors 'self'")
+  for (const [path, file] of [['/api/club-assets', 'app/api/club-assets/route.ts'], ['/api/decision-letter-assets', 'app/api/decision-letter-assets/route.ts']]) {
+    assert.equal(csp.routeSetsOwnCsp(path), true, path)
+    const response = await middleware(new NextRequest(`https://outclass.example${path}?reference=x`))
+    assert.equal(response.headers.get('content-security-policy'), null, `${path}: middleware leaves the route's header alone`)
+    const source = fs.readFileSync(file, 'utf8')
+    assert.match(source, /'Content-Security-Policy': ?SANDBOXED_FILE_POLICY/, file)
+    assert.doesNotMatch(source, /default-src 'none'; sandbox"/, `${file} uses the shared value`)
+  }
+  assert.equal(csp.routeSetsOwnCsp('/api/club-assets/x'), false)
+  assert.equal(csp.routeSetsOwnCsp('/api/recruiting-resumes'), false)
+})

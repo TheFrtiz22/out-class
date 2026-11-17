@@ -24,6 +24,29 @@ export const CSP_REPORT_PATH = "/api/csp-report"
 export const FRAME_ANCESTORS_POLICY = "frame-ancestors 'self'"
 
 /**
+ * Policy for routes that serve stored image bytes and set their own, stricter policy. It keeps
+ * the framing rule, and middleware leaves these routes' header alone (`routeSetsOwnCsp`), so the
+ * stricter value is the only Content-Security-Policy the browser receives.
+ */
+export const SANDBOXED_FILE_POLICY = "default-src 'none'; sandbox; frame-ancestors 'self'"
+const OWN_CSP_ROUTES = new Set(["/api/club-assets", "/api/decision-letter-assets"])
+export function routeSetsOwnCsp(pathname: string) {
+  return OWN_CSP_ROUTES.has(pathname)
+}
+
+/**
+ * Drops client-sent policy and nonce headers on requests that get no document policy. A path
+ * whose last segment has a dot (for example `/club/a.b`) still reaches the page renderer, which
+ * must never take a nonce or policy from the client. No real page has a dot there: club ids
+ * and slugs, short-link codes and other dynamic segments are dot-free, so such a path is a 404.
+ */
+export function stripCspRequestHeaders(headers: Headers) {
+  headers.delete("content-security-policy")
+  headers.delete("content-security-policy-report-only")
+  headers.delete(CSP_NONCE_HEADER)
+}
+
+/**
  * Puts the nonce and policy on the request headers that rendering receives. Next.js takes the
  * nonce for its framework and chunk scripts from the request's `content-security-policy` header
  * and reads the Report-Only name only when that header is absent, so the full policy is always
@@ -32,7 +55,7 @@ export const FRAME_ANCESTORS_POLICY = "frame-ancestors 'self'"
  */
 export function forwardCspToRendering(headers: Headers, nonce: string, policy: string) {
   // Never trust a client-sent nonce or policy.
-  headers.delete("content-security-policy-report-only")
+  stripCspRequestHeaders(headers)
   headers.set("content-security-policy", policy)
   headers.set(CSP_NONCE_HEADER, nonce)
 }
