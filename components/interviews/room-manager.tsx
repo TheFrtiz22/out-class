@@ -125,7 +125,7 @@ export function RoomManager({ clubId, active = true, interviewerAccess }: { club
   const roundBooking = data?.rounds.find(r => r.id === round)?.booking
   const upcoming = (data?.rooms.filter(r => r.roundId === round) ?? []).flatMap(room => room.slots.filter(slot => +new Date(slot.startTime) > Date.now()).map(slot => ({ room, slot })))
   const assigned = upcoming.filter(({ room, slot }) => slotHasInterviewers(slot, room)).length
-  const stepDone: Record<string, boolean> = { availability: false, rooms: upcoming.length > 0, review: upcoming.length > 0 && assigned === upcoming.length, publish: !!roundBooking?.bookingPublishedAt && !roundBooking.bookingPaused }
+  const stepDone: Record<string, boolean> = { availability: upcoming.length > 0, rooms: upcoming.length > 0, review: upcoming.length > 0 && assigned === upcoming.length, publish: !!roundBooking?.bookingPublishedAt && !roundBooking.bookingPaused }
   async function removeTime(roomId: string, slotId: string) {
     if (!(await confirm({ title: "Remove this time?", description: "It hasn't been booked.", confirmLabel: "Remove time", tone: "danger" }))) return
     setBusy(roomId); setError(""); setNotice("")
