@@ -225,7 +225,7 @@ test('Auth publishes its opaque epoch fence before React commits, without droppi
  observe('SIGNED_OUT',null);assert.equal(replaced.isReadAuthorityCurrent(replaced.readAuthority),false);assert.equal(render().user,identity,'Existing remote identity refresh remains separate');
 });
 
-test('Club home renders the server-read dashboard without a second read, only for the account it was read for', async () => {
+test('Club home shows the server-read dashboard at once and refreshes it in the background, only for the account it was read for', async () => {
   const member = { id: 'membership', userId: 'user-a', clubId, isOwner: false, status: 'ACTIVE', accessRole: 'MEMBER', permissions: [], interviewOffices: [], club: { id: clubId, name: 'Club' } };
   const value = { club: { id: clubId, name: 'Club' }, membership: member };
   function mount({ user = { id: 'user-a', memberships: [member] }, demo = false, initialOverview } = {}) {
@@ -243,8 +243,10 @@ test('Club home renders the server-read dashboard without a second read, only fo
   const overview = tree => nodes(tree).find(n => n.type === 'ManagerOverview');
   const seed = { view: 'club', userId: 'user-a', value };
   const seeded = mount({ initialOverview: seed });
-  assert.equal(overview(seeded.render())?.props.data, value, 'First render already shows the server-read dashboard');
-  await seeded.h.flush(); assert.equal(seeded.calls(), 0, 'No duplicate client read on mount');
+  const first = overview(seeded.render());
+  assert.equal(first?.props.data, value, 'First render already shows the server-read dashboard');
+  await seeded.h.flush(); assert.equal(seeded.calls(), 1, 'One background read refreshes a possibly restored payload');
+  assert.ok(overview(seeded.render()), 'The dashboard stays on screen through the refresh (no loading flash)');
   // Another account, Demo Mode or no seed: the page reads through /api/workspace as before.
   for (const options of [{ initialOverview: { ...seed, userId: 'user-b' } }, { initialOverview: seed, demo: true }, {}]) {
     const other = mount(options);
@@ -253,20 +255,20 @@ test('Club home renders the server-read dashboard without a second read, only fo
 });
 
 test('club workspace page reads Club home and Recruiting Overview on the server only for a live, unsuspended member', async () => {
-  function harness({ demo = false, impersonating = false, suspended = false, fails = false } = {}) {
-    const reads = []; function Workspace() {}
+  function harness({ demo = false, impersonating = false, suspended = false, fails = false, membership = {}, identity = 'user-a' } = {}) {
+    const reads = [], logs = []; function Workspace() {}
     const page = loader({
       'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
       '@/utils/auth': { getSessionUser: async () => ({ data: { user: { email: 'someone@virginia.edu' } }, error: null }) },
       '@/lib/demo/access': { DEMO_COOKIE: 'outclass-demo-session', canAccessDemo: () => false },
-      '@/utils/current-user': { getCurrentUser: async () => ({ id: 'user-a', memberships: [{ clubId, club: { name: 'Club', suspendedAt: suspended ? new Date() : null } }] }) },
-      '@/actions/club-overview': { getClubWorkspaceOverview: async (id, view) => { reads.push([id, view]); if (fails) throw Error('Access denied'); return { club: { id } } } },
+      '@/utils/current-user': { getCurrentUser: async () => ({ id: identity, memberships: membership === null ? [] : [{ clubId, status: 'ACTIVE', alumniSince: null, ...membership, club: { name: 'Club', suspendedAt: suspended ? new Date() : null } }] }) },
+      '@/actions/club-overview': { getClubWorkspaceOverview: async (id, view) => { reads.push([id, view]); if (fails) throw fails === true ? Error('Access denied') : fails; return { club: { id } } } },
       '@/components/club-workspace': { ClubWorkspace: Workspace },
       '@/components/auth-session-boundary': { AuthSessionBoundary: 'Boundary' }, '@/components/shell/authenticated-page-layout': { AuthenticatedPageLayout: 'Layout' },
       'next/link': { default: () => null }, '@/components/shell/workspace-route-loading': { WorkspaceRouteLoading: () => null },
-    })('app/(workspace)/club/[clubId]/workspace/page.tsx').default;
+    }, { console: { ...console, warn: line => logs.push(JSON.parse(line)) } })('app/(workspace)/club/[clubId]/workspace/page.tsx').default;
     const seed = async query => { const outer = await page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve(query) }); const tree = await outer.props.children.type(outer.props.children.props); return nodes(tree).find(n => n.type === Workspace)?.props.initialOverview; };
-    return { seed, reads };
+    return { seed, reads, logs };
   }
   let h = harness();
   assert.deepEqual(await h.seed({ section: 'overview' }), { view: 'club', userId: 'user-a', value: { club: { id: clubId } } });
@@ -274,5 +276,15 @@ test('club workspace page reads Club home and Recruiting Overview on the server 
   assert.equal(await h.seed({ section: 'members' }), null, 'Other sections read nothing extra');
   assert.deepEqual(h.reads, [[clubId, 'club'], [clubId, 'recruiting']]);
   h = harness({ fails: true }); assert.equal(await h.seed({ section: 'overview' }), null, 'A failed read falls back to the client read');
-  for (const options of [{ demo: true }, { impersonating: true }, { suspended: true }]) { h = harness(options); assert.equal(await h.seed({ section: 'overview' }) ?? null, null); assert.equal(h.reads.length, 0); }
+  assert.deepEqual(h.logs, [{ event: 'workspace.read.refused', kind: 'overview', source: 'page', error: 'Error' }], 'Logged like a refused /api/workspace read, with no ids or messages');
+  const redirect = Object.assign(Error('NEXT_REDIRECT'), { digest: 'NEXT_REDIRECT;replace;/auth/two-step;307;' });
+  h = harness({ fails: redirect }); await assert.rejects(h.seed({ section: 'overview' }), error => error === redirect, 'Next redirects from the loader still apply');
+  const missing = Object.assign(Error('NEXT_HTTP_ERROR_FALLBACK;404'), { digest: 'NEXT_HTTP_ERROR_FALLBACK;404' });
+  h = harness({ fails: missing }); await assert.rejects(h.seed({ section: 'overview' }), error => error === missing, 'notFound from the loader still applies'); assert.equal(h.logs.length, 0);
+  // No server read for Demo Mode, any support session (including one viewing a different account), suspended clubs,
+  // or an account that is not a current member (no membership, removed, alumni).
+  for (const options of [{ demo: true }, { impersonating: true }, { impersonating: true, identity: 'viewed-account' }, { suspended: true },
+    { membership: null }, { membership: { status: 'REMOVED' } }, { membership: { alumniSince: new Date('2026-05-20') } }]) {
+    h = harness(options); assert.equal(await h.seed({ section: 'overview' }) ?? null, null, JSON.stringify(options)); assert.equal(h.reads.length, 0);
+  }
 });

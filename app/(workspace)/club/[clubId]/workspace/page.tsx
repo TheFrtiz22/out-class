@@ -4,10 +4,11 @@ import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { getSessionUser } from "@/utils/auth";
 import { getCurrentUser } from "@/utils/current-user";
+import { isActiveMembership } from "@/lib/permissions";
 import Link from "next/link";
 import { ClubWorkspace } from "@/components/club-workspace";
 import { AuthSessionBoundary } from "@/components/auth-session-boundary";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
 import { legacyInterviewRoomHref } from "@/lib/interview-entry";
 import { PageHeader } from "@/components/ui/page-header";
@@ -50,9 +51,9 @@ async function Workspace({ clubId, section, taskView, tool }: { clubId: string; 
   // Club home and the Recruiting Overview read their dashboard on the server, so it streams with the page
   // instead of waiting for hydration and a second request. Same loader and authorization as /api/workspace;
   // the client keeps it only for this account and membership, and on any failure reads it as before.
-  const overviewView = section === "overview" ? "club" : section === "recruitment" && tool === "overview" ? "recruiting" : null;
-  const initialOverview = user && membership && !membership.club.suspendedAt && overviewView && !jar.has(PLATFORM_VIEW_COOKIE) && jar.get(DEMO_COOKIE)?.value !== "1"
-    ? await import("@/actions/club-overview").then(({ getClubWorkspaceOverview }) => getClubWorkspaceOverview(clubId, overviewView)).then(value => ({ view: overviewView, userId: user.id, value }), () => null)
+  const overviewView: "club" | "recruiting" | null = section === "overview" ? "club" : section === "recruitment" && tool === "overview" ? "recruiting" : null;
+  const initialOverview = user && membership && isActiveMembership(membership) && !membership.club.suspendedAt && overviewView && !jar.has(PLATFORM_VIEW_COOKIE) && jar.get(DEMO_COOKIE)?.value !== "1"
+    ? await import("@/actions/club-overview").then(({ getClubWorkspaceOverview }) => getClubWorkspaceOverview(clubId, overviewView)).then(value => ({ view: overviewView as "club" | "recruiting", userId: user.id, value }), overviewReadFailed)
     : null;
   if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
   return (
@@ -67,4 +68,15 @@ async function Workspace({ clubId, section, taskView, tool }: { clubId: string; 
       />
     </AuthSessionBoundary>
   );
+}
+
+/**
+ * A failed server read of the dashboard falls back to the client read (null), except Next's own control flow:
+ * a redirect or notFound from the loader's authorization still applies to the page. Logged like a refused
+ * /api/workspace read: an allowlisted kind and the error class only, never ids, arguments or messages.
+ */
+function overviewReadFailed(error: unknown): null {
+  unstable_rethrow(error);
+  console.warn(JSON.stringify({ event: "workspace.read.refused", kind: "overview", source: "page", error: error instanceof Error ? error.name : typeof error }));
+  return null;
 }
