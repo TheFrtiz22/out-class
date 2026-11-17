@@ -35,6 +35,7 @@ const exclusions = new Map([
   ['actions/resume-import.ts#confirmResumeImport', 'already returns { ok, code, message }; the graduation-year support refusal is returned as FORBIDDEN'],
   ['actions/campus-events.ts#setCampusEventRsvp', 'already returns { ok, error } through RsvpResult'],
   ['actions/campus-events.ts#getCampusEventAttendees', 'read; failures show the load fallback'],
+  ['actions/recruiting-rules.ts#getRecruitingRuleFlags', 'read; failures show the screen\'s load message'],
   ['actions/club-overview.ts#getClubWorkspaceOverview', 'read; failures show the load fallback'],
   ['actions/club-overview.ts#getDashboardReviewQueue', 'read; failures show the load fallback'],
   ['actions/tasks.ts#getTaskWorkspace', 'read; failures show the load fallback'],

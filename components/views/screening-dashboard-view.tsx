@@ -1,4 +1,5 @@
 "use client"
+import { userMessage } from "@/lib/user-message"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -68,9 +69,9 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
   async function run(action: () => Promise<void>) {
     if (busy) return
     setBusy(true); setMessage(""); setError("")
-    try { await action() } catch {
+    try { await action() } catch (failure) {
       setPreview(null)
-      setError("Could not complete this action. Check the score ranges and test requirement. Rules, applicants, or access may have changed; reload and preview again.")
+      setError(userMessage(failure, "Could not complete this action. Check the score ranges and test requirement. Rules, applicants, or access may have changed; reload and preview again."))
     } finally { setBusy(false) }
   }
   const matches = preview?.results.filter(result => result.outcome === "flag") ?? []
