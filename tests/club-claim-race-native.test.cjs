@@ -1,3 +1,4 @@
+const { unwrapActions } = require('./helpers/action-result.cjs');
 // Two simultaneous claim requests by one student for an unmanaged club on isolated
 // native PostgreSQL, through the real requestClubClaim (club row FOR UPDATE, then a
 // pending-claim lookup). ClubClaim has no unique index, so the club row lock is what
@@ -8,7 +9,7 @@ const { databaseUrl, raceFixture } = require('./helpers/race-native.cjs');
 
 test('two simultaneous claims by one student create one pending claim', { skip: !databaseUrl, timeout: 120000 }, async t => {
   const { operator, load, race, user, club } = await raceFixture(t);
-  const workspace = load('actions/club-workspace.ts');
+  const workspace = unwrapActions(load('actions/club-workspace.ts'));
   const c = await club();
   const student = await user('claimant');
   const explanation = 'I am the current president of this organization.';
