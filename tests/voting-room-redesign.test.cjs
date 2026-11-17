@@ -138,8 +138,11 @@ test('room snapshot names the round, cycle and next round for the header and "Ad
 test('audience slide: no details dialog or Read full links, the result only after close, theme stored per device',()=>{
  const audience=read('components/live-voting/audience-slide.tsx'),room=read('components/live-voting/audience-room.tsx'),view=read('components/live-voting/room-view.tsx'),theme=read('components/live-voting/projector-theme.tsx');
  assert.doesNotMatch(audience,/Dialog|Read full|Applicant details/);
- assert.match(view,/entry\.ballotState==="CLOSED"\|\|entry\.ballotState==="CONFIRMED"\)&&room\.status==="OPEN"\?closedResult/);
- assert.match(room,/<OutClassQRCode/);assert.match(room,/useShortLinkUrl\(/);
+ assert.match(room,/entry\.ballotState==="CLOSED"\|\|entry\.ballotState==="CONFIRMED"\)&&room\.status==="OPEN"\?closedResult/);
+ // Each view loads only its own screen.
+ assert.match(view,/const AudienceView=lazy\(/);assert.match(view,/const LeaderView=lazy\(/);assert.match(view,/const QrCodeCard=lazy\(/);
+ assert.doesNotMatch(view,/from "\.\/(audience-room|leader-room|room-meeting)"/);
+ assert.match(room,/<OutClassQRCode/);assert.match(room,/useShortLinkUrl\(/);assert.doesNotMatch(room,/qr-code-card/,'the projector does not pull in the QR export card');
  assert.match(room,/aria-live="polite"/);
  assert.match(theme,/try\{const v=window\.localStorage\.getItem/);assert.match(theme,/catch\{\/\* Private mode/);
 });

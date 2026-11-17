@@ -62,7 +62,7 @@ test("the projector theme is a dark variant of the same tokens, set only on the 
   assert.match(fs.readFileSync("app/(focus)/voting/rooms/[sessionId]/page.tsx", "utf8"), /view==="present"\?<div data-theme="present" className="oc-present-surface">/)
   const markup = require("node:child_process").spawnSync("git", ["ls-files", "app", "components"], { encoding: "utf8" }).stdout.split("\n").filter(file => /\.tsx?$/.test(file))
   // The live voting slide frame also sets it: the room's light/dark switch (present or present-light, same tokens).
-  const themed = ["app/(focus)/voting/rooms/[sessionId]/page.tsx", "components/live-voting/audience-room.tsx"]
+  const themed = ["app/(focus)/voting/rooms/[sessionId]/page.tsx", "components/live-voting/audience-room.tsx", "components/live-voting/audience-skeleton.tsx"]
   for (const file of markup) if (!themed.includes(file)) assert.doesNotMatch(fs.readFileSync(file, "utf8"), /<\w[^>]*\sdata-theme=/, file)
   assert.match(fs.readFileSync("components/live-voting/audience-room.tsx", "utf8"), /data-theme=\{projectorThemeAttribute\(theme\)\}/)
 })

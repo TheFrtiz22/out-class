@@ -14,7 +14,7 @@ test('a future step runs the same checks as Continue; going back is always allow
   assert.equal(await current(page),'Session details');
   // Step 1 invalid: scheduled with no date. Jumping to step 3 is refused with Continue's message, beside the control.
   await page.getByRole('radio',{name:'Schedule for later',exact:true}).check();
-  await stepButton(page,'Presentation and review').click();
+  await stepButton(page,'Slide and review').click();
   const alert=page.getByRole('alert').filter({hasText:'Choose a date and start time.'});await alert.waitFor();
   assert.equal(await current(page),'Session details');
   const described=await page.getByRole('textbox',{name:'Date and start time'}).getAttribute('aria-describedby');assert.equal(described,await alert.getAttribute('id'));
@@ -25,12 +25,12 @@ test('a future step runs the same checks as Continue; going back is always allow
   await page.getByRole('radio',{name:'Start now',exact:true}).check();
   await stepButton(page,'Applicants and voters').click();await onStep(page,'Applicants and voters');
   await page.getByRole('button',{name:'Clear voters',exact:true}).click();
-  await stepButton(page,'Presentation and review').click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();
+  await stepButton(page,'Slide and review').click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();
   assert.equal(await current(page),'Applicants and voters');
   await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();
   await stepButton(page,'Session details').click();await onStep(page,'Session details');
-  await stepButton(page,'Presentation and review').click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();assert.equal(await current(page),'Applicants and voters');
-  await page.getByRole('button',{name:'Select all voters',exact:true}).click();await stepButton(page,'Presentation and review').click();await onStep(page,'Presentation and review');
+  await stepButton(page,'Slide and review').click();await page.getByRole('alert').filter({hasText:'Select at least one voter.'}).waitFor();assert.equal(await current(page),'Applicants and voters');
+  await page.getByRole('button',{name:'Select all voters',exact:true}).click();await stepButton(page,'Slide and review').click();await onStep(page,'Slide and review');
   assert.equal(f.h.state().sessions.length,0,'a step click never creates a session');assert.deepEqual(errors,[]);
  }finally{await browser.close();await f.close()}
 });
@@ -40,7 +40,7 @@ test('a presentation switch updates the room preview and the review Shown row at
  const calls=[];await page.route('**/action',async route=>{calls.push(route.request().postDataJSON()?.name);await route.continue();});
  try{
   await page.goto(f.url+'/voting/rooms/new?actor=leader');await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
-  const preview=page.getByRole('complementary',{name:'Voting room preview'}),slide=preview.getByRole('region',{name:'Current applicant presentation'}),shown=page.getByRole('region',{name:'Session review'}).locator('div').filter({hasText:/^Shown/});
+  const preview=page.getByRole('complementary',{name:'Projector preview'}),slide=preview.getByRole('region',{name:'Current applicant presentation'}),shown=page.getByRole('region',{name:'Session review'}).locator('div').filter({hasText:/^Shown/});
   await slide.waitFor();await page.waitForLoadState('networkidle');
   const major=page.getByRole('switch',{name:'Major',exact:true});assert.equal(await major.getAttribute('aria-checked'),'false');
   assert.equal(await slide.locator('[data-slide-field="major"]').count(),0);assert.doesNotMatch(await shown.innerText(),/Major/);
@@ -59,10 +59,10 @@ test('inside the focus frame: no Back to Voting room links, save status beside E
  const f=await fixture(),browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  try{
   await page.goto(f.url+'/voting/rooms/new?actor=leader&frame=1');const name=page.getByRole('textbox',{name:'Session name',exact:true});await name.waitFor();
-  for(const step of ['Session details','Applicants and voters','Presentation and review']){
+  for(const step of ['Session details','Applicants and voters','Slide and review']){
    assert.equal(await page.getByRole('link',{name:/Back to Voting room/}).count(),0,step);
    assert.equal(await page.getByRole('link',{name:/Exit/}).count(),1,step);
-   if(step!=='Presentation and review'){if(step==='Applicants and voters')await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}
+   if(step!=='Slide and review'){if(step==='Applicants and voters')await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}
   }
   const bar=page.getByRole('banner');await bar.getByRole('status').filter({hasText:/All changes saved|Unsaved changes|Saving draft…|Draft saved/}).waitFor();
   assert.equal(await page.getByRole('heading',{level:1}).count(),1);
@@ -84,7 +84,7 @@ test('screenshots: all three steps at 1280 and 390 wide, no horizontal overflow'
    await page.getByRole('radio',{name:'Schedule for later',exact:true}).check();
    for(const [i,step] of ['session-details','applicants-voters','presentation-review'].entries()){
     if(i===1)await page.getByRole('button',{name:'Select all voters',exact:true}).click();
-    if(i===2){await page.getByRole('complementary',{name:'Voting room preview'}).getByRole('region',{name:'Current applicant presentation'}).waitFor();}
+    if(i===2){await page.getByRole('complementary',{name:'Projector preview'}).getByRole('region',{name:'Current applicant presentation'}).waitFor();}
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${step} at ${width}`);
     await page.screenshot({path:path.join(dir,`${i+1}-${step}-${width}.png`),fullPage:true});
     if(i===0){await page.getByRole('textbox',{name:'Date and start time'}).fill(new Date(Date.now()+2*86400000).toISOString().slice(0,16));}
@@ -168,7 +168,7 @@ test('a switch shows in the preview while the exact preview read is still in fli
  await page.route('**/action',async route=>{if(hold&&route.request().postDataJSON()?.name==='previewVotingSetup')await held;await route.continue();});
  try{
   await page.goto(f.url+'/voting/rooms/new?actor=leader');await page.getByRole('button',{name:'Continue',exact:true}).click();await page.getByRole('button',{name:'Select all voters',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
-  const slide=page.getByRole('complementary',{name:'Voting room preview'}).getByRole('region',{name:'Current applicant presentation'});await slide.waitFor();await page.waitForLoadState('networkidle');
+  const slide=page.getByRole('complementary',{name:'Projector preview'}).getByRole('region',{name:'Current applicant presentation'});await slide.waitFor();await page.waitForLoadState('networkidle');
   hold=true;await page.getByRole('switch',{name:'Major',exact:true}).click();
   await slide.locator('[data-slide-field="major"]').waitFor({timeout:1000});
   assert.equal(await slide.getAttribute('aria-busy'),null,'the narrowed slide is shown as current, not stale');
@@ -209,7 +209,7 @@ test('rule errors sit under their own choices; a bad timezone opens the timezone
   await rule.getByRole('radio',{name:'Do not pass',exact:true}).check();assert.match(await summary.innerText(),/2\/3 of ballots cast are Pass.*Below the threshold they don’t pass/);
   await rule.getByRole('radio',{name:/All eligible voters/}).check();await rule.getByRole('radio',{name:/^Hold/}).check();
   assert.equal(await summary.innerText(),'In plain terms: an applicant passes if at least 2/3 of all eligible voters vote Pass and at least 1/2 of eligible voters took part. Otherwise they’re held for another vote.');
-  await rule.getByRole('checkbox',{name:/reviewed this rule/}).check();await page.getByRole('button',{name:'Continue',exact:true}).click();await onStep(page,'Presentation and review');
+  await rule.getByRole('checkbox',{name:/reviewed this rule/}).check();await page.getByRole('button',{name:'Continue',exact:true}).click();await onStep(page,'Slide and review');
   const focused=await page.evaluate(()=>document.activeElement?.id||'');assert.match(focused,/-intro-3$/,'focus moves to the step intro');
   await page.getByRole('region',{name:'Session review'}).getByText('An applicant passes if at least 2/3 of all eligible voters vote Pass and at least 1/2 of eligible voters took part. Otherwise they’re held for another vote.',{exact:true}).waitFor();
  }finally{await browser.close();await f.close()}
