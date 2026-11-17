@@ -95,6 +95,8 @@ test('entire-round scope is a separate, server-authorized read: canonical once p
  ok(await h.command('START'));ok(await h.command('ACCEPT_WITHOUT_VOTE',{reason:'Clear',confirmed:true}));ok(await h.command('ADVANCE'));
  // A second room in the same round re-decides apps[0] and adds apps[1] for a member who is not a voter there.
  const second={clubId,sessionId:uuid(40)};await h.api.createLiveVotingRoom({...second,cycleId,roundId,leaderMemberIds:[leaderId],participantIds:[leaderId],applicationIds:[apps[0],apps[1]],targetSize:3});
+ // That room was saved with a voter list (leader only), so the voter cannot open it; open-electorate rooms are open to every voting member.
+ {const r=h.state().sessions.find(s=>s.id===second.sessionId);const {electorate:_open,...rest}=r.presentationOptions;r.presentationOptions=rest;r.participants=[{sessionId:r.id,memberId:leaderId,joinedAt:null}];}
  const cmd=(action,extra={})=>h.api.commandLiveVotingRoom({...second,requestId:crypto.randomUUID(),revision:h.state().sessions.find(s=>s.id===second.sessionId).revision,action,...extra});
  h.state().sessions.find(s=>s.id===second.sessionId).createdAt=new Date(Date.now()+60000);
  ok(await cmd('START'));ok(await cmd('DECIDE_WITHOUT_VOTE_AND_ADVANCE',{applicationId:apps[0],passNumber:1,choice:'REJECT',reason:'New information',confirmed:true}));

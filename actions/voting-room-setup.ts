@@ -10,7 +10,9 @@ import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-tran
 import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
-import { liveRoomFields, roomScope } from "@/lib/voting-room";
+import { liveRoomFields, roomScope, isOpenElectorate, MAX_ROOM_VOTERS } from "@/lib/voting-room";
+import { alumniRefusal } from "@/utils/graduation";
+import { supportContext } from "@/utils/support-audit";
 import { allowedByProfileCeiling, normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { votingHighlightChoices } from "@/utils/voting-room-presentation";
@@ -31,19 +33,18 @@ export async function getLiveVotingSetup(input:unknown){
     if(d.roundId&&!round||d.cycleId&&!cycle)throw Error("The selected cycle or round is unavailable in this club.");
     if(round&&!round.anonymousReview&&!hasPermission(m,"applicants.identify"))throw Error("Identified review permission required.");
     const apps=round&&cycle?await tx.application.findMany({where:{clubId:d.clubId,roundId:round.id,recruitmentCycleId:cycle.id,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}},select:{id:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}},orderBy:[{submittedAt:"asc"},{id:"asc"}]}):[];
-    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true,graduatedAt:true}}}}}});
-    const voters=members.filter(v=>!isGraduatedMember(v)&&hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(!round||round.anonymousReview||hasPermission(v,"applicants.identify")));
-    // People who interviewed this round's applicants start ticked as voters, next to the officers.
-    const interviewed=new Set(round?(await tx.interviewRecord.findMany({where:{roundId:round.id,completedAt:{not:null},application:{clubId:d.clubId,...(cycle?{recruitmentCycleId:cycle.id}:{})}},select:{interviewerId:true},distinct:["interviewerId"]})).map(r=>r.interviewerId):[]);
+    // Count only: any of these members can join with the join QR or link (no saved voter list).
+    const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null}},select:{status:true,alumniSince:true,isOwner:true,permissions:true,user:{select:{studentProfile:{select:{graduatedAt:true}}}}}});
+    const joinableVoterCount=members.filter(v=>!isGraduatedMember(v)&&hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(!round||round.anonymousReview||hasPermission(v,"applicants.identify"))).length;
     const evidence=interviewCapabilities(m);
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});
     const panel=await tx.interviewPanelAssignment.findFirst({where:{memberId:m.id,revokedAt:null,application:{clubId:d.clubId}},select:{id:true}});
-    const permittedFields=liveRoomFields.filter(f=>!(round?.anonymousReview&&["name","photo","major","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))&&(f!=="resumeHighlight"||evidence.moderateResume||!!panel)&&(!["interviewScore","finalInterviewThoughts"].includes(f)||evidence.readClosing||!!ownReview));
+    const permittedFields=liveRoomFields.filter(f=>!(round?.anonymousReview&&["name","photo","major","scholarStatus","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))&&(f!=="resumeHighlight"||evidence.moderateResume||!!panel)&&(!["interviewScore","finalInterviewThoughts"].includes(f)||evidence.readClosing||!!ownReview));
     const allowedFields=permittedFields.filter(f=>allowedByProfileCeiling(f,profileFields));
     const hiddenProfileFields=permittedFields.filter(f=>!allowedByProfileCeiling(f,profileFields));
     const ruleRows=await tx.votingRuleDefault.findMany({where:{clubId:d.clubId,OR:[{roundId:null},...(round?[{roundId:round.id}]:[])]}});
     const ruleRow=ruleRows.find(r=>round&&r.roundId===round.id)??ruleRows.find(r=>r.roundId===null);
-    return {memberId:m.id,timeZone:"America/New_York",cycles,rounds,allowedFields,hiddenProfileFields,canEditProfileFields:hasPermission(m,"club.settings"),defaultRules:readVotingRules(ruleRow?.rules),defaultRulesSource:ruleRow?(ruleRow.roundId?"round" as const:"club" as const):null,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,defaultSelected:!!v.interviewOffices?.some(o=>["PRESIDENT","VICE_PRESIDENT","BOARD"].includes(o))||interviewed.has(v.id),label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
+    return {memberId:m.id,timeZone:"America/New_York",cycles,rounds,allowedFields,hiddenProfileFields,canEditProfileFields:hasPermission(m,"club.settings"),defaultRules:readVotingRules(ruleRow?.rules),defaultRulesSource:ruleRow?(ruleRow.roundId?"round" as const:"club" as const):null,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),joinableVoterCount};
   },votingReadLimits);
 }
 
@@ -69,6 +70,7 @@ export async function getLiveVotingJoinInfo(input:unknown){
     const cycle=await tx.recruitmentCycle.findFirst({where:{id:s.cycleId!,clubId:d.clubId},select:{archivedAt:true}});
     if(round.archivedAt||cycle?.archivedAt)return {status:"EXPIRED" as const};
     try{if(!roomAuthority(s,m,round.anonymousReview).voter)return {status:"DENIED" as const};}catch{return {status:"DENIED" as const};}
+    if(await alumniRefusal(tx,user.id,"vote"))return {status:"DENIED" as const};
     if(s.state==="COMPLETED"||s.finalizedAt)return {status:"ENDED" as const};
     const meeting=joinMeetingPreview((s.presentationOptions as {meeting?:unknown}|null)?.meeting,s.state==="DRAFT"&&!s.startedAt);
     return {status:s.participants.find(p=>p.memberId===m.id)?.joinedAt?"JOINED" as const:"READY" as const,meeting};
@@ -77,11 +79,23 @@ export async function getLiveVotingJoinInfo(input:unknown){
 export async function joinLiveVotingRoom(input:unknown){
   const d=roomScope.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review","decisions.vote"]);
   return clubWriteTransaction(async tx=>{
+    // Current membership in this session's club (and so its school), an enabled account and the club's voting
+    // permissions; alumni are refused (lib/graduation.ts). The session row lock serializes joins with a ballot closing.
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"]);
+    // A support session acts as the member but never joins a vote for them.
+    if(await supportContext())throw Error("Joining a vote isn’t available in a support session.");
+    if(await alumniRefusal(tx,user.id,"vote"))throw Error("Session ended or joining is unavailable.");
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
     if(!roomAuthority(s,m,round.anonymousReview).voter||s.state==="COMPLETED"||s.finalizedAt)throw Error("Session ended or joining is unavailable.");
-    const p=s.participants.find(p=>p.memberId===m.id)!;
-    if(!p.joinedAt){
+    const p=s.participants.find(p=>p.memberId===m.id);
+    if(!p){
+      // Open electorate only (a legacy session's voter is always on its saved list): joining adds the member, at any time.
+      if(!isOpenElectorate(s.presentationOptions))throw Error("Session ended or joining is unavailable.");
+      if(s.participants.length>=MAX_ROOM_VOTERS)throw Error(`This session is full (${MAX_ROOM_VOTERS} voters).`);
+      await tx.votingParticipant.create({data:{sessionId:s.id,memberId:m.id,joinedAt:new Date()}});
+      await tx.votingSession.update({where:{id:s.id},data:{revision:{increment:1}}});
+      await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.room.joined",details:{memberId:m.id,late:!!s.startedAt}}});
+    }else if(!p.joinedAt){
       await tx.votingParticipant.update({where:{sessionId_memberId:{sessionId:s.id,memberId:m.id}},data:{joinedAt:new Date()}});
       await tx.votingSession.update({where:{id:s.id},data:{revision:{increment:1}}});
       await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.room.joined",details:{memberId:m.id}}});

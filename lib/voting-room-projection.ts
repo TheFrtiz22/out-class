@@ -1,7 +1,7 @@
 import {meetingDetails} from "@/lib/voting-session-setup";
 import type { Prisma } from "@prisma/client";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
-import { roomOutcomes, roomTally, publicChoice, roomCommandResultSchema } from "@/lib/voting-room";
+import { roomOutcomes, roomTally, publicChoice, roomCommandResultSchema, isOpenElectorate } from "@/lib/voting-room";
 import type { z } from "zod";
 
 export type UndoableDecision=NonNullable<z.infer<typeof roomCommandResultSchema>["decision"]>;
@@ -25,10 +25,20 @@ type Member={id:string}&NonNullable<Parameters<typeof hasPermission>[0]>;
 export function roomAuthority(s: LiveRoom, m: Member, anonymous: boolean) {
   if (!hasPermission(m, "applications.review") || (!anonymous && !hasPermission(m, "applicants.identify"))) throw Error("Voting presentation access denied.");
   const leader = s.leaderMemberIds.includes(m.id) && hasPermission(m, "decisions.start");
-  const voter = s.participants.some(p => p.memberId === m.id) && hasPermission(m, "decisions.vote");
+  // Open-electorate sessions: any member who may vote can join. Legacy sessions: only their saved voter list.
+  const voter = (s.participants.some(p => p.memberId === m.id) || isOpenElectorate(s.presentationOptions)) && hasPermission(m, "decisions.vote");
   const observer = hasPermission(m, "decisions.view");
   if (!leader && !voter && !observer) throw Error("Voting room access denied.");
   return { leader, voter, observer };
+}
+/** This session's voter roster: members who joined (open electorate) or the saved list (legacy). */
+export function roomRosterIds(s: { presentationOptions: unknown; participants: { memberId: string; joinedAt: Date | string | null }[] }) {
+  const open = isOpenElectorate(s.presentationOptions);
+  return s.participants.filter(p => !open || p.joinedAt).map(p => p.memberId);
+}
+/** Ballots and discussion requests need a place on the roster, not only the permission to join. */
+export function onRoomRoster(s: Parameters<typeof roomRosterIds>[0], memberId: string) {
+  return roomRosterIds(s).includes(memberId);
 }
 export function requireRoomLeader(s: LiveRoom, m: Member, capability: ClubPermission) {
   if (!s.leaderMemberIds.includes(m.id) || !hasPermission(m, capability) || !hasPermission(m,"decisions.start")) throw Error("Current session leadership permission required.");

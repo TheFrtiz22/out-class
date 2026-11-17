@@ -131,3 +131,14 @@ export function bandCounts(input: { banded: readonly { band: "green" | "yellow" 
   const count = (band: string) => input.banded.filter(r => r.band === band).length;
   return { bandsSet: input.bandsSet, green: count("green"), yellow: count("yellow"), red: count("red"), scored: input.banded.length, notScored: input.notScored, hidden: input.hidden };
 }
+
+export type RoundTrackerCounts = { passed: number; failed: number; held: number; toGo: number; total: number; target: number | null; reached: boolean; markerPercent: number | null };
+/**
+ * The live-voting round tracker: Passed, Did not pass, Held and To go for the whole round (each applicant once, from
+ * recorded outcomes; "to go" has no outcome yet), and where the target sits on a bar of every applicant in the round.
+ */
+export function roundTrackerCounts(summary: Pick<TargetSummary, "decisions" | "target">): RoundTrackerCounts {
+  const d = summary.decisions, target = summary.target.value;
+  return { passed: d.pass, failed: d.notPass, held: d.hold, toGo: d.unreviewed, total: d.total, target, reached: target !== null && d.pass >= target,
+    markerPercent: target !== null && d.total > 0 && target <= d.total ? Math.min(100, target * 100 / d.total) : null };
+}

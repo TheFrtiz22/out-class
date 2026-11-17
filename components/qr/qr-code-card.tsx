@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { OutClassQRCode } from "./outclass-qr-code";
 import { QrPresenterDialog } from "./qr-presenter-dialog";
 import { downloadQrPng, downloadQrSvg } from "@/lib/qr/export";
-import { createShortLink } from "@/actions/short-links";
+import { useShortLinkUrl } from "./use-short-link-url";
 
 export { downloadQrPng, downloadQrSvg };
+
+export { useShortLinkUrl };
 
 export interface QrCodeCardProps {
   title: string;
@@ -23,29 +24,7 @@ export function QrCodeCard({
   filename,
   downloadable = true,
 }: QrCodeCardProps) {
-  const [origin, setOrigin] = useState("");
-  const [optimizedUrl, setOptimizedUrl] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const orig = window.location.origin;
-      setOrigin(orig);
-
-      // Attempt to optimize with an OutClass short link for clean, low-density QR
-      // Server-validated and session-bound; falls back to the direct URL when
-      // signed out (e.g. demo) or when the path is not a shareable destination.
-      createShortLink({ target: path })
-        .then((res) => {
-          setOptimizedUrl(`${orig}${res.shortUrl}`);
-        })
-        .catch(() => {
-          // Graceful fallback to direct URL on local/offline environments
-          setOptimizedUrl(`${orig}${path}`);
-        });
-    }
-  }, [path]);
-
-  const activeUrl = optimizedUrl || (origin ? `${origin}${path}` : "");
+  const activeUrl = useShortLinkUrl(path);
 
   return (
     <OutClassQRCode

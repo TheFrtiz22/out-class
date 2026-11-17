@@ -16,7 +16,9 @@ const sample=p=>p.evaluate(()=>{const shown=e=>!!e&&e.checkVisibility({visibilit
   const mark=stage.querySelector('.vr-slide-out .vr-outcome');if(shown(mark)){const text=mark.textContent;if(s.outcomes.at(-1)!==text)s.outcomes.push(text);s.firstOutcome||=t;}
   if(stage.classList.contains('vr-slide-sliding')){s.slideStart||=t;s.outX.push(x(stage.querySelector('.vr-slide-out')));s.inX.push(x(stage.querySelector('.vr-slide-in')));}else if(s.slideStart&&!s.slideEnd)s.slideEnd=t;}
   if(s.on)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
-const stop=p=>p.evaluate(()=>{window.__s.on=false;return window.__s;});
+// A ready DOM can precede the sampler's next frame, especially across four CI pages.
+// Let that already-scheduled sample observe the settled phase before freezing its timestamps.
+const stop=p=>p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__s.on=false;resolve(window.__s);})));
 const unlocked=(p,name)=>p.waitForFunction(n=>{const b=[...document.querySelectorAll('.vr-leader button')].find(b=>b.textContent.trim()===n);return !!b&&!b.closest('fieldset')?.disabled;},name);
 
 test('decision motion: outcome beside the name, then a same-direction slide on every view; Undo; reduced motion; repeated clicks',{timeout:600000},async()=>{
@@ -69,7 +71,7 @@ test('decision motion: outcome beside the name, then a same-direction slide on e
   for(const [p,size] of [[small,'1366×768'],[large,'1920×1080']])assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight),`projector fits at ${size}`);
   assert.ok(await member.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'phone: no horizontal scroll');
   // Counters come from the confirmed room state.
-  await leader.getByText('Reviewed 1 of 3 this pass · Pass 1',{exact:true}).waitFor();
+  await leader.locator('.vr-lead-queue li').first().getByText(/^(Passed|Held|Not passed)$/).waitFor();
   // Focus lands on the new applicant's name, never on a decision control.
   assert.equal(await leader.evaluate(()=>document.activeElement?.textContent),'QA Applicant Two');
 

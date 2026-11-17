@@ -38,3 +38,10 @@ test('voting display and previews require real server capabilities and correct s
  const h=harness();h.caps(['applications.review','applicants.identify','decisions.vote']);await assert.rejects(h.api.getApplicantDisplay({clubId,applicationId,previewConfig:{version:1,fields:['name']}}),/setup permission/);await h.api.getApplicantDisplay({clubId,applicationId,sessionId});h.uninvite();await assert.rejects(h.api.getApplicantDisplay({clubId,applicationId,sessionId}),/unavailable/);
  await assert.rejects(h.api.getApplicantDisplay({clubId,applicationId,sessionId:uuid(99)}),/unavailable/);h.session.candidates=[];h.caps(['applications.review','applicants.identify','decisions.manage']);await assert.rejects(h.api.getApplicantDisplay({clubId,applicationId,sessionId}),/unavailable/);h.caps(['applications.review','decisions.vote']);h.round.anonymousReview=false;await assert.rejects(h.api.getApplicantDisplay({clubId,applicationId,sessionId}),/reviewer/);
 });
+
+test('a voting slide or setup preview never shows a member their own application',async()=>{
+ const h=harness(true),scope={clubId,applicationId,sessionId};h.app.studentId=memberId;
+ await assert.rejects(h.api.getApplicantDisplay(scope),/Applicant unavailable/);
+ await assert.rejects(h.api.getApplicantDisplay({clubId,applicationId,previewConfig:{version:1,fields:['name']}}),/Applicant unavailable/);
+ h.app.studentId=uuid(6);assert.ok((await h.api.getApplicantDisplay(scope)).visible,'someone else\'s application still presents');
+});

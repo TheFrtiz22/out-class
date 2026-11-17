@@ -3,8 +3,9 @@ import {z} from "zod";
 import {requireClubPermission} from "@/utils/auth";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {clubWriteTransaction,votingWriteLimits} from "@/utils/club-write-transaction";
-import {loadVotingRoom,requireRoomLeader,roomAuthority} from "@/utils/voting-room";
+import {loadVotingRoom,requireRoomLeader,roomAuthority,onRoomRoster} from "@/utils/voting-room";
 import {currentEligibleVoterIds} from "@/utils/voting-rules";
+import {supportContext} from "@/utils/support-audit";
 
 /** "Something to add": a request for the leader's attention about the applicant
  * currently being discussed. It never casts a ballot, changes an outcome, saves
@@ -25,9 +26,12 @@ export async function setDiscussionRequest(input:unknown):Promise<Result>{
   const d=raiseSchema.parse(input),{user}=await requireClubPermission(d.clubId,["applications.review","decisions.vote"]);
   return clubWriteTransaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.vote"]);
+    if(await supportContext())throw Error("Raising a hand isn’t available in a support session.");
     const {s,round}=await loadVotingRoom(tx,d.clubId,d.sessionId,true);
-    if(!roomAuthority(s,m,round.anonymousReview).voter)throw Error("Eligible session voter required.");
+    if(!roomAuthority(s,m,round.anonymousReview).voter||!onRoomRoster(s,m.id))throw Error("Eligible session voter required.");
     if(!current(s,d))return moved;
+    // Nobody raises a hand about their own application.
+    if(await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,studentId:user.id},select:{id:true}}))throw Error("You can’t raise your hand on your own application.");
     const key={sessionId:s.id,passNumber:d.passNumber,applicationId:d.applicationId,memberId:m.id};
     const row=await tx.votingHandRaise.findUnique({where:{sessionId_passNumber_applicationId_memberId:key}});
     const active=!!row&&!row.withdrawnAt&&!row.clearedAt,now=new Date();

@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {chromium}=require('playwright'),{fixture}=require('./helpers/voting-room-ui-fixture.cjs');
 const {sessionId,uuid}=require('./helpers/voting-room-harness.cjs');
 
-// The projector shows the same one-line Pass meaning as the leader's target summary: both read
+// While voting is open, the projector's vote line shows the same one-line Pass meaning as the leader's target summary: both read
 // room.targetSummary.pass (passMeaning() in lib/voting-target-summary.ts), never a second copy of the words.
 const fits=page=>page.evaluate(()=>({height:document.documentElement.scrollHeight,width:document.documentElement.scrollWidth,innerHeight,innerWidth}));
 const assertFits=async(page,label)=>{const m=await fits(page);assert.ok(m.height<=m.innerHeight+1&&m.width<=m.innerWidth,`${label}: no scroll (${JSON.stringify(m)})`)};
@@ -12,10 +12,10 @@ test('projector shows the leader\'s Pass meaning for final and later-round wordi
  const f=await fixture(),browser=await chromium.launch({headless:true}),errors=[];
  const base=`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}`;
  const open=async(view,width,height)=>{const page=await (await browser.newContext({viewport:{width,height}})).newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(`${base}&view=${view}&actor=leader`);await page.getByRole('heading',{name:'QA Applicant One',exact:true}).waitFor();return page;};
- const leaderMeaning=async page=>{const el=page.getByRole('region',{name:'Decision totals'}).locator('[data-pass-meaning]');await el.waitFor();return {kind:await el.getAttribute('data-pass-meaning'),text:(await el.innerText()).trim()};};
- const projectorMeaning=async page=>{const el=page.getByRole('region',{name:'Passed and target'}).locator('[data-pass-meaning]');await el.waitFor();return {kind:await el.getAttribute('data-pass-meaning'),text:(await el.innerText()).trim()};};
+ const leaderMeaning=async page=>{if(!await page.locator('.vr-lead-totals[open]').count())await page.getByText('Session and round totals',{exact:true}).click();const el=page.getByRole('region',{name:'Decision totals'}).locator('[data-pass-meaning]');await el.waitFor();return {kind:await el.getAttribute('data-pass-meaning'),text:(await el.innerText()).trim()};};
+ const projectorMeaning=async page=>{const el=page.locator('.vr-aud-footer [data-pass-meaning]');await el.waitFor();return {kind:await el.getAttribute('data-pass-meaning'),text:(await el.innerText()).trim()};};
  try{
-  await f.h.create({targetSize:2});await f.h.command('START');
+  await f.h.create({targetSize:2});await f.h.command('START');await f.h.command('OPEN_VOTING');
   const sizes=[[1366,768],[1920,1080],[1280,720]];
 
   // The harness has one round, so this is the club's final decision round.
@@ -24,7 +24,7 @@ test('projector shows the leader\'s Pass meaning for final and later-round wordi
   for(const [w,h] of sizes){
    const present=await open('present',w,h);
    assert.deepEqual(await projectorMeaning(present),finalLeader,`projector matches the leader at ${w}×${h}`);
-   const style=await present.getByRole('region',{name:'Passed and target'}).locator('[data-pass-meaning]').evaluate(e=>{const s=getComputedStyle(e),stats=getComputedStyle(e.parentElement);return{size:parseFloat(s.fontSize),statsSize:parseFloat(stats.fontSize),color:s.color,muted:(()=>{const p=document.createElement('span');p.style.color='var(--muted-foreground)';e.appendChild(p);const c=getComputedStyle(p).color;p.remove();return c})()}});
+   const style=await present.locator('.vr-aud-footer [data-pass-meaning]').evaluate(e=>{const s=getComputedStyle(e),stats=getComputedStyle(e.closest('.vr-vote-status').querySelector('.vr-vote-state'));return{size:parseFloat(s.fontSize),statsSize:parseFloat(stats.fontSize),color:s.color,muted:(()=>{const p=document.createElement('span');p.style.color='var(--muted-foreground)';e.appendChild(p);const c=getComputedStyle(p).color;p.remove();return c})()}});
    assert.ok(style.size<=style.statsSize,'quiet text: no larger than the counts line');assert.equal(style.color,style.muted,'muted foreground');
    await assertFits(present,`final wording ${w}×${h}`);
    await present.context().close();

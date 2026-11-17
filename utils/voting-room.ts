@@ -29,6 +29,6 @@ export async function loadVotingRoom(tx: AppTransactionClient, clubId: string, s
   const round = await tx.pipelineRound.findFirst({ where: { id: s.roundId, clubId } });
   const cycle = s.cycleId ? await tx.recruitmentCycle.findFirst({ where: { id: s.cycleId, clubId } }) : null;
   if (!round || !cycle || (write && (round.archivedAt || cycle.archivedAt))) throw Error("Voting scope unavailable or archived.");
-  return { s, round };
+  return { s, round, cycle };
 }
-export { roomAuthority,requireRoomLeader,projectVotingRoom,undoableDecision } from "@/lib/voting-room-projection";
+export { roomAuthority,requireRoomLeader,projectVotingRoom,undoableDecision,onRoomRoster,roomRosterIds } from "@/lib/voting-room-projection";

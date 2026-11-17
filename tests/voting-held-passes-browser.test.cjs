@@ -14,7 +14,7 @@ const watch=p=>p.evaluate(()=>{const s=window.__w={modes:[],fadeMoved:0,headings
  const tick=()=>{const st=document.querySelector('.vr-slide-stage');if(st){const sl=st.classList.contains('vr-slide-sliding'),fade=st.classList.contains('vr-slide-fade');if(sl&&!s.sliding)s.modes.push(fade?'fade':'slide');s.sliding=sl;
   if(sl&&fade&&(x(st.querySelector('.vr-slide-out'))>0.5||x(st.querySelector('.vr-slide-in'))>0.5))s.fadeMoved++;
   const h=st.querySelector('.vr-slide-in [data-applicant-heading]');if(st.classList.contains('vr-slide-ready')&&shown(h)&&s.headings.at(-1)!==h.textContent)s.headings.push(h.textContent);
-  const hd=document.querySelector('.vr-header')?.getBoundingClientRect().top+scrollY;if(hd!==undefined&&s.header.at(-1)!==Math.round(hd))s.header.push(Math.round(hd));}
+  const hd=document.querySelector('.vr-header,.vr-lead-header,.vr-aud-header')?.getBoundingClientRect().top+scrollY;if(hd!==undefined&&s.header.at(-1)!==Math.round(hd))s.header.push(Math.round(hd));}
   if(s.on)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
 const stop=p=>p.evaluate(()=>{window.__w.on=false;return window.__w;});
 
@@ -74,7 +74,7 @@ test('full session across devices: intermission, held passes with fresh ballots,
   await decide(f,apps[1],3,'ACCEPT');await settle(all,'Review complete');
   for(const p of all)await p.getByText(/^No held applicants remain\./).waitFor();
   assert.equal(await leader.getByRole('button',{name:'Review held applicants',exact:true}).count(),0);
-  await leader.getByText('1 over target',{exact:true}).first().waitFor();
+  await leader.getByText(/^Target of 1 reached · voting can continue/).first().waitFor();
   assert.match(await member.locator('.vr-intermission-counts').innerText(),/Passed\s*2[\s\S]*Held\s*0[\s\S]*Not passed\s*1[\s\S]*Unreviewed\s*0/);
 
   // End voting: the leader's explicit action; every device fades to the summary with passed applicants first.

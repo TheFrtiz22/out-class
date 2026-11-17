@@ -7,17 +7,31 @@ export const roomChoice = z.enum(["ACCEPT", "HOLD", "REJECT"]);
 export const storedChoice = { ACCEPT: "PASS", HOLD: "HOLD", REJECT: "NOT_PASS" } as const;
 export function publicChoice(value: string | null):"ACCEPT"|"HOLD"|"REJECT"|"UNREVIEWED" { return value === "PASS" ? "ACCEPT" : value === "NOT_PASS" ? "REJECT" : value === "HOLD" ? "HOLD" : "UNREVIEWED"; }
 export const roomScope = z.object({ clubId: z.string().uuid(), sessionId: z.string().uuid() }).strict();
-export const liveRoomFields=["photo","name","major","academicYear","gpa","sat","act","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"] as const;
+export const liveRoomFields=["photo","name","major","academicYear","scholarStatus","gpa","sat","act","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"] as const;
 export type LiveRoomField=typeof liveRoomFields[number];
 export const roomPresentationSchema=z.object({fields:z.array(z.enum(liveRoomFields)).max(liveRoomFields.length).refine(v=>new Set(v).size===v.length),highlights:z.record(z.string().uuid(),z.string().uuid()).default({}),meeting:meetingDetailsSchema.optional(),
   /** Absent means leader-confirmed voting (the original behaviour). */
-  rules:votingRulesSchema.optional()}).strict();
-export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:liveRoomFields.filter((f):f is Exclude<LiveRoomField,"resumeHighlight"|"interviewScore"|"finalInterviewThoughts"|"additionalObservations">=>fields.includes(f)&&!["resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"].includes(f))};}
+  rules:votingRulesSchema.optional(),
+  /** Set by the server on every session created or edited since the voter picker was retired (see isOpenElectorate). */
+  electorate:z.literal("OPEN").optional()}).strict();
+/**
+ * Open electorate: any current member who may vote in the club joins with the join QR or link, and joining
+ * adds them to the session's voters (a VotingParticipant row with joinedAt). Sessions without the marker were
+ * set up with a saved voter list and keep it (legacy): only those listed members may join or vote.
+ */
+export const OPEN_ELECTORATE="OPEN" as const;
+export function isOpenElectorate(presentationOptions:unknown){return !!presentationOptions&&typeof presentationOptions==="object"&&(presentationOptions as {electorate?:unknown}).electorate===OPEN_ELECTORATE;}
+/** Most people one session can hold as voters (the ballot rule snapshot's bound). */
+export const MAX_ROOM_VOTERS=500;
+/** Slide fields read by the voting loaders themselves, outside the Applicant Display contract. */
+const slideOnlyFields=["scholarStatus","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"] as const;
+export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:liveRoomFields.filter((f):f is Exclude<LiveRoomField,typeof slideOnlyFields[number]>=>fields.includes(f)&&!(slideOnlyFields as readonly string[]).includes(f))};}
 export function liveRoomPath(clubId:string,sessionId:string,view:"leader"|"present"|"member"="member",demo=false){return `/voting/rooms/${encodeURIComponent(sessionId)}?clubId=${encodeURIComponent(clubId)}&view=${view}${demo?"&demo=1":""}`;}
 export const createRoomSchema = roomScope.extend({
   cycleId: z.string().uuid(), roundId: z.string().uuid(),
   leaderMemberIds: z.array(z.string().uuid()).min(1).max(50),
-  participantIds: z.array(z.string().uuid()).min(1).max(500),
+  /** Legacy: sessions no longer take a saved voter list. Older clients may still send one; it is ignored. */
+  participantIds: z.array(z.string().uuid()).max(500).default([]),
   applicationIds: z.array(z.string().uuid()).min(1).max(2000),
   targetSize: z.number().int().min(1).max(2000).nullable().default(null), displayConfig: votingDisplaySchema.default(defaultVotingDisplay),
   presentationOptions:roomPresentationSchema.optional(), notifyVoters:z.boolean().optional(),
@@ -39,6 +53,10 @@ export const roomBallotSchema = roomScope.extend({ requestId: z.string().uuid(),
 /** The room moved to another applicant after this viewer's last snapshot: a normal race, not a failure. */
 export class VotingPresentationChanged extends Error { readonly stale=true as const; constructor(message="Voting presentation changed. Reload the page to continue."){super(message);this.name="VotingPresentationChanged";} }
 export function isStalePresentation(value:unknown):value is {stale:true}{return !!value&&typeof value==="object"&&(value as {stale?:unknown}).stale===true;}
+/** The applicant on screen is the viewer: nobody sees or votes on their own application. Carries no applicant data. */
+export type OwnApplicationPresentation={ownApplication:true};
+export const OWN_APPLICATION_MESSAGE="You’re the applicant on screen; you can’t see or vote on this one.";
+export function isOwnApplicationPresentation(value:unknown):value is OwnApplicationPresentation{return !!value&&typeof value==="object"&&(value as {ownApplication?:unknown}).ownApplication===true;}
 export function uniqueSelection(values: string[]) { if (new Set(values).size !== values.length) throw Error("Duplicate selection."); }
 export type RoomEntry = { applicationId: string; passNumber?: number; position: number; ballotState: string; confirmedDecision: string | null; ballots: { memberId: string; decision: string; revision: number }[] };
 export function roomOutcomes(s: { candidates: { applicationId: string }[]; passes: { number: number; candidates: RoomEntry[] }[] }) {

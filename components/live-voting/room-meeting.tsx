@@ -5,7 +5,7 @@ import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
-import {commandLiveVotingRoom,getRoundTargetSummary,getLiveVotingSummary,previewLiveVotingFinalization,finalizeLiveVotingRoom,sendLiveVotingNotifications} from "@/lib/voting-room-api";
+import {commandLiveVotingRoom,getLiveVotingSummary,previewLiveVotingFinalization,finalizeLiveVotingRoom,sendLiveVotingNotifications} from "@/lib/voting-room-api";
 import type {useLiveVotingRoom} from "@/hooks/use-live-voting-room";
 import {roomCommandSchema,leadingBallotChoice,outcomeLabels,savedOutcomeLabels} from "@/lib/voting-room";
 import type {z} from "zod";
@@ -13,7 +13,10 @@ import {decisionsHref} from "@/lib/voting-navigation";
 import {useDemoMode} from "@/contexts/demo-context";
 import {Check, XIcon, MoreHorizontal, Pause} from "@/components/icons";
 import { NativeSelect } from "@/components/ui/native-select"
-import {VotingTargetSummary,type ScopedTargetSummary} from "@/components/voting-target-summary";
+import {VotingTargetSummary} from "@/components/voting-target-summary";
+import {useRoundSummary} from "./round-tracker";
+import type {VotingSummaryState} from "./use-voting-summary";
+export {useVotingSummary,type VotingSummaryState} from "./use-voting-summary";
 type Room=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
 type Command=z.infer<typeof roomCommandSchema>;
 type Summary=Awaited<ReturnType<typeof getLiveVotingSummary>>;
@@ -21,22 +24,14 @@ type Plan=Awaited<ReturnType<typeof previewLiveVotingFinalization>>;
 const outcomeNames=outcomeLabels;
 /** Leader summary: this session's counts arrive with every room snapshot (same authorized polling path,
  * counts only); the entire round is a separate, server-authorized read refreshed when the room changes. */
-function outcomeSignature(room:Room){return room.outcomes.map(o=>`${o.applicationId}:${o.passNumber}:${o.outcome}`).join("|");}
-export function OutcomeCounts({room}:{room:Room}){
- // Round totals are keyed by club, cycle and round: another round's counts never show while this one loads.
- const scope=`${room.clubId}:${room.cycleId}:${room.roundId}`;
- const [loaded,setLoaded]=useState<{scope:string;round:ScopedTargetSummary|null;status:string}|null>(null),ticket=useRef(0);
- // Re-read the round only when confirmed outcomes change, not on every ballot: each extra
- // server action queues ahead of the next room poll and made the leader's counts lag.
- const outcomeKey=outcomeSignature(room);
- useEffect(()=>{const mine=++ticket.current,scope=`${room.clubId}:${room.cycleId}:${room.roundId}`;getRoundTargetSummary({clubId:room.clubId,roundId:room.roundId,cycleId:room.cycleId}).then(r=>{if(mine===ticket.current)setLoaded({scope,round:r,status:""})}).catch(()=>{if(mine===ticket.current)setLoaded({scope,round:null,status:"Round totals unavailable."})});},[room.clubId,room.roundId,room.cycleId,room.accessVersion,outcomeKey]);
- const current=loaded?.scope===scope?loaded:null;
- return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={current?.round??null} roundStatus={current?current.status:"Loading…"}/>;
+export function OutcomeCounts({room,round}:{room:Room;round?:ReturnType<typeof useRoundSummary>}){
+ const own=useRoundSummary(round?null:room),current=round??own;
+ return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={current.round} roundStatus={current.status}/>;
 }
-export function LeaderControls({room,refresh,member,transitioning=false}:{room:Room;refresh:()=>Promise<void>|undefined;member?:string;transitioning?:boolean}){
+export function LeaderControls({room,refresh,member,transitioning=false,summaryState,nextLabel}:{room:Room;refresh:()=>Promise<void>|undefined;member?:string;transitioning?:boolean;summaryState:VotingSummaryState;nextLabel:string|null}){
  const confirm=useConfirm();
  const [staleRevision,setStaleRevision]=useState<number|null>(null);
- const [confirmedRevision,setConfirmedRevision]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState(""),[reason,setReason]=useState(""),[pending,setPending]=useState<Command|null>(null),[summary,setSummary]=useState<Summary|null>(null),[summaryError,setSummaryError]=useState(false),[reload,setReload]=useState(0),[correction,setCorrection]=useState(""),[correctionReason,setCorrectionReason]=useState(""),[electorateIssue,setElectorateIssue]=useState("");
+ const [confirmedRevision,setConfirmedRevision]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState(""),[reason,setReason]=useState(""),[pending,setPending]=useState<Command|null>(null),[correction,setCorrection]=useState(""),[correctionReason,setCorrectionReason]=useState(""),[electorateIssue,setElectorateIssue]=useState("");
  // Server-backed: the snapshot carries the latest decision only while the server would accept its Undo
  // (latest activity, same pass, OPEN or PAUSED, next applicant untouched), so it survives refreshes and shows on
  // every leader device, and disappears with any newer activity. No client copy of the decision is kept.
@@ -45,9 +40,7 @@ export function LeaderControls({room,refresh,member,transitioning=false}:{room:R
  const [slowSave,setSlowSave]=useState(false);useEffect(()=>{if(!busy){setSlowSave(false);return;}const t=setTimeout(()=>setSlowSave(true),250);return()=>clearTimeout(t);},[busy]);
  const lock=useRef(false),entry=room.history.find(p=>p.number===room.passNumber)?.candidates.find(c=>c.applicationId===room.currentApplicantId);
  useEffect(()=>{setReason("")},[room.currentApplicantId,room.passNumber]);
- // Labels and later rounds do not change with ballots; refetch on phase, outcome or access changes only.
- const summaryKey=`${room.status}:${room.passNumber}:${room.finalizedAt??""}:${room.accessVersion}:${outcomeSignature(room)}`;
- useEffect(()=>{let live=true;setSummary(null);setSummaryError(false);getLiveVotingSummary({clubId:room.clubId,sessionId:room.id}).then(s=>{if(live)setSummary(s)}).catch(()=>{if(live)setSummaryError(true)});return()=>{live=false}},[room.clubId,room.id,summaryKey,reload]);
+ const {summary,error:summaryError,reload:reloadSummary}=summaryState;
  async function send(action:Command["action"],extra:Partial<Command>={},retry=false){
   if(lock.current)return;lock.current=true;setBusy(true);setError("");
   const body=retry&&pending?pending:{clubId:room.clubId,sessionId:room.id,requestId:crypto.randomUUID(),revision:room.revision,action,...extra};setPending(body);
@@ -67,14 +60,18 @@ export function LeaderControls({room,refresh,member,transitioning=false}:{room:R
  const correctable=room.outcomes.filter(o=>["ACCEPT","REJECT"].includes(o.outcome));
  return <section className="vr-leader" aria-label="Leader controls"><h2 className="sr-only">Leader controls</h2>
  {error&&<div role="alert" className="vr-error">{error}{pending&&<Button disabled={busy} variant="outline" onClick={()=>void send(pending.action,{},true)}>Retry command</Button>}</div>}
- <fieldset disabled={busy||!!pending||waitingForSnapshot||transitioning||!!room.finalizedAt} className="space-y-4"><legend className="sr-only">Voting meeting controls</legend><div className="vr-actions">
+ <fieldset disabled={busy||!!pending||waitingForSnapshot||transitioning||!!room.finalizedAt} className="space-y-4"><legend className="sr-only">Voting meeting controls</legend><div className="vr-lead-nav">
+ {room.status==="OPEN"&&<Button variant="outline" className="vr-lead-prev" disabled={!saved||!room.permissions.canCorrect} aria-label={saved?`Previous: undo ${label(saved.applicationId)} ${savedOutcomeLabels[saved.choice]}`:"Previous"} onClick={()=>{if(saved)void send("UNDO_DECISION",{applicationId:saved.applicationId,passNumber:saved.passNumber,undoRequestId:saved.requestId});}}>Previous</Button>}
+ <div className="vr-actions vr-lead-primary">
  {room.status==="DRAFT"&&<Button onClick={async()=>{const early=room.meeting?.plannedAt&&+new Date(room.meeting.plannedAt)>Date.now();if(!early||await confirm({title:"Start this session early?",description:"It is scheduled for later. Voting begins only when you open a ballot.",confirmLabel:"Start early"}))void send("START",{confirmed:!!early});}}>Start session</Button>}
  {room.status==="OPEN"&&entry?.ballotState==="PENDING"&&<Button onClick={()=>void send("OPEN_VOTING",{applicationId:room.currentApplicantId!,passNumber:room.passNumber,viewedAt:room.viewedAt,viewToken:room.viewToken??undefined})}>Open voting</Button>}
- {room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<Button onClick={async()=>{if(!missing||await confirm({title:"Close voting early?",description:`${missing} ${missing===1?"ballot is":"ballots are"} missing from the eligible voters. Missing ballots are not Do not pass votes.`,confirmLabel:"Close voting now"}))void send("CLOSE_VOTING",{confirmed:true,applicationId:room.currentApplicantId!,passNumber:room.passNumber,viewedAt:room.viewedAt,viewToken:room.viewToken??undefined})}}>Close voting</Button>}
- {room.status==="OPEN"&&entry?.ballotState==="CONFIRMED"&&<Button onClick={()=>void send("ADVANCE",{applicationId:room.currentApplicantId!,passNumber:room.passNumber})}>Continue saved decision</Button>}
+ {room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<Button onClick={async()=>{if(!missing||await confirm({title:"Close voting early?",description:`${missing} ${missing===1?"ballot is":"ballots are"} missing from members in the room. Missing ballots are not Do not pass votes.`,confirmLabel:"Close voting now"}))void send("CLOSE_VOTING",{confirmed:true,applicationId:room.currentApplicantId!,passNumber:room.passNumber,viewedAt:room.viewedAt,viewToken:room.viewToken??undefined})}}>Close vote</Button>}
  {["PAUSED","COMPLETED"].includes(room.status)&&counts("HOLD")>0&&<Button onClick={async()=>{if(room.status!=="COMPLETED"||await confirm({title:"Resume to review held applicants?",description:"Only held applicants are reviewed. Unreviewed applicants remain unresolved.",confirmLabel:"Resume with held applicants"}))void send("NEXT_PASS")}}>Review held applicants</Button>}
  {room.permissions.canEnd&&room.status==="PAUSED"&&<Button variant="outline" onClick={async()=>{if(await confirmEnd())void send("END",{confirmed:true})}}>End voting</Button>}
  </div>
+ {room.status==="OPEN"&&<Button variant="outline" className="vr-lead-next" disabled={entry?.ballotState!=="CONFIRMED"} onClick={()=>void send("ADVANCE",{applicationId:room.currentApplicantId!,passNumber:room.passNumber})}>{nextLabel?`Next: ${nextLabel}`:"Next"}</Button>}
+ </div>
+ {room.status==="OPEN"&&entry?.ballotState==="OPEN"&&<p className="vr-lead-help">{room.rule?.mode==="THRESHOLD"?`After you close the vote, the rule decides (${room.rule.description}) and the result shows on the projector.`:"After you close the vote, the totals show on the projector and you confirm Pass, Hold or Do not pass."}</p>}
  {room.status==="OPEN"&&entry?.ballotState==="OPEN"&&electorateNotice&&<section aria-label="Voters changed" className="vr-prep-update"><p role="status">{electorateNotice}</p><p className="text-sm">Recounting removes only voters who can no longer vote. The rule stays the same. This is saved in the history.</p><label>Reason for recounting<input aria-label="Reason for recounting" value={reason} maxLength={1000} onChange={e=>setReason(e.target.value)}/></label><Button disabled={!reason.trim()} onClick={()=>void send("CLOSE_VOTING",{confirmed:true,resolveElectorate:true,reason:reason.trim(),applicationId:room.currentApplicantId!,passNumber:room.passNumber,viewedAt:room.viewedAt,viewToken:room.viewToken??undefined})}>Recount without them and close</Button></section>}
  {room.status==="OPEN"&&entry?.ballotState==="CLOSED"&&room.ruleResult&&<section aria-label="Confirm rule outcome"><h3>Voting rule result</h3>{"totals"in entry&&entry.totals&&<p>Pass {entry.totals.ACCEPT} · Hold {entry.totals.HOLD} · Do not pass {entry.totals.REJECT} · {missing} missing</p>}<p>{room.ruleResult.summary}</p>
   {room.ruleResult.outcome?<div className="vr-actions"><Button onClick={()=>void send("DECIDE_AND_ADVANCE",{applicationId:room.currentApplicantId!,passNumber:room.passNumber,choice:room.ruleResult!.outcome!})}>{room.ruleResult.outcome==="ACCEPT"?<Check aria-hidden="true" size={16}/>:room.ruleResult.outcome==="HOLD"?<Pause aria-hidden="true" size={16}/>:<XIcon aria-hidden="true" size={16}/>} Confirm {outcomeNames[room.ruleResult.outcome]}</Button></div>
@@ -88,10 +85,9 @@ export function LeaderControls({room,refresh,member,transitioning=false}:{room:R
  </fieldset>{waitingForSnapshot&&!busy&&<p role="status">Updating…</p>}{busy&&slowSave&&<p role="status" className="text-sm text-muted-foreground">{pending?.choice?`Saving ${outcomeNames[pending.choice]}...`:pending?.action==="PASS_WITHOUT_VOTE_AND_ADVANCE"?"Saving Pass...":"Saving…"}</p>}
  {saved&&<div className="vr-decision-saved" role="status">{label(saved.applicationId)} {savedOutcomeLabels[saved.choice]}{saved.decidedBy?` by ${saved.decidedBy}`:""} {room.permissions.canCorrect&&<Button size="sm" variant="ghost" disabled={busy||!!pending||waitingForSnapshot||!!room.finalizedAt} onClick={()=>void send("UNDO_DECISION",{applicationId:saved.applicationId,passNumber:saved.passNumber,undoRequestId:saved.requestId})}>Undo</Button>}</div>}
 
- {(room.status==="PAUSED"||room.status==="COMPLETED")&&<section aria-label="Voting summary"><h2>Voting summary</h2>{summaryError?<p role="alert">Couldn’t load applicant labels. <Button variant="outline" onClick={()=>setReload(v=>v+1)}>Retry summary</Button></p>:!summary?<LoadingState label="Loading summary…" layout="table" rows={3} />:<div className="vr-summary-lists">{(["ACCEPT","HOLD","REJECT","UNREVIEWED"] as const).map(kind=><section key={kind} className={kind==="ACCEPT"?"vr-accepted":""}><h3>{kind==="ACCEPT"?"Passed · Provisional":outcomeNames[kind]}</h3><ul>{room.outcomes.filter(o=>o.outcome===kind).map(o=><li key={o.applicationId}>{label(o.applicationId)}</li>)}</ul>{!counts(kind)&&<p>None</p>}</section>)}</div>}<details><summary>Voting-pass history</summary>{room.history.map(p=><section key={p.number}><h3>Pass {p.number}</h3><ul>{p.candidates.map(c=><li key={c.applicationId}>{label(c.applicationId)} · {outcomeNames[c.outcome]}{c.withoutVote?` · ${c.outcome==="REJECT"?"Not passed":"Passed"} without a vote`: "totals"in c&&c.totals?` · Pass ${c.totals.ACCEPT}, Hold ${c.totals.HOLD}, Do not pass ${c.totals.REJECT}`:" · Unfinished"}</li>)}</ul></section>)}</details></section>}
+ {(room.status==="PAUSED"||room.status==="COMPLETED")&&<section aria-label="Voting summary"><h2>Voting summary</h2>{summaryError?<p role="alert">Couldn’t load applicant labels. <Button variant="outline" onClick={reloadSummary}>Retry summary</Button></p>:!summary?<LoadingState label="Loading summary…" layout="table" rows={3} />:<div className="vr-summary-lists">{(["ACCEPT","HOLD","REJECT","UNREVIEWED"] as const).map(kind=><section key={kind} className={kind==="ACCEPT"?"vr-accepted":""}><h3>{kind==="ACCEPT"?"Passed · Provisional":outcomeNames[kind]}</h3><ul>{room.outcomes.filter(o=>o.outcome===kind).map(o=><li key={o.applicationId}>{label(o.applicationId)}</li>)}</ul>{!counts(kind)&&<p>None</p>}</section>)}</div>}<details><summary>Voting-pass history</summary>{room.history.map(p=><section key={p.number}><h3>Pass {p.number}</h3><ul>{p.candidates.map(c=><li key={c.applicationId}>{label(c.applicationId)} · {outcomeNames[c.outcome]}{c.withoutVote?` · ${c.outcome==="REJECT"?"Not passed":"Passed"} without a vote`: "totals"in c&&c.totals?` · Pass ${c.totals.ACCEPT}, Hold ${c.totals.HOLD}, Do not pass ${c.totals.REJECT}`:" · Unfinished"}</li>)}</ul></section>)}</details></section>}
  {room.status==="COMPLETED"&&room.permissions.canFinalize&&!room.finalizedAt&&summary&&<Finalization room={room} summary={summary} refresh={refresh} blocked={busy||!!pending||waitingForSnapshot}/>}
  {room.finalizedAt&&<><p role="status">Decisions finalized. Finalization did not send applicant messages. <Link className="vr-link" href={decisionsHref(room.clubId,"letters",new URLSearchParams({cycleId:room.cycleId??"",roundId:room.roundId}).toString())}>Open applicant communications</Link></p>{room.permissions.canFinalize&&<Notify room={room}/>}</>}
- <details className="mt-4"><summary>Joined participants · {room.joinedParticipants.filter(p=>p.joined).length}</summary><ul>{room.joinedParticipants.map(p=><li key={p.id}>{p.label} · {p.joined?"Joined":"Waiting"}</li>)}</ul></details>
  </section>;
 }
 function Notify({room}:{room:Room}){

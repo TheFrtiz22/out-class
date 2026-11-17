@@ -63,8 +63,8 @@ test('steps are buttons in a labelled nav; going forward runs the same validatio
  // Start session still re-validates everything and the server re-validates the payload; a step click cannot skip either.
  assert.match(src,/if\(!pending\.current\)\{try\{validate\(2\);\}catch/);
  // Server side: create and update both re-run the full setup validation, whatever step the browser was on.
- assert.match(read('actions/voting-room.ts'),/export async function createLiveVotingRoom[\s\S]*?validateVotingSetup\(tx,d,user,\{rejectHiddenProfileFields:true\}\)/);
- assert.match(read('actions/voting-session-setup.ts'),/validateVotingSetup\(tx,d,user,\{rejectHiddenProfileFields:true\}\)/);
+ assert.match(read('actions/voting-room.ts'),/export async function createLiveVotingRoom[\s\S]*?validateVotingSetup\(tx,\{\.\.\.d,participantIds:\[\]\},user,\{rejectHiddenProfileFields:true\}\)/);
+ assert.match(read('actions/voting-session-setup.ts'),/validateVotingSetup\(tx,\{\.\.\.d,participantIds:\[\]\},user,\{rejectHiddenProfileFields:true\}\)/);
  // Errors sit next to their control and are linked to it.
  assert.match(src,/const show=\(field:SetupField\)=>problem\?\.field===field\?<p id=\{`\$\{uid\}-problem`\} role="alert"/);
  assert.match(src,/aria-describedby=\{`\$\{uid\}-target-help \$\{describe\('target'\)/);
@@ -72,7 +72,8 @@ test('steps are buttons in a labelled nav; going forward runs the same validatio
 
 test('every presentation field has a group, the old disclosures are gone, and both titles are set',()=>{
  const src=read('components/live-voting/room-setup.tsx'),room=load('lib/voting-room.ts');
- const grouped=[...src.match(/const fieldGroups[^\n]*/)[0].matchAll(/"(\w+)"/g)].map(m=>m[1]).filter(f=>room.liveRoomFields.includes(f));
+ assert.match(src,/const fieldGroups=slideFieldGroups;/);
+ const grouped=slides.slideFieldGroups.flatMap(g=>g[1]);
  assert.deepEqual([...grouped].sort(),[...room.liveRoomFields].sort());
  assert.doesNotMatch(src,/Duration and repeated-hour options|Location and participant instructions · Optional|<details/);
  assert.match(src,/Only matters on the night daylight saving time ends\./);

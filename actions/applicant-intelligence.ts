@@ -35,6 +35,8 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
     let { app, member: reviewer } = await authorized(tx, data, membership.id, !data.sessionId);
+    // Voting slides and setup previews never show a member their own application (as review keeps reviewers off it).
+    if ((data.sessionId || data.previewConfig) && app.studentId === user.id) throw new Error("Applicant unavailable for this reviewer.");
     let config=readDisplayConfig(app.round.applicantDisplay);
     if(data.previewConfig){
       if(!hasPermission(reviewer,"decisions.manage"))throw Error("Voting setup permission required.");

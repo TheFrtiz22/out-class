@@ -126,7 +126,9 @@ test('the projector and leader slide keep refreshing while hidden or covered; a 
     assert.equal(p.timers.size, 0)
   } finally { p.restore() }
   const view = fs.readFileSync('components/live-voting/room-view.tsx', 'utf8')
-  assert.match(view, /<RoomPresentation [^>]*presenting=\{view!=="member"\}/, 'the room passes presenting for the leader and projector views')
+  // The leader and projector slides go through one builder that always presents; the member slide never does.
+  assert.match(view, /<RoomPresentation [^>]*\bpresenting variant=\{variant\}/, 'the room passes presenting for the leader and projector views')
+  assert.match(view, /<RoomPresentation [^>]*presenting=\{false\}/, 'the member slide pauses while hidden')
 })
 
 test('SupportSessionSync makes no view-as calls without a support marker, but still checks a restored page', async () => {

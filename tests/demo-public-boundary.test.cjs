@@ -90,3 +90,25 @@ test('anonymous homepage workspace and demo query URLs use the existing login re
     })
   }
 })
+
+test('signed-in homepage: a disabled account gets AccountUnavailable even when the profile read fails', async () => {
+  let profileFails = true, disabledAt = new Date('2026-11-01')
+  function AccountUnavailable() {}
+  const { default: Page } = load('app/page.tsx', {
+    'next/cache': { unstable_cache: fn => fn },
+    'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
+    'next/navigation': { redirect(location) { const e = new Error('REDIRECT'); e.location = location; throw e } },
+    '@/lib/auth': load('lib/auth.ts'), '@/lib/demo/access': privateAccess,
+    '@/utils/auth': { getSessionUser: async () => ({ data: { user: { id: 'user-a', email: 'student@virginia.edu', email_confirmed_at: '2026-10-08T12:00:00Z' } }, error: null }) },
+    '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'support-view' },
+    '@/lib/navigation': require('./helpers/navigation-module.cjs'),
+    '@/components/auth/account-unavailable': { AccountUnavailable },
+    '@/utils/prisma': { prisma: { user: { findUnique: async () => ({ disabledAt }) }, studentProfile: { findUnique: async () => { if (profileFails) throw Error('database unavailable'); return { id: 'profile' } } } } },
+  })
+  const page = () => Page({ searchParams: Promise.resolve({}) })
+  assert.equal((await page()).type, AccountUnavailable)
+  profileFails = false; assert.equal((await page()).type, AccountUnavailable)
+  // An enabled account with a profile still goes straight to /home; a failed profile read is not swallowed.
+  disabledAt = null; await assert.rejects(page(), error => error.location === '/home')
+  profileFails = true; await assert.rejects(page(), /database unavailable/)
+})

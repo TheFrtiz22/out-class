@@ -86,7 +86,7 @@ test('a view taken mid-ballot can still close once more ballots arrive',async()=
 });
 
 test('one Open voting click opens the ballot even when a voter joined after Start',async()=>{
- const h=harness();await h.create();ok(await h.command('START'));const v=await view(h);
+ const h=harness();await h.create({joined:[leaderId]});ok(await h.command('START'));const v=await view(h);
  const setup=load('actions/voting-room-setup.ts',h.mocks);h.as(voterId);await setup.joinLiveVotingRoom(h.scope);h.as(leaderId);
  assert.equal(session(h).revision,v.revision+1,'joining still bumps the room revision so every view refreshes');
  const open=(requestId,extra)=>h.api.commandLiveVotingRoom({...h.scope,requestId,revision:v.revision,viewedAt:v.viewedAt,viewToken:v.viewToken,action:'OPEN_VOTING',...extra});
@@ -100,7 +100,8 @@ test('one Open voting click opens the ballot even when a voter joined after Star
 
 test('a voter losing eligibility mid-ballot shows the leader a notice at once, pauses voting, and the recount counts missing ballots against the new electorate',async()=>{
  const third=uuid(7),rules={mode:'THRESHOLD',threshold:{numerator:2,denominator:3},denominator:'BALLOTS_CAST',minimumParticipation:{numerator:2,denominator:3},belowThreshold:'HOLD',reviewed:true};
- const h=harness();await h.create({participantIds:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},rules}});ok(await h.command('START'));ok(await h.command('OPEN_VOTING'));
+ // Saved-list (legacy) sessions keep pausing; open-electorate sessions snapshot who counts as each ballot closes instead.
+ const h=harness();await h.create({legacyVoters:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},rules}});ok(await h.command('START'));ok(await h.command('OPEN_VOTING'));
  h.as(voterId);ok(await h.vote('ACCEPT'));h.as(leaderId);
  let view=await h.read();assert.equal(view.votingPaused,false);assert.equal(view.electorateChange,null);
  h.members[2].permissions=h.members[2].permissions.filter(p=>p!=='decisions.vote');
@@ -112,7 +113,7 @@ test('a voter losing eligibility mid-ballot shows the leader a notice at once, p
  ok(await h.command('CLOSE_VOTING',{resolveElectorate:true,reason:'Member left the board'}));
  const audit=h.state().audit.findLast(a=>a.action==='voting.room.close_voting');assert.equal(audit.details.missingBallots,1,'electorate 2 with 1 ballot is 1 missing');
  // Restoring access instead resumes voting without a recount.
- const r=harness();await r.create({participantIds:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},rules}});ok(await r.command('START'));ok(await r.command('OPEN_VOTING'));
+ const r=harness();await r.create({legacyVoters:[leaderId,voterId,third],presentationOptions:{fields:['name'],highlights:{},rules}});ok(await r.command('START'));ok(await r.command('OPEN_VOTING'));
  const kept=r.members[2].permissions;r.members[2].permissions=kept.filter(p=>p!=='decisions.vote');assert.equal((await r.read()).votingPaused,true);
  r.members[2].permissions=kept;assert.equal((await r.read()).votingPaused,false);r.as(voterId);ok(await r.vote('ACCEPT'));
 });
@@ -181,11 +182,11 @@ test('reads that never settle report unavailable each time and back off 5â†’10â†
 });
 
 test('the leader catches up when its tab becomes visible and per-ballot extra reads are gone',()=>{
- const hook=fs.readFileSync('hooks/use-live-voting-room.ts','utf8'),meeting=fs.readFileSync('components/live-voting/room-meeting.tsx','utf8');
+ const hook=fs.readFileSync('hooks/use-live-voting-room.ts','utf8'),meeting=fs.readFileSync('components/live-voting/room-meeting.tsx','utf8'),tracker=fs.readFileSync('components/live-voting/round-tracker.tsx','utf8');
  assert.match(hook,/visibilitychange/);
  assert.doesNotMatch(meeting,/room\.revision,reload\]|room\.cycleId,room\.revision\]/);
  // Round totals still re-read when the viewer's access changes (review finding 3).
- assert.match(meeting,/\[room\.clubId,room\.roundId,room\.cycleId,room\.accessVersion,outcomeKey\]/);
+ assert.match(tracker,/\[room\?\.clubId,room\?\.roundId,room\?\.cycleId,room\?\.accessVersion,outcomeKey\]/);
  assert.match(meeting,/send\("CLOSE_VOTING",\{confirmed:true,applicationId:room\.currentApplicantId!,passNumber:room\.passNumber,viewedAt:room\.viewedAt,viewToken:room\.viewToken\?\?undefined\}\)/);
 });
 

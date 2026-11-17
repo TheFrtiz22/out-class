@@ -74,7 +74,8 @@ test('Demo Mode: application review, Interview 1 and Interview 2 run the same ro
   const app=pick(demoStore.get());
   demoStore.mutate(s=>{const a=s.applications.find(v=>v.id===app.id);a.roundId=reviewRound.id;a.evaluations=[];s.interviews=s.interviews.filter(r=>r.applicationId!==app.id);});
   const room=async round=>{const sessionId=crypto.randomUUID(),setup=await setupFor(round);assert.ok(setup.applicants.some(a=>a.id===app.id),round.name);
-   await api.createLiveVotingRoom({clubId:club.id,sessionId,cycleId:club.id,roundId:round.id,leaderMemberIds:[leader.id],participantIds:[leader.id],applicationIds:[app.id],presentationOptions:{fields:['name','interviewScore','finalInterviewThoughts'],highlights:{}}});
+   await api.createLiveVotingRoom({clubId:club.id,sessionId,cycleId:club.id,roundId:round.id,leaderMemberIds:[leader.id],applicationIds:[app.id],presentationOptions:{fields:['name','interviewScore','finalInterviewThoughts'],highlights:{}}});
+   await api.joinLiveVotingRoom({clubId:club.id,sessionId});
    return {clubId:club.id,sessionId,applicationId:app.id};};
   // Application review: voting works, no interview scores, no zeros.
   let scope=await room(reviewRound),p=JSON.parse(JSON.stringify(await api.getLiveVotingPresentation(scope)));

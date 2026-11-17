@@ -5,7 +5,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const {harness,uuid,apps,leaderId,voterId}=require('./helpers/voting-room-harness.cjs');
 const thirdId=uuid(7);
-async function room(){const h=harness();await h.create({participantIds:[leaderId,voterId,thirdId]});h.as(leaderId);await h.command('START');await h.command('OPEN_VOTING');return h;}
+async function room(){const h=harness();await h.create({joined:[leaderId,voterId,thirdId]});h.as(leaderId);await h.command('START');await h.command('OPEN_VOTING');return h;}
 const read=async(h,actor)=>{h.as(actor);return h.read();};
 const ok=r=>assert.equal(r.ok,true,JSON.stringify(r));
 

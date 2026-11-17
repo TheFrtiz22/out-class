@@ -264,9 +264,10 @@ test('voting: a graduate (kept owner included) is never an eligible voter', asyn
   assert.deepEqual(await rules.currentEligibleVoterIds(tx, CLUB, ['m1', 'm2'], true), ['m2'], 'the kept-owner graduate is excluded')
   assert.deepEqual(args.include, { user: { select: { studentProfile: { select: { graduatedAt: true } } } } })
   // The setup electorate and the live room apply the same predicate.
-  assert.match(src('actions/voting-room-setup.ts'), /const voters=members\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
+  assert.match(src('actions/voting-room-setup.ts'), /const joinableVoterCount=members\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
   assert.match(src('actions/voting-room.ts'), /const eligible=members\.filter\(v=>!isGraduatedMember\(v\)&&hasPermission/)
-  for (const file of ['actions/voting-room-setup.ts', 'actions/voting-room.ts']) assert.match(src(file), /studentProfile:\{select:\{firstName:true,lastName:true,graduatedAt:true\}\}/, file)
+  assert.match(src('actions/voting-room-setup.ts'), /studentProfile:\{select:\{graduatedAt:true\}\}/)
+  assert.match(src('actions/voting-room.ts'), /studentProfile:\{select:\{firstName:true,lastName:true,graduatedAt:true\}\}/)
 })
 
 // ---- Review follow-ups (Nov 17) ----
@@ -360,7 +361,7 @@ test('share links: refused for alumni (every shareable target is club-scoped); t
   await assert.rejects(short.createShortLink({ target: '/club/synthetic-club' }), e => e.message === g.ALUMNI_REFUSALS.share)
   for (const file of ['actions/terms.ts', 'actions/tutorials.ts']) assert.doesNotMatch(src(file), /assertNotAlumni|alumniRefusal/, file)
   // The QR card already falls back to the full address when a short link is refused.
-  assert.match(src('components/qr/qr-code-card.tsx'), /\.catch\(\(\) => \{[^}]*setOptimizedUrl\(`\$\{orig\}\$\{path\}`\);/)
+  assert.match(src('components/qr/use-short-link-url.ts'), /\.catch\(\(\) => \{[^}]*setOptimizedUrl\(`\$\{orig\}\$\{path\}`\);/)
 })
 
 test('in-transaction rechecks and the request-scoped graduation read', async () => {
