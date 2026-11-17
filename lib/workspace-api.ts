@@ -5,6 +5,7 @@ import * as interviewEntry from "@/actions/interview-entry";
 import * as availabilitySchedules from "@/actions/availability-schedules";
 import * as panelApi from "@/actions/panel-proposals";
 import * as publicationApi from "@/actions/panel-publication";
+import * as approvalRequestApi from "@/actions/panel-approval-request";
 import * as availabilityOverrideApi from "@/actions/interview-availability-overrides";
 import * as bookingPublicationApi from "@/actions/interview-booking-publication";
 import * as invitationSchedules from "@/actions/invitation-schedules";
@@ -89,6 +90,7 @@ export const beginPanelScheduleRevision = adapt(publicationApi.beginPanelSchedul
 export const revalidatePanelDraft = adapt(publicationApi.revalidatePanelDraft, "revalidatePanelDraft")
 export const reviewPanelPublication = adapt(publicationApi.reviewPanelPublication, "reviewPanelPublication")
 export const publishPanelSchedule = adapt(publicationApi.publishPanelSchedule, "publishPanelSchedule")
+export const requestPanelApproval = adapt(approvalRequestApi.requestPanelApproval, "requestPanelApproval")
 export const assignPanelAvailabilityOverride = adapt(availabilityOverrideApi.assignPanelAvailabilityOverride, "assignPanelAvailabilityOverride")
 export const revokePanelAvailabilityOverride = adapt(availabilityOverrideApi.revokePanelAvailabilityOverride, "revokePanelAvailabilityOverride")
 export const getInterviewBookingPublication = adapt((...args: Parameters<typeof bookingPublicationApi.getInterviewBookingPublication>) => readWorkspace<Awaited<ReturnType<typeof bookingPublicationApi.getInterviewBookingPublication>>>("bookingPublication", args), "getInterviewBookingPublication")
