@@ -5,7 +5,7 @@ import { ActionWorkflow } from "@/components/product/action-workflow";
 import { useEffect, useRef, useState } from "react"
 import { getInterviewBookingPublication, setInterviewBookingPublication } from "@/lib/workspace-api"
 import type { BookingSettings, InterviewRoom } from "@/lib/interview-rooms"
-import { bookingState } from "@/lib/interview-scheduling-ui"
+import { bookingState, suggestedCycle } from "@/lib/interview-scheduling-ui"
 import { schedulingDateTime } from "@/lib/scheduling-config"
 import { Button } from "@/components/ui/button"
 import { NativeSelect } from "@/components/ui/native-select"
@@ -13,15 +13,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 export function InterviewBookingPublication({ clubId, roundId, settings, cycles, rooms, onChanged, onPublished, onFixSlot, onTimes, settingsOpen, onSettingsOpenChange }: { clubId: string; roundId: string; settings: BookingSettings; cycles: { id: string; name: string }[]; rooms: InterviewRoom[]; onChanged: () => void; onPublished?: () => void; onFixSlot?: (id: string) => void; onTimes?: () => void; settingsOpen?: boolean; onSettingsOpenChange?: (open: boolean) => void }) {
   const [coverage, setCoverage] = useState<Awaited<ReturnType<typeof getInterviewBookingPublication>> | null>(null), [error, setError] = useState(""), [busy, setBusy] = useState(false), [retry, setRetry] = useState(0), [notice, setNotice] = useState("")
-  const [cycleId, setCycle] = useState(settings.bookingCycleId || ""), [cancel, setCancel] = useState(settings.bookingAllowCancellation), [reschedule, setReschedule] = useState(settings.bookingAllowRescheduling), [pause, setPause] = useState(false)
+  const [cycleId, setCycle] = useState(settings.bookingCycleId || ""), [cycleTouched, setCycleTouched] = useState(false), [cycleOpen, setCycleOpen] = useState(false), [cancel, setCancel] = useState(settings.bookingAllowCancellation), [reschedule, setReschedule] = useState(settings.bookingAllowRescheduling), [pause, setPause] = useState(false)
   const saving = useRef(false)
   useEffect(() => { let current = true; setCoverage(null); getInterviewBookingPublication({ clubId, roundId }).then(value => { if (current) { setCoverage(value); setError("") } }).catch(() => { if (current) setError("Could not check booking readiness. Retry before publishing.") }); return () => { current = false } }, [clubId, roundId, retry])
+  // Before the first publish, the cycle follows the invited applicants unless the leader picked one, so a
+  // default of "without a cycle" can't publish a schedule nobody invited is able to book.
+  useEffect(() => { if (!coverage || cycleTouched || settings.bookingPublishedAt) return; const best = suggestedCycle(coverage.invited, cycleId); if (best !== null) setCycle(best) }, [coverage, cycleTouched, settings.bookingPublishedAt, cycleId])
   useEffect(() => { const refresh = () => setRetry(v => v + 1); for (const name of ["outclass:panels-changed", "outclass:staffing-changed", "outclass:availability-changed"]) window.addEventListener(name, refresh); return () => { for (const name of ["outclass:panels-changed", "outclass:staffing-changed", "outclass:availability-changed"]) window.removeEventListener(name, refresh) } }, [])
   async function save(action: "PUBLISH" | "PAUSE" | "POLICY", policy = { cancel, reschedule }) {
     if (saving.current) return
     saving.current = true; setBusy(true); setError(""); setNotice("")
     try {
-      await setInterviewBookingPublication({ clubId, roundId, revision: settings.bookingRevision, action, cycleId: cycleId || null, allowCancellation: policy.cancel, allowRescheduling: policy.reschedule })
+      // Only publishing changes the cycle; pausing and policy saves keep the stored one, so a suggested cycle
+      // shown before the first publish never makes a settings change fail.
+      await setInterviewBookingPublication({ clubId, roundId, revision: settings.bookingRevision, action, cycleId: action === "PUBLISH" ? cycleId || null : settings.bookingCycleId ?? null, allowCancellation: policy.cancel, allowRescheduling: policy.reschedule })
       setNotice(action === "PUBLISH" ? "Schedule published." : action === "PAUSE" ? "Booking paused. Existing interviews are kept." : "Booking settings saved.")
       setPause(false); onChanged(); if (action === "PUBLISH") onPublished?.()
     } catch (e) {
@@ -33,6 +38,11 @@ export function InterviewBookingPublication({ clubId, roundId, settings, cycles,
   }
   const unoffered = coverage?.slots.filter(s => s.unoffered).length ?? 0, offered = coverage?.slots.filter(s => !s.unoffered) ?? []
   const blocked = offered.filter(s => !s.bookable)
+  const invited = coverage?.invited ?? [], invitedIn = (id: string) => invited.find(g => (g.cycleId ?? "") === id)?.count ?? 0
+  const invitedTotal = invited.reduce((n, g) => n + g.count, 0), invitedHere = invitedIn(cycleId), elsewhere = invitedTotal - invitedHere
+  const cycleName = cycleId ? cycles.find(c => c.id === cycleId)?.name ?? "This cycle" : "Applications without a cycle"
+  const showCycle = cycleOpen || cycleTouched || !coverage || elsewhere > 0 || !invitedTotal
+  const label = (id: string, name: string) => coverage ? `${name} · ${invitedIn(id)} invited` : name
   return <section aria-label="Publish schedule" className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-base font-medium">Publish schedule</h3><span className="text-sm text-muted-foreground">{bookingState(settings, rooms)}</span></header>
     {!coverage && !error && <LoadingState label="Checking interviewer coverage…" layout="inline" rows={3} />}
@@ -40,7 +50,11 @@ export function InterviewBookingPublication({ clubId, roundId, settings, cycles,
     {!!unoffered && <p className="text-sm text-muted-foreground">{unoffered} {unoffered === 1 ? "time slot has" : "time slots have"} no interviewers and won&apos;t be offered.</p>}
     {!!blocked.length && <section><h4 className="text-sm font-medium">Resolve booking issues ({blocked.length})</h4><ul className="mt-2 divide-y text-sm">{blocked.map(row => { const room = rooms.find(r => r.slots.some(s => s.id === row.slotId)), slot = room?.slots.find(s => s.id === row.slotId); return <li key={row.slotId} className="py-2"><Button type="button" variant="link" className="h-auto min-h-11 whitespace-normal p-0 text-left font-medium" onClick={() => onFixSlot?.(row.slotId)}>{room?.name || "Interview"} · {slot ? schedulingDateTime(slot.startTime) : "Time"}</Button><p className="text-muted-foreground">{row.reasons.join(" ")}</p></li> })}</ul></section>}
     {coverage && !coverage.slots.length && <div className="space-y-2 text-sm"><p>No upcoming time slots.</p>{onTimes && <Button variant="outline" onClick={onTimes}>Set interview times</Button>}</div>}
-    <label className="ir-field max-w-sm">Recruiting cycle<NativeSelect aria-label="Recruiting cycle" disabled={busy} value={cycleId} onChange={e => setCycle(e.target.value)}><option value="">Applications without a cycle</option>{cycles.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</NativeSelect></label>
+    {coverage && invitedTotal > 0 && invitedHere > 0 && <p className="text-sm">{invitedHere} invited {invitedHere === 1 ? "applicant" : "applicants"} can book{elsewhere ? ` from ${cycleName}` : ""}.{!showCycle && cycles.length > 0 && <> <Button type="button" variant="link" className="h-auto p-0 align-baseline" onClick={() => setCycleOpen(true)}>Change cycle</Button></>}</p>}
+    {coverage && !invitedTotal && <p className="text-sm text-muted-foreground">No applicants are invited to this round yet. Invite finalists so they can book these times.</p>}
+    {coverage && invitedTotal > 0 && !invitedHere && <p role="alert" className="text-sm text-amber-800 dark:text-amber-300">No invited applicants are in {cycleName}. Choose the cycle your finalists applied in, or they won&apos;t be able to book.</p>}
+    {coverage && invitedHere > 0 && elsewhere > 0 && <p className="text-sm text-muted-foreground">{elsewhere} invited {elsewhere === 1 ? "applicant is" : "applicants are"} in another cycle and won&apos;t see these times.</p>}
+    {showCycle && <label className="ir-field max-w-sm">Recruiting cycle<NativeSelect aria-label="Recruiting cycle" disabled={busy} value={cycleId} onChange={e => { setCycleTouched(true); setCycle(e.target.value) }}><option value="">{label("", "Applications without a cycle")}</option>{cycles.map(c => <option key={c.id} value={c.id}>{label(c.id, c.name)}</option>)}</NativeSelect></label>}
     <Button disabled={busy || !coverage || !offered.length || !!blocked.length} onClick={() => void save("PUBLISH")}>{busy ? "Saving…" : settings.bookingPublishedAt && settings.bookingPaused ? "Resume booking" : "Publish schedule"}</Button>
     <ActionWorkflow title="Booking settings" description="What applicants may do before their interview starts. Changes save as you make them." trigger="Booking settings" open={settingsOpen} onOpenChange={onSettingsOpenChange}><div className="space-y-3" data-saving={busy}>
       <fieldset disabled={busy} className="flex flex-wrap gap-4 text-sm"><legend className="sr-only">Applicant changes before the interview starts</legend><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={cancel} onChange={e => { setCancel(e.target.checked); void save("POLICY", { cancel: e.target.checked, reschedule }) }}/>Allow cancellation</label><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={reschedule} onChange={e => { setReschedule(e.target.checked); void save("POLICY", { cancel, reschedule: e.target.checked }) }}/>Allow rescheduling</label></fieldset>
@@ -51,3 +65,4 @@ export function InterviewBookingPublication({ clubId, roundId, settings, cycles,
     <Dialog open={pause} onOpenChange={open => { if (!busy) setPause(open) }}><DialogContent><DialogHeader><DialogTitle>Pause new interview times?</DialogTitle><DialogDescription>Applicants cannot reserve a new time while paused. Confirmed reservations stay in place.</DialogDescription></DialogHeader>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setPause(false)}>Keep booking open</Button><Button disabled={busy} onClick={() => void save("PAUSE")}>{busy ? "Pausing…" : "Pause booking"}</Button></div></DialogContent></Dialog>
   </section>
 }
+

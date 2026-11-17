@@ -1,3 +1,4 @@
+const { unwrapActions } = require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -19,12 +20,12 @@ function harness({ allowed = true } = {}) {
     club: { findUniqueOrThrow: async q => { assert.equal(q.where.id, clubId); return state.row }, update: async q => { state.writes.push(q.data); state.row = { ...state.row, ...q.data } } },
     auditLog: { create: async q => { state.audits.push(q.data) } },
   }
-  state.actions = load('actions/club-workspace.ts', {
+  state.actions = unwrapActions(load('actions/club-workspace.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, user, capabilities) => { state.checks.push(['transaction', id, user, capabilities]) } },
     '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {}, releaseReplacedClubImages: async () => {} },
     '@/utils/auth': { requireClubPermission: async (id, capabilities) => { state.checks.push(['request', id, capabilities]); if (!allowed) throw new Error('Denied'); return { user: { id: 'leader' } } } },
     '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
-  })
+  }))
   state.save = (fields, extra = {}) => state.actions.updateClubSettings({ clubId, ...profileDraft(state.row), ...fields, ...extra })
   return state
 }

@@ -186,3 +186,10 @@ test('the applicant panel hands an ACCESS_REVOKED refusal (panel read or résum�
  const other=panelHarness({getInterviewApplicantPanel:async()=>{throw Error('network')},pinInterviewResume:async()=>({id:'d'})},()=>assert.fail('not a revocation'));
  other.render();await flush();const v=other.render();assert.match(v.text,/Applicant panel unavailable/);assert.ok(v.buttons.includes('Retry applicant panel'));
 });
+test('an applicant with no résumé on file gets a plain empty state: no pin attempt, no error and no Retry',async()=>{
+ const flush=()=>new Promise(r=>setImmediate(r));let pins=0
+ const h=panelHarness({getInterviewApplicantPanel:async()=>({profile:{firstName:'Jamie',lastName:'Lee',headshotUrl:null,scholarStatus:null},document:null,resumeOnFile:false}),pinInterviewResume:async()=>{pins++;throw Error('none')}},()=>assert.fail('not a revocation'))
+ h.render();await flush();await flush();const v=h.render()
+ assert.equal(pins,0);assert.match(v.text,/No résumé on file/);assert.match(v.text,/Jamie didn’t add a PDF résumé/)
+ assert.doesNotMatch(v.text,/No interview résumé is available/);assert.equal(v.buttons.includes('Retry applicant panel'),false)
+})

@@ -8,5 +8,5 @@ export const metadata = { title: "School requests · Admin", robots: { index: fa
 export default async function SchoolRequestsPage() {
   const result = await adminPageLoad("/platform/school-requests", requirePlatformAdmin)
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />
-  return <section className="max-w-[var(--oc-content-width)] oc-workspace-stack oc-admin-workspace"><PageHeader eyebrow="OutClass · Administration" title="School Requests" description="Review interest from students, club leaders, and university administrators." /><SchoolRequestReview /></section>
+  return <section className="max-w-[var(--oc-content-width)] oc-workspace-stack oc-admin-workspace"><PageHeader eyebrow="OutClass · Administration" title="School requests" description="Review interest from students, club leaders, and university administrators." /><SchoolRequestReview /></section>
 }

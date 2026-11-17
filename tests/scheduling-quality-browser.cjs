@@ -154,7 +154,7 @@ async function verify(config, root) {
     assert.match(await admin.page.locator('[data-av-cell="0:36"]').getAttribute('aria-label'), /4 available interviewers/)
     overview = await action('getAvailabilityOverview', { ...scope, week: a.week, timezone: 'America/New_York' }, 'owner', 'actions/availability.ts'); assert.equal(overview.members.length, 8); assert.equal(overview.members.filter(m => m.confirmed).length, 6); assert.equal(overview.members.find(m => m.id === a.eligible[6].id).available[0][36], false); assert.equal(overview.members.find(m => m.id === a.eligible[7].id).available[0][36], false)
     assert.ok(overview.slots.filter(s => easternClock(s.startTime) === '09:00').every(s => !s.availableMemberIds.includes(a.eligible[5].id)))
-    await admin.page.getByText('Only 4/5 positions can be covered simultaneously with these candidates.', { exact: true }).waitFor(); assert.equal(await admin.page.getByRole('row').filter({ hasText: 'Shared staffing shortage' }).count(), 2);
+    await admin.page.getByText('Only 4/5 positions can be covered simultaneously with these candidates.', { exact: true }).waitFor(); assert.equal(await admin.page.getByRole('row').filter({ hasText: 'Not enough free' }).count(), 2);
     record('Admin response tracking, exact heatmap/list/capacity counts, excluded ineligible/missing/declined participants and official commitments')
     // Creation through the actual existing form in a second round.
     await chooseRound(admin.page, a.secondRoundId); await nav(admin.page).getByRole('button', { name: /Set interview times$/ }).click(); await admin.page.getByRole('button', { name: 'Add interview times', exact: true }).first().click()

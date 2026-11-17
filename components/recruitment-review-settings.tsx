@@ -1,7 +1,7 @@
 "use client";
 import { userMessage } from "@/lib/user-message"
 import { ActionWorkflow } from "@/components/product/action-workflow";
-import { DecisionTemplateEditor } from "@/components/communications/template-editor";
+import Link from "next/link";
 import { useState } from "react";
 import {
   setRoundAnonymousReview,
@@ -41,18 +41,17 @@ export function RecruitmentReviewSettings({
   const content = (
       <div className="space-y-4 pt-4" data-saving={busy}>
         <p className="text-sm text-muted-foreground">
-          Anonymous review withholds identity, free text, attachments,
-          experiences, prior notes, and appointments. Numeric metrics, scores,
-          and separately prepared manager-reviewed text remain available.
-          Previously viewed information cannot be recalled; configure rounds
-          before review begins. Disabling anonymity exposes identities to users
-          with identified-applicant access and is audited.
+          Reviewers in an anonymous round see scores and metrics, not names,
+          free text, files or notes. Set it before review begins: what a
+          reviewer has seen can’t be hidden again. Turning it off shows names
+          to members who can identify applicants, and is audited.
         </p>
         {!canIdentify && <p className="text-sm text-muted-foreground">Changing anonymity also requires permission to identify applicants.</p>}
         {rounds.map((r) => (
           <label className="flex min-h-11 items-center gap-3" key={r.id}>
             <input
               type="checkbox"
+              className="oc-checkbox"
               disabled={busy || !canIdentify}
               checked={r.anonymousReview}
               onChange={(e) =>
@@ -99,7 +98,7 @@ export function RecruitmentReviewSettings({
           </Button>
         </form>
         <p role="status">{message}</p>
-        <DecisionTemplateEditor clubId={clubId} />
+        <p className="text-sm text-muted-foreground">Decision letters are edited in <Link className="underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=notifications`}>Settings › Communications</Link>.</p>
       </div>
   );
   return embedded ? content : <ActionWorkflow title="Review privacy & test requirements" description="Configure round privacy and required applicant test information." trigger="Review privacy & test requirements" presentation="sheet">{content}</ActionWorkflow>;

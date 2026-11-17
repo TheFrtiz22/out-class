@@ -89,7 +89,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   // Admin sections.
   await page.route('**/api/platform/eligibility',route=>route.fulfill({json:{eligible:true}}));await page.goto(`${fixture.base}/platform/audit?role=platform`,{waitUntil:'networkidle'})
   for(const name of ['Home','Platform','Operations','System'])await rail.getByRole('navigation',{name,exact:true}).waitFor()
-  await expect(rail.getByRole('link',{name:'Audit Log',exact:true})).toHaveAttribute('aria-current','page');await page.unroute('**/api/platform/eligibility')
+  await expect(rail.getByRole('link',{name:'Audit log',exact:true})).toHaveAttribute('aria-current','page');await page.unroute('**/api/platform/eligibility')
 
   // 1024–1279px: icons only, named, with a tooltip on hover or focus. Still no overlay.
   await page.goto(route(),{waitUntil:'networkidle'})

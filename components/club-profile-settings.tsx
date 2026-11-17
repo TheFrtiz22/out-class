@@ -7,6 +7,7 @@ import { loadedDemoStore } from "@/lib/demo/loader"
 import { hasPermission, isActiveMembership } from "@/lib/permissions"
 import { updateClubSettings } from "@/actions/club-workspace"
 import { ClubProfileEditor } from "@/components/clubs/club-profile-editor"
+import { ClubQrPanel } from "@/components/clubs/club-qr-panel"
 import { useEffect, useState } from "react"
 import { readWorkspace } from "@/lib/workspace-read"
 import { clubProfileSchema, profileDraft } from "@/lib/club-marketing"
@@ -33,10 +34,10 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
         if (clubId !== state.clubs[0].id || state.perspective.role !== "leader") throw new UserFacingError("Demo management is limited to MII leaders.")
         Object.assign(state.clubs[0], profile)
       })
-      else await updateClubSettings({ clubId, ...profile, expectedProfile: expected ? JSON.stringify(clubProfileSchema.parse(expected)) : undefined })
+      else unwrapAction(await updateClubSettings({ clubId, ...profile, expectedProfile: expected ? JSON.stringify(clubProfileSchema.parse(expected)) : undefined }))
       try { await refreshUser() } catch { /* The saved profile is authoritative; keep the editor usable. */ }
       onSaved?.()
     }} />
-
+    {!demo.isDemoEnabled && <ClubQrPanel club={club} />}
   </div>
 }

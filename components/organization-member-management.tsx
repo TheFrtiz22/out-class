@@ -859,7 +859,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   {inviteTab === "delivery" && <InvitationEmailControls clubId={clubId} onSent={reload} />}
                 </div>}
               </ActionWorkflow>
-              {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." open={importOpen} onOpenChange={setImportOpen} presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} /></ActionWorkflow>}
+              {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." open={importOpen} onOpenChange={setImportOpen} presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} framed={false} /></ActionWorkflow>}
               {caps.canManageMembers && <MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} open={groupsOpen} onOpenChange={setGroupsOpen} />}
             </div>
             {!invitesOpen && directory}
