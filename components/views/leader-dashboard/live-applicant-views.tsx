@@ -10,10 +10,11 @@ import type { ApplicantSort } from "@/lib/live-applicant-sorting"
 import { stagedLabel, type StagedDecisionView } from "@/lib/staged-decisions"
 import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
 import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
+import { scholarSummary } from "@/lib/scholar-status"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 type Candidate = Pipeline["applications"][number]
-type Props = { votingSelection?: {ids:string[];toggle:(id:string)=>void}; applicants: Candidate[]; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; profileFields?: ProfileFieldVisibility; staged?: ReadonlyMap<string, StagedDecisionView> }
+type Props = { votingSelection?: {ids:string[];toggle:(id:string)=>void}; applicants: Candidate[]; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; profileFields?: ProfileFieldVisibility; staged?: ReadonlyMap<string, StagedDecisionView>; showScholar?: boolean }
 function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boolean }) {
   return <span className="oc-applicant-person"><Avatar aria-hidden="true"><AvatarFallback>{anonymous ? <ShieldCheck size={16} /> : label.split(/\s+/).map(part => part[0]).slice(0,2).join("")}</AvatarFallback></Avatar><span>{label}</span></span>
 }
@@ -31,14 +32,16 @@ function Rating({ app }: { app: Candidate }) {
   const detail = `${summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}${summary.provisional ? " · Provisional" : ""}`
   return <span title={detail}>{summary.average === null ? <span className="oc-dt-muted">{summary.submitted}/{summary.required} reviews</span> : <><strong className="font-semibold">{formatAverage(summary.average)}</strong><span className="oc-dt-muted"> /10{summary.provisional ? "*" : ""}</span></>}<span className="sr-only"> · {detail}</span></span>
 }
-export const applicantSortOptions: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Name" }, { key: "year", label: "Class year" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status" }]
-const anonymous = (app: Candidate) => app.studentId.startsWith("anonymous-")
+export const applicantSortOptions: { key: ApplicantSort; label: string }[] = [{ key: "name", label: "Name" }, { key: "year", label: "Class year" }, { key: "round", label: "Round" }, { key: "gpa", label: "GPA" }, { key: "sat", label: "SAT" }, { key: "act", label: "ACT" }, { key: "score", label: "Rating" }, { key: "status", label: "Status" }, { key: "scholar", label: "Scholars first" }]
+const anonymous = (app: Pick<Candidate, "studentId">) => app.studentId.startsWith("anonymous-")
+/** Program names or "Not a scholar"; nothing for anonymous applicants or an unanswered question. */
+export const applicantScholar = (app: Pick<Candidate, "studentId"> & { student: { studentProfile?: { scholarStatus?: unknown } | null } }) => anonymous(app) ? null : scholarSummary(app.student.studentProfile?.scholarStatus)
 const roundName = (rounds: Pipeline["rounds"], app: Candidate) => rounds.find(round => round.id === app.roundId)?.name
 const testScores = (app: Candidate, fields: ProfileFieldVisibility) => joinFacts(fields.sat && app.student.studentProfile?.satScore != null && `SAT ${app.student.studentProfile.satScore}`, fields.act && app.student.studentProfile?.actScore != null && `ACT ${app.student.studentProfile.actScore}`)
 /** Profile columns the club has hidden are not rendered (their values are already withheld by the server). */
-const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gpa" ? fields.gpa : id === "sat" ? fields.sat : id === "act" ? fields.act : id === "test" ? fields.sat || fields.act : id === "year" ? fields.academicYear : true
+const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gpa" ? fields.gpa : id === "sat" ? fields.sat : id === "act" ? fields.act : id === "test" ? fields.sat || fields.act : id === "year" ? fields.academicYear : id === "scholar" ? fields.scholarStatus : true
 /** Applicants: email drops first, then SAT and ACT combine into one "Test scores" column (below 880px, never beside them), then Year drops. Cards below 640px. */
-export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection, profileFields = defaultProfileFieldVisibility(), staged }: Props) {
+export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection, profileFields = defaultProfileFieldVisibility(), staged, showScholar = false }: Props) {
   const columns = ([
     { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-applicant-person-row"><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><PreviouslyAppliedBadge priors={app.priorApplications} /></span>, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
@@ -47,9 +50,10 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
     { id: "test", header: "Test scores", hideFrom: "lg", cell: app => testScores(app, profileFields) || "—" },
     { id: "sat", header: "SAT", sortKey: "sat", align: "end", showFrom: "lg", cell: app => app.student.studentProfile?.satScore ?? "—" },
     { id: "act", header: "ACT", sortKey: "act", align: "end", showFrom: "lg", cell: app => app.student.studentProfile?.actScore ?? "—" },
+    { id: "scholar", header: "Scholar", sortKey: "scholar", showFrom: "lg", cell: app => applicantScholar(app) ?? <span className="oc-dt-muted">{anonymous(app) ? "—" : "Not provided"}</span> },
     { id: "score", header: "Rating", sortKey: "score", cell: app => <Rating app={app} /> },
     { id: "status", header: "Status", sortKey: "status", cell: app => <Status app={app} rounds={rounds} staged={staged} /> },
-  ] satisfies DataTableColumn<Candidate>[]).filter(column => columnVisible(column.id, profileFields))
+  ] satisfies DataTableColumn<Candidate>[]).filter(column => columnVisible(column.id, profileFields)).filter(column => column.id !== "scholar" || showScholar)
   return <DataTable caption="Applicants" rows={applicants} rowKey={app => app.id} columns={columns} density={compact ? "compact" : "default"}
     onOpen={app => open(app)} openLabel={app => `Open ${name(app)}`} openAttributes={app => ({ "data-applicant-id": app.id })}
     sort={sortBy ? { key: sort, descending, toggle: key => sortBy(key as ApplicantSort) } : undefined}
@@ -57,7 +61,7 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
     card={{
       title: app => <span className="oc-dt-name">{name(app)} <PreviouslyAppliedBadge priors={app.priorApplications} /></span>,
       trailing: app => <Status app={app} rounds={rounds} staged={staged} />,
-      meta: app => joinFacts(profileFields.academicYear && app.student.studentProfile?.academicYear, roundName(rounds, app), profileFields.gpa && app.student.studentProfile?.gpa != null && `GPA ${app.student.studentProfile.gpa.toFixed(2)}`, testScores(app, profileFields), app.roundScore?.average != null && `Rating ${formatAverage(app.roundScore.average)}`),
+      meta: app => joinFacts(profileFields.academicYear && app.student.studentProfile?.academicYear, roundName(rounds, app), profileFields.gpa && app.student.studentProfile?.gpa != null && `GPA ${app.student.studentProfile.gpa.toFixed(2)}`, testScores(app, profileFields), showScholar && applicantScholar(app), app.roundScore?.average != null && `Rating ${formatAverage(app.roundScore.average)}`),
     }} />
 }
 const votingEligible = (status: string) => ["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "WAITLISTED"].includes(status)

@@ -7,6 +7,7 @@ import { pipelineDetailInclude, pipelineDetailProjection } from "@/lib/pipeline-
 import { rankedReviewSelect, rankedReviewProjection } from "@/lib/ranked-review-read";
 import { loadPriorApplications, mayShowPriorApplications, mayShowPriorOutcome, type PriorApplication } from "@/lib/prior-applications";
 import { readPipelineSelection } from "@/lib/pipeline-selection-read";
+import { boundedParse } from "@/lib/bounded-input";
 import { pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
@@ -43,7 +44,7 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof 
 }
 
 export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
-  const query = pipelinePageQuery.parse(input);
+  const query = boundedParse(pipelinePageQuery, input);
   const { pipeline } = await readPipeline(clubId, { roundId: query.gender || query.genderCounts ? query.roundId : undefined, gender: query.gender, genderCounts: query.genderCounts }, async (tx, where, membership, rounds, roundPrivacy, profileFields) => {
     // Scope binding only. Both ranking and bounded hydration share this fresh
     // guarded Repeatable Read snapshot; the cursor never grants authority.
@@ -69,7 +70,7 @@ export async function getRankedReviewRound(clubId: string, roundId: string) {
 
 /** Explicit whole-selection read for the review queue, board counts and voting, without identities. */
 export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
-  const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
+  const query = boundedParse(pipelinePageQuery.omit({ cursor: true }), input);
   const { pipeline } = await readPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false },
     (tx, where, membership, rounds, roundPrivacy, profileFields) => readPipelineSelection(tx, where, membership, query, rounds, roundPrivacy, profileFields));
   return pipeline.applications;

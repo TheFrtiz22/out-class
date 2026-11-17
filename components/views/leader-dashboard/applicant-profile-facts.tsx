@@ -1,11 +1,12 @@
 import type { ReactNode } from "react"
 import type { ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { safeProfileUrl } from "@/lib/student-profile"
+import { scholarSummary } from "@/lib/scholar-status"
 
 type Experience = { id: string; title: string; subtitle: string; period: string }
 export type ApplicantProfileFactsProfile = {
   academicYear?: string | null; gpa?: number | null; satScore?: number | null; actScore?: number | null
-  experiences?: Experience[]; linkedinUrl?: string | null
+  experiences?: Experience[]; linkedinUrl?: string | null; scholarStatus?: unknown
 }
 
 /** The academic summary line: only enabled fields that have a value, so nothing renders as an empty label. */
@@ -24,8 +25,11 @@ export function ApplicantProfileFacts({ profile, fields, resume, children }: { p
   const experiences = fields.experiences ? profile.experiences ?? [] : []
   const linkedin = fields.linkedin ? safeProfileUrl(profile.linkedinUrl) : undefined
   const showResume = fields.resume && !!resume
+  // Program names or "Not a scholar"; an unanswered question leaves no row. Anonymous rows carry no value.
+  const scholar = fields.scholarStatus ? scholarSummary(profile.scholarStatus) : null
   return <>
     {facts.length > 0 && <p className="text-xs text-muted-foreground" data-profile-facts="">{facts.join(" · ")}</p>}
+    {scholar && <p className="text-sm" data-profile-field="scholarStatus"><span className="text-muted-foreground">Scholar: </span>{scholar}</p>}
     {children}
     {experiences.map(item => (
       <div key={item.id} className="text-sm" data-profile-field="experiences">

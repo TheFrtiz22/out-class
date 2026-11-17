@@ -1,5 +1,7 @@
 "use server";
 import { profilePhotoSource } from "@/lib/profile-photo";
+import { normalizeProfileFieldVisibility, restrictProfileFields } from "@/lib/profile-field-visibility";
+import { scholarStatusValue } from "@/lib/scholar-status";
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { Prisma } from "@prisma/client";
@@ -59,10 +61,13 @@ async function getInterviewApplicantPanelCommand(input: z.infer<typeof scope>) {
   return prisma.$transaction(async tx => {
     const { app } = await authorizeInterview(tx, data, user.id, "panel", "share");
     const profile = await tx.studentProfile.findUnique({ where: { userId: app.studentId }, select: { firstName: true, lastName: true, headshotUrl: true, scholarStatus: true, resumeUrl: true } });
+    // The club's applicant profile-field setting applies in the interview room too (photo, scholar status).
+    const club = await tx.club.findUnique({ where: { id: data.clubId }, select: { profileFieldVisibility: true } });
+    const shown = profile ? restrictProfileFields({ firstName: profile.firstName, lastName: profile.lastName, headshotUrl: profile.headshotUrl, scholarStatus: scholarStatusValue(profile.scholarStatus) }, normalizeProfileFieldVisibility(club?.profileFieldVisibility)) : null;
     const document = await tx.interviewResumeDocument.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: data.roundId } }, select: documentSelect });
     // Whether a résumé can be shown at all, so the room shows "none on file" instead of an error and Retry.
     const resumeOnFile = !!document || (app.roundId === data.roundId && !!profile?.resumeUrl && isPrivateResume(profile.resumeUrl) && profile.resumeUrl.startsWith(`${app.studentId}/`));
-    return { profile: profile ? { firstName: profile.firstName, lastName: profile.lastName, scholarStatus: profile.scholarStatus, headshotUrl: profilePhotoSource(profile.headshotUrl, data) ?? null } : null, document, resumeOnFile };
+    return { profile: shown ? { ...shown, headshotUrl: profilePhotoSource(shown.headshotUrl, data) ?? null } : null, document, resumeOnFile };
   }, interviewTransactionOptions);
 }
 /** Snapshot bytes once; neither profile replacement nor student object deletion changes this version. */
