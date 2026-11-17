@@ -7,7 +7,8 @@ import { prisma } from "@/utils/prisma"
 import { requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
-import { applyRuleSchema, buildRulePreview, ruleEligibleStatuses, ruleLabel, ruleScopeSchema, saveRuleSchema, validateRuleRequirement } from "@/lib/recruiting-rules"
+import { boundedParse } from "@/lib/bounded-input"
+import { applyRuleSchema, buildRulePreview, ruleEligibleStatuses, ruleEventLimit, ruleLabel, ruleScopeSchema, saveRuleSchema, validateRuleRequirement } from "@/lib/recruiting-rules"
 import type { z } from "zod"
 
 async function scopedRound(tx: AppTransactionClient, scope: z.infer<typeof ruleScopeSchema>) {
@@ -27,24 +28,32 @@ export async function getRecruitingRules(clubId: string) {
     select: { id: true, name: true, anonymousReview: true, screeningRule: true },
   })
   const club = await prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { testRequirement: true } })
-  return { rounds, canIdentify: hasPermission(membership, "applicants.identify"), testRequirement: club.testRequirement, canPreview: hasPermission(membership, "applications.review"), canApply: hasPermission(membership, "applications.review") && hasPermission(membership, "decisions.manage") }
+  // Recruiting events a rule can require attendance at: this club's applicant-facing events, newest first.
+  const events = await prisma.meeting.findMany({
+    where: { clubId, audience: "RECRUITMENT" }, orderBy: { date: "desc" }, take: ruleEventLimit,
+    select: { id: true, title: true, date: true },
+  })
+  return { rounds, events, canIdentify: hasPermission(membership, "applicants.identify"), testRequirement: club.testRequirement, canPreview: hasPermission(membership, "applications.review"), canApply: hasPermission(membership, "applications.review") && hasPermission(membership, "decisions.manage") }
 }
 
 export async function saveRecruitingRule(input: z.infer<typeof saveRuleSchema>) {
-  const parsed = saveRuleSchema.parse(input)
+  const parsed = boundedParse(saveRuleSchema, input)
   const { user } = await requireClubPermission(parsed.clubId, ["recruitment.manage"])
   const saved = await prisma.$transaction(async tx => {
     await lockOperationalClub(tx, parsed.clubId);
     const round = await scopedRound(tx, parsed)
     validateRuleRequirement(parsed.thresholds, round.club.testRequirement)
     if ((round.screeningRule?.revision ?? 0) !== parsed.expectedRevision) throw new Error("Rules changed. Reload before saving.")
+    const eventIds = parsed.thresholds.requiredEventIds
+    if (eventIds.length && await tx.meeting.count({ where: { id: { in: eventIds }, clubId: parsed.clubId } }) !== eventIds.length)
+      throw new Error("Choose events from this club.")
     const data = { ...parsed.thresholds, revision: parsed.expectedRevision + 1 }
     const rule = round.screeningRule
       ? await tx.recruitingRule.update({ where: { roundId: parsed.roundId }, data })
       : await tx.recruitingRule.create({ data: { roundId: parsed.roundId, ...data } })
     // Flags belong to a specific saved rule version, never silently carry them into another.
     await tx.recruitingRuleFlag.deleteMany({ where: { roundId: parsed.roundId } })
-    await tx.auditLog.create({ data: { actorId: user.id, clubId: parsed.clubId, targetId: parsed.roundId, action: "recruiting.rules.save", details: { before: round.screeningRule ? { minGpa: round.screeningRule.minGpa, minSat: round.screeningRule.minSat, minAct: round.screeningRule.minAct, revision: round.screeningRule.revision } : null, after: data } } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: parsed.clubId, targetId: parsed.roundId, action: "recruiting.rules.save", details: { before: round.screeningRule ? { minGpa: round.screeningRule.minGpa, minSat: round.screeningRule.minSat, minAct: round.screeningRule.minAct, requiredEventIds: round.screeningRule.requiredEventIds, revision: round.screeningRule.revision } : null, after: data } } })
     return rule
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
   revalidatePath(`/club/${parsed.clubId}/workspace`)
@@ -55,13 +64,20 @@ async function preview(tx: AppTransactionClient, scope: z.infer<typeof ruleScope
   const round = await scopedRound(tx, scope)
   if (!round.anonymousReview && !canIdentify) throw new Error("Applicant identity permission is required for this round.")
   if (!round.screeningRule) throw new Error("Save this round's rules before previewing.")
-  const { minGpa, minSat, minAct, revision } = round.screeningRule
+  const { minGpa, minSat, minAct, requiredEventIds = [], revision } = round.screeningRule
+  // Only this club's required events that have already started count; a deleted event simply drops out.
+  const heldEventIds = requiredEventIds.length
+    ? (await tx.meeting.findMany({ where: { id: { in: requiredEventIds }, clubId: scope.clubId, date: { lte: new Date() } }, select: { id: true } })).map(event => event.id)
+    : []
   const applications = await tx.application.findMany({
     where: { clubId: scope.clubId, roundId: scope.roundId, status: { in: ruleEligibleStatuses as ("SUBMITTED" | "IN_REVIEW" | "INTERVIEWING")[] } },
-    select: { id: true, status: true, student: { select: { studentProfile: { select: { gpa: true, satScore: true, actScore: true } } } } },
+    select: { id: true, status: true, student: { select: { studentProfile: { select: { gpa: true, satScore: true, actScore: true } }, ...(heldEventIds.length ? { attendances: { where: { eventId: { in: heldEventIds } }, select: { eventId: true } } } : {}) } } },
     orderBy: { id: "asc" },
   })
-  return buildRulePreview(scope, revision, { minGpa, minSat, minAct }, round.club.testRequirement, applications.map(app => ({ id: app.id, status: app.status, gpa: app.student.studentProfile?.gpa ?? null, satScore: app.student.studentProfile?.satScore ?? null, actScore: app.student.studentProfile?.actScore ?? null })))
+  return buildRulePreview(scope, revision, { minGpa, minSat, minAct, requiredEventIds }, round.club.testRequirement, applications.map(app => {
+    const student = app.student as typeof app.student & { attendances?: { eventId: string }[] }
+    return { id: app.id, status: app.status, gpa: student.studentProfile?.gpa ?? null, satScore: student.studentProfile?.satScore ?? null, actScore: student.studentProfile?.actScore ?? null, ...(heldEventIds.length ? { attendedEventIds: (student.attendances ?? []).map(a => a.eventId) } : {}) }
+  }), { heldEventIds })
 }
 
 export async function previewRecruitingRule(input: z.infer<typeof ruleScopeSchema>) {

@@ -136,6 +136,10 @@ const assert = require("node:assert/strict")
   await db.exec(fs.readFileSync(dir + "20260928000000_private_resume_storage/migration.sql", "utf8"))
   const migrationNames = fs.readdirSync(dir).filter(name => fs.existsSync(dir+name+'/migration.sql')).sort()
   for (const migration of migrationNames.filter(name => name >= "20260929000000")) await db.exec(fs.readFileSync(dir+ migration+'/migration.sql','utf8'))
+  // Attendance rule: existing rules keep working with no required events; the list is bounded and null-free.
+  assert.deepEqual((await db.query(`SELECT "requiredEventIds" FROM "RecruitingRule" WHERE "roundId"='round'`)).rows[0].requiredEventIds, [])
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "requiredEventIds"=array_fill('e'::text, ARRAY[51]) WHERE "roundId"='round'`),/check constraint/)
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "requiredEventIds"=ARRAY[NULL::text] WHERE "roundId"='round'`),/check constraint/)
   assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status, 'IN_REVIEW')
   const migratedWork=(await db.query(`SELECT * FROM "TaskAssignment" WHERE id='former-work'`)).rows[0]
   assert.equal(migratedWork.text,'Preserved work'); assert.equal(migratedWork.groupLabel,null); assert.equal(migratedWork.revisionRequestedAt,null)

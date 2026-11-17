@@ -9,6 +9,10 @@ import { testRequirementLabels } from "@/lib/test-scores"
 import { PillGroup } from "@/components/ui/segmented-control"
 import { RangeSlider } from "@/components/ui/range-slider"
 import { useConfirm } from "@/components/ui/confirm-dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
+
+const eventDate = new Intl.DateTimeFormat("en-US", { timeZone: SCHEDULING_TIMEZONE, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })
 
 type Rules = Awaited<ReturnType<typeof getRecruitingRules>>
 type Round = Rules["rounds"][number]
@@ -45,7 +49,7 @@ export function ScreeningDashboardView({ clubId, onReview }: { clubId?: string; 
 function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { clubId: string; round: Round; data: Rules; onSaved: (saved: NonNullable<Round["screeningRule"]>) => void; onReload: () => void; onReview?: () => void }) {
   const confirm = useConfirm()
   const canPreview = data.canPreview && (round.anonymousReview || data.canIdentify)
-  const source: RuleThresholds = round.screeningRule ? { minGpa: round.screeningRule.minGpa, minSat: round.screeningRule.minSat, minAct: round.screeningRule.minAct } : emptyRuleThresholds
+  const source: RuleThresholds = round.screeningRule ? { minGpa: round.screeningRule.minGpa, minSat: round.screeningRule.minSat, minAct: round.screeningRule.minAct, requiredEventIds: [...(round.screeningRule.requiredEventIds ?? [])].sort() } : emptyRuleThresholds
   const [thresholds, setThresholds] = useState<RuleThresholds>(source)
   const [preview, setPreview] = useState<RulePreview | null>(null)
   const [flags, setFlags] = useState<Awaited<ReturnType<typeof getRecruitingRuleFlags>> | null>(null)
@@ -79,6 +83,13 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
     ...(data.testRequirement !== "ACT" || thresholds.minSat !== null ? [{ key: "minSat" as const, label: "SAT", min: 400, max: 1600, step: 10 }] : []),
     ...(data.testRequirement !== "SAT" || thresholds.minAct !== null ? [{ key: "minAct" as const, label: "ACT", min: 1, max: 36, step: 1 }] : []),
   ]
+  // Saved events that no longer appear in the list (deleted, or older than the newest 50) stay selected but are shown by count.
+  const listedEvents = new Set(data.events.map(event => event.id))
+  const unlistedRequired = thresholds.requiredEventIds.filter(id => !listedEvents.has(id)).length
+  function toggleEvent(id: string, on: boolean) {
+    setThresholds(current => ({ ...current, requiredEventIds: (on ? [...current.requiredEventIds, id] : current.requiredEventIds.filter(item => item !== id)).sort() }))
+    setPreview(null)
+  }
   function review(id: string) { focusLeader({ clubId, applicantId: id, roundId: round.id }); onReview?.() }
   return <div className="space-y-6" data-rule-dirty={dirty} data-unsaved={dirty} data-saving={busy}>
     <p className="text-sm">{testRequirementLabels[data.testRequirement as keyof typeof testRequirementLabels]}</p>
@@ -86,6 +97,15 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
       <fieldset disabled={busy} className="space-y-3"><legend className="mb-3 font-medium">Minimum scores</legend>
         {fields.map(field => <RangeSlider key={field.key} label={`Minimum ${field.label}`} min={field.min} max={field.max} step={field.step} noneLabel="No threshold" nullAtMin={false} disabled={busy}
           value={thresholds[field.key]} onChange={value => { setThresholds(current => ({ ...current, [field.key]: value })); setPreview(null) }} />)}
+      </fieldset>
+      <fieldset disabled={busy} className="space-y-3"><legend className="mb-1 font-medium">Required attendance</legend>
+        <p className="text-xs text-muted-foreground">Flag applicants with no check-in at any selected event, such as info sessions, resume workshops and panels. Only events that have started count.</p>
+        {!data.events.length ? <p className="text-sm text-muted-foreground">No recruiting events yet. Create them in Events, then choose them here.</p> :
+          <ul className="max-h-56 space-y-2 overflow-y-auto">{data.events.map(event => <li key={event.id}><label className="flex items-start gap-2 text-sm">
+            <Checkbox className="mt-0.5" checked={thresholds.requiredEventIds.includes(event.id)} onCheckedChange={value => toggleEvent(event.id, value === true)} />
+            <span>{event.title} <span className="text-muted-foreground">· {eventDate.format(new Date(event.date))}</span></span>
+          </label></li>)}</ul>}
+        {unlistedRequired > 0 && <p className="text-xs text-muted-foreground">{unlistedRequired} more selected {unlistedRequired === 1 ? "event isn’t" : "events aren’t"} listed here. <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={() => { setThresholds(current => ({ ...current, requiredEventIds: current.requiredEventIds.filter(id => listedEvents.has(id)) })); setPreview(null) }}>Remove</Button></p>}
       </fieldset>
       <p className="text-xs text-muted-foreground">No threshold until you move a slider; to remove one, select its value and clear it. Missing or invalid scores require manual review, never automatic failure. GPA is evaluated independently. SAT-only and ACT-only clubs use that test; Both evaluates each threshold you set. For SAT-or-ACT, set both test thresholds or neither. When both optional test thresholds are set, either qualifying score also suffices.</p>
       <p className="text-xs text-muted-foreground">Saving replaces this round’s configuration and clears its previous flags. It does not evaluate or change any applicant.</p>
@@ -101,6 +121,7 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
       {!canPreview && <p className="text-sm text-muted-foreground">Applicant review permission is required; identified rounds also require identity access.</p>}
       {preview && <div className="space-y-4">
         <p role="status" className="text-sm">{preview.results.length} evaluated · {matches.length} suggested flags · {preview.results.filter(result => result.outcome === "manual").length} need manual review only.</p>
+        {thresholds.requiredEventIds.length > 0 && preview.heldEventCount === 0 && <p className="text-sm text-muted-foreground">None of the required events has started yet, so attendance isn’t checked.</p>}
         <ul className="max-h-80 divide-y overflow-y-auto rounded border px-3">{preview.results.map(result => <li key={result.id} className="space-y-1 py-3 text-sm"><p className="font-medium">{result.label}</p><p>{result.outcome === "flag" ? result.reasons.join("; ") : result.outcome === "manual" ? "Manual review" : "No flag suggested"}</p>{result.missing.length > 0 && <p className="text-muted-foreground">Missing / invalid: {result.missing.join(", ")}. Not treated as failures.</p>}</li>)}</ul>
         <p className="text-xs text-muted-foreground">Applying replaces this round’s saved flags with this preview. Decisions remain unchanged. You can clear flags at any time.</p>
         <Button disabled={busy || !data.canApply} onClick={() => void run(async () => { const result = await applyRecruitingRuleFlags({ ...scope, fingerprint: preview.fingerprint }); setPreview(null); setFlags(await getRecruitingRuleFlags(scope)); setMessage(`${result.flagged} flags saved. No decisions changed.`) })}>Apply {matches.length} review flags</Button>

@@ -46,7 +46,7 @@ function harness(permissions=['recruitment.manage','applications.review','decisi
  }
  prisma.$transaction=async(fn,options)=>{calls.push(options?.isolationLevel);return fn(prisma)}
  const api=load('actions/recruiting-rules.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async(club,caps)=>{assert.equal(club,clubId);if(!caps.every(p=>permissions.includes(p)))throw Error('Denied');return {user:{id:'actor'},membership:{permissions}}}},'next/cache':{revalidatePath(){}}})
- return {api,state,calls}
+ return {api,state,calls,prisma}
 }
 test('explicit apply flags only and audits; stale previews cannot delete or create flags',async()=>{
  const h=harness(), preview=await h.api.previewRecruitingRule(scope)
@@ -86,4 +86,50 @@ test('server enforces scope, granular permissions and anonymous-only reviewer re
  anonymous.state.anonymousReview=false
  await assert.rejects(anonymous.api.previewRecruitingRule(scope),/identity permission/)
  await assert.rejects(anonymous.api.applyRecruitingRuleFlags({...scope,fingerprint:'a'.repeat(64)}),/Denied/)
+})
+
+test('attendance rule flags applicants with no check-in at any started required event',async()=>{
+ const e1='00000000-0000-4000-8000-0000000000e1',e2='00000000-0000-4000-8000-0000000000e2'
+ const t={minGpa:null,minSat:null,minAct:null,requiredEventIds:[e1,e2]}
+ assert.equal(rules.evaluateRule(t,'OPTIONAL',{...candidate,attendedEventIds:[]},{heldEventIds:[e1]}).outcome,'flag')
+ assert.deepEqual(rules.evaluateRule(t,'OPTIONAL',{...candidate,attendedEventIds:[]},{heldEventIds:[e1]}).reasons,[rules.attendanceReason])
+ assert.equal(rules.evaluateRule(t,'OPTIONAL',{...candidate,attendedEventIds:[e1]},{heldEventIds:[e1,e2]}).outcome,'clear')
+ assert.equal(rules.evaluateRule(t,'OPTIONAL',{...candidate,attendedEventIds:[e2]},{heldEventIds:[e1,e2]}).outcome,'clear')
+ // No required event has started yet: nobody is flagged for missing it.
+ assert.equal(rules.evaluateRule(t,'OPTIONAL',{...candidate,attendedEventIds:[]},{heldEventIds:[]}).outcome,'clear')
+ // A started event that is not required never counts.
+ assert.equal(rules.evaluateRule({...t,requiredEventIds:[e2]},'OPTIONAL',{...candidate,attendedEventIds:[]},{heldEventIds:[e1]}).outcome,'clear')
+ // Combines with score thresholds.
+ assert.equal(rules.evaluateRule({...thresholds,requiredEventIds:[e1]},'BOTH',{...candidate,gpa:3,attendedEventIds:[]},{heldEventIds:[e1]}).reasons.length,2)
+ // Rules saved before attendance existed still evaluate.
+ assert.equal(rules.evaluateRule(thresholds,'BOTH',candidate).outcome,'clear')
+ assert.deepEqual(rules.ruleThresholdSchema.parse(thresholds).requiredEventIds,[])
+ assert.throws(()=>rules.ruleThresholdSchema.parse({...t,requiredEventIds:[e1,e1]}))
+ assert.throws(()=>rules.ruleThresholdSchema.parse({...t,requiredEventIds:['not-an-id']}))
+ assert.throws(()=>rules.ruleThresholdSchema.parse({...t,requiredEventIds:Array.from({length:51},(_,i)=>`00000000-0000-4000-8000-${String(i).padStart(12,'0')}`)}))
+ // Fingerprint changes when a check-in lands or a required event starts, so a stale preview cannot be applied.
+ const base=await rules.buildRulePreview(scope,1,t,'OPTIONAL',[{...candidate,attendedEventIds:[]}],{heldEventIds:[e1]})
+ assert.equal(base.results[0].outcome,'flag'); assert.equal(base.heldEventCount,1)
+ assert.notEqual(base.fingerprint,(await rules.buildRulePreview(scope,1,t,'OPTIONAL',[{...candidate,attendedEventIds:[e1]}],{heldEventIds:[e1]})).fingerprint)
+ assert.notEqual(base.fingerprint,(await rules.buildRulePreview(scope,1,t,'OPTIONAL',[{...candidate,attendedEventIds:[]}],{heldEventIds:[e1,e2]})).fingerprint)
+})
+test('server: attendance comes from this club’s started events only, and saves reject foreign events',async()=>{
+ const e1='00000000-0000-4000-8000-0000000000e1', h=harness()
+ h.state.rule={...h.state.rule,minGpa:null,minSat:null,minAct:null,requiredEventIds:[e1]}
+ const meetingCalls=[]
+ let attendances=[]
+ h.prisma.meeting={
+  findMany:async({where})=>{meetingCalls.push(where);assert.equal(where.clubId,clubId);assert.ok(where.date.lte instanceof Date);return where.id.in.includes(e1)?[{id:e1}]:[]},
+  count:async({where})=>{assert.equal(where.clubId,clubId);return where.id.in.filter(id=>id===e1).length},
+ }
+ const findMany=h.prisma.application.findMany
+ h.prisma.application.findMany=async args=>{assert.deepEqual(args.select.student.select.attendances,{where:{eventId:{in:[e1]}},select:{eventId:true}});return (await findMany(args)).map(app=>({...app,student:{...app.student,attendances}}))}
+ const flagged=await h.api.previewRecruitingRule(scope)
+ assert.equal(flagged.results[0].outcome,'flag');assert.deepEqual(flagged.results[0].reasons,[rules.attendanceReason])
+ attendances=[{eventId:e1}]
+ assert.equal((await h.api.previewRecruitingRule(scope)).results[0].outcome,'clear')
+ assert.equal(meetingCalls.length,2)
+ await assert.rejects(h.api.saveRecruitingRule({...scope,expectedRevision:1,thresholds:{minGpa:null,minSat:null,minAct:null,requiredEventIds:['00000000-0000-4000-8000-0000000000f0']}}),/this club/)
+ const saved=await h.api.saveRecruitingRule({...scope,expectedRevision:1,thresholds:{minGpa:null,minSat:null,minAct:null,requiredEventIds:[e1]}})
+ assert.deepEqual(saved.requiredEventIds,[e1])
 })
