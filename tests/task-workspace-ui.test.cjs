@@ -43,7 +43,7 @@ test('personal task counts separate due, missing and submitted work inside the S
  assert.equal(nodes(tree).some(n=>typeof n.props?.className==='string'&&n.props.className.includes('oc-task-total')),false)
  const status=()=>nodes(tree).find(n=>n.type==='PillSelect'&&n.props.label==='Status')
  const labels=status().props.options.map(o=>o.label)
- assert.ok(labels.includes('Due (1)'));assert.ok(labels.includes('Missing (1)'));assert.ok(labels.includes('Submitted (2)'))
+ assert.ok(labels.includes('Due (1)'));assert.ok(labels.includes('Overdue (1)'));assert.ok(labels.includes('Submitted (2)'))
  status().props.onChange('overdue');tree=h.render()
  assert.match(text(tree),/Missing exercise/);assert.doesNotMatch(text(tree),/Your research|Reviewed exercise|Closed exercise/)
  status().props.onChange('submitted');tree=h.render()
