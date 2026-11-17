@@ -155,7 +155,7 @@ test('an existing draft opens with every saved value and saves back unchanged',{
   assert.equal(await rule.getByRole('radio',{name:/Threshold decides/}).isChecked(),true);assert.equal(await rule.getByRole('radio',{name:/Ballots cast/}).isChecked(),true);assert.equal(await rule.getByRole('radio',{name:'Do not pass',exact:true}).isChecked(),true);
   assert.equal(await rule.getByLabel('Threshold numerator').inputValue(),'3');assert.equal(await page.getByRole('spinbutton',{name:'Target number to pass',exact:true}).inputValue(),'2');
   await page.getByRole('button',{name:'Continue',exact:true}).click();
-  for(const [field,on] of [['Name',true],['GPA (out of 4.0)',true],['Major',true],['SAT',false]])assert.equal(await page.getByRole('switch',{name:field,exact:true}).getAttribute('aria-checked'),String(on),field);
+  for(const [field,on] of [['Name',true],['GPA',true],['Major',true],['SAT',false]])assert.equal(await page.getByRole('switch',{name:field,exact:true}).getAttribute('aria-checked'),String(on),field);
   await page.getByRole('button',{name:'Save draft',exact:true}).click();await page.getByText('Draft saved',{exact:true}).waitFor();
   const stored=f.h.state().drafts.find(d=>d.key===`voting-setup:${f.clubId}:${draftId}`).content;
   assert.deepEqual({...stored,step:1},seed,'the saved draft is unchanged apart from the step');assert.deepEqual(errors,[]);
