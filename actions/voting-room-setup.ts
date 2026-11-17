@@ -22,7 +22,7 @@ export async function getLiveVotingSetup(input:unknown){
   return prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.manage","decisions.start"],{readOnly:true});
     const cycles=await tx.recruitmentCycle.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true},orderBy:{createdAt:"desc"}});
-    const roundRows=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true,anonymousReview:true,club:{select:{profileFieldVisibility:true}}},orderBy:{order:"asc"}});
+    const roundRows=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true,type:true,anonymousReview:true,club:{select:{profileFieldVisibility:true}}},orderBy:{order:"asc"}});
     // The club's applicant profile setting is the ceiling for slide fields (read with the rounds, same snapshot).
     const profileFields=normalizeProfileFieldVisibility(roundRows[0]?.club?.profileFieldVisibility);
     const rounds=roundRows.map(({club:_club,...r})=>r);
