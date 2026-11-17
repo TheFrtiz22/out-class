@@ -10,6 +10,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
 import { ShareClubButton } from "@/components/clubs/share-club-button"
+import { JoinPromptDialog } from "@/components/clubs/join-prompt-dialog"
 import { ReportContentButton } from "@/components/reports/report-content-button"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
 import { useClubCustomization } from "@/lib/club-customization"
@@ -55,6 +56,7 @@ export function ClubProfileView({
   const { user, refreshUser } = useAuth()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [joinPrompt, setJoinPrompt] = useState<string | null>(null)
   const heading = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (ready && !preview) heading.current?.focus({ preventScroll: true })
@@ -116,12 +118,13 @@ export function ClubProfileView({
   const reapply = real && actualApplication?.status === "REJECTED" && recruitment.available
   // Alumni see their own applications but cannot start one (the server refuses too).
   const alumni = real && (!application || reapply) && isAlumniProfile(user?.profile)
-  const applyLabel = busy ? "Opening…" : alumni && user ? "Alumni can’t apply" : reapply ? "Apply again" : application ? draft ? "Continue draft" : "View status" : real && !user ? "Sign in to apply" : "Start application"
+  const applyLabel = busy ? "Opening…" : alumni && user ? "Alumni can’t apply" : reapply ? "Apply again" : application ? draft ? "Continue draft" : "View status" : "Start application"
   const applyDisabled = preview || busy || alumni || (real && !application && !recruitment.available)
   async function apply() {
     if (preview) return
     if (real && !user) {
-      onNavigate("auth")
+      // Signed out (often straight from the club's QR code): offer sign-up first, then come back here.
+      setJoinPrompt(`${window.location.pathname}${window.location.search}`)
       return
     }
     setError("")
@@ -195,6 +198,10 @@ export function ClubProfileView({
     {application && <StatusPill status={application.status} />}
     {real && !preview && <ReportContentButton target={{ type: "club", id: club.id }} label={`Report ${name}`} ownerClubId={club.id} className="oc-club-report" />}
     {error && <p role="alert" className="w-full text-destructive">{error}</p>}
+    {joinPrompt && <JoinPromptDialog open onOpenChange={open => { if (!open) setJoinPrompt(null) }}
+      title={`Apply to ${name}`}
+      description="Create a free OutClass account to start your application. One profile covers the basics for every club you apply to, and you’ll come right back here."
+      returnPath={joinPrompt} />}
   </div>
   const showRequirements = real && (!!club.testRequirement || !!club.timeCommitment || !!club.requirements?.length)
   const recruitmentSection = !!deadlineText || recruitment.expired || !!application || showRequirements || readMarketing(publicProfile.marketing).sections.some(section => section.visible && section.kind === "recruitment")
