@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { WorkspaceRouteLoading } from "@/components/shell/workspace-route-loading";
 import { clubWorkspaceTitle, canonicalClubWorkspaceHref } from "@/lib/workspace-routes";
+import { Button } from "@/components/ui/button";
 export const maxDuration = 60;
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
   return { title: clubWorkspaceTitle(await searchParams) };
@@ -47,7 +48,7 @@ async function Workspace({ clubId, section, taskView, tool }: { clubId: string; 
   }
   const user = demoEnabled ? null : await getCurrentUser();
   const membership = user?.memberships.find(member => member.clubId === clubId);
-  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Link className="underline" href="/home">Return to Personal workspace</Link></div></AuthenticatedPageLayout>;
+  if (membership?.club.suspendedAt) return <AuthenticatedPageLayout><div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p>{membership.club.name} operations are unavailable until an administrator restores the club. Your membership and existing records are preserved.</p><Button variant="outline" asChild><Link href="/home">Return to Personal workspace</Link></Button></div></AuthenticatedPageLayout>;
   return (
     <AuthSessionBoundary>
       <ClubWorkspace
