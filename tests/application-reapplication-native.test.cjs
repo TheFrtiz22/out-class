@@ -119,7 +119,7 @@ test('students can re-apply after rejection in the club\'s next active cycle', {
     await operator.clubMember.create({ data: { userId: leader.id, clubId: f.club.id, isOwner: true, accessRole: 'OWNER' } });
     const old = await operator.application.create({ data: { studentId: user.id, clubId: f.club.id, roundId: f.round.id, status: 'REJECTED', submittedAt: new Date(+f.cycles[0].createdAt - 86400000) } });
     await as(user, () => directory.startClubApplication(f.club.id));
-    await assert.rejects(as(leader, () => recruitment.reconsiderRejectedApplication({ clubId: f.club.id, applicationId: old.id, expectedGuard: guard(old), reason: 'Reconsidering after review.' })), /has re-applied/);
+    assert.equal((await refused(as(leader, () => recruitment.reconsiderRejectedApplication({ clubId: f.club.id, applicationId: old.id, expectedGuard: guard(old), reason: 'Reconsidering after review.' })), /has re-applied/)).code, 'REAPPLIED');
     assert.equal((await operator.application.findUniqueOrThrow({ where: { id: old.id } })).status, 'REJECTED');
   });
 });

@@ -26,6 +26,8 @@ function Status({ app, rounds, staged }: { app: Candidate; rounds: Pipeline["rou
 function Rating({ app }: { app: Candidate }) {
   const summary = app.roundScore
   if (!summary) return <span className="oc-applicant-review-hidden oc-dt-muted" title="Hidden until you review"><Lock aria-hidden="true" size={14} />Hidden<span className="sr-only"> until you review</span></span>
+  // Nobody is assigned to review yet (e.g. an interview not held): "0/0 reviews" says nothing.
+  if (summary.average === null && !summary.required && !summary.submitted) return <span className="oc-dt-muted" title="No reviews yet">Not scored yet</span>
   const detail = `${summary.average === null ? `${summary.submitted} of ${summary.required} reviews submitted` : `Average of ${scoredEvaluationsLabel(summary.submitted)}`}${summary.provisional ? " · Provisional" : ""}`
   return <span title={detail}>{summary.average === null ? <span className="oc-dt-muted">{summary.submitted}/{summary.required} reviews</span> : <><strong className="font-semibold">{formatAverage(summary.average)}</strong><span className="oc-dt-muted"> /10{summary.provisional ? "*" : ""}</span></>}<span className="sr-only"> · {detail}</span></span>
 }
@@ -70,7 +72,7 @@ export function LiveDecisionList({ applicants, rounds, open, compact, name, sort
   return <DataTable caption="Applications awaiting a decision" rows={applicants} rowKey={app => app.id} columns={columns} density={compact ? "compact" : "default"}
     onOpen={app => open(app)} openLabel={app => `Review decision for ${name(app)}`} openAttributes={app => ({ "data-applicant-id": app.id })}
     sort={sortBy ? { key: sort, descending, toggle: key => sortBy(key as ApplicantSort) } : undefined}
-    card={{ title: app => name(app), trailing: app => <Status app={app} rounds={rounds} staged={staged} />, meta: app => joinFacts(roundName(rounds, app) || "Round unavailable", app.roundScore?.average != null ? `Rating ${formatAverage(app.roundScore.average)}` : app.roundScore ? `${app.roundScore.submitted}/${app.roundScore.required} reviews` : "Rating hidden until you review") }} />
+    card={{ title: app => name(app), trailing: app => <Status app={app} rounds={rounds} staged={staged} />, meta: app => joinFacts(roundName(rounds, app) || "Round unavailable", app.roundScore?.average != null ? `Rating ${formatAverage(app.roundScore.average)}` : app.roundScore ? (app.roundScore.required || app.roundScore.submitted ? `${app.roundScore.submitted}/${app.roundScore.required} reviews` : "Not scored yet") : "Rating hidden until you review") }} />
 }
 
 export function VotingSelection({app,name,selection}:{app:{id:string;status:string};name:string;selection:NonNullable<Props["votingSelection"]>}){

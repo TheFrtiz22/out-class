@@ -13,8 +13,10 @@ import Link from "next/link"
 import type { User } from "@supabase/supabase-js"
 import "./login.css"
 import { PublicPageFrame } from "@/components/landing/public-page-frame"
+import { clubContextLine } from "@/lib/auth-club-context"
 
-export function SignupPageView({ initialUser, initialError = "", termsAccepted = false }: { initialUser: User | null; initialError?: string; termsAccepted?: boolean }) {
+/** `club`: the public club the visitor came from (see lib/auth-club-context.ts). */
+export function SignupPageView({ initialUser, initialError = "", termsAccepted = false, club }: { initialUser: User | null; initialError?: string; termsAccepted?: boolean; club?: { name: string; follow: boolean } }) {
   const { isImpersonating } = useAuth()
   const demo = useDemoMode()
   const [busy, setBusy] = useState(false)
@@ -40,7 +42,7 @@ export function SignupPageView({ initialUser, initialError = "", termsAccepted =
     <section className="oc-login-auth" aria-labelledby="signup-title">
       <div className="oc-signup-content oc-login-auth-content">
         <h1 id="signup-title" className="oc-auth-title">Create your profile</h1>
-        <p className="oc-login-auth-description">Use your UVA email. Leading a club? Sign up first, then accept your club’s invitation or claim its page.</p>
+        <p className="oc-login-auth-description">{club ? clubContextLine(club.name, club.follow, "signup") : "Use your UVA email. Leading a club? Sign up first, then accept your club’s invitation or claim its page."}</p>
         {MICROSOFT_AUTH_ENABLED && !initialUser && <><Button className="oc-login-uva" disabled={busy} onClick={() => void continueWithUva()}>{busy ? "Redirecting…" : "Continue with UVA"}</Button>{TERMS_ACCEPTANCE_REQUIRED && <p className="oc-login-auth-description">You’ll agree to the <Link href="/terms" target="_blank" rel="noopener" className="underline underline-offset-2">Terms</Link> and <Link href="/privacy" target="_blank" rel="noopener" className="underline underline-offset-2">Privacy Policy</Link> before your profile is created.</p>}<p className="oc-login-auth-description">Or create an account with your UVA email below.</p></>}
         {error && <p role="alert" className="oc-login-error">{error}</p>}
         <fieldset disabled={busy}><StudentOnboardingWizard embedded initialUser={initialUser} termsAccepted={termsAccepted}

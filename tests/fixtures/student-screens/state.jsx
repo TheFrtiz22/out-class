@@ -14,6 +14,8 @@ export async function getClubDirectory() { return { clubs: fixtureClubs } }
 export async function getPublicClub(id) { return { club: fixtureClubs.find(club => club.id === id) || null } }
 export async function startClubApplication() { return { applicationId: 'fixture-app' } }
 export async function searchPublicClubIds() { return null }
+// The fixture has no sessions, so sharing falls back to the page's own address.
+export async function createShortLink() { throw new Error('No short links in the fixture') }
 export function useCorkboard() { return { items: [{ club: fixtureClubs[2], savedAt: '2026-11-01' }], loading: false, authenticated: true, error: '', pending: new Set(), saveClub: async () => {}, refresh: async () => {}, activate: () => {} } }
 export function CorkboardProvider({ children }) { return children }
 export function SavedClubsPopover() { return null }

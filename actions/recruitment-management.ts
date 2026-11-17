@@ -37,30 +37,39 @@ async function saveRecruitmentCycleCommand(input:unknown){
   return {success:true};
  });
 }
+/** Refusals (an archived cycle, an application another leader just moved) are returned as ActionError
+ * results so the leader sees why; see saveRecruitmentCycle. */
 export async function assignApplicationCycle(input:unknown){
+ return actionResult(()=>assignApplicationCycleCommand(input),"assignApplicationCycle");
+}
+async function assignApplicationCycleCommand(input:unknown){
  const d=z.object({clubId:uuid,applicationId:uuid,cycleId:uuid.nullable(),expectedCycleId:uuid.nullable()}).strict().parse(input);
  const {user}=await requireClubPermission(d.clubId,["recruitment.manage","applications.review","applicants.identify"]);
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,d.clubId,user.id,["recruitment.manage","applications.review","applicants.identify"]);
-  if(d.cycleId&&!await tx.recruitmentCycle.findFirst({where:{id:d.cycleId,clubId:d.clubId,archivedAt:null}}))throw Error("Cycle unavailable.");
+  if(d.cycleId&&!await tx.recruitmentCycle.findFirst({where:{id:d.cycleId,clubId:d.clubId,archivedAt:null}}))throw new ActionError("That cycle was archived or removed. Refresh and choose an open cycle.","STALE");
   const result=await tx.application.updateMany({where:{id:d.applicationId,clubId:d.clubId,status:{not:"DRAFTING"},recruitmentCycleId:d.expectedCycleId,round:{anonymousReview:false}},data:{recruitmentCycleId:d.cycleId}});
-  if(result.count!==1)throw Error("Application changed or unavailable.");
+  if(result.count!==1)throw new ActionError("This application changed while you were viewing it. Refresh and try again.","STALE");
   await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.applicationId,action:"recruitment.cycle.assigned",details:{previous:d.expectedCycleId,cycleId:d.cycleId}}});
   return {success:true};
  });
 }
-/** Explicit reconsideration preserves all submitted material and immutable decisions. */
+/** Explicit reconsideration preserves all submitted material and immutable decisions. Refusals
+ * (a decision that changed meanwhile, a student who has re-applied) are returned as ActionError results. */
 export async function reconsiderRejectedApplication(input:unknown){
+ return actionResult(()=>reconsiderRejectedApplicationCommand(input),"reconsiderRejectedApplication");
+}
+async function reconsiderRejectedApplicationCommand(input:unknown){
  const d=z.object({clubId:uuid,applicationId:uuid,expectedGuard:z.string().regex(/^[a-f0-9]{64}$/),reason:z.string().trim().min(10).max(1000)}).strict().parse(input);
  const {user}=await requireClubPermission(d.clubId,["decisions.manage","applicants.identify"]);
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,d.clubId,user.id,["decisions.manage","applicants.identify"]);
   const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,status:"REJECTED",round:{archivedAt:null}}});
-  if(!app||decisionPublicationGuard(app)!==d.expectedGuard)throw Error("Rejected application changed or unavailable.");
+  if(!app||decisionPublicationGuard(app)!==d.expectedGuard)throw new ActionError("This decision changed while you were viewing it. Refresh to see the current status.","STALE");
   // Reopening is unavailable once the student has re-applied: review their current application instead.
-  if(await tx.application.findFirst({where:{studentId:app.studentId,clubId:d.clubId,status:{not:"REJECTED"}},select:{id:true}}))throw Error("This student has re-applied. Review their current application instead.");
+  if(await tx.application.findFirst({where:{studentId:app.studentId,clubId:d.clubId,status:{not:"REJECTED"}},select:{id:true}}))throw new ActionError("This student has re-applied. Review their current application instead.","REAPPLIED");
   const result=await tx.application.updateMany({where:{id:app.id,clubId:d.clubId,status:"REJECTED",decisionVersion:app.decisionVersion,decisionStateRevision:app.decisionStateRevision},data:{status:"IN_REVIEW",decisionVersion:{increment:1}}});
-  if(result.count!==1)throw Error("Rejected application changed or unavailable.");
+  if(result.count!==1)throw new ActionError("This decision changed while you were viewing it. Refresh to see the current status.","STALE");
   await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.applicationId,action:"recruitment.reconsidered",reason:d.reason,details:{previousStatus:"REJECTED",status:"IN_REVIEW",previousVersion:app.decisionVersion}}});
   return {success:true};
  });

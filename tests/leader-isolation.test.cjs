@@ -37,8 +37,8 @@ test('board decisions use the expected status and reject stale writes',async()=>
 test('round moves atomically check the expected round within the authorized club',async()=>{
  const expectedRoundId='00000000-0000-4000-8000-000000000004', roles=[]
  const action=unwrapActions(load('actions/crm.ts',{pipelineRound:{findFirst:async()=>({id:newRoundId})},application:{findFirst:async()=>({id:applicationId,clubId,status:'IN_REVIEW'}),updateMany:async args=>{
-   assert.deepEqual(args.where,{id:applicationId,clubId,status:{not:'DRAFTING'},roundId:expectedRoundId})
-   assert.deepEqual(args.data,{roundId:newRoundId})
+   assert.deepEqual(args.where,{id:applicationId,clubId,status:'IN_REVIEW',roundId:expectedRoundId},'the move applies only to the status it was computed from')
+   assert.deepEqual(args.data,{roundId:newRoundId,status:'IN_REVIEW'})
    return {count:0}
  }}},roles))
  await assert.rejects(action.moveApplicantRound({clubId,applicationId,newRoundId,expectedRoundId}),/Application changed/)

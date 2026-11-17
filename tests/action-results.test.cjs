@@ -55,6 +55,17 @@ test('application submit returns closed intake and missing profile as safe failu
   assert.deepEqual(JSON.parse(JSON.stringify(submitted)), submitted);
 });
 
+test('an answer over the length limit is a message the student can act on, for drafts and submits, at the boundary', async () => {
+  const long = n => ({ clubId, answers: [{ questionId, response: 'x'.repeat(n) }] });
+  for (const call of ['saveApplicationDraft', 'submitApplication']) {
+    const refused = await applications()[call](long(100001));
+    assert.equal(refused.ok, false);
+    assert.equal(refused.code, 'TOO_LONG');
+    assert.match(userMessage(refused, fallback), /longer than 100,000 characters/);
+    assert.equal((await applications()[call](long(100000))).ok, true, 'exactly at the limit still saves');
+  }
+});
+
 test('application success is wrapped and unexpected errors still throw', async () => {
   const saved = await applications().submitApplication(input);
   assert.deepEqual(saved, { $action: 'outclass.action/v1', ok: true, data: { success: true, applicationId: 'app' } });
@@ -101,4 +112,25 @@ test('returned refusals are logged at info with only the action name and code', 
   } finally { console.info = info; }
   assert.deepEqual(logged.map(line => JSON.parse(line)), [{ event: 'action.refused', action: 'submitApplication', code: 'ACTION_REFUSED' }]);
   assert.ok(!logged.join('').includes('closed'), 'the refusal message is not logged');
+});
+
+test('publishing interview booking too early returns the real reason, not the generic save failure', async () => {
+  const roundId = '00000000-0000-4000-8000-000000000003';
+  const round = { id: roundId, clubId, anonymousReview: false, bookingRevision: 0, bookingCycleId: null, bookingPublishedAt: null, bookingPaused: false };
+  const load = coverage => loader({
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'leader' } }) },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn({ pipelineRound: { findFirst: async () => round } }) } },
+    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
+    '@/utils/interview-booking': { interviewBookingCoverage: async () => coverage },
+    '@/utils/applicant-booking-notifications': { notifyBookingPublished: async () => { throw Error('must not notify') } },
+    '@/lib/interview-rooms': { bookingSlotSnapshot: () => ({}) },
+    'next/cache': { revalidatePath: () => {} },
+  })('actions/interview-booking-publication.ts');
+  const publish = { clubId, roundId, revision: 0, action: 'PUBLISH', cycleId: null, allowCancellation: true, allowRescheduling: true };
+  const noInterviewers = await load([{ slotId: 's1', unoffered: true, bookable: false, reasons: [] }]).setInterviewBookingPublication(publish);
+  assert.deepEqual([noInterviewers.ok, noInterviewers.error], [false, 'Add interviewers to at least one time before publishing the schedule.']);
+  const noTimes = await load([]).setInterviewBookingPublication(publish);
+  assert.deepEqual([noTimes.ok, noTimes.error], [false, 'Add upcoming interview times before publishing the schedule.']);
+  const stale = await load([]).setInterviewBookingPublication({ ...publish, revision: 4 });
+  assert.deepEqual([stale.ok, stale.error], [false, 'Booking settings changed in another tab. Reload and try again.']);
 });

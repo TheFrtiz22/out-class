@@ -1,5 +1,6 @@
 const {test}=require('node:test')
 const assert=require('node:assert/strict')
+const { unwrapActions } = require('./helpers/action-result.cjs')
 const fs=require('node:fs')
 const ts=require('typescript')
 function load(file,mocks={}){
@@ -58,12 +59,12 @@ test('resume upload refuses public buckets and issues only an owner-scoped priva
  process.env.SUPABASE_SECRET_KEY='test-only'
  for(const isPublic of [true,false]){
   let signed
-  const api=load('actions/storage.ts',{
+  const api=unwrapActions(load('actions/storage.ts',{
    '@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},
    'next/headers':{cookies:async()=>({})},
    '@/utils/supabase/server':{createClient:async()=>({storage:{from:()=>({createSignedUploadUrl:async path=>{signed=path;return{data:{signedUrl:'https://upload.test',token:'token'}}},uploadToSignedUrl:async()=>({error:null})})}})},
    '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:isPublic}}),from:()=>({list:async()=>({data:[],error:null})})}})},
-  })
+  }))
   const form=new FormData();form.set('kind','resume');form.set('file',new Blob(['%PDF-fixture'],{type:'application/pdf'}),'application.pdf');
   if(isPublic){await assert.rejects(api.uploadProfileFile(form),/unavailable/);assert.equal(signed,undefined)}
   else{

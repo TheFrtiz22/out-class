@@ -353,7 +353,7 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
       {!rounds.length && (
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>Recruiting has no rounds yet, so there is nothing to review or schedule.</p>
-          <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=cycles`}>Set up recruitment rounds</Link>
+          <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=settings&setting=pipeline`}>Set up recruitment rounds</Link>
         </div>
       )}
       <RecruitmentReviewSettings
