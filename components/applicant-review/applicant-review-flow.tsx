@@ -29,6 +29,7 @@ import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
 import { useStagedDecisions, type StagedDecisions } from "@/hooks/use-staged-decisions"
 import { announceDataChanged } from "@/hooks/use-revalidate"
 import { moveApplicantRound, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+import { userMessage } from "@/lib/user-message"
 import { hasPermission } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
@@ -124,7 +125,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const refresh = () => { setRevision(value => value + 1); onChanged?.() }
   async function run(work: () => Promise<unknown>, success: string, failure: string) {
     setBusy(true); setMessage("")
-    try { await work(); setMessage(success); setPanel(null); refresh(); announceDataChanged("applicants") } catch { setMessage(failure) } finally { setBusy(false) }
+    try { await work(); setMessage(success); setPanel(null); refresh(); announceDataChanged("applicants") } catch (error) { setMessage(userMessage(error, failure)) } finally { setBusy(false) }
   }
 
   const canReview = hasPermission(membership, "applications.review")
