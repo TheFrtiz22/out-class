@@ -17,7 +17,8 @@ const previewRosterImport = unwrapped(previewRosterImportAction), confirmRosterI
 type Preview = Awaited<ReturnType<typeof previewRosterImport>>;
 const labels = { READY: "Ready", INVALID: "Invalid", DUPLICATE: "Duplicate", ALREADY_MEMBER: "Already a member", ALREADY_INVITED: "Already invited" };
 
-export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onImported?: () => Promise<void> }) {
+/** `framed={false}` drops the card border and heading when a sheet or dialog already titles the import. */
+export function RosterCsvImporter({ clubId, onImported, framed = true }: { clubId: string; onImported?: () => Promise<void>; framed?: boolean }) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [result, setResult] = useState<Awaited<ReturnType<typeof confirmRosterImport>> | null>(null);
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
@@ -58,8 +59,8 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
     catch (e) { setError(userMessage(e, "Could not confirm import. Try again.")); }
     finally { working.current = false; setBusy(false); }
   }
-  return <section className="space-y-4 rounded-xl border p-4 sm:p-6" aria-label="CSV member roster import" aria-busy={busy} data-saving={busy} data-unsaved={!!preview && !result?.completed}>
-    <div><h2 className="oc-section-heading ">Import member roster</h2><p className="text-sm text-muted-foreground">Upload <ArrowRight size={14} aria-hidden="true" className="inline align-[-0.125em]" /> preview <ArrowRight size={14} aria-hidden="true" className="inline align-[-0.125em]" /> confirm. Required: name, computing_id. Optional: graduation year ({graduationYearRange().min}–{graduationYearRange().max}). Up to {ROSTER_MAX_ROWS.toLocaleString()} rows and 1 MB.</p></div>
+  return <section className={framed ? "space-y-4 rounded-xl border p-4 sm:p-6" : "space-y-4"} aria-label="CSV member roster import" aria-busy={busy} data-saving={busy} data-unsaved={!!preview && !result?.completed}>
+    <div>{framed && <h2 className="oc-section-heading">Import member roster</h2>}<p className="text-sm text-muted-foreground">Upload <ArrowRight size={14} aria-hidden="true" className="inline align-[-0.125em]" /> preview <ArrowRight size={14} aria-hidden="true" className="inline align-[-0.125em]" /> confirm. Required: name, computing_id. Optional: graduation year ({graduationYearRange().min}–{graduationYearRange().max}). Up to {ROSTER_MAX_ROWS.toLocaleString()} rows and 1 MB.</p></div>
     <div className="rounded-xl border border-dashed bg-muted/20 p-4 transition-colors hover:bg-muted/40 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30 sm:p-5" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (working.current) return; if (e.dataTransfer.files.length !== 1) { setError("Upload one CSV file at a time."); return; } void load(e.dataTransfer.files[0]); }}>
       <label className="block space-y-2"><span className="text-sm">Drop a CSV here or choose a file</span><Input type="file" accept=".csv,text/csv" aria-describedby={`roster-help-${clubId}`} aria-invalid={!!error} disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.target.value = ""; void load(file); }} /></label>
       <p id={`roster-help-${clubId}`} className="mt-3 text-control leading-5 text-muted-foreground">Column order may vary. Supported headers include Full Name, Graduation Year, and Computing ID. Ambiguous columns such as email or ID are rejected.</p>

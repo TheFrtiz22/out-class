@@ -197,7 +197,7 @@ export async function startClubApplication(clubId: string): Promise<{ applicatio
       select: { applicationOpen: true, applicationDeadline: true },
     });
     if (!club || !applicationAvailability(club))
-      throw new Error("Applications are closed for this club.");
+      return { applicationId: null, unavailable: "Applications are closed for this club." };
     const unavailable = await reapplicationUnavailable(tx, user.id, clubId);
     if (unavailable) return { applicationId: null, unavailable };
     const round = await tx.pipelineRound.findFirst({
@@ -205,7 +205,7 @@ export async function startClubApplication(clubId: string): Promise<{ applicatio
       orderBy: { order: "asc" },
     });
     if (!round)
-      throw new Error("Applications are not available for this club.");
+      return { applicationId: null, unavailable: "Applications are not available for this club." };
     const application = await tx.application.create({
       data: {
         studentId: user.id,

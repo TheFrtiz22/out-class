@@ -66,10 +66,9 @@ export function ClubAccessEditor({
     }
   }
   return (
-    <div className="space-y-6" data-saving={busy} data-unsaved={target ? JSON.stringify([...selected].sort()) !== JSON.stringify([...target.permissions].sort()) || owner !== target.isOwner : !!email.trim()}>
-      <p>
-        Capabilities apply only to this club. Owners retain every capability. Only owners can
-        appoint or change other owners. Anonymous reviewers need only “Review applications”. Identified review, identity reveals, moving applicants, and recording decisions require “View identified applicants”.
+    <div className="space-y-5" data-saving={busy} data-unsaved={target ? JSON.stringify([...selected].sort()) !== JSON.stringify([...target.permissions].sort()) || owner !== target.isOwner : !!email.trim()}>
+      <p className="text-sm leading-6 text-muted-foreground">
+        These apply only to this club. Owners have every capability, and only owners can make or change owners.
       </p>
       <fieldset disabled={busy || higherAuthority || !hasPermission(actor, "leaders.manage")} className="space-y-4">
         {!selectedMemberId && !inviteOnly && <label className="block">
@@ -117,11 +116,13 @@ export function ClubAccessEditor({
             ))}
           </NativeSelect>
         </label>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <p className="text-xs leading-5 text-muted-foreground">Anonymous reviewers need only “Review applications”. Seeing names, revealing identities, moving applicants and recording decisions also need “View identified applicants”.</p>
+        <div className="grid gap-x-3 sm:grid-cols-2">
           {clubPermissions.map((p) => (
             <label key={p} className="flex min-h-11 items-center gap-3">
               <input
                 type="checkbox"
+                className="oc-checkbox"
                 checked={selected.includes(p)}
                 disabled={!hasPermission(actor, p)}
                 onChange={(e) =>
@@ -134,10 +135,11 @@ export function ClubAccessEditor({
         </div>
         {memberId && (
           <label className="flex min-h-11 items-center gap-3">
-            <input type="checkbox" disabled={!actor?.isOwner} checked={owner} onChange={(e) => setOwner(e.target.checked)} />
+            <input type="checkbox" className="oc-checkbox" disabled={!actor?.isOwner} checked={owner} onChange={(e) => setOwner(e.target.checked)} />
             Club owner
           </label>
         )}
+        <div className="flex flex-wrap gap-2">
         <Button
           onClick={() =>
             void run(async () => {
@@ -155,17 +157,18 @@ export function ClubAccessEditor({
           {memberId ? "Save access" : "Create invitation"}
         </Button>
         {memberId && <Button variant="outline" onClick={() => void run(() => updateClubAccess({ clubId, memberId, permissions: [], isOwner: false }))}>Revoke management access</Button>}
+        </div>
       </fieldset>
       {higherAuthority && <p className="text-sm text-muted-foreground">Only an owner can change this member’s higher-authority access.</p>}
-      <p role="status">{message}</p>
-      {!selectedMemberId && <><h2 className="oc-section-heading ">Pending invitations</h2>
-      <p className="text-sm text-muted-foreground">
-        Copy and share the invitation link. Email delivery is not configured by this feature.
-      </p>
+      <p role="status" className="text-sm empty:hidden">{message}</p>
+      {!selectedMemberId && <><h2 className="oc-section-heading">Pending invitations</h2>
+      {data.invitations.length ? <p className="text-sm text-muted-foreground">
+        OutClass doesn’t email these invitations. Send each person their invitation link yourself.
+      </p> : <p className="text-sm text-muted-foreground">No pending invitations.</p>}
       {data.invitations.map((i) => (
         <div key={i.id} className="flex flex-wrap items-center gap-3 border-b py-3">
           <span className="min-w-0 break-all">{i.email}</span>
-          <a className="underline" href={`/invitations/${i.id}`}>
+          <a className="text-sm underline underline-offset-4" href={`/invitations/${i.id}`}>
             Invitation link
           </a>
           <Button

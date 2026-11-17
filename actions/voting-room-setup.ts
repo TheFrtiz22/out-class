@@ -23,7 +23,7 @@ export async function getLiveVotingSetup(input:unknown){
   return prisma.$transaction(async tx=>{
     const m=await authorizeClubTransaction(tx,d.clubId,user.id,["applications.review","decisions.manage","decisions.start"],{readOnly:true});
     const cycles=await tx.recruitmentCycle.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true},orderBy:{createdAt:"desc"}});
-    const roundRows=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true,anonymousReview:true,club:{select:{profileFieldVisibility:true}}},orderBy:{order:"asc"}});
+    const roundRows=await tx.pipelineRound.findMany({where:{clubId:d.clubId,archivedAt:null},select:{id:true,name:true,type:true,anonymousReview:true,club:{select:{profileFieldVisibility:true}}},orderBy:{order:"asc"}});
     // The club's applicant profile setting is the ceiling for slide fields (read with the rounds, same snapshot).
     const profileFields=normalizeProfileFieldVisibility(roundRows[0]?.club?.profileFieldVisibility);
     const rounds=roundRows.map(({club:_club,...r})=>r);
@@ -33,6 +33,8 @@ export async function getLiveVotingSetup(input:unknown){
     const apps=round&&cycle?await tx.application.findMany({where:{clubId:d.clubId,roundId:round.id,recruitmentCycleId:cycle.id,status:{in:["SUBMITTED","IN_REVIEW","INTERVIEWING","WAITLISTED"]}},select:{id:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}},orderBy:[{submittedAt:"asc"},{id:"asc"}]}):[];
     const members=await tx.clubMember.findMany({where:{clubId:d.clubId,...activeMemberWhere,user:{disabledAt:null}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true,graduatedAt:true}}}}}});
     const voters=members.filter(v=>!isGraduatedMember(v)&&hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")&&(!round||round.anonymousReview||hasPermission(v,"applicants.identify")));
+    // People who interviewed this round's applicants start ticked as voters, next to the officers.
+    const interviewed=new Set(round?(await tx.interviewRecord.findMany({where:{roundId:round.id,completedAt:{not:null},application:{clubId:d.clubId,...(cycle?{recruitmentCycleId:cycle.id}:{})}},select:{interviewerId:true},distinct:["interviewerId"]})).map(r=>r.interviewerId):[]);
     const evidence=interviewCapabilities(m);
     const ownReview=await tx.interviewRecord.findFirst({where:{interviewerId:m.id,completedAt:{not:null},application:{clubId:d.clubId}},select:{id:true}});
     const panel=await tx.interviewPanelAssignment.findFirst({where:{memberId:m.id,revokedAt:null,application:{clubId:d.clubId}},select:{id:true}});
@@ -41,7 +43,7 @@ export async function getLiveVotingSetup(input:unknown){
     const hiddenProfileFields=permittedFields.filter(f=>!allowedByProfileCeiling(f,profileFields));
     const ruleRows=await tx.votingRuleDefault.findMany({where:{clubId:d.clubId,OR:[{roundId:null},...(round?[{roundId:round.id}]:[])]}});
     const ruleRow=ruleRows.find(r=>round&&r.roundId===round.id)??ruleRows.find(r=>r.roundId===null);
-    return {memberId:m.id,timeZone:"America/New_York",cycles,rounds,allowedFields,hiddenProfileFields,canEditProfileFields:hasPermission(m,"club.settings"),defaultRules:readVotingRules(ruleRow?.rules),defaultRulesSource:ruleRow?(ruleRow.roundId?"round" as const:"club" as const):null,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,defaultSelected:!!v.interviewOffices?.some(o=>["PRESIDENT","VICE_PRESIDENT","BOARD"].includes(o)),label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
+    return {memberId:m.id,timeZone:"America/New_York",cycles,rounds,allowedFields,hiddenProfileFields,canEditProfileFields:hasPermission(m,"club.settings"),defaultRules:readVotingRules(ruleRow?.rules),defaultRulesSource:ruleRow?(ruleRow.roundId?"round" as const:"club" as const):null,applicants:apps.map(a=>({id:a.id,label:round?.anonymousReview?anonymousApplicantLabel(a.id):a.student.studentProfile?`${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}`:"Applicant"})),voters:voters.map(v=>({id:v.id,defaultSelected:!!v.interviewOffices?.some(o=>["PRESIDENT","VICE_PRESIDENT","BOARD"].includes(o))||interviewed.has(v.id),label:v.user.studentProfile?`${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}`:"Club member"}))};
   },votingReadLimits);
 }
 

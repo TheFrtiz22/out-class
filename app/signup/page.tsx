@@ -6,6 +6,8 @@ import { redirect } from "next/navigation"
 import { TERMS_ACCEPTANCE_REQUIRED } from "@/lib/legal-versions"
 import { hasCurrentTermsAcceptance } from "@/utils/terms-acceptance"
 import { prisma } from "@/utils/prisma"
+import { returnClub } from "@/lib/auth-club-context"
+import { getPublicClubSeo } from "@/lib/public-club-seo"
 
 export const metadata = { title: "Create your profile", robots: { index: false, follow: false } }
 
@@ -17,5 +19,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   if (account?.hasProfile) redirect(next === "/" ? account.destination : next)
   // A signed-in account finishing its profile (Microsoft, confirmed link) is asked once, unless it already accepted.
   const termsAccepted = !!account?.user && TERMS_ACCEPTANCE_REQUIRED && await hasCurrentTermsAcceptance(prisma, account.user.id).catch(() => false)
-  return <SignupPageView initialUser={account?.user ?? null} initialError={authenticationError(params.error)} termsAccepted={termsAccepted} />
+  const target = returnClub(next)
+  const club = target ? await getPublicClubSeo(target.ref) : null
+  return <SignupPageView initialUser={account?.user ?? null} initialError={authenticationError(params.error)} termsAccepted={termsAccepted} club={club && target ? { name: club.name, follow: target.follow } : undefined} />
 }

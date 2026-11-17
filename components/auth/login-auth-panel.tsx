@@ -24,18 +24,20 @@ type LoginAuthPanelProps = EmailLoginFormProps & {
   onDifferentEmail: () => void
   onBack: () => void
   onCreateAccount?: () => void
+  /** Replaces the default line under "Welcome back". */
+  description?: string
   /** Bot check shared by password sign-in and code requests. */
   security?: ReactNode
 }
 
 export function LoginAuthPanel(props: LoginAuthPanelProps) {
-  const { step, emailExpanded, email, code, notice, error, loading, microsoftLoading, resendSeconds, onToggleEmail, onCodeChange, onMicrosoftLogin, onVerifyCode, onRequestCode, onDifferentEmail, onCreateAccount } = props
+  const { step, emailExpanded, email, code, notice, error, loading, microsoftLoading, resendSeconds, onToggleEmail, onCodeChange, onMicrosoftLogin, onVerifyCode, onRequestCode, onDifferentEmail, onCreateAccount, description } = props
   const emailToggle = useRef<HTMLButtonElement>(null)
   return (
     <section className="oc-login-auth" aria-labelledby="login-auth-title">
       <div className="oc-login-auth-content">
         <h1 id="login-auth-title" className="oc-auth-title">{step === "email" ? "Welcome back" : "Check your inbox"}</h1>
-        <p className="oc-login-auth-description">{step === "email" ? "Sign in with your UVA account." : <>Enter the six-digit code for <strong>{email}</strong>.</>}</p>
+        <p className="oc-login-auth-description">{step === "email" ? (description ?? "Sign in with your UVA account.") : <>Enter the six-digit code for <strong>{email}</strong>.</>}</p>
         {step === "email" ? (
           <>
             {MICROSOFT_AUTH_ENABLED && <>

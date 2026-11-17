@@ -8,6 +8,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog"
 import { TurnstileWidget } from "@/components/security/turnstile-widget"
 import { turnstileRequired, TURNSTILE_PENDING } from "@/lib/turnstile"
 import { cancelAccountDeletion, requestAccountDeletion } from "@/actions/account-deletion"
+import { unwrapAction } from "@/lib/action-result"
 import { accountDeletionConfirmationMatches } from "@/lib/account-deletion"
 import { userMessage } from "@/lib/user-message"
 
@@ -35,7 +36,7 @@ export function AccountDeletion({ email, passwordAccount, pending: initial, warn
     if (!ok) return
     setBusy(true)
     try {
-      const result = await requestAccountDeletion({ confirmation: typed, ...(passwordAccount ? { password, turnstileToken: turnstileToken ?? undefined } : {}) })
+      const result = unwrapAction(await requestAccountDeletion({ confirmation: typed, ...(passwordAccount ? { password, turnstileToken: turnstileToken ?? undefined } : {}) }))
       setPending({ requestedAt: result.requestedAt, scheduledFor: result.scheduledFor, emailSent: result.emailSent })
       setWarnings(result.warnings)
       setTyped(""); setPassword("")
@@ -48,7 +49,7 @@ export function AccountDeletion({ email, passwordAccount, pending: initial, warn
   async function cancel() {
     setMessage(""); setError(""); setBusy(true)
     try {
-      await cancelAccountDeletion()
+      unwrapAction(await cancelAccountDeletion())
       setPending(null)
       setMessage("Deletion cancelled. Your account stays as it is.")
       router.refresh()

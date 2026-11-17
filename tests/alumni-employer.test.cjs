@@ -1,3 +1,4 @@
+const { unwrapActions } = require('./helpers/action-result.cjs');
 // Alumni part 2 (lib/graduation.ts, utils/graduation.ts, actions/graduation.ts, actions/club-alumni.ts):
 // alumni are refused every active feature server-side, the employer is validated and saved, the
 // placement merge is idempotent and anonymous, the Alumni tab is for current members only, and both
@@ -402,7 +403,7 @@ test('alumni: requesting to claim a club and accepting an emailed club invitatio
     auditLog: { create: async () => assert.fail() },
   }
   const prisma = { club: { findUnique: async () => ({ id: clubId }) }, $transaction: fn => fn(tx) }
-  const workspace = load('actions/club-workspace.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'grad' } }), requireClubPermission: async () => assert.fail() }, 'next/cache': { revalidatePath() {}, revalidateTag() {} } })
+  const workspace = unwrapActions(load('actions/club-workspace.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'grad' } }), requireClubPermission: async () => assert.fail() }, 'next/cache': { revalidatePath() {}, revalidateTag() {} } }))
   await assert.rejects(workspace.requestClubClaim(clubId, 'I am the president of this club.'), e => e.message === g.ALUMNI_REFUSALS.join)
   // Email invitations (not identity or offer invitations, which share the existing guards) recheck too.
   assert.match(src('actions/club-access.ts'), /if \(existing && !isActiveMembership\(existing\)\) throw new ActionError\("Membership is inactive\. Request a new identity invitation\."\);\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "join"\);\n[\s\S]{0,200}const permissions/)

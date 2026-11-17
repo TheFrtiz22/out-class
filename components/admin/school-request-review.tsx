@@ -10,6 +10,10 @@ import { schoolRequestStatuses, schoolRequestRoleLabels, type schoolRequestRoles
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
+import { EmptyState } from "@/components/ui/empty-state"
+
+const statusLabels: Record<string, string> = { PENDING: "Pending", IN_REVIEW: "In review", CONTACTED: "Contacted", CLOSED: "Closed" }
+const statusLabel = (value: string) => statusLabels[value] ?? value
 import { Panel } from "@/components/ui/panel"
 
 function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: () => void }) {
@@ -18,7 +22,7 @@ function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: ()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   return <Panel as="article" className="space-y-4">
-    <div><p className="text-sm text-muted-foreground">{row.status.replaceAll("_", " ")} · {new Date(row.createdAt).toLocaleDateString()}</p><h2 className="oc-section-heading">{row.university}</h2></div>
+    <div><p className="text-sm text-muted-foreground">{statusLabel(row.status)} · {new Date(row.createdAt).toLocaleDateString()}</p><h2 className="oc-section-heading">{row.university}</h2></div>
     <p>{row.fullName} · {schoolRequestRoleLabels[row.role as (typeof schoolRequestRoles)[number]]}<br /><a className="break-all underline" href={`mailto:${row.email}`}>{row.email}</a>{row.organization && <><br />{row.organization}</>}</p>
     {row.message && <p className="whitespace-pre-wrap break-words text-sm">{row.message}</p>}
     {row.reviewedAt && <p className="text-xs text-muted-foreground">Last reviewed {new Date(row.reviewedAt).toLocaleString()} by {row.reviewedBy}</p>}
@@ -30,7 +34,7 @@ function RequestReview({ row, onReviewed }: { row: SchoolRequest; onReviewed: ()
       catch (e) { setError(userMessage(e, "Review could not be saved.")) }
       finally { setBusy(false) }
     }}>
-      <label className="block space-y-1"><span className="text-sm">Review status</span><NativeSelect className="block" value={status} onChange={event => setStatus(event.target.value)}>{schoolRequestStatuses.map(value => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}</NativeSelect></label>
+      <label className="block space-y-1"><span className="text-sm">Review status</span><NativeSelect className="block" value={status} onChange={event => setStatus(event.target.value)}>{schoolRequestStatuses.map(value => <option key={value} value={value}>{statusLabel(value)}</option>)}</NativeSelect></label>
       <label className="block space-y-1"><span className="text-sm">Review note</span><Textarea required minLength={10} maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></label>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <Button disabled={busy || note.trim().length < 10} type="submit">{busy ? "Saving…" : "Save review"}</Button>
@@ -53,10 +57,10 @@ export function SchoolRequestReview() {
   }, [status, page, refresh])
   return <section className="space-y-5">
     <p className="text-sm text-muted-foreground">These are expressions of interest. Reviewing or closing a request never approves a university or grants account access.</p>
-    <div className="space-y-1"><span className="block">Filter by status</span><PillGroup label="Filter by status" size="compact" value={status} onChange={value => { setStatus(value); setPage(0) }} options={[{ value: "", label: "All requests" }, ...schoolRequestStatuses.map(value => ({ value, label: value.replaceAll("_", " ") }))]} /></div>
+    <div className="space-y-1"><span className="block">Filter by status</span><PillGroup label="Filter by status" size="compact" value={status} onChange={value => { setStatus(value); setPage(0) }} options={[{ value: "", label: "All requests" }, ...schoolRequestStatuses.map(value => ({ value, label: statusLabel(value) }))]} /></div>
     {error && <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(value => value + 1)}>Try again</Button></div>}
     {loading ? <LoadingState label="Loading school requests…" layout="table" rows={3} /> : !error && <>
-      {result.rows.length ? result.rows.map(row => <RequestReview key={`${row.id}:${row.revision}`} row={row} onReviewed={() => setRefresh(value => value + 1)} />) : <p>No matching school requests.</p>}
+      {result.rows.length ? result.rows.map(row => <RequestReview key={`${row.id}:${row.revision}`} row={row} onReviewed={() => setRefresh(value => value + 1)} />) : <EmptyState density="compact" align="start" tone="outlined" title="No school requests" description={status ? "None have this status. Choose All requests to see the rest." : "Requests from the public Request your school form appear here."} />}
       <div className="flex items-center gap-4"><Button variant="outline" disabled={page === 0} onClick={() => setPage(value => value - 1)}>Previous</Button><span>Page {page + 1}</span><Button variant="outline" disabled={!result.hasMore} onClick={() => setPage(value => value + 1)}>Next</Button></div>
     </>}
   </section>

@@ -56,7 +56,7 @@ export function VotingSlidePreparation({clubId,sessionId}:{clubId:string;session
     <div className="vr-prep-layout">
       <nav aria-label="Applicants" className="vr-prep-list">
         <p className="text-sm" role="status">{missing?`${missing} of ${overview.applicants.length} without highlights`:"Every applicant has at least one highlight"}</p>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={missingOnly} onChange={e=>setMissingOnly(e.target.checked)}/> Show only missing</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="oc-checkbox" checked={missingOnly} onChange={e=>setMissingOnly(e.target.checked)}/> Show only missing</label>
         <ul>{list.map(a=><li key={a.applicationId}><button type="button" aria-current={selected===a.applicationId?"true":undefined} onClick={()=>choose(a.applicationId)} className="vr-prep-applicant">
           <span><span className="block">{a.name}</span>{a.highlightCount>0&&<span className="block text-xs text-muted-foreground" data-slide-timing={a.timing}>{slideTimingShort[a.timing]}</span>}</span>
           <span className={a.highlightCount?"text-muted-foreground":"vr-prep-missing"}>{a.highlightCount?`${a.highlightCount} of ${maxSlideHighlights}`:<><TriangleAlert aria-hidden="true" size={14}/> None</>}</span>

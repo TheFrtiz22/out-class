@@ -231,3 +231,12 @@ test('open and not-open filters partition the full directory without hiding club
   assert.equal(directoryFiltersFromParams(saved).recruitment, 'closed')
   assert.equal(directoryFiltersFromParams(new URLSearchParams('recruitment=invalid')).recruitment, 'all')
 })
+test("a closed club or one with no round returns its reason instead of throwing, so production shows it", async () => {
+  const actions = (club, round) => load("actions/club-directory.ts", {
+    "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": { requireAuth: async () => ({ user: { id: "student" } }) },
+    "@/utils/prisma": { prisma: { club: { findUnique: async () => club }, application: { findFirst: async () => null, create: async () => { throw new Error("must not create") } }, pipelineRound: { findFirst: async () => round } } },
+  })
+  assert.deepEqual(await actions({ applicationOpen: false, applicationDeadline: null }, { id: "r" }).startClubApplication("club"), { applicationId: null, unavailable: "Applications are closed for this club." })
+  assert.deepEqual(await actions({ applicationOpen: true, applicationDeadline: new Date(Date.now() - 60000) }, { id: "r" }).startClubApplication("club"), { applicationId: null, unavailable: "Applications are closed for this club." })
+  assert.deepEqual(await actions({ applicationOpen: true, applicationDeadline: null }, null).startClubApplication("club"), { applicationId: null, unavailable: "Applications are not available for this club." })
+})

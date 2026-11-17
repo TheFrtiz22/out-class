@@ -44,7 +44,7 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
   const identity = `${clubId}:${roundId}:${cycleId}:${demo.isDemoEnabled}:${member.permissions?.join()}`;
   const [rooms, setRooms] = useState<{ identity: string; rows: Rooms; failed?: boolean } | null>(null), [retry, setRetry] = useState(0);
   const [allRooms, setAllRooms] = useState<Rooms | null>(null);
-  const [managedRounds, setManagedRounds] = useState<{ id: string; name: string }[] | null>(null);
+  const [managedRounds, setManagedRounds] = useState<{ id: string; name: string; active?: number }[] | null>(null);
   useEffect(() => {
     if (!access.canVote || !demo.ready) return;
     let current = true;
@@ -59,10 +59,10 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
   useEffect(() => {
     if (!demo.ready) return;
     let current = true;
-    if (canManageRounds) getWorkspaceRounds(clubId).then(rows => { if (current) setManagedRounds(rows.map(r => ({ id: r.id, name: r.name }))) }).catch(() => { if (current) setManagedRounds(null) });
+    if (canManageRounds) getWorkspaceRounds(clubId, cycleId ? { cycleId } : {}).then(rows => { if (current) setManagedRounds(rows.map(r => ({ id: r.id, name: r.name, active: r.active }))) }).catch(() => { if (current) setManagedRounds(null) });
     else if (access.canVote) listLiveVotingRooms({ clubId }).then(rows => { if (current) setAllRooms(rows) }).catch(() => { if (current) setAllRooms(null) });
     return () => { current = false };
-  }, [clubId, canManageRounds, access.canVote, demo.ready]);
+  }, [clubId, cycleId, canManageRounds, access.canVote, demo.ready]);
   const rows = rooms?.identity === identity ? rooms.rows : null, roomsFailed = !!rooms?.failed && rooms.identity === identity;
   const counts = rows ? decideCounts(rows) : null;
   const rounds = managedRounds ?? (allRooms ? roundsFromRooms(allRooms) : []);

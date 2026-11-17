@@ -22,7 +22,7 @@
   [data-product-shell="manager"] .oc-meeting-list { gap: .625rem; }
   [data-product-shell="manager"] .oc-meeting-list > li > button.oc-content-panel { gap: .75rem; padding: .875rem 1rem; }
   [data-product-shell="manager"] .oc-meeting-list > li > button.oc-content-panel h3 { margin-top: .125rem; font-size: 1rem; }
-  [data-product-shell="manager"] .oc-meeting-list > li > button.oc-content-panel :is(p.mt-3, p.mt-4) { margin-top: .375rem; }
+  [data-product-shell="manager"] .oc-meeting-list > li > button.oc-content-panel p.mt-1\.5 { margin-top: .375rem; }
   [data-product-shell="manager"] .oc-meeting-list > li > button.oc-content-panel p { font-size: var(--oc-text-caption); }
   [data-product-shell="manager"] .oc-meeting-list > li > div { margin-top: .25rem; padding-inline: 1rem; font-size: var(--oc-text-caption); }
   [data-product-shell="manager"] .oc-meeting-list > li > div .oc-button { height: 36px; min-height: 36px; }
