@@ -22,7 +22,8 @@ import { notificationGroups, notificationPriority } from "@/lib/student-agenda"
 import { toast } from "sonner"
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
-import { Panel } from "@/components/ui/panel"
+import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/ui/empty-state"
 import { pluralize } from "@/lib/copy/terms"
 import { notificationSettingsHref } from "@/lib/settings-navigation"
 
@@ -121,8 +122,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   return (
     <div className="oc-inbox-workspace max-w-[var(--oc-content-width)] space-y-6 text-foreground">
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
-      {showFilters && <Panel className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
+      {showFilters && <div className="oc-toolbar">
           <SearchField aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} containerClassName="min-w-0 flex-1 basis-60" />
           <SegmentedControl label="Read status" size="compact" value={readFilter} onChange={setReadFilter} options={[{ value: "all", label: "All" }, { value: "unread", label: "Unread", count: unread || undefined }, { value: "read", label: "Read" }]} />
           <FilterPopover title="Notification filters" align="end" count={[filter !== "All", club !== "all", sort !== "priority"].filter(Boolean).length}>
@@ -139,8 +139,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
             </div>
           </FilterPopover>
           {filtering && (<Button variant="ghost" size="sm" onClick={() => { resetFilters(); setSort("priority") }}>Clear filters</Button>)}
-        </div>
-      </Panel>}
+      </div>}
       <div
         className={cn(
           "grid items-start gap-8",
@@ -189,7 +188,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   size="sm"
                   variant="ghost"
                   onClick={() => remove(checkedIds)}
-                  className="text-red-600"
+                  className="text-destructive"
                 >
                   <Trash2 className="size-4" />
                   Delete
@@ -216,7 +215,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     <div
                       key={item.id}
                       className={cn(
-                        "flex items-start gap-3 border-l-2 border-transparent px-3 py-5 motion-safe:animate-in motion-safe:fade-in motion-safe:transition-colors motion-safe:duration-200 hover:bg-secondary/40",
+                        "flex items-start gap-3 border-l-2 border-transparent px-3 py-3.5 motion-safe:animate-in motion-safe:fade-in motion-safe:transition-colors motion-safe:duration-200 hover:bg-secondary/40",
                         selectedId === item.id && "bg-secondary/50",
                         !item.read && "border-l-primary bg-secondary/20",
                       )}
@@ -256,9 +255,9 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                             <span className="ml-auto shrink-0 text-xs font-medium text-primary">
                               <span
                                 aria-hidden="true"
-                                className="mr-1 inline-block size-1.5 rounded-full bg-primary"
+                                className="inline-block size-2 rounded-full bg-primary"
                               />
-                              Unread
+                              <span className="sr-only">Unread</span>
                             </span>
                           )}
                         </div>
@@ -275,9 +274,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                         </p>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           {item.urgent && (
-                            <span className="rounded bg-secondary px-1.5 py-0.5 font-medium text-foreground">
-                              Urgent
-                            </span>
+                            <Badge variant="warning">Urgent</Badge>
                           )}
                           <span>{item.type}</span>
                           <span aria-hidden="true">·</span>
@@ -303,20 +300,14 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               </section>
             ))}
             {!filtered.length && (
-              <div className="space-y-3 p-10 text-center">
-                <Bell className="mx-auto size-6 text-muted-foreground" />
-                <p className="text-sm font-medium">
-                  {items.length ? "No matching notifications" : "No notifications yet"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {items.length
-                    ? "Your keyword or filters hide every notification."
-                    : "Nothing has been sent to you yet. Choose which updates you want by email."}
-                </p>
-                {items.length
+              <EmptyState density="compact" icon={<Bell />}
+                title={items.length ? "No matching notifications" : "No notifications yet"}
+                description={items.length
+                  ? "Your keyword or filters hide every notification."
+                  : "Nothing has been sent to you yet. Choose which updates you want by email."}
+                action={items.length
                   ? <Button size="sm" variant="outline" onClick={resetFilters}>Clear filters</Button>
-                  : !demo.isDemoEnabled && <Button size="sm" variant="outline" asChild><Link href={notificationSettingsHref} scroll={false}>Notification settings</Link></Button>}
-              </div>
+                  : !demo.isDemoEnabled && <Button size="sm" variant="outline" asChild><Link href={notificationSettingsHref} scroll={false}>Notification settings</Link></Button>} />
             )}
           </div>
         </section>
@@ -324,12 +315,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
           aria-label="Notification details"
           className={cn("oc-detail-panel min-w-0", !selected && "hidden")}
         >
-          {!selected ? (
-            <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-              <Bell className="size-6 text-muted-foreground" />
-              <p className="text-sm">Choose a notification to read the full update.</p>
-            </div>
-          ) : (
+          {!selected ? null : (
             <>
               <div className="space-y-5 border-b border-border p-5 sm:p-6">
                 <Button
@@ -388,7 +374,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-600"
+                    className="text-destructive"
                     onClick={() => remove([selected.id])}
                   >
                     <Trash2 className="size-4" />
@@ -445,9 +431,6 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   </Button>
                 )}
               </div>
-              <p className="border-t border-border px-6 py-4 text-xs text-muted-foreground">
-                {"Club updates stay here so you can return to them anytime."}
-              </p>
             </>
           )}
         </section>
