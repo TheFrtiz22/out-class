@@ -52,3 +52,11 @@ test('cumulative score uses canonical submitted reviews, weighted across authori
  let score=await helper.votingInterviewSummary(tx,clubId,apps[0],leaderId);assert.equal(score.average,7.75);assert.equal(score.submitted,2);assert.equal(score.rounds,2);
  rows=[];score=await helper.votingInterviewSummary(tx,clubId,apps[0],leaderId);assert.equal(score.average,null);
 });
+test('setup ticks the round\'s interviewers as voters by default, next to the officers',async()=>{
+ const h=harness(),api=load('actions/voting-room-setup.ts',h.mocks);
+ const before=await api.getLiveVotingSetup(selection),plain=before.voters.find(v=>!v.defaultSelected);
+ assert.ok(plain,'a member who is not an officer starts unticked');
+ h.state().interviewRecords.push({interviewerId:plain.id,roundId,completedAt:new Date()});
+ const after=await api.getLiveVotingSetup(selection);
+ assert.equal(after.voters.find(v=>v.id===plain.id).defaultSelected,true);
+});
