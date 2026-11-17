@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   if (!secret || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const startedAt = Date.now();
   let result;
-  try { result = await processNotificationEmails(10); }
+  try { result = await processNotificationEmails(25, { drain: true }); }
   catch { return Response.json({ error: "Notification email delivery unavailable. Queued work is retained." }, { status: 503 }); }
   // Web Push (S1-8) runs after email, inside the same 60 s budget, and can never fail the email response.
   let push;
