@@ -11,6 +11,14 @@ function presentBooking(booking: import("@/lib/interview-rooms").RoomBooking) {
 function presentSlot(slot: import("@/lib/interview-rooms").RoomSlot) {
   return { ...slot, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString() }
 }
+/** Same counts as the live workspace: invited finalists, how many of them booked, seats left in published future times. */
+function demoBookingProgress(s: ReturnType<typeof demoStore.get>, clubId: string, roundId: string, bookings: { applicationId: string; slotId: string }[]) {
+  if (!demoBookingSettings(roundId).bookingPublishedAt) return undefined
+  const cohort = new Set(s.applications.filter(a => a.clubId === clubId && a.roundId === roundId && a.status === "INTERVIEWING").map(a => a.id))
+  const booked = new Set(bookings.filter(b => cohort.has(b.applicationId)).map(b => b.applicationId)).size
+  const open = (s.interviewRooms ?? []).filter(r => r.clubId === clubId && r.roundId === roundId && r.isOpen).flatMap(r => r.slots.filter(slot => +new Date(slot.startTime) > Date.now() && isPublishedBookingSlot(s.bookingFlow.publishedSlots[roundId], slot, r)).map(slot => Math.max(0, slot.capacity - bookings.filter(b => b.slotId === slot.id).length))).reduce((n, v) => n + v, 0)
+  return { invited: cohort.size, booked, open }
+}
 function manager(clubId: string) {
   const s = demoStore.get()
   if (s.perspective.role !== "leader" || clubId !== s.clubs[0].id) throw new Error("Choose the MII manager workspace.")
@@ -19,7 +27,7 @@ function manager(clubId: string) {
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const s = manager(clubId), club = s.clubs.find(c => c.id === clubId)!
   const bookings = (s.roomBookings ?? []).filter(b => (s.interviewRooms ?? []).some(r => r.id === b.roomId && r.clubId === clubId))
-  return { clubName: club.name, cycles: [], rounds: club.rounds.map(r => ({ id: r.id, name: r.name, type: r.type, configuration: r.configuration, booking: demoBookingSettings(r.id), invited: s.applications.filter(a => a.clubId === clubId && a.roundId === r.id && a.status === "INTERVIEWING").length })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, externallyBookedAt: r.externallyBookedAt ? new Date(r.externallyBookedAt).toISOString() : null, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(b => {
+  return { clubName: club.name, cycles: [], rounds: club.rounds.map(r => ({ id: r.id, name: r.name, type: r.type, configuration: r.configuration, booking: demoBookingSettings(r.id), progress: demoBookingProgress(s, clubId, r.id, bookings) })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, externallyBookedAt: r.externallyBookedAt ? new Date(r.externallyBookedAt).toISOString() : null, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(b => {
     const app = s.applications.find(a => a.id === b.applicationId && a.clubId === clubId);
     const historical = club.rounds.find(r => r.id === b.roundId), current = club.rounds.find(r => r.id === app?.roundId);
     const identified = hasPermission(demoMember(), "applicants.identify") && historical?.anonymousReview === false && current?.anonymousReview === false;
