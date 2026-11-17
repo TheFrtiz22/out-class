@@ -7,6 +7,7 @@
 // appear in any response body. A JSON summary (case, result, notes) is written to
 // test-results/attacker-pass.json even when a case fails.
 const { test } = require("node:test");
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -47,7 +48,7 @@ test("attacker pass: IDOR, logout replay, public-key access, headers, enumeratio
       const created = await service.auth.admin.createUser({ email, password, email_confirm: true });
       assert.equal(created.error, null, `Local fixture account ${label}`);
       const id = created.data.user.id;
-      await db.user.create({ data: { id, email, studentProfile: { create: { firstName: `Attacker${label.toUpperCase()}`, lastName, computingId, major: "Economics", gradYear: 2028 } } } });
+      await db.user.create({ data: { id, email, studentProfile: { create: { firstName: `Attacker${label.toUpperCase()}`, lastName, computingId, major: "Economics", gradYear: 2028 } } } });await satisfyAvailabilityRequirement(db,id);
       const actor = new Actor(c); await actor.signIn(email, password);
       return { id, email, password, lastName, computingId, actor };
     }

@@ -4,6 +4,7 @@ import { WorkspaceShell } from "@/components/shell/workspace-shell"
 import { workspaceFrame } from "@/components/shell/workspace-frame"
 import { MaintenanceGate } from "@/components/maintenance-gate"
 import { TermsGate } from "@/components/legal/terms-gate"
+import { AvailabilityGate } from "@/components/availability/availability-gate"
 
 /**
  * Every signed-in workspace route (Personal, club workspaces, Admin, settings, meetings, …) shares
@@ -14,5 +15,5 @@ import { TermsGate } from "@/components/legal/terms-gate"
  */
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
   // Maintenance mode replaces the signed-in shell for non-admins; /platform stays usable for admins.
-  return await workspaceFrame() === "shell" ? <MaintenanceGate><TermsGate><WorkspaceShell>{children}</WorkspaceShell></TermsGate></MaintenanceGate> : <PublicPageFrame>{children}</PublicPageFrame>
+  return await workspaceFrame() === "shell" ? <MaintenanceGate><TermsGate><AvailabilityGate><WorkspaceShell>{children}</WorkspaceShell></AvailabilityGate></TermsGate></MaintenanceGate> : <PublicPageFrame>{children}</PublicPageFrame>
 }

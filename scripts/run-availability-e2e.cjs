@@ -1,6 +1,7 @@
 // Dedicated local Supabase + an isolated production build of the real application.
 // No application .env files, hosted credentials, existing DBs, or live panels are used.
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict')
+const { satisfyAvailabilityRequirement } = require('../tests/helpers/availability-requirement-fixture.cjs')
 const { spawn, spawnSync } = require('node:child_process'), { randomUUID } = require('node:crypto')
 const { PrismaClient } = require('@prisma/client'), { createClient } = require('@supabase/supabase-js')
 const repo = path.resolve(__dirname, '..'), root = path.join(os.tmpdir(), 'outclass-availability-e2e'), project = 'outclass-availability-e2e'
@@ -58,7 +59,7 @@ async function main() {
       const email = `availability.${role}.${randomUUID().slice(0, 8)}@virginia.edu`, password = 'Local-availability-only!' + randomUUID()
       const { data, error } = await auth.auth.admin.createUser({ email, password, email_confirm: true }); if (error) throw Error('Local test account creation failed')
       settings.actors[role] = { id: data.user.id, email, password }
-      await db.user.create({ data: { id: data.user.id, email, studentProfile: { create: { firstName: role === 'interviewer' ? 'Test' : 'Local', lastName: role === 'interviewer' ? 'Interviewer' : role, computingId: role + randomUUID().slice(0, 8), major: 'Economics', gradYear: 2028 } } } })
+      await db.user.create({ data: { id: data.user.id, email, studentProfile: { create: { firstName: role === 'interviewer' ? 'Test' : 'Local', lastName: role === 'interviewer' ? 'Interviewer' : role, computingId: role + randomUUID().slice(0, 8), major: 'Economics', gradYear: 2028 } } } }); await satisfyAvailabilityRequirement(db,data.user.id);
     }
     settings.clubs = []
     for (const name of ['Availability Test Club', 'Other Availability Club']) {

@@ -475,6 +475,8 @@ export function StudentOnboardingWizard({
   }
 
   // ── Step 5: Interests (optional, private to the student) ─────────────────
+  // Finishing hands off to the workspace, where the required weekly-availability step comes next
+  // (components/availability/availability-gate.tsx).
 
   useEffect(() => { if (step === 4) void loadInterestSurveyForm() }, [step])
   async function skipInterests() {
@@ -918,7 +920,7 @@ export function StudentOnboardingWizard({
                 <h2 className="oc-section-heading text-foreground">Help us suggest clubs</h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">About a minute. Optional.</p>
               </div>
-              <InterestSurveyForm initial={null} idPrefix="onboarding-interests" submitLabel="Finish"
+              <InterestSurveyForm initial={null} idPrefix="onboarding-interests" submitLabel="Continue"
                 onSaved={() => { invalidateInterestSurvey(); onComplete() }}
                 secondary={busy => <Button type="button" variant="secondary" disabled={busy || loading} onClick={() => void skipInterests()}>Skip for now</Button>} />
             </>

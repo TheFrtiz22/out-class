@@ -4,6 +4,7 @@ const fs = require("node:fs"),
   os = require("node:os"),
   { spawnSync } = require("node:child_process"),
   { randomUUID } = require("node:crypto");
+const { satisfyAvailabilityRequirement } = require('../tests/helpers/availability-requirement-fixture.cjs')
 const { createClient } = require("@supabase/supabase-js"),
   { PrismaClient } = require("@prisma/client");
 const project = process.argv.includes("--admin-session") ? "outclass-admin-session-e2e" : "outclass-corkboard-e2e", appPort = project === "outclass-admin-session-e2e" ? 3109 : 3108, portOffset = project === "outclass-admin-session-e2e" ? 6000 : 2000;
@@ -108,7 +109,7 @@ function run(binary, args, env = process.env) {
     });
     if (error) throw error;
     const id = data.user.id;
-    await db.user.create({ data: { id, email } });
+    await db.user.create({ data: { id, email } });await satisfyAvailabilityRequirement(db,id);
     await db.studentProfile.create({
       data: {
         userId: id,

@@ -1,6 +1,7 @@
 // Investigation only. Accepts only the reserved disposable local Supabase fixture.
 // No application .env is read; no cookies, headers, payloads or personal data are saved.
 const fs = require('node:fs');
+const { satisfyAvailabilityRequirement } = require('../tests/helpers/availability-requirement-fixture.cjs')
 const path = require('node:path');
 const os = require('node:os');
 const assert = require('node:assert/strict');
@@ -56,7 +57,7 @@ async function seed(config) {
   const userId=verified.data.user.id, clubIds=[randomUUID(),randomUUID()];
   const db=new PrismaClient({datasourceUrl:config.status.DB_URL});
   try {
-    await db.user.upsert({where:{id:userId},create:{id:userId,email},update:{}});
+    await db.user.upsert({where:{id:userId},create:{id:userId,email},update:{}});await satisfyAvailabilityRequirement(db,userId);
     await db.studentProfile.create({data:{userId,firstName:'Audit',lastName:'Owner',computingId:tag,major:'Economics',gradYear:2028}});
     for(let c=0;c<2;c++) {
       const clubId=clubIds[c];

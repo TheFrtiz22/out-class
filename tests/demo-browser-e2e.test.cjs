@@ -3,6 +3,7 @@
 // OUTCLASS_DEMO_ALLOWED_EMAILS=<one @virginia.edu presenter address>, then point
 // OUTCLASS_ONBOARDING_E2E_CONFIG at the kept stack's config.json.
 const { test } = require("node:test")
+const { satisfyAvailabilityRequirement } = require('./helpers/availability-requirement-fixture.cjs')
 const assert = require("node:assert/strict")
 const fs = require("node:fs")
 const path = require("node:path")
@@ -85,7 +86,7 @@ test("Demo Mode in a real browser: no live demo chunks, first-try demo data, fai
   const existing = (await service.auth.admin.listUsers()).data.users.find(user => user.email === presenter)
   const created = existing ? await service.auth.admin.updateUserById(existing.id, { password }) : await service.auth.admin.createUser({ email: presenter, password, email_confirm: true })
   assert.equal(created.error, null)
-  await db.user.upsert({ where: { id: created.data.user.id }, create: { id: created.data.user.id, email: presenter }, update: {} })
+  await db.user.upsert({ where: { id: created.data.user.id }, create: { id: created.data.user.id, email: presenter }, update: {} }); await satisfyAvailabilityRequirement(db,created.data.user.id);
   const actor = new Actor(config); await actor.signIn(presenter, password); await actor.profile("Demo Presenter", 2027)
   const miiId = harness().load("lib/demo/seed.ts").createDemoSeed().clubs[0].id
 
