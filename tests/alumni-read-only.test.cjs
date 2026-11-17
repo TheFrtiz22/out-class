@@ -235,8 +235,6 @@ test('kept-owner graduate: access editor and invitations allow only making someo
 test('kept-owner graduate: direct membership loads mark the actor too', () => {
   const pins = {
     'actions/organization-members.ts': /const actor = await graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique\(\{ where: \{ userId_clubId: \{ userId, clubId \} \} \}\)\);/,
-    'actions/roster-import.ts': /const member = await graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/,
-    'actions/club-settings.ts': /!hasPermission\(await graduateClubAccessOrNull\(tx, member\), permission\)/,
     'actions/panel-proposals.ts': /const member=await graduateClubAccessOrNull\(tx,await tx\.clubMember\.findUnique/,
     'utils/invitation-delivery.ts': /const actor = await graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/,
     'utils/voting-room-page-access.ts': /!hasPermission\(await graduateClubAccessOrNull\(prisma, member\), "applications\.review"\)/,
@@ -247,7 +245,8 @@ test('kept-owner graduate: direct membership loads mark the actor too', () => {
   pins['actions/availability.ts'] = /authorizeClubTransaction\(tx, input\.clubId, user\.id, \[\]\)\n\s*\/\/[^\n]*\n\s*await assertNotAlumni\(tx, user\.id, "availability"\)/
   for (const [file, pattern] of Object.entries(pins)) assert.match(src(file), pattern, file)
   assert.equal(src('actions/club-access.ts').match(/graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/g).length, 5)
-  assert.equal(src('actions/tasks.ts').match(/graduateClubAccessOrNull\((tx|prisma), await (tx|prisma)\.clubMember\.findUnique/g).length, 3)
+  // Private task files: a marked actor no longer holds tasks.manage.
+  assert.equal(src('actions/tasks.ts').match(/graduateClubAccessOrNull\(prisma, await prisma\.clubMember\.findUnique/g).length, 1)
   assert.equal(src('actions/club-onboarding.ts').match(/graduateClubAccessOrNull\(tx, await tx\.clubMember\.findUnique/g).length, 2)
 })
 

@@ -87,9 +87,9 @@ async function currentMember(
   manage = false,
 ) {
   await lockOperationalClub(tx, clubId);
-  const member = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({
+  const member = await tx.clubMember.findUnique({
     where: { userId_clubId: { clubId, userId } },
-  }));
+  });
   if (!member || !isActiveMembership(member) || (manage && !hasPermission(member, "tasks.manage")))
     throw new ActionError("Task access unavailable. Your membership or permissions may have changed; reload the page.", "FORBIDDEN");
   return member;
@@ -278,9 +278,9 @@ async function updateTaskMemberCommand(input: {
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, data.clubId);
-    const manager = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({
+    const manager = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
-    }));
+    });
     if (!manager || !hasPermission(manager, "members.manage"))
       throw new ActionError("Membership access unavailable. Your permissions may have changed; reload the page.", "FORBIDDEN");
     const result = await tx.clubMember.updateMany({
