@@ -8,10 +8,19 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { boundedParse } from "@/lib/bounded-input";
+import { ActionError, actionResult } from "@/lib/action-result";
 
-export async function updateClubSettings(input: {
+type ClubSettingsInput = {
   clubId: string; name: string; tagline: string; description: string; expectedProfile?: string;
-} & Partial<import("@/lib/club-marketing").ClubProfileDraft>) {
+} & Partial<import("@/lib/club-marketing").ClubProfileDraft>;
+
+/** Refusals a leader can act on (a profile changed in another tab, maintenance) are returned as
+ * ActionError results so their message survives production builds. */
+export async function updateClubSettings(input: ClubSettingsInput) {
+  return actionResult(() => updateClubSettingsCommand(input), "updateClubSettings");
+}
+
+async function updateClubSettingsCommand(input: ClubSettingsInput) {
   const data = boundedParse(clubProfileSchema.partial().extend({
     expectedProfile: z.string().max(300000).optional(),
     clubId: z.string().uuid(), name: z.string().trim().min(1).max(150),
@@ -37,7 +46,7 @@ export async function updateClubSettings(input: {
       };
       const actual = snapshot(previous);
       const next = snapshot({ ...previous, ...fields });
-      if (actual !== expectedProfile && actual !== next) throw Error("This club profile changed while you were editing. Your private draft is retained. Reopen to compare before publishing.");
+      if (actual !== expectedProfile && actual !== next) throw new ActionError("This club profile changed while you were editing. Your private draft is retained. Reopen to compare before publishing.", "STALE");
     }
     await assertClubImageAssignment(tx, clubId, fields, previous);
     await tx.club.update({ where: { id: clubId }, data: fields });
@@ -82,7 +91,12 @@ export async function saveClubTask(input: {
   throw new Error("Legacy task writes are disabled. Reload and use the current Tasks workspace.");
 }
 
+/** Returns refusals (an already managed club, an alumni account) as ActionError results. */
 export async function requestClubClaim(clubId: string, explanation: string) {
+  return actionResult(() => requestClubClaimCommand(clubId, explanation), "requestClubClaim");
+}
+
+async function requestClubClaimCommand(clubId: string, explanation: string) {
   const data = z
     .object({
       clubId: z.string().uuid(),
@@ -91,13 +105,13 @@ export async function requestClubClaim(clubId: string, explanation: string) {
     .parse({ clubId, explanation });
   const { user } = await requireAuth();
   if (!(await prisma.club.findUnique({ where: { id: clubId } })))
-    throw new Error("Club unavailable.");
+    throw new ActionError("This club is no longer listed. Refresh the directory and try again.", "NOT_FOUND");
   return prisma.$transaction(async (tx) => {
     await lockOperationalClub(tx, data.clubId);
     // Alumni cannot join clubs or take club roles, so they cannot claim one (lib/graduation.ts).
     const { alumniRefusal } = await import("@/utils/graduation");
     const alumni = await alumniRefusal(tx, user.id, "join");
-    if (alumni) throw new Error(alumni);
+    if (alumni) throw new ActionError(alumni, "ALUMNI");
     const club = await tx.club.findUnique({ where: { id: data.clubId } });
     if (
       !club ||
@@ -106,8 +120,9 @@ export async function requestClubClaim(clubId: string, explanation: string) {
         where: { clubId: data.clubId, isOwner: true },
       }))
     )
-      throw new Error(
+      throw new ActionError(
         "This club is already managed. Ask an existing manager for an invitation.",
+        "ALREADY_MANAGED",
       );
     const existing = await tx.clubClaim.findFirst({
       where: { clubId: data.clubId, userId: user.id, status: "PENDING" },

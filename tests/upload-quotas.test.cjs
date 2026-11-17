@@ -1,3 +1,4 @@
+const { unwrapActions } = require('./helpers/action-result.cjs');
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -164,11 +165,11 @@ function clubHarness({ failSum = false } = {}) {
     '@/utils/admin-transaction': { authorizeAdminTransaction: async () => {} },
     '@/lib/club-image': { prepareClubImage: async () => ({ bytes: new Uint8Array(SIX_MB), mime: 'image/png', contentType: 'image/webp' }) },
   })
-  const workspace = load('actions/club-workspace.ts', { ...common,
+  const workspace = unwrapActions(load('actions/club-workspace.ts', { ...common,
     '@/lib/club-suspension': { lockOperationalClub: async () => {} },
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
     'next/cache': { revalidatePath() {}, revalidateTag() {} },
-  })
+  }))
   const upload = () => { const f = new FormData(); f.set('clubId', clubId); f.set('admin', 'false'); f.set('file', new Blob([new Uint8Array(png)], { type: 'image/png' }), 'logo.png'); return assets.uploadClubAsset(f) }
   const saveLogo = logoUrl => workspace.updateClubSettings({ clubId, name: 'Club', tagline: '', description: '', logoUrl })
   return { upload, saveLogo, objects, removed, logs, club }
