@@ -82,10 +82,10 @@ test('slide model: scholar status only when the server returned it for a request
 test('scholar status: selected, identified rounds only; off by default; in the Profile group',()=>{
  const slides=load('lib/voting-slide-fields.ts'),room=load('lib/voting-room.ts');
  const raw={selections:['ECHOLS','OTHER'],other:'Mellon Fellow'};
- assert.deepEqual(slides.selectedScholarStatus(['name','scholarStatus'],false,raw),{scholarStatus:['Echols Scholars Program','Mellon Fellow']});
- assert.deepEqual(slides.selectedScholarStatus(['name'],false,raw),{});
- assert.deepEqual(slides.selectedScholarStatus(['name','scholarStatus'],true,raw),{},'anonymous (blind) rounds never receive it');
- assert.deepEqual(slides.selectedScholarStatus(['scholarStatus'],false,{selections:['NOT_APPLICABLE'],other:''}),{scholarStatus:[]});
+ assert.deepEqual(slides.selectedScholarStatus(['name','scholarStatus'],false,raw,true),{scholarStatus:['Echols Scholars Program','Mellon Fellow']});
+ assert.deepEqual(slides.selectedScholarStatus(['name'],false,raw,true),{});
+ assert.deepEqual(slides.selectedScholarStatus(['name','scholarStatus'],true,raw,true),{},'anonymous (blind) rounds never receive it');
+ assert.deepEqual(slides.selectedScholarStatus(['scholarStatus'],false,{selections:['NOT_APPLICABLE'],other:''},true),{scholarStatus:[]});
  assert.deepEqual(slides.slideFieldGroups.find(g=>g[0]==='Profile')[1],['photo','name','major','academicYear','scholarStatus']);
  assert.equal(slides.slideFieldLabel('scholarStatus'),'Scholar status');
  assert.ok(room.liveRoomFields.includes('scholarStatus'));
@@ -101,7 +101,7 @@ test('scholar status loads only through the authorized slide loaders, and only t
  for(const file of ['actions/voting-room.ts','actions/voting-session-setup.ts']){
   const src=read(file);
   assert.match(src,/student:\{select:\{studentProfile:\{select:\{scholarStatus:true\}\}\}\}/,file);
-  assert.match(src,/selectedScholarStatus\([^)]*anonymous\|\|round\.anonymousReview/,file);
+  assert.match(src,/selectedScholarStatus\([^;]*anonymous\|\|round\.anonymousReview[^;]*allowedByProfileCeiling\(['"]scholarStatus['"]/,file);
  }
 });
 
@@ -145,4 +145,56 @@ test('audience slide: no details dialog or Read full links, the result only afte
  assert.match(room,/<OutClassQRCode/);assert.match(room,/useShortLinkUrl\(/);assert.doesNotMatch(room,/qr-code-card/,'the projector does not pull in the QR export card');
  assert.match(room,/aria-live="polite"/);
  assert.match(theme,/try\{const v=window\.localStorage\.getItem/);assert.match(theme,/catch\{\/\* Private mode/);
+});
+
+test('scholar status follows the club profile-field ceiling: hidden setting, no scholar status even for a saved session',async()=>{
+ const h=harness();
+ h.state().apps.forEach(a=>a.student={studentProfile:{firstName:'QA',lastName:'Applicant',scholarStatus:{selections:['ECHOLS'],other:''}}});
+ h.mocks['@/actions/applicant-intelligence']={getApplicantDisplay:async d=>({applicationId:d.applicationId,roundId,anonymous:false,configured:['name'],visible:['name'],withheld:[],sections:[{field:'name',label:'Name',items:['QA Applicant']}],photo:null,links:[],observations:[]})};
+ h.tx.interviewResumeAnnotation={findMany:async()=>[]};
+ await h.create({presentationOptions:{fields:['name','scholarStatus'],highlights:{}}});await h.command('START');
+ // The club turns scholar status off after the session was saved with the field.
+ h.state().apps.forEach(a=>a.club={profileFieldVisibility:{scholarStatus:false}});
+ const room=load('actions/voting-room.ts',h.mocks);
+ const shown=await room.getLiveVotingPresentation({...h.scope,applicationId:h.state().sessions[0].activeApplicationId??apps[0]});
+ assert.equal('scholarStatus'in shown,false);assert.equal(shown.requestedFields.includes('scholarStatus'),false);
+ // Setup lists it as hidden by the club setting and refuses a new session with it.
+ h.round.club={profileFieldVisibility:{scholarStatus:false}};
+ const setup=load('actions/voting-room-setup.ts',h.mocks),info=await setup.getLiveVotingSetup({clubId,roundId,cycleId:h.cycle.id});
+ assert.equal(info.allowedFields.includes('scholarStatus'),false);assert.ok(info.hiddenProfileFields.includes('scholarStatus'));
+ const pf=load('lib/profile-field-visibility.ts');
+ assert.equal(pf.allowedByProfileCeiling('scholarStatus',pf.normalizeProfileFieldVisibility({scholarStatus:false})),false);
+ assert.equal(pf.allowedByProfileCeiling('scholarStatus',pf.normalizeProfileFieldVisibility(null)),true,'on by default, as in #385');
+ const slides=load('lib/voting-slide-fields.ts');
+ assert.deepEqual(slides.selectedScholarStatus(['scholarStatus'],false,{selections:['ECHOLS'],other:''},false),{});
+ for(const file of ['actions/voting-room.ts','actions/voting-session-setup.ts','lib/demo/voting-room.ts'])assert.match(read(file),/allowedByProfileCeiling\(['"]scholarStatus['"]/,file);
+});
+
+test('one assembly for every voting slide payload: requestedFields lists only the parts present',()=>{
+ const slides=load('lib/voting-slide-fields.ts');
+ const p=slides.assembleVotingPresentation({display:{visible:['name'],sections:[]},evidence:{interviewScore:{current:{}}},highlight:{},observations:{},scholar:{scholarStatus:['Echols Scholars Program']},prepared:{preparedHighlights:[]}});
+ assert.deepEqual(p.requestedFields,['name','scholarStatus','interviewScore']);assert.deepEqual(p.preparedHighlights,[]);
+ assert.deepEqual(slides.assembleVotingPresentation({display:{visible:[]},evidence:{},highlight:{resumeHighlight:null},observations:{additionalObservations:[]},scholar:{}}).requestedFields,['resumeHighlight','additionalObservations']);
+ for(const file of ['actions/voting-room.ts','actions/voting-session-setup.ts','lib/demo/voting-room.ts'])assert.match(read(file),/assembleVotingPresentation\(\{display:/,file);
+});
+
+test('projector: "next" names the applicant in identified rounds and keeps anonymous labels in anonymous rounds',async()=>{
+ const names=load('components/live-voting/room-names.ts');
+ const room={passNumber:1,currentApplicantId:'a',history:[{number:1,candidates:[{applicationId:'a',position:0},{applicationId:'b',position:1}]}]};
+ assert.equal(names.nextName(room,[{id:'b',label:'Jordan Ellis'}]),'Jordan Ellis');
+ assert.equal(names.nextName(room,undefined),'Applicant 2','a presenter without leader labels sees the number');
+ // The labels come from the leader summary, which uses anonymous labels in an anonymous round.
+ const h=harness();h.state().apps.forEach(a=>a.student={studentProfile:{firstName:'Secret',lastName:'Name'}});
+ await h.create({presentationOptions:{fields:[],highlights:{}}});h.round.anonymousReview=true;
+ const final=load('actions/voting-room-finalization.ts',h.mocks),summary=await final.getLiveVotingSummary(h.scope);
+ assert.ok(summary.labels.length>0);for(const l of summary.labels){assert.match(l.label,/^Applicant [0-9A-F]{10}$/);assert.doesNotMatch(l.label,/Secret|Name/);}
+ h.round.anonymousReview=false;const identified=await final.getLiveVotingSummary(h.scope);assert.ok(identified.labels.every(l=>l.label==='Secret Name'));
+});
+
+test('own application (#392): no slide, scholar, totals or result; the projector keeps round counts without the access note',()=>{
+ const presentation=read('components/live-voting/room-presentation.tsx'),audience=read('components/live-voting/audience-room.tsx'),tracker=read('components/live-voting/round-tracker.tsx');
+ assert.match(presentation,/if\(isOwnApplication\(data\)\)return <p role="status" className="vr-own-application">/);
+ assert.ok(presentation.indexOf('isOwnApplication(data)')<presentation.indexOf('<ApplicantSlide'),'checked before any slide renders');
+ assert.match(audience,/const aside=!own&&entry/);
+ assert.match(tracker,/variant==="panel"&&summary\.partial&&/);
 });

@@ -15,7 +15,7 @@ import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, un
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { z } from "zod";
 import { votingSelectedHighlight,votingSelectedEvidence } from "@/utils/voting-room-presentation";
-import {selectedVotingDisplay,selectedScholarStatus} from "@/lib/voting-slide-fields";
+import {selectedVotingDisplay,selectedScholarStatus,assembleVotingPresentation} from "@/lib/voting-slide-fields";
 import {lockVotingObservations,votingObservations} from '@/utils/additional-observations';
 import {votingDiscussion} from '@/utils/voting-discussion';
 import {currentEligibleVoterIds,latestBallotRule,ballotRuleResult,sessionRules} from '@/utils/voting-rules';
@@ -173,11 +173,11 @@ async function readLivePresentation(input:unknown) {
     const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,options?.fields??[],display.anonymous,s.roundId);
     const selectedDisplay=selectedVotingDisplay(display,options?.fields);
     const observations=await votingObservations(tx,s,app.id,user.id,!!options?.fields.includes('additionalObservations'),display.anonymous);
-    const scholar=selectedScholarStatus(options?.fields,display.anonymous||round.anonymousReview,app.student?.studentProfile?.scholarStatus);
+    const scholar=selectedScholarStatus(options?.fields,display.anonymous||round.anonymousReview,app.student?.studentProfile?.scholarStatus,allowedByProfileCeiling("scholarStatus",normalizeProfileFieldVisibility(app.club?.profileFieldVisibility)));
     // Preparation preview shows the leader's unlocked working copy; everyone else sees the locked pass copy.
     if(d.preparation)requireRoomLeader(s,m,"decisions.manage");
     const prepared=await presentedSlideHighlights(tx,s,app.id,user.id,display.anonymous,!!d.preparation);
-    return {access:accessFingerprint(m),presentation:{...selectedDisplay,...evidence,...highlight,...observations,...prepared,...scholar,requestedFields:[...selectedDisplay.visible,...(scholar.scholarStatus?["scholarStatus" as const]:[]),...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]}};
+    return {access:accessFingerprint(m),presentation:assembleVotingPresentation({display:selectedDisplay,evidence,highlight,observations,prepared,scholar})};
   },votingReadLimits);
   // Same post-read re-check as the room read: evidence computed under since-revoked access is never returned.
   const {membership}=await requireClubPermission(d.clubId,["applications.review"]);

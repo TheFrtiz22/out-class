@@ -85,7 +85,9 @@ type StageOptions={aside?:(outcome:RoomResult|null)=>ReactNode;idle?:React.React
 /** The projector view: loaded on demand for view=present only. */
 export function AudienceView({room,entry,clubId,sessionId,demoScoped,stage}:{room:RoomSnapshot;entry:Entry|undefined;clubId:string;sessionId:string;demoScoped:boolean;stage:(options:StageOptions)=>ReactNode}){
  const {summary}=useVotingSummary(room,room.permissions.leader);
- const aside=entry&&(entry.ballotState==="CLOSED"||entry.ballotState==="CONFIRMED")&&room.status==="OPEN"?closedResult(room,entry):undefined;
+ // #392 marks the viewer's own application on the snapshot (ownApplicant): no result or totals for it.
+ const own=(room as {ownApplicant?:boolean}).ownApplicant===true;
+ const aside=!own&&entry&&(entry.ballotState==="CLOSED"||entry.ballotState==="CONFIRMED")&&room.status==="OPEN"?closedResult(room,entry):undefined;
  const idle=room.status==="DRAFT"?<section className="vr-applicant vr-aud-waiting" aria-label="Waiting room"><h2 data-applicant-heading tabIndex={-1}>Ready when your leader is</h2><p>Voting has not started. Scan the code to join.</p><JoinCode clubId={clubId} sessionId={sessionId} demo={demoScoped} size={220}/></section>:undefined;
  return <AudienceRoom room={room} entry={entry} clubId={clubId} sessionId={sessionId} demo={demoScoped} stage={stage({aside,idle})} nextLabel={nextName(room,summary?.labels)}/>;
 }

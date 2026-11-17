@@ -7,12 +7,23 @@ export const slideFieldGroups:readonly (readonly [string,readonly LiveRoomField[
 export function slideFieldLabel(f:LiveRoomField){
   return f==="scholarStatus"?"Scholar status":f==="gpa"?"GPA":f==="resumeHighlight"?"Résumé excerpt":f==="interviewScore"?"Interview score":f==="additionalObservations"?"Additional observations":f==="finalInterviewThoughts"?"Interviewer final thoughts":fieldLabels[f];
 }
-/** Scholar programme names for a voting slide: only when the leader selected the field and the round is identified.
- * Callers pass the authorized application's profile value; anonymous (blind) rounds never receive it. */
-export function selectedScholarStatus(fields:readonly string[]|undefined,anonymous:boolean,raw:unknown):{scholarStatus?:string[]}{
-  return fields?.includes("scholarStatus")&&!anonymous?{scholarStatus:scholarNames(raw)}:{};
+/** Scholar programme names for a voting slide: only when the leader selected the field, the round is identified and
+ * the club's applicant profile setting shows scholar status (`ceiling`, from allowedByProfileCeiling). Callers pass the
+ * authorized application's profile value; anonymous (blind) rounds and hidden settings never receive it. */
+export function selectedScholarStatus(fields:readonly string[]|undefined,anonymous:boolean,raw:unknown,ceiling:boolean):{scholarStatus?:string[]}{
+  return fields?.includes("scholarStatus")&&!anonymous&&ceiling?{scholarStatus:scholarNames(raw)}:{};
 }
-
+type SlideEvidence={interviewScore?:unknown;finalInterviewThoughts?:unknown};
+/**
+ * The one assembly of a voting slide payload from its separately authorized parts (live room, setup preview and Demo).
+ * `requestedFields` is derived from the parts actually present, so a part withheld or redacted upstream is never listed;
+ * any whole-presentation redaction wraps this single return.
+ */
+export function assembleVotingPresentation<D extends {visible:readonly string[]},E extends SlideEvidence,H extends object,O extends {additionalObservations?:unknown},P extends object>(parts:{display:D;evidence:E;highlight:H;observations:O;scholar:{scholarStatus?:string[]};prepared?:P}){
+  const {display,evidence,highlight,observations,scholar,prepared}=parts;
+  return {...display,...evidence,...highlight,...observations,...(prepared??{} as P),...scholar,
+    requestedFields:[...display.visible as D["visible"],...(scholar.scholarStatus?["scholarStatus" as const]:[]),...("resumeHighlight"in highlight?["resumeHighlight" as const]:[]),...(evidence.interviewScore?["interviewScore" as const]:[]),...(evidence.finalInterviewThoughts?["finalInterviewThoughts" as const]:[]),...(observations.additionalObservations?["additionalObservations" as const]:[])]};
+}
 /** Reapply the current selection after the separately authorized display read.
  * A concurrent setup edit must not return a previously selected field. */
 export function selectedVotingDisplay(display:ApplicantDisplay,fields:LiveRoomField[]|undefined):ApplicantDisplay{

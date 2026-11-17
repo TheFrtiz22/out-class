@@ -15,7 +15,7 @@ import { decisionTypes } from "@/lib/decision-letters";
 import { editorValue } from "@/lib/editor-value";
 import { hasPermission } from "@/lib/permissions";
 import { anonymousApplicantLabel,type ReviewApplication } from "@/lib/anonymous-review";
-import {selectedVotingDisplay,selectedScholarStatus} from "@/lib/voting-slide-fields";
+import {selectedVotingDisplay,selectedScholarStatus,assembleVotingPresentation} from "@/lib/voting-slide-fields";
 import { projectApplicantDisplay } from "@/lib/applicant-display";
 import { allowedByProfileCeiling, normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 import { interviewCapabilities } from "@/lib/interview-access";
@@ -151,8 +151,8 @@ function demoPresentation(c:Pick<ReturnType<typeof find>,"state"|"m"|"round"|"cl
    // Same contract as votingSelectedEvidence for a voting round: this round only, earlier rounds labelled separately.
    const evidence=!base.anonymous?demoRoundScopedEvidence(c.state,c.club,c.m,a,fields):{};
    const observations=demoVotingObservations(c.state,{id:c.s.id??'',clubId:c.club.id,startedAt:c.s.startedAt??null},applicationId,c.m.userId,fields.includes('additionalObservations'),base.anonymous);
-   const scholar=selectedScholarStatus(fields,base.anonymous||!!c.round.anonymousReview,(person.profile as {scholarStatus?:unknown}).scholarStatus);
-   return {...base,...observations,photo:base.visible.includes('photo')?person.profile.headshotUrl??null:null,...evidence,...highlight,...scholar,requestedFields:[...base.visible,...(scholar.scholarStatus?['scholarStatus' as const]:[]),...('resumeHighlight'in highlight?['resumeHighlight' as const]:[]),...(evidence.interviewScore?['interviewScore' as const]:[]),...(evidence.finalInterviewThoughts?['finalInterviewThoughts' as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};
+   const scholar=selectedScholarStatus(fields,base.anonymous||!!c.round.anonymousReview,(person.profile as {scholarStatus?:unknown}).scholarStatus,allowedByProfileCeiling('scholarStatus',normalizeProfileFieldVisibility(c.state.profileFieldVisibility?.[c.club.id])));
+   return assembleVotingPresentation({display:{...base,photo:base.visible.includes('photo')?person.profile.headshotUrl??null:null},evidence,highlight,observations,scholar});
 }
 
 async function sessionSetupUnlocked<K extends keyof typeof Plans>(method:K,input:unknown):Promise<Awaited<ReturnType<(typeof Plans)[K]>>>{

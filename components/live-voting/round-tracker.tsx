@@ -49,6 +49,7 @@ export function RoundTracker({summary,status,variant,position}:{summary:ScopedTa
    {marker!==null&&<span className="vr-tracker-marker" style={{left:`${marker}%`}}/>}
   </div>
   {variant==="panel"&&<p className="vr-tracker-meta" data-reached={reached||undefined}>{[targetText??"No target set",summary.sessions!==undefined?`${summary.sessions} ${summary.sessions===1?"session":"sessions"} this round`:null].filter(Boolean).join(" · ")}</p>}
-  {summary.partial&&<p className="vr-tracker-meta">Includes only voting sessions you can open.</p>}
+  {/* The projector keeps the round-wide counts but not this access note (leader screen only). */}
+  {variant==="panel"&&summary.partial&&<p className="vr-tracker-meta">Includes only voting sessions you can open.</p>}
  </div>;
 }

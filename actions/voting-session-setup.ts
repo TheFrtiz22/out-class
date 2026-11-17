@@ -15,7 +15,8 @@ import {validateVotingSetup,notifyVotingVoters} from "@/utils/voting-room-setup"
 import {hasPermission} from "@/lib/permissions";
 import {getApplicantDisplay} from '@/actions/applicant-intelligence';
 import {votingObservations} from '@/utils/additional-observations';
-import {selectedVotingDisplay,selectedScholarStatus} from "@/lib/voting-slide-fields";
+import {selectedVotingDisplay,selectedScholarStatus,assembleVotingPresentation} from "@/lib/voting-slide-fields";
+import {allowedByProfileCeiling,normalizeProfileFieldVisibility} from "@/lib/profile-field-visibility";
 import {votingSelectedHighlight,votingSelectedEvidence} from '@/utils/voting-room-presentation';
 import {getLiveVotingSetup} from '@/actions/voting-room-setup';
 import { boundedParse } from "@/lib/bounded-input";
@@ -25,12 +26,12 @@ export async function previewVotingSetup(input:unknown){
  const setup=await getLiveVotingSetup({clubId:d.clubId,cycleId:d.cycleId,roundId:d.roundId}),{user}=await requireClubPermission(d.clubId,[...permissions]);
  if(!setup.applicants.some(a=>a.id===d.applicationId)||d.options.fields.some(f=>!setup.allowedFields.includes(f)))throw Error('Presentation isn’t available with the current voter or field settings.');
  const display=await getApplicantDisplay({clubId:d.clubId,applicationId:d.applicationId,previewConfig:roomDisplayConfig(d.options.fields)});
- return prisma.$transaction(async tx=>{const member=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions],{readOnly:true});const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}}),app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{in:['SUBMITTED','IN_REVIEW','INTERVIEWING','WAITLISTED']}},include:{student:{select:{studentProfile:{select:{scholarStatus:true}}}}}});if(!round||!app||display.anonymous!==round.anonymousReview||!round.anonymousReview&&!hasPermission(member,"applicants.identify"))throw Error('Applicant context changed. Update the preview.');const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,d.options.fields,display.anonymous,d.roundId);
+ return prisma.$transaction(async tx=>{const member=await authorizeClubTransaction(tx,d.clubId,user.id,[...permissions],{readOnly:true});const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}}),app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,roundId:d.roundId,recruitmentCycleId:d.cycleId,status:{in:['SUBMITTED','IN_REVIEW','INTERVIEWING','WAITLISTED']}},include:{club:{select:{profileFieldVisibility:true}},student:{select:{studentProfile:{select:{scholarStatus:true}}}}}});if(!round||!app||display.anonymous!==round.anonymousReview||!round.anonymousReview&&!hasPermission(member,"applicants.identify"))throw Error('Applicant context changed. Update the preview.');const evidence=await votingSelectedEvidence(tx,d.clubId,d.applicationId,user.id,d.options.fields,display.anonymous,d.roundId);
  const highlight=await votingSelectedHighlight(tx,d,user.id,d.options.fields.includes('resumeHighlight'),display.anonymous,d.options.highlights[d.applicationId]);
  const selectedDisplay=selectedVotingDisplay(display,d.options.fields);
  const observations=await votingObservations(tx,{id:'',startedAt:null,clubId:d.clubId,cycleId:d.cycleId},app.id,user.id,d.options.fields.includes('additionalObservations'),display.anonymous);
- const scholar=selectedScholarStatus(d.options.fields,display.anonymous||round.anonymousReview,app.student?.studentProfile?.scholarStatus);
- return {...selectedDisplay,...evidence,...highlight,...observations,...scholar,requestedFields:[...selectedDisplay.visible,...(scholar.scholarStatus?['scholarStatus' as const]:[]),...('resumeHighlight'in highlight?['resumeHighlight' as const]:[]),...(evidence.interviewScore?['interviewScore' as const]:[]),...(evidence.finalInterviewThoughts?['finalInterviewThoughts' as const]:[]),...(observations.additionalObservations?['additionalObservations' as const]:[])]};},votingReadLimits);
+ const scholar=selectedScholarStatus(d.options.fields,display.anonymous||round.anonymousReview,app.student?.studentProfile?.scholarStatus,allowedByProfileCeiling('scholarStatus',normalizeProfileFieldVisibility(app.club?.profileFieldVisibility)));
+ return assembleVotingPresentation({display:selectedDisplay,evidence,highlight,observations,scholar});},votingReadLimits);
 }
 export async function listVotingSetupDrafts(input:unknown){
  const {clubId}=z.object({clubId:z.string().uuid()}).strict().parse(input),{user}=await requireClubPermission(clubId,[...permissions]);
