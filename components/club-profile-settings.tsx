@@ -7,6 +7,7 @@ import { loadedDemoStore } from "@/lib/demo/loader"
 import { hasPermission, isActiveMembership } from "@/lib/permissions"
 import { updateClubSettings } from "@/actions/club-workspace"
 import { ClubProfileEditor } from "@/components/clubs/club-profile-editor"
+import { ClubQrPanel } from "@/components/clubs/club-qr-panel"
 import { useEffect, useState } from "react"
 import { readWorkspace } from "@/lib/workspace-read"
 import { clubProfileSchema, profileDraft } from "@/lib/club-marketing"
@@ -37,6 +38,6 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
       try { await refreshUser() } catch { /* The saved profile is authoritative; keep the editor usable. */ }
       onSaved?.()
     }} />
-
+    {!demo.isDemoEnabled && <ClubQrPanel club={club} />}
   </div>
 }
