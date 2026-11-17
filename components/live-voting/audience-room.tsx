@@ -2,29 +2,13 @@
 import {useEffect,useRef,useState,type ReactNode} from "react";
 import {PageHeader} from "@/components/ui/page-header";
 import {OutClassQRCode} from "@/components/qr/outclass-qr-code";
-import {useShortLinkUrl} from "@/components/qr/qr-code-card";
+import {useShortLinkUrl} from "@/components/qr/use-short-link-url";
 import {liveRoomPath,type RoomResult} from "@/lib/voting-room";
-import type {useLiveVotingRoom} from "@/hooks/use-live-voting-room";
 import {RoundTracker,useRoundSummary} from "./round-tracker";
+import {VoteStatus} from "./vote-status";
+import {useVotingSummary} from "./use-voting-summary";
+import {applicantPosition,nextName,resultWords,roundLine,shortLinkText,type Entry,type RoomSnapshot} from "./room-names";
 import {ProjectorThemeSwitch,projectorThemeAttribute,useProjectorTheme,type ProjectorTheme} from "./projector-theme";
-
-export type RoomSnapshot=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
-type Entry=RoomSnapshot["history"][number]["candidates"][number];
-export const resultWords={ACCEPT:"Passed",HOLD:"Held",REJECT:"Did not pass"} as const;
-
-/** Where the room is: the current applicant's place in this pass, as "Applicant 8 of 12". */
-export function applicantPosition(room:RoomSnapshot){
- const pass=room.history.find(p=>p.number===room.passNumber),entry=pass?.candidates.find(c=>c.applicationId===room.currentApplicantId);
- return entry&&pass?`Applicant ${entry.position+1} of ${pass.candidates.length}`:"";
-}
-/** The next applicant in this pass after the current one, or null at the end of the pass. */
-export function nextApplicant(room:RoomSnapshot){
- const pass=room.history.find(p=>p.number===room.passNumber),entry=pass?.candidates.find(c=>c.applicationId===room.currentApplicantId);
- if(!pass||!entry)return null;
- return [...pass.candidates].sort((a,b)=>a.position-b.position).find(c=>c.position>entry.position)??null;
-}
-export function roundLine(room:RoomSnapshot){return [room.roundName,room.cycleName].filter(Boolean).join(" · ");}
-export function shortLinkText(url:string){return url.replace(/^https?:\/\//,"");}
 
 /** Counts only, after the leader closes the ballot: the outcome, the three totals and the rule. Never a ballot. */
 export function VoteResult({room,entry,outcome,variant="slide"}:{room:RoomSnapshot;entry:Entry;outcome:RoomResult|null;variant?:"slide"|"panel"}){
@@ -45,20 +29,6 @@ export function VoteResult({room,entry,outcome,variant="slide"}:{room:RoomSnapsh
   <dl className="vr-aud-bars" aria-label="Closed ballot totals">{rows.map(([label,key,n])=><div key={key} data-choice={key}>
    <dt>{label}</dt><dd className="vr-aud-bar" aria-hidden="true"><span style={{width:`${n*100/max}%`}}/></dd><dd className="vr-aud-bar-count">{n}</dd></div>)}</dl>
   <p className="vr-aud-meta">{room.participation.voted} of {room.participation.eligible} in the room voted{rule?` · ${rule}`:""}</p>
- </div>;
-}
-
-/** The status line along the bottom of the projector. While voting is open it shows only how many have voted. */
-export function VoteStatus({room,entry,next,variant}:{room:RoomSnapshot;entry:Entry|undefined;next:string|null;variant:"slide"|"panel"}){
- const {voted,eligible}=room.participation,share=eligible?Math.min(100,voted*100/eligible):0;
- const open=room.status==="OPEN"&&entry?.ballotState==="OPEN";
- const label=room.status==="COMPLETED"?"Voting ended":room.status==="DRAFT"?"Voting has not started":room.status==="PAUSED"?"Waiting for the leader":open&&room.votingPaused?"Voting paused":open?"Voting open":entry?.ballotState==="CLOSED"||entry?.ballotState==="CONFIRMED"?"Vote closed":"Waiting for voting";
- const detail=open&&!room.votingPaused?(variant==="slide"?"vote on your phone":""):label==="Vote closed"&&next?`next: ${next}`:"";
- return <div className="vr-vote-status" data-variant={variant} data-state={open?"open":"waiting"}>
-  <div className="vr-vote-left"><p className="vr-vote-state"><strong>{label}</strong>{detail&&<span> · {detail}</span>}</p>
-  {variant==="slide"&&open&&<p className="vr-pass-meaning" data-pass-meaning={room.targetSummary.pass.kind}>{room.targetSummary.pass.label}</p>}</div>
-  {open?<div className="vr-vote-count"><span className="vr-vote-meter" aria-hidden="true"><span style={{width:`${share}%`}}/></span><p aria-live="polite"><strong>{voted}</strong> of {eligible} in the room voted</p></div>
-   :<p className="vr-vote-position">{applicantPosition(room)}</p>}
  </div>;
 }
 
@@ -106,15 +76,16 @@ export function SlideFrame({theme,round,headerEnd,tracker,stage,footer,preview=f
  </div>;
 }
 
-/** The projector while the room loads: the same frame, theme and header, so nothing shifts when the slide arrives. */
-export function AudienceSkeleton({sessionId,children}:{sessionId:string;children:ReactNode}){
- const [theme]=useProjectorTheme(sessionId);
- return <div className="vr-aud" data-theme={projectorThemeAttribute(theme)}>
-  <div className="vr-aud-slide" aria-busy="true">
-   <header className="vr-aud-header"><PageHeader title="Live voting" className="vr-aud-title"/></header>
-   <div className="vr-aud-tracker"><div className="vr-tracker"><div className="vr-tracker-head"><span className="vr-tracker-meta">&nbsp;</span></div><div className="vr-tracker-bar" aria-hidden="true"/></div></div>
-   <div className="vr-aud-stage">{children}</div>
-   <footer className="vr-aud-footer"><div className="vr-vote-status" data-variant="slide"><p className="vr-vote-state">&nbsp;</p></div></footer>
-  </div>
- </div>;
+
+/** The projector's result for a closed ballot, bound to the snapshot it closed in (the outgoing slide keeps it). */
+function closedResult(room:RoomSnapshot,entry:Entry){
+ return function ClosedResult(outcome:RoomResult|null){return <VoteResult room={room} entry={entry} outcome={outcome}/>;};
+}
+type StageOptions={aside?:(outcome:RoomResult|null)=>ReactNode;idle?:React.ReactElement};
+/** The projector view: loaded on demand for view=present only. */
+export function AudienceView({room,entry,clubId,sessionId,demoScoped,stage}:{room:RoomSnapshot;entry:Entry|undefined;clubId:string;sessionId:string;demoScoped:boolean;stage:(options:StageOptions)=>ReactNode}){
+ const {summary}=useVotingSummary(room,room.permissions.leader);
+ const aside=entry&&(entry.ballotState==="CLOSED"||entry.ballotState==="CONFIRMED")&&room.status==="OPEN"?closedResult(room,entry):undefined;
+ const idle=room.status==="DRAFT"?<section className="vr-applicant vr-aud-waiting" aria-label="Waiting room"><h2 data-applicant-heading tabIndex={-1}>Ready when your leader is</h2><p>Voting has not started. Scan the code to join.</p><JoinCode clubId={clubId} sessionId={sessionId} demo={demoScoped} size={220}/></section>:undefined;
+ return <AudienceRoom room={room} entry={entry} clubId={clubId} sessionId={sessionId} demo={demoScoped} stage={stage({aside,idle})} nextLabel={nextName(room,summary?.labels)}/>;
 }

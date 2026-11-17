@@ -5,7 +5,8 @@ import type {ScopedTargetSummary} from "@/components/voting-target-summary";
 import {roundTrackerCounts} from "@/lib/voting-target-summary";
 
 type RoomScope={clubId:string;cycleId:string|null;roundId:string;accessVersion?:string;outcomes:readonly {applicationId:string;passNumber:number;outcome:string}[]};
-export function outcomeSignature(room:Pick<RoomScope,"outcomes">){return room.outcomes.map(o=>`${o.applicationId}:${o.passNumber}:${o.outcome}`).join("|");}
+import {outcomeSignature} from "./room-names";
+export {outcomeSignature};
 
 /**
  * Entire-round counts (every session of the round this viewer may open), from the same server-authorized read the

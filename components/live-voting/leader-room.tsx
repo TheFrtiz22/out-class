@@ -11,7 +11,11 @@ const SessionDetails=lazy(()=>import("./session-details").then(m=>({default:m.Se
 import {OutcomeCounts,type VotingSummaryState} from "./room-meeting";
 import {RoundTracker,useRoundSummary} from "./round-tracker";
 import {ProjectorThemeSwitch,useProjectorTheme} from "./projector-theme";
-import {VoteStatus,roundLine,type RoomSnapshot} from "./audience-room";
+import {VoteStatus} from "./vote-status";
+import {applicantPosition,nextName,roundLine,type RoomSnapshot} from "./room-names";
+import {LeaderControls,useVotingSummary} from "./room-meeting";
+import {DiscussionLeader} from "./discussion-panel";
+import {VotingBackLink} from "./room-back-link";
 
 type Entry=RoomSnapshot["history"][number]["candidates"][number];
 
@@ -59,5 +63,19 @@ export function LeaderRoom({room,entry,clubId,sessionId,demoScoped,stage,control
     <section aria-labelledby="vr-lead-queue"><h2 id="vr-lead-queue">Applicants</h2><Queue room={room} label={label}/></section>
    </aside>
   </div>
+ </div>;
+}
+
+/** The leader view: loaded on demand for view=leader only. */
+export function LeaderView({room,entry,clubId,sessionId,demoScoped,refresh,member,qrButton,moreButton,onShowQr,qrDialog,transitioning,stage}:{room:RoomSnapshot;entry:RoomSnapshot["history"][number]["candidates"][number]|undefined;clubId:string;sessionId:string;demoScoped:boolean;refresh:()=>Promise<void>|undefined;member?:string;qrButton:React.Ref<HTMLButtonElement>;moreButton:React.Ref<HTMLButtonElement>;onShowQr:()=>void;qrDialog:React.ReactNode;transitioning:boolean;stage:(position:string)=>React.ReactNode}){
+ const summaryState=useVotingSummary(room),next=nextName(room,summaryState.summary?.labels);
+ return <div className="vr-page vr-lead-page"><VotingBackLink clubId={clubId} cycleId={room.cycleId} roundId={room.roundId}/>
+  <LeaderRoom room={room} entry={entry} clubId={clubId} sessionId={sessionId} demoScoped={demoScoped} summaryState={summaryState} onShowQr={onShowQr} qrButton={qrButton} moreButton={moreButton} nextLabel={next} refresh={refresh}
+   stage={stage(applicantPosition(room))}
+   discussion={room.discussion&&!demoScoped?<DiscussionLeader clubId={clubId} sessionId={sessionId} discussion={room.discussion} refresh={refresh}/>:null}
+   controls={room.meeting?.status!=='CANCELLED'?<LeaderControls room={room} refresh={refresh} member={member} transitioning={transitioning} summaryState={summaryState} nextLabel={next}/>:null}/>
+  {room.status==="COMPLETED"&&<p role="status">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}
+  <p className="sr-only">{entry?`${applicantPosition(room)}. ${entry.ballotState==="OPEN"?"Voting open":"Voting closed or waiting"}.`:"Waiting for the leader."}</p>
+  {qrDialog}
  </div>;
 }

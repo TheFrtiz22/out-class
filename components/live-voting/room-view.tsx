@@ -1,5 +1,4 @@
 "use client";
-import {Popover,PopoverTrigger,PopoverContent} from "@/components/ui/popover";
 import { useFocusFrame } from "@/components/shell/focus-frame-context";
 import { votingRoomFocus } from "@/lib/focus-routes";
 import { VotingBackLink } from "./room-back-link";
@@ -15,20 +14,22 @@ import { liveRoomPath,roomBallotSchema,outcomeLabels,confirmedResult,adjacentApp
 import { z } from "zod";
 // The downloadable QR card (export and presenter dialog) loads only when the join dialog or the leader's waiting room asks for it.
 const QrCodeCard=lazy(()=>import("@/components/qr/qr-code-card").then(m=>({default:m.QrCodeCard})));
-import {Check,Pause,XIcon,ChevronDown} from "@/components/icons";
+import {Check,Pause,XIcon} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog,DialogContent,DialogTitle } from "@/components/ui/dialog";
 import { ApplicantTransition,type Motion } from "./applicant-transition";
 import { RoomPresentation } from "./room-presentation";
-import {LeaderControls,useVotingSummary,type VotingSummaryState} from "./room-meeting";
-import {AudienceRoom,AudienceSkeleton,JoinCode,VoteResult,applicantPosition,nextApplicant} from "./audience-room";
-import {LeaderRoom} from "./leader-room";
+import {AudienceSkeleton} from "./audience-skeleton";
+import type {RoomSnapshot} from "./room-names";
+// Each view loads only its own screen: the projector never downloads the leader controls, and members neither.
+const AudienceView=lazy(()=>import("./audience-room").then(m=>({default:m.AudienceView})));
+const LeaderView=lazy(()=>import("./leader-room").then(m=>({default:m.LeaderView})));
 const SessionDetails=lazy(()=>import('./session-details').then(m=>({default:m.SessionDetails})));
 import {formatDateTime} from '@/lib/copy/terms';
 import {SCHEDULING_TIMEZONE,SCHEDULING_TIMEZONE_LABEL} from '@/lib/scheduling-config';
 import type {VotingJoinMeeting} from '@/lib/voting-session-setup';
 import {BallotPrivacyNote} from "@/components/live-voting/ballot-privacy-note";
-import {DiscussionLeader,DiscussionMember} from "@/components/live-voting/discussion-panel";
+import {DiscussionMember} from "@/components/live-voting/discussion-panel";
 import "./room.css";
 import { PageHeader } from "@/components/ui/page-header";
 import { NativeSelect } from "@/components/ui/native-select"
@@ -63,7 +64,6 @@ function JoinMeetingPreview({meeting}:{meeting:VotingJoinMeeting}){
  const until=meeting.plannedAt?+new Date(meeting.plannedAt)-Date.now():0,minutes=Math.max(1,Math.round(until/60000));
  return <section aria-label="Session details" className="space-y-1"><h2>{meeting.name}</h2>{meeting.plannedAt&&<p>{`Scheduled start · ${formatDateTime(meeting.plannedAt,{timeZone:SCHEDULING_TIMEZONE})} ${SCHEDULING_TIMEZONE_LABEL}`}</p>}{until>0&&until<3600000&&<p>{`Starts in about ${minutes} ${minutes===1?"minute":"minutes"}`}</p>}{meeting.location&&<p className="break-words">{meeting.location}</p>}</section>;
 }
-type RoomSnapshot=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
 /**
  * What the stage shows when no applicant is current: before the start, between passes, and once voting has ended.
  * Counts come from the room's canonical outcomes (each applicant's latest confirmed decision), so moving someone from
@@ -99,31 +99,6 @@ function motionFor(room:RoomSnapshot,appId:string|null,from:{passNumber:number;a
  if(from.applicationId===null)return appId?"fade":"none";
  return adjacentApplicants(room.history,{passNumber:from.passNumber,applicationId:from.applicationId},{passNumber:room.passNumber,applicationId:appId})?"slide":"none";
 }
-/** The projector's result for a closed ballot, bound to the snapshot it closed in (the outgoing slide keeps it). */
-function closedResult(room:RoomSnapshot,entry:RoomSnapshot["history"][number]["candidates"][number]){
- return function ClosedResult(outcome:RoomResult|null){return <VoteResult room={room} entry={entry} outcome={outcome}/>;};
-}
-/** Names come from the leader-only summary read; a presenter without it sees the applicant's number. */
-function nextName(room:RoomSnapshot,summary:VotingSummaryState["summary"]){
- const next=nextApplicant(room);
- return next?summary?.labels.find(l=>l.id===next.applicationId)?.label??`Applicant ${next.position+1}`:null;
-}
-function AudienceView({room,entry,clubId,sessionId,demoScoped,stage}:{room:RoomSnapshot;entry:RoomSnapshot["history"][number]["candidates"][number]|undefined;clubId:string;sessionId:string;demoScoped:boolean;stage:React.ReactNode}){
- const {summary}=useVotingSummary(room,room.permissions.leader);
- return <AudienceRoom room={room} entry={entry} clubId={clubId} sessionId={sessionId} demo={demoScoped} stage={stage} nextLabel={nextName(room,summary)}/>;
-}
-function LeaderView({room,entry,clubId,sessionId,demoScoped,refresh,member,qrButton,moreButton,onShowQr,qrDialog,transitioning,stage}:{room:RoomSnapshot;entry:RoomSnapshot["history"][number]["candidates"][number]|undefined;clubId:string;sessionId:string;demoScoped:boolean;refresh:()=>Promise<void>|undefined;member?:string;qrButton:React.Ref<HTMLButtonElement>;moreButton:React.Ref<HTMLButtonElement>;onShowQr:()=>void;qrDialog:React.ReactNode;transitioning:boolean;stage:(position:string)=>React.ReactNode}){
- const summaryState=useVotingSummary(room),next=nextName(room,summaryState.summary);
- return <div className="vr-page vr-lead-page"><VotingBackLink clubId={clubId} cycleId={room.cycleId} roundId={room.roundId}/>
-  <LeaderRoom room={room} entry={entry} clubId={clubId} sessionId={sessionId} demoScoped={demoScoped} summaryState={summaryState} onShowQr={onShowQr} qrButton={qrButton} moreButton={moreButton} nextLabel={next} refresh={refresh}
-   stage={stage(applicantPosition(room))}
-   discussion={room.discussion&&!demoScoped?<DiscussionLeader clubId={clubId} sessionId={sessionId} discussion={room.discussion} refresh={refresh}/>:null}
-   controls={room.meeting?.status!=='CANCELLED'?<LeaderControls room={room} refresh={refresh} member={member} transitioning={transitioning} summaryState={summaryState} nextLabel={next}/>:null}/>
-  {room.status==="COMPLETED"&&<p role="status">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}
-  <p className="sr-only">{entry?`${applicantPosition(room)}. ${entry.ballotState==="OPEN"?"Voting open":"Voting closed or waiting"}.`:"Waiting for the leader."}</p>
-  {qrDialog}
- </div>;
-}
 export function VotingRoom(props:RoomProps){
  const {clubId,sessionId,view,demoScoped,identity,member}=props,{room,error,refresh}=useLiveVotingRoom(clubId,sessionId,identity,member),[qr,setQr]=useState(false),[preview,setPreview]=useState(""),[voteError,setVoteError]=useState(""),[voteBusy,setVoteBusy]=useState(false),[attempt,setAttempt]=useState<Ballot|null>(null),[ack,setAck]=useState<{key:string;choice:string;revision:number}|null>(null);
  const [readyApplicant,setReadyApplicant]=useState<string|null>(null);
@@ -142,11 +117,9 @@ export function VotingRoom(props:RoomProps){
  const qrCard=<Suspense fallback={<div className="vr-qr-card-placeholder" aria-hidden="true"/>}><QrCodeCard title="Join this voting session" description="Sign in with your club account." path={liveRoomPath(clubId,sessionId,"member",demoScoped)} filename="outclass-voting-session"/></Suspense>;
  const qrDialog=<Dialog open={qr} onOpenChange={setQr}><DialogContent onCloseAutoFocus={e=>{e.preventDefault();const origin=qrOrigin.current;(origin?.isConnected?origin:sessionButton.current??qrButton.current)?.focus();}} aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto"><DialogTitle>Join live voting</DialogTitle>{qrCard}</DialogContent></Dialog>;
  const transition=(variant:"audience"|"leader",extra:{aside?:(o:RoomResult|null)=>React.ReactNode;position?:string;idle?:React.ReactElement})=><ApplicantTransition key={`${identity}:${room.accessVersion}`} fill={variant==="audience"} applicantId={appId} passNumber={room.passNumber} onReady={setReadyApplicant} summary={room.status!=="OPEN"&&room.status!=="DRAFT"} ended={room.status==="COMPLETED"} idle={extra.idle??(room.status==="PAUSED"||room.status==="COMPLETED"?<Intermission room={room} view={view}/>:undefined)} resultFor={(n,id)=>confirmedResult(room.history,n,id)} motionFrom={(n,id)=>motionFor(room,appId,{passNumber:n,applicationId:id})} release={!!entry&&entry.ballotState!=="PENDING"}><RoomPresentation clubId={clubId} sessionId={sessionId} applicationId={appId??""} identity={`${identity}:${room.accessVersion}`} refreshKey={0} member={member} onStale={refresh} presenting variant={variant} aside={extra.aside} position={extra.position}/></ApplicantTransition>;
- if(view==="present")return <AudienceView room={room} entry={entry} clubId={clubId} sessionId={sessionId} demoScoped={demoScoped} stage={transition("audience",{
-   aside:entry&&(entry.ballotState==="CLOSED"||entry.ballotState==="CONFIRMED")&&room.status==="OPEN"?closedResult(room,entry):undefined,
-   idle:room.status==="DRAFT"?<section className="vr-applicant vr-aud-waiting" aria-label="Waiting room"><h2 data-applicant-heading tabIndex={-1}>Ready when your leader is</h2><p>Voting has not started. Scan the code to join.</p><JoinCode clubId={clubId} sessionId={sessionId} demo={demoScoped} size={220}/></section>:undefined})}/>;
- if(view==="leader")return <LeaderView room={room} entry={entry} clubId={clubId} sessionId={sessionId} demoScoped={demoScoped} refresh={refresh} member={member} qrButton={qrButton} moreButton={sessionButton} onShowQr={()=>{qrOrigin.current=document.activeElement as HTMLElement|null;setQr(true);}} qrDialog={qrDialog} transitioning={readyApplicant!==`${room.passNumber}:${appId??(room.status==="COMPLETED"?"end":"null")}`}
-   stage={(position)=><>{room.status==="DRAFT"&&<><section aria-label="Waiting room" className="vr-lead-waiting"><h2>Ready when your leader is</h2><p>Voting has not started.</p>{qrCard}</section><label className="block my-4">Preview applicant<NativeSelect className="ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</NativeSelect></label></>}{transition("leader",{position})}</>}/>;
+ if(view==="present")return <Suspense fallback={<AudienceSkeleton sessionId={sessionId}><p role="status" className="vr-aud-meta">Restoring voting session…</p></AudienceSkeleton>}><AudienceView room={room} entry={entry} clubId={clubId} sessionId={sessionId} demoScoped={demoScoped} stage={o=>transition("audience",o)}/></Suspense>;
+ if(view==="leader")return <Suspense fallback={<div className="vr-page"><LoadingState label="Restoring voting session…" layout="voting" rows={3}/></div>}><LeaderView room={room} entry={entry} clubId={clubId} sessionId={sessionId} demoScoped={demoScoped} refresh={refresh} member={member} qrButton={qrButton} moreButton={sessionButton} onShowQr={()=>{qrOrigin.current=document.activeElement as HTMLElement|null;setQr(true);}} qrDialog={qrDialog} transitioning={readyApplicant!==`${room.passNumber}:${appId??(room.status==="COMPLETED"?"end":"null")}`}
+   stage={(position)=><>{room.status==="DRAFT"&&<><section aria-label="Waiting room" className="vr-lead-waiting"><h2>Ready when your leader is</h2><p>Voting has not started.</p>{qrCard}</section><label className="block my-4">Preview applicant<NativeSelect className="ml-2" aria-label="Preview applicant" value={appId??""} onChange={e=>setPreview(e.target.value)}>{room.outcomes.map((a,i)=><option key={a.applicationId} value={a.applicationId}>Applicant {i+1}</option>)}</NativeSelect></label></>}{transition("leader",{position})}</>}/></Suspense>;
  return <div className="vr-page vr-member">
  <VotingBackLink clubId={clubId} cycleId={room.cycleId} roundId={room.roundId}/><header className="vr-header"><PageHeader title="Your vote" /></header>
  <div className="vr-stats" aria-label="Session progress"><span>{room.status==="COMPLETED"?"Session ended":entry?.ballotState==="OPEN"?"Voting open":entry?.ballotState==="CLOSED"||entry?.ballotState==="CONFIRMED"?"Voting closed":"Waiting for voting"}</span><span>{room.participation.voted} of {room.participation.eligible} eligible voters voted</span><span>Reviewed {pass?.candidates.filter(c=>c.ballotState==="CONFIRMED").length??0} of {pass?.candidates.length??room.outcomes.length} this pass · Pass {room.passNumber||1}</span></div>

@@ -14,7 +14,9 @@ import {useDemoMode} from "@/contexts/demo-context";
 import {Check, XIcon, MoreHorizontal, Pause} from "@/components/icons";
 import { NativeSelect } from "@/components/ui/native-select"
 import {VotingTargetSummary} from "@/components/voting-target-summary";
-import {outcomeSignature,useRoundSummary} from "./round-tracker";
+import {useRoundSummary} from "./round-tracker";
+import type {VotingSummaryState} from "./use-voting-summary";
+export {useVotingSummary,type VotingSummaryState} from "./use-voting-summary";
 type Room=NonNullable<ReturnType<typeof useLiveVotingRoom>["room"]>;
 type Command=z.infer<typeof roomCommandSchema>;
 type Summary=Awaited<ReturnType<typeof getLiveVotingSummary>>;
@@ -26,15 +28,6 @@ export function OutcomeCounts({room,round}:{room:Room;round?:ReturnType<typeof u
  const own=useRoundSummary(round?null:room),current=round??own;
  return <VotingTargetSummary label="Decision totals" target={room.targetSummary} session={room.targetSummary} round={current.round} roundStatus={current.status}/>;
 }
-/** Applicant labels, later rounds and the summary lists: refetched on phase, outcome or access changes only (labels
- * and later rounds do not change with ballots). Shared by the leader's queue and the controls. */
-export function useVotingSummary(room:Room,enabled=true){
- const [summary,setSummary]=useState<Summary|null>(null),[error,setError]=useState(false),[reload,setReload]=useState(0);
- const key=`${room.status}:${room.passNumber}:${room.finalizedAt??""}:${room.accessVersion}:${outcomeSignature(room)}`;
- useEffect(()=>{let live=true;setSummary(null);setError(false);if(!enabled)return;getLiveVotingSummary({clubId:room.clubId,sessionId:room.id}).then(s=>{if(live)setSummary(s)}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[room.clubId,room.id,key,reload,enabled]);
- return {summary,error,reload:()=>setReload(v=>v+1)};
-}
-export type VotingSummaryState=ReturnType<typeof useVotingSummary>;
 export function LeaderControls({room,refresh,member,transitioning=false,summaryState,nextLabel}:{room:Room;refresh:()=>Promise<void>|undefined;member?:string;transitioning?:boolean;summaryState:VotingSummaryState;nextLabel:string|null}){
  const confirm=useConfirm();
  const [staleRevision,setStaleRevision]=useState<number|null>(null);
