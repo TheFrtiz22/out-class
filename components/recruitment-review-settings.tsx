@@ -43,7 +43,7 @@ export function RecruitmentReviewSettings({
         <p className="text-sm text-muted-foreground">
           Reviewers in an anonymous round see scores and metrics, not names,
           free text, files or notes. Set it before review begins: what a
-          reviewer has seen can't be hidden again. Turning it off shows names
+          reviewer has seen can’t be hidden again. Turning it off shows names
           to members who can identify applicants, and is audited.
         </p>
         {!canIdentify && <p className="text-sm text-muted-foreground">Changing anonymity also requires permission to identify applicants.</p>}
