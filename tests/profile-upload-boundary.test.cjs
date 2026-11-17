@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const { unwrapActions } = require('./helpers/action-result.cjs')
 const fs = require('node:fs');
 const ts = require('typescript');
 const owner = '123e4567-e89b-12d3-a456-426614174000';
@@ -42,7 +43,7 @@ function harness({ account = 'active', signingError = false, uploadError = false
       studentProfile: { update: async ({ where, data }) => { profiles.set(where.userId, data); return data; }, findUnique: async ({ where }) => profiles.get(where.userId) },
     } },
   };
-  return { api: load('actions/storage.ts', mocks), profile: load('actions/profile.ts', mocks), calls };
+  return { api: unwrapActions(load('actions/storage.ts', mocks)), profile: load('actions/profile.ts', mocks), calls };
 }
 for (const [type, image] of Object.entries(images)) test(`exported upload accepts validated ${type} with a fresh owner path and no returned capability`, async () => {
   const h = harness(); const result = await h.api.uploadProfileFile(form(type));

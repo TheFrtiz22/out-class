@@ -55,6 +55,17 @@ test('application submit returns closed intake and missing profile as safe failu
   assert.deepEqual(JSON.parse(JSON.stringify(submitted)), submitted);
 });
 
+test('an answer over the length limit is a message the student can act on, for drafts and submits, at the boundary', async () => {
+  const long = n => ({ clubId, answers: [{ questionId, response: 'x'.repeat(n) }] });
+  for (const call of ['saveApplicationDraft', 'submitApplication']) {
+    const refused = await applications()[call](long(100001));
+    assert.equal(refused.ok, false);
+    assert.equal(refused.code, 'TOO_LONG');
+    assert.match(userMessage(refused, fallback), /longer than 100,000 characters/);
+    assert.equal((await applications()[call](long(100000))).ok, true, 'exactly at the limit still saves');
+  }
+});
+
 test('application success is wrapped and unexpected errors still throw', async () => {
   const saved = await applications().submitApplication(input);
   assert.deepEqual(saved, { $action: 'outclass.action/v1', ok: true, data: { success: true, applicationId: 'app' } });

@@ -4,6 +4,7 @@ import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission } from "@/lib/permissions";
+import { ActionError, actionResult } from "@/lib/action-result";
 import { RANKED_REVIEW_NO_CYCLE, rankedBandsSchema, rankedCycleKeySchema, rankedScopeSetting, readRankedReviewSettings, withRankedScope } from "@/lib/ranked-review";
 
 const uuid = z.string().uuid();
@@ -43,16 +44,20 @@ const saveSchema = z.object({
  * applicant is advanced, rejected or notified.
  */
 export async function saveRankedReviewBands(input: unknown) {
+  return actionResult(() => saveRankedReviewBandsCommand(input), "saveRankedReviewBands");
+}
+
+async function saveRankedReviewBandsCommand(input: unknown) {
   const data = saveSchema.parse(input);
   const { user } = await requireClubPermission(data.clubId, ["recruitment.manage"]);
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, data.clubId, user.id, ["recruitment.manage"]);
     const round = await tx.pipelineRound.findFirst({ where: { id: data.roundId, clubId: data.clubId, archivedAt: null }, select: { id: true, configuration: true } });
-    if (!round) throw new Error("Round unavailable.");
+    if (!round) throw new ActionError("This round was archived or removed. Refresh and choose another round.", "STALE");
     if (data.cycleKey !== RANKED_REVIEW_NO_CYCLE && !await tx.recruitmentCycle.findFirst({ where: { id: data.cycleKey, clubId: data.clubId }, select: { id: true } }))
-      throw new Error("Cycle unavailable.");
+      throw new ActionError("That recruitment cycle was removed. Refresh and choose another.", "STALE");
     const current = rankedScopeSetting(round.configuration, data.cycleKey);
-    if (current.revision !== data.expectedRevision) throw new Error("Discussion bands changed. Reload before saving.");
+    if (current.revision !== data.expectedRevision) throw new ActionError("Someone else changed these discussion bands. Refresh to see them, then save again.", "STALE");
     const revision = current.revision + 1;
     await tx.pipelineRound.update({ where: { id: round.id }, data: { configuration: withRankedScope(round.configuration, data.cycleKey, data.bands, revision) } });
     await tx.auditLog.create({ data: { actorId: user.id, action: "round.ranked-review-bands.configure", targetId: round.id, clubId: data.clubId, details: { cycleKey: data.cycleKey, bands: data.bands, revision } } });
