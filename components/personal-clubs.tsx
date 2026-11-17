@@ -1,7 +1,8 @@
 "use client"
 import { PillSelect } from "@/components/ui/pill-select"
+import { SearchField } from "@/components/ui/search-field"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { ArrowRight } from "@/components/icons"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { hasWorkspace } from "@/lib/permissions"
@@ -32,9 +33,25 @@ export function PersonalClubs({ section }: { section: PersonalSection }) {
   const clubFilter = memberships.length > 1 ? <PillSelect label="Filter by club" allLabel="All clubs" size="compact" active={!!selected} value={selected} onChange={value => { if (canLeaveWorkspace()) setSelected(value) }} options={memberships.map(m => ({ value: m.clubId, label: m.club.name }))} /> : null
   // One meeting list for every club the person belongs to, so its filters appear once; each row names its club.
   if (section === "meetings") return <MeetingList clubId={selected || undefined} clubIds={memberships.map(m => m.clubId)} filters={clubFilter} embedded personalOnly initialAudience="MEMBERS" />
-  const shown = selected ? memberships.filter(m => m.clubId === selected) : memberships
-  return <div className="space-y-4">{clubFilter}
-    {shown.map(m => <section key={m.clubId} aria-label={m.club.name} className="space-y-2">{shown.length > 1 && <h2 className="oc-section-heading">{m.club.name}</h2>}<ClubTasks clubId={m.clubId} embedded personalOnly /></section>)}
+  if (memberships.length === 1) return <ClubTasks clubId={member.clubId} embedded personalOnly />
+  return <AllClubTasks memberships={selected ? memberships.filter(m => m.clubId === selected) : memberships} clubFilter={clubFilter} />
+}
+/** One filter row for every club's tasks; each club's list follows it and is headed only when it has tasks to show. */
+function AllClubTasks({ memberships, clubFilter }: { memberships: ExtendedMembership[]; clubFilter: ReactNode }) {
+  const [filter, setFilter] = useState("open"), [query, setQuery] = useState(""), [counts, setCounts] = useState<Record<string, number>>({})
+  const onCount = useCallback((clubId: string, count: number) => setCounts(current => current[clubId] === count ? current : { ...current, [clubId]: count }), [])
+  const reporters = useMemo(() => Object.fromEntries(memberships.map(m => [m.clubId, (count: number) => onCount(m.clubId, count)])), [memberships, onCount])
+  const filtered = filter !== "open" || !!query.trim()
+  const settled = memberships.every(m => counts[m.clubId] !== undefined), none = settled && memberships.every(m => counts[m.clubId] === 0)
+  return <div className="oc-personal-tasks space-y-4">
+    <div role="toolbar" aria-label="Task filters" className="oc-task-filters">
+      {clubFilter}
+      {filter !== "projects" && <PillSelect label="Status" prefix="Status" size="compact" active={filter !== "open"} value={filter} onChange={setFilter} options={[{ value: "open", label: "Active" }, { value: "due", label: "Due" }, { value: "overdue", label: "Overdue" }, { value: "submitted", label: "Submitted" }, { value: "completed", label: "Completed" }, { value: "all", label: "All tasks" }]} />}
+      <PillSelect label="Group by" prefix="Group by" size="compact" active={filter === "projects"} value={filter === "projects" ? "project" : "none"} onChange={next => setFilter(next === "project" ? "projects" : "open")} options={[{ value: "none", label: "None" }, { value: "project", label: "Project" }]} />
+      <SearchField aria-label="Search tasks" value={query} onChange={event => setQuery(event.target.value)} onClear={() => setQuery("")} placeholder="Search tasks" containerClassName="oc-task-search-control" />
+    </div>
+    {memberships.map(m => <section key={m.clubId} aria-label={m.club.name} className="space-y-2">{counts[m.clubId] !== 0 && counts[m.clubId] !== undefined && <h2 className="oc-section-heading">{m.club.name}</h2>}<ClubTasks clubId={m.clubId} embedded personalOnly shared={{ filter, query, onCount: reporters[m.clubId] }} /></section>)}
+    {none && <EmptyState role="status" tone="outlined" density="compact" title={filtered ? "No tasks match your filters." : "You're all caught up."} description={filtered ? "Try another search or clear the filters." : "No tasks need your attention. Choose All tasks under Status to see earlier work."} action={filtered ? <Button type="button" variant="outline" size="sm" onClick={() => { setQuery(""); setFilter("open") }}>Clear filters</Button> : undefined} />}
   </div>
 }
 /** Moved from Settings → Organizations (now redirected to My Clubs). */
