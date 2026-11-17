@@ -16,13 +16,14 @@ export function PersonalSettingsLayout({ children }: { children: ReactNode }) {
   if (pathname === "/settings/interviews") return children
   const section = personalSettingsSectionFor(pathname)
   const value = section?.href ?? "/settings"
-  // Personal settings only: club settings are reached from each club workspace. Phones use the
-  // overview list (/settings) and drill in; a section shows breadcrumbs back to it.
+  // Personal settings only: club settings are reached from each club workspace. The overview list (/settings)
+  // is the menu at every width, so it shows no side menu beside it; a section shows the side menu on desktop
+  // and breadcrumbs back to the overview.
   const guard = (event: { preventDefault(): void }) => { if (!canLeaveWorkspace()) event.preventDefault() }
   return <div data-settings-hub>
     {section && <Breadcrumbs className="mb-2" items={[{ label: "Settings", href: "/settings" }, { label: section.label }]} onLinkClick={guard} />}
-    <PageHeader title={section?.label ?? "Settings"} description={section?.description ?? "Your account, notifications and availability."} />
-    <div className="oc-settings-workspace">
+    <PageHeader title={section?.label ?? "Settings"} description={section?.description ?? "Your account, notifications, availability and interests."} />
+    {!section ? <div className="oc-workspace-stack max-w-2xl" data-settings-content>{children}</div> : <div className="oc-settings-workspace">
       <aside className="oc-settings-menu oc-personal-settings-menu">
         <nav className="oc-settings-navigation oc-settings-desktop-navigation" aria-label="Personal settings">
           <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">Personal settings</p>
@@ -30,6 +31,6 @@ export function PersonalSettingsLayout({ children }: { children: ReactNode }) {
         </nav>
       </aside>
       <div className="oc-workspace-stack" data-settings-content>{children}</div>
-    </div>
+    </div>}
   </div>
 }
