@@ -237,7 +237,7 @@ export function ClubSettingsWorkspace({
             {member.isOwner && (
               <Link
                 className="oc-profile-link"
-                href={`/club/${clubId}/workspace?section=settings&setting=members`}
+                href={`/club/${encodeURIComponent(clubId)}/workspace?section=members`}
               >
                 Manage owners and member access <ArrowUpRight size={14} className="inline-block align-text-bottom" />
               </Link>
