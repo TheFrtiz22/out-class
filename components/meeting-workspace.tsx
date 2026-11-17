@@ -379,50 +379,52 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
   }, [id, refresh]);
   if (error)
     return (
-      <div role="alert">
-        {error}{" "}
-        <Button variant="outline" onClick={() => setRefresh((v) => v + 1)}>
+      <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-destructive">
+        {error}
+        <Button variant="outline" size="sm" onClick={() => setRefresh((v) => v + 1)}>
           Retry
         </Button>
       </div>
     );
   if (!meeting) return <LoadingState label="Loading meeting…" layout="form" rows={3} />;
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
-    resources = resourceSchema.array().safeParse(meeting.resources);
+    resources = resourceSchema.array().safeParse(meeting.resources),
+    canManage = hasPermission(member, "meetings.manage");
   return (
-    <article className="max-w-[var(--oc-content-width)] space-y-8">
-      <header className="space-y-4 border-b pb-7">
+    <article className="max-w-[var(--oc-content-width)] space-y-6">
+      <header className="space-y-3 border-b pb-5">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}
           {meeting.audience === "MEMBERS"
             ? "Member meeting"
             : "Recruitment / Interest"}
         </p>
-        <PageHeader title={meeting.title} action={headerAction} />
-        <p>
+        {/* Managers edit from the title row, not from the bottom of a long page. */}
+        <PageHeader title={meeting.title} action={headerAction || canManage ? <div className="flex flex-wrap items-center gap-3">{headerAction}{canManage && <ActionWorkflow showCloseAction={false} title="Edit meeting" description="Update the meeting details, agenda, recap, or shared resources." trigger="Edit meeting">{done => <MeetingEditor key={meeting.revision} clubId={meeting.clubId} meeting={meeting} onCancel={done} onSaved={() => { done(); setRefresh(v => v + 1); onUpdated?.() }} />}</ActionWorkflow>}</div> : undefined} />
+        <p className="text-sm font-medium">
           {meetingDate(meeting.date)}
           {meeting.endDate &&
             ` – ${meetingDate(meeting.endDate)}`}{" "}
           · {meeting.location}
         </p>
-        <p className="whitespace-pre-wrap">{meeting.description}</p>
+        {meeting.description && <p className="whitespace-pre-wrap text-sm leading-6">{meeting.description}</p>}
       </header>
-      {hasPermission(member, "meetings.manage") && <MeetingGroupInvitation meeting={meeting} />}
+      {canManage && <MeetingGroupInvitation meeting={meeting} />}
       {(["agenda", "recap"] as const).map((key) => (
-        <section key={key} className="space-y-3 border-t pt-5">
+        <section key={key} className="space-y-2 border-t pt-4">
           <h2 className="oc-section-heading capitalize">{key}</h2>
           <p className="whitespace-pre-wrap text-sm leading-7">
             {meeting[key] || `No ${key} has been added yet.`}
           </p>
         </section>
       ))}
-      <section className="space-y-3 border-t pt-5">
-        <h2 className="oc-section-heading ">Resources</h2>
+      <section className="space-y-2 border-t pt-4">
+        <h2 className="oc-section-heading">Resources</h2>
         {resources.success && resources.data.length ? (
           resources.data.map((r) => (
             <a
               key={r.id}
-              className="block min-h-11 break-words rounded-md border bg-card p-4 text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+              className="flex min-h-11 items-center break-words text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
               href={r.url}
               target="_blank"
               rel="noreferrer"
@@ -438,9 +440,6 @@ export function MeetingDetail({ id, onUpdated, headerAction }: { id: string; onU
       </section>
       {hasPermission(member, "meetings.attendance") && (
         <MeetingAttendance meeting={meeting} member={member} />
-      )}
-      {hasPermission(member, "meetings.manage") && (
-        <ActionWorkflow showCloseAction={false} title="Edit meeting" description="Update the meeting details, agenda, recap, or shared resources." trigger="Edit meeting">{done => <MeetingEditor key={meeting.revision} clubId={meeting.clubId} meeting={meeting} onCancel={done} onSaved={() => { done(); setRefresh(v => v + 1); onUpdated?.() }} />}</ActionWorkflow>
       )}
     </article>
   );
