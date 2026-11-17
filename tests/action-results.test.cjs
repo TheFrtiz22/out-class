@@ -102,3 +102,24 @@ test('returned refusals are logged at info with only the action name and code', 
   assert.deepEqual(logged.map(line => JSON.parse(line)), [{ event: 'action.refused', action: 'submitApplication', code: 'ACTION_REFUSED' }]);
   assert.ok(!logged.join('').includes('closed'), 'the refusal message is not logged');
 });
+
+test('publishing interview booking too early returns the real reason, not the generic save failure', async () => {
+  const roundId = '00000000-0000-4000-8000-000000000003';
+  const round = { id: roundId, clubId, anonymousReview: false, bookingRevision: 0, bookingCycleId: null, bookingPublishedAt: null, bookingPaused: false };
+  const load = coverage => loader({
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'leader' } }) },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn({ pipelineRound: { findFirst: async () => round } }) } },
+    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
+    '@/utils/interview-booking': { interviewBookingCoverage: async () => coverage },
+    '@/utils/applicant-booking-notifications': { notifyBookingPublished: async () => { throw Error('must not notify') } },
+    '@/lib/interview-rooms': { bookingSlotSnapshot: () => ({}) },
+    'next/cache': { revalidatePath: () => {} },
+  })('actions/interview-booking-publication.ts');
+  const publish = { clubId, roundId, revision: 0, action: 'PUBLISH', cycleId: null, allowCancellation: true, allowRescheduling: true };
+  const noInterviewers = await load([{ slotId: 's1', unoffered: true, bookable: false, reasons: [] }]).setInterviewBookingPublication(publish);
+  assert.deepEqual([noInterviewers.ok, noInterviewers.error], [false, 'Add interviewers to at least one time before publishing the schedule.']);
+  const noTimes = await load([]).setInterviewBookingPublication(publish);
+  assert.deepEqual([noTimes.ok, noTimes.error], [false, 'Add upcoming interview times before publishing the schedule.']);
+  const stale = await load([]).setInterviewBookingPublication({ ...publish, revision: 4 });
+  assert.deepEqual([stale.ok, stale.error], [false, 'Booking settings changed in another tab. Reload and try again.']);
+});

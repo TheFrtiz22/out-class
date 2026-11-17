@@ -7,8 +7,9 @@ import { UserFacingError } from "@/lib/action-result"
  * round, offer, letter and notification change only then. Pure rules shared by the server, Demo and the UI.
  *
  * Mapping (statuses: SUBMITTED, IN_REVIEW, INTERVIEWING, WAITLISTED, ACCEPTED, REJECTED):
- *   Advance  → the next active round by order (status becomes IN_REVIEW; INTERVIEWING stays only when the next
- *              round is also an interview round). In the last round, or from the waitlist: ACCEPTED.
+ *   Advance  → the next active round by order. Into an interview round the status becomes INTERVIEWING (the
+ *              applicant is invited and can book once the schedule is published); otherwise IN_REVIEW.
+ *              In the last round, or from the waitlist: ACCEPTED.
  *   Hold     → IN_REVIEW, same round (nothing is published).
  *   Reject   → REJECTED.   Waitlist → WAITLISTED.   Accept → ACCEPTED.
  * Final decisions (ACCEPTED, REJECTED) are never staged again: they are corrected through the applicant menu.
@@ -57,8 +58,8 @@ export function resolveStagedTarget(app: { status: string; roundId: string }, ro
   const current = rounds.find(round => round.id === app.roundId)
   const moveTo = (target: StageRound): StagedTarget => {
     if (app.status === "WAITLISTED") throw new UserFacingError("Waitlisted applicants can be accepted or rejected, not moved between rounds.")
-    const keepInterview = app.status === "INTERVIEWING" && isInterviewRecruitmentRound(target.type)
-    return { targetStatus: keepInterview ? "INTERVIEWING" : "IN_REVIEW", targetRoundId: target.id }
+    // Entering an interview round is the interview invitation: booking requires INTERVIEWING.
+    return { targetStatus: isInterviewRecruitmentRound(target.type) ? "INTERVIEWING" : "IN_REVIEW", targetRoundId: target.id }
   }
   switch (outcome) {
     case "ADVANCE": {
