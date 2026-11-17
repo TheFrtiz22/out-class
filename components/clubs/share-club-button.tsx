@@ -3,6 +3,8 @@ import { ShareSheet } from "@/components/share/share-sheet"
 import type { DirectoryClub } from "@/lib/club-directory"
 import { clubSharePath } from "@/lib/share-links"
 import { useAuth } from "@/contexts/auth-context"
+import { createShortLink } from "@/actions/short-links"
+import { clubQrFilename } from "@/lib/club-qr"
 
 /**
  * Opens the share sheet for a club's public profile (Messages, Instagram, WhatsApp, Email,
@@ -14,19 +16,18 @@ import { useAuth } from "@/contexts/auth-context"
 export function ShareClubButton({ club, className, iconOnly }: { club: Pick<DirectoryClub, "id" | "name" | "source">; className?: string; iconOnly?: boolean }) {
   const { user } = useAuth()
   if (club.source === "preview") return null
+  const path = clubSharePath(club.id)
+  // createShortLink needs a session: for a signed-out caller it redirects the whole page away
+  // from the club instead of failing, so visitors get a code for the page's own address.
+  const shortLink = user ? () => createShortLink({ target: path }).then(result => result.shortUrl) : undefined
   return <ShareSheet
-    path={clubSharePath(club.id)}
+    path={path}
     title={club.name}
     text={`Check out ${club.name} on OutClass`}
     subtitle="Anyone with the link can see the club’s public profile."
     className={className}
     iconOnly={iconOnly}
-    qr={{ filename: qrFilename(club.name), description: "Scan to see the club, follow it and apply on OutClass.", shortLink: !!user }}
+    qr={{ filename: clubQrFilename(club.name), description: "Scan to see the club, follow it and apply on OutClass.", shortLink }}
   />
 }
 
-/** "TAMID at UVA" → "tamid-at-uva-qr-code". */
-function qrFilename(name: string): string {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60)
-  return `${slug || "club"}-qr-code`
-}

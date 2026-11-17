@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { QrPresenterDialog } from "@/components/qr/qr-presenter-dialog"
-import { createShortLink } from "@/actions/short-links"
 import { SHARE_CHANNELS, SHARE_CHANNEL_LABELS, opensWebsite, shareHref, type ShareChannel } from "@/lib/share-links"
 import "./share-sheet.css"
 
@@ -39,17 +38,17 @@ export type ShareSheetProps = {
   iconOnly?: boolean
   /**
    * Offer a "QR code" target that presents a scannable code full screen, with PNG and SVG
-   * downloads. The code points at a permanent OutClass short link (/q/…) when the path is a
-   * shareable destination and `shortLink` is true, otherwise at the page itself.
+   * downloads. The code points at the short path `shortLink` resolves to (a permanent /q/…
+   * link), or at the page itself when there is none or it fails.
    */
   qr?: {
     filename: string
     description?: string
     /**
-     * Only for a signed-in sharer: createShortLink requires a session and, for anyone else,
-     * redirects the whole page instead of failing, which would take a visitor off the club.
+     * Resolves a same-site short path such as "/q/abc123". Passed by the caller so this sheet
+     * stays free of server actions (it is bundled into isolated UI fixtures).
      */
-    shortLink?: boolean
+    shortLink?: () => Promise<string>
   }
 }
 
@@ -114,8 +113,9 @@ export function ShareSheet({ path, title, text, heading, subtitle, label = "Shar
     setQrLoading(true)
     // A short link keeps the code sparse enough to scan from across a room. Signed-out sharers
     // (or a slow network) fall back to the page's own address, which scans the same way.
-    const short = !qr?.shortLink ? "" : await Promise.race([
-      createShortLink({ target: path }).then(result => `${window.location.origin}${result.shortUrl}`).catch(() => ""),
+    const resolve = qr?.shortLink
+    const short = !resolve ? "" : await Promise.race([
+      resolve().then(shortPath => shortPath.startsWith("/") ? `${window.location.origin}${shortPath}` : "").catch(() => ""),
       new Promise<string>(resolve => window.setTimeout(() => resolve(""), 4000)),
     ])
     setQrValue(short || url)

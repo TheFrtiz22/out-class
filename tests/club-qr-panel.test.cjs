@@ -14,7 +14,7 @@ test('leaders get their club QR code beside the public profile they edit', () =>
 })
 
 test('club QR panel filenames are safe slugs', () => {
-  const panel = fs.readFileSync('components/clubs/club-qr-panel.tsx', 'utf8')
+  const panel = fs.readFileSync('lib/club-qr.ts', 'utf8')
   const start = panel.indexOf('export function clubQrFilename')
   const body = panel.slice(start, panel.indexOf('\n}\n', start) + 2).replace(/^export /, '').replace(/: string/g, '')
   const clubQrFilename = new Function(`${body}; return clubQrFilename`)()
