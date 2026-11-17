@@ -28,7 +28,8 @@ export function pipelineListProjection(data: Pipeline) {
             academicYear: profile.academicYear, gpa: profile.gpa,
             satScore: profile.satScore, actScore: profile.actScore,
             // Same validated value as the database summary; anonymous projections carry null.
-            scholarStatus: scholarStatusValue(profile.scholarStatus),
+            // Typed as unknown so detail rows (stored JSON) and summary rows share one paging contract.
+            scholarStatus: scholarStatusValue(profile.scholarStatus) as unknown,
           } : null,
         },
         evaluations: pipelineReviewerReferences(app.evaluations),
