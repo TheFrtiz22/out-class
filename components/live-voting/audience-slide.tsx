@@ -34,10 +34,10 @@ export function OutcomeMark({result}:{result:RoomResult}){
 
 function Note({note}:{note:SlideNote}){
  const id=useId();
- return <section className="vr-aud-note" aria-labelledby={id} data-slide-field={note.key.startsWith("earlier:")?"earlierRounds":note.key}>
+ return <div role="group" className="vr-aud-note" aria-labelledby={id} data-slide-field={note.key.startsWith("earlier:")?"earlierRounds":note.key}>
   <h3 id={id}>{note.label}</h3>
   <ul className="vr-aud-paras">{note.paragraphs.map((p,i)=><li key={i} className="vr-aud-para" data-muted={p.muted||undefined}>{p.quote?<blockquote><SlideText text={p.text}/></blockquote>:<SlideText text={p.text}/>}{p.meta&&<p className="vr-aud-meta">{p.meta}</p>}</li>)}</ul>
- </section>;
+ </div>;
 }
 function Person({model,heading,children}:{model:SlideModel;heading:ReactNode;children?:ReactNode}){
  return <div className="vr-aud-person">

@@ -30,7 +30,7 @@ test('locked highlights render consistently across applicants, in full with attr
   preparations[1].highlights=[{id:uuid(610),mode:'QUOTE',text:scoreText,source:scoreSource,writtenBy:null},quote(5,'profile:major:0','Economics','Major')];preparations[1].revision=2;
   const base=`${f.url}/voting/rooms/${sessionId}?clubId=${f.clubId}&view=present&actor=leader`;
   await page.goto(base);await page.getByRole('heading',{name:'QA Applicant One',exact:true}).waitFor();
-  const band=page.getByRole('region',{name:'Leader-selected highlights'});await band.waitFor();
+  const band=page.getByRole('group',{name:'Leader-selected highlights'});await band.waitFor();
   assert.equal(await band.locator('.vr-aud-para').count(),3);
   assert.ok(await band.getByText('Leader summary:').count(),'summary is labelled as leader writing');
   assert.equal(await band.locator('blockquote').count(),2,'quotations render as quotations');
@@ -43,7 +43,7 @@ test('locked highlights render consistently across applicants, in full with attr
   // Same structure for the next applicant, with fewer highlights.
   await f.h.command('PASS_WITHOUT_VOTE_AND_ADVANCE',{confirmed:true,reason:'Fixture advance',applicationId:apps[0],passNumber:1});
   await page.getByRole('heading',{name:'QA Applicant Two',exact:true}).waitFor({timeout:20000});
-  const second=page.getByRole('region',{name:'Leader-selected highlights'});
+  const second=page.getByRole('group',{name:'Leader-selected highlights'});
   assert.equal(await second.locator('.vr-aud-para').count(),2,'highlights saved after START appear when the applicant comes up');
   assert.ok(await second.getByText('Interview score · Interview').count(),'interview-score quotation is on the slide');
   assert.equal(locks.length,2);assert.equal(locks[1].preparationRevision,2);
