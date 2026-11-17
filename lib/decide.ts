@@ -104,10 +104,13 @@ export function roundLetterCounts(apps: { id: string; decisionVersion: number }[
  * The round Overview opens on when the URL names none: the round of an active live session, else of a scheduled
  * one, else of the most recent session (rooms arrive newest first), else the first round in pipeline order.
  */
-export function overviewDefaultRound(rounds: { id: string }[], rooms: OverviewRoom[] | null): string | null {
+export function overviewDefaultRound(rounds: { id: string; active?: number }[], rooms: OverviewRoom[] | null): string | null {
   const known = (room?: OverviewRoom) => room && rounds.some(round => round.id === room.roundId) ? room.roundId : null
+  // With no session running or scheduled, the round holding the most applicants still waiting on a decision.
+  const current = [...rounds].filter(round => (round.active ?? 0) > 0).sort((a, b) => (b.active ?? 0) - (a.active ?? 0))[0]?.id ?? null
   return known(rooms?.find(room => overviewSessionGroup(room) === "active"))
     ?? known(rooms?.find(room => overviewSessionGroup(room) === "scheduled"))
+    ?? current
     ?? known(rooms?.find(room => rounds.some(round => round.id === room.roundId)))
     ?? rounds[0]?.id ?? null
 }
