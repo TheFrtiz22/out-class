@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict')
 const React=require('react'),{renderToStaticMarkup}=require('react-dom/server')
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript')
 // Renders the real card and detail; server actions and the booking/offer panels are stubbed (no database here).
-const stub=name=>()=>React.createElement('div',{'data-stub':name})
+const stub=name=>Object.assign(function Stub(){return React.createElement('div',{'data-stub':name})},{displayName:name})
 function load(file){
   const mod={exports:{}},code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText
   new Function('require','module','exports',code)(name=>{
