@@ -169,7 +169,9 @@ test('bookings list in time order and name the interviewers of the booked time',
  assert.deepEqual(core.bookingsByTime([b(3,'2099-01-01T17:00:00Z'),b(1,'2099-01-01T15:00:00Z'),b(2,'2099-01-01T15:00:00Z')]).map(x=>x.id),[id(1),id(2),id(3)])
  // A published session panel wins; a legacy room falls back to its approved panel; nothing assigned is empty.
  assert.deepEqual(core.slotInterviewerIds({panelScheduleVersionId:id(9),publishedPanelMemberIds:[id(7)]},{approvedPanelMemberIds:[id(8)]}),[id(7)])
- assert.deepEqual(core.slotInterviewerIds({panelScheduleVersionId:null},{approvedPanelMemberIds:[id(8)]}),[id(8)])
+ assert.deepEqual(core.slotInterviewerIds({panelScheduleVersionId:null},{approvedPanelMemberIds:[id(8)],panelMemberIds:[id(8)]}),[id(8)])
+ // Approved, then taken off the panel: no longer shown as an interviewer.
+ assert.deepEqual(core.slotInterviewerIds({panelScheduleVersionId:null},{approvedPanelMemberIds:[id(8),id(9)],panelMemberIds:[id(8)]}),[id(8)])
  assert.deepEqual(core.slotInterviewerIds(undefined,undefined),[])
  const source=fs.readFileSync('components/interviews/room-manager.tsx','utf8')
  assert.match(source,/bookingsByTime\(data\?\.bookings/)

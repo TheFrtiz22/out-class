@@ -122,3 +122,17 @@ test('a round runs one open live session at a time: a second start is refused un
  // Ending the first frees the round.
  ok(await h.command('END'));ok(await start(second));assert.equal(h.state().sessions.find(s=>s.id===second).state,'OPEN');
 });
+
+test('two drafts in one round and cycle started at once: one opens, the other is refused; another club is unaffected',async()=>{
+ const h=harness(),second=uuid(41);await h.create();await h.create({sessionId:second,applicationIds:[apps[2]]});
+ const start=id=>h.api.commandLiveVotingRoom({clubId,sessionId:id,requestId:uuid(300+(id===second?1:0)),revision:h.state().sessions.find(s=>s.id===id).revision,action:'START'});
+ const results=await Promise.all([start(sessionId),start(second)]);
+ assert.deepEqual(results.map(r=>r.ok).sort(),[false,true]);
+ assert.equal(results.find(r=>!r.ok).code,'ROUND_SESSION_OPEN');
+ assert.deepEqual(h.state().sessions.map(s=>s.state).sort(),['DRAFT','OPEN']);
+ // The same round and cycle IDs open in a different club do not block this club's start.
+ const other=harness();await other.create();
+ other.state().sessions.push({...structuredClone(other.state().sessions[0]),id:uuid(42),clubId:uuid(43),state:'OPEN'});
+ ok(await other.command('START'));
+ assert.deepEqual(other.state().sessions.map(s=>s.state),['OPEN','OPEN']);
+});

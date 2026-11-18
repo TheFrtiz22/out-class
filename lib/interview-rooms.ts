@@ -42,8 +42,10 @@ export function slotHasInterviewers(slot: Pick<RoomSlot, "panelScheduleVersionId
   return slot.panelScheduleVersionId ? (slot.publishedPanelMemberIds?.length ?? 0) > 0 : !!room.isOpen && !!room.panelApprovedBy && (room.approvedPanelMemberIds ?? []).some(id => room.panelMemberIds.includes(id))
 }
 /** Who interviews at a booked time: the slot's published panel, or the room's approved panel for legacy rooms. */
-export function slotInterviewerIds(slot: Pick<RoomSlot, "panelScheduleVersionId" | "publishedPanelMemberIds"> | undefined, room: Pick<InterviewRoom, "approvedPanelMemberIds"> | undefined) {
-  return slot?.panelScheduleVersionId ? slot.publishedPanelMemberIds ?? [] : room?.approvedPanelMemberIds ?? []
+export function slotInterviewerIds(slot: Pick<RoomSlot, "panelScheduleVersionId" | "publishedPanelMemberIds"> | undefined, room: Pick<InterviewRoom, "approvedPanelMemberIds" | "panelMemberIds"> | undefined) {
+  if (slot?.panelScheduleVersionId) return slot.publishedPanelMemberIds ?? []
+  // As the server does: an approval counts only for members still on the room's panel.
+  return (room?.approvedPanelMemberIds ?? []).filter(id => room?.panelMemberIds.includes(id))
 }
 /** Bookings in the order they happen. */
 export function bookingsByTime<T extends Pick<RoomBooking, "id" | "startTime">>(bookings: readonly T[]) {
