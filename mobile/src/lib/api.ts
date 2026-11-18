@@ -69,3 +69,18 @@ export async function authorizedSource(path: string): Promise<{ uri: string; hea
   const token = await accessToken();
   return { uri: new URL(path, config.apiUrl).toString(), headers: token ? { Authorization: `Bearer ${token}` } : undefined };
 }
+
+export type MediaKind = "profile-photos" | "resumes" | "application-attachments" | "club-assets" | "decision-letter-assets" | "interview-resumes" | "recruiting-resumes";
+
+/**
+ * Private media through the mobile API: the web's own media handlers, reached with this session
+ * (app/api/mobile/v1/media). `params` are the same query parameters the web route takes, e.g.
+ * `mediaSource("profile-photos", { path })` for the signed-in person's own photo. Use the result
+ * as an expo-image `source`, or fetch it; the server decides whether this account may see it.
+ */
+export async function mediaSource(kind: MediaKind, params: Record<string, string | undefined>): Promise<{ uri: string; headers?: Record<string, string> }> {
+  const url = new URL(`/api/mobile/v1/media/${kind}`, config.apiUrl);
+  for (const [key, value] of Object.entries(params)) if (value) url.searchParams.set(key, value);
+  const token = await accessToken();
+  return { uri: url.toString(), headers: token ? { Authorization: `Bearer ${token}` } : undefined };
+}

@@ -1,0 +1,26 @@
+# Release builds: sign in as ${ROLE} on a clean install. Run with -e ROLE_EMAIL / ROLE_PASSWORD set by the caller flows below.
+appId: net.outclass.app
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit"
+    timeout: 60000
+- tapOn:
+    id: "sign-in-email"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "sign-in-password"
+- inputText: ${PASSWORD}
+- tapOn:
+    id: "sign-in-submit"
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 60000

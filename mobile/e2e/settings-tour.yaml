@@ -1,0 +1,59 @@
+# Settings overview, calendar link, notifications, account. Pass -e SHOTS=<prefix>.
+appId: net.outclass.app
+---
+# Return to the tabs from wherever the last run stopped.
+- repeat:
+    times: 5
+    while:
+      visible:
+        id: "header-back"
+    commands:
+      - tapOn:
+          id: "header-back"
+# Settings
+- tapOn:
+    id: "tab-profile"
+- tapOn:
+    id: "profile-header-settings"
+- extendedWaitUntil:
+    visible:
+      id: "settings-account"
+    timeout: 30000
+- takeScreenshot: ${SHOTS}-11-settings
+- tapOn:
+    id: "settings-calendar-feed"
+- extendedWaitUntil:
+    visible:
+      id: "calendar-feed-create"
+    timeout: 60000
+    optional: true
+- takeScreenshot: ${SHOTS}-12-calendar-feed
+- tapOn:
+    point: "50%,8%"
+- tapOn:
+    id: "settings-notifications"
+- extendedWaitUntil:
+    visible:
+      id: "preferences-save"
+    timeout: 60000
+    optional: true
+- takeScreenshot: ${SHOTS}-13-settings-notifications
+- tapOn:
+    id: "header-back"
+- tapOn:
+    id: "settings-account"
+- extendedWaitUntil:
+    visible:
+      id: "settings-sign-out"
+    timeout: 30000
+- takeScreenshot: ${SHOTS}-14-account
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-confirm|account-deletion-cancel"
+    direction: DOWN
+    optional: true
+- takeScreenshot: ${SHOTS}-15-account-deletion
+- tapOn:
+    id: "header-back"
+- tapOn:
+    id: "header-back"

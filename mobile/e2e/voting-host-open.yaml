@@ -3,6 +3,10 @@ appId: net.outclass.app
 ---
 - scrollUntilVisible:
     element:
+      id: "voting-status"
+    direction: UP
+- scrollUntilVisible:
+    element:
       id: "voting-open"
     direction: DOWN
 - tapOn:

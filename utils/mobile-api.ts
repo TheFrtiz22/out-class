@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { ActionError, isActionError, isActionResult } from "@/lib/action-result";
 import { assertBoundedInput } from "@/lib/bounded-input";
@@ -137,3 +138,35 @@ function failure(error: unknown, name: string): Response {
 }
 
 export { ActionError };
+
+/**
+ * Private media for the native app (photos, resumes, attachments, letter and club images).
+ * The web serves these through its own route handlers, each with its own authorization
+ * (owner-only resumes, context-scoped applicant photos, and so on). The app calls the SAME
+ * handler: this only verifies the bearer session and opens the mobile request context, so the
+ * handler's `requireAuth` sees the app's user. No authorization is restated here.
+ */
+export async function handleMobileMedia(request: Request, handler: ((request: NextRequest) => Promise<Response>) | undefined): Promise<Response> {
+  if (!handler) return refusal(404, "UNKNOWN_OPERATION", "This app version asked for something the server does not offer.");
+  const cookieStore = await cookies();
+  if (cookieStore.get(DEMO_COOKIE)?.value === "1" || cookieStore.has(PLATFORM_VIEW_COOKIE))
+    return refusal(403, "UNSUPPORTED_SESSION", "The mobile API is unavailable in Demo Mode and support sessions.");
+  const token = bearerToken(request);
+  if (!token) return refusal(401, "UNAUTHENTICATED", "Sign in to continue.");
+  return runMobileRequest({ token, write: false }, async () => {
+    try {
+      const state = await getSessionState();
+      if (state.secondFactorPending) return refusal(401, "TWO_STEP_REQUIRED", TWO_STEP_REQUIRED_MESSAGE);
+      const { data: { user }, error } = state.identity;
+      if (error && !providerAuthFailure(error)) return refusal(503, AUTH_UNAVAILABLE, AUTH_UNAVAILABLE_MESSAGE);
+      if (!user) return refusal(401, "UNAUTHENTICATED", "Sign in to continue.");
+      const limit = rateLimiter.check(RATE_LIMITS.mobileApi, `user:${user.id}`);
+      if (!limit.ok) return refusal(429, "RATE_LIMITED", RATE_LIMIT_MESSAGE, rateLimitHeaders(limit.retryAfterSeconds));
+      // The handler reads only the query string; the bearer token is not passed on.
+      const url = new URL(request.url);
+      return await handler(new NextRequest(url, { method: "GET", headers: { accept: request.headers.get("accept") ?? "*/*" } }));
+    } catch (error) {
+      return failure(error, "media");
+    }
+  });
+}

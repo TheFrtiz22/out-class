@@ -7,7 +7,7 @@ import { type ConfirmRequest, Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, Card, Divider, Row } from "~/components/ui";
 import { type Choice, type CommandResult, type RoomEntry, type RoomSnapshot, type SummaryLabels, SESSION_ENDED, applicantLabel, leadingChoice, outcomeLabels, savedOutcomeLabels, webRoomPath } from "~/components/voting/room";
-import { api } from "~/lib/api";
+import { ApiError, api } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openOnWeb } from "~/lib/links";
 import { useTheme } from "~/lib/theme";
@@ -56,9 +56,10 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
       haptics.save();
       setConfirmedRevision(response.result.revision); setPending(null); setMore(false);
       await refresh();
-    } catch {
+    } catch (failure) {
       haptics.error();
-      setError("Command could not be confirmed. Reconnecting before retry; your decision may already be saved.");
+      // A refusal the server put into words (signed out, rate limited, access removed) is shown as written.
+      setError(failure instanceof ApiError && failure.status >= 400 && failure.status < 500 ? failure.message : "Command could not be confirmed. Reconnecting before retry; your decision may already be saved.");
       await refresh().catch(() => undefined);
     } finally { lock.current = false; setBusy(false); }
   }

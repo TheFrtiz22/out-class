@@ -104,6 +104,19 @@ async function call(token, name, input, method = "GET", headers = {}) {
   const second = await call(leader.token, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING, payload: pass2.data?.payload }, "POST");
   rows.push({ check: "a second pass for the same student does not double-count", operation: "checkInPass.scan", expected: "already-checked-in", actual: second.data?.status ?? second.status, code: "", ok: second.data?.status === "already-checked-in" ? "ok" : "FAIL" }); if (second.data?.status !== "already-checked-in") failed++;
 
+  // 5b. Private media goes through the web's own handlers: owner-only, never by guessing a path.
+  const media = async (who, kind, query) => {
+    const url = new URL(`/api/mobile/v1/media/${kind}`, base); for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
+    const response = await fetch(url, { headers: who ? { Authorization: `Bearer ${who.token}` } : {}, redirect: "manual" });
+    return response.status;
+  };
+  const guessed = `${student.userId}/00000000-0000-4000-8000-000000000000.pdf`;
+  check("media: signed out", "media/resumes", "401", String(await media(null, "resumes", { path: guessed })));
+  check("media: another account asks for the student's resume path", "media/resumes", "refused", [403, 404].includes(await media(interviewer, "resumes", { path: guessed })) ? "refused" : "SERVED");
+  check("media: another account asks for the student's photo path", "media/profile-photos", "refused", [403, 404].includes(await media(leader, "profile-photos", { path: `${student.userId}/00000000-0000-4000-8000-000000000000.png` })) ? "refused" : "SERVED");
+  check("media: unknown kind", "media/nope", "404", String(await media(student, "nope", {})));
+  check("media: another account asks for the student's letter logo", "media/decision-letter-assets", "404", String(await media(interviewer, "decision-letter-assets", { applicationId: STUDENT_LETTER, letterId: "00000000-0000-4000-8000-000000000000" })));
+
   // 6. Input bounds and method rules at the boundary.
   await expect("oversized input", student, "inbox.read", { ids: Array.from({ length: 5000 }, () => "00000000-0000-4000-8000-000000000000"), read: true }, "POST", 400);
   await expect("malformed input", student, "interviews.reserve", { applicationId: "nope", slotId: "nope" }, "POST", 400);

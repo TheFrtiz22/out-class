@@ -31,8 +31,8 @@ export default function LeaderHub() {
   const meetings = useApiQuery<LeaderMeeting[]>("meetings", { clubId }, { enabled: !!tools?.attendance, scope: "leader" });
   const open = (meetings.data ?? []).filter(meeting => attendanceOpen(meeting)).sort((a, b) => +new Date(a.date) - +new Date(b.date));
 
-  const tool = (icon: IconComponent, title: string, detail: string, onPress: () => void, testID: string) => (
-    <Row testID={testID} leading={icon({ size: 24, color: colors.brandInk })} title={title} detail={detail} trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={onPress} />
+  const tool = (Icon: IconComponent, title: string, detail: string, onPress: () => void, testID: string) => (
+    <Row testID={testID} leading={<Icon size={24} color={colors.brandInk} />} title={title} detail={detail} trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={onPress} />
   );
   const web = (label: string, href: string) => (
     <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title={label} detail="Open on web" onPress={() => { openOnWeb(href); }} />

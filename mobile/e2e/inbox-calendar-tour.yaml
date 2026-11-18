@@ -1,0 +1,82 @@
+# Calendar (agenda, month, event sheet), a meeting, and a member club. Pass -e SHOTS=<prefix>.
+appId: net.outclass.app
+---
+# Return to the tabs from wherever the last run stopped.
+- repeat:
+    times: 5
+    while:
+      visible:
+        id: "header-back"
+    commands:
+      - tapOn:
+          id: "header-back"
+# Calendar and a meeting
+- tapOn:
+    id: "tab-calendar"
+- extendedWaitUntil:
+    visible:
+      id: "calendar-subscribe"
+    timeout: 90000
+- extendedWaitUntil:
+    visible:
+      id: "calendar-include-past"
+    timeout: 90000
+    optional: true
+- takeScreenshot: ${SHOTS}-16-calendar-agenda
+- tapOn: "Month"
+- takeScreenshot: ${SHOTS}-17-calendar-month
+- tapOn: "Agenda"
+- tapOn:
+    id: "calendar-event-meeting"
+    index: 0
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "calendar-add"
+    timeout: 15000
+    optional: true
+- takeScreenshot: ${SHOTS}-18-calendar-event
+- tapOn:
+    id: "calendar-open-meeting"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "meeting-agenda"
+    timeout: 60000
+    optional: true
+- takeScreenshot: ${SHOTS}-19-meeting
+- scrollUntilVisible:
+    element:
+      id: "meeting-resources"
+    direction: DOWN
+    optional: true
+- takeScreenshot: ${SHOTS}-20-meeting-lower
+- tapOn:
+    id: "header-back"
+    optional: true
+# My club
+- tapOn:
+    id: "tab-home"
+- scrollUntilVisible:
+    element: "My clubs"
+    direction: DOWN
+    optional: true
+- tapOn:
+    text: "Blue Ridge Consulting Collective"
+    below: "My clubs"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "my-club-public"
+    timeout: 60000
+    optional: true
+- takeScreenshot: ${SHOTS}-21-my-club
+- scrollUntilVisible:
+    element:
+      id: "my-club-meeting"
+    direction: DOWN
+    optional: true
+- takeScreenshot: ${SHOTS}-22-my-club-meetings
+- tapOn:
+    id: "header-back"
+    optional: true

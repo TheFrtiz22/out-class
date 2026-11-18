@@ -1,16 +1,13 @@
-# Leader: Home -> Leader tools -> Live voting -> the session's room (host controls).
+# Leader: the club's voting sessions, then the session's room (host controls).
+# Opens the list by its app link (the same route Leader tools -> Live voting pushes).
 appId: net.outclass.app
 ---
 - runFlow: leader-sign-in.yaml
-- tapOn:
-    id: "home-leader-tools"
-- tapOn:
-    id: "leader-voting"
+- openLink: "outclass://leader/253d3ff8-35eb-4619-81bf-c7c195bbf4fe/voting"
 - extendedWaitUntil:
     visible:
       id: "voting-rooms"
     timeout: 30000
-- takeScreenshot: .shots/leader/voting-rooms
 - tapOn:
     id: "voting-room-e89ed370-6e82-4b3d-a454-091e0b109207"
 - extendedWaitUntil:

@@ -17,12 +17,8 @@ import { fonts, useTheme } from "~/lib/theme";
 import type { FullStudentProfile, ProfileSectionId } from "~/lib/types";
 
 function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-      <Text variant="small">{label}</Text>
-      <Text variant="small" color={useTheme().colors.foreground} style={{ flex: 1 }}>{value}</Text>
-    </View>
-  );
+  const { colors } = useTheme();
+  return <Text variant="small">{label} <Text variant="small" color={colors.foreground}>{value}</Text></Text>;
 }
 
 /** The web's condensed profile (components/views/unified-student-profile-view.tsx). */
