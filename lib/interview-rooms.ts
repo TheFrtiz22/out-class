@@ -41,6 +41,14 @@ export const roomTimeRemovalSchema = z.object({ clubId: z.string().uuid(), roomI
 export function slotHasInterviewers(slot: Pick<RoomSlot, "panelScheduleVersionId" | "publishedPanelMemberIds">, room: Pick<InterviewRoom, "isOpen" | "panelApprovedBy" | "approvedPanelMemberIds" | "panelMemberIds">) {
   return slot.panelScheduleVersionId ? (slot.publishedPanelMemberIds?.length ?? 0) > 0 : !!room.isOpen && !!room.panelApprovedBy && (room.approvedPanelMemberIds ?? []).some(id => room.panelMemberIds.includes(id))
 }
+/** Who interviews at a booked time: the slot's published panel, or the room's approved panel for legacy rooms. */
+export function slotInterviewerIds(slot: Pick<RoomSlot, "panelScheduleVersionId" | "publishedPanelMemberIds"> | undefined, room: Pick<InterviewRoom, "approvedPanelMemberIds"> | undefined) {
+  return slot?.panelScheduleVersionId ? slot.publishedPanelMemberIds ?? [] : room?.approvedPanelMemberIds ?? []
+}
+/** Bookings in the order they happen. */
+export function bookingsByTime<T extends Pick<RoomBooking, "id" | "startTime">>(bookings: readonly T[]) {
+  return [...bookings].sort((a, b) => +new Date(a.startTime) - +new Date(b.startTime) || a.id.localeCompare(b.id))
+}
 export type RoomSlot = { publishedPanelMemberIds?: string[]; panelScheduleVersionId?: string | null; interviewersNeeded?: number | null; staffingRevision?: number; id: string; startTime: string; endTime: string; capacity: number; booked: number }
 export type InterviewRoom = { externallyBookedAt?: string | null; interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
 export type RoomBooking = { id: string; applicationId: string; slotId: string; roomId: string; roundId: string; candidate: string; startTime: string; endTime: string; location: string }
