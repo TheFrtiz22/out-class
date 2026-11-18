@@ -26,11 +26,12 @@ type QuickAction = { id: string; title: string; subtitle?: string; icon?: string
 type QuickActionsModule = { initial?: QuickAction; setItems(items: QuickAction[]): Promise<void>; addListener(listener: (action: QuickAction) => void): { remove(): void } };
 const QuickActions: QuickActionsModule | null = (() => { try { return require("expo-quick-actions") as QuickActionsModule; } catch { return null; } })();
 
-/** `outclass://scan` and `outclass://pass` (home screen quick actions), and scanned-elsewhere `/q/<code>` universal links. */
+/** A `/q/<code>` universal link opened from outside the app: redeem it in the scanner screen. */
 function shortcutRoute(url: string): string | { pathname: string; params: Record<string, string> } | null {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol === "outclass:") return parsed.host === "scan" ? "/scan" : parsed.host === "pass" ? "/pass" : null;
+    // `outclass://…` links are routes already: Expo Router opens them (with their parameters) on its own.
+    if (parsed.protocol === "outclass:") return null;
     const parts = parsed.pathname.split("/").filter(Boolean);
     if (parts.length === 2 && parts[0] === "q" && /^[a-zA-Z0-9_-]{1,32}$/.test(parts[1]!)) return { pathname: "/scan", params: { code: parts[1]! } };
   } catch { /* not a link for this app */ }

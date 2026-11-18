@@ -15,7 +15,14 @@ export function Glass({ children, style, radius, ...rest }: ViewProps & { radius
   const shape = { borderRadius: radius ?? 0, overflow: "hidden" as const };
   const edge = { borderWidth: StyleSheet.hairlineWidth, borderColor: dark ? "rgba(255,255,255,0.14)" : "rgba(35,45,75,0.10)" };
   if (a11y.reduceTransparency) return <View {...rest} style={[shape, edge, { backgroundColor: colors.card }, style]}>{children}</View>;
-  if (liquid) return <GlassView {...rest} glassEffectStyle="regular" style={[shape, style]}>{children}</GlassView>;
+  // Liquid Glass alone is clear enough that text scrolling underneath competes with the labels on top;
+  // a light wash of the surface colour keeps the header and dock legible, as the web's glass tint does.
+  if (liquid) return (
+    <GlassView {...rest} glassEffectStyle="regular" style={[shape, style]}>
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dark ? "rgba(22,38,56,0.46)" : "rgba(255,254,250,0.58)" }]} />
+      {children}
+    </GlassView>
+  );
   return (
     <View {...rest} style={[shape, edge, style]}>
       <BlurView intensity={Platform.OS === "android" ? 28 : 48} tint={dark ? "dark" : "light"} style={StyleSheet.absoluteFill} />

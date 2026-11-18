@@ -1,0 +1,8 @@
+# Release build: sign in as the staging leader on a clean install.
+appId: net.outclass.app
+---
+- runFlow:
+    file: release-sign-in.yaml
+    env:
+      EMAIL: ${LEADER_EMAIL}
+      PASSWORD: ${LEADER_PASSWORD}

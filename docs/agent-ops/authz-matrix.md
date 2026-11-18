@@ -203,3 +203,24 @@ Resource: live voting session roster (`VotingParticipant`), ballots (`VotingBall
 | Database (any client) | roster row after start only for open sessions, only as a join, same club, never after completion; join time immutable | unchanged | n/a | closing snapshot names only joined members, rule unchanged, reason required, only while open | `tests/voting-open-electorate-migration.test.cjs` |
 
 Review follow-up (2026-11-17), same resource: the applicant on screen is also refused their own slide, tally, rule result, outcome (unless leading) and hand-raise; the applicant display refuses voting slides and setup previews of your own application; recused members don't count for that applicant in open sessions; support (impersonation) sessions cannot join, vote or raise a hand; non-leaders in anonymous rounds see the uncorrected room count. Tests: `tests/voting-open-electorate.test.cjs` (5 new cases), `tests/voting-display-snapshot.test.cjs`.
+
+## 2026-11-18 · MOBILE-1 · Native app API, door mode, native push (branch `mobile/foundation`, not merged)
+
+Resource: `app/api/mobile/v1/[operation]` and `app/api/mobile/v1/media/[kind]`. The boundary authenticates a Supabase bearer token with the cookie session's own checks (`utils/auth.ts` `verifiedSessionState`) and then calls an existing Server Action, loader or media handler, which authorizes as it does for the web. New authorization code exists only in `actions/check-in-pass.ts` (door mode) and the native-device functions of `actions/push-subscriptions.ts`.
+
+Evidence: `scripts/staging/api-authz.cjs` (live HTTP against the production build on staging, 82 checks, 0 failed, 2026-11-18); `tests/check-in-pass.test.cjs`, `tests/native-push.test.cjs`; reviewer findings and fixes in `validation-report.md`.
+
+| Actor | Any operation | Own records (applications, letters, offers, schedule, profile, inbox) | Leader operations (overview parts, pipeline, attendance, issue check-in, announce, vote command) | Door scan (`checkInPass.scan`) | Own pass (`checkInPass.issue`) | Private media | Test |
+|---|---|---|---|---|---|---|---|
+| No token | 401; public directory and public event board answer as signed out | deny | deny | deny | deny | 401 | matrix "signed out", "signed-out write" |
+| Forged or truncated token | 401 | deny | deny | deny | deny | 401 | matrix "forged token" |
+| Bearer plus a browser session, Demo or support cookie | 403 `UNSUPPORTED_SESSION` before any action | deny | deny | deny | deny | 403 | matrix "bearer plus a browser session cookie", "demo cookie refused" |
+| Student (member, no permissions) | allow own | allow | deny (403/422); club home parts for recruiting come back empty | deny 403 | allow, 45 s, single use | own photo and resume only | matrix sections 2, 3, 5 |
+| Another account (cross-user) | — | "no letter" (null), schedule and offer refused | — | — | — | guessed paths 403/404 | matrix "cross-user …", "media: another account …" |
+| Leader of the club | allow | own only | allow | allow in own club for a meeting of that club inside the attendance window | allow | applicant media only with the web handlers' context checks | matrix "leader of the club" |
+| Leader, another club (cross-club) | — | — | deny 403/404 | deny 403; meeting not in the club 404 | — | deny | matrix "leader, in a club they do not lead", "door scan in a club…" |
+| Alumni (read-only) | reads allow | reads allow | deny | deny | deny 403 `ALUMNI_ACCOUNT` | own | matrix section 4 |
+| Support (view-as) session | refused at the boundary (cookie) | — | — | refused in the action | refused in the action | refused | `tests/check-in-pass.test.cjs` (source), boundary check |
+| Database (anon / authenticated roles) | `MeetingCheckInPass`: no privileges, RLS on; `WebPushSubscription` unchanged | | | | | | `tests/check-in-pass.test.cjs`, `tests/native-push.test.cjs` |
+
+Untested cells (carried to docs/mobile/FINAL_REPORT.md): cross-school (staging has one school); the `not-eligible` door answer and name withholding in anonymous review against live data; two concurrent scans of one pass from two clubs (fixed by claim-by-delete, not yet raced on PostgreSQL); maintenance mode on a mobile write; `voting.command` reached past input validation by a non-leader; revoked-member mid-session on the voting and interview operations.

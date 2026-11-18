@@ -206,13 +206,13 @@ export default function InterviewScreen() {
                     </View>
                   </View>
                   <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                    {WEEKDAYS.map(weekday => <View key={weekday} style={{ width: `${100 / 7}%`, alignItems: "center", paddingBottom: 4 }}><Text variant="caption">{weekday}</Text></View>)}
-                    {Array.from({ length: leading }, (_, index) => <View key={`pad-${index}`} style={{ width: `${100 / 7}%` }} />)}
+                    {WEEKDAYS.map(weekday => <View key={weekday} style={{ width: "14.28%", alignItems: "center", paddingBottom: 4 }}><Text variant="caption">{weekday}</Text></View>)}
+                    {Array.from({ length: leading }, (_, index) => <View key={`pad-${index}`} style={{ width: "14.28%" }} />)}
                     {Array.from({ length: days }, (_, index) => {
                       const date = `${month}-${String(index + 1).padStart(2, "0")}`;
                       const available = availableDates.includes(date), selected = date === selectedDay;
                       return (
-                        <View key={date} style={{ width: `${100 / 7}%`, alignItems: "center", paddingVertical: 1 }}>
+                        <View key={date} style={{ width: "14.28%", alignItems: "center", paddingVertical: 1 }}>
                           <Press testID={available ? "interview-day" : undefined} disabled={!available || busy} accessibilityLabel={formatDay(date, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} accessibilityState={{ selected, disabled: !available || busy }} onPress={() => { haptics.tick(); setDay(date); }}
                             style={{ width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", backgroundColor: selected ? colors.primary : available ? colors.brandSubtle : "transparent", opacity: available ? 1 : 0.38 }}>
                             <Text variant={available ? "smallStrong" : "small"} maxFontSizeMultiplier={1.3} color={selected ? colors.primaryForeground : available ? colors.brandInk : colors.mutedForeground}>{index + 1}</Text>
