@@ -11,7 +11,7 @@ import { requireClubPermission } from "@/utils/auth";
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { hasPermission, activeMemberWhere } from "@/lib/permissions";
-import { createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged, isOpenElectorate, OPEN_ELECTORATE, MAX_ROOM_VOTERS, type OwnApplicationPresentation } from "@/lib/voting-room";
+import { ROUND_SESSION_OPEN_MESSAGE, createRoomSchema, roomScope, roomCommandSchema, roomBallotSchema, uniqueSelection, roomOutcomes, storedChoice, recommendedOutcome,roomPresentationSchema,roomDisplayConfig, roomCommandResultSchema, VotingPresentationChanged, isOpenElectorate, OPEN_ELECTORATE, MAX_ROOM_VOTERS, type OwnApplicationPresentation } from "@/lib/voting-room";
 import { supportContext } from "@/utils/support-audit";
 import { loadVotingRoom, requireRoomLeader, roomAuthority, projectVotingRoom, undoableDecision, roomFingerprint, signRoomView, verifyRoomView, onRoomRoster, roomRosterIds, type LiveRoom } from "@/utils/voting-room";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
@@ -30,6 +30,13 @@ import { ALUMNI_REFUSED } from "@/lib/graduation";
 class RoomConflict extends Error { constructor(public code:string,message:string){super(message);} }
 async function domainResult<T>(work:()=>Promise<T>) { try { return {ok:true as const,result:await work()}; } catch(e) { if(e instanceof RoomConflict)return {ok:false as const,code:e.code,message:e.message}; throw e; } }
 const retryConflict=()=>new RoomConflict("STALE_STATE","The room changed. Reload the page, check the latest, and try again.");
+/** Refuses a session entering OPEN while another live session in its round and cycle is open or paused. The advisory
+ * lock serializes concurrent starts in one round, so two sessions cannot both pass the check. */
+async function assertNoOtherOpenRoundSession(tx:AppTransactionClient,s:{id:string;clubId:string;roundId:string;cycleId:string|null}){
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${"voting-round-open:"+s.clubId+":"+s.roundId}, 0))::text`;
+  const other=await tx.votingSession.findFirst({where:{id:{not:s.id},clubId:s.clubId,roundId:s.roundId,cycleId:s.cycleId,mode:"LIVE",state:{in:["OPEN","PAUSED"]},finalizedAt:null},select:{id:true}});
+  if(other)throw new RoomConflict("ROUND_SESSION_OPEN",ROUND_SESSION_OPEN_MESSAGE);
+}
 const ballotReceipt=z.object({accepted:z.literal(true),ballotRevision:z.number().int().nonnegative()}).strict();
 /** Room command receipts (and slide-preparation receipts, which share this shape but never move the room). */
 const revisionReceipt=z.union([z.object({revision:z.number().int().nonnegative(),decision:z.unknown().optional(),undone:z.boolean().optional()}).strict(),
@@ -309,6 +316,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         }
 
         if(d.action==="START"?s.state!=="DRAFT":!["PAUSED","COMPLETED"].includes(s.state)||pass?.state!=="COMPLETED")throw retryConflict();
+        if(s.state!=="PAUSED")await assertNoOtherOpenRoundSession(tx,s);
         const ids=roomOutcomes(s).filter(o=>d.action==="START"?o.outcome==="UNREVIEWED":o.outcome==="HOLD").map(o=>o.applicationId);
         if(!ids.length)throw new RoomConflict("EMPTY_QUEUE","No held or unreviewed applicants remain. End the session when ready.");
         if(d.action==='START'&&!round.anonymousReview&&roomPresentationSchema.safeParse(s.presentationOptions).data?.fields.includes('additionalObservations'))await lockVotingObservations(tx,s,user.id);
@@ -409,6 +417,7 @@ export async function commandLiveVotingRoom(input:unknown) {
         // Never-opened instances return to PENDING; an instance that was opened returns CLOSED with its times.
         await updateEntry({ballotState:old.openedAt?"CLOSED":"PENDING",withoutVote:false,confirmedDecision:null,confirmedBy:null,confirmedAt:null,override:null,overrideBy:null,overrideAt:null},old);
         await tx.$executeRaw`SELECT set_config('outclass.voting_undo','',true)`;
+        if(s.state==="COMPLETED")await assertNoOtherOpenRoundSession(tx,s);
         await tx.votingPass.update({where:{sessionId_number:{sessionId:s.id,number:s.currentPass}},data:{state:"OPEN",completedAt:null}});
         Object.assign(patch,{activeApplicationId:old.applicationId,state:"OPEN"});break;
       }

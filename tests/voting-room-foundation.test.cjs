@@ -112,3 +112,13 @@ test('the Voting room lists board (LEGACY) draft sessions alongside live rooms, 
  assert.deepEqual(await h.api.listLiveVotingRooms({clubId,cycleId:uuid(99)}),[]);h.members[2].permissions=h.members[2].permissions.filter(p=>p!=='decisions.vote');h.as(uuid(7));await assert.rejects(h.api.listLiveVotingRooms({clubId}),/access denied/);
  assert.doesNotMatch(fs.readFileSync('actions/voting-room.ts','utf8').match(/export async function listLiveVotingRooms[\s\S]*?findMany\(\{where:\{[^}]*/)[0],/mode:"LIVE"/);
 });
+
+test('a round runs one open live session at a time: a second start is refused until the first ends',async()=>{
+ const h=harness(),second=uuid(40);await h.create();await h.create({sessionId:second,applicationIds:[apps[2]]});
+ const start=id=>h.api.commandLiveVotingRoom({clubId,sessionId:id,requestId:uuid(200+Math.floor(Math.random()*1e6)),revision:h.state().sessions.find(s=>s.id===id).revision,action:'START'});
+ ok(await start(sessionId));
+ const refused=await start(second);assert.equal(refused.ok,false);assert.equal(refused.code,'ROUND_SESSION_OPEN');assert.match(refused.message,/already open/);
+ assert.equal(h.state().sessions.find(s=>s.id===second).state,'DRAFT','the refused session is unchanged');
+ // Ending the first frees the round.
+ ok(await h.command('END'));ok(await start(second));assert.equal(h.state().sessions.find(s=>s.id===second).state,'OPEN');
+});
