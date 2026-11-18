@@ -72,10 +72,19 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   await expect(overview).toHaveAttribute('aria-current', 'step')
   await expect(vote).toHaveText(/Vote, \d+ sessions? to run\d+$/); await expect(send).toHaveText(/Send, \d+ applicants? ready to send\d+$/)
   await expect(vote.locator('.oc-stepper-badge')).toHaveText(/^\d+$/); await expect(send.locator('.oc-stepper-badge')).toHaveText(/^\d+$/)
-  // Review (#281): the shared applicant review, then back to Overview before the round and history checks.
+  // Review (#281): a summary that opens the shared applicant review in Applicants (pending a decision, review open),
+  // instead of repeating the Applicants table; then back to Decide and Overview before the round and history checks.
   await page.getByRole('button', { name: 'Next: Review', exact: true }).click()
   await expect(reviewStep).toHaveAttribute('aria-current', 'step')
-  await expect(page.getByRole('button', { name: 'Review applicants needing a decision', exact: true })).toBeVisible()
+  const reviewLink = page.getByRole('link', { name: 'Review in Applicants', exact: true })
+  await expect(reviewLink).toBeVisible()
+  await expect(reviewLink).toHaveAttribute('href', /[?&]section=recruitment&tool=applicants&decision=pending(&roundId=[^&]+)?&review=1$/)
+  await reviewLink.click()
+  await expect.poll(params).toEqual(expect.objectContaining({ section: 'recruitment', tool: 'applicants', decision: 'pending' }))
+  const reviewDialog = page.getByRole('dialog'); await reviewDialog.waitFor({ timeout: 30000 })
+  await page.keyboard.press('Escape'); await reviewDialog.waitFor({ state: 'hidden' })
+  await page.goBack(); await expect.poll(params).toEqual(expect.objectContaining({ tool: 'decisions', decisionTab: 'review' }))
+  await expect(reviewStep).toHaveAttribute('aria-current', 'step')
   await overview.click(); await expect(overview).toHaveAttribute('aria-current', 'step')
   await page.getByRole('heading', { name: 'Voting sessions', exact: true }).waitFor()
   // With no round in the URL, Overview opens on the current round and writes it into the URL (no extra Back step).
