@@ -11,7 +11,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     page.setDefaultTimeout(10000);
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.goto(fixture.url);
-    await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
+    await page.getByText('65 events · Times shown in Eastern Time', { exact: true }).waitFor();
     assert.equal(await page.locator('.oc-pinned-flyer').count(), 60);
     const reads = () => fixture.calls.filter(c => c.name === 'getPublicCorkboard').length;
     let before = reads();
@@ -30,7 +30,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.ok(calendar.includes('DTEND:' + stamp(fixture.events[0].endDate)));
     assert.equal(await page.getByRole('dialog').count(), 0, 'Calendar must not open the parent card');
     await page.getByLabel('Search events', { exact: true }).fill('After Hours');
-    await page.getByText('13 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
+    await page.getByText('13 events · Times shown in Eastern Time', { exact: true }).waitFor();
     before = reads(); await page.getByRole('button', { name: 'Board', exact: true }).click();
     assert.equal(await page.locator('.oc-pinned-flyer').count(), 13);
     assert.equal(await page.getByLabel('Search events', { exact: true }).inputValue(), 'After Hours');
@@ -67,13 +67,13 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.keyboard.press('Escape');
     assert.equal(await filterButton.getAttribute('aria-expanded'), 'false');
     assert.equal(await page.locator('.oc-filter-button-count').innerText(), '1'); assert.equal(await toolbar.getByRole('button', { name: 'Filters, 1 active', exact: true }).count(), 1);
-    await page.getByText('1 approved event · Times shown in Eastern Time', { exact: true }).waitFor();
+    await page.getByText('1 event · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'List', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 1);
     await page.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).click();
     await page.getByRole('heading', { name: 'You haven’t saved any events yet.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Browse all events', exact: true }).click();
-    await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
+    await page.getByText('65 events · Times shown in Eastern Time', { exact: true }).waitFor();
     await filterButton.click();
     await page.getByRole('combobox', { name: 'Category', exact: true }).click();
     await page.getByRole('option', { name: 'Sports', exact: true }).click();
@@ -81,11 +81,11 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.getByRole('button', { name: 'Reset filters', exact: true }).click();
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('.oc-filter-button-count').count(), 0);
-    await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
+    await page.getByText('65 events · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByLabel('Search events', { exact: true }).fill('no matching campus event');
     await page.getByRole('heading', { name: 'No events match “no matching campus event”.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
-    await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
+    await page.getByText('65 events · Times shown in Eastern Time', { exact: true }).waitFor();
     const screenshots = process.env.OUTCLASS_EVENTS_SCREENSHOTS;
     for (const [name, width, height] of [['desktop', 1440, 1000], ['tablet', 820, 1180], ['mobile', 390, 844]]) {
       await page.setViewportSize({ width, height });

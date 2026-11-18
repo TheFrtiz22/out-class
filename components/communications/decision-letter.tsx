@@ -119,15 +119,18 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
  if(!data)return <div className="decision-layout"><PageHeader title="Decision letter unavailable" /><p role="alert">{error||'A formal letter is unavailable for this historical decision.'}</p><Link href={decisionsHref}>Return to Status</Link></div>;
  const active=data.isCurrent&&data.currentStatus==='ACCEPTED'&&(!data.letter||data.letter.decision==='ACCEPTED')&&!data.suspended&&data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)>new Date();
  const offer=data.offer;
- return <div className="decision-layout"><nav className="decision-controls" aria-label="Letter actions"><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>
-  {celebratory&&data.letter&&<AcceptanceBanner firstName={data.letter.content.studentName.split(/\s+/)[0]||data.letter.content.studentName} clubName={data.letter.content.clubName} kind={kind} onCelebrate={celebration.play}/>}
-  {celebratory&&data.letter&&<Celebration kind={kind} accent={data.letter.content.accent} run={celebration.run}/>}
-  {data.letter ? <LetterPaper decision={data.letter.decision} marketing={data.marketing} content={data.letter.content} logoSource={data.letter.content.logoReference?`/api/decision-letter-assets?applicationId=${encodeURIComponent(applicationId)}&letterId=${encodeURIComponent(data.letter.id)}`:undefined}/> : <article className="decision-paper"><h1>Your decision</h1><p>Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</p></article>}
-  {((!data.letter||data.letter.decision==='ACCEPTED')||!data.isCurrent||data.suspended||offer?.status==='ACCEPTED'||error)&&<section className="decision-controls decision-response" aria-label="Decision next steps">
+ const response=((!data.letter||data.letter.decision==='ACCEPTED')||!data.isCurrent||data.suspended||offer?.status==='ACCEPTED'||error)&&<section className={`decision-controls decision-response${active?" decision-response-first":""}`} aria-label="Decision next steps">
    {!data.isCurrent&&<p>This is a historical letter. Your current decision is {data.currentStatus.toLowerCase()}. Offer controls reflect your current record.</p>}
    {data.suspended&&<p>This club is suspended. Offer responses are currently unavailable.</p>}
    {(!data.letter||data.letter.decision==='ACCEPTED')&&(active?<><h2>Your invitation</h2><p>Please respond by {new Date(offer!.expiresAt).toLocaleDateString()}.</p>{isAlumniProfile(user?.profile)?<p role="status">{ALUMNI_REFUSALS.respond}</p>:<div className="flex flex-wrap gap-3"><Button disabled={busy} onClick={()=>void respond('ACCEPT')}>Accept Offer</Button><Button disabled={busy} variant="outline" onClick={()=>void respond('DECLINE')}>Decline Offer</Button></div>}</>:<p>{offer?.status==='ACCEPTED'?'Your offer was accepted. Your membership is recorded. Current access is managed by the club.':offer?.status==='DECLINED'?'You declined this offer. Your letter remains available.':offer?.status==='REVOKED'?'This offer is no longer active. Contact the club with questions.':offer&&(offer.status==='EXPIRED'||new Date(offer.expiresAt)<=new Date())?'This offer has expired.':'There is no active offer associated with this decision.'}</p>)}
    {offer?.status==='ACCEPTED'&&<Link href="/clubs" className="inline-flex items-center gap-1">Open My Clubs<ArrowRight size={16} aria-hidden="true"/></Link>}
    {error&&<p role="alert">{error}</p>}
-  </section>}</div>;
+  </section>;
+ return <div className="decision-layout"><nav className="decision-controls" aria-label="Letter actions"><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>
+  {celebratory&&data.letter&&<AcceptanceBanner firstName={data.letter.content.studentName.split(/\s+/)[0]||data.letter.content.studentName} clubName={data.letter.content.clubName} kind={kind} onCelebrate={celebration.play}/>}
+  {celebratory&&data.letter&&<Celebration kind={kind} accent={data.letter.content.accent} run={celebration.run}/>}
+  {/* An offer waiting on the student comes before the letter, so Accept and Decline are on screen without scrolling. */}
+  {active&&response}
+  {data.letter ? <LetterPaper decision={data.letter.decision} marketing={data.marketing} content={data.letter.content} logoSource={data.letter.content.logoReference?`/api/decision-letter-assets?applicationId=${encodeURIComponent(applicationId)}&letterId=${encodeURIComponent(data.letter.id)}`:undefined}/> : <article className="decision-paper"><h1>Your decision</h1><p>Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</p></article>}
+  {!active&&response}</div>;
 }

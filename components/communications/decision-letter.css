@@ -36,6 +36,7 @@
 .decision-seal{position:relative;margin-top:40px;padding-top:16px;border-top:1px solid var(--letter-rule);font-family:var(--oc-font-sans);font-size:var(--oc-size-12);letter-spacing:.16em;text-transform:uppercase;text-align:center;color:var(--letter-muted)}
 
 .decision-response{align-items:flex-start;flex-direction:column;padding:28px;margin-top:24px;border:1px solid var(--border);border-radius:var(--oc-content-radius)}
+.decision-response-first{margin-top:0;margin-bottom:24px}
 
 /* Acceptance banner and celebration overlay (screen only). */
 .decision-celebrate-banner{display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;margin:0 0 20px;padding:18px 22px;border:1px solid var(--border);border-radius:var(--oc-content-radius);background:var(--oc-content-surface);box-shadow:var(--oc-content-shadow)}
