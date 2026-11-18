@@ -1,6 +1,6 @@
 // Runs Maestro flows against the simulator with the staging accounts passed as flow variables.
 // Passwords come from the git-ignored accounts file and are never printed.
-// Run: node scripts/staging/maestro.cjs <flow.yaml> [more maestro args]
+// Run: [MAESTRO_DEVICE=<simulator udid>] node scripts/staging/maestro.cjs <flow.yaml> [more maestro args]
 "use strict";
 const { spawnSync } = require("node:child_process");
 const os = require("node:os");
@@ -16,7 +16,7 @@ for (const [role, account] of Object.entries(found)) {
 }
 const javaHome = process.env.JAVA_HOME || "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home";
 const [flow, ...rest] = process.argv.slice(2);
-const result = spawnSync(path.join(os.homedir(), ".maestro/bin/maestro"), ["test", flow, ...variables, ...rest], {
+const result = spawnSync(path.join(os.homedir(), ".maestro/bin/maestro"), [...(process.env.MAESTRO_DEVICE ? ["--device", process.env.MAESTRO_DEVICE] : []), "test", flow, ...variables, ...rest], {
   cwd: path.join(env.root, "mobile"), encoding: "utf8",
   env: { PATH: `${javaHome}/bin:${process.env.PATH}`, JAVA_HOME: javaHome, HOME: os.homedir(), MAESTRO_CLI_NO_ANALYTICS: "1", MAESTRO_DISABLE_UPDATE_CHECK: "true" },
 });

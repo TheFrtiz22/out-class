@@ -57,6 +57,7 @@ export const mobileOperations = {
 
   // Applications, interviews, decisions
   "applications": operation("GET", none, async () => (await import("@/actions/applications")).getStudentApplications()),
+  "applications.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileApplications()),
   "applications.start": operation("POST", club, async ({ clubId }) => (await import("@/actions/club-directory")).startClubApplication(clubId)),
   "applications.saveDraft": operation("POST", passthrough, async input => (await import("@/actions/applications")).saveApplicationDraft(input as never)),
   "applications.submit": operation("POST", passthrough, async input => (await import("@/actions/applications")).submitApplication(input as never)),
@@ -74,12 +75,20 @@ export const mobileOperations = {
   "inbox.preferences": operation("GET", none, async () => (await import("@/actions/communications")).getNotificationPreferences()),
   "inbox.preferences.save": operation("POST", passthrough, async input => (await import("@/actions/communications")).saveNotificationPreferences(input)),
 
+  // Native push: the device is another subscription of the web's push path (actions/push-subscriptions.ts)
+  "push.settings": operation("GET", passthrough, async input => (await import("@/actions/push-subscriptions")).getNativePushSettings(input)),
+  "push.register": operation("POST", passthrough, async input => (await import("@/actions/push-subscriptions")).saveNativePushDevice(input)),
+  "push.unregister": operation("POST", passthrough, async input => (await import("@/actions/push-subscriptions")).removeNativePushDevice(input)),
+
   // Meetings and check-in
   "meetings": operation("GET", z.object({ clubId: uuid.optional() }).strict().optional(), async input => (await import("@/actions/meetings")).listMeetings(input?.clubId)),
   "meetings.meeting": operation("GET", z.object({ meetingId: uuid }).strict(), async ({ meetingId }) => (await import("@/actions/meetings")).getMeeting(meetingId)),
   "meetings.checkIn": operation("POST", z.object({ meetingId: uuid, token: z.string().min(16).max(256) }).strict(), async ({ meetingId, token }) => (await import("@/actions/meetings")).checkInMeeting(meetingId, token)),
   "meetings.checkIn.issue": operation("POST", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).issueMeetingCheckIn(clubId, meetingId)),
   "meetings.checkIn.close": operation("POST", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).closeMeetingCheckIn(clubId, meetingId)),
+  // Door mode: the student's personal pass, and the leader scanning it (actions/check-in-pass.ts)
+  "checkInPass.issue": operation("POST", none, async () => (await import("@/actions/check-in-pass")).issueCheckInPass()),
+  "checkInPass.scan": operation("POST", passthrough, async input => (await import("@/actions/check-in-pass")).scanCheckInPass(input)),
   "meetings.attendance": operation("GET", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).meetingAttendance(clubId, meetingId)),
 
   // Tasks
