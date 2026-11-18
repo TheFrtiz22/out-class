@@ -91,9 +91,10 @@ export function advanceLabel(app: { status: string; roundId: string }, rounds: r
   } catch { return "Advance" }
 }
 
-/** Short description of a staged decision: "Advance to Interview", "Reject", "Hold". */
+/** Short description of a staged decision: "Advance to Interview", "Move to Round 1", "Reject", "Hold". */
 export function stagedLabel(staged: Pick<StagedDecisionView, "outcome" | "targetStatus" | "targetRoundId"> & { targetRoundName?: string | null }, rounds: readonly { id: string; name: string }[]) {
-  if (staged.targetRoundId) return `Advance to ${rounds.find(round => round.id === staged.targetRoundId)?.name ?? staged.targetRoundName ?? "another round"}`
+  // A chosen round can be an earlier one, so only Advance says "Advance".
+  if (staged.targetRoundId) return `${staged.outcome === "ROUND" ? "Move" : "Advance"} to ${rounds.find(round => round.id === staged.targetRoundId)?.name ?? staged.targetRoundName ?? "another round"}`
   switch (staged.targetStatus) {
     case "ACCEPTED": return staged.outcome === "ADVANCE" ? "Advance to Accepted" : "Accept"
     case "REJECTED": return "Reject"

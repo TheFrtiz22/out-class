@@ -35,6 +35,16 @@ test('Advance moves to the next round, and to Accepted from the last round or th
   assert.equal(staged.advanceLabel({ status: 'IN_REVIEW', roundId: 'r3' }, rounds), 'Advance to Accepted')
 })
 
+test('a staged move to an earlier round reads as a move, and the list flags decisions saved before the applicant changed', () => {
+  // Asher Waldman case: in Round 2 with a decision that sends them back to Round 1.
+  assert.equal(staged.stagedLabel({ outcome: 'ROUND', targetStatus: 'IN_REVIEW', targetRoundId: 'r1' }, rounds), 'Move to Application review')
+  assert.equal(staged.stagedLabel({ outcome: 'ADVANCE', targetStatus: 'INTERVIEWING', targetRoundId: 'r2' }, rounds), 'Advance to Interview')
+  assert.equal(staged.stagedIsStale({ expectedStatus: 'IN_REVIEW', expectedRoundId: 'r1' }, { status: 'INTERVIEWING', roundId: 'r2' }), true)
+  const views = read('components/views/leader-dashboard/live-applicant-views.tsx')
+  assert.match(views, /stagedIsStale\(pending, app\)/)
+  assert.match(views, /Out of date: \$\{stagedLabel\(pending, rounds\)\}/)
+})
+
 test('Round moves invite to interview on entering an interview round and return to review on leaving one', () => {
   for (const type of ['INTERVIEW', 'GROUP_INTERVIEW']) {
     assert.equal(lifecycle.statusAfterRoundMove('SUBMITTED', type), 'INTERVIEWING')
