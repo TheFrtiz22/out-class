@@ -1,5 +1,6 @@
 import type { AppTransactionClient } from "@/utils/prisma";
 import { normalizeSchoolIdentifier } from "@/lib/club-onboarding";
+import type { VerificationPurpose } from "@/lib/invitation-access";
 import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy, UniversityVerificationError, verificationRemedyFor } from "@/utils/verified-email-policy";
 
 type VerifiedAccount = {
@@ -20,8 +21,9 @@ async function schoolNameFor(email: string | undefined) {
     return type?.school.name ?? null;
   } catch { return null; }
 }
-export async function prepareVerifiedSchoolAccount(account: VerifiedAccount) {
-  if (!hasConfirmedUniversityEmail(account)) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_REQUIRED", { remedy: verificationRemedyFor(account), school: await schoolNameFor(account.supabaseUser.email ?? account.user.email) });
+/** purpose only words the refusal: "view" lists or opens invitations, "respond" (the default) acts on one. */
+export async function prepareVerifiedSchoolAccount(account: VerifiedAccount, purpose: VerificationPurpose = "respond") {
+  if (!hasConfirmedUniversityEmail(account)) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_REQUIRED", { remedy: verificationRemedyFor(account), school: await schoolNameFor(account.supabaseUser.email ?? account.user.email), purpose });
   await requireVerifiedEmailPolicy();
   prepared.add(account);
 }

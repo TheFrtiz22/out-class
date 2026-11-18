@@ -43,3 +43,14 @@ test('an unconfirmed account is refused with its own school name and remedy, loo
  assert.deepEqual(queries[0].where,{emailDomain:'virginia.edu',school:{active:true}});
  await assert.rejects(prepareVerifiedSchoolAccount(account(['azure'],[{provider:'azure',user_id:'other',identity_data:{email:'mst3k@virginia.edu'}}])),error=>error.context.remedy==='provider'&&/Microsoft sign-in/.test(error.message)&&!/password reset/.test(error.message));
 });
+
+test('the refusal reads "To see club invitations" when listing and "To respond to this invitation" when acting on one',async()=>{
+ const load=loader({'@/utils/prisma':{prisma:{schoolIdentifierType:{findFirst:async()=>({school:{name:'University of Virginia'}})}}}});
+ const {prepareVerifiedSchoolAccount}=load('utils/school-identity.ts');const access=load('lib/invitation-access.ts');
+ const account=()=>({user:{id:'u',email:'mst3k@virginia.edu'},supabaseUser:{id:'u',email:'mst3k@virginia.edu',email_confirmed_at:'2026-10-05T00:00:00Z',confirmation_sent_at:null,app_metadata:{providers:['email']}}});
+ await assert.rejects(prepareVerifiedSchoolAccount(account(),'view'),error=>error.message===access.verificationRequiredMessage({remedy:'password',school:'University of Virginia',purpose:'view'})&&/^To see club invitations, /.test(error.message));
+ await assert.rejects(prepareVerifiedSchoolAccount(account()),error=>error.message===access.verificationRequiredMessage({remedy:'password',school:'University of Virginia',purpose:'respond'})&&/^To respond to this invitation, /.test(error.message));
+ const source=fs.readFileSync('actions/club-onboarding.ts','utf8');
+ assert.match(source,/export async function getOrganizationInvitations[\s\S]{0,200}prepareVerifiedSchoolAccount\(account, "view"\)/,'listing uses the viewing copy');
+ assert.equal((source.match(/prepareVerifiedSchoolAccount\(account\);/g)||[]).length,3,'accept, dismiss and decline use the responding copy');
+});

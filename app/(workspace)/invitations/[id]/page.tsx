@@ -47,7 +47,7 @@ export default async function Invitation({
   // accept/decline server actions (InvitationResponse) inside their own transaction.
   const identities = await (async () => {
     try {
-      await prepareVerifiedSchoolAccount(account);
+      await prepareVerifiedSchoolAccount(account, "respond");
       return await previewVerifiedSchoolIdentities(prisma, account);
     } catch (error) {
       if (!(error instanceof UniversityVerificationError)) throw error;

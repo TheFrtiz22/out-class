@@ -6,7 +6,9 @@
  * Microsoft sign-in, which carries the address (it has no password to reset).
  */
 export type VerificationRemedy = "password" | "provider"
-export type VerificationContext = { remedy?: VerificationRemedy | null; school?: string | null }
+/** "view": listing or opening invitations; "respond": accepting, declining or setting one aside. */
+export type VerificationPurpose = "view" | "respond"
+export type VerificationContext = { remedy?: VerificationRemedy | null; school?: string | null; purpose?: VerificationPurpose }
 
 export const UNIVERSITY_VERIFICATION_UNAVAILABLE_MESSAGE = "Invitations can’t be checked right now. Try again in a few minutes."
 export const UNIVERSITY_VERIFICATION_HREF = "/settings/account"
@@ -25,11 +27,12 @@ export function schoolEmailPhrase(school?: string | null) {
 export function verificationTitle(school?: string | null) {
   return `Confirm ${schoolEmailPhrase(school)}`
 }
-export function verificationRequiredMessage({ remedy, school }: VerificationContext = {}) {
+export function verificationRequiredMessage({ remedy, school, purpose = "view" }: VerificationContext = {}) {
   const email = schoolEmailPhrase(school)
+  const lead = purpose === "respond" ? "To respond to this invitation" : "To see club invitations"
   return remedy === "provider"
-    ? `To see club invitations, OutClass needs to confirm ${email} from your Microsoft sign-in. Sign out and sign in with Microsoft again. If this keeps happening, contact OutClass support.`
-    : `To see club invitations, confirm ${email}: send yourself a password reset from Account settings, then sign in again.`
+    ? `${lead}, OutClass needs to confirm ${email} from your Microsoft sign-in. Sign out and sign in with Microsoft again. If this keeps happening, contact OutClass support.`
+    : `${lead}, confirm ${email}: send yourself a password reset from Account settings, then sign in again.`
 }
 
 /** "verify": a password reset from Account settings confirms the email; "verify-provider": sign in with Microsoft again. */
