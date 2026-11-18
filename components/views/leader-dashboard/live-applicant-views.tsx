@@ -4,7 +4,7 @@ import { DataTable, DataTableSecondary, type DataTableColumn } from "@/component
 import { joinFacts } from "@/lib/join-facts"
 import { StatusPill } from "@/components/ui/status-pill"
 import { PreviouslyAppliedBadge } from "@/components/previously-applied-badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { ApplicantSort } from "@/lib/live-applicant-sorting"
 import { stagedIsStale, stagedLabel, type StagedDecisionView } from "@/lib/staged-decisions"
@@ -15,9 +15,11 @@ import { scholarSummary } from "@/lib/scholar-status"
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 type Candidate = Pipeline["applications"][number]
 type Props = { votingSelection?: {ids:string[];toggle:(id:string)=>void}; applicants: Candidate[]; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; profileFields?: ProfileFieldVisibility; staged?: ReadonlyMap<string, StagedDecisionView>; showScholar?: boolean }
-function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boolean }) {
-  return <span className="oc-applicant-person"><Avatar aria-hidden="true"><AvatarFallback>{anonymous ? <ShieldCheck size={16} /> : label.split(/\s+/).map(part => part[0]).slice(0,2).join("")}</AvatarFallback></Avatar><span>{label}</span></span>
+/** The photo URL is the server-authorized CRM source; anonymous rows and clubs that hide photos get none. */
+function ApplicantIdentity({ label, anonymous, photo }: { label: string; anonymous: boolean; photo?: string | null }) {
+  return <span className="oc-applicant-person"><Avatar aria-hidden="true">{!anonymous && photo && <AvatarImage src={photo} alt="" width={24} height={24} loading="lazy" decoding="async" draggable={false} />}<AvatarFallback delayMs={!anonymous && photo ? 400 : 0}>{anonymous ? <ShieldCheck size={16} /> : label.split(/\s+/).map(part => part[0]).slice(0,2).join("")}</AvatarFallback></Avatar><span>{label}</span></span>
 }
+const applicantPhoto = (app: Candidate, fields: ProfileFieldVisibility) => fields.photo && !anonymous(app) ? app.student.studentProfile?.headshotUrl ?? null : null
 /** Status, plus the staged (unsent) decision when there is one. */
 function Status({ app, rounds, staged }: { app: Candidate; rounds: Pipeline["rounds"]; staged?: Props["staged"] }) {
   const pending = staged?.get(app.id)
@@ -45,7 +47,7 @@ const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gp
 /** Applicants: email drops first, then SAT and ACT combine into one "Test scores" column (below 880px, never beside them), then Year drops. Cards below 640px. */
 export function LiveApplicantList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, votingSelection, profileFields = defaultProfileFieldVisibility(), staged, showScholar = false }: Props) {
   const columns = ([
-    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-applicant-person-row"><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><PreviouslyAppliedBadge priors={app.priorApplications} /></span>, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
+    { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-applicant-person-row"><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} photo={applicantPhoto(app, profileFields)} /><PreviouslyAppliedBadge priors={app.priorApplications} /></span>, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
     { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Not available" },
     { id: "gpa", header: "GPA", sortKey: "gpa", align: "end", cell: app => app.student.studentProfile?.gpa?.toFixed(2) ?? "—" },

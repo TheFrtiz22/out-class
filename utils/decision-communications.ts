@@ -1,15 +1,17 @@
 import { activeMemberWhere } from "@/lib/permissions";
 import type { FrozenLetterSettings } from "@/lib/decision-schedule";
 import type { AppTransactionClient } from '@/utils/prisma';
-import { decisionTypes, decisionDestination, resolveLetter, type LetterDecision } from '@/lib/decision-letters';
+import { decisionTypes, decisionDestination, resolveLetter, letterKindFor, type LetterDecision } from '@/lib/decision-letters';
 import { clubAssetReference } from '@/lib/club-assets';
 /** Invoked only by the canonical publisher under its Club serialization lock. */
 export async function publishDecisionCommunication(tx:AppTransactionClient,applicationId:string,actorId:string,settings?:FrozenLetterSettings,names?:{firstName:string;fullName:string}) {
- const app=await tx.application.findUniqueOrThrow({where:{id:applicationId},select:{id:true,status:true,decisionVersion:true,studentId:true,clubId:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}},club:{select:{name:true,color:true,logoUrl:true,decisionLetterTemplates:true,sendFormalDecisionLetters:true}},recruitmentOffer:{select:{expiresAt:true}}}});
+ const app=await tx.application.findUniqueOrThrow({where:{id:applicationId},select:{id:true,status:true,decisionVersion:true,studentId:true,clubId:true,round:{select:{name:true,order:true}},student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}},club:{select:{name:true,color:true,logoUrl:true,decisionLetterTemplates:true,sendFormalDecisionLetters:true}},recruitmentOffer:{select:{expiresAt:true}}}});
  if (!(decisionTypes as readonly string[]).includes(app.status)) return;
  const now=new Date(),profile=app.student.studentProfile;
  const branding=settings ?? {enabled:app.club.sendFormalDecisionLetters,templates:app.club.decisionLetterTemplates,name:app.club.name,color:app.club.color,logoUrl:app.club.logoUrl};
- const letter=branding.enabled ? await tx.decisionLetter.create({data:{applicationId:app.id,clubId:app.clubId,version:app.decisionVersion,decision:app.status,content:resolveLetter(app.status as LetterDecision,branding.templates,{firstName:names?.firstName ?? profile?.firstName ?? 'Student',fullName:names?.fullName ?? (profile ? `${profile.firstName} ${profile.lastName}` : 'Student'),clubName:branding.name,date:now,expiresAt:app.recruitmentOffer?.expiresAt ?? null,logoReference:clubAssetReference.safeParse(branding.logoUrl).success?branding.logoUrl:null,accent:branding.color})}}) : null;
+ // A rejection before the club's last active round gets the "didn't advance" letter, not the final one.
+ const laterRound=branding.enabled&&app.status==='REJECTED'?await tx.pipelineRound.count({where:{clubId:app.clubId,archivedAt:null,order:{gt:app.round.order}}})>0:false;
+ const letter=branding.enabled ? await tx.decisionLetter.create({data:{applicationId:app.id,clubId:app.clubId,version:app.decisionVersion,decision:app.status,content:resolveLetter(letterKindFor(app.status as LetterDecision,laterRound),branding.templates,{roundName:app.round.name,firstName:names?.firstName ?? profile?.firstName ?? 'Student',fullName:names?.fullName ?? (profile ? `${profile.firstName} ${profile.lastName}` : 'Student'),clubName:branding.name,date:now,expiresAt:app.recruitmentOffer?.expiresAt ?? null,logoReference:clubAssetReference.safeParse(branding.logoUrl).success?branding.logoUrl:null,accent:branding.color})}}) : null;
  await tx.userNotification.create({data:{userId:app.studentId,clubId:app.clubId,type:'DECISION',title:`Your decision from ${app.club.name} is available`,body:'Open your decision on OutClass.',href:decisionDestination(app.id,letter?.id),eventKey:`decision:${app.id}:${app.decisionVersion}`}});
  // The canonical INSERT trigger atomically queues NotificationEmailOutbox.
  // Individual domain events pass through the existing support attribution layer.

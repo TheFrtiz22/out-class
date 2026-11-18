@@ -8,7 +8,7 @@ import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { overviewSessionAction, overviewSessionGroup, overviewSummaryState, type DecideStep, type OverviewSummaryState, type ScopedRead } from "@/lib/decide";
 import { getRoundLetterCounts, getRoundTargetSummary, type listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getDecisionTemplates } from "@/lib/workspace-api";
-import { decisionTypes } from "@/lib/decision-letters";
+import { letterKinds } from "@/lib/decision-letters";
 import { liveRoomPath } from "@/lib/voting-room";
 import { formatDateTime, pluralize } from "@/lib/copy/terms";
 import { VotingTargetSummary, type ScopedTargetSummary } from "@/components/voting-target-summary";
@@ -106,7 +106,7 @@ export function DecideOverview({ clubId, member, access, rows, failed, onRetry, 
   const letterCounts = overviewSummaryState({ roundId, scope, loaded: counts, canIdentify, rooms: rows });
   const templates = letters?.scope === lettersScope ? letters : null;
   const sessions = rows?.filter(r => overviewSessionGroup(r)) ?? [];
-  const customized = templates?.value ? decisionTypes.filter(type => templates.value!.templates[type]).length : 0;
+  const customized = templates?.value ? letterKinds.filter(type => templates.value!.templates[type]).length : 0;
   const roomsFailed = failed ? <div role="alert" className="space-y-2"><p className="text-sm">Voting sessions could not be loaded.</p><Button variant="outline" size="sm" onClick={onRetry}>Retry</Button></div> : null;
 
   return <div className="grid gap-5">
@@ -138,7 +138,7 @@ export function DecideOverview({ clubId, member, access, rows, failed, onRetry, 
         : letterCounts.kind === "ready" ? <dl className="m-0 grid grid-cols-2 gap-4 sm:max-w-sm" aria-label="Applicants by letter status"><Figure label="Ready to send" value={letterCounts.value.ready} /><Figure label="Sent" value={letterCounts.value.sent} /></dl> : null)}
       {canLetters && (!templates ? <LoadingState label="Loading letter templates…" layout="rows" rows={1} />
         : !templates.value ? <p role="status" className="text-sm text-muted-foreground">Letter templates could not be loaded.</p>
-        : <p className="text-sm"><span className="font-medium">{customized} of {decisionTypes.length}</span> outcome letters customized · Formal letters {templates.value.sendFormalDecisionLetters ? "on" : "off"}</p>)}
+        : <p className="text-sm"><span className="font-medium">{customized} of {letterKinds.length}</span> outcome letters customized · Formal letters {templates.value.sendFormalDecisionLetters ? "on" : "off"}</p>)}
     </Panel> : access.canSend ? <p><StepLink label="Open Send" href={stepHref("letters")} /></p> : null}
   </div>;
 }

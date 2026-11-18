@@ -49,7 +49,8 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
   }
   return clubs
     .filter((club) => {
-      const text = [club.name, club.category, club.pitch, club.description || "", ...club.tags, ...readMarketing(club.marketing).placements]
+      // Where a club meets comes from its public upcoming events (clubs have no separate location field).
+      const text = [club.name, club.category, club.pitch, club.description || "", ...club.tags, ...readMarketing(club.marketing).placements, ...(club.publicEvents ?? []).map((event) => event.location)]
         .join(" ")
         .toLocaleLowerCase("en-US")
       if (!words.every((word) => text.includes(word))) return false
