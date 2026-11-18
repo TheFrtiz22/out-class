@@ -204,7 +204,7 @@ Resource: live voting session roster (`VotingParticipant`), ballots (`VotingBall
 
 Review follow-up (2026-11-17), same resource: the applicant on screen is also refused their own slide, tally, rule result, outcome (unless leading) and hand-raise; the applicant display refuses voting slides and setup previews of your own application; recused members don't count for that applicant in open sessions; support (impersonation) sessions cannot join, vote or raise a hand; non-leaders in anonymous rounds see the uncorrected room count. Tests: `tests/voting-open-electorate.test.cjs` (5 new cases), `tests/voting-display-snapshot.test.cjs`.
 
-## 2026-11-18 · MOBILE-1 · Native app API, door mode, native push (branch `mobile/foundation`, not merged)
+## 2026-11-18 · MOBILE-1 · Native app API, door mode, native push (branch `mobile/app-build`, not merged)
 
 Resource: `app/api/mobile/v1/[operation]` and `app/api/mobile/v1/media/[kind]`. The boundary authenticates a Supabase bearer token with the cookie session's own checks (`utils/auth.ts` `verifiedSessionState`) and then calls an existing Server Action, loader or media handler, which authorizes as it does for the web. New authorization code exists only in `actions/check-in-pass.ts` (door mode) and the native-device functions of `actions/push-subscriptions.ts`.
 

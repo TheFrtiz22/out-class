@@ -11,6 +11,7 @@ function localConfig(): PublicConfig {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, "config.local.json"), "utf8")) as PublicConfig; } catch { return {}; }
 }
 const local = localConfig();
+const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://out-class.net";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -74,11 +75,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-localization",
     // Long-press app-icon shortcuts (Scan, Check-in pass). Items are set at runtime in src/app/_layout.tsx.
     "expo-quick-actions",
-    ["expo-build-properties", { ios: { deploymentTarget: "17.0" } }],
+    // Android release builds refuse plain HTTP. It is allowed only when this build's API address is plain
+    // HTTP (a local server on staging data); a production build's address is HTTPS, so it stays refused.
+    ["expo-build-properties", { ios: { deploymentTarget: "17.0" }, android: { usesCleartextTraffic: apiUrl.startsWith("http://") } }],
   ],
   experiments: { reactCompiler: true },
   extra: {
-    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://out-class.net",
+    apiUrl,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? local.supabaseUrl ?? "",
     supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? local.supabasePublishableKey ?? "",
     turnstileSiteKey: process.env.EXPO_PUBLIC_TURNSTILE_SITE_KEY ?? local.turnstileSiteKey ?? "",

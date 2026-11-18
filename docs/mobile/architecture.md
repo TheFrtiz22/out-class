@@ -1,6 +1,6 @@
 # OutClass mobile architecture
 
-Status: in progress (branch `mobile/foundation`). Written 2026-11-18.
+Status: in progress (branch `mobile/app-build`). Written 2026-11-18.
 
 ## Shape
 
