@@ -93,6 +93,8 @@ test('Demo Mode: session and round summaries use the same projection with zero l
 test('entire-round scope is a separate, server-authorized read: canonical once per applicant, partial when rooms are not visible',async()=>{
  const h=harness();await h.create({targetSize:2});const api=load('actions/voting-target-summary.ts',h.mocks);
  ok(await h.command('START'));ok(await h.command('ACCEPT_WITHOUT_VOTE',{reason:'Clear',confirmed:true}));ok(await h.command('ADVANCE'));
+ // One live session per round is open at a time, so the first ends before the second starts; ended sessions still count.
+ ok(await h.command('END'));
  // A second room in the same round re-decides apps[0] and adds apps[1] for a member who is not a voter there.
  const second={clubId,sessionId:uuid(40)};await h.api.createLiveVotingRoom({...second,cycleId,roundId,leaderMemberIds:[leaderId],participantIds:[leaderId],applicationIds:[apps[0],apps[1]],targetSize:3});
  // That room was saved with a voter list (leader only), so the voter cannot open it; open-electorate rooms are open to every voting member.

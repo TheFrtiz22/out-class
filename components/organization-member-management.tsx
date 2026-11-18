@@ -117,6 +117,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const [dirty, setDirty] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
   const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
+  // Removed members (status LEFT) stay out of the default directory; the Status filter shows them on their own.
+  const [statusFilter, setStatusFilter] = useState<"" | "removed">("");
   const [addOpen, setAddOpen] = useState(false), [importOpen, setImportOpen] = useState(false), [groupsOpen, setGroupsOpen] = useState(false);
   // The club workspace page header renders #workspace-page-actions on Members (as on Applicants). Re-resolved after
   // every commit so a remounted header never leaves the portal on a detached node; placed before paint.
@@ -263,7 +265,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             member: null,
             invitation,
           })),
-      ].filter(row => Boolean(row.invitation) === invitesOpen && (!groupFilter || row.member?.groups.includes(groupFilter)) && (!roleFilter || row.role === roleFilter) && (!yearFilter || row.year === yearFilter)).filter((row) =>
+      ].filter(row => Boolean(row.invitation) === invitesOpen && (!row.member || (row.member.status === "LEFT") === (statusFilter === "removed")) && (!groupFilter || row.member?.groups.includes(groupFilter)) && (!roleFilter || row.role === roleFilter) && (!yearFilter || row.year === yearFilter)).filter((row) =>
         `${row.name} ${row.detail} ${row.year || ""} ${organizationRoleLabels[row.role]} ${row.status} ${row.member?.groups.join(" ") || ""}`
           .toLowerCase()
           .includes(needle),
@@ -493,13 +495,16 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 }}
                 onClear={() => { setQuery(""); resetPaging() }}
               />
-              <FilterPopover title="Member filters" align="start" count={[roleFilter, showYear && yearFilter, !invitesOpen && groupFilter].filter(Boolean).length}
-                footer={<Button variant="ghost" size="sm" disabled={!roleFilter && !yearFilter && !groupFilter} onClick={() => { setRoleFilter(""); setYearFilter(""); setGroupFilter(""); resetPaging() }}>Clear filters</Button>}>
+              <FilterPopover title="Member filters" align="start" count={[roleFilter, showYear && yearFilter, !invitesOpen && groupFilter, !invitesOpen && statusFilter].filter(Boolean).length}
+                footer={<Button variant="ghost" size="sm" disabled={!roleFilter && !yearFilter && !groupFilter && !statusFilter} onClick={() => { setRoleFilter(""); setYearFilter(""); setGroupFilter(""); setStatusFilter(""); resetPaging() }}>Clear filters</Button>}>
                 <div className="oc-filter-field"><span className="oc-filter-field-label">Role</span>
                   <PillSelect label="Filter members by role" size="compact" allLabel="All roles" value={roleFilter} onChange={value => { setRoleFilter(value); resetPaging() }} options={organizationRoles.map(role => ({ value: role, label: organizationRoleLabels[role] }))} />
                 </div>
                 {showYear && <div className="oc-filter-field"><span className="oc-filter-field-label">Year</span>
                   <PillSelect label="Filter members by year" size="compact" allLabel="All years" value={yearFilter} onChange={value => { setYearFilter(value); resetPaging() }} options={memberYears.map(year => ({ value: year, label: year }))} />
+                </div>}
+                {!invitesOpen && <div className="oc-filter-field"><span className="oc-filter-field-label">Status</span>
+                  <PillSelect label="Filter members by status" size="compact" allLabel="Current" value={statusFilter} onChange={value => { setStatusFilter(value === "removed" ? "removed" : ""); resetPaging() }} options={[{ value: "removed", label: "Removed" }]} />
                 </div>}
                 {!invitesOpen && caps.canManageMembers && <div className="oc-filter-field"><span className="oc-filter-field-label">Group</span>
                   <PillSelect label="Filter members by group" size="compact" allLabel="All groups" value={groupFilter} onChange={value => { setGroupFilter(value); resetPaging() }} options={memberGroups.map(group => ({ value: group, label: group }))} />

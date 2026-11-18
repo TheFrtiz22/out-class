@@ -1,7 +1,7 @@
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { emptyDemoBookingFlow, defaultBookingSettings } from "./interview-booking"
 import { dayKey, zonedInstant, bookingSlotSnapshot } from "@/lib/interview-rooms"
-import { resolveLetter, type LetterDecision, type LetterTemplate } from "@/lib/decision-letters";
+import { resolveLetter, type LetterDecision, type LetterKind, type LetterTemplate } from "@/lib/decision-letters";
 import type { DemoRecruitingRule, DemoRecruitingFlag, DemoRuleAudit } from "./recruiting-rules"
 import { defaultVotingDisplay } from "@/lib/voting-presentation"
 import { defaultDisplayConfig } from "@/lib/applicant-display"
@@ -423,7 +423,7 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
   })
   const result = {
     bookingFlow: emptyDemoBookingFlow(),
-    letterTemplates: {} as Record<string, Partial<Record<LetterDecision,LetterTemplate>>>,
+    letterTemplates: {} as Record<string, Partial<Record<LetterKind,LetterTemplate>>>,
     decisionLetters: applications.filter(a=>['ACCEPTED','WAITLISTED','REJECTED'].includes(a.status)).map((a,i)=>{
       const club=clubs.find(c=>c.id===a.clubId)!,student=students.find(u=>u.id===a.studentId)!;
       return {id:uid(31,i),applicationId:a.id,clubId:a.clubId,version:1,decision:a.status as LetterDecision,createdAt:at(-4),content:resolveLetter(a.status as LetterDecision,{}, {firstName:student.profile.firstName,fullName:`${student.profile.firstName} ${student.profile.lastName}`,clubName:club.name,date:at(-4),expiresAt:a.status==='ACCEPTED'?at(30):null,logoReference:null,accent:club.color})};

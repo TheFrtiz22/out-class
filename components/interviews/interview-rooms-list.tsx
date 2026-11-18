@@ -33,8 +33,9 @@ function InterviewRow({ row, withDay, primary }: { row: InterviewRoomEntry; with
   const applicant = interviewEntryCandidate(row);
   return <li className="oc-my-interview">
     <div className="min-w-0">
-      <p className="truncate text-sm font-medium" title={row.interviewers.length ? `With ${row.interviewers.join(", ")}` : undefined}>{applicant ?? <span className="font-normal text-muted-foreground">Open time slot</span>}</p>
+      <p className="truncate text-sm font-medium">{applicant ?? <span className="font-normal text-muted-foreground">Open time slot</span>}</p>
       <p className="text-xs text-muted-foreground">{joinFacts(row.roundName, withDay ? shortDay(row) : "", interviewTimingShort(row), row.location || row.roomName)}</p>
+      {row.interviewers.length > 0 && <p className="text-xs text-muted-foreground">With {row.interviewers.join(", ")}</p>}
     </div>
     {openable(row) && <Button asChild size="sm" variant={primary ? "default" : "outline"}><Link data-entry-link="" href={entryHref(row)} aria-label={`${interviewEntryLabel(row)} · ${applicant ?? row.roomName}`}>{interviewEntryLabel(row)}</Link></Button>}
   </li>;

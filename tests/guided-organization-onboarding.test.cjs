@@ -12,6 +12,15 @@ test('checklist derives completion from real profile, reviewed roster, active ad
  assert.equal(steps({...fixture,members:[{isOwner:false,status:'ACTIVE',role:'ADMIN',permissions:[]}]})[3].complete,false);
 });
 
+test('the roster step is complete once the club has current members besides the owner, with or without a CSV import',()=>{
+ const steps=load('lib/organization-onboarding.ts').organizationSetupSteps,roster=input=>steps({...fixture,...input}).find(step=>step.id==='roster');
+ assert.equal(roster({}).complete,false);
+ assert.equal(roster({members:[...fixture.members,{isOwner:true,status:'ACTIVE'}]}).complete,false);
+ assert.equal(roster({members:[...fixture.members,{isOwner:false,status:'ACTIVE',permissions:[]}]}).complete,true);
+ assert.equal(roster({members:[...fixture.members,{isOwner:false,status:'ACTIVE',alumniSince:new Date(),permissions:[]}]}).complete,false);
+ assert.equal(roster({rosterReady:true}).complete,true);
+});
+
 test('checklist revalidates current organization access and scopes every read, excluding invalid imports and disabled administrators',async()=>{
  let authorized=true;const queries=[];
  const tx={clubMember:{findUnique:async()=>authorized?{isOwner:true,status:'ACTIVE'}:{status:'LEFT',permissions:[]},findMany:async query=>{queries.push(query);return[{isOwner:true,status:'ACTIVE'}];}},club:{findUniqueOrThrow:async query=>{queries.push(query);return{...fixture,claimedAt:new Date()};}},rosterImport:{count:async query=>{queries.push(query);return 0;}},pipelineRound:{count:async query=>{queries.push(query);return 0;}}};

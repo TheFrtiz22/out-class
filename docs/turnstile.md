@@ -28,9 +28,9 @@ added without a rebuild change nothing on either side.
 Siteverify has a 2.5 s timeout. A timeout or Cloudflare outage fails closed with "temporarily
 unavailable. Please try again." (HTTP 503): while configured, the forms OutClass verifies
 depend on Cloudflare being reachable. The bot-check answer never depends on whether an
-address has an account. No CSP change was needed: the only CSP is `frame-ancestors 'self'`,
-which does not restrict scripts or child frames. If a `script-src`/`frame-src` policy is added
-later, include `https://challenges.cloudflare.com` in both.
+address has an account. The page policy (`lib/csp.ts`, docs/csp.md) adds
+`https://challenges.cloudflare.com` to `script-src`, `frame-src` and `connect-src` whenever
+Turnstile is on.
 
 Not challenged: `verifyOtp` (code and link verification), Microsoft sign-in, signed-in actions.
 

@@ -79,3 +79,13 @@ test('when only past unbooked times remain, an organizer is still sent to Schedu
  nodes(tree).find(n=>n.props?.children==='Open schedule').props.onClick();assert.equal(opened,1);
  const member=list([past]);member.render();await flush();assert.match(text(member.render()),/No upcoming interviews\. Past times nobody booked are hidden\./);
 });
+
+test('the empty interview queue tells an owner to assign interviewers instead of asking the owner',()=>{
+ const fs=require('node:fs'),ts=require('typescript'),src=fs.readFileSync('components/views/interview-workspace-view.tsx','utf8');
+ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('lib/interview-access.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(n=>n==='@/lib/permissions'?(()=>{const m={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('lib/permissions.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(require,m,m.exports);return m.exports})():require(n),mod,mod.exports);
+ const caps=mod.exports.interviewCapabilities;
+ assert.equal(caps({status:'ACTIVE',isOwner:true,permissions:[]}).manageGrants,true);
+ assert.equal(caps({status:'ACTIVE',isOwner:false,permissions:['interviews.manage','applications.review','applicants.identify']}).manageGrants,false);
+ const owner=src.indexOf('interviewCapabilities(membership).manageGrants'),ownerCopy=src.indexOf('Assign interviewers, yourself included, on Schedule.'),askOwner=src.indexOf('Ask your club owner to confirm your assignment.');
+ assert.ok(owner>0&&owner<ownerCopy&&ownerCopy<askOwner,'owners see the assign copy; everyone else is asked to contact the owner');
+});

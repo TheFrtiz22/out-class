@@ -79,6 +79,20 @@ test('student dashboard queries exclude private manager review text',async()=>{
   await load('actions/applications.ts').getStudentDashboardData()
 })
 
+test('student dashboard marks members-only meetings of clubs the student helps run, and returns no membership rows',async()=>{
+  const meeting=(id,audience,members)=>({id,clubId:'c-'+id,title:id,date:new Date('2026-12-01T15:00:00Z'),endDate:null,allDay:false,location:'Rice',description:null,audience,club:{name:'Club '+id,members}})
+  let select
+  const load=loader({'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma:{
+    application:{findMany:async()=>[]},eventAttendance:{findMany:async()=>[]},
+    meeting:{findMany:async query=>{select=query.select;return [meeting('deliberations','MEMBERS',[{isOwner:false,permissions:['meetings.manage'],status:'ACTIVE',alumniSince:null}]),meeting('general','MEMBERS',[{isOwner:false,permissions:[],status:'ACTIVE',alumniSince:null}]),meeting('owner-open-house','RECRUITMENT',[{isOwner:true,permissions:[],status:'ACTIVE',alumniSince:null}]),meeting('public','RECRUITMENT',[])]}},
+    $transaction:async fn=>fn({clubMember:{findMany:async()=>[]}}),
+  }},'next/cache':{revalidatePath(){}}})
+  const {meetings}=await load('actions/applications.ts').getStudentDashboardData()
+  assert.deepEqual(select.club.select.members.where.userId,actorId)
+  assert.deepEqual(meetings.map(m=>[m.id,m.forLeaders]),[['deliberations',true],['general',false],['owner-open-house',false],['public',false]])
+  assert.ok(meetings.every(m=>!('members' in m.club)))
+})
+
 test('account endpoint independently denies demo cookies',async()=>{
   const demoCookie=loader({})('lib/demo/access.ts').DEMO_COOKIE
   const viewCookie=loader({})('lib/platform-view-as.ts').PLATFORM_VIEW_COOKIE

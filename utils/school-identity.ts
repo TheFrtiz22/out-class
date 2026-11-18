@@ -1,17 +1,29 @@
 import type { AppTransactionClient } from "@/utils/prisma";
 import { normalizeSchoolIdentifier } from "@/lib/club-onboarding";
-import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy, UniversityVerificationError } from "@/utils/verified-email-policy";
+import type { VerificationPurpose } from "@/lib/invitation-access";
+import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy, UniversityVerificationError, verificationRemedyFor } from "@/utils/verified-email-policy";
 
 type VerifiedAccount = {
   user: { id: string; email: string };
-  supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; confirmation_sent_at?: string | null; app_metadata?: Record<string, unknown> };
+  supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; confirmation_sent_at?: string | null; app_metadata?: Record<string, unknown>; identities?: { provider: string; user_id: string; identity_data?: Record<string, unknown> }[] };
 };
 
 // Per-account object preparation, never a global user/email cache. All public
 // actions obtain this object from requireAuth, never from client input.
 const prepared = new WeakSet<VerifiedAccount>();
-export async function prepareVerifiedSchoolAccount(account: VerifiedAccount) {
-  if (!hasConfirmedUniversityEmail(account)) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_REQUIRED");
+/** The active school whose email domain matches the account, for refusal copy. Null when unknown or unreadable. */
+async function schoolNameFor(email: string | undefined) {
+  const domain = email?.trim().toLowerCase().split("@")[1];
+  if (!domain) return null;
+  try {
+    const { prisma } = await import("@/utils/prisma");
+    const type = await prisma.schoolIdentifierType.findFirst({ where: { emailDomain: domain, school: { active: true } }, select: { school: { select: { name: true } } } });
+    return type?.school.name ?? null;
+  } catch { return null; }
+}
+/** purpose only words the refusal: "view" lists or opens invitations, "respond" (the default) acts on one. */
+export async function prepareVerifiedSchoolAccount(account: VerifiedAccount, purpose: VerificationPurpose = "respond") {
+  if (!hasConfirmedUniversityEmail(account)) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_REQUIRED", { remedy: verificationRemedyFor(account), school: await schoolNameFor(account.supabaseUser.email ?? account.user.email), purpose });
   await requireVerifiedEmailPolicy();
   prepared.add(account);
 }

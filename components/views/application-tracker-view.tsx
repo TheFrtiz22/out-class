@@ -51,6 +51,18 @@ const date = (value: Date | string) =>
     hour: "numeric",
     minute: "2-digit",
   })
+/** Puts the open application (or none) in the URL; push adds a history entry, so Back closes the view.
+ * Returns what happened: "pushed", "kept" (the URL already says so, or was replaced), or null without a browser history. */
+function writeApplicationUrl(id: string | null, tab?: string | null, push = false): "pushed" | "kept" | null {
+  if (typeof window === "undefined" || !window.history || !window.location?.href) return null
+  const url = new URL(window.location.href)
+  if (id) url.searchParams.set("applicationId", id); else url.searchParams.delete("applicationId")
+  if (tab) url.searchParams.set("tab", tab)
+  if (url.href === window.location.href) return "kept"
+  if (push) { window.history.pushState(null, "", url); return "pushed" }
+  window.history.replaceState(window.history.state, "", url)
+  return "kept"
+}
 // "View submitted responses" asks for the answers, not the status, of the application it focuses.
 let responsesRequested: string | null = null
 
@@ -79,6 +91,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   const content = useRef<HTMLDivElement>(null)
   const lastOpened = useRef<string | null>(null)
   const handledLink = useRef<string | null>(null)
+  const pushedEntry = useRef<string | null>(null)
   // statusId: switching between an application's status and its answers keeps activeId, so focus follows the new heading.
   useEffect(() => {
     if (activeId) content.current?.querySelector<HTMLElement>("h1")?.focus()
@@ -135,7 +148,10 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
     }
   }, [user?.id, loading, retry, sync])
   useEffect(() => {
-    if (pending || !focusApplicationClubId && !applicationId) return
+    if (pending) return
+    // Back (or any history step) removed the open application from the URL: return to the list.
+    if (!applicationId && handledLink.current && !focusApplicationClubId) { handledLink.current = null; pushedEntry.current = null; setActiveId(null); setStatusId(null); setNotice(""); return }
+    if (!focusApplicationClubId && !applicationId) return
     const app = applications.find((item) => applicationId ? item.id === applicationId : item.clubId === focusApplicationClubId)
     if (app && (scope === "all" || app.status !== "DRAFTING")) {
       // The same URL link seen again (the list refreshed, e.g. right after submitting) keeps what is on screen.
@@ -151,9 +167,8 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
       // A link to one application (Home's View interview, an email) opens the stage that holds it, not the stage in the URL.
       const appStage = applicationStage(app.status)
       if (appStage) setFilter(appStage)
-      // A submitted application's link is used once: Back stays on the list instead of reopening it on the next reload.
-      // A draft keeps its link, so a reload while writing returns to the same answers.
-      if (app.status !== "DRAFTING" && typeof window !== "undefined" && window.history && window.location?.href) { const url = new URL(window.location.href); if (appStage) url.searchParams.set("tab", appStage); url.searchParams.delete("applicationId"); window.history.replaceState(window.history.state, "", url) }
+      // The open application stays in the URL, so the view can be linked, reloaded, and closed with Back.
+      if (writeApplicationUrl(app.id, appStage)) handledLink.current = app.id
     }
     clearApplicationFocus()
   }, [applications, pending, focusApplicationClubId, applicationId, clearApplicationFocus, scope])
@@ -239,7 +254,13 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   function bookingChanged() {
     void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Interview saved. Your application will update shortly."))
   }
-  if (app && (statusView || statusId === app.id)) return <div ref={content} className="oc-application-detail max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setStatusId(null); setNotice("") }} onResponses={() => statusView ? openRelated("tracker") : setStatusId(null)} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
+  // Closing an application opened from the list steps back through history; one opened by a link drops it from the URL.
+  function closeApplication() {
+    setActiveId(null); setStatusId(null); setNotice("")
+    if (pushedEntry.current && pushedEntry.current === activeId && typeof window !== "undefined" && window.history) { pushedEntry.current = null; window.history.back(); return }
+    pushedEntry.current = null; handledLink.current = null; writeApplicationUrl(null)
+  }
+  if (app && (statusView || statusId === app.id)) return <div ref={content} className="oc-application-detail max-w-[var(--oc-reading-width)] space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={closeApplication} onResponses={() => statusView ? openRelated("tracker") : setStatusId(null)} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => void revalidate(true)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
       <div ref={content} className={`oc-application-detail pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-[var(--oc-reading-width)] space-y-7"}`}>
@@ -248,13 +269,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
           size="sm"
           className="-ml-3"
           disabled={working}
-          onClick={() =>
-            leave(() => {
-              setActiveId(null)
-              setStatusId(null)
-              setNotice("")
-            })
-          }
+          onClick={() => leave(closeApplication)}
         >
           <ArrowLeft className="size-4" />
           Applications
@@ -347,7 +362,12 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
   }
   const visible = applications.filter(item => applicationStage(item.status) === stage)
     .sort((a, b) => stage === "drafts" ? a.club.name.localeCompare(b.club.name) : compareApplicationStatus(a, b, now) || a.club.name.localeCompare(b.club.name))
-  function open(item: StudentApplication) { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }
+  function open(item: StudentApplication) {
+    lastOpened.current = item.id; setActiveId(item.id); setNotice("")
+    const written = writeApplicationUrl(item.id, null, true)
+    if (written) handledLink.current = item.id
+    if (written === "pushed") pushedEntry.current = item.id
+  }
   return (
     <div ref={content} className="oc-applications max-w-[var(--oc-content-width)] space-y-5" data-application-scope={scope}>
       <PageHeader density="expressive" title="Applications" description="Your drafts, applications in review, interviews and decisions." />

@@ -19,6 +19,13 @@ export function academicYear(profile: { gradYear: number; transferStudent?: bool
   const label = year < 1 ? "Incoming Student" : academicYearLabels[year - 1] || (year > 8 ? "Beyond Eighth Year" : "Year unavailable");
   return `${label}${profile.transferStudent ? "*" : ""}`;
 }
+/** No college grades exist before the first fall term ends, so an incoming student's or fall first year's GPA
+ * is a high school GPA (the profile asks for the college GPA once there is one). */
+export function gpaLabel(profile: { gradYear: number; transferStudent?: boolean }, now = new Date()) {
+  const year = academicYear(profile, now).replace(/\*$/, "");
+  const fallTerm = now.getUTCMonth() >= 7;
+  return !profile.transferStudent && (year === "Incoming Student" || (year === "First Year" && fallTerm)) ? "High school GPA" : "College GPA";
+}
 export type RecruitmentProfile = Omit<FullStudentProfile, "gradYear" | "highSchool" | "pronouns" | "transferStudent" | "gender" | "phone" | "graduatedAt" | "graduationConfirmedAt" | "graduationPromptDismissedAt" | "postGradEmployer" | "postGradRole" | "alumniPlacementClubIds" | "alumniDirectoryVisible" | "alumniPlacementShare"> & { academicYear: string; gender: string | null };
 /** Shared fields for the full profile and the database summary projection. */
 export function recruitmentListProfile(p: Pick<FullStudentProfile, "firstName" | "lastName" | "major" | "gradYear" | "transferStudent" | "gpa" | "satScore" | "actScore">) {

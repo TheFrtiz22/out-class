@@ -27,7 +27,7 @@ export function ScreeningDashboardView({ clubId, onReview }: { clubId?: string; 
     }).catch(() => { if (current) setError(true) })
     return () => { current = false }
   }, [clubId, reload])
-  if (!clubId) return <p className="py-6 text-sm text-muted-foreground">Open Review Tools in a managed club workspace to configure persisted recruiting rules.</p>
+  if (!clubId) return <p className="py-6 text-sm text-muted-foreground">Open Review Tools from a club you manage to set its recruiting rules.</p>
   if (error) return <div role="alert" className="py-6"><p>Rules could not be loaded. Check your access and try again.</p><Button onClick={() => setReload(n => n + 1)}>Retry</Button></div>
   if (!data) return <LoadingState label="Loading recruiting rules…" layout="form" rows={3} />
   const round = data.rounds.find(round => round.id === roundId)

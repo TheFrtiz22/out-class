@@ -46,3 +46,13 @@ test('Demo atomic decision, safe Undo and stale Undo retain isolated persistence
  await cmd('START');const r=await cmd('PASS_WITHOUT_VOTE_AND_ADVANCE',{applicationId:ids[0],passNumber:1});assert.equal(r.ok,true);assert.equal((await api.getLiveVotingRoom(scope)).currentApplicantId,ids[1]);assert.equal((await cmd('UNDO_DECISION',{applicationId:ids[0],passNumber:1,undoRequestId:r.result.decision.requestId})).ok,true);assert.equal((await api.getLiveVotingRoom(scope)).currentApplicantId,ids[0]);
  const again=await cmd('PASS_WITHOUT_VOTE_AND_ADVANCE',{applicationId:ids[0],passNumber:1});await cmd('OPEN_VOTING');assert.equal((await cmd('UNDO_DECISION',{applicationId:ids[0],passNumber:1,undoRequestId:again.result.decision.requestId})).code,'UNDO_UNSAFE');demoStore.stop();demoStore.start();assert.equal((await api.getLiveVotingRoom(scope)).currentApplicantId,ids[1]);assert.equal(h.calls(),0);demoStore.stop();
 });
+test('Demo refuses a second open live session in the same round with the server message',async()=>{
+ const h=harness(),{demoStore}=h.load('lib/demo/store.ts');demoStore.start();demoStore.mutate(s=>s.perspective={role:'leader',clubId:s.clubs[0].id});
+ const state=demoStore.get(),clubId=state.clubs[0].id,roundId=state.clubs[0].rounds.find(r=>r.name==='Interview').id,leader=state.memberships.find(m=>m.clubId===clubId&&m.isOwner),api=h.load('lib/voting-room-api.ts');
+ const setup=await api.getLiveVotingSetup({clubId,roundId,cycleId:clubId}),[a,b]=setup.applicants.map(x=>x.id),first=crypto.randomUUID(),second=crypto.randomUUID();
+ for(const [sessionId,ids] of [[first,[a]],[second,[b]]])await api.createLiveVotingRoom({clubId,sessionId,roundId,cycleId:clubId,applicationIds:ids,leaderMemberIds:[leader.id]});
+ const start=async sessionId=>{try{return await api.commandLiveVotingRoom({clubId,sessionId,action:'START',confirmed:true,revision:(await api.getLiveVotingRoom({clubId,sessionId})).revision,requestId:crypto.randomUUID()})}catch(e){return e}};
+ assert.notEqual((await start(first))?.ok,false);
+ const refused=await start(second);assert.equal(refused.code??refused.result?.code,'ROUND_SESSION_OPEN',JSON.stringify(refused));
+ assert.equal(h.calls(),0);
+});

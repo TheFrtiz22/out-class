@@ -17,6 +17,7 @@ import { getInterviewWorkspace, resolveInterviewRoomEntry, openInterviewSession,
 import { captureInterviewCandidate, animateInterviewCandidate } from "@/lib/interview-candidate-motion"
 import { interviewQueue } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
+import { interviewCapabilities } from "@/lib/interview-access"
 import { DemoInterviewGuide, DemoInterviewGuideContent } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { useConfirm } from "@/components/ui/confirm-dialog"
@@ -368,7 +369,9 @@ function InterviewSession({
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
               ? "Choose an assigned candidate to open their interview and your private question notes."
-              : "No current panel assignments are available in this round. Ask your club owner to confirm your assignment."}
+              : interviewCapabilities(membership).manageGrants
+                ? "You aren’t on a panel in this round. Assign interviewers, yourself included, on Schedule."
+                : "No current panel assignments are available in this round. Ask your club owner to confirm your assignment."}
           </p>
           {queue.length > 0 && (
             <Button onClick={() => void choose(queue[0].id)}>
