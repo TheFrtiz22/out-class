@@ -1,7 +1,18 @@
-# Fresh JS, the first-run developer menu dismissed, signed in as the staging student.
+# Fresh JS from Metro (-e METRO_PORT=<port>, default 8081), the first-run developer menu dismissed, signed in as the staging student.
 appId: net.outclass.app
 ---
-- runFlow: dev-connect.yaml
+- launchApp:
+    clearState: false
+- openLink: "outclass://expo-development-client/?url=http%3A%2F%2Flocalhost%3A${typeof METRO_PORT === 'undefined' ? '8081' : METRO_PORT}"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit|home-screen"
+    timeout: 180000
 - runFlow:
     when:
       visible: "Continue"

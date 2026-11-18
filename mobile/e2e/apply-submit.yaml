@@ -1,0 +1,73 @@
+# Fills and submits a fresh draft (irreversible): pass -e APPLICATION_ID=<a new draft's id> from
+# `applications.start` at a club the student has not applied to. Never run it on the seeded draft.
+# Expects the staging question set: two essays, one choice, one select-all, an optional document.
+appId: net.outclass.app
+---
+- launchApp:
+    clearState: false
+- runFlow: apply-ready.yaml
+- openLink: "outclass://application/${APPLICATION_ID}"
+- extendedWaitUntil:
+    visible:
+      id: "draft-progress"
+    timeout: 90000
+
+# Submitting with required questions unanswered is refused before anything is sent.
+- scrollUntilVisible:
+    element:
+      id: "draft-review"
+    direction: DOWN
+- tapOn:
+    id: "draft-review"
+- scrollUntilVisible:
+    element:
+      id: "draft-error"
+    direction: UP
+- assertVisible: "A few responses need your attention. Your draft can still be saved."
+- takeScreenshot: .shots/applications/flow-submit-validation
+
+- scrollUntilVisible:
+    element:
+      id: "answer-1"
+    direction: DOWN
+- tapOn:
+    id: "answer-1"
+- inputText: "I want a place to write every week and to hear honest notes from other writers."
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "answer-2"
+    direction: DOWN
+- tapOn:
+    id: "answer-2"
+- inputText: "Our class zine lost its editor a week before print. I took over the layout and we shipped on time."
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "answer-3"
+    direction: DOWN
+- tapOn:
+    id: "answer-3"
+- takeScreenshot: .shots/applications/flow-submit-choice
+- tapOn: "3 to 5 hours"
+- scrollUntilVisible:
+    element: "Events and community"
+    direction: DOWN
+- tapOn: "Events and community"
+- scrollUntilVisible:
+    element:
+      id: "draft-review"
+    direction: DOWN
+- takeScreenshot: .shots/applications/flow-submit-filled
+- tapOn:
+    id: "draft-review"
+- assertVisible: "Ready to send your application?"
+- takeScreenshot: .shots/applications/flow-submit-confirm
+- tapOn:
+    id: "confirm-accept"
+- extendedWaitUntil:
+    visible: "Your application was submitted successfully."
+    timeout: 90000
+- assertVisible:
+    id: "application-status"
+- takeScreenshot: .shots/applications/flow-submit-done

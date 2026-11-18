@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Glass } from "~/components/glass";
@@ -12,20 +12,18 @@ import type { HomeView } from "~/lib/types";
 
 // The same five tabs as the phone-width site (lib/navigation.ts): Home holds To-do, Tasks,
 // Applications and My Clubs; Explore holds Events; Settings is reached from Profile.
-const tabs: { name: string; label: string; icon: IconComponent }[] = [
-  { name: "index", label: "Home", icon: Home },
-  { name: "explore", label: "Explore", icon: Compass },
-  { name: "inbox", label: "Inbox", icon: Inbox },
-  { name: "calendar", label: "Calendar", icon: CalendarDays },
-  { name: "profile", label: "Profile", icon: UserRound },
+const tabs: { name: string; label: string; icon: IconComponent; href: "/" | "/explore" | "/inbox" | "/calendar" | "/profile" }[] = [
+  { name: "index", href: "/", label: "Home", icon: Home },
+  { name: "explore", href: "/explore", label: "Explore", icon: Compass },
+  { name: "inbox", href: "/inbox", label: "Inbox", icon: Inbox },
+  { name: "calendar", href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { name: "profile", href: "/profile", label: "Profile", icon: UserRound },
 ];
 
 /** The round glass dock (styles/navigation-glass.css `.oc-dock`), floating above the content. */
-type DockProps = {
-  state: { index: number; routes: { key: string; name: string }[] };
-  navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => { defaultPrevented: boolean }; navigate: (name: string) => void };
-};
-function Dock({ state, navigation }: DockProps) {
+type DockProps = { state: { index: number; routes: { key: string; name: string }[] } };
+function Dock({ state }: DockProps) {
+  const router = useRouter();
   const { colors, radius } = useTheme();
   const insets = useSafeAreaInsets();
   const home = useApiQuery<HomeView>("home.view", undefined, { staleTime: 30_000 });
@@ -47,8 +45,8 @@ function Dock({ state, navigation }: DockProps) {
               accessibilityState={{ selected }}
               accessibilityLabel={badge ? `${tab.label}, ${badge} unread` : tab.label}
               onPress={() => {
-                const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-                if (!selected && !event.defaultPrevented) { haptics.tick(); navigation.navigate(route.name); }
+                // Selecting the tab you are on does nothing; another tab switches at once, with a tick.
+                if (!selected) { haptics.tick(); router.navigate(tab.href); }
               }}
               style={{ flex: 1, minWidth: 62, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 2, borderRadius: radius.full, backgroundColor: selected ? colors.primary : "transparent" }}
             >

@@ -22,7 +22,7 @@ appId: net.outclass.app
 - assertVisible:
     id: "confirm-sheet"
 - assertVisible: "Confirm interview"
-- takeScreenshot: ../.shots/applications/flow-interview-confirm
+- takeScreenshot: .shots/applications/flow-interview-confirm
 - tapOn:
     id: "confirm-accept"
 - scrollUntilVisible:
@@ -32,11 +32,11 @@ appId: net.outclass.app
     timeout: 90000
 - assertVisible: "Interview confirmed"
 - assertVisible: "Your interview"
-- takeScreenshot: ../.shots/applications/flow-interview-booked
+- takeScreenshot: .shots/applications/flow-interview-booked
 - tapOn:
     id: "interview-cancel"
 - assertVisible: "Release your reserved time?"
-- takeScreenshot: ../.shots/applications/flow-interview-cancel-confirm
+- takeScreenshot: .shots/applications/flow-interview-cancel-confirm
 - tapOn:
     id: "confirm-accept"
 - extendedWaitUntil:
@@ -44,4 +44,4 @@ appId: net.outclass.app
     timeout: 90000
 - assertNotVisible:
     id: "interview-booking"
-- takeScreenshot: ../.shots/applications/flow-interview-cancelled
+- takeScreenshot: .shots/applications/flow-interview-cancelled

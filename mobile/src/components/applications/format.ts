@@ -2,8 +2,10 @@
 export const ZONE = "America/New_York";
 export const ZONE_LABEL = "Eastern Time";
 
+/** "Nov 24, 2026, 3:15 PM", as the web prints it (the device's own joiner would say "at"). */
 export function schedulingDateTime(value: string | Date) {
-  return new Intl.DateTimeFormat("en-US", { timeZone: ZONE, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(value));
+  const date = new Date(value);
+  return `${date.toLocaleDateString("en-US", { timeZone: ZONE, month: "short", day: "numeric", year: "numeric" })}, ${slotTime(date)}`;
 }
 export const applicantDate = (value: string | Date) => `${schedulingDateTime(value)} · ${ZONE_LABEL}`;
 export function slotTime(value: string | Date) {

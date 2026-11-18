@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Pressable, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { IconComponent } from "~/components/icon-factory";
-import { Check, Search, X } from "~/components/icons";
+import { Search, X } from "~/components/icons";
 import { Text } from "~/components/text";
 import { DOCK_CLEARANCE, TARGET } from "~/components/ui";
 import { haptics } from "~/lib/haptics";
@@ -60,19 +60,6 @@ export function FilterChip({ label, count, icon: Icon, selected, onPress, testID
       {Icon ? <Icon size={16} weight={selected ? "fill" : "regular"} color={ink} /> : null}
       <Text variant="smallStrong" color={ink} numberOfLines={1}>{label}</Text>
       {count === undefined ? null : <Text variant="caption" color={selected ? colors.primaryForeground : colors.mutedForeground}>{count}</Text>}
-    </Pressable>
-  );
-}
-
-/** One choice in a filter sheet: a full-width row with a check when selected. */
-export function OptionRow({ label, selected, onPress, testID }: { label: string; selected: boolean; onPress: () => void; testID?: string }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable testID={testID} accessibilityRole="radio" accessibilityState={{ selected, checked: selected }} accessibilityLabel={label}
-      onPress={() => { if (!selected) haptics.tick(); onPress(); }}
-      style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, minHeight: TARGET + 4, paddingVertical: 6 }}>
-      <Text variant={selected ? "bodyStrong" : "body"} style={{ flex: 1 }}>{label}</Text>
-      {selected ? <Check size={18} color={colors.brandInk} /> : null}
     </Pressable>
   );
 }

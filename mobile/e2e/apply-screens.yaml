@@ -1,8 +1,7 @@
 # Opens each applications screen on the seeded staging data and takes a screenshot of it.
-# Run once in light and once in dark (xcrun simctl ui <udid> appearance dark); pass -e SHOTS=<name prefix>.
+# Run once in light and once in dark (xcrun simctl ui <udid> appearance dark); pass -e SHOTS=dark to name them (default light).
+# Maestro keeps the images in its own run folder (~/.maestro/tests/<run>/apply-screens/takeScreenshot).
 appId: net.outclass.app
-env:
-  SHOTS: light
 ---
 # A fresh launch loads the current bundle from Metro.
 - launchApp:
@@ -15,16 +14,16 @@ env:
     timeout: 60000
 - tapOn:
     id: "applications-tab-drafts"
-- takeScreenshot: ../.shots/applications/${SHOTS}-list-drafts
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-list-drafts
 - tapOn:
     id: "applications-tab-in-review"
-- takeScreenshot: ../.shots/applications/${SHOTS}-list-in-review
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-list-in-review
 - tapOn:
     id: "applications-tab-interviews"
-- takeScreenshot: ../.shots/applications/${SHOTS}-list-interviews
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-list-interviews
 - tapOn:
     id: "applications-tab-decisions"
-- takeScreenshot: ../.shots/applications/${SHOTS}-list-decisions
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-list-decisions
 
 # Draft form
 - openLink: "outclass://application/27933a5a-c44f-4416-aa03-f667be79bc23"
@@ -32,12 +31,12 @@ env:
     visible:
       id: "draft-progress"
     timeout: 60000
-- takeScreenshot: ../.shots/applications/${SHOTS}-draft-top
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-draft-top
 - scrollUntilVisible:
     element:
       id: "draft-review"
     direction: DOWN
-- takeScreenshot: ../.shots/applications/${SHOTS}-draft-bottom
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-draft-bottom
 
 # Submitted: status, then responses
 - openLink: "outclass://application/4739ce79-55e1-4293-9327-f3eba26fb4b5"
@@ -45,14 +44,14 @@ env:
     visible:
       id: "application-status"
     timeout: 60000
-- takeScreenshot: ../.shots/applications/${SHOTS}-submitted-status
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-submitted-status
 - scrollUntilVisible:
     element:
       id: "application-view-responses"
     direction: DOWN
 - tapOn:
     id: "application-view-responses"
-- takeScreenshot: ../.shots/applications/${SHOTS}-submitted-responses
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-submitted-responses
 
 # Interviewing, booked
 - openLink: "outclass://application/30520845-fab4-4c0a-9f29-099e390a45aa"
@@ -60,13 +59,13 @@ env:
     visible:
       id: "application-status"
     timeout: 60000
-- takeScreenshot: ../.shots/applications/${SHOTS}-interviewing-status
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-interviewing-status
 - openLink: "outclass://interview/30520845-fab4-4c0a-9f29-099e390a45aa"
 - extendedWaitUntil:
     visible:
       id: "interview-booking"
     timeout: 90000
-- takeScreenshot: ../.shots/applications/${SHOTS}-interview-booked
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-interview-booked
 
 # Interviewing, not booked
 - openLink: "outclass://interview/16e1fc5c-795e-484d-8826-973721f6996c"
@@ -74,12 +73,12 @@ env:
     visible:
       id: "interview-day-heading"
     timeout: 90000
-- takeScreenshot: ../.shots/applications/${SHOTS}-interview-open
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-interview-open
 - scrollUntilVisible:
     element:
       id: "interview-slot"
     direction: DOWN
-- takeScreenshot: ../.shots/applications/${SHOTS}-interview-times
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-interview-times
 
 # Decisions: rejected letter, accepted with a pending offer
 - openLink: "outclass://decision/37972775-3e1b-4faa-8295-6f46f4b1d8fe"
@@ -87,14 +86,14 @@ env:
     visible:
       id: "decision-letter"
     timeout: 60000
-- takeScreenshot: ../.shots/applications/${SHOTS}-decision-rejected
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-decision-rejected
 - openLink: "outclass://decision/84f4f4dc-3fdd-44ea-8331-0524ccad446f"
 - extendedWaitUntil:
     visible:
       id: "decision-response"
     timeout: 60000
-- takeScreenshot: ../.shots/applications/${SHOTS}-decision-offer
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-decision-offer
 - scrollUntilVisible:
     element: "Delivered securely through OutClass"
     direction: DOWN
-- takeScreenshot: ../.shots/applications/${SHOTS}-decision-offer-letter
+- takeScreenshot: .shots/applications/${typeof SHOTS === 'undefined' ? 'light' : SHOTS}-decision-offer-letter

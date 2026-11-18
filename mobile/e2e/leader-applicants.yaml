@@ -1,0 +1,19 @@
+# Leader: Applicant glance (round counts, list, round filter, server search).
+appId: net.outclass.app
+---
+- runFlow: leader-sign-in.yaml
+- tapOn:
+    id: "home-leader-tools"
+- tapOn:
+    id: "leader-applicants"
+- extendedWaitUntil:
+    visible:
+      id: "applicants-total"
+    timeout: 30000
+- tapOn:
+    id: "applicants-search"
+- inputText: "Arch"
+- extendedWaitUntil:
+    visible:
+      id: "applicants-total"
+    timeout: 20000

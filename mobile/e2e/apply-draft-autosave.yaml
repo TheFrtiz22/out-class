@@ -19,7 +19,7 @@ appId: net.outclass.app
     id: "answer-2"
 - eraseText: 40
 - inputText: "Autosave check from Maestro"
-- takeScreenshot: ../.shots/applications/flow-autosave-typing
+- takeScreenshot: .shots/applications/flow-autosave-typing
 - hideKeyboard
 - scrollUntilVisible:
     element:
@@ -27,7 +27,7 @@ appId: net.outclass.app
     direction: UP
     timeout: 60000
 - assertVisible: "Saved"
-- takeScreenshot: ../.shots/applications/flow-autosave-saved
+- takeScreenshot: .shots/applications/flow-autosave-saved
 
 # Relaunch: the answer is read back from the server.
 - stopApp
@@ -44,4 +44,4 @@ appId: net.outclass.app
     direction: DOWN
 - assertNotVisible:
     id: "autosave-recovery"
-- takeScreenshot: ../.shots/applications/flow-autosave-persisted
+- takeScreenshot: .shots/applications/flow-autosave-persisted

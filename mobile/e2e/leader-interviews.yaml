@@ -1,0 +1,34 @@
+# Interviewer: Interview day (today's interviews, next interviewee, timer), then enter and write a private note.
+appId: net.outclass.app
+---
+- runFlow:
+    file: leader-switch-account.yaml
+    env:
+      EMAIL: ${INTERVIEWER_EMAIL}
+      PASSWORD: ${INTERVIEWER_PASSWORD}
+- scrollUntilVisible:
+    element:
+      id: "home-leader-tools"
+    direction: DOWN
+- tapOn:
+    id: "home-leader-tools"
+- tapOn:
+    id: "leader-interviews"
+- extendedWaitUntil:
+    visible:
+      id: "interview-next"
+    timeout: 30000
+- assertVisible:
+    id: "interview-timer"
+- tapOn:
+    id: "interview-enter"
+- extendedWaitUntil:
+    visible:
+      id: "interview-notes-field"
+    timeout: 30000
+- tapOn:
+    id: "interview-notes-field"
+- inputText: "Clear structure on the case. "
+- extendedWaitUntil:
+    visible: "All changes saved"
+    timeout: 20000

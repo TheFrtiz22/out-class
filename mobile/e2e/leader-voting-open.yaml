@@ -1,0 +1,19 @@
+# Leader: Home -> Leader tools -> Live voting -> the session's room (host controls).
+appId: net.outclass.app
+---
+- runFlow: leader-sign-in.yaml
+- tapOn:
+    id: "home-leader-tools"
+- tapOn:
+    id: "leader-voting"
+- extendedWaitUntil:
+    visible:
+      id: "voting-rooms"
+    timeout: 30000
+- takeScreenshot: .shots/leader/voting-rooms
+- tapOn:
+    id: "voting-room-e89ed370-6e82-4b3d-a454-091e0b109207"
+- extendedWaitUntil:
+    visible:
+      id: "voting-host-controls"
+    timeout: 30000

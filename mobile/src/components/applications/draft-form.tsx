@@ -8,7 +8,7 @@ import { useConfirm } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, Card, Press, TARGET } from "~/components/ui";
 import { api, ApiError, errorMessage } from "~/lib/api";
-import { useAutosave } from "~/lib/autosave";
+import { type AutosaveState, useAutosave } from "~/lib/autosave";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
 import type { ApplicationAnswer, ApplicationsView, StudentApplication } from "~/lib/types";
@@ -25,7 +25,7 @@ const fromAnswers = (answers: ApplicationAnswer[]): Responses => Object.fromEntr
  * questions, help text, autosave, Save draft and Review & submit, with the same wording.
  * It renders as direct children of the screen's scroll view so a question can be scrolled to.
  */
-export function DraftForm({ application, userId, onScrollTo, onSubmitted }: { application: StudentApplication; userId: string; onScrollTo: (y: number) => void; onSubmitted: () => void }) {
+export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSaveState }: { application: StudentApplication; userId: string; onScrollTo: (y: number) => void; onSubmitted: () => void; onSaveState?: (state: AutosaveState) => void }) {
   const { colors, radius } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -73,6 +73,10 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted }: { ap
   });
   // Lists and Home re-read once the editor closes.
   useEffect(() => () => { void queryClient.invalidateQueries({ queryKey: ["applications.view"] }); void queryClient.invalidateQueries({ queryKey: ["home.view"] }); }, [queryClient]);
+
+  // The header repeats the save state, so it stays in view while writing further down the form.
+  const saveState = autosave.state;
+  useEffect(() => { onSaveState?.(saveState); return () => onSaveState?.("idle"); }, [saveState, onSaveState]);
 
   const locked = busy || autosave.recovery != null;
   // Follow-up questions appear only after the answer they depend on.

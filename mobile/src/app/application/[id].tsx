@@ -7,6 +7,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { Text } from "~/components/text";
 import { Button, Chip, EmptyState, ErrorState, ScreenScroll, Skeleton, statusTone } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
+import type { AutosaveState } from "~/lib/autosave";
 import { useApiQuery } from "~/lib/query";
 import type { ApplicationsView } from "~/lib/types";
 
@@ -17,6 +18,7 @@ export default function ApplicationScreen() {
   const top = useHeaderInset();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const [notice, setNotice] = useState("");
+  const [saveState, setSaveState] = useState<AutosaveState>("idle");
   // Always re-read on open: a draft is edited against the server's current answers, never a cached copy.
   const view = useApiQuery<ApplicationsView>("applications.view", undefined, { refetchOnMount: "always" });
   const app = view.data?.applications.find(item => item.id === id);
@@ -47,7 +49,7 @@ export default function ApplicationScreen() {
                 <Text variant="caption" style={{ flexShrink: 1 }}>{app.deadlineLabel ? `Deadline ${app.deadlineLabel}` : "Deadline not published"}</Text>
               </View>
             </ApplicationHeading>
-            <DraftForm key={app.id} application={app} userId={view.data!.userId}
+            <DraftForm key={app.id} application={app} userId={view.data!.userId} onSaveState={setSaveState}
               onScrollTo={y => scroll.current?.scrollTo({ y: Math.max(0, y - top - 12), animated: true })}
               onSubmitted={() => { setNotice("Your application was submitted successfully."); scroll.current?.scrollTo({ y: 0, animated: false }); }} />
           </>
@@ -55,7 +57,11 @@ export default function ApplicationScreen() {
           <StatusDetail application={app} notice={notice} alumniRespond={view.data!.alumni ? view.data!.alumniRefusals.respond : null} />
         )}
       </ScreenScroll>
-      <Header title={draft ? "Your application" : "Application"} back />
+      <Header title={draft ? "Your application" : "Application"} back actions={draft && saveState !== "idle" ? (
+        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: 12 }}>
+          <Text variant="caption" testID="header-save-state">{saveState === "saved" ? "Saved" : saveState === "error" ? "Couldn’t save" : saveState === "offline" ? "Offline" : saveState === "unreachable" ? "Couldn’t reach OutClass" : "Saving…"}</Text>
+        </View>
+      ) : undefined} />
     </View>
   );
 }

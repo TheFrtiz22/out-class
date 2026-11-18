@@ -1,0 +1,39 @@
+# Voter: sign in as the staging interviewer, open the session from Leader tools, join if needed and cast Pass.
+appId: net.outclass.app
+---
+- runFlow:
+    file: leader-switch-account.yaml
+    env:
+      EMAIL: ${INTERVIEWER_EMAIL}
+      PASSWORD: ${INTERVIEWER_PASSWORD}
+- scrollUntilVisible:
+    element:
+      id: "home-leader-tools"
+    direction: DOWN
+- tapOn:
+    id: "home-leader-tools"
+- tapOn:
+    id: "leader-voting"
+- tapOn:
+    id: "voting-room-e89ed370-6e82-4b3d-a454-091e0b109207"
+- runFlow:
+    when:
+      visible:
+        id: "voting-join-button"
+    commands:
+      - tapOn:
+          id: "voting-join-button"
+- extendedWaitUntil:
+    visible:
+      id: "voting-ballot"
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: "voting-choice-accept"
+    commands:
+      - tapOn:
+          id: "voting-choice-accept"
+      - extendedWaitUntil:
+          visible: "Vote recorded · Pass"
+          timeout: 20000

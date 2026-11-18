@@ -63,6 +63,7 @@ export default function Inbox() {
   const header = (
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
       <Text variant="display" accessibilityRole="header">Inbox</Text>
+      <Text variant="small" style={{ marginTop: -8 }}>Announcements, application updates and tasks from your clubs.</Text>
       <AlumniBanner />
       {actionFailed ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">Couldn’t update notifications.</Text> : null}
       {showFilters ? (
@@ -89,7 +90,7 @@ export default function Inbox() {
         ListHeaderComponent={header}
         renderSectionHeader={({ section }) => (
           <View style={{ paddingTop: 16, paddingBottom: 8, gap: 2 }}>
-            <Text variant="eyebrow" accessibilityRole="header">{section.title}</Text>
+            <Text variant="card" accessibilityRole="header">{section.title}</Text>
             {section.title === countSection ? <Text variant="caption" accessibilityLiveRegion="polite">{unread} unread · {items.length} {items.length === 1 ? "notification" : "notifications"}</Text> : null}
           </View>
         )}

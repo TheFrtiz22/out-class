@@ -1,0 +1,13 @@
+# Host, on an applicant whose voting has not opened: open voting.
+appId: net.outclass.app
+---
+- scrollUntilVisible:
+    element:
+      id: "voting-open"
+    direction: DOWN
+- tapOn:
+    id: "voting-open"
+- extendedWaitUntil:
+    visible:
+      id: "voting-close"
+    timeout: 30000

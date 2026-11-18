@@ -1,7 +1,9 @@
 // Phone-width reference screenshots of the web app for the native port (docs/mobile/reference/web-phone-reference.md).
 // Staging only (scripts/staging/guard.cjs), against the dev server already running on localhost:3000.
 // Signs in through the real /login form. Read-only: opens pages, sheets and menus; never submits, books, responds or saves.
-// The one exception is the first-run tutorial, which is captured and then skipped the way a student would.
+// Two things it does change: the first-run tutorial is captured and then skipped the way a student would, and the
+// leader run presses "Open attendance QR" on the live meeting (the QR host view only exists while check-in is open;
+// it is left open, never closed).
 //
 //   node scripts/staging/web-screenshots.cjs                      every role, every screen
 //   node scripts/staging/web-screenshots.cjs --role=student       one role (student | alumni | leader)
@@ -44,11 +46,18 @@ async function settle(page, extra = 900) {
   await page.waitForTimeout(extra);
 }
 async function go(page, route, extra) {
+  // Under load the dev server sometimes answers a signed-in request as signed-out (redirect to /login or the landing page).
+  // That is not the screen being captured: wait and load it again rather than photograph the wrong page.
   for (let attempt = 0; ; attempt++) {
-    try { await page.goto(ORIGIN + route, { waitUntil: "domcontentloaded", timeout: 180000 }); break; }
-    catch (error) { if (attempt >= 2) throw error; await page.waitForTimeout(8000); }
+    try {
+      await page.goto(ORIGIN + route, { waitUntil: "domcontentloaded", timeout: 180000 });
+      await settle(page, extra);
+      const pathname = new URL(page.url()).pathname;
+      if (route.startsWith("/login") || (pathname !== "/login" && pathname !== "/")) return;
+      if (attempt >= 3) throw new Error(`signed-out redirect for ${route}`);
+    } catch (error) { if (attempt >= 3) throw error; }
+    await page.waitForTimeout(8000);
   }
-  await settle(page, extra);
 }
 async function dump(page, name) {
   if (!DUMP) return;
@@ -91,8 +100,8 @@ async function overlay(page, name) {
   await page.setViewportSize(VIEWPORT); await page.waitForTimeout(400);
 }
 async function tap(locator, wait = 900) {
-  await locator.first().scrollIntoViewIfNeeded({ timeout: 15000 });
-  await locator.first().click({ timeout: 15000 });
+  await locator.first().scrollIntoViewIfNeeded({ timeout: 60000 });
+  await locator.first().click({ timeout: 30000 });
   await locator.page().waitForTimeout(wait);
 }
 const button = (page, name, exact = false) => page.getByRole("button", { name, exact });
@@ -107,7 +116,7 @@ async function signIn(browser, role) {
   // The Next.js dev indicator is not part of the product.
   await context.addInitScript(() => { const hide = () => { const style = document.createElement("style"); style.textContent = "nextjs-portal{display:none!important}"; document.documentElement.appendChild(style); }; if (document.documentElement) hide(); else document.addEventListener("DOMContentLoaded", hide); });
   const page = await context.newPage();
-  await go(page, "/home");
+  await page.goto(`${ORIGIN}/home`, { waitUntil: "domcontentloaded", timeout: 180000 }); await settle(page);
   if (/\/login|^\/$/.test(new URL(page.url()).pathname) || await page.locator("input[type=password]").count()) {
     const account = accounts(env.root)[role];
     if (!account) throw new Error(`No staging account for role ${role}`);
@@ -170,13 +179,13 @@ const screens = [
   }],
   // Explore tab
   ["13-explore", "student", async page => { await go(page, "/explore"); await full(page, "13-explore", { viewport: true }); }],
-  ["14-explore-search", "student", async page => { await go(page, "/explore"); await page.getByRole("textbox", { name: "Search clubs" }).fill("consulting"); await page.waitForTimeout(2500); await full(page, "14-explore-search-typed"); await page.getByRole("textbox", { name: "Search clubs" }).fill("zzzqqq"); await page.waitForTimeout(2500); await full(page, "15-explore-search-empty"); }],
+  ["14-explore-search", "student", async page => { await go(page, "/explore"); await page.locator('input[aria-label="Search clubs"]:visible').fill("consulting"); await page.waitForTimeout(2500); await full(page, "14-explore-search-typed"); await page.locator('input[aria-label="Search clubs"]:visible').fill("zzzqqq"); await page.waitForTimeout(2500); await full(page, "15-explore-search-empty"); }],
   ["16-explore-filter", "student", async page => { await go(page, "/explore"); await tap(button(page, "Filter clubs")); await view(page, "16-explore-filter-panel"); await tap(button(page, "Filters", true)); await overlay(page, "16b-explore-filter-sheet"); await escape(page); }],
   ["17-explore-interests", "student", async page => { await go(page, "/explore"); await tap(button(page, /more interests/)); await view(page, "17-explore-more-interests"); await escape(page); await tap(button(page, "Saved clubs")); await view(page, "18-explore-saved-clubs-popover"); await escape(page); }],
   ["19-explore-category", "student", async page => { await go(page, "/explore"); await tap(button(page, "Finance & Investing", true), 2500); await full(page, "19-explore-category-selected"); }],
   ["20-explore-categories", "student", async page => { await go(page, "/explore/categories"); await full(page, "20-explore-categories"); }],
   ["21-events", "student", async page => { await go(page, "/corkboard"); await full(page, "21-events-list", { viewport: true }); await tap(button(page, "Board", true), 2000); await full(page, "22-events-board"); await tap(button(page, "Filters", true)); await overlay(page, "23-events-filters"); await escape(page); await tap(page.getByRole("combobox", { name: "When" })); await view(page, "23b-events-when-menu"); await escape(page); }],
-  ["24-event-detail", "student", async page => { await go(page, "/corkboard"); await tap(page.getByText("FWIT Open House").first(), 2500); await settle(page); await overlay(page, "24-event-detail"); }],
+  ["24-event-detail", "student", async page => { await go(page, "/corkboard"); await tap(page.locator('a[href*="/corkboard?event="]:visible'), 2500); await settle(page); await overlay(page, "24-event-detail"); }],
   ["25-saved-clubs", "student", async page => { await go(page, "/saved-clubs"); await full(page, "25-saved-clubs"); }],
   ["26-club-member", "student", async page => { await go(page, "/club/blue-ridge-consulting"); await full(page, "26-club-blue-ridge-consulting", { viewport: true }); }],
   ["27-club-applicant", "student", async page => { await go(page, "/club/lawn-street-capital"); await full(page, "27-club-lawn-street-capital"); await tap(button(page, "Share", true)); await view(page, "28-club-share-menu"); await escape(page); await tap(button(page, /^Report/)); await overlay(page, "29-club-report-dialog"); await escape(page); }],
@@ -188,7 +197,7 @@ const screens = [
   ["39-calendar-menus", "student", async page => { await go(page, "/calendar"); await tap(button(page, "Filters", true)); await view(page, "39-calendar-filters"); await escape(page); await tap(button(page, "Subscribe", true)); await overlay(page, "40-calendar-subscribe"); await escape(page); }],
   ["41-calendar-event", "student", async page => { await go(page, "/calendar"); await tap(button(page, /FWIT Open House/), 2500); await overlay(page, "41-calendar-event-detail"); await escape(page); await tap(button(page, /Interview · Confirmed/), 2500); await overlay(page, "41b-calendar-interview-detail"); await escape(page); }],
   ["42-meetings", "student", async page => { await go(page, "/meetings"); await full(page, "42-meetings"); await tap(button(page, /FWIT Open House/), 2500); await overlay(page, "42b-meetings-detail-sheet"); await escape(page); }],
-  ["43-meeting-detail", "student", async page => { await go(page, `/meetings/${LIVE_MEETING}`); await full(page, "43-meeting-detail-live"); }],
+  ["43-meeting-detail", "student", async page => { await go(page, `/meetings/${LIVE_MEETING}`); for (let i = 0; i < 3 && await page.getByText("Meeting unavailable.").count(); i++) { await tap(button(page, "Retry", true), 4000); await settle(page); } await full(page, "43-meeting-detail-live"); }],
   // Profile tab
   ["44-profile", "student", async page => { await go(page, "/profile"); await full(page, "44-profile", { viewport: true }); await tap(button(page, "Edit profile", true), 1800); await overlay(page, "45-profile-edit"); await escape(page); if (await button(page, /Preview/).first().isEnabled()) { await tap(button(page, /Preview/), 1800); await view(page, "46-profile-preview"); await escape(page); } }],
   ["47-settings", "student", async page => { await go(page, "/settings"); await full(page, "47-settings"); }],
@@ -219,8 +228,17 @@ const screens = [
   ["64-alumni-explore", "alumni", async page => { await go(page, "/explore"); await full(page, "64-alumni-explore"); }],
   ["65-alumni-club", "alumni", async page => { await go(page, "/club/blue-ridge-consulting"); await full(page, "65-alumni-club-blue-ridge-consulting"); await go(page, `/club/${LEADER_CLUB}/workspace`); await full(page, "65b-alumni-member-workspace"); }],
   // Leader (view only)
-  ["66-leader-check-in", "leader", async page => { await go(page, `/meetings/${LIVE_MEETING}`); await full(page, "66-leader-meeting-host"); }],
-  ["67-leader-voting-room", "leader", async page => { await go(page, `/voting/rooms/${VOTING_SESSION}`); await settle(page, 2500); await full(page, "67-leader-voting-room", { viewport: true }); }],
+  ["66-leader-check-in", "leader", async page => { await go(page, `/meetings/${LIVE_MEETING}`); for (let i = 0; i < 3 && await page.getByText("Meeting unavailable.").count(); i++) { await tap(button(page, "Retry", true), 4000); await settle(page); } await full(page, "66-leader-meeting-host", { viewport: true });
+    // The QR host view only exists while check-in is open. Opening it is the leader's normal action; this script never closes it.
+    const open = button(page, "Open attendance QR", true);
+    if (await open.count()) { await tap(open, 5000); await settle(page); }
+    await full(page, "66b-leader-check-in-qr-open");
+    await button(page, "Close check-in", true).first().scrollIntoViewIfNeeded().catch(() => {}); await page.waitForTimeout(500);
+    await view(page, "66b-leader-check-in-qr-open", ".viewport");
+    const present = button(page, /^Present/);
+    if (await present.count()) { await tap(present, 2500); await view(page, "66c-leader-check-in-presenter"); await escape(page); }
+  }],
+  ["67-leader-voting-room", "leader", async page => { await go(page, `/voting/rooms/${VOTING_SESSION}?clubId=${LEADER_CLUB}&view=leader`); await settle(page, 2500); await full(page, "67-leader-voting-room", { viewport: true }); }],
 ];
 
 (async () => {

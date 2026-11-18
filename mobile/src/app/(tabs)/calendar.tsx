@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, MapPin } from "~/components/icons";
 import { FilterChips } from "~/components/inbox/filter-chips";
+import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, TARGET } from "~/components/ui";
@@ -114,6 +115,7 @@ export default function CalendarScreen() {
   const [day, setDay] = useState(today);
   const [month, setMonth] = useState(today.slice(0, 7));
   const [calendarNote, setCalendarNote] = useState("");
+  const [feed, setFeed] = useState(false);
 
   // `?type=meeting` (the web's old /clubs/meetings) opens Calendar filtered to club meetings.
   useEffect(() => { if (params.type === "meeting") setFilter(MEETINGS_FILTER); }, [params.type]);
@@ -147,6 +149,8 @@ export default function CalendarScreen() {
   const header = (
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
       <Text variant="display" accessibilityRole="header">Calendar</Text>
+      <Text variant="small" style={{ marginTop: -8 }}>Times shown in Eastern Time.</Text>
+      <Button variant="secondary" size="compact" icon={CalendarPlus} testID="calendar-subscribe" label="Subscribe" onPress={() => setFeed(true)} />
       {events.length > 0 ? (
         <>
           <Segmented label="Calendar view" value={view} onChange={setView} options={[{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }]} />
@@ -188,12 +192,13 @@ export default function CalendarScreen() {
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
         refreshControl={<RefreshControl refreshing={calendar.isRefetching} onRefresh={() => { calendar.refetch(); me.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
         ListHeaderComponent={header}
-        renderSectionHeader={({ section }) => <Text variant="eyebrow" accessibilityRole="header" style={{ paddingTop: 16, paddingBottom: 8 }}>{section.title}</Text>}
+        renderSectionHeader={({ section }) => <Text variant="section" accessibilityRole="header" style={{ paddingTop: 18, paddingBottom: 10 }}>{section.title}</Text>}
         renderSectionFooter={({ section }) => (view === "month" && !section.data.length ? <Text variant="small" style={{ paddingVertical: 8 }}>{filtered ? "No events on this day match your filters." : "Nothing scheduled."}</Text> : null)}
         renderItem={({ item, index, section }) => <EventRow event={item} first={index === 0} last={index === section.data.length - 1} onPress={() => { setCalendarNote(""); setSelectedId(item.id); }} />}
         ListEmptyComponent={view === "agenda" || calendar.isPending || calendar.isError ? empty : undefined}
       />
       <Header title="Calendar" />
+      <CalendarFeedSheet open={feed} onClose={() => setFeed(false)} />
 
       <Sheet open={!!selected} onClose={() => setSelectedId(null)} title={selected?.title} testID="calendar-event-sheet">
         {selected ? (

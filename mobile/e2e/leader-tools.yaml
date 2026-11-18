@@ -1,0 +1,47 @@
+# Sign in as the staging leader on a clean install, open Leader tools, and walk host check-in and announce.
+appId: net.outclass.app
+---
+- launchApp:
+    clearState: true
+- openLink: "outclass://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit"
+    timeout: 180000
+- tapOn:
+    id: "sign-in-email"
+- inputText: ${LEADER_EMAIL}
+- tapOn:
+    id: "sign-in-password"
+- inputText: ${LEADER_PASSWORD}
+- tapOn:
+    id: "sign-in-submit"
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible:
+      id: "home-leader-tools"
+    timeout: 60000
+- takeScreenshot: ../.shots/leader/01-home
+- tapOn:
+    id: "home-leader-tools"
+- extendedWaitUntil:
+    visible:
+      id: "leader-host-check-in"
+    timeout: 30000
+- takeScreenshot: ../.shots/leader/02-hub
+- tapOn:
+    id: "leader-host-check-in"
+- extendedWaitUntil:
+    visible:
+      id: "host-code"
+    timeout: 30000
+- takeScreenshot: ../.shots/leader/03-host-check-in

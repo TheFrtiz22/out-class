@@ -21,7 +21,7 @@ export const CLUB_CARD_GAP = 10;
 export function clubCardHeight(theme: Pick<Theme, "text" | "leading">, fontScale: number) {
   const scale = Math.min(Math.max(fontScale, 1), 2.2);
   const lines = theme.text.body * theme.leading.compact + 3 * theme.text.caption * theme.leading.compact + 2 * theme.text.small * theme.leading.compact;
-  return Math.ceil(lines * scale) + 2 * PADDING + 16;
+  return Math.ceil(lines * scale) + 2 * PADDING + 8;
 }
 
 type Props = { club: PublicClub; saved: boolean; height: number; now: number; onOpen: (club: PublicClub) => void; onPressIn?: (club: PublicClub) => void; onToggleSaved?: (club: PublicClub, saved: boolean) => void; testID?: string };

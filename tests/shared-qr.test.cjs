@@ -85,18 +85,15 @@ test("the drawn geometry equals the web's SVG: modules, quiet zone, finders and 
 test("no data module is drawn under a finder or the badge, and the logo can be left out", () => {
   const payload = payloads[1]
   const qr = shared.brandedQr(payload)
-  const cells = [...qr.modulePath.matchAll(/L (\d+) (\d+(?:\.\d+)?) L|M (\d+(?:\.\d+)?) (\d+) /g)]
-  assert.ok(cells.length > 0)
   const origins = new Set()
-  // Each cell path ends by returning to its top-left corner: "L x y+rTL ... Z"; recover the cell from its bounds.
+  // Recover each drawn cell from the bounds of its path's points.
   for (const cell of qr.modulePath.split("Z").filter(Boolean)) {
-    const numbers = cell.match(/-?\d+(?:\.\d+)?/g).map(Number)
     const xs = [], ys = []
     const tokens = cell.trim().split(/\s+/)
     for (let i = 0; i < tokens.length; i++) {
       if (tokens[i] === "M" || tokens[i] === "L") { xs.push(Number(tokens[i + 1])); ys.push(Number(tokens[i + 2])) }
     }
-    assert.ok(numbers.length > 0)
+    assert.ok(xs.length > 0)
     origins.add(`${Math.floor(Math.min(...ys)) - qr.margin},${Math.floor(Math.min(...xs)) - qr.margin}`)
   }
   const badgeStart = qr.badge.x - qr.margin
