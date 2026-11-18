@@ -318,8 +318,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
           {/* Only clubs the directory actually highlights; an alphabetical slice would repeat "All clubs" below. */}
           {!active.length && filters.sort === "name" && featured.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
-              <div className="oc-explore-section-heading"><div><h2 id="curated-title">Featured clubs</h2></div>
-              <p>Clubs highlighted in the directory.</p></div>
+              <div className="oc-explore-section-heading"><div><h2 id="curated-title">Featured clubs</h2></div></div>
               <ul className="oc-explore-grid">{featured.map(club => card(club, "featured"))}</ul>
             </section>
           )}

@@ -235,7 +235,7 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
         {loading
           ? "Loading campus events…"
           : error ||
-            `${total} approved ${total === 1 ? "event" : "events"} · Times shown in Eastern Time`}
+            `${total} ${total === 1 ? "event" : "events"} · Times shown in Eastern Time`}
       </p>
       {error ? (
         <div role="alert" className="oc-events-empty">
