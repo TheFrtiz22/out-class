@@ -127,7 +127,7 @@ export function ApplicationBuilderView({
     if (working.current) return;
     let deadlineAt: string | null = null;
     try { deadlineAt = deadline ? deadlineInstant(deadline) : null }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Choose a valid date and time."); return }
+    catch { setError("Choose a valid date and time. Times inside a daylight-saving change can’t be used."); return }
     const input = {
       clubId,
       version,

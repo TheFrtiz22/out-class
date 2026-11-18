@@ -149,6 +149,13 @@ test('#7 the application form lives in Recruiting; the old Settings URL redirect
   assert.ok(ids(['application.manage']).includes('application'))
   assert.ok(!ids(['applications.review']).includes('application'))
   assert.equal(nav.managerNavigation({ permissions: ['application.manage'], status: 'ACTIVE' }, 'club', 'recruiting').find(i => i.id === 'application').href, '/club/club/workspace?section=recruitment&tool=application')
+  // Not a rail entry (the rail has no room for another item); it lights Recruiting overview, which links to it.
+  const app = nav.managerNavigation({ isOwner: true, status: 'ACTIVE' }, 'club', 'recruiting').find(i => i.id === 'application')
+  assert.equal(app.hidden, true)
+  const rail = load('lib/navigation.ts')
+  assert.equal(rail.activeNavItem('/club/c/workspace', new URLSearchParams('section=recruitment&tool=application')), 'overview')
+  assert.ok(rail.leaderRailSections({ permissions: ['application.manage'], status: 'ACTIVE' }, 'c').some(section => section.id === 'recruiting'), 'an application editor still reaches Recruiting')
+  assert.match(read('components/recruiting-overview.tsx'), /hasPermission\(membership, "application\.manage"\) && <Button variant="ghost" size="lg" asChild><Link \{\.\.\.clubLinkProps\(clubId, `[^`]*tool=application`\)\}><FileText aria-hidden="true" \/>Application<\/Link>/)
   const { availableSettings } = load('lib/club-settings.ts')
   assert.ok(!availableSettings({ isOwner: true }).some(item => item.id === 'application'))
   const settings = read('components/club-settings-workspace.tsx')

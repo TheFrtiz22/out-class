@@ -51,7 +51,8 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       // Decide keeps the internal `tool=decisions` value; it opens on Overview, then Vote (decisionTab=voting) and Send (decisionTab=letters).
       ...(canVote || canSend ? [item("decisions", "Decide", "recruitment", { href: decisionsHref(clubId, "overview", search) })] : []),
       // The application form and deadline (moved from Settings › Recruitment & applications, which redirects here).
-      ...(hasPermission(member, "application.manage") ? [item("application", "Application", "recruitment")] : []),
+      // Not a rail entry: the Recruiting Overview links to it, and the rail lights Recruiting overview while it is open.
+      ...(hasPermission(member, "application.manage") ? [item("application", "Application", "recruitment", { hidden: true })] : []),
       ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
   }
   return [item("overview", "Home"),

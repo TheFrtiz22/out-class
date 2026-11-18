@@ -22,14 +22,14 @@ const club = "club"
 const owner = { isOwner: true }
 const labels = sections => sections.map(section => [section.label ?? section.name, section.items.map(item => item.label)])
 
-test("rail: Recruiting (Overview, Applicants, Interviews, Decide, Application), Club (Home, Calendar, Tasks, Members, Alumni, Settings); the shell pins Inbox and Settings", () => {
+test("rail: Recruiting (Overview, Applicants, Interviews, Decide), Club (Home, Calendar, Tasks, Members, Alumni, Settings); the shell pins Inbox and Settings", () => {
   const sections = nav.leaderRailSections(owner, club)
   assert.deepEqual(labels(sections), [
-    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide", "Application"]],
+    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide"]],
     ["Club", ["Home", "Calendar", "Tasks", "Members", "Alumni", "Settings"]],
   ])
   assert.ok(sections.every(section => !section.pinned), "only the shared Inbox/Settings foot is pinned")
-  assert.equal(nav.railItems(sections).length, 11)
+  assert.equal(nav.railItems(sections).length, 10)
   // No flyouts, no drawer items, no Announcements, no separate Meetings/Events in the rail.
   for (const id of ["rounds", "rules", "announcements", "meetings", "events", "scheduled-decisions", "resumes", "reviews"])
     assert.ok(!nav.railItems(sections).some(item => item.id === id), id)
@@ -74,7 +74,7 @@ test("phone bar: Home · Recruiting · Calendar · Members, then More lists the 
   assert.deepEqual(bar.map(item => item.label), ["Home", "Recruiting", "Calendar", "Members"])
   assert.ok(bar[1].matches.includes("decisions") && bar[1].matches.includes("resumes"))
   assert.deepEqual(labels(nav.moreSections(sections, bar)), [
-    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide", "Application"]],
+    ["Recruiting", ["Recruiting overview", "Applicants", "Interviews", "Decide"]],
     ["Club", ["Tasks", "Alumni", "Settings"]],
   ])
   // Without Members access the bar falls back to the next club page.
