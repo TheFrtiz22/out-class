@@ -156,9 +156,11 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
   const filtered = useMemo(() => {
     const match = searchMatches?.query === filters.query.trim() ? searchMatches : null
     if (!match) return filterDirectory(clubs, filters, now)
-    const visible = new Set(match.ids)
+    // The index covers name, category, tagline and description; local matches (event locations, placements) are added after its results.
+    const visible = new Set([...match.ids, ...filterDirectory(clubs, filters, now).map(club => club.id)])
+    const rank = (id: string) => { const index = match.ids.indexOf(id); return index < 0 ? Infinity : index }
     const matches = filterDirectory(clubs.filter(club => visible.has(club.id)), { ...filters, query: "" }, now)
-    return filters.sort === "name" ? matches.sort((a, b) => match.ids.indexOf(a.id) - match.ids.indexOf(b.id)) : matches
+    return filters.sort === "name" ? matches.sort((a, b) => rank(a.id) - rank(b.id) || 0) : matches
   }, [clubs, filters, now, searchMatches])
   const active = Object.entries(filters).filter(
     ([key, value]) =>

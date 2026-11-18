@@ -120,7 +120,7 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   await send.click(); await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'letters', roundId: expect.any(String) }))
   await expect(send).toHaveAttribute('aria-current', 'step')
   await page.getByRole('heading', { name: 'Decision letters', exact: true }).waitFor()
-  await expect(page.getByRole('group', { name: 'Letter outcome' }).getByRole('button')).toHaveText(['Accepted', 'Not accepted', 'Waitlisted'])
+  await expect(page.getByRole('group', { name: 'Letter outcome' }).getByRole('button')).toHaveText(['Accepted', 'Not accepted', "Didn't advance", 'Waitlisted'])
   await expect(page.getByRole('button', { name: /^Next:/ })).toHaveCount(0)
   await page.getByRole('button', { name: 'Back to Vote', exact: true }).click()
   await expect.poll(params).toEqual(expect.objectContaining({ decisionTab: 'voting' }))
