@@ -90,6 +90,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
     )
   const checklist = profileChecklist(profile)
   const completed = checklist.filter((item) => item.complete).length
+  const allAdded = completed === checklist.length
   // One entry point: "Edit profile" opens every section; "Import from résumé" lives inside it.
   const editProfile = <EditStudentProfileDialog
     profile={profile!}
@@ -101,11 +102,11 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   function section(title: string, key: ProfileSection, children: ReactNode, description?: string) {
     return (
       <Panel as="section" aria-label={title}>
-        <div className="mb-5 flex items-center justify-between gap-4">
+        <div className="mb-3 flex items-center justify-between gap-4">
           <h3 className="oc-card-heading ">{title}</h3>
         </div>
         {description && (
-          <p className="mb-5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          <p className="mb-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
             {description}
           </p>
         )}
@@ -118,8 +119,8 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
       <p role="status" className="sr-only">
         {saved ? "Profile changes saved." : ""}
       </p>
-      <header className={`flex items-start gap-5 ${settings ? "pb-5 sm:gap-5" : "oc-profile-identity pb-9 sm:gap-7 sm:pb-12"}`}>
-        <Avatar className={settings ? "size-20 shrink-0" : "size-24 shrink-0 sm:size-32"}>
+      <header className={`flex items-start gap-5 ${settings ? "pb-5 sm:gap-5" : "oc-profile-identity pb-6 sm:gap-6 sm:pb-8"}`}>
+        <Avatar className={settings ? "size-20 shrink-0" : "size-20 shrink-0 sm:size-24"}>
           <AvatarImage src={profilePhotoSource(profile.headshotUrl)} alt="" />
           <AvatarFallback className="bg-secondary text-xl font-medium text-primary sm:text-3xl">
             {profile.firstName[0]}
@@ -163,7 +164,8 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           </div>
         </div>
       </header>
-      <div className="grid items-start gap-[var(--oc-content-gap)] lg:grid-cols-[minmax(0,1fr)_16rem]">
+      {/* Once every suggested detail is added, the checklist has nothing left to say, so the sections take the full width. */}
+      <div className={`grid items-start gap-[var(--oc-content-gap)]${allAdded ? "" : " lg:grid-cols-[minmax(0,1fr)_16rem]"}`}>
         <div className="oc-workspace-stack">
           {section(
             "Education",
@@ -207,7 +209,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           )}
           <AlumniDetailsPanel key={profile.userId} profile={profile} />
         </div>
-        <Panel as="aside">
+        {!allAdded && <Panel as="aside">
           <h3 className="oc-card-heading ">Profile details</h3>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {completed} of {checklist.length} profile details added. These are suggestions, not
@@ -242,7 +244,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
               </li>
             ))}
           </ul>
-        </Panel>
+        </Panel>}
       </div>
     </article>
   )
