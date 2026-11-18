@@ -1,21 +1,57 @@
-# Profile: change the phone number to PHONE and save (a real write as the staging student).
+# Profile: change the phone number to PHONE and save (a real write as the staging student). Pass -e PHONE=... -e SHOTS=<prefix>.
 appId: net.outclass.app
 ---
+- repeat:
+    times: 5
+    while:
+      visible:
+        id: "header-back"
+    commands:
+      - tapOn:
+          id: "header-back"
 - tapOn:
     id: "tab-profile"
-- scrollUntilVisible:
-    element:
-      id: "profile-edit-phone"
-    direction: DOWN
-- tapOn:
-    id: "profile-edit-phone"
 - extendedWaitUntil:
     visible:
-      id: "profile-phone"
+      id: "profile-edit"
+    timeout: 90000
+- tapOn:
+    id: "profile-edit"
+- extendedWaitUntil:
+    visible:
+      id: "profile-edit-done"
     timeout: 30000
+- takeScreenshot: ${SHOTS}-40-profile-edit-identity
+- tapOn:
+    id: "profile-section-education"
+- takeScreenshot: ${SHOTS}-41-profile-edit-education
+- tapOn:
+    id: "profile-section-links"
+- takeScreenshot: ${SHOTS}-42-profile-edit-links
+- tapOn:
+    id: "profile-section-contact"
+- tapOn:
+    id: "profile-phone"
+- eraseText: 30
+- inputText: "12345"
+- tapOn:
+    id: "profile-edit-save"
+- takeScreenshot: ${SHOTS}-43-profile-phone-invalid
 - tapOn:
     id: "profile-phone"
 - eraseText: 30
 - inputText: ${PHONE}
 - tapOn:
     id: "profile-edit-save"
+- extendedWaitUntil:
+    visible:
+      id: "profile-edit-status"
+    timeout: 90000
+- takeScreenshot: ${SHOTS}-44-profile-phone-saved
+- tapOn:
+    id: "profile-edit-done"
+- scrollUntilVisible:
+    element:
+      id: "profile-phone-value"
+    direction: DOWN
+- takeScreenshot: ${SHOTS}-45-profile-phone-shown

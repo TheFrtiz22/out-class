@@ -58,13 +58,18 @@ async function scanCheckInPassCommand(input: unknown): Promise<DoorScanResult> {
     if (now.getTime() < meeting.date.getTime() - 3600000 || now.getTime() > (meeting.endDate || meeting.date).getTime() + 6 * 3600000)
       throw new ActionError("Attendance opens one hour before the meeting and closes six hours after its end (or start if no end is set).", "CLOSED");
     // The scanner's own authority is re-read inside the transaction, as the room's code re-reads its issuer's.
+    const expired = () => new ActionError("This pass has expired. Ask them to open their pass again.", "PASS_EXPIRED");
     const pass = await tx.meetingCheckInPass.findUnique({ where: { tokenHash: hash(token) } });
-    if (!pass || pass.expiresAt <= now) {
-      if (pass) await tx.meetingCheckInPass.deleteMany({ where: { id: pass.id } });
-      throw new ActionError("This pass has expired. Ask them to open their pass again.", "PASS_EXPIRED");
+    if (!pass) throw expired();
+    // Lock order is User, then pass, as in issueCheckInPass (which trims a user's passes under the same lock).
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${pass.userId} FOR SHARE`;
+    // Single use: the delete is the claim. Two scanners at different meetings lock different rows above,
+    // so only the one whose delete removes the row goes on; the pass is spent whatever the outcome.
+    const spent = await tx.meetingCheckInPass.deleteMany({ where: { id: pass.id, expiresAt: { gt: now } } });
+    if (spent.count !== 1) {
+      await tx.meetingCheckInPass.deleteMany({ where: { id: pass.id } });
+      throw expired();
     }
-    // Single use: the pass is spent whatever the outcome, so a photo of it is worth nothing.
-    await tx.meetingCheckInPass.deleteMany({ where: { id: pass.id } });
     const student = await tx.user.findUnique({
       where: { id: pass.userId },
       select: {
@@ -85,7 +90,8 @@ async function scanCheckInPassCommand(input: unknown): Promise<DoorScanResult> {
     // The row itself does not say who recorded it; the audit log does.
     await tx.auditLog.create({ data: { actorId: scanner.id, clubId, targetId: meetingId, action: "meeting.attendance.door_scan", details: { studentId: student.id } } });
     return { status: "checked-in", checkedInAt: attendance.checkedInAt.toISOString(), name };
-  });
+    // A door line on a busy network: room for the ten short statements above, never an open-ended wait.
+  }, { maxWait: 5000, timeout: 10000 });
 }
 
 export async function issueCheckInPass() {

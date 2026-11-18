@@ -1,5 +1,6 @@
-# Account deletion: request as the signed-in staging account (ROLE_PASSWORD passed by the caller's flow variables).
-# ALWAYS follow with settings-delete-cancel.yaml: the staging student must not be left with a pending deletion.
+# Account deletion as the staging student: request (DELETE + current password), screenshot the scheduled state, then CANCEL.
+# The request and its cancellation are one flow on purpose: the staging student must never be left with a pending deletion.
+# Pass -e SHOTS=<prefix>.
 appId: net.outclass.app
 ---
 - runFlow: settings-account.yaml
@@ -24,3 +25,18 @@ appId: net.outclass.app
     visible:
       id: "confirm-accept"
     timeout: 15000
+- takeScreenshot: ${SHOTS}-50-delete-confirm-sheet
+- tapOn:
+    id: "confirm-accept"
+- extendedWaitUntil:
+    visible:
+      id: "account-deletion-cancel"
+    timeout: 120000
+- takeScreenshot: ${SHOTS}-51-delete-scheduled
+- tapOn:
+    id: "account-deletion-cancel"
+- extendedWaitUntil:
+    visible:
+      id: "account-deletion-confirm"
+    timeout: 120000
+- takeScreenshot: ${SHOTS}-52-delete-cancelled

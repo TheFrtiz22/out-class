@@ -12,7 +12,7 @@ import { isUvaEmail, safeReturnPath } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
 import { RETURN_PATH_HEADER, secondFactorPending, TWO_STEP_REQUIRED_MESSAGE, twoStepChallengeHref } from "@/lib/user-mfa";
 import { createClient } from "./supabase/server";
-import { mobileRequest } from "./mobile-request";
+import { mobileRequest } from "@/utils/mobile-request";
 import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
 import { redirect } from "next/navigation";

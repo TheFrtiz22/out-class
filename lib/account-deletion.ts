@@ -92,6 +92,7 @@ export const userRelationDeletionPlan: Record<string, { model: string; onDelete:
   availability: { model: "UserAvailability", onDelete: "Cascade", treatment: "delete", note: "Personal availability." },
   editorDrafts: { model: "EditorDraft", onDelete: "Cascade", treatment: "delete", note: "Unsent drafts." },
   calendarFeedToken: { model: "CalendarFeedToken", onDelete: "Cascade", treatment: "delete", note: "Calendar subscription token." },
+  checkInPasses: { model: "MeetingCheckInPass", onDelete: "Cascade", treatment: "delete", note: "Short-lived door-mode check-in passes, so no pass minted before deletion can still be scanned." },
   pushSubscriptions: { model: "WebPushSubscription", onDelete: "Cascade", treatment: "delete", note: "Browser push endpoints, so the person's devices stop receiving notifications; WebPushDelivery rows cascade." },
   notifications: { model: "UserNotification", onDelete: "Cascade", treatment: "delete", note: "Inbox; email outbox rows cascade." },
   notificationPreferences: { model: "UserNotificationPreference", onDelete: "Cascade", treatment: "delete", note: "Email preferences." },

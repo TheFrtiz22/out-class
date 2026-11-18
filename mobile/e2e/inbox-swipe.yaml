@@ -1,0 +1,49 @@
+# Inbox swipe actions on the first announcement: mark read/unread, then dismiss (archive). Real writes. Pass -e SHOTS=<prefix>.
+appId: net.outclass.app
+---
+- repeat:
+    times: 5
+    while:
+      visible:
+        id: "header-back"
+    commands:
+      - tapOn:
+          id: "header-back"
+- tapOn:
+    id: "tab-inbox"
+- extendedWaitUntil:
+    visible:
+      id: "inbox-type-announcements"
+    timeout: 90000
+- tapOn:
+    id: "inbox-type-announcements"
+- swipe:
+    from:
+      id: "inbox-row-announcement"
+      index: 0
+    direction: LEFT
+    duration: 600
+- takeScreenshot: ${SHOTS}-30-inbox-swipe-open
+- tapOn:
+    id: "inbox-row-read-.*"
+    index: 0
+- takeScreenshot: ${SHOTS}-31-inbox-after-read-toggle
+- swipe:
+    from:
+      id: "inbox-row-announcement"
+      index: 0
+    direction: LEFT
+    duration: 600
+- tapOn:
+    id: "inbox-row-archive-.*"
+    index: 0
+- takeScreenshot: ${SHOTS}-32-inbox-after-dismiss
+- tapOn:
+    id: "inbox-type-all"
+- tapOn:
+    id: "inbox-mark-all"
+- extendedWaitUntil:
+    visible: "0 unread.*"
+    timeout: 60000
+    optional: true
+- takeScreenshot: ${SHOTS}-33-inbox-all-read

@@ -27,7 +27,15 @@ Three additive migrations, applied and tested on staging, rehearsed on PGlite in
 
 Steps: Actions → Database migrations → Run workflow with `ref` = the mobile branch and `dry_run` on;
 confirm exactly these three are pending; run again with `dry_run` off and approve. The Vercel
-`prebuild` schema check keeps the code from publishing ahead of them.
+`prebuild` schema check keeps the code from publishing ahead of the first two (it checks tables and
+columns, not CHECK constraints, so it cannot see the third: apply all three together).
+
+Rollback, in this order: delete `kind = 'EXPO'` rows (older code would try to send Web Push to
+them), restore the two original CHECKs, drop the two columns, drop `MeetingCheckInPass`.
+
+Not yet exercised on real PostgreSQL: the grant and policy branch for `outclass_production_app`
+(staging has no such role; PGlite tests cover it). Run `node scripts/run-disposable-postgres.cjs
+security` in CI, or check `pg_policies` for `MeetingCheckInPass` after applying.
 
 ## 2. Native push credentials (push works in the app; server-to-device delivery needs these)
 
