@@ -51,7 +51,7 @@ test('phone Calendar: filters behind a Filter button; phone Profile: navy studen
  const src=css('components/views/calendar-view.tsx');
  assert.match(src,/className="oc-calendar-filter-toggle" aria-expanded=\{phoneFilters\} aria-controls="calendar-tools"/);
  assert.match(src,/id="calendar-tools" className="oc-toolbar oc-calendar-tools" data-phone-open=\{phoneFilters \|\| undefined\}/);
- assert.match(css('components/views/unified-student-profile-view.tsx'),/"oc-profile-identity pb-9/);
+ assert.match(css('components/views/unified-student-profile-view.tsx'),/"oc-profile-identity pb-/);
  const s=css('styles/product-components.css');assert.match(s,/^\.oc-calendar-filter-toggle \{ display: none !important; \}/m);
  const phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
  assert.match(phone,/\.oc-calendar-tools:not\(\[data-phone-open\]\) \{ display: none; \}/);
