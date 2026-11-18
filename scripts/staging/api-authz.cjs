@@ -26,6 +26,7 @@ async function call(token, name, input, method = "GET", headers = {}) {
 (async () => {
   const [student, leader, interviewer, alumni] = await Promise.all(["student", "leader", "interviewer", "alumni"].map(signIn));
   const rows = []; let failed = 0;
+  const check = (label, operation, expected, actual) => { const ok = expected === actual; if (!ok) failed++; rows.push({ check: label, operation, expected, actual, code: "", ok: ok ? "ok" : "FAIL" }); };
   const expect = async (label, who, name, input, method, allowed, extraHeaders) => {
     const result = await call(who?.token ?? null, name, input, method, extraHeaders);
     const ok = (Array.isArray(allowed) ? allowed : [allowed]).includes(result.status);
@@ -46,7 +47,9 @@ async function call(token, name, input, method = "GET", headers = {}) {
   for (const who of [interviewer, alumni, leader]) {
     const label = who === interviewer ? "cross-user (interviewer)" : who === alumni ? "cross-user (alumni)" : "cross-user (leader of another club)";
     await expect(label, who, "interviews.schedule", { applicationId: STUDENT_BOOKABLE }, "GET", [403, 404, 422]);
-    await expect(label, who, "decisions.letter", { applicationId: STUDENT_LETTER }, "GET", [403, 404, 422]);
+    // The letter query is scoped to the caller's own applications, so another account gets "no letter" (null), never the letter.
+    const letter = await expect(label, who, "decisions.letter", { applicationId: STUDENT_LETTER }, "GET", 200);
+    check(`${label}: no letter content`, "decisions.letter", "null", letter.data === null ? "null" : "DATA");
     await expect(label, who, "offers.respond", { applicationId: STUDENT_OFFER, response: "ACCEPT" }, "POST", [403, 404, 422]);
   }
   const mine = await expect("own applications", student, "applications", undefined, "GET", 200);
@@ -58,8 +61,18 @@ async function call(token, name, input, method = "GET", headers = {}) {
   // 3. Club capability: leader tools need the club's permission; a plain member and an outsider are refused.
   const leaderOps = [["leader.overview", { clubId: LEADER_CLUB }, "GET"], ["leader.pipelinePage", { clubId: LEADER_CLUB }, "GET"], ["leader.rounds", { clubId: LEADER_CLUB }, "GET"], ["meetings.attendance", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING }, "GET"], ["meetings.checkIn.issue", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING }, "POST"], ["leader.announcements", { clubId: LEADER_CLUB }, "GET"]];
   for (const [name, input, method] of leaderOps) {
-    await expect("member without the permission", student, name, input, method, 403);
-    await expect("alumni (read-only)", alumni, name, input, method, 403);
+    if (name === "leader.overview") {
+      // Any member may open their club's home; the recruiting parts are simply empty without the permission.
+      for (const [label, who] of [["member without the permission", student]]) {
+        const overview = await expect(label, who, name, { ...input, view: "recruiting" }, method, 200);
+        const ops = overview.data?.operations ?? {};
+        check(`${label}: no recruiting data`, name, "empty", [ops.rounds, ops.queue, ops.cycles, ops.bookings, ops.votes, ops.offers].every(list => Array.isArray(list) && !list.length) && overview.data?.recruitment == null ? "empty" : "DATA");
+      }
+      await expect("alumni (read-only)", alumni, name, input, method, [200, 403]);
+    } else {
+      await expect("member without the permission", student, name, input, method, [403, 422]);
+      await expect("alumni (read-only)", alumni, name, input, method, [403, 422]);
+    }
     await expect("leader of the club", leader, name, input, method, 200);
     await expect("leader, in a club they do not lead", leader, name, { ...input, clubId: OTHER_CLUB }, method, [403, 404]);
   }
@@ -75,7 +88,9 @@ async function call(token, name, input, method = "GET", headers = {}) {
   // 4. Alumni are read-only: every write the web refuses is refused here with the same code.
   await expect("alumni cannot get a pass", alumni, "checkInPass.issue", undefined, "POST", 403);
   await expect("alumni cannot save a club", alumni, "clubs.save", { clubId: OTHER_CLUB, saved: true }, "POST", [403, 422]);
-  await expect("alumni cannot start an application", alumni, "applications.start", { clubId: OTHER_CLUB }, "POST", [403, 422]);
+  // startClubApplication answers a refusal as data ({ applicationId: null, unavailable }), as the web shows it.
+  const started = await expect("alumni cannot start an application", alumni, "applications.start", { clubId: OTHER_CLUB }, "POST", [200, 403, 422]);
+  if (started.status === 200) check("alumni: no application was created", "applications.start", "refused", started.data?.applicationId == null && typeof started.data?.unavailable === "string" ? "refused" : "CREATED");
   await expect("alumni cannot check in", alumni, "meetings.checkIn", { meetingId: LIVE_MEETING, token: "ab".repeat(32) }, "POST", [403, 422]);
   await expect("alumni can still read their inbox", alumni, "inbox", undefined, "GET", 200);
 

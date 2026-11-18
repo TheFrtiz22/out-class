@@ -3,6 +3,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Linking from "expo-linking";
+import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import { Component, type ReactNode, useEffect, useState } from "react";
 import { View } from "react-native";
@@ -11,11 +13,24 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Text } from "~/components/text";
 import { Button } from "~/components/ui";
 import { AuthProvider, useAuth } from "~/lib/auth";
+import { resolveHref } from "~/lib/links";
+import { notificationPath } from "~/lib/push";
 import { createQueryClient } from "~/lib/query";
 import { reportError } from "~/lib/report";
 import { ThemeProvider, useTheme } from "~/lib/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+/** `outclass://scan` and `outclass://pass` (home screen quick actions), and scanned-elsewhere `/q/<code>` universal links. */
+function shortcutRoute(url: string): string | { pathname: string; params: Record<string, string> } | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "outclass:") return parsed.host === "scan" ? "/scan" : parsed.host === "pass" ? "/pass" : null;
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    if (parts.length === 2 && parts[0] === "q" && /^[a-zA-Z0-9_-]{1,32}$/.test(parts[1]!)) return { pathname: "/scan", params: { code: parts[1]! } };
+  } catch { /* not a link for this app */ }
+  return null;
+}
 
 /** The last line of defence: a calm screen and a way back, never a white screen. */
 class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -48,6 +63,21 @@ function Navigation() {
     else if (session && onSignIn) router.replace("/");
   }, [ready, session, segments, router]);
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => {}); }, [ready]);
+  // A tapped push opens the screen for the path it carries (the same mapping as the Inbox).
+  const lastResponse = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    const path = notificationPath(lastResponse);
+    if (!ready || !session || !path) return;
+    resolveHref(path).then(route => router.push((route ?? { pathname: "/inbox" }) as never)).catch(() => {});
+    Notifications.clearLastNotificationResponseAsync().catch(() => {});
+  }, [ready, session, lastResponse, router]);
+  // The long-press app-icon shortcuts (Scan, Check-in pass) arrive as deep links.
+  const url = Linking.useURL();
+  useEffect(() => {
+    if (!ready || !session || !url) return;
+    const target = shortcutRoute(url);
+    if (target) router.push(target as never);
+  }, [ready, session, url, router]);
 
   return (
     <>

@@ -55,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // While the session can still authorize it: stop this device's pushes for the account.
+    await import("~/lib/push").then(module => module.unregisterPushBeforeSignOut()).catch(() => {});
     await supabase.auth.signOut().catch(() => supabase.auth.signOut({ scope: "local" }));
     queryClient.clear();
     clearPrivateMemory();

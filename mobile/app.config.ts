@@ -78,7 +78,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-localization",
     ["expo-build-properties", { ios: { deploymentTarget: "17.0" } }],
   ],
-  experiments: { typedRoutes: true, reactCompiler: true },
+  experiments: { reactCompiler: true },
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://out-class.net",
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? local.supabaseUrl ?? "",

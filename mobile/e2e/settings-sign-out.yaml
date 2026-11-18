@@ -1,0 +1,12 @@
+# Sign out through Settings -> Account & Security (confirm sheet).
+appId: net.outclass.app
+---
+- runFlow: settings-account.yaml
+- tapOn:
+    id: "settings-sign-out"
+- tapOn:
+    id: "confirm-accept"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit"
+    timeout: 60000

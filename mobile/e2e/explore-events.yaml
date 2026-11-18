@@ -1,0 +1,10 @@
+# The campus Events board from Explore.
+appId: net.outclass.app
+---
+- runFlow: explore-list.yaml
+- tapOn:
+    id: "explore-events"
+- extendedWaitUntil:
+    visible:
+      id: "event-card-0"
+    timeout: 60000

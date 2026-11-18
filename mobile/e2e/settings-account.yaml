@@ -1,0 +1,10 @@
+# Profile -> Settings -> Account & Security.
+appId: net.outclass.app
+---
+- runFlow: settings-open.yaml
+- tapOn:
+    id: "settings-account"
+- extendedWaitUntil:
+    visible:
+      id: "settings-sign-out"
+    timeout: 30000

@@ -1,0 +1,16 @@
+# Share sheet with the branded QR code (run on a club page).
+appId: net.outclass.app
+---
+- scrollUntilVisible:
+    element:
+      id: "club-share"
+    direction: UP
+- tapOn:
+    id: "club-share"
+- extendedWaitUntil:
+    visible:
+      id: "share-qr"
+    timeout: 30000
+- tapOn:
+    id: "share-copy"
+- assertVisible: "Link copied."

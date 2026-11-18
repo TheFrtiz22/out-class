@@ -79,6 +79,17 @@ async function full(page, name, { viewport = false } = {}) {
   if (capped > VIEWPORT.height) { await page.setViewportSize(VIEWPORT); await page.waitForTimeout(300); }
   results.push(`${name}.png${height > MAX_FULL_HEIGHT ? ` (first ${MAX_FULL_HEIGHT} of ${height} px)` : ""}`);
 }
+/** An open dialog, sheet or drawer that scrolls inside itself: first viewport, then the viewport grown by its overflow. */
+async function overlay(page, name) {
+  await view(page, name);
+  const extra = await page.evaluate(() => Math.max(0, ...[...document.querySelectorAll('[role="dialog"], [role="dialog"] *')].map(el => /(auto|scroll)/.test(getComputedStyle(el).overflowY) ? el.scrollHeight - el.clientHeight : 0)));
+  if (extra < 24) return;
+  const height = Math.min(VIEWPORT.height + extra, MAX_FULL_HEIGHT);
+  await page.setViewportSize({ width: VIEWPORT.width, height }); await page.waitForTimeout(1200);
+  const open = await page.locator('[role="dialog"]').count();
+  if (open) { await page.screenshot({ path: path.join(OUT, `${name}.full.png`) }); results.push(`${name}.full.png`); }
+  await page.setViewportSize(VIEWPORT); await page.waitForTimeout(400);
+}
 async function tap(locator, wait = 900) {
   await locator.first().scrollIntoViewIfNeeded({ timeout: 15000 });
   await locator.first().click({ timeout: 15000 });
@@ -145,30 +156,41 @@ const screens = [
   ["09-applications-decisions", "student", async page => { await go(page, "/applications?tab=decisions"); await full(page, "09-applications-decisions"); }],
   ["10-my-clubs", "student", async page => { await go(page, "/clubs"); await full(page, "10-my-clubs"); }],
   ["11-tasks", "student", async page => { await go(page, "/clubs/tasks"); await full(page, "11-tasks"); await tap(page.getByRole("combobox", { name: "Status" })); await view(page, "11b-tasks-status-menu"); await escape(page); await tap(page.getByRole("combobox", { name: "Group by" })); await view(page, "11c-tasks-group-menu"); await escape(page); }],
-  ["12-task-detail", "student", async page => { await go(page, "/clubs/tasks"); await tap(button(page, /Complete new member onboarding/), 2500); await settle(page); await full(page, "12-task-detail"); }],
+  ["12-task-detail", "student", async page => { await go(page, "/clubs/tasks"); await tap(button(page, /Complete new member onboarding/), 2500); await settle(page); await overlay(page, "12-task-detail"); }],
+  ["02-guide-replay", "student", async page => {
+    // The guide only opens by itself on a first sign-in. On later runs, reopen it from its own "Tutorial help" chip, capture, skip again.
+    if (results.some(name => name.startsWith("02-home-first-run-guide.viewport"))) return;
+    await go(page, "/home");
+    await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith("outclass:tutorial-dismissed")).forEach(key => localStorage.removeItem(key)));
+    await go(page, "/home");
+    const help = button(page, "Tutorial help", true); await help.waitFor({ timeout: 20000 });
+    if (!fs.existsSync(path.join(OUT, "02-home-first-run-guide-help-chip.viewport.png"))) await view(page, "02-home-first-run-guide-help-chip", ".viewport");
+    await tap(help, 2500); await button(page, "Skip", true).waitFor({ timeout: 15000 });
+    await firstRunGuide(page, "02-home-first-run-guide");
+  }],
   // Explore tab
   ["13-explore", "student", async page => { await go(page, "/explore"); await full(page, "13-explore", { viewport: true }); }],
   ["14-explore-search", "student", async page => { await go(page, "/explore"); await page.getByRole("textbox", { name: "Search clubs" }).fill("consulting"); await page.waitForTimeout(2500); await full(page, "14-explore-search-typed"); await page.getByRole("textbox", { name: "Search clubs" }).fill("zzzqqq"); await page.waitForTimeout(2500); await full(page, "15-explore-search-empty"); }],
-  ["16-explore-filter", "student", async page => { await go(page, "/explore"); await tap(button(page, "Filter clubs")); await view(page, "16-explore-filter-sheet"); await escape(page); }],
+  ["16-explore-filter", "student", async page => { await go(page, "/explore"); await tap(button(page, "Filter clubs")); await view(page, "16-explore-filter-panel"); await tap(button(page, "Filters", true)); await overlay(page, "16b-explore-filter-sheet"); await escape(page); }],
   ["17-explore-interests", "student", async page => { await go(page, "/explore"); await tap(button(page, /more interests/)); await view(page, "17-explore-more-interests"); await escape(page); await tap(button(page, "Saved clubs")); await view(page, "18-explore-saved-clubs-popover"); await escape(page); }],
   ["19-explore-category", "student", async page => { await go(page, "/explore"); await tap(button(page, "Finance & Investing", true), 2500); await full(page, "19-explore-category-selected"); }],
   ["20-explore-categories", "student", async page => { await go(page, "/explore/categories"); await full(page, "20-explore-categories"); }],
-  ["21-events", "student", async page => { await go(page, "/corkboard"); await full(page, "21-events-list", { viewport: true }); await tap(button(page, "Board", true), 2000); await full(page, "22-events-board"); await tap(button(page, "Filters", true)); await view(page, "23-events-filters"); await escape(page); await tap(page.getByRole("combobox", { name: "When" })); await view(page, "23b-events-when-menu"); await escape(page); }],
-  ["24-event-detail", "student", async page => { await go(page, "/corkboard"); await tap(page.getByText("FWIT Open House").first(), 2500); await settle(page); await view(page, "24-event-detail"); }],
+  ["21-events", "student", async page => { await go(page, "/corkboard"); await full(page, "21-events-list", { viewport: true }); await tap(button(page, "Board", true), 2000); await full(page, "22-events-board"); await tap(button(page, "Filters", true)); await overlay(page, "23-events-filters"); await escape(page); await tap(page.getByRole("combobox", { name: "When" })); await view(page, "23b-events-when-menu"); await escape(page); }],
+  ["24-event-detail", "student", async page => { await go(page, "/corkboard"); await tap(page.getByText("FWIT Open House").first(), 2500); await settle(page); await overlay(page, "24-event-detail"); }],
   ["25-saved-clubs", "student", async page => { await go(page, "/saved-clubs"); await full(page, "25-saved-clubs"); }],
   ["26-club-member", "student", async page => { await go(page, "/club/blue-ridge-consulting"); await full(page, "26-club-blue-ridge-consulting", { viewport: true }); }],
-  ["27-club-applicant", "student", async page => { await go(page, "/club/lawn-street-capital"); await full(page, "27-club-lawn-street-capital"); await tap(button(page, "Share", true)); await view(page, "28-club-share-menu"); await escape(page); await tap(button(page, /^Report/)); await view(page, "29-club-report-dialog"); await escape(page); }],
+  ["27-club-applicant", "student", async page => { await go(page, "/club/lawn-street-capital"); await full(page, "27-club-lawn-street-capital"); await tap(button(page, "Share", true)); await view(page, "28-club-share-menu"); await escape(page); await tap(button(page, /^Report/)); await overlay(page, "29-club-report-dialog"); await escape(page); }],
   // Inbox tab
-  ["30-inbox", "student", async page => { await go(page, "/inbox"); await full(page, "30-inbox", { viewport: true }); await tap(button(page, /^Unread/), 1500); await full(page, "31-inbox-unread"); await tap(button(page, "Read", true), 1500); await full(page, "32-inbox-read"); await tap(button(page, "Filters", true)); await view(page, "33-inbox-filters"); await escape(page); }],
-  ["34-inbox-preferences", "student", async page => { await go(page, "/inbox?tab=preferences"); await view(page, "34-inbox-preferences", ".viewport"); await full(page, "34-inbox-preferences"); }],
+  ["30-inbox", "student", async page => { await go(page, "/inbox"); await full(page, "30-inbox", { viewport: true }); await tap(button(page, /^Unread/), 1500); await full(page, "31-inbox-unread"); await tap(button(page, "Read", true), 1500); await full(page, "32-inbox-read"); await tap(button(page, "Filters", true)); await overlay(page, "33-inbox-filters"); await escape(page); }],
+  ["34-inbox-preferences", "student", async page => { await go(page, "/inbox?tab=preferences"); await overlay(page, "34-inbox-preferences"); }],
   // Calendar tab
   ["35-calendar", "student", async page => { await go(page, "/calendar"); await full(page, "35-calendar-agenda", { viewport: true }); for (const [n, mode] of [["36", "Month"], ["37", "Week"], ["38", "Day"]]) { await tap(button(page, mode, true), 1800); await full(page, `${n}-calendar-${mode.toLowerCase()}`); } }],
-  ["39-calendar-menus", "student", async page => { await go(page, "/calendar"); await tap(button(page, "Filters", true)); await view(page, "39-calendar-filters"); await escape(page); await tap(button(page, "Subscribe", true)); await view(page, "40-calendar-subscribe"); await escape(page); }],
-  ["41-calendar-event", "student", async page => { await go(page, "/calendar"); await tap(button(page, /FWIT Open House/), 2500); await view(page, "41-calendar-event-detail"); await escape(page); await tap(button(page, /Interview · Confirmed/), 2500); await view(page, "41b-calendar-interview-detail"); await escape(page); }],
-  ["42-meetings", "student", async page => { await go(page, "/meetings"); await full(page, "42-meetings"); }],
+  ["39-calendar-menus", "student", async page => { await go(page, "/calendar"); await tap(button(page, "Filters", true)); await view(page, "39-calendar-filters"); await escape(page); await tap(button(page, "Subscribe", true)); await overlay(page, "40-calendar-subscribe"); await escape(page); }],
+  ["41-calendar-event", "student", async page => { await go(page, "/calendar"); await tap(button(page, /FWIT Open House/), 2500); await overlay(page, "41-calendar-event-detail"); await escape(page); await tap(button(page, /Interview · Confirmed/), 2500); await overlay(page, "41b-calendar-interview-detail"); await escape(page); }],
+  ["42-meetings", "student", async page => { await go(page, "/meetings"); await full(page, "42-meetings"); await tap(button(page, /FWIT Open House/), 2500); await overlay(page, "42b-meetings-detail-sheet"); await escape(page); }],
   ["43-meeting-detail", "student", async page => { await go(page, `/meetings/${LIVE_MEETING}`); await full(page, "43-meeting-detail-live"); }],
   // Profile tab
-  ["44-profile", "student", async page => { await go(page, "/profile"); await full(page, "44-profile", { viewport: true }); await tap(button(page, "Edit profile", true), 1800); await view(page, "45-profile-edit"); await escape(page); await tap(button(page, /Preview/), 1800); await view(page, "46-profile-preview"); await escape(page); }],
+  ["44-profile", "student", async page => { await go(page, "/profile"); await full(page, "44-profile", { viewport: true }); await tap(button(page, "Edit profile", true), 1800); await overlay(page, "45-profile-edit"); await escape(page); if (await button(page, /Preview/).first().isEnabled()) { await tap(button(page, /Preview/), 1800); await view(page, "46-profile-preview"); await escape(page); } }],
   ["47-settings", "student", async page => { await go(page, "/settings"); await full(page, "47-settings"); }],
   ["48-settings-account", "student", async page => { await go(page, "/settings/account"); await full(page, "48-settings-account-and-delete"); }],
   ["49-settings-availability", "student", async page => { await go(page, "/settings/availability"); await full(page, "49-settings-availability"); }],
@@ -179,8 +201,8 @@ const screens = [
   ["53-application-status", "student", async page => { await go(page, "/applications?tab=in-review"); await tap(button(page, /View details|View status/), 3000); await settle(page); await full(page, "53-application-status-in-review"); }],
   ["54-interview-booking", "student", async page => { await go(page, "/applications?tab=interviews"); await tap(button(page, "Review interview", true), 3000); await settle(page); await full(page, "54-interview-booking"); }],
   ["55-interview-booked", "student", async page => { await go(page, "/applications?tab=interviews"); await tap(button(page, "View details", true), 3000); await settle(page); await full(page, "55-interview-booked"); }],
-  ["56-decision-rejected", "student", async page => { await go(page, "/applications?tab=decisions"); await tap(button(page, "View details", true), 3000); await settle(page); await full(page, "56-decision-rejected"); }],
-  ["58-offer-pending", "student", async page => { await go(page, "/applications?tab=decisions"); await tap(button(page, "Review offer", true), 3000); await settle(page); await full(page, "58-offer-pending"); }],
+  ["56-decision-rejected", "student", async page => { await go(page, "/applications?tab=decisions"); await tap(button(page, "View details", true), 3000); await settle(page); await full(page, "56-decision-rejected"); const letter = page.getByRole("link", { name: /View Decision/i }).or(page.getByRole("button", { name: /View Decision/i })); if (await letter.count()) { await tap(letter, 4000); await settle(page); await full(page, "57-decision-letter-rejected"); } }],
+  ["58-offer-pending", "student", async page => { await go(page, "/applications?tab=decisions"); await tap(button(page, "Review offer", true), 3000); await settle(page); await full(page, "58-offer-pending"); const letter = page.getByRole("link", { name: /View Decision/i }).or(page.getByRole("button", { name: /View Decision/i })); if (await letter.count()) { await tap(letter, 4000); await settle(page); await full(page, "59-offer-letter"); } }],
   ["60-member-workspace", "student", async page => { await go(page, `/club/${LEADER_CLUB}/workspace`); await full(page, "60-member-workspace", { viewport: true }); await tap(button(page, "More sections", true)); await view(page, "61-member-workspace-more-sheet"); await escape(page); }],
   ["62-loading", "student", async page => {
     // A cold navigation, captured before the route's data arrives.

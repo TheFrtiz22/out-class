@@ -1,0 +1,47 @@
+# Opens the staging student's draft, types an answer, waits for the autosave to report "Saved",
+# relaunches the app and checks the answer came back from the server. The draft stays a draft.
+appId: net.outclass.app
+---
+- launchApp:
+    clearState: false
+- runFlow: apply-ready.yaml
+- openLink: "outclass://application/27933a5a-c44f-4416-aa03-f667be79bc23"
+- extendedWaitUntil:
+    visible:
+      id: "draft-progress"
+    timeout: 90000
+- assertVisible: "Your application"
+- scrollUntilVisible:
+    element:
+      id: "answer-2"
+    direction: DOWN
+- tapOn:
+    id: "answer-2"
+- eraseText: 40
+- inputText: "Autosave check from Maestro"
+- takeScreenshot: ../.shots/applications/flow-autosave-typing
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "autosave-saved"
+    direction: UP
+    timeout: 60000
+- assertVisible: "Saved"
+- takeScreenshot: ../.shots/applications/flow-autosave-saved
+
+# Relaunch: the answer is read back from the server.
+- stopApp
+- launchApp:
+    clearState: false
+- runFlow: apply-ready.yaml
+- openLink: "outclass://application/27933a5a-c44f-4416-aa03-f667be79bc23"
+- extendedWaitUntil:
+    visible:
+      id: "draft-progress"
+    timeout: 90000
+- scrollUntilVisible:
+    element: ".*Autosave check from Maestro.*"
+    direction: DOWN
+- assertNotVisible:
+    id: "autosave-recovery"
+- takeScreenshot: ../.shots/applications/flow-autosave-persisted

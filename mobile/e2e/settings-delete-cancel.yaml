@@ -1,0 +1,14 @@
+# Account deletion: cancel the pending request.
+appId: net.outclass.app
+---
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-cancel"
+    direction: DOWN
+    timeout: 60000
+- tapOn:
+    id: "account-deletion-cancel"
+- extendedWaitUntil:
+    visible:
+      id: "account-deletion-confirm"
+    timeout: 90000

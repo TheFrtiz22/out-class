@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
 import { ChevronRight, Compass, IdCard } from "~/components/icons";
+import { leaderMemberships } from "~/components/leader/access";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, statusTone } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
@@ -69,6 +70,17 @@ export default function Home() {
             <Card padded={false} style={{ paddingHorizontal: 16 }}>
               <Row testID="home-pass" leading={<IdCard size={24} color={colors.brandInk} />} title="Check-in pass" detail="Show this at the door" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/pass")} />
             </Card>
+
+            {leaderMemberships(me.data).length ? (
+              <Card padded={false} style={{ paddingHorizontal: 16 }}>
+                {leaderMemberships(me.data).map((membership, index) => (
+                  <View key={membership.id}>
+                    {index ? <Divider /> : null}
+                    <Row testID="home-leader-tools" leading={<ClubMark name={membership.club.name} color={membership.club.color} logoUrl={membership.club.logoUrl} size={40} />} title="Leader tools" detail={membership.club.name} trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push({ pathname: "/leader/[clubId]", params: { clubId: membership.clubId } })} />
+                  </View>
+                ))}
+              </Card>
+            ) : null}
 
             <View style={{ gap: 10 }}>
               <SectionHeader title="Tasks" action={data.tasks.length ? <Button variant="ghost" size="compact" label="All tasks" onPress={() => router.push("/tasks")} /> : undefined} />

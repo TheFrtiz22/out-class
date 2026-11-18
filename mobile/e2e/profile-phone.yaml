@@ -1,0 +1,21 @@
+# Profile: change the phone number to PHONE and save (a real write as the staging student).
+appId: net.outclass.app
+---
+- tapOn:
+    id: "tab-profile"
+- scrollUntilVisible:
+    element:
+      id: "profile-edit-phone"
+    direction: DOWN
+- tapOn:
+    id: "profile-edit-phone"
+- extendedWaitUntil:
+    visible:
+      id: "profile-phone"
+    timeout: 30000
+- tapOn:
+    id: "profile-phone"
+- eraseText: 30
+- inputText: ${PHONE}
+- tapOn:
+    id: "profile-edit-save"

@@ -1,0 +1,13 @@
+# Inbox: list, filters, notification settings sheet. Assumes the staging student is signed in.
+appId: net.outclass.app
+---
+- tapOn:
+    id: "tab-inbox"
+- extendedWaitUntil:
+    visible:
+      id: "inbox-screen"
+    timeout: 60000
+- extendedWaitUntil:
+    visible:
+      id: "inbox-mark-all"
+    timeout: 60000

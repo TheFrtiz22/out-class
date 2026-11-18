@@ -83,7 +83,7 @@ export default function Inbox() {
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={inbox.isRefetching && !inbox.isFetchingNextPage} onRefresh={() => inbox.refetch()} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        refreshControl={<RefreshControl refreshing={inbox.isRefetching && !inbox.isFetchingNextPage} onRefresh={() => { inbox.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
         onEndReachedThreshold={0.4}
         onEndReached={() => { if (inbox.hasNextPage && !inbox.isFetchingNextPage) inbox.fetchNextPage(); }}
         ListHeaderComponent={header}
@@ -105,7 +105,7 @@ export default function Inbox() {
         ListFooterComponent={
           inbox.isFetchingNextPage ? <View accessibilityLabel="Loading…" style={{ paddingVertical: 20 }}><ActivityIndicator color={colors.mutedForeground} /></View>
             : inbox.isFetchNextPageError ? <View style={{ paddingVertical: 16, gap: 8, alignItems: "center" }}><Text variant="small" color={colors.destructive} accessibilityRole="alert">Could not load more updates. Please try again.</Text><Button variant="secondary" label="Load older updates" onPress={() => inbox.fetchNextPage()} /></View>
-              : null
+              : undefined
         }
       />
       <Header

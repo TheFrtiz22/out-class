@@ -1,0 +1,5 @@
+# Explore: relaunch on fresh JS, then open the tab and wait for the directory.
+appId: net.outclass.app
+---
+- runFlow: explore-start.yaml
+- runFlow: explore-open.yaml

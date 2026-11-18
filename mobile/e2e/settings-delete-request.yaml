@@ -1,0 +1,26 @@
+# Account deletion: request as the signed-in staging account (ROLE_PASSWORD passed by the caller's flow variables).
+# ALWAYS follow with settings-delete-cancel.yaml: the staging student must not be left with a pending deletion.
+appId: net.outclass.app
+---
+- runFlow: settings-account.yaml
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-confirm"
+    direction: DOWN
+- tapOn:
+    id: "account-deletion-confirm"
+- inputText: "DELETE"
+- tapOn:
+    id: "account-deletion-password"
+- inputText: ${STUDENT_PASSWORD}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-submit"
+    direction: DOWN
+- tapOn:
+    id: "account-deletion-submit"
+- extendedWaitUntil:
+    visible:
+      id: "confirm-accept"
+    timeout: 15000

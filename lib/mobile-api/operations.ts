@@ -75,6 +75,9 @@ export const mobileOperations = {
   "inbox.preferences": operation("GET", none, async () => (await import("@/actions/communications")).getNotificationPreferences()),
   "inbox.preferences.save": operation("POST", passthrough, async input => (await import("@/actions/communications")).saveNotificationPreferences(input)),
 
+  // The scanner: the /q page's resolution, for a signed-in app (lib/mobile-api/short-links.ts)
+  "shortLinks.resolve": operation("GET", z.object({ code: z.string().regex(/^[a-zA-Z0-9_-]{1,32}$/) }).strict(), async ({ code }) => (await import("@/lib/mobile-api/short-links")).resolveMobileShortLink(code)),
+
   // Native push: the device is another subscription of the web's push path (actions/push-subscriptions.ts)
   "push.settings": operation("GET", passthrough, async input => (await import("@/actions/push-subscriptions")).getNativePushSettings(input)),
   "push.register": operation("POST", passthrough, async input => (await import("@/actions/push-subscriptions")).saveNativePushDevice(input)),
@@ -104,6 +107,14 @@ export const mobileOperations = {
   "voting.room": operation("GET", passthrough, async input => (await import("@/actions/voting-room")).getLiveVotingRoom(input)),
   "voting.ballot": operation("POST", passthrough, async input => (await import("@/actions/voting-room")).castLiveVotingBallot(input)),
   "voting.command": operation("POST", passthrough, async input => (await import("@/actions/voting-room")).commandLiveVotingRoom(input)),
+  // The applicant on screen: the room's own authorized slide read, laid out by the web's slide model (no new fields).
+  "voting.presentation": operation("GET", passthrough, async input => {
+    const data = await (await import("@/actions/voting-room")).getLiveVotingPresentation(input);
+    if ("stale" in data || "ownApplication" in data) return data;
+    return { slide: (await import("@/components/live-voting/slide-model")).slideModel(data) };
+  }),
+  // Session leaders only: applicant labels for the queue and "Next" (the leader room's own summary read).
+  "voting.summary": operation("GET", room, async input => (await import("@/actions/voting-room-finalization")).getLiveVotingSummary(input)),
 
   // Leader tools
   "leader.overview": operation("GET", z.object({ clubId: uuid, view: z.enum(["all", "club", "recruiting", "strip"]).optional() }).strict(), async ({ clubId, view }) => (await import("@/actions/club-overview")).getClubWorkspaceOverview(clubId, view)),
@@ -113,8 +124,12 @@ export const mobileOperations = {
     return (await import("@/actions/crm")).getClubPipelinePage(clubId, pipelinePageQuery.parse(query ?? {}));
   }),
   "leader.announcements": operation("GET", club, async ({ clubId }) => (await import("@/actions/communications")).getClubAnnouncements(clubId)),
+  "leader.announce.preview": operation("GET", z.object({ clubId: uuid, audience: z.enum(["MEMBERS", "APPLICANTS"]) }).strict(), async ({ clubId, audience }) => (await import("@/actions/recipient-groups")).previewRecipientAudience(clubId, { include: [{ source: audience }] })),
   "leader.announce": operation("POST", passthrough, async input => (await import("@/actions/communications")).publishClubAnnouncement(input)),
   "leader.interviewRooms": operation("GET", club, async ({ clubId }) => (await import("@/actions/interview-entry")).getAssignedInterviewRooms(clubId)),
+  // Interview day: the interviewer's own session (opening creates their draft record, so both are POST).
+  "leader.interviewSession.open": operation("POST", passthrough, async input => (await import("@/actions/interview-kits")).openInterviewSession(input as never)),
+  "leader.interviewSession.save": operation("POST", passthrough, async input => (await import("@/actions/interview-kits")).saveInterviewSession(input as never)),
 } satisfies Record<string, AnyMobileOperation>;
 
 export type MobileOperations = typeof mobileOperations;

@@ -1,0 +1,17 @@
+# Profile -> Edit profile sheet on the section given by SECTION (identity|education|experience|links|contact).
+appId: net.outclass.app
+---
+- tapOn:
+    id: "tab-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-edit"
+    timeout: 90000
+- tapOn:
+    id: "profile-edit"
+- extendedWaitUntil:
+    visible:
+      id: "profile-edit-done"
+    timeout: 30000
+- tapOn:
+    id: "profile-section-${SECTION}"

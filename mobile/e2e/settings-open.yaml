@@ -1,0 +1,11 @@
+# Profile -> Settings overview.
+appId: net.outclass.app
+---
+- tapOn:
+    id: "tab-profile"
+- tapOn:
+    id: "profile-header-settings"
+- extendedWaitUntil:
+    visible:
+      id: "settings-account"
+    timeout: 30000
