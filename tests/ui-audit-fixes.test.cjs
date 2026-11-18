@@ -136,7 +136,7 @@ test("items 22, 23, 24 and 25: Members action in the header, shared empty states
     const source = read(file)
     assert.match(source, /oc-dt-scope/, file); assert.match(source, /<SortControl className="oc-dt-cards-sort[ "]/, file)
   }
-  assert.match(read("lib/product-navigation.ts"), /item\("overview", TERMS\.recruitingOverview, "recruitment"\)/)
+  assert.match(read("lib/product-navigation.ts"), /item\("overview", TERMS\.recruitingOverview, "recruitment"/)
   assert.match(read("components/recruiting-overview.tsx"), /PageHeader|Recruiting/)
 })
 

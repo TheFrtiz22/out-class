@@ -200,7 +200,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   }
   function navigate(view: ViewId) { if (canLeaveWorkspace()) onNavigate(view) }
   function navLink(item: ProductNavItem, dock = false) {
-    const selected = item.id === current
+    // A page without its own rail entry (Recruiting › Application) lights the item that links to it.
+    const selected = item.id === current || (!!current && !!item.matches?.includes(current))
     const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left", selected ? "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const NavIcon = navigationIcons[item.id] ?? FileText
     const badge = platform && item.id === "reports" ? reportsBadge : 0

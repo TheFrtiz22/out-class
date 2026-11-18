@@ -67,6 +67,8 @@ export function validateRubricScores(value: RubricScores, rubric: ReviewRubric) 
     const category = rubric.categories.find(candidate => candidate.id === item.id)
     if (!category || category.max !== item.max) throw new Error("Grading categories changed. Reload before submitting.")
   }
+  // One category is the overall score: there is no separate overall to edit, so it must follow the category.
+  if (value.overridden && rubric.categories.length <= 1) throw new Error("The overall score follows the category score. Reload before submitting.")
   if (!value.overridden) {
     const computed = rubricOverall(value.categories)
     if (computed === null || Math.abs(computed - value.overall) > 0.051) throw new Error("The overall score does not match the category scores.")
@@ -75,3 +77,19 @@ export function validateRubricScores(value: RubricScores, rubric: ReviewRubric) 
 }
 
 export const formatOverall = (value: number | null | undefined) => value == null ? "—" : (Math.round(value * 10) / 10).toFixed(1)
+
+/** A reviewer's unsaved grade (autosaved privately): category scores, the overall when edited, and a comment. */
+export type GradeDraft = { scores: Record<string, string>; overall: string; override: boolean; notes: string }
+export const emptyGradeDraft: GradeDraft = { scores: {}, overall: "", override: false, notes: "" }
+
+/** Older review drafts stored `{ score, notes }`; they restore into the Overall field. */
+export function readGradeDraft(value: unknown, rubric?: ReviewRubric): GradeDraft {
+  if (!value || typeof value !== "object") return emptyGradeDraft
+  const v = value as Partial<GradeDraft> & { score?: string }
+  const draft: GradeDraft = { scores: v.scores && typeof v.scores === "object" ? v.scores : {}, overall: typeof v.overall === "string" ? v.overall : typeof v.score === "string" ? v.score : "", override: v.override === true || (!v.scores && typeof v.score === "string" && v.score !== ""), notes: typeof v.notes === "string" ? v.notes : "" }
+  // One category has no separate overall row, so an override would be invisible: the visible category score is
+  // authoritative. A restored legacy overall (out of 10) becomes that category's score when it is out of 10 too.
+  const only = rubric?.categories.length === 1 ? rubric.categories[0] : null
+  if (only && draft.override) return { ...draft, override: false, overall: "", scores: draft.scores[only.id] === undefined && only.max === 10 && draft.overall.trim() !== "" ? { ...draft.scores, [only.id]: draft.overall } : draft.scores }
+  return draft
+}

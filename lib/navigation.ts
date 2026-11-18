@@ -1,5 +1,5 @@
 import { managerNavigation, mobileDestinations, type ProductNavItem } from "@/lib/product-navigation"
-import { hasPermission, type ClubAccess } from "@/lib/permissions"
+import type { ClubAccess } from "@/lib/permissions"
 import { adminNavigation } from "@/lib/admin-navigation"
 import { STUDENT_HOME } from "@/lib/student-routes"
 import { INBOX_HREF, TERMS } from "@/lib/copy/terms"
@@ -94,8 +94,7 @@ export function leaderRailSections(member: ClubAccess, clubId: string, search = 
   const clubItems = managerNavigation(member, clubId, "club", search)
   const club = [...clubItems.filter(visible).map(item => item.id === "overview" ? { ...item, id: "club-home" } : item), ...clubItems.filter(item => item.id === "settings")]
   // Only Overview means the member has no recruiting tools; the overview alone is not a section.
-  // The Application page is not a rail entry, but a member who can edit it still gets Recruiting (its Overview links there).
-  const hasRecruiting = recruiting.some(item => item.id !== "overview") || hasPermission(member, "application.manage")
+  const hasRecruiting = recruiting.some(item => item.id !== "overview")
   return [
     ...(hasRecruiting ? [{ id: "recruiting", label: "Recruiting", tour: "mode-recruiting", items: recruiting.map(item => ({ ...item, mode: "recruiting" as const })) }] : []),
     { id: "club", label: "Club", tour: "mode-club", items: club.map(item => ({ ...item, mode: "club" as const })) },
@@ -158,7 +157,7 @@ export function activeNavItem(pathname: string, params: URLSearchParams = new UR
   if (/^\/club\/[^/]+\/workspace$/.test(pathname)) {
     const section = params.get("section") || "overview", tool = params.get("tool")
     // Same mapping the club workspace uses to pick its content. Pages without a rail entry light their parent.
-    if (section === "recruitment") return !tool || ["applicants", "rejected", "resumes", "reviews", "rounds", "rules"].includes(tool) ? "applicants" : tool === "scheduled-decisions" || tool === "voting" || tool === "letters" ? "decisions" : tool === "application" ? "overview" : tool
+    if (section === "recruitment") return !tool || ["applicants", "rejected", "resumes", "reviews", "rounds", "rules"].includes(tool) ? "applicants" : tool === "scheduled-decisions" || tool === "voting" || tool === "letters" ? "decisions" : tool
     if (section === "overview" || section === "announcements") return "club-home"
     if (section === "meetings" || section === "events") return options.member ? "club-meetings" : "calendar"
     return options.member && (section === "calendar" || section === "tasks") ? (section === "calendar" ? "club-meetings" : "club-tasks") : section

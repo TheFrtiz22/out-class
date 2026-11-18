@@ -154,8 +154,18 @@ test('#7 the application form lives in Recruiting; the old Settings URL redirect
   const app = nav.managerNavigation({ isOwner: true, status: 'ACTIVE' }, 'club', 'recruiting').find(i => i.id === 'application')
   assert.equal(app.hidden, true)
   const rail = load('lib/navigation.ts')
-  assert.equal(rail.activeNavItem('/club/c/workspace', new URLSearchParams('section=recruitment&tool=application')), 'overview')
-  assert.ok(rail.leaderRailSections({ permissions: ['application.manage'], status: 'ACTIVE' }, 'c').some(section => section.id === 'recruiting'), 'an application editor still reaches Recruiting')
+  assert.equal(rail.activeNavItem('/club/c/workspace', new URLSearchParams('section=recruitment&tool=application')), 'application')
+  // Recruiting overview lights for it (the rail selects an item whose matches include the current page).
+  assert.deepEqual(nav.managerNavigation({ isOwner: true, status: 'ACTIVE' }, 'club', 'recruiting').find(i => i.id === 'overview').matches, ['application'])
+  assert.match(read('components/shell/product-shell.tsx'), /const selected = item\.id === current \|\| \(!!current && !!item\.matches\?\.includes\(current\)\)/)
+  // A member who can only edit the application has no Recruiting overview (it needs a recruiting tool), so
+  // Application is their one visible Recruiting entry: no wider access is granted to reach it.
+  const editor = { permissions: ['application.manage'], status: 'ACTIVE' }
+  const editorRecruiting = rail.leaderRailSections(editor, 'c').find(section => section.id === 'recruiting')
+  assert.deepEqual(editorRecruiting.items.map(i => [i.id, i.href]), [['application', '/club/c/workspace?section=recruitment&tool=application']])
+  assert.ok(!nav.managerNavigation(editor, 'c', 'recruiting').some(i => i.id === 'overview'), 'no Overview link that would be refused')
+  assert.equal(rail.bottomBarItems(rail.leaderRailSections(editor, 'c'), 'leader', 'application').find(i => i.id === 'recruiting').href, '/club/c/workspace?section=recruitment&tool=application')
+  assert.match(read('components/club-workspace.tsx'), /\(recruitmentTools\(membership!\)\.length > 0 \|\| active === "application"\)/)
   assert.match(read('components/recruiting-overview.tsx'), /hasPermission\(membership, "application\.manage"\) && <Button variant="ghost" size="lg" asChild><Link \{\.\.\.clubLinkProps\(clubId, `[^`]*tool=application`\)\}><FileText aria-hidden="true" \/>Application<\/Link>/)
   const { availableSettings } = load('lib/club-settings.ts')
   assert.ok(!availableSettings({ isOwner: true }).some(item => item.id === 'application'))
@@ -262,4 +272,26 @@ test('#18 a directory-imported club claimed for the first time gets the new-club
   assert.equal((read('actions/platform-admin.ts').match(/markClubClaimed\(tx, /g) || []).length, 2)
   assert.match(read('utils/club-onboarding.ts'), /if \(isOwner\) await markClubClaimed\(tx, invitation\.clubId\);/)
   assert.doesNotMatch(read('actions/platform-admin.ts') + read('utils/club-onboarding.ts'), /data: \{ claimedAt: new Date\(\) \}/)
+})
+
+test('#19 a single-category rubric has no hidden overall: restored overrides follow the category, and the server refuses one', () => {
+  const r = load('lib/review-rubric.ts', { zod: require('zod') })
+  const single = r.defaultReviewRubric, only = single.categories[0].id
+  // A legacy { score } draft (override on) becomes the visible category score, with no override.
+  assert.deepEqual(r.readGradeDraft({ score: '7.5', notes: 'Strong' }, single), { scores: { [only]: '7.5' }, overall: '', override: false, notes: 'Strong' })
+  // A saved override next to a different category score: the visible category score wins.
+  assert.deepEqual(r.readGradeDraft({ scores: { [only]: '6' }, overall: '9', override: true, notes: '' }, single), { scores: { [only]: '6' }, overall: '', override: false, notes: '' })
+  // Several categories keep their visible, editable override.
+  const multi = { categories: [{ id: 'a', label: 'A', max: 5 }, { id: 'b', label: 'B', max: 5 }] }
+  assert.equal(r.readGradeDraft({ scores: { a: '4' }, overall: '9', override: true, notes: '' }, multi).override, true)
+  // Server: a single category cannot carry a different overall, overridden or not.
+  assert.throws(() => r.validateRubricScores({ categories: [{ id: only, label: 'Overall', max: 10, score: 6 }], overall: 9, overridden: true }, single), /follows the category score/)
+  assert.throws(() => r.validateRubricScores({ categories: [{ id: only, label: 'Overall', max: 10, score: 6 }], overall: 9, overridden: false }, single), /does not match/)
+  assert.doesNotThrow(() => r.validateRubricScores({ categories: [{ id: only, label: 'Overall', max: 10, score: 6 }], overall: 6, overridden: false }, single))
+  assert.doesNotThrow(() => r.validateRubricScores({ categories: [{ id: 'a', label: 'A', max: 5, score: 4 }], overall: 9, overridden: true }, multi))
+  // The client only sends an override where the overall row is shown.
+  const grading = read('components/applicant-review/review-grading.tsx')
+  assert.match(grading, /const override = draft\.override && rubric\.categories\.length > 1/)
+  assert.match(grading, /overridden: override \|\| !scored\.length/)
+  assert.match(grading, /restore: value => setDraft\(readDraft\(value, rubric\)\)/)
 })
