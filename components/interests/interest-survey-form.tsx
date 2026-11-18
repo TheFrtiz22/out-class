@@ -15,13 +15,15 @@ import {
  * The four survey questions, shared by onboarding's last step, the Home prompt and Settings → Interests.
  * Saves only the signed-in student's own answers (actions/interest-survey.ts) with the revision it loaded.
  */
-export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = "Save", idPrefix = "interests" }: {
+export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = "Save", idPrefix = "interests", privacyNote = true }: {
   initial: InterestSurveyDocument | null
   onSaved: (survey: InterestSurveyDocument) => void
   /** A Skip or Cancel button, placed beside Save. */
   secondary?: (busy: boolean) => ReactNode
   submitLabel?: string
   idPrefix?: string
+  /** Settings already says "Only you see this" in its page description. */
+  privacyNote?: boolean
 }) {
   const [answers, setAnswers] = useState<InterestAnswers>(() => initial ? { interests: initial.interests, goals: initial.goals, weeklyHours: initial.weeklyHours, selectivity: initial.selectivity } : { ...emptyInterestAnswers })
   const [revision, setRevision] = useState(initial?.revision ?? 0)
@@ -68,7 +70,7 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
     {question("selective", "Open to applying to selective clubs?", null,
       <FilterChips<Selectivity | ""> label="Open to applying to selective clubs?" value={answers.selectivity ?? ""} onChange={value => set({ selectivity: value || null })}
         options={SELECTIVITY.map(option => ({ value: option.id, label: option.label }))} />)}
-    <p className="text-xs text-muted-foreground">Only you see these. Clubs never do.</p>
+    {privacyNote && <p className="text-xs text-muted-foreground">Only you see these. Clubs never do.</p>}
     {error && <p role="alert" className="oc-feedback">{error}</p>}
     </fieldset>
     {alumni ? <p role="status" className="text-sm text-muted-foreground">{ALUMNI_REFUSALS.survey}</p> : <div className="flex flex-wrap items-center gap-3">
