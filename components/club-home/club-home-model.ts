@@ -41,7 +41,8 @@ export type NeedsAction =
   | { kind: "task"; label: string; taskId: string; assignmentId: string; title: string; review?: boolean }
   | { kind: "meeting"; label: string; meetingId: string; title: string }
   | { kind: "applicant"; label: string; applicationId: string }
-export type NeedsCard = { id: string; priority: number; title: string; detail: string; progress?: { done: number; total: number }; action: NeedsAction }
+/** `count`: how many items a recruiting card stands for (reviews, applicants, sessions, offers); the strip adds them up. */
+export type NeedsCard = { id: string; priority: number; title: string; detail: string; progress?: { done: number; total: number }; count?: number; action: NeedsAction }
 
 export function isOverdue(due: Date | string | null | undefined, now: number) {
   return !!due && +new Date(due) < now
@@ -79,14 +80,15 @@ export function recruitingActive(op: Overview["operations"]) {
 }
 
 export type RecruitingStrip = { open: boolean; applicants: number; attention: number; href: string }
-/** Club home's one link to recruiting, only with recruiting access and an active cycle. */
+/**
+ * Club home's one link to recruiting, only with recruiting access and an active cycle. Its item count is the
+ * Recruiting Overview's Needs you, item for item (recruitingAttention), so the two pages never disagree.
+ */
 export function recruitingStrip(data: Overview, hrefs: RailHrefs): RecruitingStrip | null {
   const op = data.operations
   if (!hrefs.recruiting || !recruitingActive(op)) return null
   const applicants = op.cycles.length ? op.cycles.reduce((n, c) => n + c.applicants, 0) : op.rounds.reduce((n, r) => n + r.count, 0)
-  const scheduling = hasPermission(data.membership, "interviews.manage") ? op.rounds.reduce((n, r) => n + r.needsBooking, 0) : 0
-  const attention = op.rounds.reduce((n, r) => n + r.pending, 0) + scheduling + op.votes.filter(v => v.state === "OPEN").length
-  return { open: !!op.intake?.applicationOpen, applicants, attention, href: hrefs.recruiting }
+  return { open: !!op.intake?.applicationOpen, applicants, attention: recruitingAttention(data, hrefs), href: hrefs.recruiting }
 }
 
 /**
@@ -108,18 +110,42 @@ const voteComplete = (vote: Overview["operations"]["votes"][number]) => vote.sta
  * applicants needing interview times, voting complete, offers awaiting a response.
  */
 export function recruitingNeeds(data: Overview, hrefs: RailHrefs): NeedsCard[] {
+  return allRecruitingNeeds(data, hrefs).slice(0, 4)
+}
+
+/** Every recruiting item that needs this member, counted from the same cards Needs you shows (before its four-card cut). */
+export function recruitingAttention(data: Overview, hrefs: RailHrefs) {
+  return allRecruitingNeeds(data, hrefs).reduce((n, card) => n + (card.count ?? 1), 0)
+}
+
+/** A session listed once, even if a read returns it twice. */
+const uniqueVotes = (votes: Overview["operations"]["votes"]) => votes.filter((vote, index) => votes.findIndex(other => other.id === vote.id) === index)
+/** "Round 2 · Open", or "Round 2 · 2 sessions" when a round has more than one session in the list. */
+function voteSummary(votes: Overview["operations"]["votes"]) {
+  const groups = new Map<string, { name: string; states: string[] }>()
+  for (const vote of votes) {
+    const key = `${vote.roundId ?? vote.round.name}`
+    const group = groups.get(key) ?? { name: vote.round.name, states: [] as string[] }
+    group.states.push(votingStateLabel(vote.state))
+    groups.set(key, group)
+  }
+  return [...groups.values()].map(g => g.states.length === 1 ? `${g.name} · ${g.states[0]}` : `${g.name} · ${g.states.length} sessions`).join(" · ")
+}
+
+function allRecruitingNeeds(data: Overview, hrefs: RailHrefs): NeedsCard[] {
   const { operations: op, membership: m, club } = data
   const cards: NeedsCard[] = []
-  const live = op.votes.filter(v => v.state === "OPEN" || !v.participants.length && !!v.joinOpenedAt && !voteComplete(v) && !hasPermission(m, "decisions.manage"))
-  if (live[0]) cards.push({ id: "vote-live", priority: 1, title: live[0].state === "OPEN" ? live.length === 1 ? "Voting is open" : `${live.length} voting sessions are open` : "You can join a voting session", detail: live.map(v => `${v.round.name} · ${votingStateLabel(v.state)}`).join(" · "), action: { kind: "link", href: voteHref(club.id, m, live[0]), label: live[0].state === "OPEN" ? TERMS.openVoting : "Join session" } })
+  const votes = uniqueVotes(op.votes)
+  const live = votes.filter(v => v.state === "OPEN" || !v.participants.length && !!v.joinOpenedAt && !voteComplete(v) && !hasPermission(m, "decisions.manage"))
+  if (live[0]) cards.push({ id: "vote-live", priority: 1, title: live[0].state === "OPEN" ? live.length === 1 ? "Voting is open" : `${live.length} voting sessions are open` : "You can join a voting session", detail: voteSummary(live), count: live.length, action: { kind: "link", href: voteHref(club.id, m, live[0]), label: live[0].state === "OPEN" ? TERMS.openVoting : "Join session" } })
   const pending = op.rounds.reduce((n, r) => n + r.pending, 0), eligible = op.rounds.reduce((n, r) => n + r.eligible, 0)
-  if (hasPermission(m, "applications.review") && pending > 0 && hrefs.applicants) cards.push({ id: "reviews", priority: 2, title: `${pluralize(pending, "application")} to review`, detail: op.rounds.filter(r => r.pending > 0).map(r => `${r.name} · ${r.pending} left`).join(" · "), progress: { done: eligible - pending, total: eligible }, action: { kind: "link", href: reviewApplicantsHref(hrefs.applicants, op.rounds), label: "Open applicants" } })
+  if (hasPermission(m, "applications.review") && pending > 0 && hrefs.applicants) cards.push({ id: "reviews", priority: 2, title: `${pluralize(pending, "application")} to review`, detail: op.rounds.filter(r => r.pending > 0).map(r => `${r.name} · ${r.pending} left`).join(" · "), progress: { done: eligible - pending, total: eligible }, count: pending, action: { kind: "link", href: reviewApplicantsHref(hrefs.applicants, op.rounds), label: "Open applicants" } })
   const unscheduled = op.rounds.filter(r => r.needsBooking > 0), needsTime = unscheduled.reduce((n, r) => n + r.needsBooking, 0)
-  if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${pluralize(needsTime, "applicant")} ${needsTime === 1 ? "needs" : "need"} an interview time`, detail: unscheduled.map(r => r.name).join(" · "), action: { kind: "link", href: `${hrefs.interviews}&interviewTab=schedule&roundId=${unscheduled[0]!.id}`, label: TERMS.scheduleInterviews } })
-  const done = op.votes.filter(voteComplete)
-  if (done[0]) cards.push({ id: "vote-complete", priority: 4, title: "Voting complete", detail: `${done.map(v => v.round.name).join(" · ")} · Send decisions when you are ready`, action: { kind: "link", href: voteHref(club.id, m, done[0]), label: TERMS.openSession } })
-  if (op.offers[0]) cards.push({ id: "offers", priority: 5, title: `${pluralize(op.offers.length, "offer")} awaiting a response`, detail: `Next expires ${new Date(op.offers[0].expiresAt).toLocaleDateString([], { month: "short", day: "numeric" })}`, action: { kind: "applicant", label: "View offer", applicationId: op.offers[0].applicationId } })
-  return cards.sort((a, b) => a.priority - b.priority).slice(0, 4)
+  if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${pluralize(needsTime, "applicant")} ${needsTime === 1 ? "needs" : "need"} an interview time`, detail: unscheduled.map(r => r.name).join(" · "), count: needsTime, action: { kind: "link", href: `${hrefs.interviews}&interviewTab=schedule&roundId=${unscheduled[0]!.id}`, label: TERMS.scheduleInterviews } })
+  const done = votes.filter(voteComplete)
+  if (done[0]) cards.push({ id: "vote-complete", priority: 4, title: "Voting complete", detail: `${[...new Set(done.map(v => v.round.name))].join(" · ")} · Send decisions when you are ready`, count: done.length, action: { kind: "link", href: voteHref(club.id, m, done[0]), label: TERMS.openSession } })
+  if (op.offers[0]) cards.push({ id: "offers", priority: 5, title: `${pluralize(op.offers.length, "offer")} awaiting a response`, detail: `Next expires ${new Date(op.offers[0].expiresAt).toLocaleDateString([], { month: "short", day: "numeric" })}`, count: op.offers.length, action: { kind: "applicant", label: "View offer", applicationId: op.offers[0].applicationId } })
+  return cards.sort((a, b) => a.priority - b.priority)
 }
 
 /** `noun` is the count's singular and plural, for "1 offer" / "2 offers" beside the label. */
@@ -135,7 +161,8 @@ export function pipeline(recruitment: Overview["recruitment"]): { stages: Pipeli
       { id: "applied", label: "Applied", noun: ["applicant", "applicants"], count: total, tone: "navy" },
       { id: "review", label: "In review", noun: ["in review", "in review"], count: count("SUBMITTED", "IN_REVIEW"), tone: "info" },
       { id: "interviews", label: "Interviews", noun: ["interview", "interviews"], count: count("INTERVIEWING"), tone: "interview" },
-      { id: "offers", label: "Offers", noun: ["offer", "offers"], count: count("ACCEPTED"), tone: "navy" },
+      // ACCEPTED is an admission decision, named as Decisions delivered and Conversion name it.
+      { id: "offers", label: "Accepted", noun: ["accepted", "accepted"], count: count("ACCEPTED"), tone: "navy" },
     ],
   }
 }

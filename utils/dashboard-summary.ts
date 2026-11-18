@@ -8,8 +8,8 @@ import { anonymousApplicantLabel } from "@/lib/anonymous-review"
 
 /**
  * Which dashboard asks. Club home ("club") reads club work only; the Recruiting Overview ("recruiting")
- * reads the cycle only; the Club home recruiting strip ("strip") reads intake, cycles, round counts and
- * votes. "all" is the full projection. Every part keeps its permission gate; a part a view does not
+ * reads the cycle only; the Club home recruiting strip ("strip") reads intake, cycles, round counts, votes and
+ * offers. "all" is the full projection. Every part keeps its permission gate; a part a view does not
  * read is returned empty, never filled from another scope.
  */
 export type OverviewView = "all" | "club" | "recruiting" | "strip"
@@ -55,7 +55,8 @@ export async function dashboardSummary(clubId: string, member: ClubAccess & { id
       COUNT(*) FILTER (WHERE a."submittedAt" >= ${new Date(+now - 7 * 86400000)})::int AS "recentSubmissions"
       FROM "TaskAssignment" a JOIN "ClubTask" t ON t.id=a."taskId"
       WHERE t."clubId"=${clubId} AND t.kind='TASK' AND t.status <> 'DRAFT'`) : [],
-    recruitingPart && identify && hasPermission(member, "decisions.manage") ? prisma.clubInvitation.findMany({ where: { clubId, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null, expiredAt: null, application: { clubId, status: "ACCEPTED" } }, select: { id: true, applicationId: true, expiresAt: true, application: { select: { id: true, round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } }, orderBy: [{ expiresAt: "asc" }, { id: "asc" }], take: 4 }) : [],
+    // Offers awaiting a response are a Recruiting Needs you item, so the Club home strip reads them too (same gate).
+    stripPart && identify && hasPermission(member, "decisions.manage") ? prisma.clubInvitation.findMany({ where: { clubId, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null, expiredAt: null, application: { clubId, status: "ACCEPTED" } }, select: { id: true, applicationId: true, expiresAt: true, application: { select: { id: true, round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } }, orderBy: [{ expiresAt: "asc" }, { id: "asc" }], take: 4 }) : [],
     // Club home Tasks for task managers: per task, never per person. Open tasks overdue or due this week.
     manage ? prisma.clubTask.findMany({ where: { clubId, kind: "TASK", status: { notIn: ["DRAFT", "DONE"] }, dueAt: { not: null, lte: week } }, select: { id: true, title: true, dueAt: true, _count: { select: { assignments: { where: { reviewedAt: null, OR: [{ submittedAt: null }, { revisionRequestedAt: { not: null } }] } } } } }, orderBy: [{ dueAt: "asc" }, { id: "asc" }], take: 12 }) : [],
   ])

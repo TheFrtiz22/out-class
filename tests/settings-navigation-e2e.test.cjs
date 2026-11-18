@@ -166,7 +166,8 @@ test('settings and authenticated navigation across roles, saves, history and res
     assert.equal((await db.club.findUniqueOrThrow({ where: { id: second.id } })).applicationOpen, true);
     await leaderPage.getByRole('button', { name: /^Switch club:/ }).click();
     await leaderPage.getByRole('menuitem').filter({ hasText: second.name }).click();
-    await leaderPage.waitForURL(`**/club/${second.id}/workspace?section=settings&setting=application`);
+    // Settings › Recruitment & applications moved to Recruiting › Application; the old URL redirects there.
+    await leaderPage.waitForURL(`**/club/${second.id}/workspace?section=recruitment&tool=application`);
     await leaderPage.waitForFunction(name => document.querySelector('header .oc-header-club-name')?.textContent === name, second.name);
     await openApplications.waitFor(); assert.equal(await openApplications.isChecked(), true);
     await leaderPage.reload(); await openApplications.waitFor();
@@ -238,7 +239,7 @@ test('settings and authenticated navigation across roles, saves, history and res
       await studentPage.keyboard.press('Escape');
       await studentPage.screenshot({ path: path.join(artifacts, `${width === 390 ? 'mobile' : 'tablet'}-notifications.png`), fullPage: true });
       await leaderPage.setViewportSize({ width, height: 900 });
-      await open(leaderPage, `/club/${first.id}/workspace?section=settings&setting=application`);
+      await open(leaderPage, `/club/${first.id}/workspace?section=settings&setting=general`);
       await leaderPage.locator('#organization-settings-section').selectOption('members');
       await leaderPage.getByRole('heading', { name: 'Interviewer eligibility', exact: true }).waitFor();
       await noOverflow(leaderPage);

@@ -90,15 +90,16 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
       </div>)}
     </div>
     {invalid && <p role="alert" className="text-control text-destructive">{invalid.label} must be between 0 and {invalid.max}.</p>}
-    <div className="oc-review-overall-row">
+    {/* One category is the overall score already, so it is shown once (its own row), not again as a second overall. */}
+    {rubric.categories.length > 1 && <div className="oc-review-overall-row">
       <div>
-        <p className="text-xs text-muted-foreground">{draft.override ? "Overall (edited)" : rubric.categories.length > 1 ? "Overall · average of scored categories" : "Out of 10"}</p>
+        <p className="text-xs text-muted-foreground">{draft.override ? "Overall (edited)" : "Overall · average of scored categories"}</p>
         {draft.override
           ? <span className="flex items-center gap-1"><Label htmlFor="grade-overall" className="sr-only">Overall score out of 10</Label><Input id="grade-overall" type="number" inputMode="decimal" min={1} max={10} step={0.1} className="oc-review-score-input" value={draft.overall} disabled={!canEvaluate || busy} onChange={event => set({ overall: event.target.value })} /><span className="text-xs text-muted-foreground">/10</span></span>
           : <p className="oc-review-overall"><span className="tabular-nums">{formatOverall(computed)}</span><span className="oc-review-overall-scale">/10</span></p>}
       </div>
       {canEvaluate && rubric.categories.length > 1 && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => set(draft.override ? { override: false } : { override: true, overall: computed === null ? "" : String(computed) })}>{draft.override ? "Use average" : "Edit"}</Button>}
-    </div>
+    </div>}
     {stored !== null && overall !== null && Math.abs(stored - overall) > 0.001 && <p className="text-xs text-muted-foreground">Ratings record this as {stored.toFixed(1)} (scores are kept in half points from 1 to 10).</p>}
     {overallInvalid && <p role="alert" className="text-control text-destructive">Enter an overall score from 0 to 10.</p>}
     <Label htmlFor="grade-notes" className="text-xs text-muted-foreground">Comment (optional)</Label>

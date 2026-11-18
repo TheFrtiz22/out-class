@@ -16,7 +16,6 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { resolveSettingsTab, settingsSections } from "@/lib/club-settings";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
 import { canLeaveWorkspace } from "@/lib/product-navigation";
-import { canOpenRecruitingSettings, recruitingSettingsSections, withRecruitingSettings } from "@/lib/recruiting-settings";
 import { hasPermission, permissionLabels } from "@/lib/permissions";
 import { organizationRoleLabels, organizationRolePermissions, organizationRoles } from "@/lib/organization-authorization";
 import { saveClubPreferences as saveClubPreferencesAction } from "@/actions/club-settings";
@@ -24,17 +23,9 @@ import { ClubProfileSettings } from "@/components/club-profile-settings";
 import { ProfileFieldSettings } from "@/components/profile-field-settings";
 
 import "@/components/clubs/club-settings.css";
-import { VotingRuleDefaults } from "@/components/live-voting/voting-rule-defaults";
 import { NativeSelect } from "@/components/ui/native-select"
-import { Button } from "@/components/ui/button"
 import { unwrapped } from "@/lib/action-result"
 const saveClubPreferences = unwrapped(saveClubPreferencesAction)
-const ApplicationBuilder = dynamic(() =>
-  import("@/components/views/club-manager/application-builder-view").then(
-    (m) => m.ApplicationBuilderView,
-  ),
-  { loading: () => <LoadingState label="Loading application settings…" layout="form" rows={3} /> },
-);
 const DecisionTemplates = dynamic(() => import("@/components/communications/template-editor").then(m => m.DecisionTemplateEditor), { loading: () => <LoadingState label="Loading letter settings…" layout="form" rows={3} /> });
 const Cycles = dynamic(() => import("@/components/recruitment-cycles").then(m => m.RecruitmentCycles), { loading: () => <LoadingState label="Loading recruitment cycles…" layout="rows" rows={3} /> });
 const PipelineBuilder = dynamic(() =>
@@ -163,16 +154,6 @@ export function ClubSettingsWorkspace({
                 </p>
               </section>
             )}
-          </div>
-        )}
-        {visible("application") && (
-          <div hidden={active !== "application"}>
-            {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Button asChild variant="link" size="sm"><Link href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link></Button><Button asChild variant="link" size="sm"><Link href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></Button></div>}
-            {/* Recruiting: opens the Recruiting settings drawer in place (the same drawer as the Applicants gear). */}
-            {canOpenRecruitingSettings(member) && <section aria-labelledby="settings-recruiting-heading" className="mb-5 space-y-2 border-b pb-4"><h2 id="settings-recruiting-heading" className="oc-section-heading">Recruiting</h2><div className="flex flex-wrap gap-2">{recruitingSettingsSections.map(item => <Button key={item.id} type="button" variant="outline" size="sm" aria-haspopup="dialog" onClick={() => { if (canLeaveWorkspace()) router.push(`/club/${encodeURIComponent(clubId)}/workspace?${withRecruitingSettings(params.toString(), item.id)}`, { scroll: false }) }}>{item.label}</Button>)}</div></section>}
-            <ApplicationBuilder clubId={clubId} />
-            {/* Voting defaults are configuration, so they live here; the Voting room links to this section. */}
-            {hasPermission(member, "applications.review") && hasPermission(member, "decisions.manage") && hasPermission(member, "decisions.start") && !demo.isDemoEnabled && <section id="voting-rules" aria-label="Default voting rules" className="mt-8 border-t pt-5"><VotingRuleDefaults clubId={clubId} /></section>}
           </div>
         )}
         {visible("profiles") && <div hidden={active !== "profiles"}><ProfileFieldSettings clubId={clubId} /></div>}

@@ -42,7 +42,8 @@ test('shared route layout authenticates protected pages and retains public pages
 });
 test('organization Settings includes only supported configuration and keeps operations reachable', () => {
   const { availableSettings } = load('lib/club-settings.ts');
-  assert.deepEqual(availableSettings({ permissions: ['application.manage'] }).map(item => item.id), ['application']);
+  // The application form moved to Recruiting › Application.
+  assert.deepEqual(availableSettings({ permissions: ['application.manage'] }).map(item => item.id), []);
   assert.deepEqual(availableSettings({ permissions: ['recruitment.manage'] }).map(item => item.id), ['cycles', 'pipeline', 'notifications']);
   assert.deepEqual(availableSettings({ status: 'LEFT', isOwner: true }), []);
   assert.ok(!availableSettings({ isOwner: true }).some(item => item.id === 'tasks'));

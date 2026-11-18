@@ -16,6 +16,7 @@ import { adminActionResult } from "@/lib/admin-failure";
 import { readDemoTemplate } from "@/lib/demo/validate";
 import { clubPermissions } from "@/lib/permissions";
 import { boundedParse } from "@/lib/bounded-input";
+import { newClubProfileFieldVisibility } from "@/lib/profile-field-visibility";
 
 const resources = z.enum(platformResources);
 export type PlatformResource = z.infer<typeof resources>;
@@ -532,7 +533,7 @@ async function changePlatformResourceCommand(input: unknown, reason: string) {
         const { kind, id, ...fields } = data;
         const record = id
           ? await tx.club.update({ where: { id }, data: fields })
-          : await tx.club.create({ data: fields });
+          : await tx.club.create({ data: { ...fields, profileFieldVisibility: newClubProfileFieldVisibility() } });
         targetId = record.id;
         break;
       }

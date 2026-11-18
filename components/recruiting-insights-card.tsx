@@ -24,7 +24,7 @@ export function RecruitingInsightsCards({ clubId, index }: { clubId: string; ind
   const flagged = data.reviewers.filter(r => r.offset !== null && Math.abs(r.offset) >= 0.5)
   return <>
     <DashboardCard id="dashboard-funnel" title="Conversion" aside={data.cycleName ?? undefined} index={index}>
-      <MetricTiles items={[{ label: "Applied", value: f.applied }, { label: `Interviewed · ${rate(f.interviewed)}`, value: f.interviewed }, { label: `Admitted · ${rate(f.admitted)}`, value: f.admitted }, { label: `Joined · ${rate(f.joined)}`, value: f.joined }]} />
+      <MetricTiles items={[{ label: "Applied", value: f.applied }, { label: `Interviewed · ${rate(f.interviewed)}`, value: f.interviewed }, { label: `Accepted · ${rate(f.admitted)}`, value: f.admitted }, { label: `Joined · ${rate(f.joined)}`, value: f.joined }]} />
       {/* Counts the whole cycle, so it differs from the in-progress count in Pipeline by round. */}
       <DashboardFoot>Everyone who applied this cycle, including applicants already decided.</DashboardFoot>
     </DashboardCard>

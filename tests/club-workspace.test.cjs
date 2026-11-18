@@ -126,6 +126,8 @@ function setup(permissions = [], isOwner = false) {
       },
     },
     application: { findMany: async (args) => { (queries.waiting ??= []).push(args); return []; } },
+    // Outcome counts are scoped like Recruiting insights: the single active cycle.
+    recruitmentCycle: { findMany: async (args) => { queries.cycles = args; return [{ id: "cycle-1", createdAt: new Date() }]; } },
   };
   const auth = {
     requireClubMembership: async (id) => {
@@ -185,6 +187,9 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
   assert.equal(h.queries.recruitment.values[1], clubId);
   assert.equal(h.queries.recruitment.values[2], false);
   assert.doesNotMatch(h.queries.recruitment.sql, /firstName|lastName|email|"StudentProfile"/);
+  // Same population as Recruiting insights: the single active cycle's applications.
+  assert.match(h.queries.recruitment.sql, /AND \(\?::text IS NULL OR a\."recruitmentCycleId" = \?\)/);
+  assert.deepEqual(h.queries.recruitment.values.slice(-2), ["cycle-1", "cycle-1"]);
   assert.deepEqual(result.recruitment, [
     { status: "SUBMITTED", count: 3 },
     { status: "ACCEPTED", count: 5 },

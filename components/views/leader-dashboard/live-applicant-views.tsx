@@ -39,6 +39,8 @@ const anonymous = (app: Pick<Candidate, "studentId">) => app.studentId.startsWit
 /** Program names or "Not a scholar"; nothing for anonymous applicants or an unanswered question. */
 export const applicantScholar = (app: Pick<Candidate, "studentId"> & { student: { studentProfile?: { scholarStatus?: unknown } | null } }) => anonymous(app) ? null : scholarSummary(app.student.studentProfile?.scholarStatus)
 const roundName = (rounds: Pipeline["rounds"], app: Candidate) => rounds.find(round => round.id === app.roundId)?.name
+/** The Round column: an accepted applicant has finished the rounds, so it reads "Accepted", not the last round's name. */
+export const applicantRoundLabel = (rounds: Pipeline["rounds"], app: Pick<Candidate, "roundId" | "status">) => app.status === "ACCEPTED" ? "Accepted" : rounds.find(round => round.id === app.roundId)?.name
 const testScores = (app: Candidate, fields: ProfileFieldVisibility) => joinFacts(fields.sat && app.student.studentProfile?.satScore != null && `SAT ${app.student.studentProfile.satScore}`, fields.act && app.student.studentProfile?.actScore != null && `ACT ${app.student.studentProfile.actScore}`)
 /** Profile columns the club has hidden are not rendered (their values are already withheld by the server). */
 const columnVisible = (id: string, fields: ProfileFieldVisibility) => id === "gpa" ? fields.gpa : id === "sat" ? fields.sat : id === "act" ? fields.act : id === "test" ? fields.sat || fields.act : id === "year" ? fields.academicYear : id === "scholar" ? fields.scholarStatus : true
@@ -47,7 +49,7 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
   const columns = ([
     { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-applicant-person-row"><ApplicantIdentity label={name(app)} anonymous={anonymous(app)} /><PreviouslyAppliedBadge priors={app.priorApplications} /></span>, secondary: app => <DataTableSecondary from="xl">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
     { id: "year", header: "Year", sortKey: "year", showFrom: "md", cell: app => app.student.studentProfile?.academicYear || "—" },
-    { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Not available" },
+    { id: "round", header: "Round", sortKey: "round", cell: app => applicantRoundLabel(rounds, app) || "Not available" },
     { id: "gpa", header: "GPA", sortKey: "gpa", align: "end", cell: app => app.student.studentProfile?.gpa?.toFixed(2) ?? "—" },
     { id: "test", header: "Test scores", hideFrom: "lg", cell: app => testScores(app, profileFields) || "—" },
     { id: "sat", header: "SAT", sortKey: "sat", align: "end", showFrom: "lg", cell: app => app.student.studentProfile?.satScore ?? "—" },
@@ -63,7 +65,7 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
     card={{
       title: app => <span className="oc-dt-name">{name(app)} <PreviouslyAppliedBadge priors={app.priorApplications} /></span>,
       trailing: app => <Status app={app} rounds={rounds} staged={staged} />,
-      meta: app => joinFacts(profileFields.academicYear && app.student.studentProfile?.academicYear, roundName(rounds, app), profileFields.gpa && app.student.studentProfile?.gpa != null && `GPA ${app.student.studentProfile.gpa.toFixed(2)}`, testScores(app, profileFields), showScholar && applicantScholar(app), app.roundScore?.average != null && `Rating ${formatAverage(app.roundScore.average)}`),
+      meta: app => joinFacts(profileFields.academicYear && app.student.studentProfile?.academicYear, app.status !== "ACCEPTED" && roundName(rounds, app), profileFields.gpa && app.student.studentProfile?.gpa != null && `GPA ${app.student.studentProfile.gpa.toFixed(2)}`, testScores(app, profileFields), showScholar && applicantScholar(app), app.roundScore?.average != null && `Rating ${formatAverage(app.roundScore.average)}`),
     }} />
 }
 const votingEligible = (status: string) => ["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "WAITLISTED"].includes(status)
@@ -71,7 +73,7 @@ const votingEligible = (status: string) => ["SUBMITTED", "IN_REVIEW", "INTERVIEW
 export function LiveDecisionList({ applicants, rounds, open, compact, name, sort = "name", descending = false, sortBy, staged }: Props) {
   const columns: DataTableColumn<Candidate>[] = [
     { id: "name", header: "Applicant", sortKey: "name", primary: true, cell: app => <span className="oc-dt-name">{name(app)}</span>, secondary: app => <DataTableSecondary from="lg">{anonymous(app) ? "Anonymous review" : app.student.email}</DataTableSecondary> },
-    { id: "round", header: "Round", sortKey: "round", cell: app => roundName(rounds, app) || "Round unavailable" },
+    { id: "round", header: "Round", sortKey: "round", cell: app => applicantRoundLabel(rounds, app) || "Round unavailable" },
     { id: "score", header: "Rating", sortKey: "score", cell: app => <Rating app={app} /> },
     { id: "status", header: "Decision", sortKey: "status", cell: app => <Status app={app} rounds={rounds} staged={staged} /> },
   ]

@@ -22,6 +22,19 @@ export function defaultProfileFieldVisibility(): ProfileFieldVisibility {
   return Object.fromEntries(profileFieldKeys.map(key => [key, !profileFieldsHiddenByDefault.includes(key)])) as ProfileFieldVisibility;
 }
 
+/** Standardized tests are opt-in for clubs created from Nov 2026: hidden unless the club turns them on. */
+export const profileFieldsOptInForNewClubs: readonly ProfileFieldKey[] = ["sat", "act"];
+
+/**
+ * The map stored on a newly created club. Clubs created earlier keep NULL (the defaults above, tests on), so their
+ * leaders see what they saw before; a new club stores this explicit map instead, with SAT and ACT off.
+ */
+export function newClubProfileFieldVisibility(): ProfileFieldVisibility {
+  const result = defaultProfileFieldVisibility();
+  for (const key of profileFieldsOptInForNewClubs) result[key] = false;
+  return result;
+}
+
 export function normalizeProfileFieldVisibility(value: unknown): ProfileFieldVisibility {
   const result = defaultProfileFieldVisibility();
   if (!value || typeof value !== "object" || Array.isArray(value)) return result;

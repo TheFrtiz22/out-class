@@ -42,7 +42,7 @@ test("items 3 and 8: count labels name what they count, with the shared pluraliz
   assert.equal(model.recruitingStripText({ applicants: 3, attention: 0 }), "3 applicants")
   const { pluralize } = loadComponent("lib/copy/terms.ts")
   const stages = model.pipeline([{ status: "SUBMITTED", count: 1 }, { status: "INTERVIEWING", count: 1 }, { status: "ACCEPTED", count: 1 }]).stages
-  assert.deepEqual(stages.slice(1).map(stage => pluralize(stage.count, ...stage.noun)), ["1 in review", "1 interview", "1 offer"])
+  assert.deepEqual(stages.slice(1).map(stage => pluralize(stage.count, ...stage.noun)), ["1 in review", "1 interview", "1 accepted"])
   assert.doesNotMatch(read("components/recruiting-overview.tsx"), /stage\.label\.toLowerCase\(\)/)
 })
 
@@ -156,12 +156,16 @@ test("items 27, 28, 30, 31 and 34: steady tab widths, settings links, review mod
   assert.doesNotMatch(active, /font-weight/, "selected underline tabs keep the same weight")
   const settings = read("components/club-settings-workspace.tsx")
   assert.doesNotMatch(settings, /<Link className="underline underline-offset-4"/)
-  assert.match(settings, /<Button asChild variant="link" size="sm"><Link href=\{`\/club\/\$\{clubId\}\/workspace\?section=settings&setting=pipeline`\}/)
+  // The duplicate "Configure recruitment rounds" / "Manage application cycles" links were removed with the application form's move to Recruiting.
+  assert.doesNotMatch(settings, /Configure recruitment rounds|Manage application cycles/)
   assert.match(read("components/clubs/club-settings.css"), /\.oc-settings-personal-link \{[^}]*border-top: 1px solid var\(--border\)[^}]*text-decoration: none/)
   const flow = read("components/applicant-review/applicant-review-flow.tsx")
   assert.match(flow, /recruiting leads assign panels in Interviews › Scheduling\. Submitted grades are read-only\./)
   assert.doesNotMatch(flow, /<kbd>A<\/kbd> advance/, "A, H and R are shown once, on the buttons")
-  assert.match(read("components/applicant-review/review-grading.tsx"), /"Overall · average of scored categories" : "Out of 10"/)
+  const grading = read("components/applicant-review/review-grading.tsx")
+  assert.match(grading, /\{rubric\.categories\.length > 1 && <div className="oc-review-overall-row">/, "a single category is the overall score, shown once")
+  assert.match(grading, /"Overall \(edited\)" : "Overall · average of scored categories"/)
+  assert.doesNotMatch(grading, /Out of 10"/)
   assert.match(read("components/applicant-recusal.tsx"), /<Button variant="outline" size="sm" disabled=\{busy\} onClick=\{\(\) => void change\(true\)\} title="[^"]*"><UserCog aria-hidden="true" \/>I know this applicant/)
   const preview = read("components/interviews/panel-preview-workspace.tsx")
   assert.match(preview, /<Panel as="section" aria-label="Schedule status"/)

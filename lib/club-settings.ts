@@ -130,7 +130,6 @@ export function applicationAvailability(
 }
 export const settingsSections = [
   { id: "general", label: "Public profile", permission: "club.settings" },
-  { id: "application", label: "Recruitment & applications", permission: "application.manage" },
   { id: "profiles", label: "Applicant profiles", permission: "club.settings" },
   { id: "cycles", label: "Application cycles", permission: "recruitment.manage" },
   {

@@ -7,7 +7,7 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { canLeaveWorkspace, decideAccess } from "@/lib/product-navigation";
 import { decisionsHref, legacyVotingHistoryHref } from "@/lib/voting-navigation";
-import { decideCounts, decideTab, decideTabs, overviewDefaultRound, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
+import { decideCounts, decideTab, decideTabs, overviewDefaultRound, pendingApplicantsHref, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
 import { listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getWorkspaceRounds } from "@/lib/workspace-api";
 import { liveRoomPath } from "@/lib/voting-room";
@@ -22,7 +22,6 @@ import { WorkspaceLoading } from "@/components/workspace-loading";
 import { DecisionSchedules } from "@/components/decision-schedules";
 import { DecideOverview } from "./decide-overview";
 const VotingRoomLanding = dynamic(() => import("./room-landing").then(m => m.VotingRoomLanding), { loading: () => <WorkspaceLoading label="Loading voting sessions…" layout="rows" rows={3} /> });
-const DecideReview = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.LiveLeaderWorkspace), { loading: () => <WorkspaceLoading label="Loading applicants needing a decision…" layout="applicants" rows={3} /> });
 const StagedDecisionsPanel = dynamic(() => import("@/components/applicant-review/staged-decisions-panel").then(m => m.StagedDecisionsPanel), { loading: () => <LoadingState label="Loading saved decisions…" layout="rows" rows={2} /> });
 const DecisionTemplateEditor = dynamic(() => import("@/components/communications/template-editor").then(m => m.DecisionTemplateEditor), { loading: () => <WorkspaceLoading label="Loading decision letters…" layout="form" rows={3} /> });
 
@@ -103,13 +102,27 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
     </div>
     <section aria-label={steps[index]?.label} className="space-y-6">
       {tab === "overview" && <DecideOverview clubId={clubId} member={member} access={access} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} roundId={roundId} cycleId={cycleId} stepHref={step => decisionsHref(clubId, step, search)} />}
-      {tab === "review" && access.canDecide && <DecideReview key={roundId} scoped decisionsOnly initialDecision="pending" />}
+      {tab === "review" && access.canDecide && <ReviewStep clubId={clubId} roundId={roundId} rounds={managedRounds} />}
       {tab === "voting" && access.canVote && <VotingRoomLanding clubId={clubId} />}
       {tab === "letters" && access.canSend && <>{access.canDecide && <StagedDecisionsPanel clubId={clubId} roundId={roundId || undefined} />}<SendStep clubId={clubId} member={member} rows={rows} failed={roomsFailed} onRetry={() => setRetry(n => n + 1)} canVote={access.canVote} canScheduled={access.canScheduled} roundId={roundId} /></>}
     </section>
     <StepperNav onBack={index > 0 ? () => open(steps[index - 1].id) : undefined} backLabel={index > 0 ? `Back to ${steps[index - 1].label}` : undefined}
       onNext={index >= 0 && index < steps.length - 1 ? () => open(steps[index + 1].id) : undefined} nextLabel={index < steps.length - 1 ? `Next: ${steps[index + 1]?.label}` : undefined} />
   </div>;
+}
+
+/**
+ * Step 1: a short summary and a link. The review itself is the Applicants review flow (decisions are saved, not
+ * sent), so this step does not repeat the Applicants table. The count is Pipeline by round's "in progress" count.
+ */
+function ReviewStep({ clubId, roundId, rounds }: { clubId: string; roundId: string; rounds: { id: string; name: string; active?: number }[] | null }) {
+  const round = rounds?.find(r => r.id === roundId);
+  const active = round ? round.active : rounds && !roundId ? rounds.reduce((n, r) => n + (r.active ?? 0), 0) : undefined;
+  return <Panel as="section" aria-labelledby="decide-review-heading" className="oc-workspace-stack">
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="decide-review-heading" className="oc-section-heading">Review</h2>
+      <Button asChild variant="outline" size="sm"><Link scroll={false} href={pendingApplicantsHref(clubId, roundId, true)}>Review in Applicants</Link></Button></div>
+    <p className="text-sm text-muted-foreground">{active != null ? `${pluralize(active, "applicant in progress", "applicants in progress")}${round ? ` in ${round.name}` : ""}. ` : ""}Decisions you save there wait here for Send.</p>
+  </Panel>;
 }
 
 /** Step 2: what is ready to send in this round, letters by outcome, individual decisions, and scheduled sends. */
@@ -120,8 +133,9 @@ function SendStep({ clubId, member, rows, failed, onRetry, canVote, canScheduled
   const demo = useDemoMode();
   const ready = rows?.filter(readyToSend) ?? [];
   const canLetters = hasPermission(member, "recruitment.manage");
-  const applicants = `/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants&decision=pending${roundId ? `&roundId=${encodeURIComponent(roundId)}` : ""}`;
   return <>
+    {/* Applicants still pending a decision: a step-level link, not part of the letters card. */}
+    <div className="flex justify-end"><Button asChild variant="outline" size="sm"><Link scroll={false} href={pendingApplicantsHref(clubId, roundId)}>Open applicants</Link></Button></div>
     {canVote && <Panel as="section" aria-labelledby="decide-ready-heading" className="oc-workspace-stack">
       <h2 id="decide-ready-heading" className="oc-section-heading">Ready to send</h2>
       <p className="text-sm text-muted-foreground">Closed voting sessions whose outcomes haven’t been sent. Each one shows Accepted, Waitlisted and Not accepted counts before you send or schedule it.</p>
@@ -134,8 +148,7 @@ function SendStep({ clubId, member, rows, failed, onRetry, canVote, canScheduled
           </li>)}</ul>}
     </Panel>}
     <Panel as="section" aria-labelledby="decide-letters-heading" className="oc-workspace-stack">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="decide-letters-heading" className="oc-section-heading">Decision letters</h2>
-        <Button asChild variant="outline" size="sm"><Link href={applicants}>Open applicants</Link></Button></div>
+      <h2 id="decide-letters-heading" className="oc-section-heading">Decision letters</h2>
       {canLetters ? <DecisionTemplateEditor clubId={clubId} inline /> : <p role="status" className="text-sm text-muted-foreground">Letter template editing requires recruitment management access.</p>}
     </Panel>
     {canScheduled && <DecisionSchedules clubId={clubId} />}

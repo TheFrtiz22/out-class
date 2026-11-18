@@ -87,6 +87,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
   </Dashboard>
 
   return <Dashboard className="oc-command-center oc-command-recruiting" busy={refreshing}>
+    {club.isDiscoverable === false && <p className="oc-command-footnote oc-dashboard-note" data-testid="recruiting-unpublished">Not visible to students.{hasPermission(membership, "club.settings") && <> <Link className="underline underline-offset-4" {...clubLinkProps(club.id, `/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=general`)}>Publish profile</Link></>}</p>}
     {!hasPermission(membership, "applicants.identify") && hasPermission(membership, "applications.review") && <p className="oc-command-footnote oc-dashboard-note">Anonymous rounds only. Identity, files and unapproved free text remain withheld.</p>}
     <NeedsYouRow headingId="recruiting-needs" items={cards.map(card => ({ id: card.id, title: card.title, detail: card.detail, progress: card.progress, action: action(card) }))}
       clear={<><strong>You’re caught up.</strong> Votes, reviews, interview times and offers that need you will show up here.</>} />

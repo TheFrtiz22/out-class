@@ -137,7 +137,9 @@ test('the review flow is the one decision UI: shared by Applicants, the board, R
   assert.match(hook, /const UNDO_MS = 5000/); assert.match(hook, /label: "Undo"/); assert.match(hook, /put\(app\.id, previous\)/, 'failed saves roll back')
   assert.match(read('components/views/leader-dashboard/live-leader-workspace.tsx'), /<ApplicantReviewFlow/)
   const decide = read('components/live-voting/decide-page.tsx')
-  assert.match(decide, /<DecideReview key=\{roundId\} scoped decisionsOnly initialDecision="pending" \/>/)
+  // Decide › Review links to the Applicants review flow instead of repeating the Applicants table.
+  assert.match(decide, /<ReviewStep clubId=\{clubId\} roundId=\{roundId\} rounds=\{managedRounds\} \/>/)
+  assert.match(decide, /pendingApplicantsHref\(clubId, roundId, true\)\}>Review in Applicants</)
   assert.match(decide, /<StagedDecisionsPanel/)
   const boardSrc = read('components/applicant-review/applicant-board.tsx')
   assert.match(boardSrc, /KeyboardSensor/); assert.match(boardSrc, /staged\.stage\(/); assert.doesNotMatch(boardSrc, /setApplicationStatus/)

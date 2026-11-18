@@ -35,14 +35,12 @@ import {
 } from "@/components/ui/dialog";
 import "@/components/clubs/club-settings.css";
 import { unwrapped } from "@/lib/action-result"
+import { zonedInputValue, zonedInstant } from "@/lib/interview-rooms"
+import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 const saveApplicationSettings = unwrapped(saveApplicationSettingsAction)
-const localDate = (date: Date | string | null) => {
-  if (!date) return "";
-  const d = new Date(date);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
-};
+/** The deadline is shown and entered in Eastern Time, like interview scheduling, whatever the browser's zone. */
+const localDate = (date: Date | string | null) => date ? zonedInputValue(date, SCHEDULING_TIMEZONE) : "";
+const deadlineInstant = (value: string) => zonedInstant(value.slice(0, 10), value.slice(11, 16), SCHEDULING_TIMEZONE).toISOString();
 export function ApplicationBuilderView({
   clubId: provided,
 }: {
@@ -127,11 +125,14 @@ export function ApplicationBuilderView({
   }
   async function save() {
     if (working.current) return;
+    let deadlineAt: string | null = null;
+    try { deadlineAt = deadline ? deadlineInstant(deadline) : null }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Choose a valid date and time."); return }
     const input = {
       clubId,
       version,
       open,
-      deadline: deadline ? new Date(deadline).toISOString() : null,
+      deadline: deadlineAt,
       questions,
     };
     const parsed = applicationSettingsSchema.safeParse(input);
@@ -227,7 +228,7 @@ export function ApplicationBuilderView({
           >
             <Toggle label="Applications open" checked={open} onCheckedChange={setOpen} className="self-start" />
             <label className="space-y-2 text-sm">
-              Deadline (optional, your local time)
+              Deadline (optional, {SCHEDULING_TIMEZONE_LABEL})
               <Input
                 type="datetime-local"
                 value={deadline}

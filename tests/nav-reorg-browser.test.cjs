@@ -27,6 +27,7 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
     ['section=recruitment&tool=decisions&decisionTab=voting', { section: 'recruitment', tool: 'decisions', decisionTab: 'voting' }, 'Decide'],
     ['section=recruitment&tool=rules', { section: 'recruitment', tool: 'applicants', recruitingSettings: 'rules' }, 'Applicants'],
     ['section=recruitment&tool=rounds', { section: 'recruitment', tool: 'applicants', recruitingSettings: 'anonymous' }, 'Applicants'],
+    ['section=settings&setting=application', { section: 'recruitment', tool: 'application' }, 'Application'],
   ]
   for (const [from, to, current] of moves) {
     await open(from)
@@ -51,11 +52,11 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   await drawer.getByRole('tab', { name: 'Auto-reject rules', exact: true }).click()
   await expect.poll(params).toEqual(expect.objectContaining({ recruitingSettings: 'rules' }))
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' }); await expect(gear).toBeFocused()
-  // …and from club Settings → Application → Recruiting, in place.
-  await open('section=settings&setting=application')
+  // …and from Recruiting › Application (formerly club Settings), in place.
+  await open('section=recruitment&tool=application')
   const recruiting = page.getByRole('region', { name: 'Recruiting', exact: true })
   await recruiting.getByRole('button', { name: 'Auto-reject rules', exact: true }).click(); await drawer.waitFor()
-  assert.equal(params().section, 'settings')
+  assert.equal(params().section, 'recruitment')
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' })
   await expect(recruiting.getByRole('button', { name: 'Auto-reject rules', exact: true })).toBeFocused()
 
