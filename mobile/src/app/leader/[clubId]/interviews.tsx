@@ -47,15 +47,15 @@ export default function InterviewDay() {
   const line = (row: InterviewEntry, withDay = false) => {
     const candidate = entryCandidate(row), status = entryStatus(row, now), current = focus?.id === row.id;
     const body = (
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52, paddingVertical: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, minHeight: 52, paddingVertical: 12 }}>
         <View style={{ width: 92 }}>
           <Text variant="smallStrong" style={{ fontVariant: ["tabular-nums"] }} color={current ? colors.brandInk : colors.foreground}>{timeRange(row).replace("–", "–\n")}</Text>
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="bodyStrong" numberOfLines={1} color={candidate ? colors.foreground : colors.mutedForeground}>{candidate ?? "Open time slot"}</Text>
+          <Text variant="bodyStrong" numberOfLines={2} color={candidate ? colors.foreground : colors.mutedForeground}>{candidate ?? "Open time slot"}</Text>
           <Text variant="small" numberOfLines={2}>{[withDay ? shortDay(row) : "", row.roundName, row.location || row.roomName].filter(Boolean).join(" · ")}</Text>
+          <View style={{ marginTop: 4 }}><Chip label={status} tone={tones[status] ?? "neutral"} /></View>
         </View>
-        <Chip label={status} tone={tones[status] ?? "neutral"} />
       </View>
     );
     return openable(row)

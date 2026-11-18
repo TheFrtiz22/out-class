@@ -29,7 +29,17 @@ appId: net.outclass.app
     id: "profile-section-links"
 - takeScreenshot: ${SHOTS}-42-profile-edit-links
 - tapOn:
-    id: "profile-section-contact"
+    id: "profile-edit-done"
+- scrollUntilVisible:
+    element:
+      id: "profile-edit-phone"
+    direction: DOWN
+- tapOn:
+    id: "profile-edit-phone"
+- extendedWaitUntil:
+    visible:
+      id: "profile-phone"
+    timeout: 30000
 - tapOn:
     id: "profile-phone"
 - eraseText: 30

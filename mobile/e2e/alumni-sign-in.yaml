@@ -1,4 +1,4 @@
-# Signs out the current account through Settings, then signs in as the staging alumni account.
+# Signs out the current account through Settings, then signs in as the staging alumni account. Pass -e SHOTS=<prefix>.
 appId: net.outclass.app
 ---
 - runFlow:
@@ -18,3 +18,4 @@ appId: net.outclass.app
     visible:
       id: "home-screen"
     timeout: 90000
+- takeScreenshot: ${SHOTS}-00-home
