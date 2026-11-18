@@ -9,7 +9,7 @@ import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement } from "@/lib/test-scores"
 import { ALUMNI_APPLY_MESSAGE, isAlumniProfile } from "@/lib/graduation"
 import { assertNotAlumni } from "@/utils/graduation"
-import { activeMemberWhere } from "@/lib/permissions"
+import { activeMemberWhere, hasPermission, type ClubAccess } from "@/lib/permissions"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
@@ -165,6 +165,11 @@ function studentCalendarWindow() {
   return { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }
 }
 
+/** Members-only meetings of a club the student helps run are leader work: Calendar keeps them, student Home does not. */
+function studentMeeting<M extends { audience: string; club: { name: string; members: ClubAccess[] } }>({ club: { members, ...club }, ...meeting }: M) {
+  return { ...meeting, club, forLeaders: meeting.audience !== "RECRUITMENT" && hasPermission(members[0], "meetings.manage") }
+}
+
 export async function getStudentDashboardData() {
   const { user } = await requireAuth()
 
@@ -196,8 +201,8 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { AND: [{ OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: { AND: [{ OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true, members: { where: { userId: user.id, ...activeMemberWhere }, select: { isOwner: true, permissions: true, status: true, alumniSince: true }, take: 1 } } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
-  return { applications, attendances, meetings, panelAssignments }
+  return { applications, attendances, meetings: meetings.map(studentMeeting), panelAssignments }
 }
