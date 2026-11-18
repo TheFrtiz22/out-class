@@ -71,3 +71,11 @@ test('an organizer with nothing assigned is sent to Schedule instead of the over
  assert.match(words,/You aren’t assigned to any interviews yet\. Set interview times and interviewers on Schedule\./);assert.doesNotMatch(words,/Back to recruiting overview/);
  nodes(tree).find(n=>n.props?.children==='Open schedule').props.onClick();assert.equal(opened,1);
 });
+test('when only past unbooked times remain, an organizer is still sent to Schedule',async()=>{
+ // The overview can say an applicant needs a time while every slot is in the past; this page must point the same way.
+ let opened=0;const past=row('past',Date.now()-30*day,{bookingId:null,applicationId:null,candidate:null});
+ const h=list([past],undefined,{onSchedule:()=>opened++});h.render();await flush();const tree=h.render(),words=text(tree);
+ assert.match(words,/No upcoming interviews\. Past times nobody booked are hidden; set new times on Schedule\./);
+ nodes(tree).find(n=>n.props?.children==='Open schedule').props.onClick();assert.equal(opened,1);
+ const member=list([past]);member.render();await flush();assert.match(text(member.render()),/No upcoming interviews\. Past times nobody booked are hidden\./);
+});
