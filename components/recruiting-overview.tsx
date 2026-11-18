@@ -94,7 +94,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
       <DashboardCard id="dashboard-pipeline" title="Pipeline by round" index={cards.length + 1} className="oc-pipeline-section">
         {op.rounds.length > 0 ? <>
           <PipelineBars stages={op.rounds.map((r, i) => ({ id: r.id, label: `${String(i + 1).padStart(2, "0")} · ${r.name}`, count: r.count }))} />
-          <DashboardFoot>{[pluralize(total, "active applicant"), ...(statuses ? statuses.stages.slice(1).map(stage => pluralize(stage.count, ...stage.noun)) : []), `${pluralize(pending, "review")} left for you`].join(" · ")}</DashboardFoot>
+          <DashboardFoot>{[pluralize(total, "applicant in progress", "applicants in progress"), ...(statuses ? statuses.stages.slice(1).map(stage => pluralize(stage.count, ...stage.noun)) : []), `${pluralize(pending, "review")} left for you`].join(" · ")}</DashboardFoot>
         </> : empty(hasPermission(membership, "recruitment.manage") ? "No recruiting rounds yet." : "No rounds are available with your current review access.",
           hasPermission(membership, "recruitment.manage") ? <DashboardMore {...clubLinkProps(club.id, `/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=pipeline`)}>Set up rounds</DashboardMore> : undefined)}
       </DashboardCard>
@@ -125,7 +125,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
         <DashboardFoot>Recorded outcomes are visible to applicants; voting stays separate until published.</DashboardFoot>
       </DashboardCard>}
       {total > 0 && <DashboardCard id="dashboard-coverage" title="Reviewer progress" index={cards.length + 4} className="oc-coverage-panel">
-        <MetricTiles items={[{ label: "Applicants with a submitted review", value: reviewed, of: total }]} />
+        <MetricTiles items={[{ label: "In-progress applicants with a submitted review", value: reviewed, of: total }]} />
         <progress className="oc-dashboard-progress" value={reviewed} max={total} aria-label="Team review progress" />
       </DashboardCard>}
       {hasPermission(membership, "recruitment.manage") && <RecruitingInsightsCards clubId={club.id} index={cards.length + 5} />}

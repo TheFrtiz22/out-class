@@ -25,6 +25,8 @@ export function RecruitingInsightsCards({ clubId, index }: { clubId: string; ind
   return <>
     <DashboardCard id="dashboard-funnel" title="Conversion" aside={data.cycleName ?? undefined} index={index}>
       <MetricTiles items={[{ label: "Applied", value: f.applied }, { label: `Interviewed · ${rate(f.interviewed)}`, value: f.interviewed }, { label: `Admitted · ${rate(f.admitted)}`, value: f.admitted }, { label: `Joined · ${rate(f.joined)}`, value: f.joined }]} />
+      {/* Counts the whole cycle, so it differs from the in-progress count in Pipeline by round. */}
+      <DashboardFoot>Everyone who applied this cycle, including applicants already decided.</DashboardFoot>
     </DashboardCard>
     {data.reviewers.length > 0 && <DashboardCard id="dashboard-calibration" title="Reviewer calibration" index={index + 1}>
       {flagged.length ? <ul className="space-y-2 text-sm">{flagged.slice(0, 5).map(r => <li key={r.memberId}><strong className="font-medium">{r.name}</strong><span className="block text-muted-foreground">{calibrationLabel(r.offset)} · {r.compared} shared</span></li>)}</ul>
