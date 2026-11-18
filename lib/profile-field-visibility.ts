@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AppTransactionClient } from "@/utils/prisma";
 
 /**
  * Single source of truth for which applicant profile fields a club's leaders see.
@@ -133,12 +134,7 @@ export function allowedByProfileCeiling(field: string, visibility: ProfileFieldV
   return !cappedDisplayFields.has(field) || visibility[field as ProfileFieldKey] !== false;
 }
 
-type ClaimClient = {
-  club: {
-    findUnique(args: { where: { id: string }; select: { claimedAt: true; profileFieldVisibility: true } }): PromiseLike<{ claimedAt: Date | null; profileFieldVisibility: unknown } | null>;
-    update(args: { where: { id: string }; data: { claimedAt: Date; profileFieldVisibility?: ProfileFieldVisibility } }): PromiseLike<unknown>;
-  };
-};
+type ClaimClient = Pick<AppTransactionClient, "club">;
 
 /**
  * Marks a club claimed (an owner now runs it). A directory-imported club claimed for the first time, still on the

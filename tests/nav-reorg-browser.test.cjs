@@ -27,7 +27,8 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
     ['section=recruitment&tool=decisions&decisionTab=voting', { section: 'recruitment', tool: 'decisions', decisionTab: 'voting' }, 'Decide'],
     ['section=recruitment&tool=rules', { section: 'recruitment', tool: 'applicants', recruitingSettings: 'rules' }, 'Applicants'],
     ['section=recruitment&tool=rounds', { section: 'recruitment', tool: 'applicants', recruitingSettings: 'anonymous' }, 'Applicants'],
-    ['section=settings&setting=application', { section: 'recruitment', tool: 'application' }, 'Application'],
+    // Recruiting › Application has no rail entry; the rail lights Recruiting overview, which links to it.
+    ['section=settings&setting=application', { section: 'recruitment', tool: 'application' }, 'Recruiting overview'],
   ]
   for (const [from, to, current] of moves) {
     await open(from)
