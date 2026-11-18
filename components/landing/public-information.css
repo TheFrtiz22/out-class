@@ -285,7 +285,9 @@
 .oc-information main.oc-public-frame-main { background: transparent; }
 
 /* Security: compact topic rows (each a kicker and heading beside its prose) and one card grid. */
-.oc-security-page .oc-public-section.oc-security-topic { padding-block: clamp(40px, 5vw, 64px); border-top: 1px solid var(--border); }
+.oc-security-page .oc-public-section.oc-security-topic { padding-block: clamp(28px, 4vw, 48px); border-top: 1px solid var(--border); }
+/* On phones a topic stacks; its heading sits right above its prose instead of 36px away. */
+@media (max-width: 800px) { .oc-security-page .oc-security-topic.oc-editorial-split { gap: 12px; } }
 .oc-security-page .oc-security-topic:first-child { border-top: 0; }
 .oc-security-list { display: grid; gap: 12px; margin: 0 0 20px; padding-left: 20px; list-style: disc; }
 .oc-security-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 32px 0 0; padding: 0; list-style: none; }
