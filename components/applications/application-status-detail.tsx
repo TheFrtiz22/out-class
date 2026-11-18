@@ -4,11 +4,10 @@ import { RecruitmentOffer } from "./recruitment-offer"
 import { ArrowLeft, ArrowRight, CalendarDays } from "@/components/icons"
 import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { ClubLogo } from "@/components/club-logo"
-import { StatusPill } from "@/components/ui/status-pill"
 import { Button } from "@/components/ui/button"
 import { applicationStatusLabels, applicationNextStep } from "@/lib/student-applications"
 import { isApplicationDecision } from "@/lib/application-presentation"
-import { ApplicationStatusProgress, applicantDate } from "./application-status-card"
+import { ApplicationStatusProgress, InstructionsText, applicantDate, decisionLetterHref } from "./application-status-card"
 import type { StudentApplication } from "./application-form"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { PageHeader } from "@/components/ui/page-header"
@@ -27,9 +26,9 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
     </header>
     <p role="status" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
     <section className="oc-status-detail-update" data-status={app.status} aria-label="Current application status">
-      <div className="flex flex-wrap items-center gap-3"><h2 className="oc-section-heading">{applicationStatusLabels[app.status]}</h2><StatusPill status={app.status} /></div>
+      <h2 className="oc-section-heading">{applicationStatusLabels[app.status]}</h2>
       {!decision && app.round?.name && <p className="mt-2 text-sm text-muted-foreground">Current club round · {app.round.name}</p>}
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{applicationNextStep(app.status)}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground"><InstructionsText text={applicationNextStep(app.status)} href={decisionLetterHref(app)} /></p>
       {!!app.decisionLetters?.length && <Button asChild className="mt-4"><Link href={`/applications/${encodeURIComponent(app.id)}/decision`}>View Decision</Link></Button>}
       {!app.decisionLetters?.length && decision && <p className="mt-2 text-xs text-muted-foreground">Formal letter unavailable for this historical decision.</p>}
       {!app.decisionLetters?.length && (app.status === "ACCEPTED" || app.recruitmentOffer) && <RecruitmentOffer application={app} onChanged={onRefresh} onMyClubs={onMyClubs} />}

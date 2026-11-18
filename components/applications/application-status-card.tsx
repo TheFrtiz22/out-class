@@ -1,15 +1,28 @@
 "use client"
+import Link from "next/link"
 import { schedulingDateTime, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { ArrowRight, CalendarDays } from "@/components/icons"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Button } from "@/components/ui/button"
-import { applicationStatusLabels, applicationNextStep } from "@/lib/student-applications"
+import { applicationNextStep } from "@/lib/student-applications"
 import { applicationStatusProgress, currentApplicationInterview, applicationNeedsAttention, isApplicationDecision } from "@/lib/application-presentation"
 import type { StudentApplication } from "./application-form"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 
 export const applicantDate = (value: Date | string) => `${schedulingDateTime(value)} · ${SCHEDULING_TIMEZONE_LABEL}`
+const INSTRUCTIONS = "the club’s instructions"
+/** The club's instructions are its decision letter when one was sent; otherwise they sit in the application's status view. */
+export function decisionLetterHref(app: Pick<StudentApplication, "id" | "decisionLetters">) {
+  return app.decisionLetters?.length ? `/applications/${encodeURIComponent(app.id)}/decision` : null
+}
+/** Turns "the club’s instructions" in a status sentence into a link to them (or, without a letter, to the status view). */
+export function InstructionsText({ text, href, onOpen }: { text: string; href: string | null; onOpen?: () => void }) {
+  const at = text.indexOf(INSTRUCTIONS)
+  if (at < 0 || (!href && !onOpen)) return <>{text}</>
+  const label = text.slice(at, at + INSTRUCTIONS.length)
+  return <>{text.slice(0, at)}{href ? <Link className="oc-status-instructions" href={href}>{label}</Link> : <button type="button" className="oc-status-instructions" onClick={onOpen}>{label}</button>}{text.slice(at + INSTRUCTIONS.length)}</>
+}
 export function ApplicationStatusProgress({ application }: { application: StudentApplication }) {
   const { stages, current, previous } = applicationStatusProgress(application)
   return <ol className="oc-status-stages" aria-label={`Recruitment stages for ${application.club.name}`}>
@@ -29,7 +42,7 @@ export function ApplicationStatusCard({ application: app, now, onOpen }: { appli
     <ApplicationStatusProgress application={app} />
     <div className="oc-status-next">
       <div>{!decision && interview && !interview.past ? <><p className="oc-status-interview"><CalendarDays size={16} aria-hidden="true" />Interview · {applicantDate(interview.booking.slot.startTime)}</p><p>{interview.booking.slot.location || "Location not provided"}</p></>
-        : <><p className="oc-status-next-label">{applicationStatusLabels[app.status]}</p><p>{attention && decision ? "Accept or decline your club offer." : attention ? "You haven’t booked an interview for this round. Check available times and the club’s instructions." : !decision && interview?.past ? `Interview · ${applicantDate(interview.booking.slot.startTime)}. Check the club’s instructions for next steps.` : applicationNextStep(app.status)}</p></>}</div>
+        : <><p className="oc-status-next-label">Next step</p><p><InstructionsText href={attention ? null : decisionLetterHref(app)} onOpen={onOpen} text={attention && decision ? "Accept or decline your club offer." : attention ? "You haven’t booked an interview for this round. Check available times and the club’s instructions." : !decision && interview?.past ? `Interview · ${applicantDate(interview.booking.slot.startTime)}. Check the club’s instructions for next steps.` : applicationNextStep(app.status)} /></p></>}</div>
       <Button variant={attention ? "default" : "outline"} data-application-id={app.id} onClick={onOpen}>{attention ? decision ? "Review offer" : "Review interview" : "View details"}<ArrowRight size={16} aria-hidden="true" /></Button>
     </div>
   </article>
