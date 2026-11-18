@@ -7,7 +7,7 @@ import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import { Component, type ReactNode, useEffect, useState } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Text } from "~/components/text";
@@ -20,6 +20,11 @@ import { reportError } from "~/lib/report";
 import { ThemeProvider, useTheme } from "~/lib/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Optional at runtime: a build made before the module was added simply has no shortcuts.
+type QuickAction = { id: string; title: string; subtitle?: string; icon?: string; params?: { href?: string } };
+type QuickActionsModule = { initial?: QuickAction; setItems(items: QuickAction[]): Promise<void>; addListener(listener: (action: QuickAction) => void): { remove(): void } };
+const QuickActions: QuickActionsModule | null = (() => { try { return require("expo-quick-actions") as QuickActionsModule; } catch { return null; } })();
 
 /** `outclass://scan` and `outclass://pass` (home screen quick actions), and scanned-elsewhere `/q/<code>` universal links. */
 function shortcutRoute(url: string): string | { pathname: string; params: Record<string, string> } | null {
@@ -71,7 +76,21 @@ function Navigation() {
     resolveHref(path).then(route => router.push((route ?? { pathname: "/inbox" }) as never)).catch(() => {});
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
   }, [ready, session, lastResponse, router]);
-  // The long-press app-icon shortcuts (Scan, Check-in pass) arrive as deep links.
+  // Long-press app-icon shortcuts: offered only while signed in, and routed like any other link.
+  useEffect(() => {
+    QuickActions?.setItems(session ? [
+      { id: "scan", title: "Scan", subtitle: "Check in or open a code", icon: Platform.OS === "ios" ? "symbol:qrcode.viewfinder" : undefined, params: { href: "/scan" } },
+      { id: "pass", title: "Check-in pass", subtitle: "Show at the door", icon: Platform.OS === "ios" ? "symbol:person.text.rectangle" : undefined, params: { href: "/pass" } },
+    ] : [])?.catch(() => {});
+  }, [session]);
+  useEffect(() => {
+    if (!ready || !session || !QuickActions) return;
+    const go = (action: QuickAction | undefined) => { const href = action?.params?.href; if (href === "/scan" || href === "/pass") router.push(href); };
+    go(QuickActions.initial);
+    const subscription = QuickActions.addListener(go);
+    return () => subscription.remove();
+  }, [ready, session, router]);
+  // Deep links: `outclass://scan`, `outclass://pass`, and `/q/<code>` universal links.
   const url = Linking.useURL();
   useEffect(() => {
     if (!ready || !session || !url) return;

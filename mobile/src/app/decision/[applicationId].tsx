@@ -114,7 +114,7 @@ export default function DecisionScreen() {
             ) : null}
             {/* An offer waiting on the student comes before the letter, so Accept and Decline are on screen without scrolling. */}
             {active ? response : null}
-            {letter ? <LetterPaper content={letter} /> : (
+            {letter ? <LetterPaper content={letter} logo={data.letter ? { applicationId, letterId: data.letter.id } : undefined} /> : (
               <Card style={{ gap: 10, paddingVertical: 24 }}>
                 <Text variant="title" accessibilityRole="header">Your decision</Text>
                 <Text variant="body">Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</Text>

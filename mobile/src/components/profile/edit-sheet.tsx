@@ -8,6 +8,7 @@ import { ScrollView, Switch, View, useWindowDimensions } from "react-native";
 import { Field } from "~/components/field";
 import { Camera, FileText, ImagePlus, Plus, Trash2, Upload } from "~/components/icons";
 import { FilterChips } from "~/components/inbox/filter-chips";
+import { PrivateImage, photoParams } from "~/components/private-image";
 import { genderValues, graduationYearOptions, initials, isStoragePath, pronounValues, scholarLabels, scholarPrograms, sectionOrder, sectionPayload, sectionSnapshot, sectionTitles, toggleScholar } from "~/components/profile/model";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
@@ -178,7 +179,8 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
                 <Text variant="smallStrong">Profile photo (JPEG, PNG or WebP, up to 5 MB)</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <View accessible={false} style={{ width: 64, height: 64, borderRadius: 32, overflow: "hidden", backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
-                    {photoPreview && draft.headshotUrl ? <Image source={{ uri: photoPreview }} style={{ width: 64, height: 64 }} contentFit="cover" /> : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.sansMedium, fontSize: 22, lineHeight: 28, color: colors.primary }}>{initials(draft)}</Text>}
+                    {photoPreview && draft.headshotUrl ? <Image source={{ uri: photoPreview }} style={{ width: 64, height: 64 }} contentFit="cover" />
+                      : <PrivateImage own kind="profile-photos" params={photoParams(draft.headshotUrl)} style={{ width: 64, height: 64 }} fallback={<Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.sansMedium, fontSize: 22, lineHeight: 28, color: colors.primary }}>{initials(draft)}</Text>} />}
                   </View>
                   <Text variant="small" style={{ flex: 1 }}>{draft.headshotUrl ? "A photo is on your profile." : "No photo added."}</Text>
                 </View>

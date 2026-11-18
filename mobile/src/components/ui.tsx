@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import type { IconComponent } from "~/components/icon-factory";
 import { Text } from "~/components/text";
+import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
 import { spring } from "~/lib/motion";
 import { fonts, useTheme } from "~/lib/theme";
@@ -108,13 +109,17 @@ export function statusTone(code: string): ChipTone {
   return ({ DRAFTING: "warning", SUBMITTED: "info", IN_REVIEW: "info", INTERVIEWING: "interview", ACCEPTED: "success", REJECTED: "neutral", WAITLISTED: "neutral" } as Record<string, ChipTone>)[code] ?? "neutral";
 }
 
+const CLUB_ASSET = /^club-assets\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/;
 /** A club's mark: its logo when it has one, otherwise its initials on the club colour. */
 export function ClubMark({ name, color, logoUrl, size = 44 }: { name: string; color?: string | null; logoUrl?: string | null; size?: number }) {
   const { radius } = useTheme();
   const initials = name.split(/\s+/).filter(word => /^[A-Za-z0-9]/.test(word)).slice(0, 2).map(word => word[0]!.toUpperCase()).join("");
+  // An uploaded logo is a stored reference the site serves publicly (lib/club-assets.ts clubAssetSource); an address is used as is.
+  const logo = !logoUrl ? null : CLUB_ASSET.test(logoUrl) ? `${config.apiUrl}/api/club-assets?reference=${encodeURIComponent(logoUrl)}`
+    : logoUrl.startsWith("/") && !logoUrl.startsWith("//") ? `${config.apiUrl}${logoUrl}` : /^https?:\/\//i.test(logoUrl) ? logoUrl : null;
   return (
     <View accessible={false} style={{ width: size, height: size, borderRadius: Math.min(radius.md, size / 3.4), backgroundColor: color || "#142d4e", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-      {logoUrl ? <Image source={{ uri: logoUrl }} style={{ width: size, height: size }} contentFit="cover" transition={150} />
+      {logo ? <Image source={{ uri: logo }} style={{ width: size, height: size }} contentFit="cover" transition={150} />
         : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.displayStrong, fontSize: size * 0.36, lineHeight: size * 0.44, color: "#ffffff" }}>{initials}</Text>}
     </View>
   );

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { View } from "react-native";
 import { OWN_APPLICATION_MESSAGE, POLL_MS, type RoomSnapshot } from "~/components/voting/room";
+import { PrivateImage, photoParams } from "~/components/private-image";
 import { Text } from "~/components/text";
 import { Button, Card, Divider, Skeleton } from "~/components/ui";
 import { api } from "~/lib/api";
@@ -61,9 +62,10 @@ export function ApplicantSlide({ room, applicationId, position, live, result, on
     <Card testID="voting-applicant" accessibilityLabel="Current applicant presentation" style={{ gap: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
         {slide.showPhoto ? (
-          // Applicant photos are served by a cookie-authenticated route the app cannot use; initials stand in.
-          <View accessible={false} style={{ width: 56, height: 56, borderRadius: radius.full, backgroundColor: colors.brandSubtle, alignItems: "center", justifyContent: "center" }}>
-            <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.displayStrong, fontSize: 20, lineHeight: 26, color: colors.brandInk }}>{slide.anonymous ? "" : initials(slide.name)}</Text>
+          // The slide's photo address is the server's, scoped to this session; kept in memory only. Initials stand in without one.
+          <View accessible={false} style={{ width: 56, height: 56, borderRadius: radius.full, overflow: "hidden", backgroundColor: colors.brandSubtle, alignItems: "center", justifyContent: "center" }}>
+            <PrivateImage kind="profile-photos" params={slide.anonymous ? null : photoParams(slide.photo)} style={{ width: 56, height: 56 }}
+              fallback={<Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.displayStrong, fontSize: 20, lineHeight: 26, color: colors.brandInk }}>{slide.anonymous ? "" : initials(slide.name)}</Text>} />
           </View>
         ) : null}
         <View style={{ flex: 1, gap: 2 }}>

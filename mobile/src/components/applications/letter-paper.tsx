@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import Svg, { Circle, Defs, Path, Text as SvgText, TextPath } from "react-native-svg";
+import { PrivateImage } from "~/components/private-image";
 import { Text } from "~/components/text";
 import { fonts, useTheme } from "~/lib/theme";
 import type { LetterContent } from "~/lib/types";
@@ -35,13 +36,15 @@ function LetterSeal({ clubName, color }: { clubName: string; color: string }) {
  * The published letter is structured text: title, body paragraphs separated by blank lines,
  * closing, signer and footer, rendered natively.
  */
-export function LetterPaper({ content }: { content: LetterContent }) {
+export function LetterPaper({ content, logo }: { content: LetterContent; logo?: { applicationId: string; letterId: string } }) {
   const { colors, radius, dark } = useTheme();
   // The club's accent marks the letter on paper; on the dark surface it would not be legible.
   const accent = !dark && /^#[\da-f]{6}$/i.test(content.accent) ? content.accent : colors.foreground;
   return (
     <View accessibilityLabel="Formal decision letter" testID="decision-letter" style={{ backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 22, paddingVertical: 28, gap: 18 }}>
       <View style={{ alignItems: "center", gap: 4 }}>
+        {/* The logo published with this letter (web: /api/decision-letter-assets). Nothing shows when there is none. */}
+        {logo && content.logoReference ? <PrivateImage kind="decision-letter-assets" params={logo} contentFit="contain" accessibilityLabel={`${content.clubName} logo`} style={{ width: 72, height: 72, borderRadius: radius.md, marginBottom: 8 }} /> : null}
         <Text variant="eyebrow" align="center" color={accent}>{content.clubName}</Text>
         <Text variant="caption" align="center">Recruitment correspondence</Text>
         <View style={{ width: 56, height: 2, backgroundColor: accent, marginTop: 10 }} />

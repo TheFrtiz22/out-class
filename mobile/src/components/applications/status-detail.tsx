@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Linking, View } from "react-native";
 import { ArrowRight, CalendarDays, ChevronDown, ChevronUp, FileText } from "~/components/icons";
+import { openPrivateDocument } from "~/components/private-image";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, ClubMark, Divider, Press, TARGET, statusTone } from "~/components/ui";
 import { useTheme } from "~/lib/theme";
@@ -62,7 +63,11 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
                 <Text variant="small" color={colors.foreground} style={{ textDecorationLine: "underline" }}>Open submitted document</Text>
               </Press>
             ) : attachment ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><FileText size={16} color={colors.mutedForeground} /><Text variant="small">Uploaded PDF</Text></View>
+              // An uploaded PDF: the saved answer's own file through the media route; the server decides who may read it.
+              <Press testID={`application-attachment-${index + 1}`} onPress={() => { void openPrivateDocument("application-attachments", { applicationId: app.id, questionId: question.id }); }} accessibilityRole="link" accessibilityLabel="Open submitted document" style={{ minHeight: TARGET, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
+                <FileText size={16} color={colors.mutedForeground} />
+                <Text variant="small" color={colors.foreground} style={{ textDecorationLine: "underline" }}>Open submitted document</Text>
+              </Press>
             ) : <Text variant="small" selectable style={{ lineHeight: 24 }}>{shown || "No response provided."}</Text>}
           </View>
         );

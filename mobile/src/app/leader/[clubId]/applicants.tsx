@@ -5,6 +5,7 @@ import { FlatList, RefreshControl, ScrollView, StyleSheet, TextInput, View } fro
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
 import { ExternalLink, Search, ShieldCheck } from "~/components/icons";
+import { PrivateImage, photoParams } from "~/components/private-image";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, ErrorState, Press, Skeleton, SkeletonRows, TARGET, statusTone } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
@@ -137,9 +138,12 @@ export default function Applicants() {
           return (
             <Press large testID={`applicant-${item.id}`} accessibilityRole="link" accessibilityLabel={`Open ${name}`} accessibilityHint="Opens on the web" onPress={() => { openOnWeb(`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants&applicantId=${encodeURIComponent(item.id)}`); }}>
               <Card style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                {/* Applicant photos are served by a cookie-authenticated route the app cannot use; initials stand in, as on the web's list. */}
-                <View accessible={false} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.brandSubtle, alignItems: "center", justifyContent: "center" }}>
-                  {hidden ? <ShieldCheck size={18} color={colors.brandInk} /> : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.sansSemibold, fontSize: 15, lineHeight: 20, color: colors.brandInk }}>{name.split(/\s+/).map(part => part[0]).slice(0, 2).join("").toUpperCase()}</Text>}
+                {/* A photo shows only when the server's projection carries one for this viewer; its address already holds the scope the server authorizes (club, application, mode). Kept in memory only. */}
+                <View accessible={false} style={{ width: 44, height: 44, borderRadius: 22, overflow: "hidden", backgroundColor: colors.brandSubtle, alignItems: "center", justifyContent: "center" }}>
+                  {hidden ? <ShieldCheck size={18} color={colors.brandInk} /> : (
+                    <PrivateImage kind="profile-photos" params={fields?.photo !== false ? photoParams(profile?.headshotUrl) : null} style={{ width: 44, height: 44 }}
+                      fallback={<Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.sansSemibold, fontSize: 15, lineHeight: 20, color: colors.brandInk }}>{name.split(/\s+/).map(part => part[0]).slice(0, 2).join("").toUpperCase()}</Text>} />
+                  )}
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text variant="card" numberOfLines={1}>{name}</Text>

@@ -33,10 +33,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSCalendarsFullAccessUsageDescription: "OutClass adds interviews and events to your calendar when you ask it to.",
       NSCalendarsWriteOnlyAccessUsageDescription: "OutClass adds interviews and events to your calendar when you ask it to.",
       ITSAppUsesNonExemptEncryption: false,
-      UIApplicationShortcutItems: [
-        { UIApplicationShortcutItemType: "net.outclass.app.scan", UIApplicationShortcutItemTitle: "Scan", UIApplicationShortcutItemIconType: "UIApplicationShortcutIconTypeCapturePhoto" },
-        { UIApplicationShortcutItemType: "net.outclass.app.pass", UIApplicationShortcutItemTitle: "Check-in pass", UIApplicationShortcutItemIconType: "UIApplicationShortcutIconTypeContact" },
-      ],
     },
     privacyManifests: {
       NSPrivacyTracking: false,
@@ -76,6 +72,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-sharing",
     "expo-audio",
     "expo-localization",
+    // Long-press app-icon shortcuts (Scan, Check-in pass). Items are set at runtime in src/app/_layout.tsx.
+    "expo-quick-actions",
     ["expo-build-properties", { ios: { deploymentTarget: "17.0" } }],
   ],
   experiments: { reactCompiler: true },

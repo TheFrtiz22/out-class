@@ -8,7 +8,8 @@ import { Header, useHeaderInset } from "~/components/header";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Check, ChevronRight, ExternalLink, FileText, Linkedin, Pencil, Settings } from "~/components/icons";
 import { EditProfileSheet } from "~/components/profile/edit-sheet";
-import { initials, profileChecklist, resumeHref, safeProfileUrl, scholarSummary } from "~/components/profile/model";
+import { PrivateImage, openPrivateDocument, photoParams } from "~/components/private-image";
+import { initials, isStoragePath, profileChecklist, resumeHref, safeProfileUrl, scholarSummary } from "~/components/profile/model";
 import { Text } from "~/components/text";
 import { Button, Card, Divider, ErrorState, IconButton, Row, ScreenScroll, Skeleton } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
@@ -31,8 +32,9 @@ export default function Profile() {
   useRefetchOnFocus(query);
   const [editing, setEditing] = useState<ProfileSectionId | null>(null);
   const [lastSection, setLastSection] = useState<ProfileSectionId>("identity");
-  // TODO(profile.media): the saved headshot cannot be shown yet (see the note below); a photo chosen in this session can.
+  // A photo chosen in this session shows at once; the saved one comes through the media route.
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
+  const [resumeNote, setResumeNote] = useState("");
   const profile = query.data?.profile ?? null;
   const edit = (section: ProfileSectionId) => { setLastSection(section); setEditing(section); };
 
@@ -69,7 +71,8 @@ export default function Profile() {
             <View style={{ flexDirection: "row", gap: 16, alignItems: "flex-start" }}>
               <View accessible={false} testID="profile-avatar" style={{ width: 80, height: 80, borderRadius: 40, overflow: "hidden", backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
                 {localPhoto && profile.headshotUrl ? <Image source={{ uri: localPhoto }} style={{ width: 80, height: 80 }} contentFit="cover" />
-                  : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.sansMedium, fontSize: 28, lineHeight: 34, color: colors.primary }}>{initials(profile)}</Text>}
+                  : <PrivateImage own kind="profile-photos" params={photoParams(profile.headshotUrl)} style={{ width: 80, height: 80 }}
+                      fallback={<Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.sansMedium, fontSize: 28, lineHeight: 34, color: colors.primary }}>{initials(profile)}</Text>} />}
               </View>
               <View style={{ flex: 1, gap: 8 }}>
                 <Text variant="title" accessibilityRole="header" testID="profile-name">{profile.firstName} {profile.lastName}</Text>
@@ -77,8 +80,14 @@ export default function Profile() {
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
                   <Button size="compact" icon={Pencil} testID="profile-edit" label="Edit profile" onPress={() => edit("identity")} />
                   {linkedin ? <Button size="compact" variant="secondary" icon={Linkedin} testID="profile-linkedin-open" label="LinkedIn" accessibilityHint="Opens in the browser" onPress={() => { openExternal(linkedin); }} /> : null}
-                  {resume ? <Button size="compact" variant="secondary" icon={FileText} testID="profile-resume-view" label="View résumé" accessibilityHint="Opens in the browser" onPress={() => { if (/^https?:\/\//i.test(resume)) openExternal(resume); else openOnWeb(resume); }} /> : null}
+                  {resume ? <Button size="compact" variant="secondary" icon={FileText} testID="profile-resume-view" label="View résumé" accessibilityHint="Opens in the browser" onPress={async () => {
+                    setResumeNote("");
+                    if (/^https?:\/\//i.test(resume)) { openExternal(resume); return; }
+                    // An uploaded PDF: the owner's own file, through the media route.
+                    if (isStoragePath(profile.resumeUrl) ? !(await openPrivateDocument("resumes", { path: profile.resumeUrl! })) : !(await openOnWeb(resume))) setResumeNote(errorMessage(null));
+                  }} /> : null}
                 </View>
+                {resumeNote ? <Text variant="small" accessibilityRole="alert" color={colors.destructive}>{resumeNote}</Text> : null}
               </View>
             </View>
             <AlumniBanner />
