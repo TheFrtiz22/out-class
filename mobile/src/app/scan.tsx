@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Linking, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,24 +17,23 @@ import { useQueryClient } from "@tanstack/react-query";
 type Phase = { name: "scanning" } | { name: "working" } | { name: "result"; outcome: ScanOutcome } | { name: "message"; title: string; body: string };
 
 /** The universal scanner: OutClass check-in, club, voting and live-room codes. Everything else is politely declined. */
-export default function Scan() {
+export function ScanScreen({ initialCode }: { initialCode?: string }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [permission, requestPermission] = useCameraPermissions();
-  const [phase, setPhase] = useState<Phase>({ name: "scanning" });
+  const [phase, setPhase] = useState<Phase>(initialCode ? { name: "working" } : { name: "scanning" });
   const busy = useRef(false);
-  // Opened from a `/q/<code>` universal link: redeem that code without the camera.
-  const { code: linkedCode } = useLocalSearchParams<{ code?: string }>();
+  // Opened for one code (a `/q/<code>` link, src/app/q/[code].tsx): redeem it without the camera.
   const linked = useRef(false);
   useEffect(() => {
-    if (!linkedCode || linked.current) return;
+    if (!initialCode || linked.current) return;
     linked.current = true;
-    onScanned(`${config.apiUrl}/q/${linkedCode}`);
+    onScanned(`${config.apiUrl}/q/${initialCode}`);
     // Runs once for the code this screen was opened with.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkedCode]);
+  }, [initialCode]);
 
   async function onScanned(text: string) {
     if (busy.current) return;
@@ -61,7 +60,8 @@ export default function Scan() {
   }
   const again = () => { busy.current = false; setPhase({ name: "scanning" }); };
 
-  const granted = !!permission?.granted;
+  // A linked code is redeemed without the camera, so it never asks for camera access.
+  const granted = !!permission?.granted || (!!initialCode && phase.name !== "scanning");
   return (
     <View style={{ flex: 1, backgroundColor: "#000000" }} testID="scan-screen">
       {granted && phase.name === "scanning" ? (
@@ -125,4 +125,8 @@ export default function Scan() {
       )}
     </View>
   );
+}
+
+export default function Scan() {
+  return <ScanScreen />;
 }

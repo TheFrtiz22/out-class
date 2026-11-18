@@ -1,0 +1,15 @@
+# Turn on "Push notifications on this device" from the app's own switch and accept the system prompt.
+appId: net.outclass.app
+---
+- openLink: "outclass://settings/notifications"
+- extendedWaitUntil:
+    visible:
+      id: "preferences-push"
+    timeout: 30000
+- tapOn:
+    id: "preferences-push"
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"

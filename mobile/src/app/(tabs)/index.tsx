@@ -34,7 +34,7 @@ export default function Home() {
             <Card style={{ gap: 10 }}><Skeleton width="40%" /><Skeleton width="80%" height={22} /><Skeleton width={120} height={44} radius={22} /></Card>
             <SkeletonRows count={3} />
           </>
-        ) : home.isError ? (
+        ) : home.isError && !data ? (
           <ErrorState message={errorMessage(home.error)} offline={home.error instanceof ApiError && home.error.offline} onRetry={refresh} />
         ) : data ? (
           <>

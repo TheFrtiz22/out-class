@@ -92,7 +92,11 @@ export async function handleMobileRequest(request: Request, name: string, operat
         const state = await getSessionState();
         if (state.secondFactorPending) return refusal(401, "TWO_STEP_REQUIRED", TWO_STEP_REQUIRED_MESSAGE);
         const { data: { user }, error } = state.identity;
-        if (error && !providerAuthFailure(error)) return refusal(503, AUTH_UNAVAILABLE, AUTH_UNAVAILABLE_MESSAGE);
+        if (error && !providerAuthFailure(error)) {
+          // An Auth outage, not a sign-out. Name and status only, so a recurring cause can be traced.
+          console.warn(JSON.stringify({ event: "mobile.auth.unavailable", operation: name, error: error.name, status: (error as { status?: unknown }).status ?? null }));
+          return refusal(503, AUTH_UNAVAILABLE, AUTH_UNAVAILABLE_MESSAGE);
+        }
         if (!user) return found.public ? await execute() : refusal(401, "UNAUTHENTICATED", "Sign in to continue.");
         const limit = rateLimiter.check(RATE_LIMITS.mobileApi, `user:${user.id}`);
         if (!limit.ok) return refusal(429, "RATE_LIMITED", RATE_LIMIT_MESSAGE, rateLimitHeaders(limit.retryAfterSeconds));

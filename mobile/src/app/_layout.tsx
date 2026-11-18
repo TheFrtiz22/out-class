@@ -3,7 +3,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import { Component, type ReactNode, useEffect, useState } from "react";
@@ -26,17 +25,6 @@ type QuickAction = { id: string; title: string; subtitle?: string; icon?: string
 type QuickActionsModule = { initial?: QuickAction; setItems(items: QuickAction[]): Promise<void>; addListener(listener: (action: QuickAction) => void): { remove(): void } };
 const QuickActions: QuickActionsModule | null = (() => { try { return require("expo-quick-actions") as QuickActionsModule; } catch { return null; } })();
 
-/** A `/q/<code>` universal link opened from outside the app: redeem it in the scanner screen. */
-function shortcutRoute(url: string): string | { pathname: string; params: Record<string, string> } | null {
-  try {
-    const parsed = new URL(url);
-    // `outclass://…` links are routes already: Expo Router opens them (with their parameters) on its own.
-    if (parsed.protocol === "outclass:") return null;
-    const parts = parsed.pathname.split("/").filter(Boolean);
-    if (parts.length === 2 && parts[0] === "q" && /^[a-zA-Z0-9_-]{1,32}$/.test(parts[1]!)) return { pathname: "/scan", params: { code: parts[1]! } };
-  } catch { /* not a link for this app */ }
-  return null;
-}
 
 /** The last line of defence: a calm screen and a way back, never a white screen. */
 class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -91,13 +79,6 @@ function Navigation() {
     const subscription = QuickActions.addListener(go);
     return () => subscription.remove();
   }, [ready, session, router]);
-  // Deep links: `outclass://scan`, `outclass://pass`, and `/q/<code>` universal links.
-  const url = Linking.useURL();
-  useEffect(() => {
-    if (!ready || !session || !url) return;
-    const target = shortcutRoute(url);
-    if (target) router.push(target as never);
-  }, [ready, session, url, router]);
 
   return (
     <>
@@ -106,6 +87,7 @@ function Navigation() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="sign-in" options={{ animation: "fade" }} />
         <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="q/[code]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="pass" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
       </Stack>
     </>
