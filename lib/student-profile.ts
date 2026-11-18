@@ -138,6 +138,7 @@ export function profileChecklist(profile: FullStudentProfile) {
     { label: "Name", complete: Boolean(profile.firstName.trim() && profile.lastName.trim()) },
     { label: "Education", complete: Boolean(profile.major.trim() && profile.gradYear) },
     { label: "Résumé", complete: Boolean(resolveResumeUrl(profile.resumeUrl)) },
+    { label: "Experience", complete: (profile.experiences ?? []).some(item => item.title.trim()) },
     { label: "LinkedIn", complete: Boolean(safeProfileUrl(profile.linkedinUrl)) },
   ]
 }
