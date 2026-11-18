@@ -192,9 +192,18 @@ test('responses finishing together still collapse the final request',async()=>{
   assert.equal(h.render().props['data-collapsing'],true);await h.flush();await h.finishCollapse();assert.equal(h.render(),null);
 });
 
-test('Settings explains missing university proof and conceals previously loaded invitations on a denied refresh',async()=>{
- let denied=false;const h=container({getOrganizationInvitations:async()=>{if(denied)throw Object.assign(Error('Verify your university email through the normal email verification or password recovery flow before responding to invitations.'),{userFacing:true});return[invitation()]}},{includeDismissed:true});
+test('My Clubs explains missing university proof, links to Account settings and conceals previously loaded invitations on a denied refresh',async()=>{
+ let denied=false;const h=container({getOrganizationInvitations:async()=>{if(denied)throw Object.assign(Error('To see club invitations, confirm your UVA email: send yourself a password reset from Account settings, then sign in again.'),{userFacing:true,code:'UNIVERSITY_VERIFICATION_REQUIRED'});return[invitation()]}},{includeDismissed:true});
  h.render();await h.flush();assert.equal(cards(h.render()).length,1);
  denied=true;h.context().refresh();h.render();await h.flush();const tree=h.render();
- assert.equal(cards(tree).length,0);assert.match(JSON.stringify(tree),/Verify your university email/);assert.ok(nodes(tree).some(n=>n.props?.role==='alert'));
+ assert.equal(cards(tree).length,0);assert.equal(h.context().block,'verify');
+ const text=JSON.stringify(tree);assert.match(text,/confirm your UVA email/);assert.doesNotMatch(text,/normal email verification|password recovery flow/);
+ assert.ok(nodes(tree).some(n=>n.type==='Link'&&n.props.href==='/settings/account'));assert.ok(!nodes(tree).some(n=>n.props?.children==='Try again'));
+});
+
+test('a generic invitation-check failure keeps Retry and names no verification step',async()=>{
+ const h=container({getOrganizationInvitations:async()=>{throw Object.assign(Error('Could not load this workspace. Try again.'),{userFacing:true,code:'USER_FACING'})}},{includeDismissed:true});
+ h.render();await h.flush();const tree=h.render();
+ assert.equal(h.context().block,null);assert.ok(nodes(tree).some(n=>n.props?.role==='alert'));assert.ok(nodes(tree).some(n=>n.props?.children==='Try again'));
+ assert.ok(!nodes(tree).some(n=>n.type==='Link'));
 });

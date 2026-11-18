@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context";
 import { invitationProfileDefaults, type InvitationProfileDefaults } from "@/lib/organization-claiming";
 import { OrganizationInvitationCard, type InvitationChange } from "@/components/organization-invitation-card";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { UNIVERSITY_VERIFICATION_HREF } from "@/lib/invitation-access";
 
 /** Retains the existing integration point for member invitations and owner claims. */
 export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, includeDismissed = false }: {
@@ -13,7 +15,7 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
   onProfileDefaults?: (defaults: InvitationProfileDefaults) => void;
   includeDismissed?: boolean;
 }) {
-  const { invitations: pending, loading, failed, notice, refresh, changed } = useOrganizationInvitations();
+  const { invitations: pending, loading, failed, block, notice, refresh, changed } = useOrganizationInvitations();
   const invitations = includeDismissed ? pending : pending.filter(invitation => !invitation.dismissedAt);
   const [collapseHeight, setCollapseHeight] = useState<number | null>(null);
   const attention = useRef<HTMLDivElement>(null);
@@ -64,12 +66,12 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
   if (!invitations.length && !loading && !failed) return null;
   return <section aria-label="Pending organization invitations" className="mb-6 min-w-0 max-w-[var(--oc-content-width)] space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-2">
-      <div><h2 className="oc-section-heading">Pending invitations</h2><p className="mt-1 text-sm text-muted-foreground">Includes any you set aside with Not now.</p></div>
+      <div><h2 className="oc-section-heading">Pending invitations</h2>{!failed && <p className="mt-1 text-sm text-muted-foreground">Includes any you set aside with Not now.</p>}</div>
     </header>
     {onProfileDefaults && invitations.length > 0 && <p className="text-sm text-muted-foreground">Invitation details may fill blank profile fields. Review and edit your name and graduation year before saving.</p>}
     {notice && !failed && <p role="status" className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">{notice}</p>}
     {loading && !invitations.length ? <LoadingState label="Checking organization invitations…" layout="feed" rows={2} />
-      : failed ? <div className="rounded-xl border p-4 space-y-3"><p role="alert">{notice || "Could not check organization invitations."}</p><Button variant="outline" onClick={refresh}>Try again</Button></div>
+      : failed ? <div className="rounded-xl border p-4 space-y-3"><p role={block === "verify" ? "status" : "alert"}>{notice || "Couldn’t check invitations. Try again."}</p>{block === "verify" ? <Button asChild variant="outline"><Link href={UNIVERSITY_VERIFICATION_HREF}>Account settings</Link></Button> : <Button variant="outline" onClick={refresh}>Try again</Button>}</div>
       : <ul className="space-y-3">{invitations.map(invitation => <OrganizationInvitationCard key={invitation.id} invitation={invitation} onChanged={changed} allowDecline />)}</ul>}
   </section>;
 }

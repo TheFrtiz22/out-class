@@ -1,8 +1,14 @@
 import type { Notification, TrackedApplication } from "@/lib/data"
 
 /** Exact destinations supplied by notifications take precedence over legacy UI actions. */
+/** Club invitations are answered in My Clubs, alongside any others pending. */
+export const INVITATIONS_HREF = "/clubs"
+const legacyInvitationPath = (path: string) => path.startsWith("/invitations") || path === "/settings/organizations"
+
 export function notificationDestination(item: Notification, applications: Pick<TrackedApplication, "clubId" | "status">[] = []) {
   const href = item.taskHref || item.href
+  // Voting session invitations share this type and keep their own room link.
+  if (item.type === "Club Invitation" && (!href || legacyInvitationPath(new URL(href, "https://outclass.local").pathname))) return { kind: "href", href: INVITATIONS_HREF } as const
   if (href) {
     // Announcements currently target the general inbox. Read them inline rather
     // than moving there; Expand and View all remain the explicit inbox actions.

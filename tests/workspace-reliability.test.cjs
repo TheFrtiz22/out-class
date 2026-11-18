@@ -15,8 +15,8 @@ test('voting GET allowlist validates scope, uses private no-store responses and 
 });
 test('workspace reads carry no client identity, bound slow reads, and expose only allowlisted invitation recovery messages',async t=>{
  const previous=global.fetch;t.after(()=>global.fetch=previous);const {readWorkspace}=loader()('lib/workspace-read.ts');
- for(const [code,message] of [['UNIVERSITY_VERIFICATION_REQUIRED',/Verify your university email/],['UNIVERSITY_VERIFICATION_UNAVAILABLE',/temporarily unavailable/],['internal secret',/Your access changed/]]){
+ for(const [code,message] of [['UNIVERSITY_VERIFICATION_REQUIRED',/confirm your UVA email/],['UNIVERSITY_VERIFICATION_UNAVAILABLE',/can’t be checked right now/],['internal secret',/Your access changed/]]){
  global.fetch=async(url,options)=>{assert.match(url,/^\/api\/workspace\?/);assert.equal(options.credentials,'same-origin');assert.equal(options.cache,'no-store');assert.ok(options.signal);return{ok:false,status:403,json:async()=>({error:code})}};
- await assert.rejects(readWorkspace('invitations',[true]),message);
+ await assert.rejects(readWorkspace('invitations',[true]),error=>message.test(error.message)&&!/normal email verification|password recovery flow/.test(error.message)&&(code.startsWith('UNIVERSITY_')?error.code===code:true));
  }
 });

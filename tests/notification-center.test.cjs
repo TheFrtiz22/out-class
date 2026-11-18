@@ -34,6 +34,8 @@ function harness(api = {}) {
 
 test('exact task, decision, interview and invitation destinations are preserved; general inbox updates read inline', () => {
   for (const href of ['/applications/a/decision?letterId=v2', '/club/b/workspace?section=recruitment&tool=interviews&assignmentId=x', '/invitations/invite', '/settings/interviews']) assert.deepEqual(presentation.notificationDestination(notification('a', { href })), { kind: 'href', href })
+  for (const href of [undefined, '', '/invitations/invite', '/settings/organizations']) assert.deepEqual(presentation.notificationDestination(notification('a', { href, type: 'Club Invitation', cta: 'Review invitation', clubId: 'club' })), { kind: 'href', href: '/clubs' })
+  assert.deepEqual(presentation.notificationDestination(notification('a', { href: '/voting/rooms/r?clubId=c&view=member', type: 'Club Invitation' })), { kind: 'href', href: '/voting/rooms/r?clubId=c&view=member' })
   assert.deepEqual(presentation.notificationDestination(notification('a', { taskHref: '/club/c/workspace?section=tasks&taskId=t' })), { kind: 'href', href: '/club/c/workspace?section=tasks&taskId=t' })
   assert.deepEqual(presentation.notificationDestination(notification('a', { href: '/?workspace=student&view=inbox', type: 'Announcement' })), { kind: 'detail' })
   assert.deepEqual(presentation.notificationDestination(notification('a', { href: '/inbox', type: 'Announcement' })), { kind: 'detail' })
