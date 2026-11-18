@@ -8,7 +8,7 @@
 export const CSP_REPORT_MAX_BYTES = 8 * 1024
 const MAX_REPORTS_PER_BODY = 10
 
-export type CspViolationSummary = { directive: string; blocked: string; path: string; disposition: "enforce" | "report" }
+export type CspViolationSummary = { directive: string; blocked: string; path: string; disposition: "enforce" | "report"; asset?: string; source?: string }
 
 const clip = (value: unknown, max = 64) => typeof value === "string" ? value.slice(0, max).replace(/[^\w\-.:/' *]/g, "") : ""
 
@@ -18,6 +18,24 @@ function blockedSource(value: unknown) {
   if (/^(data|blob|about|filesystem|mediastream):/i.test(value)) return value.slice(0, value.indexOf(":")).toLowerCase()
   try { const url = new URL(value); return url.protocol.startsWith("http") || url.protocol.startsWith("ws") ? url.origin.slice(0, 120) : url.protocol.replace(":", "") }
   catch { return clip(value, 32) || "unknown" }
+}
+
+/**
+ * Public build files are named by content hash and hold no personal data, so their path is kept:
+ * it says which chunk or worker a report is about. Any other URL keeps only what blockedSource keeps.
+ */
+function publicAsset(value: unknown) {
+  if (typeof value !== "string") return undefined
+  try {
+    const url = new URL(value)
+    return /^\/(?:_next\/static|pdfjs)\//.test(url.pathname) ? url.pathname.replace(/[^\w\-./()[\]]/g, "").slice(0, 120) : undefined
+  } catch { return undefined }
+}
+
+/** Where the violating code ran: a public build file's path, or else the origin or scheme (for example chrome-extension). */
+function sourceFile(value: unknown) {
+  if (typeof value !== "string" || !value) return undefined
+  return publicAsset(value) ?? blockedSource(value)
 }
 
 /** Path only, with ids (UUIDs, cuids, long numbers or tokens) masked so a record is never identifiable. */
@@ -30,6 +48,8 @@ function documentPath(value: unknown) {
   ).join("/").slice(0, 120) || "/"
 }
 
+const optional = (key: "asset" | "source", value: string | undefined) => value ? { [key]: value } : {}
+
 function summarize(raw: Record<string, unknown>): CspViolationSummary | null {
   // report-uri uses kebab-case; the Reporting API (report-to) uses camelCase.
   const directive = clip(raw["effective-directive"] ?? raw.effectiveDirective ?? raw["violated-directive"], 40).split(" ")[0]
@@ -39,6 +59,8 @@ function summarize(raw: Record<string, unknown>): CspViolationSummary | null {
     blocked: blockedSource(raw["blocked-uri"] ?? raw.blockedURL),
     path: documentPath(raw["document-uri"] ?? raw.documentURL),
     disposition: raw.disposition === "enforce" ? "enforce" : "report",
+    ...optional("asset", publicAsset(raw["blocked-uri"] ?? raw.blockedURL)),
+    ...optional("source", sourceFile(raw["source-file"] ?? raw.sourceFile)),
   }
 }
 
@@ -70,7 +92,7 @@ export function cspReportLog({ windowMs = 60_000, maxLogs = 20, maxKeys = 200, n
         windowStart = now(); logged = 0; dropped = 0; seen = new Map()
       }
       for (const summary of summaries) {
-        const key = `${summary.disposition}|${summary.directive}|${summary.blocked}|${summary.path}`
+        const key = `${summary.disposition}|${summary.directive}|${summary.blocked}|${summary.path}|${summary.asset ?? ""}|${summary.source ?? ""}`
         const count = seen.get(key)
         if (count !== undefined) { seen.set(key, count + 1); continue }
         if (seen.size >= maxKeys || logged >= maxLogs) { dropped++; continue }

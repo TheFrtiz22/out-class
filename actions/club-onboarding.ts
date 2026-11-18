@@ -46,7 +46,7 @@ export async function createClubIdentityInvitation(input: unknown) {
 export async function getOrganizationInvitations(includeDismissed = false) {
   z.boolean().parse(includeDismissed);
   const account = await requireAuth({ verifyEmail: true });
-  await prepareVerifiedSchoolAccount(account);
+  await prepareVerifiedSchoolAccount(account, "view");
   const identities = await previewVerifiedSchoolIdentities(prisma, account);
   if (!identities.length) return [];
   return prisma.clubInvitation.findMany({

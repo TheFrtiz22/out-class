@@ -99,6 +99,7 @@ export function upcomingAgenda(events: ClubEvent[], now: Date) {
       (event) =>
         event.type !== "Deadline" &&
         event.response !== "declined" &&
+        !event.forLeaders &&
         eventStart(event).getTime() >= now.getTime(),
     )
     .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())

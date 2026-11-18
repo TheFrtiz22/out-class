@@ -5,6 +5,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 
+
+// The refusal an account without mailbox proof gets when it acts on an invitation (shared copy, lib/invitation-access.ts).
+const invitationAccess=(()=>{const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('lib/invitation-access.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(require,mod,mod.exports);return mod.exports})();
+const verificationRefusal=error=>error.code==='UNIVERSITY_VERIFICATION_REQUIRED'&&[null,'University of Virginia'].some(school=>error.message===invitationAccess.verificationRequiredMessage({remedy:'password',school,purpose:'respond'}))&&/^To respond to this invitation, confirm your /.test(error.message);
+
 function loader(mocks) {
   const cache = {};
   function load(file) {
@@ -121,9 +126,9 @@ test('pending imports cannot silently upgrade a pending invitation', async () =>
 });
 
 test('wrong, unverified, and verification-skipped identities cannot accept invitations', async () => {
-  for (const modify of [s=>{s.identityIds=['other-identity'];},s=>{s.verified=false;},s=>{s.skipped=true;}]) {
+  for (const [modify,unverified] of [[s=>{s.identityIds=['other-identity'];},false],[s=>{s.verified=false;},true],[s=>{s.skipped=true;},true]]) {
     const h=setup();modify(h.state);
-    await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/unavailable|Verify/);
+    await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),unverified?verificationRefusal:/unavailable/);
     assert.equal(h.state.writes.length,0);
   }
 });
@@ -306,9 +311,9 @@ test('concurrent claiming attempts revalidate after the organization transaction
 });
 
 test('dismiss and restore revalidate identity and terminal state without any mutation on failure',async()=>{
-  for(const modify of [s=>{s.identityIds=['someone-else'];},s=>{s.verified=false;},s=>{s.invitation.status='REVOKED';},s=>{s.invitation.expiresAt=new Date(Date.now()-1);}]) {
+  for(const [modify,unverified] of [[s=>{s.identityIds=['someone-else'];},false],[s=>{s.verified=false;},true],[s=>{s.invitation.status='REVOKED';},false],[s=>{s.invitation.expiresAt=new Date(Date.now()-1);},false]]) {
     for(const dismissed of [true,false]) {
-      const h=setup();modify(h.state);await assert.rejects(h.api.setOrganizationInvitationDismissed(inviteId,dismissed),/Verify|unavailable/);assert.equal(h.state.writes.length,0);
+      const h=setup();modify(h.state);await assert.rejects(h.api.setOrganizationInvitationDismissed(inviteId,dismissed),unverified?verificationRefusal:/unavailable/);assert.equal(h.state.writes.length,0);
     }
   }
 });

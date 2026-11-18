@@ -3,12 +3,11 @@ import { profilePhotoSource } from "@/lib/profile-photo"
 import { scholarSummary } from "@/lib/scholar-status"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowUpRight, Check, FileText, Linkedin, Pencil, Eye, ChevronDown } from "@/components/icons"
+import { Check, Pencil } from "@/components/icons"
 import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import {
   gpaSchema, profileChecklist,
-  safeProfileUrl, resolveResumeUrl,
   type FullStudentProfile,
   type ProfileSection,
 } from "@/lib/student-profile"
@@ -16,7 +15,8 @@ import type { StudentMembership } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { StudentProfilePreview } from "@/components/student-profile-preview"
+import { gpaLabel } from "@/lib/recruitment-profile"
 import { ResumeImportDialog } from "@/components/resume-import-dialog"
 import { formatPhone } from "@/lib/phone"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
@@ -140,27 +140,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
             {editProfile}
-            <div role="group" aria-label="Links and résumé" className="flex flex-wrap items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" aria-label="Preview links and résumé" disabled={!safeProfileUrl(profile.linkedinUrl) && !resolveResumeUrl(profile.resumeUrl)}>
-                    <Eye className="size-4" />Preview<ChevronDown className="size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {safeProfileUrl(profile.linkedinUrl) && <DropdownMenuItem asChild>
-                    <a href={safeProfileUrl(profile.linkedinUrl)} target="_blank" rel="noopener noreferrer">
-                      <Linkedin className="size-4" />LinkedIn<ArrowUpRight className="ml-auto size-3.5" /><span className="sr-only"> (opens in a new tab)</span>
-                    </a>
-                  </DropdownMenuItem>}
-                  {resolveResumeUrl(profile.resumeUrl) && <DropdownMenuItem asChild>
-                    <a href={resolveResumeUrl(profile.resumeUrl)} target="_blank" rel="noopener noreferrer">
-                      <FileText className="size-4" />View résumé<ArrowUpRight className="ml-auto size-3.5" /><span className="sr-only"> (opens in a new tab)</span>
-                    </a>
-                  </DropdownMenuItem>}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <StudentProfilePreview profile={profile} />
           </div>
         </div>
       </header>
@@ -180,13 +160,14 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
               <p className="mt-2 text-sm text-muted-foreground">{profile.major}</p>
               {profile.highSchool && <p className="mt-2 text-sm">High school: {profile.highSchool}</p>}
               {(profile.gender || profile.pronouns) && <p className="mt-2 text-sm">{[profile.gender && `Gender: ${profile.gender}`, profile.pronouns && `Pronouns: ${profile.pronouns}`].filter(Boolean).join(" · ")}</p>}
+              {profile.gender && <p className="mt-1 text-xs text-muted-foreground">Clubs see your gender only when they turn it on for a round.</p>}
               {profile.transferStudent && <p className="mt-2 text-sm">Transfer student</p>}
               <p className="mt-2 text-sm"><span className="text-muted-foreground">Scholar status: </span>{scholarSummary(profile.scholarStatus) ?? <span className="text-muted-foreground">Not provided</span>}</p>
               {(profile.gpa != null || profile.satScore != null || profile.actScore != null) && (
                 <dl className="mt-4 flex flex-wrap gap-6 text-sm">
                   {profile.gpa != null && (
                     <div className="flex gap-2">
-                      <dt className="text-muted-foreground">GPA</dt>
+                      <dt className="text-muted-foreground">{gpaLabel(profile)}</dt>
                       <dd>{gpaSchema.safeParse(profile.gpa).success ? `${profile.gpa} / 4.00` : `${profile.gpa} · Confirm a GPA out of 4.0 in Education`}</dd>
                     </div>
                   )}
@@ -200,6 +181,12 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                 </dl>
               )}
             </div>,
+          )}
+          {section(
+            "Experience",
+            "experience",
+            profile.experiences.length ? <ul className="space-y-3">{profile.experiences.map(item => <li key={item.id} className="text-sm"><p className="font-medium">{item.title}</p>{(item.subtitle || item.period) && <p className="text-muted-foreground">{[item.subtitle, item.period].filter(Boolean).join(" · ")}</p>}</li>)}</ul>
+              : <p className="text-sm text-muted-foreground">Not added. Add roles, jobs or activities in Edit profile.</p>,
           )}
           {section(
             "Phone",

@@ -111,3 +111,12 @@ test('bulk removal sends the members counted in the dialog even if the selection
  live.answer(true);await h.flush();
  assert.deepEqual(calls.map(c=>c.targets.map(t=>t.id)),[['student']],'the confirmed selection, not the current one');}finally{live.restore();restore();}
 });
+
+test('removed members stay out of the default directory and appear under the Removed status filter',async()=>{
+ const restore=setupWindow();try{const directory=fixture();directory.members.push({...directory.members[1],id:'gone',userId:'gone',status:'LEFT',user:{...directory.members[1].user,email:'gone@virginia.edu',studentProfile:{firstName:'Former',lastName:'Member',gradYear:'2027',major:'Finance'}}});
+  const h=harness({getOrganizationMemberManagement:async()=>directory});h.render();await h.flush();
+  let text=JSON.stringify(nodes(h.render()));assert.ok(!text.includes('Former Member'));assert.ok(text.includes('student Smith'));
+  const filter=nodes(h.render()).find(n=>n.type==='PillSelect'&&n.props.label==='Filter members by status');assert.equal(filter.props.allLabel,'Current');assert.deepEqual(filter.props.options,[{value:'removed',label:'Removed'}]);
+  filter.props.onChange('removed');text=JSON.stringify(nodes(h.render()));assert.ok(text.includes('Former Member'));assert.ok(!text.includes('student Smith'));
+ }finally{restore()}
+});

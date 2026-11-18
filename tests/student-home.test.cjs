@@ -161,3 +161,17 @@ test("urgent unread updates become the next action without displacing an imminen
   const imminent = event("soon", "2026-09-21", "11:00 AM")
   assert.equal(nextHomeAction(drafts, [imminent], now, [notification]).kind, "event")
 })
+
+test("members-only meetings for club leaders stay off student Home but remain calendar events", () => {
+  const meetings = [
+    { id: "lead", clubId: "pcg", date: "2026-09-21T15:00:00Z", title: "Final Round Deliberations", location: "Rice", audience: "MEMBERS", forLeaders: true, club: { name: "PCG" } },
+    { id: "gbm", clubId: "pcg", date: "2026-09-21T16:00:00Z", title: "General body meeting", location: "Rice", audience: "MEMBERS", forLeaders: false, club: { name: "PCG" } },
+  ]
+  const events = studentCalendarEvents({ meetings })
+  assert.deepEqual(events.map(event => [event.title, !!event.forLeaders]), [["Final Round Deliberations", true], ["General body meeting", false]])
+  const agenda = upcomingAgenda(events, now)
+  assert.deepEqual(agenda.map(event => event.title), ["General body meeting"])
+  const next = nextHomeAction([], agenda, now)
+  assert.equal(next.kind, "event"); assert.equal(next.event.title, "General body meeting")
+  assert.equal(nextHomeAction([], upcomingAgenda(events.slice(0, 1), now), now).kind, "explore")
+})

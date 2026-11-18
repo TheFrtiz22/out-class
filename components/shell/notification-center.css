@@ -47,7 +47,8 @@
 .oc-notification-empty-action { display: inline-flex; min-height: 2.75rem; align-items: center; color: var(--primary); font-size: var(--oc-size-13); font-weight: 500; text-decoration: underline; text-underline-offset: 4px; }
 .oc-notification-empty span { font-size: var(--oc-size-12); color: var(--muted-foreground); }
 .oc-notification-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid color-mix(in srgb, var(--school-primary) 9%, transparent); background: #f5eee4; font-size: var(--oc-size-13); line-height: 1.3846; flex-shrink: 0; }
-.oc-notification-error button { flex-shrink: 0; min-height: 44px; min-width: 44px; font-weight: 600; }
+.oc-notification-error button, .oc-notification-error-action { flex-shrink: 0; min-height: 44px; min-width: 44px; font-weight: 600; }
+.oc-notification-error-action { display: inline-flex; align-items: center; text-decoration: underline; text-underline-offset: 3px; }
 .oc-notification-detail { padding: 8px 18px 18px; }
 .oc-notification-detail h3 { margin: 12px 0; font-family: var(--oc-font-sans); font-size: 0.9375rem; font-weight: 600; line-height: 1.4667; }
 .oc-notification-detail > p:not(.oc-notification-meta) { font-size: var(--oc-size-13); line-height: 1.6923; color: var(--muted-foreground); white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 12px; }

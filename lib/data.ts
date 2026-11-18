@@ -97,6 +97,8 @@ export type ClubEvent = {
   managedEventId?: string
   bookingSlotId?: string
   response?: "going" | "confirmed" | "declined"
+  /** A members-only meeting of a club this person helps run (set by the server). Calendar only, not student Home. */
+  forLeaders?: boolean
 
   id: string
   day: number

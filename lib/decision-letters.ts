@@ -1,7 +1,15 @@
 import { z } from "zod";
 export const decisionTypes = ['ACCEPTED', 'WAITLISTED', 'REJECTED'] as const;
 export type LetterDecision = typeof decisionTypes[number];
-export const letterVariables = ['student.firstName','student.fullName','club.name','decision.date','offer.expiresAt'] as const;
+/** Letter wording a club can customize. NOT_ADVANCED is a rejection before the last round: the
+ * application status is still REJECTED; only the letter differs from a final rejection. */
+export const letterKinds = ['ACCEPTED', 'WAITLISTED', 'REJECTED', 'NOT_ADVANCED'] as const;
+export type LetterKind = typeof letterKinds[number];
+/** Which letter a published decision uses. `laterRound`: the club has an active round after the applicant's round. */
+export function letterKindFor(decision: LetterDecision, laterRound: boolean): LetterKind {
+  return decision === 'REJECTED' && laterRound ? 'NOT_ADVANCED' : decision;
+}
+export const letterVariables = ['student.firstName','student.fullName','club.name','round.name','decision.date','offer.expiresAt'] as const;
 const text = (max: number) => z.string().trim().max(max).superRefine((value, ctx) => {
   const remaining = value.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (token, key) => {
     if (!(letterVariables as readonly string[]).includes(key)) ctx.addIssue({ code:'custom', message:`Unknown variable: ${key}` });
@@ -16,18 +24,27 @@ export const defaultCelebration: CelebrationKind = 'confetti';
 export const celebrationLabels: Record<CelebrationKind,string> = { confetti:'Confetti', fireworks:'Fireworks', sparkles:'Sparkles', none:'None' };
 export const letterTemplateSchema = z.object({ title:text(160).pipe(z.string().min(1)), body:text(6000).pipe(z.string().min(1)), closing:text(300), signer:text(160), footer:text(1000), celebration:z.enum(celebrationKinds).optional() }).strict();
 export type LetterTemplate = z.infer<typeof letterTemplateSchema>;
-export const letterTemplatesSchema = z.object({ ACCEPTED:letterTemplateSchema.optional(), WAITLISTED:letterTemplateSchema.optional(), REJECTED:letterTemplateSchema.optional() }).strict();
-export const defaultLetters: Record<LetterDecision,LetterTemplate> = {
+export const letterTemplatesSchema = z.object({ ACCEPTED:letterTemplateSchema.optional(), WAITLISTED:letterTemplateSchema.optional(), REJECTED:letterTemplateSchema.optional(), NOT_ADVANCED:letterTemplateSchema.optional() }).strict();
+export const defaultLetters: Record<LetterKind,LetterTemplate> = {
  ACCEPTED:{title:'Congratulations, and welcome to {{club.name}}',body:'On behalf of everyone at {{club.name}}, it is our great pleasure to offer you membership. Congratulations!\n\nYour application, and the care and thought you brought to every stage of recruitment, stood out to us. We are genuinely excited about the perspective, curiosity, and energy you will bring to our community.\n\nPlease review your offer below and respond by {{offer.expiresAt}}. We very much hope you will say yes, and we look forward to welcoming you.',closing:'With warm congratulations,',signer:'{{club.name}}',footer:'',celebration:'confetti'},
  WAITLISTED:{title:'Your recruitment decision',body:'Thank you for your interest in {{club.name}} and for the time you devoted to your application.\n\nWe are writing to let you know that you have been placed on our waitlist. We appreciate the opportunity to learn about you. A place on the waitlist does not guarantee a future offer of membership.\n\nIf your decision changes, we will share an update through OutClass. Thank you for your patience and continued interest.',closing:'Sincerely,',signer:'{{club.name}}',footer:''},
  REJECTED:{title:'Your recruitment decision',body:'Thank you for your interest in {{club.name}} and for sharing your time and experiences with us.\n\nAfter careful consideration, we are unable to offer you membership through this recruitment process. We recognize the effort that goes into applying and appreciate the opportunity to learn about you.\n\nWe wish you every success in finding communities and opportunities that inspire you.',closing:'Sincerely,',signer:'{{club.name}}',footer:''},
+ NOT_ADVANCED:{title:'Your recruitment decision',body:'Thank you for applying to {{club.name}} and for the time you gave to our recruitment process.\n\nAfter careful consideration, we will not be moving your application forward from {{round.name}} to the next round, so it will not continue this cycle. We appreciate the opportunity to learn about you.\n\nWe hope you will consider applying again in a future recruitment cycle.',closing:'Sincerely,',signer:'{{club.name}}',footer:''},
 };
 export type LetterContent = Omit<LetterTemplate,'celebration'> & { celebration?:CelebrationKind; studentName:string; clubName:string; logoReference:string|null; accent:string; date:string };
-export function resolveLetter(decision:LetterDecision, templates:unknown, values:{firstName:string;fullName:string;clubName:string;date:Date;expiresAt:Date|null;logoReference:string|null;accent:string}):LetterContent {
+const customized=(kind:LetterKind,templates:Partial<Record<LetterKind,LetterTemplate>>)=>{const t=templates[kind];return !!t&&JSON.stringify(t)!==JSON.stringify(defaultLetters[kind])};
+/** True while a club's own rejection letter stands in for an unedited "didn't advance" letter. */
+export function notAdvancedUsesRejection(templates:Partial<Record<LetterKind,LetterTemplate>>){return !customized('NOT_ADVANCED',templates)&&customized('REJECTED',templates)}
+/** Frozen snapshots merge in the defaults, so "customized" means different from the default wording. */
+function chooseTemplate(kind:LetterKind,templates:Partial<Record<LetterKind,LetterTemplate>>):LetterTemplate{
+ if(kind==='NOT_ADVANCED'&&notAdvancedUsesRejection(templates))return templates.REJECTED!;
+ return templates[kind] ?? defaultLetters[kind];
+}
+export function resolveLetter(decision:LetterKind, templates:unknown, values:{firstName:string;fullName:string;clubName:string;roundName?:string|null;date:Date;expiresAt:Date|null;logoReference:string|null;accent:string}):LetterContent {
  const parsed=letterTemplatesSchema.safeParse(templates ?? {});
- const template=parsed.success ? parsed.data[decision] ?? defaultLetters[decision] : defaultLetters[decision];
+ const template=parsed.success ? chooseTemplate(decision,parsed.data) : defaultLetters[decision];
  const date=values.date.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'});
- const variables:Record<string,string>={'student.firstName':values.firstName,'student.fullName':values.fullName,'club.name':values.clubName,'decision.date':date,'offer.expiresAt':values.expiresAt?.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}) ?? 'the deadline shown with your offer'};
+ const variables:Record<string,string>={'student.firstName':values.firstName,'student.fullName':values.fullName,'club.name':values.clubName,'round.name':values.roundName?.trim()||'this round','decision.date':date,'offer.expiresAt':values.expiresAt?.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}) ?? 'the deadline shown with your offer'};
  const render=(value:string)=>value.replace(/\{\{\s*([\w.]+)\s*\}\}/g,(_,key)=>variables[key] ?? '');
  const {celebration,...copy}=template;
  return {...Object.fromEntries(Object.entries(copy).map(([key,value])=>[key,render(value)])) as Omit<LetterTemplate,'celebration'>,...(decision==='ACCEPTED'?{celebration:celebration ?? defaultCelebration}:{}),studentName:values.fullName,clubName:values.clubName,logoReference:values.logoReference,accent:/^#[\da-f]{6}$/i.test(values.accent)?values.accent:'#142d4e',date};

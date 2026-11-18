@@ -240,3 +240,25 @@ test("a closed club or one with no round returns its reason instead of throwing,
   assert.deepEqual(await actions({ applicationOpen: true, applicationDeadline: new Date(Date.now() - 60000) }, { id: "r" }).startClubApplication("club"), { applicationId: null, unavailable: "Applications are closed for this club." })
   assert.deepEqual(await actions({ applicationOpen: true, applicationDeadline: null }, null).startClubApplication("club"), { applicationId: null, unavailable: "Applications are not available for this club." })
 })
+
+test("search matches a club's public event locations and descriptions (\"piedmont\", \"case interview\")", () => {
+  const base = { category: "Academic", pitch: "", tags: [], acceptanceRate: null, aumValue: null, timeCommitment: null, logoText: "", color: "#142d4e" }
+  const listed = [
+    { ...base, id: "a", name: "Alpha", description: "Weekly case interview practice", publicEvents: [] },
+    { ...base, id: "b", name: "Beta", description: "", publicEvents: [{ id: "e", title: "Info session", date: "2026-12-01T00:00:00.000Z", location: "Piedmont Hall 120", description: null }] },
+    { ...base, id: "c", name: "Gamma", description: "" },
+  ]
+  const ids = query => filterDirectory(listed, { ...emptyDirectoryFilters, query }).map(c => c.id)
+  assert.deepEqual(ids("piedmont"), ["b"])
+  assert.deepEqual(ids("Case Interview"), ["a"])
+  assert.deepEqual(ids("piedmont case"), [], "every word must match")
+  assert.deepEqual(ids(""), ["a", "b", "c"], "clubs without events still list")
+})
+
+test("Explore adds local matches (locations) to Typesense results without reordering by index rank", () => {
+  const view = fs.readFileSync("components/views/explore-view.tsx", "utf8")
+  assert.match(view, /new Set\(\[\.\.\.match\.ids, \.\.\.filterDirectory\(clubs, filters, now\)\.map\(club => club\.id\)\]\)/)
+  // The index still holds only public club fields.
+  const sync = fs.readFileSync("scripts/sync-typesense-public-clubs.cjs", "utf8")
+  assert.match(sync, /select: \{ id: true, name: true, category: true, tagline: true, description: true \}/)
+})

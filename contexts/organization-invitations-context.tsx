@@ -3,6 +3,7 @@ import { userMessage } from "@/lib/user-message"
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { getOrganizationInvitations } from "@/lib/workspace-read";
+import { invitationCheckBlock, type InvitationCheckBlock } from "@/lib/invitation-access";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { toast } from "sonner";
@@ -12,6 +13,8 @@ type InvitationState = {
   invitations: OrganizationInvitation[];
   loading: boolean;
   failed: boolean;
+  /** Why the check was refused, when it was: "verify" needs the account's UVA email confirmed. */
+  block: InvitationCheckBlock;
   notice: string;
   refresh: () => void;
   changed: (change: InvitationChange) => Promise<void>;
@@ -26,7 +29,7 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
   const accountKey = enabled ? user.id : "disabled";
   const currentAccount = useRef(accountKey);
   currentAccount.current = accountKey;
-  const [data, setData] = useState({ accountKey, invitations: [] as OrganizationInvitation[], loading: enabled, failed: false, notice: "" });
+  const [data, setData] = useState({ accountKey, invitations: [] as OrganizationInvitation[], loading: enabled, failed: false, block: null as InvitationCheckBlock, notice: "" });
   const [attempt, setAttempt] = useState(0);
   const changes = useRef({ accountKey, items: new Map<string, InvitationChange["kind"]>() });
 
@@ -45,7 +48,7 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
   useEffect(() => {
     let cancelled = false;
     if (changes.current.accountKey !== accountKey) changes.current = { accountKey, items: new Map() };
-    setData(previous => ({ accountKey, invitations: previous.accountKey === accountKey ? previous.invitations : [], notice: previous.accountKey === accountKey && !previous.failed ? previous.notice : "", loading: enabled, failed: false }));
+    setData(previous => ({ accountKey, invitations: previous.accountKey === accountKey ? previous.invitations : [], notice: previous.accountKey === accountKey && !previous.failed ? previous.notice : "", loading: enabled, failed: false, block: null }));
     if (!enabled) return;
     const current = () => !cancelled && currentAccount.current === accountKey;
     // Include set-aside requests for Settings and the notification indicator.
@@ -57,7 +60,7 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
         return [{ ...invitation, dismissedAt: kind === "dismissed" ? new Date() : kind === "restored" ? null : invitation.dismissedAt }];
       });
       setData(previous => ({ ...previous, invitations, notice: previous.failed ? "" : previous.notice }));
-    }).catch(error => { if (current()) setData(previous => ({ ...previous, invitations: [], failed: true, notice: userMessage(error, "Could not check organization invitations.") })); })
+    }).catch(error => { if (current()) setData(previous => ({ ...previous, invitations: [], failed: true, block: invitationCheckBlock(error), notice: userMessage(error, "Couldn’t check invitations. Try again.") })); })
       .finally(() => { if (current()) setData(previous => ({ ...previous, loading: false })); });
     return () => { cancelled = true; };
   }, [accountKey, enabled, attempt]);
@@ -84,7 +87,7 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
   }
 
   // Account changes conceal private data during render, before effects run, without remounting the app.
-  const state = data.accountKey === accountKey && enabled ? data : { invitations: [], loading: enabled, failed: false, notice: "" };
+  const state = data.accountKey === accountKey && enabled ? data : { invitations: [], loading: enabled, failed: false, block: null, notice: "" };
   return <Context.Provider value={{ ...state, refresh: () => setAttempt(value => value + 1), changed }}>{children}</Context.Provider>;
 }
 

@@ -1,13 +1,14 @@
 import type {VotingNotices} from "./voting-session-notifications";
 import { demoStore } from './store';
 import type { DemoState } from './seed';
-import { decisionTypes,resolveLetter,letterTemplatesSchema,decisionDestination,type LetterContent,type LetterDecision } from '@/lib/decision-letters';
+import { decisionTypes,resolveLetter,letterKindFor,letterTemplatesSchema,decisionDestination,type LetterContent,type LetterDecision } from '@/lib/decision-letters';
 export type DemoLetter={id:string;applicationId:string;clubId:string;version:number;decision:LetterDecision;content:LetterContent;createdAt:Date};
 export function demoPublishLetter(s:DemoState,applicationId:string){
  const app=s.applications.find(a=>a.id===applicationId)!;
  if(!(decisionTypes as readonly string[]).includes(app.status))return;
  const previous=s.decisionLetters.filter(l=>l.applicationId===app.id),student=s.students.find(u=>u.id===app.studentId)!,club=s.clubs.find(c=>c.id===app.clubId)!,now=new Date();
- s.decisionLetters.push({id:crypto.randomUUID(),applicationId:app.id,clubId:app.clubId,version:previous.length+1,decision:app.status as LetterDecision,createdAt:now,content:resolveLetter(app.status as LetterDecision,s.letterTemplates[club.id],{firstName:student.profile.firstName,fullName:`${student.profile.firstName} ${student.profile.lastName}`,clubName:club.name,date:now,expiresAt:s.recruitmentOffers.find(o=>o.applicationId===app.id)?.expiresAt??null,logoReference:null,accent:club.color})});
+ const round=club.rounds.find(r=>r.id===app.roundId),laterRound=!!round&&club.rounds.some(r=>!r.archivedAt&&r.order>round.order);
+ s.decisionLetters.push({id:crypto.randomUUID(),applicationId:app.id,clubId:app.clubId,version:previous.length+1,decision:app.status as LetterDecision,createdAt:now,content:resolveLetter(letterKindFor(app.status as LetterDecision,laterRound),s.letterTemplates[club.id],{roundName:round?.name,firstName:student.profile.firstName,fullName:`${student.profile.firstName} ${student.profile.lastName}`,clubName:club.name,date:now,expiresAt:s.recruitmentOffers.find(o=>o.applicationId===app.id)?.expiresAt??null,logoReference:null,accent:club.color})});
 }
 export async function getDecisionLetter(applicationId:string,letterId?:string){
  const s=demoStore.get(),app=s.applications.find(a=>a.id===applicationId&&a.studentId===s.students[0].id);

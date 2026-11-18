@@ -25,6 +25,7 @@ import { AboutSection, FaqSection, LifeSection, MarketingProfile, MembersSection
 import { profileDraft, readMarketing } from "@/lib/club-marketing"
 import { clubs } from "@/lib/data"
 import { eventStart } from "@/lib/calendar"
+import { testRequirementLabels } from "@/lib/test-scores"
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
 import "@/components/clubs/club-discovery.css"
@@ -203,7 +204,9 @@ export function ClubProfileView({
       description="Create a free OutClass account to start your application. One profile covers the basics for every club you apply to, and you’ll come right back here."
       returnPath={joinPrompt} />}
   </div>
-  const showRequirements = real && (!!club.testRequirement || !!club.timeCommitment || !!club.requirements?.length)
+  // Test scores matter only when a club requires them; "optional" (the default) says nothing to a college applicant.
+  const testsRequired = !!club.testRequirement && club.testRequirement !== "OPTIONAL" && club.testRequirement in testRequirementLabels
+  const showRequirements = real && (testsRequired || !!club.timeCommitment || !!club.requirements?.length)
   const recruitmentSection = !!deadlineText || recruitment.expired || !!application || showRequirements || readMarketing(publicProfile.marketing).sections.some(section => section.visible && section.kind === "recruitment")
   return (
     <article className="oc-club-profile">
@@ -221,10 +224,11 @@ export function ClubProfileView({
         <MarketingProfile profile={publicProfile} action={primaryAction} />
       </div>
       {real && !demo.isDemoEnabled && !club.claimed && <UnclaimedProfileNotice club={club} />}
+      {/* Members get their club's pages; everyone else sees its public events below. Without them, About shows only the club's own content. */}
       <AboutSection profile={publicProfile}>
-        {(real || user?.memberships.some(m => m.clubId === club.id)) && <nav aria-label="Club pages" className="oc-club-links">
-          {real && <Link className="oc-tap-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas and recaps <ArrowUpRight size={14} aria-hidden="true" /></Link>}
-          {user?.memberships.some(m => m.clubId === club.id) && <Link className="oc-tap-link" href={`/club/${club.id}/workspace`}>Open club workspace <ArrowUpRight size={14} aria-hidden="true" /></Link>}
+        {user?.memberships.some(m => m.clubId === club.id) && <nav aria-label="Club pages" className="oc-club-links">
+          {real && <Link className="oc-tap-link" href={`/meetings?clubId=${club.id}`}>Meetings <ArrowUpRight size={14} aria-hidden="true" /></Link>}
+          <Link className="oc-tap-link" href={`/club/${club.id}/workspace`}>Open club workspace <ArrowUpRight size={14} aria-hidden="true" /></Link>
         </nav>}
       </AboutSection>
       <MembersSection profile={publicProfile} reportClubId={real && !preview ? club.id : undefined} />
@@ -236,7 +240,7 @@ export function ClubProfileView({
         {showRequirements && <div className="oc-club-subsection">
           <h3>Before you apply</h3>
           <p className="oc-club-prose">Your OutClass profile is the starting point for your application.</p>
-          {club.testRequirement && <p className="oc-club-prose">Standardized tests: {club.testRequirement === "OPTIONAL" ? "SAT and ACT optional" : club.testRequirement.replaceAll("_", " ") + " required"}. Scores come from your student profile.</p>}
+          {testsRequired && <p className="oc-club-prose">Standardized tests: {testRequirementLabels[club.testRequirement as keyof typeof testRequirementLabels]}. Scores come from your student profile.</p>}
           {club.timeCommitment && <p className="oc-club-prose">Time commitment: {club.timeCommitment} hours per week.</p>}
           {!!club.requirements?.length && <>
             <h4 className="oc-club-minor-heading">Required club questions</h4>

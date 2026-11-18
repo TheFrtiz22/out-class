@@ -22,6 +22,20 @@ export function legacyVotingHistoryHref(clubId:string,sessionId:string,demo=fals
 }
 /** Readable state for a voting session: Draft, Open, Paused or Closed. */
 export function votingStateLabel(state:string){return state==="OPEN"?"Open":state==="PAUSED"?"Paused":state==="COMPLETED"||state==="COMPLETE"?"Closed":"Draft";}
+/**
+ * The status shown for one session in the Voting room list. A session that was never opened reads "Not opened"
+ * once its planned time has passed, rather than "Draft" or "Scheduled".
+ */
+export function votingSessionStatusLabel(r:{mode?:string|null;state:string;finalizedAt?:string|Date|null;meeting?:{status?:string|null;plannedAt?:string|Date|null}|null},now=Date.now()){
+  if(r.mode!=="LIVE")return votingStateLabel(r.state);
+  if(r.meeting?.status==="CANCELLED")return "Cancelled";
+  if(r.state==="DRAFT"){
+    if(r.meeting?.plannedAt&&+new Date(r.meeting.plannedAt)<=now)return "Not opened";
+    return r.meeting?.status==="SCHEDULED"?"Scheduled":"Draft";
+  }
+  if(r.state==="COMPLETED")return r.finalizedAt?"Closed · Finalized":"Closed · Provisional";
+  return r.state==="PAUSED"?"Paused":"Open";
+}
 export function votingSetupHref(clubId:string,search="",selectionKey?:string){
   const source=new URLSearchParams(search),q=new URLSearchParams({clubId});
   for(const key of ["cycleId","roundId","demo","draft","session"])if(source.get(key))q.set(key,source.get(key)!);
