@@ -23,6 +23,11 @@ export const OPEN_ELECTORATE="OPEN" as const;
 export function isOpenElectorate(presentationOptions:unknown){return !!presentationOptions&&typeof presentationOptions==="object"&&(presentationOptions as {electorate?:unknown}).electorate===OPEN_ELECTORATE;}
 /** Most people one session can hold as voters (the ballot rule snapshot's bound). */
 export const MAX_ROOM_VOTERS=500;
+/** One running (open or paused) live session per round and cycle: starting or reopening another is refused. */
+export const ROUND_SESSION_OPEN_MESSAGE="Another voting session for this round is already open. End it before starting this one.";
+export function otherOpenRoundSession<T extends {id:string;clubId:string;roundId:string;cycleId?:string|null;mode?:string|null;state:string;finalizedAt?:unknown}>(sessions:readonly T[],s:Pick<T,"id"|"clubId"|"roundId"|"cycleId">){
+  return sessions.find(o=>o.id!==s.id&&o.clubId===s.clubId&&o.roundId===s.roundId&&(o.cycleId??null)===(s.cycleId??null)&&o.mode==="LIVE"&&(o.state==="OPEN"||o.state==="PAUSED")&&!o.finalizedAt);
+}
 /** Slide fields read by the voting loaders themselves, outside the Applicant Display contract. */
 const slideOnlyFields=["scholarStatus","resumeHighlight","interviewScore","finalInterviewThoughts","additionalObservations"] as const;
 export function roomDisplayConfig(fields:LiveRoomField[]){return {version:1 as const,fields:liveRoomFields.filter((f):f is Exclude<LiveRoomField,typeof slideOnlyFields[number]>=>fields.includes(f)&&!(slideOnlyFields as readonly string[]).includes(f))};}

@@ -35,3 +35,15 @@ test('landing metadata is role projected and never includes ballots or applicant
  assert.doesNotMatch(JSON.stringify(own),/ballots|leaderMemberIds|studentProfile|applicationIds|participants/);
  h.members[1].permissions=[];await assert.rejects(h.api.listLiveVotingRooms({clubId}),/Denied/);
 });
+
+test('a live session never opened reads "Not opened" once its planned time has passed, not Draft or Scheduled',()=>{
+ const label=navigation.votingSessionStatusLabel,now=Date.parse('2026-11-18T15:00:00Z'),live=(state,meeting,extra={})=>({mode:'LIVE',state,meeting,...extra});
+ assert.equal(label(live('DRAFT',null),now),'Draft');
+ assert.equal(label(live('DRAFT',{status:'SCHEDULED',plannedAt:'2026-11-19T15:00:00Z'}),now),'Scheduled');
+ assert.equal(label(live('DRAFT',{status:'SCHEDULED',plannedAt:'2026-11-17T15:00:00Z'}),now),'Not opened');
+ assert.equal(label(live('DRAFT',{status:'DRAFT',plannedAt:'2026-11-17T15:00:00Z'}),now),'Not opened');
+ assert.equal(label(live('DRAFT',{status:'CANCELLED',plannedAt:'2026-11-17T15:00:00Z'}),now),'Cancelled');
+ assert.equal(label(live('OPEN',null),now),'Open');assert.equal(label(live('PAUSED',null),now),'Paused');
+ assert.equal(label(live('COMPLETED',null,{finalizedAt:new Date()}),now),'Closed · Finalized');assert.equal(label(live('COMPLETED',null),now),'Closed · Provisional');
+ assert.equal(label({mode:'LEGACY',state:'DRAFT'},now),'Draft');
+});
