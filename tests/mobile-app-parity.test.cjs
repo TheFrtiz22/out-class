@@ -62,6 +62,7 @@ test('a member inside a club keeps More for the club pages; the personal rail ge
  const member=nav.memberRailSections('club-1','Chess Club');
  assert.deepEqual(nav.bottomBarItems(member,'personal','club-home').map(item=>item.id),['student-dashboard','explore','inbox','calendar'],'four tabs, so More opens the sheet');
  assert.deepEqual(member.find(section=>section.id==='member-club').items.map(item=>item.id),['club-home','club-meetings','club-tasks','club-alumni'],'the sheet lists the club pages');
+ const labels=nav.railItems(member).map(item=>item.label);assert.deepEqual(labels.filter((label,i)=>labels.indexOf(label)!==i),[],'no two rail entries share a name (the club\'s Tasks is "Club tasks")');
  assert.ok(nav.railItems?nav.railItems(member).some(item=>item.id==='student-profile'):member.some(section=>section.items.some(item=>item.id==='student-profile')),'Profile stays in the sheet');
  assert.deepEqual(nav.bottomBarItems(nav.personalRailSections(),'personal','student-dashboard').map(item=>item.id),['student-dashboard','explore','inbox','calendar','student-profile']);
 });

@@ -71,11 +71,12 @@ export function accountRailSection(): RailSection {
 /** A member (non-leader) club page: personal sections plus that club's own pages. */
 export function memberRailSections(clubId: string, clubName: string | undefined, options: { settings?: boolean } = {}): RailSection[] {
   const root = `/club/${encodeURIComponent(clubId)}/workspace`
-  // Members only see meetings, so their Calendar entry keeps the Meetings name (the personal rail already has a Calendar).
+  // Members only see meetings, so their Calendar entry keeps the Meetings name, and the club's Tasks is "Club tasks":
+  // the personal sections above already have a Calendar and a Tasks.
   const club: RailSection = { id: "member-club", label: clubName || "Club", items: [
     { id: "club-home", label: "Club home", href: `${root}?section=overview` },
     { id: "club-meetings", label: "Meetings", href: `${root}?section=calendar&type=meetings` },
-    { id: "club-tasks", label: "Tasks", href: `${root}?section=tasks` },
+    { id: "club-tasks", label: "Club tasks", href: `${root}?section=tasks` },
     { id: "club-alumni", label: "Alumni", href: `${root}?section=alumni` },
   ] }
   const sections = personalRailSections(options)
