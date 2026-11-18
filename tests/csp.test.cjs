@@ -117,7 +117,7 @@ test('Turnstile origins appear only when Turnstile is enabled', () => {
   const on = csp.buildCsp({ nonce: 'n', env: { NODE_ENV: 'production', TURNSTILE_ENABLED: '1' } })
   assert.match(directive(on, 'script-src'), / https:\/\/challenges\.cloudflare\.com$/)
   assert.equal(directive(on, 'frame-src'), "frame-src 'self' https://challenges.cloudflare.com")
-  assert.doesNotMatch(directive(on, 'connect-src'), /cloudflare/)
+  assert.equal(directive(on, 'connect-src'), "connect-src 'self' https://challenges.cloudflare.com")
 })
 
 test('inline scripts carry the request nonce', async () => {
@@ -217,7 +217,7 @@ test('production policy string: nonce-only scripts, no eval, no wildcard hosts, 
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self'",
-    "connect-src 'self' https://abc.supabase.co wss://abc.supabase.co https://o1.ingest.us.sentry.io",
+    "connect-src 'self' https://abc.supabase.co wss://abc.supabase.co https://o1.ingest.us.sentry.io https://challenges.cloudflare.com",
     "frame-src 'self' https://challenges.cloudflare.com",
     "worker-src 'self'", "manifest-src 'self'", "media-src 'self'",
     "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'self'",
@@ -280,4 +280,36 @@ test('routes with their own sandboxed policy keep it as the only Content-Securit
   }
   assert.equal(csp.routeSetsOwnCsp('/api/club-assets/x'), false)
   assert.equal(csp.routeSetsOwnCsp('/api/recruiting-resumes'), false)
+})
+
+test('Turnstile origins follow the build-time flag at request time, as middleware runs on Vercel', () => {
+  // next.config.mjs `env` is compiled in where code names process.env.TURNSTILE_ENABLED literally;
+  // it is never a runtime variable. Simulate that build step, with the runtime variable unset.
+  const source = fs.readFileSync('lib/csp.ts', 'utf8')
+  assert.match(source, /process\.env\.TURNSTILE_ENABLED/, 'the flag is read by its literal name')
+  const compiled = (flag) => {
+    const mod = { exports: {} }
+    const code = ts.transpileModule(source.replaceAll('process.env.TURNSTILE_ENABLED', JSON.stringify(flag)), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
+    new Function('require', 'module', 'exports', code)(require, mod, mod.exports)
+    return mod.exports
+  }
+  return withEnv({ TURNSTILE_ENABLED: undefined, NODE_ENV: 'production' }, () => {
+    const on = compiled('1').buildCsp({ nonce: 'n' })
+    for (const name of ['script-src', 'frame-src', 'connect-src']) assert.match(directive(on, name), / https:\/\/challenges\.cloudflare\.com(?: |$)/, name)
+    assert.doesNotMatch(compiled('').buildCsp({ nonce: 'n' }), /cloudflare/)
+    // The middleware builds the policy with the default environment, not a copy of process.env.
+    assert.match(fs.readFileSync('middleware.ts', 'utf8'), /buildCsp\(\{ nonce \}\)/)
+  })
+})
+
+test('reports keep the public build file a violation is about, and never other URL detail', () => {
+  const body = (report) => JSON.stringify({ 'csp-report': { 'document-uri': 'https://www.out-class.net/club/7f0e0c1e-1111-4222-8333-944444444444/workspace?section=members&email=a@b.c', disposition: 'report', ...report } })
+  const [chunk] = reports.parseCspReports(body({ 'effective-directive': 'script-src-elem', 'blocked-uri': 'https://www.out-class.net/_next/static/chunks/app/(workspace)/club/[clubId]/workspace/page-abc123.js?dpl=dpl_X', 'source-file': 'https://www.out-class.net/_next/static/chunks/webpack-1f2e.js?dpl=dpl_X' }))
+  assert.deepEqual(chunk, { directive: 'script-src-elem', blocked: 'https://www.out-class.net', path: '/club/:id/workspace', disposition: 'report', asset: '/_next/static/chunks/app/(workspace)/club/[clubId]/workspace/page-abc123.js', source: '/_next/static/chunks/webpack-1f2e.js' })
+  const [media] = reports.parseCspReports(body({ 'effective-directive': 'media-src', 'blocked-uri': 'https://ssl.gstatic.com/dictionary/static/sounds/oxford/word.mp3?token=secret', 'source-file': 'chrome-extension://abcdefghijklmnop/content.js' }))
+  assert.deepEqual(media, { directive: 'media-src', blocked: 'https://ssl.gstatic.com', path: '/club/:id/workspace', disposition: 'report', source: 'chrome-extension' })
+  const [plain] = reports.parseCspReports(body({ 'effective-directive': 'img-src', 'blocked-uri': 'https://example.com/u/123/avatar.png?sig=x' }))
+  assert.equal(plain.asset, undefined)
+  assert.equal(plain.source, undefined)
+  assert.doesNotMatch(JSON.stringify([chunk, media, plain]), /email|secret|sig=|dpl=|7f0e0c1e|abcdefghijklmnop/)
 })

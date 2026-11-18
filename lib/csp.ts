@@ -97,17 +97,29 @@ export function cspAppliesTo(pathname: string) {
 }
 
 /**
+ * The environment the policy is built from at request time. TURNSTILE_ENABLED comes from the
+ * `env` block of next.config.mjs, which is compiled into code that names
+ * `process.env.TURNSTILE_ENABLED` literally; it is not a runtime environment variable on Vercel.
+ * Read through `process.env` as an object, it was always unset in production, so the Turnstile
+ * origins were missing from the policy while the widget was on. The literal read keeps it.
+ */
+export function runtimeCspEnv(): Env {
+  return { ...process.env, TURNSTILE_ENABLED: process.env.TURNSTILE_ENABLED }
+}
+
+/**
  * Every origin the browser actually talks to (inventory in docs/csp.md):
  * - Supabase (NEXT_PUBLIC_SUPABASE_URL): auth/REST from the browser client, and wss for Realtime
  *   (inbox and communications live updates).
  * - Sentry ingest, derived from NEXT_PUBLIC_SENTRY_DSN, only when it is set.
- * - Cloudflare Turnstile, only when TURNSTILE_ENABLED (both keys set at build time).
+ * - Cloudflare Turnstile (api.js, its challenge frame and its requests), only when TURNSTILE_ENABLED
+ *   (both keys set at build time; see runtimeCspEnv).
  * Vercel Analytics and Speed Insights load from and post to same-origin /_vercel/* paths, so
  * 'self' covers them; the bundle injects their script, which 'strict-dynamic' trusts.
  * Typesense is queried only from server actions, and Microsoft sign-in and Outlook are
  * top-level navigations or popups (not form posts), so neither needs a browser directive.
  */
-export function buildCsp({ nonce, env = process.env }: { nonce: string; env?: Env }) {
+export function buildCsp({ nonce, env = runtimeCspEnv() }: { nonce: string; env?: Env }) {
   const development = env.NODE_ENV === "development"
   const supabase = origin(env.NEXT_PUBLIC_SUPABASE_URL)
   let sentry: string | undefined
@@ -127,7 +139,8 @@ export function buildCsp({ nonce, env = process.env }: { nonce: string; env?: En
     // Club logos, banners and gallery images can be legacy https links entered by leaders.
     ["img-src", "'self' data: blob: https:"],
     ["font-src", "'self'"],
-    ["connect-src", list("'self'", supabase, supabase?.replace(/^http/, "ws"), sentry)],
+    // Turnstile's api.js also makes requests to its own origin.
+    ["connect-src", list("'self'", supabase, supabase?.replace(/^http/, "ws"), sentry, turnstile)],
     // The résumé frame is a same-origin route; Turnstile renders its challenge in a frame.
     ["frame-src", list("'self'", turnstile)],
     // The service worker and the self-hosted pdf.js worker.
