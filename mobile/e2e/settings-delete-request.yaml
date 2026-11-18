@@ -51,7 +51,7 @@ appId: net.outclass.app
 - tapOn:
     id: "account-deletion-cancel"
 - extendedWaitUntil:
-    visible:
-      id: "account-deletion-confirm"
+    notVisible:
+      id: "account-deletion-cancel"
     timeout: 120000
 - takeScreenshot: ${SHOTS}-52-delete-cancelled

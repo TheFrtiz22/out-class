@@ -20,7 +20,8 @@ export default function Tasks() {
   const top = useHeaderInset();
   const params = useLocalSearchParams<{ clubId?: string; taskId?: string }>();
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
-  const memberships = (me.data?.memberships ?? []).filter(membership => !params.clubId || membership.clubId === params.clubId);
+  // Alumni memberships stay on the roster without club access (lib/graduation.ts), so their task lists are not requested.
+  const memberships = (me.data?.memberships ?? []).filter(membership => !membership.alumniSince && (!params.clubId || membership.clubId === params.clubId));
   const workspaces = useTaskWorkspaces(memberships);
   const [filter, setFilter] = useState<TaskFilter>("open");
   const now = Date.now();

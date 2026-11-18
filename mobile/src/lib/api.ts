@@ -48,8 +48,11 @@ async function request<T>(method: "GET" | "POST", operation: string, input: unkn
   const refusal = payload?.error;
   if (response.status === 401 && token) {
     // The server no longer accepts this session (signed out elsewhere, expired, disabled).
+    // Only Auth saying the session is gone signs the person out. A refresh that could not reach Auth
+    // (a bad connection) leaves them signed in to try again.
     const refreshed = await supabase.auth.refreshSession();
-    if (refreshed.error || !refreshed.data.session) await supabase.auth.signOut({ scope: "local" });
+    const status = (refreshed.error as { status?: number } | null)?.status;
+    if (refreshed.error && typeof status === "number" && status >= 400 && status < 500) await supabase.auth.signOut({ scope: "local" });
   }
   throw new ApiError(response.status, refusal?.code ?? "UNAVAILABLE", refusal?.message ?? GENERIC_MESSAGE);
 }

@@ -26,7 +26,7 @@ export default function MyClub() {
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
   const member = me.data?.memberships.find(membership => membership.clubId === clubId);
   const meetings = useApiQuery<Meeting[]>("meetings", { clubId }, { enabled: !!clubId });
-  const tasks = useApiQuery<TaskWorkspace>("tasks.workspace", { clubId }, { enabled: !!clubId && !!member });
+  const tasks = useApiQuery<TaskWorkspace>("tasks.workspace", { clubId }, { enabled: !!clubId && !!member && !member.alumniSince });
   const [when, setWhen] = useState<"upcoming" | "past">("upcoming");
   const now = Date.now();
   const refresh = () => { me.refetch(); meetings.refetch(); tasks.refetch(); };
@@ -60,7 +60,7 @@ export default function MyClub() {
 
             <View style={{ gap: 10 }}>
               <SectionHeader title="Tasks" action={allTasks ? <Button variant="ghost" size="compact" testID="my-club-all-tasks" label="All tasks" onPress={() => router.push({ pathname: "/tasks", params: { clubId: member.clubId } })} /> : undefined} />
-              {tasks.isPending ? <SkeletonRows count={2} avatar={false} /> : tasks.isError ? (
+              {member.alumniSince ? <Card><Text variant="small">New tasks will appear here.</Text></Card> : tasks.isPending ? <SkeletonRows count={2} avatar={false} /> : tasks.isError ? (
                 <Card style={{ gap: 8 }} accessibilityRole="alert"><Text variant="small">{errorMessage(tasks.error, "Could not load tasks.")}</Text><Button variant="secondary" size="compact" label="Try again" onPress={() => tasks.refetch()} /></Card>
               ) : active.length ? (
                 <Card padded={false} style={{ paddingHorizontal: 16 }}>

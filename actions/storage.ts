@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { auditSupportAction } from "@/utils/support-audit";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/auth";
+import { mobileRequest } from "@/utils/mobile-request";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { storagePathSchema, validateProfileFile } from "@/lib/student-profile";
@@ -45,7 +46,12 @@ async function uploadProfileFileCommand(input: FormData) {
   const bucket = kind === "resume" ? "resumes" : "headshots";
   const path = storagePathSchema.parse(`${user.id}/${randomUUID()}.${extension}`);
   const cookieStore = await cookies();
-  let client = await createClient(cookieStore);
+  // The upload is signed as the owner, so Storage's own owner-prefix policy applies. A browser carries
+  // the session in cookies; the native app carries the same verified session as a bearer token.
+  const mobile = mobileRequest();
+  let client = mobile
+    ? createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "", { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${mobile.token}` } } })
+    : await createClient(cookieStore);
   if (impersonation || kind === "resume" || kind === "headshot") {
     const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!secret) throw new ActionError(impersonation ? "Support uploads are unavailable." : "Private document storage is unavailable.");

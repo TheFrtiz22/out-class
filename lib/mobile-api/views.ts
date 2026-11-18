@@ -38,7 +38,9 @@ export async function getMobileHome() {
     agendaCount: agenda.length,
     nextAction: nextHomeAction(applications, agenda, now, taskNotifications),
     tasks: taskNotifications,
-    unread: inbox.unread + taskNotifications.filter(item => !item.read).length,
+    // The web's bell count (components/shell/product-shell.tsx): durable unread, plus computed notifications
+    // that have no durable row of their own.
+    unread: inbox.unread + taskNotifications.filter(item => !(item as { durableId?: string }).durableId && !item.read).length,
   };
 }
 

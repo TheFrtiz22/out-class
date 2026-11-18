@@ -98,7 +98,7 @@ export default function TaskScreen() {
   const top = useHeaderInset();
   const { assignmentId, clubId } = useLocalSearchParams<{ assignmentId: string; clubId?: string }>();
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
-  const memberships = (me.data?.memberships ?? []).filter(membership => !clubId || membership.clubId === clubId);
+  const memberships = (me.data?.memberships ?? []).filter(membership => !membership.alumniSince && (!clubId || membership.clubId === clubId));
   const workspaces = useTaskWorkspaces(memberships);
   const client = useQueryClient();
   const viewed = useRef<string | null>(null);
