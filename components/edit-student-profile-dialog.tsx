@@ -174,7 +174,8 @@ export function EditStudentProfileDialog({
       </DialogTrigger>
       <DialogContent
         className="max-h-[90dvh] overflow-y-auto sm:max-w-xl"
-        style={{ width: "min(36rem, calc(100vw - 2rem))", maxHeight: "calc(100dvh - 2rem)", minHeight: 0, overflowY: "auto" }}
+        // Switching sections keeps one height, so the window doesn't jump as content changes.
+        style={{ width: "min(36rem, calc(100vw - 2rem))", ...(sections ? { height: "min(46rem, calc(100dvh - 2rem))", alignContent: "start" } : {}), maxHeight: "calc(100dvh - 2rem)", minHeight: 0, overflowY: "auto" }}
         showCloseButton={!busy}
         onEscapeKeyDown={(event) => {
           if (busy) event.preventDefault()
@@ -183,7 +184,7 @@ export function EditStudentProfileDialog({
       >
         <DialogHeader>
           <DialogTitle>{sections ? "Edit profile" : titles[section]}</DialogTitle>
-          <DialogDescription>{sections ? "Choose a section. Changes save as you go." : "Update this section of your recruiting profile."}</DialogDescription>
+          <DialogDescription>{sections ? "Choose a section. Changes save as you go." : "Changes save as you go."}</DialogDescription>
         </DialogHeader>
         {sections && <SegmentedControl label="Profile section" size="compact" value={section} onChange={async next => {
           if (next === section || busy) return
@@ -226,7 +227,7 @@ export function EditStudentProfileDialog({
                     {photoSource && <ProfilePhotoCrop source={photoSource} onCancel={() => setPhotoSource(null)} onSave={async file => { await upload(file, "headshot"); setPhotoSource(null) }} />}
                     {draft.headshotUrl && <Button type="button" variant="outline" onClick={() => setPhotoSource(profilePhotoSource(draft.headshotUrl) ?? null)}>Re-edit photo</Button>}
                     <Button type="button" variant="ghost" onClick={() => { setPhotoSource(null); setDraft({ ...draft, headshotUrl: null }) }}>Remove photo</Button>
-                    <p className="text-xs text-muted-foreground">Save changes to update your photo.</p>
+                    <p className="text-xs text-muted-foreground">Your photo saves with your other changes.</p>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Your computing ID is managed by your university account.
@@ -253,7 +254,7 @@ export function EditStudentProfileDialog({
                   </div>
                   {field("highSchool", "High school (optional)")}
                   <div className="grid gap-4 sm:grid-cols-2">{([["gender", "Gender", genderValues], ["pronouns", "Pronouns", pronounValues]] as const).map(([key, label, values]) => <div className="space-y-2" key={key}><Label htmlFor={`profile-${key}`}>{label}</Label><NativeSelect id={`profile-${key}`} className="w-full" value={draft[key] ?? ""} onChange={e => setDraft({ ...draft, [key]: e.target.value || null })}><option value="">Not provided</option>{values.map(v => <option key={v}>{v}</option>)}</NativeSelect></div>)}</div>
-                  <p className="text-xs text-muted-foreground">Gender is shared with recruitment reviewers only when explicitly enabled for the round. Pronouns and high school stay on your personal profile.</p>
+                  <p className="text-xs text-muted-foreground">Clubs see your gender only when they turn it on for a round. Pronouns and high school stay on your profile.</p>
                   <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={draft.transferStudent} onChange={e => setDraft({ ...draft, transferStudent: e.target.checked })} />Transfer student</label>
                   <fieldset className="space-y-3"><legend className="text-sm font-medium">Are you a scholar?</legend>
                     <NativeSelect aria-label="Are you a scholar?"  value={scholarYes ? "yes" : draft.scholarStatus ? "no" : ""} onChange={e => { setScholarYes(e.target.value === "yes"); setDraft({ ...draft, scholarStatus: e.target.value === "no" ? { selections: ["NOT_APPLICABLE"], other: "" } : null }) }}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></NativeSelect>
@@ -264,7 +265,7 @@ export function EditStudentProfileDialog({
                   <div className="grid grid-cols-2 gap-4">
                     {(
                       [
-                        ["gpa", "GPA out of 4.0 (optional)", 0, 4, ".001"],
+                        ["gpa", "GPA out of 4.0 (optional): college, or high school until you have one", 0, 4, ".001"],
                         ["satScore", "SAT (optional)", 400, 1600, "1"],
                         ["actScore", "ACT composite (optional)", 1, 36, "1"],
                         ["actEnglish", "ACT English (optional)", 1, 36, "1"],
@@ -400,8 +401,7 @@ export function EditStudentProfileDialog({
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    The document attachment saves automatically. Clear the résumé URL to remove the
-                    attachment. LinkedIn and résumé details are not imported automatically.
+                    Uploads save as you go. Clear the résumé URL to remove the attachment.
                   </p>
                 </>
               )}

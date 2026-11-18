@@ -6,5 +6,5 @@ export const metadata = { title: "Clubs · Admin", robots: { index: false, follo
 export default async function AdminClubsPage() {
   const result = await loadAdminClubs();
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
-  return <div className="min-w-0 oc-workspace-stack oc-admin-workspace"><PageHeader eyebrow="OutClass · Administration" title="Clubs" description="Manage club identities, public profiles and visibility. Recruitment and club operations retain their canonical controls." /><AdminClubs initial={result.value!} /></div>;
+  return <div className="min-w-0 oc-workspace-stack oc-admin-workspace"><PageHeader eyebrow="OutClass · Administration" title="Clubs" description="Manage club identities, public profiles and visibility. Recruiting and day-to-day club settings stay with each club." /><AdminClubs initial={result.value!} /></div>;
 }

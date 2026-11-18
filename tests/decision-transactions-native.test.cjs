@@ -11,6 +11,7 @@ const fs = require('node:fs'), path = require('node:path'), ts = require('typesc
 const { PrismaClient } = require('@prisma/client');
 const databaseUrl = process.env.OUTCLASS_TRANSACTION_TEST_DATABASE_URL;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const invitationAccess = (() => { const mod = { exports: {} }; new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync('lib/invitation-access.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(require, mod, mod.exports); return mod.exports; })();
 function loader(mocks, overrides = {}) {
   const cache = new Map();
   function load(file) {
@@ -398,7 +399,12 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
       if (failure === 'suspension') await operator.club.update({ where:{id:f.club.id}, data:{suspendedAt:new Date()} });
       if (failure === 'audit') state.failAction = 'club.invite.accept';
       if (failure === 'account') await operator.user.update({ where:{id:f.student.id}, data:{disabledAt:new Date()} });
-      await assert.rejects(r.run(() => onboarding.acceptIdentityClubInvitation(invited.id)), /Verify|unavailable|no longer|suspended|Injected/);
+      // Missing mailbox proof is refused with its code and the shared accept-path copy (lib/invitation-access.ts); the school
+      // name comes from the fixture's email domain when its identifier type is configured.
+      await assert.rejects(r.run(() => onboarding.acceptIdentityClubInvitation(invited.id)), failure === 'proof'
+        ? error => error.code === 'UNIVERSITY_VERIFICATION_REQUIRED' && /^To respond to this invitation, confirm your .+ email: send yourself a password reset from Account settings/.test(error.message)
+          && [null, f.school?.name ?? null, 'University of Virginia'].some(school => error.message === invitationAccess.verificationRequiredMessage({ remedy: 'password', school, purpose: 'respond' }))
+        : /unavailable|no longer|suspended|Injected/);
       state.failAction = null;
       assert.equal(await base.clubMember.count({where:{clubId:f.club.id,userId:f.student.id}}),0);
       assert.equal((await base.clubInvitation.findUniqueOrThrow({where:{id:invited.id}})).status,'PENDING');

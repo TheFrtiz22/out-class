@@ -119,3 +119,5 @@
   .oc-writing-textarea { padding: .75rem; }
   .oc-writing-actions { position: static; }
 }
+.oc-status-instructions { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.oc-status-instructions:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--oc-radius-sm); }

@@ -56,7 +56,7 @@ function trackerHarness(records,scope='status',params='') {
  const h=hooks(),calls=[],navigation=[];const auth={user:{id:'student'},loading:false,refreshUser:async()=>{}};
  const shared={focusApplicationClubId:null,clearApplicationFocus(){shared.focusApplicationClubId=null},focusApplication:id=>calls.push(['focus',id]),syncApplications:items=>calls.push(['applications',items]),syncApplicationBookings:items=>calls.push(['bookings',items])};
  let server=records,fail=false,query=params;const revalidation={};
- const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-server-now':{useServerAnchoredNow:()=>Date.now()},'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:{confirm:()=>false}}).ApplicationTrackerView;
+ const C=load('components/views/application-tracker-view.tsx',{react:h.react,'@/hooks/use-server-now':{useServerAnchoredNow:()=>Date.now()},'@/hooks/use-revalidate':{useRevalidate:(fn,options)=>Object.assign(revalidation,{fn,options})},'next/navigation':{useSearchParams:()=>new URLSearchParams(query)},'@/lib/workspace-api':{getStudentApplications:async()=>{calls.push(['read']);if(fail)throw Error('Unavailable');return structuredClone(server)}},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/application-state':{useApplicationState:()=>shared},window:global.window||{confirm:()=>false}}).ApplicationTrackerView;
  return {...h,calls,auth,navigation,revalidation,setScope:value=>scope=value,render:()=>h.render(()=>C({scope,onNavigate:view=>navigation.push(view)})),setRecords:records=>server=records,fail:()=>fail=true,query:value=>query=value,shared};
 }
 const cards=tree=>nodes(tree).filter(node=>node.type==='ApplicationStatusCard');
@@ -256,3 +256,23 @@ test('View submitted responses from the status page opens the answers, and a lat
  assert.equal(detail(),undefined,'the submitted answers show, not the status again');
  assert.ok(JSON.stringify(nodes(h.render()).filter(n=>typeof n.props?.children==='string').map(n=>n.props.children)).includes('read-only after submission'),'the answers view is open, not the list');
 })
+
+test('an opened application lives in the URL: the list pushes ?applicationId, Back closes it, and a link reopens it',async()=>{
+ const previous=global.window,entries=[];let href='https://outclass.test/applications?tab=decisions',backs=0;
+ global.window={confirm:()=>false,get location(){return{href}},history:{state:null,pushState:(_s,_t,url)=>{entries.push(['push',String(url)]);href=String(url)},replaceState:(_s,_t,url)=>{entries.push(['replace',String(url)]);href=String(url)},back:()=>{backs++}}};
+ try{
+  const h=trackerHarness([app('Offer','ACCEPTED')],'all','tab=decisions');h.render();await h.flush();h.render();await h.flush();
+  cards(h.render())[0].props.onOpen();
+  assert.deepEqual(entries,[['push','https://outclass.test/applications?tab=decisions&applicationId=Offer']]);
+  h.query('tab=decisions&applicationId=Offer');h.render();await h.flush();
+  const detail=()=>nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail');
+  assert.equal(detail()?.props.application.id,'Offer','the pushed URL keeps the open application');
+  detail().props.onBack();assert.equal(backs,1,'closing an application opened from the list steps back through history');
+  // The browser's Back removes the parameter: the list returns.
+  h.query('tab=decisions');h.render();await h.flush();assert.equal(detail(),undefined);assert.equal(cards(h.render()).length,1);
+  // Forward (or a shared link) opens the same application again, and its close drops the parameter instead of leaving the page.
+  href='https://outclass.test/applications?tab=decisions&applicationId=Offer';h.query('tab=decisions&applicationId=Offer');h.render();await h.flush();h.render();await h.flush();
+  assert.equal(detail()?.props.application.id,'Offer');
+  detail().props.onBack();assert.equal(backs,1,'a linked application is closed in place');assert.equal(entries.at(-1)[1],'https://outclass.test/applications?tab=decisions');
+ }finally{global.window=previous}
+});
