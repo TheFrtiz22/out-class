@@ -7,7 +7,7 @@ import { PreviouslyAppliedBadge } from "@/components/previously-applied-badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { ApplicantSort } from "@/lib/live-applicant-sorting"
-import { stagedLabel, type StagedDecisionView } from "@/lib/staged-decisions"
+import { stagedIsStale, stagedLabel, type StagedDecisionView } from "@/lib/staged-decisions"
 import { formatAverage, scoredEvaluationsLabel } from "@/lib/interview-review-summary"
 import { defaultProfileFieldVisibility, type ProfileFieldVisibility } from "@/lib/profile-field-visibility"
 import { scholarSummary } from "@/lib/scholar-status"
@@ -21,7 +21,9 @@ function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boo
 /** Status, plus the staged (unsent) decision when there is one. */
 function Status({ app, rounds, staged }: { app: Candidate; rounds: Pipeline["rounds"]; staged?: Props["staged"] }) {
   const pending = staged?.get(app.id)
-  return <span className="inline-flex flex-wrap items-center gap-1"><StatusPill status={app.status} />{pending && <span className="oc-staged-chip" title="Saved for Decide › Send. Not sent yet."><ArrowRight size={14} aria-hidden="true" />{stagedLabel(pending, rounds)}</span>}</span>
+  // A decision saved before the applicant moved is not sent by Decide › Send; say so instead of offering it.
+  const stale = !!pending && stagedIsStale(pending, app)
+  return <span className="inline-flex flex-wrap items-center gap-1"><StatusPill status={app.status} />{pending && <span className="oc-staged-chip" data-stale={stale || undefined} title={stale ? "Saved before this applicant changed. Decide › Send skips it; stage a new decision." : "Saved for Decide › Send. Not sent yet."}><ArrowRight size={14} aria-hidden="true" />{stale ? `Out of date: ${stagedLabel(pending, rounds)}` : stagedLabel(pending, rounds)}</span>}</span>
 }
 /** The rating on one line: the average (or the submitted count) with the detail in a tooltip and for screen readers. */
 function Rating({ app }: { app: Candidate }) {

@@ -64,6 +64,7 @@
 
 /* Staged decision marker (list, board, review) */
 .oc-staged-chip { display: inline-flex; align-items: center; gap: .25rem; max-width: 100%; padding: .0625rem .5rem; border: 1px dashed var(--oc-content-edge); border-radius: var(--oc-radius-full); color: var(--muted-foreground); font-size: var(--oc-text-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oc-staged-chip[data-stale] { border-style: solid; border-color: var(--warning); background: var(--warning-subtle); color: var(--foreground); }
 
 /* Applicants toolbar: view · status · search · sort · filters · more, one card. When the card is too narrow for one
    line (container query, so sidebars and page width both count), search and sort move to their own row. */
