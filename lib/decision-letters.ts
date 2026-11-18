@@ -32,9 +32,17 @@ export const defaultLetters: Record<LetterKind,LetterTemplate> = {
  NOT_ADVANCED:{title:'Your recruitment decision',body:'Thank you for applying to {{club.name}} and for the time you gave to our recruitment process.\n\nAfter careful consideration, we will not be moving your application forward from {{round.name}} to the next round, so it will not continue this cycle. We appreciate the opportunity to learn about you.\n\nWe hope you will consider applying again in a future recruitment cycle.',closing:'Sincerely,',signer:'{{club.name}}',footer:''},
 };
 export type LetterContent = Omit<LetterTemplate,'celebration'> & { celebration?:CelebrationKind; studentName:string; clubName:string; logoReference:string|null; accent:string; date:string };
+const customized=(kind:LetterKind,templates:Partial<Record<LetterKind,LetterTemplate>>)=>{const t=templates[kind];return !!t&&JSON.stringify(t)!==JSON.stringify(defaultLetters[kind])};
+/** True while a club's own rejection letter stands in for an unedited "didn't advance" letter. */
+export function notAdvancedUsesRejection(templates:Partial<Record<LetterKind,LetterTemplate>>){return !customized('NOT_ADVANCED',templates)&&customized('REJECTED',templates)}
+/** Frozen snapshots merge in the defaults, so "customized" means different from the default wording. */
+function chooseTemplate(kind:LetterKind,templates:Partial<Record<LetterKind,LetterTemplate>>):LetterTemplate{
+ if(kind==='NOT_ADVANCED'&&notAdvancedUsesRejection(templates))return templates.REJECTED!;
+ return templates[kind] ?? defaultLetters[kind];
+}
 export function resolveLetter(decision:LetterKind, templates:unknown, values:{firstName:string;fullName:string;clubName:string;roundName?:string|null;date:Date;expiresAt:Date|null;logoReference:string|null;accent:string}):LetterContent {
  const parsed=letterTemplatesSchema.safeParse(templates ?? {});
- const template=parsed.success ? parsed.data[decision] ?? defaultLetters[decision] : defaultLetters[decision];
+ const template=parsed.success ? chooseTemplate(decision,parsed.data) : defaultLetters[decision];
  const date=values.date.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'});
  const variables:Record<string,string>={'student.firstName':values.firstName,'student.fullName':values.fullName,'club.name':values.clubName,'round.name':values.roundName?.trim()||'this round','decision.date':date,'offer.expiresAt':values.expiresAt?.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}) ?? 'the deadline shown with your offer'};
  const render=(value:string)=>value.replace(/\{\{\s*([\w.]+)\s*\}\}/g,(_,key)=>variables[key] ?? '');

@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useEffect,useRef,useState } from 'react';
 import { getDecisionTemplates,saveDecisionTemplates,setFormalDecisionLetters } from '@/lib/workspace-api';
-import { defaultLetters,letterVariables,resolveLetter,type LetterKind,type LetterTemplate,letterTemplatesSchema,celebrationKinds,celebrationLabels,defaultCelebration } from '@/lib/decision-letters';
+import { defaultLetters,letterVariables,resolveLetter,notAdvancedUsesRejection,type LetterKind,type LetterTemplate,letterTemplatesSchema,celebrationKinds,celebrationLabels,defaultCelebration } from '@/lib/decision-letters';
 import { AcceptanceBanner,LetterPaper } from './decision-letter';
 import { Celebration,useCelebration } from './decision-celebration';
 import { PillGroup, SegmentedControl } from '@/components/ui/segmented-control';
@@ -38,7 +38,7 @@ export function DecisionTemplateEditor({clubId,inline=false}:{clubId:string;inli
  <Toggle label="Send formal decision letters" checked={club.sendFormalDecisionLetters} disabled={busy} onCheckedChange={async enabled=>{setBusy(true);try{await setFormalDecisionLetters(clubId,enabled);setClub({...club,sendFormalDecisionLetters:enabled});setMessage('Formal-letter setting saved. Historical letters are unchanged.');}catch{setMessage('Could not save the formal-letter setting.');}finally{setBusy(false)}}}/>
  <p className="text-sm text-muted-foreground">When off, applicants still see their decision in OutClass, without a formal letter.</p>
  <div className="space-y-2 text-sm"><span className="block">Outcome</span><PillGroup label="Letter outcome" size="compact" value={selected} onChange={value=>{setSelected(value);setPreview(false)}} options={(['ACCEPTED','REJECTED','NOT_ADVANCED','WAITLISTED'] as const).map(type=>({value:type,label:outcomeLabels[type]}))}/></div>
- {selected==='NOT_ADVANCED'&&<p className="text-xs text-muted-foreground">Sent to applicants not accepted before your last round.</p>}
+ {selected==='NOT_ADVANCED'&&<p className="text-xs text-muted-foreground">{notAdvancedUsesRejection(templates)?"Until you edit this, applicants who don't advance get your rejection letter.":"Sent to applicants not accepted before your last round."}</p>}
  {selected==='ACCEPTED'&&<div className="space-y-2">
   <p className="text-sm font-medium">Celebration</p>
   <div className="flex flex-wrap items-center gap-3"><SegmentedControl label="Acceptance celebration" value={celebrationKind} onChange={value=>{setTemplates({...templates,ACCEPTED:{...template,celebration:value}});if(value!=='none')celebration.play()}} options={celebrationKinds.map(kind=>({value:kind,label:celebrationLabels[kind],disabled:busy||autosave.recovery!=null}))}/>

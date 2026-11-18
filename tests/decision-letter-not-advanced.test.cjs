@@ -87,3 +87,34 @@ test('the letter editor offers the new outcome and the overview counts every let
   assert.match(fs.readFileSync('components/live-voting/decide-overview.tsx', 'utf8'), /letterKinds\.filter\(type => templates\.value!\.templates\[type\]\)/)
   assert.match(fs.readFileSync('lib/demo/communications.ts', 'utf8'), /letterKindFor\(app\.status as LetterDecision,laterRound\)/)
 })
+
+test('a club\'s custom rejection letter stands in until it edits "didn\'t advance"', async () => {
+  const customRejected = { ...letters.defaultLetters.REJECTED, body: 'Our own rejection wording.' }
+  const customNotAdvanced = { ...letters.defaultLetters.NOT_ADVANCED, body: 'Our own wording for {{round.name}}.' }
+  // Custom rejection, no "didn't advance": the club's rejection wording.
+  assert.equal(letters.resolveLetter('NOT_ADVANCED', { REJECTED: customRejected }, values).body, 'Our own rejection wording.')
+  assert.equal(letters.notAdvancedUsesRejection({ REJECTED: customRejected }), true)
+  // Neither customized (also a frozen snapshot that merged in the defaults): the default "didn't advance" wording.
+  for (const templates of [{}, { ...letters.defaultLetters }]) {
+    assert.match(letters.resolveLetter('NOT_ADVANCED', templates, values).body, /from First Interviews to the next round/)
+    assert.equal(letters.notAdvancedUsesRejection(templates), false)
+  }
+  // A frozen snapshot with a custom rejection and the default "didn't advance" still falls back.
+  assert.equal(letters.resolveLetter('NOT_ADVANCED', { ...letters.defaultLetters, REJECTED: customRejected }, values).body, 'Our own rejection wording.')
+  // Both customized: each keeps its own wording.
+  const both = { REJECTED: customRejected, NOT_ADVANCED: customNotAdvanced }
+  assert.equal(letters.resolveLetter('NOT_ADVANCED', both, values).body, 'Our own wording for First Interviews.')
+  assert.equal(letters.resolveLetter('REJECTED', both, values).body, 'Our own rejection wording.')
+  assert.equal(letters.notAdvancedUsesRejection(both), false)
+
+  // Publishing with the club's stored templates.
+  const s = harness({ later: 1 })
+  const find = s.tx.application.findUniqueOrThrow
+  s.tx.application.findUniqueOrThrow = async q => { const app = await find(q); return { ...app, club: { ...app.club, decisionLetterTemplates: { REJECTED: customRejected } } } }
+  await publishDecisionCommunication(s.tx, 'app', 'actor')
+  assert.equal(s.letters[0].content.body, 'Our own rejection wording.')
+  assert.equal(s.letters[0].decision, 'REJECTED')
+
+  const editor = fs.readFileSync('components/communications/template-editor.tsx', 'utf8')
+  assert.match(editor, /notAdvancedUsesRejection\(templates\)\?"Until you edit this, applicants who don't advance get your rejection letter\."/)
+})
