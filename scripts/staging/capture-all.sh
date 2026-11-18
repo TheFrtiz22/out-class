@@ -20,7 +20,7 @@ node scripts/staging/maestro.cjs e2e/enable-push.yaml 2>&1 | grep -E 'FAILED' | 
 both student
 for T in light dark; do
   theme "$T"
-  CODE="$(node scripts/staging/issue-code.cjs)"; open_link "outclass://scan?code=$CODE"; sleep 9; shot "$OUT/$T/26-check-in-result.png"
+  CODE="$(node scripts/staging/issue-code.cjs)"; open_link "outclass://q/$CODE"; sleep 9; shot "$OUT/$T/26-check-in-result.png"
   open_link "outclass://club/this-club-does-not-exist"; sleep 6; shot "$OUT/$T/28-error-state.png"
   if [ "$PLATFORM" = ios ]; then
     open_link "outclass://"; sleep 3

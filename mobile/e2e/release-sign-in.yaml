@@ -13,8 +13,13 @@ appId: net.outclass.app
 - tapOn:
     id: "sign-in-password"
 - inputText: ${PASSWORD}
+# Android's keyboard covers the button; iOS has nothing to hide once the field loses focus.
+- hideKeyboard:
+    optional: true
+# On iOS, hiding the keyboard submits the form (the password field's Go key), so the button may already be gone.
 - tapOn:
     id: "sign-in-submit"
+    optional: true
 - runFlow:
     when:
       visible: "Not Now"
