@@ -25,6 +25,8 @@ export const mobileOperations = {
   "graduation.details": operation("POST", passthrough, async input => (await import("@/actions/graduation")).saveAlumniDetails(input)),
 
   // Home, calendar
+  "home.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileHome()),
+  "calendar.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileCalendar()),
   "home.dashboard": operation("GET", none, async () => (await import("@/actions/applications")).getStudentDashboardData()),
   "home.taskNotifications": operation("GET", none, async () => (await import("@/actions/tasks")).getTaskNotifications()),
   "invitations": operation("GET", none, async () => (await import("@/actions/club-onboarding")).getOrganizationInvitations(false)),

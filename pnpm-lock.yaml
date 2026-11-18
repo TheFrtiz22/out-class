@@ -213,6 +213,9 @@ importers:
       '@expo-google-fonts/source-sans-3':
         specifier: ^0.4.2
         version: 0.4.2
+      '@outclass/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.88.1(@babel/core@7.29.13)(@react-native/metro-config@0.88.1(@babel/core@7.29.13))(@types/react@19.3.0)(react@19.3.0))

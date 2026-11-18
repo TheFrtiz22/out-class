@@ -3,11 +3,11 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
+      "~/*": [
         "./src/*"
       ],
-      "@/assets/*": [
-        "./assets/*"
+      "phosphor-react-native/src/icons/*": [
+        "./src/types/phosphor-icons.d.ts"
       ]
     }
   },
@@ -16,5 +16,11 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "app.config.ts",
+    "ios",
+    "android",
+    "node_modules"
   ]
 }

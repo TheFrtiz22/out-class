@@ -1,0 +1,15 @@
+# Development builds only: open the dev client on the local Metro server.
+appId: net.outclass.app
+---
+- launchApp:
+    clearState: false
+- openLink: "outclass://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit|home-screen"
+    timeout: 120000

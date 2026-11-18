@@ -52,3 +52,4 @@ docs/mobile/STAGING_ACCOUNTS.local.md
 /mobile/.expo/
 /mobile/expo-env.d.ts
 /mobile/dist/
+/.shots/
