@@ -71,7 +71,7 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
     {onProfileDefaults && invitations.length > 0 && <p className="text-sm text-muted-foreground">Invitation details may fill blank profile fields. Review and edit your name and graduation year before saving.</p>}
     {notice && !failed && <p role="status" className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">{notice}</p>}
     {loading && !invitations.length ? <LoadingState label="Checking organization invitations…" layout="feed" rows={2} />
-      : failed ? <div className="rounded-xl border p-4 space-y-3"><p role={block === "verify" ? "status" : "alert"}>{notice || "Couldn’t check invitations. Try again."}</p>{block === "verify" ? <Button asChild variant="outline"><Link href={UNIVERSITY_VERIFICATION_HREF}>Account settings</Link></Button> : <Button variant="outline" onClick={refresh}>Try again</Button>}</div>
+      : failed ? <div className="rounded-xl border p-4 space-y-3"><p role={block === "verify" || block === "verify-provider" ? "status" : "alert"}>{notice || "Couldn’t check invitations. Try again."}</p>{block === "verify" ? <Button asChild variant="outline"><Link href={UNIVERSITY_VERIFICATION_HREF}>Account settings</Link></Button> : <Button variant="outline" onClick={refresh}>Try again</Button>}</div>
       : <ul className="space-y-3">{invitations.map(invitation => <OrganizationInvitationCard key={invitation.id} invitation={invitation} onChanged={changed} allowDecline />)}</ul>}
   </section>;
 }

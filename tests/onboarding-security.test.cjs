@@ -28,7 +28,7 @@ test('changed verified mailbox never discovers historical university identities;
  const helper=load('utils/school-identity.ts',{'@/utils/verified-email-policy':{...load('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}}});
  const account={user:{id:'account',email:'newid@virginia.edu'},supabaseUser:{id:'account',email:'NEWID@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-02',user_metadata:{computing_id:'victim'}}};
  assert.deepEqual((await helper.verifiedSchoolIdentities(tx,account)).map(i=>i.id),['current']);assert.equal(normalized,'newid');assert.deepEqual(query.id,{in:['current']});
- for(const change of [{confirmation_sent_at:undefined},{confirmation_sent_at:'invalid'},{confirmation_sent_at:'2027-01-01'},{id:'victim'},{email:'victim@virginia.edu'},{confirmation_sent_at: '2026-09-01', email_confirmed_at:null},{app_metadata:{email_verification_skipped:true}}])await assert.rejects(helper.verifiedSchoolIdentities(tx,{...account,supabaseUser:{...account.supabaseUser,...change}}),/confirm your UVA email/);
+ for(const change of [{confirmation_sent_at:undefined},{confirmation_sent_at:'invalid'},{confirmation_sent_at:'2027-01-01'},{id:'victim'},{email:'victim@virginia.edu'},{confirmation_sent_at: '2026-09-01', email_confirmed_at:null},{app_metadata:{email_verification_skipped:true}}])await assert.rejects(helper.verifiedSchoolIdentities(tx,{...account,supabaseUser:{...account.supabaseUser,...change}}),/confirm your university email: send yourself a password reset/);
 });
 
 test('all onboarding tables retain independent restrictive RLS even with browser grants and permissive policies',async t=>{

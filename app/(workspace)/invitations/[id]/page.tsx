@@ -5,7 +5,7 @@ import { prisma } from "@/utils/prisma";
 import { getSessionUser, requireAuth } from "@/utils/auth";
 import { previewVerifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { UniversityVerificationError } from "@/utils/verified-email-policy";
-import { UNIVERSITY_VERIFICATION_HREF } from "@/lib/invitation-access";
+import { UNIVERSITY_VERIFICATION_HREF, verificationTitle } from "@/lib/invitation-access";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
@@ -56,8 +56,8 @@ export default async function Invitation({
     }
   })();
   if (verificationError) return <div className="max-w-xl space-y-4">
-    <PageHeader title={verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? "Confirm your UVA email" : "Invitations unavailable"} />
-    <p role="alert">{verificationError.message}</p><Button variant="outline" asChild>{verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? <Link href={UNIVERSITY_VERIFICATION_HREF}>Account settings</Link> : <Link href="/clubs">Go to My Clubs</Link>}</Button>
+    <PageHeader title={verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? verificationTitle(verificationError.context.school) : "Invitations unavailable"} />
+    <p role="alert">{verificationError.message}</p><Button variant="outline" asChild>{verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" && verificationError.context.remedy !== "provider" ? <Link href={UNIVERSITY_VERIFICATION_HREF}>Account settings</Link> : <Link href="/clubs">Go to My Clubs</Link>}</Button>
   </div>;
   const invitation = await prisma.clubInvitation.findFirst({
     where: {

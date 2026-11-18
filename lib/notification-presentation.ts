@@ -3,7 +3,8 @@ import type { Notification, TrackedApplication } from "@/lib/data"
 /** Exact destinations supplied by notifications take precedence over legacy UI actions. */
 /** Club invitations are answered in My Clubs, alongside any others pending. */
 export const INVITATIONS_HREF = "/clubs"
-const legacyInvitationPath = (path: string) => path.startsWith("/invitations") || path === "/settings/organizations"
+// A link to one invitation (/invitations/<id>) still opens it; only the old list pages fall back to My Clubs.
+const legacyInvitationPath = (path: string) => path === "/settings/organizations" || /^\/invitations\/?$/.test(path)
 
 export function notificationDestination(item: Notification, applications: Pick<TrackedApplication, "clubId" | "status">[] = []) {
   const href = item.taskHref || item.href

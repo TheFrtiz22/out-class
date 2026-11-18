@@ -193,12 +193,19 @@ test('responses finishing together still collapse the final request',async()=>{
 });
 
 test('My Clubs explains missing university proof, links to Account settings and conceals previously loaded invitations on a denied refresh',async()=>{
- let denied=false;const h=container({getOrganizationInvitations:async()=>{if(denied)throw Object.assign(Error('To see club invitations, confirm your UVA email: send yourself a password reset from Account settings, then sign in again.'),{userFacing:true,code:'UNIVERSITY_VERIFICATION_REQUIRED'});return[invitation()]}},{includeDismissed:true});
+ let denied=false;const h=container({getOrganizationInvitations:async()=>{if(denied)throw Object.assign(Error('To see club invitations, confirm your University of Virginia email: send yourself a password reset from Account settings, then sign in again.'),{userFacing:true,code:'UNIVERSITY_VERIFICATION_REQUIRED',remedy:'password'});return[invitation()]}},{includeDismissed:true});
  h.render();await h.flush();assert.equal(cards(h.render()).length,1);
  denied=true;h.context().refresh();h.render();await h.flush();const tree=h.render();
  assert.equal(cards(tree).length,0);assert.equal(h.context().block,'verify');
- const text=JSON.stringify(tree);assert.match(text,/confirm your UVA email/);assert.doesNotMatch(text,/normal email verification|password recovery flow/);
+ const text=JSON.stringify(tree);assert.match(text,/confirm your University of Virginia email/);assert.doesNotMatch(text,/UVA email/);assert.doesNotMatch(text,/normal email verification|password recovery flow/);
  assert.ok(nodes(tree).some(n=>n.type==='Link'&&n.props.href==='/settings/account'));assert.ok(!nodes(tree).some(n=>n.props?.children==='Try again'));
+});
+
+test('a Microsoft-only account is told to sign in with Microsoft again, with Try again and no password-reset link',async()=>{
+ const h=container({getOrganizationInvitations:async()=>{throw Object.assign(Error('To see club invitations, OutClass needs to confirm your University of Virginia email from your Microsoft sign-in. Sign out and sign in with Microsoft again. If this keeps happening, contact OutClass support.'),{userFacing:true,code:'UNIVERSITY_VERIFICATION_REQUIRED',remedy:'provider'})}},{includeDismissed:true});
+ h.render();await h.flush();const tree=h.render();const text=JSON.stringify(tree);
+ assert.equal(h.context().block,'verify-provider');assert.match(text,/sign in with Microsoft again/);assert.doesNotMatch(text,/password reset/);
+ assert.ok(!nodes(tree).some(n=>n.type==='Link'));assert.ok(nodes(tree).some(n=>n.props?.children==='Try again'));assert.ok(nodes(tree).some(n=>n.props?.role==='status'));
 });
 
 test('a generic invitation-check failure keeps Retry and names no verification step',async()=>{

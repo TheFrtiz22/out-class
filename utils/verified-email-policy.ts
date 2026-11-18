@@ -1,9 +1,21 @@
 import { ActionError } from "@/lib/action-result";
-import { UNIVERSITY_VERIFICATION_REQUIRED_MESSAGE, UNIVERSITY_VERIFICATION_UNAVAILABLE_MESSAGE } from "@/lib/invitation-access";
+import { UNIVERSITY_VERIFICATION_UNAVAILABLE_MESSAGE, verificationRequiredMessage, type VerificationContext } from "@/lib/invitation-access";
 export class UniversityVerificationError extends ActionError {
-  constructor(public readonly code: "UNIVERSITY_VERIFICATION_REQUIRED" | "UNIVERSITY_VERIFICATION_UNAVAILABLE") {
-    super(code === "UNIVERSITY_VERIFICATION_REQUIRED" ? UNIVERSITY_VERIFICATION_REQUIRED_MESSAGE : UNIVERSITY_VERIFICATION_UNAVAILABLE_MESSAGE, code);
+  /** How this account can confirm its mailbox and the school's name, for the refusal copy only. */
+  readonly context: VerificationContext;
+  constructor(public readonly code: "UNIVERSITY_VERIFICATION_REQUIRED" | "UNIVERSITY_VERIFICATION_UNAVAILABLE", context: VerificationContext = {}) {
+    super(code === "UNIVERSITY_VERIFICATION_REQUIRED" ? verificationRequiredMessage(context) : UNIVERSITY_VERIFICATION_UNAVAILABLE_MESSAGE, code);
+    this.context = context;
   }
+}
+
+/** A password account confirms its mailbox with a password reset; an account without a password signs in with Microsoft. */
+export function verificationRemedyFor(account: { supabaseUser: { app_metadata?: Record<string, unknown>; identities?: { provider: string }[] } }) {
+  const metadata = account.supabaseUser.app_metadata ?? {};
+  const providers = Array.isArray(metadata.providers) ? metadata.providers : typeof metadata.provider === "string" ? [metadata.provider] : [];
+  const hasPassword = providers.includes("email") || account.supabaseUser.identities?.some(identity => identity.provider === "email");
+  const microsoft = providers.includes("azure") || account.supabaseUser.identities?.some(identity => identity.provider === "azure");
+  return !hasPassword && microsoft ? "provider" as const : "password" as const;
 }
 
 export function hasConfirmedUniversityEmail(account: {

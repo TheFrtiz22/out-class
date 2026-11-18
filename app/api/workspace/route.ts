@@ -96,7 +96,8 @@ export async function GET(request: Request) {
   } catch (error) {
     // A rate-limited read (ActionError code RATE_LIMITED) says so, so the browser can say "try again shortly".
     if (error && typeof error === "object" && "code" in error && error.code === "RATE_LIMITED") return Response.json({ error: RATE_LIMIT_MESSAGE }, { status: 429, headers })
-    if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
+    // The remedy and school name describe the signed-in account itself; nothing about other users.
+    if (error instanceof UniversityVerificationError) return Response.json(error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? { error: error.code, remedy: error.context.remedy ?? null, school: error.context.school ?? null } : { error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
     // Name the refused read kind (an allowlisted constant) so a recurring 403 can be traced; no arguments, ids or messages.
