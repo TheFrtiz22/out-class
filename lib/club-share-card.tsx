@@ -8,6 +8,7 @@ import { analyzeLogoPixels, logoBackgroundColor } from "@/lib/club-logo-backgrou
 import { privateClubAssetStorage } from "@/utils/club-asset-storage"
 import { initials } from "@/lib/club-share-text"
 import { SHARE_CARD_COLORS as C } from "@/lib/share-card-palette"
+import { resolveHostSchool } from "@/utils/school-scope"
 import { CACHE, TRANSIENT, SHARE_CARD_SIZE, caslon, clip, dataUrl, glassChip, glassPanel, loadType, loadWordmark, local, renderSiteShareCard, rgba } from "@/lib/share-card"
 
 type ShareProfile = ClubShareProfile
@@ -76,7 +77,8 @@ export async function renderClubShareCard(idOrSlug: string) {
     // Couldn't check: show the site card, but never let the CDN pin it to this club's URL.
     return renderSiteShareCard(TRANSIENT)
   }
-  if (!club) return renderSiteShareCard()
+  // The fallback names the host's school (host only: this response is CDN-cached for every viewer).
+  if (!club) return renderSiteShareCard(CACHE, await resolveHostSchool().catch(() => undefined))
   const [logo, cover, wordmark, [serif, serifBold]] = await Promise.all([logoTile(club), backdrop(club), loadWordmark(), loadType()])
   const color = hex(club.color)
   const name = clip(club.name, 70)

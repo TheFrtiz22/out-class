@@ -38,9 +38,13 @@ async function schoolForUser(userId: string): Promise<SchoolScope | null> {
   return type?.school ?? null
 }
 
-/** The effective account: a support session's target, otherwise the verified session user. */
+/** The effective account: a valid support session's target, otherwise the verified session user.
+ * An invalid or expired view-as cookie falls back to the signed-in account, never to the host. */
 async function viewerUserId(): Promise<string | null> {
-  if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return (await platformViewSession().catch(() => null))?.targetUserId ?? null
+  if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) {
+    const target = (await platformViewSession().catch(() => null))?.targetUserId
+    if (target) return target
+  }
   return (await getSessionUser()).data.user?.id ?? null
 }
 
@@ -61,12 +65,15 @@ export const resolveViewerSchool = cache(async (): Promise<SchoolScope> => {
   return resolveHostSchool()
 })
 
-/** The host-named school (or the launch school), for responses that never depend on the viewer, such as the sitemap. */
+/**
+ * The host-named school (or the launch school). Use it for every response a shared cache may hold
+ * (sitemap, share-card images, publicly cached assets): those must never depend on the viewer.
+ */
 export async function resolveHostSchool(): Promise<SchoolScope> {
   const key = schoolKeyFromHost((await headers()).get("host"))
   if (!key) return DEFAULT_SCHOOL
-  const school = await prisma.school.findUnique({ where: { key }, select: { ...schoolFields, active: true } })
+  const school = await prisma.school.findUnique({ where: { key }, select: { ...schoolFields, name: true, active: true } })
   if (!school) return DEFAULT_SCHOOL
   // An id no Club row can carry: an inactive school's host lists nothing rather than another school's clubs.
-  return school.active ? { id: school.id, key: school.key } : { id: `inactive:${school.key}`, key: school.key }
+  return school.active ? { id: school.id, key: school.key, name: school.name } : { id: `inactive:${school.key}`, key: school.key, name: school.name }
 }

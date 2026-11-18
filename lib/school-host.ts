@@ -1,10 +1,10 @@
 import { SITE_URL } from "@/lib/seo"
 
 /** One school's public scope: the School row (prisma/schema.prisma) that Club.schoolId points at. */
-export type SchoolScope = { id: string; key: string }
+export type SchoolScope = { id: string; key: string; name?: string }
 
 /** The launch school. Club.schoolId and Club.campusKey default to it, and the main domain shows it. */
-export const DEFAULT_SCHOOL: SchoolScope = { id: "school-uva", key: "uva" }
+export const DEFAULT_SCHOOL: SchoolScope = { id: "school-uva", key: "uva", name: "University of Virginia" }
 
 const APEX = new URL(SITE_URL).hostname.replace(/^www\./, "")
 const NOT_SCHOOLS = new Set(["www"])

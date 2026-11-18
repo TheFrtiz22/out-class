@@ -36,7 +36,7 @@ const eventSelect = {
   isPublic: true,
   audience: true,
   revision: true,
-  club: { select: { name: true, suspendedAt: true } },
+  club: { select: { name: true, suspendedAt: true, schoolId: true } },
   publication: { select: { status: true, category: true, contact: true, rsvpEnabled: true, rsvpRequired: true, capacity: true, rsvpDeadline: true, template: true, flyerId: true, submittedAt: true, submittedBy: true, reviewedAt: true, rejectionReason: true, approvedRevision: true, publishedAt: true } },
   _count: { select: { rsvps: true } },
 } as const;
@@ -241,9 +241,11 @@ async function setSavedCampusEventCommand(input: unknown) {
     await prisma.savedCampusEvent.deleteMany({ where: { userId: user.id, eventId } });
     return { saved: false };
   }
+  const school = await resolveViewerSchool();
   return prisma.$transaction(async tx => {
     const event = await locked(tx, eventId);
-    if (!eventIsPublished(event)) throw new ActionError("This event is no longer available.");
+    // Another school's event is "no longer available", like an unpublished one.
+    if (!eventIsPublished(event) || event.club.schoolId !== school.id) throw new ActionError("This event is no longer available.");
     await tx.savedCampusEvent.upsert({
       where: { userId_eventId: { userId: user.id, eventId } },
       create: { userId: user.id, eventId }, update: {},
@@ -524,13 +526,16 @@ export async function setCampusEventRsvp(input: unknown): Promise<RsvpResult> {
   if (refusal) return { ok: false, error: refusal };
   // Every RSVP for one event waits on its row lock (capacity is exact). A short
   // lock timeout turns a pile-up into a prompt "try again" instead of a 5 s hang.
+  // RSVP is for the viewer's own school's events; cancelling an existing RSVP stays possible.
+  const school = d.going ? await resolveViewerSchool() : null;
   let result: { going: boolean; count: number };
   try { result = await clubWriteTransaction(async (tx) => {
     const scope = await tx.meeting.findUnique({ where: { id: d.eventId }, select: { clubId: true } });
     if (!scope) throw new EventUnavailable();
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
-    const e = await locked(tx, d.eventId),
-      existing = await tx.eventRsvp.findUnique({
+    const e = await locked(tx, d.eventId);
+    if (school && e.club.schoolId !== school.id) throw new EventUnavailable();
+    const existing = await tx.eventRsvp.findUnique({
         where: { eventId_userId: { eventId: d.eventId, userId: user.id } },
       });
     if (!d.going) {

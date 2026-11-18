@@ -22,7 +22,7 @@ import { cspNonce } from "@/utils/csp-nonce"
 
 const readLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
 // The launch participants are the launch school's (lib/launch-clubs.ts); another school's viewers see none.
-const getCachedLaunchClubs = async () => (await resolveViewerSchool()).id === DEFAULT_SCHOOL.id ? readLaunchClubs() : []
+const getCachedLaunchClubs = async () => { const school = await resolveViewerSchool(); return school.id === DEFAULT_SCHOOL.id ? readLaunchClubs(school.id) : [] }
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
   const params = await searchParams

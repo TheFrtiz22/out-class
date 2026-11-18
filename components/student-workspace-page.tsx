@@ -17,7 +17,7 @@ import { studentRouteForPath } from "@/lib/navigation"
 
 const readLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
 // The launch participants are the launch school's (lib/launch-clubs.ts); another school's viewers see none.
-const getCachedLaunchClubs = async () => (await resolveViewerSchool()).id === DEFAULT_SCHOOL.id ? readLaunchClubs() : []
+const getCachedLaunchClubs = async () => { const school = await resolveViewerSchool(); return school.id === DEFAULT_SCHOOL.id ? readLaunchClubs(school.id) : [] }
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
 function query(params: Record<string, string | string[] | undefined>) {

@@ -219,3 +219,10 @@ Resource: public club directory and Explore (`getClubDirectory`), club pages and
 | Forged host / preview host / nested subdomain | launch school (no school named) | launch school | launch school | launch school | n/a | www | same (school hosts case) |
 
 Untested cells: none at unit level; the cross-school cells are not yet proven against disposable Postgres (no Docker on this machine) — CI disposable-integration must confirm. Direct RSVP/save-event by a known event id of another school is not a listing and was left unchanged (follow-up).
+
+Review follow-up (2026-11-18), same resource:
+- **Shared-cache responses are host-scoped, never viewer-scoped.** Club share cards (`loadClubShareProfile`, OG/Twitter images, `public, s-maxage=3600`), the share-card fallback, the sitemap (`force-dynamic`) and public club images (`/api/club-assets`, `s-maxage=300`) use `resolveHostSchool()`. A school host serves only its own clubs' images. The shared main domain keeps serving every school's images, because every school's signed-in students and platform admins use it and those bytes are public.
+- **Per-request responses are viewer-scoped.** Page metadata (`getPublicClubSeo`, `getPublicCampusEvent`) belongs to dynamic pages that read cookies, so it is never shared-cached.
+- **Invalid support sessions.** An invalid view-as cookie falls back to the signed-in account's school, never to the host.
+- **By-id refusals.** These now refuse another school's id: `getMeeting`, `clubLinkPreview`, public `/api/event-flyers` (private, no-store), RSVP (`going: true`) and save-event (`saved: true`). Cancelling an existing RSVP and removing a saved event stay allowed.
+- **Tests.** `tests/school-directory-scope.test.cjs`: the share-card host-only case, fallback card text, the sitemap dynamic case, by-id refusals for both schools, the club images host case, and the junk view-cookie case.
