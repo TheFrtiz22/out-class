@@ -19,6 +19,7 @@ import {
   type EventFilters,
 } from "@/lib/campus-events";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { resolveViewerSchool } from "@/utils/school-scope";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { ActionError, actionResult } from "@/lib/action-result";
@@ -112,13 +113,12 @@ async function locked(
     throw new ActionError("Event changed. Reload before continuing.");
   return e;
 }
-export async function getPublicCorkboard(input: EventFilters = {}) {
-  const f = eventFiltersSchema.parse(input),
-    range = eventDateWindow(f.period, f.date);
-  const savedUser = f.savedOnly ? (await requireAuth()).user : null;
+/** One school's board (utils/school-scope.ts resolves which); other schools' events never match. */
+async function readPublicCorkboard(schoolId: string, f: z.infer<typeof eventFiltersSchema>, savedUserId: string | null) {
+  const range = eventDateWindow(f.period, f.date);
   const where: Prisma.MeetingWhereInput = {
-    ...(savedUser ? { saves: { some: { userId: savedUser.id } } } : {}),
-    club: { is: { suspendedAt: null } },
+    ...(savedUserId ? { saves: { some: { userId: savedUserId } } } : {}),
+    club: { is: { suspendedAt: null, schoolId } },
     audience: "RECRUITMENT",
     isPublic: true,
     publication: {
@@ -175,6 +175,7 @@ export async function getPublicCorkboard(input: EventFilters = {}) {
     prisma.meeting.count({ where }),
     prisma.club.findMany({
       where: {
+        schoolId,
         suspendedAt: null,
         events: {
           some: {
@@ -195,10 +196,27 @@ export async function getPublicCorkboard(input: EventFilters = {}) {
     clubs,
   };
 }
+export async function getPublicCorkboard(input: EventFilters = {}) {
+  const f = eventFiltersSchema.parse(input);
+  const savedUser = f.savedOnly ? (await requireAuth()).user : null;
+  const school = await resolveViewerSchool();
+  return readPublicCorkboard(school.id, f, savedUser?.id ?? null);
+}
+/** The unfiltered board for the server-rendered /corkboard page, cached per school (the school id is in the key). */
+let defaultBoard: ((schoolId: string) => ReturnType<typeof readPublicCorkboard>) | undefined;
+export async function getDefaultPublicCorkboard() {
+  const school = await resolveViewerSchool();
+  if (!defaultBoard) {
+    const { unstable_cache } = await import("next/cache");
+    defaultBoard = unstable_cache((schoolId: string) => readPublicCorkboard(schoolId, eventFiltersSchema.parse({}), null), ["public-corkboard-default"], { revalidate: 60, tags: ["club-directory"] });
+  }
+  return defaultBoard(school.id);
+}
 export async function getPublicCampusEvent(eventId: string) {
   z.string().uuid().parse(eventId);
-  const e = await prisma.meeting.findUnique({
-    where: { id: eventId },
+  const school = await resolveViewerSchool();
+  const e = await prisma.meeting.findFirst({
+    where: { id: eventId, club: { is: { schoolId: school.id } } },
     select: publicEventSelect,
   });
   return e && eventIsPublished(e) ? present(e) : null;

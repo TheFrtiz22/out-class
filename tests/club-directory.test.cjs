@@ -5,7 +5,7 @@ const ts = require("typescript")
 const Module = require("node:module")
 const path = require("node:path")
 function load(file, dependencies = {}) {
-  dependencies = { "next/cache": { unstable_cache: fn => fn }, ...dependencies }
+  dependencies = { "next/cache": { unstable_cache: fn => fn }, "@/utils/school-scope": require('./helpers/school-scope.cjs').schoolScope(), ...dependencies }
   if (dependencies["@/utils/prisma"]?.prisma) { const db=dependencies["@/utils/prisma"].prisma; db.$queryRaw ||= async()=>[]; db.$transaction ||= async fn=>fn(db); db.club ||= {}; db.club.findUnique ||= async()=>({applicationOpen:true}); }
   const filename = path.resolve(__dirname, "..", file)
   const output = ts.transpileModule(fs.readFileSync(filename, "utf8"), {

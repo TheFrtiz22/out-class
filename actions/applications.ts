@@ -3,7 +3,8 @@ import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 
 import { assertClubOperational } from "@/lib/club-suspension";
 import { activeRecruitmentCycle, applicationRecency, currentApplication, reapplicationUnavailable } from "@/lib/recruitment-cycle";
-import { publicMeetingVisibility } from "@/lib/campus-events";
+import { publicMeetingVisibility, schoolPublicMeetingVisibility } from "@/lib/campus-events";
+import { resolveViewerSchool } from "@/utils/school-scope";
 
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement } from "@/lib/test-scores"
@@ -167,6 +168,8 @@ function studentCalendarWindow() {
 
 export async function getStudentDashboardData() {
   const { user } = await requireAuth()
+  // Other clubs' public meetings come from the student's own school only.
+  const school = await resolveViewerSchool()
 
   const [applications, attendances, meetings, panelAssignments] = await Promise.all([
 prisma.application.findMany({
@@ -196,7 +199,7 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { AND: [{ OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: { AND: [{ OR: [schoolPublicMeetingVisibility(school.id), { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
   return { applications, attendances, meetings, panelAssignments }

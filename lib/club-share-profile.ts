@@ -1,6 +1,7 @@
 import "server-only"
 import { cache } from "react"
 import { prisma } from "@/utils/prisma"
+import { resolveViewerSchool } from "@/utils/school-scope"
 import { shareSummary } from "@/lib/club-share-text"
 
 /**
@@ -16,7 +17,9 @@ const shareFields = {
 
 /** Throws on database errors so callers can tell "no such club" (null) from "couldn't check". */
 export const loadClubShareProfile = cache(async (idOrSlug: string) => {
-  const club = await prisma.club.findFirst({ where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], suspendedAt: null }, select: shareFields })
+  // The viewer's school only, like the page: another school's club unfurls as "not found".
+  const school = await resolveViewerSchool()
+  const club = await prisma.club.findFirst({ where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], schoolId: school.id, suspendedAt: null }, select: shareFields })
   return club && { ...club, summary: shareSummary(club.tagline, club.description) }
 })
 export type ClubShareProfile = NonNullable<Awaited<ReturnType<typeof loadClubShareProfile>>>
