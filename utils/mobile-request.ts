@@ -11,7 +11,8 @@ import { AsyncLocalStorage } from "node:async_hooks";
  * this path, so a browser request cannot opt in to it.
  */
 export type MobileRequestContext = {
-  /** The Supabase access token from `Authorization: Bearer`. Unverified until getSessionState runs. */
+  /** The Supabase access token from `Authorization: Bearer`. Unverified until getSessionState runs.
+   * Empty for a public operation called without a token: that request is signed out, whatever cookies it carries. */
   readonly token: string;
   /** A state-changing request: gets the same maintenance-mode refusal as a Server Action. */
   readonly write: boolean;

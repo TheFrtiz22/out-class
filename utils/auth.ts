@@ -48,6 +48,8 @@ export const getSessionState = cache(async () => {
   // Its bearer token gets the same verification as a cookie session; cookies are not consulted.
   const mobile = mobileRequest();
   if (mobile) {
+    // A public operation called without a token is signed out; a cookie never stands in for the bearer.
+    if (!mobile.token) return { identity: { data: { user: null }, error: null }, secondFactorPending: false, pendingUser: undefined };
     mobile.session ??= verifiedSessionState(createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "placeholder", { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }), mobile.token);
     return mobile.session as Promise<SessionState>;

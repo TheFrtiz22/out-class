@@ -51,6 +51,14 @@ const statusByCode: Record<string, number> = {
 };
 const refusalStatus = (code: string) => statusByCode[code] ?? 422;
 
+/** The native app never sends cookies. A request that carries a browser session (a Supabase auth cookie,
+ * Demo Mode or a support session) is a browser, and mixing its cookies with a bearer token could let one
+ * identity stand in for the other in code that reads cookies directly. Such requests are refused outright. */
+function carriesBrowserSession(cookieStore: Awaited<ReturnType<typeof cookies>>): boolean {
+  return cookieStore.get(DEMO_COOKIE)?.value === "1" || cookieStore.has(PLATFORM_VIEW_COOKIE)
+    || cookieStore.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name));
+}
+
 function bearerToken(request: Request): string | null {
   const match = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(request.headers.get("authorization") ?? "");
   return match ? match[1] : null;
@@ -74,11 +82,7 @@ export async function handleMobileRequest(request: Request, name: string, operat
   const found = Object.hasOwn(operations, name) ? operations[name] : undefined;
   if (!found) return refusal(404, "UNKNOWN_OPERATION", "This app version asked for something the server does not offer.");
   if (request.method !== found.method) return refusal(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: found.method });
-  // The native app never sends cookies. A request that carries Demo Mode or a support session is a
-  // browser, and those modes keep their own isolated paths.
-  const cookieStore = await cookies();
-  if (cookieStore.get(DEMO_COOKIE)?.value === "1" || cookieStore.has(PLATFORM_VIEW_COOKIE))
-    return refusal(403, "UNSUPPORTED_SESSION", "The mobile API is unavailable in Demo Mode and support sessions.");
+  if (carriesBrowserSession(await cookies())) return refusal(403, "UNSUPPORTED_SESSION", "The mobile API is for the OutClass app. Use the website in a browser.");
   const token = bearerToken(request);
   if (!token && !found.public) return refusal(401, "UNAUTHENTICATED", "Sign in to continue.");
 
@@ -107,7 +111,8 @@ export async function handleMobileRequest(request: Request, name: string, operat
     }
     return success(result);
   };
-  return token ? runMobileRequest({ token, write: found.method === "POST" }, run) : run();
+  // Always inside the mobile context: without a token the request is signed out (public operations only).
+  return runMobileRequest({ token: token ?? "", write: found.method === "POST" }, run);
 }
 
 function success(data: unknown) {
@@ -148,9 +153,7 @@ export { ActionError };
  */
 export async function handleMobileMedia(request: Request, handler: ((request: NextRequest) => Promise<Response>) | undefined): Promise<Response> {
   if (!handler) return refusal(404, "UNKNOWN_OPERATION", "This app version asked for something the server does not offer.");
-  const cookieStore = await cookies();
-  if (cookieStore.get(DEMO_COOKIE)?.value === "1" || cookieStore.has(PLATFORM_VIEW_COOKIE))
-    return refusal(403, "UNSUPPORTED_SESSION", "The mobile API is unavailable in Demo Mode and support sessions.");
+  if (carriesBrowserSession(await cookies())) return refusal(403, "UNSUPPORTED_SESSION", "The mobile API is for the OutClass app. Use the website in a browser.");
   const token = bearerToken(request);
   if (!token) return refusal(401, "UNAUTHENTICATED", "Sign in to continue.");
   return runMobileRequest({ token, write: false }, async () => {
@@ -164,7 +167,10 @@ export async function handleMobileMedia(request: Request, handler: ((request: Ne
       if (!limit.ok) return refusal(429, "RATE_LIMITED", RATE_LIMIT_MESSAGE, rateLimitHeaders(limit.retryAfterSeconds));
       // The handler reads only the query string; the bearer token is not passed on.
       const url = new URL(request.url);
-      return await handler(new NextRequest(url, { method: "GET", headers: { accept: request.headers.get("accept") ?? "*/*" } }));
+      // The address keeps the handlers' own per-address limits per phone, and Range keeps resume paging working.
+      const forwarded: Record<string, string> = { accept: request.headers.get("accept") ?? "*/*" };
+      for (const name of ["x-forwarded-for", "range"]) { const value = request.headers.get(name); if (value) forwarded[name] = value; }
+      return await handler(new NextRequest(url, { method: "GET", headers: forwarded }));
     } catch (error) {
       return failure(error, "media");
     }

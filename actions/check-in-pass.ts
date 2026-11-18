@@ -44,6 +44,8 @@ const scanInput = z.object({ clubId: z.string().uuid(), meetingId: z.string().uu
 async function scanCheckInPassCommand(input: unknown): Promise<DoorScanResult> {
   const { clubId, meetingId, payload } = scanInput.parse(input);
   const { user: scanner } = await requireClubPermission(clubId, ["meetings.attendance"]);
+  // A support session reads; it never records attendance for the member it views as.
+  if ((await requireAuth()).impersonation) throw new ActionError("Door mode isn’t available in a support session.", "FORBIDDEN");
   const token = parseCheckInPass(payload);
   if (!token) throw new ActionError("That isn’t an OutClass check-in pass.", "NOT_A_PASS");
   return prisma.$transaction(async tx => {
@@ -57,7 +59,6 @@ async function scanCheckInPassCommand(input: unknown): Promise<DoorScanResult> {
     // The same attendance window as the room's code (issueMeetingCheckIn).
     if (now.getTime() < meeting.date.getTime() - 3600000 || now.getTime() > (meeting.endDate || meeting.date).getTime() + 6 * 3600000)
       throw new ActionError("Attendance opens one hour before the meeting and closes six hours after its end (or start if no end is set).", "CLOSED");
-    // The scanner's own authority is re-read inside the transaction, as the room's code re-reads its issuer's.
     const expired = () => new ActionError("This pass has expired. Ask them to open their pass again.", "PASS_EXPIRED");
     const pass = await tx.meetingCheckInPass.findUnique({ where: { tokenHash: hash(token) } });
     if (!pass) throw expired();

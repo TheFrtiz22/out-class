@@ -6,14 +6,7 @@ appId: net.outclass.app
     env:
       EMAIL: ${INTERVIEWER_EMAIL}
       PASSWORD: ${INTERVIEWER_PASSWORD}
-- scrollUntilVisible:
-    element:
-      id: "home-leader-tools"
-    direction: DOWN
-- tapOn:
-    id: "home-leader-tools"
-- tapOn:
-    id: "leader-voting"
+- openLink: "outclass://leader/253d3ff8-35eb-4619-81bf-c7c195bbf4fe/voting"
 - tapOn:
     id: "voting-room-e89ed370-6e82-4b3d-a454-091e0b109207"
 - runFlow:

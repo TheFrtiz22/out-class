@@ -6,14 +6,7 @@ appId: net.outclass.app
     env:
       EMAIL: ${INTERVIEWER_EMAIL}
       PASSWORD: ${INTERVIEWER_PASSWORD}
-- scrollUntilVisible:
-    element:
-      id: "home-leader-tools"
-    direction: DOWN
-- tapOn:
-    id: "home-leader-tools"
-- tapOn:
-    id: "leader-interviews"
+- openLink: "outclass://leader/253d3ff8-35eb-4619-81bf-c7c195bbf4fe/interviews"
 - extendedWaitUntil:
     visible:
       id: "interview-next"

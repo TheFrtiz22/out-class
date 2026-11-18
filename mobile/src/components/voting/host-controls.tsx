@@ -159,8 +159,8 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
 
       {room.status === "OPEN" ? (
         <View style={{ flexDirection: "row", gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <Button full testID="voting-previous" variant="secondary" label="Previous" accessibilityHint={saved ? `Undo ${label(saved.applicationId)} ${savedOutcomeLabels[saved.choice]}` : undefined} disabled={locked || !saved || !room.permissions.canCorrect} onPress={undo} />
+          <View>
+            <Button testID="voting-previous" variant="secondary" label="Previous" accessibilityHint={saved ? `Undo ${label(saved.applicationId)} ${savedOutcomeLabels[saved.choice]}` : undefined} disabled={locked || !saved || !room.permissions.canCorrect} onPress={undo} />
           </View>
           <View style={{ flex: 1 }}>
             <Button full testID="voting-next" variant="secondary" label={next ? `Next: ${next}` : "Next"} disabled={locked || ballotState !== "CONFIRMED"} onPress={() => { void send("ADVANCE", scope); }} />

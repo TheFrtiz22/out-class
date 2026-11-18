@@ -1,4 +1,5 @@
 "use server"
+import { mobileRequest } from "@/utils/mobile-request"
 import { createHash } from "node:crypto"
 import { cookies, headers } from "next/headers"
 import { revalidatePath } from "next/cache"
@@ -117,8 +118,11 @@ async function verifyFreshAuthentication(user: { id: string; email: string }, pa
     return "password"
   }
   const client = await createClient(await cookies())
-  const { data, error } = await client.auth.getClaims()
-  if (error || !freshAuthentication(data?.claims?.amr)) throw new ActionError("For your security, sign out and sign back in, then delete your account within 10 minutes.")
+  // The native app has no cookie session: its freshness is read from the same verified bearer token that
+  // identifies it (utils/mobile-request.ts), and must belong to this account.
+  const mobile = mobileRequest()
+  const { data, error } = mobile ? await client.auth.getClaims(mobile.token) : await client.auth.getClaims()
+  if (error || (mobile && data?.claims?.sub !== user.id) || !freshAuthentication(data?.claims?.amr)) throw new ActionError("For your security, sign out and sign back in, then delete your account within 10 minutes.")
   return "recent-sign-in"
 }
 

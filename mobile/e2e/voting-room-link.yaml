@@ -1,0 +1,12 @@
+# With the app running and signed in: open the staging session's room by its app link (no relaunch).
+appId: net.outclass.app
+---
+- openLink: "outclass://voting/e89ed370-6e82-4b3d-a454-091e0b109207?clubId=253d3ff8-35eb-4619-81bf-c7c195bbf4fe"
+- extendedWaitUntil:
+    visible:
+      id: "voting-room"
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: "voting-applicant-name"
+    timeout: 30000

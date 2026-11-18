@@ -41,6 +41,11 @@ async function call(token, name, input, method = "GET", headers = {}) {
   await expect("another project's style token", { token: student.token.split(".").slice(0, 2).join(".") + ".AAAA" }, "me", undefined, "GET", 401);
   await expect("demo cookie refused", student, "me", undefined, "GET", 403, { Cookie: "outclass-demo-session=1" });
   await expect("public read without a session", null, "explore.directory", undefined, "GET", 200);
+  // A browser's Supabase session cookie must never ride along with (or stand in for) the bearer token.
+  await expect("bearer plus a browser session cookie", student, "me", undefined, "GET", 403, { Cookie: "sb-brrdatmhoagaxmggurki-auth-token=x" });
+  await expect("public read with only a browser session cookie", null, "events.board", { savedOnly: true }, "GET", 403, { Cookie: "sb-brrdatmhoagaxmggurki-auth-token=x" });
+  const anonymousSaved = await expect("public read, signed out, asking for saved events", null, "events.board", { savedOnly: true }, "GET", [200, 401, 403, 422]);
+  void anonymousSaved;
   await expect("signed-out write", null, "clubs.save", { clubId: OTHER_CLUB, saved: true }, "POST", 401);
 
   // 2. Cross-user: one student's records are invisible to another account.
