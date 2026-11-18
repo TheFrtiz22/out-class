@@ -144,7 +144,10 @@ function allRecruitingNeeds(data: Overview, hrefs: RailHrefs): NeedsCard[] {
   if (hasPermission(m, "interviews.manage") && needsTime > 0 && hrefs.interviews) cards.push({ id: "interviews", priority: 3, title: `${pluralize(needsTime, "applicant")} ${needsTime === 1 ? "needs" : "need"} an interview time`, detail: unscheduled.map(r => r.name).join(" · "), count: needsTime, action: { kind: "link", href: `${hrefs.interviews}&interviewTab=schedule&roundId=${unscheduled[0]!.id}`, label: TERMS.scheduleInterviews } })
   const done = votes.filter(voteComplete)
   if (done[0]) cards.push({ id: "vote-complete", priority: 4, title: "Voting complete", detail: `${[...new Set(done.map(v => v.round.name))].join(" · ")} · Send decisions when you are ready`, count: done.length, action: { kind: "link", href: voteHref(club.id, m, done[0]), label: TERMS.openSession } })
-  if (op.offers[0]) cards.push({ id: "offers", priority: 5, title: `${pluralize(op.offers.length, "offer")} awaiting a response`, detail: `Next expires ${new Date(op.offers[0].expiresAt).toLocaleDateString([], { month: "short", day: "numeric" })}`, count: op.offers.length, action: { kind: "applicant", label: "View offer", applicationId: op.offers[0].applicationId } })
+  // The count is every pending offer (offerCount); the list behind "View offer" is the Overview's four soonest.
+  // The Club home strip reads the count only, so its card has no list and links to the Overview instead.
+  const offers = op.offerCount ?? op.offers.length, next = op.offers[0]
+  if (offers > 0 && (next || hrefs.recruiting)) cards.push({ id: "offers", priority: 5, title: `${pluralize(offers, "offer")} awaiting a response`, detail: next ? `Next expires ${new Date(next.expiresAt).toLocaleDateString([], { month: "short", day: "numeric" })}` : "Waiting on applicants", count: offers, action: next ? { kind: "applicant", label: "View offer", applicationId: next.applicationId } : { kind: "link", href: hrefs.recruiting!, label: "Open recruiting" } })
   return cards.sort((a, b) => a.priority - b.priority)
 }
 

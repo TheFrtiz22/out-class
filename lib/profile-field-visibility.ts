@@ -132,3 +132,21 @@ export function allowedByProfileCeiling(field: string, visibility: ProfileFieldV
   if (field === "resumeHighlight") return visibility.resume !== false;
   return !cappedDisplayFields.has(field) || visibility[field as ProfileFieldKey] !== false;
 }
+
+type ClaimClient = {
+  club: {
+    findUnique(args: { where: { id: string }; select: { claimedAt: true; profileFieldVisibility: true } }): PromiseLike<{ claimedAt: Date | null; profileFieldVisibility: unknown } | null>;
+    update(args: { where: { id: string }; data: { claimedAt: Date; profileFieldVisibility?: ProfileFieldVisibility } }): PromiseLike<unknown>;
+  };
+};
+
+/**
+ * Marks a club claimed (an owner now runs it). A directory-imported club claimed for the first time, still on the
+ * NULL defaults, gets the new-club map (SAT and ACT off), so newly onboarded clubs behave like newly created ones.
+ * A club that was already claimed, or has saved its own settings, keeps them.
+ */
+export async function markClubClaimed(tx: ClaimClient, clubId: string, now = new Date()) {
+  const club = await tx.club.findUnique({ where: { id: clubId }, select: { claimedAt: true, profileFieldVisibility: true } });
+  const firstClaim = !!club && club.claimedAt === null && club.profileFieldVisibility === null;
+  await tx.club.update({ where: { id: clubId }, data: { claimedAt: now, ...(firstClaim ? { profileFieldVisibility: newClubProfileFieldVisibility() } : {}) } });
+}

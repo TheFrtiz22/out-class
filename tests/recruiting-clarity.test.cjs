@@ -134,7 +134,8 @@ test('#24 the application deadline is shown and entered in Eastern Time', () => 
   assert.equal(rooms.zonedInputValue('2026-12-01T22:00:00.000Z', 'America/New_York'), '2026-12-01T17:00')
   assert.equal(rooms.zonedInstant('2026-07-01', '17:00', 'America/New_York').toISOString(), '2026-07-01T21:00:00.000Z')
   const src = read('components/views/club-manager/application-builder-view.tsx')
-  assert.match(src, /zonedInputValue\(date, SCHEDULING_TIMEZONE\)/)
+  assert.match(src, /const localDate = \(date: Date \| string \| null\) => deadlineInputValue\(date\)/)
+  assert.match(src, /deadline: deadline \|\| null,/, 'the Eastern wall time is sent as shown')
   assert.match(src, /Deadline \(optional, \{SCHEDULING_TIMEZONE_LABEL\}\)/)
   assert.doesNotMatch(src, /getTimezoneOffset|your local time/)
 })
@@ -172,4 +173,93 @@ test('#19 a single grading category is the overall score, shown once', () => {
   const src = read('components/applicant-review/review-grading.tsx')
   assert.match(src, /\{rubric\.categories\.length > 1 && <div className="oc-review-overall-row">/)
   assert.doesNotMatch(src, /"Out of 10"/)
+})
+
+// The strip counts every pending offer with a count query (no names), under the Overview's gate.
+async function summaryWith({ permissions, isOwner = false, pending = 6, view = 'strip' }) {
+  const calls = []
+  const model = name => ({
+    findMany: async args => { calls.push([name, 'findMany', args]); return [] },
+    findUniqueOrThrow: async () => ({ applicationOpen: true, applicationDeadline: null }),
+    count: async args => { calls.push([name, 'count', args]); return name === 'clubInvitation' ? pending : 0 },
+  })
+  const prisma = new Proxy({ $queryRaw: async () => [] }, { get: (target, key) => key in target ? target[key] : model(String(key)) })
+  const { dashboardSummary } = load('utils/dashboard-summary.ts', { '@/utils/prisma': { prisma }, '@prisma/client': { Prisma: { sql: (strings, ...values) => ({ strings, values }) } } })
+  const result = await dashboardSummary('club-1', { id: 'member', userId: 'user', isOwner, permissions }, view)
+  return { result, calls: calls.filter(([name]) => name === 'clubInvitation') }
+}
+
+test('#3 the strip reads pending offers as a count: 6 offers count 6, and no offer names reach Club home', async () => {
+  const leader = await summaryWith({ permissions: ['applications.review', 'applicants.identify', 'decisions.manage'] })
+  assert.equal(leader.result.offerCount, 6)
+  assert.deepEqual(leader.result.offers, [], 'the strip view fetches no offer rows')
+  assert.deepEqual(leader.calls.map(([, op]) => op), ['count'])
+  const where = leader.calls[0][2].where
+  assert.equal(where.clubId, 'club-1'); assert.equal(where.status, 'PENDING'); assert.deepEqual(where.application, { clubId: 'club-1', status: 'ACCEPTED' })
+  // The Recruiting Overview still lists the four soonest, with the same scope.
+  const overview = await summaryWith({ permissions: ['applications.review', 'applicants.identify', 'decisions.manage'], view: 'recruiting' })
+  const list = overview.calls.find(([, op]) => op === 'findMany')[2]
+  const scope = ({ expiresAt, ...rest }) => ({ ...rest, expires: expiresAt.gt instanceof Date })
+  assert.equal(list.take, 4); assert.deepEqual(scope(list.where), scope(where))
+  // Without decisions.manage or applicants.identify: nothing queried, 0.
+  for (const permissions of [['applications.review', 'applicants.identify'], ['applications.review', 'decisions.manage']]) {
+    const member = await summaryWith({ permissions })
+    assert.equal(member.result.offerCount, 0); assert.deepEqual(member.calls, [], permissions.join())
+  }
+  // Six pending offers with no list rows (strip view): the strip and the card both say 6.
+  const data = overview_('large', owner)
+  data.operations.offers = []; data.operations.offerCount = 6
+  data.operations.rounds = data.operations.rounds.map(r => ({ ...r, pending: 0, needsBooking: 0 })); data.operations.votes = []
+  const hrefs = model.railHrefs(owner, club.id)
+  assert.equal(model.recruitingStrip(data, hrefs).attention, 6)
+  const card = model.recruitingNeeds(data, hrefs).find(c => c.id === 'offers')
+  assert.equal(card.title, '6 offers awaiting a response'); assert.equal(card.action.kind, 'link')
+  // With the Overview's four listed, the title still counts all six.
+  data.operations.offers = [1, 2, 3, 4].map(i => ({ id: `o${i}`, applicationId: `a${i}`, expiresAt: new Date(Date.now() + i * 86400000), label: `Applicant ${i}` }))
+  assert.equal(model.recruitingNeeds(data, hrefs).find(c => c.id === 'offers').title, '6 offers awaiting a response')
+})
+function overview_(size, access) { return overview(size, club, access) }
+
+test('#24 deadlineInstant resolves Eastern wall time the same in the browser and on the server', () => {
+  const d = load('lib/application-deadline.ts', { zod: require('zod') })
+  // Spring forward: 2:30 AM on Mar 8 2026 never happens.
+  assert.throws(() => d.deadlineInstant('2026-03-08T02:30'), { name: 'DeadlineError', message: /doesn’t exist on Mar 8/ })
+  // Fall back: 1:30 AM on Nov 1 2026 happens twice.
+  assert.throws(() => d.deadlineInstant('2026-11-01T01:30'), { name: 'DeadlineError', message: 'This time happens twice on Nov 1; pick another time.' })
+  // Either side of the change, same day: EST after the fall-back, EST before the spring-forward.
+  assert.equal(d.deadlineInstant('2026-11-01T23:59').toISOString(), '2026-11-02T04:59:00.000Z')
+  assert.equal(d.deadlineInstant('2026-03-08T00:00').toISOString(), '2026-03-08T05:00:00.000Z')
+  assert.equal(d.deadlineInstant('2026-07-01T17:00').toISOString(), '2026-07-01T21:00:00.000Z')
+  // An ISO instant (imports, stored values) is kept; malformed or zone-less-with-seconds values are refused, never server-local.
+  assert.equal(d.deadlineInstant('2026-12-01T22:00:00.000Z').toISOString(), '2026-12-01T22:00:00.000Z')
+  for (const bad of ['2026-02-30T10:00', '2026-12-01T22:00:00', 'tomorrow', '2026-12-01']) assert.throws(() => d.deadlineInstant(bad), { name: 'DeadlineError' }, bad)
+  assert.equal(d.deadlineInputValue('2026-12-01T22:00:00.000Z'), '2026-12-01T17:00')
+  // The club and admin save schemas share the check, and both actions resolve with deadlineInstant.
+  assert.equal(d.deadlineInput.safeParse('2026-11-01T01:30').error.issues[0].message, 'This time happens twice on Nov 1; pick another time.')
+  assert.match(read('lib/club-settings.ts'), /deadline: deadlineInput\.nullable\(\)/)
+  assert.match(read('lib/admin-clubs.ts'), /applicationDeadline: deadlineInput\.nullable\(\)/)
+  assert.match(read('actions/club-settings.ts'), /applicationDeadline: data\.deadline \? deadlineInstant\(data\.deadline\) : null/)
+  assert.match(read('actions/admin-clubs.ts'), /applicationDeadline: d\.applicationDeadline \? deadlineInstant\(d\.applicationDeadline\) : null/)
+  for (const file of ['actions/club-settings.ts', 'actions/admin-clubs.ts', 'components/views/club-manager/application-builder-view.tsx', 'components/admin/admin-clubs.tsx']) assert.doesNotMatch(read(file), /new Date\((?:data\.deadline|d\.applicationDeadline|e\.target\.value)/, file)
+})
+
+test('#18 a directory-imported club claimed for the first time gets the new-club SAT/ACT default; claimed clubs keep theirs', async () => {
+  const v = load('lib/profile-field-visibility.ts', { zod: require('zod') })
+  const claim = async club => {
+    const writes = []
+    await v.markClubClaimed({ club: { findUnique: async () => club, update: async args => { writes.push(args.data) } } }, 'club-1')
+    return writes[0]
+  }
+  const first = await claim({ claimedAt: null, profileFieldVisibility: null })
+  assert.ok(first.claimedAt instanceof Date)
+  assert.deepEqual(first.profileFieldVisibility, v.newClubProfileFieldVisibility())
+  // Already claimed (an active club), or settings saved: only the claim time changes.
+  for (const club of [{ claimedAt: new Date('2026-01-01'), profileFieldVisibility: null }, { claimedAt: null, profileFieldVisibility: { sat: true } }]) {
+    const write = await claim(club)
+    assert.ok(write.claimedAt instanceof Date); assert.equal('profileFieldVisibility' in write, false)
+  }
+  // Every claim path uses it: admin claim approval, owner grant, and owner invitation acceptance.
+  assert.equal((read('actions/platform-admin.ts').match(/markClubClaimed\(tx, /g) || []).length, 2)
+  assert.match(read('utils/club-onboarding.ts'), /if \(isOwner\) await markClubClaimed\(tx, invitation\.clubId\);/)
+  assert.doesNotMatch(read('actions/platform-admin.ts') + read('utils/club-onboarding.ts'), /data: \{ claimedAt: new Date\(\) \}/)
 })

@@ -16,6 +16,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { boundedSafeParse } from "@/lib/bounded-input";
 import { newClubProfileFieldVisibility } from "@/lib/profile-field-visibility";
+import { deadlineInstant } from "@/lib/application-deadline";
 const editable = { id: true, name: true, shortName: true, slug: true, schoolId: true, campusKey: true, tagline: true, description: true, category: true, color: true, logoUrl: true, bannerUrl: true, marketing: true, acceptanceRate: true, aumValue: true, isDiscoverable: true, applicationOpen: true, applicationDeadline: true, suspendedAt: true } as const;
 function version(value: unknown) { return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
 export async function getAdminClubs(input: unknown = {}) {
@@ -54,7 +55,7 @@ export async function saveAdminClub(input: unknown): Promise<{ id?: string; erro
       if (!school?.active || previous && (previous.schoolId!==school.id || previous.campusKey!==school.key)) return { error: 'School/campus cannot change through profile editing. Resolve existing school relationships first.' };
       if (previous) await assertClubImageAssignment(tx, previous.id, d.profile, previous);
       else if (d.profile.logoUrl || d.profile.bannerUrl || d.profile.marketing.gallery.length || d.profile.marketing.sections.some(s => s.cards.some(c => c.image))) return { error: 'Create the club before uploading its images.' };
-      const fields = { ...d.profile, slug: d.slug, schoolId: school.id, campusKey: school.key, isDiscoverable: d.isDiscoverable, applicationOpen: d.applicationOpen, applicationDeadline: d.applicationDeadline ? new Date(d.applicationDeadline) : null };
+      const fields = { ...d.profile, slug: d.slug, schoolId: school.id, campusKey: school.key, isDiscoverable: d.isDiscoverable, applicationOpen: d.applicationOpen, applicationDeadline: d.applicationDeadline ? deadlineInstant(d.applicationDeadline) : null };
       const club = previous ? await tx.club.update({ where: { id: previous.id }, data: { ...fields, applicationVersion: { increment: previous.applicationOpen !== fields.applicationOpen || previous.applicationDeadline?.toISOString() !== fields.applicationDeadline?.toISOString() ? 1 : 0 } } }) : await tx.club.create({ data: { ...fields, profileFieldVisibility: newClubProfileFieldVisibility() } });
       await tx.auditLog.create({ data: { actorId: actor.id, action: previous ? 'platform.club.profile.update' : 'platform.club.create', targetId: club.id, clubId: club.id, details: { reason: d.reason } } });
       if (previous) images = { clubId: previous.id, previous };

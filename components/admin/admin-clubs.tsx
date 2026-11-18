@@ -24,6 +24,10 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { unwrapAction } from "@/lib/action-result"
+import { deadlineInputValue } from "@/lib/application-deadline"
+import { SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
+/** Stored deadlines arrive as instants; an edited one is the Eastern wall time typed (the server resolves both). */
+const adminDeadlineValue = (value: string | null | undefined) => !value ? '' : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value : deadlineInputValue(value)
 type Club = NonNullable<Awaited<ReturnType<typeof getAdminClub>>['value']>;
 const blank = (schoolId: string): Club => ({ id: '', slug: '', schoolId, campusKey: '', isDiscoverable: false, applicationOpen: false, applicationDeadline: null, suspendedAt: null, version: '', features: normalizeClubFeatures(null), profile: profileDraft({name:'',category:'Other',color:DEFAULT_CLUB_COLOR}) });
 export function AdminClubs({ initial }: { initial: Awaited<ReturnType<typeof getAdminClubs>> }) {
@@ -41,7 +45,7 @@ export function AdminClubs({ initial }: { initial: Awaited<ReturnType<typeof get
       <label className="space-y-2 text-sm">School / campus<NativeSelect value={editing.schoolId} disabled={!!editing.id} onChange={e=>setEditing({...editing,schoolId:e.target.value})}>{data.schools.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</NativeSelect></label>
       <Toggle label="Discoverable" description="Listed on Explore" checked={editing.isDiscoverable} onCheckedChange={checked=>setEditing({...editing,isDiscoverable:checked})}/>
       <Toggle label="Applications open" description="Needs a recruiting pipeline" checked={editing.applicationOpen} onCheckedChange={checked=>setEditing({...editing,applicationOpen:checked})}/>
-      <label className="space-y-2 text-sm">Application deadline (UTC, optional)<Input type="datetime-local" value={editing.applicationDeadline?.slice(0,16)||''} onChange={e=>setEditing({...editing,applicationDeadline:e.target.value?new Date(e.target.value+'Z').toISOString():null})}/></label>
+      <label className="space-y-2 text-sm">Application deadline ({SCHEDULING_TIMEZONE_LABEL}, optional)<Input type="datetime-local" value={adminDeadlineValue(editing.applicationDeadline)} onChange={e=>setEditing({...editing,applicationDeadline:e.target.value||null})}/></label>
       <label className="space-y-2 text-sm">Reason for change<Input minLength={10} maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)}/></label>
     </div><p className="text-xs leading-6 text-muted-foreground">Public profile fields below are shared with authorized leaders’ Appearance controls. Slug, school, discovery and recruiting availability are platform metadata here. Leaders are assigned through existing invitations and claims.</p>
     {editing.id&&<div className="oc-toolbar"><Link className="text-sm underline" href={`/platform/claims?clubId=${editing.id}`}>Club claims</Link><Link className="text-sm underline" href={`/platform/permissions?clubId=${editing.id}`}>Membership and access</Link><Button variant="outline" onClick={e=>{origin.current=e.currentTarget;setLifecycle(true)}}>{editing.suspendedAt?'Restore club':'Suspend club'}</Button></div>}

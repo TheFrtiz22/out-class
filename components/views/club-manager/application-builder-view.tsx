@@ -35,12 +35,11 @@ import {
 } from "@/components/ui/dialog";
 import "@/components/clubs/club-settings.css";
 import { unwrapped } from "@/lib/action-result"
-import { zonedInputValue, zonedInstant } from "@/lib/interview-rooms"
-import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
+import { deadlineInputValue } from "@/lib/application-deadline"
+import { SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 const saveApplicationSettings = unwrapped(saveApplicationSettingsAction)
 /** The deadline is shown and entered in Eastern Time, like interview scheduling, whatever the browser's zone. */
-const localDate = (date: Date | string | null) => date ? zonedInputValue(date, SCHEDULING_TIMEZONE) : "";
-const deadlineInstant = (value: string) => zonedInstant(value.slice(0, 10), value.slice(11, 16), SCHEDULING_TIMEZONE).toISOString();
+const localDate = (date: Date | string | null) => deadlineInputValue(date);
 export function ApplicationBuilderView({
   clubId: provided,
 }: {
@@ -125,14 +124,13 @@ export function ApplicationBuilderView({
   }
   async function save() {
     if (working.current) return;
-    let deadlineAt: string | null = null;
-    try { deadlineAt = deadline ? deadlineInstant(deadline) : null }
-    catch { setError("Choose a valid date and time. Times inside a daylight-saving change can’t be used."); return }
+    // The Eastern wall time as shown; the schema refuses times a clock change skips or repeats, and the
+    // server resolves it with the same deadlineInstant.
     const input = {
       clubId,
       version,
       open,
-      deadline: deadlineAt,
+      deadline: deadline || null,
       questions,
     };
     const parsed = applicationSettingsSchema.safeParse(input);
