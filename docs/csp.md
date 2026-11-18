@@ -31,7 +31,7 @@ script-src 'self' 'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval' [https://chall
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: blob: https:;
 font-src 'self';
-connect-src 'self' <NEXT_PUBLIC_SUPABASE_URL> <wss:// same host> [<Sentry ingest origin>];
+connect-src 'self' <NEXT_PUBLIC_SUPABASE_URL> <wss:// same host> [<Sentry ingest origin>] [https://challenges.cloudflare.com];
 frame-src 'self' [https://challenges.cloudflare.com];
 worker-src 'self'; manifest-src 'self'; media-src 'self';
 object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';
@@ -39,7 +39,7 @@ object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';
 report-uri /api/csp-report
 ```
 
-Items in brackets are added only when configured: Turnstile when `TURNSTILE_ENABLED` (both keys set at build time), Sentry when `NEXT_PUBLIC_SENTRY_DSN` is set, and `upgrade-insecure-requests` when enforcing (browsers ignore it in Report-Only and print a warning). Development adds `'unsafe-eval'` for React Refresh.
+Items in brackets are added only when configured: Turnstile when `TURNSTILE_ENABLED` (both keys set at build time; `runtimeCspEnv` reads it by its literal name, because `next.config.mjs` `env` values are compiled in and are not runtime variables on Vercel — until November 18 the production policy left Turnstile out while the widget was on), Sentry when `NEXT_PUBLIC_SENTRY_DSN` is set, and `upgrade-insecure-requests` when enforcing (browsers ignore it in Report-Only and print a warning). Development adds `'unsafe-eval'` for React Refresh.
 
 ### Origin inventory
 
@@ -48,7 +48,7 @@ Items in brackets are added only when configured: Turnstile when `TURNSTILE_ENAB
 | Supabase project URL | Browser auth client; Realtime for inbox and communications live updates | connect-src https + wss |
 | Sentry ingest (from the DSN) | Browser error reports | connect-src |
 | `/_vercel/insights/*`, `/_vercel/speed-insights/*` | Vercel Analytics and Speed Insights, same origin | covered by `'self'` |
-| `challenges.cloudflare.com` | Turnstile `api.js` and its challenge frame, only when enabled | script-src, frame-src |
+| `challenges.cloudflare.com` | Turnstile `api.js`, its challenge frame and its requests, only when enabled | script-src, frame-src, connect-src |
 | `/pdfjs/pdf.worker.min.mjs`, `/sw.js` | pdf.js worker for the résumé viewer; service worker | worker-src `'self'` |
 | Self-hosted fonts (`next/font/local`) | Caslon and Source Sans | font-src `'self'` |
 
@@ -75,7 +75,7 @@ Nonces need per-request HTML, so a statically prerendered page cannot carry one.
 
 `POST /api/csp-report` (`app/api/csp-report/route.ts`, `lib/csp-report.ts`):
 - Accepts `application/csp-report` (report-uri) and `application/reports+json` (Reporting API). Other content types get 415. Bodies over 8 KB get 413, checked from `Content-Length` and again while reading.
-- Logs `console.warn("CSP violation", { directive, blocked, path, disposition })` to the Vercel runtime log. `blocked` is reduced to an origin or a keyword (`inline`, `eval`, `data`, `blob`). `path` has no query string, and ids, long numbers and tokens are masked as `:id`. Script samples, referrers, full URLs and user agents are never logged.
+- Logs `console.warn("CSP violation", { directive, blocked, path, disposition, asset?, source? })` to the Vercel runtime log. `blocked` is reduced to an origin or a keyword (`inline`, `eval`, `data`, `blob`). `path` has no query string, and ids, long numbers and tokens are masked as `:id`. `asset` is the path of a blocked public build file (`/_next/static/…`, `/pdfjs/…`, query string dropped), and `source` is the build file the violating code ran from, or only the origin or scheme (for example `chrome-extension`) for anything else. Build files are named by content hash and hold no personal data. Script samples, referrers, other full URLs and user agents are never logged.
 - Each distinct violation is logged once per minute per instance, with at most 20 lines per minute and 200 tracked keys. When the window rolls over, a `CSP violations repeated` line gives the counts of repeats and dropped reports.
 - The middleware skips session refresh for this endpoint and lets Demo Mode browsers report. The maintenance write guard exempts it because it writes no data.
 - The policy uses only `report-uri`. Chrome ignores `report-uri` when `report-to` is present, and Reporting API delivery (batched, through `Reporting-Endpoints`) was not observed in local headless Chrome testing, so `report-to` is left out until it can be verified on a deployment.
@@ -85,7 +85,7 @@ Nonces need per-request HTML, so a statically prerendered page cannot carry one.
 1. Merge with `OUTCLASS_CSP_ENFORCE` unset. Every page then sends `Content-Security-Policy-Report-Only`.
 2. Run for a few days that cover real use: sign-in, signup with Turnstile if it is on, Explore, a leader workspace with Realtime inbox, the interview résumé viewer (including a scanned PDF), QR export, and installing or updating the PWA.
 3. After the rendering-header fix deploys, the `script-src-elem` reports for `inline` and the site origin on every page should stop. If they continue, do not enforce.
-4. Read the reports in Vercel runtime logs (search `CSP violation`). For each distinct `directive` + `blocked`, either add the origin to `buildCsp` with a reason in the inventory above, or fix the code that caused it. Expected noise: browser extensions (`blocked` values such as `chrome-extension`), which need no change.
+4. Read the reports in Vercel runtime logs (search `CSP violation`). For each distinct `directive` + `blocked`, either add the origin to `buildCsp` with a reason in the inventory above, or fix the code that caused it. Expected noise: browser extensions (`blocked` or `source` values such as `chrome-extension`), which need no change. `media-src` blocked `https://ssl.gstatic.com` comes from an extension, not the app: nothing in the app or its dependencies plays media from there (Google's dictionary and translation extensions play pronunciation audio from that host inside the page). Do not widen `media-src` for it. Under enforcement it only stops that extension's audio.
 5. Known item to watch: a non-private, external https résumé link opened in the leader workspace frame will report `frame-src`. Under enforcement it would not render inline (the link still opens in a new tab).
 6. When a full day has no reports caused by the app, set `OUTCLASS_CSP_ENFORCE=1` in Vercel Production (and Preview first if you want) and redeploy. Middleware reads it at runtime on Vercel, but a redeploy makes the change explicit. To roll back, unset the variable and redeploy.
 7. Right after enforcing, open a page and confirm the response's `Content-Security-Policy` header contains the full policy (with `script-src` and a nonce) and that the page works. Then watch `CSP violation` lines with `disposition: 'enforce'` for 24 hours.
