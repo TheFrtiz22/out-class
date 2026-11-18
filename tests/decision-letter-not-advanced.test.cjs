@@ -37,10 +37,10 @@ test('default "didn\'t advance" copy names the round and differs from the final 
   assert.equal(letters.letterTemplatesSchema.safeParse({ REJECTED: letters.defaultLetters.REJECTED }).success, true)
 })
 
-function harness({ status = 'REJECTED', order = 0, later = 1, enabled = true } = {}) {
+function harness({ status = 'REJECTED', order = 0, later = 1, enabled = true, roundClub = 'club' } = {}) {
   const state = { letters: [], counts: [] }
   state.tx = {
-    application: { findUniqueOrThrow: async q => { assert.deepEqual(q.select.round, { select: { name: true, order: true } }); return { id: 'app', status, decisionVersion: 2, studentId: 'student', clubId: 'club', round: { name: 'Round 1', order }, student: { studentProfile: { firstName: 'Alex', lastName: 'Student' } }, club: { name: 'Example Club', color: '#142d4e', logoUrl: null, decisionLetterTemplates: null, sendFormalDecisionLetters: enabled }, recruitmentOffer: null } } },
+    application: { findUniqueOrThrow: async q => { assert.deepEqual(q.select.round, { select: { name: true, order: true, clubId: true } }); return { id: 'app', status, decisionVersion: 2, studentId: 'student', clubId: 'club', round: { name: 'Round 1', order, clubId: roundClub }, student: { studentProfile: { firstName: 'Alex', lastName: 'Student' } }, club: { name: 'Example Club', color: '#142d4e', logoUrl: null, decisionLetterTemplates: null, sendFormalDecisionLetters: enabled }, recruitmentOffer: null } } },
     pipelineRound: { count: async q => { state.counts.push(q.where); return later } },
     decisionLetter: { create: async q => { state.letters.push(q.data); return { id: 'letter' } } },
     userNotification: { create: async () => ({}) },
@@ -117,4 +117,18 @@ test('a club\'s custom rejection letter stands in until it edits "didn\'t advanc
 
   const editor = fs.readFileSync('components/communications/template-editor.tsx', 'utf8')
   assert.match(editor, /notAdvancedUsesRejection\(templates\)\?"Until you edit this, applicants who don't advance get your rejection letter\."/)
+})
+
+test('a round from another club gives no round name and is treated as a final rejection', async () => {
+  const s = harness({ later: 3, roundClub: 'other-club' })
+  await publishDecisionCommunication(s.tx, 'app', 'actor')
+  assert.equal(s.counts.length, 0, 'no later-round lookup for a mismatched round')
+  assert.match(s.letters[0].content.body, /unable to offer you membership/)
+  assert.equal(s.letters[0].decision, 'REJECTED')
+  // A template using {{round.name}} falls back instead of naming the other club's round.
+  const t = harness({ status: 'ACCEPTED', roundClub: 'other-club' })
+  const find = t.tx.application.findUniqueOrThrow
+  t.tx.application.findUniqueOrThrow = async q => { const app = await find(q); return { ...app, club: { ...app.club, decisionLetterTemplates: { ACCEPTED: { ...letters.defaultLetters.ACCEPTED, body: 'Welcome after {{round.name}}.' } } } } }
+  await publishDecisionCommunication(t.tx, 'app', 'actor')
+  assert.equal(t.letters[0].content.body, 'Welcome after this round.')
 })
