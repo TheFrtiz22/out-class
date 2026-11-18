@@ -2,7 +2,12 @@
 # (Settings -> Account & Security -> Sign out), then signs in.
 appId: net.outclass.app
 ---
-- runFlow: leader-dev-connect.yaml
+# Connect to Metro only when the app is not already up (a relaunch is slow on a busy machine).
+- runFlow:
+    when:
+      notVisible:
+        id: "sign-in-submit|home-screen|tab-home"
+    file: leader-dev-connect.yaml
 - runFlow:
     when:
       visible:

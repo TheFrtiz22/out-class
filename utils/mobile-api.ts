@@ -96,6 +96,9 @@ export async function handleMobileRequest(request: Request, name: string, operat
         if (!user) return found.public ? await execute() : refusal(401, "UNAUTHENTICATED", "Sign in to continue.");
         const limit = rateLimiter.check(RATE_LIMITS.mobileApi, `user:${user.id}`);
         if (!limit.ok) return refusal(429, "RATE_LIMITED", RATE_LIMIT_MESSAGE, rateLimitHeaders(limit.retryAfterSeconds));
+        // Maintenance mode: every write is refused for non-admins, as for Server Actions (requireAuth also
+        // checks; this covers an operation whose action authenticates another way).
+        if (found.method === "POST") await (await import("@/utils/site-settings")).assertSiteWritable(user.id);
       }
       return await execute();
     } catch (error) {
@@ -123,6 +126,7 @@ function failure(error: unknown, name: string): Response {
   if (isActionError(error)) return refusal(refusalStatus(error.code), error.code, error.message);
   if (error instanceof z.ZodError || error instanceof SyntaxError) return refusal(400, "INVALID_REQUEST", "That request was not understood.");
   if (error instanceof UniversityVerificationError) return refusal(error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, error.code, "University email verification is required.");
+  if (error instanceof Error && error.name === "MaintenanceModeError") return refusal(503, "MAINTENANCE", error.message);
   const mark = digest(error);
   // requireAuth redirects a signed-out or unconfirmed caller; a loader's notFound() is a 404.
   if (mark.startsWith("NEXT_REDIRECT")) return refusal(401, "UNAUTHENTICATED", "Sign in to continue.");

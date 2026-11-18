@@ -5,6 +5,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { AlumniBanner, isAlumniProfile } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
+import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Check, ChevronRight, ExternalLink, FileText, Linkedin, Pencil, Settings } from "~/components/icons";
 import { EditProfileSheet } from "~/components/profile/edit-sheet";
 import { initials, profileChecklist, resumeHref, safeProfileUrl, scholarSummary } from "~/components/profile/model";
@@ -27,6 +28,7 @@ export default function Profile() {
   const router = useRouter();
   const top = useHeaderInset();
   const query = useApiQuery<{ profile: FullStudentProfile | null }>("profile");
+  useRefetchOnFocus(query);
   const [editing, setEditing] = useState<ProfileSectionId | null>(null);
   const [lastSection, setLastSection] = useState<ProfileSectionId>("identity");
   // TODO(profile.media): the saved headshot cannot be shown yet (see the note below); a photo chosen in this session can.

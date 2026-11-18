@@ -239,7 +239,9 @@ test('route handlers: every app/api write handler is guarded by the maintenance 
     'app/api/internal/graduation/route.ts': 'cron, bearer secret; off unless OUTCLASS_GRADUATION_JOB_ENABLED',
     'app/api/email/unsubscribe/route.ts': 'legal email opt-out (RFC 8058 one-click) must work during maintenance; signed token, optional email only',
     'app/api/csp-report/route.ts': 'browser CSP reports; logs a bounded summary, writes no data',
+    'app/api/mobile/v1/[operation]/route.ts': 'native app API; handleMobileRequest (utils/mobile-api.ts) calls assertSiteWritable after authentication for every POST (asserted below)',
   }
+  assert.match(fs.readFileSync('utils/mobile-api.ts', 'utf8'), /if \(found\.method === "POST"\) await \(await import\("@\/utils\/site-settings"\)\)\.assertSiteWritable\(user\.id\)/, 'the mobile API applies the maintenance check to writes')
   const routes = []
   const walk = dir => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = `${dir}/${e.name}`; if (e.isDirectory()) walk(f); else if (/^route\.tsx?$/.test(e.name)) routes.push(f) } }
   walk('app/api')

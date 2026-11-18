@@ -270,7 +270,6 @@ async function seed() {
       // Optional email off: these are real-domain addresses and staging must never mail them.
       await tx.userNotificationPreference.upsert({ where: { userId: account.id }, update: {}, create: { userId: account.id, emailAnnouncements: false, emailMessages: false, emailApplications: false, emailInterviews: false, emailInvitations: false, emailTasks: false, emailPlatform: false, emailFrequency: "OFF" } });
       await tx.userAvailability.upsert({ where: { userId: account.id }, update: {}, create: { userId: account.id, schedule: WEEKLY_PERSONAL } });
-      await tx.studentInterestProfile.upsert({ where: { userId: account.id }, update: {}, create: { userId: account.id, interests: ["consulting", "finance", "tech"], goals: ["career", "community"], weeklyHours: "3-5", selectivity: "either", completedAt: NOW } });
     }
     const studentProfile = await tx.studentProfile.findUniqueOrThrow({ where: { userId: A.student } });
     await insertMissing(tx, "experience", [

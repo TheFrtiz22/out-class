@@ -7,6 +7,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { Archive, Bell, CheckCheck, ExternalLink, Mail, MailOpen, Settings } from "~/components/icons";
 import { useInbox, useInboxActions } from "~/components/inbox/data";
 import { FilterChips } from "~/components/inbox/filter-chips";
+import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { NotificationPreferencesSheet } from "~/components/inbox/preferences";
 import { clubName, ctaLabel, filterRows, fullDate, groupRows, opensInPlace, type ReadFilter, senderTitle, type TypeFilter, typeFilters, typeLabel } from "~/components/inbox/presentation";
 import { InboxListRow } from "~/components/inbox/row";
@@ -26,6 +27,7 @@ export default function Inbox() {
   const top = useHeaderInset();
   const params = useLocalSearchParams<{ tab?: string }>();
   const inbox = useInbox();
+  useRefetchOnFocus(inbox);
   const { read, archive, readAll } = useInboxActions();
   const [readFilter, setReadFilter] = useState<ReadFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("All");

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, MapPin } from "~/components/icons";
 import { FilterChips } from "~/components/inbox/filter-chips";
+import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
@@ -105,6 +106,7 @@ export default function CalendarScreen() {
   const top = useHeaderInset();
   const params = useLocalSearchParams<{ type?: string }>();
   const calendar = useApiQuery<CalendarView>("calendar.view");
+  useRefetchOnFocus(calendar);
   const me = useApiQuery<Me & { applications?: MyApplicationSummary[] }>("me", undefined, { staleTime: 5 * 60_000 });
   const [view, setView] = useState<"agenda" | "month">("agenda");
   const [filter, setFilter] = useState("all");

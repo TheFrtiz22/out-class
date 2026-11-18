@@ -1,6 +1,6 @@
 import { useIsFocused, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
 import { Clock, ExternalLink, MapPin } from "~/components/icons";
 import { InterviewNotes } from "~/components/leader/interview-notes";
@@ -65,8 +65,8 @@ export default function InterviewDay() {
   const list = (items: InterviewEntry[], withDay = false) => items.map((row, index) => <View key={row.id}>{index ? <Divider /> : null}{line(row, withDay)}</View>);
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="interview-day" refreshing={pulling} onRefresh={() => { setPulling(true); rooms.refetch().finally(() => setPulling(false)); }}>
+    <View style={{ flex: 1 }}>
+      <ScreenScroll top={top} testID="interview-day" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={pulling} onRefresh={() => { setPulling(true); rooms.refetch().finally(() => setPulling(false)); }}>
         <View style={{ gap: 4 }}>
           <Text variant="eyebrow">{formatDateKey(easternDateKey(now), { weekday: "long", month: "long", day: "numeric" })} · Eastern Time</Text>
           <Text variant="title" accessibilityRole="header">My interviews</Text>
@@ -113,7 +113,7 @@ export default function InterviewDay() {
         )}
       </ScreenScroll>
       <Header title="Interview day" back />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

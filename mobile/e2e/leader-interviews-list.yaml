@@ -1,0 +1,8 @@
+# Interview day, with the screen already open: put the keyboard away and show today's list.
+appId: net.outclass.app
+---
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "interview-today"
+    direction: DOWN
