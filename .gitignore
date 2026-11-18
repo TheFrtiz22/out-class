@@ -44,3 +44,11 @@ dist/
 build/
 # Local browser evidence and test server logs
 /test-results/
+docs/mobile/STAGING_ACCOUNTS.local.md
+
+# Native app (mobile/): generated native projects and Expo caches
+/mobile/ios/
+/mobile/android/
+/mobile/.expo/
+/mobile/expo-env.d.ts
+/mobile/dist/

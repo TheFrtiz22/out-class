@@ -29,6 +29,7 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | `/q/[code]` short links (middleware) | IP | 600 / min (a 200-person check-in on one campus address must work) |
 | `POST /api/csp-report` (middleware) | IP | 20 / min; over the limit middleware answers 204 itself (no 429: browsers do not retry reports), so a burst does not invoke the report function |
 | `GET /api/club-assets` | IP | 300 / min |
+| `/api/mobile/v1/*` (native app API, `utils/mobile-api.ts`) | account | 600 / min; each operation also keeps the limits of the action it calls |
 | `GET /api/calendar-feed/[token]` | IP, then token | 300 / min per IP (before the lookup; calendar services poll many feeds from shared addresses), 30 / 10 min per token |
 | `POST /api/school-requests` | IP | 10 / h (plus the existing 100/h global and 3/day per email in Postgres) |
 | `POST /api/auth/password-recovery` | IP | 30 / 15 min |
