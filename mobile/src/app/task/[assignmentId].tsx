@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { View } from "react-native";
 import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
 import { Field } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
@@ -129,8 +129,8 @@ export default function TaskScreen() {
   const children = task && workspace ? workspace.tasks.filter(child => child.projectId === task.id) : [];
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={workspaces.some(query => query.isRefetching)} onRefresh={refresh} testID="task-screen">
+    <View style={{ flex: 1 }}>
+      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets refreshing={workspaces.some(query => query.isRefetching)} onRefresh={refresh} testID="task-screen">
         {loading ? (
           <>
             <View style={{ gap: 10 }}><Skeleton width="50%" /><Skeleton width="85%" height={30} /><Skeleton width="40%" /></View>
@@ -182,6 +182,6 @@ export default function TaskScreen() {
         )}
       </ScreenScroll>
       <Header title="Task" back />
-    </KeyboardAvoidingView>
+    </View>
   );
 }

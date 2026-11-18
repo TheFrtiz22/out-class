@@ -144,7 +144,7 @@ export default function Applicants() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text variant="card" numberOfLines={1}>{name}</Text>
                   <Text variant="small" numberOfLines={1}>{hidden ? "Anonymous review" : facts || item.student.email}</Text>
-                  <Text variant="caption" numberOfLines={1}>{roundName(item.roundId)} · {rating(item)}</Text>
+                  <Text variant="caption" numberOfLines={2}>{roundName(item.roundId)} · {rating(item)}</Text>
                 </View>
                 <View style={{ alignItems: "flex-end", gap: 8 }}>
                   <Chip label={statusLabels[item.status] ?? item.status} tone={statusTone(item.status)} />

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { View } from "react-native";
 import { Field } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
 import { ExternalLink, LogOut } from "~/components/icons";
@@ -136,8 +136,8 @@ export default function AccountSettings() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="settings-account-screen">
+    <View style={{ flex: 1 }}>
+      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets testID="settings-account-screen">
         <Text variant="display" accessibilityRole="header">Account & Security</Text>
         <Card style={{ gap: 14 }}>
           <Text variant="section" accessibilityRole="header">Sign-in information</Text>
@@ -156,6 +156,6 @@ export default function AccountSettings() {
       </ScreenScroll>
       <Header title="Settings" back />
       {sheet}
-    </KeyboardAvoidingView>
+    </View>
   );
 }

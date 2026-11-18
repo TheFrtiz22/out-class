@@ -22,7 +22,8 @@ export function Press({ children, style, large, onPressIn, onPressOut, disabled,
   const pressed = useSharedValue(0);
   const animated = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * (1 - (large ? theme.press.scaleLarge : theme.press.scale)) }],
-    opacity: 1 - pressed.value * 0.08,
+    // The animated value owns opacity, so the disabled dim is folded in here rather than in a static style.
+    opacity: (disabled ? 0.5 : 1) * (1 - pressed.value * 0.08),
   }));
   return (
     <AnimatedPressable
@@ -31,7 +32,7 @@ export function Press({ children, style, large, onPressIn, onPressOut, disabled,
       {...rest}
       onPressIn={event => { pressed.value = theme.a11y.reduceMotion ? 1 : withTiming(1, { duration: theme.duration.pressIn }); onPressIn?.(event); }}
       onPressOut={event => { pressed.value = spring(0, { kind: "quick", reduceMotion: theme.a11y.reduceMotion }); onPressOut?.(event); }}
-      style={[style, animated, disabled ? { opacity: 0.5 } : null]}
+      style={[style, animated]}
     >
       {children}
     </AnimatedPressable>

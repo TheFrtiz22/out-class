@@ -3,18 +3,28 @@
 # Pass -e SHOTS=<prefix>.
 appId: net.outclass.app
 ---
-- runFlow: settings-account.yaml
+# Starts on Account & Security (run settings-account.yaml first).
+- extendedWaitUntil:
+    visible:
+      id: "settings-sign-out"
+    timeout: 30000
 - scrollUntilVisible:
     element:
       id: "account-deletion-confirm"
     direction: DOWN
 - tapOn:
     id: "account-deletion-confirm"
+- eraseText: 80
 - inputText: "DELETE"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-password"
+    direction: DOWN
 - tapOn:
     id: "account-deletion-password"
 - inputText: ${STUDENT_PASSWORD}
-- hideKeyboard
+- pressKey: Enter
 - scrollUntilVisible:
     element:
       id: "account-deletion-submit"
@@ -32,6 +42,11 @@ appId: net.outclass.app
     visible:
       id: "account-deletion-cancel"
     timeout: 120000
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
 - takeScreenshot: ${SHOTS}-51-delete-scheduled
 - tapOn:
     id: "account-deletion-cancel"

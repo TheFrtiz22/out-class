@@ -1,0 +1,16 @@
+# After another device saved a newer draft: typing here is refused with the server's message, and Reload shows the newer notes.
+appId: net.outclass.app
+---
+- tapOn:
+    id: "interview-notes-field"
+- inputText: "Typed on the phone."
+- extendedWaitUntil:
+    visible: "A newer draft exists. Reload before saving."
+    timeout: 30000
+- takeScreenshot: .shots/leader/33-interview-conflict
+- tapOn:
+    id: "interview-reload"
+- extendedWaitUntil:
+    visible: "All changes saved"
+    timeout: 30000
+- assertVisible: ".*From the web room.*"

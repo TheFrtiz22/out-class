@@ -12,3 +12,4 @@ appId: net.outclass.app
     visible:
       id: "account-deletion-confirm"
     timeout: 90000
+- takeScreenshot: ${SHOTS}-52-delete-cancelled

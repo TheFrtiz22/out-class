@@ -2,8 +2,11 @@
 appId: net.outclass.app
 ---
 - runFlow: settings-open.yaml
+- waitForAnimationToEnd:
+    timeout: 3000
 - tapOn:
     id: "settings-account"
+    retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
       id: "settings-sign-out"
