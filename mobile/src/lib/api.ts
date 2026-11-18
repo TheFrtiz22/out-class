@@ -21,6 +21,22 @@ async function accessToken(): Promise<string | null> {
 
 type CallOptions = { signal?: AbortSignal; anonymous?: boolean };
 
+/**
+ * A multipart upload. Picked files are `{ uri, name, type }` parts, which the runtime's `fetch`
+ * refuses (expo/src/winter/fetch/convertFormData.ts: "`uri` is not supported"); React Native's
+ * XMLHttpRequest reads the file from its address and streams it.
+ */
+function sendForm(url: string, headers: Record<string, string>, form: FormData): Promise<Pick<Response, "ok" | "status" | "json">> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    for (const [name, value] of Object.entries(headers)) xhr.setRequestHeader(name, value);
+    xhr.onload = () => resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json: async () => JSON.parse(xhr.responseText) });
+    xhr.onerror = xhr.ontimeout = xhr.onabort = () => reject(new TypeError("Network request failed"));
+    xhr.send(form);
+  });
+}
+
 async function request<T>(method: "GET" | "POST", operation: string, input: unknown, options: CallOptions): Promise<T> {
   const url = new URL(`/api/mobile/v1/${operation}`, config.apiUrl);
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -35,9 +51,9 @@ async function request<T>(method: "GET" | "POST", operation: string, input: unkn
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(input ?? null);
   }
-  let response: Response;
+  let response: Pick<Response, "ok" | "status" | "json">;
   try {
-    response = await fetch(url.toString(), { method, headers, body, signal: options.signal });
+    response = input instanceof FormData && method === "POST" ? await sendForm(url.toString(), headers, input) : await fetch(url.toString(), { method, headers, body, signal: options.signal });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw error;
     throw new ApiError(0, "OFFLINE", OFFLINE_MESSAGE);

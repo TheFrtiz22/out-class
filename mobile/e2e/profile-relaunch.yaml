@@ -1,0 +1,6 @@
+# Relaunch, then the Profile tab: the saved photo comes from the server.
+appId: net.outclass.app
+---
+- stopApp
+- runFlow: dev-connect.yaml
+- runFlow: profile-open.yaml

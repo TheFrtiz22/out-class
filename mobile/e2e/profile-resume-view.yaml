@@ -1,0 +1,6 @@
+# Relaunch, Profile tab, View résumé: the owner's uploaded PDF opens in the in-app browser.
+appId: net.outclass.app
+---
+- runFlow: profile-relaunch.yaml
+- tapOn:
+    id: "profile-resume-view"

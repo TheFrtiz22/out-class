@@ -1,0 +1,9 @@
+# With the system crop screen open: confirm the crop; the photo uploads and saves.
+appId: net.outclass.app
+---
+- tapOn:
+    point: "89%,92%"
+- extendedWaitUntil:
+    visible:
+      id: "profile-edit-status|profile-edit-error"
+    timeout: 60000

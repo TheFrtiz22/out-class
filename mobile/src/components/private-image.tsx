@@ -66,6 +66,8 @@ export async function openPrivateDocument(kind: MediaKind, params: Params): Prom
     const { uri, headers } = await mediaSource(kind, params);
     const response = await fetch(uri, { headers });
     const final = response.url;
+    // Only the address is needed; the file itself is left to the browser.
+    void response.body?.cancel().catch(() => {});
     // A refusal is answered by the media route itself; only a redirect away from it is a document.
     if (!final || !/^https?:\/\//i.test(final) || new URL(final).origin === new URL(uri).origin) return false;
     await WebBrowser.openBrowserAsync(final, { presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET });
