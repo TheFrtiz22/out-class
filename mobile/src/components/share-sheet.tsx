@@ -69,7 +69,7 @@ export function ShareSheet({ open, onClose, target }: { open: boolean; onClose: 
       setStatus({ tone: "ok", message: "Link copied." });
     } catch {
       haptics.error();
-      setStatus({ tone: "error", message: "Couldn’t copy automatically. The link is selected, so copy it from the box." });
+      setStatus({ tone: "error", message: "Couldn’t copy automatically. Press and hold the link above to copy it." });
     }
   }
   async function share() {

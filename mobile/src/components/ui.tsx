@@ -1,5 +1,5 @@
-import { type ReactNode, useEffect } from "react";
-import { ActivityIndicator, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewProps, StyleSheet, View, type ViewProps, type ViewStyle } from "react-native";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewProps, StyleSheet, View, type ViewProps, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -7,6 +7,7 @@ import type { IconComponent } from "~/components/icon-factory";
 import { Text } from "~/components/text";
 import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
+import { useAndroidKeyboardInset } from "~/lib/keyboard";
 import { spring } from "~/lib/motion";
 import { fonts, useTheme } from "~/lib/theme";
 
@@ -40,8 +41,22 @@ export function Press({ children, style, large, onPressIn, onPressOut, disabled,
   );
 }
 
-type ButtonProps = { label: string; onPress?: () => void; variant?: "primary" | "secondary" | "ghost" | "destructive" | "accent"; size?: "default" | "compact" | "large"; icon?: IconComponent; loading?: boolean; disabled?: boolean; full?: boolean; accessibilityHint?: string; testID?: string };
-export function Button({ label, onPress, variant = "primary", size = "default", icon: Icon, loading, disabled, full, accessibilityHint, testID }: ButtonProps) {
+/** Presses closer together than this are one press: a double tap never submits twice. */
+const REPEAT_GUARD_MS = 450;
+/** `onPress`, ignoring a repeat that lands within the guard window (the second tap of a double tap). */
+function useSinglePress(onPress?: () => void) {
+  const last = useRef(0);
+  if (!onPress) return undefined;
+  return () => {
+    const now = Date.now();
+    if (now - last.current < REPEAT_GUARD_MS) return;
+    last.current = now;
+    onPress();
+  };
+}
+
+type ButtonProps = { label: string; onPress?: () => void; variant?: "primary" | "secondary" | "ghost" | "destructive" | "accent"; size?: "default" | "compact" | "large"; icon?: IconComponent; loading?: boolean; disabled?: boolean; full?: boolean; accessibilityHint?: string; testID?: string; style?: ViewStyle };
+export function Button({ label, onPress, variant = "primary", size = "default", icon: Icon, loading, disabled, full, accessibilityHint, testID, style }: ButtonProps) {
   const { colors, radius, controlHeight } = useTheme();
   const palette = {
     primary: { background: colors.primary, text: colors.primaryForeground, border: colors.primary },
@@ -51,27 +66,30 @@ export function Button({ label, onPress, variant = "primary", size = "default", 
     accent: { background: colors.brandSubtle, text: colors.brandInk, border: colors.brandSubtle },
   }[variant];
   const height = Math.max(TARGET, size === "large" ? controlHeight.large + 4 : size === "compact" ? controlHeight.compact : controlHeight.large);
+  const press = useSinglePress(onPress);
   return (
     <Press
       testID={testID}
-      onPress={onPress}
+      onPress={press}
       disabled={disabled || loading}
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
-      style={{ minHeight: height, paddingHorizontal: size === "compact" ? 14 : 18, borderRadius: radius.full, backgroundColor: palette.background, borderColor: palette.border, borderWidth: StyleSheet.hairlineWidth * 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, alignSelf: full ? "stretch" : "flex-start" }}
+      hitSlop={size === "compact" ? 6 : undefined}
+      style={[{ minHeight: height, paddingHorizontal: size === "compact" ? 14 : 18, paddingVertical: 6, borderRadius: radius.full, backgroundColor: palette.background, borderColor: palette.border, borderWidth: StyleSheet.hairlineWidth * 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, alignSelf: full ? "stretch" : "flex-start", maxWidth: "100%" }, ...(style ? [style] : [])]}
     >
       {loading ? <ActivityIndicator size="small" color={palette.text} /> : Icon ? <Icon size={18} color={palette.text} /> : null}
-      <Text variant="button" color={palette.text} numberOfLines={1}>{label}</Text>
+      <Text variant="button" color={palette.text} numberOfLines={1} style={{ flexShrink: 1 }}>{label}</Text>
     </Press>
   );
 }
 
 /** A round icon-only control with a 44pt target. `label` is required: it is the accessible name. */
-export function IconButton({ icon: Icon, label, onPress, onLongPress, tone = "plain", selected, testID }: { icon: IconComponent; label: string; onPress?: () => void; onLongPress?: () => void; tone?: "plain" | "surface"; selected?: boolean; testID?: string }) {
+export function IconButton({ icon: Icon, label, onPress, onLongPress, tone = "plain", selected, disabled, accessibilityHint, testID }: { icon: IconComponent; label: string; onPress?: () => void; onLongPress?: () => void; tone?: "plain" | "surface"; selected?: boolean; disabled?: boolean; accessibilityHint?: string; testID?: string }) {
   const { colors } = useTheme();
+  const press = useSinglePress(onPress);
   return (
-    <Press testID={testID} onPress={onPress} onLongPress={onLongPress} accessibilityLabel={label} accessibilityState={{ selected: !!selected }} hitSlop={4}
+    <Press testID={testID} onPress={press} onLongPress={onLongPress} disabled={disabled} accessibilityLabel={label} accessibilityHint={accessibilityHint} accessibilityState={{ selected: !!selected, disabled: !!disabled }} hitSlop={6}
       style={{ width: TARGET, height: TARGET, borderRadius: TARGET / 2, alignItems: "center", justifyContent: "center", backgroundColor: tone === "surface" ? colors.card : "transparent", borderWidth: tone === "surface" ? StyleSheet.hairlineWidth : 0, borderColor: colors.border }}>
       <Icon size={22} weight={selected ? "fill" : "regular"} color={selected ? colors.brandInk : colors.foreground} />
     </Press>
@@ -110,16 +128,21 @@ export function statusTone(code: string): ChipTone {
 }
 
 const CLUB_ASSET = /^club-assets\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/;
+/** A colour value React Native can draw: a club colour is free text on the server, and an unknown one warns. */
+const HEX_COLOR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 /** A club's mark: its logo when it has one, otherwise its initials on the club colour. */
 export function ClubMark({ name, color, logoUrl, size = 44 }: { name: string; color?: string | null; logoUrl?: string | null; size?: number }) {
   const { radius } = useTheme();
-  const initials = name.split(/\s+/).filter(word => /^[A-Za-z0-9]/.test(word)).slice(0, 2).map(word => word[0]!.toUpperCase()).join("");
+  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  const latin = words.filter(word => /^[A-Za-z0-9]/.test(word));
+  const initials = (latin.length ? latin : words).slice(0, 2).map(word => Array.from(word)[0]!.toUpperCase()).join("");
+  const [failed, setFailed] = useState("");
   // An uploaded logo is a stored reference the site serves publicly (lib/club-assets.ts clubAssetSource); an address is used as is.
   const logo = !logoUrl ? null : CLUB_ASSET.test(logoUrl) ? `${config.apiUrl}/api/club-assets?reference=${encodeURIComponent(logoUrl)}`
     : logoUrl.startsWith("/") && !logoUrl.startsWith("//") ? `${config.apiUrl}${logoUrl}` : /^https?:\/\//i.test(logoUrl) ? logoUrl : null;
   return (
-    <View accessible={false} style={{ width: size, height: size, borderRadius: Math.min(radius.md, size / 3.4), backgroundColor: color || "#142d4e", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-      {logo ? <Image source={{ uri: logo }} style={{ width: size, height: size }} contentFit="cover" transition={150} />
+    <View accessible={false} style={{ width: size, height: size, borderRadius: Math.min(radius.md, size / 3.4), backgroundColor: color && HEX_COLOR.test(color.trim()) ? color.trim() : "#142d4e", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      {logo && failed !== logo ? <Image source={{ uri: logo }} style={{ width: size, height: size }} contentFit="cover" transition={150} onError={() => setFailed(logo)} />
         : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.displayStrong, fontSize: size * 0.36, lineHeight: size * 0.44, color: "#ffffff" }}>{initials}</Text>}
     </View>
   );
@@ -209,7 +232,7 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
       {options.map(option => {
         const selected = option.value === value;
         return (
-          <Pressable key={option.value} accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={option.label}
+          <Pressable key={option.value} accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={option.label} hitSlop={{ top: 3, bottom: 3 }}
             onPress={() => { if (!selected) { haptics.tick(); onChange(option.value); } }}
             style={{ flex: 1, minHeight: TARGET - 6, alignItems: "center", justifyContent: "center", borderRadius: radius.full, backgroundColor: selected ? colors.card : "transparent", paddingHorizontal: 10 }}>
             <Text variant="smallStrong" color={selected ? colors.foreground : colors.mutedForeground} numberOfLines={1}>{option.label}</Text>
@@ -220,17 +243,25 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
   );
 }
 
-/** The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance. */
+/**
+ * The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance, and a
+ * focused field kept above the keyboard on both platforms.
+ */
 export function ScreenScroll({ children, refreshing, onRefresh, dock, top = 0, contentStyle, ...rest }: ScrollViewProps & { refreshing?: boolean; onRefresh?: () => void; dock?: boolean; top?: number; contentStyle?: ViewStyle }) {
   const { colors, space } = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboard = useAndroidKeyboardInset();
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1, backgroundColor: colors.background, marginBottom: keyboard ? keyboard + insets.bottom : 0 }}
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       contentContainerStyle={[{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + (dock ? DOCK_CLEARANCE : 24), gap: space.content - 4 }, contentStyle]}
       keyboardShouldPersistTaps="handled"
       contentInsetAdjustmentBehavior="never"
-      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.mutedForeground} progressViewOffset={top} /> : undefined}
+      // The scroll bar runs between the floating header and the dock, not under them.
+      scrollIndicatorInsets={{ top, bottom: dock ? DOCK_CLEARANCE : 0 }}
+      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} /> : undefined}
       {...rest}
     >
       {children}

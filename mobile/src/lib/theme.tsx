@@ -27,8 +27,8 @@ export function ThemeProvider({ children, school }: { children: ReactNode; schoo
   const [a11y, setA11y] = useState<Accessibility>({ reduceMotion: false, reduceTransparency: false });
   useEffect(() => {
     let live = true;
-    Promise.all([AccessibilityInfo.isReduceMotionEnabled(), AccessibilityInfo.isReduceTransparencyEnabled().catch(() => false)])
-      .then(([reduceMotion, reduceTransparency]) => { if (live) setA11y({ reduceMotion, reduceTransparency }); });
+    Promise.all([AccessibilityInfo.isReduceMotionEnabled().catch(() => false), AccessibilityInfo.isReduceTransparencyEnabled().catch(() => false)])
+      .then(([reduceMotion, reduceTransparency]) => { if (live) setA11y({ reduceMotion, reduceTransparency }); }, () => {});
     const motion = AccessibilityInfo.addEventListener("reduceMotionChanged", reduceMotion => setA11y(current => ({ ...current, reduceMotion })));
     const transparency = AccessibilityInfo.addEventListener("reduceTransparencyChanged", reduceTransparency => setA11y(current => ({ ...current, reduceTransparency })));
     return () => { live = false; motion.remove(); transparency.remove(); };

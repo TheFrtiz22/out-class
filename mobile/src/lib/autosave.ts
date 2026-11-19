@@ -99,7 +99,7 @@ class AutosaveQueue<T> {
         this.state = "saved"; this.error = ""; this.recover(null);
       } catch (error) {
         // A request that never reached OutClass keeps the edit and waits for the connection or Retry.
-        if (error instanceof ApiError && error.offline) this.connection(online ? "unreachable" : "offline");
+        if (error instanceof ApiError && error.unreachable) this.connection(online ? "unreachable" : "offline");
         else { this.state = "error"; this.error = errorMessage(error, "Your changes are still here. Reconnect and retry."); }
         throw error;
       } finally { this.flight = null; if (this.active) this.notify(); }

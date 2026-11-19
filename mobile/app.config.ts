@@ -61,6 +61,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     predictiveBackGestureEnabled: true,
     permissions: ["android.permission.CAMERA", "android.permission.POST_NOTIFICATIONS", "android.permission.VIBRATE"],
+    // The camera and image picker libraries declare the microphone for video; the app never records,
+    // so the permission is removed from the merged manifest (no Play Store data-safety question for it).
+    blockedPermissions: ["android.permission.RECORD_AUDIO"],
     intentFilters: [
       { action: "VIEW", autoVerify: true, data: [{ scheme: "https", host: "out-class.net", pathPrefix: "/q/" }], category: ["BROWSABLE", "DEFAULT"] },
     ],
@@ -70,10 +73,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ["expo-splash-screen", { backgroundColor: "#0F2E56", image: "./assets/images/splash-icon.png", imageWidth: 96 }],
     ["expo-font", { fonts: ["./assets/fonts/LibreCaslonText-Regular.ttf", "./assets/fonts/LibreCaslonText-SemiBold.ttf"] }],
     "expo-secure-store",
-    ["expo-camera", { cameraPermission: "OutClass uses the camera to scan check-in codes and to take your profile photo.", recordAudioAndroid: false }],
+    ["expo-camera", { cameraPermission: "OutClass uses the camera to scan check-in codes and to take your profile photo.", microphonePermission: false, recordAudioAndroid: false }],
     ["expo-image-picker", { photosPermission: "OutClass uses your photo library so you can choose a profile photo.", cameraPermission: "OutClass uses the camera to take your profile photo.", microphonePermission: false }],
     ["expo-calendar", { calendarPermission: "OutClass adds interviews and events to your calendar when you ask it to." }],
-    ["expo-notifications", { color: "#232D4B" }],
+    // Android draws the status-bar icon from its alpha alone: the monogram, not the square app icon.
+    ["expo-notifications", { color: "#232D4B", icon: "./assets/images/android-icon-monochrome.png" }],
     "expo-sharing",
     "expo-localization",
     // Long-press app-icon shortcuts (Scan). Items are set at runtime in src/app/_layout.tsx.
