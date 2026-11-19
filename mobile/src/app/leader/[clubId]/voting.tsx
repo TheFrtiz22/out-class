@@ -15,7 +15,11 @@ import { useTheme } from "~/lib/theme";
 const headings: Record<RoomGroup, string> = { draft: "Not yet scheduled", scheduled: "Scheduled sessions", active: "Active sessions", past: "Past sessions" };
 const empty: Record<RoomGroup, string> = { draft: "", scheduled: "No scheduled sessions.", active: "No active sessions.", past: "No past sessions." };
 const tones: Record<string, ChipTone> = { Open: "success", Paused: "warning", Scheduled: "info", Draft: "neutral", Cancelled: "neutral", "Closed · Finalized": "neutral", "Closed · Provisional": "brand", Closed: "neutral" };
-const dateTime = (value: string, timeZone?: string) => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", ...(timeZone ? { timeZone } : {}) });
+function dateTime(value: string, timeZone?: string) {
+  const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" };
+  // A zone this phone's Intl doesn't know falls back to the phone's own instead of throwing.
+  try { return new Date(value).toLocaleString("en-US", { ...options, ...(timeZone ? { timeZone } : {}) }); } catch { return new Date(value).toLocaleString("en-US", options); }
+}
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
 /** The club's voting sessions, grouped and labelled as the web's Voting room lists them. Setup stays on the web. */
@@ -54,9 +58,9 @@ export default function VotingRooms() {
                     <Card style={{ gap: 8 }}>
                       <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
                         <View style={{ flex: 1, gap: 2 }}>
-                          <Text variant="card">{name}</Text>
+                          <Text variant="card" numberOfLines={2}>{name}</Text>
                           {room.meeting?.plannedAt ? <Text variant="small" color={colors.foreground}>{dateTime(room.meeting.plannedAt, room.meeting.timeZone)}{room.meeting.timeZone ? ` · ${room.meeting.timeZone}` : ""}</Text> : null}
-                          <Text variant="small">{room.cycleName} · {room.roundName} · {plural(room.applicantCount, "applicant")}</Text>
+                          <Text variant="small" numberOfLines={2}>{room.cycleName} · {room.roundName} · {plural(room.applicantCount, "applicant")}</Text>
                         </View>
                         <Chip label={status} tone={tones[status] ?? "neutral"} />
                       </View>
