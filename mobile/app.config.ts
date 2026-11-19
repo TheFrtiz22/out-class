@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "OutClass",
   slug: "outclass",
+  owner: "outclass",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
@@ -49,6 +50,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: "net.outclass.app",
+    // Firebase config for Android push (FCM). Public identifiers only; the FCM service-account key lives in
+    // Expo credentials, never here. Omitted when the file is absent so builds without it still configure.
+    googleServicesFile: fs.existsSync(path.join(__dirname, "google-services.json")) ? "./google-services.json" : undefined,
     adaptiveIcon: {
       backgroundColor: "#0F2E56",
       foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -81,6 +85,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   experiments: { reactCompiler: true },
   extra: {
+    // EAS project @outclass/outclass. The app needs it to request an Expo push token (src/lib/push.ts).
+    eas: { projectId: "23668155-43a1-4bf7-9b89-1f61a42b535b" },
     apiUrl,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? local.supabaseUrl ?? "",
     supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? local.supabasePublishableKey ?? "",
