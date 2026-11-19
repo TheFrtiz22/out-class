@@ -9,6 +9,7 @@ import { unstable_cache } from "next/cache";
 import { applicationAvailability } from "@/lib/club-settings";
 import { prisma } from "@/utils/prisma";
 import type { DirectoryClub } from "@/lib/club-directory";
+import { resolveViewerSchool } from "@/utils/school-scope";
 
 // Explicit public fields only: no applicants, emails, memberships, or evaluations.
 const publicFields = {
@@ -105,10 +106,11 @@ function present(club: PublicClubRecord): DirectoryClub {
     })),
   };
 }
+// The school id is an argument, so it is part of the cache key: one school's list is never served to another.
 const readClubs = unstable_cache(
-  async () =>
+  async (schoolId: string) =>
     prisma.club.findMany({
-      where: { isDiscoverable: true, suspendedAt: null },
+      where: { schoolId, isDiscoverable: true, suspendedAt: null },
       select: { ...publicFields, events: false },
       orderBy: { name: "asc" },
     }),
@@ -120,7 +122,8 @@ export async function getClubDirectory(): Promise<{
   error?: string;
 }> {
   try {
-    const clubs = await readClubs();
+    const school = await resolveViewerSchool();
+    const clubs = await readClubs(school.id);
     // Publication withdrawal must not wait for the directory's metadata cache.
     const events = await prisma.meeting.findMany({
       where: {
@@ -156,8 +159,10 @@ export async function getPublicClub(
   id: string,
 ): Promise<{ club: DirectoryClub | null; error?: string }> {
   try {
+    // Another school's club is not found here (its page 404s), even by direct id or slug.
+    const school = await resolveViewerSchool();
     const club = await prisma.club.findFirst({
-      where: { OR: [{ id }, { slug: id }], suspendedAt: null },
+      where: { OR: [{ id }, { slug: id }], schoolId: school.id, suspendedAt: null },
       select: { ...publicFields, events: false },
     });
     if (!club) return { club: null };
@@ -223,8 +228,9 @@ export async function startClubApplication(clubId: string): Promise<{ applicatio
 export async function getCorkboard() {
   const { requireAuth } = await import("@/utils/auth");
   const { user } = await requireAuth();
+  const school = await resolveViewerSchool();
   const records = await prisma.corkboardClub.findMany({
-    where: { userId: user.id },
+    where: { userId: user.id, club: { schoolId: school.id } },
     include: { club: { select: publicClubSelection() } },
     orderBy: [{ savedAt: "desc" }, { clubId: "asc" }],
   });
@@ -252,8 +258,9 @@ export async function setCorkboardClub(input: unknown) {
     });
     return { saved: false, savedAt: null };
   }
-  const club = await prisma.club.findUnique({
-    where: { id: data.clubId },
+  const school = await resolveViewerSchool();
+  const club = await prisma.club.findFirst({
+    where: { id: data.clubId, schoolId: school.id },
     select: { id: true },
   });
   if (!club) throw new Error("This club is no longer available.");

@@ -1,13 +1,15 @@
 import { SITE_URL, SITE_DESCRIPTION, ORGANIZATION_DESCRIPTION, LEGAL_ORGANIZATION_NAME } from "@/lib/seo"
 import { getIndexableClubs } from "@/lib/public-club-seo"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
+import { DEFAULT_SCHOOL } from "@/lib/school-host"
 
 // A plain-text guide for language models (https://llmstxt.org). Public pages only: the same
 // set as the sitemap, so nothing here is private or unlisted.
 export const revalidate = 600
 
 export async function GET() {
-  const clubs = await getIndexableClubs()
+  // This guide describes the main site, so it lists the launch school's clubs only.
+  const clubs = await getIndexableClubs(DEFAULT_SCHOOL.id)
   const lines = [
     "# OutClass",
     "",

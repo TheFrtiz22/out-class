@@ -4,6 +4,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
 function load(file, mocks = {}) {
+  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/lib/school-host': require('./helpers/school-scope.cjs').schoolHost(), ...mocks }
   mocks = { "next/cache": { unstable_cache: fn => fn, revalidateTag() {}, revalidatePath() {} }, ...mocks }
   if (mocks["@/utils/prisma"]) mocks["@/utils/club-write-transaction"] = { clubWriteTransaction: fn => mocks["@/utils/prisma"].prisma.$transaction(fn) }
   const mod = { exports: {} }

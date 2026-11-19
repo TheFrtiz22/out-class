@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { CorkboardView } from "@/components/views/corkboard-view";
-import { unstable_cache } from "next/cache";
-import { getPublicCampusEvent, getPublicCorkboard } from "@/actions/campus-events";
+import { getDefaultPublicCorkboard, getPublicCampusEvent } from "@/actions/campus-events";
 import { eventScheduleLabel } from "@/lib/campus-events";
 import { pageTitle, SITE_URL, socialDefaults } from "@/lib/seo";
 import { shareText, eventSharePath } from "@/lib/share-links";
@@ -32,12 +31,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 /**
  * The unfiltered board, read on the server so the first paint shows events instead of a placeholder
- * followed by a client round trip. Public data only (no saved filter); event and club changes
- * revalidate the "club-directory" tag (actions/campus-events.ts refresh()).
- * The board is single-school today (UVA). When school scoping arrives, the school must be part of
- * this cache key (and the read's arguments), or one school's board would be served to another.
+ * followed by a client round trip. Public data only (no saved filter), scoped to the viewer's school
+ * and cached per school (actions/campus-events.ts getDefaultPublicCorkboard); event and club changes
+ * revalidate the "club-directory" tag.
  */
-const readDefaultBoard = unstable_cache(() => getPublicCorkboard(), ["public-corkboard-default"], { revalidate: 60, tags: ["club-directory"] });
+const readDefaultBoard = () => getDefaultPublicCorkboard();
 
 export default async function Page() {
   // A failed read falls back to the board's own client load and error state.

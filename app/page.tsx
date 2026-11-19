@@ -2,6 +2,8 @@ import { requireAuth } from "@/utils/auth"
 import { AccountUnavailable } from "@/components/auth/account-unavailable"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { getLaunchClubs } from "@/lib/launch-clubs"
+import { DEFAULT_SCHOOL } from "@/lib/school-host"
+import { resolveViewerSchool } from "@/utils/school-scope"
 import { safeReturnPath, isUvaEmail } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { HomeEntry } from "@/components/home-entry"
@@ -18,7 +20,9 @@ import { SITE_TITLE, SITE_DESCRIPTION, publicPageMetadata, privateRobots, privat
 import { initialLandingAudience, landingAudienceBootScript, LANDING_AUDIENCE_PREFERENCE } from "@/lib/landing-audience"
 import { cspNonce } from "@/utils/csp-nonce"
 
-const getCachedLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
+const readLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
+// The launch participants are the launch school's (lib/launch-clubs.ts); another school's viewers see none.
+const getCachedLaunchClubs = async () => { const school = await resolveViewerSchool(); return school.id === DEFAULT_SCHOOL.id ? readLaunchClubs(school.id) : [] }
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
   const params = await searchParams

@@ -14,7 +14,7 @@ Set these **server-only** environment variables (never `NEXT_PUBLIC_`):
 - `TYPESENSE_URL` — HTTPS origin of the Typesense server.
 - `TYPESENSE_SEARCH_KEY` — `documents:search`-only key restricted to
   `outclass_public_clubs_v1`. Used in a Next server action.
-- `TYPESENSE_ADMIN_KEY` — operator-only key with collection create/read,
+- `TYPESENSE_ADMIN_KEY` — operator-only key with collection create/read/update,
   document import/export/delete permissions, used only during reindexing.
   **Do not configure this key in Vercel runtime environments.**
 
@@ -30,9 +30,15 @@ From an authorized operator environment with an existing working Prisma
 `node scripts/sync-typesense-public-clubs.cjs`
 
 The script creates the versioned collection if missing, imports only
-discoverable and unsuspended clubs with these fields: id, name, category,
-tagline and description. It verifies per-document import results and removes
+discoverable and unsuspended clubs with these fields: id, schoolId, name,
+category, tagline and description. It verifies per-document import results and removes
 IDs no longer present in the authoritative public directory.
+
+Search is school-scoped: the server action filters on the viewer's `schoolId`
+(`utils/school-scope.ts`), drops any hit from another school, and callers
+intersect the IDs with their own school-scoped database read. A collection
+created before school scoping gains the `schoolId` field on the next sync run;
+until then the filtered query fails and Discover uses its local fallback search.
 
 It must be scheduled/repeated after club publication edits and withdrawal.
 Until a reliable change-driven sync/outbox is implemented, an operator must

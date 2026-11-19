@@ -5,7 +5,7 @@ const ts = require("typescript")
 const Module = require("node:module")
 const path = require("node:path")
 function load(file, dependencies = {}) {
-  dependencies = { "next/cache": { unstable_cache: fn => fn }, ...dependencies }
+  dependencies = { "next/cache": { unstable_cache: fn => fn }, "@/utils/school-scope": require('./helpers/school-scope.cjs').schoolScope(), ...dependencies }
   if (dependencies["@/utils/prisma"]?.prisma) { const db=dependencies["@/utils/prisma"].prisma; db.$queryRaw ||= async()=>[]; db.$transaction ||= async fn=>fn(db); db.club ||= {}; db.club.findUnique ||= async()=>({applicationOpen:true}); }
   const filename = path.resolve(__dirname, "..", file)
   const output = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
@@ -260,5 +260,6 @@ test("Explore adds local matches (locations) to Typesense results without reorde
   assert.match(view, /new Set\(\[\.\.\.match\.ids, \.\.\.filterDirectory\(clubs, filters, now\)\.map\(club => club\.id\)\]\)/)
   // The index still holds only public club fields.
   const sync = fs.readFileSync("scripts/sync-typesense-public-clubs.cjs", "utf8")
-  assert.match(sync, /select: \{ id: true, name: true, category: true, tagline: true, description: true \}/)
+  // Plus schoolId, which search filters on (actions/typesense-search.ts).
+  assert.match(sync, /select: \{ id: true, schoolId: true, name: true, category: true, tagline: true, description: true \}/)
 })
