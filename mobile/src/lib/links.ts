@@ -12,6 +12,9 @@ export type AppRoute = { pathname: string; params?: Record<string, string> };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SHORT_CODE = /^[a-zA-Z0-9_-]{1,32}$/;
+const CLUB_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
+/** An email names the exact letter (`?letterId=`); without it the screen shows the latest one. */
+const letterParam = (query: URLSearchParams): { letterId?: string } => { const id = query.get("letterId"); return id && UUID.test(id) ? { letterId: id } : {}; };
 const siteHosts = () => new Set(["out-class.net", "www.out-class.net", new URL(config.apiUrl).host]);
 
 /** A site path from an href that is either a path or a full URL on the site. Null for other hosts. */
@@ -53,10 +56,10 @@ export function routeForHref(href: string | null | undefined): AppRoute | null {
   if (first === "q" && second && !third) return SHORT_CODE.test(second) ? { pathname: "/q/[code]", params: { code: second } } : null;
 
   if (first === "applications") {
-    if (second && UUID.test(second)) return third === "decision" ? { pathname: "/decision/[applicationId]", params: { applicationId: second } } : { pathname: "/application/[id]", params: { id: second } };
+    if (second && UUID.test(second)) return third === "decision" ? { pathname: "/decision/[applicationId]", params: { applicationId: second, ...letterParam(query) } } : { pathname: "/application/[id]", params: { id: second } };
     return { pathname: "/applications" };
   }
-  if (first === "decisions" && second && UUID.test(second)) return { pathname: "/decision/[applicationId]", params: { applicationId: second } };
+  if (first === "decisions" && second && UUID.test(second)) return { pathname: "/decision/[applicationId]", params: { applicationId: second, ...letterParam(query) } };
 
   if (first === "interviews" && second === "book") {
     const applicationId = query.get("applicationId");
@@ -75,6 +78,8 @@ export function routeForHref(href: string | null | undefined): AppRoute | null {
     return null;
   }
 
+  // A club's public page by slug (club QR codes and shared links); the club screen loads either form.
+  if (first === "club" && second && !third && !UUID.test(second) && CLUB_SLUG.test(second)) return { pathname: "/club/[id]", params: { id: second } };
   if (first === "club" && second && UUID.test(second)) {
     if (!third) return { pathname: "/club/[id]", params: { id: second } };
     if (third === "tasks") return { pathname: "/tasks", params: { clubId: second } };

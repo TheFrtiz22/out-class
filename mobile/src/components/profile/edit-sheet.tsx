@@ -94,10 +94,8 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
     if (problem) { setError(problem); haptics.error(); return null; }
     setBusy("save"); setError(""); setStatus("");
     try {
-      // The mobile route caps `expected` at 200 characters, and an education or experience snapshot is longer, so
-      // sending it would refuse every such save. Without it the server saves without the other-device check.
       const input = sectionPayload(value, saved, section);
-      const result = await api.post<SaveResult>("profile.updateSection", expected.current.length <= 200 ? { input, expected: expected.current } : { input });
+      const result = await api.post<SaveResult>("profile.updateSection", { input, expected: expected.current });
       if ("error" in result) throw new Error(result.error || "Unable to save.");
       expected.current = sectionSnapshot(result.profile, section);
       setSaved(result.profile); setDraft(result.profile);
