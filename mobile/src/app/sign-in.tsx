@@ -1,6 +1,8 @@
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Field, type FieldRef } from "~/components/field";
 import { Text } from "~/components/text";
@@ -15,6 +17,7 @@ export default function SignIn() {
   const { colors, dark } = useTheme();
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,7 +37,7 @@ export default function SignIn() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: colors.background }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, gap: 28 }}>
         <View style={{ gap: 18 }}>
           <Image accessibilityLabel="OutClass" source={dark ? require("../../assets/brand/10_hero_transparent.svg") : require("../../assets/brand/02_primary_lockup.svg")} style={{ width: 190, height: 52 }} contentFit="contain" contentPosition="left" />
@@ -49,7 +52,11 @@ export default function SignIn() {
           {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert" accessibilityLiveRegion="polite">{error}</Text> : null}
           <Button full size="large" label="Sign in" testID="sign-in-submit" loading={busy} onPress={() => submit()} />
         </View>
-        <Text variant="caption" align="center">New to OutClass? Create your account at out-class.net, then sign in here.</Text>
+        <View style={{ gap: 4, alignItems: "center" }}>
+          <Text variant="small" color={colors.mutedForeground}>New to OutClass?</Text>
+          <Button variant="secondary" full label="Create an account" testID="sign-in-sign-up" onPress={() => router.push("/sign-up")} />
+          <Button variant="ghost" size="compact" label="Forgot password?" testID="sign-in-forgot" onPress={() => { WebBrowser.openBrowserAsync(`${config.apiUrl}/forgot-password`).catch(() => {}); }} />
+        </View>
       </ScrollView>
       <TurnstileSheet open={challenge} onClose={() => setChallenge(false)} onToken={token => { setChallenge(false); submit(token); }} />
     </KeyboardAvoidingView>

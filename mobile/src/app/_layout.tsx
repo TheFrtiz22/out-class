@@ -14,9 +14,10 @@ import { Button } from "~/components/ui";
 import { AuthProvider, useAuth } from "~/lib/auth";
 import { resolveHref } from "~/lib/links";
 import { notificationPath } from "~/lib/push";
-import { createQueryClient } from "~/lib/query";
+import { createQueryClient, useApiQuery } from "~/lib/query";
 import { reportError } from "~/lib/report";
 import { ThemeProvider, useTheme } from "~/lib/theme";
+import type { Me } from "~/lib/types";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -49,13 +50,20 @@ function Navigation() {
   const segments = useSegments();
   const router = useRouter();
   const ready = session !== undefined;
+  // A signed-in account without a student profile (a new account, or one made on the web that never
+  // finished) is held on complete-profile, as the web holds it on /signup.
+  const me = useApiQuery<Me>("me", undefined, { enabled: !!session });
+  const needsProfile = !!session && me.data?.profile === null;
 
   useEffect(() => {
     if (!ready) return;
-    const onSignIn = segments[0] === "sign-in";
-    if (!session && !onSignIn) router.replace("/sign-in");
-    else if (session && onSignIn) router.replace("/");
-  }, [ready, session, segments, router]);
+    const onAuth = segments[0] === "sign-in" || segments[0] === "sign-up";
+    const onProfile = segments[0] === "complete-profile";
+    if (!session) { if (!onAuth) router.replace("/sign-in"); }
+    else if (needsProfile) { if (!onProfile) router.replace("/complete-profile"); }
+    // Wait for `me` before leaving, so a new account never flashes the tabs on its way to its profile.
+    else if ((onAuth || onProfile) && (me.data || me.isError)) router.replace("/");
+  }, [ready, session, needsProfile, me.data, me.isError, segments, router]);
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => {}); }, [ready]);
   // A tapped push opens the screen for the path it carries (the same mapping as the Inbox).
   const lastResponse = Notifications.useLastNotificationResponse();
@@ -85,6 +93,8 @@ function Navigation() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background }, animation: "default", gestureEnabled: true, fullScreenGestureEnabled: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="sign-in" options={{ animation: "fade" }} />
+        <Stack.Screen name="sign-up" options={{ animation: "slide_from_right" }} />
+        <Stack.Screen name="complete-profile" options={{ animation: "fade", gestureEnabled: false }} />
         <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="q/[code]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
       </Stack>

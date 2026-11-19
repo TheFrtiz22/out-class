@@ -22,7 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const userId = useRef<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => { userId.current = data.session?.user.id ?? null; setSession(data.session); });
+    // A session that can't be read (an unreadable key-store entry) reads as signed out, never as loading forever.
+    supabase.auth.getSession().then(({ data }) => { userId.current = data.session?.user.id ?? null; setSession(data.session); }, () => { userId.current = null; setSession(null); });
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       const nextId = next?.user.id ?? null;
       // A different account (or none) must never see the previous account's cached data.
@@ -57,7 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     // While the session can still authorize it: stop this device's pushes for the account.
     await import("~/lib/push").then(module => module.unregisterPushBeforeSignOut()).catch(() => {});
-    await supabase.auth.signOut().catch(() => supabase.auth.signOut({ scope: "local" }));
+    // A bad connection must not hold Sign out: after 5 s this device signs out locally.
+    const remote = supabase.auth.signOut().then(({ error }) => { if (error) throw error; });
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000));
+    await Promise.race([remote, timeout]).catch(() => supabase.auth.signOut({ scope: "local" }));
     queryClient.clear();
     clearPrivateMemory();
   }, [queryClient]);
