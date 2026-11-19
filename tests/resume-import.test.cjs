@@ -187,3 +187,7 @@ test('sign-up reading authenticates, never stores the file or writes a profile, 
   assert.equal(h.uploads.length, 0); assert.equal(h.writes.length, 0);
   await assert.rejects(harness({ deny: true }).api.readResumeForOnboarding(form(layout('b-politics'))), /Unauthenticated/);
 });
+test('an all-capitals organization ("NASA") stays inside its experience section', () => {
+  const proposal = contract.extractResumeProposal(['Riley Example', 'Experience', 'Software Engineering Intern', 'NASA', '2025 - Present', 'Research Aide', 'IBM', '2024 - 2025', 'Skills', 'Python'].join('\n'));
+  assert.deepEqual(proposal.experiences.map(e => [e.title, e.subtitle, e.period]), [['Software Engineering Intern', 'NASA', '2025 - Present'], ['Research Aide', 'IBM', '2024 - 2025']]);
+});

@@ -76,18 +76,18 @@ const SECTION_KEYWORDS: [SectionKind, RegExp][] = [
   ["other", /\b(?:skills|awards|honors|certifications?|licenses|interests|languages|summary|objective|profile|references|coursework|publications|additional|technologies|tools)\b/],
 ]
 const normalizeHeading = (line: string) => line.toLowerCase().replace(/&/g, " and ").replace(/[^\p{L}\s]/gu, " ").replace(/\s+/g, " ").trim()
-/** A section heading: a short line that names a résumé section (any case), or a short all-capitals line. */
+const HEADING_WORDS = new Set("and academic academics achievements activities additional awards background campus certificates certification certifications community competencies course coursework education employment experience experiences extracurricular extracurriculars highlights history honors information interests internship internships involvement languages leadership licenses objective organizations other personal profile professional project projects publications qualifications references relevant research scholarships selected service skills student summary technical technologies tools volunteer volunteering work".split(" "))
+/**
+ * A section heading: a short line made only of section words ("Campus Involvement", "WORK EXPERIENCE").
+ * Organizations and roles in capitals ("NASA", "Research Aide") never qualify.
+ */
 function headingKind(line: string): SectionKind | null {
-  if (line.length > 50 || /\d|@/.test(line)) return null
+  if (line.length > 50 || /\d|@/.test(line) || !/^\p{Lu}/u.test(line)) return null
   const words = normalizeHeading(line).split(" ").filter(Boolean)
-  if (!words.length || words.length > 5) return null
+  if (!words.length || words.length > 5 || !words.every(word => HEADING_WORDS.has(word))) return null
   const text = words.join(" ")
-  const capitals = line === line.toUpperCase() && /\p{Lu}{3}/u.test(line)
-  for (const [kind, pattern] of SECTION_KEYWORDS) {
-    // Title-case lines must be nothing but heading words ("Campus Involvement"), never a role or a sentence.
-    if (pattern.test(text) && (capitals || words.length <= 4 && !ROLE.test(text) && /^\p{Lu}/u.test(line))) return kind
-  }
-  return capitals ? "other" : null
+  for (const [kind, pattern] of SECTION_KEYWORDS) if (pattern.test(text)) return kind
+  return "other"
 }
 const titleCase = (value: string) => value === value.toUpperCase() ? value.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase()) : value
 const clean = (value: string) => value.replace(/\s+/g, " ").replace(/^[\s,;:|·•\-–—]+|[\s,;:|·•\-–—(]+$/g, "").trim()

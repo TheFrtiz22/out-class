@@ -421,7 +421,8 @@ export function StudentOnboardingWizard({
 
   async function onStep3Submit(data: AcademicProfileData) {
     setConfirmNotice("")
-    if (loading) return
+    // A résumé still being read would fill fields after the student moved on.
+    if (loading || resumeFill.busy) return
     if (termsUnsaved) {
       if (!acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
       setLoading(true); setGlobalError("")
@@ -465,6 +466,7 @@ export function StudentOnboardingWizard({
   }
 
   async function onStep4Submit(data: ExperienceAssetsData, skipAssets = false) {
+    if (resumeFill.busy) return
     setGlobalError("")
     setLoading(true)
     try {
@@ -871,7 +873,7 @@ export function StudentOnboardingWizard({
 
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || resumeFill.busy}
                   className="mt-2 h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
                   Continue

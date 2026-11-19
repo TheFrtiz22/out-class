@@ -74,3 +74,16 @@ test('sign-up step 3 fills only empty fields from a résumé, attaches the PDF f
  assert.equal(step4.values.linkedinUrl,'https://www.linkedin.com/in/maya-chen-example');assert.deepEqual(appended,[proposal.experiences[0]]);
  tree=render();assert.match(JSON.stringify(tree),/Filled in 5 details from your résumé/);
 });
+
+test('sign-up cannot move past step 3 while a résumé is still being read',async()=>{
+ const h=hooks(),forms=[];let release;
+ const C=load('components/views/student-onboarding-wizard.tsx',{react:h.react,'@/contexts/auth-context':{useAuth:()=>({isImpersonating:false})},'@/utils/supabase/client':{createClient:()=>({})},'@/actions/onboarding':{},'@/actions/terms':{},'@/actions/profile':{},'@/actions/storage':{},'@/actions/resume-import':{readResumeForOnboarding:()=>new Promise(r=>{release=r;})},'@/actions/interest-survey':{},'@/hooks/use-interest-survey':{invalidateInterestSurvey(){}},'@/lib/workspace-api':{dismissInterestSurveyPrompt:async()=>{}},'react-hook-form':{useForm:config=>{const form={values:{...config.defaultValues},dirty:{},formState:{errors:{}},register:()=>({}),watch:key=>form.values[key],getValues:key=>key?form.values[key]:form.values,getFieldState:key=>({isDirty:!!form.dirty[key]}),setValue:(key,value)=>form.values[key]=value,handleSubmit:fn=>()=>fn(form.values)};forms.push(form);return form;},useFieldArray:()=>({fields:[],append:()=>{},remove:()=>{}})}}).StudentOnboardingWizard;
+ const render=()=>h.render(()=>C({initialUser:{email:'verified@virginia.edu',email_confirmed_at:'2026-01-01',user_metadata:{first_name:'Maya',last_name:'Chen'}},termsAccepted:true,onComplete:()=>{}}));
+ await nodes(render()).find(n=>n.type==='form').props.onSubmit();let tree=render();
+ const file=new Blob(['%PDF-fixture'],{type:'application/pdf'});file.name='resume.pdf';
+ const pending=nodes(tree).find(n=>n.props?.id==='onboarding-resume-fill').props.onChange({target:{files:[file],value:'resume.pdf'}});
+ tree=render();const submit=nodes(tree).find(n=>n.type==='Button'&&n.props.type==='submit');assert.equal(submit.props.disabled,true);
+ await nodes(tree).find(n=>n.type==='form').props.onSubmit();tree=render();assert.ok(nodes(tree).some(n=>n.props?.id==='onboarding-resume-fill'),'still on step 3');
+ release({ok:false,code:'INVALID_PDF',message:'Choose a valid PDF résumé.'});await pending;tree=render();
+ assert.equal(nodes(tree).find(n=>n.type==='Button'&&n.props.type==='submit').props.disabled,false);
+});
