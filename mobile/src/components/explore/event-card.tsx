@@ -24,7 +24,7 @@ export const EventCard = memo(function EventCard({ event, saved, saveReady, onOp
   const rsvp = !event.rsvpEnabled ? "" : event.capacity !== null && event.rsvpCount >= event.capacity ? "Event full" : event.rsvpRequired ? "RSVP required · Register in event details" : "RSVP available in event details";
   return (
     <View style={{ backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, overflow: "hidden", shadowColor: colors.schoolPrimary, shadowOpacity: dark ? 0 : 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
-      <Press large testID={testID} accessibilityRole="link" accessibilityLabel={`View event: ${event.title}, ${when}, ${event.location}, hosted by ${event.clubName}`} onPress={() => onOpen(event)}>
+      <Press large testID={testID} accessibilityRole="link" accessibilityLabel={`View event: ${event.title}, ${when}${event.location?.trim() ? `, ${event.location}` : ""}, hosted by ${event.clubName}`} onPress={() => onOpen(event)}>
         {flyer ? <Image source={{ uri: flyer }} accessibilityLabel={`${event.title} event poster`} contentFit="cover" transition={150} style={{ width: "100%", aspectRatio: 16 / 9 }} /> : null}
         <View style={{ flexDirection: "row", gap: 12, padding: 14, paddingBottom: 10 }}>
           <View accessible accessibilityLabel={eventDateLabel(event.date)} style={{ width: 50, paddingVertical: 6, borderRadius: radius.md, backgroundColor: colors.brandSubtle, alignItems: "center", alignSelf: "flex-start" }}>
@@ -35,7 +35,7 @@ export const EventCard = memo(function EventCard({ event, saved, saveReady, onOp
             <Text variant="caption" numberOfLines={1}><Text variant="caption" color={colors.foreground} style={{ fontFamily: fonts.sansSemibold }}>{event.clubName}</Text>{event.category ? ` · ${event.category}` : ""}</Text>
             <Text variant="card" numberOfLines={2}>{event.title}</Text>
             <View style={{ flexDirection: "row", gap: 6, marginTop: 2 }}><View style={{ marginTop: 2 }}><Clock size={14} color={colors.mutedForeground} /></View><Text variant="small" style={{ flex: 1 }}>{when}</Text></View>
-            <View style={{ flexDirection: "row", gap: 6 }}><View style={{ marginTop: 2 }}><MapPin size={14} color={colors.mutedForeground} /></View><Text variant="small" numberOfLines={1} style={{ flex: 1 }}>{event.location}</Text></View>
+            <View style={{ flexDirection: "row", gap: 6 }}><View style={{ marginTop: 2 }}><MapPin size={14} color={colors.mutedForeground} /></View><Text variant="small" numberOfLines={1} style={{ flex: 1 }}>{event.location?.trim() || "Location not announced"}</Text></View>
             {event.description ? <Text variant="small" color={colors.foreground} numberOfLines={2} style={{ marginTop: 2 }}>{event.description}</Text> : null}
             {rsvp ? <Text variant="caption" style={{ marginTop: 2 }}>{rsvp}</Text> : null}
           </View>

@@ -2,16 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
+import { ALUMNI_REFUSALS, isAlumniProfile } from "~/components/alumni-banner";
 import { AboutSection, ClubEventsSection, ClubIdentity, FaqSection, LifeSection, MembersSection, RecruitmentSection, UnclaimedNotice } from "~/components/explore/club-sections";
 import { applicationStatusCode, applicationStatusLabel, clubRecruitment, clubSharePath, recruitmentDate } from "~/components/explore/directory";
 import { clubQuery, useSavedClubs } from "~/components/explore/hooks";
 import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
 import type { IconComponent } from "~/components/icon-factory";
-import { ArrowRight, ArrowUpRight, Bookmark, Share } from "~/components/icons";
+import { ArrowRight, Bookmark, Share } from "~/components/icons";
 import { ShareSheet } from "~/components/share-sheet";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET, statusTone } from "~/components/ui";
+import { Button, Card, Chip, EmptyState, ErrorState, ScreenScroll, Skeleton, statusTone } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
@@ -19,11 +20,12 @@ import { useTheme } from "~/lib/theme";
 import type { ClubDirectory, MyApplicationSummary, PublicClub, SavedClubs } from "~/lib/types";
 
 const BookmarkFilled: IconComponent = props => <Bookmark {...props} weight="fill" />;
-type Account = { applications?: MyApplicationSummary[]; memberships?: { clubId: string }[] };
+type Account = { applications?: MyApplicationSummary[]; memberships?: { clubId: string; alumniSince: string | null }[]; profile?: { graduatedAt?: string | null } | null };
 type StartResult = { applicationId: string } | { applicationId: null; unavailable: string };
 
 export default function ClubPage() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const id = typeof params.id === "string" ? params.id.trim() : "";
   const { colors } = useTheme();
   const router = useRouter();
   const top = useHeaderInset();
@@ -34,7 +36,7 @@ export default function ClubPage() {
   // The list a student came from already holds the club's summary: show it while the full profile loads.
   const summary = () => queryClient.getQueryData<ClubDirectory>(["explore.directory", null])?.clubs.find(item => item.id === id)
     ?? queryClient.getQueryData<SavedClubs>(["clubs.saved", null])?.items.find(item => item.club.id === id)?.club;
-  const profile = useQuery({ ...clubQuery(id), placeholderData: () => { const club = summary(); return club ? { club } : undefined; } });
+  const profile = useQuery({ ...clubQuery(id), enabled: !!id, placeholderData: () => { const club = summary(); return club ? { club } : undefined; } });
   const club = profile.data?.club ?? null;
   const [now] = useState(() => Date.now());
   const [sharing, setSharing] = useState(false);
@@ -55,7 +57,8 @@ export default function ClubPage() {
   const refresh = () => { profile.refetch(); me.refetch(); saved.query.refetch(); };
 
   let body;
-  if (!club && profile.isPending) body = <ClubSkeleton />;
+  if (!id) body = <EmptyState title="This club is no longer available." action={<Button variant="secondary" label="Browse clubs" onPress={() => router.replace("/explore")} />} />;
+  else if (!club && profile.isPending) body = <ClubSkeleton />;
   else if (!club && profile.isError) body = <ErrorState message={errorMessage(profile.error, "We couldn’t load this club. Please try again.")} offline={profile.error instanceof ApiError && profile.error.offline} onRetry={refresh} />;
   else if (!club) body = profile.data?.error ? <ErrorState message={profile.data.error} onRetry={refresh} /> : <EmptyState title="This club is no longer available." action={<Button variant="secondary" label="Browse clubs" onPress={() => router.replace("/explore")} />} />;
   else body = renderClub(club);
@@ -64,32 +67,40 @@ export default function ClubPage() {
   function renderClub(club: PublicClub) {
     const recruitment = clubRecruitment(club, now);
     const following = saved.ids.has(club.id);
+    const alumni = isAlumniProfile(me.data?.profile);
     const draft = !!application && /draft/i.test(application.status);
     // A rejected student may start a new application in the club's next cycle.
-    const reapply = application?.status === "REJECTED" && recruitment.available;
-    const closed = !application && !recruitment.available;
+    const reapply = !alumni && application?.status === "REJECTED" && recruitment.available;
+    // A current member has no application to start here: the club's own page is the next step (web bug: members saw "Start application").
+    const member = !alumni && !!me.data?.memberships?.some(item => item.clubId === club.id && !item.alumniSince);
+    const closed = !application && (!recruitment.available || member || alumni);
     const applyLabel = start.isPending ? "Opening…" : reapply ? "Apply again" : application ? draft ? "Continue draft" : "View status" : "Start application";
     const deadlineText = recruitment.deadline ? `Application deadline: ${recruitmentDate(recruitment.deadline)}` : "";
-    const member = me.data?.memberships?.some(item => item.clubId === club.id);
     const apply = () => {
       setError("");
       if (application && !reapply) router.push({ pathname: "/application/[id]", params: { id: application.id } });
       else start.mutate(club.id);
     };
     const follow = (variant: "primary" | "secondary") => (
-      <Button full variant={variant} size="large" testID="club-follow" icon={following ? BookmarkFilled : Bookmark} label={following ? "Following" : "Follow"} accessibilityHint={`${following ? "Following" : "Follow"} ${club.name}`} disabled={saved.query.isPending} onPress={() => saved.setSaved(club, !following)} />
+      <Button full variant={variant} size="large" testID="club-follow" icon={following ? BookmarkFilled : Bookmark} label={following ? "Following" : "Follow"} accessibilityHint={following ? `Removes ${club.name} from your saved clubs` : `Saves ${club.name} to your saved clubs`} disabled={saved.query.isPending || alumni} onPress={() => saved.setSaved(club, !following)} />
     );
     const share = <Button full variant="secondary" size="large" testID="club-share" icon={Share} label="Share" onPress={() => setSharing(true)} />;
     const action = (
       <View style={{ gap: 10 }}>
-        {closed ? (
+        {member ? (
           <>
-            <View style={{ flexDirection: "row", gap: 10 }}><View style={{ flex: 1 }}>{follow("primary")}</View><View style={{ flex: 1 }}>{share}</View></View>
-            <Text variant="small">Applications aren’t open yet · Follow to keep this club in your saved clubs</Text>
+            <Button full size="large" testID="club-workspace" icon={ArrowRight} label="Open club workspace" onPress={() => router.push({ pathname: "/my-club/[clubId]", params: { clubId: club.id } })} />
+            <View style={{ flexDirection: "row", gap: 10 }}><View style={{ flex: 1 }}>{follow("secondary")}</View><View style={{ flex: 1 }}>{share}</View></View>
+            <Text variant="small">You’re a member of this club.</Text>
+          </>
+        ) : closed ? (
+          <>
+            <View style={{ flexDirection: "row", gap: 10 }}><View style={{ flex: 1 }}>{follow(alumni ? "secondary" : "primary")}</View><View style={{ flex: 1 }}>{share}</View></View>
+            <Text variant="small">{alumni ? ALUMNI_REFUSALS.apply : recruitment.expired ? "The application deadline has passed · Follow to keep this club in your saved clubs" : "Applications aren’t open yet · Follow to keep this club in your saved clubs"}</Text>
           </>
         ) : (
           <>
-            <Button full size="large" testID="club-apply" icon={start.isPending ? undefined : ArrowRight} loading={start.isPending} label={applyLabel} onPress={apply} />
+            <Button full size="large" testID="club-apply" icon={start.isPending ? undefined : ArrowRight} loading={start.isPending} disabled={me.isPending} label={applyLabel} onPress={apply} />
             <View style={{ flexDirection: "row", gap: 10 }}><View style={{ flex: 1 }}>{follow("secondary")}</View><View style={{ flex: 1 }}>{share}</View></View>
             {deadlineText ? <Text variant="small">{recruitment.closingSoon ? "Closing soon · " : ""}{deadlineText}</Text> : null}
           </>
@@ -103,13 +114,7 @@ export default function ClubPage() {
       <>
         <ClubIdentity club={club} action={action} />
         {club.claimed === false ? <UnclaimedNotice /> : null}
-        <AboutSection club={club}>
-          {member ? (
-            <Press accessibilityRole="link" accessibilityLabel="Open club workspace" onPress={() => router.push({ pathname: "/my-club/[clubId]", params: { clubId: club.id } })} style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: TARGET }}>
-              <Text variant="bodyStrong" color={colors.brandInk}>Open club workspace</Text><ArrowUpRight size={14} color={colors.brandInk} />
-            </Press>
-          ) : null}
-        </AboutSection>
+        <AboutSection club={club} />
         <MembersSection club={club} />
         <RecruitmentSection club={club} deadlineText={deadlineText} expired={recruitment.expired} application={application} />
         <LifeSection club={club} />
