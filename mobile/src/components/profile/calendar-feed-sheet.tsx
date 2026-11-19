@@ -6,7 +6,7 @@ import { Copy } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button } from "~/components/ui";
-import { api } from "~/lib/api";
+import { api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openExternal } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
@@ -21,7 +21,7 @@ export function CalendarFeedSheet({ open, onClose }: { open: boolean; onClose: (
   const [links, setLinks] = useState<CalendarFeedLinks | null>(null);
   const [message, setMessage] = useState("");
   const active = status.data?.active ?? false;
-  const failed = () => { setMessage("Couldn’t update your calendar link. Try again."); haptics.error(); };
+  const failed = (error: unknown) => { setMessage(errorMessage(error, "Couldn’t update your calendar link. Try again.")); haptics.error(); };
   const create = useMutation({
     mutationFn: () => api.post<CalendarFeedLinks>("calendarFeed.create"),
     onMutate: () => setMessage(""),
@@ -53,6 +53,7 @@ export function CalendarFeedSheet({ open, onClose }: { open: boolean; onClose: (
           </>
         ) : (
           <>
+            {status.isError ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">Couldn’t check whether you already have a calendar link. A new link replaces any old one.</Text> : null}
             {active ? <Text variant="small">Your calendar is subscribed. A new link replaces the current one, which then stops updating.</Text> : null}
             <Button full size="large" testID="calendar-feed-create" loading={create.isPending} disabled={busy || status.isPending} label={active ? "Create a new link" : "Create my calendar link"} onPress={() => create.mutate()} />
             {active ? <Button full variant="ghost" testID="calendar-feed-disable" disabled={busy} label="Turn off calendar link" onPress={() => disable.mutate()} /> : null}

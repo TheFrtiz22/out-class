@@ -1,3 +1,4 @@
+import { normalizePhone, PHONE_INVALID_MESSAGE } from "@outclass/shared/phone";
 import { easternDateKey } from "~/lib/eastern";
 import type { FullStudentProfile, ProfileSectionId } from "~/lib/types";
 
@@ -29,6 +30,7 @@ export function profileChecklist(profile: FullStudentProfile) {
     { label: "Name", complete: Boolean(profile.firstName.trim() && profile.lastName.trim()) },
     { label: "Education", complete: Boolean(profile.major?.trim() && profile.gradYear) },
     { label: "Résumé", complete: Boolean(resumeHref(profile.resumeUrl)) },
+    { label: "Experience", complete: (profile.experiences ?? []).some(item => item.title.trim()) },
     { label: "LinkedIn", complete: Boolean(safeProfileUrl(profile.linkedinUrl)) },
   ];
 }
@@ -80,3 +82,54 @@ export function sectionPayload(draft: FullStudentProfile, original: FullStudentP
 }
 
 export const initials = (profile: { firstName?: string | null; lastName?: string | null }) => `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase() || "OC";
+
+/** The score fields as typed. Checked apart from the section because text that isn't a number parses to null, which would otherwise read as "unchanged" and vanish on Done. */
+export function numberProblem(numbers: Record<string, string>): string | null {
+  for (const key of Object.keys(numberLabels) as NumberKey[]) {
+    const text = (numbers[key] ?? "").trim();
+    if (!text) continue;
+    const value = Number(text.replace(",", "."));
+    if (!Number.isFinite(value)) return `Enter ${numberLabels[key]} as a number.`;
+    if (key === "gpa" && (value < 0 || value > 4 || Math.abs(value * 1000 - Math.round(value * 1000)) > 1e-8)) return "Enter a GPA from 0 to 4.0, with at most three decimal places.";
+    if (key === "satScore" && (!Number.isInteger(value) || value < 400 || value > 1600)) return "Enter an SAT score from 400 to 1600.";
+    if (key !== "gpa" && key !== "satScore" && (!Number.isInteger(value) || value < 1 || value > 36)) return `Enter an ${numberLabels[key]} score from 1 to 36.`;
+  }
+  return null;
+}
+
+export type NumberKey = "gpa" | "satScore" | "actScore" | "actEnglish" | "actMath" | "actReading" | "actScience";
+const numberLabels: Record<NumberKey, string> = { gpa: "GPA", satScore: "SAT", actScore: "ACT composite", actEnglish: "ACT English", actMath: "ACT Math", actReading: "ACT Reading", actScience: "ACT Science" };
+
+/**
+ * The server's section rules (lib/student-profile.ts profileSectionSchemaFor) checked before a save,
+ * so a mistake is named in plain words next to the form instead of the validator's own wording.
+ * Null when the section can be sent; the server still decides.
+ */
+export function sectionProblem(draft: FullStudentProfile, section: ProfileSectionId): string | null {
+  if (section === "identity") {
+    if (!draft.firstName.trim()) return "Enter your first name.";
+    if (!draft.lastName.trim()) return "Enter your last name.";
+    if (draft.firstName.trim().length > 100 || draft.lastName.trim().length > 100) return "Names can be up to 100 characters.";
+  }
+  if (section === "education") {
+    if (!draft.major?.trim()) return "Enter your major or intended major.";
+    if ((draft.major?.trim().length ?? 0) > 200) return "Major can be up to 200 characters.";
+    if (!draft.gradYear) return "Choose your graduation year.";
+    if ((draft.highSchool?.trim().length ?? 0) > 200) return "High school can be up to 200 characters.";
+    if (draft.scholarStatus?.selections?.includes("OTHER") && !draft.scholarStatus.other?.trim()) return "Describe Other scholar status.";
+  }
+  if (section === "experience") {
+    const index = draft.experiences.findIndex(item => !item.title.trim() || !item.subtitle.trim());
+    if (index >= 0) return `Add a role and an organization for experience ${index + 1}, or remove it.`;
+    if (draft.experiences.some(item => item.title.trim().length > 200 || item.subtitle.trim().length > 200 || item.period.trim().length > 100)) return "Keep each role and organization under 200 characters, and dates under 100.";
+  }
+  if (section === "links") {
+    const linkedin = draft.linkedinUrl?.trim();
+    const host = linkedin?.replace(/^https?:\/\//i, "").split(/[/?#:]/)[0] ?? "";
+    if (linkedin && (/\s/.test(linkedin) || !/(^|\.)linkedin\.com$/i.test(host))) return "Use a LinkedIn URL, like linkedin.com/in/your-name.";
+  }
+  if (section === "contact") {
+    try { normalizePhone(draft.phone ?? ""); } catch { return PHONE_INVALID_MESSAGE; }
+  }
+  return null;
+}

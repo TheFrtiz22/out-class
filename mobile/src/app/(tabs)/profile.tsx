@@ -45,6 +45,9 @@ export default function Profile() {
   const resume = resumeHref(profile?.resumeUrl);
   const scholar = profile ? scholarSummary(profile.scholarStatus) : null;
   const afterGraduation = !!profile && (!!profile.graduationConfirmedAt || isAlumniProfile(profile));
+  const classOf = profile?.gradYear ? `Class of ${profile.gradYear}` : "";
+  const studies = [profile?.major?.trim(), classOf].filter(Boolean).join(" · ");
+  const experiences = (profile?.experiences ?? []).filter(item => item.title.trim());
   const work = profile ? [profile.postGradRole?.trim(), profile.postGradEmployer?.trim()].filter(Boolean).join(" at ") : "";
 
   return (
@@ -76,7 +79,7 @@ export default function Profile() {
               </View>
               <View style={{ flex: 1, gap: 8 }}>
                 <Text variant="title" accessibilityRole="header" testID="profile-name">{profile.firstName} {profile.lastName}</Text>
-                <Text variant="small">{profile.major} · Class of {profile.gradYear}</Text>
+                {studies ? <Text variant="small">{studies}</Text> : null}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
                   <Button size="compact" icon={Pencil} testID="profile-edit" label="Edit profile" onPress={() => edit("identity")} />
                   {linkedin ? <Button size="compact" variant="secondary" icon={Linkedin} testID="profile-linkedin-open" label="LinkedIn" accessibilityHint="Opens in the browser" onPress={() => { openExternal(linkedin); }} /> : null}
@@ -119,9 +122,9 @@ export default function Profile() {
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 8 }}>
                 <Text variant="bodyStrong">University of Virginia</Text>
-                <Text variant="small" style={{ fontVariant: ["tabular-nums"] }}>Class of {profile.gradYear}</Text>
+                {classOf ? <Text variant="small" style={{ fontVariant: ["tabular-nums"] }}>{classOf}</Text> : null}
               </View>
-              <Text variant="small">{profile.major}</Text>
+              <Text variant="small">{profile.major?.trim() || "Major not added"}</Text>
               {profile.highSchool ? <Text variant="small" color={colors.foreground}>High school: {profile.highSchool}</Text> : null}
               {profile.gender || profile.pronouns ? <Text variant="small" color={colors.foreground}>{[profile.gender && `Gender: ${profile.gender}`, profile.pronouns && `Pronouns: ${profile.pronouns}`].filter(Boolean).join(" · ")}</Text> : null}
               {profile.transferStudent ? <Text variant="small" color={colors.foreground}>Transfer student</Text> : null}
@@ -133,6 +136,19 @@ export default function Profile() {
                   {profile.satScore != null ? <Line label="SAT" value={String(profile.satScore)} /> : null}
                 </View>
               ) : null}
+            </Card>
+
+            <Card style={{ gap: 8 }} testID="profile-experience">
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text variant="card" accessibilityRole="header" style={{ flex: 1 }}>Experience</Text>
+                <Button variant="ghost" size="compact" testID="profile-edit-experience" label={experiences.length ? "Edit" : "Add"} accessibilityHint="Edit experience" onPress={() => edit("experience")} />
+              </View>
+              {experiences.length ? experiences.map((item, index) => (
+                <View key={index} style={{ gap: 2 }}>
+                  <Text variant="bodyStrong">{item.title.trim()}</Text>
+                  {[item.subtitle.trim(), item.period.trim()].some(Boolean) ? <Text variant="small">{[item.subtitle.trim(), item.period.trim()].filter(Boolean).join(" · ")}</Text> : null}
+                </View>
+              )) : <Text variant="small">Internships, research, projects or leadership. Not added yet.</Text>}
             </Card>
 
             <Card style={{ gap: 8 }} testID="profile-phone-card">
