@@ -27,6 +27,8 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
     ['section=recruitment&tool=decisions&decisionTab=voting', { section: 'recruitment', tool: 'decisions', decisionTab: 'voting' }, 'Decide'],
     ['section=recruitment&tool=rules', { section: 'recruitment', tool: 'applicants', recruitingSettings: 'rules' }, 'Applicants'],
     ['section=recruitment&tool=rounds', { section: 'recruitment', tool: 'applicants', recruitingSettings: 'anonymous' }, 'Applicants'],
+    // Recruiting › Application has no rail entry; the rail lights Recruiting overview, which links to it.
+    ['section=settings&setting=application', { section: 'recruitment', tool: 'application' }, 'Recruiting overview'],
   ]
   for (const [from, to, current] of moves) {
     await open(from)
@@ -51,11 +53,11 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   await drawer.getByRole('tab', { name: 'Auto-reject rules', exact: true }).click()
   await expect.poll(params).toEqual(expect.objectContaining({ recruitingSettings: 'rules' }))
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' }); await expect(gear).toBeFocused()
-  // …and from club Settings → Application → Recruiting, in place.
-  await open('section=settings&setting=application')
+  // …and from Recruiting › Application (formerly club Settings), in place.
+  await open('section=recruitment&tool=application')
   const recruiting = page.getByRole('region', { name: 'Recruiting', exact: true })
   await recruiting.getByRole('button', { name: 'Auto-reject rules', exact: true }).click(); await drawer.waitFor()
-  assert.equal(params().section, 'settings')
+  assert.equal(params().section, 'recruitment')
   await page.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' })
   await expect(recruiting.getByRole('button', { name: 'Auto-reject rules', exact: true })).toBeFocused()
 
@@ -70,10 +72,19 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   await expect(overview).toHaveAttribute('aria-current', 'step')
   await expect(vote).toHaveText(/Vote, \d+ sessions? to run\d+$/); await expect(send).toHaveText(/Send, \d+ applicants? ready to send\d+$/)
   await expect(vote.locator('.oc-stepper-badge')).toHaveText(/^\d+$/); await expect(send.locator('.oc-stepper-badge')).toHaveText(/^\d+$/)
-  // Review (#281): the shared applicant review, then back to Overview before the round and history checks.
+  // Review (#281): a summary that opens the shared applicant review in Applicants (pending a decision, review open),
+  // instead of repeating the Applicants table; then back to Decide and Overview before the round and history checks.
   await page.getByRole('button', { name: 'Next: Review', exact: true }).click()
   await expect(reviewStep).toHaveAttribute('aria-current', 'step')
-  await expect(page.getByRole('button', { name: 'Review applicants needing a decision', exact: true })).toBeVisible()
+  const reviewLink = page.getByRole('link', { name: 'Review in Applicants', exact: true })
+  await expect(reviewLink).toBeVisible()
+  await expect(reviewLink).toHaveAttribute('href', /[?&]section=recruitment&tool=applicants&decision=pending(&roundId=[^&]+)?&review=1$/)
+  await reviewLink.click()
+  await expect.poll(params).toEqual(expect.objectContaining({ section: 'recruitment', tool: 'applicants', decision: 'pending' }))
+  const reviewDialog = page.getByRole('dialog'); await reviewDialog.waitFor({ timeout: 30000 })
+  await page.keyboard.press('Escape'); await reviewDialog.waitFor({ state: 'hidden' })
+  await page.goBack(); await expect.poll(params).toEqual(expect.objectContaining({ tool: 'decisions', decisionTab: 'review' }))
+  await expect(reviewStep).toHaveAttribute('aria-current', 'step')
   await overview.click(); await expect(overview).toHaveAttribute('aria-current', 'step')
   await page.getByRole('heading', { name: 'Voting sessions', exact: true }).waitFor()
   // With no round in the URL, Overview opens on the current round and writes it into the URL (no extra Back step).

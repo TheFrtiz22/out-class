@@ -9,6 +9,7 @@ import type { requireAuth } from "@/utils/auth";
 import { verifiedSchoolIdentities } from "@/utils/school-identity";
 import { canGrantOnboardingRole, invitationPurpose, normalizeSchoolIdentifier, onboardingRolePermissions } from "@/lib/club-onboarding";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
+import { markClubClaimed } from "@/lib/profile-field-visibility";
 
 export async function recipientInvitation(tx: AppTransactionClient, invitationId: string, account: Awaited<ReturnType<typeof requireAuth>>, acceptedRetry = false) {
   const hint = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
@@ -62,7 +63,7 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
       create: { userId: account.user.id, clubId: invitation.clubId, permissions, isOwner, accessRole },
       update: { permissions, isOwner, accessRole, ...(rejoining ? { status: "ACTIVE", alumniSince: null, joinedAt: new Date() } : {}) },
     });
-    if (isOwner) await tx.club.update({ where: { id: invitation.clubId }, data: { claimedAt: new Date() } });
+    if (isOwner) await markClubClaimed(tx, invitation.clubId);
     const now = new Date();
     await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "ACCEPTED", acceptedAt: now, claimedAt: now, claimedUserId: account.user.id } });
     await tx.auditLog.create({ data: { actorId: account.user.id, action: "club.invite.accept", targetId: invitation.id, clubId: invitation.clubId, details: { membershipId: membership.id } } });

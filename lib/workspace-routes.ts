@@ -19,7 +19,7 @@ const sectionTitles: Record<string, string> = {
 const toolTitles: Record<string, string> = {
   overview: TERMS.recruiting, applicants: TERMS.applicants, rejected: TERMS.applicants, interviews: "Interviews", decisions: "Decide",
   "scheduled-decisions": "Decide", resumes: "Résumé moderation", reviews: "Submitted reviews",
-  rounds: TERMS.applicants, rules: TERMS.applicants,
+  rounds: TERMS.applicants, rules: TERMS.applicants, application: "Application",
 }
 
 /** The `<title>` text (before " · OutClass") for a club workspace URL. */
@@ -67,6 +67,8 @@ export function canonicalClubWorkspaceQuery(input: URLSearchParams): URLSearchPa
     // The board ballot opens from the Voting room, not from Applicants.
     if ((q.get("tool") ?? "applicants") === "applicants" && q.get("voting") === "1") { set("tool", "decisions"); set("decisionTab", "voting"); set("voting", null) }
   }
+  // Settings → Recruitment & applications (the application form, deadline and voting defaults) moved into Recruiting.
+  if (section === "settings" && q.get("setting") === "application") { set("section", "recruitment"); set("tool", "application"); set("setting", null) }
   // Settings → Interviews re-rendered the Interviews tool; every tab now lives there (kits by default).
   if (section === "settings" && q.get("setting") === "interviews") {
     set("section", "recruitment"); set("tool", "interviews"); set("setting", null)

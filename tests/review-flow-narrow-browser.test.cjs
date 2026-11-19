@@ -12,9 +12,9 @@ test('review dialog fits every tested width with a wide font and the dashboard b
   const browser = await chromium.launch({ headless: true, ...(!fs.existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) }); t.after(() => browser.close(), { timeout: 30000 })
   const page = await (await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' })).newPage(), errors = []
   page.on('pageerror', e => errors.push(e.message))
-  await page.goto(fixture.url('section=recruitment&tool=decisions&decisionTab=review'))
-  await page.getByRole('button', { name: 'Review applicants needing a decision', exact: true }).click({ timeout: 60000 })
-  const dialog = page.getByRole('dialog'); await dialog.waitFor()
+  // Decide › Review links here (Applicants, pending a decision, review open): the same review dialog.
+  await page.goto(fixture.url('section=recruitment&tool=applicants&decision=pending&review=1'))
+  const dialog = page.getByRole('dialog'); await dialog.waitFor({ timeout: 60000 })
   await page.addStyleTag({ content: '*{font-family:Verdana,"DejaVu Sans",sans-serif!important}' })
   // The dashboard's bar: its title and the extra outline "Next assigned review" button.
   await dialog.evaluate(el => {

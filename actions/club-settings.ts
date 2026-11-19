@@ -16,6 +16,7 @@ import { normalizeProfileFieldVisibility, sameProfileFieldVisibility, saveProfil
 import { revalidatePath, revalidateTag } from "next/cache";
 import { boundedParse } from "@/lib/bounded-input";
 import { ActionError, actionResult } from "@/lib/action-result";
+import { deadlineInstant } from "@/lib/application-deadline";
 async function authorize(
   tx: AppTransactionClient,
   clubId: string,
@@ -147,7 +148,8 @@ async function saveApplicationSettingsCommand(input: unknown) {
         where: { id: data.clubId },
         data: {
           applicationOpen: data.open,
-          applicationDeadline: data.deadline ? new Date(data.deadline) : null,
+          // Eastern Time, resolved the same way the editor shows it (never the server's zone).
+          applicationDeadline: data.deadline ? deadlineInstant(data.deadline) : null,
           applicationVersion: { increment: 1 },
         },
       });

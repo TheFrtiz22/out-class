@@ -132,7 +132,7 @@ test('overview action: member counts only with member-directory access, scoped t
   const clubId = '00000000-0000-4000-8000-000000000001'
   let access = owner, counts = []
   const model = name => ({ findUniqueOrThrow: async () => ({ id: clubId, name: 'Club', tagline: '' }), findFirst: async () => null, findMany: async () => [], groupBy: async () => [], count: async query => { counts.push([name, query]); return 3 } })
-  const prisma = { club: model('club'), meeting: model('meeting'), taskAssignment: model('taskAssignment'), application: model('application'), interviewBooking: model('interviewBooking'), votingSession: model('votingSession'), clubMember: model('clubMember'), clubInvitation: model('clubInvitation'), $queryRaw: async () => [] }
+  const prisma = { club: model('club'), meeting: model('meeting'), taskAssignment: model('taskAssignment'), application: model('application'), interviewBooking: model('interviewBooking'), votingSession: model('votingSession'), clubMember: model('clubMember'), clubInvitation: model('clubInvitation'), recruitmentCycle: model('recruitmentCycle'), $queryRaw: async () => [] }
   const api = load('actions/club-overview.ts', { '@/utils/prisma': { prisma }, '@/utils/auth': { requireClubMembership: async () => ({ membership: access }), requireClubPermission: async () => ({}) }, '@/utils/dashboard-summary': { dashboardSummary: async () => ({}), dashboardReviewQueue: async () => [] } })
   assert.deepEqual((await api.getClubWorkspaceOverview(clubId)).members, { active: 3, pendingInvitations: 3, recent: 3 })
   const [members, invitations, recent] = counts.filter(([name]) => name === 'clubMember' || name === 'clubInvitation')
@@ -219,7 +219,8 @@ test('each dashboard reads only its own data: Club home never queries applicants
   for (const name of ['meeting', 'announcement', 'task', 'teamTasks']) assert.ok(!cycle.has(name), `Recruiting does not read ${name}`)
   for (const name of ['club', 'cycle', 'booking', 'vote', 'raw']) assert.ok(cycle.has(name), `Recruiting reads ${name}`)
   const strip = await reads('strip')
-  assert.deepEqual([...strip].sort(), ['club', 'cycle', 'raw', 'vote'], 'the strip reads intake, cycles, round counts and votes only')
+  // Offers are a Recruiting Needs you item, so the strip reads them to count the same items.
+  assert.deepEqual([...strip].sort(), ['club', 'cycle', 'offer', 'raw', 'vote'], 'the strip reads intake, cycles, round counts, votes and offers only')
 })
 
 test('authz: new overview fields keep their gates in every view', async () => {

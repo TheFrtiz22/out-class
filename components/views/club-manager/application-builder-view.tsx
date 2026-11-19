@@ -35,14 +35,11 @@ import {
 } from "@/components/ui/dialog";
 import "@/components/clubs/club-settings.css";
 import { unwrapped } from "@/lib/action-result"
+import { deadlineInputValue } from "@/lib/application-deadline"
+import { SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 const saveApplicationSettings = unwrapped(saveApplicationSettingsAction)
-const localDate = (date: Date | string | null) => {
-  if (!date) return "";
-  const d = new Date(date);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
-};
+/** The deadline is shown and entered in Eastern Time, like interview scheduling, whatever the browser's zone. */
+const localDate = (date: Date | string | null) => deadlineInputValue(date);
 export function ApplicationBuilderView({
   clubId: provided,
 }: {
@@ -127,11 +124,13 @@ export function ApplicationBuilderView({
   }
   async function save() {
     if (working.current) return;
+    // The Eastern wall time as shown; the schema refuses times a clock change skips or repeats, and the
+    // server resolves it with the same deadlineInstant.
     const input = {
       clubId,
       version,
       open,
-      deadline: deadline ? new Date(deadline).toISOString() : null,
+      deadline: deadline || null,
       questions,
     };
     const parsed = applicationSettingsSchema.safeParse(input);
@@ -227,7 +226,7 @@ export function ApplicationBuilderView({
           >
             <Toggle label="Applications open" checked={open} onCheckedChange={setOpen} className="self-start" />
             <label className="space-y-2 text-sm">
-              Deadline (optional, your local time)
+              Deadline (optional, {SCHEDULING_TIMEZONE_LABEL})
               <Input
                 type="datetime-local"
                 value={deadline}

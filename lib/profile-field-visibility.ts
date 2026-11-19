@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AppTransactionClient } from "@/utils/prisma";
 
 /**
  * Single source of truth for which applicant profile fields a club's leaders see.
@@ -20,6 +21,19 @@ export const profileFieldsHiddenByDefault: readonly ProfileFieldKey[] = ["gpa", 
 
 export function defaultProfileFieldVisibility(): ProfileFieldVisibility {
   return Object.fromEntries(profileFieldKeys.map(key => [key, !profileFieldsHiddenByDefault.includes(key)])) as ProfileFieldVisibility;
+}
+
+/** Standardized tests are opt-in for clubs created from Nov 2026: hidden unless the club turns them on. */
+export const profileFieldsOptInForNewClubs: readonly ProfileFieldKey[] = ["sat", "act"];
+
+/**
+ * The map stored on a newly created club. Clubs created earlier keep NULL (the defaults above, tests on), so their
+ * leaders see what they saw before; a new club stores this explicit map instead, with SAT and ACT off.
+ */
+export function newClubProfileFieldVisibility(): ProfileFieldVisibility {
+  const result = defaultProfileFieldVisibility();
+  for (const key of profileFieldsOptInForNewClubs) result[key] = false;
+  return result;
 }
 
 export function normalizeProfileFieldVisibility(value: unknown): ProfileFieldVisibility {
@@ -118,4 +132,17 @@ export function allowedByProfileCeiling(field: string, visibility: ProfileFieldV
   // A leader-selected résumé excerpt is résumé content: it follows the résumé setting.
   if (field === "resumeHighlight") return visibility.resume !== false;
   return !cappedDisplayFields.has(field) || visibility[field as ProfileFieldKey] !== false;
+}
+
+type ClaimClient = Pick<AppTransactionClient, "club">;
+
+/**
+ * Marks a club claimed (an owner now runs it). A directory-imported club claimed for the first time, still on the
+ * NULL defaults, gets the new-club map (SAT and ACT off), so newly onboarded clubs behave like newly created ones.
+ * A club that was already claimed, or has saved its own settings, keeps them.
+ */
+export async function markClubClaimed(tx: ClaimClient, clubId: string, now = new Date()) {
+  const club = await tx.club.findUnique({ where: { id: clubId }, select: { claimedAt: true, profileFieldVisibility: true } });
+  const firstClaim = !!club && club.claimedAt === null && club.profileFieldVisibility === null;
+  await tx.club.update({ where: { id: clubId }, data: { claimedAt: now, ...(firstClaim ? { profileFieldVisibility: newClubProfileFieldVisibility() } : {}) } });
 }

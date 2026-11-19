@@ -105,7 +105,10 @@ test('grading: any number of categories on their own scales, averaged out of 10;
   const cat = { ...r.categories[0], score: 7 }
   assert.ok(rubric.validateRubricScores({ categories: [cat], overall: 7, overridden: false }, r))
   assert.throws(() => rubric.validateRubricScores({ categories: [cat], overall: 9, overridden: false }, r), /does not match/)
-  assert.ok(rubric.validateRubricScores({ categories: [cat], overall: 9, overridden: true }, r), 'a reviewer may edit the overall')
+  // With several categories a reviewer may edit the overall; one category is the overall, so it cannot differ (#19).
+  const two = { categories: [...r.categories, { id: '00000000-0000-4000-8000-00000000d002', label: 'Fit', max: 10 }] }
+  assert.ok(rubric.validateRubricScores({ categories: [cat], overall: 9, overridden: true }, two), 'a reviewer may edit the overall')
+  assert.throws(() => rubric.validateRubricScores({ categories: [cat], overall: 9, overridden: true }, r), /follows the category score/)
   assert.throws(() => rubric.validateRubricScores({ categories: [{ ...cat, max: 5 }], overall: 7, overridden: true }, r), /changed/)
   assert.equal(rubric.rubricScoresSchema.safeParse({ categories: [{ ...cat, score: 11 }], overall: 7, overridden: true }).success, false)
 })
@@ -137,7 +140,9 @@ test('the review flow is the one decision UI: shared by Applicants, the board, R
   assert.match(hook, /const UNDO_MS = 5000/); assert.match(hook, /label: "Undo"/); assert.match(hook, /put\(app\.id, previous\)/, 'failed saves roll back')
   assert.match(read('components/views/leader-dashboard/live-leader-workspace.tsx'), /<ApplicantReviewFlow/)
   const decide = read('components/live-voting/decide-page.tsx')
-  assert.match(decide, /<DecideReview key=\{roundId\} scoped decisionsOnly initialDecision="pending" \/>/)
+  // Decide › Review links to the Applicants review flow instead of repeating the Applicants table.
+  assert.match(decide, /<ReviewStep clubId=\{clubId\} roundId=\{roundId\} rounds=\{managedRounds\} \/>/)
+  assert.match(decide, /pendingApplicantsHref\(clubId, roundId, true\)\}>Review in Applicants</)
   assert.match(decide, /<StagedDecisionsPanel/)
   const boardSrc = read('components/applicant-review/applicant-board.tsx')
   assert.match(boardSrc, /KeyboardSensor/); assert.match(boardSrc, /staged\.stage\(/); assert.doesNotMatch(boardSrc, /setApplicationStatus/)

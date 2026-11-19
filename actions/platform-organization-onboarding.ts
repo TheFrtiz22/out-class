@@ -9,6 +9,7 @@ import {
   organizationOnboardingSchema, organizationNameKey, onboardingIdentifierPattern,
   normalizePresidentIdentifier, type OrganizationOnboardingSchool, type OrganizationOnboardingResult,
 } from "@/lib/platform-organization-onboarding";
+import { newClubProfileFieldVisibility } from "@/lib/profile-field-visibility";
 
 class OnboardingConflict extends Error {}
 
@@ -106,7 +107,7 @@ export async function createOrganizationAndInvitePresident(input: unknown): Prom
       // unclaimed SchoolIdentity; claimedUserId remains null until acceptance.
       const organization = await tx.club.create({ data: {
         schoolId: config.schoolId, campusKey: config.school.key, name: data.organizationName, slug,
-        tagline: "", description: "", color: "#17233b", category: "Other",
+        tagline: "", description: "", color: "#17233b", category: "Other", profileFieldVisibility: newClubProfileFieldVisibility(),
       }, select: { id: true, name: true } });
       const invitation = await tx.clubInvitation.create({ data: {
         clubId: organization.id, schoolId: config.schoolId, schoolIdentityId: identity.id,

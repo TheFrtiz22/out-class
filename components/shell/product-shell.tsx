@@ -60,7 +60,7 @@ const FeedbackDialog = dynamic(() => import("@/components/feedback/feedback-dial
  * Rail icons. Club workspace items each get a distinct glyph: Overview (gauge) vs Home (house), Applicants
  * (ID card) vs Members (people), one Calendar, and Decide (gavel). Exported for the phone bar.
  */
-export const navigationIcons: Record<string, typeof Home> = { rejected: IdCard, resumes: FileText, reviews: FileText, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, "club-alumni": GraduationCap, alumni: GraduationCap, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "account-settings": Settings, "student-profile": UserRound, corkboard: CalendarStar, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: Gavel, clubs: Users2, overview: Gauge, meetings: CalendarDays, tasks: ListChecks, applicants: IdCard, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw, recruiting: FileText }
+export const navigationIcons: Record<string, typeof Home> = { rejected: IdCard, resumes: FileText, reviews: FileText, users: Users2, reports: FileText, events: CalendarDays, claims: Shield, "school-requests": FileText, onboarding: Users2, support: Shield, activity: FileText, permissions: Shield, audit: FileText, "student-dashboard": Home, "club-home": Home, "club-meetings": CalendarDays, "club-tasks": ListChecks, "club-alumni": GraduationCap, alumni: GraduationCap, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "account-settings": Settings, "student-profile": UserRound, corkboard: CalendarStar, calendar: CalendarDays, applications: FileText, application: FileText, interviews: Video, decisions: Gavel, clubs: Users2, overview: Gauge, meetings: CalendarDays, tasks: ListChecks, applicants: IdCard, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal, cycles: RefreshCw, recruiting: FileText }
 
 /**
  * One shell for every workspace. `sections` come from lib/navigation; the highlighted
@@ -200,7 +200,8 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
   }
   function navigate(view: ViewId) { if (canLeaveWorkspace()) onNavigate(view) }
   function navLink(item: ProductNavItem, dock = false) {
-    const selected = item.id === current
+    // A page without its own rail entry (Recruiting › Application) lights the item that links to it.
+    const selected = item.id === current || (!!current && !!item.matches?.includes(current))
     const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left", selected ? "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const NavIcon = navigationIcons[item.id] ?? FileText
     const badge = platform && item.id === "reports" ? reportsBadge : 0
