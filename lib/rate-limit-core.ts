@@ -20,6 +20,8 @@ export const RATE_LIMITS = {
   searchUser: { name: "search-user", limit: 120, windowMs: minute },
   searchAnonymous: { name: "search-anonymous", limit: 300, windowMs: minute },
   clubExports: { name: "club-exports", limit: 10, windowMs: 10 * minute },
+  // Each import fetches an outside page and up to two images, so keep it to a handful per account.
+  clubWebsiteImport: { name: "club-website-import", limit: 20, windowMs: 10 * minute },
   // Generous: a 200-person check-in can put every phone behind one campus network address.
   shortLinks: { name: "short-links", limit: 600, windowMs: minute },
   clubAssets: { name: "club-assets", limit: 300, windowMs: minute },
