@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewProps, StyleSheet, View, type ViewProps, type ViewStyle } from "react-native";
+import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewProps, StyleSheet, View, type ViewProps, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -7,6 +7,7 @@ import type { IconComponent } from "~/components/icon-factory";
 import { Text } from "~/components/text";
 import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
+import { useAndroidKeyboardInset } from "~/lib/keyboard";
 import { spring } from "~/lib/motion";
 import { fonts, useTheme } from "~/lib/theme";
 
@@ -242,13 +243,19 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
   );
 }
 
-/** The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance. */
+/**
+ * The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance, and a
+ * focused field kept above the keyboard on both platforms.
+ */
 export function ScreenScroll({ children, refreshing, onRefresh, dock, top = 0, contentStyle, ...rest }: ScrollViewProps & { refreshing?: boolean; onRefresh?: () => void; dock?: boolean; top?: number; contentStyle?: ViewStyle }) {
   const { colors, space } = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboard = useAndroidKeyboardInset();
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1, backgroundColor: colors.background, marginBottom: keyboard ? keyboard + insets.bottom : 0 }}
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       contentContainerStyle={[{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + (dock ? DOCK_CLEARANCE : 24), gap: space.content - 4 }, contentStyle]}
       keyboardShouldPersistTaps="handled"
       contentInsetAdjustmentBehavior="never"
