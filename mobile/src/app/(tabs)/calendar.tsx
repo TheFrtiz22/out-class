@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, RefreshControl, SectionList, Switch, View } from "react-native";
+import { Pressable, RefreshControl, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, MapPin } from "~/components/icons";
@@ -9,7 +9,7 @@ import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, TARGET } from "~/components/ui";
+import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, TARGET, Toggle } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { addDays, addToCalendar, easternDateKey, easternTime, formatDateKey } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
@@ -155,9 +155,8 @@ export default function CalendarScreen() {
 
   const header = (
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
-      <Text variant="display" accessibilityRole="header">Calendar</Text>
-      <Text variant="small" style={{ marginTop: -8 }}>Times shown in Eastern Time.</Text>
-      <Button variant="secondary" size="compact" icon={CalendarPlus} testID="calendar-subscribe" label="Subscribe" onPress={() => setFeed(true)} />
+      {/* The title lives in the floating bar alone; Subscribe sits there too, so nothing here takes a line of its own. */}
+      <Text variant="small">Times shown in Eastern Time.</Text>
       {events.length > 0 ? (
         <>
           <Segmented label="Calendar view" value={view} onChange={setView} options={[{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }]} />
@@ -165,7 +164,7 @@ export default function CalendarScreen() {
           {view === "agenda" ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: TARGET }}>
               <Text variant="body" style={{ flex: 1 }}>Include past events</Text>
-              <Switch testID="calendar-include-past" accessibilityLabel="Include past events" accessibilityRole="switch" value={includePast} onValueChange={value => { haptics.tick(); setIncludePast(value); }} trackColor={{ true: colors.primary, false: colors.muted }} ios_backgroundColor={colors.muted} />
+              <Toggle testID="calendar-include-past" accessibilityLabel="Include past events" value={includePast} onValueChange={setIncludePast} />
             </View>
           ) : (
             <View style={{ gap: 10 }}>
@@ -204,7 +203,7 @@ export default function CalendarScreen() {
         renderItem={({ item, index, section }) => <EventRow event={item} first={index === 0} last={index === section.data.length - 1} onPress={() => { setCalendarNote(""); setSelectedId(item.id); }} />}
         ListEmptyComponent={view === "agenda" || calendar.isPending || calendar.isError ? empty : undefined}
       />
-      <Header title="Calendar" />
+      <Header title="Calendar" actions={<Button variant="ghost" size="compact" icon={CalendarPlus} testID="calendar-subscribe" label="Subscribe" accessibilityHint="Add OutClass to your calendar" onPress={() => setFeed(true)} style={{ alignSelf: "center" }} />} />
       <CalendarFeedSheet open={feed} onClose={() => setFeed(false)} />
 
       <Sheet open={!!selected} onClose={() => setSelectedId(null)} title={selected?.title} testID="calendar-event-sheet">

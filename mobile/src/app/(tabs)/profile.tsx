@@ -11,7 +11,7 @@ import { EditProfileSheet } from "~/components/profile/edit-sheet";
 import { PrivateImage, openPrivateDocument, photoParams } from "~/components/private-image";
 import { initials, isStoragePath, profileChecklist, resumeHref, safeProfileUrl, scholarSummary } from "~/components/profile/model";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, ErrorState, IconButton, Row, ScreenScroll, Skeleton } from "~/components/ui";
+import { Button, Card, ErrorState, IconButton, Row, ScreenScroll, Skeleton } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { openExternal, openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
@@ -71,7 +71,7 @@ export default function Profile() {
           </View>
         ) : (
           <>
-            <View style={{ flexDirection: "row", gap: 16, alignItems: "flex-start" }}>
+            <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
               <View accessible={false} testID="profile-avatar" style={{ width: 80, height: 80, borderRadius: 40, overflow: "hidden", backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
                 {localPhoto && profile.headshotUrl ? <Image source={{ uri: localPhoto }} style={{ width: 80, height: 80 }} contentFit="cover" />
                   : <PrivateImage own kind="profile-photos" params={photoParams(profile.headshotUrl)} style={{ width: 80, height: 80 }}
@@ -80,19 +80,20 @@ export default function Profile() {
               <View style={{ flex: 1, gap: 8 }}>
                 <Text variant="title" accessibilityRole="header" testID="profile-name">{profile.firstName} {profile.lastName}</Text>
                 {studies ? <Text variant="small">{studies}</Text> : null}
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-                  <Button size="compact" icon={Pencil} testID="profile-edit" label="Edit profile" onPress={() => edit("identity")} />
-                  {linkedin ? <Button size="compact" variant="secondary" icon={Linkedin} testID="profile-linkedin-open" label="LinkedIn" accessibilityHint="Opens in the browser" onPress={() => { openExternal(linkedin); }} /> : null}
-                  {resume ? <Button size="compact" variant="secondary" icon={FileText} testID="profile-resume-view" label="View résumé" accessibilityHint="Opens in the browser" onPress={async () => {
-                    setResumeNote("");
-                    if (/^https?:\/\//i.test(resume)) { openExternal(resume); return; }
-                    // An uploaded PDF: the owner's own file, through the media route.
-                    if (isStoragePath(profile.resumeUrl) ? !(await openPrivateDocument("resumes", { path: profile.resumeUrl! })) : !(await openOnWeb(resume))) setResumeNote(errorMessage(null));
-                  }} /> : null}
-                </View>
-                {resumeNote ? <Text variant="small" accessibilityRole="alert" color={colors.destructive}>{resumeNote}</Text> : null}
               </View>
             </View>
+            {/* The three profile actions share one row under the name block, each an equal share of the width. */}
+            <View testID="profile-actions" style={{ flexDirection: "row", gap: 8 }}>
+              <Button size="compact" icon={Pencil} testID="profile-edit" label="Edit" accessibilityHint="Edit your profile" onPress={() => edit("identity")} style={{ flex: 1, paddingHorizontal: 10 }} />
+              {linkedin ? <Button size="compact" variant="secondary" icon={Linkedin} testID="profile-linkedin-open" label="LinkedIn" accessibilityHint="Opens in the browser" onPress={() => { openExternal(linkedin); }} style={{ flex: 1, paddingHorizontal: 10 }} /> : null}
+              {resume ? <Button size="compact" variant="secondary" icon={FileText} testID="profile-resume-view" label="Résumé" accessibilityHint="Opens your résumé in the browser" onPress={async () => {
+                setResumeNote("");
+                if (/^https?:\/\//i.test(resume)) { openExternal(resume); return; }
+                // An uploaded PDF: the owner's own file, through the media route.
+                if (isStoragePath(profile.resumeUrl) ? !(await openPrivateDocument("resumes", { path: profile.resumeUrl! })) : !(await openOnWeb(resume))) setResumeNote(errorMessage(null));
+              }} style={{ flex: 1, paddingHorizontal: 10 }} /> : null}
+            </View>
+            {resumeNote ? <Text variant="small" accessibilityRole="alert" color={colors.destructive}>{resumeNote}</Text> : null}
             <AlumniBanner />
 
             {!allAdded ? (
@@ -172,8 +173,6 @@ export default function Profile() {
 
             <Card padded={false} style={{ paddingHorizontal: 16, borderRadius: radius.lg }}>
               <Row testID="profile-settings" leading={<Settings size={22} color={colors.brandInk} />} title="Settings" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/settings" as never)} />
-              <Divider />
-              <Row testID="profile-tasks" title="Tasks" detail="Your tasks across clubs" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/tasks")} />
             </Card>
 
             <EditProfileSheet open={!!editing} initialSection={lastSection} profile={profile} onClose={() => setEditing(null)} onSaved={() => {}} onLocalPhoto={setLocalPhoto} />

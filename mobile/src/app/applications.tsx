@@ -7,7 +7,7 @@ import { StatusProgress } from "~/components/applications/status-progress";
 import { Header, useHeaderInset } from "~/components/header";
 import { ArrowRight, CalendarDays, FilePenLine } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, ClubMark, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, statusTone } from "~/components/ui";
+import { Button, Card, ClubMark, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, StatusChip } from "~/components/ui";
 import { ApiError } from "~/lib/api";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
@@ -29,7 +29,7 @@ function DraftCard({ application: app, alumni, onOpen }: { application: StudentA
             <Text variant="small">{progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions"}</Text>
             <Text variant="small">{app.deadlineLabel ? `Deadline · ${app.deadlineLabel}` : "Deadline not published"}{intakeClosed ? <Text variant="smallStrong"> · Applications closed</Text> : null}</Text>
           </View>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
         </View>
         <View accessibilityRole="progressbar" accessibilityLabel={`Required responses ready for ${app.club.name}`} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress.percent) }} style={{ height: 4, borderRadius: 2, backgroundColor: colors.muted, overflow: "hidden" }}>
           <View style={{ width: `${Math.max(0, Math.min(100, progress.percent))}%`, height: 4, borderRadius: 2, backgroundColor: colors.brandInk }} />
@@ -55,7 +55,7 @@ function StatusCard({ application: app, onOpen, onAction }: { application: Stude
             <Text variant="card" numberOfLines={2}>{app.club.name}</Text>
             <Text variant="small">{decision ? attention ? "Membership offer ready" : "Decision received" : attention ? "Review interview options" : app.round?.name || app.statusLabel}</Text>
           </View>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
         </View>
         <StatusProgress application={app} />
         <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, gap: 3 }}>
@@ -111,10 +111,7 @@ export default function Applications() {
         refreshControl={<RefreshControl refreshing={view.isRefetching} onRefresh={() => { void view.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
         ListHeaderComponent={
           <View style={{ gap: space.content - 4 }}>
-            <View style={{ gap: 6 }}>
-              <Text variant="display" accessibilityRole="header">Applications</Text>
-              <Text variant="small">Your drafts, applications in review, interviews and decisions.</Text>
-            </View>
+            <Text variant="small">Your drafts, applications in review, interviews and decisions.</Text>
             {view.isPending ? (
               <>
                 <View style={{ flexDirection: "row", gap: 22 }}>{[64, 78, 84, 80].map((width, index) => <Skeleton key={index} width={width} height={18} />)}</View>

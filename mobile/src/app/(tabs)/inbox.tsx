@@ -70,8 +70,6 @@ export default function Inbox() {
 
   const header = (
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
-      <Text variant="display" accessibilityRole="header">Inbox</Text>
-      <Text variant="small" style={{ marginTop: -8 }}>Announcements, application updates and tasks from your clubs.</Text>
       <AlumniBanner />
       {actionFailed ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">Couldn’t update notifications.</Text> : null}
       {showFilters ? (

@@ -1,9 +1,10 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewProps, StyleSheet, View, type ViewProps, type ViewStyle } from "react-native";
+import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewProps, StyleSheet, Switch, View, type ViewProps, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import type { IconComponent } from "~/components/icon-factory";
+import { CalendarClock, CheckCircle2, Circle, Clock, Eye, FilePenLine, Send, XCircle } from "~/components/icons";
 import { Text } from "~/components/text";
 import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
@@ -107,24 +108,38 @@ export function Card({ children, style, padded = true, tone = "card", ...rest }:
 }
 
 export type ChipTone = "neutral" | "brand" | "success" | "warning" | "info" | "error" | "interview";
-export function Chip({ label, tone = "neutral", icon: Icon }: { label: string; tone?: ChipTone; icon?: IconComponent }) {
-  const { colors, radius } = useTheme();
-  const palette: Record<ChipTone, [string, string]> = {
-    neutral: [colors.secondary, colors.secondaryForeground], brand: [colors.brandSubtle, colors.brandInk], success: [colors.successSubtle, colors.success],
-    warning: [colors.warningSubtle, colors.warning], info: [colors.infoSubtle, colors.info], error: [colors.errorSubtle, colors.destructive], interview: [colors.interviewSubtle, colors.interview],
-  };
-  const [background, text] = palette[tone];
+const toneIcons: Record<ChipTone, IconComponent> = { neutral: Circle, brand: Circle, success: CheckCircle2, warning: Clock, info: Clock, error: XCircle, interview: CalendarClock };
+function useToneColor() {
+  const { colors } = useTheme();
+  return (tone: ChipTone) => ({ neutral: colors.mutedForeground, brand: colors.brandInk, success: colors.success, warning: colors.warning, info: colors.info, error: colors.destructive, interview: colors.interview } as Record<ChipTone, string>)[tone];
+}
+
+/**
+ * A status label as the web draws it (components/ui/status-pill.tsx `.oc-status-pill`): a tinted
+ * icon and plain text, no filled capsule. The icon carries the tone, so the state reads by shape
+ * as well as colour; the label stays in the text colour.
+ */
+export function Chip({ label, tone = "neutral", icon, testID }: { label: string; tone?: ChipTone; icon?: IconComponent; testID?: string }) {
+  const { colors } = useTheme();
+  const toneColor = useToneColor();
+  const Icon = icon ?? toneIcons[tone];
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", backgroundColor: background, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 }}>
-      {Icon ? <Icon size={13} color={text} /> : null}
-      <Text variant="caption" color={text} style={{ fontFamily: fonts.sansSemibold }}>{label}</Text>
+    <View testID={testID} style={{ flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", flexShrink: 0, paddingVertical: 2 }}>
+      <Icon size={16} weight={tone === "brand" ? "fill" : "regular"} color={toneColor(tone)} />
+      <Text variant="caption" color={colors.foreground} numberOfLines={1} style={{ fontFamily: fonts.sansMedium }}>{label}</Text>
     </View>
   );
 }
 
 /** The tone the web gives each application status (student-facing labels come from the server). */
 export function statusTone(code: string): ChipTone {
-  return ({ DRAFTING: "warning", SUBMITTED: "info", IN_REVIEW: "info", INTERVIEWING: "interview", ACCEPTED: "success", REJECTED: "neutral", WAITLISTED: "neutral" } as Record<string, ChipTone>)[code] ?? "neutral";
+  return ({ DRAFTING: "neutral", SUBMITTED: "neutral", IN_REVIEW: "info", INTERVIEWING: "interview", ACCEPTED: "success", REJECTED: "error", WAITLISTED: "warning" } as Record<string, ChipTone>)[code] ?? "neutral";
+}
+/** One glyph per application state, as on the web (status-pill.tsx `statusIcons`). */
+const statusIcons: Record<string, IconComponent> = { DRAFTING: FilePenLine, SUBMITTED: Send, IN_REVIEW: Eye, INTERVIEWING: CalendarClock, ACCEPTED: CheckCircle2, REJECTED: XCircle, WAITLISTED: Clock };
+/** An application's state: Draft, Submitted, In review, Interview, Accepted, Not selected, Waitlisted. */
+export function StatusChip({ label, code, testID }: { label: string; code: string; testID?: string }) {
+  return <Chip label={label} tone={statusTone(code)} icon={statusIcons[code]} testID={testID} />;
 }
 
 const CLUB_ASSET = /^club-assets\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/;
@@ -142,7 +157,8 @@ export function ClubMark({ name, color, logoUrl, size = 44 }: { name: string; co
     : logoUrl.startsWith("/") && !logoUrl.startsWith("//") ? `${config.apiUrl}${logoUrl}` : /^https?:\/\//i.test(logoUrl) ? logoUrl : null;
   return (
     <View accessible={false} style={{ width: size, height: size, borderRadius: Math.min(radius.md, size / 3.4), backgroundColor: color && HEX_COLOR.test(color.trim()) ? color.trim() : "#142d4e", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-      {logo && failed !== logo ? <Image source={{ uri: logo }} style={{ width: size, height: size }} contentFit="cover" transition={150} onError={() => setFailed(logo)} />
+      {/* "contain": the whole logo shows inside the box, never cropped; a non-square logo sits on the club colour. */}
+      {logo && failed !== logo ? <Image source={{ uri: logo }} style={{ width: size, height: size }} contentFit="contain" transition={150} onError={() => setFailed(logo)} />
         : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.displayStrong, fontSize: size * 0.36, lineHeight: size * 0.44, color: "#ffffff" }}>{initials}</Text>}
     </View>
   );
@@ -240,6 +256,23 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
         );
       })}
     </View>
+  );
+}
+
+/**
+ * The one on/off switch. On must read as on at a glance in both themes: the navy track the web uses
+ * in light mode, and the school accent in dark mode, where the light primary under a white thumb
+ * looked the same as off. Off is a quiet grey track. Every switch in the app goes through this.
+ */
+export function toggleTrack({ colors, dark }: Pick<ReturnType<typeof useTheme>, "colors" | "dark">) {
+  return { on: dark ? colors.schoolAccent : colors.primary, off: dark ? colors.input : colors.muted };
+}
+export function Toggle({ value, onValueChange, disabled, accessibilityLabel, testID }: { value: boolean; onValueChange: (value: boolean) => void; disabled?: boolean; accessibilityLabel: string; testID?: string }) {
+  const { on, off } = toggleTrack(useTheme());
+  return (
+    <Switch testID={testID} accessibilityLabel={accessibilityLabel} accessibilityRole="switch" accessibilityState={{ checked: value, disabled: !!disabled }}
+      value={value} disabled={disabled} onValueChange={next => { haptics.tick(); onValueChange(next); }}
+      trackColor={{ true: on, false: off }} ios_backgroundColor={off} thumbColor="#ffffff" />
   );
 }
 

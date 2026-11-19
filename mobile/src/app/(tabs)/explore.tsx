@@ -68,7 +68,6 @@ export default function Explore() {
   const failed = directory.isError || !!directory.data?.error;
   const header = (
     <View style={{ gap: 14, paddingBottom: 12 }}>
-      <Text variant="display" accessibilityRole="header">Explore clubs</Text>
       <View style={{ flexDirection: "row", gap: 10 }}>
         <View style={{ flex: 1 }}><Button full variant="secondary" icon={CalendarDays} label="Events" testID="explore-events" onPress={() => router.push("/events")} /></View>
         <View style={{ flex: 1 }}><Button full variant="secondary" icon={Bookmark} label="Saved clubs" testID="explore-saved" onPress={() => router.push("/saved-clubs")} /></View>

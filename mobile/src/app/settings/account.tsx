@@ -138,7 +138,6 @@ export default function AccountSettings() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} automaticallyAdjustKeyboardInsets testID="settings-account-screen">
-        <Text variant="display" accessibilityRole="header">Account & Security</Text>
         <Card style={{ gap: 14 }}>
           <Text variant="section" accessibilityRole="header">Sign-in information</Text>
           <Detail label="University email" value={email} />
@@ -154,7 +153,7 @@ export default function AccountSettings() {
         </Card>
         {email ? <AccountDeletion email={email} passwordAccount={passwordAccount} /> : null}
       </ScreenScroll>
-      <Header title="Settings" back />
+      <Header title="Account & Security" back />
       {sheet}
     </View>
   );

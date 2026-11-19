@@ -1,6 +1,7 @@
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { act, render, screen, waitFor } from "@testing-library/react-native";
 import type { ComponentType } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "~/lib/auth";
 import { createQueryClient } from "~/lib/query";
@@ -54,15 +55,18 @@ export async function renderRoute(Screen: ComponentType, options: RenderOptions 
   resetRouter(options.params, options.segments, options.pathname);
   const client = makeQueryClient();
   const tree = options.providers === false ? <Screen /> : (
-    <SafeAreaProvider initialMetrics={metrics}>
-      <QueryClientProvider client={client}>
-        <ThemeProvider>
-          <AuthProvider>
-            <Screen />
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    // The app's root wraps everything in the gesture root (src/app/_layout.tsx); the tab dock's drag needs it.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider initialMetrics={metrics}>
+        <QueryClientProvider client={client}>
+          <ThemeProvider>
+            <AuthProvider>
+              <Screen />
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
   const result = await render(tree);
   await settle(client);

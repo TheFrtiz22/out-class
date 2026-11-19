@@ -4,7 +4,7 @@ import { Linking, View } from "react-native";
 import { ArrowRight, CalendarDays, ChevronDown, ChevronUp, FileText } from "~/components/icons";
 import { openPrivateDocument } from "~/components/private-image";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, ClubMark, Divider, Press, TARGET, statusTone } from "~/components/ui";
+import { Button, Card, ClubMark, Divider, Press, TARGET, StatusChip } from "~/components/ui";
 import { useTheme } from "~/lib/theme";
 import type { StudentApplication } from "~/lib/types";
 import { OfferCard } from "./offer-card";
@@ -41,7 +41,7 @@ export function StatusDetail({ application: app, notice, alumniRespond, onSwitch
     <>
       <ApplicationHeading application={app} eyebrow="Your application">
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
           <Text variant="caption" style={{ flexShrink: 1 }}>{app.submittedLabel ? `Submitted ${app.submittedLabel}` : "Submitted application"}</Text>
         </View>
       </ApplicationHeading>
@@ -86,7 +86,7 @@ export function StatusDetail({ application: app, notice, alumniRespond, onSwitch
       <Card accessibilityLabel="Current application status" testID="application-status" style={{ gap: 10 }}>
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
           <Text variant="section" accessibilityRole="header">{app.statusLabel}</Text>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
         </View>
         {!app.decision && app.round?.name ? <Text variant="small">Current club round · {app.round.name}</Text> : null}
         <Text variant="small" style={{ lineHeight: 22 }}>{app.nextStep}</Text>

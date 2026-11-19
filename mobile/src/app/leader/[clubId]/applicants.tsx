@@ -7,7 +7,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ExternalLink, Search, ShieldCheck, X } from "~/components/icons";
 import { PrivateImage, photoParams } from "~/components/private-image";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, ErrorState, Press, Skeleton, SkeletonRows, TARGET, statusTone } from "~/components/ui";
+import { Button, Card, ErrorState, Press, Skeleton, SkeletonRows, TARGET, StatusChip } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
@@ -156,7 +156,7 @@ export default function Applicants() {
                   <Text variant="caption" numberOfLines={2}>{roundName(item.roundId)} · {rating(item)}</Text>
                 </View>
                 <View style={{ alignItems: "flex-end", gap: 8 }}>
-                  <Chip label={statusLabels[item.status] ?? item.status} tone={statusTone(item.status)} />
+                  <StatusChip label={statusLabels[item.status] ?? item.status} code={item.status} />
                   <ExternalLink size={16} color={colors.mutedForeground} />
                 </View>
               </Card>

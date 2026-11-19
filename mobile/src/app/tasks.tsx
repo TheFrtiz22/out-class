@@ -51,7 +51,6 @@ export default function Tasks() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} refreshing={refreshing} onRefresh={refresh} testID="tasks-screen">
-        <Text variant="display" accessibilityRole="header">Tasks</Text>
         <AlumniBanner action="task" />
         {me.isError ? (
           <ErrorState message={errorMessage(me.error)} offline={me.error instanceof ApiError && me.error.offline} onRetry={refresh} />

@@ -5,7 +5,7 @@ import { ChevronRight, Compass, QrCode } from "~/components/icons";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { leaderMemberships } from "~/components/leader/access";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, statusTone } from "~/components/ui";
+import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, StatusChip } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { easternShortDateTime } from "~/lib/eastern";
 import { routeForHref } from "~/lib/links";
@@ -55,10 +55,6 @@ export default function Home() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll dock top={top} refreshing={home.isRefetching || me.isRefetching} onRefresh={refresh} testID="home-screen">
-        <View style={{ gap: 4 }}>
-          <Text variant="display" accessibilityRole="header">{me.data?.profile?.firstName ? `Hi, ${me.data.profile.firstName}` : "Home"}</Text>
-        </View>
-
         {home.isPending ? (
           <>
             <Card style={{ gap: 10 }}><Skeleton width="40%" /><Skeleton width="80%" height={22} /><Skeleton width={120} height={44} radius={22} /></Card>
@@ -138,7 +134,7 @@ export default function Home() {
                         leading={<ClubMark name={application.name} color={application.color} logoUrl={application.logoUrl} size={40} />}
                         title={application.name}
                         detail={application.draft && application.intakeClosed ? "Applications closed" : undefined}
-                        trailing={<Chip label={application.statusLabel} tone={statusTone(application.statusCode)} />}
+                        trailing={<StatusChip label={application.statusLabel} code={application.statusCode} />}
                         accessibilityLabel={`${application.name}, ${application.statusLabel}`}
                         onPress={() => router.push({ pathname: "/application/[id]", params: { id: application.id } })}
                       />
@@ -180,7 +176,7 @@ export default function Home() {
           </>
         ) : null}
       </ScreenScroll>
-      <Header title="Home" />
+      <Header title={me.data?.profile?.firstName ? `Hi, ${me.data.profile.firstName}` : "Home"} />
     </View>
   );
 }
