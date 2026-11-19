@@ -116,7 +116,12 @@ async function request<T>(method: "GET" | "POST", operation: string, input: unkn
     throw new ApiError(0, "OFFLINE", OFFLINE_MESSAGE);
   }
   let payload: unknown = null;
-  try { payload = await within(response.json(), TIMEOUT_MS[method]); } catch { /* handled below */ }
+  try { payload = await within(response.json(), TIMEOUT_MS[method]); } catch (error) {
+    // A body that stalls or breaks off is a connection problem; one that isn't JSON is handled below.
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    if (!(error instanceof SyntaxError)) throw new ApiError(0, "OFFLINE", OFFLINE_MESSAGE);
+  }
   const answer = payload && typeof payload === "object" ? payload as { data?: T; error?: unknown } : null;
   if (response.ok && answer && "data" in answer) return answer.data as T;
   // The address-level rate limit answers with the message alone (lib/rate-limit-core.ts).
