@@ -1,0 +1,7 @@
+{
+  "apiUrl": "http://localhost:3000",
+  "supabaseUrl": "https://<project-ref>.supabase.co",
+  "supabasePublishableKey": "sb_publishable_...",
+  "turnstileSiteKey": "",
+  "sentryDsn": ""
+}

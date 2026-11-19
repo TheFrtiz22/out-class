@@ -1,0 +1,25 @@
+appId: net.outclass.app
+---
+- runFlow:
+    when:
+      visible:
+        id: "sign-in-submit"
+    commands:
+      - tapOn:
+          id: "sign-in-email"
+      - inputText: ${STUDENT_EMAIL}
+      - tapOn:
+          id: "sign-in-password"
+      - inputText: ${STUDENT_PASSWORD}
+      - tapOn:
+          id: "sign-in-submit"
+# iOS offers to save the password; decline so nothing covers the app.
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 60000

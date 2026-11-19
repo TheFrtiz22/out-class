@@ -1,0 +1,1 @@
+{ "aps": { "alert": { "title": "Interview update", "body": "Open OutClass for details." }, "sound": "default" }, "body": { "url": "/inbox" } }

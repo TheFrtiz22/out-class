@@ -1,0 +1,99 @@
+# A walk through Inbox, Profile and Tasks with a screenshot of each (see also settings-tour.yaml and inbox-calendar-tour.yaml).
+# Pass -e SHOTS=<prefix> (for example "tour-light"); screenshots are written as <prefix>-NN-name.png in the run's output folder. Assumes a signed-in account.
+appId: net.outclass.app
+---
+# Return to the tabs from wherever the last run stopped.
+- repeat:
+    times: 5
+    while:
+      visible:
+        id: "header-back"
+    commands:
+      - tapOn:
+          id: "header-back"
+- tapOn:
+    id: "tab-inbox"
+- extendedWaitUntil:
+    visible:
+      id: "inbox-mark-all"
+    timeout: 90000
+- extendedWaitUntil:
+    visible:
+      id: "inbox-type-all"
+    timeout: 90000
+    optional: true
+- takeScreenshot: ${SHOTS}-01-inbox
+- tapOn:
+    id: "inbox-settings"
+- extendedWaitUntil:
+    visible:
+      id: "preferences-save"
+    timeout: 90000
+    optional: true
+- takeScreenshot: ${SHOTS}-02-inbox-preferences
+- tapOn:
+    point: "50%,8%"
+- tapOn:
+    id: "inbox-type-announcements"
+    optional: true
+- takeScreenshot: ${SHOTS}-03-inbox-announcements
+- tapOn:
+    id: "inbox-row-announcement"
+    index: 0
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "inbox-detail-read"
+    timeout: 15000
+    optional: true
+- takeScreenshot: ${SHOTS}-04-inbox-detail
+- tapOn:
+    point: "50%,8%"
+- tapOn:
+    id: "inbox-type-all"
+    optional: true
+# Tasks
+- tapOn:
+    id: "tab-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-name"
+    timeout: 90000
+- takeScreenshot: ${SHOTS}-05-profile
+- scrollUntilVisible:
+    element:
+      id: "profile-tasks"
+    direction: DOWN
+- takeScreenshot: ${SHOTS}-06-profile-lower
+- tapOn:
+    id: "profile-tasks"
+- extendedWaitUntil:
+    visible:
+      id: "tasks-filter-open"
+    timeout: 90000
+    optional: true
+- takeScreenshot: ${SHOTS}-07-tasks
+- tapOn:
+    id: "tasks-filter-all"
+    optional: true
+- takeScreenshot: ${SHOTS}-08-tasks-all
+- tapOn:
+    id: "task-row-.*"
+    index: 0
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "task-instructions"
+    timeout: 60000
+    optional: true
+- takeScreenshot: ${SHOTS}-09-task-detail
+- scrollUntilVisible:
+    element:
+      id: "task-link"
+    direction: DOWN
+    optional: true
+- takeScreenshot: ${SHOTS}-10-task-submission
+- tapOn:
+    id: "header-back"
+- tapOn:
+    id: "header-back"

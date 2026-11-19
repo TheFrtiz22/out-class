@@ -1,0 +1,9 @@
+# Profile tab: header, checklist, education, phone.
+appId: net.outclass.app
+---
+- tapOn:
+    id: "tab-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-name"
+    timeout: 90000

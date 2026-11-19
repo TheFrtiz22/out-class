@@ -65,3 +65,55 @@ export const PUSH_MAX_FAILURES = 5
 export const PUSH_MAX_AGE_MS = 24 * 3600000
 /** Per-user cap: the oldest subscription is dropped when a new device subscribes past it. */
 export const PUSH_MAX_SUBSCRIPTIONS = 10
+
+// Native push (the iOS/Android app): another channel of the same path. A device is one more
+// subscription row (kind 'EXPO'), so preferences, currency checks and the at-most-once ledger
+// are the web's. Sent through Expo's push service, which holds the APNs/FCM credentials.
+
+export type PushPlatform = "IOS" | "ANDROID" | "OTHER"
+
+/** Native push is off unless NATIVE_PUSH_ENABLED=1. EXPO_ACCESS_TOKEN is optional (Expo "enhanced security"). */
+export function nativePushConfig(env: Record<string, string | undefined> = process.env) {
+  if (env.NATIVE_PUSH_ENABLED?.trim() !== "1") return null
+  const accessToken = env.EXPO_ACCESS_TOKEN?.trim() || null
+  return { accessToken, url: "https://exp.host/--/api/v2/push/send" as const }
+}
+
+const EXPO_TOKEN = /^Expo(?:nent)?PushToken\[[A-Za-z0-9_-]{8,200}\]$/
+const NATIVE_ENDPOINT_PREFIX = "expo:"
+
+/** Validates what the app registers: an Expo push token and the device platform. */
+export function parseNativePushDevice(input: unknown): { endpoint: string; platform: "IOS" | "ANDROID" } | null {
+  if (!input || typeof input !== "object") return null
+  const { token, platform } = input as { token?: unknown; platform?: unknown }
+  if (typeof token !== "string" || !EXPO_TOKEN.test(token)) return null
+  if (platform !== "IOS" && platform !== "ANDROID") return null
+  return { endpoint: `${NATIVE_ENDPOINT_PREFIX}${token}`, platform }
+}
+
+/** The Expo push token stored in a native subscription's endpoint, or null if the row is not a valid one. */
+export function nativePushToken(endpoint: string): string | null {
+  if (!endpoint.startsWith(NATIVE_ENDPOINT_PREFIX)) return null
+  const token = endpoint.slice(NATIVE_ENDPOINT_PREFIX.length)
+  return EXPO_TOKEN.test(token) ? token : null
+}
+
+/** Where a browser subscription lives, from its User-Agent: a phone browser/installed web app, or anything else. */
+export function pushPlatformFromUserAgent(userAgent: string | null | undefined): PushPlatform {
+  const ua = userAgent ?? ""
+  if (/iPhone|iPod/.test(ua)) return "IOS"
+  if (/Android/.test(ua) && /Mobile/.test(ua)) return "ANDROID"
+  return "OTHER"
+}
+
+/**
+ * One push per event per device: a phone with the native app registered does not also get the
+ * web push its browser or installed web app subscribed to. Web rows saved before platforms were
+ * recorded (null) and non-phone rows always stay.
+ */
+export function pushRecipients<T extends { kind?: string | null; platform?: string | null }>(subscriptions: T[], enabled: { web: boolean; native: boolean }): T[] {
+  const native = subscriptions.filter(row => row.kind === "EXPO" && enabled.native)
+  const nativePlatforms = new Set(native.map(row => row.platform))
+  const web = subscriptions.filter(row => row.kind !== "EXPO" && enabled.web && !(row.platform && row.platform !== "OTHER" && nativePlatforms.has(row.platform)))
+  return [...web, ...native]
+}

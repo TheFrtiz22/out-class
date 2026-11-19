@@ -227,7 +227,7 @@ function procedureHarness({ apps = [], members = [], authFails = 0, txFails = fa
     if (model === 'clubMember' && name === 'findMany') return members;
     return { count: 1 };
   };
-  const models = ['studentProfile', 'eventRsvp', 'savedCampusEvent', 'corkboardClub', 'userTutorial', 'userAvailability', 'studentInterestProfile', 'resumeSummary', 'editorDraft', 'calendarFeedToken', 'webPushSubscription', 'recipientGroupEntry', 'userNotification', 'notificationEmailDelivery', 'userNotificationPreference', 'clubConversation', 'taskAssignment', 'clubTask', 'clubClaim', 'adminElevationChallenge', 'platformAdmin', 'rosterImportRow', 'application', 'applicationAnswer', 'clubMember', 'platformReport'];
+  const models = ['studentProfile', 'eventRsvp', 'savedCampusEvent', 'corkboardClub', 'userTutorial', 'userAvailability', 'studentInterestProfile', 'resumeSummary', 'editorDraft', 'calendarFeedToken', 'webPushSubscription', 'meetingCheckInPass', 'recipientGroupEntry', 'userNotification', 'notificationEmailDelivery', 'userNotificationPreference', 'clubConversation', 'taskAssignment', 'clubTask', 'clubClaim', 'adminElevationChallenge', 'platformAdmin', 'rosterImportRow', 'application', 'applicationAnswer', 'clubMember', 'platformReport'];
   const auditModel = { create: async ({ data }) => { audit.push(data); }, findMany: async ({ where }) => audit.filter(r => r.targetId === where.targetId && r.action === where.action) };
   const db = {
     $transaction: async fn => {
@@ -275,6 +275,7 @@ test('deletion procedure deletes personal data, anonymizes club records and dele
   assert.equal(find('clubMember', 'updateMany')[0].data.status, 'LEFT');
   assert.ok(find('studentProfile', 'deleteMany').length && find('calendarFeedToken', 'deleteMany').length);
   assert.deepEqual(find('webPushSubscription', 'deleteMany')[0].where, { userId }, 'push endpoints are deleted so devices stop receiving notifications');
+  assert.deepEqual(find('meetingCheckInPass', 'deleteMany')[0].where, { userId }, 'door-mode check-in passes are deleted so none can still be scanned');
   const notif = h.calls.findIndex(c => c[0] === 'userNotification'), delivery = h.calls.findIndex(c => c[0] === 'notificationEmailDelivery');
   assert.ok(notif < delivery, 'outbox rows go with notifications before deliveries');
   assert.equal(h.user.email, `deleted-${userId}@deleted.outclass.invalid`);

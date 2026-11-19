@@ -1,0 +1,78 @@
+# Writes in the Explore area as the staging student, each undone again: RSVP and cancel, Add to Calendar,
+# event share sheet, Follow a club and swipe it out of Saved clubs (-e MODE names the screenshots).
+appId: net.outclass.app
+---
+- openLink: "outclass://events"
+- extendedWaitUntil:
+    visible:
+      id: "event-card-0"
+    timeout: 90000
+- tapOn:
+    id: "event-card-0"
+- extendedWaitUntil:
+    visible:
+      id: "event-rsvp"
+    timeout: 90000
+- tapOn:
+    id: "event-rsvp"
+- extendedWaitUntil:
+    visible:
+      id: "event-rsvp-cancel"
+    timeout: 30000
+- assertVisible: "7 / 48.*"
+- takeScreenshot: event-going-${MODE}
+- tapOn:
+    id: "event-rsvp-cancel"
+- extendedWaitUntil:
+    visible:
+      id: "event-rsvp"
+    timeout: 30000
+- assertVisible: "6 / 48.*"
+- tapOn:
+    id: "event-calendar"
+- tapOn:
+    text: "Allow.*"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "event-calendar-status"
+    timeout: 30000
+- takeScreenshot: event-calendar-${MODE}
+- tapOn:
+    id: "event-share"
+- extendedWaitUntil:
+    visible:
+      id: "share-qr"
+    timeout: 30000
+- takeScreenshot: event-share-${MODE}
+- tapOn:
+    point: 50%, 8%
+- openLink: "outclass://club/blue-ridge-consulting"
+- extendedWaitUntil:
+    visible: "Follow"
+    timeout: 90000
+- tapOn:
+    id: "club-follow"
+- extendedWaitUntil:
+    visible: "Following"
+    timeout: 30000
+- takeScreenshot: club-following-${MODE}
+- openLink: "outclass://saved-clubs"
+- extendedWaitUntil:
+    visible: "5 saved clubs"
+    timeout: 90000
+# The club just followed is first: swipe it away.
+- swipe:
+    start: 85%, 33%
+    end: 25%, 33%
+- extendedWaitUntil:
+    visible:
+      id: "saved-remove-0"
+    timeout: 10000
+- takeScreenshot: saved-swipe-${MODE}
+- tapOn:
+    id: "saved-remove-0"
+- extendedWaitUntil:
+    visible: "4 saved clubs"
+    timeout: 30000
+- takeScreenshot: saved-${MODE}

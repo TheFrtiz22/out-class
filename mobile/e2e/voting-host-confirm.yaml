@@ -1,0 +1,22 @@
+# Host, on closed totals: confirm Pass (the leading choice in the staging run) and land on the next applicant.
+appId: net.outclass.app
+---
+- scrollUntilVisible:
+    element:
+      id: "voting-status"
+    direction: UP
+- scrollUntilVisible:
+    element:
+      id: "voting-decide-accept"
+    direction: DOWN
+- tapOn:
+    id: "voting-decide-accept"
+- scrollUntilVisible:
+    element:
+      id: "voting-status"
+    direction: UP
+- scrollUntilVisible:
+    element:
+      id: "voting-open"
+    direction: DOWN
+    timeout: 30000

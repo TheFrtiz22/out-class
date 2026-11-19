@@ -118,6 +118,7 @@ export async function performAccountDeletion(
     await tx.calendarFeedToken.deleteMany({ where: { userId } })
     // Push endpoints go so the person's devices stop receiving notifications (deliveries cascade).
     await tx.webPushSubscription.deleteMany({ where: { userId } })
+    await tx.meetingCheckInPass.deleteMany({ where: { userId } })
     await tx.recipientGroupEntry.deleteMany({ where: { userId } })
     // Notifications first: their outbox rows (cascade) reference the deliveries.
     await tx.userNotification.deleteMany({ where: { userId } })

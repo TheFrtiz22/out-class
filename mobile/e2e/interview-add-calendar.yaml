@@ -1,0 +1,56 @@
+# "Add to Calendar" on the staging student's booked interview. Launches with calendar access
+# allowed (the event is added to the simulator's calendar) or, with -e CALENDAR=deny, refused
+# (the calm note; nothing else changes).
+appId: net.outclass.app
+---
+- runFlow:
+    when:
+      true: ${typeof CALENDAR !== 'undefined' && CALENDAR === 'deny'}
+    commands:
+      - launchApp:
+          clearState: false
+          permissions:
+            calendar: deny
+- runFlow:
+    when:
+      true: ${typeof CALENDAR === 'undefined' || CALENDAR !== 'deny'}
+    commands:
+      - launchApp:
+          clearState: false
+          permissions:
+            calendar: allow
+- runFlow: apply-ready.yaml
+- openLink: "outclass://interview/30520845-fab4-4c0a-9f29-099e390a45aa"
+- extendedWaitUntil:
+    visible:
+      id: "interview-add-calendar"
+    timeout: 90000
+- tapOn:
+    id: "interview-add-calendar"
+- runFlow:
+    when:
+      true: ${typeof CALENDAR !== 'undefined' && CALENDAR === 'deny'}
+    commands:
+      - runFlow:
+          when:
+            visible: "Don.t Allow"
+          commands:
+            - tapOn: "Don.t Allow"
+      - extendedWaitUntil:
+          visible: "Calendar access is off for OutClass. You can allow it in Settings."
+          timeout: 20000
+      - takeScreenshot: .shots/applications/flow-calendar-denied
+- runFlow:
+    when:
+      true: ${typeof CALENDAR === 'undefined' || CALENDAR !== 'deny'}
+    commands:
+      - runFlow:
+          when:
+            visible: "Allow.*"
+          commands:
+            - tapOn: "Allow.*"
+      - extendedWaitUntil:
+          visible: "Added to your calendar."
+          timeout: 20000
+      - assertVisible: "Added to Calendar"
+      - takeScreenshot: .shots/applications/flow-calendar-added

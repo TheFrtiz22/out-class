@@ -41,6 +41,27 @@ database-backed end-to-end test of issue → `/q` → check-in → leader report
 current coverage is `tests/meetings.test.cjs` and
 `tests/qr-branded-system.test.cjs` with mocked Prisma.
 
+## Door mode: the leader scans a personal pass (native app, 2026-11-18)
+
+The reverse direction of the room's code, for a line at the door. Not deployed: needs migration
+`20261118120000_meeting_check_in_pass` in production (docs/mobile/OWNER_QUEUE.md).
+
+- **Pass.** A signed-in student opens "Check-in pass" in the app. `issueCheckInPass`
+  (actions/check-in-pass.ts) takes no input and returns a pass for the caller only: 32 random bytes,
+  stored as a SHA-256 hash in `MeetingCheckInPass`, valid 45 seconds. The app asks for a new one every
+  25 seconds. The QR holds `OCP1.<token>`: not a link, so a camera app opens nothing. Alumni and
+  support sessions are refused.
+- **Scan.** A leader with `meetings.attendance` scans it in the app's door mode. `scanCheckInPass`
+  checks that permission on the club, that the meeting belongs to that club and is inside the same
+  attendance window as the room's code, spends the pass (single use, whatever the outcome), and
+  applies the same eligibility rule as a student scanning the room's code (`canCheckIn`). It records
+  `EventAttendance` under the existing `(eventId, studentId)` uniqueness rule and writes an audit row
+  (`meeting.attendance.door_scan`) naming the scanner.
+- **Answers.** `checked-in`, `already-checked-in` (with the student's name, withheld for an applicant
+  in anonymous review, as in the attendance list) or `not-eligible` (no name). An expired, spent or
+  made-up pass is refused with "This pass has expired. Ask them to open their pass again."
+- **Tests.** `tests/check-in-pass.test.cjs`; live matrix `scripts/staging/api-authz.cjs`.
+
 ## Short-link security boundary
 
 - `actions/short-links.ts` exports a single browser-callable action,

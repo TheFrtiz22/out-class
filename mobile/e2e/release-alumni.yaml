@@ -1,0 +1,8 @@
+# Release build: sign in as the staging alumni on a clean install.
+appId: net.outclass.app
+---
+- runFlow:
+    file: release-sign-in.yaml
+    env:
+      EMAIL: ${ALUMNI_EMAIL}
+      PASSWORD: ${ALUMNI_PASSWORD}

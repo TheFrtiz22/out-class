@@ -1,0 +1,5 @@
+# With the system photo picker open: take the first photo (top-left).
+appId: net.outclass.app
+---
+- tapOn:
+    point: "16%,24%"

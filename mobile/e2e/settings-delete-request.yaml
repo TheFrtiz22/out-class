@@ -1,0 +1,57 @@
+# Account deletion as the staging student: request (DELETE + current password), screenshot the scheduled state, then CANCEL.
+# The request and its cancellation are one flow on purpose: the staging student must never be left with a pending deletion.
+# Pass -e SHOTS=<prefix>.
+appId: net.outclass.app
+---
+# Starts on Account & Security (run settings-account.yaml first).
+- extendedWaitUntil:
+    visible:
+      id: "settings-sign-out"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-confirm"
+    direction: DOWN
+- tapOn:
+    id: "account-deletion-confirm"
+- eraseText: 80
+- inputText: "DELETE"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-password"
+    direction: DOWN
+- tapOn:
+    id: "account-deletion-password"
+- inputText: ${STUDENT_PASSWORD}
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: "account-deletion-submit"
+    direction: DOWN
+- tapOn:
+    id: "account-deletion-submit"
+- extendedWaitUntil:
+    visible:
+      id: "confirm-accept"
+    timeout: 15000
+- takeScreenshot: ${SHOTS}-50-delete-confirm-sheet
+- tapOn:
+    id: "confirm-accept"
+- extendedWaitUntil:
+    visible:
+      id: "account-deletion-cancel"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- takeScreenshot: ${SHOTS}-51-delete-scheduled
+- tapOn:
+    id: "account-deletion-cancel"
+- extendedWaitUntil:
+    notVisible:
+      id: "account-deletion-cancel"
+    timeout: 120000
+- takeScreenshot: ${SHOTS}-52-delete-cancelled

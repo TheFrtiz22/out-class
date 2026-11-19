@@ -1,0 +1,127 @@
+# Every Explore-area screen in one pass, with a screenshot of each (-e MODE=light|dark names the files).
+# Run on JS that is already loaded (explore-start.yaml loads it). Opens screens by link.
+appId: net.outclass.app
+---
+- openLink: "outclass://explore"
+- extendedWaitUntil:
+    visible:
+      id: "explore-count"
+    timeout: 90000
+- takeScreenshot: explore-${MODE}
+# Scroll check: fling through the whole directory and back.
+- repeat:
+    times: 6
+    commands:
+      - swipe:
+          start: 50%, 80%
+          end: 50%, 15%
+          duration: 120
+- takeScreenshot: explore-scrolled-${MODE}
+- repeat:
+    times: 7
+    commands:
+      - swipe:
+          start: 50%, 25%
+          end: 50%, 90%
+          duration: 120
+- tapOn:
+    id: "explore-filter"
+- extendedWaitUntil:
+    visible:
+      id: "explore-filter-done"
+    timeout: 15000
+- takeScreenshot: explore-filter-${MODE}
+- tapOn:
+    id: "explore-filter-done"
+- runFlow:
+    when:
+      visible:
+        id: "explore-search-clear"
+    commands:
+      - tapOn:
+          id: "explore-search-clear"
+- tapOn:
+    id: "explore-search"
+- inputText: "consulting"
+- extendedWaitUntil:
+    visible: "Search results"
+    timeout: 15000
+- takeScreenshot: explore-search-${MODE}
+- tapOn:
+    id: "explore-club-0"
+- extendedWaitUntil:
+    visible:
+      id: "club-follow"
+    timeout: 90000
+- takeScreenshot: club-${MODE}
+- swipe:
+    start: 50%, 80%
+    end: 50%, 20%
+- takeScreenshot: club-2-${MODE}
+- swipe:
+    start: 50%, 80%
+    end: 50%, 20%
+- takeScreenshot: club-3-${MODE}
+- swipe:
+    start: 50%, 80%
+    end: 50%, 20%
+- takeScreenshot: club-4-${MODE}
+- scrollUntilVisible:
+    element:
+      id: "club-share"
+    direction: UP
+- tapOn:
+    id: "club-share"
+- extendedWaitUntil:
+    visible:
+      id: "share-qr"
+    timeout: 30000
+- tapOn:
+    id: "share-copy"
+- extendedWaitUntil:
+    visible: "Link copied."
+    timeout: 15000
+- takeScreenshot: share-${MODE}
+# Close the sheet by its scrim.
+- tapOn:
+    point: 50%, 8%
+- assertNotVisible:
+    id: "share-qr"
+- openLink: "outclass://saved-clubs"
+- extendedWaitUntil:
+    visible:
+      id: "saved-count"
+    timeout: 90000
+- takeScreenshot: saved-${MODE}
+- swipe:
+    from:
+      id: "saved-club-1"
+    direction: LEFT
+- takeScreenshot: saved-swipe-${MODE}
+- openLink: "outclass://events"
+- extendedWaitUntil:
+    visible:
+      id: "event-card-0"
+    timeout: 90000
+- takeScreenshot: events-${MODE}
+- tapOn:
+    id: "events-filter"
+- extendedWaitUntil:
+    visible:
+      id: "events-filter-done"
+    timeout: 15000
+- takeScreenshot: events-filter-${MODE}
+- tapOn:
+    id: "events-filter-done"
+- tapOn:
+    id: "event-card-0"
+- extendedWaitUntil:
+    visible:
+      id: "event-title"
+    timeout: 90000
+- takeScreenshot: event-${MODE}
+- scrollUntilVisible:
+    element:
+      id: "event-calendar"
+    direction: DOWN
+- takeScreenshot: event-2-${MODE}

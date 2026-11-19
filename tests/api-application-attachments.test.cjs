@@ -16,7 +16,7 @@ function setup({answer=true,publicBucket=false,response=owner+'/application.pdf'
  let query, signed
  process.env.SUPABASE_SECRET_KEY='test-only'
  const api=load('app/api/application-attachments/route.ts',{
-  '@/utils/auth':{requireAuth:async()=>{if(authError)throw authError;return{user:{id:reviewerStatus?questionId:owner}}}},
+  '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth':{requireAuth:async()=>{if(authError)throw authError;return{user:{id:reviewerStatus?questionId:owner}}}},
   '@/utils/prisma':{prisma:{applicationAnswer:{findFirst:async input=>{query=input;if(reviewerStatus && input.where.application.OR[1].club.members.some.status!==reviewerStatus)return null;return answer?{response,question:{clubId:'club'},application:{clubId:'club',studentId:owner}}:null}}}},
   '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}}),from:bucket=>({createSignedUrl:async(...args)=>{signed={bucket,args};return{data:{signedUrl:'https://storage.test/signed'}}}})}})},
   'next/server':{NextResponse:class{constructor(body,init){this.body=body;Object.assign(this,init)}static redirect(url,init){return{status:302,url,...init}}}},
@@ -49,7 +49,7 @@ test('missing/inaccessible references, foreign paths, external URLs and public b
 test('legacy task writer rejects authorized old clients without any task mutation',async()=>{
  let checked=false
  const api=load('actions/club-workspace.ts',{
-  '@/utils/auth':{requireClubPermission:async(id,caps)=>{checked=true;assert.equal(id,appId);assert.deepEqual(caps,['tasks.manage']);return{user:{id:owner}}}},
+  '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth':{requireClubPermission:async(id,caps)=>{checked=true;assert.equal(id,appId);assert.deepEqual(caps,['tasks.manage']);return{user:{id:owner}}}},
   '@/utils/prisma':{prisma:new Proxy({},{get(){throw Error('Legacy database write attempted')}})},
  })
  await assert.rejects(api.saveClubTask({clubId:appId,id:questionId,title:'Stale overwrite',status:'DONE'}),/Legacy task writes are disabled/)
@@ -60,7 +60,7 @@ test('resume upload refuses public buckets and issues only an owner-scoped priva
  for(const isPublic of [true,false]){
   let signed
   const api=unwrapActions(load('actions/storage.ts',{
-   '@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},
+   '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},
    'next/headers':{cookies:async()=>({})},
    '@/utils/supabase/server':{createClient:async()=>({storage:{from:()=>({createSignedUploadUrl:async path=>{signed=path;return{data:{signedUrl:'https://upload.test',token:'token'}}},uploadToSignedUrl:async()=>({error:null})})}})},
    '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:isPublic}}),from:()=>({list:async()=>({data:[],error:null})})}})},

@@ -1,0 +1,11 @@
+# Inbox: Unread filter, then back to All.
+appId: net.outclass.app
+---
+- tapOn:
+    id: "tab-inbox"
+- extendedWaitUntil:
+    visible:
+      id: "inbox-type-all"
+    timeout: 90000
+- tapOn:
+    id: "inbox-type-urgent"

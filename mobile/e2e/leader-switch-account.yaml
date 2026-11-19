@@ -1,0 +1,45 @@
+# Signs out whoever is signed in (if anyone) and signs in with ${EMAIL} / ${PASSWORD}.
+# Use from another flow:  - runFlow: { file: leader-switch-account.yaml, env: { EMAIL: "${INTERVIEWER_EMAIL}", PASSWORD: "${INTERVIEWER_PASSWORD}" } }
+appId: net.outclass.app
+---
+# Connect to Metro only when the app is not already up (a relaunch is slow on a busy machine).
+- runFlow:
+    when:
+      notVisible:
+        id: "sign-in-submit|home-screen|tab-home"
+    file: leader-dev-connect.yaml
+- runFlow:
+    when:
+      visible:
+        id: "home-screen"
+    commands:
+      - openLink: "outclass://settings/account"
+      - extendedWaitUntil:
+          visible:
+            id: "settings-sign-out"
+          timeout: 20000
+      - tapOn:
+          id: "settings-sign-out"
+      - tapOn:
+          id: "confirm-accept"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit"
+    timeout: 30000
+- tapOn:
+    id: "sign-in-email"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "sign-in-password"
+- inputText: ${PASSWORD}
+- tapOn:
+    id: "sign-in-submit"
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 60000

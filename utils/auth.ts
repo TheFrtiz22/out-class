@@ -12,20 +12,16 @@ import { isUvaEmail, safeReturnPath } from "@/lib/auth";
 import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
 import { RETURN_PATH_HEADER, secondFactorPending, TWO_STEP_REQUIRED_MESSAGE, twoStepChallengeHref } from "@/lib/user-mfa";
 import { createClient } from "./supabase/server";
+import { mobileRequest } from "@/utils/mobile-request";
 import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-// React's request cache is limited to one server render/request. It never shares
-// a verified identity between requests, users, clubs, or support sessions.
-export const getSessionState = cache(async () => {
-  const supabase = await createClient(await cookies());
-  // getSession only supplies a candidate token; verify that exact token remotely
-  // before trusting its session claim. This retains one getUser verification.
-  const session = await supabase.auth.getSession();
-  if (session.error || !session.data.session) return { identity: { data: { user: null }, error: session.error }, secondFactorPending: false };
-  const token = session.data.session.access_token;
+type SessionVerifier = { auth: { getUser(token: string): ReturnType<Awaited<ReturnType<typeof createClient>>["auth"]["getUser"]> } };
+/** One verification for both entries: the exact token is verified remotely, bound to a live
+ * auth.sessions row, and held back while a second factor is pending. */
+async function verifiedSessionState(supabase: SessionVerifier, token: string) {
   const identity = await serverPhase("identity", () => supabase.auth.getUser(token));
   if (identity.error || !identity.data.user) return { identity, secondFactorPending: false };
   const sessionId = sessionIdFromVerifiedToken(token, identity.data.user.id);
@@ -42,6 +38,28 @@ export const getSessionState = cache(async () => {
   if (secondFactorPending(identity.data.user, token))
     return { identity: { data: { user: null }, error: null }, secondFactorPending: true, pendingUser: identity.data.user };
   return { identity, secondFactorPending: false };
+}
+type SessionState = Awaited<ReturnType<typeof verifiedSessionState>>;
+
+// React's request cache is limited to one server render/request. It never shares
+// a verified identity between requests, users, clubs, or support sessions.
+export const getSessionState = cache(async () => {
+  // The native app: only utils/mobile-api.ts opens this context (utils/mobile-request.ts).
+  // Its bearer token gets the same verification as a cookie session; cookies are not consulted.
+  const mobile = mobileRequest();
+  if (mobile) {
+    // A public operation called without a token is signed out; a cookie never stands in for the bearer.
+    if (!mobile.token) return { identity: { data: { user: null }, error: null }, secondFactorPending: false, pendingUser: undefined };
+    mobile.session ??= verifiedSessionState(createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "placeholder", { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }), mobile.token);
+    return mobile.session as Promise<SessionState>;
+  }
+  const supabase = await createClient(await cookies());
+  // getSession only supplies a candidate token; verify that exact token remotely
+  // before trusting its session claim. This retains one getUser verification.
+  const session = await supabase.auth.getSession();
+  if (session.error || !session.data.session) return { identity: { data: { user: null }, error: session.error }, secondFactorPending: false, pendingUser: undefined };
+  return verifiedSessionState(supabase, session.data.session.access_token);
 });
 export const getSessionUser = cache(async () => (await getSessionState()).identity);
 
@@ -114,7 +132,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
   // for non-admins. Page renders and GET reads are unaffected; product routes show the
   // maintenance page instead. Admin entry points (adminDiagnostics) verify admin authority
   // themselves, and support sessions above already belong to a verified platform admin.
-  if (!options.adminDiagnostics && (await headers()).has("next-action")) {
+  if (!options.adminDiagnostics && ((await headers()).has("next-action") || mobileRequest()?.write)) {
     const { assertSiteWritable } = await import("@/utils/site-settings");
     await assertSiteWritable(prismaUser.id);
   }

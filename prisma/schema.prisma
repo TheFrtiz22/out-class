@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  checkInPasses MeetingCheckInPass[]
   calendarFeedToken CalendarFeedToken?
   interviewAvailabilityOverrides InterviewAvailabilityOverride[]
   editorDrafts EditorDraft[]
@@ -890,6 +891,19 @@ model MeetingCheckInToken {
   @@index([meetingId, expiresAt])
 }
 
+// Door mode: a student's personal check-in pass (short-lived, single use, hash only).
+// Issued and redeemed only by actions/check-in-pass.ts.
+model MeetingCheckInPass {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
 model TaskAssignment {
   id          String      @id @default(uuid())
   taskId      String
@@ -1766,6 +1780,10 @@ model WebPushSubscription {
   createdAt     DateTime  @default(now())
   lastSuccessAt DateTime?
   failureCount  Int       @default(0)
+  // 'WEB' (browser Web Push) or 'EXPO' (native app device; endpoint is "expo:" + token).
+  kind          String    @default("WEB")
+  // 'IOS' | 'ANDROID' | 'OTHER'; null for rows saved before native push.
+  platform      String?
   deliveries    WebPushDelivery[]
   @@index([userId, createdAt])
 }
