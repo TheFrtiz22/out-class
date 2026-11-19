@@ -6,9 +6,9 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ArrowUpRight, CalendarPlus, ChevronRight } from "~/components/icons";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Text } from "~/components/text";
-import { Card, Divider, Press, ScreenScroll, TARGET } from "~/components/ui";
+import { Card, Divider, Press, ScreenScroll, Segmented, TARGET } from "~/components/ui";
 import { openOnWeb } from "~/lib/links";
-import { useTheme } from "~/lib/theme";
+import { type AppearancePreference, useTheme } from "~/lib/theme";
 
 // The web's Settings overview (lib/settings-navigation.ts `personalSettingsSections`), same labels and descriptions.
 const sections = [
@@ -20,7 +20,7 @@ const sections = [
 ] as const;
 
 export default function SettingsOverview() {
-  const { colors } = useTheme();
+  const { colors, appearance, setAppearance } = useTheme();
   const router = useRouter();
   const top = useHeaderInset();
   const [feed, setFeed] = useState(false);
@@ -28,7 +28,6 @@ export default function SettingsOverview() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} testID="settings-screen">
-        <Text variant="display" accessibilityRole="header">Settings</Text>
         <Card padded={false} style={{ paddingHorizontal: 16 }} accessibilityLabel="Settings overview">
           {sections.map((section, index) => {
             const web = "web" in section ? section.web : null;
@@ -48,6 +47,15 @@ export default function SettingsOverview() {
               </View>
             );
           })}
+        </Card>
+
+        <Card style={{ gap: 12 }} testID="settings-appearance">
+          <View style={{ gap: 3 }}>
+            <Text variant="bodyStrong" accessibilityRole="header">Appearance</Text>
+            <Text variant="small">System matches your phone’s light or dark setting.</Text>
+          </View>
+          <Segmented<AppearancePreference> label="Appearance" value={appearance} onChange={setAppearance}
+            options={[{ value: "system", label: "System" }, { value: "light", label: "Light" }, { value: "dark", label: "Dark" }]} />
         </Card>
 
         <Card padded={false} style={{ paddingHorizontal: 16 }}>

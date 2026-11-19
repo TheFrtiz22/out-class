@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, RefreshControl, Switch, View } from "react-native";
+import { FlatList, RefreshControl, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useIsAlumni } from "~/components/alumni-banner";
 import { addEventToCalendar, calendarMessages } from "~/components/explore/calendar";
@@ -13,7 +13,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ChevronDown, ChevronUp, SlidersHorizontal } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, TARGET } from "~/components/ui";
+import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, TARGET, Toggle } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
@@ -70,10 +70,7 @@ export default function EventsBoard() {
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text variant="display" accessibilityRole="header">Events</Text>
-        <Text variant="small">Events on Grounds</Text>
-      </View>
+      <Text variant="small">Events on Grounds</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <SearchField testID="events-search" label="Search events" placeholder="Search events…" value={query} onChangeText={setQuery} />
         <View><IconButton testID="events-filter" tone="surface" icon={SlidersHorizontal} label={menuFilters ? `Event filters (${menuFilters} active)` : "Event filters"} selected={menuFilters > 0} onPress={() => setSheet(true)} /></View>
@@ -151,11 +148,10 @@ export default function EventsBoard() {
 }
 
 function ToggleRow({ label, value, onChange, testID }: { label: string; value: boolean; onChange: (value: boolean) => void; testID?: string }) {
-  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: TARGET, gap: 12 }}>
       <Text variant="bodyStrong" style={{ flex: 1 }}>{label}</Text>
-      <Switch testID={testID} accessibilityLabel={label} value={value} onValueChange={next => { haptics.tick(); onChange(next); }} trackColor={{ true: colors.primary, false: colors.muted }} />
+      <Toggle testID={testID} accessibilityLabel={label} value={value} onValueChange={onChange} />
     </View>
   );
 }

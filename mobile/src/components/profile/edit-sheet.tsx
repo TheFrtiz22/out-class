@@ -3,7 +3,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, Platform, ScrollView, Switch, View, useWindowDimensions } from "react-native";
+import { Keyboard, Platform, ScrollView, View, useWindowDimensions } from "react-native";
 import { Field } from "~/components/field";
 import { Camera, FileText, ImagePlus, Plus, Trash2, Upload } from "~/components/icons";
 import { FilterChips } from "~/components/inbox/filter-chips";
@@ -11,7 +11,7 @@ import { PrivateImage, photoParams } from "~/components/private-image";
 import { genderValues, graduationYearOptions, initials, isStoragePath, numberProblem, pronounValues, scholarLabels, scholarPrograms, sectionOrder, sectionProblem, sectionPayload, sectionSnapshot, sectionTitles, toggleScholar } from "~/components/profile/model";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Divider, TARGET } from "~/components/ui";
+import { Button, Divider, TARGET, Toggle } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
@@ -30,11 +30,10 @@ async function uploadProfileFile(kind: "resume" | "headshot", file: Upload): Pro
 }
 
 function SwitchRow({ label, value, onChange, disabled }: { label: string; value: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
-  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: TARGET }}>
       <Text variant="body" style={{ flex: 1 }}>{label}</Text>
-      <Switch accessibilityLabel={label} accessibilityRole="switch" value={value} disabled={disabled} onValueChange={next => { haptics.tick(); onChange(next); }} trackColor={{ true: colors.primary, false: colors.muted }} ios_backgroundColor={colors.muted} />
+      <Toggle accessibilityLabel={label} value={value} disabled={disabled} onValueChange={onChange} />
     </View>
   );
 }

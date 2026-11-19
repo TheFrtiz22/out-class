@@ -6,7 +6,7 @@ import { ApplicationHeading, StatusDetail } from "~/components/applications/stat
 import { Header, useHeaderInset } from "~/components/header";
 import { Text } from "~/components/text";
 import { FilePenLine } from "~/components/icons";
-import { Button, Card, Chip, EmptyState, ErrorState, ScreenScroll, Skeleton, statusTone } from "~/components/ui";
+import { Button, Card, EmptyState, ErrorState, ScreenScroll, Skeleton, StatusChip } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import type { AutosaveState } from "~/lib/autosave";
 import { useApiQuery } from "~/lib/query";
@@ -56,7 +56,7 @@ export default function ApplicationScreen() {
           <>
             <ApplicationHeading application={app} eyebrow="Your application">
               <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-                <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+                <StatusChip label={app.statusLabel} code={app.statusCode} />
                 <Text variant="caption" style={{ flexShrink: 1 }}>{app.deadlineLabel ? `Deadline ${app.deadlineLabel}` : "Deadline not published"}</Text>
               </View>
             </ApplicationHeading>

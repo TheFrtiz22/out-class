@@ -12,7 +12,7 @@ import type { IconComponent } from "~/components/icon-factory";
 import { ArrowRight, Bookmark, Share } from "~/components/icons";
 import { ShareSheet } from "~/components/share-sheet";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, EmptyState, ErrorState, ScreenScroll, Skeleton, statusTone } from "~/components/ui";
+import { Button, Card, EmptyState, ErrorState, ScreenScroll, Skeleton, StatusChip } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
@@ -105,7 +105,7 @@ export default function ClubPage() {
             {deadlineText ? <Text variant="small">{recruitment.closingSoon ? "Closing soon · " : ""}{deadlineText}</Text> : null}
           </>
         )}
-        {application ? <Chip label={applicationStatusLabel(application.status)} tone={statusTone(applicationStatusCode(application.status))} /> : null}
+        {application ? <StatusChip label={applicationStatusLabel(application.status)} code={applicationStatusCode(application.status)} /> : null}
         {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert" testID="club-action-error">{error}</Text> : null}
       </View>
     );

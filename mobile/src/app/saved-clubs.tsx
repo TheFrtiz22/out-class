@@ -55,7 +55,6 @@ export default function SavedClubsScreen() {
 
   const header = (
     <View style={{ gap: 6, paddingBottom: 14 }}>
-      <Text variant="display" accessibilityRole="header">Saved clubs</Text>
       <Text variant="small">Saving a club doesn’t apply, join or subscribe you.</Text>
       {items.length ? <Text variant="small" accessibilityLiveRegion="polite" testID="saved-count" style={{ marginTop: 6 }}>{items.length} saved {items.length === 1 ? "club" : "clubs"}</Text> : null}
     </View>

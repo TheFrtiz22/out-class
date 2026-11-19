@@ -24,7 +24,7 @@ export const routes: RouteCase[] = [
   { file: "_layout", ownProviders: true, segments: ["(tabs)"] },
   { file: "(tabs)/_layout", rich: ["Home", "Explore", "Inbox", "Calendar", "Profile"], empty: ["Home"], error: ["Home"] },
   { file: "(tabs)/index", rich: [`Hi, Maximiliana-Alexandria`, `Finish your ${longName} application`, "Leader tools"], empty: ["Find your next club", "No applications yet"], error },
-  { file: "(tabs)/explore", rich: ["Explore clubs", "12 clubs"], empty: ["No clubs available yet."], error },
+  { file: "(tabs)/explore", rich: ["Explore", "12 clubs"], empty: ["No clubs available yet."], error },
   { file: "(tabs)/inbox", rich: ["Inbox", "Notification 2"], empty: ["Inbox"], error },
   { file: "(tabs)/calendar", rich: ["Calendar"], empty: ["Calendar"], error },
   { file: "(tabs)/profile", rich: [/Maximiliana-Alexandria/], empty: ["Profile"], error },

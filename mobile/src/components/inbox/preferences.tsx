@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ScrollView, Switch, View, useWindowDimensions } from "react-native";
+import { ScrollView, View, useWindowDimensions } from "react-native";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Divider, Segmented, Skeleton, TARGET } from "~/components/ui";
+import { Button, Divider, Segmented, Skeleton, TARGET, Toggle } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { push, type PushStatus } from "~/lib/push";
@@ -23,11 +23,10 @@ const fields = [
 const frequencies: { value: Preferences["emailFrequency"]; label: string }[] = [{ value: "INSTANT", label: "Instant" }, { value: "DAILY", label: "Daily digest" }, { value: "OFF", label: "Off" }];
 
 function ToggleRow({ label, value, onChange, disabled, testID }: { label: string; value: boolean; onChange: (value: boolean) => void; disabled?: boolean; testID?: string }) {
-  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: TARGET + 8, paddingVertical: 6 }}>
       <Text variant="body" style={{ flex: 1 }}>{label}</Text>
-      <Switch testID={testID} accessibilityLabel={label} accessibilityRole="switch" accessibilityState={{ checked: value, disabled: !!disabled }} value={value} disabled={disabled} onValueChange={next => { haptics.tick(); onChange(next); }} trackColor={{ true: colors.primary, false: colors.muted }} ios_backgroundColor={colors.muted} />
+      <Toggle testID={testID} accessibilityLabel={label} value={value} disabled={disabled} onValueChange={onChange} />
     </View>
   );
 }
