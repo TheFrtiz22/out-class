@@ -51,9 +51,9 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSave
     if (question.type !== "FILE_UPLOAD") return { questionId: question.id, response };
     return { questionId: question.id, response: documentReference(response) ?? lastSaved.current[question.id] ?? "" };
   });
-  const saved = (sent: ApplicationAnswer[]) => { expected.current = answersKey(sent); lastSaved.current = fromAnswers(sent); cache(sent); };
-
-  const cache = (saved: ApplicationAnswer[]) => queryClient.setQueryData<ApplicationsView>(["applications.view", null], view => view && ({ ...view, applications: view.applications.map(item => item.id === application.id ? { ...item, answers: saved.filter(answer => answer.response !== "") } : item) }));
+  const cache = (stored: ApplicationAnswer[]) => queryClient.setQueryData<ApplicationsView>(["applications.view", null], view => view && ({ ...view, applications: view.applications.map(item => item.id === application.id ? { ...item, answers: stored.filter(answer => answer.response !== "") } : item) }));
+  /** The server now holds these answers: the next save's compare token, link fallbacks and the cached list follow. */
+  const confirmed = (stored: ApplicationAnswer[]) => { expected.current = answersKey(stored); lastSaved.current = fromAnswers(stored); cache(stored); };
 
   /** A refused save: if the server's answers moved on, show them instead of overwriting (optimistic concurrency). */
   async function reconcile(snapshot: Responses) {
@@ -64,7 +64,7 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSave
     const key = answersKey(server.answers);
     if (key === expected.current || key === answersKey(outgoing(snapshot))) return;
     // After the failed save has settled: the server's answers become the form, this device's copy stays readable.
-    setTimeout(() => { saved(server.answers); autosave.adoptServer(fromAnswers(server.answers)); }, 0);
+    setTimeout(() => { confirmed(server.answers); autosave.adoptServer(fromAnswers(server.answers)); }, 0);
   }
 
   const autosave = useAutosave<Responses>({
@@ -77,7 +77,7 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSave
         if (cause instanceof ApiError && !cause.offline && cause.status !== 401) { setError(errorMessage(cause)); await reconcile(snapshot).catch(() => {}); }
         throw cause;
       }
-      saved(sent);
+      confirmed(sent);
     },
   });
   // Lists and Home re-read once the editor closes.
@@ -116,7 +116,7 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSave
       await autosave.flush();
       const sent = outgoing(responses);
       await api.post(final ? "applications.submit" : "applications.saveDraft", { clubId: application.clubId, answers: sent, expectedAnswers: expected.current });
-      saved(sent);
+      confirmed(sent);
       await autosave.reset();
       if (final) { haptics.confirm(); onSubmitted(); await queryClient.invalidateQueries({ queryKey: ["applications.view"] }); void queryClient.invalidateQueries({ queryKey: ["me"] }); }
       else { haptics.save(); setMessage("Draft saved to your account."); }

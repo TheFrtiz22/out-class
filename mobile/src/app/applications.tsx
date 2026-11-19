@@ -23,7 +23,7 @@ function DraftCard({ application: app, onOpen }: { application: StudentApplicati
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <ClubMark name={app.club.name} color={app.club.color} logoUrl={app.club.logoUrl} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text variant="card">{app.club.name}</Text>
+            <Text variant="card" numberOfLines={2}>{app.club.name}</Text>
             <Text variant="small">{progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions"}</Text>
             <Text variant="small">{app.deadlineLabel ? `Deadline · ${app.deadlineLabel}` : "Deadline not published"}{closed ? <Text variant="smallStrong"> · Applications closed</Text> : null}</Text>
           </View>
@@ -50,7 +50,7 @@ function StatusCard({ application: app, onOpen, onAction }: { application: Stude
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <ClubMark name={app.club.name} color={app.club.color} logoUrl={app.club.logoUrl} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text variant="card">{app.club.name}</Text>
+            <Text variant="card" numberOfLines={2}>{app.club.name}</Text>
             <Text variant="small">{decision ? attention ? "Membership offer ready" : "Decision received" : attention ? "Review interview options" : app.round?.name || app.statusLabel}</Text>
           </View>
           <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />

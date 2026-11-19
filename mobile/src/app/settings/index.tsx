@@ -1,3 +1,4 @@
+import * as Application from "expo-application";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -59,6 +60,11 @@ export default function SettingsOverview() {
             <ChevronRight size={18} color={colors.mutedForeground} />
           </Press>
         </Card>
+        {Application.nativeApplicationVersion ? (
+          <Text variant="caption" align="center" testID="settings-version" style={{ marginTop: 4 }}>
+            OutClass {Application.nativeApplicationVersion}{Application.nativeBuildVersion ? ` (${Application.nativeBuildVersion})` : ""}
+          </Text>
+        ) : null}
       </ScreenScroll>
       <Header title="Settings" back />
       <CalendarFeedSheet open={feed} onClose={() => setFeed(false)} />

@@ -65,12 +65,12 @@ export default function ApplicationScreen() {
               onSubmitted={() => { setNotice("Your application was submitted successfully."); scroll.current?.scrollTo({ y: 0, animated: false }); }} />
           </>
         ) : (
-          <StatusDetail application={app} notice={notice} alumniRespond={view.data!.alumni ? view.data!.alumniRefusals.respond : null} />
+          <StatusDetail application={app} notice={notice} alumniRespond={view.data!.alumni ? view.data!.alumniRefusals.respond : null} onSwitch={() => scroll.current?.scrollTo({ y: 0, animated: false })} />
         )}
       </ScreenScroll>
       <Header title={draft ? "Your application" : "Application"} back actions={draft && saveState !== "idle" ? (
         <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: 12 }}>
-          <Text variant="caption" testID="header-save-state">{saveState === "saved" ? "Saved" : saveState === "error" ? "Couldn’t save" : saveState === "offline" ? "Offline" : saveState === "unreachable" ? "Couldn’t reach OutClass" : "Saving…"}</Text>
+          <Text variant="caption" testID="header-save-state">{saveState === "saved" ? "Saved" : saveState === "error" || saveState === "unreachable" ? "Not saved" : saveState === "offline" ? "Offline" : "Saving…"}</Text>
         </View>
       ) : undefined} />
     </View>

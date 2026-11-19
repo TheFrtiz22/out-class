@@ -29,7 +29,7 @@ export function ApplicationHeading({ application: app, eyebrow, children }: { ap
  * ApplicationTrackerView): current status and round, decision and offer, the interview for this
  * round, recorded interviews, and the submitted answers.
  */
-export function StatusDetail({ application: app, notice, alumniRespond }: { application: StudentApplication; notice: string; alumniRespond: string | null }) {
+export function StatusDetail({ application: app, notice, alumniRespond, onSwitch }: { application: StudentApplication; notice: string; alumniRespond: string | null; onSwitch?: () => void }) {
   const { colors, radius } = useTheme();
   const router = useRouter();
   const [responses, setResponses] = useState(false);
@@ -47,7 +47,7 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
       </ApplicationHeading>
       <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border, paddingVertical: 14, gap: 10 }}>
         <Text variant="small">Your responses are saved and read-only after submission.</Text>
-        <Button testID="application-view-status" variant="secondary" label="View status" onPress={() => setResponses(false)} />
+        <Button testID="application-view-status" variant="secondary" label="View status" onPress={() => { setResponses(false); onSwitch?.(); }} />
       </View>
       <Text variant="section" accessibilityRole="header">Your submitted responses</Text>
       {app.club.questions.map((question, index) => {
@@ -138,7 +138,7 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
       ) : null}
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14 }}>
-        <Button testID="application-view-responses" variant="secondary" label="View submitted responses" onPress={() => setResponses(true)} />
+        <Button testID="application-view-responses" variant="secondary" label="View submitted responses" onPress={() => { setResponses(true); onSwitch?.(); }} />
         <Button variant="ghost" icon={CalendarDays} label="Open calendar" onPress={() => router.navigate("/calendar")} />
       </View>
     </>

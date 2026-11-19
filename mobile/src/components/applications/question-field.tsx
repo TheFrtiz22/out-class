@@ -105,6 +105,8 @@ export function QuestionField({ question, value, onChange, onBlur, invalid, disa
       autoCapitalize={link ? "none" : "sentences"}
       autoCorrect={!link}
       keyboardType={link ? "url" : "default"}
+      returnKeyType={essay ? "default" : "done"}
+      submitBehavior={essay ? "newline" : "blurAndSubmit"}
       style={{ ...border, minHeight: essay ? 200 : 48, paddingHorizontal: focused ? 13 : 14, paddingVertical: essay ? (focused ? 11 : 12) : 0, fontFamily: fonts.sans, fontSize: Math.max(16, text.body), lineHeight: essay ? Math.max(16, text.body) * 1.55 : undefined, color: colors.foreground, textAlignVertical: essay ? "top" : "center", opacity: disabled ? 0.6 : 1 }}
     />
   );
