@@ -26,7 +26,7 @@ const sets = {
     [11, "applications", "applications", 6], [12, "application-draft", `application/${APPS.draft}`, 6], [13, "application-submitted", `application/${APPS.submitted}`, 6],
     [14, "interview-booking", `interview/${APPS.bookable}`, 7], [15, "interview-booked", `interview/${APPS.booked}`, 7], [16, "decision-letter", `decision/${APPS.rejected}`, 7], [17, "offer", `decision/${APPS.offer}`, 7],
     [18, "tasks", "tasks", 6], [19, "my-club", `my-club/${CLUB}`, 6], [20, "meeting", `meeting/${MEETING}`, 6], [21, "settings", "settings", 5], [22, "settings-account", "settings/account", 5], [23, "settings-notifications", "settings/notifications", 5],
-    [24, "scanner", "scan", 5], [25, "check-in-pass", "pass", 7],
+    [24, "scanner", "scan", 5],
   ],
   leader: [
     [40, "leader-home", "", 6], [41, "leader-tools", `leader/${CLUB}`, 7], [42, "leader-host-check-in", `leader/${CLUB}/check-in/${MEETING}`, 8], [43, "leader-door-mode", `leader/${CLUB}/door/${MEETING}`, 5],

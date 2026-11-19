@@ -75,9 +75,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ["expo-calendar", { calendarPermission: "OutClass adds interviews and events to your calendar when you ask it to." }],
     ["expo-notifications", { color: "#232D4B" }],
     "expo-sharing",
-    "expo-audio",
     "expo-localization",
-    // Long-press app-icon shortcuts (Scan, Check-in pass). Items are set at runtime in src/app/_layout.tsx.
+    // Long-press app-icon shortcuts (Scan). Items are set at runtime in src/app/_layout.tsx.
     "expo-quick-actions",
     // Android release builds refuse plain HTTP. It is allowed only when this build's API address is plain
     // HTTP (a local server on staging data); a production build's address is HTTPS, so it stays refused.

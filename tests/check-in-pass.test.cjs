@@ -1,6 +1,5 @@
-// Door mode (native app): the personal check-in pass. Payload parsing, the migration's shape and
-// server-only access, and the source-level guarantees of actions/check-in-pass.ts.
-// The live authorization matrix runs against staging: scripts/staging/api-authz.cjs.
+// The personal check-in pass (door mode) was removed from the app and the mobile API on 2026-11-19.
+// The table stays (additive, empty, deleted with the account); these tests keep its shape and access rules.
 const { test } = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), ts = require('typescript')
 const { PGlite } = require('@electric-sql/pglite')
 
@@ -45,17 +44,4 @@ test('check-in pass migration: hash only, short-lived by constraint, server-only
       assert.equal((await db.query(`SELECT has_table_privilege('outclass_production_app','"MeetingCheckInPass"',$1) ok`, [p])).rows[0].ok, true, `runtime ${p}`)
     assert.equal((await db.query(`SELECT has_table_privilege('outclass_production_app','"MeetingCheckInPass"','UPDATE') ok`)).rows[0].ok, false, 'a pass is never edited')
   } finally { await db.close() }
-})
-
-test('the scan action authorizes the scanner by meetings.attendance and stores no raw token', () => {
-  const source = fs.readFileSync(path.join(root, 'actions/check-in-pass.ts'), 'utf8')
-  assert.match(source, /requireClubPermission\(clubId, \["meetings\.attendance"\]\)/, 'the scanner needs meetings.attendance on that club')
-  assert.match(source, /meeting\.findFirst\(\{ where: \{ id: meetingId, clubId \}/, 'the meeting must belong to the club the permission was checked for')
-  assert.match(source, /canCheckIn\(meeting, student\.memberships\[0\] \?\? null\)/, 'eligibility is the same rule as the student scanning the room code')
-  assert.match(source, /eventId_studentId/, 'attendance uses the existing uniqueness rule')
-  assert.match(source, /if \(impersonation\) throw/, 'a support session cannot mint a pass')
-  assert.match(source, /assertNotAlumni\(prisma, user\.id, "checkIn"\)/)
-  assert.doesNotMatch(source, /tokenHash: token\b/, 'only the hash is stored')
-  const issue = source.slice(source.indexOf('async function issueCheckInPassCommand'), source.indexOf('const scanInput'))
-  assert.doesNotMatch(issue, /\binput\b|userId: (?!user\.id)/, 'issuing takes no input: the pass is always the caller’s own')
 })

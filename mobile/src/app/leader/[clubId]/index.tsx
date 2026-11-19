@@ -63,8 +63,6 @@ export default function LeaderHub() {
                     <Chip label="Attendance open" tone="success" />
                     <Divider />
                     {tool(QrCode, "Host check-in", "Show the room's code on this phone", () => router.push({ pathname: "/leader/[clubId]/check-in/[meetingId]", params: { clubId, meetingId: meeting.id } } as never), "leader-host-check-in")}
-                    <Divider />
-                    {tool(Users, "Door mode", "Scan each member's pass", () => router.push({ pathname: "/leader/[clubId]/door/[meetingId]", params: { clubId, meetingId: meeting.id } } as never), "leader-door-mode")}
                   </Card>
                 )) : <Card><Text variant="small">Attendance opens one hour before a meeting and closes six hours after its end.</Text></Card>}
               </View>

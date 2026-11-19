@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBrightnessBoost } from "~/app/pass";
+import { useBrightnessBoost } from "~/lib/brightness";
 import { X } from "~/components/icons";
 import { QrCode } from "~/components/qr-code";
 import { useConfirm } from "~/components/sheet";

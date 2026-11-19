@@ -39,7 +39,6 @@ export function ScanScreen({ initialCode }: { initialCode?: string }) {
     if (busy.current) return;
     busy.current = true;
     const scanned = classifyScan(text);
-    if (scanned.kind === "pass") { haptics.warning(); setPhase({ name: "message", title: "That's a check-in pass", body: "A club leader scans this from a meeting's door mode." }); return; }
     if (scanned.kind === "other") { haptics.warning(); setPhase({ name: "message", title: "Not an OutClass code", body: "This scanner reads OutClass check-in, club and voting codes." }); return; }
     setPhase({ name: "working" });
     try {

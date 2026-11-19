@@ -3,19 +3,16 @@ import { shortLinkHosts } from "~/lib/config";
 import { resolveHref, type AppRoute } from "~/lib/links";
 
 /**
- * What a scanned QR code means to OutClass. The scanner recognizes two things and nothing else:
- *   - a first-party short link, `https://<site>/q/<code>` (check-in, club, voting join, live room)
- *   - a personal check-in pass, `OCP1.<token>` (only meaningful to a leader in door mode)
+ * What a scanned QR code means to OutClass. The scanner recognizes one thing and nothing else:
+ * a first-party short link, `https://<site>/q/<code>` (check-in, club, voting join, live room).
  * Scanned text is never logged, stored or sent anywhere except to the OutClass API.
  */
 const CODE = /^[a-zA-Z0-9_-]{1,32}$/;
-const PASS = /^OCP1\.[a-f0-9]{64}$/;
 
-export type Scanned = { kind: "short-link"; code: string } | { kind: "pass"; payload: string } | { kind: "other" };
+export type Scanned = { kind: "short-link"; code: string } | { kind: "other" };
 
 export function classifyScan(text: string): Scanned {
   const value = text.trim();
-  if (PASS.test(value)) return { kind: "pass", payload: value };
   try {
     const url = new URL(value);
     const parts = url.pathname.split("/").filter(Boolean);
