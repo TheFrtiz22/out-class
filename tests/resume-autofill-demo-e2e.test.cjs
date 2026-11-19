@@ -25,6 +25,7 @@ async function caption(page, text) {
   }, text).catch(() => {})
 }
 const pause = (page, ms = 1400) => page.waitForTimeout(ms)
+const dismissGuide = async page => { await page.getByRole("button", { name: "Dismiss tutorial" }).click({ timeout: 4000 }).catch(() => {}) }
 let shot = 0
 async function snap(page, name, options = {}) { shot += 1; await page.screenshot({ path: path.join(out, `${String(shot).padStart(2, "0")}-${name}.png`), ...options }).catch(error => console.log("screenshot failed", name, error.message)) }
 
@@ -69,7 +70,7 @@ test("résumé autofill demo recording", { skip: !configFile, timeout: 600000 },
     await page.locator("#onboarding-resume-fill").setInputFiles(path.join(fixtures, "layout-a-engineering.pdf"))
     await caption(page, "Uploading Maya’s made-up résumé PDF…")
     await page.getByText(/Filled in \d+ details from your résumé/).waitFor({ timeout: 30000 })
-    await caption(page, "3 · Major, graduation year, GPA and phone are filled in. She can edit any of them."); await pause(page, 2600)
+    await caption(page, "3 · Major, graduation year, phone, GPA and SAT are filled in. She can edit any of them."); await pause(page, 2600)
     await snap(page, "signup-step3-filled", { fullPage: true })
     await page.locator("#gpa").scrollIntoViewIfNeeded(); await pause(page, 1600)
     await page.getByRole("button", { name: /^Continue/ }).last().click()
@@ -89,6 +90,7 @@ test("résumé autofill demo recording", { skip: !configFile, timeout: 600000 },
     const actor = new Actor(config); await actor.signIn(email, password); await actor.availability()
     await page.goto(config.appUrl + "/profile")
     await page.getByText("Maya", { exact: false }).first().waitFor({ timeout: 30000 })
+    await pause(page, 800); await dismissGuide(page)
     await caption(page, "5 · Her saved profile, filled from the résumé"); await pause(page, 2600)
     await snap(page, "maya-saved-profile", { fullPage: true })
     await page.mouse.wheel(0, 700); await pause(page, 2200)
@@ -112,10 +114,13 @@ test("résumé autofill demo recording", { skip: !configFile, timeout: 600000 },
   p2.on("pageerror", error => console.log("pageerror:", error.message))
   try {
     await p2.goto(config.appUrl + "/profile")
-    const open = p2.getByRole("button", { name: "Import from résumé" })
-    await open.waitFor({ timeout: 30000 })
+    await p2.getByRole("button", { name: "Edit profile" }).waitFor({ timeout: 30000 })
+    await pause(p2, 800); await dismissGuide(p2)
     await caption(p2, "6 · An existing test student (Jordan Okafor, made up) with a mostly empty profile"); await pause(p2, 2400)
     await snap(p2, "jordan-before", { fullPage: true })
+    await p2.getByRole("button", { name: "Edit profile" }).click()
+    const open = p2.getByRole("button", { name: "Import from résumé" })
+    await open.waitFor({ timeout: 30000 }); await pause(p2, 1200)
     await open.click()
     await p2.getByRole("heading", { name: "Import your résumé" }).waitFor()
     await caption(p2, "Edit profile → Import from résumé"); await pause(p2, 1600)
@@ -123,7 +128,7 @@ test("résumé autofill demo recording", { skip: !configFile, timeout: 600000 },
     await p2.getByRole("button", { name: "Confirm selected changes" }).waitFor({ timeout: 30000 })
     await caption(p2, "7 · New details come pre-ticked. His existing major and phone stay unticked, so they aren’t overwritten."); await pause(p2, 3000)
     await snap(p2, "jordan-import-review")
-    const dialog = p2.getByRole("dialog")
+    const dialog = p2.getByRole("dialog").filter({ has: p2.getByRole("heading", { name: "Import your résumé" }) })
     await dialog.evaluate(el => { const s = [el, ...el.querySelectorAll("*")].find(n => n.scrollHeight > n.clientHeight + 20 && getComputedStyle(n).overflowY !== "visible"); if (s) s.scrollBy({ top: 600, behavior: "smooth" }) }).catch(() => {})
     await pause(p2, 2200); await snap(p2, "jordan-import-review-experiences")
     await dialog.evaluate(el => { const s = [el, ...el.querySelectorAll("*")].find(n => n.scrollHeight > n.clientHeight + 20 && getComputedStyle(n).overflowY !== "visible"); if (s) s.scrollBy({ top: 5000, behavior: "smooth" }) }).catch(() => {})
@@ -131,6 +136,9 @@ test("résumé autofill demo recording", { skip: !configFile, timeout: 600000 },
     await caption(p2, "Nothing changes until he confirms")
     await p2.getByRole("button", { name: "Confirm selected changes" }).click()
     await p2.getByRole("heading", { name: "Import your résumé" }).waitFor({ state: "hidden", timeout: 30000 })
+    await pause(p2, 1500); await p2.keyboard.press("Escape").catch(() => {}); await pause(p2, 800)
+    if (!p2.url().includes("/profile")) await p2.goto(config.appUrl + "/profile")
+    await dismissGuide(p2)
     await caption(p2, "8 · Saved: his profile now has the résumé’s details"); await pause(p2, 2600)
     await snap(p2, "jordan-after", { fullPage: true })
     await p2.mouse.wheel(0, 700); await pause(p2, 2400)
