@@ -26,10 +26,12 @@ export default function MyClub() {
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
   const member = me.data?.memberships.find(membership => membership.clubId === clubId);
   const meetings = useApiQuery<Meeting[]>("meetings", { clubId }, { enabled: !!clubId });
-  const tasks = useApiQuery<TaskWorkspace>("tasks.workspace", { clubId }, { enabled: !!clubId && !!member && !member.alumniSince });
+  const tasksEnabled = !!clubId && !!member && !member.alumniSince;
+  const tasks = useApiQuery<TaskWorkspace>("tasks.workspace", { clubId }, { enabled: tasksEnabled });
   const [when, setWhen] = useState<"upcoming" | "past">("upcoming");
   const now = Date.now();
-  const refresh = () => { me.refetch(); meetings.refetch(); tasks.refetch(); };
+  // `refetch` ignores `enabled`, so an alumni membership's task list is not asked for here either.
+  const refresh = () => { void me.refetch(); if (clubId) void meetings.refetch(); if (tasksEnabled) void tasks.refetch(); };
 
   const upcoming = (meetings.data ?? []).filter(meeting => +new Date(meeting.endDate || meeting.date) >= now).sort((a, b) => +new Date(a.date) - +new Date(b.date));
   const past = (meetings.data ?? []).filter(meeting => +new Date(meeting.endDate || meeting.date) < now);
@@ -39,13 +41,13 @@ export default function MyClub() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={meetings.isRefetching || tasks.isRefetching} onRefresh={refresh} testID="my-club-screen">
+      <ScreenScroll top={top} refreshing={me.isRefetching || meetings.isRefetching || tasks.isRefetching} onRefresh={refresh} testID="my-club-screen">
         {me.isPending ? (
           <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}><Skeleton width={56} height={56} radius={14} /><View style={{ flex: 1, gap: 8 }}><Skeleton width="70%" height={24} /><Skeleton width="40%" /></View></View>
         ) : me.isError ? (
           <ErrorState message={errorMessage(me.error)} offline={me.error instanceof ApiError && me.error.offline} onRetry={refresh} />
         ) : !member ? (
-          <Card><EmptyState title="You haven’t joined any clubs yet" body="Clubs appear here once you’re a member. An acceptance doesn’t make you a member on its own." action={<Button variant="secondary" label="Explore clubs" onPress={() => router.push("/explore")} />} /></Card>
+          <Card><EmptyState title="You’re not a member of this club" body="Clubs appear here once you’re an active member. If you just accepted an offer, pull down to refresh." action={clubId ? <Button variant="secondary" label="View club page" onPress={() => router.replace({ pathname: "/club/[id]", params: { id: clubId } } as never)} /> : <Button variant="secondary" label="Explore clubs" onPress={() => router.navigate("/explore")} />} /></Card>
         ) : (
           <>
             <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>

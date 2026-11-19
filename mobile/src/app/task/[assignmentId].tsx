@@ -6,7 +6,7 @@ import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
 import { Field } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
 import { ArrowUpRight, CalendarClock, CheckCircle2, Download, ExternalLink, FilePenLine } from "~/components/icons";
-import { isClosed, ownTasks, relativeDue, taskDate, taskResources, taskState, useTaskWorkspaces } from "~/components/tasks/presentation";
+import { isClosed, isMissing, isSubmitted, ownTasks, relativeDue, taskDate, taskLink, taskResources, taskState, useTaskWorkspaces } from "~/components/tasks/presentation";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
 import { api, ApiError, errorMessage } from "~/lib/api";
@@ -30,8 +30,8 @@ function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; o
 
   const submit = useMutation({
     // Files already attached on the web stay attached; the server checks every field and the revision.
-    mutationFn: () => api.post("tasks.submit", { assignmentId: own.id, revision: own.revision, text: text.trim(), link: link.trim(), fileIds: own.files.map(file => file.id) }),
-    onMutate: () => { setError(""); setSaved(false); },
+    mutationFn: (address: string) => api.post("tasks.submit", { assignmentId: own.id, revision: own.revision, text: text.trim(), link: address, fileIds: own.files.map(file => file.id) }),
+    onMutate: address => { setError(""); setSaved(false); if (address !== link.trim()) setLink(address); },
     onSuccess: () => {
       haptics.confirm(); setSaved(true);
       client.invalidateQueries({ queryKey: ["tasks.workspace"] });
@@ -87,7 +87,12 @@ function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; o
       {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">{error}</Text> : null}
       {saved ? <Text testID="task-saved" variant="small" color={colors.success} accessibilityLiveRegion="polite">Your submission was saved.</Text> : null}
       {alumni ? <AlumniBanner action="task" /> : closed ? null : (
-        <Button full size="large" testID="task-submit" loading={submit.isPending} label={submit.isPending ? "Submitting…" : own.submittedAt ? (own.revisionRequestedAt ? "Resubmit revisions" : "Update submission") : "Submit work"} onPress={() => submit.mutate()} />
+        <Button full size="large" testID="task-submit" loading={submit.isPending} label={submit.isPending ? "Submitting…" : own.submittedAt ? (own.revisionRequestedAt ? "Resubmit revisions" : "Update submission") : "Submit work"} onPress={() => {
+          // The server takes only a full http(s) address; a typed "docs.google.com/…" is completed here instead of refused.
+          const address = taskLink(link);
+          if (address === null) { haptics.error(); setError("Enter a full web address, like https://docs.google.com/…"); return; }
+          submit.mutate(address);
+        }} />
       )}
     </Card>
   );
@@ -130,7 +135,7 @@ export default function TaskScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets refreshing={workspaces.some(query => query.isRefetching)} onRefresh={refresh} testID="task-screen">
+      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={workspaces.some(query => query.isRefetching)} onRefresh={refresh} testID="task-screen">
         {loading ? (
           <>
             <View style={{ gap: 10 }}><Skeleton width="50%" /><Skeleton width="85%" height={30} /><Skeleton width="40%" /></View>
@@ -148,7 +153,7 @@ export default function TaskScreen() {
               <Text variant="display" accessibilityRole="header">{task.title}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><CalendarClock size={16} color={colors.mutedForeground} /><Text variant="small">Due {relativeDue(task.dueAt, now)}</Text></View>
-                <Chip label={taskState(task, own, now)} tone={own.reviewedAt || own.submittedAt ? "success" : task.dueAt && +new Date(task.dueAt) < now ? "error" : "neutral"} />
+                <Chip label={taskState(task, own, now)} tone={isSubmitted(own) ? "success" : isMissing(task, own, now) ? "error" : "neutral"} />
               </View>
               {task.project ? <Text variant="small">Project · {task.project.title}</Text> : null}
               {own.groupLabel ? <Text variant="smallStrong">Assigned group · {own.groupLabel}</Text> : null}

@@ -101,8 +101,8 @@ export default function Tasks() {
               <Card>
                 <EmptyState
                   title={filter !== "open" ? "No tasks match your filters." : "You're all caught up."}
-                  body={filter !== "open" ? "Try another search or clear the filters." : total ? "No tasks need your attention. Choose All tasks under Status to see earlier work." : "New tasks will appear here."}
-                  action={filter !== "open" ? <Button variant="secondary" label="Clear filters" onPress={() => setFilter("open")} /> : total ? <Button variant="secondary" testID="tasks-view-all" label="View all tasks" onPress={() => setFilter("all")} /> : undefined}
+                  body={filter !== "open" ? "Try another status, or go back to active tasks." : total ? "No tasks need your attention. Choose All tasks under Status to see earlier work." : "New tasks will appear here."}
+                  action={filter !== "open" ? <Button variant="secondary" label="Show active tasks" onPress={() => setFilter("open")} /> : total ? <Button variant="secondary" testID="tasks-view-all" label="View all tasks" onPress={() => setFilter("all")} /> : undefined}
                 />
               </Card>
             ) : null}

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
-import { View } from "react-native";
+import { type ComponentRef, useRef, useState } from "react";
+import { ScrollView, View } from "react-native";
 import { addToCalendar } from "~/components/applications/calendar";
 import { ZONE_LABEL, dayKey, formatDay, schedulingDateTime, shortDay, slotTime } from "~/components/applications/format";
 import { Header, useHeaderInset } from "~/components/header";
@@ -43,6 +43,7 @@ export default function InterviewScreen() {
   const [calendarNote, setCalendarNote] = useState("");
   const [added, setAdded] = useState<string | null>(null);
   const saving = useRef(false);
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const data = schedule.data;
   const booking = data?.booking ?? null;
@@ -60,7 +61,8 @@ export default function InterviewScreen() {
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
   const availableDates = [...new Set(slots.filter(slot => slot.booked < slot.capacity || slot.id === booking?.slotId).map(slot => dayKey(slot.startTime)))];
   const firstStart = rooms.flatMap(room => room.slots).map(slot => slot.startTime).sort()[0];
-  const month = chosenMonth ?? dayKey(firstStart ?? new Date()).slice(0, 7);
+  const thisMonth = dayKey(new Date()).slice(0, 7);
+  const month = chosenMonth ?? dayKey(firstStart ?? (booked ? booking!.startTime : new Date())).slice(0, 7);
   const selectedDay = availableDates.includes(day) && day.startsWith(month) ? day : availableDates.find(date => date.startsWith(month)) ?? "";
   const [year, monthNumber] = month.split("-").map(Number) as [number, number];
   const leading = new Date(Date.UTC(year, monthNumber - 1, 1)).getUTCDay();
@@ -89,6 +91,8 @@ export default function InterviewScreen() {
       // Saved or refused, the times on screen are re-read from the server.
       await refresh().catch(() => {});
       saving.current = false; setBusy(false);
+      // The outcome is written at the top, above the times that were just tapped.
+      scroll.current?.scrollTo({ y: 0, animated: true });
     }
   }
 
@@ -119,7 +123,7 @@ export default function InterviewScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="interview-screen" refreshing={schedule.isRefetching && !busy} onRefresh={() => { void schedule.refetch(); }}>
+      <ScreenScroll {...({ ref: scroll } as object)} top={top} testID="interview-screen" refreshing={schedule.isRefetching && !busy} onRefresh={() => { void schedule.refetch(); }}>
         <Text variant="display" accessibilityRole="header">{booked ? "Your interview" : "Book your interview"}</Text>
         {schedule.isPending ? (
           <View accessibilityLabel="Loading interview times…" accessibilityRole="progressbar" style={{ gap: 16 }}>
@@ -127,7 +131,17 @@ export default function InterviewScreen() {
             <Skeleton height={300} radius={12} />
           </View>
         ) : schedule.isError && !data ? (
-          <ErrorState message={errorMessage(schedule.error, "Could not load interview times.")} offline={schedule.error instanceof ApiError && schedule.error.offline} onRetry={() => { void schedule.refetch(); }} />
+          schedule.error instanceof ApiError && !schedule.error.offline && schedule.error.status < 500 ? (
+            // A refusal (no invitation for this round, the club paused, a bad link) is an answer, not a failed load.
+            <Card tone="soft" accessibilityRole="alert" style={{ gap: 10 }}>
+              <Text variant="body" color={colors.foreground}>{schedule.error.status === 400 ? "This interview link isn’t valid. Open the interview from your application instead." : schedule.error.message}</Text>
+              <Text variant="small">If the club invited you recently, pull down to check again or open your application for its current status.</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <Button variant="secondary" size="compact" label="Back to application" onPress={() => (router.canGoBack() ? router.back() : applicationId ? router.replace({ pathname: "/application/[id]", params: { id: applicationId } }) : router.replace("/applications"))} />
+                <Button variant="ghost" size="compact" label="Try again" onPress={() => { void schedule.refetch(); }} />
+              </View>
+            </Card>
+          ) : <ErrorState message={errorMessage(schedule.error, "Could not load interview times.")} offline={schedule.error instanceof ApiError && schedule.error.offline} onRetry={() => { void schedule.refetch(); }} />
         ) : data ? (
           <>
             {data.conflictingTimes ? <Text variant="small" testID="booking-conflicts">{data.conflictingTimes} time{data.conflictingTimes === 1 ? " is" : "s are"} hidden because {data.conflictingTimes === 1 ? "it overlaps" : "they overlap"} another interview you’ve booked.</Text> : null}
@@ -167,11 +181,11 @@ export default function InterviewScreen() {
             ) : null}
 
             {publicationState !== "PUBLISHED" ? (
-              <Card><Text variant="small" color={colors.foreground}>{publicationState === "PAUSED" ? "The club has paused new interview times. Your interview is still booked." : "Interview times aren’t open yet. Check back later or contact the club."}</Text></Card>
+              <Card><Text variant="small" color={colors.foreground}>{publicationState === "PAUSED" ? booking ? "The club has paused new interview times. Your interview is still booked." : "The club has paused new interview times. Check back later or contact the club." : booking ? "Booking is closed for this round. Contact the club if you need a different time." : "Interview times aren’t open yet. Check back later or contact the club."}</Text></Card>
             ) : !alumni && !slots.some(slot => slot.booked < slot.capacity) && !booking ? (
               <Card tone="soft" style={{ gap: 6 }}>
                 <Text variant="small" color={colors.foreground} style={{ lineHeight: 21 }}>No interview times are available right now. Your invitation is still recorded; check again later or contact the club.</Text>
-                <Press onPress={() => router.back()} accessibilityRole="link" accessibilityLabel="Back to application status" style={{ minHeight: TARGET, justifyContent: "center", alignSelf: "flex-start" }}>
+                <Press onPress={() => (router.canGoBack() ? router.back() : router.replace({ pathname: "/application/[id]", params: { id: applicationId } }))} accessibilityRole="link" accessibilityLabel="Back to application status" style={{ minHeight: TARGET, justifyContent: "center", alignSelf: "flex-start" }}>
                   <Text variant="small" color={colors.foreground} style={{ textDecorationLine: "underline" }}>Back to application status</Text>
                 </Press>
               </Card>
@@ -201,7 +215,7 @@ export default function InterviewScreen() {
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <Text variant="card" accessibilityRole="header" accessibilityLiveRegion="polite">{formatDay(`${month}-01`, { month: "long", year: "numeric" })}</Text>
                     <View style={{ flexDirection: "row" }}>
-                      <IconButton icon={ChevronLeft} label="Previous month" testID="interview-month-previous" onPress={() => stepMonth(-1)} />
+                      {month > thisMonth ? <IconButton icon={ChevronLeft} label="Previous month" testID="interview-month-previous" onPress={() => stepMonth(-1)} /> : <View style={{ width: TARGET }} />}
                       <IconButton icon={ChevronRight} label="Next month" testID="interview-month-next" onPress={() => stepMonth(1)} />
                     </View>
                   </View>

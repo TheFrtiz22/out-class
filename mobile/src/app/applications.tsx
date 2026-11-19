@@ -14,25 +14,27 @@ import { useTheme } from "~/lib/theme";
 import type { ApplicationStageId, ApplicationsView, StudentApplication } from "~/lib/types";
 
 /** A draft: required-response progress, deadline, and Continue draft (web: ApplicationManagementCard). */
-function DraftCard({ application: app, onOpen }: { application: StudentApplication; onOpen: () => void }) {
+function DraftCard({ application: app, alumni, onOpen }: { application: StudentApplication; alumni: boolean; onOpen: () => void }) {
   const { colors } = useTheme();
-  const { progress, intakeClosed: closed } = app;
+  const { progress, intakeClosed } = app;
+  // Alumni keep drafts to read but cannot submit (lib/graduation.ts), as with a closed club.
+  const closed = intakeClosed || alumni;
   return (
     <Card style={{ gap: 12 }}>
       <Press large onPress={onOpen} accessibilityLabel={`${app.club.name}, ${app.statusLabel}`} style={{ gap: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <ClubMark name={app.club.name} color={app.club.color} logoUrl={app.club.logoUrl} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text variant="card">{app.club.name}</Text>
+            <Text variant="card" numberOfLines={2}>{app.club.name}</Text>
             <Text variant="small">{progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions"}</Text>
-            <Text variant="small">{app.deadlineLabel ? `Deadline · ${app.deadlineLabel}` : "Deadline not published"}{closed ? <Text variant="smallStrong"> · Applications closed</Text> : null}</Text>
+            <Text variant="small">{app.deadlineLabel ? `Deadline · ${app.deadlineLabel}` : "Deadline not published"}{intakeClosed ? <Text variant="smallStrong"> · Applications closed</Text> : null}</Text>
           </View>
           <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
         </View>
         <View accessibilityRole="progressbar" accessibilityLabel={`Required responses ready for ${app.club.name}`} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress.percent) }} style={{ height: 4, borderRadius: 2, backgroundColor: colors.muted, overflow: "hidden" }}>
           <View style={{ width: `${Math.max(0, Math.min(100, progress.percent))}%`, height: 4, borderRadius: 2, backgroundColor: colors.brandInk }} />
         </View>
-        <Text variant="small">{closed ? "Applications are closed, so this draft can’t be submitted. You can still view or save it." : progress.ready ? "Required responses ready. Review your profile before submitting." : "Your draft is saved; nothing has been submitted."}</Text>
+        <Text variant="small">{alumni ? "Alumni accounts can’t submit new applications. You can still read this draft." : closed ? "Applications are closed, so this draft can’t be submitted. You can still view or save it." : progress.ready ? "Required responses ready. Review your profile before submitting." : "Your draft is saved; nothing has been submitted."}</Text>
       </Press>
       {/* A closed club cannot take a submission, so continuing is not the primary action. */}
       <Button testID={`application-open-${app.statusCode}`} variant={closed ? "secondary" : "primary"} icon={ArrowRight} label={closed ? "View draft" : "Continue draft"} onPress={onOpen} />
@@ -50,7 +52,7 @@ function StatusCard({ application: app, onOpen, onAction }: { application: Stude
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <ClubMark name={app.club.name} color={app.club.color} logoUrl={app.club.logoUrl} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text variant="card">{app.club.name}</Text>
+            <Text variant="card" numberOfLines={2}>{app.club.name}</Text>
             <Text variant="small">{decision ? attention ? "Membership offer ready" : "Decision received" : attention ? "Review interview options" : app.round?.name || app.statusLabel}</Text>
           </View>
           <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
@@ -133,7 +135,7 @@ export default function Applications() {
             ) : null}
           </View>
         }
-        renderItem={({ item }) => item.stage === "drafts" ? <DraftCard application={item} onOpen={() => open(item)} /> : <StatusCard application={item} onOpen={() => open(item)} onAction={() => act(item)} />}
+        renderItem={({ item }) => item.stage === "drafts" ? <DraftCard application={item} alumni={!!data?.alumni} onOpen={() => open(item)} /> : <StatusCard application={item} onOpen={() => open(item)} onAction={() => act(item)} />}
         ListEmptyComponent={data?.applications.length ? (
           <Card><EmptyState title={`No applications in ${stageLabel}.`} body={stage === "drafts" ? "You have no drafts in progress." : "None of your applications are at this stage right now."} /></Card>
         ) : undefined}

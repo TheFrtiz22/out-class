@@ -39,7 +39,7 @@ function LetterSeal({ clubName, color }: { clubName: string; color: string }) {
 export function LetterPaper({ content, logo }: { content: LetterContent; logo?: { applicationId: string; letterId: string } }) {
   const { colors, radius, dark } = useTheme();
   // The club's accent marks the letter on paper; on the dark surface it would not be legible.
-  const accent = !dark && /^#[\da-f]{6}$/i.test(content.accent) ? content.accent : colors.foreground;
+  const accent = !dark && /^#[\da-f]{6}$/i.test(content.accent ?? "") ? content.accent : colors.foreground;
   return (
     <View accessibilityLabel="Formal decision letter" testID="decision-letter" style={{ backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 22, paddingVertical: 28, gap: 18 }}>
       <View style={{ alignItems: "center", gap: 4 }}>
@@ -56,7 +56,7 @@ export function LetterPaper({ content, logo }: { content: LetterContent; logo?: 
       <Text variant="title" accessibilityRole="header">{content.title}</Text>
       <Text variant="body">Dear {content.studentName},</Text>
       <View style={{ gap: 14 }}>
-        {content.body.split(/\n\s*\n/).map((paragraph, index) => <Text key={index} variant="body" selectable style={{ lineHeight: 26 }}>{paragraph}</Text>)}
+        {(content.body || "").split(/\n\s*\n/).filter(paragraph => paragraph.trim()).map((paragraph, index) => <Text key={index} variant="body" selectable style={{ lineHeight: 26 }}>{paragraph}</Text>)}
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 6 }}>
         <View style={{ flex: 1, gap: 8 }}>
@@ -64,7 +64,7 @@ export function LetterPaper({ content, logo }: { content: LetterContent; logo?: 
           <View style={{ height: 1, width: 150, maxWidth: "100%", backgroundColor: colors.border, marginTop: 22 }} />
           {content.signer ? <Text variant="card" style={{ fontFamily: fonts.display }}>{content.signer}</Text> : null}
         </View>
-        <LetterSeal clubName={content.clubName} color={accent} />
+        <LetterSeal clubName={content.clubName || ""} color={accent} />
       </View>
       {content.footer ? <Text variant="small">{content.footer}</Text> : null}
       <Text variant="caption" align="center" style={{ marginTop: 4 }}>Delivered securely through OutClass</Text>
