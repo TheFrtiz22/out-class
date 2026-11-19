@@ -14,9 +14,11 @@ export function leaderTools(membership: Membership): LeaderTools {
   return {
     attendance: active && can(membership, "meetings.attendance"),
     announce: active && can(membership, "meetings.manage"),
-    applicants: active && can(membership, "applications.review"),
-    voting: active && (can(membership, "decisions.start") || can(membership, "decisions.vote")),
-    interviews: active && can(membership, "applications.review"),
+    // Each line is the gate of the action the tool reaches (actions/crm.ts readPipeline,
+    // actions/voting-room.ts listLiveVotingRooms, lib/interview-access.ts participate).
+    applicants: active && (can(membership, "applications.review") || can(membership, "applicants.identify")),
+    voting: active && can(membership, "applications.review") && (can(membership, "decisions.start") || can(membership, "decisions.vote") || can(membership, "decisions.view")),
+    interviews: active && can(membership, "applications.review") && can(membership, "applicants.identify"),
   };
 }
 export const hasLeaderTools = (membership: Membership) => Object.values(leaderTools(membership)).some(Boolean);
