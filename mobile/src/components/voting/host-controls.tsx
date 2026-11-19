@@ -55,6 +55,7 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
       }
       haptics.save();
       setConfirmedRevision(response.result.revision); setPending(null); setMore(false);
+      if (body.action === "CLOSE_VOTING") setReason("");
       await refresh();
     } catch (failure) {
       haptics.error();
@@ -88,9 +89,9 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
     const early = !!room.meeting?.plannedAt && +new Date(room.meeting.plannedAt) > Date.now();
     if (!early || await confirm({ title: "Start this session early?", description: "It is scheduled for later. Voting begins only when you open a ballot.", confirmLabel: "Start early" })) void send("START", { confirmed: early });
   }
-  async function close() {
+  async function close(recount = false) {
     if (!missing || await confirm({ title: "Close voting early?", description: `${missing} ${missing === 1 ? "ballot is" : "ballots are"} missing from members in the room. Missing ballots are not Do not pass votes.`, confirmLabel: "Close voting now" }))
-      void send("CLOSE_VOTING", { confirmed: true, ...scope, ...view });
+      void send("CLOSE_VOTING", { confirmed: true, ...scope, ...view, ...(recount ? { resolveElectorate: true, reason: reason.trim() } : {}) });
   }
   async function nextPass() {
     if (room.status !== "COMPLETED" || await confirm({ title: "Resume to review held applicants?", description: "Only held applicants are reviewed. Unreviewed applicants remain unresolved.", confirmLabel: "Resume with held applicants" })) void send("NEXT_PASS");
@@ -110,7 +111,13 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
       {error ? (
         <View accessibilityRole="alert" style={{ gap: 8 }}>
           <Text variant="small" color={colors.destructive} testID="voting-host-error">{error}</Text>
-          {pending ? <Button label="Retry command" variant="secondary" size="compact" disabled={busy} onPress={() => { void send(pending.action, {}, true); }} /> : null}
+          {pending && !busy ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <Button label="Retry command" variant="secondary" size="compact" testID="voting-host-retry" onPress={() => { void send(pending.action, {}, true); }} />
+              {/* The room's own snapshot shows whether it was saved; dismissing never sends anything. */}
+              <Button label="Dismiss" variant="ghost" size="compact" testID="voting-host-dismiss" onPress={() => { setPending(null); setError(""); void refresh().catch(() => undefined); }} />
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -120,7 +127,13 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
         <>
           <Button full size="large" testID="voting-close" label="Close vote" loading={busy && pending?.action === "CLOSE_VOTING"} disabled={locked} onPress={() => { void close(); }} />
           <Text variant="small">{room.rule?.mode === "THRESHOLD" ? `After you close the vote, the rule decides (${room.rule.description}) and the result shows on the projector.` : "After you close the vote, the totals show on the projector and you confirm Pass, Hold or Do not pass."}</Text>
-          {room.electorateChange ? <Text variant="small" color={colors.warning}>{room.electorateChange.removed} voter{room.electorateChange.removed === 1 ? "" : "s"} can no longer vote, so voting is paused. Recount without {room.electorateChange.removed === 1 ? "this voter" : "them"} and give a reason to close, or restore {room.electorateChange.removed === 1 ? "their" : "those voters'"} access to continue.</Text> : null}
+          {room.electorateChange ? (
+            <View style={{ gap: 10 }} testID="voting-electorate-change">
+              <Text variant="small" color={colors.warning}>{room.electorateChange.removed} voter{room.electorateChange.removed === 1 ? "" : "s"} can no longer vote, so voting is paused. Recount without {room.electorateChange.removed === 1 ? "this voter" : "them"} and give a reason to close, or restore {room.electorateChange.removed === 1 ? "their" : "those voters'"} access to continue.</Text>
+              <Field label="Reason for recounting" testID="voting-recount-reason" value={reason} onChangeText={setReason} maxLength={1000} />
+              <Button full variant="secondary" testID="voting-recount-close" label="Recount and close vote" disabled={locked || !reason.trim()} onPress={() => { void close(true); }} />
+            </View>
+          ) : null}
         </>
       ) : null}
 

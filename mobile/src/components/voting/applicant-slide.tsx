@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { OWN_APPLICATION_MESSAGE, POLL_MS, type RoomSnapshot } from "~/components/voting/room";
 import { PrivateImage, photoParams } from "~/components/private-image";
@@ -33,7 +33,10 @@ export function ApplicantSlide({ room, applicationId, position, live, result, on
   const data = query.data;
   const stale = !!data && "stale" in data;
   // The room moved on before this viewer's snapshot did: fetch the current room rather than show an error.
-  useEffect(() => { if (stale) onStale(); }, [stale, onStale]);
+  // Once per stale answer: `onStale` is a fresh function on every render of the room.
+  const onStaleRef = useRef(onStale);
+  useEffect(() => { onStaleRef.current = onStale; });
+  useEffect(() => { if (stale) onStaleRef.current(); }, [stale, query.dataUpdatedAt]);
 
   if (query.isError && !data) {
     return (
@@ -70,7 +73,7 @@ export function ApplicantSlide({ room, applicationId, position, live, result, on
         ) : null}
         <View style={{ flex: 1, gap: 2 }}>
           {position ? <Text variant="eyebrow">{position}</Text> : null}
-          <Text variant="display" accessibilityRole="header" testID="voting-applicant-name" style={{ fontSize: 28, lineHeight: 34 }}>{slide.name}</Text>
+          <Text variant="display" accessibilityRole="header" testID="voting-applicant-name" numberOfLines={3} style={{ fontSize: 28, lineHeight: 34 }}>{slide.name}</Text>
           {result ? <Text variant="smallStrong" color={colors.brandInk}>{result}</Text> : null}
         </View>
       </View>
@@ -85,7 +88,7 @@ export function ApplicantSlide({ room, applicationId, position, live, result, on
             <View key={fact.field} style={{ flexGrow: 1, minWidth: "44%", backgroundColor: colors.contentSoft, borderRadius: radius.md, padding: 12, gap: 2 }}>
               <Text variant="caption">{fact.label}</Text>
               <Text variant="metric" style={{ fontFamily: fonts.sansSemibold, fontSize: 24, lineHeight: 30 }}>{fact.value}{fact.unit ? <Text variant="small"> {fact.unit}</Text> : null}</Text>
-              {fact.meta.map(line => <Text key={line} variant="caption">{line}</Text>)}
+              {fact.meta.map((line, index) => <Text key={`${index}:${line}`} variant="caption">{line}</Text>)}
             </View>
           ))}
         </View>
