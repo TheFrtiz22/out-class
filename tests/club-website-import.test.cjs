@@ -18,7 +18,7 @@ function transport(routes) {
     req.end = () => setImmediate(() => {
       if (!route) return req.emit('error', Object.assign(new Error('not found'), { code: 'ENOTFOUND' }));
       const res = new PassThrough(); res.statusCode = route.status ?? 200; res.headers = route.headers ?? {};
-      callback(res); res.end(route.body ?? '');
+      res.complete = true; callback(res); res.end(route.body ?? '');
     });
     return req;
   };
@@ -62,6 +62,9 @@ test('redirects are re-checked, and size, type and redirect limits hold', async 
   await assert.rejects(safe.safeFetch('https://club.example/', opts(t.request)), err => err.code === 'TOO_LARGE', 'a small compressed body cannot expand past the cap');
   t = transport({ 'https://club.example/': { headers: { 'content-type': 'text/html', 'content-encoding': 'br' }, body: zlib.brotliCompressSync('<h1>Club</h1>') } });
   assert.equal((await safe.safeFetch('https://club.example/', opts(t.request))).body.toString(), '<h1>Club</h1>');
+  // A compressed response cut off part way must settle, not hang.
+  const cut = (_url, _options, callback) => { const req = new EventEmitter(); req.destroy = () => {}; req.end = () => setImmediate(() => { const res = new PassThrough(); res.statusCode = 200; res.complete = false; res.headers = { 'content-type': 'text/html', 'content-encoding': 'gzip' }; callback(res); res.write(zlib.gzipSync('<p>' + 'x'.repeat(5000) + '</p>').subarray(0, 40)); setImmediate(() => res.destroy()); }); return req; };
+  await assert.rejects(safe.safeFetch('https://club.example/', opts(cut, { maxBytes: 100000, timeoutMs: 2000 })), err => err.code === 'NETWORK');
   t = transport({ 'https://club.example/': { headers: { 'content-type': 'application/pdf' }, body: '%PDF' } });
   await assert.rejects(safe.safeFetch('https://club.example/', opts(t.request)), err => err.code === 'WRONG_TYPE');
   t = transport({ 'https://club.example/': { status: 403 } });

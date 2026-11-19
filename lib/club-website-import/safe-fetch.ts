@@ -128,7 +128,13 @@ function once(url: URL, options: SafeFetchOptions, signal: AbortSignal): Promise
       if (Number.isFinite(declared) && declared > options.maxBytes) { response.resume(); return reject(new SafeFetchError("That page is too large to import.", "TOO_LARGE")) }
       const charset = /charset\s*=\s*"?([\w.:-]+)/i.exec(rawType)?.[1]?.toLowerCase() ?? null
       let stream: NodeJS.ReadableStream = response
-      try { const unzip = decoder(String(response.headers["content-encoding"] ?? ""), options.maxBytes); if (unzip) stream = response.pipe(unzip) } catch (error) { response.resume(); return reject(error) }
+      let unzip: ReturnType<typeof decoder> = null
+      try { unzip = decoder(String(response.headers["content-encoding"] ?? ""), options.maxBytes); if (unzip) stream = response.pipe(unzip) } catch (error) { response.resume(); return reject(error) }
+      // pipe() does not pass a failed or cut-off response on to the decoder, so settle here
+      // (and stop the decoder) whenever the response ends before it is complete.
+      const cutOff = (error?: Error) => { const failure = error ?? new SafeFetchError("The website closed the connection early.", "NETWORK"); unzip?.destroy(failure); reject(failure) }
+      response.on("error", cutOff)
+      response.on("close", () => { if (!response.complete) cutOff() })
       const chunks: Buffer[] = []; let received = 0, raw = 0
       response.on("data", (chunk: Buffer) => { raw += chunk.length; if (raw > options.maxBytes) request.destroy(new SafeFetchError("That page is too large to import.", "TOO_LARGE")) })
       stream.on("data", (chunk: Buffer) => {
