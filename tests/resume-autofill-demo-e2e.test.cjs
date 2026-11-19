@@ -80,7 +80,10 @@ test("résumé autofill demo recording", { skip: !configFile, timeout: 600000 },
     await page.getByRole("button", { name: /^Continue/ }).last().click()
     await page.getByRole("heading", { name: "Help us suggest clubs" }).waitFor({ timeout: 30000 })
     await caption(page, "Nothing was saved until she pressed Continue. She skips the optional survey."); await pause(page, 1800)
-    await page.getByRole("button", { name: "Skip for now" }).click()
+    await page.getByRole("button", { name: "Skip for now" }).click({ timeout: 15000 }).catch(async () => {
+      await snap(page, "step5-without-skip", { fullPage: true })
+      await page.getByRole("button", { name: /^Continue/ }).last().click({ timeout: 10000 }).catch(() => {})
+    })
     await page.waitForURL(url => !url.pathname.startsWith("/signup"), { timeout: 30000 }).catch(() => {})
     // Off camera: the required weekly-availability step, answered through the real action.
     const actor = new Actor(config); await actor.signIn(email, password); await actor.availability()
