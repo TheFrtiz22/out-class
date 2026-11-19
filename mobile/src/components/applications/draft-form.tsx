@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
+import { AlumniBanner } from "~/components/alumni-banner";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { ChevronDown, ChevronUp, Upload } from "~/components/icons";
@@ -25,7 +26,7 @@ const fromAnswers = (answers: ApplicationAnswer[]): Responses => Object.fromEntr
  * questions, help text, autosave, Save draft and Review & submit, with the same wording.
  * It renders as direct children of the screen's scroll view so a question can be scrolled to.
  */
-export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSaveState }: { application: StudentApplication; userId: string; onScrollTo: (y: number) => void; onSubmitted: () => void; onSaveState?: (state: AutosaveState) => void }) {
+export function DraftForm({ application, userId, alumni = false, onScrollTo, onSubmitted, onSaveState }: { application: StudentApplication; userId: string; alumni?: boolean; onScrollTo: (y: number) => void; onSubmitted: () => void; onSaveState?: (state: AutosaveState) => void }) {
   const { colors, radius } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -68,7 +69,8 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSave
   }
 
   const autosave = useAutosave<Responses>({
-    identity: `application:${application.id}`, owner: userId, value: responses, restore: setResponses, serialize: serializeResponses,
+    // Alumni keep their drafts to read; the server refuses every edit, so nothing is autosaved.
+    identity: `application:${application.id}`, owner: userId, value: responses, restore: setResponses, serialize: serializeResponses, enabled: !alumni,
     save: async snapshot => {
       const sent = outgoing(snapshot);
       try {
@@ -87,7 +89,7 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSave
   const saveState = autosave.state;
   useEffect(() => { onSaveState?.(saveState); return () => onSaveState?.("idle"); }, [saveState, onSaveState]);
 
-  const locked = busy !== null || autosave.recovery != null;
+  const locked = alumni || busy !== null || autosave.recovery != null;
   // Follow-up questions appear only after the answer they depend on.
   const visible = visibleQuestionIds(questions, answers);
   const shown = questions.filter(question => visible.has(question.id));
@@ -257,13 +259,15 @@ export function DraftForm({ application, userId, onScrollTo, onSubmitted, onSave
         </View>
       ) : null}
 
-      <View style={{ gap: 12 }}>
-        <Text variant="caption">Your draft saves automatically. Nothing is submitted until you confirm.</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <Button testID="draft-save" variant="secondary" label="Save draft" loading={busy === "save"} disabled={locked} onPress={() => void persist(false)} />
-          <Button testID="draft-review" label="Review & submit" loading={busy === "submit"} disabled={locked || closed} onPress={() => void review()} />
+      {alumni ? <AlumniBanner action="apply" testID="draft-alumni" /> : (
+        <View style={{ gap: 12 }}>
+          <Text variant="caption">Your draft saves automatically. Nothing is submitted until you confirm.</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <Button testID="draft-save" variant="secondary" label="Save draft" loading={busy === "save"} disabled={locked} onPress={() => void persist(false)} />
+            <Button testID="draft-review" label="Review & submit" loading={busy === "submit"} disabled={locked || closed} onPress={() => void review()} />
+          </View>
         </View>
-      </View>
+      )}
 
       <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 14 }}>
         <Press onPress={() => setProfileOpen(open => !open)} accessibilityLabel="Shared profile & requirements" accessibilityState={{ expanded: profileOpen }} style={{ minHeight: TARGET + 4, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>

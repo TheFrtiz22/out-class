@@ -60,7 +60,7 @@ export default function ApplicationScreen() {
                 <Text variant="caption" style={{ flexShrink: 1 }}>{app.deadlineLabel ? `Deadline ${app.deadlineLabel}` : "Deadline not published"}</Text>
               </View>
             </ApplicationHeading>
-            <DraftForm key={app.id} application={app} userId={view.data!.userId} onSaveState={setSaveState}
+            <DraftForm key={app.id} application={app} userId={view.data!.userId} alumni={view.data!.alumni} onSaveState={setSaveState}
               onScrollTo={y => scroll.current?.scrollTo({ y: Math.max(0, y - top - 12), animated: true })}
               onSubmitted={() => { setNotice("Your application was submitted successfully."); scroll.current?.scrollTo({ y: 0, animated: false }); }} />
           </>
