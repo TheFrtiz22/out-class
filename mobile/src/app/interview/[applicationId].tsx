@@ -134,7 +134,7 @@ export default function InterviewScreen() {
           schedule.error instanceof ApiError && !schedule.error.offline && schedule.error.status < 500 ? (
             // A refusal (no invitation for this round, the club paused, a bad link) is an answer, not a failed load.
             <Card tone="soft" accessibilityRole="alert" style={{ gap: 10 }}>
-              <Text variant="body" color={colors.foreground}>{schedule.error.message}</Text>
+              <Text variant="body" color={colors.foreground}>{schedule.error.status === 400 ? "This interview link isn’t valid. Open the interview from your application instead." : schedule.error.message}</Text>
               <Text variant="small">If the club invited you recently, pull down to check again or open your application for its current status.</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 <Button variant="secondary" size="compact" label="Back to application" onPress={() => (router.canGoBack() ? router.back() : applicationId ? router.replace({ pathname: "/application/[id]", params: { id: applicationId } }) : router.replace("/applications"))} />
