@@ -1,0 +1,20 @@
+# Host, with the room on screen (leader-voting-open.yaml): start the session and open voting on the first applicant.
+appId: net.outclass.app
+---
+- runFlow:
+    when:
+      visible:
+        id: "voting-start"
+    commands:
+      - tapOn:
+          id: "voting-start"
+- extendedWaitUntil:
+    visible:
+      id: "voting-open"
+    timeout: 30000
+- tapOn:
+    id: "voting-open"
+- extendedWaitUntil:
+    visible:
+      id: "voting-close"
+    timeout: 30000

@@ -4,6 +4,7 @@ import { prisma } from "@/utils/prisma"
 import { getSessionUser } from "@/utils/auth"
 import { platformViewSession } from "@/utils/platform-view-as"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
+import { mobileRequest } from "@/utils/mobile-request"
 import { DEFAULT_SCHOOL, schoolKeyFromHost, type SchoolScope } from "@/lib/school-host"
 
 const schoolFields = { id: true, key: true } as const
@@ -41,7 +42,8 @@ async function schoolForUser(userId: string): Promise<SchoolScope | null> {
 /** The effective account: a valid support session's target, otherwise the verified session user.
  * An invalid or expired view-as cookie falls back to the signed-in account, never to the host. */
 async function viewerUserId(): Promise<string | null> {
-  if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) {
+  // The native app's bearer session never consults cookies (utils/mobile-request.ts; getSessionUser verifies the bearer).
+  if (!mobileRequest() && (await cookies()).has(PLATFORM_VIEW_COOKIE)) {
     const target = (await platformViewSession().catch(() => null))?.targetUserId
     if (target) return target
   }

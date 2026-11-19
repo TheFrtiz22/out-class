@@ -1,0 +1,11 @@
+# Inbox -> Notification settings sheet (web: /inbox?tab=preferences).
+appId: net.outclass.app
+---
+- tapOn:
+    id: "tab-inbox"
+- tapOn:
+    id: "inbox-settings"
+- extendedWaitUntil:
+    visible:
+      id: "preferences-save"
+    timeout: 90000

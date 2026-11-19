@@ -58,7 +58,9 @@ test('fk covering indexes: every foreign key covered, idempotent, rows and grant
 
     await db.exec(sql)
     assert.equal((await db.query(`SELECT count(*)::int n FROM pg_indexes WHERE schemaname='public' AND indexname = ANY($1)`, [statements.map(s => s.name)])).rows[0].n, statements.length, 're-run is a no-op')
-    assert.deepEqual((await db.query(grants)).rows, grantsBefore, 'grants unchanged')
+    // Later migrations may add tables (with their own grants); every table that existed before keeps its grants.
+    const tablesBefore = new Set(grantsBefore.map(row => row.table_name))
+    assert.deepEqual((await db.query(grants)).rows.filter(row => tablesBefore.has(row.table_name)), grantsBefore, 'grants unchanged')
     assert.equal((await db.query(`SELECT count(*)::int n FROM "Club" WHERE id='club'`)).rows[0].n, 1, 'existing rows kept')
     await db.exec(`DELETE FROM "User" WHERE id='alice'`)
   } finally { await db.close() }

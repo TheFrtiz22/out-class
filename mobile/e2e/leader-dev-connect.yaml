@@ -1,0 +1,18 @@
+# Development builds only: open the dev client on a Metro server. METRO_PORT defaults to the shared 8081;
+# pass `-e METRO_PORT=<port>` to use another Metro (routes added after a Metro started need a fresh one).
+appId: net.outclass.app
+env:
+  METRO_PORT: ${METRO_PORT || '8081'}
+---
+- launchApp:
+    clearState: false
+- openLink: "outclass://expo-development-client/?url=http%3A%2F%2Flocalhost%3A${METRO_PORT}"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit|home-screen"
+    timeout: 240000

@@ -1,0 +1,21 @@
+# Explore on the JS already loaded (no relaunch): open the tab and wait for the directory.
+# Opens by link so the flow does not depend on the dock.
+appId: net.outclass.app
+---
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- runFlow:
+    when:
+      visible: "Dismiss"
+    commands:
+      - tapOn: "Dismiss"
+- openLink: "outclass://explore"
+- extendedWaitUntil:
+    visible:
+      id: "explore-count"
+    timeout: 60000
+- assertVisible:
+    id: "explore-club-0"

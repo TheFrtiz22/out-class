@@ -15,7 +15,7 @@ test('web push migration: unique endpoint, one delivery per notification and sub
     const sub = (id, user, endpoint) => db.exec(`INSERT INTO "WebPushSubscription"(id,"userId",endpoint,p256dh,auth) VALUES('${id}','${user}','${endpoint}','p','a')`)
     await sub('s1', 'alice', 'https://fcm.googleapis.com/fcm/send/1')
     await assert.rejects(sub('s2', 'bob', 'https://fcm.googleapis.com/fcm/send/1'), /duplicate|unique/i, 'endpoint is unique')
-    await assert.rejects(sub('s3', 'bob', 'http://fcm.googleapis.com/x'), /endpoint_https/)
+    await assert.rejects(sub('s3', 'bob', 'http://fcm.googleapis.com/x'), /endpoint_(https|shape)/)
     const row = (await db.query(`SELECT "failureCount","lastSuccessAt","createdAt" FROM "WebPushSubscription" WHERE id='s1'`)).rows[0]
     assert.equal(row.failureCount, 0); assert.equal(row.lastSuccessAt, null); assert.ok(row.createdAt)
 

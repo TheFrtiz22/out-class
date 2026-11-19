@@ -1,0 +1,47 @@
+# Books an interview for the staging student's bookable application, checks the confirmation,
+# then cancels it, leaving the application unbooked as it started.
+appId: net.outclass.app
+---
+- launchApp:
+    clearState: false
+- runFlow: apply-ready.yaml
+- openLink: "outclass://interview/16e1fc5c-795e-484d-8826-973721f6996c"
+- extendedWaitUntil:
+    visible:
+      id: "interview-day-heading"
+    timeout: 90000
+- assertVisible: "Book your interview"
+- assertVisible: "Eastern Time"
+- scrollUntilVisible:
+    element:
+      id: "interview-slot"
+    direction: DOWN
+- tapOn:
+    id: "interview-slot"
+    index: 0
+- assertVisible:
+    id: "confirm-sheet"
+- assertVisible: "Confirm interview"
+- takeScreenshot: .shots/applications/flow-interview-confirm
+- tapOn:
+    id: "confirm-accept"
+- scrollUntilVisible:
+    element:
+      id: "interview-booking"
+    direction: UP
+    timeout: 90000
+- assertVisible: "Interview confirmed"
+- assertVisible: "Your interview"
+- takeScreenshot: .shots/applications/flow-interview-booked
+- tapOn:
+    id: "interview-cancel"
+- assertVisible: "Release your reserved time?"
+- takeScreenshot: .shots/applications/flow-interview-cancel-confirm
+- tapOn:
+    id: "confirm-accept"
+- extendedWaitUntil:
+    visible: "Booking cancelled. Your reserved time has been released."
+    timeout: 90000
+- assertNotVisible:
+    id: "interview-booking"
+- takeScreenshot: .shots/applications/flow-interview-cancelled

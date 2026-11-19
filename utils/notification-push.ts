@@ -1,6 +1,6 @@
 import { prisma } from "@/utils/prisma";
 import { optionalEmailAllowed } from "@/lib/communications-policy";
-import { buildPushPayload, parsePushSubscription, PUSH_MAX_AGE_MS, PUSH_MAX_FAILURES, webPushConfig } from "@/lib/web-push";
+import { buildPushPayload, nativePushConfig, nativePushToken, parsePushSubscription, pushRecipients, PUSH_MAX_AGE_MS, PUSH_MAX_FAILURES, webPushConfig } from "@/lib/web-push";
 import { notificationStillCurrent } from "@/utils/notification-currency";
 
 // Web Push (S1-8) is an extra channel on top of the notification email outbox, never a
@@ -25,10 +25,13 @@ const URL_BASE = "https://outclass.invalid";
 /** Called after the email grouping transaction commits. Errors are logged, never thrown. */
 export async function enqueueNotificationPushes(userId: string, notifications: { id: string; createdAt: Date }[], now = Date.now()) {
   try {
-    if (!webPushConfig()) return 0;
+    // Native push (the app) is a second channel of this same path: its devices are rows of the same table.
+    const enabled = { web: !!webPushConfig(), native: !!nativePushConfig() };
+    if (!enabled.web && !enabled.native) return 0;
     const fresh = notifications.filter(notification => now - +notification.createdAt < PUSH_MAX_AGE_MS);
     if (!fresh.length) return 0;
-    const subscriptions = await prisma.webPushSubscription.findMany({ where: { userId, failureCount: { lt: PUSH_MAX_FAILURES } }, select: { id: true } });
+    // One push per event per device: a phone with the app does not also get its browser's web push.
+    const subscriptions = pushRecipients(await prisma.webPushSubscription.findMany({ where: { userId, failureCount: { lt: PUSH_MAX_FAILURES } }, select: { id: true, kind: true, platform: true } }), enabled);
     let created = 0;
     // One insert per subscription, so a subscription deleted in between (FK 23503) skips only itself.
     for (const subscription of subscriptions) {
@@ -60,11 +63,30 @@ export function transientPushError(status: number | undefined) {
 }
 
 type Sender = Pick<typeof import("web-push"), "sendNotification">;
-type Options = { startedAt?: number; now?: () => number; sender?: Sender };
+/** Sends one native push. Resolves "gone" when the push service says the device token is no longer registered. */
+export type NativeSender = (message: { to: string; title: string; body: string; data: { url: string } }, options: { accessToken: string | null; url: string; timeout: number }) => Promise<"sent" | "gone">;
+type Options = { startedAt?: number; now?: () => number; sender?: Sender; nativeSender?: NativeSender };
 
-export async function processNotificationPushes(limit = 50, { startedAt, now = Date.now, sender }: Options = {}) {
-  const config = webPushConfig();
-  if (!config) return { enabled: false, sent: 0, failed: 0, skipped: 0, removed: 0, pruned: 0 };
+/** Expo's push service. A non-2xx answer or a ticket error other than DeviceNotRegistered throws with `statusCode`. */
+export const expoPushSender: NativeSender = async (message, { accessToken, url, timeout }) => {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+    body: JSON.stringify({ ...message, sound: "default", priority: "default", ttl: 3600, channelId: "default" }),
+    signal: AbortSignal.timeout(timeout),
+  });
+  if (!response.ok) throw Object.assign(new Error("Expo push request failed"), { statusCode: response.status });
+  const ticket = ((await response.json()) as { data?: { status?: string; details?: { error?: string } } | { status?: string; details?: { error?: string } }[] }).data;
+  const first = Array.isArray(ticket) ? ticket[0] : ticket;
+  if (first?.status === "ok") return "sent";
+  if (first?.details?.error === "DeviceNotRegistered") return "gone";
+  // InvalidCredentials, MessageTooBig, MessageRateExceeded: 429 is transient, the rest count against the device.
+  throw Object.assign(new Error("Expo push ticket error"), { statusCode: first?.details?.error === "MessageRateExceeded" ? 429 : 400 });
+};
+
+export async function processNotificationPushes(limit = 50, { startedAt, now = Date.now, sender, nativeSender = expoPushSender }: Options = {}) {
+  const config = webPushConfig(), native = nativePushConfig();
+  if (!config && !native) return { enabled: false, sent: 0, failed: 0, skipped: 0, removed: 0, pruned: 0 };
   const start = startedAt ?? now();
   let sent = 0, failed = 0, skipped = 0, removed = 0, pruned = 0;
   if (now() - start > BUDGET_MS) return { enabled: true, sent, failed, skipped, removed, pruned, deferred: true };
@@ -72,7 +94,7 @@ export async function processNotificationPushes(limit = 50, { startedAt, now = D
   const expired = await prisma.webPushDelivery.findMany({ where: { createdAt: { lt: new Date(now() - RETENTION_MS) } }, take: RETENTION_BATCH, select: { notificationId: true, subscriptionId: true } });
   if (expired.length) pruned = (await prisma.webPushDelivery.deleteMany({ where: { OR: expired } })).count;
   // Loaded only when push is configured, so the email worker never depends on it.
-  const push: Sender = sender ?? await import("web-push");
+  const push: Sender | null = config ? sender ?? await import("web-push") : null;
   const pending = await prisma.webPushDelivery.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" }, take: Math.max(1, Math.min(limit, 100)), select: { notificationId: true, subscriptionId: true } });
   for (const key of pending) {
     if (now() - start > BUDGET_MS) break;
@@ -86,8 +108,11 @@ export async function processNotificationPushes(limit = 50, { startedAt, now = D
     });
     if (!row) continue;
     const { notification, subscription } = row;
-    const stored = parsePushSubscription({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } });
-    if (!stored || stored.endpoint !== subscription.endpoint) {
+    const deviceToken = subscription.kind === "EXPO" ? nativePushToken(subscription.endpoint) : null;
+    const stored = subscription.kind === "EXPO" ? null : parsePushSubscription({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } });
+    // A channel switched off after queueing: leave the row out rather than send through it.
+    if (subscription.kind === "EXPO" ? !native : !config || !push) { await skip(); continue; }
+    if (subscription.kind === "EXPO" ? !deviceToken : !stored || stored.endpoint !== subscription.endpoint) {
       // Never POST to an endpoint that would not be accepted today.
       await prisma.webPushSubscription.deleteMany({ where: { id: subscription.id } });
       removed++; continue;
@@ -104,10 +129,15 @@ export async function processNotificationPushes(limit = 50, { startedAt, now = D
     const timeout = Math.min(SEND_TIMEOUT_MS, HARD_STOP_MS - (now() - start));
     if (timeout < 1000) { await prisma.webPushDelivery.updateMany({ where: { ...key, status: "SENDING" }, data: { status: "PENDING" } }); break; }
     try {
-      await push.sendNotification(
+      if (subscription.kind === "EXPO") {
+        const payload = buildPushPayload(notification);
+        // The same lock-screen-safe payload as the web: a category, a club name for club-wide updates, a path.
+        const outcome = await nativeSender({ to: deviceToken!, title: payload.title, body: payload.body, data: { url: payload.url } }, { accessToken: native!.accessToken, url: native!.url, timeout });
+        if (outcome === "gone") { await prisma.webPushSubscription.deleteMany({ where: { id: subscription.id } }); removed++; continue; }
+      } else await push!.sendNotification(
         { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
         JSON.stringify(buildPushPayload(notification)),
-        { vapidDetails: { subject: config.subject, publicKey: config.publicKey, privateKey: config.privateKey }, TTL: 3600, urgency: "normal", timeout },
+        { vapidDetails: { subject: config!.subject, publicKey: config!.publicKey, privateKey: config!.privateKey }, TTL: 3600, urgency: "normal", timeout },
       );
       await prisma.webPushDelivery.updateMany({ where: { ...key, status: "SENDING" }, data: { status: "SENT" } });
       await prisma.webPushSubscription.updateMany({ where: { id: subscription.id }, data: { lastSuccessAt: new Date(now()), failureCount: 0 } });

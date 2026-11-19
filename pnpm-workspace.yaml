@@ -1,5 +1,8 @@
 packages:
   - "."
+  # Native app and the tokens/types it shares with the web app (docs/mobile/architecture.md).
+  - "mobile"
+  - "packages/*"
 
 # Keep Next's transitive parsers/image libraries on patched versions.
 overrides:

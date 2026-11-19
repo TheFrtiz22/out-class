@@ -41,6 +41,14 @@ database-backed end-to-end test of issue → `/q` → check-in → leader report
 current coverage is `tests/meetings.test.cjs` and
 `tests/qr-branded-system.test.cjs` with mocked Prisma.
 
+## Door mode and the personal check-in pass: removed (2026-11-19)
+
+The native app briefly had a personal check-in pass that a leader scanned in "door mode". The owner
+asked for it to be removed, so the pass screen, door mode, the Home row, the app-icon shortcut and the
+`checkInPass.*` mobile operations are gone. Students check in only by scanning the room's code.
+The `MeetingCheckInPass` table (migration `20261118120000_meeting_check_in_pass`) stays: it is empty,
+server-only and deleted with an account; dropping it would need a new migration.
+
 ## Short-link security boundary
 
 - `actions/short-links.ts` exports a single browser-callable action,

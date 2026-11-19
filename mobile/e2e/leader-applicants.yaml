@@ -1,0 +1,16 @@
+# Leader: Applicant glance, opened by its app link (the route Leader tools -> Applicants pushes) (round counts, list, round filter, server search).
+appId: net.outclass.app
+---
+- runFlow: leader-sign-in.yaml
+- openLink: "outclass://leader/253d3ff8-35eb-4619-81bf-c7c195bbf4fe/applicants"
+- extendedWaitUntil:
+    visible:
+      id: "applicants-total"
+    timeout: 30000
+- tapOn:
+    id: "applicants-search"
+- inputText: "Arch"
+- extendedWaitUntil:
+    visible:
+      id: "applicants-total"
+    timeout: 20000

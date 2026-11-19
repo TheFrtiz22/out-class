@@ -1,0 +1,11 @@
+# Profile -> Edit profile -> Name & photo -> Choose photo (opens the system photo picker).
+# Follow with profile-photo-choose.yaml then profile-photo-confirm.yaml.
+appId: net.outclass.app
+---
+- runFlow: dev-connect.yaml
+- runFlow:
+    file: profile-edit.yaml
+    env:
+      SECTION: identity
+- tapOn:
+    id: "profile-photo-library"

@@ -47,7 +47,7 @@ test('canonical interview/voting projection hides historical Bio/subsections and
 });
 test('identity updates persist the headshot while leaving historical bio and academic data untouched',async()=>{
   let stored={headshotUrl:null,bio:'Historical',actEnglish:34};
-  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/graduation':profileTx.graduation(),'@/utils/prisma':{prisma:profileTx.withProfileTransaction({studentProfile:{update:async({where,data})=>{assert.equal(where.userId,owner);stored={...stored,...data};return stored},findUnique:async()=>stored}})},'next/cache':{revalidatePath(){}}});
+  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/graduation':profileTx.graduation(),'@/utils/prisma':{prisma:profileTx.withProfileTransaction({studentProfile:{update:async({where,data})=>{assert.equal(where.userId,owner);stored={...stored,...data};return stored},findUnique:async()=>stored}})},'next/cache':{revalidatePath(){}}});
   await api.updateStudentProfileSection({section:'identity',firstName:'Jordan',lastName:'Avery',headshotUrl:`${owner}/new.png`,bio:'Forged'});
   assert.equal(stored.headshotUrl,`${owner}/new.png`);assert.equal(stored.bio,'Historical');assert.equal(stored.actEnglish,34);
   const refreshed=await api.getStudentProfile();assert.equal(refreshed.profile.headshotUrl,stored.headshotUrl);
@@ -58,7 +58,7 @@ function uploads({deny=false,publicBucket=false,error=false}={}) {
   process.env.SUPABASE_SECRET_KEY='test-only';
   const bucket={createSignedUploadUrl:async(path)=>({data:{signedUrl:'https://signed',token:'token',path}}),getPublicUrl:path=>({data:{publicUrl:`https://storage.example.com/${path}`}}),uploadToSignedUrl:async(path,token,bytes,opts)=>{writes.push({path,token,bytes,opts});return{error:error?{}:null}}};
   const client={storage:{from:()=>bucket}};
-  const api=unwrapActions(load('actions/storage.ts',{'@/utils/auth':{requireAuth:async()=>{if(deny)throw Error('Denied');return{user:{id:owner}}}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'@/utils/supabase/server':{createClient:async()=>client},'next/headers':{cookies:async()=>({})},'@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}}),from:()=>({list:async()=>({data:[],error:null})})}})}}));
+  const api=unwrapActions(load('actions/storage.ts',{'@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth':{requireAuth:async()=>{if(deny)throw Error('Denied');return{user:{id:owner}}}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'@/utils/supabase/server':{createClient:async()=>client},'next/headers':{cookies:async()=>({})},'@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}}),from:()=>({list:async()=>({data:[],error:null})})}})}}));
   return {api,writes};
 }
 function form(bytes=fs.readFileSync('public/demo/sample-resume.pdf'),kind='resume',mime='application/pdf') {const data=new FormData();data.set('kind',kind);data.set('file',new Blob([bytes],{type:mime}),kind==='resume'?'resume.pdf':'photo.png');return data}
@@ -80,7 +80,7 @@ test('interview uses a narrow panel while the leader workspace retains the share
 
 test('profile link edits store normalized external URLs without weakening private-key ownership',async()=>{
   let saved;
-  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/graduation':profileTx.graduation(),'@/utils/prisma':{prisma:profileTx.withProfileTransaction({studentProfile:{update:async({data})=>{saved=data;return data}}})},'next/cache':{revalidatePath(){}}});
+  const api=load('actions/profile.ts',{'@/utils/terms-acceptance':TERMS,'@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/graduation':profileTx.graduation(),'@/utils/prisma':{prisma:profileTx.withProfileTransaction({studentProfile:{update:async({data})=>{saved=data;return data}}})},'next/cache':{revalidatePath(){}}});
   const result=await api.updateStudentProfileSection({section:'links',linkedinUrl:'linkedin.com/in/example',resumeUrl:'example.com/resume.pdf'});assert.ok(!result.error);assert.equal(saved.resumeUrl,'https://example.com/resume.pdf');assert.equal(saved.linkedinUrl,'https://linkedin.com/in/example');
   assert.ok((await api.updateStudentProfileSection({section:'links',linkedinUrl:null,resumeUrl:'00000000-0000-4000-8000-000000000001/private.pdf'})).error);
 });

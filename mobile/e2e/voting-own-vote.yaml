@@ -1,0 +1,24 @@
+# In the room: switch to "Your vote" (a leader who may also vote), join if needed, and cast Pass.
+appId: net.outclass.app
+---
+- scrollUntilVisible:
+    element: "Your vote"
+    direction: UP
+- tapOn: "Your vote"
+- runFlow:
+    when:
+      visible:
+        id: "voting-join-button"
+    commands:
+      - tapOn:
+          id: "voting-join-button"
+- scrollUntilVisible:
+    element:
+      id: "voting-choice-accept"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "voting-choice-accept"
+- extendedWaitUntil:
+    visible: "Vote recorded · Pass"
+    timeout: 20000

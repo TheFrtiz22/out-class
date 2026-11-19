@@ -1,0 +1,12 @@
+# Interview day: enter the next interview and wait for the saved notes.
+appId: net.outclass.app
+---
+- tapOn:
+    id: "interview-enter"
+- extendedWaitUntil:
+    visible:
+      id: "interview-notes-field"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "All changes saved"
+    timeout: 20000

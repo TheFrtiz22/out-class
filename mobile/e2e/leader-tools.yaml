@@ -1,0 +1,26 @@
+# Release build: the staging leader opens Leader tools, host check-in and announce.
+appId: net.outclass.app
+---
+- runFlow:
+    file: release-sign-in.yaml
+    env:
+      EMAIL: ${LEADER_EMAIL}
+      PASSWORD: ${LEADER_PASSWORD}
+- scrollUntilVisible:
+    element:
+      id: "home-leader-tools"
+- takeScreenshot: leader-01-home
+- tapOn:
+    id: "home-leader-tools"
+- extendedWaitUntil:
+    visible:
+      id: "leader-hub"
+    timeout: 30000
+- takeScreenshot: leader-02-hub
+- tapOn:
+    id: "leader-host-check-in"
+- extendedWaitUntil:
+    visible:
+      id: "host-code"
+    timeout: 30000
+- takeScreenshot: leader-03-host-check-in

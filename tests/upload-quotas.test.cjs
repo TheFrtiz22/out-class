@@ -41,7 +41,7 @@ function profileHarness(recentCount, listError = null) {
     from: bucket => ({ list: async (folder, options) => { calls.push({ step: 'list', bucket, folder, options }); return listError ? { data: null, error: listError } : { data: recent, error: null } } }),
   } }
   const api = unwrapActions(load('actions/storage.ts', {
-    '@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }) },
+    '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }) },
     '@/utils/support-audit': { auditSupportAction: async () => {} },
     'next/headers': { cookies: async () => ({}) },
     '@supabase/supabase-js': { createClient: () => admin },
@@ -88,7 +88,7 @@ function flyerHarness({ userRecent = 0, clubRecent = 0, clubBytes = 0 } = {}) {
   }
   const api = unwrapActions(load('actions/event-flyers.ts', {
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
-    '@/utils/auth': { requireClubPermission: async () => ({ user: { id: owner } }) },
+    '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth': { requireClubPermission: async () => ({ user: { id: owner } }) },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx), $executeRaw: async () => {} } },
     '@/utils/event-flyer-storage': { privateFlyerStorage: async () => ({ upload: async () => { calls.push({ step: 'upload' }); return { error: null } }, remove: async () => ({ error: null }) }) },
     '@/utils/support-audit': { auditSupportAction: async () => {} },
@@ -157,7 +157,7 @@ function clubHarness({ failSum = false } = {}) {
   })
   const common = {
     '@/utils/prisma': { prisma }, '@/utils/club-asset-storage': storageModule,
-    '@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }), requireClubPermission: async () => ({ user: { id: owner } }) },
+    '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }), requireClubPermission: async () => ({ user: { id: owner } }) },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
   }
   const assets = unwrapActions(load('actions/club-assets.ts', { ...common,

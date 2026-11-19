@@ -1,0 +1,24 @@
+# Host, with a ballot open: close the vote (confirming an early close if ballots are missing) and stop on the closed totals.
+appId: net.outclass.app
+---
+- scrollUntilVisible:
+    element:
+      id: "voting-status"
+    direction: UP
+- scrollUntilVisible:
+    element:
+      id: "voting-close"
+    direction: DOWN
+- tapOn:
+    id: "voting-close"
+- runFlow:
+    when:
+      visible:
+        id: "confirm-accept"
+    commands:
+      - tapOn:
+          id: "confirm-accept"
+- extendedWaitUntil:
+    visible:
+      id: "voting-totals"
+    timeout: 30000

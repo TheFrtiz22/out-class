@@ -193,7 +193,7 @@ test('school hosts: <key>.out-class.net names a school; www, the apex and previe
 })
 
 test('viewer school: the account school wins over the host; then the host school; then the launch school', async () => {
-  const resolve = async ({ host, userId = null, user = null, emailSchool = null, schools = [SCHOOLS.uva, SCHOOLS.tech].map(s => ({ ...s, active: true })), platformView = null, viewCookie = !!platformView }) => {
+  const resolve = async ({ host, userId = null, user = null, emailSchool = null, schools = [SCHOOLS.uva, SCHOOLS.tech].map(s => ({ ...s, active: true })), platformView = null, viewCookie = !!platformView, mobile = false }) => {
     const prisma = {
       user: { findUnique: async ({ where }) => (where.id === userId ? user : null) },
       schoolIdentifierType: { findFirst: async ({ where }) => { assert.deepEqual(where.school, { active: true }); return emailSchool && where.emailDomain === emailSchool.domain ? { school: emailSchool.school } : null } },
@@ -204,10 +204,11 @@ test('viewer school: the account school wins over the host; then the host school
       'next/headers': { cookies: async () => ({ has: () => viewCookie }), headers: async () => ({ get: name => (name === 'host' ? host : null) }) },
       '@/utils/prisma': { prisma },
       // With a valid support session the signed-in Auth user is the administrator, not the target.
-      '@/utils/auth': { getSessionUser: async () => ({ data: { user: platformView ? { id: 'admin' } : userId ? { id: userId } : null } }) },
+      '@/utils/auth': { getSessionUser: async () => ({ data: { user: platformView && !mobile ? { id: 'admin' } : userId ? { id: userId } : null } }) },
       '@/utils/platform-view-as': { platformViewSession: async () => platformView },
       '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'view' },
       '@/lib/school-host': schoolHost(),
+      '@/utils/mobile-request': { mobileRequest: () => (mobile ? { token: 'bearer', write: false } : undefined) },
     })
     const { id, key } = await scope.resolveViewerSchool()
     return { id, key }
@@ -233,6 +234,8 @@ test('viewer school: the account school wins over the host; then the host school
     assert.deepEqual(await resolve({ host: 'www.out-class.net', userId: 'target', user: techStudent, platformView: { targetUserId: 'target' } }), SCHOOLS.tech)
     // A junk or expired view-as cookie falls back to the signed-in account's school, never the host's.
     assert.deepEqual(await resolve({ host: 'uva.out-class.net', userId: 'u1', user: techStudent, viewCookie: true }), SCHOOLS.tech)
+    // The native app (bearer session): the account's school; cookies are never consulted.
+    assert.deepEqual(await resolve({ host: 'www.out-class.net', userId: 'u1', user: techStudent, mobile: true, viewCookie: true, platformView: { targetUserId: 'someone-else' } }), SCHOOLS.tech)
   } finally { process.env.NODE_ENV = NODE_ENV }
 })
 
@@ -266,6 +269,7 @@ const realScope = ({ host, signedInUser = null }) => load('utils/school-scope.ts
   '@/utils/platform-view-as': { platformViewSession: async () => null },
   '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'view' },
   '@/lib/school-host': schoolHost(),
+  '@/utils/mobile-request': { mobileRequest: () => undefined },
 })
 
 test('share cards depend on the host only: signed-in and signed-out requests on one host get the same card data', async () => {
