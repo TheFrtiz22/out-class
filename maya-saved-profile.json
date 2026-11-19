@@ -1,0 +1,27 @@
+{
+  "firstName": "Maya",
+  "lastName": "Chen",
+  "major": "Mechanical Engineering",
+  "gradYear": 2029,
+  "gpa": "3.82",
+  "phone": "+14345550142",
+  "linkedinUrl": "https://www.linkedin.com/in/maya-chen-example",
+  "resumeAttached": true,
+  "experiences": [
+    {
+      "title": "Chassis Team Member",
+      "subtitle": "Virginia Motorsports",
+      "period": "Sep 2025 - Present"
+    },
+    {
+      "title": "Engineering Intern",
+      "subtitle": "Example Robotics Co.",
+      "period": "June 2025 - August 2025"
+    },
+    {
+      "title": "First-Year Representative",
+      "subtitle": "Engineering Student Council",
+      "period": "Sep 2025 - Present"
+    }
+  ]
+}
