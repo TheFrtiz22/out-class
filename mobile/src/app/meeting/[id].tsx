@@ -5,7 +5,7 @@ import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
 import { ArrowUpRight, CalendarDays, CalendarPlus, MapPin, QrCode } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
+import { Button, Card, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { addToCalendar, easternDateTime } from "~/lib/eastern";
 import { openExternal } from "~/lib/links";
@@ -25,9 +25,11 @@ export default function MeetingScreen() {
   const router = useRouter();
   const top = useHeaderInset();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const meeting = useApiQuery<Meeting>("meetings.meeting", { meetingId: id }, { enabled: !!id });
+  const valid = !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const meeting = useApiQuery<Meeting>("meetings.meeting", { meetingId: id }, { enabled: valid });
   const alumni = useIsAlumni();
   const [note, setNote] = useState("");
+  const [adding, setAdding] = useState(false);
   const data = meeting.data;
   const links = resources(data?.resources);
   const upcoming = data ? +new Date(data.endDate || data.date) >= Date.now() : false;
@@ -35,7 +37,9 @@ export default function MeetingScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} refreshing={meeting.isRefetching} onRefresh={() => meeting.refetch()} testID="meeting-screen">
-        {meeting.isPending ? (
+        {!valid ? (
+          <Card><EmptyState icon={CalendarDays} title="Meeting unavailable" body="This link doesn’t point to a meeting. Check the link or ask the club for a new one." /></Card>
+        ) : meeting.isPending ? (
           <>
             <View style={{ gap: 10 }}><Skeleton width="45%" /><Skeleton width="80%" height={30} /><Skeleton width="70%" /></View>
             <Card style={{ gap: 10 }}><Skeleton width="30%" height={18} /><Skeleton /><Skeleton width="85%" /></Card>
@@ -60,12 +64,16 @@ export default function MeetingScreen() {
             </View>
 
             <View style={{ gap: 10 }}>
-              <Button full variant="secondary" icon={CalendarPlus} testID="meeting-add-calendar" label="Add to Calendar"
+              <Button full variant="secondary" icon={CalendarPlus} testID="meeting-add-calendar" label="Add to Calendar" loading={adding}
                 onPress={async () => {
-                  const result = await addToCalendar({ title: data.title, start: data.date, end: data.endDate, location: data.location, notes: [data.club.name, data.description].filter(Boolean).join("\n") });
-                  setNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : "");
+                  if (adding) return;
+                  setAdding(true); setNote("");
+                  try {
+                    const result = await addToCalendar({ title: data.title, start: data.date, end: data.endDate, location: data.location, notes: [data.club.name, data.description].filter(Boolean).join("\n") });
+                    setNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : result === "saved" ? "Added to your calendar." : "");
+                  } finally { setAdding(false); }
                 }} />
-              {note ? <Text variant="small" accessibilityRole="alert">{note}</Text> : null}
+              {note ? <Text variant="small" color={colors.foreground} accessibilityRole="alert">{note}</Text> : null}
             </View>
 
             {(["agenda", "recap"] as const).map(key => (

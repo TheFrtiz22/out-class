@@ -43,6 +43,17 @@ export function relativeDue(value: string | null, now = Date.now()): string {
 export const requirementsLabel = (task: ClubTask) => task.kind === "PROJECT" ? "Project"
   : task.requirements?.length ? task.requirements.map(type => ({ TEXT: "Written response", LINK: "Link", FILE: "File upload" } as Record<string, string>)[type] ?? type).join(" + ") : "Written response, link, or file";
 
+/** A submission link as lib/tasks.ts `safeTaskLink` accepts it ("" for none), completing a missing https://; null when unusable. */
+export function taskLink(value: string): string | null {
+  const text = value.trim();
+  if (!text) return "";
+  const address = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text.replace(/^\/+/, "")}`;
+  try {
+    const url = new URL(address);
+    return /^https?:$/.test(url.protocol) && !url.username && !url.password && url.hostname.includes(".") && address.length <= 2000 ? address : null;
+  } catch { return null; }
+}
+
 export type TaskResource = { label: string; url: string };
 export function taskResources(task: ClubTask): TaskResource[] {
   if (!Array.isArray(task.resources)) return [];
