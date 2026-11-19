@@ -25,14 +25,21 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
 });
 
+/** Android 13+ shows the permission prompt only once the app has a notification channel. */
+async function ensureChannel() {
+  if (Platform.OS === "android") await Notifications.setNotificationChannelAsync("default", { name: "OutClass", importance: Notifications.AndroidImportance.DEFAULT }).catch(() => null);
+}
+
 let cachedToken: string | null = null;
-/** This device's Expo push token, or null when it cannot have one (no project ID, no push service). */
+/** This device's Expo push token, or null when it cannot have one (no project ID, no push service, an emulator without one). */
 async function deviceToken(): Promise<string | null> {
   if (cachedToken) return cachedToken;
-  if (!projectId) return null;
+  if (!projectId || !pushSupported) return null;
   try {
-    if (Platform.OS === "android") await Notifications.setNotificationChannelAsync("default", { name: "OutClass", importance: Notifications.AndroidImportance.DEFAULT });
-    cachedToken = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    await ensureChannel();
+    // Registration waits on the platform's push service, which can stall on a poor connection.
+    const result = await Promise.race([Notifications.getExpoPushTokenAsync({ projectId }), new Promise<null>(resolve => setTimeout(() => resolve(null), 15_000))]);
+    cachedToken = result?.data ?? null;
     return cachedToken;
   } catch (error) {
     reportError(error, "push");
@@ -40,24 +47,34 @@ async function deviceToken(): Promise<string | null> {
   }
 }
 
+/** Whether the system shows this app's notifications (iOS provisional delivery counts). */
+const allowed = (permission: Notifications.NotificationPermissionsStatus) =>
+  permission.granted || permission.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+
 export const push: PushControl = {
   async status() {
-    const permission = await Notifications.getPermissionsAsync();
-    if (!permission.granted) return permission.canAskAgain ? "off" : "denied";
-    const token = await deviceToken();
-    if (!token) return "unavailable";
     try {
-      const settings = await api.get<{ enabled: boolean; subscribed: boolean }>("push.settings", { token, platform });
-      return !settings.enabled ? "unavailable" : settings.subscribed ? "on" : "off";
+      if (!pushSupported) return "unavailable";
+      const permission = await Notifications.getPermissionsAsync();
+      if (!allowed(permission)) return permission.canAskAgain ? "off" : "denied";
+      const token = await deviceToken();
+      if (!token) return "unavailable";
+      const settings = await api.get<{ enabled: boolean; subscribed: boolean } | null>("push.settings", { token, platform });
+      return !settings?.enabled ? "unavailable" : settings.subscribed ? "on" : "off";
     } catch { return "unavailable"; }
   },
   async enable() {
-    let permission = await Notifications.getPermissionsAsync();
-    if (!permission.granted && permission.canAskAgain) permission = await Notifications.requestPermissionsAsync();
-    if (!permission.granted) return false;
-    const token = await deviceToken();
-    if (!token) return false;
-    try { await api.post("push.register", { token, platform }); return true; } catch (error) { reportError(error, "push"); return false; }
+    try {
+      if (!pushSupported) return false;
+      await ensureChannel();
+      let permission = await Notifications.getPermissionsAsync();
+      if (!allowed(permission) && permission.canAskAgain) permission = await Notifications.requestPermissionsAsync();
+      if (!allowed(permission)) return false;
+      const token = await deviceToken();
+      if (!token) return false;
+      await api.post("push.register", { token, platform });
+      return true;
+    } catch (error) { reportError(error, "push"); return false; }
   },
   async disable() {
     const token = await deviceToken();
@@ -68,7 +85,7 @@ export const push: PushControl = {
 
 /** Best effort before sign-out, so a signed-out phone stops receiving that account's pushes. */
 export async function unregisterPushBeforeSignOut() {
-  if (!cachedToken && !(await Notifications.getPermissionsAsync()).granted) return;
+  if (!cachedToken && !(await Notifications.getPermissionsAsync().then(allowed, () => false))) return;
   await Promise.race([push.disable(), new Promise(resolve => setTimeout(resolve, 2500))]);
 }
 
@@ -78,4 +95,5 @@ export function notificationPath(response: Notifications.NotificationResponse | 
   return typeof url === "string" && url.startsWith("/") && !url.startsWith("//") ? url : null;
 }
 
+/** Real devices, and the iOS Simulator (which can register since Xcode 14). An Android emulator usually has no push service. */
 export const pushSupported = Device.isDevice || Platform.OS === "ios";
