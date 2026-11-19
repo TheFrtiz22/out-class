@@ -69,12 +69,11 @@ function Navigation() {
   useEffect(() => {
     QuickActions?.setItems(session ? [
       { id: "scan", title: "Scan", subtitle: "Check in or open a code", icon: Platform.OS === "ios" ? "symbol:qrcode.viewfinder" : undefined, params: { href: "/scan" } },
-      { id: "pass", title: "Check-in pass", subtitle: "Show at the door", icon: Platform.OS === "ios" ? "symbol:person.text.rectangle" : undefined, params: { href: "/pass" } },
     ] : [])?.catch(() => {});
   }, [session]);
   useEffect(() => {
     if (!ready || !session || !QuickActions) return;
-    const go = (action: QuickAction | undefined) => { const href = action?.params?.href; if (href === "/scan" || href === "/pass") router.push(href); };
+    const go = (action: QuickAction | undefined) => { const href = action?.params?.href; if (href === "/scan") router.push(href); };
     go(QuickActions.initial);
     const subscription = QuickActions.addListener(go);
     return () => subscription.remove();
@@ -88,7 +87,6 @@ function Navigation() {
         <Stack.Screen name="sign-in" options={{ animation: "fade" }} />
         <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="q/[code]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
-        <Stack.Screen name="pass" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
       </Stack>
     </>
   );

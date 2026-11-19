@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
-import { ChevronRight, Compass, IdCard } from "~/components/icons";
+import { ChevronRight, Compass, QrCode } from "~/components/icons";
 import { leaderMemberships } from "~/components/leader/access";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, statusTone } from "~/components/ui";
@@ -68,7 +68,7 @@ export default function Home() {
             </Card>
 
             <Card padded={false} style={{ paddingHorizontal: 16 }}>
-              <Row testID="home-pass" leading={<IdCard size={24} color={colors.brandInk} />} title="Check-in pass" detail="Show this at the door" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/pass")} />
+              <Row testID="home-scan" leading={<QrCode size={24} color={colors.brandInk} />} title="Scan to check in" detail="Scan the code shown at a meeting" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/scan")} />
             </Card>
 
             {leaderMemberships(me.data).length ? (

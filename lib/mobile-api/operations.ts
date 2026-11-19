@@ -89,9 +89,6 @@ export const mobileOperations = {
   "meetings.checkIn": operation("POST", z.object({ meetingId: uuid, token: z.string().min(16).max(256) }).strict(), async ({ meetingId, token }) => (await import("@/actions/meetings")).checkInMeeting(meetingId, token)),
   "meetings.checkIn.issue": operation("POST", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).issueMeetingCheckIn(clubId, meetingId)),
   "meetings.checkIn.close": operation("POST", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).closeMeetingCheckIn(clubId, meetingId)),
-  // Door mode: the student's personal pass, and the leader scanning it (actions/check-in-pass.ts)
-  "checkInPass.issue": operation("POST", none, async () => (await import("@/actions/check-in-pass")).issueCheckInPass()),
-  "checkInPass.scan": operation("POST", passthrough, async input => (await import("@/actions/check-in-pass")).scanCheckInPass(input)),
   "meetings.attendance": operation("GET", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).meetingAttendance(clubId, meetingId)),
 
   // Tasks
