@@ -28,7 +28,7 @@ export const routes: RouteCase[] = [
   { file: "(tabs)/inbox", rich: ["Inbox", "Notification 2"], empty: ["Inbox"], error },
   { file: "(tabs)/calendar", rich: ["Calendar"], empty: ["Calendar"], error },
   { file: "(tabs)/profile", rich: [/Maximiliana-Alexandria/], empty: ["Profile"], error },
-  { file: "application/[id]", params: { id: ids.draftApplication }, rich: [`Why do you want to join ${longName}?`], empty: ["No applications yet."], error },
+  { file: "application/[id]", params: { id: ids.draftApplication }, rich: [`Why do you want to join ${longName}?`], empty: ["Application unavailable"], error },
   { file: "applications", rich: ["Applications"], empty: ["Applications"], error },
   { file: "club/[id]", params: { id: ids.applyClub }, rich: [longName], empty: ["This club is no longer available."], error },
   { file: "decision/[applicationId]", params: { applicationId: ids.decidedApplication }, rich: ["Congratulations!"], empty: ["Decision letter unavailable"], error },

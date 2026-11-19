@@ -364,6 +364,7 @@ const rich: FixtureSet = {
     page: { total: 150, baseTotal: 150, next: { id: uuid(1203), direction: "after", scope: "s" } }, profileFields: { major: true, academicYear: true, photo: false },
   },
   "leader.announce.preview": { count: 42, evaluatedAt: at(0) },
+  "leader.announcements": [{ id: uuid(1301), title: "General meeting moved to Rice 130", body: "See you there.", audience: "MEMBERS", publishedAt: at(-1), _count: { notifications: 42 } }],
   "leader.announce": { id: uuid(1300), recipientCount: 42 },
   "leader.interviewRooms": Array.from({ length: 5 }, (_, index) => interviewEntry(index + 1)),
   "leader.interviewSession.open": { id: uuid(1400), revision: 1, draft: { overallReview: "", additionalNotes: "" }, completedAt: null, instructions: "Be kind." },
@@ -405,6 +406,7 @@ const empty: FixtureSet = {
   "leader.overview": { operations: null },
   "leader.pipelinePage": { rounds: [], applications: [], page: { total: 0, baseTotal: 0, next: null }, profileFields: { major: false, academicYear: false, photo: false } },
   "leader.announce.preview": { count: 0, evaluatedAt: at(0) },
+  "leader.announcements": [],
   "leader.interviewRooms": [],
 };
 

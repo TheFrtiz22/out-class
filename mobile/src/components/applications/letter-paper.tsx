@@ -51,7 +51,7 @@ export function LetterPaper({ content, logo }: { content: LetterContent; logo?: 
       </View>
       <View style={{ gap: 2 }}>
         <Text variant="small">{content.date}</Text>
-        <Text variant="small"><Text variant="eyebrow">To  </Text>{content.studentName}</Text>
+        <Text variant="small"><Text variant="eyebrow">To </Text>{content.studentName}</Text>
       </View>
       <Text variant="title" accessibilityRole="header">{content.title}</Text>
       <Text variant="body">Dear {content.studentName},</Text>

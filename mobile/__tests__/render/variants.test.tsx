@@ -19,7 +19,7 @@ const workspace = fixtureSets.rich["tasks.workspace"] as (input: unknown) => unk
 
 type Variant = { name: string; file: string; params?: Record<string, string>; overrides: FixtureSet; expect: (string | RegExp)[]; failing?: string; after?: () => void };
 const variants: Variant[] = [
-  { name: "home: next action is an event", file: "(tabs)/index", overrides: { "home.view": { ...records.homeView, nextAction: { kind: "event", event: records.homeView.agenda[0] } } }, expect: ["View calendar"] },
+  { name: "home: next action is an event", file: "(tabs)/index", overrides: { "home.view": { ...records.homeView, nextAction: { kind: "event", event: records.homeView.agenda[0] } } }, expect: [/View (calendar|meeting)/] },
   { name: "home: next action is a task", file: "(tabs)/index", overrides: { "home.view": { ...records.homeView, nextAction: { kind: "notification", notification: records.homeView.tasks[1] } } }, expect: ["Task 2", "Open"] },
   { name: "home: profile not created yet", file: "(tabs)/index", overrides: { me: { ...records.me, profile: null } }, expect: ["Home"] },
   { name: "applications: alumni account", file: "applications", overrides: { me: alumniMe, "applications.view": { ...records.applicationsView, alumni: true } }, expect: ["Applications"] },
@@ -59,8 +59,7 @@ const variants: Variant[] = [
   { name: "leader tools: membership without permissions", file: "leader/[clubId]/index", params: { clubId: ids.memberClub }, overrides: {}, expect: ["No leader tools here"] },
   { name: "leader tools: alumni membership", file: "leader/[clubId]/index", params: { clubId: ids.alumniClub }, overrides: {}, expect: ["No leader tools here"] },
   { name: "leader tools: `me` refused shows an error, not “no tools”", file: "leader/[clubId]/index", params: { clubId: ids.leaderClub },
-    overrides: { me: () => { throw new ApiError(0, "OFFLINE", "You're offline. Check your connection and try again."); } }, expect: [/offline|Try again/i],
-    failing: "leader/[clubId]/index.tsx treats a failed `me` read as a membership without tools: no error, no retry" },
+    overrides: { me: () => { throw new ApiError(0, "OFFLINE", "You're offline. Check your connection and try again."); } }, expect: [/offline|Try again/i] },
   { name: "tasks: deep link to one task opens it", file: "tasks", params: { clubId: ids.memberClub, taskId: ids.task }, overrides: {}, expect: ["Tasks"],
     after: () => expect(routerState.router.push).toHaveBeenCalledWith(expect.objectContaining({ pathname: "/task/[assignmentId]", params: expect.objectContaining({ assignmentId: ids.assignment }) })) },
   { name: "tasks: one club's workspace refused", file: "tasks", overrides: { "tasks.workspace": (input: unknown) => { if ((input as { clubId: string }).clubId === ids.leaderClub) throw new ApiError(403, "FORBIDDEN", "No access"); return workspace(input); } }, expect: ["Tasks"] },

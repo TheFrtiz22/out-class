@@ -16,6 +16,8 @@ import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ClubTask, Me, TaskAssignment } from "~/lib/types";
 
+const REQUIREMENT_LABELS: Record<string, string> = { TEXT: "a written response", LINK: "a link", FILE: "a file" };
+
 /** The web's submission form (components/club-tasks.tsx `Submission`): written response, link, files. */
 function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; own: TaskAssignment; clubName: string; saved: boolean; onSaved: (saved: boolean) => void }) {
   const { colors } = useTheme();
@@ -27,6 +29,12 @@ function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; o
   const [error, setError] = useState("");
   const setSaved = onSaved;
   const required = (type: string) => (task.requirements.includes(type) ? "Required" : "Optional");
+  /** The server's own checks (lib/tasks.ts validateTaskSubmission), said before sending. */
+  const missing = (address: string) =>
+    task.requirements.includes("TEXT") && !text.trim() ? "Add a written response before submitting."
+      : task.requirements.includes("LINK") && !address ? "Add a link before submitting."
+      : task.requirements.includes("FILE") && !own.files.length ? "This task needs a file. Add it on the web with Open on web, then submit there."
+      : !text.trim() && !address && !own.files.length ? "Add a response, link, or file before submitting." : null;
 
   const submit = useMutation({
     // Files already attached on the web stay attached; the server checks every field and the revision.
@@ -57,7 +65,7 @@ function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; o
         {own.submittedAt ? `Submitted ${taskDate(own.submittedAt)}${closed ? "" : " · You can update it until it is reviewed or the task closes."}` : "No submission yet. Late submissions are accepted while the task is open and are labeled late."}
       </Text>
       <Text variant="caption">
-        Required: {task.requirements.length ? task.requirements.map(value => value.toLowerCase()).join(" + ") : "text, a link, or a file"}. {closed ? "This submission is closed." : "Submit when ready to share it."}
+        Required: {task.requirements.length ? task.requirements.map(value => REQUIREMENT_LABELS[value] ?? value.toLowerCase()).join(" and ") : "a written response, a link, or a file"}. {closed ? "This submission is closed." : "Submit when ready to share it."}
       </Text>
       <Field testID="task-text" label={`Written response · ${required("TEXT")}`} multiline maxLength={30000} editable={!closed && !alumni && !submit.isPending} value={text} onChangeText={value => { setText(value); setSaved(false); }} />
       <Field testID="task-link" label={`Website or document link · ${required("LINK")}`} maxLength={2000} editable={!closed && !alumni && !submit.isPending} value={link} onChangeText={value => { setLink(value); setSaved(false); }} placeholder="https://…" autoCapitalize="none" autoCorrect={false} keyboardType="url" />
@@ -91,6 +99,8 @@ function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; o
           // The server takes only a full http(s) address; a typed "docs.google.com/…" is completed here instead of refused.
           const address = taskLink(link);
           if (address === null) { haptics.error(); setError("Enter a full web address, like https://docs.google.com/…"); return; }
+          const problem = missing(address);
+          if (problem) { haptics.error(); setError(problem); return; }
           submit.mutate(address);
         }} />
       )}
@@ -180,7 +190,7 @@ export default function TaskScreen() {
             {task.kind === "TASK" ? <Submission key={`${own.id}-${own.revision}`} task={task} own={own} clubName={clubName} saved={savedId === own.id} onSaved={value => setSavedId(value ? own.id : null)} /> : (
               <Card style={{ gap: 8 }}>
                 <Text variant="section" accessibilityRole="header">Related tasks</Text>
-                {children.length ? children.map(child => <Text key={child.id} variant="body">{child.title} · <Text variant="small">Due {taskDate(child.dueAt)}</Text></Text>) : <Text variant="small">New tasks will appear here.</Text>}
+                {children.length ? children.map(child => <Text key={child.id} variant="body">{child.title} · <Text variant="small">{child.dueAt ? `Due ${taskDate(child.dueAt)}` : "No due date"}</Text></Text>) : <Text variant="small">New tasks will appear here.</Text>}
               </Card>
             )}
           </>

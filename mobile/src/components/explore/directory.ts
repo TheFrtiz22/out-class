@@ -126,7 +126,7 @@ const calendarDayLabel = (date: string) => new Intl.DateTimeFormat("en-US", { ti
 export function eventScheduleLabel(event: Pick<CampusEvent, "date" | "endDate" | "allDay">) {
   if (event.allDay) {
     const first = easternDate(event.date), last = shiftDay(easternDate(event.endDate), -1);
-    return `${eventDateLabel(event.date)}${last === first ? "" : ` – ${calendarDayLabel(last)}`} · All day`;
+    return `${eventDateLabel(event.date)}${last > first ? ` – ${calendarDayLabel(last)}` : ""} · All day`;
   }
   return `${eventDateLabel(event.date)} · ${eventTimeLabel(event.date)} – ${easternDate(event.date) === easternDate(event.endDate) ? "" : `${eventDateLabel(event.endDate)} · `}${eventTimeLabel(event.endDate)}`;
 }
