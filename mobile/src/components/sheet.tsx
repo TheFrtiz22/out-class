@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, KeyboardAvoidingView, Modal, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { cancelAnimation, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "~/components/ui";
 import { Text } from "~/components/text";
@@ -9,6 +9,9 @@ import { haptics } from "~/lib/haptics";
 import { useKeyboardShown } from "~/lib/keyboard";
 import { spring } from "~/lib/motion";
 import { useTheme } from "~/lib/theme";
+
+/** How long a closing sheet takes to slide out before it is hidden. */
+export const SHEET_CLOSE_MS = 240;
 
 // Worklet copies of `project` and `rubberband` (packages/shared/src/motion.ts): the drag runs on the UI
 // thread, where calling a plain JavaScript function throws.
@@ -31,6 +34,12 @@ function rubberband(overshoot: number, dimension: number, constant = 0.55): numb
  *
  * The drag starts from the grabber and title strip, so a list or form scrolling inside the
  * sheet keeps its own vertical gesture. The keyboard lifts the sheet on both platforms.
+ *
+ * Closing is driven from JavaScript, never from an animation's end on the UI thread: the slide
+ * out is a fixed-length timing, a timer then stops it and hides the native Modal (visible=false,
+ * the dismissal UIKit expects) before the content unmounts. Unmounting a Modal that is still
+ * presented, from a UI-thread callback, while its views were being animated, is what closed the
+ * app on iOS.
  */
 export function Sheet({ open, onClose, title, children, dismissible = true, testID }: { open: boolean; onClose: () => void; title?: string; children: ReactNode; dismissible?: boolean; testID?: string }) {
   const theme = useTheme();
@@ -43,13 +52,23 @@ export function Sheet({ open, onClose, title, children, dismissible = true, test
   const start = useSharedValue(0);
   const reduceMotion = a11y.reduceMotion;
 
-  const finish = useCallback(() => setMounted(false), []);
+  const closing = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    if (closing.current) { clearTimeout(closing.current); closing.current = null; }
     if (open) { setMounted(true); offset.value = screen; offset.value = spring(0, { reduceMotion }); }
-    else if (mounted) offset.value = spring(screen, { reduceMotion, onDone: () => { "worklet"; runOnJS(finish)(); } });
+    else if (mounted) {
+      const duration = reduceMotion ? 0 : SHEET_CLOSE_MS;
+      offset.value = withTiming(screen, { duration });
+      closing.current = setTimeout(() => {
+        closing.current = null;
+        cancelAnimation(offset);
+        setMounted(false);
+      }, duration + 40);
+    }
     // `mounted` is read, not a trigger: closing starts from the open -> false edge only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, screen, reduceMotion]);
+  useEffect(() => () => { if (closing.current) clearTimeout(closing.current); cancelAnimation(offset); }, [offset]);
   useEffect(() => { if (open && title) AccessibilityInfo.announceForAccessibility(title); }, [open, title]);
 
   const requestClose = useCallback(() => { if (dismissible) onClose(); }, [dismissible, onClose]);
@@ -59,10 +78,10 @@ export function Sheet({ open, onClose, title, children, dismissible = true, test
   useEffect(() => { isOpen.current = open; }, [open]);
   const dragged = useCallback(() => {
     requestClose();
-    setTimeout(() => { if (isOpen.current) offset.value = spring(0, { reduceMotion }); }, 80);
+    setTimeout(() => { if (isOpen.current) offset.value = spring(0, { reduceMotion }); }, SHEET_CLOSE_MS + 80);
   }, [requestClose, offset, reduceMotion]);
 
-  const drag = Gesture.Pan().enabled(dismissible).activeOffsetY([-8, 8]).failOffsetX([-24, 24])
+  const drag = Gesture.Pan().withTestId("sheet-drag").enabled(dismissible).activeOffsetY([-8, 8]).failOffsetX([-24, 24])
     .onStart(() => { start.value = offset.value; })
     .onChange(event => {
       const next = start.value + event.translationY;
@@ -70,20 +89,22 @@ export function Sheet({ open, onClose, title, children, dismissible = true, test
     })
     .onEnd(event => {
       const landing = offset.value + project(event.velocityY);
-      if (landing > screen * 0.33) { offset.value = spring(screen, { kind: "ui", velocity: event.velocityY, reduceMotion, onDone: () => { "worklet"; runOnJS(dragged)(); } }); }
+      // Thrown away: slide out and tell the owner now; the close itself runs from JavaScript.
+      if (landing > screen * 0.33) { offset.value = withTiming(screen, { duration: reduceMotion ? 0 : SHEET_CLOSE_MS }); runOnJS(dragged)(); }
       else offset.value = spring(0, { kind: Math.abs(event.velocityY) > 400 ? "thrown" : "ui", velocity: event.velocityY, reduceMotion });
     });
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: Math.max(-40, offset.value) }] }));
   const scrimStyle = useAnimatedStyle(() => ({ opacity: Math.max(0, Math.min(1, 1 - offset.value / (screen * 0.6))) }));
 
-  if (!mounted) return null;
+  // The Modal stays in the tree and is hidden with `visible`, so it is dismissed the way UIKit
+  // expects instead of being torn down while presented; its content goes once it is hidden.
   return (
-    <Modal transparent visible statusBarTranslucent navigationBarTranslucent animationType="none" onRequestClose={requestClose}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+    <Modal transparent visible={mounted} statusBarTranslucent navigationBarTranslucent animationType="none" onRequestClose={requestClose}>
+      {mounted ? <GestureHandlerRootView style={{ flex: 1 }}>
         {/* "padding" on Android too: the app draws edge to edge, where the window no longer resizes for the keyboard. */}
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
           <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }, scrimStyle]}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={requestClose} accessible={dismissible} accessibilityLabel="Close" accessibilityRole="button" />
+            <Pressable testID="sheet-scrim" style={StyleSheet.absoluteFill} onPress={requestClose} accessible={dismissible} accessibilityLabel="Close" accessibilityRole="button" />
           </Animated.View>
           <Animated.View testID={testID} accessibilityViewIsModal onAccessibilityEscape={requestClose}
             style={[{ backgroundColor: colors.card, borderTopLeftRadius: radius.xl2, borderTopRightRadius: radius.xl2, paddingBottom: (keyboard ? 0 : insets.bottom) + 16, paddingHorizontal: 20, maxHeight: screen - insets.top - 24 }, sheetStyle]}>
@@ -98,7 +119,7 @@ export function Sheet({ open, onClose, title, children, dismissible = true, test
             {children}
           </Animated.View>
         </KeyboardAvoidingView>
-      </GestureHandlerRootView>
+      </GestureHandlerRootView> : null}
     </Modal>
   );
 }
