@@ -24,7 +24,6 @@ type QuickAction = { id: string; title: string; subtitle?: string; icon?: string
 type QuickActionsModule = { initial?: QuickAction; setItems(items: QuickAction[]): Promise<void>; addListener(listener: (action: QuickAction) => void): { remove(): void } };
 const QuickActions: QuickActionsModule | null = (() => { try { return require("expo-quick-actions") as QuickActionsModule; } catch { return null; } })();
 
-
 /** How long launch waits for fonts and the stored session before showing the app regardless. */
 const LAUNCH_WAIT_MS = 6000;
 
