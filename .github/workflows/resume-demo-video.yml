@@ -29,22 +29,11 @@ jobs:
           OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
           OUTCLASS_DEMO_OUT: ${{ runner.temp }}/resume-demo
         run: node scripts/run-onboarding-e2e.cjs --resume-demo
-      - name: Join the recordings into one MP4
-        if: always()
-        working-directory: ${{ runner.temp }}/resume-demo
-        run: |
-          ls -la || exit 0
-          for f in part*.webm; do [ -f "$f" ] && ffmpeg -y -loglevel error -i "$f" -c:v libx264 -pix_fmt yuv420p -r 30 -movflags +faststart "${f%.webm}.mp4"; done
-          if [ -f part1.mp4 ] && [ -f part2.mp4 ]; then
-            printf "file 'part1.mp4'\nfile 'part2.mp4'\n" > list.txt
-            ffmpeg -y -loglevel error -f concat -safe 0 -i list.txt -c copy resume-autofill-demo.mp4
-          fi
-          ls -la
       - name: Publish the outputs to the demo output branch
         if: always()
         working-directory: ${{ runner.temp }}/resume-demo
         run: |
-          rm -rf raw-video list.txt part1.webm part2.webm
+          rm -rf raw-video
           [ -n "$(ls -A 2>/dev/null)" ] || exit 0
           git init -q -b out . && git config user.name "github-actions[bot]" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A && git commit -q -m "Résumé autofill demo outputs (run ${{ github.run_id }})"
