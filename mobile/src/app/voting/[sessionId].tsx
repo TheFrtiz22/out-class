@@ -46,14 +46,18 @@ export default function VotingRoomScreen() {
   const [pulling, setPulling] = useState(false);
 
   const roomQuery = useApiQuery<RoomSnapshot>("voting.room", scope, { scope: "leader", enabled: valid, staleTime: 0, gcTime: 60_000, refetchInterval: live ? POLL_MS : false, retry: 1 });
-  // A failed read clears what was on screen, as the web's subscription does.
-  const room = roomQuery.isError ? undefined : roomQuery.data;
+  // A refused read clears what was on screen, as the web's subscription does. A dropped connection keeps the
+  // last snapshot under a reconnecting notice (every ballot and command is checked again by the server), so
+  // a blip on the room's Wi-Fi doesn't wipe a leader's half-typed reason.
+  const reconnecting = roomQuery.isError && roomQuery.error instanceof ApiError && (roomQuery.error.offline || roomQuery.error.status >= 500) && !!roomQuery.data;
+  const room = roomQuery.isError && !reconnecting ? undefined : roomQuery.data;
   const leader = !!room?.permissions.leader;
   const mode: Mode | "present" | null = room ? (leader ? chosen ?? "leader" : room.permissions.voter ? "member" : "present") : roomQuery.isError ? "member" : null;
   const refresh = () => roomQuery.refetch();
 
   // The voter's way in (MemberJoin): eligibility and the join state are the server's, checked every 5 s until joined.
-  const [joined, setJoined] = useState(false);
+  const [joinedHere, setJoined] = useState(false);
+  const joined = joinedHere || !!room?.joinedSelf;
   const join = useApiQuery<JoinInfo>("voting.joinInfo", scope, { scope: "leader", enabled: valid && mode === "member" && !joined, staleTime: 0, gcTime: 0, refetchInterval: live ? POLL_MS : false, retry: 1 });
   const joinStatus = join.data?.status;
   useEffect(() => { if (joinStatus === "JOINED" || joinStatus === "ENDED") setJoined(true); }, [joinStatus]);
@@ -77,7 +81,7 @@ export default function VotingRoomScreen() {
 
   const entry = room ? currentEntry(room) : undefined;
   const pass = room ? currentPass(room) : undefined;
-  const title = mode === "leader" ? "Lead voting" : mode === "member" && !joined ? "Join live voting" : mode === "present" ? "Live voting" : "Your vote";
+  const title = mode === "leader" ? "Lead voting" : mode === "member" && !joined ? "Join live voting" : mode === "member" ? "Your vote" : "Live voting";
   const gate = mode === "member" && !joined;
 
   const stage = (current: RoomSnapshot, current_entry: RoomEntry | undefined) => (
@@ -98,7 +102,16 @@ export default function VotingRoomScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="voting-room" refreshing={pulling} onRefresh={() => { setPulling(true); Promise.all([roomQuery.refetch(), gate ? join.refetch() : null]).finally(() => setPulling(false)); }}>
+      <ScreenScroll top={top} testID="voting-room" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={pulling} onRefresh={() => { setPulling(true); Promise.all([roomQuery.refetch(), gate ? join.refetch() : null]).finally(() => setPulling(false)); }}>
+        {valid && leader && room?.permissions.voter ? (
+          <Segmented label="Voting view" value={mode === "member" ? "member" : "leader"} onChange={value => setChosen(value)} options={[{ value: "leader", label: "Lead voting" }, { value: "member", label: "Your vote" }]} />
+        ) : null}
+        {reconnecting ? (
+          <Card tone="warm" accessibilityRole="alert" testID="voting-reconnecting" style={{ gap: 2 }}>
+            <Text variant="smallStrong">Reconnecting…</Text>
+            <Text variant="small">{roomQuery.error instanceof ApiError && roomQuery.error.offline ? "You're offline. " : ""}This may be out of date. Your last vote or command may already be saved.</Text>
+          </Card>
+        ) : null}
         {!valid ? <Card><ErrorState message="This session link is expired or unavailable." /></Card>
           : gate ? (
             <Card testID="voting-join" style={{ gap: 12 }}>
@@ -139,10 +152,13 @@ export default function VotingRoomScreen() {
             )
           ) : (
             <>
-              {roundLine(room) ? <Text variant="eyebrow">{roundLine(room)}</Text> : null}
-              {leader && room.permissions.voter ? (
-                <Segmented label="Voting view" value={mode === "member" ? "member" : "leader"} onChange={value => setChosen(value)} options={[{ value: "leader", label: "Lead voting" }, { value: "member", label: "Your vote" }]} />
+              {room.meeting?.name || roundLine(room) ? (
+                <View style={{ gap: 2 }}>
+                  {roundLine(room) ? <Text variant="eyebrow" numberOfLines={2}>{roundLine(room)}</Text> : null}
+                  {room.meeting?.name ? <Text variant="title" accessibilityRole="header" numberOfLines={3}>{room.meeting.name}</Text> : null}
+                </View>
               ) : null}
+              {room.meeting?.status === "CANCELLED" ? <Card tone="soft"><Text variant="small">This session was cancelled. Saved votes and outcomes are kept.</Text></Card> : null}
 
               <Card testID="voting-status" accessibilityLabel="Session progress" style={{ gap: 8 }}>
                 <Text variant="card" testID="voting-status-label">{mode === "leader" ? voteStatusLabel(room, entry) : room.status === "COMPLETED" ? "Session ended" : entry?.ballotState === "OPEN" ? "Voting open" : entry?.ballotState === "CLOSED" || entry?.ballotState === "CONFIRMED" ? "Voting closed" : "Waiting for voting"}</Text>
@@ -161,12 +177,7 @@ export default function VotingRoomScreen() {
               {mode === "leader" ? (
                 <>
                   {room.meeting?.status !== "CANCELLED" ? <HostControls room={room} entry={entry} labels={labels} next={nextLabel(room, labels)} refresh={refresh} confirm={confirm} /> : null}
-                  <Card testID="voting-in-room" style={{ gap: 8 }}>
-                    <Text variant="section" accessibilityRole="header">In the room</Text>
-                    <Text variant="body">{room.joinedParticipants.filter(person => person.joined).length} {room.joinedParticipants.filter(person => person.joined).length === 1 ? "member" : "members"} joined</Text>
-                    {room.joinedParticipants.length ? room.joinedParticipants.map(person => <Text key={person.id} variant="small">{person.label} · {person.joined ? "Joined" : "Waiting"}</Text>) : null}
-                    {room.status !== "COMPLETED" ? <Button label="Show join QR" variant="secondary" size="compact" testID="voting-join-qr" onPress={() => setJoinQr(true)} /> : null}
-                  </Card>
+                  <InRoom room={room} onShowQr={room.status !== "COMPLETED" ? () => setJoinQr(true) : undefined} />
                   <Queue room={room} labels={labels} />
                   <Card padded={false} style={{ paddingHorizontal: 16 }}>
                     <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title="Prepare slides" detail="Open on web" onPress={() => { openOnWeb(`/voting/rooms/${encodeURIComponent(room.id)}/prepare?clubId=${encodeURIComponent(room.clubId)}`); }} />
@@ -195,10 +206,10 @@ export default function VotingRoomScreen() {
 function Intermission({ room, leader }: { room: RoomSnapshot; leader: boolean }) {
   // Counts are the session's decision totals as the server sends them.
   const { pass, hold, notPass, unreviewed } = room.targetSummary.decisions;
-  const counts = leader ? null : (
+  const counts = (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
       {([["Passed", pass], ["Held", hold], ["Not passed", notPass], ["Unreviewed", unreviewed]] as const).map(([name, count]) => (
-        <View key={name} accessible accessibilityLabel={`${name} ${count}`}><Text variant="metric" style={{ fontSize: 24, lineHeight: 30 }}>{count}</Text><Text variant="caption">{name}</Text></View>
+        <View key={name} accessible accessibilityLabel={`${name} ${count}`} style={{ minWidth: 64 }}><Text variant="metric" style={{ fontSize: 24, lineHeight: 30 }}>{count}</Text><Text variant="caption">{name}</Text></View>
       ))}
     </View>
   );
@@ -217,6 +228,28 @@ function Intermission({ room, leader }: { room: RoomSnapshot; leader: boolean })
       <Text variant="title" accessibilityRole="header">{hold ? "Review held applicants" : "Review complete"}</Text>
       <Text variant="small">{hold ? `${hold} held applicant${hold === 1 ? "" : "s"} remaining` : "No held applicants remain."}</Text>
       {counts}
+    </Card>
+  );
+}
+
+/** Who has joined the session (leaders only): the count, then the names, collapsed past a screenful. */
+function InRoom({ room, onShowQr }: { room: RoomSnapshot; onShowQr?: () => void }) {
+  const [all, setAll] = useState(false);
+  const people = [...room.joinedParticipants].sort((a, b) => Number(b.joined) - Number(a.joined));
+  const joined = people.filter(person => person.joined).length;
+  const shown = all ? people : people.slice(0, 8);
+  return (
+    <Card testID="voting-in-room" style={{ gap: 8 }}>
+      <Text variant="section" accessibilityRole="header">In the room</Text>
+      <Text variant="body">{joined} {joined === 1 ? "member" : "members"} joined{people.length ? ` of ${people.length} who can vote` : ""}</Text>
+      {shown.map(person => (
+        <View key={person.id} style={{ flexDirection: "row", gap: 8 }}>
+          <Text variant="small" numberOfLines={1} style={{ flex: 1 }}>{person.label}</Text>
+          <Text variant="small">{person.joined ? "Joined" : "Waiting"}</Text>
+        </View>
+      ))}
+      {people.length > shown.length ? <Button label={`Show all ${people.length}`} variant="ghost" size="compact" onPress={() => setAll(true)} /> : null}
+      {onShowQr ? <Button label="Show join QR" variant="secondary" size="compact" testID="voting-join-qr" onPress={onShowQr} /> : null}
     </Card>
   );
 }

@@ -29,7 +29,9 @@ export default function LeaderHub() {
   const membership = me.data?.memberships.find(item => item.clubId === clubId);
   const tools = membership ? leaderTools(membership) : null;
   const meetings = useApiQuery<LeaderMeeting[]>("meetings", { clubId }, { enabled: !!tools?.attendance, scope: "leader" });
-  const open = (meetings.data ?? []).filter(meeting => attendanceOpen(meeting)).sort((a, b) => +new Date(a.date) - +new Date(b.date));
+  const now = Date.now();
+  const open = (meetings.data ?? []).filter(meeting => attendanceOpen(meeting, now)).sort((a, b) => +new Date(a.date) - +new Date(b.date));
+  const upcoming = (meetings.data ?? []).filter(meeting => +new Date(meeting.date) > now && !attendanceOpen(meeting, now)).sort((a, b) => +new Date(a.date) - +new Date(b.date))[0];
 
   const tool = (Icon: IconComponent, title: string, detail: string, onPress: () => void, testID: string) => (
     <Row testID={testID} leading={<Icon size={24} color={colors.brandInk} />} title={title} detail={detail} trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={onPress} />
@@ -40,12 +42,14 @@ export default function LeaderHub() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="leader-hub" refreshing={meetings.isRefetching} onRefresh={() => { me.refetch(); meetings.refetch(); }}>
+      <ScreenScroll top={top} testID="leader-hub" refreshing={me.isRefetching || meetings.isRefetching} onRefresh={() => { me.refetch(); meetings.refetch(); }}>
         <View style={{ gap: 4 }}>
           <Text variant="eyebrow">Leader tools</Text>
-          <Text variant="title" accessibilityRole="header">{membership?.club.name ?? "Club"}</Text>
+          <Text variant="title" accessibilityRole="header" numberOfLines={3}>{membership?.club.name ?? (me.isPending ? " " : "Club")}</Text>
         </View>
-        {me.isPending ? <SkeletonRows count={3} avatar={false} /> : !membership || !tools || !Object.values(tools).some(Boolean) ? (
+        {me.isPending ? <SkeletonRows count={3} avatar={false} /> : me.isError && !me.data ? (
+          <Card><ErrorState message={errorMessage(me.error)} offline={me.error instanceof ApiError && me.error.offline} onRetry={() => me.refetch()} /></Card>
+        ) : !membership || !tools || !Object.values(tools).some(Boolean) ? (
           <Card><EmptyState title="No leader tools here" body="Your role in this club doesn't include leader tools." /></Card>
         ) : (
           <>
@@ -57,14 +61,19 @@ export default function LeaderHub() {
                 ) : open.length ? open.map(meeting => (
                   <Card key={meeting.id} style={{ gap: 10 }}>
                     <View style={{ gap: 2 }}>
-                      <Text variant="card">{meeting.title}</Text>
+                      <Text variant="card" numberOfLines={2}>{meeting.title}</Text>
                       <Text variant="small">{easternShortDateTime(meeting.date)}{meeting.location ? ` · ${meeting.location}` : ""}</Text>
                     </View>
                     <Chip label="Attendance open" tone="success" />
                     <Divider />
                     {tool(QrCode, "Host check-in", "Show the room's code on this phone", () => router.push({ pathname: "/leader/[clubId]/check-in/[meetingId]", params: { clubId, meetingId: meeting.id } } as never), "leader-host-check-in")}
                   </Card>
-                )) : <Card><Text variant="small">Attendance opens one hour before a meeting and closes six hours after its end.</Text></Card>}
+                )) : (
+                  <Card style={{ gap: 4 }}>
+                    {upcoming ? <Text variant="bodyStrong" numberOfLines={2}>Next: {upcoming.title} · {easternShortDateTime(upcoming.date)}</Text> : <Text variant="bodyStrong">No meeting is open for check-in</Text>}
+                    <Text variant="small">Attendance opens one hour before a meeting and closes six hours after its end.</Text>
+                  </Card>
+                )}
               </View>
             ) : null}
 

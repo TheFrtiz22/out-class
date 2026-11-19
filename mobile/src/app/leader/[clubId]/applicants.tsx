@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FlatList, RefreshControl, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
-import { ExternalLink, Search, ShieldCheck } from "~/components/icons";
+import { ExternalLink, Search, ShieldCheck, X } from "~/components/icons";
 import { PrivateImage, photoParams } from "~/components/private-image";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, ErrorState, Press, Skeleton, SkeletonRows, TARGET, statusTone } from "~/components/ui";
@@ -99,8 +99,13 @@ export default function Applicants() {
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 48, borderRadius: radius.full, borderWidth: 1, borderColor: colors.input, backgroundColor: colors.card, paddingHorizontal: 14 }}>
         <Search size={18} color={colors.mutedForeground} />
         <TextInput testID="applicants-search" accessibilityLabel="Search applicants" placeholder="Name, anonymous ID, or major" placeholderTextColor={colors.mutedForeground} value={typed} onChangeText={setTyped}
-          autoCapitalize="none" autoCorrect={false} returnKeyType="search" clearButtonMode="while-editing" maxLength={200}
+          autoCapitalize="none" autoCorrect={false} returnKeyType="search" maxLength={200}
           style={{ flex: 1, minHeight: 46, fontFamily: fonts.sans, fontSize: Math.max(16, text.body), color: colors.foreground }} />
+        {typed ? (
+          <Press testID="applicants-search-clear" accessibilityLabel="Clear search" hitSlop={8} onPress={() => { setTyped(""); setQuery(""); }} style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center", marginRight: -6 }}>
+            <X size={18} color={colors.mutedForeground} />
+          </Press>
+        ) : null}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingHorizontal: 16 }} accessibilityRole="tablist" accessibilityLabel="Round">
         {chip(null, "All rounds")}
