@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { FlatList, RefreshControl, Switch, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useIsAlumni } from "~/components/alumni-banner";
 import { addEventToCalendar, calendarMessages } from "~/components/explore/calendar";
 import { type EventFilters, eventBoardEmpty, eventCategories, initialEventFilters } from "~/components/explore/directory";
 import { EventCard, EventCardSkeleton } from "~/components/explore/event-card";
@@ -33,6 +34,7 @@ export default function EventsBoard() {
   const insets = useSafeAreaInsets();
   const notice = useNotice();
   const saves = useSavedEvents(notice.show);
+  const alumni = useIsAlumni();
   const [query, setQuery] = useState("");
   const [choices, setChoices] = useState<EventFilters>(initialEventFilters);
   const [sheet, setSheet] = useState(false);
@@ -58,7 +60,9 @@ export default function EventsBoard() {
       .then(outcome => { if (outcome === "added") haptics.confirm(); else haptics.warning(); show(calendarMessages[outcome], outcome === "added" ? "ok" : "error"); })
       .catch(() => { haptics.error(); show("We couldn’t add this event to your calendar. Try again.") });
   }, [show]);
-  const { ids, ready, setSaved } = saves;
+  const { ids, setSaved } = saves;
+  // Alumni accounts keep their saved events but cannot change them (the server refuses too).
+  const ready = saves.ready && !alumni;
   const renderItem = useCallback(({ item, index }: { item: CampusEvent; index: number }) => (
     <EventCard event={item} saved={ids.has(item.id)} saveReady={ready} onOpen={open} onToggleSaved={setSaved} onAddToCalendar={addToCalendar} testID={`event-card-${index}`} />
   ), [ids, ready, open, setSaved, addToCalendar]);
