@@ -14,7 +14,7 @@ export type RouteCase = {
   /** The route mounts its own providers (the root layout). */
   ownProviders?: boolean;
   /** Known app bugs: the mode's test is marked `test.failing` with the reason (see the report). */
-  failing?: Partial<Record<"rich" | "empty" | "error" | "missing" | "malformed", string>>;
+  failing?: Partial<Record<"rich" | "empty" | "error" | "missing" | "malformed" | "presses", string>>;
 };
 
 const error = [/test refusal|couldn.t|could not|try again|unavailable|went wrong/i];

@@ -30,6 +30,9 @@ jest.mock("react-native-reanimated", () => {
     Easing: new Proxy({}, { get: () => identity }),
     ReduceMotion: { System: "system", Always: "always", Never: "never" },
     FadeIn: { duration: () => ({}) }, FadeOut: { duration: () => ({}) }, LinearTransition: {},
+    // What react-native-gesture-handler's GestureDetector reads from Reanimated.
+    useEvent: () => () => {}, useComposedEventHandler: () => () => {}, useHandler: () => ({ doDependenciesDiffer: false, context: { lastUpdateEvent: undefined } }),
+    isSharedValue: () => false, setGestureState: () => {}, NativeEventsManager: class { attachEvents() {} detachEvents() {} updateEvents() {} },
   };
 });
 jest.mock("react-native-gesture-handler/ReanimatedSwipeable", () => {
@@ -124,6 +127,14 @@ jest.mock("expo-router", () => {
 });
 
 // ---- Native modules ---------------------------------------------------------------------------
+// React Native's jest preset leaves these as bare jest.fn(), but the app chains `.catch` on them.
+{
+  const { Linking, Share } = require("react-native");
+  Linking.openURL = jest.fn(async () => true);
+  Linking.canOpenURL = jest.fn(async () => true);
+  Linking.openSettings = jest.fn(async () => {});
+  Share.share = jest.fn(async () => ({ action: "sharedAction" }));
+}
 jest.mock("expo-font", () => ({ useFonts: () => [true, null], loadAsync: jest.fn(async () => {}), isLoaded: () => true }));
 jest.mock("expo-splash-screen", () => ({ preventAutoHideAsync: jest.fn(async () => true), hideAsync: jest.fn(async () => true), setOptions: jest.fn() }));
 jest.mock("expo-secure-store", () => {
