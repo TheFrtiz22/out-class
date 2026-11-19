@@ -19,6 +19,8 @@
     "app.config.ts",
     "ios",
     "android",
-    "node_modules"
+    "node_modules",
+    "__tests__",
+    "jest.config.js"
   ]
 }

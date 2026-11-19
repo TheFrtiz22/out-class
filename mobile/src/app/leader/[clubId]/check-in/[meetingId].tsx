@@ -105,10 +105,10 @@ export default function CheckInHost() {
               {expired ? <Text variant="caption" align="center">Refreshing the code…</Text> : null}
             </View>
           )}
-        <View accessible accessibilityLiveRegion="polite" accessibilityLabel={`${count ?? 0} checked in`} style={{ alignItems: "center" }}>
+        {code.isError && count == null ? null : <View accessible accessibilityLiveRegion="polite" accessibilityLabel={`${count ?? 0} checked in`} style={{ alignItems: "center" }}>
           <Text variant="metric" testID="host-count" style={{ fontSize: 44, lineHeight: 50 }}>{count ?? "–"}</Text>
           <Text variant="small">checked in</Text>
-        </View>
+        </View>}
       </View>
       <Button full size="large" variant="secondary" label={close.isPending ? "Closing…" : "Close check-in"} testID="host-close" loading={close.isPending} disabled={close.isSuccess} onPress={() => { void onClose(); }} />
       {close.isError ? <Text variant="small" color={colors.destructive} align="center" accessibilityRole="alert" style={{ marginTop: 8 }}>{errorMessage(close.error)}</Text> : null}

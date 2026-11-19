@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest"],
+    "allowJs": false
+  },
+  "include": ["../src/**/*.ts", "../src/**/*.tsx", "../expo-env.d.ts", "./**/*.ts", "./**/*.tsx"],
+  "exclude": ["../node_modules"]
+}

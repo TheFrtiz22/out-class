@@ -4,7 +4,7 @@ import { useAutosave } from "@/hooks/use-autosave"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
-import { applicationAnswersKey } from "@/lib/student-applications"
+import { applicationAnswersKey, normalizeApplicationAttachments } from "@/lib/student-applications"
 import { QuestionField } from "@/components/applications/question-field"
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement, testRequirementLabels } from "@/lib/test-scores"
@@ -29,6 +29,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
+
+function storedForm(questions: Parameters<typeof normalizeApplicationAttachments>[0], answers: { questionId: string; response: string }[]) {
+  try { return normalizeApplicationAttachments(questions, answers) } catch { return answers }
+}
 
 export type StudentApplication = Awaited<ReturnType<typeof getStudentApplications>>[number]
 export function ApplicationForm({
@@ -67,7 +71,8 @@ export function ApplicationForm({
     save: async snapshot => {
       const savedAnswers = questions.map(q => ({ questionId: q.id, response: snapshot[q.id] || "" }))
       await saveApplicationDraft({ clubId: application.clubId, answers: savedAnswers, expectedAnswers: expected.current })
-      expected.current = applicationAnswersKey(savedAnswers)
+      // The server stores links normalized (a trailing slash, an added https://), so compare against that form.
+      expected.current = applicationAnswersKey(storedForm(questions, savedAnswers))
       onSaved(false, savedAnswers)
     },
   })
