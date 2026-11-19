@@ -1,5 +1,6 @@
 import { PHONE_INVALID_MESSAGE, normalizePhone } from "@outclass/shared/phone";
 import { useQueryClient } from "@tanstack/react-query";
+import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
 import { KeyboardAvoidingView, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,8 +12,9 @@ import { Button } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { haptics } from "~/lib/haptics";
+import { config } from "~/lib/config";
 import { useApiQuery } from "~/lib/query";
-import { nameIssue, termsAcceptedFor, type SignupOptions } from "~/lib/signup";
+import { PASSWORD_NOT_SAVED_NOTICE, nameIssue, passwordNotSavedFor, termsAcceptedFor, type SignupOptions } from "~/lib/signup";
 import { useTheme } from "~/lib/theme";
 
 type Errors = Partial<Record<"firstName" | "lastName" | "major" | "gradYear" | "phone" | "terms" | "form", string>>;
@@ -40,6 +42,7 @@ export default function CompleteProfile() {
   const [acceptTerms, setAcceptTerms] = useState(() => termsAcceptedFor(session?.user.email));
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
+  const [passwordNotSaved] = useState(() => passwordNotSavedFor(session?.user.email));
   const lastRef = useRef<FieldRef>(null), majorRef = useRef<FieldRef>(null), phoneRef = useRef<FieldRef>(null);
 
   async function save() {
@@ -77,6 +80,12 @@ export default function CompleteProfile() {
           <Text variant="display" accessibilityRole="header">Finish your profile</Text>
           <Text variant="body" color={colors.mutedForeground}>Clubs see this when you apply. You can add more later from your profile.</Text>
         </View>
+        {passwordNotSaved ? (
+          <View accessibilityRole="alert" style={{ gap: 8, padding: 14, borderRadius: 14, backgroundColor: colors.muted }}>
+            <Text variant="small">{PASSWORD_NOT_SAVED_NOTICE}</Text>
+            <Button variant="secondary" size="compact" label="Reset password" testID="profile-reset-password" onPress={() => { WebBrowser.openBrowserAsync(`${config.apiUrl}/forgot-password`).catch(() => {}); }} />
+          </View>
+        ) : null}
         <View style={{ gap: 14 }}>
           <View style={{ flexDirection: "row", gap: 12 }}>
             <View style={{ flex: 1 }}>

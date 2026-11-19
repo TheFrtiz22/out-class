@@ -43,3 +43,10 @@ export type SignupOptions = { termsRequired: boolean; turnstileSiteKey: string |
 let termsAcceptedBy: string | null = null;
 export function rememberTermsAccepted(email: string) { termsAcceptedBy = email.trim().toLowerCase(); }
 export function termsAcceptedFor(email: string | null | undefined) { return !!email && termsAcceptedBy === email.trim().toLowerCase(); }
+
+// Confirmation signed in but could not save the chosen password (lib/signup-password.ts on the web):
+// complete-profile says so, since the next sign-in on this app needs a password.
+let passwordNotSavedBy: string | null = null;
+export function rememberPasswordNotSaved(email: string) { passwordNotSavedBy = email.trim().toLowerCase(); }
+export function passwordNotSavedFor(email: string | null | undefined) { return !!email && passwordNotSavedBy === email.trim().toLowerCase(); }
+export const PASSWORD_NOT_SAVED_NOTICE = "Email confirmed. Your password wasn't saved, so reset it before you next sign in.";

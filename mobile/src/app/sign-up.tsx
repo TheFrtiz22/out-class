@@ -12,7 +12,7 @@ import { api, errorMessage } from "~/lib/api";
 import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
-import { PASSWORD_HINT, emailIssue, nameIssue, passwordIssue, rememberTermsAccepted, type SignupOptions } from "~/lib/signup";
+import { PASSWORD_HINT, emailIssue, nameIssue, passwordIssue, rememberPasswordNotSaved, rememberTermsAccepted, type SignupOptions } from "~/lib/signup";
 import { supabase } from "~/lib/supabase";
 import { useTheme } from "~/lib/theme";
 
@@ -83,8 +83,9 @@ export default function SignUp() {
     if (!/^\d{6}$/.test(value)) { setErrors({ code: "Enter the 6-digit code from the email." }); return; }
     verifying.current = true; setBusy(true); setErrors({}); setNotice("");
     try {
-      const result = await api.post<{ session: { access_token: string; refresh_token: string } }>("auth.confirmEmail", { email: address, code: value, password }, { anonymous: true });
+      const result = await api.post<{ session: { access_token: string; refresh_token: string }; passwordSaved?: boolean }>("auth.confirmEmail", { email: address, code: value, password }, { anonymous: true });
       if (termsRequired && acceptTerms) rememberTermsAccepted(address);
+      if (result.passwordSaved === false) rememberPasswordNotSaved(address);
       const { error } = await supabase.auth.setSession(result.session);
       if (error) throw error;
       haptics.confirm();
