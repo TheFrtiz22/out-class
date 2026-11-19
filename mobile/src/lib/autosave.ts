@@ -59,7 +59,7 @@ class AutosaveQueue<T> {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private active = true;
   private stored = false;
-  constructor(initial: T, private save: (value: T) => Promise<void>, private notify: () => void, private recover: (value: T | null) => boolean) { this.value = clone(initial); }
+  constructor(initial: T, private save: (value: T) => Promise<void | T>, private notify: () => void, private recover: (value: T | null, server?: T) => boolean) { this.value = clone(initial); }
   get dirty() { return this.generation !== this.persisted; }
   get saving() { return this.flight !== null; }
   hold() { if (this.timer) clearTimeout(this.timer); this.timer = null; this.held = true; }
@@ -90,13 +90,16 @@ class AutosaveQueue<T> {
     if (!this.dirty || this.held) return Promise.resolve();
     const run = async () => {
       try {
+        let partial: T | undefined;
         while (this.dirty) {
           const generation = this.generation, payload = clone(this.value);
           this.state = "saving"; if (this.active) this.notify();
-          await this.save(payload);
+          partial = (await this.save(payload)) ?? undefined;
           this.persisted = generation;
         }
-        this.state = "saved"; this.error = ""; this.recover(null);
+        this.state = "saved"; this.error = "";
+        // A save that could not send part of the value (the server kept its own) keeps the device copy against what it holds now.
+        if (partial === undefined) this.recover(null); else this.stored = this.recover(this.value, partial);
       } catch (error) {
         // A request that never reached OutClass keeps the edit and waits for the connection or Retry.
         if (error instanceof ApiError && error.offline) this.connection(online ? "unreachable" : "offline");
@@ -132,7 +135,7 @@ type Entry<T> = { identity: string; queue: AutosaveQueue<T>; ready: boolean; rec
  * `identity` names the resource, `owner` the signed-in account (no device copy without one).
  * `serialize` gives the comparison form of a value (the baseline a device copy was made against).
  */
-export function useAutosave<T>({ identity, owner, value, save, restore, enabled = true, serialize = JSON.stringify }: { identity: string; owner?: string | null; value: T; save: (value: T) => Promise<void>; restore: (value: T) => void; enabled?: boolean; serialize?: (value: T) => string }): AutosaveHandle<T> {
+export function useAutosave<T>({ identity, owner, value, save, restore, enabled = true, serialize = JSON.stringify }: { identity: string; owner?: string | null; value: T; save: (value: T) => Promise<void | T>; restore: (value: T) => void; enabled?: boolean; serialize?: (value: T) => string }): AutosaveHandle<T> {
   const [, render] = useState(0);
   const latest = useRef({ value, save, restore, serialize });
   latest.current = { value, save, restore, serialize };
@@ -145,9 +148,10 @@ export function useAutosave<T>({ identity, owner, value, save, restore, enabled 
     const key = owner ? `outclass:draft:v1:${owner}:${identity}` : null;
     const update = () => render(count => count + 1);
     const entry: Entry<T> = { identity, ready: false, recovery: null, reviewing: false, baseline: original.serialize(original.value), key, queue: null as never };
-    const recover = (content: T | null) => {
+    const recover = (content: T | null, server?: T) => {
       if (!key) return false;
       if (content === null) { AsyncStorage.removeItem(key).catch(() => {}); entry.baseline = latest.current.serialize(entry.queue.value); return false; }
+      if (server !== undefined) entry.baseline = latest.current.serialize(server);
       AsyncStorage.setItem(key, JSON.stringify({ value: content, baseline: entry.baseline, at: Date.now() } satisfies StoredDraft<T>)).catch(() => {});
       return true;
     };

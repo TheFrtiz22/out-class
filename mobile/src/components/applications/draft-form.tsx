@@ -80,6 +80,9 @@ export function DraftForm({ application, userId, alumni = false, onScrollTo, onS
         throw cause;
       }
       confirmed(sent);
+      // A document link still being typed went as its saved value: the device copy keeps the typed text.
+      const incomplete = questions.some(question => question.type === "FILE_UPLOAD" && (snapshot[question.id] ?? "").trim() !== "" && documentReference(snapshot[question.id]) === null);
+      return incomplete ? fromAnswers(sent) : undefined;
     },
   });
   // Lists and Home re-read once the editor closes.
