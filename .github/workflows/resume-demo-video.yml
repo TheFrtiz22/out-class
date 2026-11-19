@@ -1,0 +1,61 @@
+name: Résumé autofill demo video
+
+# Demo branch only. Records résumé autofill on a disposable local Supabase stack with
+# made-up students and résumés. No repository secrets, hosted Auth, production database
+# or external email.
+on:
+  push:
+    branches: ["demo/resume-autofill-video"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Record the demo on the disposable stack
+        env:
+          OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
+          OUTCLASS_DEMO_OUT: ${{ runner.temp }}/resume-demo
+        run: node scripts/run-onboarding-e2e.cjs --resume-demo
+      - name: Join the recordings into one MP4
+        if: always()
+        working-directory: ${{ runner.temp }}/resume-demo
+        run: |
+          ls -la || exit 0
+          for f in part*.webm; do [ -f "$f" ] && ffmpeg -y -loglevel error -i "$f" -c:v libx264 -pix_fmt yuv420p -r 30 -movflags +faststart "${f%.webm}.mp4"; done
+          if [ -f part1.mp4 ] && [ -f part2.mp4 ]; then
+            printf "file 'part1.mp4'\nfile 'part2.mp4'\n" > list.txt
+            ffmpeg -y -loglevel error -f concat -safe 0 -i list.txt -c copy resume-autofill-demo.mp4
+          fi
+          ls -la
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resume-autofill-demo
+          path: |
+            ${{ runner.temp }}/resume-demo/*.mp4
+            ${{ runner.temp }}/resume-demo/*.png
+            ${{ runner.temp }}/resume-demo/*.json
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: supabase-start-logs-resume-demo
+          path: |
+            ${{ runner.temp }}/supabase-start-logs
+            /tmp/outclass-onboarding-e2e/*.log
+          if-no-files-found: ignore
+          retention-days: 7
