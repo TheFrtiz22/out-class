@@ -12,3 +12,12 @@ export function slotAt(x: number, width: number, count: number) {
   const slot = (width - DOCK_PADDING * 2) / count;
   return Math.min(count - 1, Math.max(0, (x - DOCK_PADDING) / slot - 0.5));
 }
+
+/**
+ * Where the pill comes to rest when a finger lets go: a drop lands on the tab under the finger,
+ * and a cancelled drag (the system took the touch, say) goes back to the tab you are on.
+ */
+export function restingSlot(position: number, dropped: boolean, current: number) {
+  "worklet";
+  return dropped ? Math.round(position) : current;
+}

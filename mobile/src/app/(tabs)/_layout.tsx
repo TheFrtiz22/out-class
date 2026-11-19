@@ -9,7 +9,7 @@ import type { IconComponent } from "~/components/icon-factory";
 import { CalendarDays, Compass, Home, Inbox, UserRound } from "~/components/icons";
 import { Text } from "~/components/text";
 import { haptics } from "~/lib/haptics";
-import { DOCK_PADDING, slotAt } from "~/lib/dock";
+import { DOCK_PADDING, restingSlot, slotAt } from "~/lib/dock";
 import { useKeyboardShown } from "~/lib/keyboard";
 import { spring } from "~/lib/motion";
 import { useApiQuery } from "~/lib/query";
@@ -94,7 +94,7 @@ function Dock({ state }: DockProps) {
       if (index !== hovered.value) { hovered.value = index; runOnJS(onCross)(index); }
     })
     .onEnd((_event, success) => {
-      const index = Math.round(position.value);
+      const index = restingSlot(position.value, success, current);
       position.value = spring(index, { reduceMotion });
       lift.value = spring(0, { kind: "quick", reduceMotion });
       hovered.value = -1;

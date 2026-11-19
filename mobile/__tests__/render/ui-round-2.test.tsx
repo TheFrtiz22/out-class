@@ -10,7 +10,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView, State } from "react-native-gesture-handler";
 import { fireGestureHandler, getByGestureTestId } from "react-native-gesture-handler/jest-utils";
 import { Chip, ClubMark, StatusChip, toggleTrack } from "~/components/ui";
-import { slotAt } from "~/lib/dock";
+import { restingSlot, slotAt } from "~/lib/dock";
 import { ThemeProvider, useTheme } from "~/lib/theme";
 import { captureConsole, loggedCrashes, releaseConsole, renderRoute } from "./harness";
 import { routerState } from "./router-state";
@@ -168,6 +168,13 @@ describe("tab dock drag", () => {
       fireGestureHandler(getByGestureTestId("tab-dock-drag"), [{ state: State.BEGAN, x: 30 }, { state: State.ACTIVE, x: 40 }, { x: 300 }, { state: State.CANCELLED, x: 300 }]);
     });
     expect(routerState.router.navigate).not.toHaveBeenCalled();
+  });
+
+  test("a cancelled drag puts the pill back behind the tab you are on", () => {
+    // Dragged from Home (0) to past Calendar: a drop rests on the tab under the finger, a cancel on Home.
+    expect(restingSlot(3.4, true, 0)).toBe(3);
+    expect(restingSlot(3.4, false, 0)).toBe(0);
+    expect(restingSlot(0.2, false, 2)).toBe(2);
   });
 
   test("a plain tap still switches tabs", async () => {
