@@ -231,7 +231,7 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
       {options.map(option => {
         const selected = option.value === value;
         return (
-          <Pressable key={option.value} accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={option.label}
+          <Pressable key={option.value} accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={option.label} hitSlop={{ top: 3, bottom: 3 }}
             onPress={() => { if (!selected) { haptics.tick(); onChange(option.value); } }}
             style={{ flex: 1, minHeight: TARGET - 6, alignItems: "center", justifyContent: "center", borderRadius: radius.full, backgroundColor: selected ? colors.card : "transparent", paddingHorizontal: 10 }}>
             <Text variant="smallStrong" color={selected ? colors.foreground : colors.mutedForeground} numberOfLines={1}>{option.label}</Text>

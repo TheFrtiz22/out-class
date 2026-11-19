@@ -21,4 +21,4 @@ export const config = {
 
 /** Hosts whose /q/<code> links the scanner and universal links accept. The host is never a
  * security boundary: the server authorizes every check-in against the signed-in session. */
-export const shortLinkHosts = new Set(["out-class.net", "www.out-class.net", new URL(config.apiUrl).host]);
+export const shortLinkHosts = new Set(["out-class.net", "www.out-class.net", ...(() => { try { return [new URL(config.apiUrl).host]; } catch { return []; } })()]);
