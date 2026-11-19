@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlumniBanner } from "~/components/alumni-banner";
@@ -35,6 +35,7 @@ export default function Inbox() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [actionFailed, setActionFailed] = useState(false);
+  const opening = useRef(false);
 
   // Emails and the web link to /inbox?tab=preferences; the same address opens the sheet here.
   useEffect(() => { if (params.tab === "preferences") setPreferences(true); }, [params.tab]);
@@ -55,11 +56,16 @@ export default function Inbox() {
   const dismiss = (ids: string[]) => { setActionFailed(false); if (selectedId && ids.includes(selectedId)) setSelectedId(null); archive.mutate({ ids }, { onError: fail }); };
 
   async function open(item: InboxRow) {
-    if (!item.readAt) setRead([item.id], true);
-    // Updates that target the inbox itself are read in place; the rest open their own screen.
-    const route = opensInPlace(item) ? null : await resolveHref(item.href);
-    if (route && route.pathname !== "/inbox") { router.push(route as never); return; }
-    setSelectedId(item.id);
+    // A booking link waits for a lookup; a second tap meanwhile must not open the screen twice.
+    if (opening.current) return;
+    opening.current = true;
+    try {
+      if (!item.readAt) setRead([item.id], true);
+      // Updates that target the inbox itself are read in place; the rest open their own screen.
+      const route = opensInPlace(item) ? null : await resolveHref(item.href);
+      if (route && route.pathname !== "/inbox") { router.push(route as never); return; }
+      setSelectedId(item.id);
+    } finally { opening.current = false; }
   }
 
   const header = (
@@ -102,7 +108,7 @@ export default function Inbox() {
         ListEmptyComponent={
           inbox.isPending ? <View style={{ paddingTop: 12 }}><SkeletonRows count={5} /></View>
             : inbox.isError ? <ErrorState message={errorMessage(inbox.error)} offline={inbox.error instanceof ApiError && inbox.error.offline} onRetry={() => inbox.refetch()} />
-              : items.length ? <EmptyState icon={Bell} title="No matching notifications" body="Your keyword or filters hide every notification." action={<Button variant="secondary" label="Clear filters" onPress={() => { setReadFilter("all"); setTypeFilter("All"); }} />} />
+              : items.length ? <EmptyState icon={Bell} title="No matching notifications" body="Your filters hide every notification." action={<Button variant="secondary" label="Clear filters" onPress={() => { setReadFilter("all"); setTypeFilter("All"); }} />} />
                 : <EmptyState icon={Bell} title="No notifications yet" body="Nothing has been sent to you yet. Choose which updates you want by email." action={<Button variant="secondary" testID="inbox-empty-settings" label="Notification settings" onPress={() => setPreferences(true)} />} />
         }
         ListFooterComponent={
@@ -114,7 +120,7 @@ export default function Inbox() {
       <Header
         title="Inbox"
         actions={<>
-          <IconButton icon={CheckCheck} label="Mark all updates as read" testID="inbox-mark-all" onPress={() => { if (unread && !readAll.isPending) { setActionFailed(false); readAll.mutate(undefined, { onError: fail }); } }} />
+          {unread > 0 ? <IconButton icon={CheckCheck} label={`Mark all ${unread} updates as read`} testID="inbox-mark-all" onPress={() => { if (!readAll.isPending) { setActionFailed(false); readAll.mutate(undefined, { onError: fail }); } }} /> : null}
           <IconButton icon={Settings} label="Notification settings" testID="inbox-settings" onPress={() => setPreferences(true)} />
         </>}
       />

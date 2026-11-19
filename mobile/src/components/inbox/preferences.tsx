@@ -4,7 +4,7 @@ import { ScrollView, Switch, View, useWindowDimensions } from "react-native";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, Divider, Segmented, Skeleton, TARGET } from "~/components/ui";
-import { api } from "~/lib/api";
+import { api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { push, type PushStatus } from "~/lib/push";
 import { useApiQuery } from "~/lib/query";
@@ -66,18 +66,18 @@ export function NotificationPreferencesForm({ onSaved }: { onSaved?: () => void 
   const client = useQueryClient();
   const query = useApiQuery<Preferences>("inbox.preferences");
   const [draft, setDraft] = useState<Preferences | null>(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const prefs = draft ?? query.data ?? null;
   const save = useMutation({
     mutationFn: (value: Preferences) => api.post<Preferences>("inbox.preferences.save", {
       emailAnnouncements: value.emailAnnouncements, emailMessages: value.emailMessages, emailApplications: value.emailApplications, emailInterviews: value.emailInterviews,
       emailInvitations: value.emailInvitations, emailTasks: value.emailTasks, emailPlatform: value.emailPlatform, emailFrequency: value.emailFrequency,
     }),
-    onMutate: () => setMessage(""),
-    onSuccess: saved => { client.setQueryData(["inbox.preferences", null], saved); setDraft(null); setMessage("Preferences saved."); haptics.confirm(); onSaved?.(); },
-    onError: () => { setMessage("Could not save preferences."); haptics.error(); },
+    onMutate: () => setMessage(null),
+    onSuccess: saved => { client.setQueryData(["inbox.preferences", null], saved); setDraft(null); setMessage({ text: "Preferences saved.", error: false }); haptics.confirm(); onSaved?.(); },
+    onError: error => { setMessage({ text: errorMessage(error, "Could not save preferences."), error: true }); haptics.error(); },
   });
-  const change = (patch: Partial<Preferences>) => { if (prefs) { setMessage(""); setDraft({ ...prefs, ...patch }); } };
+  const change = (patch: Partial<Preferences>) => { if (prefs) { setMessage(null); setDraft({ ...prefs, ...patch }); } };
 
   return (
     <View style={{ gap: 14 }} accessibilityLabel="Email notification preferences">
@@ -96,13 +96,14 @@ export function NotificationPreferencesForm({ onSaved }: { onSaved?: () => void 
           </View>
           <View style={{ gap: 8 }}>
             <Text variant="smallStrong">Frequency</Text>
-            <Segmented label="Frequency" options={frequencies} value={prefs.emailFrequency} onChange={value => change({ emailFrequency: value })} />
+            <Segmented label="Frequency" options={frequencies} value={prefs.emailFrequency} onChange={value => { if (!save.isPending) change({ emailFrequency: value }); }} />
+            {prefs.emailFrequency === "OFF" ? <Text variant="caption">Email updates are off. Security emails still arrive.</Text> : null}
           </View>
           <Button full size="large" testID="preferences-save" label={save.isPending ? "Saving…" : "Save preferences"} loading={save.isPending} disabled={!draft} onPress={() => save.mutate(prefs)} />
         </>
       ) : query.isError ? (
         <View style={{ gap: 10 }}>
-          <Text variant="small" color={colors.destructive} accessibilityRole="alert">Could not load preferences.</Text>
+          <Text variant="small" color={colors.destructive} accessibilityRole="alert">{errorMessage(query.error, "Could not load preferences.")}</Text>
           <Button variant="secondary" label="Retry" onPress={() => query.refetch()} />
         </View>
       ) : (
@@ -110,7 +111,7 @@ export function NotificationPreferencesForm({ onSaved }: { onSaved?: () => void 
           <Skeleton width="72%" height={18} /><Skeleton width="84%" height={18} /><Skeleton width="60%" height={18} />
         </View>
       )}
-      {message ? <Text testID="preferences-message" variant="small" color={message.startsWith("Could not") ? colors.destructive : colors.foreground} accessibilityRole={message.startsWith("Could not") ? "alert" : "text"} accessibilityLiveRegion="polite">{message}</Text> : null}
+      {message ? <Text testID="preferences-message" variant="small" color={message.error ? colors.destructive : colors.foreground} accessibilityRole={message.error ? "alert" : "text"} accessibilityLiveRegion="polite">{message.text}</Text> : null}
     </View>
   );
 }
@@ -121,7 +122,8 @@ export function NotificationPreferencesSheet({ open, onClose }: { open: boolean;
   return (
     <Sheet open={open} onClose={onClose} title="Notification settings" testID="preferences-sheet">
       <ScrollView style={{ maxHeight: height * 0.68 }} contentContainerStyle={{ paddingBottom: 8 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {open ? <NotificationPreferencesForm /> : null}
+        {/* The sheet unmounts its content after it closes, so the form stays while it slides away. */}
+        <NotificationPreferencesForm />
       </ScrollView>
     </Sheet>
   );
