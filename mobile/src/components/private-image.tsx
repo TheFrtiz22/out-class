@@ -64,7 +64,10 @@ export function PrivateImage({ kind, params, style, contentFit = "cover", fallba
 export async function openPrivateDocument(kind: MediaKind, params: Params): Promise<boolean> {
   try {
     const { uri, headers } = await mediaSource(kind, params);
-    const response = await fetch(uri, { headers });
+    // Only the redirect is needed; a server that never answers must not leave the caller spinning.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20_000);
+    const response = await fetch(uri, { headers, signal: controller.signal }).finally(() => clearTimeout(timer));
     const final = response.url;
     // Only the address is needed; the file itself is left to the browser.
     void response.body?.cancel().catch(() => {});

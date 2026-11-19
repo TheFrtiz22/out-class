@@ -24,7 +24,8 @@ export function Header({ title, back, actions, scanner = !back }: { title: strin
     <View pointerEvents="box-none" style={{ position: "absolute", top: insets.top + 4, left: 12, right: 12, zIndex: 20 }}>
       <Glass radius={HEADER_HEIGHT / 2} style={{ height: HEADER_HEIGHT, flexDirection: "row", alignItems: "center", paddingHorizontal: 6, gap: 2 }}>
         {back ? <IconButton icon={ArrowLeft} label="Back" testID="header-back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} /> : <View style={{ width: 12 }} />}
-        <Text variant="section" accessibilityRole="header" numberOfLines={1} style={{ flex: 1, fontSize: 20, lineHeight: 26 }}>{title}</Text>
+        {/* The bar has a fixed height, so the title scales less than body text and truncates rather than clips. */}
+        <Text variant="section" accessibilityRole="header" numberOfLines={1} maxFontSizeMultiplier={1.35} style={{ flex: 1, fontSize: 20, lineHeight: 26 }}>{title}</Text>
         {actions}
         {scanner ? <IconButton icon={QrCode} label="Scan a code" testID="header-scan" onPress={() => router.push("/scan")} /> : null}
         {!actions && !scanner ? <View style={{ width: TARGET }} /> : null}

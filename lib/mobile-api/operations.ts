@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { operation, type AnyMobileOperation } from "@/utils/mobile-api";
+import { mobileConfirmInput, mobileRegisterInput } from "@/lib/mobile-api/auth";
 
 /**
  * Every call the native app can make (docs/mobile/architecture.md). Each entry names an existing
@@ -16,6 +17,11 @@ const passthrough = z.unknown();
 const formData = z.instanceof(FormData);
 
 export const mobileOperations = {
+  // Account creation (signed out until the code is confirmed; lib/mobile-api/auth.ts)
+  "auth.signupOptions": operation("GET", none, async () => (await import("@/lib/mobile-api/auth")).mobileSignupOptions(), { public: true }),
+  "auth.register": operation("POST", mobileRegisterInput, async input => (await import("@/lib/mobile-api/auth")).mobileRegister(input), { public: true }),
+  "auth.confirmEmail": operation("POST", mobileConfirmInput, async (input, request) => (await import("@/lib/mobile-api/auth")).mobileConfirmEmail(input, request), { public: true }),
+  "terms.accept": operation("POST", none, async () => (await import("@/lib/mobile-api/auth")).mobileAcceptTerms()),
   // Account
   "me": operation("GET", none, async () => (await import("@/utils/current-user")).getCurrentUser()),
   "account.deletion": operation("GET", none, async () => (await import("@/actions/account-deletion")).getAccountDeletionRequest()),
@@ -52,7 +58,7 @@ export const mobileOperations = {
   // Profile
   "profile": operation("GET", none, async () => (await import("@/actions/profile")).getStudentProfile()),
   "profile.create": operation("POST", passthrough, async input => (await import("@/actions/profile")).upsertStudentProfile(input as never)),
-  "profile.updateSection": operation("POST", z.object({ input: z.unknown(), expected: z.string().max(200).optional() }).strict(), async ({ input, expected }) => (await import("@/actions/profile")).updateStudentProfileSection(input, expected)),
+  "profile.updateSection": operation("POST", z.object({ input: z.unknown(), expected: z.string().max(100_000).optional() }).strict(), async ({ input, expected }) => (await import("@/actions/profile")).updateStudentProfileSection(input, expected)),
   "profile.upload": operation("POST", formData, async input => (await import("@/actions/storage")).uploadProfileFile(input)),
 
   // Applications, interviews, decisions

@@ -327,7 +327,10 @@ test("an unfinished account that already has a verified second factor is left un
 
 test("code verification is behind the shared per-address limiter", () => {
   const source = fs.readFileSync(path.join(root, "app/api/auth/confirm-email/route.ts"), "utf8")
-  assert.ok(source.indexOf("limitRequest(request, RATE_LIMITS.emailCode)") < source.indexOf("recordEmailCodeAttempt("))
+  const shared = fs.readFileSync(path.join(root, "lib/email-code-session.ts"), "utf8")
+  const limit = source.indexOf("limitRequest(request, RATE_LIMITS.emailCode)")
+  assert.ok(limit > 0 && limit < source.indexOf("verifyEmailCode("))
+  assert.ok(shared.indexOf("recordEmailCodeAttempt(") > 0 && shared.indexOf("recordEmailCodeAttempt(") < shared.indexOf("verifyOtp("))
 })
 
 test("without the Supabase secret key the route refuses before using the code", async () => {
