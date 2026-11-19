@@ -84,18 +84,18 @@ const calendarEvent = (n: number, days: number, extra: Partial<AgendaEvent> = {}
   return {
     id: `meeting-${uuid(300 + n)}`, clubId: n % 2 ? ids.leaderClub : ids.memberClub, startTime: start.toISOString(), endTime: new Date(+start + 3_600_000).toISOString(),
     date: start.toISOString().slice(0, 10), day: start.getDate(), time: "7:00 PM", title: n === 1 ? `General body meeting: ${longName}` : `Event ${n}`, club: n % 2 ? longName : "Virginia Motorsports",
-    color: n % 2 ? "#0F2E56" : "#E57200", type: ["meeting", "deadline", "interview", "event"][n % 4]!, location: n % 3 ? "Rice Hall 130" : undefined, description: n % 2 ? "Bring a laptop." : undefined, durationMinutes: 60, ...extra,
+    color: n % 2 ? "#0F2E56" : "#E57200", type: ["Other", "Deadline", "Interest Meeting", "Coffee Chat"][n % 4]!, location: n % 3 ? "Rice Hall 130" : undefined, description: n % 2 ? "Bring a laptop." : undefined, durationMinutes: 60, ...extra,
   };
 };
 const agenda: AgendaEvent[] = [
   calendarEvent(1, 0.2), calendarEvent(2, 1), calendarEvent(3, 2, { allDay: true, time: "" }), calendarEvent(4, 3, { response: "GOING" }), calendarEvent(5, 6),
-  calendarEvent(6, 9, { id: `booking-${ids.booking}`, clubId: ids.interviewClub, type: "interview", title: "Interview: Design Team", bookingSlotId: ids.slot, applicationId: ids.interviewApplication }),
+  calendarEvent(6, 9, { id: `booking-${ids.booking}`, clubId: ids.interviewClub, type: "Interview", title: "Interview: Design Team", bookingSlotId: ids.slot, applicationId: ids.interviewApplication }),
   calendarEvent(7, 12, { readOnly: true }), calendarEvent(8, -3), calendarEvent(9, 40),
 ];
 const homeApplication = (id: string, clubId: string, name: string, status: string, statusCode: string, statusLabel: string, extra: Partial<HomeApplication> = {}): HomeApplication =>
   ({ id, clubId, name, color: "#0F2E56", logoUrl: null, status, statusCode, statusLabel, draft: status === "DRAFTING", closed: false, intakeClosed: false, ...extra });
 const homeApplications: HomeApplication[] = [
-  homeApplication(ids.draftApplication, ids.applyClub, longName, "DRAFTING", "drafting", "Draft", { responsesSaved: 2, deadline: calendarEvent(10, 4, { type: "deadline" }) }),
+  homeApplication(ids.draftApplication, ids.applyClub, longName, "DRAFTING", "drafting", "Draft", { responsesSaved: 2, deadline: calendarEvent(10, 4, { type: "Deadline" }) }),
   homeApplication(ids.reviewApplication, ids.memberClub, "Virginia Motorsports", "SUBMITTED", "submitted", "Submitted", { logoUrl: "https://out-class.test/logo.png" }),
   homeApplication(ids.interviewApplication, ids.interviewClub, "Design Team", "INTERVIEWING", "interviewing", "Interview"),
   homeApplication(ids.decidedApplication, ids.decidedClub, "Hoos Coding", "DRAFTING", "drafting", "Draft", { intakeClosed: true, closed: true }),
