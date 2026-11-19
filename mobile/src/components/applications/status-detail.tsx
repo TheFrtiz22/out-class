@@ -139,7 +139,7 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14 }}>
         <Button testID="application-view-responses" variant="secondary" label="View submitted responses" onPress={() => setResponses(true)} />
-        <Button variant="ghost" icon={CalendarDays} label="Open calendar" onPress={() => router.push("/calendar")} />
+        <Button variant="ghost" icon={CalendarDays} label="Open calendar" onPress={() => router.navigate("/calendar")} />
       </View>
     </>
   );

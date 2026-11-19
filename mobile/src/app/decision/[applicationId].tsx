@@ -9,7 +9,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ArrowRight, PartyPopper } from "~/components/icons";
 import { Text } from "~/components/text";
 import { Button, Card, ErrorState, ScreenScroll, Skeleton } from "~/components/ui";
-import { api, ApiError } from "~/lib/api";
+import { api, ApiError, errorMessage } from "~/lib/api";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ApplicationsView, DecisionLetterView } from "~/lib/types";
@@ -30,7 +30,8 @@ export default function DecisionScreen() {
   const letter = data?.letter?.content;
   const [readError, setReadError] = useState("");
   const marked = useRef<string | null>(null);
-  const offerResponse = useOfferResponse(applicationId, letter?.clubName ?? "", "Your response could not be saved. Refresh and try again.");
+  const clubName = letter?.clubName || applications.data?.applications.find(item => item.id === applicationId)?.club.name || "";
+  const offerResponse = useOfferResponse(applicationId, clubName, "Your response could not be saved. Refresh and try again.");
 
   const notificationId = data?.notificationId;
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function DecisionScreen() {
           : offer && (offer.status === "EXPIRED" || +new Date(offer.expiresAt) <= now) ? "This offer has expired."
           : "There is no active offer associated with this decision."}</Text>
       )) : null}
-      {offer?.status === "ACCEPTED" ? <Button variant="secondary" icon={ArrowRight} label="Open My Clubs" onPress={() => router.push("/")} /> : null}
+      {offer?.status === "ACCEPTED" ? <Button variant="secondary" icon={ArrowRight} label="Open your club" onPress={() => router.push({ pathname: "/my-club/[clubId]", params: { clubId: data.clubId } })} /> : null}
       {message ? <Text variant="small" color={colors.foreground} accessibilityRole="alert" testID="decision-message">{message}</Text> : null}
     </Card>
   ) : null;
@@ -92,8 +93,8 @@ export default function DecisionScreen() {
             </Card>
           </View>
         ) : letterQuery.isError && !data ? (
-          letterQuery.error instanceof ApiError && letterQuery.error.offline
-            ? <ErrorState offline message={letterQuery.error.message} onRetry={() => { void letterQuery.refetch(); }} />
+          letterQuery.error instanceof ApiError && (letterQuery.error.offline || letterQuery.error.status >= 500)
+            ? <ErrorState offline={letterQuery.error.offline} message={errorMessage(letterQuery.error)} onRetry={() => { void letterQuery.refetch(); }} />
             : <ErrorState message="This letter could not be loaded. Sign in to the account that submitted the application and try again." onRetry={() => { void letterQuery.refetch(); }} />
         ) : !data ? (
           <View accessibilityRole="alert" style={{ gap: 12 }}>
@@ -107,7 +108,7 @@ export default function DecisionScreen() {
               <Card tone="sage" accessibilityLabel="Congratulations" testID="decision-congratulations" style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
                 <PartyPopper size={26} color={colors.success} />
                 <View style={{ flex: 1, gap: 4 }}>
-                  <Text variant="section">Congratulations, {letter.studentName.split(/\s+/)[0] || letter.studentName}!</Text>
+                  <Text variant="section">{letter.studentName?.trim() ? `Congratulations, ${letter.studentName.trim().split(/\s+/)[0]}!` : "Congratulations!"}</Text>
                   <Text variant="small" color={colors.foreground}>{letter.clubName} would love to have you. Read your letter, then respond below.</Text>
                 </View>
               </Card>

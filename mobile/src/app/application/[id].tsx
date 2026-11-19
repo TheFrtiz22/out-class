@@ -1,11 +1,12 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { type ComponentRef, useRef, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { type ComponentRef, useCallback, useRef, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { DraftForm } from "~/components/applications/draft-form";
 import { ApplicationHeading, StatusDetail } from "~/components/applications/status-detail";
 import { Header, useHeaderInset } from "~/components/header";
 import { Text } from "~/components/text";
-import { Button, Chip, EmptyState, ErrorState, ScreenScroll, Skeleton, statusTone } from "~/components/ui";
+import { FilePenLine } from "~/components/icons";
+import { Button, Card, Chip, EmptyState, ErrorState, ScreenScroll, Skeleton, statusTone } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import type { AutosaveState } from "~/lib/autosave";
 import { useApiQuery } from "~/lib/query";
@@ -25,6 +26,13 @@ export default function ApplicationScreen() {
   const draft = app?.status === "DRAFTING";
   const loading = view.isPending || (draft && !view.isFetchedAfterMount && !view.isError);
   const failed = view.isError && (!app || (draft && !view.isFetchedAfterMount));
+  // Coming back (from the profile, a booking or a letter) re-reads the record: profile notes, closing dates and status move on.
+  const returned = useRef(false);
+  const refetch = view.refetch;
+  useFocusEffect(useCallback(() => {
+    if (returned.current) void refetch();
+    returned.current = true;
+  }, [refetch]));
 
   return (
     <View style={{ flex: 1 }}>
@@ -40,7 +48,10 @@ export default function ApplicationScreen() {
         ) : failed ? (
           <ErrorState message={errorMessage(view.error)} offline={view.error instanceof ApiError && view.error.offline} onRetry={() => { void view.refetch(); }} />
         ) : !app ? (
-          <EmptyState title="No applications yet." body="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button label="Explore clubs" onPress={() => router.replace("/explore")} />} />
+          <Card>
+            <EmptyState icon={FilePenLine} title="Application unavailable" body="This application isn’t on your account. It may have been removed, or the link is for another account."
+              action={<Button variant="secondary" label="View your applications" onPress={() => router.replace("/applications")} />} />
+          </Card>
         ) : draft ? (
           <>
             <ApplicationHeading application={app} eyebrow="Your application">

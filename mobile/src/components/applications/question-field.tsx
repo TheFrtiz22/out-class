@@ -1,19 +1,20 @@
 import { useState } from "react";
-import { TextInput, View } from "react-native";
-import { Check, ChevronDown } from "~/components/icons";
+import { ScrollView, TextInput, View, useWindowDimensions } from "react-native";
+import { Check, ChevronDown, FileText } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Press, TARGET } from "~/components/ui";
+import { Button, Press, TARGET } from "~/components/ui";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
 import type { ApplicationQuestion } from "~/lib/types";
-import { MAX_ANSWER_CHARACTERS, encodeSelections, selectedOptions } from "./rules";
+import { MAX_ANSWER_CHARACTERS, encodeSelections, isUploadedDocument, selectedOptions } from "./rules";
 
 type Props = { question: ApplicationQuestion; value: string; onChange: (value: string) => void; onBlur?: () => void; invalid?: boolean; disabled?: boolean; index: number };
 
 /** One answer control per question type, as the web's QuestionField: essay box, choice, select-all, text or link. */
 export function QuestionField({ question, value, onChange, onBlur, invalid, disabled, index }: Props) {
   const { colors, radius, text } = useTheme();
+  const { height } = useWindowDimensions();
   const [focused, setFocused] = useState(false);
   const [open, setOpen] = useState(false);
   const border = { borderRadius: radius.md, borderWidth: focused ? 2 : 1, borderColor: invalid ? colors.destructive : focused ? colors.ring : colors.input, backgroundColor: colors.card };
@@ -54,19 +55,23 @@ export function QuestionField({ question, value, onChange, onBlur, invalid, disa
           <ChevronDown size={18} color={colors.mutedForeground} />
         </Press>
         <Sheet open={open} onClose={() => { setOpen(false); onBlur?.(); }} title={question.prompt.length > 80 ? `Question ${index + 1}` : question.prompt}>
-          <View accessibilityRole="radiogroup" style={{ gap: 4 }}>
-            {["", ...question.options].map(option => {
-              const selected = option === value;
-              return (
-                <Press key={option || "none"} large accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={option || "Select an option"}
-                  onPress={() => { haptics.tick(); onChange(option); setOpen(false); onBlur?.(); }}
-                  style={{ minHeight: TARGET + 4, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, borderRadius: radius.md, backgroundColor: selected ? colors.contentSoft : "transparent" }}>
-                  <Text variant={selected ? "bodyStrong" : "body"} color={option ? colors.foreground : colors.mutedForeground} style={{ flex: 1 }}>{option || "Select an option"}</Text>
-                  {selected ? <Check size={18} color={colors.brandInk} /> : null}
-                </Press>
-              );
-            })}
-          </View>
+          {/* A long list of choices scrolls inside the sheet instead of running off the screen. */}
+          <ScrollView style={{ maxHeight: height * 0.6 }} showsVerticalScrollIndicator={question.options.length > 8}>
+            <View accessibilityRole="radiogroup" style={{ gap: 4 }}>
+              {/* The empty row clears an answer; it is offered only once there is one. */}
+              {[...(value ? [""] : []), ...question.options].map(option => {
+                const selected = option === value;
+                return (
+                  <Press key={option || "none"} large accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={option || "Clear selection"}
+                    onPress={() => { haptics.tick(); onChange(option); setOpen(false); onBlur?.(); }}
+                    style={{ minHeight: TARGET + 4, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, borderRadius: radius.md, backgroundColor: selected ? colors.contentSoft : "transparent" }}>
+                    <Text variant={selected ? "bodyStrong" : "body"} color={option ? colors.foreground : colors.mutedForeground} style={{ flex: 1 }}>{option || "Clear selection"}</Text>
+                    {selected ? <Check size={18} color={colors.brandInk} /> : null}
+                  </Press>
+                );
+              })}
+            </View>
+          </ScrollView>
         </Sheet>
       </>
     );
@@ -74,6 +79,14 @@ export function QuestionField({ question, value, onChange, onBlur, invalid, disa
 
   const essay = question.type === "ESSAY";
   const link = question.type === "FILE_UPLOAD";
+  // An uploaded PDF is stored as a private key, which means nothing to read: show it as an attachment.
+  if (link && isUploadedDocument(value)) return (
+    <View testID={`answer-${index + 1}`} accessibilityLabel={`${name}. PDF attached`} style={{ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 14, paddingRight: 4, paddingVertical: 4, ...border, borderWidth: 1, borderColor: invalid ? colors.destructive : colors.input }}>
+      <FileText size={18} color={colors.mutedForeground} />
+      <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>PDF attached</Text>
+      <Button variant="ghost" size="compact" label="Remove" disabled={disabled} accessibilityHint="Removes the attached PDF from this answer" onPress={() => { haptics.tick(); onChange(""); onBlur?.(); }} />
+    </View>
+  );
   return (
     <TextInput
       testID={`answer-${index + 1}`}
