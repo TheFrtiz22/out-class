@@ -38,7 +38,8 @@ function agendaGroups(events: AgendaEvent[], now: number, includePast: boolean) 
     const label = past ? "Earlier" : event.date === today || (event.allDay && event.date < today) ? "Today" : event.date === tomorrow ? "Tomorrow" : event.date < weekEnd ? "Next 7 days" : "Later";
     groups.set(label, [...(groups.get(label) ?? []), event]);
   }
-  return ["Today", "Tomorrow", "Next 7 days", "Later", "Earlier"].filter(label => groups.has(label)).map(label => ({ title: label, data: groups.get(label)! }));
+  // Past events read newest first, nearest the present.
+  return ["Today", "Tomorrow", "Next 7 days", "Later", "Earlier"].filter(label => groups.has(label)).map(label => ({ title: label, data: label === "Earlier" ? [...groups.get(label)!].reverse() : groups.get(label)! }));
 }
 
 function EventRow({ event, first, last, onPress }: { event: AgendaEvent; first: boolean; last: boolean; onPress: () => void }) {
@@ -57,8 +58,8 @@ function EventRow({ event, first, last, onPress }: { event: AgendaEvent; first: 
           <Chip label={event.type} tone={typeTone[event.type] ?? "neutral"} />
           {status ? <Text variant="caption">{status.slice(3)}</Text> : null}
         </View>
-        <Text variant="bodyStrong">{event.title}</Text>
-        <Text variant="small">{event.club}{event.location ? ` · ${event.location}` : ""}</Text>
+        <Text variant="bodyStrong" numberOfLines={3}>{event.title}</Text>
+        <Text variant="small" numberOfLines={2}>{event.club}{event.location ? ` · ${event.location}` : ""}</Text>
       </View>
       <View style={{ marginTop: 6 }}><ChevronRight size={18} color={colors.mutedForeground} /></View>
     </Press>
@@ -124,6 +125,10 @@ export default function CalendarScreen() {
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60_000); return () => clearInterval(timer); }, []);
 
   const events = calendar.data?.events ?? [];
+  // Only types this person actually has, so no chip leads to an empty list.
+  const present = new Set(events.map(event => event.type));
+  const hasMeetings = events.some(event => event.id.startsWith("meeting-"));
+  const options = typeOptions.filter(option => option.value === "all" || option.value === filter || (option.value === MEETINGS_FILTER ? hasMeetings : present.has(option.value)));
   const visible = events.filter(event => filter === "all" || (filter === MEETINGS_FILTER ? event.id.startsWith("meeting-") : event.type === filter));
   const sections = view === "agenda"
     ? agendaGroups(visible, now, includePast)
@@ -156,7 +161,7 @@ export default function CalendarScreen() {
       {events.length > 0 ? (
         <>
           <Segmented label="Calendar view" value={view} onChange={setView} options={[{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }]} />
-          <FilterChips label="Filter event type" testID="calendar-type" value={filter} onChange={setFilter} options={typeOptions} />
+          {options.length > 2 || filter !== "all" ? <FilterChips label="Filter event type" testID="calendar-type" value={filter} onChange={setFilter} options={options} /> : null}
           {view === "agenda" ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: TARGET }}>
               <Text variant="body" style={{ flex: 1 }}>Include past events</Text>
@@ -166,7 +171,7 @@ export default function CalendarScreen() {
             <View style={{ gap: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <IconButton icon={ChevronLeft} label="Previous period" tone="surface" onPress={() => stepMonth(-1)} />
-                <Text variant="section" accessibilityRole="header" align="center" style={{ flex: 1 }}>{formatDateKey(`${month}-01`, { month: "long", year: "numeric" })}</Text>
+                <Text variant="section" accessibilityRole="header" align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flex: 1 }}>{formatDateKey(`${month}-01`, { month: "long", year: "numeric" })}</Text>
                 <IconButton icon={ChevronRight} label="Next period" tone="surface" onPress={() => stepMonth(1)} />
                 <Button variant="ghost" size="compact" label="Today" onPress={() => { setMonth(today.slice(0, 7)); setDay(today); }} />
               </View>
@@ -180,7 +185,7 @@ export default function CalendarScreen() {
 
   const empty = calendar.isPending ? <View style={{ paddingTop: 12 }}><SkeletonRows count={4} avatar={false} /></View>
     : calendar.isError ? <ErrorState message={errorMessage(calendar.error)} offline={calendar.error instanceof ApiError && calendar.error.offline} onRetry={() => calendar.refetch()} />
-      : <EmptyState icon={CalendarDays} title={filtered ? "No events match these filters" : "Nothing coming up"} body={filtered ? "Your search, type filter or hidden club calendars leave nothing to show." : "You have no interviews or RSVP’d events coming up."}
+      : <EmptyState icon={CalendarDays} title={filtered ? "No events match these filters" : "Nothing coming up"} body={filtered ? "No events of this type are on your calendar." : includePast ? "You have no interviews, meetings or RSVP’d events yet." : "You have no interviews, meetings or RSVP’d events coming up."}
           action={filtered ? <Button variant="secondary" label="Clear filters" onPress={() => setFilter("all")} /> : <Button variant="secondary" label="Browse events" onPress={() => router.push("/events" as never)} />} />;
 
   return (
@@ -212,9 +217,9 @@ export default function CalendarScreen() {
             </View>
             <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
               <View style={{ marginTop: 2 }}><MapPin size={18} color={colors.foreground} /></View>
-              <Text variant="body" style={{ flex: 1 }}>{selected.location ?? (selected.type === "Deadline" ? "Online application" : "Location not announced")}</Text>
+              <Text variant="body" style={{ flex: 1 }}>{selected.location?.trim() || (selected.type === "Deadline" ? "Online application" : "Location not announced")}</Text>
             </View>
-            <Text variant="small">{selected.description ?? (selected.readOnly ? "Review your scheduled event details below." : selected.type === "Deadline" ? "Open your application to review your progress and next steps before this deadline." : "Review this club event and manage your attendance below.")}</Text>
+            <Text variant="small">{selected.description?.trim() || (selected.readOnly ? "Review your scheduled event details below." : selected.type === "Deadline" ? "Open your application to review your progress and next steps before this deadline." : "Review this club event and manage your attendance below.")}</Text>
             {selected.readOnly ? <Text variant="small">Contact the club if you need to change these arrangements.</Text> : null}
             {selected.response ? <Text variant="smallStrong" accessibilityLiveRegion="polite">{selected.response === "declined" ? "Attendance cancelled" : selected.response === "confirmed" ? "Interview confirmed" : "You're going"}</Text> : null}
             {calendarNote ? <Text variant="small" accessibilityRole="alert">{calendarNote}</Text> : null}
@@ -224,7 +229,7 @@ export default function CalendarScreen() {
               <Button full size="large" variant="secondary" icon={CalendarPlus} testID="calendar-add" label="Add to Calendar"
                 onPress={async () => {
                   const result = await addToCalendar({ title: selected.title, start: selected.startTime, end: endOf(selected), allDay: selected.allDay, location: selected.location, notes: [selected.club, selected.description].filter(Boolean).join("\n") });
-                  setCalendarNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : "");
+                  setCalendarNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : result === "saved" ? "Added to your calendar." : "");
                 }} />
             </View>
           </View>
