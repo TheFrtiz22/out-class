@@ -6,6 +6,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { applicationStatusLabel, clubImage, eventDateLabel, eventScheduleLabel, eventTimeLabel, profileStatistics } from "~/components/explore/directory";
 import type { IconComponent } from "~/components/icon-factory";
 import { CalendarDays, Check, ChevronDown, ChevronUp, ExternalLink, Globe, Instagram, Linkedin, Mail, MapPin, Play } from "~/components/icons";
+import { PlacementCarousel } from "~/components/explore/placement-carousel";
 import { Text } from "~/components/text";
 import { Card, ClubMark, Divider, IconButton, Press, TARGET } from "~/components/ui";
 import { config } from "~/lib/config";
@@ -191,7 +192,7 @@ export function MembersSection({ club }: { club: PublicClub }) {
       {placements.length ? (
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}><Subheading>Where members go</Subheading><Text variant="caption">Club-reported</Text></View>
-          <Bullets items={placements} />
+          <PlacementCarousel names={placements} />
         </View>
       ) : null}
       {accolades.length ? <View style={{ gap: 8 }}><Subheading>Recognition</Subheading><Bullets items={accolades} /></View> : null}
