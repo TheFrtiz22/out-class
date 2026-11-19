@@ -128,3 +128,62 @@ test('real malformed and empty PDFs return structured action failures without up
     assert.equal(h.uploads.length, 0); assert.equal(h.writes.length, 0);
   }
 });
+
+// Made-up résumés in common student layouts (tests/fixtures/resume-import/generate-layouts.py).
+const layout = name => fs.readFileSync(`tests/fixtures/resume-import/layout-${name}.pdf`);
+const field = (proposal, name) => proposal.fields.find(f => f.field === name);
+test('common layouts: degree lines, dates beside the degree, right-hand date columns and contact headers fill the profile', async () => {
+  const expected = {
+    'a-engineering': { major: 'Mechanical Engineering', gradYear: '2029', gpa: '3.82', phone: '(434) 555-0142', linkedinUrl: 'https://www.linkedin.com/in/maya-chen-example', name: ['Maya', 'Chen'], experiences: [['Chassis Team Member', 'Virginia Motorsports', 'Sep 2025 - Present'], ['Engineering Intern', 'Example Robotics Co.', 'June 2025 - August 2025'], ['First-Year Representative', 'Engineering Student Council', 'Sep 2025 - Present']] },
+    'b-politics': { major: 'Foreign Affairs and Economics', gradYear: '2028', gpa: '3.6', phone: '(540) 555-0199', linkedinUrl: 'https://www.linkedin.com/in/jordan-okafor-example', name: ['Jordan', 'Lee Okafor'], experiences: [['Research Assistant', 'Batten School Policy Lab', 'January 2026 – Present'], ['Campaign Intern', 'Example for Delegate', 'Summer 2025'], ['Delegate', 'Model United Nations', '2024 – Present']] },
+    'c-firstyear': { major: 'Computer Science', gradYear: '2030', gpa: '4.0', satScore: '1510', actScore: '34', highSchool: 'Example High School', name: ['Sam', 'Patel-Rivera'], experiences: [['Study Buddy App', 'Personal project', '2025 - 2026'], ['Robotics Team Captain', 'Example High School', '2023 - 2026']] },
+    'd-business': { major: 'Commerce', gradYear: '2028', gpa: '3.71', phone: '(434) 555-0177', name: ['Alex', 'Morgan'], experiences: [['Summer Analyst', 'Example Capital Partners', 'Jun 2025 - Aug 2025'], ['Teaching Assistant', 'Department of Economics', 'Jan 2026 - Present']] },
+  };
+  for (const [name, want] of Object.entries(expected)) {
+    const proposal = contract.extractResumeProposal(await pdf.extractPdfText(layout(name)));
+    for (const key of ['major', 'gradYear', 'gpa', 'phone', 'linkedinUrl', 'satScore', 'actScore', 'highSchool']) {
+      if (want[key]) { assert.equal(field(proposal, key).value, want[key], `${name} ${key}`); assert.equal(field(proposal, key).status, 'found', `${name} ${key}`); }
+      else assert.equal(field(proposal, key).status, 'missing', `${name} ${key}`);
+    }
+    assert.deepEqual([field(proposal, 'firstName').value, field(proposal, 'lastName').value], want.name, name);
+    assert.equal(field(proposal, 'firstName').status, 'uncertain');
+    assert.deepEqual(proposal.experiences.map(e => [e.title, e.subtitle, e.period]), want.experiences, name);
+  }
+});
+test('descriptions, skills, summaries and high-school dates never become entries or graduation years', () => {
+  const proposal = contract.extractResumeProposal([
+    'Riley Example', 'Summary', 'Student interested in robotics since 2019.',
+    'Education', 'Example High School — Graduated June 2026', 'University of Virginia', 'Intended major: Physics',
+    'Experience', 'Led a group of twelve students through a long design review and testing cycle in 2024', 'Lab Volunteer', '• Cleaned equipment in 2025',
+    'Skills', 'Python | SQL | 2025 Excel',
+  ].join('\n'));
+  assert.equal(field(proposal, 'gradYear').status, 'missing'); assert.equal(field(proposal, 'major').value, 'Physics');
+  assert.equal(field(proposal, 'highSchool').value, 'Example High School'); assert.deepEqual(proposal.experiences, []);
+});
+test('preselection ticks only confident values for empty fields', () => {
+  const fields = [{ field: 'major', status: 'found', value: 'Physics' }, { field: 'gpa', status: 'found', value: '3.9' }, { field: 'firstName', status: 'uncertain', value: 'Riley' }, { field: 'phone', status: 'found', value: '(434) 555-0100' }];
+  assert.deepEqual(contract.preselectedFields(fields, { major: '', gpa: 3.5, firstName: null, phone: null }), ['major', 'phone']);
+});
+test('confirm normalizes imported LinkedIn and phone values and rejects other sites', async () => {
+  const h = harness(); h.current().phone = null; h.current().linkedinUrl = null;
+  const result = await h.api.confirmResumeImport({ patch: contract.reviewPatch({ phone: '(434) 555-0142', linkedinUrl: 'https://www.linkedin.com/in/maya-chen-example' }, ['phone', 'linkedinUrl']), experiences: [], baseline: h.baseline() });
+  assert.equal(result.profile.phone, '+14345550142'); assert.equal(result.profile.linkedinUrl, 'https://www.linkedin.com/in/maya-chen-example');
+  assert.throws(() => contract.reviewPatch({ linkedinUrl: 'https://example.com/in/x' }, ['linkedinUrl']));
+});
+test('sign-up prefill keeps confident values inside the sign-up form limits', async () => {
+  const proposal = contract.extractResumeProposal(await pdf.extractPdfText(layout('a-engineering')));
+  const prefill = contract.onboardingPrefill(proposal, ['2027', '2028', '2029', '2030']);
+  assert.deepEqual(prefill.academic, { major: 'Mechanical Engineering', gradYear: '2029', gpa: '3.82', phone: '(434) 555-0142' });
+  assert.equal(prefill.linkedinUrl, 'https://www.linkedin.com/in/maya-chen-example'); assert.equal(prefill.experiences.length, 3);
+  assert.equal(contract.onboardingPrefill(proposal, ['2030']).academic.gradYear, undefined);
+  assert.equal('firstName' in prefill.academic, false);
+});
+test('sign-up reading authenticates, never stores the file or writes a profile, and refuses non-PDFs', async () => {
+  const h = harness({ parse: pdf.extractPdfText });
+  const result = await h.api.readResumeForOnboarding(form(layout('b-politics')));
+  assert.equal(result.ok, true); assert.equal(field(result.proposal, 'major').value, 'Foreign Affairs and Economics'); assert.equal('reference' in result, false);
+  for (const input of [form(Buffer.from('not pdf')), form(layout('b-politics'), 'application/pdf', 'resume.txt'), form(fs.readFileSync('tests/fixtures/resume-import/empty.pdf'))]) await rejected(h.api.readResumeForOnboarding(input));
+  const forged = form(layout('b-politics')); forged.set('userId', 'forged'); await rejected(h.api.readResumeForOnboarding(forged));
+  assert.equal(h.uploads.length, 0); assert.equal(h.writes.length, 0);
+  await assert.rejects(harness({ deny: true }).api.readResumeForOnboarding(form(layout('b-politics'))), /Unauthenticated/);
+});
