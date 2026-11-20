@@ -12,6 +12,11 @@ function localConfig(): PublicConfig {
 }
 const local = localConfig();
 const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://out-class.net";
+// The production Supabase project's address and publishable key. Both are public (the web sends the
+// same two to every browser), and they are the defaults so a fresh clone run in Expo Go signs in with
+// no hidden file: without them the app sent sign-in to a placeholder address and showed only "try again".
+// EXPO_PUBLIC_* or config.local.json still override them, for a local server or a staging project.
+const PRODUCTION_SUPABASE = { url: "https://htlgjluegmdwfjkzzwic.supabase.co", publishableKey: "sb_publishable_H-crMmjPAlJ6L2RvwoAAVw_Bpz-fLDa" };
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -91,8 +96,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // EAS project @outclass/outclass. The app needs it to request an Expo push token (src/lib/push.ts).
     eas: { projectId: "23668155-43a1-4bf7-9b89-1f61a42b535b" },
     apiUrl,
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? local.supabaseUrl ?? "",
-    supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? local.supabasePublishableKey ?? "",
+    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || local.supabaseUrl || PRODUCTION_SUPABASE.url,
+    supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || local.supabasePublishableKey || PRODUCTION_SUPABASE.publishableKey,
     turnstileSiteKey: process.env.EXPO_PUBLIC_TURNSTILE_SITE_KEY ?? local.turnstileSiteKey ?? "",
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? local.sentryDsn ?? "",
   },
