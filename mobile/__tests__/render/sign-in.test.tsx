@@ -122,4 +122,25 @@ describe("sign-in screen", () => {
     expect(screen.queryByText(/isn't right/)).toBeNull();
     expect(loggedCrashes()).toEqual([]);
   });
+
+  test("the check's own frames load inside the app instead of being handed to the phone", async () => {
+    signInWithPassword.mockClear();
+    signInWithPassword.mockResolvedValueOnce({ data: { session: null, user: null }, error: { name: "AuthApiError", status: 400, code: "captcha_failed", message: "captcha verification process failed" } });
+    await renderRoute(SignIn, { segments: ["sign-in"], overrides: { "auth.signupOptions": { termsRequired: true, turnstileSiteKey: "0xTEST", graduationYears: [] } } });
+    await submit();
+    // react-native-webview's own check for each navigation (iOS checks frames too): a URL that fails
+    // is sent to Linking, which logged "Can't open url: about:srcdoc" and left Turnstile on "Verifying...".
+    const { createOnShouldStartLoadWithRequest } = jest.requireActual("react-native-webview/lib/WebViewShared");
+    const whitelist = screen.getByTestId("webview").props.originWhitelist as string[];
+    const loads = (url: string) => {
+      let allowed: boolean | undefined;
+      createOnShouldStartLoadWithRequest((shouldStart: boolean) => { allowed = shouldStart; }, whitelist)({ nativeEvent: { url, lockIdentifier: 1 } });
+      return allowed;
+    };
+    expect(loads("about:srcdoc")).toBe(true);
+    expect(loads("about:blank")).toBe(true);
+    expect(loads("https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/if/ov2/av0/rcv/abc/0xTEST/dark/fbE/new/normal/auto/")).toBe(true);
+    expect(loads("https://www.out-class.net/")).toBe(true);
+    expect(loads("javascript:alert(1)")).toBe(false);
+  });
 });

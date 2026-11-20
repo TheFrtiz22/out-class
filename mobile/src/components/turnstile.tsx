@@ -7,6 +7,9 @@ import { Button } from "~/components/ui";
 import { config } from "~/lib/config";
 import { useTheme } from "~/lib/theme";
 
+/** Where the check's page and its frames may load: Cloudflare over https, and the about: frames it builds. */
+export const TURNSTILE_ORIGINS = ["https://*", "about:*"];
+
 /**
  * Cloudflare Turnstile for native sign-in (docs/turnstile.md). Supabase Auth verifies the token,
  * so the app only has to obtain one: the widget runs in a WebView whose page origin is the site
@@ -40,7 +43,10 @@ callback:function(t){window.ReactNativeWebView.postMessage(JSON.stringify({token
           <View style={{ height: 80, justifyContent: "center" }}>
             <WebView
               key={attempt}
-              originWhitelist={["https://*"]}
+              // Turnstile draws its challenge in an about:srcdoc frame. On iOS every frame navigation is
+              // checked against this list, and one that fails is handed to the phone to open instead
+              // ("Can't open url: about:srcdoc"), so the check stayed on "Verifying..." forever.
+              originWhitelist={TURNSTILE_ORIGINS}
               source={{ html, baseUrl: "https://www.out-class.net" }}
               style={{ height: 80, backgroundColor: colors.card }}
               scrollEnabled={false}
