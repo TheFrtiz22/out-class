@@ -227,8 +227,10 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       <nav aria-label={section.label ?? section.name} className="space-y-1">{section.items.filter(i => !i.hidden).map(item => navLink(item))}</nav>
     </div>)}
   </div> }
-  // Search already lists Inbox and Settings once each, so the foot is left out here.
-  const railLinks = railItems(railSections.filter(section => section.id !== foot.id)).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! }))
+  // Search already lists Inbox and account Settings once each, so the foot is left out here, except a club's own
+  // Settings: it moved there, and search must still open it rather than account settings.
+  const footClubSettings = railItems(railSections.filter(section => section.id === foot.id)).find(item => item.id === "settings" && item.href)
+  const railLinks = [...railItems(railSections.filter(section => section.id !== foot.id)), ...(footClubSettings ? [footClubSettings] : [])].filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! }))
   // Meetings, Events and Members of this club, each only when its page would open; one entry per address.
   const clubLinks = allowed && !platform ? clubSearchLinks(member, clubId).filter(link => !railLinks.some(rail => rail.href === link.href)) : []
   const otherClubs = manager && !platform ? access.clubs.filter(club => club.clubId !== clubId) : []
@@ -268,6 +270,6 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])].map(link => ({ ...link, icon: navigationIcons[link.id] }))} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform || footClubSettings ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])].map(link => ({ ...link, icon: navigationIcons[link.id] }))} onNavigate={onNavigate} />
   </div>
 }
