@@ -31,3 +31,12 @@ test('the Users console actions return a stale elevation as a refusal', async ()
   for (const call of [api.inspectAdminStudent(id, reason), api.resendAdminStudentInvitation(id, reason)])
     assert.equal((await refused(call, /Verify your password/)).code, 'ADMIN_ELEVATION_REQUIRED');
 });
+
+// The Reports badge polls in the background, also while the console navigates to /platform/login
+// (OUT-CLASS-F). A stale elevation there is a returned refusal, not an unhandled server error.
+test('the Reports badge pulse returns a stale elevation as a refusal, and the browser adapter unwraps it', async () => {
+  // Same module instance as above (load caches by file), so requirePlatformAdmin is the stale stub.
+  const api = load('actions/admin-workspace.ts');
+  assert.equal((await refused(api.getAdminReportsPulse(), /Verify your password/)).code, 'ADMIN_ELEVATION_REQUIRED');
+  assert.match(fs.readFileSync('lib/workspace-api.ts', 'utf8'), /getAdminReportsPulse = unwrapped\(adminReportsPulse\)/);
+});

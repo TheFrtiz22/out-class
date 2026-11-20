@@ -308,4 +308,4 @@ export const prepareFeedbackScreenshot = unwrapped(feedbackReports.prepareFeedba
 export const submitFeedbackReport = unwrapped(feedbackReports.submitFeedbackReport)
 export const getFeedbackScreenshot = unwrapped(feedbackReports.getFeedbackScreenshot)
 /** Admin shell: open issue/feedback count and a queue fingerprint (no report content). */
-export const getAdminReportsPulse = adminReportsPulse
+export const getAdminReportsPulse = unwrapped(adminReportsPulse)
