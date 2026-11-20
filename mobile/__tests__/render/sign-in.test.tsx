@@ -45,6 +45,17 @@ describe("app config", () => {
     expect(extra.supabasePublishableKey).toBe("sb_publishable_staging");
   });
 
+  test("a local file copied from config.example.json, or half filled, never overrides production", () => {
+    const { supabasePair } = require("../../app.config");
+    const production = { url: "https://htlgjluegmdwfjkzzwic.supabase.co", source: "the built-in production settings" };
+    expect(supabasePair({}, { supabaseUrl: "https://<project-ref>.supabase.co", supabasePublishableKey: "sb_publishable_..." })).toMatchObject(production);
+    // The 401 "Invalid API key" case: production's address from one place, a key that isn't production's from another.
+    expect(supabasePair({}, { supabaseUrl: "https://htlgjluegmdwfjkzzwic.supabase.co", supabasePublishableKey: "sb_publishable_..." })).toMatchObject(production);
+    expect(supabasePair({}, { supabasePublishableKey: "sb_publishable_staging" })).toMatchObject(production);
+    expect(supabasePair({ EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_staging" }, {})).toMatchObject(production);
+    expect(supabasePair({}, { supabaseUrl: "https://staging.supabase.co/", supabasePublishableKey: "sb_publishable_staging" })).toEqual({ url: "https://staging.supabase.co", key: "sb_publishable_staging", source: "mobile/config.local.json" });
+  });
+
   test("an app with no address says how to fix it instead of 'try again'", () => {
     expect(missingConfigMessage({ supabaseUrl: "", supabasePublishableKey: "" })).toMatch(/config\.local\.json/);
   });
@@ -56,6 +67,14 @@ describe("sign-in failures", () => {
     expect(failure.message).toMatch(/couldn't reach OutClass/);
     expect(failure.message).toMatch(/Dev details: AuthRetryableFetchError · Network request failed/);
     expect(signInFailure({ name: "AuthRetryableFetchError", status: 0, message: "Network request failed" }, false).message).not.toMatch(/Dev details/);
+  });
+
+  test("a refused key is a setup problem, never 'wrong password', and names where the key came from", () => {
+    const failure = signInFailure({ name: "AuthApiError", status: 401, message: "Invalid API key" }, true);
+    expect(failure.message).not.toMatch(/isn't right/);
+    expect(failure.message).toMatch(/can't reach the sign-in service/);
+    expect(failure.message).toMatch(/Setup: the Supabase key from .* was refused\. Delete mobile\/config\.local\.json/);
+    expect(signInFailure({ name: "AuthApiError", status: 401, message: "Invalid API key" }, false).message).not.toMatch(/Setup:/);
   });
 
   test("wrong password, rate limit and captcha read as the web does", () => {

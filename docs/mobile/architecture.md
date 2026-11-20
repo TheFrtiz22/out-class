@@ -60,7 +60,8 @@ order and counts and never re-counts.
   `mobile/config.local.json`. The API base URL is configurable; nothing hardcodes a school host.
   With neither, the app uses production: `https://out-class.net` and the production Supabase
   project's public URL and publishable key, so a fresh clone signs in from Expo Go with no extra
-  file. Password sign-in asks for the Turnstile check only when Supabase answers `captcha_failed`;
+  file. The Supabase URL and key always come as a pair from one place (env, then the local file,
+  then production); a placeholder or half-filled pair is skipped. Password sign-in asks for the Turnstile check only when Supabase answers `captcha_failed`;
   development builds add the real Supabase error under the sign-in message.
 - Data: TanStack Query over `src/lib/api.ts`; refusals are shown with the server's wording.
 - Theme: `@outclass/shared/tokens` `resolveTheme(scheme, school)`; follows the system light/dark

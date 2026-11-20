@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
-type Extra = { apiUrl: string; supabaseUrl: string; supabasePublishableKey: string; turnstileSiteKey: string; sentryDsn: string };
+type Extra = { apiUrl: string; supabaseUrl: string; supabasePublishableKey: string; supabaseSource: string; turnstileSiteKey: string; sentryDsn: string };
 const extra = (Constants.expoConfig?.extra ?? {}) as Partial<Extra>;
 
 /** Public configuration only (app.config.ts). The API base URL is configurable per build, so a
@@ -15,6 +15,8 @@ export const config = {
   apiUrl: reachable((extra.apiUrl ?? "https://out-class.net").replace(/\/+$/, "")),
   supabaseUrl: extra.supabaseUrl ?? "",
   supabasePublishableKey: extra.supabasePublishableKey ?? "",
+  /** Where the address and key came from (app.config.ts supabasePair), named in development error details. */
+  supabaseSource: extra.supabaseSource ?? "",
   turnstileSiteKey: extra.turnstileSiteKey ?? "",
   sentryDsn: extra.sentryDsn ?? "",
 };
