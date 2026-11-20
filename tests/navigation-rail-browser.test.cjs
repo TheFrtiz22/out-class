@@ -38,17 +38,18 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
   await expect(page.locator('header').getByRole('button',{name:/^Search OutClass/})).toBeVisible();await expect(page.locator('header').getByRole('button',{name:/^Notifications/})).toBeVisible()
   await capture('rail-labelled')
 
-  // The club rail: every destination in order, each a plain link (no flyout). The club's own Settings ends the
-  // Club section; the shared Inbox and account Settings foot is pinned at the bottom.
-  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Recruiting overview','Applicants','Interviews','Decide','Home','Calendar','Tasks','Members','Alumni','Settings','Inbox','Settings'])
+  // The club rail: every destination in order, each a plain link (no flyout). One Settings, the club's own, is
+  // pinned at the bottom directly below Inbox; account Settings stays in the account menu.
+  assert.deepEqual(await rail.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Recruiting overview','Applicants','Interviews','Decide','Home','Calendar','Tasks','Members','Alumni','Inbox','Settings'])
   assert.equal(await rail.locator('button[aria-controls],[aria-haspopup]').count(),0,'no rail item opens a menu')
   const clubNav=rail.getByRole('navigation',{name:'Club',exact:true}),foot=rail.getByRole('navigation',{name:'Inbox and settings',exact:true})
-  await expect(clubNav.getByRole('link',{name:'Settings',exact:true})).toHaveAttribute('href',/section=settings/)
-  await expect(foot.getByRole('link')).toHaveText(['Inbox','Settings']);await expect(foot.getByRole('link',{name:'Settings',exact:true})).toHaveAttribute('href','/settings')
+  assert.equal(await clubNav.getByRole('link',{name:'Settings',exact:true}).count(),0,'no second Settings in the Club section')
+  await expect(foot.getByRole('link')).toHaveText(['Inbox','Settings']);await expect(foot.getByRole('link',{name:'Settings',exact:true})).toHaveAttribute('href',/section=settings/)
   const settingsBox=await foot.getByRole('link',{name:'Settings',exact:true}).boundingBox(),railBox=await rail.locator('.oc-dock-rail').boundingBox()
-  assert.ok(railBox.y+railBox.height-(settingsBox.y+settingsBox.height)<40,'account Settings sits at the bottom of the rail')
-  const clubSettingsBox=await clubNav.getByRole('link',{name:'Settings',exact:true}).boundingBox(),inboxBox=await foot.getByRole('link',{name:'Inbox',exact:true}).boundingBox()
-  assert.ok(inboxBox.y-(clubSettingsBox.y+clubSettingsBox.height)>40,'the Inbox and Settings foot is separated from the Club items')
+  assert.ok(railBox.y+railBox.height-(settingsBox.y+settingsBox.height)<40,'club Settings sits at the bottom of the rail')
+  const alumniBox=await clubNav.getByRole('link',{name:'Alumni',exact:true}).boundingBox(),inboxBox=await foot.getByRole('link',{name:'Inbox',exact:true}).boundingBox()
+  assert.ok(inboxBox.y-(alumniBox.y+alumniBox.height)>40,'the Inbox and Settings foot is separated from the Club items')
+  assert.ok(settingsBox.y>inboxBox.y,'Settings sits below Inbox')
   // Active item follows the URL: Applicants is the default recruitment tool and lights for its record pages.
   await expect(applicants).toHaveAttribute('aria-current','page')
   // Destinations respect pending saves and unsaved changes.
@@ -134,7 +135,7 @@ test('browser: labelled rail without overlay, tooltips when compact, URL-driven 
    const drawer=page.getByRole('dialog',{name:'Workspace navigation',exact:true});await drawer.waitFor()
    assert.equal(await drawer.getByRole('navigation',{name:'Workspaces'}).count(),0)
    // More lists the rail items the bar doesn't show directly, in rail order and with rail labels, ending with the Inbox and Settings foot.
-   assert.deepEqual(await drawer.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Recruiting overview','Applicants','Interviews','Decide','Tasks','Alumni','Settings','Inbox','Settings'])
+   assert.deepEqual(await drawer.getByRole('link').evaluateAll(links=>links.map(link=>link.getAttribute('aria-label'))),['Recruiting overview','Applicants','Interviews','Decide','Tasks','Alumni','Inbox','Settings'])
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
    if(size===390){await page.waitForTimeout(220);await capture('rail-mobile');axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();assert.deepEqual(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[])}
    await page.keyboard.press('Escape');await drawer.waitFor({state:'hidden'})

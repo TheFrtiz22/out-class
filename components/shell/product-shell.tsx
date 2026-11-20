@@ -39,7 +39,7 @@ import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { studentNav, adminNav, type ViewId } from "@/lib/views"
 import { canLeaveWorkspace, clubSearchLinks, type ProductNavItem } from "@/lib/product-navigation"
-import { accountRailSection, activeNavItem, bottomBarItems, inPlaceSections, moreSections, railItems, workspaceOptionName, type RailSection } from "@/lib/navigation"
+import { activeNavItem, bottomBarItems, inPlaceSections, moreSections, railItems, railWithFoot, workspaceOptionName, type RailSection } from "@/lib/navigation"
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 import { handleClubLink } from "@/lib/workspace-navigation"
@@ -210,11 +210,13 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     const element = item.href ? <Link key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={accessibleName} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (item.mode && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.mode); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={accessibleName} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
     return element
   }
-  // Inbox and Settings close every workspace's rail. The sample previews navigate in place, and account
-  // settings need a live session, so the demo and the previews hide Settings.
+  // Inbox and Settings close every workspace's rail; a leader's club workspace shows its club Settings there, once.
+  // The sample previews navigate in place, and account settings need a live session, so the demo and the previews
+  // hide account Settings.
   const inPlace = mode === "preview" || !!pathname?.startsWith("/preview")
-  const foot = inPlace ? inPlaceSections([accountRailSection()])[0] : accountRailSection()
-  const railSections = !allowed ? [] : [...sections, foot].map(section => ({ ...section, items: section.items.filter(item => item.href !== "/settings" && item.id !== "account-settings" || !!user && !demo.isDemoEnabled && !inPlace) })).filter(section => section.items.length)
+  const rail = railWithFoot(sections, manager && !platform)
+  const foot = inPlace ? inPlaceSections([rail.foot])[0] : rail.foot
+  const railSections = !allowed ? [] : [...rail.sections, foot].map(section => ({ ...section, items: section.items.filter(item => item.href !== "/settings" && item.id !== "account-settings" || !!user && !demo.isDemoEnabled && !inPlace) })).filter(section => section.items.length)
   const bar = allowed ? bottomBarItems(railSections, mode === "preview" ? "preview" : workspace, current) : []
   /** Phone "More" sheet: a club workspace lists every rail item the bar doesn't show directly; elsewhere, every rail section. */
   const sheetSections = workspace === "leader" && mode !== "preview" ? moreSections(railSections, bar) : railSections
@@ -225,8 +227,10 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       <nav aria-label={section.label ?? section.name} className="space-y-1">{section.items.filter(i => !i.hidden).map(item => navLink(item))}</nav>
     </div>)}
   </div> }
-  // Search already lists Inbox and Settings once each, so the foot is left out here.
-  const railLinks = railItems(railSections.filter(section => section.id !== foot.id)).filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! }))
+  // Search already lists Inbox and account Settings once each, so the foot is left out here, except a club's own
+  // Settings: it moved there, and search must still open it rather than account settings.
+  const footClubSettings = railItems(railSections.filter(section => section.id === foot.id)).find(item => item.id === "settings" && item.href)
+  const railLinks = [...railItems(railSections.filter(section => section.id !== foot.id)), ...(footClubSettings ? [footClubSettings] : [])].filter(item => item.href).map(item => ({ id: item.id, title: item.id === "overview" && item.mode === "recruiting" ? TERMS.recruiting : item.label, href: item.href! }))
   // Meetings, Events and Members of this club, each only when its page would open; one entry per address.
   const clubLinks = allowed && !platform ? clubSearchLinks(member, clubId).filter(link => !railLinks.some(rail => rail.href === link.href)) : []
   const otherClubs = manager && !platform ? access.clubs.filter(club => club.clubId !== clubId) : []
@@ -266,6 +270,6 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
       const origin = searchOrigin.current
       if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
       else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
-    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])].map(link => ({ ...link, icon: navigationIcons[link.id] }))} onNavigate={onNavigate} />
+    }} items={[...searchItems, { id: "inbox", title: TERMS.inbox, icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} links={[...railLinks, ...clubLinks, ...(platform || footClubSettings ? [] : [{ id: "settings", title: "Settings", href: "/settings" }]), ...(platform || !user || demo.isDemoEnabled ? [] : [{ id: "notification-settings", title: "Notification settings", href: notificationSettingsHref }])].map(link => ({ ...link, icon: navigationIcons[link.id] }))} onNavigate={onNavigate} />
   </div>
 }
