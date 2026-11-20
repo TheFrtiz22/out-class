@@ -10,6 +10,7 @@ import "@/components/clubs/profile-presentation.css"
 import { profileStatistics, readMarketing, type ClubMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
 import { presentPublicMarketing } from "@/lib/public-club-content"
 import { employerMark, SHOW_EMPLOYER_MARKS } from "@/lib/employer-marks"
+import { EmployerCarousel } from "@/components/clubs/employer-carousel"
 
 /** The public view of a profile's marketing: unknown placeholders and research links hidden. */
 export function publicMarketing(value: unknown): ClubMarketing {
@@ -146,7 +147,10 @@ export function ProfileStatistics({ profile, compact = false }: { profile: Param
   </dl> : null
 }
 
-/** Member destinations as a text list labelled club-reported. Employer logos are hidden (SHOW_EMPLOYER_MARKS). */
+/** Member destinations labelled club-reported, as firm names only. Employer logos are hidden (SHOW_EMPLOYER_MARKS).
+ * Full profiles with enough destinations show them in the 3D carousel; cards and short lists stay a static chip list. */
+const CAROUSEL_MIN = 6
+/** Member destinations, labelled club-reported. */
 export function MemberOutcomes({ profile, compact = false }: { profile: { marketing?: unknown }; compact?: boolean }) {
   const m = readMarketing(profile.marketing)
   const names = [...new Set(m.placements.map(name => name.trim()).filter(Boolean))]
@@ -154,6 +158,6 @@ export function MemberOutcomes({ profile, compact = false }: { profile: { market
   const Heading = compact ? "p" : "h3"
   return <div className={compact ? "oc-member-outcomes" : "oc-member-outcomes oc-club-subsection"}>
     <Heading className="oc-member-outcomes-title">Where members go <span>Club-reported</span></Heading>
-    <ul>{names.slice(0, compact ? 6 : undefined).map(name => { const mark = SHOW_EMPLOYER_MARKS ? employerMark(name) : undefined; return <li key={name}>{mark && <Image src={mark} alt="" width={90} height={28} loading="lazy" className="oc-member-outcome-mark" />}{name}</li> })}</ul>
+    {!compact && names.length >= CAROUSEL_MIN ? <EmployerCarousel names={names} /> : <ul>{names.slice(0, compact ? 6 : undefined).map(name => { const mark = SHOW_EMPLOYER_MARKS ? employerMark(name) : undefined; return <li key={name}>{mark && <Image src={mark} alt="" width={90} height={28} loading="lazy" className="oc-member-outcome-mark" />}{name}</li> })}</ul>}
   </div>
 }

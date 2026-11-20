@@ -76,7 +76,7 @@ test('shared public renderer displays marketing content and respects empty and h
   const { renderToStaticMarkup } = require('react-dom/server')
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/clubs/marketing-profile.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', code)(n => n === '@/components/reports/report-content-button' ? { ReportContentButton: () => null } : n === '@/components/club-logo' ? require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx') : n === '@/components/icons' ? require('./helpers/icons.cjs') : n.endsWith('.css') ? {} : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts') : require(n), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(n => n === '@/components/reports/report-content-button' ? { ReportContentButton: () => null } : n === '@/components/club-logo' ? require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx') : n === '@/components/clubs/employer-carousel' ? require('./helpers/component-module.cjs').loadComponent('components/clubs/employer-carousel.tsx') : n === '@/components/icons' ? require('./helpers/icons.cjs') : n.endsWith('.css') ? {} : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts') : require(n), mod, mod.exports)
   const profile = draft()
   const header = renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile }))
   const sections = renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile }))
@@ -89,6 +89,12 @@ test('shared public renderer displays marketing content and respects empty and h
   assert.match(sections, /Who can join\?/)
   // Outbound links render in the About section, beside the description.
   assert.match(renderToStaticMarkup(React.createElement(mod.exports.AboutSection, { profile })), /https:\/\/example.com\/join/)
+  // Six or more destinations use the carousel; before hydration it renders every firm name as a plain list.
+  const firms = ['Alpha Partners', 'Beta Capital', 'Gamma Group', 'Delta Labs', 'Epsilon Co', 'Zeta Advisors']
+  const outcomes = renderToStaticMarkup(React.createElement(mod.exports.MembersSection, { profile: { ...profile, marketing: { ...profile.marketing, placements: firms } } }))
+  assert.match(outcomes, /oc-employer-carousel/)
+  for (const firm of firms) assert.match(outcomes, new RegExp(firm))
+  assert.doesNotMatch(outcomes.slice(outcomes.indexOf('oc-employer-carousel'), outcomes.indexOf('A look inside')), /<img/)
   profile.marketing.showMembers = false
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile })), />Members</)
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile: profileDraft({ name: 'Empty' }) })), /Frequently asked|Life in the club|A look inside/)
