@@ -10,6 +10,11 @@ export function captchaRequired(error: AuthErrorLike) {
   return !!error && (error.code === "captcha_failed" || /captcha/i.test(error.message ?? ""));
 }
 
+/** Supabase's gateway refused the app's publishable key (401, "Invalid API key"). */
+export function keyRefused(error: AuthErrorLike) {
+  return !!error && error.status === 401 && /api key/i.test(error.message ?? "");
+}
+
 /** The app was started without a Supabase address (no EXPO_PUBLIC_* and no config.local.json override). */
 export function missingConfigMessage(current: { supabaseUrl: string; supabasePublishableKey: string } = config) {
   if (current.supabaseUrl && current.supabasePublishableKey) return null;
@@ -24,7 +29,12 @@ export function missingConfigMessage(current: { supabaseUrl: string; supabasePub
 export function signInFailure(error: NonNullable<AuthErrorLike>, dev: boolean = typeof __DEV__ !== "undefined" && __DEV__): SignInFailure {
   const needsCaptcha = captchaRequired(error);
   let message: string;
-  if (needsCaptcha) message = "One more check is needed before you can sign in.";
+  if (keyRefused(error)) {
+    // Supabase refused the app's key (401 "Invalid API key"): a setup problem, never the person's password.
+    message = "This copy of the app can't reach the sign-in service. Try again after the next update.";
+    if (dev) message += `\n\nSetup: the Supabase key from ${config.supabaseSource || "this app's config"} was refused. Delete mobile/config.local.json and any EXPO_PUBLIC_SUPABASE_* settings (mobile/.env), then run pnpm start --clear.`;
+  }
+  else if (needsCaptcha) message = "One more check is needed before you can sign in.";
   else if (error.status === 400 || error.code === "invalid_credentials") message = "That email or password isn't right.";
   else if (error.status === 429) message = "Too many attempts. Wait a moment and try again.";
   // supabase-js reports a request that never reached the server (offline, bad address) with status 0.

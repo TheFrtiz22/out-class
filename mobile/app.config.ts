@@ -18,6 +18,29 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://out-c
 // EXPO_PUBLIC_* or config.local.json still override them, for a local server or a staging project.
 const PRODUCTION_SUPABASE = { url: "https://htlgjluegmdwfjkzzwic.supabase.co", publishableKey: "sb_publishable_H-crMmjPAlJ6L2RvwoAAVw_Bpz-fLDa" };
 
+/** A value copied from config.example.json or left half-filled ("sb_publishable_...", "<project-ref>"). */
+export function isPlaceholder(value: string | undefined): boolean {
+  return !value || !value.trim() || /\.\.\.|[<>]|placeholder|your[-_ ]/i.test(value);
+}
+
+/**
+ * The Supabase address and key always come as a pair from one place: EXPO_PUBLIC_* first, then
+ * config.local.json, then production. A place that sets only one of the two, or a placeholder, is
+ * skipped, so a half-filled local file can never pair production's address with a key it refuses.
+ * `source` is shown under a refused sign-in in development, so a stale override is easy to find.
+ */
+export function supabasePair(env: NodeJS.ProcessEnv, file: PublicConfig) {
+  const candidates = [
+    { url: env.EXPO_PUBLIC_SUPABASE_URL, key: env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY, source: "EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY" },
+    { url: file.supabaseUrl, key: file.supabasePublishableKey, source: "mobile/config.local.json" },
+  ];
+  const chosen = candidates.find(candidate => !isPlaceholder(candidate.url) && !isPlaceholder(candidate.key));
+  return chosen
+    ? { url: chosen.url!.trim().replace(/\/+$/, ""), key: chosen.key!.trim(), source: chosen.source }
+    : { url: PRODUCTION_SUPABASE.url, key: PRODUCTION_SUPABASE.publishableKey, source: "the built-in production settings" };
+}
+const supabase = supabasePair(process.env, local);
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "OutClass",
@@ -96,8 +119,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // EAS project @outclass/outclass. The app needs it to request an Expo push token (src/lib/push.ts).
     eas: { projectId: "23668155-43a1-4bf7-9b89-1f61a42b535b" },
     apiUrl,
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || local.supabaseUrl || PRODUCTION_SUPABASE.url,
-    supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || local.supabasePublishableKey || PRODUCTION_SUPABASE.publishableKey,
+    supabaseUrl: supabase.url,
+    supabasePublishableKey: supabase.key,
+    supabaseSource: supabase.source,
     turnstileSiteKey: process.env.EXPO_PUBLIC_TURNSTILE_SITE_KEY ?? local.turnstileSiteKey ?? "",
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? local.sentryDsn ?? "",
   },
