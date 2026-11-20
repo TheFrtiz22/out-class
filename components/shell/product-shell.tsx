@@ -39,7 +39,7 @@ import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { studentNav, adminNav, type ViewId } from "@/lib/views"
 import { canLeaveWorkspace, clubSearchLinks, type ProductNavItem } from "@/lib/product-navigation"
-import { accountRailSection, activeNavItem, bottomBarItems, inPlaceSections, moreSections, railItems, workspaceOptionName, type RailSection } from "@/lib/navigation"
+import { activeNavItem, bottomBarItems, inPlaceSections, moreSections, railItems, railWithFoot, workspaceOptionName, type RailSection } from "@/lib/navigation"
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 import { handleClubLink } from "@/lib/workspace-navigation"
@@ -210,11 +210,13 @@ export function ProductShell({ children, mode, sections, active, title, clubId =
     const element = item.href ? <Link key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={accessibleName} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (item.mode && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.mode); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-dock-item={dock || undefined} data-tour={`nav-${item.id}`} aria-label={accessibleName} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
     return element
   }
-  // Inbox and Settings close every workspace's rail. The sample previews navigate in place, and account
-  // settings need a live session, so the demo and the previews hide Settings.
+  // Inbox and Settings close every workspace's rail; a leader's club workspace shows its club Settings there, once.
+  // The sample previews navigate in place, and account settings need a live session, so the demo and the previews
+  // hide account Settings.
   const inPlace = mode === "preview" || !!pathname?.startsWith("/preview")
-  const foot = inPlace ? inPlaceSections([accountRailSection()])[0] : accountRailSection()
-  const railSections = !allowed ? [] : [...sections, foot].map(section => ({ ...section, items: section.items.filter(item => item.href !== "/settings" && item.id !== "account-settings" || !!user && !demo.isDemoEnabled && !inPlace) })).filter(section => section.items.length)
+  const rail = railWithFoot(sections, manager && !platform)
+  const foot = inPlace ? inPlaceSections([rail.foot])[0] : rail.foot
+  const railSections = !allowed ? [] : [...rail.sections, foot].map(section => ({ ...section, items: section.items.filter(item => item.href !== "/settings" && item.id !== "account-settings" || !!user && !demo.isDemoEnabled && !inPlace) })).filter(section => section.items.length)
   const bar = allowed ? bottomBarItems(railSections, mode === "preview" ? "preview" : workspace, current) : []
   /** Phone "More" sheet: a club workspace lists every rail item the bar doesn't show directly; elsewhere, every rail section. */
   const sheetSections = workspace === "leader" && mode !== "preview" ? moreSections(railSections, bar) : railSections

@@ -33,6 +33,27 @@ test("members without a destination get the next club page instead", () => {
   assert.deepEqual(nav.bottomBarItems(meetingsOnly, "leader", "club-home").map(item => item.label), ["Home", "Calendar", "Tasks"])
 })
 
+test("a club workspace shows one Settings, pinned below Inbox, and it opens club settings", () => {
+  const owner = nav.leaderRailSections({ isOwner: true }, club)
+  const { sections, foot } = nav.railWithFoot(owner, true)
+  const all = nav.railItems([...sections, foot])
+  assert.deepEqual(all.filter(item => item.label === "Settings").map(item => item.id), ["settings"], "exactly one Settings")
+  assert.equal(all.some(item => item.id === "account-settings"), false, "account Settings stays in the account menu")
+  assert.equal(foot.pinned, true)
+  assert.deepEqual(foot.items.map(item => item.label), ["Inbox", "Settings"], "Settings sits directly below Inbox")
+  assert.match(foot.items[1].href, /^\/club\/club\/workspace\?section=settings/)
+  assert.equal(sections.some(section => section.items.some(item => item.id === "settings")), false, "no second Settings in the Club section")
+  // Phones: the bar is unchanged and the More sheet lists club Settings once, under Inbox.
+  const rail = [...sections, foot], bar = nav.bottomBarItems(rail, "leader", "club-home")
+  assert.deepEqual(bar.map(item => item.label), ["Home", "Recruiting", "Calendar", "Members"])
+  assert.deepEqual(nav.railItems(nav.moreSections(rail, bar)).filter(item => item.label === "Settings").map(item => item.id), ["settings"])
+  // A leader with no club Settings keeps account Settings in the foot; other workspaces always do.
+  const meetingsOnly = nav.railWithFoot(nav.leaderRailSections({ permissions: ["meetings.manage"] }, club), true)
+  assert.deepEqual(meetingsOnly.foot.items.map(item => item.id), ["inbox", "account-settings"])
+  assert.deepEqual(nav.railWithFoot(nav.personalRailSections(), false).foot.items.map(item => item.id), ["inbox", "account-settings"])
+  assert.match(fs.readFileSync("components/shell/product-shell.tsx", "utf8"), /railWithFoot\(sections, manager && !platform\)/)
+})
+
 test("every phone bar link has an accessible name and the bar marks Recruiting active for its pages", () => {
   const source = fs.readFileSync("components/shell/mobile-navigation.tsx", "utf8")
   assert.match(source, /"aria-label": item\.label/)
