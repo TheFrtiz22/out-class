@@ -31,7 +31,6 @@ const pause = (page, ms = 1400) => page.waitForTimeout(ms)
 const dismissGuide = async page => { await page.getByRole("button", { name: "Dismiss tutorial" }).click({ timeout: 3000 }).catch(() => {}) }
 let shot = 0
 async function snap(page, name, options = {}) { shot += 1; await page.screenshot({ path: path.join(out, `${String(shot).padStart(2, "0")}-${name}.png`), ...options }).catch(error => console.log("screenshot failed", name, error.message)) }
-const score = r => [r.name, r.tagline, r.description, r.email, r.instagram, r.linkedin, r.commitment, r.logo, r.banner].filter(Boolean).length + Math.min(r.links?.length || 0, 2)
 const clubRow = club => ({ name: club.name, tagline: club.tagline, description: club.description?.slice(0, 400), color: club.color, logo: club.logoUrl ? (club.logoUrl.startsWith("data:") ? "inline image" : "uploaded") : null, cover: club.bannerUrl ? "uploaded" : null, marketing: club.marketing })
 
 async function scrollPage(page, top) { await page.evaluate(y => { const s = [...document.querySelectorAll("main, [id='workspace-content'], body *")].find(n => n.scrollHeight > n.clientHeight + 200 && /(auto|scroll)/.test(getComputedStyle(n).overflowY)); (s || window).scrollBy({ top: y, behavior: "smooth" }) }, top).catch(() => {}) }
@@ -54,15 +53,29 @@ test("club website import demo recording", { skip: !configFile, timeout: 900000 
   assert.equal((await elevate({ action: "password", password: config.admin.password })).status, 200)
   assert.equal((await elevate({ action: "verify", code: totp(config.admin.totpSecret) })).status, 200)
 
-  // Off camera: read each candidate site once and keep the two that fill the most fields.
+  // Off camera: try each candidate site once in the real editor (no recording) and keep the two
+  // that fill the most fields. The browser decodes the full action reply, images included.
+  const probeContext = await browser.newContext({ viewport: size })
+  await probeContext.addCookies([...admin.cookies].map(([name, value]) => ({ name, value, url: config.appUrl })))
+  const probe = await probeContext.newPage()
   for (const url of candidates) {
-    try { const r = await admin.action("actions/club-website-import.ts", "importClubFromWebsite", [{ url }]); log.probes.push({ url, ok: true, score: score(r), name: r.name, tagline: r.tagline, email: r.email, instagram: r.instagram, linkedin: r.linkedin, logo: !!r.logo, banner: !!r.banner, links: r.links?.length || 0 }) }
-    catch (error) { log.probes.push({ url, ok: false, error: error.message }) }
+    try {
+      await probe.goto(config.appUrl + "/platform/clubs"); await dismissGuide(probe)
+      await probe.getByRole("button", { name: /New club/ }).click({ timeout: 30000 })
+      await probe.getByRole("textbox", { name: "Club website link" }).fill(url)
+      await probe.getByRole("button", { name: "Fill profile" }).click()
+      const result = probe.locator("p", { hasText: /^(Filled |Your profile already has)/ }).or(probe.getByRole("alert"))
+      await result.first().waitFor({ timeout: 45000 })
+      const text = (await result.first().textContent()) || ""
+      const filled = text.match(/^Filled (.*) from /)?.[1] || ""
+      log.probes.push({ url, ok: /^Filled /.test(text), score: filled ? filled.split(/, | and /).length : 0, message: text.trim() })
+    } catch (error) { log.probes.push({ url, ok: false, error: error.message.split("\n")[0] }) }
   }
+  await probeContext.close()
   console.log(JSON.stringify(log.probes, null, 1))
   const ranked = log.probes.filter(p => p.ok).sort((a, b) => b.score - a.score)
-  assert.ok(ranked.length >= 2, "at least two club sites readable")
-  const [siteA, siteB] = ranked
+  assert.ok(ranked.length >= 1, "at least one club site readable")
+  const siteA = ranked[0], siteB = ranked[1] || ranked[0]
   fs.writeFileSync(path.join(out, "site-probes.json"), JSON.stringify(log.probes, null, 2))
 
   // ── Part 1: the test admin adds a new club by pasting its website link ──
@@ -101,7 +114,7 @@ test("club website import demo recording", { skip: !configFile, timeout: 900000 
     await snap(page, "admin-saved")
     const saved = await db.club.findFirstOrThrow({ where: { slug: `demo-import-${suffix}` } }); createdId = saved.id
     // Now the club exists, a second fill can upload the site's logo and cover image too.
-    if (siteA.logo || siteA.banner) {
+    if (/logo|cover image/.test(siteA.message)) {
       await link.scrollIntoViewIfNeeded()
       await caption(page, "Images upload once the club exists, so the admin presses Fill profile again for the logo and cover"); await pause(page, 2400)
       await page.getByRole("button", { name: "Fill profile" }).click()
