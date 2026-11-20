@@ -1,0 +1,157 @@
+{
+  "probes": [
+    {
+      "url": "https://vcguva.com/",
+      "ok": false,
+      "score": 0,
+      "message": "OutClass couldn't reach that website."
+    },
+    {
+      "url": "https://www.180dcuva.org/",
+      "ok": true,
+      "score": 7,
+      "message": "Filled club name, tagline, description, website link, Instagram, LinkedIn and 2 social links from 180dcuva.org. Review them, then publish."
+    },
+    {
+      "url": "https://www.uvatamid.org/",
+      "ok": true,
+      "score": 5,
+      "message": "Filled club name, tagline, description, website link and Instagram from uvatamid.org. Review them, then publish. The logo wasn't added: the upload failed."
+    },
+    {
+      "url": "https://uvagrc.com/",
+      "ok": true,
+      "score": 6,
+      "message": "Filled club name, tagline, description, website link, Instagram and LinkedIn from uvagrc.com. Review them, then publish. The logo wasn't added: the upload failed."
+    },
+    {
+      "url": "https://www.seeduva.com/",
+      "ok": true,
+      "score": 6,
+      "message": "Filled club name, tagline, description, website link, email and Instagram from seeduva.com. Review them, then publish. The logo wasn't added: the upload failed."
+    },
+    {
+      "url": "https://gmgatuva.com/",
+      "ok": true,
+      "score": 7,
+      "message": "Filled club name, tagline, description, website link, email, Instagram and LinkedIn from gmgatuva.com. Review them, then publish. The logo wasn't added: the upload failed. The cover image wasn't added: the upload failed."
+    },
+    {
+      "url": "https://uvapwp.com/",
+      "ok": true,
+      "score": 4,
+      "message": "Filled club name, tagline, description and website link from uvapwp.com. Review them, then publish."
+    },
+    {
+      "url": "https://www.enactusatuva.com/",
+      "ok": true,
+      "score": 4,
+      "message": "Filled club name, tagline, description and website link from enactusatuva.com. Review them, then publish. The logo wasn't added: the upload failed. The cover image wasn't added: the upload failed."
+    },
+    {
+      "url": "https://www.vccatuva.org/",
+      "ok": true,
+      "score": 7,
+      "message": "Filled club name, tagline, description, website link, email, Instagram and LinkedIn from vccatuva.org. Review them, then publish. The logo wasn't added: the upload failed."
+    },
+    {
+      "url": "https://www.aifatuva.com/",
+      "ok": true,
+      "score": 5,
+      "message": "Filled club name, tagline, description, website link and LinkedIn from aifatuva.com. Review them, then publish. The logo wasn't added: the upload failed. The cover image wasn't added: the upload failed."
+    }
+  ],
+  "adminClub": {
+    "name": "180 Degrees Consulting UVA",
+    "tagline": "180 Degrees Consulting was founded in 2007 at the University of Sydney.",
+    "description": "180 Degrees Consulting was founded in 2007 at the University of Sydney. It has grown to become the world's largest student volunteer consultancy with over 150 branches across 33 countries. The organization started with a mission to connect talented and socially conscious students with high potential nonprofit organizations and social enterprises to further their social impact.\n\nHere at UVA, our br",
+    "color": "#142d45",
+    "logo": null,
+    "cover": null,
+    "marketing": {
+      "dues": "",
+      "faqs": [],
+      "email": "",
+      "links": [
+        {
+          "url": "https://twitter.com/180degrees",
+          "label": "X"
+        },
+        {
+          "url": "https://facebook.com/180DegreesConsulting",
+          "label": "Facebook"
+        }
+      ],
+      "gallery": [],
+      "metrics": [],
+      "showAum": true,
+      "website": "https://www.180dcuva.org",
+      "benefits": [],
+      "features": [],
+      "linkedin": "https://linkedin.com/company/180-degrees-consulting",
+      "sections": [],
+      "videoUrl": "",
+      "accolades": [],
+      "instagram": "https://instagram.com/uva180dc",
+      "commitment": "",
+      "placements": [],
+      "eligibility": "",
+      "logoOnBrand": false,
+      "memberCount": null,
+      "showMembers": true,
+      "outcomesNote": "",
+      "acceptanceNote": "",
+      "bannerPosition": {
+        "x": 50,
+        "y": 50
+      },
+      "showAcceptance": true,
+      "acceptanceSource": "",
+      "acceptanceApproximate": false
+    }
+  },
+  "leaderClub": {
+    "name": "Global Markets Group",
+    "tagline": "Global Markets Group (GMG) is the University of Virginia's premier student-run long/short equity fund, investing ~$32,000 in global equities across the Americas, EMEA, and Asia Pacific.",
+    "description": "Positions across established and emerging markets in the Americas, EMEA, and Asia Pacific diversify the portfolio and mitigate single-market risk.",
+    "color": "#142D45",
+    "logo": "uploaded",
+    "cover": "uploaded",
+    "marketing": {
+      "dues": "",
+      "faqs": [],
+      "email": "globalmarketsgroupatuva@gmail.com",
+      "links": [],
+      "gallery": [],
+      "metrics": [],
+      "showAum": true,
+      "website": "https://gmgatuva.com",
+      "benefits": [],
+      "features": [],
+      "linkedin": "https://linkedin.com/company/globalmarketsgroup",
+      "sections": [],
+      "videoUrl": "",
+      "accolades": [],
+      "instagram": "https://instagram.com/gmgatuva",
+      "commitment": "",
+      "placements": [],
+      "eligibility": "",
+      "logoOnBrand": false,
+      "memberCount": null,
+      "showMembers": true,
+      "outcomesNote": "",
+      "acceptanceNote": "",
+      "bannerPosition": {
+        "x": 50,
+        "y": 50
+      },
+      "showAcceptance": true,
+      "acceptanceSource": "",
+      "acceptanceApproximate": false
+    }
+  },
+  "sites": {
+    "admin": "https://www.180dcuva.org/",
+    "leader": "https://gmgatuva.com/"
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "url": "https://vcguva.com/",
+    "ok": false,
+    "score": 0,
+    "message": "OutClass couldn't reach that website."
+  },
+  {
+    "url": "https://www.180dcuva.org/",
+    "ok": true,
+    "score": 7,
+    "message": "Filled club name, tagline, description, website link, Instagram, LinkedIn and 2 social links from 180dcuva.org. Review them, then publish."
+  },
+  {
+    "url": "https://www.uvatamid.org/",
+    "ok": true,
+    "score": 5,
+    "message": "Filled club name, tagline, description, website link and Instagram from uvatamid.org. Review them, then publish. The logo wasn't added: the upload failed."
+  },
+  {
+    "url": "https://uvagrc.com/",
+    "ok": true,
+    "score": 6,
+    "message": "Filled club name, tagline, description, website link, Instagram and LinkedIn from uvagrc.com. Review them, then publish. The logo wasn't added: the upload failed."
+  },
+  {
+    "url": "https://www.seeduva.com/",
+    "ok": true,
+    "score": 6,
+    "message": "Filled club name, tagline, description, website link, email and Instagram from seeduva.com. Review them, then publish. The logo wasn't added: the upload failed."
+  },
+  {
+    "url": "https://gmgatuva.com/",
+    "ok": true,
+    "score": 7,
+    "message": "Filled club name, tagline, description, website link, email, Instagram and LinkedIn from gmgatuva.com. Review them, then publish. The logo wasn't added: the upload failed. The cover image wasn't added: the upload failed."
+  },
+  {
+    "url": "https://uvapwp.com/",
+    "ok": true,
+    "score": 4,
+    "message": "Filled club name, tagline, description and website link from uvapwp.com. Review them, then publish."
+  },
+  {
+    "url": "https://www.enactusatuva.com/",
+    "ok": true,
+    "score": 4,
+    "message": "Filled club name, tagline, description and website link from enactusatuva.com. Review them, then publish. The logo wasn't added: the upload failed. The cover image wasn't added: the upload failed."
+  },
+  {
+    "url": "https://www.vccatuva.org/",
+    "ok": true,
+    "score": 7,
+    "message": "Filled club name, tagline, description, website link, email, Instagram and LinkedIn from vccatuva.org. Review them, then publish. The logo wasn't added: the upload failed."
+  },
+  {
+    "url": "https://www.aifatuva.com/",
+    "ok": true,
+    "score": 5,
+    "message": "Filled club name, tagline, description, website link and LinkedIn from aifatuva.com. Review them, then publish. The logo wasn't added: the upload failed. The cover image wasn't added: the upload failed."
+  }
+]
