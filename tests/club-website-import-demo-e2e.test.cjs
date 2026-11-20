@@ -64,12 +64,14 @@ test("club website import demo recording", { skip: !configFile, timeout: 900000 
       await probe.getByRole("button", { name: /New club/ }).click({ timeout: 30000 })
       await probe.getByRole("textbox", { name: "Club website link" }).fill(url)
       await probe.getByRole("button", { name: "Fill profile" }).click()
-      const result = probe.locator("p", { hasText: /^(Filled |Your profile already has)/ }).or(probe.getByRole("alert"))
+      // Scope to the import panel: Next's route announcer is also role="alert".
+      const panel = probe.locator("section", { has: probe.getByRole("textbox", { name: "Club website link" }) })
+      const result = panel.locator("p", { hasText: /^(Filled |Your profile already has)/ }).or(panel.locator('[role="alert"]', { hasText: /\S/ }))
       await result.first().waitFor({ timeout: 45000 })
       const text = (await result.first().textContent()) || ""
       const filled = text.match(/^Filled (.*) from /)?.[1] || ""
       log.probes.push({ url, ok: /^Filled /.test(text), score: filled ? filled.split(/, | and /).length : 0, message: text.trim() })
-    } catch (error) { log.probes.push({ url, ok: false, error: error.message.split("\n")[0] }) }
+    } catch (error) { log.probes.push({ url, ok: false, error: error.message.split("\n")[0] }); await probe.screenshot({ path: path.join(out, `probe-failed-${new URL(url).hostname}.png`) }).catch(() => {}) }
   }
   await probeContext.close()
   console.log(JSON.stringify(log.probes, null, 1))
@@ -156,7 +158,7 @@ test("club website import demo recording", { skip: !configFile, timeout: 900000 
     const fill = p2.getByRole("button", { name: "Fill profile" })
     await link.click(); await p2.keyboard.type("not a real club site", { delay: 30 })
     await fill.click()
-    await p2.getByRole("alert").waitFor({ timeout: 30000 }).catch(() => {})
+    await p2.locator("section", { has: link }).locator('[role="alert"]', { hasText: /\S/ }).waitFor({ timeout: 30000 }).catch(() => {})
     await caption(p2, "A link that isn’t a website gets a plain message, and nothing changes"); await pause(p2, 2400)
     await snap(p2, "leader-bad-link")
     await link.fill(""); await link.click(); await p2.keyboard.type(siteB.url, { delay: 35 }); await pause(p2, 600)
