@@ -1,0 +1,59 @@
+name: Club website import demo video
+
+# Demo branch only. Records the club website import on a disposable local Supabase stack with
+# made-up accounts and test clubs. It reads public club websites only. No repository secrets, hosted Auth, production database
+# or external email.
+on:
+  push:
+    branches: ["demo/club-import-video"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Record the demo on the disposable stack
+        env:
+          OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
+          OUTCLASS_DEMO_OUT: ${{ runner.temp }}/club-demo
+        run: node scripts/run-onboarding-e2e.cjs --club-import-demo
+      - name: Publish the outputs to the demo output branch
+        if: always()
+        working-directory: ${{ runner.temp }}/club-demo
+        run: |
+          rm -rf raw-video
+          [ -n "$(ls -A 2>/dev/null)" ] || exit 0
+          git init -q -b out . && git config user.name "github-actions[bot]" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -q -m "Club import demo outputs (run ${{ github.run_id }})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" out:demo/club-import-video-output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: club-import-demo
+          path: |
+            ${{ runner.temp }}/club-demo/*.mp4
+            ${{ runner.temp }}/club-demo/*.png
+            ${{ runner.temp }}/club-demo/*.json
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: supabase-start-logs-club-demo
+          path: |
+            ${{ runner.temp }}/supabase-start-logs
+            /tmp/outclass-onboarding-e2e/*.log
+          if-no-files-found: ignore
+          retention-days: 7
