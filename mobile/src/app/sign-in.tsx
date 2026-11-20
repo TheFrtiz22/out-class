@@ -11,6 +11,8 @@ import { Button } from "~/components/ui";
 import { useAuth } from "~/lib/auth";
 import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
+import { useApiQuery } from "~/lib/query";
+import type { SignupOptions } from "~/lib/signup";
 import { useTheme } from "~/lib/theme";
 
 export default function SignIn() {
@@ -24,16 +26,22 @@ export default function SignIn() {
   const [busy, setBusy] = useState(false);
   const [challenge, setChallenge] = useState(false);
   const passwordRef = useRef<FieldRef>(null);
+  // The check's site key: this build's, or the one the server gives the sign-up screens.
+  const options = useApiQuery<SignupOptions>("auth.signupOptions", undefined, { anonymous: true, staleTime: 10 * 60_000 });
+  const siteKey = config.turnstileSiteKey || options.data?.turnstileSiteKey || null;
 
   async function submit(captchaToken?: string) {
     if (!email.trim()) { setError("Enter your UVA email first."); return; }
     if (!password) { setError("Enter your password."); return; }
-    // Production may enforce Turnstile on password sign-in (docs/turnstile.md): get a token first.
-    if (config.turnstileSiteKey && !captchaToken) { setChallenge(true); return; }
     setBusy(true); setError("");
     const failure = await signIn(email, password, captchaToken);
     setBusy(false);
-    if (failure) { haptics.error(); setError(failure); } else haptics.confirm();
+    if (!failure) { haptics.confirm(); return; }
+    // Supabase enforces Turnstile on password sign-in only when its captcha setting is on
+    // (docs/turnstile.md, stage 2): ask for the check only then, and retry once with its token.
+    if (failure.needsCaptcha && !captchaToken && siteKey) { setChallenge(true); return; }
+    haptics.error();
+    setError(failure.needsCaptcha && !siteKey ? "Sign-in needs a security check this copy of the app can't load. Try again in a moment." : failure.message);
   }
 
   return (
@@ -58,7 +66,7 @@ export default function SignIn() {
           <Button variant="ghost" size="compact" label="Forgot password?" testID="sign-in-forgot" onPress={() => { WebBrowser.openBrowserAsync(`${config.apiUrl}/forgot-password`).catch(() => {}); }} />
         </View>
       </ScrollView>
-      <TurnstileSheet open={challenge} onClose={() => setChallenge(false)} onToken={token => { setChallenge(false); submit(token); }} />
+      <TurnstileSheet open={challenge} siteKey={siteKey} onClose={() => setChallenge(false)} onToken={token => { setChallenge(false); submit(token); }} />
     </KeyboardAvoidingView>
   );
 }

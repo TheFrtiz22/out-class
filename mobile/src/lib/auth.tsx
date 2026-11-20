@@ -3,12 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 import { clearPrivateMemory } from "~/lib/private-memory";
+import { missingConfigMessage, signInFailure, type SignInFailure } from "~/lib/sign-in-error";
 import { supabase } from "~/lib/supabase";
 
 type AuthValue = {
   /** undefined while the stored session is being read. */
   session: Session | null | undefined;
-  signIn: (email: string, password: string, captchaToken?: string) => Promise<string | null>;
+  /** null on success; otherwise what to tell the person, and whether a Turnstile check is needed first. */
+  signIn: (email: string, password: string, captchaToken?: string) => Promise<SignInFailure | null>;
   signOut: () => Promise<void>;
 };
 const AuthContext = createContext<AuthValue>({ session: undefined, signIn: async () => null, signOut: async () => {} });
@@ -47,12 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const signIn = useCallback(async (email: string, password: string, captchaToken?: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password, options: captchaToken ? { captchaToken } : undefined });
-    if (!error) return null;
-    // The web's wording (app/login). Supabase's own messages are not shown.
-    if (error.status === 400) return "That email or password isn't right.";
-    if (error.status === 429) return "Too many attempts. Wait a moment and try again.";
-    return "We couldn't sign you in just now. Try again in a moment.";
+    const missing = missingConfigMessage();
+    if (missing) return { message: missing, needsCaptcha: false };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password, options: captchaToken ? { captchaToken } : undefined });
+      return error ? signInFailure(error) : null;
+    } catch (thrown) {
+      // A failure before any answer (a malformed address, a storage error) still gets a message.
+      return signInFailure(thrown instanceof Error ? { name: thrown.name, message: thrown.message } : { message: String(thrown) });
+    }
   }, []);
 
   const signOut = useCallback(async () => {

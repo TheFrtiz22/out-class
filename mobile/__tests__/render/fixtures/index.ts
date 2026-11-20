@@ -275,6 +275,8 @@ const roomSnapshot: RoomSnapshot = {
 
 // ---- Sets -------------------------------------------------------------------------------------
 const rich: FixtureSet = {
+  // Public sign-up options (lib/mobile-api/auth.ts mobileSignupOptions). No Turnstile key: checks stay off in tests.
+  "auth.signupOptions": { termsRequired: true, turnstileSiteKey: null, graduationYears: ["2027", "2028", "2029", "2030"] },
   // Account
   "me": me,
   "account.deletion": { pending: { requestedAt: at(-1), scheduledFor: at(29), emailSent: true }, warnings: ["You own a club. Transfer ownership first."] },
