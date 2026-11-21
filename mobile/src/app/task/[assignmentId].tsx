@@ -1,19 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import * as DocumentPicker from "expo-document-picker";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
 import { Field } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
-import { ArrowUpRight, CalendarClock, CheckCircle2, Download, ExternalLink, FilePenLine } from "~/components/icons";
+import { ArrowUpRight, CalendarClock, CheckCircle2, Download, FilePenLine, Plus } from "~/components/icons";
 import { isClosed, isMissing, isSubmitted, ownTasks, relativeDue, taskDate, taskLink, taskResources, taskState, useTaskWorkspaces, workspaceKey } from "~/components/tasks/presentation";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
 import { api, ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
-import { openExternal, openOnWeb } from "~/lib/links";
+import { openExternal } from "~/lib/links";
 import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
+import { MAX_TASK_FILES, TASK_FILE_MIME_TYPES, TaskUploadError, taskFileProblem, uploadTaskFile, type UploadedTaskFile } from "~/lib/task-files";
 import { useTheme } from "~/lib/theme";
 import type { ClubTask, Me, TaskAssignment } from "~/lib/types";
 
@@ -36,18 +38,21 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
   const setText = (value: string) => { setTextState(value); onDraft({ id: own.id, text: value, link }); };
   const setLink = (value: string) => { setLinkState(value); onDraft({ id: own.id, text, link: value }); };
   const [error, setError] = useState("");
+  // The files the submission will carry: those already attached, plus new uploads until it is saved.
+  const [files, setFiles] = useState<(UploadedTaskFile & { attached?: boolean })[]>(() => own.files.map(file => ({ id: file.id, name: file.name, size: file.size, attached: true })));
+  const [uploading, setUploading] = useState(false);
   const setSaved = onSaved;
   const required = (type: string) => (task.requirements.includes(type) ? "Required" : "Optional");
   /** The server's own checks (lib/tasks.ts validateTaskSubmission), said before sending. */
   const missing = (address: string) =>
     task.requirements.includes("TEXT") && !text.trim() ? "Add a written response before submitting."
       : task.requirements.includes("LINK") && !address ? "Add a link before submitting."
-      : task.requirements.includes("FILE") && !own.files.length ? "This task needs a file. Add it on the web with Open on web, then submit there."
-      : !text.trim() && !address && !own.files.length ? "Add a response, link, or file before submitting." : null;
+      : task.requirements.includes("FILE") && !files.length ? "Add a file before submitting."
+      : !text.trim() && !address && !files.length ? "Add a response, link, or file before submitting." : null;
 
   const submit = useMutation({
-    // Files already attached on the web stay attached; the server checks every field and the revision.
-    mutationFn: (address: string) => api.post("tasks.submit", { assignmentId: own.id, revision: own.revision, text: text.trim(), link: address, fileIds: own.files.map(file => file.id) }),
+    // The server checks every field, each file's contents and the revision.
+    mutationFn: (address: string) => api.post("tasks.submit", { assignmentId: own.id, revision: own.revision, text: text.trim(), link: address, fileIds: files.map(file => file.id) }),
     onMutate: address => { setError(""); setSaved(false); onStale(false); if (address !== link.trim()) setLink(address); },
     onSuccess: () => {
       haptics.confirm(); setSaved(true); onDraft(null);
@@ -71,6 +76,28 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
     onError: reason => { haptics.error(); setError(errorMessage(reason, "Download failed.")); },
   });
 
+  async function addFiles() {
+    if (uploading || submit.isPending) return;
+    setError("");
+    let picked: DocumentPicker.DocumentPickerResult;
+    try { picked = await DocumentPicker.getDocumentAsync({ type: TASK_FILE_MIME_TYPES, copyToCacheDirectory: true, multiple: true }); } catch { setError("Couldn’t open your files. Try again."); return; }
+    if (picked.canceled || !picked.assets?.length) return;
+    if (picked.assets.length + files.length > MAX_TASK_FILES) { haptics.error(); setError("Choose up to five files."); return; }
+    const problem = picked.assets.map(asset => taskFileProblem(asset)).find(Boolean);
+    if (problem) { haptics.error(); setError(problem); return; }
+    setUploading(true); setSaved(false);
+    try {
+      for (const asset of picked.assets) {
+        const uploaded = await uploadTaskFile(own.id, asset);
+        setFiles(current => [...current, uploaded]);
+      }
+      haptics.tick();
+    } catch (reason) {
+      haptics.error();
+      setError(reason instanceof TaskUploadError ? reason.message : errorMessage(reason, "Upload failed."));
+    } finally { setUploading(false); }
+  }
+
   return (
     <Card style={{ gap: 14 }} testID="task-submission">
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -88,16 +115,18 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
 
       <View style={{ gap: 6 }}>
         <Text variant="smallStrong">File upload · {required("FILE")}</Text>
-        {own.files.map(file => (
-          <View key={file.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: TARGET }}>
-            <Text variant="small" color={colors.foreground} style={{ flex: 1 }}>{file.name} · {Math.ceil(file.size / 1024)} KB</Text>
-            <Button variant="ghost" size="compact" icon={Download} label="Download" accessibilityHint={file.name} loading={download.isPending && download.variables === file.id} onPress={() => download.mutate(file.id)} />
+        {files.map(file => (
+          <View key={file.id} testID={`task-file-${file.id}`} style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: TARGET }}>
+            <Text variant="small" color={colors.foreground} style={{ flex: 1 }} numberOfLines={2}>{file.name} · {Math.ceil(file.size / 1024)} KB{file.attached ? "" : " · Not submitted yet"}</Text>
+            {file.attached ? <Button variant="ghost" size="compact" icon={Download} label="Download" accessibilityHint={file.name} loading={download.isPending && download.variables === file.id} onPress={() => download.mutate(file.id)} /> : null}
+            {closed || alumni ? null : <Button variant="ghost" size="compact" testID={`task-file-remove-${file.id}`} label="Remove" accessibilityHint={file.name} disabled={uploading || submit.isPending} onPress={() => { setFiles(current => current.filter(item => item.id !== file.id)); setSaved(false); }} />}
           </View>
         ))}
         {closed || alumni ? null : (
           <>
-            <Text variant="caption">Up to 5, 10 MB each. PDF, images, text, or Office documents. Files are added on the web for now.</Text>
-            <Button variant="secondary" size="compact" icon={ExternalLink} testID="task-open-web" label="Open on web" accessibilityHint={`Upload files for ${task.title} in ${clubName}`} onPress={() => { openOnWeb(`/club/${task.clubId}/workspace?section=tasks&taskView=mine&taskId=${task.id}`); }} />
+            <Text variant="caption">Up to 5, 10 MB each. PDF, images, text, or Office documents.{files.some(file => !file.attached) ? " New files are added when you submit." : ""}</Text>
+            <Button variant="secondary" size="compact" icon={Plus} testID="task-add-files" label={uploading ? "Uploading…" : "Add files"} loading={uploading} disabled={submit.isPending || files.length >= MAX_TASK_FILES} accessibilityHint={`Upload files for ${task.title} in ${clubName}`} onPress={() => { void addFiles(); }} />
+            {uploading ? <Text variant="caption" accessibilityLiveRegion="polite">Uploading securely… Keep this page open.</Text> : null}
           </>
         )}
       </View>
@@ -112,7 +141,7 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
       {stale && !closed ? <Text testID="task-stale" variant="small" color={colors.destructive} accessibilityRole="alert">{STALE_MESSAGE}</Text> : null}
       {saved ? <Text testID="task-saved" variant="small" color={colors.success} accessibilityLiveRegion="polite">Your submission was saved.</Text> : null}
       {alumni ? <AlumniBanner action="task" /> : closed ? null : (
-        <Button full size="large" testID="task-submit" loading={submit.isPending} label={submit.isPending ? "Submitting…" : own.submittedAt ? (own.revisionRequestedAt ? "Resubmit revisions" : "Update submission") : "Submit work"} onPress={() => {
+        <Button full size="large" testID="task-submit" loading={submit.isPending} disabled={uploading} label={submit.isPending ? "Submitting…" : own.submittedAt ? (own.revisionRequestedAt ? "Resubmit revisions" : "Update submission") : "Submit work"} onPress={() => {
           // The server takes only a full http(s) address; a typed "docs.google.com/…" is completed here instead of refused.
           const address = taskLink(link);
           if (address === null) { haptics.error(); setError("Enter a full web address, like https://docs.google.com/…"); return; }

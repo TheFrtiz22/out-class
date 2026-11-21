@@ -113,6 +113,8 @@ export const mobileOperations = {
   "tasks.workspace": operation("GET", z.object({ clubId: uuid, focus: z.object({ taskId: uuid, assignmentId: uuid.optional() }).strict().optional() }).strict(), async ({ clubId, focus }) => (await import("@/actions/tasks")).getTaskWorkspace(clubId, focus)),
   "tasks.view": operation("POST", z.object({ assignmentId: uuid }).strict(), async ({ assignmentId }) => (await import("@/actions/tasks")).viewTask(assignmentId)),
   "tasks.submit": operation("POST", passthrough, async input => (await import("@/actions/tasks")).submitTask(input as never)),
+  // A task file: records it and returns a one-time upload address; the app then sends the bytes there (components/club-tasks.tsx).
+  "tasks.upload": operation("POST", passthrough, async input => (await import("@/actions/tasks")).uploadTaskFile(input as never)),
   "tasks.file": operation("GET", z.object({ fileId: uuid }).strict(), async ({ fileId }) => (await import("@/actions/tasks")).downloadTaskFile(fileId)),
 
   // Live voting
