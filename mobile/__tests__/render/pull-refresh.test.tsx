@@ -41,7 +41,7 @@ function holdApi() {
 
 // Every row has two entries: Jest reads a test function with more parameters than the row as one awaiting `done`.
 const screens: [string, Record<string, string>][] = [
-  ["(tabs)/index", {}], ["(tabs)/explore", {}], ["(tabs)/inbox", {}], ["(tabs)/calendar", {}], ["(tabs)/profile", {}],
+  ["(tabs)/index", {}], ["(tabs)/explore", {}], ["inbox", {}], ["(tabs)/calendar", {}], ["(tabs)/profile", {}],
   ["applications", {}], ["saved-clubs", {}], ["tasks", {}], ["events/index", {}],
   ["club/[id]", { id: ids.applyClub }], ["events/[id]", { id: ids.event }],
 ];

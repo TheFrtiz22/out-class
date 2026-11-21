@@ -15,7 +15,7 @@ const homeView = records.homeView as HomeView;
 
 describe("a failed background refresh keeps what is on screen", () => {
   test.each([
-    ["(tabs)/inbox", "inbox", ["inbox", "pages"], "Notification 2"],
+    ["inbox", "inbox", ["inbox", "pages"], "Notification 2"],
     ["(tabs)/calendar", "calendar.view", ["calendar.view", null], "Event 2"],
     ["(tabs)/explore", "explore.directory", ["explore.directory", null], "12 clubs"],
     ["(tabs)/profile", "profile", ["profile", null], "Education"],
@@ -33,7 +33,7 @@ describe("a failed background refresh keeps what is on screen", () => {
   });
 
   test("a first load that fails still shows the error", async () => {
-    const Screen = require("~/app/(tabs)/inbox").default;
+    const Screen = require("~/app/inbox").default;
     await renderRoute(Screen, { mode: "rich", overrides: { inbox: busy } });
     expect(screenText(screen.toJSON())).toContain("This didn't load");
   });
@@ -111,10 +111,11 @@ describe("stacked screens go back to the tabs underneath", () => {
 });
 
 describe("Inbox badge", () => {
+  // The Inbox is the bell in a tab's header; its label carries the count.
   async function badgeLabel(home: Partial<HomeView>) {
-    const Layout = require("~/app/(tabs)/_layout").default;
-    await renderRoute(Layout, { mode: "rich", overrides: { "home.view": { ...homeView, ...home } } });
-    return screen.getByTestId("tab-inbox").props.accessibilityLabel as string;
+    const Screen = require("~/app/(tabs)/explore").default;
+    await renderRoute(Screen, { mode: "rich", overrides: { "home.view": { ...homeView, ...home } } });
+    return screen.getByTestId("header-inbox").props.accessibilityLabel as string;
   }
   test("counts what the Inbox lists, not task notifications it doesn't", async () => {
     expect(await badgeLabel({ unread: 5, inboxUnread: 3 })).toBe("Inbox, 3 unread");
@@ -124,7 +125,7 @@ describe("Inbox badge", () => {
   });
 
   test("Mark all as read clears the Inbox's count and leaves task notifications in the total", async () => {
-    const Screen = require("~/app/(tabs)/inbox").default;
+    const Screen = require("~/app/inbox").default;
     const { client } = await renderRoute(Screen, { mode: "rich" });
     client.setQueryData<HomeView>(["home.view", null], { ...homeView, unread: 10, inboxUnread: 8 });
     // Hold the write so the optimistic state can be read before the lists reload.

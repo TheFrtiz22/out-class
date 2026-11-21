@@ -13,8 +13,8 @@ import { spring } from "~/lib/motion";
 import { usePullRefresh } from "~/lib/pull-refresh";
 import { fonts, useTheme } from "~/lib/theme";
 
-/** Space the floating dock takes at the bottom of a tab screen (dock height + its inset). */
-export const DOCK_CLEARANCE = 92;
+/** Space the floating dock takes at the bottom of a tab screen (its 74pt height, lib/dock.ts, plus room to breathe). */
+export const DOCK_CLEARANCE = 100;
 /** Minimum touch target (44pt, Apple HIG; 48dp on Android is met by the same padding). */
 export const TARGET = 44;
 
