@@ -18,6 +18,9 @@ jest.mock("~/lib/config", () => {
   return { ...actual, config: { ...actual.config, supabaseUrl: "https://htlgjluegmdwfjkzzwic.supabase.co", supabasePublishableKey: "sb_publishable_test", turnstileSiteKey: "" } };
 });
 
+// Which status bar style the screen asks for (the real one only talks to the native side).
+jest.mock("expo-status-bar", () => ({ StatusBar: jest.fn(() => null) }));
+
 beforeEach(captureConsole);
 afterEach(releaseConsole);
 
@@ -104,6 +107,20 @@ describe("sign-in screen", () => {
     expect(StyleSheet.flatten(forgot.props.style).alignSelf).toBe("center");
     expect(screen.getByTestId("sign-in-sign-up")).toBeTruthy();
     expect(loggedCrashes()).toEqual([]);
+  });
+
+  test("the light status bar is set only while sign-in is the screen showing, not under Sign up", async () => {
+    const bar = jest.requireMock<{ StatusBar: jest.Mock }>("expo-status-bar").StatusBar;
+    bar.mockClear();
+    await renderRoute(SignIn, { segments: ["sign-in"] });
+    expect(bar.mock.calls.map(([props]) => props.style)).toContain("light");
+    const router = jest.requireMock<{ useIsFocused: () => boolean }>("expo-router");
+    const focused = jest.spyOn(router, "useIsFocused").mockReturnValue(false);
+    try {
+      bar.mockClear();
+      await renderRoute(SignIn, { segments: ["sign-up"] });
+      expect(bar).not.toHaveBeenCalled();
+    } finally { focused.mockRestore(); }
   });
 
   test("signs in without a check when Supabase doesn't ask for one", async () => {
