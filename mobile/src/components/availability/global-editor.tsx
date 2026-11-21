@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AvailabilityEditor } from "~/components/availability/editor";
 import { Card, ErrorState, Skeleton, TARGET } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
@@ -25,11 +25,23 @@ export function GlobalAvailabilityEditor({ readOnly, onPaintingChange }: { readO
   const client = useQueryClient();
   const query = useApiQuery<MyAvailability>("availability.mine");
   const [nonce, setNonce] = useState(0);
+  // The revision this editor holds. Settings and the Calendar each keep an editor mounted, so when the
+  // cached week moves on without this editor saving it (the other screen saved, or a refresh brought a
+  // newer copy), start again from the newer copy rather than send the next edit with a stale revision.
+  // Unsaved edits stay on the device and come back as a copy to review.
+  const revision = query.data?.document.revision;
+  const held = useRef(revision);
+  useEffect(() => {
+    if (revision === undefined) return;
+    if (held.current !== undefined && held.current !== revision) setNonce(value => value + 1);
+    held.current = revision;
+  }, [revision]);
   const reload = async () => { await query.refetch(); setNonce(value => value + 1); };
   if (query.data) {
     return (
       <AvailabilityEditor key={`global:${nonce}`} initial={readDocument(query.data.document)} readOnly={readOnly} onPaintingChange={onPaintingChange}
         onSaved={saved => {
+          held.current = saved.revision;
           client.setQueryData<MyAvailability>(MY_AVAILABILITY, old => old && { ...old, document: saved });
           // Each round's prefill comes from the global schedule.
           void client.invalidateQueries({ queryKey: ["availability.round"], refetchType: "none" });

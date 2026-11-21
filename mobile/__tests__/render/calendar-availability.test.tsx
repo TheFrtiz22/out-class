@@ -111,6 +111,32 @@ describe("editing availability from the Calendar", () => {
     expect(Object.values(saved.exceptions)).toEqual([[[480, 495], [540, 720]]]);
   });
 
+  test("a week saved from Settings while the Calendar stays open is picked up, so the next edit isn't refused as stale", async () => {
+    const { client } = await renderRoute(Screen());
+    await openAvailability(client);
+    await press("availability-day-0");
+    expect(checked("availability-grid-slot-36")).toBe(true);
+    // Settings' editor saved revision 7 (Monday cleared) into the shared cache.
+    await act(async () => {
+      client.setQueryData<{ document: { accountId: string; revision: number; schedule: object } }>(["availability.mine", null], old => old && {
+        ...old, document: { ...old.document, revision: 7, schedule: { timezone: "America/New_York", weekly: [[], [], [[840, 1020]], [], [], [], []], weeklySubmitted: true, exceptions: {} } },
+      });
+    });
+    await settle(client);
+    await press("availability-day-0");
+    expect(checked("availability-grid-slot-36")).toBe(false);
+    await press("availability-grid-slot-32");
+    await autosave(client);
+    expect(saves().at(-1)).toMatchObject({ revision: 7 });
+    expect(saves().at(-1)!.schedule.weekly[0]).toEqual([[480, 495]]);
+    // Its own save doesn't start the editor over: the next edit goes with the revision it got back.
+    await press("availability-grid-slot-33");
+    await autosave(client);
+    expect(saves().at(-1)).toMatchObject({ revision: 8 });
+    expect(saves().at(-1)!.schedule.weekly[0]).toEqual([[480, 510]]);
+    expect(loggedCrashes()).toEqual([]);
+  });
+
   test("Club interview rounds opens Settings → Availability", async () => {
     const { client } = await renderRoute(Screen());
     await openAvailability(client);
