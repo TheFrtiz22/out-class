@@ -32,7 +32,7 @@ jest.mock("react-native-reanimated", () => {
     Extrapolation: { CLAMP: "clamp", EXTEND: "extend", IDENTITY: "identity" },
     Easing: new Proxy({}, { get: () => identity }),
     ReduceMotion: { System: "system", Always: "always", Never: "never" },
-    FadeIn: { duration: () => ({}) }, FadeOut: { duration: () => ({}) }, LinearTransition: {},
+    LinearTransition: {},
     // What react-native-gesture-handler's GestureDetector reads from Reanimated.
     useEvent: () => () => {}, useComposedEventHandler: () => () => {}, useHandler: () => ({ doDependenciesDiffer: false, context: { lastUpdateEvent: undefined } }),
     isSharedValue: () => false, setGestureState: () => {}, NativeEventsManager: class { attachEvents() {} detachEvents() {} updateEvents() {} },
