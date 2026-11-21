@@ -285,6 +285,9 @@ const rich: FixtureSet = {
   "calendarFeed": { active: true, createdAt: at(-30), lastUsedAt: null },
   "calendarFeed.create": { https: "https://out-class.test/feed.ics", webcal: "webcal://out-class.test/feed.ics", google: "https://calendar.google.com/x" },
   "calendarFeed.disable": null,
+  // Settings → Interests (actions/interest-survey.ts); the save echoes the answers with the next revision.
+  "interests": { interests: ["tech", "consulting"], goals: ["career"], weeklyHours: "3-5", selectivity: null, revision: 3, completed: true, dismissed: false },
+  "interests.save": (input: unknown) => { const { revision, ...answers } = input as { revision: number }; return { ...answers, revision: revision + 1, completed: true, dismissed: false }; },
   // Home, calendar
   "home.view": homeView,
   "calendar.view": { generatedAt: at(0), events: agenda },
@@ -377,6 +380,7 @@ const empty: FixtureSet = {
   "me": emptyMe,
   "account.deletion": { pending: null, warnings: [] },
   "calendarFeed": { active: false, createdAt: null, lastUsedAt: null },
+  "interests": { interests: [], goals: [], weeklyHours: null, selectivity: null, revision: 0, completed: false, dismissed: false },
   "home.view": emptyHome,
   "calendar.view": { generatedAt: at(0), events: [] },
   "explore.directory": { clubs: [] },

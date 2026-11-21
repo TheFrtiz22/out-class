@@ -48,6 +48,7 @@ export const routes: RouteCase[] = [
   { file: "scan", rich: [/scan/i], empty: [/scan/i], error: [/scan/i] },
   { file: "settings/account", rich: ["Account & Security", "Delete account"], empty: ["Account & Security"], error: ["Delete account"] },
   { file: "settings/index", rich: ["Settings"], empty: ["Settings"], error: ["Settings"] },
+  { file: "settings/interests", rich: ["Interests", "What are you into?", "2 of 6"], empty: ["0 of 6"], error },
   { file: "settings/notifications", rich: ["Notifications"], empty: ["Notifications"], error: ["Notifications"] },
   { file: "sign-in", segments: ["sign-in"], rich: ["Sign in"], empty: ["Sign in"], error: ["Sign in"] },
   { file: "task/[assignmentId]", params: { assignmentId: ids.assignment, clubId: ids.memberClub }, rich: [`Submit the ${longName} chassis design review packet`], empty: ["Task"], error },
