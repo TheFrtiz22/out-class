@@ -170,7 +170,7 @@ describe("Calendar event types", () => {
 
 describe("other chip filters wrap too", () => {
   test.each([
-    ["(tabs)/inbox", "inbox-type", {}],
+    ["inbox", "inbox-type", {}],
     ["tasks", "tasks-filter", {}],
     ["leader/[clubId]/applicants", "applicants-round", { clubId: ids.leaderClub }],
   ] as const)("%s", async (file, testID, params) => {
