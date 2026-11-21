@@ -41,6 +41,14 @@ export function supabasePair(env: NodeJS.ProcessEnv, file: PublicConfig) {
 }
 const supabase = supabasePair(process.env, local);
 
+// The app's Sentry project (outclass-ot/outclass-mobile). A DSN only lets a client send reports, so it
+// is public like the web's. EXPO_PUBLIC_SENTRY_DSN or config.local.json can point elsewhere, or set "off".
+const PRODUCTION_SENTRY_DSN = "https://c5bcc247482cdd3247db5e98d5a65c34@o4512386190999552.ingest.us.sentry.io/4512471586897920";
+export function sentryDsn(env: NodeJS.ProcessEnv, file: PublicConfig): string {
+  const chosen = [env.EXPO_PUBLIC_SENTRY_DSN, file.sentryDsn].find(value => !isPlaceholder(value));
+  return chosen?.trim() ?? PRODUCTION_SENTRY_DSN;
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "OutClass",
@@ -110,6 +118,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-localization",
     // Long-press app-icon shortcuts (Scan). Items are set at runtime in src/app/_layout.tsx.
     "expo-quick-actions",
+    // Crash reporting (src/lib/report.ts). Source-map and debug-symbol upload needs a Sentry auth token
+    // in EAS secrets (SENTRY_AUTH_TOKEN); until one is added the upload is off so builds never fail on it.
+    ["@sentry/react-native/expo", { organization: "outclass-ot", project: "outclass-mobile", disableAutoUpload: true }],
     // Android release builds refuse plain HTTP. It is allowed only when this build's API address is plain
     // HTTP (a local server on staging data); a production build's address is HTTPS, so it stays refused.
     ["expo-build-properties", { ios: { deploymentTarget: "17.0" }, android: { usesCleartextTraffic: apiUrl.startsWith("http://") } }],
@@ -123,6 +134,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabasePublishableKey: supabase.key,
     supabaseSource: supabase.source,
     turnstileSiteKey: process.env.EXPO_PUBLIC_TURNSTILE_SITE_KEY ?? local.turnstileSiteKey ?? "",
-    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? local.sentryDsn ?? "",
+    sentryDsn: sentryDsn(process.env, local),
   },
 });

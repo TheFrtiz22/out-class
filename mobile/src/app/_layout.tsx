@@ -16,10 +16,12 @@ import { openRoute, resolveHref } from "~/lib/links";
 import { pendingLinkFor } from "~/lib/pending-link";
 import { notificationPath } from "~/lib/push";
 import { createQueryClient, useApiQuery } from "~/lib/query";
-import { reportError } from "~/lib/report";
+import { reportError, startReporting } from "~/lib/report";
 import { ThemeProvider, useTheme } from "~/lib/theme";
 import type { Me } from "~/lib/types";
 
+// First, so a failure anywhere in launch is reported (src/lib/report.ts; off when no DSN is configured).
+startReporting();
 SplashScreen.preventAutoHideAsync().catch(() => {});
 hideDevToolsButton();
 
