@@ -306,3 +306,18 @@ describe("P6: a meeting that ends the same day", () => {
     expect(easternRange(start, null)).not.toContain("–");
   });
 });
+
+describe("notification links to the new Settings screens", () => {
+  const { routeForHref } = jest.requireActual<typeof import("~/lib/links")>("~/lib/links");
+  const round = "6f1d2c3b-4a5e-4f60-8a7b-9c0d1e2f3a4b", club = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
+  test("a published interview panel opens Interview schedule, not the Inbox", () => {
+    expect(routeForHref(`/settings/interviews?clubId=${club}&roundId=${round}`)).toEqual({ pathname: "/settings/interviews" });
+  });
+  test("an availability request opens Availability on its round", () => {
+    expect(routeForHref(`/settings/availability?clubId=${club}&roundId=${round}`)).toEqual({ pathname: "/settings/availability", params: { roundId: round } });
+    expect(routeForHref("/settings/availability?roundId=not-an-id")).toEqual({ pathname: "/settings/availability" });
+  });
+  test("Interests opens in the app", () => {
+    expect(routeForHref("/settings/interests")).toEqual({ pathname: "/settings/interests" });
+  });
+});
