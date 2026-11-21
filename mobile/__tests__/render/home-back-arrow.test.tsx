@@ -8,12 +8,10 @@ import { routerState } from "./router-state";
 beforeEach(captureConsole);
 afterEach(() => { routerState.tabIndex = 0; routerState.stackIndex = 0; releaseConsole(); });
 
-/** The navigation a tab screen sees when its copy of the tabs sits at `index` in the root stack. */
-const navigation = (index: number) => ({ setOptions: jest.fn(), addListener: jest.fn(() => jest.fn()), isFocused: () => true, goBack: jest.fn(), canGoBack: () => true, dispatch: jest.fn(), getParent: () => ({ getState: () => ({ index }) }) });
 
 describe("Home has no Back arrow", () => {
   test.each([0, 1, 3])("with %i screens under it", async index => {
-    jest.spyOn(require("expo-router"), "useNavigation").mockReturnValue(navigation(index));
+    routerState.stackIndex = index;
     const Screen = require("~/app/(tabs)/index").default;
     await renderRoute(Screen, { mode: "rich" });
     expect(screen.queryByTestId("header-back")).toBeNull();
@@ -22,7 +20,7 @@ describe("Home has no Back arrow", () => {
   });
 
   test("while it loads and when it fails", async () => {
-    jest.spyOn(require("expo-router"), "useNavigation").mockReturnValue(navigation(1));
+    routerState.stackIndex = 1;
     const Screen = require("~/app/(tabs)/index").default;
     await renderRoute(Screen, { mode: "error" });
     expect(screen.queryByTestId("header-back")).toBeNull();
@@ -38,7 +36,7 @@ describe("sub-pages keep their Back arrow", () => {
   });
 
   test("a copy of the tabs over another screen closes with Back", async () => {
-    jest.spyOn(require("expo-router"), "useNavigation").mockReturnValue(navigation(1));
+    routerState.stackIndex = 1;
     const Screen = require("~/app/(tabs)/profile").default;
     await renderRoute(Screen, { mode: "rich" });
     await fireEvent.press(screen.getByTestId("header-back"));
@@ -46,7 +44,7 @@ describe("sub-pages keep their Back arrow", () => {
   });
 
   test("Back with nothing left to close goes Home instead of failing", async () => {
-    jest.spyOn(require("expo-router"), "useNavigation").mockReturnValue(navigation(1));
+    routerState.stackIndex = 1;
     routerState.router.canDismiss.mockReturnValueOnce(false);
     const Screen = require("~/app/(tabs)/profile").default;
     await renderRoute(Screen, { mode: "rich" });

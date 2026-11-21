@@ -1,4 +1,4 @@
-import { useIsFocused, useNavigation, useRouter } from "expo-router";
+import { useCanDismiss, useIsFocused, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -35,11 +35,12 @@ export function useHeaderInset() {
 export function Header({ title, back, root, actions, scanner = !back, fitTitle }: { title: string; back?: boolean; root?: boolean; actions?: ReactNode; scanner?: boolean; fitTitle?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const navigation = useNavigation();
   const focused = useIsFocused();
-  // Read while focused only: a focused tab's own copy of the tabs is the top of the root stack, so a
-  // stack index above 0 means it was opened over another screen. (Unfocused, the index is a screen's above it.)
-  const stacked = !back && !root && focused && (navigation.getParent()?.getState()?.index ?? 0) > 0;
+  const canDismiss = useCanDismiss();
+  // Read while focused only: a focused tab's own copy of the tabs is the top of the root stack, so
+  // something to dismiss means it was opened over another screen. (Unfocused, it is a screen above it.)
+  // A hook, not navigation.getState(): reading navigation state during render is stale and warns.
+  const stacked = !back && !root && focused && canDismiss;
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", top: insets.top + 4, left: 12, right: 12, zIndex: 20 }}>
       <Glass radius={HEADER_HEIGHT / 2} style={{ height: HEADER_HEIGHT, flexDirection: "row", alignItems: "center", paddingHorizontal: 6, gap: 2 }}>
