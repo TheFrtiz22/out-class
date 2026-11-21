@@ -5,6 +5,9 @@ function bundle(entry,mocks={}){
  mocks={'pdfjs-dist':'module.exports={}',...mocks}
  // The shell removes this device's push subscription on sign-out through a server action
  // (dynamic import); fixtures have no server, so the action is a no-op.
+ // Server actions are RPC stubs in Next's client bundle. The club website import action pulls in
+ // Node-only code (DNS, sockets, sharp), so fixtures get a stub that fails like an unreachable server.
+ mocks={'@/actions/club-website-import':`exports.importClubFromWebsite=async()=>{throw new Error('Fixture has no server.')}`,...mocks}
  mocks={'@/actions/push-subscriptions':'exports.removePushSubscription=async()=>({ok:true})',...mocks}
  // The app mounts ConfirmProvider once in the root layout; give every fixture root the same
  // provider so components that call useConfirm() render as they do in the app.
