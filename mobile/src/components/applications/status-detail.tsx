@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Linking, View } from "react-native";
+import { ActivityIndicator, Linking, View } from "react-native";
 import { ArrowRight, CalendarDays, ChevronDown, ChevronUp, FileText } from "~/components/icons";
 import { openPrivateDocument } from "~/components/private-image";
 import { Text } from "~/components/text";
@@ -34,6 +34,16 @@ export function StatusDetail({ application: app, notice, alumniRespond, onSwitch
   const router = useRouter();
   const [responses, setResponses] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // The document being opened (it can take up to 20 s), and the one that couldn't be.
+  const [opening, setOpening] = useState<string | null>(null);
+  const [unopened, setUnopened] = useState<string | null>(null);
+  async function openDocument(questionId: string) {
+    if (opening) return;
+    setOpening(questionId); setUnopened(null);
+    const opened = await openPrivateDocument("application-attachments", { applicationId: app.id, questionId });
+    setOpening(null);
+    if (!opened) setUnopened(questionId);
+  }
   const letter = app.decisionLetters.length > 0;
   const booked = !!app.interview && !app.interview.past;
 
@@ -64,10 +74,13 @@ export function StatusDetail({ application: app, notice, alumniRespond, onSwitch
               </Press>
             ) : attachment ? (
               // An uploaded PDF: the saved answer's own file through the media route; the server decides who may read it.
-              <Press testID={`application-attachment-${index + 1}`} onPress={() => { void openPrivateDocument("application-attachments", { applicationId: app.id, questionId: question.id }); }} accessibilityRole="link" accessibilityLabel="Open submitted document" style={{ minHeight: TARGET, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
-                <FileText size={16} color={colors.mutedForeground} />
-                <Text variant="small" color={colors.foreground} style={{ textDecorationLine: "underline" }}>Open submitted document</Text>
-              </Press>
+              <View style={{ gap: 4 }}>
+                <Press testID={`application-attachment-${index + 1}`} disabled={opening !== null} onPress={() => { void openDocument(question.id); }} accessibilityRole="link" accessibilityLabel="Open submitted document" accessibilityState={{ busy: opening === question.id, disabled: opening !== null }} style={{ minHeight: TARGET, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
+                  {opening === question.id ? <ActivityIndicator size="small" color={colors.mutedForeground} /> : <FileText size={16} color={colors.mutedForeground} />}
+                  <Text variant="small" color={colors.foreground} style={{ textDecorationLine: "underline" }}>{opening === question.id ? "Opening document…" : "Open submitted document"}</Text>
+                </Press>
+                {unopened === question.id ? <Text testID={`application-attachment-error-${index + 1}`} variant="small" color={colors.destructive} accessibilityRole="alert">This document couldn’t be opened. Try again, or ask the club.</Text> : null}
+              </View>
             ) : <Text variant="small" selectable style={{ lineHeight: 24 }}>{shown || "No response provided."}</Text>}
           </View>
         );
@@ -139,7 +152,8 @@ export function StatusDetail({ application: app, notice, alumniRespond, onSwitch
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14 }}>
         <Button testID="application-view-responses" variant="secondary" label="View submitted responses" onPress={() => { setResponses(true); onSwitch?.(); }} />
-        <Button variant="ghost" icon={CalendarDays} label="Open calendar" onPress={() => router.navigate("/calendar")} />
+        {/* Back to the tabs underneath: navigate or push would stack a second tab bar on this screen. */}
+        <Button variant="ghost" icon={CalendarDays} testID="application-open-calendar" label="Open calendar" onPress={() => router.dismissTo("/calendar")} />
       </View>
     </>
   );

@@ -8,8 +8,9 @@ import { ArrowUpRight, CalendarDays, CalendarPlus, MapPin, QrCode } from "~/comp
 import { Text } from "~/components/text";
 import { Button, Card, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
-import { addToCalendar, easternDateTime } from "~/lib/eastern";
+import { addToCalendar, easternRange } from "~/lib/eastern";
 import { openExternal } from "~/lib/links";
+import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { Me, Meeting, MeetingResource } from "~/lib/types";
@@ -33,6 +34,7 @@ export default function MeetingScreen() {
   const [adding, setAdding] = useState(false);
   const data = meeting.data;
   const links = resources(data?.resources);
+  const pull = usePullRefresh(() => meeting.refetch());
   const upcoming = data ? +new Date(data.endDate || data.date) >= Date.now() : false;
   // A leader with attendance access hosts check-in from here while attendance is open (the leader hub's own rule).
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
@@ -41,7 +43,7 @@ export default function MeetingScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={meeting.isRefetching} onRefresh={() => meeting.refetch()} testID="meeting-screen">
+      <ScreenScroll top={top} refreshing={pull.refreshing} onRefresh={valid ? pull.onRefresh : undefined} testID="meeting-screen">
         {!valid ? (
           <Card><EmptyState icon={CalendarDays} title="Meeting unavailable" body="This link doesn’t point to a meeting. Check the link or ask the club for a new one." /></Card>
         ) : meeting.isPending ? (
@@ -50,16 +52,17 @@ export default function MeetingScreen() {
             <Card style={{ gap: 10 }}><Skeleton width="30%" height={18} /><Skeleton /><Skeleton width="85%" /></Card>
             <Card style={{ gap: 10 }}><Skeleton width="30%" height={18} /><Skeleton /><Skeleton width="60%" /></Card>
           </>
-        ) : meeting.isError ? (
+        ) : meeting.isError && !data ? (
           <ErrorState message={errorMessage(meeting.error)} offline={meeting.error instanceof ApiError && meeting.error.offline} onRetry={() => meeting.refetch()} />
         ) : data ? (
           <>
+            {meeting.isError ? <Text variant="caption" accessibilityRole="alert" testID="meeting-refresh-failed">Couldn’t refresh this meeting. Showing what was last loaded.</Text> : null}
             <View style={{ gap: 8 }}>
               <Text variant="small">{data.club.name} · {data.audience === "MEMBERS" ? "Member meeting" : "Recruitment / Interest"}</Text>
               <Text variant="display" accessibilityRole="header">{data.title}</Text>
               <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
                 <View style={{ marginTop: 2 }}><CalendarDays size={18} color={colors.foreground} /></View>
-                <Text variant="bodyStrong" style={{ flex: 1 }}>{easternDateTime(data.date)}{data.endDate ? ` – ${easternDateTime(data.endDate)}` : ""}</Text>
+                <Text variant="bodyStrong" style={{ flex: 1 }}>{easternRange(data.date, data.endDate)}</Text>
               </View>
               <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
                 <View style={{ marginTop: 2 }}><MapPin size={18} color={colors.foreground} /></View>

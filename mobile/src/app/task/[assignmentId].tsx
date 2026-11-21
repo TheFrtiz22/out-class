@@ -6,26 +6,35 @@ import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
 import { Field } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
 import { ArrowUpRight, CalendarClock, CheckCircle2, Download, ExternalLink, FilePenLine } from "~/components/icons";
-import { isClosed, isMissing, isSubmitted, ownTasks, relativeDue, taskDate, taskLink, taskResources, taskState, useTaskWorkspaces } from "~/components/tasks/presentation";
+import { isClosed, isMissing, isSubmitted, ownTasks, relativeDue, taskDate, taskLink, taskResources, taskState, useTaskWorkspaces, workspaceKey } from "~/components/tasks/presentation";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
 import { api, ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openExternal, openOnWeb } from "~/lib/links";
+import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ClubTask, Me, TaskAssignment } from "~/lib/types";
 
 const REQUIREMENT_LABELS: Record<string, string> = { TEXT: "a written response", LINK: "a link", FILE: "a file" };
+const STALE_MESSAGE = "This task changed since you opened it. Your text is kept. Check it and submit again.";
+
+/** What the student typed, held by the screen: a reload with a new revision remounts the form, and an error state unmounts it. */
+type Draft = { id: string; text: string; link: string };
 
 /** The web's submission form (components/club-tasks.tsx `Submission`): written response, link, files. */
-function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; own: TaskAssignment; clubName: string; saved: boolean; onSaved: (saved: boolean) => void }) {
+function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale, onStale }: { task: ClubTask; own: TaskAssignment; clubName: string; saved: boolean; onSaved: (saved: boolean) => void; draft: Draft | null; onDraft: (draft: Draft | null) => void; stale: boolean; onStale: (stale: boolean) => void }) {
   const { colors } = useTheme();
   const client = useQueryClient();
   const alumni = useIsAlumni();
   const closed = isClosed(task, own);
-  const [text, setText] = useState(own.text ?? "");
-  const [link, setLink] = useState(own.link ?? "");
+  // A closed submission shows what the server holds; an open one keeps what was typed before a reload.
+  const kept = !closed && draft?.id === own.id ? draft : null;
+  const [text, setTextState] = useState(kept?.text ?? own.text ?? "");
+  const [link, setLinkState] = useState(kept?.link ?? own.link ?? "");
+  const setText = (value: string) => { setTextState(value); onDraft({ id: own.id, text: value, link }); };
+  const setLink = (value: string) => { setLinkState(value); onDraft({ id: own.id, text, link: value }); };
   const [error, setError] = useState("");
   const setSaved = onSaved;
   const required = (type: string) => (task.requirements.includes(type) ? "Required" : "Optional");
@@ -39,14 +48,21 @@ function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; o
   const submit = useMutation({
     // Files already attached on the web stay attached; the server checks every field and the revision.
     mutationFn: (address: string) => api.post("tasks.submit", { assignmentId: own.id, revision: own.revision, text: text.trim(), link: address, fileIds: own.files.map(file => file.id) }),
-    onMutate: address => { setError(""); setSaved(false); if (address !== link.trim()) setLink(address); },
+    onMutate: address => { setError(""); setSaved(false); onStale(false); if (address !== link.trim()) setLink(address); },
     onSuccess: () => {
-      haptics.confirm(); setSaved(true);
+      haptics.confirm(); setSaved(true); onDraft(null);
       client.invalidateQueries({ queryKey: ["tasks.workspace"] });
       client.invalidateQueries({ queryKey: ["home.view", null] });
       client.invalidateQueries({ queryKey: ["home.taskNotifications", null] });
     },
-    onError: reason => { haptics.error(); setError(errorMessage(reason, "Could not save. Please try again.")); },
+    onError: reason => {
+      haptics.error();
+      // Reviewed or changed elsewhere (STALE), or closed (CLOSED): the app re-reads the task itself, since it has
+      // no "reload the page". The typed text is held by the screen, so the new revision's form keeps it.
+      if (reason instanceof ApiError && (reason.code === "STALE" || reason.code === "CLOSED")) void client.invalidateQueries({ queryKey: workspaceKey(task.clubId) });
+      if (reason instanceof ApiError && reason.code === "STALE") { onStale(true); return; }
+      setError(errorMessage(reason, "Could not save. Please try again."));
+    },
   });
   const download = useMutation({
     mutationFn: (fileId: string) => api.get<{ url: string }>("tasks.file", { fileId }),
@@ -93,6 +109,7 @@ function Submission({ task, own, clubName, saved, onSaved }: { task: ClubTask; o
         </View>
       ) : null}
       {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">{error}</Text> : null}
+      {stale && !closed ? <Text testID="task-stale" variant="small" color={colors.destructive} accessibilityRole="alert">{STALE_MESSAGE}</Text> : null}
       {saved ? <Text testID="task-saved" variant="small" color={colors.success} accessibilityLiveRegion="polite">Your submission was saved.</Text> : null}
       {alumni ? <AlumniBanner action="task" /> : closed ? null : (
         <Button full size="large" testID="task-submit" loading={submit.isPending} label={submit.isPending ? "Submitting…" : own.submittedAt ? (own.revisionRequestedAt ? "Resubmit revisions" : "Update submission") : "Submit work"} onPress={() => {
@@ -119,6 +136,8 @@ export default function TaskScreen() {
   const viewed = useRef<string | null>(null);
   // A saved submission reloads the task with a new revision, which remounts the form: the confirmation is held here.
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [staleId, setStaleId] = useState<string | null>(null);
+  const draft = useRef<Draft | null>(null);
   const now = Date.now();
 
   const index = workspaces.findIndex(query => ownTasks(query.data).some(({ own }) => own.id === assignmentId));
@@ -126,8 +145,11 @@ export default function TaskScreen() {
   const workspace = index >= 0 ? workspaces[index]!.data : undefined;
   const clubName = index >= 0 ? memberships[index]!.club.name : "Your club";
   const loading = me.isPending || (!found && workspaces.some(query => query.isPending));
-  const failure = me.error ?? (!found ? workspaces.find(query => query.isError)?.error : null);
-  const refresh = () => { me.refetch(); workspaces.forEach(query => { query.refetch(); }); };
+  // A failed background refetch keeps the loaded task (and the form being typed in) on screen; only a first load that failed is an error.
+  const failure = (me.isError && !me.data ? me.error : null) ?? (!found ? workspaces.find(query => query.isError && !query.data)?.error : null);
+  const outdated = (me.isError && !!me.data) || (!!found && workspaces[index]!.isError);
+  const refresh = () => Promise.all([me.refetch(), ...workspaces.map(query => query.refetch())]);
+  const pull = usePullRefresh(refresh);
 
   // Opening a task marks it viewed, as the web's task sheet does.
   useEffect(() => {
@@ -145,7 +167,7 @@ export default function TaskScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={workspaces.some(query => query.isRefetching)} onRefresh={refresh} testID="task-screen">
+      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={pull.refreshing} onRefresh={pull.onRefresh} testID="task-screen">
         {loading ? (
           <>
             <View style={{ gap: 10 }}><Skeleton width="50%" /><Skeleton width="85%" height={30} /><Skeleton width="40%" /></View>
@@ -153,11 +175,12 @@ export default function TaskScreen() {
             <Card style={{ gap: 10 }}><Skeleton width="45%" height={18} /><Skeleton height={90} /><Skeleton height={44} /></Card>
           </>
         ) : failure ? (
-          <ErrorState message={errorMessage(failure, "Could not load tasks.")} offline={failure instanceof ApiError && failure.offline} onRetry={refresh} />
+          <ErrorState message={errorMessage(failure, "Could not load tasks.")} offline={failure instanceof ApiError && failure.offline} onRetry={() => { void refresh(); }} />
         ) : !task || !own ? (
           <Card><EmptyState title="Task unavailable" body="This task is no longer assigned to you, or it was removed." /></Card>
         ) : (
           <>
+            {outdated ? <Text variant="caption" accessibilityRole="alert" testID="task-refresh-failed">Couldn’t refresh this task. Showing what was last loaded.</Text> : null}
             <View style={{ gap: 8 }}>
               <Text variant="small">{clubName} · {task.kind === "PROJECT" ? "Project" : "Assignment"}</Text>
               <Text variant="display" accessibilityRole="header">{task.title}</Text>
@@ -187,7 +210,8 @@ export default function TaskScreen() {
               ) : null}
             </Card>
 
-            {task.kind === "TASK" ? <Submission key={`${own.id}-${own.revision}`} task={task} own={own} clubName={clubName} saved={savedId === own.id} onSaved={value => setSavedId(value ? own.id : null)} /> : (
+            {task.kind === "TASK" ? <Submission key={`${own.id}-${own.revision}`} task={task} own={own} clubName={clubName} saved={savedId === own.id} onSaved={value => setSavedId(value ? own.id : null)}
+              draft={draft.current} onDraft={value => { draft.current = value; }} stale={staleId === own.id} onStale={value => setStaleId(value ? own.id : null)} /> : (
               <Card style={{ gap: 8 }}>
                 <Text variant="section" accessibilityRole="header">Related tasks</Text>
                 {children.length ? children.map(child => <Text key={child.id} variant="body">{child.title} · <Text variant="small">{child.dueAt ? `Due ${taskDate(child.dueAt)}` : "No due date"}</Text></Text>) : <Text variant="small">New tasks will appear here.</Text>}

@@ -8,7 +8,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ArrowRight, CalendarDays, FilePenLine } from "~/components/icons";
 import { Text } from "~/components/text";
 import { Button, Card, ClubMark, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, StatusChip } from "~/components/ui";
-import { ApiError } from "~/lib/api";
+import { ApiError, errorMessage } from "~/lib/api";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ApplicationStageId, ApplicationsView, StudentApplication } from "~/lib/types";
@@ -120,10 +120,10 @@ export default function Applications() {
               </>
             ) : view.isError && !data ? (
               <View accessibilityRole="alert">
-                <ErrorState message={view.error instanceof ApiError && view.error.offline ? view.error.message : "Your saved responses haven’t changed. Please try again."} offline={view.error instanceof ApiError && view.error.offline} onRetry={() => { void view.refetch(); }} />
+                <ErrorState message={errorMessage(view.error)} offline={view.error instanceof ApiError && view.error.unreachable} onRetry={() => { void view.refetch(); }} />
               </View>
             ) : data && !data.applications.length ? (
-              <EmptyState icon={FilePenLine} title="No applications yet." body="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button testID="applications-explore" label="Explore clubs" onPress={() => router.push("/explore")} />} />
+              <EmptyState icon={FilePenLine} title="No applications yet." body="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button testID="applications-explore" label="Explore clubs" onPress={() => router.dismissTo("/explore")} />} />
             ) : data ? (
               <>
                 <StageTabs label="Application stage" items={data.stages} value={stage} onChange={setChosen} />
