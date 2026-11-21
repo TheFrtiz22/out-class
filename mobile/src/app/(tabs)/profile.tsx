@@ -7,6 +7,7 @@ import { AlumniBanner, isAlumniProfile } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Check, ChevronRight, ExternalLink, FileText, Linkedin, Pencil, Settings } from "~/components/icons";
+import { AlumniDetailsSheet, alumniDetailsDraft } from "~/components/profile/alumni-details-sheet";
 import { EditProfileSheet } from "~/components/profile/edit-sheet";
 import { PrivateImage, openPrivateDocument, photoParams } from "~/components/private-image";
 import { initials, isStoragePath, profileChecklist, resumeHref, safeProfileUrl, scholarSummary } from "~/components/profile/model";
@@ -38,6 +39,7 @@ export default function Profile() {
   // A photo chosen in this session shows at once; the saved one comes through the media route.
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
   const [resumeNote, setResumeNote] = useState("");
+  const [alumniEditing, setAlumniEditing] = useState(false);
   const profile = query.data?.profile ?? null;
   const edit = (section: ProfileSectionId) => { setLastSection(section); setEditing(section); };
 
@@ -172,7 +174,7 @@ export default function Profile() {
                 <Line label="Working at" value={work || "Not added"} />
                 <Line label="Clubs’ alumni list" value={profile.alumniDirectoryVisible ?? true ? "Shown to current members" : "Hidden"} />
                 <Line label="“Where members go”" value={profile.alumniPlacementShare ?? true ? "Company name added" : "Not added"} />
-                <Button variant="secondary" size="compact" icon={ExternalLink} label="Open on web" accessibilityHint="Edit your after-graduation details on the site" onPress={() => { openOnWeb("/profile"); }} />
+                <Button variant="secondary" size="compact" icon={Pencil} testID="profile-after-graduation-edit" label="Edit" accessibilityHint="Edit your after-graduation details" onPress={() => setAlumniEditing(true)} />
               </Card>
             ) : null}
 
@@ -184,6 +186,7 @@ export default function Profile() {
       </ScreenScroll>
       {/* Outside the loaded branch: a refetch while the sheet is open (picking a photo backgrounds the app) never unmounts the draft. */}
       {profile ? <EditProfileSheet open={!!editing} initialSection={lastSection} profile={profile} onClose={() => setEditing(null)} onSaved={() => {}} onLocalPhoto={setLocalPhoto} /> : null}
+      {profile ? <AlumniDetailsSheet open={alumniEditing} initial={alumniDetailsDraft(profile)} onClose={() => setAlumniEditing(false)} /> : null}
       <Header title="Profile" actions={<IconButton icon={Settings} label="Settings" testID="profile-header-settings" onPress={() => router.push("/settings" as never)} />} />
     </View>
   );
