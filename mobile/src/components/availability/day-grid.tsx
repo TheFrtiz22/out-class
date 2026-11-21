@@ -10,6 +10,7 @@ import { useTheme } from "~/lib/theme";
 const ROW = TARGET;
 const LABEL = 58;
 const GAP = 4;
+const QUARTERS = [":00", ":15", ":30", ":45"];
 const HOURS = Array.from({ length: (AVAILABILITY_END_SLOT - AVAILABILITY_FIRST_SLOT) / 4 }, (_, i) => AVAILABILITY_FIRST_SLOT + i * 4);
 
 /**
@@ -75,6 +76,11 @@ export function DayGrid({ cells, known, dayName, onChange, onPaintingChange, rea
 
   return (
     <View testID={testID} accessibilityLabel={`${dayName} availability by quarter hour`}>
+      {/* Each block is a quarter hour; the column heads say which one, so the four don't read as one hour split evenly by eye. */}
+      <View testID={`${testID}-columns`} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: "row", gap: GAP, paddingBottom: 6 }}>
+        <View style={{ width: LABEL - GAP }} />
+        {QUARTERS.map(label => <Text key={label} variant="caption" align="center" style={{ flex: 1, fontVariant: ["tabular-nums"] }}>{label}</Text>)}
+      </View>
       <GestureDetector gesture={paint}>
         <View testID={`${testID}-rows`} onLayout={event => { width.current = event.nativeEvent.layout.width; }} style={{ gap: GAP }}>
           {HOURS.map(start => (

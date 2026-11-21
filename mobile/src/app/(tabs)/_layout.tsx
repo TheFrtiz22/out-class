@@ -6,25 +6,27 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from "react-nativ
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Glass } from "~/components/glass";
 import type { IconComponent } from "~/components/icon-factory";
-import { CalendarDays, Compass, Home, Inbox, UserRound } from "~/components/icons";
+import { CalendarDays, Compass, FilePenLine, Home, UserRound, Users } from "~/components/icons";
 import { Text } from "~/components/text";
 import { haptics } from "~/lib/haptics";
-import { DOCK_PADDING, restingSlot, slotAt } from "~/lib/dock";
+import { DOCK_ICON, DOCK_PADDING, DOCK_TAB_HEIGHT, restingSlot, slotAt } from "~/lib/dock";
 import { useKeyboardShown } from "~/lib/keyboard";
 import { spring } from "~/lib/motion";
-import { useApiQuery } from "~/lib/query";
+import { useMiddleTab } from "~/lib/middle-tab";
 import { fonts, useTheme } from "~/lib/theme";
-import type { HomeView } from "~/lib/types";
 
-// The same five tabs as the phone-width site (lib/navigation.ts): Home holds To-do, Tasks,
-// Applications and My Clubs; Explore holds Events; Settings is reached from Profile.
-const tabs: { name: string; label: string; icon: IconComponent; href: "/" | "/explore" | "/inbox" | "/calendar" | "/profile" }[] = [
+type Tab = { name: string; label: string; icon: IconComponent; href: "/" | "/explore" | "/clubs" | "/calendar" | "/profile" };
+// Five tabs. The middle one is Apply while an application is still open and My Clubs once they are all
+// settled (lib/middle-tab.ts). The Inbox is the bell in the header; Events are in Explore; Settings in Profile.
+const tabs: Tab[] = [
   { name: "index", href: "/", label: "Home", icon: Home },
   { name: "explore", href: "/explore", label: "Explore", icon: Compass },
-  { name: "inbox", href: "/inbox", label: "Inbox", icon: Inbox },
+  { name: "clubs", href: "/clubs", label: "Apply", icon: FilePenLine },
   { name: "calendar", href: "/calendar", label: "Calendar", icon: CalendarDays },
   { name: "profile", href: "/profile", label: "Profile", icon: UserRound },
 ];
+const middle = { apply: { label: "Apply", icon: FilePenLine }, clubs: { label: "My Clubs", icon: Users } } as const;
+
 
 /** How far a finger moves sideways before the dock treats a touch as a drag rather than a tap. */
 const DRAG_SLOP = 8;
@@ -37,17 +39,18 @@ const LIFT_SCALE = 0.08;
  * ticks as it crosses each tab, and on release locks onto the tab under the finger (as Instagram's
  * and Apple Music's tab bars do).
  */
-type DockProps = { state: { index: number; routes: { key: string; name: string }[] }; navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => unknown } };
+type DockProps = { state: { index: number; routes: { key: string; name: string }[] }; navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => unknown; getParent?: () => { getState?: () => { index?: number } | undefined } | undefined } };
 function Dock({ state, navigation }: DockProps) {
   const router = useRouter();
   const { colors, radius, a11y } = useTheme();
   const insets = useSafeAreaInsets();
   // The dock steps aside for the keyboard rather than riding on top of it.
   const keyboard = useKeyboardShown();
-  const home = useApiQuery<HomeView>("home.view", undefined, { staleTime: 30_000 });
-  // The Inbox's own count, so marking everything read there clears the badge. (`unread`, the web's bell
-  // count, also counts task notifications the Inbox doesn't list; an older server sends only that.)
-  const unread = Math.max(0, Number(home.data?.inboxUnread ?? home.data?.unread) || 0);
+  const mode = useMiddleTab();
+  const shape = (name: string) => {
+    const tab = tabs.find(item => item.name === name)!;
+    return tab.name === "clubs" ? { ...tab, ...middle[mode] } : tab;
+  };
 
   const routes = state.routes.filter(route => tabs.some(tab => tab.name === route.name));
   const current = Math.max(0, routes.findIndex(route => route.key === state.routes[state.index]?.key));
@@ -71,7 +74,11 @@ function Dock({ state, navigation }: DockProps) {
 
   const go = (index: number) => {
     const tab = tabs.find(item => item.name === routes[index]?.name);
-    if (tab && index !== current) router.navigate(tab.href);
+    if (!tab || index === current) return;
+    // In a copy of the tabs opened over another screen, Home is the real Home underneath: close the
+    // copy rather than show Home inside it, where it would need a Back arrow.
+    if (tab.href === "/" && (navigation.getParent?.()?.getState?.()?.index ?? 0) > 0) router.dismissTo("/");
+    else router.navigate(tab.href);
   };
   const onGrab = (index: number) => { holding.current = true; haptics.grab(); setHover(index); };
   const onCross = (index: number) => { haptics.tick(); setHover(index); };
@@ -111,26 +118,25 @@ function Dock({ state, navigation }: DockProps) {
 
   if (keyboard) return null;
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: Math.max(insets.bottom, 10), alignItems: "center" }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: Math.max(insets.bottom, 10), alignItems: "stretch" }}>
       {/* The shadow sits on a wrapper: the glass clips its own corners, which would clip a shadow drawn on it. */}
-      <View style={{ marginHorizontal: 14, borderRadius: radius.full, shadowColor: colors.schoolPrimary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
+      <View style={{ marginHorizontal: 12, borderRadius: radius.full, shadowColor: colors.schoolPrimary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
         <GestureDetector gesture={drag}>
           <Glass radius={radius.full} accessibilityRole="tablist" testID="tab-dock" onLayout={event => { const next = event.nativeEvent.layout.width; dockWidth.value = next; setWidth(next); }} style={{ flexDirection: "row", padding: DOCK_PADDING }}>
             {slot ? <Animated.View pointerEvents="none" testID="tab-selection" style={[{ position: "absolute", top: DOCK_PADDING, bottom: DOCK_PADDING, left: DOCK_PADDING, width: slot, borderRadius: radius.full, backgroundColor: colors.primary }, pill]} /> : null}
             {routes.map((route, index) => {
-              const tab = tabs.find(item => item.name === route.name)!;
+              const tab = shape(route.name);
               const selected = current === index;
               // The icon and label read as selected under the pill, which during a drag is where the finger is.
               const lit = shown === index;
               const Icon = tab.icon;
-              const badge = tab.name === "inbox" && unread > 0 ? unread : 0;
               return (
                 <Pressable
                   key={route.key}
-                  testID={`tab-${tab.label.toLowerCase()}`}
+                  testID={`tab-${tab.name === "clubs" ? `clubs-${mode}` : tab.label.toLowerCase()}`}
                   accessibilityRole="tab"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={badge ? `${tab.label}, ${badge} unread` : tab.label}
+                  accessibilityLabel={tab.label}
                   onPress={() => {
                     // Another tab switches at once, with a tick. The tab you are on gets the navigator's own
                     // tabPress, which its list answers by scrolling to the top (useScrollToTop), as iOS tab bars do.
@@ -138,17 +144,10 @@ function Dock({ state, navigation }: DockProps) {
                     if (!selected) { haptics.tick(); go(index); }
                     else navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
                   }}
-                  style={({ pressed }) => ({ flex: 1, minWidth: 62, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 2, borderRadius: radius.full, backgroundColor: !slot && selected ? colors.primary : pressed && !lit ? colors.muted : "transparent" })}
+                  style={({ pressed }) => ({ flex: 1, minWidth: 64, minHeight: DOCK_TAB_HEIGHT, alignItems: "center", justifyContent: "center", gap: 3, borderRadius: radius.full, backgroundColor: !slot && selected ? colors.primary : pressed && !lit ? colors.muted : "transparent" })}
                 >
-                  <View>
-                    <Icon size={22} weight={lit ? "fill" : "regular"} color={lit ? colors.primaryForeground : colors.foreground} />
-                    {badge ? (
-                      <View style={{ position: "absolute", top: -5, right: -11, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.schoolAccent, alignItems: "center", justifyContent: "center" }}>
-                        <Text maxFontSizeMultiplier={1.2} style={{ fontFamily: fonts.sansBold, fontSize: 10, lineHeight: 13, color: "#232d4b" }}>{badge > 99 ? "99+" : badge}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text maxFontSizeMultiplier={1.3} numberOfLines={1} style={{ fontFamily: lit ? fonts.sansSemibold : fonts.sansMedium, fontSize: 11, lineHeight: 14, color: lit ? colors.primaryForeground : colors.foreground }}>{tab.label}</Text>
+                  <Icon size={DOCK_ICON} weight={lit ? "fill" : "regular"} color={lit ? colors.primaryForeground : colors.foreground} />
+                  <Text maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{ fontFamily: lit ? fonts.sansSemibold : fonts.sansMedium, fontSize: 12, lineHeight: 15, color: lit ? colors.primaryForeground : colors.foreground }}>{tab.label}</Text>
                 </Pressable>
               );
             })}

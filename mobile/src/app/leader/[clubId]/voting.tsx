@@ -1,5 +1,4 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
 import { ChevronRight, ExternalLink } from "~/components/icons";
@@ -31,7 +30,6 @@ export default function VotingRooms() {
   const top = useHeaderInset();
   const router = useRouter();
   const { colors } = useTheme();
-  const [pulling, setPulling] = useState(false);
   const rooms = useApiQuery<RoomListItem[]>("voting.rooms", { clubId }, { scope: "leader", staleTime: 0 });
   // Back from a room: a session ended there leaves Active sessions.
   useRefetchOnReturn(() => rooms.refetch());
@@ -49,7 +47,7 @@ export default function VotingRooms() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="voting-rooms" refreshing={pulling} onRefresh={() => { setPulling(true); rooms.refetch().finally(() => setPulling(false)); }}>
+      <ScreenScroll top={top} testID="voting-rooms" onRefresh={() => rooms.refetch()}>
         {rooms.isPending ? <SkeletonRows count={3} avatar={false} /> : rooms.isError && !rooms.data ? (
           <Card><ErrorState offline={rooms.error instanceof ApiError && rooms.error.offline} message={rooms.error instanceof ApiError && rooms.error.offline ? rooms.error.message : "Voting sessions could not be loaded. Check your current access and retry."} onRetry={() => rooms.refetch()} /></Card>
         ) : (["draft", "scheduled", "active", "past"] as const).map(kind => {

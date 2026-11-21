@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
+import { FlatList, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CLUB_CARD_GAP, ClubCard, ClubCardSkeleton, clubCardHeight } from "~/components/explore/club-card";
 import { type DirectoryFilters, categoryIcon, clubRecruitment, emptyDirectoryFilters, filterDirectory, rankedCategories, recruitmentOptions } from "~/components/explore/directory";
@@ -10,9 +10,10 @@ import { FieldLabel, FilterChip, SearchField, useDebounced, useNotice } from "~/
 import { Header, useHeaderInset } from "~/components/header";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Bookmark, CalendarDays, Compass, SlidersHorizontal, Users, X } from "~/components/icons";
+import { OptionPicker, type PickerOption } from "~/components/option-picker";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote } from "~/components/ui";
+import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
@@ -52,6 +53,8 @@ export default function Explore() {
   const filters = useMemo(() => ({ ...choices, query: search }), [choices, search]);
   const filtered = useMemo(() => filterDirectory(clubs ?? [], filters, now), [clubs, filters, now]);
   const categories = useMemo(() => rankedCategories(clubs ?? []), [clubs]);
+  // Busiest categories first, so the few on screen are the likeliest picks; the rest are one tap away in a searchable list.
+  const categoryOptions = useMemo<PickerOption[]>(() => [{ value: "all", label: "All", count: clubs?.length ?? 0, icon: Users }, ...categories.map(({ category, count }) => ({ value: category, label: category, count, icon: categoryIcon(category) }))], [categories, clubs]);
   const recruitmentCounts = useMemo(() => {
     const matches = filterDirectory(clubs ?? [], { ...filters, recruitment: "all" }, now);
     return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closed: matches.filter(club => !clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length };
@@ -65,7 +68,7 @@ export default function Explore() {
   const height = clubCardHeight(theme, fontScale);
   const change = (key: keyof DirectoryFilters, value: string) => { if (key === "query") setQuery(value); else setChoices(current => ({ ...current, [key]: value })); };
   const clear = () => { setQuery(""); setChoices(emptyDirectoryFilters); };
-  const refresh = () => { setNow(Date.now()); directory.refetch(); saved.query.refetch(); };
+  const refresh = () => { setNow(Date.now()); return Promise.all([directory.refetch(), saved.query.refetch()]); };
   const open = useCallback((club: PublicClub) => router.push({ pathname: "/club/[id]", params: { id: club.id } }), [router]);
   const pressIn = useCallback((club: PublicClub) => prefetch(club.id), [prefetch]);
   const { setSaved, ids } = saved;
@@ -90,14 +93,9 @@ export default function Explore() {
         </View>
       </View>
       {clubs && categories.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Browse categories" keyboardShouldPersistTaps="handled" style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-          <FilterChip testID="explore-category-all" label="All" count={clubs.length} icon={Users} selected={choices.category === "all"} onPress={() => change("category", "all")} />
-          {categories.map(({ category, count }) => {
-            const selected = choices.category.toLowerCase() === category.toLowerCase();
-            // Choosing the selected category again returns to all interests, as on the web.
-            return <FilterChip key={category} label={category} count={count} icon={categoryIcon(category)} selected={selected} onPress={() => change("category", selected ? "all" : category)} />;
-          })}
-        </ScrollView>
+        <OptionPicker label="Browse categories" testID="explore-category" sheetTitle="All categories" moreLabel="All categories" searchPlaceholder="Search categories" inline={4} deselectTo="all" alphabetical
+          value={categoryOptions.find(option => option.value.toLowerCase() === choices.category.toLowerCase())?.value ?? choices.category}
+          options={categoryOptions} onChange={category => change("category", category)} />
       ) : null}
       {active.length > 0 ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
@@ -135,6 +133,7 @@ export default function Explore() {
       action={active.length ? <Button variant="secondary" label="Clear search and filters" onPress={clear} /> : <Button variant="secondary" label="See campus events" onPress={() => router.push("/events")} />} />
   );
 
+  const pullControl = usePullControl(refresh, top);
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -157,7 +156,7 @@ export default function Explore() {
         windowSize={9}
         removeClippedSubviews
         scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={directory.isRefetching} onRefresh={refresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
       />
       <Header title="Explore" />
       {notice.element}

@@ -9,7 +9,6 @@ import { FilePenLine } from "~/components/icons";
 import { Button, Card, EmptyState, ErrorState, ScreenScroll, Skeleton, StatusChip } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import type { AutosaveState } from "~/lib/autosave";
-import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import type { ApplicationsView } from "~/lib/types";
 
@@ -30,7 +29,6 @@ export default function ApplicationScreen() {
   // Coming back (from the profile, a booking or a letter) re-reads the record: profile notes, closing dates and status move on.
   const returned = useRef(false);
   const refetch = view.refetch;
-  const pull = usePullRefresh(refetch);
   useFocusEffect(useCallback(() => {
     if (returned.current) void refetch();
     returned.current = true;
@@ -39,7 +37,7 @@ export default function ApplicationScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll {...({ ref: scroll } as object)} top={top} testID="application-screen" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
-        refreshing={!draft && pull.refreshing} onRefresh={draft ? undefined : pull.onRefresh}>
+        onRefresh={draft ? undefined : refetch}>
         {loading ? (
           <View accessibilityLabel="Loading" accessibilityRole="progressbar" style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", gap: 12 }}><Skeleton width={48} height={48} radius={12} /><View style={{ flex: 1, gap: 8 }}><Skeleton width="34%" height={12} /><Skeleton width="78%" height={26} /><Skeleton width="56%" height={12} /></View></View>

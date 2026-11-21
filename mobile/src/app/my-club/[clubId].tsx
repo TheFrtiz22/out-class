@@ -10,7 +10,6 @@ import { Text } from "~/components/text";
 import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Press, ScreenScroll, SectionHeader, Segmented, Skeleton, SkeletonRows } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { easternDateTime, easternRange } from "~/lib/eastern";
-import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { Me, Meeting, Membership, TaskWorkspace } from "~/lib/types";
@@ -34,7 +33,6 @@ export default function MyClub() {
   const now = Date.now();
   // `refetch` ignores `enabled`, so an alumni membership's task list is not asked for here either.
   const refresh = () => Promise.all([me.refetch(), clubId ? meetings.refetch() : null, tasksEnabled ? tasks.refetch() : null]);
-  const pull = usePullRefresh(refresh);
 
   const upcoming = (meetings.data ?? []).filter(meeting => +new Date(meeting.endDate || meeting.date) >= now).sort((a, b) => +new Date(a.date) - +new Date(b.date));
   const past = (meetings.data ?? []).filter(meeting => +new Date(meeting.endDate || meeting.date) < now);
@@ -44,7 +42,7 @@ export default function MyClub() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={pull.refreshing} onRefresh={pull.onRefresh} testID="my-club-screen">
+      <ScreenScroll top={top} onRefresh={refresh} testID="my-club-screen">
         {me.isPending ? (
           <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}><Skeleton width={56} height={56} radius={14} /><View style={{ flex: 1, gap: 8 }}><Skeleton width="70%" height={24} /><Skeleton width="40%" /></View></View>
         ) : me.isError && !me.data ? (
