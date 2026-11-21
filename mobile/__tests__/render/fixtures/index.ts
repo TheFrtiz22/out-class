@@ -274,6 +274,8 @@ const roomSnapshot: RoomSnapshot = {
 };
 
 // ---- Sets -------------------------------------------------------------------------------------
+const availabilitySchedule = { timezone: "America/New_York", weekly: [[[540, 720]], [], [[840, 1020]], [], [], [], []], weeklySubmitted: true, exceptions: {} };
+
 const rich: FixtureSet = {
   // Public sign-up options (lib/mobile-api/auth.ts mobileSignupOptions). No Turnstile key: checks stay off in tests.
   "auth.signupOptions": { termsRequired: true, turnstileSiteKey: null, graduationYears: ["2027", "2028", "2029", "2030"] },
@@ -374,6 +376,16 @@ const rich: FixtureSet = {
   "leader.interviewRooms": Array.from({ length: 5 }, (_, index) => interviewEntry(index + 1)),
   "leader.interviewSession.open": { id: uuid(1400), revision: 1, draft: { overallReview: "", additionalNotes: "" }, completedAt: null, instructions: "Be kind." },
   "leader.interviewSession.save": { session: { id: uuid(1400), revision: 2, draft: { overallReview: "", additionalNotes: "x" }, completedAt: null } },
+  // Settings → Availability (actions/availability.ts): the global week, one round awaiting a response, and saves that echo the next revision.
+  "availability.mine": { document: { accountId: ids.user, revision: 2, schedule: availabilitySchedule }, rounds: [
+    { id: ids.round, clubId: ids.memberClub, clubName: "Virginia Motorsports", name: "First round interviews", confirmed: false, response: "AWAITING", requested: true },
+    { id: ids.round2, clubId: ids.leaderClub, clubName: longName, name: "Final round", confirmed: true, response: "SUBMITTED", requested: true },
+  ] },
+  "availability.save": (input: unknown) => { const value = input as { revision: number }; return { ...value, revision: value.revision + 1 }; },
+  "availability.round": (input: unknown) => ({ preferredWeek: "2026-11-23", name: (input as { roundId: string }).roundId === ids.round ? "First round interviews" : "Final round", confirmed: false, declined: false, global: availabilitySchedule,
+    document: { accountId: ids.user, revision: 1, schedule: { ...availabilitySchedule, exceptions: { "2026-11-24": [[600, 660]] } } } }),
+  "availability.round.save": (input: unknown) => { const { clubId: _c, roundId: _r, confirm, ...value } = input as { clubId: string; roundId: string; confirm: boolean; revision: number }; return { document: { ...value, revision: value.revision + 1 }, confirmed: confirm }; },
+  "availability.round.decline": (input: unknown) => ({ revision: (input as { revision: number }).revision + 1 }),
 };
 
 const empty: FixtureSet = {
@@ -414,6 +426,7 @@ const empty: FixtureSet = {
   "leader.announce.preview": { count: 0, evaluatedAt: at(0) },
   "leader.announcements": [],
   "leader.interviewRooms": [],
+  "availability.mine": { document: { accountId: ids.user, revision: 0, schedule: { timezone: "America/New_York", weekly: [[], [], [], [], [], [], []], weeklySubmitted: false, exceptions: {} } }, rounds: [] },
 };
 
 export const fixtureSets = { rich, empty };

@@ -48,6 +48,7 @@ export const routes: RouteCase[] = [
   { file: "saved-clubs", rich: ["Saved clubs", longName], empty: ["Saved clubs"], error },
   { file: "scan", rich: [/scan/i], empty: [/scan/i], error: [/scan/i] },
   { file: "settings/account", rich: ["Account & Security", "Delete account"], empty: ["Account & Security"], error: ["Delete account"] },
+  { file: "settings/availability", rich: ["Availability", "Your weekly rhythm", "My global availability · all clubs"], empty: ["No schedule saved"], error },
   { file: "settings/index", rich: ["Settings"], empty: ["Settings"], error: ["Settings"] },
   { file: "settings/interests", rich: ["Interests", "What are you into?", "2 of 6"], empty: ["0 of 6"], error },
   { file: "settings/notifications", rich: ["Notifications"], empty: ["Notifications"], error: ["Notifications"] },
