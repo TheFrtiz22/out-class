@@ -10,7 +10,6 @@ import { ArrowRight, PartyPopper } from "~/components/icons";
 import { Text } from "~/components/text";
 import { Button, Card, ErrorState, ScreenScroll, Skeleton } from "~/components/ui";
 import { api, ApiError, errorMessage } from "~/lib/api";
-import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ApplicationsView, DecisionLetterView } from "~/lib/types";
@@ -37,7 +36,6 @@ export default function DecisionScreen() {
   const [readError, setReadError] = useState("");
   const marked = useRef<string | null>(null);
   const clubName = letter?.clubName || applications.data?.applications.find(item => item.id === applicationId)?.club.name || "";
-  const pull = usePullRefresh(() => letterQuery.refetch(), () => applications.refetch());
   // The application's own label ("In review", "Not selected"), not the raw status code, but only while it
   // describes the same status as the letter's fresh read: an older applications list never outranks it.
   const listed = applications.data?.applications.find(item => item.id === applicationId);
@@ -95,7 +93,7 @@ export default function DecisionScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="decision-screen" refreshing={pull.refreshing} onRefresh={pull.onRefresh}>
+      <ScreenScroll top={top} testID="decision-screen" onRefresh={() => Promise.all([letterQuery.refetch(), applications.refetch()])}>
         {letterQuery.isPending ? (
           <View accessibilityLabel="Opening your decision letter…" accessibilityRole="progressbar">
             <Card style={{ gap: 16, paddingVertical: 28 }}>

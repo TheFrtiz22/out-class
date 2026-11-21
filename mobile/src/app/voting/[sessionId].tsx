@@ -45,7 +45,6 @@ export default function VotingRoomScreen() {
   const [chosen, setChosen] = useState<Mode | null>(params.view === "member" ? "member" : null);
   const [joinQr, setJoinQr] = useState(false);
   const [joinError, setJoinError] = useState("");
-  const [pulling, setPulling] = useState(false);
 
   const roomQuery = useApiQuery<RoomSnapshot>("voting.room", scope, { scope: "leader", enabled: valid, staleTime: 0, gcTime: 60_000, refetchInterval: live ? POLL_MS : false, retry: once });
   // A refused read clears what was on screen, as the web's subscription does. A dropped or slow connection,
@@ -105,7 +104,7 @@ export default function VotingRoomScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="voting-room" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={pulling} onRefresh={() => { setPulling(true); Promise.all([roomQuery.refetch(), gate ? join.refetch() : null]).finally(() => setPulling(false)); }}>
+      <ScreenScroll top={top} testID="voting-room" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" onRefresh={() => Promise.all([roomQuery.refetch(), gate ? join.refetch() : null])}>
         {valid && leader && room?.permissions.voter ? (
           <Segmented label="Voting view" value={mode === "member" ? "member" : "leader"} onChange={value => setChosen(value)} options={[{ value: "leader", label: "Lead voting" }, { value: "member", label: "Your vote" }]} />
         ) : null}

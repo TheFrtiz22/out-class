@@ -57,7 +57,7 @@ export default function AvailabilitySettings() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} testID="settings-availability-screen" keyboardShouldPersistTaps="handled" scrollEnabled={!painting}
-        refreshing={query.isRefetching && !query.data} onRefresh={query.data ? undefined : () => { void query.refetch(); }}>
+        onRefresh={query.data ? undefined : () => query.refetch()}>
         <AlumniBanner action="availability" />
         {query.data ? (
           <>

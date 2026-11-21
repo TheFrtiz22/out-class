@@ -127,7 +127,7 @@ export default function InterviewScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll {...({ ref: scroll } as object)} top={top} testID="interview-screen" refreshing={schedule.isRefetching && !busy} onRefresh={() => { void schedule.refetch(); }}>
+      <ScreenScroll {...({ ref: scroll } as object)} top={top} testID="interview-screen" onRefresh={() => schedule.refetch()}>
         {schedule.isPending ? (
           <View accessibilityLabel="Loading interview times…" accessibilityRole="progressbar" style={{ gap: 16 }}>
             <Card style={{ gap: 10 }}><Skeleton width="40%" height={12} /><Skeleton width="70%" height={22} /><Skeleton width="90%" /></Card>

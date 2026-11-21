@@ -45,7 +45,7 @@ export default function EventDetail() {
   const [adding, setAdding] = useState(false);
   const [now] = useState(() => Date.now());
 
-  const refresh = () => { void detail.refetch(); void saves.query.refetch(); void queryClient.invalidateQueries({ queryKey: ["events.rsvp", { eventId: id }] }); };
+  const refresh = () => Promise.all([detail.refetch(), saves.query.refetch(), queryClient.invalidateQueries({ queryKey: ["events.rsvp", { eventId: id }] })]);
   async function addToCalendar(item: CampusEvent) {
     setAdding(true);
     try {
@@ -116,7 +116,7 @@ export default function EventDetail() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={detail.isRefetching && !detail.isPlaceholderData} onRefresh={refresh} testID="event-screen">{body}</ScreenScroll>
+      <ScreenScroll top={top} onRefresh={refresh} testID="event-screen">{body}</ScreenScroll>
       <Header title="Event" back />
       {notice.element}
     </View>

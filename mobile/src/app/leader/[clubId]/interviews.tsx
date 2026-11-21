@@ -28,7 +28,6 @@ export default function InterviewDay() {
   const { colors } = useTheme();
   const focused = useIsFocused();
   const [now, setNow] = useState(Date.now());
-  const [pulling, setPulling] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const rooms = useApiQuery<InterviewEntry[]>("leader.interviewRooms", { clubId }, { scope: "leader", staleTime: 0, refetchInterval: focused ? 60_000 : false });
   useEffect(() => {
@@ -66,7 +65,7 @@ export default function InterviewDay() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="interview-day" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={pulling} onRefresh={() => { setPulling(true); rooms.refetch().finally(() => setPulling(false)); }}>
+      <ScreenScroll top={top} testID="interview-day" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" onRefresh={() => rooms.refetch()}>
         {/* The page's name is in the bar ("Interview day"); the day it covers is the one line above the schedule. */}
         <Text variant="eyebrow">{formatDateKey(easternDateKey(now), { weekday: "long", month: "long", day: "numeric" })} · Eastern Time</Text>
         {rooms.isPending ? (

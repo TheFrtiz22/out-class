@@ -1,13 +1,13 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { FlatList, RefreshControl, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { FlatList, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
 import { ExternalLink, Search, ShieldCheck, X } from "~/components/icons";
 import { PrivateImage, photoParams } from "~/components/private-image";
 import { Text } from "~/components/text";
-import { Button, Card, ErrorState, Press, Skeleton, SkeletonRows, TARGET, StatusChip } from "~/components/ui";
+import { Button, Card, ErrorState, Press, Skeleton, SkeletonRows, TARGET, StatusChip, usePullControl } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
@@ -51,7 +51,6 @@ export default function Applicants() {
   const [roundId, setRoundId] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
   const [query, setQuery] = useState("");
-  const [pulling, setPulling] = useState(false);
   useEffect(() => { const timer = setTimeout(() => setQuery(typed.trim()), 350); return () => clearTimeout(timer); }, [typed]);
 
   const overview = useApiQuery<Overview>("leader.overview", { clubId, view: "recruiting" }, { scope: "leader", staleTime: 30_000 });
@@ -114,6 +113,7 @@ export default function Applicants() {
     </View>
   );
 
+  const pullControl = usePullControl(() => Promise.all([overview.refetch(), pipeline.refetch()]), top);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
@@ -125,7 +125,7 @@ export default function Applicants() {
         contentContainerStyle={{ paddingTop: top + 12, paddingHorizontal: 16, paddingBottom: insets.bottom + 24, gap: 10 }}
         ListHeaderComponent={header}
         scrollIndicatorInsets={{ top }}
-        refreshControl={<RefreshControl refreshing={pulling} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} onRefresh={() => { setPulling(true); Promise.all([overview.refetch(), pipeline.refetch()]).finally(() => setPulling(false)); }} />}
+        refreshControl={pullControl}
         onEndReachedThreshold={0.6}
         onEndReached={() => { if (pipeline.hasNextPage && !pipeline.isFetchingNextPage) pipeline.fetchNextPage(); }}
         ListEmptyComponent={pipeline.isPending ? <SkeletonRows count={5} /> : pipeline.isError ? (
