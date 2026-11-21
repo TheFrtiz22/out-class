@@ -45,6 +45,6 @@ describe("not-found screen", () => {
     const NotFound = require("~/app/+not-found").default;
     await renderRoute(NotFound);
     fireEvent.press(screen.getByText("Go to Home"));
-    expect(routerState.router.replace).toHaveBeenCalledWith("/");
+    expect(routerState.router.dismissTo).toHaveBeenCalledWith("/");
   });
 });

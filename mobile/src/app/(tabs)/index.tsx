@@ -188,7 +188,7 @@ export default function Home() {
           </>
         ) : null}
       </ScreenScroll>
-      <Header title={me.data?.profile?.firstName ? `Hi, ${me.data.profile.firstName}` : "Home"} />
+      <Header root title={me.data?.profile?.firstName ? `Hi, ${me.data.profile.firstName}` : "Home"} />
     </View>
   );
 }

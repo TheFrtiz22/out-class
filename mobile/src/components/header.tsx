@@ -22,23 +22,26 @@ export function useHeaderInset() {
  * A tab opened from a pushed screen (Update profile in a draft) is a second copy of the tabs on top
  * of the stack, with no way back but the swipe. Its tab headers show Back too, which closes that copy.
  *
+ * Home (`root`) never shows Back, wherever it is: it is the bottom of the app, and a Back there had
+ * nothing safe to go back to.
+ *
  * `fitTitle` shrinks a long title (a club's full name) to fit the bar on one line instead of
  * cutting it off.
  */
-export function Header({ title, back, actions, scanner = !back, fitTitle }: { title: string; back?: boolean; actions?: ReactNode; scanner?: boolean; fitTitle?: boolean }) {
+export function Header({ title, back, root, actions, scanner = !back, fitTitle }: { title: string; back?: boolean; root?: boolean; actions?: ReactNode; scanner?: boolean; fitTitle?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const navigation = useNavigation();
   const focused = useIsFocused();
   // Read while focused only: a focused tab's own copy of the tabs is the top of the root stack, so a
   // stack index above 0 means it was opened over another screen. (Unfocused, the index is a screen's above it.)
-  const stacked = !back && focused && (navigation.getParent()?.getState()?.index ?? 0) > 0;
+  const stacked = !back && !root && focused && (navigation.getParent()?.getState()?.index ?? 0) > 0;
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", top: insets.top + 4, left: 12, right: 12, zIndex: 20 }}>
       <Glass radius={HEADER_HEIGHT / 2} style={{ height: HEADER_HEIGHT, flexDirection: "row", alignItems: "center", paddingHorizontal: 6, gap: 2 }}>
-        {back ? <IconButton icon={ArrowLeft} label="Back" testID="header-back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
+        {back && !root ? <IconButton icon={ArrowLeft} label="Back" testID="header-back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
           // `dismiss` pops the whole copy of the tabs; `back` would first step through the tabs' own history.
-          : stacked ? <IconButton icon={ArrowLeft} label="Back" testID="header-back" onPress={() => router.dismiss()} />
+          : stacked ? <IconButton icon={ArrowLeft} label="Back" testID="header-back" onPress={() => (router.canDismiss() ? router.dismiss() : router.dismissTo("/"))} />
             : <View style={{ width: 12 }} />}
         {/* The bar has a fixed height, so the title scales less than body text and truncates rather than clips. */}
         <Text variant="section" accessibilityRole="header" numberOfLines={1} maxFontSizeMultiplier={1.35} adjustsFontSizeToFit={fitTitle} minimumFontScale={fitTitle ? TITLE_MIN_SCALE : undefined} style={{ flex: 1, fontSize: 20, lineHeight: 26 }}>{title}</Text>

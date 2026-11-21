@@ -37,7 +37,7 @@ const LIFT_SCALE = 0.08;
  * ticks as it crosses each tab, and on release locks onto the tab under the finger (as Instagram's
  * and Apple Music's tab bars do).
  */
-type DockProps = { state: { index: number; routes: { key: string; name: string }[] }; navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => unknown } };
+type DockProps = { state: { index: number; routes: { key: string; name: string }[] }; navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => unknown; getParent?: () => { getState?: () => { index?: number } | undefined } | undefined } };
 function Dock({ state, navigation }: DockProps) {
   const router = useRouter();
   const { colors, radius, a11y } = useTheme();
@@ -71,7 +71,11 @@ function Dock({ state, navigation }: DockProps) {
 
   const go = (index: number) => {
     const tab = tabs.find(item => item.name === routes[index]?.name);
-    if (tab && index !== current) router.navigate(tab.href);
+    if (!tab || index === current) return;
+    // In a copy of the tabs opened over another screen, Home is the real Home underneath: close the
+    // copy rather than show Home inside it, where it would need a Back arrow.
+    if (tab.href === "/" && (navigation.getParent?.()?.getState?.()?.index ?? 0) > 0) router.dismissTo("/");
+    else router.navigate(tab.href);
   };
   const onGrab = (index: number) => { holding.current = true; haptics.grab(); setHover(index); };
   const onCross = (index: number) => { haptics.tick(); setHover(index); };
