@@ -7,7 +7,7 @@ import { Text } from "~/components/text";
 import { Button, Card, Divider, IconButton, Press, Segmented, TARGET } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import {
-  SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, WEEK_DAYS, addDays, availabilityEditorDays, availabilityEditorKnownDays, dayIndex, editAvailabilityDays, monday,
+  SCHEDULING_TIMEZONE, WEEK_DAYS, addDays, availabilityEditorDays, availabilityEditorKnownDays, dayIndex, editAvailabilityDays, monday,
   readDocument, restoreVisibleRecurring, sameSchedule, today, visibleHours, type AvailabilityDocument, type AvailabilitySchedule, type MyAvailability, type RoundAvailability,
 } from "~/lib/availability";
 import { useAutosave } from "~/lib/autosave";
@@ -35,10 +35,10 @@ const readRound = async (scope: RoundScope) => { const value = await api.get<Rou
  * The availability editor (web: components/availability/my-availability.tsx AvailabilityEditor). Edits
  * save on their own a moment after each change, with the revision that was loaded, and an unsaved copy
  * is kept on this device until it reaches OutClass. With `scope` it edits one club and round's own
- * response and adds Submit, Withdraw and Decline.
+ * response and adds Submit, Withdraw and Decline. `title` names a round; the global week needs none.
  */
 export function AvailabilityEditor({ initial, scope, title, initialWeek, initialStatus, readOnly, onSaved, onStatus, onReload, onPaintingChange }: {
-  initial: AvailabilityDocument; scope?: RoundScope; title: string; initialWeek?: string; initialStatus?: Status; readOnly?: boolean; onPaintingChange?: (painting: boolean) => void;
+  initial: AvailabilityDocument; scope?: RoundScope; title?: string; initialWeek?: string; initialStatus?: Status; readOnly?: boolean; onPaintingChange?: (painting: boolean) => void;
   onSaved?: (document: AvailabilityDocument) => void; onStatus?: (status: Status) => void; onReload: () => void;
 }) {
   const { colors } = useTheme();
@@ -146,7 +146,7 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
     : autosave.state === "offline" || autosave.state === "unreachable" ? autosave.error
     : autosave.state === "error" ? "Save failed · edits retained"
     : autosave.dirty ? "Unsaved changes"
-    : revision.current === 0 ? "No schedule saved" : "All changes saved";
+    : revision.current === 0 ? "No schedule saved" : "Saved";
   const stale = autosave.state === "error" && autosave.error && /another tab|reload/i.test(autosave.error);
   const dayName = WEEK_DAYS[day];
   const dateLabel = (i: number) => formatDateKey(dates[i], { month: "short", day: "numeric" });
@@ -155,28 +155,26 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
 
   return (
     <View style={{ gap: 12 }} testID="availability-editor">
-      <Card style={{ gap: 10 }}>
-        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
-          <Text variant="section" accessibilityRole="header" style={{ flex: 1 }} numberOfLines={3}>{title}</Text>
-          {readOnly ? null : <Text testID="availability-save-state" variant="caption" color={autosave.state === "error" ? colors.destructive : colors.mutedForeground} accessibilityLiveRegion="polite" style={{ maxWidth: "50%", textAlign: "right" }}>{saveText}</Text>}
-        </View>
-        <Text variant="small">{scope ? "Your global schedule is prefilled. Adjust specific dates here and confirm your participation for this club and round." : "Enter your usual free time once. Your schedule follows local clock time, including daylight saving changes."}</Text>
-        <Text variant="caption">8:00 AM–9:00 PM · {SCHEDULING_TIMEZONE_LABEL}</Text>
-        {!scope && schedule.timezone === SCHEDULING_TIMEZONE ? (
-          <Segmented<Mode> label="Availability editing mode" value={mode} onChange={setMode} options={[{ value: "recurring", label: "Recurring week" }, { value: "week", label: "Specific dates" }]} />
-        ) : null}
-        {autosave.state === "error" && autosave.error ? (
-          <View style={{ gap: 8 }}>
-            <Text variant="small" color={colors.destructive} accessibilityRole="alert">{autosave.error}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {stale ? null : <Button size="compact" variant="secondary" label="Retry save" onPress={() => { void autosave.flush().catch(() => {}); }} />}
-              <Button size="compact" variant="secondary" testID="availability-reload" label="Reload saved version" onPress={onReload} />
-            </View>
+      {title ? (
+        <Card style={{ gap: 6 }}>
+          <Text variant="section" accessibilityRole="header" numberOfLines={3}>{title}</Text>
+          {scope ? <Text variant="small">Prefilled from your global schedule. Submit to confirm for this round.</Text> : null}
+        </Card>
+      ) : null}
+      {!scope && schedule.timezone === SCHEDULING_TIMEZONE ? (
+        <Segmented<Mode> label="Availability editing mode" value={mode} onChange={setMode} options={[{ value: "recurring", label: "Recurring week" }, { value: "week", label: "Specific dates" }]} />
+      ) : null}
+      {autosave.state === "error" && autosave.error ? (
+        <Card tone="soft" style={{ gap: 8 }}>
+          <Text variant="small" color={colors.destructive} accessibilityRole="alert">{autosave.error}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {stale ? null : <Button size="compact" variant="secondary" label="Retry save" onPress={() => { void autosave.flush().catch(() => {}); }} />}
+            <Button size="compact" variant="secondary" testID="availability-reload" label="Reload saved version" onPress={onReload} />
           </View>
-        ) : autosave.state === "offline" || autosave.state === "unreachable" ? (
-          <Button size="compact" variant="secondary" label="Retry save" onPress={() => { void autosave.flush().catch(() => {}); }} />
-        ) : null}
-      </Card>
+        </Card>
+      ) : autosave.state === "offline" || autosave.state === "unreachable" ? (
+        <Button size="compact" variant="secondary" label="Retry save" style={{ alignSelf: "flex-start" }} onPress={() => { void autosave.flush().catch(() => {}); }} />
+      ) : null}
 
       {autosave.recovery ? (
         <Card tone="soft" style={{ gap: 10 }} testID="availability-recovery">
@@ -253,12 +251,18 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
             );
           })}
         </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Text testID="availability-day-summary" variant="smallStrong" style={{ flex: 1 }} numberOfLines={2}>
+            {recurring ? `${dayName}s` : `${dayName.slice(0, 3)}, ${dateLabel(day)}`} · {knownDays[day] ? `${visibleHours(days[day])} hours` : "not submitted"}
+          </Text>
+          {readOnly ? null : <Text testID="availability-save-state" variant="caption" color={autosave.state === "error" ? colors.destructive : colors.mutedForeground} accessibilityLiveRegion="polite" numberOfLines={2} style={{ maxWidth: "45%", textAlign: "right" }}>{saveText}</Text>}
+        </View>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 4 }}>
           <Legend color={colors.primary} label="Available" />
           <Legend color={colors.card} border={colors.border} label="Unavailable" />
-          <Legend color={colors.muted} border={colors.border} dashed label="Not submitted" />
+          {knownDays.every(Boolean) ? null : <Legend color={colors.muted} border={colors.border} dashed label="Not submitted" />}
         </View>
-        <Text variant="caption">{knownDays[day] ? `${dayName}${recurring ? "s" : `, ${dateLabel(day)}`}: ${visibleHours(days[day])} hours available.` : `${dayName}${recurring ? "s are" : " is"} not submitted yet. Times you add submit it.`} Tap a time to add or remove it, or touch and hold, then drag to fill a range.{recurring ? "" : " Date changes replace the editable hours on that day."}</Text>
+        {readOnly ? null : <Text testID="availability-help" variant="caption">Each block is 15 minutes. Tap one to switch it, or hold and drag to fill a range.</Text>}
         <DayGrid cells={days[day]} known={knownDays[day]} dayName={dayName} readOnly={locked} onPaintingChange={onPaintingChange} onChange={cells => editDays(days.map((value, i) => i === day ? cells : value), [day])} />
         {readOnly ? null : (
           <>
@@ -266,7 +270,7 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <Button size="compact" variant="secondary" icon={Copy} testID="availability-copy-day" label={`Copy ${dayName.slice(0, 3)} to…`} disabled={locked} onPress={() => setCopying(true)} />
               <Button size="compact" variant="secondary" testID="availability-clear-day" label={`Clear ${dayName.slice(0, 3)}`} disabled={locked} onPress={() => clear([day])} />
-              <Button size="compact" variant="secondary" testID="availability-clear-week" label="Clear entire week" disabled={locked} onPress={() => clear([0, 1, 2, 3, 4, 5, 6])} />
+              <Button size="compact" variant="secondary" testID="availability-clear-week" label="Clear week" disabled={locked} onPress={() => clear([0, 1, 2, 3, 4, 5, 6])} />
               {recurring ? null : <Button size="compact" variant="secondary" testID="availability-copy-previous" label="Copy previous week" disabled={locked} onPress={copyPrevious} />}
               {hasDateChange ? <Button size="compact" variant="ghost" testID="availability-use-recurring" label={`Use recurring on ${dayName.slice(0, 3)}`} disabled={locked} onPress={() => change(restoreVisibleRecurring(schedule, dates[day]))} /> : null}
             </View>
