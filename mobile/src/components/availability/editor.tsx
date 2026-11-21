@@ -112,13 +112,16 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
       async () => readDocument((await api.post<{ document: AvailabilityDocument }>("availability.round.save", { ...payload, ...scope, confirm: true })).document),
       async () => { const current = await readRound(scope); return { document: current.document, responseMatches: current.confirmed && !current.declined }; });
     revision.current = saved.revision; await autosave.reset();
+    onSaved?.(saved);
     setStatus({ confirmed: true, declined: false }); haptics.confirm();
   }, "Could not confirm participation.");
   const withdraw = () => act(async () => {
     if (!scope) return;
     await autosave.flush();
     const result = await api.post<{ document: AvailabilityDocument }>("availability.round.save", { ...document(schedule), ...scope, confirm: false });
-    revision.current = readDocument(result.document).revision; await autosave.reset();
+    const saved = readDocument(result.document);
+    revision.current = saved.revision; await autosave.reset();
+    onSaved?.(saved);
     setStatus({ confirmed: false, declined: false });
   }, "Could not withdraw confirmation.");
   const decline = () => act(async () => {
@@ -126,6 +129,8 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
     await autosave.flush();
     const result = await api.post<{ revision: number }>("availability.round.decline", { ...scope, revision: revision.current, accountId: initial.accountId });
     revision.current = result.revision; await autosave.reset();
+    // Keep the cached response on the new revision, so reopening this round doesn't start stale.
+    onSaved?.(document(schedule));
     setStatus({ confirmed: false, declined: true });
   }, "Could not decline participation.");
   const useGlobal = () => act(async () => {
@@ -193,7 +198,11 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
             <>
               <Text variant="small">Unsaved availability from this device is available.</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                <Button size="compact" label="Restore edits" testID="availability-restore" onPress={autosave.restoreRecovery} />
+                <Button size="compact" label="Restore edits" testID="availability-restore" onPress={() => {
+                  // A restored copy is an edit: like any change, it takes a round response back to not submitted.
+                  if (scope && (status.confirmed || status.declined)) setStatus({ confirmed: false, declined: false });
+                  autosave.restoreRecovery();
+                }} />
                 <Button size="compact" variant="ghost" label="Discard" onPress={() => { void autosave.discardRecovery(); }} />
               </View>
             </>

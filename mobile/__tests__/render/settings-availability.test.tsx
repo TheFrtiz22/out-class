@@ -3,6 +3,7 @@
  * the global week autosaves with the loaded revision, and a round's response is submitted, withdrawn
  * or declined the way the web's editor does it.
  */
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, screen } from "@testing-library/react-native";
 import { State } from "react-native-gesture-handler";
 import { fireGestureHandler, getByGestureTestId } from "react-native-gesture-handler/jest-utils";
@@ -215,4 +216,38 @@ describe("round availability", () => {
     expect(saved).toMatchObject({ confirm: false, revision: 1 });
     expect(saved.schedule.exceptions["2026-11-24"]).toEqual([[600, 615], [630, 660]]);
   });
+  test("after submitting, reopening the round keeps the new revision", async () => {
+    const { client } = await openRound();
+    await press("availability-submit-round");
+    await settle(client);
+    await act(() => new Promise(resolve => setTimeout(resolve, 460)));
+    await press("availability-round-picker");
+    await press("availability-round-global");
+    await settle(client);
+    await press("availability-round-picker");
+    await press(`availability-round-${ids.round}`);
+    await settle(client);
+    await press("availability-decline");
+    await settle(client);
+    expect(posts("availability.round.decline").at(-1)).toMatchObject({ revision: 2 });
+    expect(loggedCrashes()).toEqual([]);
+  });
+
+  test("restoring a device copy of a submitted round takes it back to not submitted", async () => {
+    const { readDocument } = require("~/lib/availability");
+    const loaded = readDocument({ accountId: ids.user, revision: 1, schedule: { timezone: "America/New_York", weekly: [[[540, 720]], [], [[840, 1020]], [], [], [], []], weeklySubmitted: true, exceptions: { "2026-11-24": [[600, 660]] } } }).schedule;
+    const mine = { ...loaded, exceptions: { ...loaded.exceptions, "2026-11-25": [[600, 630]] } };
+    await AsyncStorage.setItem(`outclass:draft:v1:${ids.user}:availability:${ids.memberClub}:${ids.round}`, JSON.stringify({ value: mine, baseline: JSON.stringify(loaded), at: Date.now() }));
+    const { client } = await renderRoute(Screen(), { overrides: { "availability.round": () => ({ preferredWeek: "2026-11-23", name: "First round interviews", confirmed: true, declined: false, global: loaded, document: { accountId: ids.user, revision: 1, schedule: loaded } }) } });
+    await press("availability-round-picker");
+    await press(`availability-round-${ids.round}`);
+    await settle(client);
+    expect(screen.getByText(/^Submitted · Participation confirmed/)).toBeTruthy();
+    await press("availability-restore");
+    await autosave(client);
+    expect(screen.getByText(/^Not submitted for this round/)).toBeTruthy();
+    expect(posts("availability.round.save").at(-1)).toMatchObject({ confirm: false, revision: 1 });
+    await AsyncStorage.clear();
+  });
 });
+
