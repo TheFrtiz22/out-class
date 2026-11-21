@@ -2,6 +2,8 @@
  * Profile → After graduation is edited in the app with the web's own action (actions/graduation.ts
  * saveAlumniDetails), with the same fields and choices as components/alumni-details-fields.tsx.
  */
+import { resolveTheme } from "@outclass/shared/tokens";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fireEvent, screen, within } from "@testing-library/react-native";
 import { ApiError } from "~/lib/api";
 import { apiState } from "./api-state";
@@ -42,6 +44,27 @@ describe("after graduation details", () => {
     expect(screen.getByTestId("alumni-save")).toBeTruthy();
     const style = [scroll.props.style].flat().reduce((all, part) => ({ ...all, ...part }), {});
     expect(style.maxHeight).toBeLessThan(852);
+  });
+
+  test("in Dark the sheet uses dark colours only", async () => {
+    await AsyncStorage.setItem("outclass.appearance", "dark");
+    const values = (mode: "light" | "dark") => new Set(Object.values(resolveTheme(mode).colors as unknown as Record<string, string>).filter(value => typeof value === "string").map(value => value.toLowerCase()));
+    const light = values("light"), dark = values("dark");
+    const { toJSON } = await renderRoute(Screen(), { overrides: { profile: graduated } });
+    await fireEvent.press(screen.getByTestId("profile-after-graduation-edit"));
+    const found: string[] = [];
+    const walk = (node: unknown) => {
+      if (!node || typeof node !== "object") return;
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+      const { props, children } = node as { props?: { style?: unknown }; children?: unknown };
+      for (const part of [props?.style].flat(Infinity as 1) as Record<string, unknown>[]) for (const key of ["color", "backgroundColor", "borderColor"]) if (part && typeof part[key] === "string") found.push((part[key] as string).toLowerCase());
+      walk(children);
+    };
+    walk(toJSON());
+    expect(found.some(colour => dark.has(colour) && !light.has(colour))).toBe(true);
+    expect(found.filter(colour => light.has(colour) && !dark.has(colour))).toEqual([]);
+    await AsyncStorage.clear();
+    expect(loggedCrashes()).toEqual([]);
   });
 
   test("a refused entry keeps the sheet open with the server's reason", async () => {
