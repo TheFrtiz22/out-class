@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { prepareResumeImport, confirmResumeImport } from "@/lib/workspace-api"
-import { resumeLabels, reviewPatch, type ResumeField } from "@/lib/resume-import"
+import { preselectedFields, resumeLabels, reviewPatch, type ResumeField } from "@/lib/resume-import"
 import type { FullStudentProfile } from "@/lib/student-profile"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -24,9 +24,12 @@ export function ResumeImportDialog({ profile, onSaved, label = "Import from rés
       const form = new FormData(); form.set("file", file)
       const result = await prepareResumeImport(form)
       if (!result.ok) { setError(result.message); return }
-      setReview(result); setSelected([]); setAttach(false)
+      // Confident suggestions for empty fields, new experience entries and (with no résumé on file)
+      // the PDF itself start ticked; the student still reviews and confirms before anything saves.
+      setReview(result); setSelected(preselectedFields(result.proposal.fields, result.baseline)); setAttach(!profile.resumeUrl)
       setValues(Object.fromEntries(result.proposal.fields.map(v => [v.field, v.value || ""])))
-      setEntries(result.proposal.experiences.map(v => ({ ...v, accepted: false })))
+      const existing = new Set(profile.experiences.map(v => [v.title, v.subtitle, v.period].map(s => s.trim().toLowerCase()).join("\u0000")))
+      setEntries(result.proposal.experiences.map(v => ({ ...v, accepted: !existing.has([v.title, v.subtitle, v.period].map(s => s.trim().toLowerCase()).join("\u0000")) })))
     } catch { setError("Could not process this résumé. Please try again.") }
     finally { setBusy(false) }
   }
@@ -34,7 +37,7 @@ export function ResumeImportDialog({ profile, onSaved, label = "Import from rés
     if (!review || busy) return
     setError("")
     let patch
-    try { patch = reviewPatch(values, selected) } catch { setError("Check selected values: names and major are required; use valid years and scores."); return }
+    try { patch = reviewPatch(values, selected) } catch { setError("Check the ticked values: names and major are required; use valid years, scores, a LinkedIn link and a phone number."); return }
     setBusy(true)
     try {
       const result = await confirmResumeImport({ patch, baseline: review.baseline, experiences: entries.filter(v => v.accepted).map(({ title, subtitle, period }) => ({ title, subtitle, period })), ...(attach ? { resumeReference: review.reference } : {}) })
@@ -48,11 +51,11 @@ export function ResumeImportDialog({ profile, onSaved, label = "Import from rés
     <DialogTrigger asChild><Button variant="outline" size="sm" disabled={demo.isDemoEnabled}>{label}</Button></DialogTrigger>
     {demo.isDemoEnabled && <p className="mt-2 text-xs text-muted-foreground">PDF importing is unavailable in Demo Mode; sample profiles stay isolated.</p>}
     <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl" onEscapeKeyDown={e => { if (busy) e.preventDefault() }} onPointerDownOutside={e => { if (busy) e.preventDefault() }}>
-      <DialogHeader><DialogTitle>Import your résumé</DialogTitle><DialogDescription>Upload a text-based PDF, review the suggestions, then confirm. Nothing changes in your profile before confirmation.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Import your résumé</DialogTitle><DialogDescription>Upload a text-based PDF and we fill in what we can find. Review the ticked suggestions, then confirm. Nothing changes in your profile before confirmation.</DialogDescription></DialogHeader>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {busy && <p role="status" aria-live="polite">{review ? "Saving confirmed changes…" : "Processing PDF and preparing suggestions…"}</p>}
       {!review ? <div className="space-y-3"><Label htmlFor="resume-import-file">PDF résumé · up to 10 MB and 10 pages</Label><Input id="resume-import-file" type="file" accept="application/pdf,.pdf" disabled={busy} onChange={e => { void process(e.target.files?.[0]); e.target.value = "" }} /><p className="text-xs text-muted-foreground">Scanned/image-only PDFs are unsupported. The document is stored privately after extraction; attaching it to your profile is optional.</p></div> : <div className="space-y-5">
-        <p className="text-sm">Select only the changes you want. Checked profile fields replace their existing values; unchecked fields stay unchanged.</p>
+        <p className="text-sm">{selected.length || entries.some(v => v.accepted) ? "We ticked what we found for empty fields. Untick anything that's wrong, edit any value, then confirm." : "Tick the changes you want. Ticked fields replace their existing values; unticked fields stay unchanged."}</p>
         <fieldset disabled={busy} className="space-y-4">{review.proposal.fields.map(item => <div key={item.field} className="space-y-2 rounded-lg border p-3">
           <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" className="oc-checkbox" checked={selected.includes(item.field)} onChange={e => setSelected(v => e.target.checked ? [...v, item.field] : v.filter(f => f !== item.field))} />Change {resumeLabels[item.field]}</label>
           <p className="text-xs text-muted-foreground">Current: {String(review.baseline[item.field] ?? "Not set")} · {item.status === "found" ? "Found" : item.status === "uncertain" ? "Needs verification" : "Not found"}. {item.note}</p>

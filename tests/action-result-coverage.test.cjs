@@ -33,6 +33,7 @@ const exclusions = new Map([
   ['actions/organization-members.ts#getOrganizationMemberManagement', 'read through /api/workspace'],
   ['actions/profile.ts#updateStudentProfileSection', 'already returns { error }; the graduation-year support refusal is returned as that message'],
   ['actions/resume-import.ts#prepareResumeImport', 'already returns { ok, code, message }; file-check and upload refusals are caught and returned as INVALID_PDF or IMPORT_REJECTED'],
+  ['actions/resume-import.ts#readResumeForOnboarding', 'already returns { ok, code, message } like prepareResumeImport; it shares the same file checks and refusal mapping and stores nothing'],
   ['actions/resume-import.ts#confirmResumeImport', 'already returns { ok, code, message }; the graduation-year support refusal is returned as FORBIDDEN'],
   ['actions/campus-events.ts#setCampusEventRsvp', 'already returns { ok, error } through RsvpResult'],
   ['actions/campus-events.ts#getCampusEventAttendees', 'read; failures show the load fallback'],

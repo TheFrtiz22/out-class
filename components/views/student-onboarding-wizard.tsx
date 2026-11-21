@@ -44,6 +44,8 @@ import { dismissInterestSurveyPrompt } from "@/lib/workspace-api"
 import { invalidateInterestSurvey } from "@/hooks/use-interest-survey"
 import { graduationYearOptions } from "@/lib/graduation-years"
 import { uploadProfileFile } from "@/actions/storage"
+import { readResumeForOnboarding } from "@/actions/resume-import"
+import { onboardingPrefill } from "@/lib/resume-import"
 import {
   accountBasicsSchema,
   registrationSchema,
@@ -376,6 +378,36 @@ export function StudentOnboardingWizard({
     defaultValues: { gradYear: "", major: "", phone: "", gpa: "", satScore: "", actScore: "" },
   })
 
+  // Optional: fill steps 3 and 4 from a résumé. Only empty fields are filled; the student reviews
+  // every step before finishing, and the PDF is attached (removable) on step 4 like a manual upload.
+  const [resumeFill, setResumeFill] = useState({ busy: false, message: "" })
+  async function fillFromResume(file?: File) {
+    if (!file || resumeFill.busy || loading) return
+    if (file.size > MAX_RESUME_SIZE) { setResumeFill({ busy: false, message: "Choose a PDF up to 10 MB." }); return }
+    setResumeFill({ busy: true, message: "" })
+    try {
+      const form = new FormData(); form.set("file", file)
+      const result = await readResumeForOnboarding(form)
+      if (!result.ok) { setResumeFill({ busy: false, message: result.message }); return }
+      const prefill = onboardingPrefill(result.proposal, graduationYears)
+      let filled = 0
+      for (const [field, value] of Object.entries(prefill.academic) as [keyof AcademicProfileData, string][]) {
+        if (!step3Form.getValues(field)) { step3Form.setValue(field, value, { shouldDirty: true, shouldValidate: true }); filled++ }
+      }
+      if (prefill.linkedinUrl && !step4Form.getValues("linkedinUrl")) { step4Form.setValue("linkedinUrl", prefill.linkedinUrl, { shouldDirty: true }); filled++ }
+      const key = (v: { title: string; subtitle: string; period: string }) => [v.title, v.subtitle, v.period].map(x => x.trim().toLowerCase()).join("\u0000")
+      const existing = new Set((step4Form.getValues("experiences") ?? []).map(key))
+      const additions = prefill.experiences.filter(v => !existing.has(key(v))).slice(0, Math.max(0, 20 - existing.size))
+      if (additions.length) { experienceFields.append(additions); filled += additions.length }
+      setResumeFile(file)
+      setResumeFill({ busy: false, message: filled
+        ? `Filled in ${filled} ${filled === 1 ? "detail" : "details"} from your résumé. Check them before you continue.`
+        : "We couldn’t find profile details in this PDF. Fill in the form below; your résumé is still attached on the next step." })
+    } catch {
+      setResumeFill({ busy: false, message: "Couldn’t read this résumé. Fill in the form below, or try another PDF." })
+    }
+  }
+
   function applyInvitationDefaults(defaults: InvitationProfileDefaults) {
     for (const field of ["firstName", "lastName"] as const) {
       if (!step1Form.getValues(field) && !step1Form.getFieldState(field).isDirty) {
@@ -389,7 +421,8 @@ export function StudentOnboardingWizard({
 
   async function onStep3Submit(data: AcademicProfileData) {
     setConfirmNotice("")
-    if (loading) return
+    // A résumé still being read would fill fields after the student moved on.
+    if (loading || resumeFill.busy) return
     if (termsUnsaved) {
       if (!acceptTerms) { setGlobalError(TERMS_REQUIRED_MESSAGE); return }
       setLoading(true); setGlobalError("")
@@ -433,6 +466,7 @@ export function StudentOnboardingWizard({
   }
 
   async function onStep4Submit(data: ExperienceAssetsData, skipAssets = false) {
+    if (resumeFill.busy) return
     setGlobalError("")
     setLoading(true)
     try {
@@ -703,6 +737,28 @@ export function StudentOnboardingWizard({
                 {confirmNotice && <p role="status" className="mt-3 text-sm text-muted-foreground">{confirmNotice}</p>}
               </div>
 
+              <div className="mb-5 rounded-md border border-border bg-muted p-3">
+                <Label htmlFor="onboarding-resume-fill" className="text-sm font-medium text-foreground">
+                  Have a résumé? Fill this in from your PDF
+                </Label>
+                <p className="mt-1 text-control text-muted-foreground">
+                  We read your major, graduation year, scores, phone, LinkedIn and experience. You check everything before saving.
+                </p>
+                <Input
+                  id="onboarding-resume-fill"
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  disabled={resumeFill.busy || loading}
+                  className="mt-2 h-11 rounded-md border-border"
+                  onChange={e => { void fillFromResume(e.target.files?.[0]); e.target.value = "" }}
+                />
+                {(resumeFill.busy || resumeFill.message) && (
+                  <p role="status" aria-live="polite" className="mt-2 text-control text-muted-foreground">
+                    {resumeFill.busy ? "Reading your résumé…" : resumeFill.message}
+                  </p>
+                )}
+              </div>
+
               <form
                 onSubmit={step3Form.handleSubmit(onStep3Submit)}
                 className="space-y-4"
@@ -817,7 +873,7 @@ export function StudentOnboardingWizard({
 
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || resumeFill.busy}
                   className="mt-2 h-11 w-full rounded-md border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
                 >
                   Continue
