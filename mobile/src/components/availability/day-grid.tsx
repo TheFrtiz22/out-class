@@ -18,13 +18,15 @@ const HOURS = Array.from({ length: (AVAILABILITY_END_SLOT - AVAILABILITY_FIRST_S
  * set the whole hour, or touch and hold, then drag, to paint a range. `known` false draws the day
  * as not submitted (unknown), not as unavailable.
  */
-export function DayGrid({ cells, known, dayName, onChange, readOnly, testID = "availability-grid" }: {
-  cells: boolean[]; known: boolean; dayName: string; onChange?: (cells: boolean[]) => void; readOnly?: boolean; testID?: string;
+export function DayGrid({ cells, known, dayName, onChange, onPaintingChange, readOnly, testID = "availability-grid" }: {
+  cells: boolean[]; known: boolean; dayName: string; onChange?: (cells: boolean[]) => void; onPaintingChange?: (painting: boolean) => void; readOnly?: boolean; testID?: string;
 }) {
   const { colors, radius } = useTheme();
   const [preview, setPreview] = useState<boolean[] | null>(null);
   const width = useRef(0);
   const drag = useRef<{ from: number; on: boolean } | null>(null);
+  // The press under a finger that just painted must not toggle that quarter hour back.
+  const painted = useRef(0);
   const shown = preview ?? cells;
 
   const slotAt = (x: number, y: number) => {
@@ -43,6 +45,7 @@ export function DayGrid({ cells, known, dayName, onChange, readOnly, testID = "a
       const slot = slotAt(event.x, event.y);
       if (slot === null) return;
       drag.current = { from: slot, on: !cells[slot] };
+      onPaintingChange?.(true);
       haptics.tick();
       setPreview(paintSlots(cells, slot, slot, !cells[slot]));
     })
@@ -54,13 +57,15 @@ export function DayGrid({ cells, known, dayName, onChange, readOnly, testID = "a
     .onEnd((event, success) => {
       const active = drag.current;
       drag.current = null;
+      painted.current = Date.now();
+      onPaintingChange?.(false);
       const slot = slotAt(event.x, Math.max(0, event.y));
       setPreview(null);
       if (success && active) onChange?.(paintSlots(cells, active.from, slot ?? active.from, active.on));
     })
-    .onFinalize(() => { if (drag.current) { drag.current = null; setPreview(null); } });
+    .onFinalize(() => { if (drag.current) { drag.current = null; painted.current = Date.now(); setPreview(null); onPaintingChange?.(false); } });
 
-  const toggle = (slot: number) => { if (readOnly || !onChange) return; haptics.tick(); onChange(paintSlots(cells, slot, slot, !cells[slot])); };
+  const toggle = (slot: number) => { if (readOnly || !onChange || Date.now() - painted.current < 400) return; haptics.tick(); onChange(paintSlots(cells, slot, slot, !cells[slot])); };
   const toggleHour = (start: number) => {
     if (readOnly || !onChange) return;
     const full = [0, 1, 2, 3].every(i => cells[start + i]);

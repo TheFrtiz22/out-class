@@ -76,6 +76,10 @@ describe("global availability", () => {
       ]);
     });
     expect([36, 37, 38, 39].map(slot => checked(`availability-grid-slot-${slot}`))).toEqual([true, true, true, true]);
+    // The tap that ends the drag doesn't undo the quarter hour it started on, and the page scrolls again.
+    await press("availability-grid-slot-36");
+    expect(checked("availability-grid-slot-36")).toBe(true);
+    expect(screen.getByTestId("settings-availability-screen").props.scrollEnabled).not.toBe(false);
     await autosave(client);
     expect(posts("availability.save").at(-1)!.schedule.weekly[2]).toEqual([[480, 600], [840, 1020]]);
   });

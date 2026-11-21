@@ -45,6 +45,8 @@ export default function AvailabilitySettings() {
   const [chosen, setChosen] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [nonce, setNonce] = useState(0);
+  // While a finger paints a range on the grid, the page holds still.
+  const [painting, setPainting] = useState(false);
   const selectedId = chosen ?? (typeof params.roundId === "string" ? params.roundId : "");
   const round = rounds.find(item => item.id === selectedId);
 
@@ -55,7 +57,7 @@ export default function AvailabilitySettings() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="settings-availability-screen" keyboardShouldPersistTaps="handled"
+      <ScreenScroll top={top} testID="settings-availability-screen" keyboardShouldPersistTaps="handled" scrollEnabled={!painting}
         refreshing={query.isRefetching && !query.data} onRefresh={query.data ? undefined : () => { void query.refetch(); }}>
         <AlumniBanner action="availability" />
         {query.data ? (
@@ -74,9 +76,9 @@ export default function AvailabilitySettings() {
               </Press>
             </View>
             {round ? (
-              <RoundEditor key={`${round.id}:${nonce}`} round={round} readOnly={alumni} onStatus={(confirmed, declined) => setRoundStatus(round.id, confirmed, declined)} onReload={() => { void reload(); }} />
+              <RoundEditor key={`${round.id}:${nonce}`} round={round} readOnly={alumni} onPaintingChange={setPainting} onStatus={(confirmed, declined) => setRoundStatus(round.id, confirmed, declined)} onReload={() => { void reload(); }} />
             ) : (
-              <AvailabilityEditor key={`global:${nonce}`} initial={readDocument(query.data.document)} title="Your weekly rhythm" readOnly={alumni}
+              <AvailabilityEditor key={`global:${nonce}`} initial={readDocument(query.data.document)} title="Your weekly rhythm" readOnly={alumni} onPaintingChange={setPainting}
                 onSaved={saved => {
                   client.setQueryData<MyAvailability>(MINE, old => old && { ...old, document: saved });
                   // Each round's prefill comes from the global schedule.
@@ -113,7 +115,7 @@ export default function AvailabilitySettings() {
   );
 }
 
-function RoundEditor({ round, readOnly, onStatus, onReload }: { round: AvailabilityRound; readOnly: boolean; onStatus: (confirmed: boolean, declined: boolean) => void; onReload: () => void }) {
+function RoundEditor({ round, readOnly, onStatus, onReload, onPaintingChange }: { round: AvailabilityRound; readOnly: boolean; onStatus: (confirmed: boolean, declined: boolean) => void; onReload: () => void; onPaintingChange: (painting: boolean) => void }) {
   const client = useQueryClient();
   const input = { clubId: round.clubId, roundId: round.id };
   const query = useApiQuery<RoundAvailability>("availability.round", input, { staleTime: 0 });
@@ -121,7 +123,7 @@ function RoundEditor({ round, readOnly, onStatus, onReload }: { round: Availabil
   const patch = (change: Partial<RoundAvailability>) => client.setQueryData<RoundAvailability>(key, old => old && { ...old, ...change });
   if (query.data) {
     return (
-      <AvailabilityEditor initial={readDocument(query.data.document)} scope={input} title={query.data.name} initialWeek={query.data.preferredWeek} readOnly={readOnly}
+      <AvailabilityEditor initial={readDocument(query.data.document)} scope={input} title={query.data.name} initialWeek={query.data.preferredWeek} readOnly={readOnly} onPaintingChange={onPaintingChange}
         initialStatus={{ confirmed: query.data.confirmed, declined: query.data.declined }}
         onSaved={(document: AvailabilityDocument) => patch({ document })}
         onStatus={status => { patch(status); onStatus(status.confirmed, status.declined); }}

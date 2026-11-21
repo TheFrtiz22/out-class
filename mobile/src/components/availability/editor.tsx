@@ -37,8 +37,8 @@ const readRound = async (scope: RoundScope) => { const value = await api.get<Rou
  * is kept on this device until it reaches OutClass. With `scope` it edits one club and round's own
  * response and adds Submit, Withdraw and Decline.
  */
-export function AvailabilityEditor({ initial, scope, title, initialWeek, initialStatus, readOnly, onSaved, onStatus, onReload }: {
-  initial: AvailabilityDocument; scope?: RoundScope; title: string; initialWeek?: string; initialStatus?: Status; readOnly?: boolean;
+export function AvailabilityEditor({ initial, scope, title, initialWeek, initialStatus, readOnly, onSaved, onStatus, onReload, onPaintingChange }: {
+  initial: AvailabilityDocument; scope?: RoundScope; title: string; initialWeek?: string; initialStatus?: Status; readOnly?: boolean; onPaintingChange?: (painting: boolean) => void;
   onSaved?: (document: AvailabilityDocument) => void; onStatus?: (status: Status) => void; onReload: () => void;
 }) {
   const { colors } = useTheme();
@@ -250,7 +250,7 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
           <Legend color={colors.muted} border={colors.border} dashed label="Not submitted" />
         </View>
         <Text variant="caption">{knownDays[day] ? `${dayName}${recurring ? "s" : `, ${dateLabel(day)}`}: ${visibleHours(days[day])} hours available.` : `${dayName}${recurring ? "s are" : " is"} not submitted yet. Times you add submit it.`} Tap a time to add or remove it, or touch and hold, then drag to fill a range.{recurring ? "" : " Date changes replace the editable hours on that day."}</Text>
-        <DayGrid cells={days[day]} known={knownDays[day]} dayName={dayName} readOnly={locked} onChange={cells => editDays(days.map((value, i) => i === day ? cells : value), [day])} />
+        <DayGrid cells={days[day]} known={knownDays[day]} dayName={dayName} readOnly={locked} onPaintingChange={onPaintingChange} onChange={cells => editDays(days.map((value, i) => i === day ? cells : value), [day])} />
         {readOnly ? null : (
           <>
             <Divider />
