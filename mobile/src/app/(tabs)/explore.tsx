@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
+import { FlatList, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CLUB_CARD_GAP, ClubCard, ClubCardSkeleton, clubCardHeight } from "~/components/explore/club-card";
 import { type DirectoryFilters, categoryIcon, clubRecruitment, emptyDirectoryFilters, filterDirectory, rankedCategories, recruitmentOptions } from "~/components/explore/directory";
@@ -12,7 +12,7 @@ import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Bookmark, CalendarDays, Compass, SlidersHorizontal, Users, X } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote } from "~/components/ui";
+import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
@@ -65,7 +65,7 @@ export default function Explore() {
   const height = clubCardHeight(theme, fontScale);
   const change = (key: keyof DirectoryFilters, value: string) => { if (key === "query") setQuery(value); else setChoices(current => ({ ...current, [key]: value })); };
   const clear = () => { setQuery(""); setChoices(emptyDirectoryFilters); };
-  const refresh = () => { setNow(Date.now()); directory.refetch(); saved.query.refetch(); };
+  const refresh = () => { setNow(Date.now()); return Promise.all([directory.refetch(), saved.query.refetch()]); };
   const open = useCallback((club: PublicClub) => router.push({ pathname: "/club/[id]", params: { id: club.id } }), [router]);
   const pressIn = useCallback((club: PublicClub) => prefetch(club.id), [prefetch]);
   const { setSaved, ids } = saved;
@@ -135,6 +135,7 @@ export default function Explore() {
       action={active.length ? <Button variant="secondary" label="Clear search and filters" onPress={clear} /> : <Button variant="secondary" label="See campus events" onPress={() => router.push("/events")} />} />
   );
 
+  const pullControl = usePullControl(refresh, top);
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -157,7 +158,7 @@ export default function Explore() {
         windowSize={9}
         removeClippedSubviews
         scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={directory.isRefetching} onRefresh={refresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
       />
       <Header title="Explore" />
       {notice.element}

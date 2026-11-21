@@ -56,7 +56,7 @@ export default function Home() {
   useRefetchOnFocus(home);
   const me = useApiQuery<Me & { applications?: MyApplicationSummary[] }>("me", undefined, { staleTime: 5 * 60_000 });
   const data = home.data;
-  const refresh = () => { home.refetch(); me.refetch(); };
+  const refresh = () => Promise.all([home.refetch(), me.refetch()]);
   const next = data?.nextAction;
   const leading = leaderMemberships(me.data);
   const go = (route: Route) => router.push(route as never);
@@ -65,7 +65,7 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll ref={scroll} dock top={top} refreshing={home.isRefetching || me.isRefetching} onRefresh={refresh} testID="home-screen">
+      <ScreenScroll ref={scroll} dock top={top} onRefresh={refresh} testID="home-screen">
         {home.isPending ? (
           <>
             <Card style={{ gap: 10 }}><Skeleton width="40%" /><Skeleton width="80%" height={22} /><Skeleton width={120} height={44} radius={22} /></Card>

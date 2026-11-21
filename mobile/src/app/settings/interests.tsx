@@ -65,7 +65,7 @@ export default function InterestsSettings() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="settings-interests-screen" refreshing={query.isRefetching && !save.isPending} onRefresh={dirty ? undefined : () => { void query.refetch(); }}>
+      <ScreenScroll top={top} testID="settings-interests-screen" onRefresh={dirty ? undefined : () => query.refetch()}>
         <Text variant="small">What you’re into, so we can suggest clubs. Only you see this. Clubs never do.</Text>
         <AlumniBanner action="survey" />
         {answers ? (

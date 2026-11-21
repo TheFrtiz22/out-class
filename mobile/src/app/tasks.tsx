@@ -9,7 +9,6 @@ import { isMissing, isSubmitted, matchesFilter, ownTasks, relativeDue, requireme
 import { Text } from "~/components/text";
 import { Button, Card, Chip, Divider, EmptyState, ErrorState, Press, ScreenScroll, SkeletonRows } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
-import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ClubTask, Me, TaskAssignment } from "~/lib/types";
@@ -35,7 +34,6 @@ export default function Tasks() {
   const loading = me.isPending;
   const waiting = workspaces.some(query => query.isPending);
   const refresh = () => Promise.all([me.refetch(), ...workspaces.map(query => query.refetch())]);
-  const pull = usePullRefresh(refresh);
   const clubs = memberships.map((membership, index) => {
     const all = ownTasks(workspaces[index]?.data);
     return { membership, query: workspaces[index], all, shown: all.filter(({ task, own }) => matchesFilter(task, own, filter, now)) };
@@ -58,7 +56,7 @@ export default function Tasks() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={pull.refreshing} onRefresh={pull.onRefresh} testID="tasks-screen">
+      <ScreenScroll top={top} onRefresh={refresh} testID="tasks-screen">
         <AlumniBanner action="task" />
         {me.isError && !me.data ? (
           <ErrorState message={errorMessage(me.error)} offline={me.error instanceof ApiError && me.error.offline} onRetry={() => { void refresh(); }} />

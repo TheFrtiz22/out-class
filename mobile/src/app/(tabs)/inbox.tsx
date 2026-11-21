@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, SectionList, View } from "react-native";
+import { ActivityIndicator, ScrollView, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlumniBanner } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
@@ -13,7 +13,7 @@ import { clubName, ctaLabel, filterRows, fullDate, groupRows, opensInPlace, type
 import { InboxListRow } from "~/components/inbox/row";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote } from "~/components/ui";
+import { Button, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openOnWeb, resolveHref } from "~/lib/links";
@@ -87,6 +87,7 @@ export default function Inbox() {
     </View>
   );
 
+  const pullControl = usePullControl(() => inbox.refetch(), top);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SectionList
@@ -98,7 +99,7 @@ export default function Inbox() {
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
         scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={inbox.isRefetching && !inbox.isFetchingNextPage} onRefresh={() => { inbox.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
         onEndReachedThreshold={0.4}
         onEndReached={() => { if (inbox.hasNextPage && !inbox.isFetchingNextPage) inbox.fetchNextPage(); }}
         ListHeaderComponent={header}

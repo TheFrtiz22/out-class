@@ -94,7 +94,7 @@ export default function Announce() {
   return (
     // ScreenScroll keeps the focused field above the keyboard itself; a KeyboardAvoidingView on top of it doubled the gap.
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="announce-screen" refreshing={sent.isRefetching} onRefresh={() => { void sent.refetch(); }}>
+      <ScreenScroll top={top} testID="announce-screen" onRefresh={() => sent.refetch()}>
         <Text variant="small">Announcements you publish land in each recipient’s OutClass inbox, with email according to their preferences.</Text>
         {applicants ? (
           <View style={{ gap: 6 }}>

@@ -10,7 +10,6 @@ import { Button, Card, Divider, EmptyState, ErrorState, Press, ScreenScroll, Ske
 import { ApiError, errorMessage } from "~/lib/api";
 import { addToCalendar, easternRange } from "~/lib/eastern";
 import { openExternal } from "~/lib/links";
-import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { Me, Meeting, MeetingResource } from "~/lib/types";
@@ -34,7 +33,6 @@ export default function MeetingScreen() {
   const [adding, setAdding] = useState(false);
   const data = meeting.data;
   const links = resources(data?.resources);
-  const pull = usePullRefresh(() => meeting.refetch());
   const upcoming = data ? +new Date(data.endDate || data.date) >= Date.now() : false;
   // A leader with attendance access hosts check-in from here while attendance is open (the leader hub's own rule).
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
@@ -43,7 +41,7 @@ export default function MeetingScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={pull.refreshing} onRefresh={valid ? pull.onRefresh : undefined} testID="meeting-screen">
+      <ScreenScroll top={top} onRefresh={valid ? () => meeting.refetch() : undefined} testID="meeting-screen">
         {!valid ? (
           <Card><EmptyState icon={CalendarDays} title="Meeting unavailable" body="This link doesn’t point to a meeting. Check the link or ask the club for a new one." /></Card>
         ) : meeting.isPending ? (

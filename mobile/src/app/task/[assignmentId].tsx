@@ -13,7 +13,6 @@ import { Button, Card, Chip, Divider, EmptyState, ErrorState, Press, ScreenScrol
 import { api, ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openExternal } from "~/lib/links";
-import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { MAX_TASK_FILES, TASK_FILE_MIME_TYPES, TaskUploadError, taskFileProblem, uploadTaskFile, type UploadedTaskFile } from "~/lib/task-files";
 import { useTheme } from "~/lib/theme";
@@ -189,7 +188,6 @@ export default function TaskScreen() {
   const failure = (me.isError && !me.data ? me.error : null) ?? (!found ? workspaces.find(query => query.isError && !query.data)?.error : null);
   const outdated = (me.isError && !!me.data) || (!!found && workspaces[index]!.isError);
   const refresh = () => Promise.all([me.refetch(), ...workspaces.map(query => query.refetch())]);
-  const pull = usePullRefresh(refresh);
 
   // Opening a task marks it viewed, as the web's task sheet does.
   useEffect(() => {
@@ -207,7 +205,7 @@ export default function TaskScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={pull.refreshing} onRefresh={pull.onRefresh} testID="task-screen">
+      <ScreenScroll top={top} automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" onRefresh={refresh} testID="task-screen">
         {loading ? (
           <>
             <View style={{ gap: 10 }}><Skeleton width="50%" /><Skeleton width="85%" height={30} /><Skeleton width="40%" /></View>

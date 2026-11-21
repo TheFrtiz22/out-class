@@ -1,13 +1,13 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, RefreshControl, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StageTabs } from "~/components/applications/stage-tabs";
 import { StatusProgress } from "~/components/applications/status-progress";
 import { Header, useHeaderInset } from "~/components/header";
 import { ArrowRight, CalendarDays, FilePenLine } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, Card, ClubMark, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, StatusChip } from "~/components/ui";
+import { Button, Card, ClubMark, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, StatusChip, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
@@ -99,6 +99,7 @@ export default function Applications() {
     else open(app);
   };
 
+  const pullControl = usePullControl(() => view.refetch(), top);
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -109,7 +110,7 @@ export default function Applications() {
         data={visible}
         keyExtractor={item => item.id}
         scrollIndicatorInsets={{ top }}
-        refreshControl={<RefreshControl refreshing={view.isRefetching} onRefresh={() => { void view.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
         ListHeaderComponent={
           <View style={{ gap: space.content - 4 }}>
             <Text variant="small">Your drafts, applications in review, interviews and decisions.</Text>

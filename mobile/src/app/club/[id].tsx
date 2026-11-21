@@ -54,7 +54,7 @@ export default function ClubPage() {
     },
     onError: cause => { haptics.error(); setError(errorMessage(cause, "We couldn’t open your application. Please try again.")); },
   });
-  const refresh = () => { profile.refetch(); me.refetch(); saved.query.refetch(); };
+  const refresh = () => Promise.all([profile.refetch(), me.refetch(), saved.query.refetch()]);
 
   let body;
   if (!id) body = <EmptyState title="This club is no longer available." action={<Button variant="secondary" label="Browse clubs" onPress={() => router.replace("/explore")} />} />;
@@ -127,7 +127,7 @@ export default function ClubPage() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={profile.isRefetching && !profile.isPlaceholderData} onRefresh={refresh} testID="club-screen">{body}</ScreenScroll>
+      <ScreenScroll top={top} onRefresh={refresh} testID="club-screen">{body}</ScreenScroll>
       <Header title={club?.name ?? "Club"} back fitTitle />
       {notice.element}
     </View>

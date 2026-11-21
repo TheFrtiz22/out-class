@@ -65,7 +65,7 @@ export default function InterviewScheduleSettings() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="settings-interviews-screen" refreshing={query.isRefetching} onRefresh={() => { void query.refetch(); }}>
+      <ScreenScroll top={top} testID="settings-interviews-screen" onRefresh={() => query.refetch()}>
         <Text variant="small">Your approved panel assignments across all your clubs.</Text>
         {query.data ? (
           <>

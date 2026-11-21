@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, RefreshControl, SectionList, View } from "react-native";
+import { Pressable, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, MapPin } from "~/components/icons";
@@ -9,7 +9,7 @@ import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, StaleNote, TARGET, Toggle } from "~/components/ui";
+import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, StaleNote, TARGET, Toggle, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { addDays, addToCalendar, easternDateKey, easternTime, formatDateKey } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
@@ -200,6 +200,7 @@ export default function CalendarScreen() {
       : <EmptyState icon={CalendarDays} title={filtered ? "No events match these filters" : "Nothing coming up"} body={filtered ? "No events of this type are on your calendar." : includePast ? "You have no interviews, meetings or RSVP’d events yet." : "You have no interviews, meetings or RSVP’d events coming up."}
           action={filtered ? <Button variant="secondary" label="Clear filters" onPress={() => setFilter("all")} /> : <Button variant="secondary" label="Browse events" onPress={() => router.push("/events" as never)} />} />;
 
+  const pullControl = usePullControl(() => Promise.all([calendar.refetch(), me.refetch()]), top);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SectionList
@@ -211,7 +212,7 @@ export default function CalendarScreen() {
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
         scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={calendar.isRefetching} onRefresh={() => { calendar.refetch(); me.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
         ListHeaderComponent={header}
         renderSectionHeader={({ section }) => <Text variant="section" accessibilityRole="header" style={{ paddingTop: 18, paddingBottom: 10 }}>{section.title}</Text>}
         renderSectionFooter={({ section }) => (view === "month" && !section.data.length ? <Text variant="small" style={{ paddingVertical: 8 }}>{filtered ? "No events on this day match your filters." : "Nothing scheduled."}</Text> : null)}

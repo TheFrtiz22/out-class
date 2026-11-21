@@ -57,7 +57,7 @@ export default function Profile() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll ref={scroll} dock top={top} refreshing={query.isRefetching} onRefresh={() => query.refetch()} testID="profile-screen">
+      <ScreenScroll ref={scroll} dock top={top} onRefresh={() => query.refetch()} testID="profile-screen">
         {query.isPending ? (
           <View accessibilityLabel="Loading profile" accessibilityRole="progressbar" style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}><Skeleton width={80} height={80} radius={40} /><View style={{ flex: 1, gap: 10 }}><Skeleton width="70%" height={24} /><Skeleton width="55%" /><Skeleton width={120} height={36} radius={18} /></View></View>
