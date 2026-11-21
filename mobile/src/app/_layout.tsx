@@ -11,6 +11,7 @@ import { Appearance, Platform, Pressable, Text as NativeText, View } from "react
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "~/lib/auth";
+import { hideDevToolsButton } from "~/lib/dev-tools";
 import { resolveHref } from "~/lib/links";
 import { notificationPath } from "~/lib/push";
 import { createQueryClient, useApiQuery } from "~/lib/query";
@@ -19,6 +20,7 @@ import { ThemeProvider, useTheme } from "~/lib/theme";
 import type { Me } from "~/lib/types";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+hideDevToolsButton();
 
 // Optional at runtime: a build made before the module was added simply has no shortcuts.
 type QuickAction = { id: string; title: string; subtitle?: string; icon?: string; params?: { href?: string } };
