@@ -12,6 +12,7 @@ jest.mock("react-native-reanimated", () => {
   const identity = () => (value: unknown) => value;
   // Layout animations (FadeInDown.duration(…).delay(…)) are chainable builders; under test they do nothing.
   const layout: Record<string, unknown> = new Proxy({}, { get: () => () => layout });
+  const frameCallbacks: { callback: unknown; isActive: boolean }[] = [];
   return {
     FadeIn: layout, FadeInDown: layout, FadeInUp: layout, FadeOut: layout,
     __esModule: true,
@@ -22,6 +23,18 @@ jest.mock("react-native-reanimated", () => {
     useAnimatedProps: (props: () => object) => props(),
     useDerivedValue: (value: () => unknown) => ({ value: value() }),
     useAnimatedReaction: () => {},
+    // Like the real hook, `autostart` is read once, on the first render; each instance is kept for tests.
+    __frameCallbacks: frameCallbacks,
+    useFrameCallback: (callback: unknown, autostart = true) => {
+      const ref = React.useRef(null);
+      if (!ref.current) {
+        const instance = { callback, isActive: autostart, callbackId: 0, setActive: (active: boolean) => { instance.isActive = active; } };
+        ref.current = instance;
+        frameCallbacks.push(instance);
+      }
+      ref.current.callback = callback;
+      return ref.current;
+    },
     useAnimatedScrollHandler: () => () => {},
     useAnimatedRef: () => React.useRef(null),
     useReducedMotion: () => false,
