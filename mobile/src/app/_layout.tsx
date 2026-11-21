@@ -12,7 +12,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "~/lib/auth";
 import { hideDevToolsButton } from "~/lib/dev-tools";
-import { resolveHref } from "~/lib/links";
+import { openRoute, resolveHref } from "~/lib/links";
 import { pendingLinkFor } from "~/lib/pending-link";
 import { notificationPath } from "~/lib/push";
 import { createQueryClient, useApiQuery } from "~/lib/query";
@@ -119,7 +119,7 @@ function Navigation() {
     const id = lastResponse.notification.request.identifier;
     if (handledResponse.current === id) return;
     handledResponse.current = id;
-    resolveHref(path).then(route => router.push((route ?? { pathname: "/inbox" }) as never)).catch(() => {});
+    resolveHref(path).then(route => openRoute(router, route ?? { pathname: "/inbox" })).catch(() => {});
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
   }, [ready, signedIn, lastResponse, router]);
   // Long-press app-icon shortcuts: offered only while signed in, and routed like any other link.

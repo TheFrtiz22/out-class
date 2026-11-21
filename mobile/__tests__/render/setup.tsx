@@ -117,8 +117,9 @@ jest.mock("expo-router", () => {
   const Tabs = ({ children, tabBar }: { children?: unknown; tabBar?: (props: unknown) => unknown }) => {
     const names: string[] = [];
     React.Children.forEach(children, (child: { props?: { name?: string } }) => { if (child?.props?.name) names.push(child.props.name); });
-    const state = { index: 0, routes: names.map(name => ({ key: `${name}-key`, name })) };
-    return React.createElement(React.Fragment, null, children, tabBar ? tabBar({ state, navigation: { navigate: jest.fn(), emit: jest.fn() }, descriptors: {} }) : null);
+    const state = { index: routerState.tabIndex, routes: names.map(name => ({ key: `${name}-key`, name })) };
+    const navigation = { navigate: jest.fn(), emit: jest.fn(), getParent: () => ({ getState: () => ({ index: routerState.stackIndex }) }) };
+    return React.createElement(React.Fragment, null, children, tabBar ? tabBar({ state, navigation, descriptors: {} }) : null);
   };
   Tabs.Screen = Screen;
   const Link = ({ children, href, asChild, ...rest }: { children?: unknown; href: unknown; asChild?: boolean }) =>

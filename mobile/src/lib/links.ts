@@ -10,6 +10,20 @@ import { config } from "~/lib/config";
  */
 export type AppRoute = { pathname: string; params?: Record<string, string> };
 
+/** The tab screens' paths (src/app/(tabs)). */
+export const TAB_PATHS: readonly string[] = ["/", "/explore", "/inbox", "/calendar", "/profile"];
+type Navigator = { push(href: never): void; dismissTo(href: never): void };
+
+/**
+ * Opens a route from anywhere. A tab goes back down to the tabs at the bottom of the stack and
+ * switches to it; pushing a tab path from a screen above them would stack a second copy of the
+ * tabs, and that copy's Home showed a Back arrow. Every other screen is pushed.
+ */
+export function openRoute(router: Navigator, route: AppRoute) {
+  if (TAB_PATHS.includes(route.pathname) && !route.params) router.dismissTo(route.pathname as never);
+  else router.push(route as never);
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SHORT_CODE = /^[a-zA-Z0-9_-]{1,32}$/;
 const CLUB_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
