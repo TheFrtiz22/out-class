@@ -95,7 +95,7 @@ export default function CheckInHost() {
           </View>
         ) : code.isError ? (
             <View accessibilityRole="alert" style={{ alignItems: "center", gap: 12 }}>
-              <Text variant="section" align="center">{code.error instanceof ApiError && code.error.offline ? "You're offline" : "Check-in isn't available"}</Text>
+              <Text variant="section" align="center">{code.error instanceof ApiError && code.error.offline ? "You're offline" : code.error instanceof ApiError && code.error.unreachable ? "Reconnecting…" : "Check-in isn't available"}</Text>
               <Text variant="small" align="center">{errorMessage(code.error)}</Text>
               <Button label="Try again" variant="secondary" onPress={() => code.refetch()} />
             </View>

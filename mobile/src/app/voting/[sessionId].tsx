@@ -19,11 +19,13 @@ import { ApiError, api } from "~/lib/api";
 import { EASTERN } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
 import { openOnWeb } from "~/lib/links";
-import { useApiQuery } from "~/lib/query";
+import { shouldRetry, useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 
 type Mode = "leader" | "member";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// One retry at most, and only of what the app retries at all: a refusal clears the room at once.
+const once = (count: number, error: unknown) => count < 1 && shouldRetry(count, error);
 const plannedTime = (value: string) => new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 
 /**
@@ -45,11 +47,12 @@ export default function VotingRoomScreen() {
   const [joinError, setJoinError] = useState("");
   const [pulling, setPulling] = useState(false);
 
-  const roomQuery = useApiQuery<RoomSnapshot>("voting.room", scope, { scope: "leader", enabled: valid, staleTime: 0, gcTime: 60_000, refetchInterval: live ? POLL_MS : false, retry: 1 });
-  // A refused read clears what was on screen, as the web's subscription does. A dropped connection keeps the
-  // last snapshot under a reconnecting notice (every ballot and command is checked again by the server), so
-  // a blip on the room's Wi-Fi doesn't wipe a leader's half-typed reason.
-  const reconnecting = roomQuery.isError && roomQuery.error instanceof ApiError && (roomQuery.error.offline || roomQuery.error.status >= 500) && !!roomQuery.data;
+  const roomQuery = useApiQuery<RoomSnapshot>("voting.room", scope, { scope: "leader", enabled: valid, staleTime: 0, gcTime: 60_000, refetchInterval: live ? POLL_MS : false, retry: once });
+  // A refused read clears what was on screen, as the web's subscription does. A dropped or slow connection,
+  // an outage or a rate limit keeps the last snapshot under a reconnecting notice (every ballot and command is
+  // checked again by the server), so a blip on the room's Wi-Fi doesn't wipe a leader's half-typed reason.
+  const failure = roomQuery.error instanceof ApiError ? roomQuery.error : null;
+  const reconnecting = roomQuery.isError && !!failure && (failure.unreachable || failure.status >= 500 || failure.status === 429) && !!roomQuery.data;
   const room = roomQuery.isError && !reconnecting ? undefined : roomQuery.data;
   const leader = !!room?.permissions.leader;
   const mode: Mode | "present" | null = room ? (leader ? chosen ?? "leader" : room.permissions.voter ? "member" : "present") : roomQuery.isError ? "member" : null;
@@ -58,7 +61,7 @@ export default function VotingRoomScreen() {
   // The voter's way in (MemberJoin): eligibility and the join state are the server's, checked every 5 s until joined.
   const [joinedHere, setJoined] = useState(false);
   const joined = joinedHere || !!room?.joinedSelf;
-  const join = useApiQuery<JoinInfo>("voting.joinInfo", scope, { scope: "leader", enabled: valid && mode === "member" && !joined, staleTime: 0, gcTime: 0, refetchInterval: live ? POLL_MS : false, retry: 1 });
+  const join = useApiQuery<JoinInfo>("voting.joinInfo", scope, { scope: "leader", enabled: valid && mode === "member" && !joined, staleTime: 0, gcTime: 0, refetchInterval: live ? POLL_MS : false, retry: once });
   const joinStatus = join.data?.status;
   useEffect(() => { if (joinStatus === "JOINED" || joinStatus === "ENDED") setJoined(true); }, [joinStatus]);
   const joinNow = useMutation({
@@ -109,7 +112,7 @@ export default function VotingRoomScreen() {
         {reconnecting ? (
           <Card tone="warm" accessibilityRole="alert" testID="voting-reconnecting" style={{ gap: 2 }}>
             <Text variant="smallStrong">Reconnecting…</Text>
-            <Text variant="small">{roomQuery.error instanceof ApiError && roomQuery.error.offline ? "You're offline. " : ""}This may be out of date. Your last vote or command may already be saved.</Text>
+            <Text variant="small">{failure?.offline ? "You're offline. " : ""}This may be out of date. Your last vote or command may already be saved.</Text>
           </Card>
         ) : null}
         {!valid ? <Card><ErrorState message="This session link is expired or unavailable." /></Card>
@@ -117,7 +120,7 @@ export default function VotingRoomScreen() {
             <Card testID="voting-join" style={{ gap: 12 }}>
               {join.isError && !join.data ? (
                 <View accessibilityRole="alert" style={{ gap: 10 }}>
-                  <Text variant="body">{join.error instanceof ApiError && join.error.offline ? join.error.message : "Couldn't check this session. Retry when connected."}</Text>
+                  <Text variant="body">{join.error instanceof ApiError && join.error.unreachable ? join.error.message : "Couldn't check this session. Retry when connected."}</Text>
                   <Button label="Retry" variant="secondary" onPress={() => join.refetch()} />
                 </View>
               ) : !join.data ? (
@@ -141,7 +144,7 @@ export default function VotingRoomScreen() {
             </Card>
           ) : !room ? (
             roomQuery.isError ? (
-              <Card><ErrorState offline={roomQuery.error instanceof ApiError && roomQuery.error.offline} message={roomQuery.error instanceof ApiError && roomQuery.error.offline ? roomQuery.error.message : ROOM_UNAVAILABLE} onRetry={() => roomQuery.refetch()} /></Card>
+              <Card><ErrorState offline={!!failure?.offline} message={failure?.unreachable ? failure.message : ROOM_UNAVAILABLE} onRetry={() => roomQuery.refetch()} /></Card>
             ) : (
               <View accessibilityLabel="Restoring voting session…" accessibilityRole="progressbar" style={{ gap: 12 }}>
                 <Skeleton width="50%" height={12} />

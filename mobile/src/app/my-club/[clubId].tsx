@@ -3,6 +3,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { AlumniBanner } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
+import { hasLeaderTools } from "~/components/leader/access";
 import { CalendarDays, ChevronRight, FilePenLine } from "~/components/icons";
 import { isMissing, isSubmitted, matchesFilter, ownTasks, relativeDue, statusLabel } from "~/components/tasks/presentation";
 import { Text } from "~/components/text";
@@ -58,7 +59,11 @@ export default function MyClub() {
               </View>
             </View>
             <AlumniBanner />
-            <Button variant="secondary" size="compact" testID="my-club-public" label="View club page" onPress={() => router.push({ pathname: "/club/[id]", params: { id: member.clubId } } as never)} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              {/* The same gate as Home's leader rows; each tool is authorized again by the server. */}
+              {hasLeaderTools(member, me.data?.profile) ? <Button size="compact" testID="my-club-leader-tools" label="Leader tools" onPress={() => router.push({ pathname: "/leader/[clubId]", params: { clubId: member.clubId } } as never)} /> : null}
+              <Button variant="secondary" size="compact" testID="my-club-public" label="View club page" onPress={() => router.push({ pathname: "/club/[id]", params: { id: member.clubId } } as never)} />
+            </View>
 
             <View style={{ gap: 10 }}>
               <SectionHeader title="Tasks" action={allTasks ? <Button variant="ghost" size="compact" testID="my-club-all-tasks" label="All tasks" onPress={() => router.push({ pathname: "/tasks", params: { clubId: member.clubId } })} /> : undefined} />

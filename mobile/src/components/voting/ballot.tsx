@@ -43,6 +43,14 @@ export function BallotPanel({ room, entry, refresh }: { room: RoomSnapshot; entr
     setError(savedChoice === pending.choice ? "" : "Voting moved on before your vote was confirmed. It may not have been recorded.");
   }, [unconfirmed, pending, pendingKey, key, entry?.ownBallot?.choice]);
 
+  // A refusal or "moved on" note belongs to the applicant it was about: the next one starts clean. Kept: a
+  // vote still unconfirmed (its Retry; the effect above reports it once the move is seen), and a refusal
+  // whose own refresh is what moved the room.
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  const settledAt = useRef(0);
+  useEffect(() => { if (!pendingRef.current && !lock.current && Date.now() - settledAt.current > 1000) setError(""); }, [key]);
+
   async function vote(choice?: Choice) {
     if (lock.current || (!entry && !pending)) return;
     lock.current = true; setBusy(true); setError("");
@@ -61,7 +69,7 @@ export function BallotPanel({ room, entry, refresh }: { room: RoomSnapshot; entr
     } catch {
       haptics.error(); setAttempt(null);
       setError("Your vote could not be confirmed. Retry sends the same vote safely.");
-    } finally { lock.current = false; setBusy(false); }
+    } finally { lock.current = false; settledAt.current = Date.now(); setBusy(false); }
   }
 
   const recorded = ack?.key === key && ack.revision >= (entry?.ownBallot?.revision ?? -1) ? ack.choice : entry?.ownBallot?.choice;

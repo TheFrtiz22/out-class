@@ -67,21 +67,21 @@ export default function InterviewDay() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} testID="interview-day" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" refreshing={pulling} onRefresh={() => { setPulling(true); rooms.refetch().finally(() => setPulling(false)); }}>
-        <View style={{ gap: 4 }}>
-          <Text variant="eyebrow">{formatDateKey(easternDateKey(now), { weekday: "long", month: "long", day: "numeric" })} · Eastern Time</Text>
-          <Text variant="title" accessibilityRole="header">My interviews</Text>
-        </View>
+        {/* The page's name is in the bar ("Interview day"); the day it covers is the one line above the schedule. */}
+        <Text variant="eyebrow">{formatDateKey(easternDateKey(now), { weekday: "long", month: "long", day: "numeric" })} · Eastern Time</Text>
         {rooms.isPending ? (
           <View accessibilityLabel="Loading your interviews…" accessibilityRole="progressbar" style={{ gap: 12 }}>
             <Card style={{ gap: 12 }}><Skeleton width="30%" height={12} /><Skeleton width="68%" height={30} /><Skeleton width="50%" /><Skeleton width="44%" height={44} /></Card>
             <SkeletonRows count={3} avatar={false} />
           </View>
-        ) : rooms.isError ? (
-          <Card><ErrorState offline={rooms.error instanceof ApiError && rooms.error.offline} message={rooms.error instanceof ApiError && rooms.error.offline ? rooms.error.message : "Couldn’t load your interviews. Check your current interview access and retry."} onRetry={() => rooms.refetch()} /></Card>
+        ) : rooms.isError && !rooms.data ? (
+          <Card><ErrorState offline={rooms.error instanceof ApiError && rooms.error.offline} message={rooms.error instanceof ApiError && rooms.error.unreachable ? rooms.error.message : "Couldn’t load your interviews. Check your current interview access and retry."} onRetry={() => rooms.refetch()} /></Card>
         ) : !rows.length ? (
           <Card><EmptyState title="My interviews" body="You aren’t assigned to any interviews yet. Club leaders add you when they schedule interviews." /></Card>
         ) : (
           <>
+            {/* A failed background refresh keeps the schedule (and an open notes editor) on screen. */}
+            {rooms.isError ? <Text variant="small" accessibilityRole="alert" testID="interview-refresh-failed">Couldn’t refresh · showing your last schedule</Text> : null}
             {focus ? <FocusCard key={focus.id} row={focus} now={now} next={focus.id === day.next?.id} notes={openId === focus.id} onEnter={() => enter(focus)} /> : (
               <Card testID="interview-next-none"><Text variant="small">Nothing here right now. Past time slots nobody booked are hidden.</Text></Card>
             )}
@@ -136,7 +136,7 @@ function FocusCard({ row, now, next, notes, onEnter }: { row: InterviewEntry; no
       </View>
       <View accessible accessibilityRole="timer" accessibilityLabel={`${timer.label} ${timer.phase === "after" ? "" : timer.digits}`} style={{ backgroundColor: colors.contentSoft, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, gap: 2 }}>
         <Text variant="caption">{timer.label}</Text>
-        <Text testID="interview-timer" maxFontSizeMultiplier={1.4} style={{ fontFamily: fonts.sansSemibold, fontSize: 44, lineHeight: 50, fontVariant: ["tabular-nums"], color: low || timer.phase === "after" ? colors.destructive : colors.foreground }}>{timer.digits}</Text>
+        <Text testID="interview-timer" maxFontSizeMultiplier={1.4} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: fonts.sansSemibold, fontSize: 44, lineHeight: 50, fontVariant: ["tabular-nums"], color: low || timer.phase === "after" ? colors.destructive : colors.foreground }}>{timer.digits}</Text>
       </View>
       {openable(row) ? (
         notes ? (

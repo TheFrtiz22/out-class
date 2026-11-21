@@ -3,6 +3,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
+import { attendanceOpen, leaderTools } from "~/components/leader/access";
 import { ArrowUpRight, CalendarDays, CalendarPlus, MapPin, QrCode } from "~/components/icons";
 import { Text } from "~/components/text";
 import { Button, Card, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
@@ -11,7 +12,7 @@ import { addToCalendar, easternDateTime } from "~/lib/eastern";
 import { openExternal } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
-import type { Meeting, MeetingResource } from "~/lib/types";
+import type { Me, Meeting, MeetingResource } from "~/lib/types";
 
 /** Resources a club attached (lib/meetings.ts `resourceSchema`); anything else is ignored. */
 function resources(value: unknown): MeetingResource[] {
@@ -33,6 +34,10 @@ export default function MeetingScreen() {
   const data = meeting.data;
   const links = resources(data?.resources);
   const upcoming = data ? +new Date(data.endDate || data.date) >= Date.now() : false;
+  // A leader with attendance access hosts check-in from here while attendance is open (the leader hub's own rule).
+  const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
+  const membership = data ? me.data?.memberships.find(item => item.clubId === data.clubId) : undefined;
+  const host = !!data && !!membership && leaderTools(membership, me.data?.profile).attendance && attendanceOpen(data);
 
   return (
     <View style={{ flex: 1 }}>
@@ -97,11 +102,14 @@ export default function MeetingScreen() {
             </Card>
 
             {/* Attendance is recorded by scanning the leader's current code; the server decides whether it counts. */}
-            {alumni ? <AlumniBanner action="checkIn" /> : upcoming ? (
+            {alumni ? <AlumniBanner action="checkIn" /> : upcoming || host ? (
               <Card style={{ gap: 10 }} testID="meeting-check-in">
                 <Text variant="section" accessibilityRole="header">Meeting check-in</Text>
-                <Text variant="small">Scan the QR displayed by the meeting leader. Codes expire quickly to protect attendance.</Text>
-                <Button icon={QrCode} testID="meeting-scan" label="Scan a code" onPress={() => router.push("/scan")} />
+                <Text variant="small">{host ? "Show the room's code from this phone, or scan another leader's code to check yourself in." : "Scan the QR displayed by the meeting leader. Codes expire quickly to protect attendance."}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                  {host ? <Button icon={QrCode} testID="meeting-host-check-in" label="Host check-in" onPress={() => router.push({ pathname: "/leader/[clubId]/check-in/[meetingId]", params: { clubId: data.clubId, meetingId: data.id } } as never)} /> : null}
+                  {upcoming ? <Button icon={QrCode} variant={host ? "secondary" : "primary"} testID="meeting-scan" label="Scan a code" onPress={() => router.push("/scan")} /> : null}
+                </View>
               </Card>
             ) : null}
           </>
