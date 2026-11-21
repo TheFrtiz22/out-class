@@ -10,7 +10,10 @@ jest.mock("react-native-reanimated", () => {
   const land = (to: unknown, _config?: unknown, done?: (finished: boolean) => void) => { if (done) queueMicrotask(() => done(true)); return to; };
   const Animated = { View: RN.View, Text: RN.Text, ScrollView: RN.ScrollView, Image: RN.Image, FlatList: RN.FlatList, createAnimatedComponent: (component: unknown) => component };
   const identity = () => (value: unknown) => value;
+  // Layout animations (FadeInDown.duration(…).delay(…)) are chainable builders; under test they do nothing.
+  const layout: Record<string, unknown> = new Proxy({}, { get: () => () => layout });
   return {
+    FadeIn: layout, FadeInDown: layout, FadeInUp: layout, FadeOut: layout,
     __esModule: true,
     default: Animated,
     ...Animated,
