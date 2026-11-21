@@ -375,6 +375,12 @@ const rich: FixtureSet = {
   "leader.announcements": [{ id: uuid(1301), title: "General meeting moved to Rice 130", body: "See you there.", audience: "MEMBERS", publishedAt: at(-1), _count: { notifications: 42 } }],
   "leader.announce": { id: uuid(1300), recipientCount: 42 },
   "leader.interviewRooms": Array.from({ length: 5 }, (_, index) => interviewEntry(index + 1)),
+  // Settings → Interview schedule (actions/official-panel-schedule.ts): two upcoming panels and one past.
+  "interviews.panels": [
+    { id: uuid(1500), clubId: ids.leaderClub, clubName: longName, roundId: ids.round2, roundName: "Final round", roomName: "Panel B", location: "Rice Hall 130", timezone: "America/New_York", startTime: at(9, 2), endTime: at(9, 3), buffer: 0, version: 1, availabilityOverridden: true },
+    { id: uuid(1501), clubId: ids.memberClub, clubName: "Virginia Motorsports", roundId: ids.round, roundName: "First round interviews", roomName: "Panel A", location: "Thornton Hall E316", timezone: "America/New_York", startTime: at(2, 1), endTime: at(2, 2), buffer: 10, version: 3 },
+    { id: uuid(1502), clubId: ids.memberClub, clubName: "Virginia Motorsports", roundId: ids.round, roundName: "Spring interviews", roomName: "Panel C", location: "Clark Hall 107", timezone: "America/New_York", startTime: at(-30, 1), endTime: at(-30, 2), buffer: 5, version: 1 },
+  ],
   "leader.interviewSession.open": { id: uuid(1400), revision: 1, draft: { overallReview: "", additionalNotes: "" }, completedAt: null, instructions: "Be kind." },
   "leader.interviewSession.save": { session: { id: uuid(1400), revision: 2, draft: { overallReview: "", additionalNotes: "x" }, completedAt: null } },
   // Settings → Availability (actions/availability.ts): the global week, one round awaiting a response, and saves that echo the next revision.
@@ -426,6 +432,7 @@ const empty: FixtureSet = {
   "leader.pipelinePage": { rounds: [], applications: [], page: { total: 0, baseTotal: 0, next: null }, profileFields: { major: false, academicYear: false, photo: false } },
   "leader.announce.preview": { count: 0, evaluatedAt: at(0) },
   "leader.announcements": [],
+  "interviews.panels": [],
   "leader.interviewRooms": [],
   "availability.mine": { document: { accountId: ids.user, revision: 0, schedule: { timezone: "America/New_York", weekly: [[], [], [], [], [], [], []], weeklySubmitted: false, exceptions: {} } }, rounds: [] },
 };

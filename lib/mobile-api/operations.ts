@@ -42,6 +42,9 @@ export const mobileOperations = {
   "availability.round.save": operation("POST", passthrough, async input => (await import("@/actions/availability")).saveMyRoundAvailability(input)),
   "availability.round.decline": operation("POST", passthrough, async input => (await import("@/actions/availability")).declineRoundParticipation(input)),
 
+  // Settings → Interview schedule: the signed-in person's published panel assignments (app/(workspace)/settings/interviews).
+  "interviews.panels": operation("GET", none, async () => (await import("@/actions/official-panel-schedule")).getMyInterviewPanelSchedule()),
+
   // Home, calendar
   "home.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileHome()),
   "calendar.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileCalendar()),
