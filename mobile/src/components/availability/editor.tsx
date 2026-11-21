@@ -233,7 +233,7 @@ export function AvailabilityEditor({ initial, scope, title, initialWeek, initial
             <IconButton icon={ChevronLeft} label="Previous week" testID="availability-previous-week" onPress={() => setWeek(addDays(week, -7))} />
             <View style={{ flex: 1, alignItems: "center" }}>
               <Text variant="bodyStrong" testID="availability-week">Week of {formatDateKey(week, { month: "short", day: "numeric", year: "numeric" })}</Text>
-              {week !== monday(today()) ? <Press onPress={() => setWeek(monday(today()))} accessibilityLabel="Go to this week" style={{ minHeight: 28, justifyContent: "center" }}><Text variant="caption" color={colors.brandInk}>This week</Text></Press> : null}
+              {week !== monday(today()) ? <Press onPress={() => setWeek(monday(today()))} accessibilityLabel="Go to this week" style={{ minHeight: TARGET, justifyContent: "center", paddingHorizontal: 8 }}><Text variant="caption" color={colors.brandInk}>This week</Text></Press> : null}
             </View>
             <IconButton icon={ChevronRight} label="Next week" testID="availability-next-week" onPress={() => setWeek(addDays(week, 7))} />
           </View>

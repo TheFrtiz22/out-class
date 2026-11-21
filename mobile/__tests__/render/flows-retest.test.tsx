@@ -148,7 +148,7 @@ describe("F6: a stale task refusal", () => {
     await settle(client);
     expect(apiState.calls.filter(call => call.operation === "tasks.workspace").length).toBeGreaterThan(reads);
     expect(screen.getByTestId("task-text").props.value).toBe("Kept answer");
-    expect(screen.getByTestId("task-stale").props.children).toMatch(/Your text is kept/);
+    expect(screen.getByTestId("task-stale").props.children).toMatch(/Your text and new files are kept/);
     expect(screen.queryByText(/Reload the page/)).toBeNull();
     expect(loggedCrashes()).toEqual([]);
   });
