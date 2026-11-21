@@ -308,6 +308,7 @@ const rich: FixtureSet = {
   "share.shortLink": { url: "https://out-class.net/q/abc123", code: "abc123" },
   // Profile
   "profile": { profile: fullProfile },
+  "graduation.details": { saved: true },
   "profile.updateSection": { profile: fullProfile },
   "profile.upload": { reference: "profile-photos/user-1/new.jpg" },
   // Applications
