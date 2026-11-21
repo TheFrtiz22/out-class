@@ -108,7 +108,8 @@ export default function Applications() {
         contentInsetAdjustmentBehavior="never"
         data={visible}
         keyExtractor={item => item.id}
-        refreshControl={<RefreshControl refreshing={view.isRefetching} onRefresh={() => { void view.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top }}
+        refreshControl={<RefreshControl refreshing={view.isRefetching} onRefresh={() => { void view.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
         ListHeaderComponent={
           <View style={{ gap: space.content - 4 }}>
             <Text variant="small">Your drafts, applications in review, interviews and decisions.</Text>

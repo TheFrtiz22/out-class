@@ -21,8 +21,8 @@ export function TermsCheckbox({ checked, onChange, error, testID }: { checked: b
         <Text variant="small" style={{ flex: 1 }}>I agree to the Terms of Service and Privacy Policy.</Text>
       </Pressable>
       <View style={{ flexDirection: "row", gap: 20, paddingLeft: 36 }}>
-        <Pressable accessibilityRole="link" onPress={() => open("/terms")} hitSlop={10}><Text variant="smallStrong" color={colors.primary}>Read the Terms</Text></Pressable>
-        <Pressable accessibilityRole="link" onPress={() => open("/privacy")} hitSlop={10}><Text variant="smallStrong" color={colors.primary}>Privacy Policy</Text></Pressable>
+        <Pressable accessibilityRole="link" onPress={() => open("/terms")} hitSlop={{ left: 10, right: 10 }} style={{ minHeight: TARGET, justifyContent: "center" }}><Text variant="smallStrong" color={colors.primary}>Read the Terms</Text></Pressable>
+        <Pressable accessibilityRole="link" onPress={() => open("/privacy")} hitSlop={{ left: 10, right: 10 }} style={{ minHeight: TARGET, justifyContent: "center" }}><Text variant="smallStrong" color={colors.primary}>Privacy Policy</Text></Pressable>
       </View>
       {error ? <Text variant="caption" color={colors.destructive} accessibilityRole="alert">{error}</Text> : null}
     </View>

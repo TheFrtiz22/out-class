@@ -140,7 +140,7 @@ function Dock({ state }: DockProps) {
                     <Icon size={22} weight={lit ? "fill" : "regular"} color={lit ? colors.primaryForeground : colors.foreground} />
                     {badge ? (
                       <View style={{ position: "absolute", top: -5, right: -11, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.schoolAccent, alignItems: "center", justifyContent: "center" }}>
-                        <Text maxFontSizeMultiplier={1.2} style={{ fontFamily: fonts.sansBold, fontSize: 10, lineHeight: 13, color: "#ffffff" }}>{badge > 99 ? "99+" : badge}</Text>
+                        <Text maxFontSizeMultiplier={1.2} style={{ fontFamily: fonts.sansBold, fontSize: 10, lineHeight: 13, color: "#232d4b" }}>{badge > 99 ? "99+" : badge}</Text>
                       </View>
                     ) : null}
                   </View>

@@ -22,6 +22,7 @@ const error = [/test refusal|couldn.t|could not|try again|unavailable|went wrong
 /** Every route file in src/app, with the params a real navigation passes. */
 export const routes: RouteCase[] = [
   { file: "_layout", ownProviders: true, segments: ["(tabs)"] },
+  { file: "+not-found", rich: ["This page isn’t in the app", "Go to Home"], empty: ["This page isn’t in the app"], error: ["This page isn’t in the app"] },
   { file: "(tabs)/_layout", rich: ["Home", "Explore", "Inbox", "Calendar", "Profile"], empty: ["Home"], error: ["Home"] },
   { file: "(tabs)/index", rich: [`Hi, Maximiliana-Alexandria`, `Finish your ${longName} application`, "Leader tools"], empty: ["Find your next club", "No applications yet"], error },
   { file: "(tabs)/explore", rich: ["Explore", "12 clubs"], empty: ["No clubs available yet."], error },

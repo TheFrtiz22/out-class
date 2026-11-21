@@ -196,7 +196,8 @@ export default function CalendarScreen() {
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={calendar.isRefetching} onRefresh={() => { calendar.refetch(); me.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
+        refreshControl={<RefreshControl refreshing={calendar.isRefetching} onRefresh={() => { calendar.refetch(); me.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
         ListHeaderComponent={header}
         renderSectionHeader={({ section }) => <Text variant="section" accessibilityRole="header" style={{ paddingTop: 18, paddingBottom: 10 }}>{section.title}</Text>}
         renderSectionFooter={({ section }) => (view === "month" && !section.data.length ? <Text variant="small" style={{ paddingVertical: 8 }}>{filtered ? "No events on this day match your filters." : "Nothing scheduled."}</Text> : null)}

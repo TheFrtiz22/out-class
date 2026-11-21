@@ -17,8 +17,10 @@ export const fonts = {
 type Accessibility = { reduceMotion: boolean; reduceTransparency: boolean };
 /** The person's light/dark choice in Settings. "system" follows the phone. */
 export type AppearancePreference = "system" | "light" | "dark";
-type ThemeValue = Theme & { dark: boolean; a11y: Accessibility; appearance: AppearancePreference; setAppearance: (value: AppearancePreference) => void };
+/** `loaded` turns true once the saved Light/Dark choice is read (or after a short wait), so launch can keep the splash up until then. */
+type ThemeValue = Theme & { dark: boolean; a11y: Accessibility; appearance: AppearancePreference; setAppearance: (value: AppearancePreference) => void; loaded: boolean };
 const APPEARANCE_KEY = "outclass.appearance";
+const THEME_WAIT_MS = 500;
 const isPreference = (value: unknown): value is AppearancePreference => value === "system" || value === "light" || value === "dark";
 /** Native views (alerts, the keyboard, pickers, Liquid Glass) follow the app's choice too, not only our own colours. */
 function applyNative(preference: AppearancePreference) {
@@ -27,19 +29,22 @@ function applyNative(preference: AppearancePreference) {
 
 const light = resolveTheme("light");
 const dark = resolveTheme("dark");
-const ThemeContext = createContext<ThemeValue>({ ...light, dark: false, a11y: { reduceMotion: false, reduceTransparency: false }, appearance: "system", setAppearance: () => {} });
+const ThemeContext = createContext<ThemeValue>({ ...light, dark: false, a11y: { reduceMotion: false, reduceTransparency: false }, appearance: "system", setAppearance: () => {}, loaded: true });
 
 /** Follows the system light/dark setting unless the person picked Light or Dark in Settings (kept on
  * this device). The school theme comes from the signed-in account's server-side identity (`school`),
  * never from the build: only the `--school-*` layer differs. */
 export function ThemeProvider({ children, school }: { children: ReactNode; school?: string }) {
   const [appearance, setPreference] = useState<AppearancePreference>("system");
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let live = true;
     AsyncStorage.getItem(APPEARANCE_KEY).then(stored => {
       if (live && isPreference(stored) && stored !== "system") { setPreference(stored); applyNative(stored); }
-    }, () => {});
-    return () => { live = false; };
+    }, () => {}).finally(() => { if (live) setLoaded(true); });
+    // Storage that never answers must not hold the launch.
+    const timer = setTimeout(() => { if (live) setLoaded(true); }, THEME_WAIT_MS);
+    return () => { live = false; clearTimeout(timer); };
   }, []);
   const setAppearance = useCallback((value: AppearancePreference) => {
     setPreference(value);
@@ -59,8 +64,8 @@ export function ThemeProvider({ children, school }: { children: ReactNode; schoo
   }, []);
   const value = useMemo<ThemeValue>(() => {
     const base = school ? resolveTheme(scheme, school) : scheme === "dark" ? dark : light;
-    return { ...base, dark: scheme === "dark", a11y, appearance, setAppearance };
-  }, [scheme, school, a11y, appearance, setAppearance]);
+    return { ...base, dark: scheme === "dark", a11y, appearance, setAppearance, loaded };
+  }, [scheme, school, a11y, appearance, setAppearance, loaded]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
