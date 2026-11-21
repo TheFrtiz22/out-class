@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import { type LayoutChangeEvent, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useFrameCallback, useSharedValue } from "react-native-reanimated";
@@ -9,10 +10,11 @@ import { fonts, useTheme } from "~/lib/theme";
 /**
  * "Where members go" as drifting rails of raised pills: the native counterpart of the web's
  * components/clubs/employer-carousel.tsx. Firm names only (no employer logos). Up to three rails
- * in alternating directions; a horizontal drag moves a rail and flicks it with momentum, and
- * vertical scrolling passes through. Reduce Motion (and short lists) show the plain wrapped list.
+ * in alternating directions at the web's speed; touching a rail holds it still (the web slows on
+ * hover), a horizontal drag moves it and flicks it with momentum, and vertical scrolling passes
+ * through. Reduce Motion (and short lists) show the plain wrapped list.
  */
-const SPEED = 24; // points per second
+const SPEED = 28; // points per second, as on the web
 const MAX_ROWS = 3;
 const MIN_PER_ROW = 3;
 const COPIES = 3;
@@ -47,13 +49,14 @@ function Pill({ name }: { name: string }) {
 }
 
 function Rail({ names, direction }: { names: string[]; direction: 1 | -1 }) {
-  const [measured, setMeasured] = useState(false);
   const offset = useSharedValue(0);
   const momentum = useSharedValue(0);
   const dragging = useSharedValue(false);
   const width = useSharedValue(0);
 
-  useFrameCallback(frame => {
+  // Always registered as running: Reanimated reads `autostart` only on the first render, so a rail
+  // that waited for its measurement never moved. Until the width is known the wrap below is skipped.
+  const drift = useFrameCallback(frame => {
     "worklet";
     const dt = Math.min((frame.timeSincePreviousFrame ?? 16) / 1000, 0.05);
     if (!dragging.value) {
@@ -63,10 +66,15 @@ function Rail({ names, direction }: { names: string[]; direction: 1 | -1 }) {
     }
     const w = width.value;
     if (w > 0) offset.value = ((offset.value % w) + w) % w - w;
-  }, measured);
+  });
+  // Stop drawing frames while another screen covers this one.
+  useFocusEffect(useCallback(() => {
+    drift.setActive(true);
+    return () => drift.setActive(false);
+  }, [drift]));
 
   const drag = Gesture.Pan().activeOffsetX([-10, 10]).failOffsetY([-8, 8])
-    .onStart(() => { dragging.value = true; momentum.value = 0; })
+    .onBegin(() => { dragging.value = true; momentum.value = 0; })
     .onChange(event => { offset.value += event.changeX; })
     .onEnd(event => { momentum.value = Math.max(-2400, Math.min(2400, event.velocityX)); })
     .onFinalize(() => { dragging.value = false; });
@@ -74,7 +82,6 @@ function Rail({ names, direction }: { names: string[]; direction: 1 | -1 }) {
   const trackStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
   const measure = (event: LayoutChangeEvent) => {
     width.value = event.nativeEvent.layout.width + GAP; // one set plus the gap before the next copy
-    setMeasured(true);
   };
 
   return (

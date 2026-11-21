@@ -128,7 +128,7 @@ export default function ClubPage() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} refreshing={profile.isRefetching && !profile.isPlaceholderData} onRefresh={refresh} testID="club-screen">{body}</ScreenScroll>
-      <Header title={club?.name ?? "Club"} back />
+      <Header title={club?.name ?? "Club"} back fitTitle />
       {notice.element}
     </View>
   );
