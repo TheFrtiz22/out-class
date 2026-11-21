@@ -25,6 +25,7 @@ Policies are defined in `RATE_LIMITS` (`lib/rate-limit-core.ts`). Keep this tabl
 | Endpoint | Key | Limit |
 |---|---|---|
 | Club search server action (`actions/typesense-search.ts`) | account when signed in / IP when not | 120 / min per account; 300 / min per IP |
+| Club website import server action (`actions/club-website-import.ts`) | account | 20 / 10 min |
 | `GET /api/club-exports` | account | 10 / 10 min per instance, **and** 10 / 10 min across instances (audit rows) |
 | `/q/[code]` short links (middleware) | IP | 600 / min (a 200-person check-in on one campus address must work) |
 | `POST /api/csp-report` (middleware) | IP | 20 / min; over the limit middleware answers 204 itself (no 429: browsers do not retry reports), so a burst does not invoke the report function |
