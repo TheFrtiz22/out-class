@@ -41,7 +41,7 @@ export const routes: RouteCase[] = [
   { file: "leader/[clubId]/check-in/[meetingId]", params: { clubId: ids.leaderClub, meetingId: ids.meeting }, rich: ["checked in", "Close check-in"], empty: ["checked in"], error },
   { file: "leader/[clubId]/index", params: { clubId: ids.leaderClub }, rich: ["Leader tools"], empty: ["Leader tools"], error: ["Leader tools"] },
   { file: "leader/[clubId]/interviews", params: { clubId: ids.leaderClub }, rich: [longPerson], empty: ["Interview day"], error },
-  { file: "leader/[clubId]/voting", params: { clubId: ids.leaderClub }, rich: [`Final deliberation for ${longName}`], empty: ["Voting room"], error },
+  { file: "leader/[clubId]/voting", params: { clubId: ids.leaderClub }, rich: [`Final deliberation for ${longName}`], empty: ["No active sessions."], error },
   { file: "meeting/[id]", params: { id: ids.meeting }, rich: [`Weekly general body meeting for all members of ${longName}`, "Slides"], empty: ["Meeting"], error },
   { file: "my-club/[clubId]", params: { clubId: ids.memberClub }, rich: ["Virginia Motorsports"], empty: ["My club"], error },
   { file: "q/[code]", params: { code: "abc123" }, rich: [/checked in|check-in|Checked/i], empty: [/isn.t|unavailable|not valid|expired/i], error },

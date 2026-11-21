@@ -2,10 +2,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
-import { Field } from "~/components/field";
+import { ScrollView, View } from "react-native";
+import { Field, type FieldRef } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
 import { Megaphone } from "~/components/icons";
+import { canAnnounceToApplicants } from "~/components/leader/access";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, Card, Divider, ScreenScroll, Segmented, SectionHeader, Skeleton } from "~/components/ui";
@@ -14,6 +15,7 @@ import { easternShortDateTime } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
+import type { Me } from "~/lib/types";
 
 type Audience = "MEMBERS" | "APPLICANTS";
 type Preview = { count: number; evaluatedAt: string };
@@ -36,7 +38,14 @@ export default function Announce() {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [audience, setAudience] = useState<Audience>("MEMBERS");
+  const [chosen, setAudience] = useState<Audience>("MEMBERS");
+  // Active applicants only for a leader the server lets identify recipients (utils/recipient-audience.ts);
+  // anyone else would write the post and then get "Identified applicant recipient access required."
+  const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
+  const membership = me.data?.memberships.find(item => item.clubId === clubId);
+  const applicants = !!membership && canAnnounceToApplicants(membership, me.data?.profile);
+  const audience: Audience = applicants ? chosen : "MEMBERS";
+  const bodyField = useRef<FieldRef>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   // The sheet keeps showing the last count while it slides away, never a flash of "0".
   const [shown, setShown] = useState<Preview | null>(null);
@@ -83,23 +92,26 @@ export default function Announce() {
     );
   }
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+    // ScreenScroll keeps the focused field above the keyboard itself; a KeyboardAvoidingView on top of it doubled the gap.
+    <View style={{ flex: 1 }}>
       <ScreenScroll top={top} testID="announce-screen" refreshing={sent.isRefetching} onRefresh={() => { void sent.refetch(); }}>
         <Text variant="small">Announcements you publish land in each recipient’s OutClass inbox, with email according to their preferences.</Text>
-        <View style={{ gap: 6 }}>
-          <Text variant="smallStrong">Recipient type</Text>
-          <Segmented label="Recipient type" value={audience} onChange={setAudience} options={[{ value: "MEMBERS", label: "Members" }, { value: "APPLICANTS", label: "Active applicants" }]} />
-        </View>
-        <Field label="Title" testID="announce-title" value={title} onChangeText={setTitle} maxLength={200} returnKeyType="next" />
-        <Field label="Announcement" testID="announce-body" value={body} onChangeText={setBody} maxLength={10000} multiline />
+        {applicants ? (
+          <View style={{ gap: 6 }}>
+            <Text variant="smallStrong">Recipient type</Text>
+            <Segmented label="Recipient type" value={audience} onChange={setAudience} options={[{ value: "MEMBERS", label: "Members" }, { value: "APPLICANTS", label: "Active applicants" }]} />
+          </View>
+        ) : <Text variant="smallStrong" testID="announce-members-only">To: Members</Text>}
+        <Field label="Title" testID="announce-title" value={title} onChangeText={setTitle} maxLength={200} returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => bodyField.current?.focus()} />
+        <Field ref={bodyField} label="Announcement" testID="announce-body" value={body} onChangeText={setBody} maxLength={10000} multiline />
         {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">{error}</Text> : null}
         <Button full size="large" testID="announce-review" label={review.isPending ? "Reviewing recipients…" : "Publish announcement"} loading={review.isPending} disabled={!ready} onPress={() => review.mutate()} />
         <Text variant="caption">Custom audiences and scheduled sends are on the web.</Text>
         <View style={{ gap: 10, marginTop: 8 }}>
           <SectionHeader title="Recent announcements" />
           {sent.isPending ? <Card style={{ gap: 8 }}><Skeleton width="60%" height={16} /><Skeleton width="90%" /></Card>
-            : sent.isError ? <Text variant="small">Recent announcements didn’t load. Pull down to retry.</Text>
-            : !sent.data.length ? <Text variant="small">Nothing published yet.</Text>
+            : sent.isError && !sent.data ? <Text variant="small">Recent announcements didn’t load. Pull down to retry.</Text>
+            : !sent.data?.length ? <Text variant="small">Nothing published yet.</Text>
             : (
               <Card padded={false} style={{ paddingHorizontal: 16 }}>
                 {sent.data.slice(0, 10).map((item, index) => (
@@ -132,6 +144,6 @@ export default function Announce() {
           <Button full size="large" variant="secondary" label="Cancel" disabled={publish.isPending} onPress={() => setPreview(null)} />
         </ScrollView>
       </Sheet>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

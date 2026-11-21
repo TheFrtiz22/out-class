@@ -36,7 +36,15 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
   const [more, setMore] = useState(false);
   const lock = useRef(false);
   const applicantKey = `${room.passNumber}:${room.currentApplicantId}`;
-  useEffect(() => { setReason(""); }, [applicantKey]);
+  // A new applicant starts clean: no reason, and no refusal left over from the last one. Kept: an unconfirmed
+  // command (its Retry and Dismiss), and a refusal whose own refresh is what moved the room (it explains the move).
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  const settledAt = useRef(0);
+  useEffect(() => {
+    setReason("");
+    if (!pendingRef.current && !lock.current && Date.now() - settledAt.current > 1000) setError("");
+  }, [applicantKey]);
   useEffect(() => { if (staleRevision === null) return; const timer = setTimeout(() => setStaleRevision(null), 4000); return () => clearTimeout(timer); }, [staleRevision]);
 
   async function send(action: Action, extra: Record<string, unknown> = {}, retry = false) {
@@ -62,7 +70,7 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
       // A refusal the server put into words (signed out, rate limited, access removed) is shown as written.
       setError(failure instanceof ApiError && failure.status >= 400 && failure.status < 500 ? failure.message : "Command could not be confirmed. Reconnecting before retry; your decision may already be saved.");
       await refresh().catch(() => undefined);
-    } finally { lock.current = false; setBusy(false); }
+    } finally { lock.current = false; settledAt.current = Date.now(); setBusy(false); }
   }
 
   const saved = room.undo;
@@ -83,6 +91,7 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
   const ballotState = entry?.ballotState;
   const canDecideWithoutVote = room.status === "OPEN" && (ballotState === "PENDING" || ballotState === "OPEN") && room.permissions.canDecideWithoutVote;
   const canEndFromMore = room.permissions.canEnd && (room.status === "DRAFT" || room.status === "OPEN");
+  const recountOnly = !!room.electorateChange && room.rule?.mode === "THRESHOLD";
   const hasMore = canDecideWithoutVote || canEndFromMore || room.permissions.canCorrect;
 
   async function start() {
@@ -125,13 +134,14 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
       {room.status === "OPEN" && ballotState === "PENDING" ? <Button full size="large" testID="voting-open" label="Open voting" loading={busy && pending?.action === "OPEN_VOTING"} disabled={locked} onPress={() => { void send("OPEN_VOTING", { ...scope, ...view }); }} /> : null}
       {room.status === "OPEN" && ballotState === "OPEN" ? (
         <>
-          <Button full size="large" testID="voting-close" label="Close vote" loading={busy && pending?.action === "CLOSE_VOTING"} disabled={locked} onPress={() => { void close(); }} />
+          {/* A threshold room that lost voters can only close with a recount and a reason (actions/voting-room.ts). */}
+          {recountOnly ? null : <Button full size="large" testID="voting-close" label="Close vote" loading={busy && pending?.action === "CLOSE_VOTING"} disabled={locked} onPress={() => { void close(); }} />}
           <Text variant="small">{room.rule?.mode === "THRESHOLD" ? `After you close the vote, the rule decides (${room.rule.description}) and the result shows on the projector.` : "After you close the vote, the totals show on the projector and you confirm Pass, Hold or Do not pass."}</Text>
           {room.electorateChange ? (
             <View style={{ gap: 10 }} testID="voting-electorate-change">
               <Text variant="small" color={colors.warning}>{room.electorateChange.removed} voter{room.electorateChange.removed === 1 ? "" : "s"} can no longer vote, so voting is paused. Recount without {room.electorateChange.removed === 1 ? "this voter" : "them"} and give a reason to close, or restore {room.electorateChange.removed === 1 ? "their" : "those voters'"} access to continue.</Text>
               <Field label="Reason for recounting" testID="voting-recount-reason" value={reason} onChangeText={setReason} maxLength={1000} />
-              <Button full variant="secondary" testID="voting-recount-close" label="Recount and close vote" disabled={locked || !reason.trim()} onPress={() => { void close(true); }} />
+              <Button full size={recountOnly ? "large" : undefined} variant={recountOnly ? "primary" : "secondary"} testID="voting-recount-close" label="Recount and close vote" loading={recountOnly && busy && pending?.action === "CLOSE_VOTING"} disabled={locked || !reason.trim()} onPress={() => { void close(true); }} />
             </View>
           ) : null}
         </>
@@ -167,7 +177,7 @@ export function HostControls({ room, entry, labels, next, refresh, confirm }: { 
         </View>
       ) : null}
 
-      {(room.status === "PAUSED" || room.status === "COMPLETED") && hold > 0 ? <Button full size="large" testID="voting-next-pass" label="Review held applicants" disabled={locked} onPress={() => { void nextPass(); }} /> : null}
+      {(room.status === "PAUSED" || room.status === "COMPLETED") && hold > 0 && !room.finalizedAt ? <Button full size="large" testID="voting-next-pass" label="Review held applicants" disabled={locked} onPress={() => { void nextPass(); }} /> : null}
       {room.permissions.canEnd && room.status === "PAUSED" ? <Button full testID="voting-end" variant="secondary" label="End voting" disabled={locked} onPress={() => { void end(); }} /> : null}
 
       {room.status === "OPEN" ? (

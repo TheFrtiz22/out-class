@@ -83,7 +83,6 @@ export default function Applicants() {
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 4 }}>
-      <Text variant="title" accessibilityRole="header">Applicants</Text>
       {overview.isPending ? <View style={{ flexDirection: "row", gap: 10 }}><Skeleton width={104} height={64} radius={14} /><Skeleton width={104} height={64} radius={14} /><Skeleton width={104} height={64} radius={14} /></View>
         : roundCounts.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingHorizontal: 16 }} testID="applicants-round-counts">
