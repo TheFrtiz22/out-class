@@ -64,9 +64,11 @@ certificate's SHA-256 fingerprint), deploy, then check with Apple's and Google's
 
 ## 5. Sentry
 
-Create a Sentry project for the app (React Native) and set `EXPO_PUBLIC_SENTRY_DSN` in the EAS
-environment. `mobile/src/lib/report.ts` is the single seam; adding `@sentry/react-native` is one
-dependency (decision-log row needed).
+Done 2026-11-21: Sentry project `outclass-ot/outclass-mobile` (React Native, free plan) is wired in through
+`@sentry/react-native` and `mobile/src/lib/report.ts`; its public DSN is the default in `app.config.ts`
+(`EXPO_PUBLIC_SENTRY_DSN` or `config.local.json` can replace it, or set `"off"`). Left for later: readable
+stack traces for release builds need a Sentry auth token as the EAS secret `SENTRY_AUTH_TOKEN`, then
+`disableAutoUpload: false` on the `@sentry/react-native/expo` plugin. Until then builds skip the upload.
 
 ## 6. Turnstile for native sign-in
 
