@@ -11,7 +11,7 @@ function localConfig(): PublicConfig {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, "config.local.json"), "utf8")) as PublicConfig; } catch { return {}; }
 }
 const local = localConfig();
-const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://out-class.net";
+const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://www.out-class.net";
 // The production Supabase project's address and publishable key. Both are public (the web sends the
 // same two to every browser), and they are the defaults so a fresh clone run in Expo Go signs in with
 // no hidden file: without them the app sent sign-in to a placeholder address and showed only "try again".
