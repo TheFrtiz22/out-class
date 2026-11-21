@@ -58,12 +58,13 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
 
   const submit = useMutation({
     // The server checks every field, each file's contents and the revision.
-    mutationFn: (address: string) => api.post("tasks.submit", { assignmentId: own.id, revision: revision.current, text: text.trim(), link: address, fileIds: files.map(file => file.id) }),
-    onMutate: address => { setError(""); setSaved(false); onStale(false); if (address !== link.trim()) setLink(address); },
-    onSuccess: () => {
+    // The files are fixed when the tap happens, so an upload that finishes while this is in flight is not counted as sent.
+    mutationFn: ({ address, sent }: { address: string; sent: string[] }) => api.post("tasks.submit", { assignmentId: own.id, revision: revision.current, text: text.trim(), link: address, fileIds: sent }),
+    onMutate: ({ address }) => { setError(""); setSaved(false); onStale(false); if (address !== link.trim()) setLink(address); },
+    onSuccess: (_result, { sent }) => {
       // The server raised the revision and now holds these files, so a second tap before the reload isn't refused as changed.
       revision.current += 1;
-      setAttached(files.map(file => ({ ...file, attached: true }))); onPending(() => []);
+      setAttached(files.filter(file => sent.includes(file.id)).map(file => ({ ...file, attached: true }))); onPending(current => current.filter(file => !sent.includes(file.id)));
       haptics.confirm(); setSaved(true); onDraft(null);
       client.invalidateQueries({ queryKey: ["tasks.workspace"] });
       client.invalidateQueries({ queryKey: ["home.view", null] });
@@ -156,7 +157,7 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
           if (address === null) { haptics.error(); setError("Enter a full web address, like https://docs.google.com/…"); return; }
           const problem = missing(address);
           if (problem) { haptics.error(); setError(problem); return; }
-          submit.mutate(address);
+          submit.mutate({ address, sent: files.map(file => file.id) });
         }} />
       )}
     </Card>

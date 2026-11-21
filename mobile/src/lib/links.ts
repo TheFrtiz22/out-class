@@ -122,6 +122,13 @@ export function routeForHref(href: string | null | undefined): AppRoute | null {
     if (!second) return { pathname: "/settings" };
     if (second === "account") return { pathname: "/settings/account" };
     if (second === "notifications") return { pathname: "/settings/notifications" };
+    if (second === "interests") return { pathname: "/settings/interests" };
+    // A published panel lists under Interview schedule; an availability request opens on its round.
+    if (second === "interviews") return { pathname: "/settings/interviews" };
+    if (second === "availability") {
+      const roundId = query.get("roundId");
+      return roundId && UUID.test(roundId) ? { pathname: "/settings/availability", params: { roundId } } : { pathname: "/settings/availability" };
+    }
     if (second === "profile") return { pathname: "/profile" };
     return null;
   }
