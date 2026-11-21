@@ -4,53 +4,7 @@ import "react-native-gesture-handler/jestSetup";
 
 // Reanimated 4.7's own mock initializes the native module and throws under jest-expo/ios, so a
 // small stand-in: shared values are plain objects and animations land on their target at once.
-jest.mock("react-native-reanimated", () => {
-  const React = require("react");
-  const RN = require("react-native");
-  const land = (to: unknown, _config?: unknown, done?: (finished: boolean) => void) => { if (done) queueMicrotask(() => done(true)); return to; };
-  const Animated = { View: RN.View, Text: RN.Text, ScrollView: RN.ScrollView, Image: RN.Image, FlatList: RN.FlatList, createAnimatedComponent: (component: unknown) => component };
-  const identity = () => (value: unknown) => value;
-  // Layout animations (FadeInDown.duration(…).delay(…)) are chainable builders; under test they do nothing.
-  const layout: Record<string, unknown> = new Proxy({}, { get: () => () => layout });
-  const frameCallbacks: { callback: unknown; isActive: boolean }[] = [];
-  return {
-    FadeIn: layout, FadeInDown: layout, FadeInUp: layout, FadeOut: layout,
-    __esModule: true,
-    default: Animated,
-    ...Animated,
-    useSharedValue: (initial: unknown) => React.useState(() => ({ value: initial, get: () => initial, set: () => {} }))[0],
-    useAnimatedStyle: (style: () => object) => style(),
-    useAnimatedProps: (props: () => object) => props(),
-    useDerivedValue: (value: () => unknown) => ({ value: value() }),
-    useAnimatedReaction: () => {},
-    // Like the real hook, `autostart` is read once, on the first render; each instance is kept for tests.
-    __frameCallbacks: frameCallbacks,
-    useFrameCallback: (callback: unknown, autostart = true) => {
-      const ref = React.useRef(null);
-      if (!ref.current) {
-        const instance = { callback, isActive: autostart, callbackId: 0, setActive: (active: boolean) => { instance.isActive = active; } };
-        ref.current = instance;
-        frameCallbacks.push(instance);
-      }
-      ref.current.callback = callback;
-      return ref.current;
-    },
-    useAnimatedScrollHandler: () => () => {},
-    useAnimatedRef: () => React.useRef(null),
-    useReducedMotion: () => false,
-    withTiming: land, withSpring: land, withDecay: land,
-    withRepeat: (animation: unknown) => animation, withDelay: (_delay: number, animation: unknown) => animation, withSequence: (...animations: unknown[]) => animations[animations.length - 1],
-    runOnJS: (fn: unknown) => fn, runOnUI: (fn: unknown) => fn, scheduleOnRN: (fn: (...args: unknown[]) => void, ...args: unknown[]) => fn(...args), cancelAnimation: () => {},
-    interpolate: (value: number) => value, interpolateColor: (_value: number, _input: number[], output: string[]) => output[0],
-    Extrapolation: { CLAMP: "clamp", EXTEND: "extend", IDENTITY: "identity" },
-    Easing: new Proxy({}, { get: () => identity }),
-    ReduceMotion: { System: "system", Always: "always", Never: "never" },
-    LinearTransition: {},
-    // What react-native-gesture-handler's GestureDetector reads from Reanimated.
-    useEvent: () => () => {}, useComposedEventHandler: () => () => {}, useHandler: () => ({ doDependenciesDiffer: false, context: { lastUpdateEvent: undefined } }),
-    isSharedValue: () => false, setGestureState: () => {}, NativeEventsManager: class { attachEvents() {} detachEvents() {} updateEvents() {} },
-  };
-});
+jest.mock("react-native-reanimated", () => require("./reanimated-mock").reanimatedMock());
 jest.mock("react-native-gesture-handler/ReanimatedSwipeable", () => {
   const React = require("react");
   const { View } = require("react-native");
@@ -118,8 +72,9 @@ jest.mock("expo-router", () => {
     const names: string[] = [];
     React.Children.forEach(children, (child: { props?: { name?: string } }) => { if (child?.props?.name) names.push(child.props.name); });
     const state = { index: routerState.tabIndex, routes: names.map(name => ({ key: `${name}-key`, name })) };
-    const navigation = { navigate: jest.fn(), emit: jest.fn(), getParent: () => ({ getState: () => ({ index: routerState.stackIndex }) }) };
-    return React.createElement(React.Fragment, null, children, tabBar ? tabBar({ state, navigation, descriptors: {} }) : null);
+    // What Expo Router 58 hands a tab bar: an emitter and navigateToTab, and no `navigation`.
+    const props = { state, descriptors: {}, emitter: { emit: routerState.tabEmit }, navigateToTab: jest.fn(), insets: { top: 0, right: 0, bottom: 0, left: 0 } };
+    return React.createElement(React.Fragment, null, children, tabBar ? tabBar(props) : null);
   };
   Tabs.Screen = Screen;
   const Link = ({ children, href, asChild, ...rest }: { children?: unknown; href: unknown; asChild?: boolean }) =>
@@ -134,6 +89,9 @@ jest.mock("expo-router", () => {
     usePathname: () => routerState.pathname,
     useNavigation: () => ({ setOptions: jest.fn(), addListener: jest.fn(() => jest.fn()), isFocused: () => true, goBack: router.back, canGoBack: router.canGoBack, getParent: () => undefined, dispatch: jest.fn() }),
     useIsFocused: () => true,
+    // Something to dismiss: this copy of the tabs sits above another screen in the root stack.
+    useCanDismiss: () => routerState.stackIndex > 0,
+    useCanGoBack: () => true,
     useFocusEffect: (effect: () => void | (() => void)) => React.useEffect(effect, [effect]),
     useScrollToTop: jest.fn(),
     Link,

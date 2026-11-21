@@ -96,10 +96,10 @@ describe("F1: a failed background refresh keeps the loaded screen", () => {
 });
 
 describe("F2: tabs opened from a pushed screen", () => {
-  const navigation = (index: number) => ({ setOptions: jest.fn(), addListener: jest.fn(() => jest.fn()), isFocused: () => true, goBack: jest.fn(), canGoBack: () => true, dispatch: jest.fn(), getParent: () => ({ getState: () => ({ index }) }) });
+  afterEach(() => { routerState.stackIndex = 0; });
 
   test("a tab on top of another screen shows Back, which closes that copy of the tabs", async () => {
-    jest.spyOn(require("expo-router"), "useNavigation").mockReturnValue(navigation(1));
+    routerState.stackIndex = 1;
     const Screen = require("~/app/(tabs)/profile").default;
     await renderRoute(Screen);
     await fireEvent.press(screen.getByTestId("header-back"));
@@ -108,7 +108,7 @@ describe("F2: tabs opened from a pushed screen", () => {
   });
 
   test("the tabs at the bottom of the stack have no Back", async () => {
-    jest.spyOn(require("expo-router"), "useNavigation").mockReturnValue(navigation(0));
+    routerState.stackIndex = 0;
     const Screen = require("~/app/(tabs)/calendar").default;
     await renderRoute(Screen);
     expect(screen.queryByTestId("header-back")).toBeNull();

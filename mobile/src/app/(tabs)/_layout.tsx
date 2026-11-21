@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from "expo-router";
+import { Tabs, useCanDismiss, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -39,14 +39,22 @@ const LIFT_SCALE = 0.08;
  * ticks as it crosses each tab, and on release locks onto the tab under the finger (as Instagram's
  * and Apple Music's tab bars do).
  */
-type DockProps = { state: { index: number; routes: { key: string; name: string }[] }; navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => unknown; getParent?: () => { getState?: () => { index?: number } | undefined } | undefined } };
-function Dock({ state, navigation }: DockProps) {
+/**
+ * What the navigator hands its tab bar. Expo Router 58 passes `emitter` (and `navigateToTab`) and no
+ * `navigation`; reading `navigation` there threw on a Home tap and on a tap of the current tab, which
+ * froze the app behind the error. `navigation` is still read if a navigator passes it.
+ */
+type TabPress = { type: "tabPress"; target: string; canPreventDefault: true };
+type DockProps = { state: { index: number; routes: { key: string; name: string }[] }; emitter?: { emit: (event: TabPress) => unknown }; navigation?: { emit?: (event: TabPress) => unknown } };
+function Dock({ state, emitter, navigation }: DockProps) {
   const router = useRouter();
   const { colors, radius, a11y } = useTheme();
   const insets = useSafeAreaInsets();
   // The dock steps aside for the keyboard rather than riding on top of it.
   const keyboard = useKeyboardShown();
   const mode = useMiddleTab();
+  // Above 0 in the root stack: this copy of the tabs was opened over another screen.
+  const stacked = useCanDismiss();
   const shape = (name: string) => {
     const tab = tabs.find(item => item.name === name)!;
     return tab.name === "clubs" ? { ...tab, ...middle[mode] } : tab;
@@ -77,7 +85,7 @@ function Dock({ state, navigation }: DockProps) {
     if (!tab || index === current) return;
     // In a copy of the tabs opened over another screen, Home is the real Home underneath: close the
     // copy rather than show Home inside it, where it would need a Back arrow.
-    if (tab.href === "/" && (navigation.getParent?.()?.getState?.()?.index ?? 0) > 0) router.dismissTo("/");
+    if (tab.href === "/" && stacked) router.dismissTo("/");
     else router.navigate(tab.href);
   };
   const onGrab = (index: number) => { holding.current = true; haptics.grab(); setHover(index); };
@@ -142,7 +150,7 @@ function Dock({ state, navigation }: DockProps) {
                     // tabPress, which its list answers by scrolling to the top (useScrollToTop), as iOS tab bars do.
                     if (holding.current || Date.now() - droppedAt.current < 400) return;
                     if (!selected) { haptics.tick(); go(index); }
-                    else navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+                    else (emitter ?? navigation)?.emit?.({ type: "tabPress", target: route.key, canPreventDefault: true });
                   }}
                   style={({ pressed }) => ({ flex: 1, minWidth: 64, minHeight: DOCK_TAB_HEIGHT, alignItems: "center", justifyContent: "center", gap: 3, borderRadius: radius.full, backgroundColor: !slot && selected ? colors.primary : pressed && !lit ? colors.muted : "transparent" })}
                 >
@@ -161,7 +169,7 @@ function Dock({ state, navigation }: DockProps) {
 export default function TabsLayout() {
   const { colors } = useTheme();
   return (
-    <Tabs tabBar={props => <Dock {...(props as unknown as DockProps)} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.background } }}>
+    <Tabs tabBar={props => <Dock {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.background } }}>
       {tabs.map(tab => <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.label }} />)}
     </Tabs>
   );
