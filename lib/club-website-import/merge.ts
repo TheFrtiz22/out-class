@@ -2,6 +2,7 @@ import { z } from "zod"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { publicUrl, type ClubProfileDraft } from "@/lib/club-marketing"
 import type { ImportedClubProfile } from "@/lib/club-website-import/types"
+import { userMessage } from "@/lib/user-message"
 
 export type ImportMergeResult = { profile: ClubProfileDraft; filled: string[]; kept: string[] }
 
@@ -48,4 +49,30 @@ export function importedImageFile(image: { base64: string; contentType: string }
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
   return new File([bytes], `${name}.webp`, { type: image.contentType })
+}
+
+const listed = (items: string[]) => items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`
+
+/**
+ * Uploads the imported logo and cover image into `profile` through the editor's own upload path.
+ * A club that has not been saved yet has nowhere to store images (`uploadsAfterSave`), so the
+ * leader is told to add them after saving rather than shown an upload failure.
+ */
+export async function applyImportedImages(
+  profile: ClubProfileDraft,
+  imported: Pick<ImportedClubProfile, "logo" | "banner">,
+  { replace = false, upload, uploadsAfterSave = false }: { replace?: boolean; upload?: (file: File) => Promise<string>; uploadsAfterSave?: boolean } = {},
+): Promise<{ filled: string[]; kept: string[]; notes: string[] }> {
+  const filled: string[] = [], kept: string[] = [], notes: string[] = [], waiting: string[] = []
+  for (const [key, label, image] of [["logoUrl", "logo", imported.logo], ["bannerUrl", "cover image", imported.banner]] as const) {
+    if (!image) continue
+    if (profile[key] && !replace) { kept.push(label); continue }
+    if (uploadsAfterSave || !upload) { waiting.push(label); continue }
+    try { profile[key] = await upload(importedImageFile(image, key === "logoUrl" ? "club-logo" : "club-cover")); filled.push(label) }
+    catch (uploadError) { notes.push(`The ${label} wasn't added: ${userMessage(uploadError, "the upload failed.")}`) }
+  }
+  if (waiting.length) notes.unshift(uploadsAfterSave
+    ? `Save the club first, then add the ${listed(waiting)} with the image controls.`
+    : `The ${listed(waiting)} can be added with the image controls.`)
+  return { filled, kept, notes }
 }

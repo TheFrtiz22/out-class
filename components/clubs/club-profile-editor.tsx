@@ -36,7 +36,7 @@ function Records<T extends Record<string, string>>({ title, item, value, onChang
 }
 const sections = [{ id: "identity", title: "Identity & media", icon: IdCard }, { id: "theme", title: "Brand & theme", icon: Palette }, { id: "metrics", title: "Stats & achievements", icon: BarChart3 }, { id: "membership", title: "Member experience", icon: Users }, { id: "showcase", title: "Showcase & FAQs", icon: ImageIcon }, { id: "links", title: "Socials & links", icon: Link2 }]
 
-export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, externalDirty = false, clubId, rosterCount = null }: { rosterCount?: number | null; clubId?: string; initial: ClubProfileDraft; onSave: (profile: ClubProfileDraft, expected?: ClubProfileDraft) => Promise<void>; demo?: boolean; onUpload?: (file: File) => Promise<string>; externalDirty?: boolean }) {
+export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, externalDirty = false, clubId, rosterCount = null, imagesAfterSave = false }: { imagesAfterSave?: boolean; rosterCount?: number | null; clubId?: string; initial: ClubProfileDraft; onSave: (profile: ClubProfileDraft, expected?: ClubProfileDraft) => Promise<void>; demo?: boolean; onUpload?: (file: File) => Promise<string>; externalDirty?: boolean }) {
   const [draft, setDraft] = useState(initial), [saved, setSaved] = useState(initial)
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("")
   const [preview, setPreview] = useState(false)
@@ -60,7 +60,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
   }}>
     <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Your public presence</p><h2 className="oc-section-heading mt-2">Make your club stand out.</h2><p className="mt-2 text-sm text-muted-foreground">Tell your story. Show what makes joining worthwhile.</p></div><Button type="button" variant="outline" onClick={() => setPreview(!preview)}><Eye size={16} />{preview ? "Back to editor" : "Full profile preview"}</Button></div>
     {demo && <p className="text-xs text-muted-foreground">Demo changes stay in this browser.</p>}
-    {!demo && !preview && <ClubWebsiteImport clubId={clubId} draft={draft} onUpload={onUpload} onBusyChange={setImporting} disabled={busy || !!clubId && (!draftSave.ready || draftSave.recovery != null)} onApply={profile => { setDraft(profile); setMessage(""); setError("") }} />}
+    {!demo && !preview && <ClubWebsiteImport clubId={clubId} draft={draft} onUpload={onUpload} imagesAfterSave={imagesAfterSave} onBusyChange={setImporting} disabled={busy || !!clubId && (!draftSave.ready || draftSave.recovery != null)} onApply={profile => { setDraft(profile); setMessage(""); setError("") }} />}
     {preview ? <div className="max-w-[var(--oc-reading-width)] space-y-5"><MarketingProfile assetPreview profile={draft} /><AboutSection assetPreview profile={draft} /><MarketingSections assetPreview profile={draft} /></div> : <>
       <div className="oc-profile-editor-layout">
       <OnThisPage label="On this page" sections={sections.map(({ id, title }) => ({ id, title }))} targetId={id => `profile-${id}`} onJump={jump} />

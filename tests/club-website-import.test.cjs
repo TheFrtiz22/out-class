@@ -4,7 +4,7 @@ function load(file, mocks = {}) { const m = { exports: {} }; new Function('requi
 
 const safe = load('lib/club-website-import/safe-fetch.ts');
 const extract = load('lib/club-website-import/extract.ts');
-const { mergeImportedProfile } = load('lib/club-website-import/merge.ts');
+const { mergeImportedProfile, applyImportedImages } = load('lib/club-website-import/merge.ts');
 const { profileDraft, clubProfileSchema } = load('lib/club-marketing.ts');
 
 /** A transport double: `routes` maps a URL to { status, headers, body }. Records each request URL. */
@@ -148,6 +148,33 @@ test('import fills empty fields only, keeps existing words unless Replace is on,
   assert.equal(unsafe.profile.marketing.website, ''); assert.equal(unsafe.profile.marketing.instagram, ''); assert.equal(unsafe.profile.marketing.email, '');
   assert.equal(unsafe.profile.marketing.links.length, 12);
   assert.ok(clubProfileSchema.safeParse(unsafe.profile).success);
+});
+
+test('imported images: a club not saved yet is told to add them after saving, not that the upload failed', async () => {
+  const image = { contentType: 'image/webp', base64: Buffer.from('webp').toString('base64'), source: 'https://club.example/logo.png' };
+  const both = { logo: image, banner: image };
+  let calls = 0;
+  const unsaved = profileDraft({ name: 'New club', category: 'Other' });
+  const waiting = await applyImportedImages(unsaved, both, { upload: async () => { calls++; throw new Error('Create the club before uploading images.'); }, uploadsAfterSave: true });
+  assert.equal(calls, 0, 'no upload is tried for a club that has no record yet');
+  assert.deepEqual(waiting.filled, []);
+  assert.deepEqual(waiting.notes, ['Save the club first, then add the logo and cover image with the image controls.']);
+  assert.ok(!waiting.notes.join(' ').includes('failed'));
+  assert.equal(unsaved.logoUrl ?? null, null);
+
+  const saved = profileDraft({ name: 'Saved club', category: 'Other' });
+  const uploaded = await applyImportedImages(saved, both, { upload: async file => `club-assets/${file.name}` });
+  assert.deepEqual(uploaded.filled, ['logo', 'cover image']); assert.deepEqual(uploaded.notes, []);
+  assert.equal(saved.logoUrl, 'club-assets/club-logo.webp'); assert.equal(saved.bannerUrl, 'club-assets/club-cover.webp');
+
+  const failing = await applyImportedImages(profileDraft({ name: 'Club', category: 'Other' }), { logo: image, banner: null }, { upload: async () => { throw new Error('storage upload failed: 500'); } });
+  assert.deepEqual(failing.notes, ["The logo wasn't added: the upload failed."], 'a real failure still says so, without internal details');
+
+  const kept = await applyImportedImages(profileDraft({ name: 'Club', category: 'Other', logoUrl: 'club-assets/old.webp' }), { logo: image, banner: null }, { upload: async () => 'x', uploadsAfterSave: true });
+  assert.deepEqual(kept.kept, ['logo']); assert.deepEqual(kept.notes, []);
+
+  const noUpload = await applyImportedImages(profileDraft({ name: 'Club', category: 'Other' }), { logo: image, banner: null });
+  assert.deepEqual(noUpload.notes, ['The logo can be added with the image controls.']);
 });
 
 test('import reads the page and keeps only real, large-enough raster images', async () => {
