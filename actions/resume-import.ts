@@ -12,16 +12,43 @@ import { boundedSafeParse } from "@/lib/bounded-input"
 
 const failure = (code: string, message: string) => ({ ok: false as const, code, message })
 
+const INVALID_PDF = "INVALID_PDF"
+/** The one PDF in the form, checked for size, name and signature. Throws a message written for the person. */
+async function readResumeFile(input: FormData) {
+  if (input.getAll("file").length !== 1 || Array.from(input.keys()).some(k => k !== "file")) throw Error("Choose only a PDF file; storage paths and owners cannot be supplied.")
+  const file = input.get("file")
+  if (!file || typeof file === "string" || !file.size) throw Error("Choose a PDF résumé.")
+  if (file.size > 10 * 1024 * 1024) throw Error("Choose a PDF up to 10 MB.")
+  if (!/\.pdf$/i.test(file.name)) throw Error("Choose a PDF file.")
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  try { validateProfileFile(bytes, file.type, "resume") } catch { throw Error(INVALID_PDF) }
+  return { file, bytes }
+}
+function importFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : ""
+  if (message === INVALID_PDF) return failure("INVALID_PDF", "Choose a valid PDF résumé. Other file types are unsupported.")
+  // A refusal from the upload (file checks, the hourly upload limit) is already written for the person.
+  if (error instanceof UserFacingError || /^(Choose |Provide |Complete your |No meaningful text|The PDF contains|PDF processing|PDF extraction|This PDF is|Password-protected|Private document storage|Support uploads|Upload failed|Could not prepare upload)/.test(message)) return failure("IMPORT_REJECTED", message)
+  return failure("EXTRACTION_FAILED", "Could not read this PDF. Export a new text-based résumé PDF and try again.")
+}
+
+/**
+ * Sign-up prefill: reads a signed-in student's résumé into suggestions for the onboarding form.
+ * Nothing is stored here: no profile write and no upload. The file is attached, if the student keeps
+ * it, by the onboarding form's own upload when they finish.
+ */
+export async function readResumeForOnboarding(input: FormData) {
+  await requireAuth()
+  try {
+    const { bytes } = await readResumeFile(input)
+    return { ok: true as const, proposal: extractResumeProposal(await extractPdfText(bytes)) }
+  } catch (error) { return importFailure(error) }
+}
+
 export async function prepareResumeImport(input: FormData) {
   const { user } = await requireAuth()
   try {
-    if (input.getAll("file").length !== 1 || Array.from(input.keys()).some(k => k !== "file")) throw Error("Choose only a PDF file; storage paths and owners cannot be supplied.")
-    const file = input.get("file")
-    if (!file || typeof file === "string" || !file.size) throw Error("Choose a PDF résumé.")
-    if (file.size > 10 * 1024 * 1024) throw Error("Choose a PDF up to 10 MB.")
-    if (!/\.pdf$/i.test(file.name)) throw Error("Choose a PDF file.")
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    try { validateProfileFile(bytes, file.type, "resume") } catch { return failure("INVALID_PDF", "Choose a valid PDF résumé. Other file types are unsupported.") }
+    const { file, bytes } = await readResumeFile(input)
     const profile = await prisma.studentProfile.findUnique({ where: { userId: user.id }, include: { experiences: true } })
     if (!profile) throw Error("Complete your student profile before importing a résumé.")
     const proposal = extractResumeProposal(await extractPdfText(bytes))
@@ -29,12 +56,7 @@ export async function prepareResumeImport(input: FormData) {
     const upload = new FormData(); upload.set("kind", "resume"); upload.set("file", file)
     const { reference } = unwrapAction(await uploadProfileFile(upload))
     return { ok: true as const, proposal, baseline: importBaseline(profile), reference }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : ""
-    // A refusal from the upload (file checks, the hourly upload limit) is already written for the person.
-    if (error instanceof UserFacingError || /^(Choose |Provide |Complete your |No meaningful text|The PDF contains|PDF processing|PDF extraction|This PDF is|Password-protected|Private document storage|Support uploads|Upload failed|Could not prepare upload)/.test(message)) return failure("IMPORT_REJECTED", message)
-    return failure("EXTRACTION_FAILED", "Could not read this PDF. Export a new text-based résumé PDF and try again.")
-  }
+  } catch (error) { return importFailure(error) }
 }
 export async function confirmResumeImport(input: unknown) {
   const { user, impersonation } = await requireAuth()
