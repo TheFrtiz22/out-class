@@ -2,7 +2,7 @@
  * Profile → After graduation is edited in the app with the web's own action (actions/graduation.ts
  * saveAlumniDetails), with the same fields and choices as components/alumni-details-fields.tsx.
  */
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { ApiError } from "~/lib/api";
 import { apiState } from "./api-state";
 import { fixtureSets } from "./fixtures";
@@ -30,6 +30,18 @@ describe("after graduation details", () => {
     expect(posts("graduation.details")).toEqual([{ employer: "Acme Robotics", role: null, showInAlumniList: true, shareEmployer: false }]);
     expect(apiState.calls.filter(call => call.operation === "profile").length).toBeGreaterThanOrEqual(2);
     expect(loggedCrashes()).toEqual([]);
+  });
+
+  test("on a small phone the fields scroll and Save stays in view", async () => {
+    await renderRoute(Screen(), { overrides: { profile: graduated } });
+    await fireEvent.press(screen.getByTestId("profile-after-graduation-edit"));
+    const scroll = screen.getByTestId("alumni-details-scroll");
+    expect(within(scroll).getByTestId("alumni-employer")).toBeTruthy();
+    expect(within(scroll).getByTestId("alumni-show-in-list")).toBeTruthy();
+    expect(within(scroll).queryByTestId("alumni-save")).toBeNull();
+    expect(screen.getByTestId("alumni-save")).toBeTruthy();
+    const style = [scroll.props.style].flat().reduce((all, part) => ({ ...all, ...part }), {});
+    expect(style.maxHeight).toBeLessThan(852);
   });
 
   test("a refused entry keeps the sheet open with the server's reason", async () => {
