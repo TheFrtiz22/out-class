@@ -11,7 +11,7 @@ import { Button, IconButton } from "~/components/ui";
 import { ApiError, OFFLINE_MESSAGE, errorMessage } from "~/lib/api";
 import { easternDateTime } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
-import { openOnWeb } from "~/lib/links";
+import { openOnWeb, openRoute } from "~/lib/links";
 import { reportError } from "~/lib/report";
 import { classifyScan, redeemShortLink, type ScanOutcome } from "~/lib/scan";
 import { useTheme } from "~/lib/theme";
@@ -65,7 +65,7 @@ export function ScanScreen({ initialCode }: { initialCode?: string }) {
       const outcome = await redeemShortLink(code);
       // The person closed the scanner while the code was checked: never navigate away from where they went.
       if (!mounted.current) return;
-      if (outcome.kind === "navigate") { haptics.confirm(); router.replace(outcome.route as never); return; }
+      if (outcome.kind === "navigate") { haptics.confirm(); openRoute(router, outcome.route, "replace"); return; }
       if (outcome.kind === "check-in") {
         if (outcome.outcome.status === "checked-in") haptics.checkIn(); else haptics.warning();
         for (const key of ["home.view", "calendar.view", "meetings", "meetings.meeting"]) void queryClient.invalidateQueries({ queryKey: [key] });

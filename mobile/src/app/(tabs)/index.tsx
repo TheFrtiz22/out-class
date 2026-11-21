@@ -10,7 +10,7 @@ import { Text } from "~/components/text";
 import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, StaleNote, StatusChip } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { easternShortDateTime } from "~/lib/eastern";
-import { routeForHref } from "~/lib/links";
+import { openRoute, routeForHref } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
@@ -60,7 +60,8 @@ export default function Home() {
   const refresh = () => Promise.all([home.refetch(), me.refetch()]);
   const next = data?.nextAction;
   const leading = leaderMemberships(me.data);
-  const go = (route: Route) => router.push(route as never);
+  // A row that leads to another tab (the calendar) switches to it rather than stacking a second set of tabs.
+  const go = (route: Route) => openRoute(router, route);
   const scroll = useRef<ScrollViewInstance>(null);
   useTabScrollToTop(scroll);
 

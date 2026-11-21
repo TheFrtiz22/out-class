@@ -78,12 +78,24 @@ describe("the dock", () => {
 
 describe("tabs are opened without stacking another copy of the tabs", () => {
   test("openRoute: a tab goes down to the tabs, any other screen is pushed", () => {
-    const router = { push: jest.fn(), dismissTo: jest.fn() };
+    const router = { push: jest.fn(), navigate: jest.fn(), replace: jest.fn(), dismissTo: jest.fn(), canDismiss: () => true };
     openRoute(router, { pathname: "/" });
     openRoute(router, { pathname: "/calendar" });
+    openRoute(router, { pathname: "/calendar", params: { type: "meeting" } });
     openRoute(router, { pathname: "/meeting/[id]", params: { id: "x" } });
-    expect(router.dismissTo.mock.calls).toEqual([["/"], ["/calendar"]]);
+    expect(router.dismissTo.mock.calls).toEqual([["/"], ["/calendar"], [{ pathname: "/calendar", params: { type: "meeting" } }]]);
     expect(router.push.mock.calls).toEqual([[{ pathname: "/meeting/[id]", params: { id: "x" } }]]);
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  test("openRoute on a tab itself switches tabs, since there is nothing to go back down to", () => {
+    const router = { push: jest.fn(), navigate: jest.fn(), replace: jest.fn(), dismissTo: jest.fn(), canDismiss: () => false };
+    openRoute(router, { pathname: "/calendar", params: { type: "meeting" } });
+    openRoute(router, { pathname: "/explore" }, "replace");
+    expect(router.navigate.mock.calls).toEqual([[{ pathname: "/calendar", params: { type: "meeting" } }]]);
+    expect(router.replace.mock.calls).toEqual([["/explore"]]);
+    expect(router.dismissTo).not.toHaveBeenCalled();
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   test("an unknown link's Go to Home", async () => {

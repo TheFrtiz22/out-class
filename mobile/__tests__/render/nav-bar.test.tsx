@@ -147,11 +147,12 @@ describe("the Inbox bell", () => {
     expect(routerState.router.back).toHaveBeenCalledTimes(1);
   });
 
-  test("a notification that opens the Inbox pushes it over the tabs", () => {
-    const router = { push: jest.fn(), dismissTo: jest.fn() };
-    openRoute(router, { pathname: "/inbox" });
-    expect(router.push).toHaveBeenCalledWith({ pathname: "/inbox" });
-    openRoute(router, { pathname: "/clubs" });
+  test("a notification that opens the Inbox opens it over the tabs, reusing an open Inbox", () => {
+    const router = { push: jest.fn(), navigate: jest.fn(), replace: jest.fn(), dismissTo: jest.fn(), canDismiss: () => true };
+    openRoute(router, { pathname: "/inbox" }, "reuse");
+    expect(router.navigate).toHaveBeenCalledWith("/inbox");
+    expect(router.push).not.toHaveBeenCalled();
+    openRoute(router, { pathname: "/clubs" }, "reuse");
     expect(router.dismissTo).toHaveBeenCalledWith("/clubs");
   });
 });
