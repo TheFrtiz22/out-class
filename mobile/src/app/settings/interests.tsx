@@ -36,14 +36,16 @@ export default function InterestsSettings() {
   const client = useQueryClient();
   const alumni = useIsAlumni();
   const query = useApiQuery<InterestSurvey | null>("interests");
-  const [draft, setDraft] = useState<InterestAnswers | null>(null);
+  // The draft keeps the answers and revision it started from, so a background refetch can't slip a newer
+  // revision under older edits (the save would then overwrite changes made on the web instead of failing STALE).
+  const [draft, setDraft] = useState<{ answers: InterestAnswers; base: InterestAnswers; revision: number } | null>(null);
   const [message, setMessage] = useState<{ text: string; error: boolean; stale?: boolean } | null>(null);
   const loaded = query.data ? answersOf(query.data) : null;
-  const answers = draft ?? loaded;
-  const dirty = !!(draft && loaded && !sameAnswers(draft, loaded));
+  const answers = draft?.answers ?? loaded;
+  const dirty = !!(draft && !sameAnswers(draft.answers, draft.base));
 
   const save = useMutation({
-    mutationFn: (value: InterestAnswers) => api.post<InterestSurvey>("interests.save", { ...value, revision: query.data?.revision ?? 0 }),
+    mutationFn: (value: { answers: InterestAnswers; revision: number }) => api.post<InterestSurvey>("interests.save", { ...value.answers, revision: value.revision }),
     onMutate: () => setMessage(null),
     onSuccess: saved => { client.setQueryData(KEY, saved); setDraft(null); setMessage({ text: "Saved", error: false }); haptics.confirm(); },
     onError: error => {
@@ -51,7 +53,13 @@ export default function InterestsSettings() {
       setMessage({ text: errorMessage(error, "Couldn’t save your interests. Try again."), error: true, stale: error instanceof ApiError && error.code === "STALE" });
     },
   });
-  const set = (patch: Partial<InterestAnswers>) => { if (!answers || alumni || save.isPending) return; setMessage(null); setDraft({ ...answers, ...patch }); };
+  const set = (patch: Partial<InterestAnswers>) => {
+    if (!answers || !loaded || alumni || save.isPending) return;
+    setMessage(null);
+    setDraft(current => current
+      ? { ...current, answers: { ...current.answers, ...patch } }
+      : { answers: { ...loaded, ...patch }, base: loaded, revision: query.data?.revision ?? 0 });
+  };
   const reload = async () => { setMessage(null); setDraft(null); await query.refetch(); };
   const full = (answers?.interests.length ?? 0) >= MAX_INTERESTS;
 
@@ -82,7 +90,7 @@ export default function InterestsSettings() {
             </Question>
             {alumni ? null : (
               <View style={{ gap: 10 }}>
-                <Button full size="large" testID="interests-save" label={save.isPending ? "Saving…" : "Save"} loading={save.isPending} disabled={!dirty} onPress={() => { if (answers) save.mutate(answers); }} />
+                <Button full size="large" testID="interests-save" label={save.isPending ? "Saving…" : "Save"} loading={save.isPending} disabled={!dirty} onPress={() => { if (draft) save.mutate({ answers: draft.answers, revision: draft.revision }); }} />
                 {dirty && !save.isPending ? <Button full variant="ghost" testID="interests-discard" label="Discard changes" onPress={() => { setDraft(null); setMessage(null); }} /> : null}
               </View>
             )}

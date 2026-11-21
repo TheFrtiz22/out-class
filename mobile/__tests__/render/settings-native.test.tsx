@@ -51,6 +51,19 @@ describe("interests", () => {
     expect(loggedCrashes()).toEqual([]);
   });
 
+  test("a background refetch doesn't move an unsaved draft onto the newer revision", async () => {
+    const { client } = await renderRoute(Screen());
+    await fireEvent.press(screen.getByTestId("interests-into-arts"));
+    // The answers were changed on the web meanwhile; the app refetches in the background.
+    client.setQueryData(["interests", null], { ...(client.getQueryData(["interests", null]) as object), interests: ["finance"], revision: 9 });
+    await settle(client);
+    expect(screen.getByTestId("interests-into-arts").props.accessibilityState).toMatchObject({ checked: true });
+    await fireEvent.press(screen.getByTestId("interests-save"));
+    await settle(client);
+    expect(posts("interests.save")[0]).toMatchObject({ interests: ["tech", "consulting", "arts"], revision: 3 });
+    expect(loggedCrashes()).toEqual([]);
+  });
+
   test("six interests is the limit: the rest are disabled until one is removed", async () => {
     await renderRoute(Screen());
     for (const id of ["finance", "business", "impact", "arts"]) await fireEvent.press(screen.getByTestId(`interests-into-${id}`));
