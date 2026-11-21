@@ -20,13 +20,15 @@ import { useTheme } from "~/lib/theme";
 import type { ClubTask, Me, TaskAssignment } from "~/lib/types";
 
 const REQUIREMENT_LABELS: Record<string, string> = { TEXT: "a written response", LINK: "a link", FILE: "a file" };
-const STALE_MESSAGE = "This task changed since you opened it. Your text is kept. Check it and submit again.";
+const STALE_MESSAGE = "This task changed since you opened it. Your text and new files are kept. Check them and submit again.";
 
 /** What the student typed, held by the screen: a reload with a new revision remounts the form, and an error state unmounts it. */
 type Draft = { id: string; text: string; link: string };
+/** Uploads not yet submitted, held by the screen for the same reason; an upload that finishes after a remount still lands here. */
+type Pending = { id: string; files: UploadedTaskFile[] };
 
 /** The web's submission form (components/club-tasks.tsx `Submission`): written response, link, files. */
-function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale, onStale }: { task: ClubTask; own: TaskAssignment; clubName: string; saved: boolean; onSaved: (saved: boolean) => void; draft: Draft | null; onDraft: (draft: Draft | null) => void; stale: boolean; onStale: (stale: boolean) => void }) {
+function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale, onStale, pending, onPending }: { task: ClubTask; own: TaskAssignment; clubName: string; saved: boolean; onSaved: (saved: boolean) => void; draft: Draft | null; onDraft: (draft: Draft | null) => void; stale: boolean; onStale: (stale: boolean) => void; pending: UploadedTaskFile[]; onPending: (update: (files: UploadedTaskFile[]) => UploadedTaskFile[]) => void }) {
   const { colors } = useTheme();
   const client = useQueryClient();
   const alumni = useIsAlumni();
@@ -39,8 +41,12 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
   const setLink = (value: string) => { setLinkState(value); onDraft({ id: own.id, text, link: value }); };
   const [error, setError] = useState("");
   // The files the submission will carry: those already attached, plus new uploads until it is saved.
-  const [files, setFiles] = useState<(UploadedTaskFile & { attached?: boolean })[]>(() => own.files.map(file => ({ id: file.id, name: file.name, size: file.size, attached: true })));
+  // New uploads live with the screen (`pending`), so a reload that remounts this form keeps them.
+  const [attached, setAttached] = useState<(UploadedTaskFile & { attached?: boolean })[]>(() => own.files.map(file => ({ id: file.id, name: file.name, size: file.size, attached: true })));
+  const files: (UploadedTaskFile & { attached?: boolean })[] = [...attached, ...(closed ? [] : pending.filter(file => !attached.some(item => item.id === file.id)))];
   const [uploading, setUploading] = useState(false);
+  // The revision the next submit is checked against: a save raises it by one before the reload arrives.
+  const revision = useRef(own.revision);
   const setSaved = onSaved;
   const required = (type: string) => (task.requirements.includes(type) ? "Required" : "Optional");
   /** The server's own checks (lib/tasks.ts validateTaskSubmission), said before sending. */
@@ -52,9 +58,12 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
 
   const submit = useMutation({
     // The server checks every field, each file's contents and the revision.
-    mutationFn: (address: string) => api.post("tasks.submit", { assignmentId: own.id, revision: own.revision, text: text.trim(), link: address, fileIds: files.map(file => file.id) }),
+    mutationFn: (address: string) => api.post("tasks.submit", { assignmentId: own.id, revision: revision.current, text: text.trim(), link: address, fileIds: files.map(file => file.id) }),
     onMutate: address => { setError(""); setSaved(false); onStale(false); if (address !== link.trim()) setLink(address); },
     onSuccess: () => {
+      // The server raised the revision and now holds these files, so a second tap before the reload isn't refused as changed.
+      revision.current += 1;
+      setAttached(files.map(file => ({ ...file, attached: true }))); onPending(() => []);
       haptics.confirm(); setSaved(true); onDraft(null);
       client.invalidateQueries({ queryKey: ["tasks.workspace"] });
       client.invalidateQueries({ queryKey: ["home.view", null] });
@@ -89,7 +98,7 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
     try {
       for (const asset of picked.assets) {
         const uploaded = await uploadTaskFile(own.id, asset);
-        setFiles(current => [...current, uploaded]);
+        onPending(current => [...current, uploaded]);
       }
       haptics.tick();
     } catch (reason) {
@@ -119,7 +128,7 @@ function Submission({ task, own, clubName, saved, onSaved, draft, onDraft, stale
           <View key={file.id} testID={`task-file-${file.id}`} style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: TARGET }}>
             <Text variant="small" color={colors.foreground} style={{ flex: 1 }} numberOfLines={2}>{file.name} · {Math.ceil(file.size / 1024)} KB{file.attached ? "" : " · Not submitted yet"}</Text>
             {file.attached ? <Button variant="ghost" size="compact" icon={Download} label="Download" accessibilityHint={file.name} loading={download.isPending && download.variables === file.id} onPress={() => download.mutate(file.id)} /> : null}
-            {closed || alumni ? null : <Button variant="ghost" size="compact" testID={`task-file-remove-${file.id}`} label="Remove" accessibilityHint={file.name} disabled={uploading || submit.isPending} onPress={() => { setFiles(current => current.filter(item => item.id !== file.id)); setSaved(false); }} />}
+            {closed || alumni ? null : <Button variant="ghost" size="compact" testID={`task-file-remove-${file.id}`} label="Remove" accessibilityHint={file.name} disabled={uploading || submit.isPending} onPress={() => { setAttached(current => current.filter(item => item.id !== file.id)); onPending(current => current.filter(item => item.id !== file.id)); setSaved(false); }} />}
           </View>
         ))}
         {closed || alumni ? null : (
@@ -167,6 +176,7 @@ export default function TaskScreen() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [staleId, setStaleId] = useState<string | null>(null);
   const draft = useRef<Draft | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null);
   const now = Date.now();
 
   const index = workspaces.findIndex(query => ownTasks(query.data).some(({ own }) => own.id === assignmentId));
@@ -240,7 +250,8 @@ export default function TaskScreen() {
             </Card>
 
             {task.kind === "TASK" ? <Submission key={`${own.id}-${own.revision}`} task={task} own={own} clubName={clubName} saved={savedId === own.id} onSaved={value => setSavedId(value ? own.id : null)}
-              draft={draft.current} onDraft={value => { draft.current = value; }} stale={staleId === own.id} onStale={value => setStaleId(value ? own.id : null)} /> : (
+              draft={draft.current} onDraft={value => { draft.current = value; }} stale={staleId === own.id} onStale={value => setStaleId(value ? own.id : null)}
+              pending={pending?.id === own.id ? pending.files : []} onPending={update => setPending(current => ({ id: own.id, files: update(current?.id === own.id ? current.files : []) }))} /> : (
               <Card style={{ gap: 8 }}>
                 <Text variant="section" accessibilityRole="header">Related tasks</Text>
                 {children.length ? children.map(child => <Text key={child.id} variant="body">{child.title} · <Text variant="small">{child.dueAt ? `Due ${taskDate(child.dueAt)}` : "No due date"}</Text></Text>) : <Text variant="small">New tasks will appear here.</Text>}

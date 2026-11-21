@@ -4,8 +4,10 @@
  * the new file ids.
  */
 import { act, fireEvent, screen } from "@testing-library/react-native";
+import { ApiError } from "~/lib/api";
+import type { TaskWorkspace } from "~/lib/types";
 import { apiState } from "./api-state";
-import { ids } from "./fixtures";
+import { fixtureSets, ids } from "./fixtures";
 import { captureConsole, loggedCrashes, releaseConsole, renderRoute, settle } from "./harness";
 
 beforeEach(captureConsole);
@@ -15,6 +17,12 @@ const Picker = jest.requireMock("expo-document-picker") as { getDocumentAsync: j
 const Screen = () => require("~/app/task/[assignmentId]").default;
 const params = { assignmentId: ids.assignment, clubId: ids.memberClub };
 const pdf = { uri: "file:///cache/cad-review.pdf", name: "cad-review.pdf", size: 120_000, mimeType: "application/pdf" };
+/** The rich fixture's task at a given assignment revision, needing only a file. */
+const fileTask = (revision: () => number) => (input: unknown) => {
+  const workspace = (fixtureSets.rich["tasks.workspace"] as (input: unknown) => TaskWorkspace)(input);
+  workspace.tasks[0] = { ...workspace.tasks[0]!, requirements: ["FILE"], assignments: workspace.tasks[0]!.assignments.map(item => ({ ...item, revision: revision(), reviewedAt: null })) };
+  return workspace;
+};
 const posts = (operation: string) => apiState.calls.filter(call => call.method === "POST" && call.operation === operation).map(call => call.input as Record<string, unknown>);
 let fetchMock: jest.Mock;
 const realFetch = globalThis.fetch;
@@ -96,5 +104,60 @@ describe("task file upload", () => {
     const row = screen.getAllByTestId(/^task-file-remove-/)[0]!;
     await act(async () => { await fireEvent.press(row); });
     expect(screen.queryByText(/cad-review\.pdf/)).toBeNull();
+  });
+
+  test("a new upload survives the task changing elsewhere, and is still sent with the next submit", async () => {
+    let revision = 1;
+    Picker.getDocumentAsync.mockResolvedValueOnce({ canceled: false, assets: [pdf] });
+    const { client } = await renderRoute(Screen(), {
+      params,
+      overrides: {
+        "tasks.workspace": fileTask(() => revision),
+        "tasks.submit": (input: unknown) => {
+          if ((input as { revision: number }).revision !== revision) throw new ApiError(422, "STALE", "This submission changed or was reviewed. Reload the page and try again.");
+          return { success: true };
+        },
+      },
+    });
+    await fireEvent.press(screen.getByTestId("task-add-files"));
+    await settle(client);
+    revision = 2; // A reviewer changed it on the web.
+    await fireEvent.press(screen.getByTestId("task-submit"));
+    await settle(client);
+    expect(screen.getByTestId("task-stale")).toBeTruthy();
+    expect(screen.getByText(/cad-review\.pdf · 118 KB · Not submitted yet/)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId("task-submit"));
+    await settle(client);
+    expect(posts("tasks.submit").at(-1)).toMatchObject({ revision: 2, fileIds: [expect.any(String)] });
+    expect(screen.getByTestId("task-saved")).toBeTruthy();
+    expect(loggedCrashes()).toEqual([]);
+  });
+
+  test("a second submit before the reload uses the raised revision, not the old one", async () => {
+    let revision = 1;
+    const { client } = await renderRoute(Screen(), {
+      params,
+      overrides: {
+        // The reload never arrives with the new revision (say it failed), so the form keeps its first copy.
+        "tasks.workspace": fileTask(() => 1),
+        "tasks.submit": (input: unknown) => {
+          if ((input as { revision: number }).revision !== revision) throw new ApiError(422, "STALE", "This submission changed or was reviewed. Reload the page and try again.");
+          revision += 1;
+          return { success: true };
+        },
+      },
+    });
+    Picker.getDocumentAsync.mockResolvedValueOnce({ canceled: false, assets: [pdf] });
+    await fireEvent.press(screen.getByTestId("task-add-files"));
+    await settle(client);
+    await fireEvent.press(screen.getByTestId("task-submit"));
+    await settle(client);
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 500)); });
+    await fireEvent.press(screen.getByTestId("task-submit"));
+    await settle(client);
+    expect(posts("tasks.submit").map(call => call.revision)).toEqual([1, 2]);
+    expect(screen.queryByTestId("task-stale")).toBeNull();
+    expect(screen.getByTestId("task-saved")).toBeTruthy();
+    expect(screen.getByText(/cad-review\.pdf · 118 KB$/)).toBeTruthy();
   });
 });
