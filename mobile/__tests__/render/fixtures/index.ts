@@ -341,6 +341,7 @@ const rich: FixtureSet = {
   "tasks.view": null,
   "tasks.submit": null,
   "tasks.file": { url: "https://out-class.test/file.pdf" },
+  "tasks.upload": (input: unknown) => ({ id: uuid(900 + ((input as { name: string }).name.length % 90)), url: "https://storage.out-class.test/upload/sign" }),
   // Voting
   "voting.rooms": Array.from({ length: 6 }, (_, index) => roomListItem(index + 1)),
   "voting.room": roomSnapshot,
