@@ -16,7 +16,7 @@ import { Text } from "~/components/text";
 import { Button, ClubMark, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
-import { openOnWeb, resolveHref } from "~/lib/links";
+import { openOnWeb, openRoute, resolveHref } from "~/lib/links";
 import { useTheme } from "~/lib/theme";
 import type { InboxRow } from "~/lib/types";
 
@@ -66,7 +66,7 @@ export default function Inbox() {
       if (!item.readAt) setRead([item.id], true);
       // Updates that target the inbox itself are read in place; the rest open their own screen.
       const route = opensInPlace(item) ? null : await resolveHref(item.href);
-      if (route && route.pathname !== "/inbox") { router.push(route as never); return; }
+      if (route && route.pathname !== "/inbox") { openRoute(router, route); return; }
       setSelectedId(item.id);
     } finally { opening.current = false; }
   }

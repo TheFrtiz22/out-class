@@ -121,7 +121,8 @@ function Navigation() {
     const id = lastResponse.notification.request.identifier;
     if (handledResponse.current === id) return;
     handledResponse.current = id;
-    resolveHref(path).then(route => openRoute(router, route ?? { pathname: "/inbox" })).catch(() => {});
+    // "reuse": a push for the Inbox while the Inbox is open leaves it in place instead of stacking a second one.
+    resolveHref(path).then(route => openRoute(router, route ?? { pathname: "/inbox" }, "reuse")).catch(() => {});
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
   }, [ready, signedIn, lastResponse, router]);
   // Long-press app-icon shortcuts: offered only while signed in, and routed like any other link.

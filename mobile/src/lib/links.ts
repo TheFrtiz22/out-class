@@ -12,16 +12,32 @@ export type AppRoute = { pathname: string; params?: Record<string, string> };
 
 /** The tab screens' paths (src/app/(tabs)). */
 export const TAB_PATHS: readonly string[] = ["/", "/explore", "/clubs", "/calendar", "/profile"];
-type Navigator = { push(href: never): void; dismissTo(href: never): void };
+type Navigator = { push(href: never): void; navigate(href: never): void; replace(href: never): void; dismissTo(href: never): void; canDismiss(): boolean };
+/** How a screen that is not a tab is shown: pushed on top, put in place of the current screen, or reused when it is already on top. */
+type OpenMode = "push" | "replace" | "reuse";
+
+export const isTabRoute = (route: AppRoute) => TAB_PATHS.includes(route.pathname);
 
 /**
- * Opens a route from anywhere. A tab goes back down to the tabs at the bottom of the stack and
- * switches to it; pushing a tab path from a screen above them would stack a second copy of the
- * tabs, and that copy's Home showed a Back arrow. Every other screen is pushed.
+ * Opens a route from anywhere. A tab never gets a second copy of the tabs: pushing, replacing or
+ * navigating to a tab path from a screen above the tabs adds a new `(tabs)` to the root stack,
+ * whose Home then showed a Back arrow under a second dock. So from above the tabs it pops back down
+ * to them (`dismissTo`, which carries the params, such as Calendar's meeting filter) and from a tab
+ * it just switches (`dismissTo` does nothing there). Every other screen is pushed by default;
+ * "reuse" (a tapped push) leaves the same screen in place when it is already on top, such as the
+ * Inbox, rather than stacking a second one; "replace" swaps it for the current screen (the scanner).
  */
-export function openRoute(router: Navigator, route: AppRoute) {
-  if (TAB_PATHS.includes(route.pathname) && !route.params) router.dismissTo(route.pathname as never);
-  else router.push(route as never);
+export function openRoute(router: Navigator, route: AppRoute, mode: OpenMode = "push") {
+  const href = (route.params ? route : route.pathname) as never;
+  if (isTabRoute(route)) {
+    if (router.canDismiss()) router.dismissTo(href);
+    // Nothing under this screen (the scanner opened by a link on a cold start): put the tabs in its place.
+    else if (mode === "replace") router.replace(href);
+    else router.navigate(href);
+  }
+  else if (mode === "reuse") router.navigate(href);
+  else if (mode === "replace") router.replace(href);
+  else router.push(href);
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
