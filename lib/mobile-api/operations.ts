@@ -34,6 +34,14 @@ export const mobileOperations = {
   "interests": operation("GET", none, async () => (await import("@/actions/interest-survey")).getMyInterestSurvey()),
   "interests.save": operation("POST", passthrough, async input => (await import("@/actions/interest-survey")).saveMyInterestSurvey(input)),
 
+  // Settings: the student's availability (Settings → Availability on the web). The round reads and saves are
+  // the interviewer's own response for one club and round; the actions check eligibility, revision and alumni.
+  "availability.mine": operation("GET", none, async () => (await import("@/actions/availability")).getMyAvailability()),
+  "availability.save": operation("POST", passthrough, async input => (await import("@/actions/availability")).saveMyAvailability(input)),
+  "availability.round": operation("GET", z.object({ clubId: uuid, roundId: uuid }).strict(), async input => (await import("@/actions/availability")).getMyRoundAvailability(input)),
+  "availability.round.save": operation("POST", passthrough, async input => (await import("@/actions/availability")).saveMyRoundAvailability(input)),
+  "availability.round.decline": operation("POST", passthrough, async input => (await import("@/actions/availability")).declineRoundParticipation(input)),
+
   // Home, calendar
   "home.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileHome()),
   "calendar.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileCalendar()),
