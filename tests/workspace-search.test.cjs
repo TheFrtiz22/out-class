@@ -2,11 +2,12 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
-function setup(memberships=[]) {
+function setup(memberships=[], school=require('./helpers/school-scope.cjs').UVA, typesense=async()=>null) {
  const calls=[];const mocks={
+ '@/utils/school-scope':require('./helpers/school-scope.cjs').schoolScope(school),
  '@/lib/permissions':{activeMemberWhere:{status:'ACTIVE',alumniSince:null}},
  '@/utils/auth':{requireAuth:async()=>({user:{id:'student'}})},
- '@/actions/typesense-search':{searchPublicClubIds:async()=>null},
+ '@/actions/typesense-search':{searchPublicClubIds:typesense},
  '@/utils/prisma':{prisma:{
  clubMember:{findMany:async args=>{calls.push(['memberships',args]);return memberships}},
  club:{findMany:async args=>{calls.push(['clubs',args]);return []}},

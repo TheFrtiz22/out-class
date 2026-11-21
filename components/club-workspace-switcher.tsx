@@ -5,6 +5,7 @@ import { Check, ChevronsUpDown } from "@/components/icons"
 import { availableSettings } from "@/lib/club-settings"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
+import { hasPermission } from "@/lib/permissions"
 import { ClubLogo } from "@/components/club-logo"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { WorkspaceAccess } from "@/components/shell/use-workspace-access"
@@ -23,7 +24,9 @@ export function ClubWorkspaceSwitcher({ clubId, access, onSwitch }: { clubId: st
     const inSettings = params.get("section") === "settings" || pathname.startsWith("/settings") && pathname !== "/settings/interviews"
     const sections = inSettings ? availableSettings(next) : []
     const section = sections.find(section => section.id === params.get("setting")) ?? sections[0]
-    router.push(section ? `/club/${encodeURIComponent(id)}/workspace?section=settings&setting=${section.id}` : clubWorkspaceHref(id))
+    // The application form (formerly a Settings section) stays open across clubs, as Settings sections do.
+    const application = params.get("section") === "recruitment" && params.get("tool") === "application" && hasPermission(next, "application.manage")
+    router.push(application ? `/club/${encodeURIComponent(id)}/workspace?section=recruitment&tool=application` : section ? `/club/${encodeURIComponent(id)}/workspace?section=settings&setting=${section.id}` : clubWorkspaceHref(id))
     onSwitch?.()
   }
   return <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="oc-header-club" aria-label={`Switch club: ${current.club.name}`}>{identity}<ChevronsUpDown size={14} aria-hidden="true" /></button></DropdownMenuTrigger>

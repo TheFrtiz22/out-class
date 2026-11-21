@@ -33,7 +33,6 @@ const screens = [
   ["16-decision-letter", "Decision letter", "Decisions", "57-decision-letter-rejected.png"],
   ["17-offer", "Offer awaiting a response", "Decisions", "58-offer-pending.png"],
   ["24-scanner", "Scanner (the simulator has no camera image)", "Check-in", null],
-  ["25-check-in-pass", "Personal check-in pass (rotating, single use)", "Check-in", null],
   ["26-check-in-result", "Check-in result after opening a room code", "Check-in", null],
   ["28-error-state", "Error state", "States", null],
   ["29-offline-state", "Offline state", "States", null],

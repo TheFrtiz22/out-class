@@ -1,18 +1,17 @@
-import { normalizePhone, PHONE_INVALID_MESSAGE } from "@outclass/shared/phone";
 import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, Switch, View, useWindowDimensions } from "react-native";
+import { Keyboard, Platform, ScrollView, View, useWindowDimensions } from "react-native";
 import { Field } from "~/components/field";
 import { Camera, FileText, ImagePlus, Plus, Trash2, Upload } from "~/components/icons";
 import { FilterChips } from "~/components/inbox/filter-chips";
 import { PrivateImage, photoParams } from "~/components/private-image";
-import { genderValues, graduationYearOptions, initials, isStoragePath, pronounValues, scholarLabels, scholarPrograms, sectionOrder, sectionPayload, sectionSnapshot, sectionTitles, toggleScholar } from "~/components/profile/model";
+import { genderValues, graduationYearOptions, initials, isStoragePath, numberProblem, pronounValues, scholarLabels, scholarPrograms, sectionOrder, sectionProblem, sectionPayload, sectionSnapshot, sectionTitles, toggleScholar } from "~/components/profile/model";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Divider, TARGET } from "~/components/ui";
+import { Button, Divider, TARGET, Toggle } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
@@ -31,11 +30,10 @@ async function uploadProfileFile(kind: "resume" | "headshot", file: Upload): Pro
 }
 
 function SwitchRow({ label, value, onChange, disabled }: { label: string; value: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
-  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: TARGET }}>
       <Text variant="body" style={{ flex: 1 }}>{label}</Text>
-      <Switch accessibilityLabel={label} accessibilityRole="switch" value={value} disabled={disabled} onValueChange={next => { haptics.tick(); onChange(next); }} trackColor={{ true: colors.primary, false: colors.muted }} ios_backgroundColor={colors.muted} />
+      <Toggle accessibilityLabel={label} value={value} disabled={disabled} onValueChange={onChange} />
     </View>
   );
 }
@@ -62,6 +60,15 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
   const [scholarYes, setScholarYes] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [numbers, setNumbers] = useState<Record<string, string>>({});
+  const [keyboard, setKeyboard] = useState(0);
+
+  // The sheet sits on the keyboard, so the form scrolls in what is left rather than pushing the sheet off the top of a small phone.
+  useEffect(() => {
+    const ios = Platform.OS === "ios";
+    const show = Keyboard.addListener(ios ? "keyboardWillShow" : "keyboardDidShow", event => setKeyboard(event.endCoordinates.height));
+    const hide = Keyboard.addListener(ios ? "keyboardWillHide" : "keyboardDidHide", () => setKeyboard(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   // Each opening starts from the saved profile, on the section asked for.
   useEffect(() => {
@@ -79,17 +86,23 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
 
   /** Saves the open section. Resolves with the saved profile, or null when something is still unsaved. */
   async function save(value: FullStudentProfile = draft): Promise<FullStudentProfile | null> {
+    const typed = section === "education" ? numberProblem(numbers) : null;
+    if (typed) { setError(typed); haptics.error(); return null; }
     if (sectionSnapshot(value, section) === sectionSnapshot(saved, section)) return saved;
-    if (section === "education" && scholarYes && !value.scholarStatus) { setError("Choose at least one scholar program."); haptics.error(); return null; }
-    if (section === "contact") { try { normalizePhone(value.phone ?? ""); } catch { setError(PHONE_INVALID_MESSAGE); haptics.error(); return null; } }
+    const problem = section === "education" && scholarYes && !value.scholarStatus ? "Choose at least one scholar program." : sectionProblem(value, section);
+    if (problem) { setError(problem); haptics.error(); return null; }
     setBusy("save"); setError(""); setStatus("");
     try {
-      const result = await api.post<SaveResult>("profile.updateSection", { input: sectionPayload(value, saved, section), expected: expected.current });
+      const input = sectionPayload(value, saved, section);
+      const result = await api.post<SaveResult>("profile.updateSection", { input, expected: expected.current });
       if ("error" in result) throw new Error(result.error || "Unable to save.");
       expected.current = sectionSnapshot(result.profile, section);
       setSaved(result.profile); setDraft(result.profile);
       client.setQueryData(["profile", null], { profile: result.profile });
       client.invalidateQueries({ queryKey: ["me", null] });
+      // Home and Applications warn about a missing phone number; refresh them so the warning clears.
+      client.invalidateQueries({ queryKey: ["home.view"] });
+      client.invalidateQueries({ queryKey: ["applications.view"] });
       onSaved(result.profile);
       setStatus("Profile changes saved."); haptics.confirm();
       return result.profile;
@@ -145,7 +158,7 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
       if (!asset) return;
       if (asset.size && asset.size > 10 * 1024 * 1024) { setError("Choose a PDF up to 10 MB"); return; }
       setBusy("upload");
-      const reference = await uploadProfileFile("resume", { uri: asset.uri, type: "application/pdf", name: /\.pdf$/i.test(asset.name) ? asset.name.replace(/[\\/%?#]/g, "-") : "resume.pdf" });
+      const reference = await uploadProfileFile("resume", { uri: asset.uri, type: "application/pdf", name: "resume.pdf" }); // The name isn't kept, and a long or unusual one fails the server's name check.
       const next = { ...draft, resumeUrl: reference };
       setDraft(next);
       setBusy("");
@@ -170,7 +183,7 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
         <Text variant="small" style={{ marginTop: -6 }}>Choose a section. Changes save when you switch sections or tap Done.</Text>
         <FilterChips label="Profile section" testID="profile-section" value={section} onChange={switchSection} options={sectionOrder.map(id => ({ value: id, label: sectionTitles[id] }))} />
         {error ? <Text testID="profile-edit-error" variant="small" color={colors.destructive} accessibilityRole="alert">{error}</Text> : null}
-        <ScrollView style={{ maxHeight: height * 0.5 }} contentContainerStyle={{ gap: 14, paddingBottom: 6 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ maxHeight: keyboard ? Math.max(140, Math.min(height * 0.5, height - keyboard - 320)) : height * 0.5 }} contentContainerStyle={{ gap: 14, paddingBottom: 6 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {section === "identity" ? (
             <>
               <Field label="First name" testID="profile-first-name" editable={!disabled} value={draft.firstName} onChangeText={firstName => patch({ firstName })} autoComplete="given-name" textContentType="givenName" />
@@ -277,7 +290,7 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
           ) : null}
         </ScrollView>
         {status ? <Text testID="profile-edit-status" variant="small" accessibilityLiveRegion="polite">{status}</Text> : null}
-        {error && dirty && !busy ? <Button variant="ghost" size="compact" testID="profile-edit-discard" label="Discard changes" onPress={onClose} /> : null}
+        {(dirty || error) && !busy ? <Button variant="ghost" size="compact" testID="profile-edit-discard" label={dirty ? "Discard changes" : "Close"} onPress={onClose} /> : null}
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}><Button full variant="secondary" testID="profile-edit-save" label="Save" disabled={disabled || !dirty} onPress={() => { save(); }} /></View>
           <View style={{ flex: 1 }}><Button full testID="profile-edit-done" label={busy ? "Working…" : "Done"} loading={busy === "save"} disabled={disabled} onPress={done} /></View>

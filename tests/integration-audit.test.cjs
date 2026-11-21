@@ -6,6 +6,7 @@ const ts = require('typescript')
 const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12,'0')}`
 const clubId=uuid(1), foreignClub=uuid(2), actorId=uuid(3)
 function loader(mocks) {
+  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/lib/school-host': require('./helpers/school-scope.cjs').schoolHost(), ...mocks }
   const cache={}
   function load(file) {
     file=path.resolve(file)

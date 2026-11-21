@@ -5,6 +5,7 @@ import { clubCalendarHref } from "@/lib/club-calendar"
 import { decisionsHref } from "@/lib/voting-navigation"
 import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 import { TERMS } from "@/lib/copy/terms"
+import { recruitmentTools } from "@/lib/club-workspace"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
 export type ProductNavItem = { id: string; label: string; href?: string; preview?: boolean; mode?: "recruiting" | "club"
@@ -41,7 +42,10 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   if (mode === "recruiting") {
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     const { canVote, canSend } = decideAccess(member)
-    return [item("overview", TERMS.recruitingOverview, "recruitment"),
+    // The Recruiting Overview opens only with a recruiting tool (ClubWorkspace checks recruitmentTools). A member who
+    // can only edit the application form gets Application as their one Recruiting entry instead (least privilege).
+    const application = hasPermission(member, "application.manage"), overview = recruitmentTools(member).length > 0
+    return [...(overview ? [item("overview", TERMS.recruitingOverview, "recruitment", application ? { matches: ["application"] } : {})] : []),
       ...(read ? [item("applicants", "Applicants", "recruitment", { matches: ["resumes", "reviews"] })] : []),
       // Interview records are Applicants pages: linked from its toolbar and from each dossier, not from the rail.
       ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { hidden: true, href: applicantInterviewHref(clubId, "resumes", search) })] : []),
@@ -50,6 +54,9 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate ? [item("interviews", "Interviews", "recruitment")] : []),
       // Decide keeps the internal `tool=decisions` value; it opens on Overview, then Vote (decisionTab=voting) and Send (decisionTab=letters).
       ...(canVote || canSend ? [item("decisions", "Decide", "recruitment", { href: decisionsHref(clubId, "overview", search) })] : []),
+      // The application form and deadline (moved from Settings › Recruitment & applications, which redirects here).
+      // Not a rail entry when the Overview opens (it links here, and Recruiting overview lights while it is open).
+      ...(application ? [item("application", "Application", "recruitment", overview ? { hidden: true } : {})] : []),
       ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
   }
   return [item("overview", "Home"),

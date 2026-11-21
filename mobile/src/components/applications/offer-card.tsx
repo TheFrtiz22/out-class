@@ -22,14 +22,14 @@ export function useOfferResponse(applicationId: string, clubName: string, fallba
   async function respond(response: "ACCEPT" | "DECLINE", inactiveMessage: string) {
     if (busy) return;
     const confirmed = await confirm(response === "ACCEPT"
-      ? { title: "Accept Offer", description: `Accept your offer to become a club member. ${clubName}`, confirmLabel: "Accept Offer" }
-      : { title: "Decline Offer", description: clubName, confirmLabel: "Decline Offer", destructive: true });
+      ? { title: "Accept your offer?", description: `You’ll become a member of ${clubName || "the club"}.`, confirmLabel: "Accept Offer", cancelLabel: "Not yet" }
+      : { title: "Decline your offer?", description: `${clubName || "The club"} will be notified, and you won’t be able to accept this offer later.`, confirmLabel: "Decline Offer", cancelLabel: "Keep offer", destructive: true });
     if (!confirmed) return;
     setBusy(true); setMessage("");
     try {
       const result = await api.post<{ status?: string }>("offers.respond", { applicationId, response });
       if (result?.status === "INACTIVE_MEMBERSHIP") { haptics.warning(); setMessage(inactiveMessage); }
-      else haptics.confirm();
+      else { haptics.confirm(); setMessage(response === "ACCEPT" ? `Offer accepted. Welcome to ${clubName || "the club"}!` : "Offer declined. The club has been notified."); }
     } catch (error) {
       haptics.error();
       setMessage(errorMessage(error, fallback));
@@ -70,7 +70,7 @@ export function OfferCard({ application: app, alumniMessage }: { application: St
       ) : status === "ACCEPTED" ? (
         <>
           <Text variant="body">Your offer was accepted. Your club membership is recorded.</Text>
-          <Button variant="secondary" label="Open My Clubs" onPress={() => router.push("/")} />
+          <Button variant="secondary" label="Open your club" onPress={() => router.push({ pathname: "/my-club/[clubId]", params: { clubId: app.clubId } })} />
           <Text variant="caption">Current membership access is managed by the club.</Text>
         </>
       ) : (

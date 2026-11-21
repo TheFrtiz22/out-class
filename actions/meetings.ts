@@ -1,7 +1,8 @@
 "use server";
 import { ActionError, actionResult } from "@/lib/action-result";
 import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
-import { publicMeetingVisibility } from "@/lib/campus-events";
+import { schoolPublicMeetingVisibility } from "@/lib/campus-events";
+import { resolveViewerSchool } from "@/utils/school-scope";
 import { createHash, randomBytes } from "node:crypto";
 import {
   closeMeetingCheckInShortLinks,
@@ -25,11 +26,13 @@ import { boundedParse } from "@/lib/bounded-input";
 export async function listMeetings(clubId?: string) {
   const { user } = await requireAuth();
   if (clubId) z.string().uuid().parse(clubId);
+  // Public meetings are listed from the viewer's school only; member meetings follow membership.
+  const school = await resolveViewerSchool();
   return prisma.meeting.findMany({
     where: {
       ...(clubId ? { clubId } : {}),
       OR: [
-        publicMeetingVisibility,
+        schoolPublicMeetingVisibility(school.id),
         { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } },
       ],
     },
@@ -40,11 +43,13 @@ export async function listMeetings(clubId?: string) {
 async function getMeetingCommand(meetingId: string) {
   z.string().uuid().parse(meetingId);
   const { user } = await requireAuth();
+  // Another school's public meeting is unavailable by id too; member meetings follow membership.
+  const school = await resolveViewerSchool();
   const meeting = await prisma.meeting.findFirst({
     where: {
       id: meetingId,
       OR: [
-        publicMeetingVisibility,
+        schoolPublicMeetingVisibility(school.id),
         { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } },
       ],
     },

@@ -7,6 +7,7 @@ const ts = require("typescript")
 const root = path.resolve(__dirname, "..")
 const read = file => fs.readFileSync(path.join(root, file), "utf8")
 function load(file, mocks = {}) {
+  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/lib/school-host': require('./helpers/school-scope.cjs').schoolHost(), ...mocks }
   const mod = { exports: {} }
   const code = ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   new Function("require", "module", "exports", code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.slice(2) + ".ts", mocks) : require(name), mod, mod.exports)
@@ -253,7 +254,7 @@ test("search: one signed-in user at the limit does not null out other users on t
   process.env.TYPESENSE_SEARCH_KEY = "public-search-key"
   const savedFetch = global.fetch
   let fetches = 0
-  global.fetch = async () => { fetches++; return { ok: true, json: async () => ({ hits: [{ document: { id: "club-1" } }] }) } }
+  global.fetch = async () => { fetches++; return { ok: true, json: async () => ({ hits: [{ document: { id: "club-1", schoolId: "school-uva" } }] }) } }
   let current = "user-a"
   try {
     const { searchPublicClubIds } = load("actions/typesense-search.ts", {

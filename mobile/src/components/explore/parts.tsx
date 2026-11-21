@@ -95,7 +95,7 @@ function NoticeBar({ text, tone, dock, onDismiss }: { text: string; tone: "error
       pointerEvents="box-none"
       style={{ position: "absolute", left: 16, right: 16, bottom: insets.bottom + (dock ? DOCK_CLEARANCE : 16), zIndex: 30 }}
     >
-      <Pressable testID="notice" accessibilityRole="alert" accessibilityLabel={text} onPress={onDismiss}
+      <Pressable testID="notice" accessibilityRole="button" accessibilityLabel={text} accessibilityHint="Dismisses this message" accessibilityLiveRegion="polite" onPress={onDismiss}
         style={{ borderRadius: radius.lg, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: tone === "error" ? colors.destructive : colors.border, shadowColor: colors.schoolPrimary, shadowOpacity: dark ? 0 : 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } }}>
         <Text variant="smallStrong" color={tone === "error" ? colors.destructive : colors.foreground}>{text}</Text>
       </Pressable>

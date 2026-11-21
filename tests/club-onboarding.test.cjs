@@ -38,7 +38,8 @@ function setup() {
   const tx = {
     $queryRaw: async () => [],
     user: { findUnique: async ({where}) => ({ id: where.id, email: where.id+'@virginia.edu', disabledAt: where.id==='inviter' && state.disabledInviter ? new Date() : null }), create: () => { throw Error('Fake User creation forbidden'); } },
-    club: { findUniqueOrThrow: async () => ({ id: clubId, schoolId: 'school-uva', claimedAt: null }), update: async args => { state.writes.push(['club',args]); } },
+    // findUnique: markClubClaimed checks whether this is the club's first claim (an imported club on NULL defaults).
+    club: { findUniqueOrThrow: async () => ({ id: clubId, schoolId: 'school-uva', claimedAt: null }), findUnique: async () => ({ claimedAt: null, profileFieldVisibility: {} }), update: async args => { state.writes.push(['club',args]); } },
     schoolIdentifierType: { findMany: async () => [{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}], findUniqueOrThrow: async () => ({ id: 'computing', schoolId: 'school-uva', normalization: 'TRIM_LOWERCASE', validationRegex: '^[a-z0-9]+$', verification: 'EMAIL_LOCAL_PART', emailDomain: 'virginia.edu', school: { active: true } }) },
     schoolIdentity: { findUniqueOrThrow: async () => ({id:'identity',userId:state.actorId}), findMany: async ({where}) => {
       // Read-only preview: derived identities by school/type/identifier, bound or not yet bound.

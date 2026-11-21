@@ -84,30 +84,14 @@ async function call(token, name, input, method = "GET", headers = {}) {
   await expect("member cannot announce", student, "leader.announce", { clubId: LEADER_CLUB, title: "x", body: "y", audience: "MEMBERS", requestKey: "00000000-0000-4000-8000-000000000001" }, "POST", [403, 400, 422]);
   await expect("member cannot run the vote", student, "voting.command", { clubId: LEADER_CLUB, sessionId: VOTING_SESSION, action: "START" }, "POST", [403, 400, 422]);
   await expect("member cannot read the voting room", student, "voting.room", { clubId: LEADER_CLUB, sessionId: VOTING_SESSION }, "GET", [403, 404]);
-  await expect("door scan needs meetings.attendance", student, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING, payload: "OCP1." + "ab".repeat(32) }, "POST", 403);
-  await expect("door scan in a club the leader does not lead", leader, "checkInPass.scan", { clubId: OTHER_CLUB, meetingId: LIVE_MEETING, payload: "OCP1." + "ab".repeat(32) }, "POST", 403);
-  await expect("door scan: meeting must belong to the club", leader, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: "00000000-0000-4000-8000-000000000000", payload: "OCP1." + "ab".repeat(32) }, "POST", 404);
-  await expect("door scan: a made-up pass", leader, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING, payload: "OCP1." + "ab".repeat(32) }, "POST", 422);
-  await expect("door scan: a /q link is not a pass", leader, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING, payload: "https://out-class.net/q/abcdef" }, "POST", 422);
 
   // 4. Alumni are read-only: every write the web refuses is refused here with the same code.
-  await expect("alumni cannot get a pass", alumni, "checkInPass.issue", undefined, "POST", 403);
   await expect("alumni cannot save a club", alumni, "clubs.save", { clubId: OTHER_CLUB, saved: true }, "POST", [403, 422]);
   // startClubApplication answers a refusal as data ({ applicationId: null, unavailable }), as the web shows it.
   const started = await expect("alumni cannot start an application", alumni, "applications.start", { clubId: OTHER_CLUB }, "POST", [200, 403, 422]);
   if (started.status === 200) check("alumni: no application was created", "applications.start", "refused", started.data?.applicationId == null && typeof started.data?.unavailable === "string" ? "refused" : "CREATED");
   await expect("alumni cannot check in", alumni, "meetings.checkIn", { meetingId: LIVE_MEETING, token: "ab".repeat(32) }, "POST", [403, 422]);
   await expect("alumni can still read their inbox", alumni, "inbox", undefined, "GET", 200);
-
-  // 5. Door mode end to end, and idempotency: a pass is single use, attendance is recorded once.
-  const pass = await expect("student gets a pass", student, "checkInPass.issue", undefined, "POST", 200);
-  const payload = pass.data?.payload;
-  const first = await expect("leader scans it", leader, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING, payload }, "POST", 200);
-  rows.push({ check: "scan outcome", operation: "checkInPass.scan", expected: "checked-in|already-checked-in", actual: first.data?.status ?? "none", code: "", ok: ["checked-in", "already-checked-in"].includes(first.data?.status) ? "ok" : "FAIL" });
-  await expect("the same pass again is spent", leader, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING, payload }, "POST", 422);
-  const pass2 = await call(student.token, "checkInPass.issue", undefined, "POST");
-  const second = await call(leader.token, "checkInPass.scan", { clubId: LEADER_CLUB, meetingId: LIVE_MEETING, payload: pass2.data?.payload }, "POST");
-  rows.push({ check: "a second pass for the same student does not double-count", operation: "checkInPass.scan", expected: "already-checked-in", actual: second.data?.status ?? second.status, code: "", ok: second.data?.status === "already-checked-in" ? "ok" : "FAIL" }); if (second.data?.status !== "already-checked-in") failed++;
 
   // 5b. Private media goes through the web's own handlers: owner-only, never by guessing a path.
   const media = async (who, kind, query) => {

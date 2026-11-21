@@ -157,6 +157,11 @@ export const publicMeetingVisibility = {
     { publication: { is: { status: "PUBLISHED" } } },
   ],
 } satisfies Prisma.MeetingWhereInput;
+/** publicMeetingVisibility limited to one school's clubs (utils/school-scope.ts resolves the viewer's school). */
+export const schoolPublicMeetingVisibility = (schoolId: string) => ({
+  ...publicMeetingVisibility,
+  club: { is: { suspendedAt: null, schoolId } },
+}) satisfies Prisma.MeetingWhereInput;
 export function eventIsPublished(event: {
   club?: { suspendedAt?: Date | string | null };
   isPublic: boolean;

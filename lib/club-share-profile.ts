@@ -1,6 +1,7 @@
 import "server-only"
 import { cache } from "react"
 import { prisma } from "@/utils/prisma"
+import { resolveHostSchool } from "@/utils/school-scope"
 import { shareSummary } from "@/lib/club-share-text"
 
 /**
@@ -16,7 +17,10 @@ const shareFields = {
 
 /** Throws on database errors so callers can tell "no such club" (null) from "couldn't check". */
 export const loadClubShareProfile = cache(async (idOrSlug: string) => {
-  const club = await prisma.club.findFirst({ where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], suspendedAt: null }, select: shareFields })
+  // The host's school, never the viewer's: the card images are CDN-cached for everyone (lib/share-card.tsx CACHE),
+  // so a signed-in and a signed-out request on one host must get the same card. Another school's club is "not found".
+  const school = await resolveHostSchool()
+  const club = await prisma.club.findFirst({ where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], schoolId: school.id, suspendedAt: null }, select: shareFields })
   return club && { ...club, summary: shareSummary(club.tagline, club.description) }
 })
 export type ClubShareProfile = NonNullable<Awaited<ReturnType<typeof loadClubShareProfile>>>

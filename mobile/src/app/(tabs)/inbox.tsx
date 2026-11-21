@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlumniBanner } from "~/components/alumni-banner";
@@ -13,10 +13,11 @@ import { clubName, ctaLabel, filterRows, fullDate, groupRows, opensInPlace, type
 import { InboxListRow } from "~/components/inbox/row";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows } from "~/components/ui";
+import { Button, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openOnWeb, resolveHref } from "~/lib/links";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
 import type { InboxRow } from "~/lib/types";
 
@@ -35,12 +36,17 @@ export default function Inbox() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [actionFailed, setActionFailed] = useState(false);
+  const opening = useRef(false);
+  const list = useRef<SectionList<InboxRow>>(null);
+  useTabScrollToTop(list);
 
   // Emails and the web link to /inbox?tab=preferences; the same address opens the sheet here.
   useEffect(() => { if (params.tab === "preferences") setPreferences(true); }, [params.tab]);
   // Relative times move with the minute clock while the list is on screen.
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60_000); return () => clearInterval(timer); }, []);
 
+  // A failed refresh (or "load more") keeps the loaded list; only a first load that failed shows the error.
+  const failed = inbox.isError && !inbox.data;
   const items = inbox.data?.pages.flatMap(page => page.items) ?? [];
   const unread = inbox.data?.pages[0]?.unread ?? 0;
   const filtering = readFilter !== "all" || typeFilter !== "All";
@@ -55,18 +61,22 @@ export default function Inbox() {
   const dismiss = (ids: string[]) => { setActionFailed(false); if (selectedId && ids.includes(selectedId)) setSelectedId(null); archive.mutate({ ids }, { onError: fail }); };
 
   async function open(item: InboxRow) {
-    if (!item.readAt) setRead([item.id], true);
-    // Updates that target the inbox itself are read in place; the rest open their own screen.
-    const route = opensInPlace(item) ? null : await resolveHref(item.href);
-    if (route && route.pathname !== "/inbox") { router.push(route as never); return; }
-    setSelectedId(item.id);
+    // A booking link waits for a lookup; a second tap meanwhile must not open the screen twice.
+    if (opening.current) return;
+    opening.current = true;
+    try {
+      if (!item.readAt) setRead([item.id], true);
+      // Updates that target the inbox itself are read in place; the rest open their own screen.
+      const route = opensInPlace(item) ? null : await resolveHref(item.href);
+      if (route && route.pathname !== "/inbox") { router.push(route as never); return; }
+      setSelectedId(item.id);
+    } finally { opening.current = false; }
   }
 
   const header = (
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
-      <Text variant="display" accessibilityRole="header">Inbox</Text>
-      <Text variant="small" style={{ marginTop: -8 }}>Announcements, application updates and tasks from your clubs.</Text>
       <AlumniBanner />
+      {inbox.isRefetchError ? <StaleNote /> : null}
       {actionFailed ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">Couldn’t update notifications.</Text> : null}
       {showFilters ? (
         <View style={{ gap: 10 }}>
@@ -80,20 +90,22 @@ export default function Inbox() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SectionList
+        ref={list}
         testID="inbox-screen"
-        sections={inbox.isPending || inbox.isError ? [] : sections}
+        sections={inbox.isPending || failed ? [] : sections}
         keyExtractor={item => item.id}
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={inbox.isRefetching && !inbox.isFetchingNextPage} onRefresh={() => { inbox.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
+        refreshControl={<RefreshControl refreshing={inbox.isRefetching && !inbox.isFetchingNextPage} onRefresh={() => { inbox.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
         onEndReachedThreshold={0.4}
         onEndReached={() => { if (inbox.hasNextPage && !inbox.isFetchingNextPage) inbox.fetchNextPage(); }}
         ListHeaderComponent={header}
         renderSectionHeader={({ section }) => (
           <View style={{ paddingTop: 16, paddingBottom: 8, gap: 2 }}>
             <Text variant="card" accessibilityRole="header">{section.title}</Text>
-            {section.title === countSection ? <Text variant="caption" accessibilityLiveRegion="polite">{unread} unread · {items.length} {items.length === 1 ? "notification" : "notifications"}</Text> : null}
+            {section.title === countSection ? <Text variant="caption" accessibilityLiveRegion="polite">{unread} unread · {items.length} {inbox.hasNextPage ? "loaded" : items.length === 1 ? "notification" : "notifications"}</Text> : null}
           </View>
         )}
         renderItem={({ item, index, section }) => (
@@ -101,8 +113,8 @@ export default function Inbox() {
         )}
         ListEmptyComponent={
           inbox.isPending ? <View style={{ paddingTop: 12 }}><SkeletonRows count={5} /></View>
-            : inbox.isError ? <ErrorState message={errorMessage(inbox.error)} offline={inbox.error instanceof ApiError && inbox.error.offline} onRetry={() => inbox.refetch()} />
-              : items.length ? <EmptyState icon={Bell} title="No matching notifications" body="Your keyword or filters hide every notification." action={<Button variant="secondary" label="Clear filters" onPress={() => { setReadFilter("all"); setTypeFilter("All"); }} />} />
+            : failed ? <ErrorState message={errorMessage(inbox.error)} offline={inbox.error instanceof ApiError && inbox.error.offline} onRetry={() => inbox.refetch()} />
+              : items.length ? <EmptyState icon={Bell} title="No matching notifications" body="Your filters hide every notification." action={<Button variant="secondary" label="Clear filters" onPress={() => { setReadFilter("all"); setTypeFilter("All"); }} />} />
                 : <EmptyState icon={Bell} title="No notifications yet" body="Nothing has been sent to you yet. Choose which updates you want by email." action={<Button variant="secondary" testID="inbox-empty-settings" label="Notification settings" onPress={() => setPreferences(true)} />} />
         }
         ListFooterComponent={
@@ -114,7 +126,7 @@ export default function Inbox() {
       <Header
         title="Inbox"
         actions={<>
-          <IconButton icon={CheckCheck} label="Mark all updates as read" testID="inbox-mark-all" onPress={() => { if (unread && !readAll.isPending) { setActionFailed(false); readAll.mutate(undefined, { onError: fail }); } }} />
+          {unread > 0 ? <IconButton icon={CheckCheck} label={`Mark all ${unread} updates as read`} testID="inbox-mark-all" onPress={() => { if (!readAll.isPending) { setActionFailed(false); readAll.mutate(undefined, { onError: fail }); } }} /> : null}
           <IconButton icon={Settings} label="Notification settings" testID="inbox-settings" onPress={() => setPreferences(true)} />
         </>}
       />

@@ -7,32 +7,34 @@ import { StatusProgress } from "~/components/applications/status-progress";
 import { Header, useHeaderInset } from "~/components/header";
 import { ArrowRight, CalendarDays, FilePenLine } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, ClubMark, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, statusTone } from "~/components/ui";
-import { ApiError } from "~/lib/api";
+import { Button, Card, ClubMark, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, StatusChip } from "~/components/ui";
+import { ApiError, errorMessage } from "~/lib/api";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ApplicationStageId, ApplicationsView, StudentApplication } from "~/lib/types";
 
 /** A draft: required-response progress, deadline, and Continue draft (web: ApplicationManagementCard). */
-function DraftCard({ application: app, onOpen }: { application: StudentApplication; onOpen: () => void }) {
+function DraftCard({ application: app, alumni, onOpen }: { application: StudentApplication; alumni: boolean; onOpen: () => void }) {
   const { colors } = useTheme();
-  const { progress, intakeClosed: closed } = app;
+  const { progress, intakeClosed } = app;
+  // Alumni keep drafts to read but cannot submit (lib/graduation.ts), as with a closed club.
+  const closed = intakeClosed || alumni;
   return (
     <Card style={{ gap: 12 }}>
       <Press large onPress={onOpen} accessibilityLabel={`${app.club.name}, ${app.statusLabel}`} style={{ gap: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <ClubMark name={app.club.name} color={app.club.color} logoUrl={app.club.logoUrl} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text variant="card">{app.club.name}</Text>
+            <Text variant="card" numberOfLines={2}>{app.club.name}</Text>
             <Text variant="small">{progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions"}</Text>
-            <Text variant="small">{app.deadlineLabel ? `Deadline · ${app.deadlineLabel}` : "Deadline not published"}{closed ? <Text variant="smallStrong"> · Applications closed</Text> : null}</Text>
+            <Text variant="small">{app.deadlineLabel ? `Deadline · ${app.deadlineLabel}` : "Deadline not published"}{intakeClosed ? <Text variant="smallStrong"> · Applications closed</Text> : null}</Text>
           </View>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
         </View>
         <View accessibilityRole="progressbar" accessibilityLabel={`Required responses ready for ${app.club.name}`} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress.percent) }} style={{ height: 4, borderRadius: 2, backgroundColor: colors.muted, overflow: "hidden" }}>
           <View style={{ width: `${Math.max(0, Math.min(100, progress.percent))}%`, height: 4, borderRadius: 2, backgroundColor: colors.brandInk }} />
         </View>
-        <Text variant="small">{closed ? "Applications are closed, so this draft can’t be submitted. You can still view or save it." : progress.ready ? "Required responses ready. Review your profile before submitting." : "Your draft is saved; nothing has been submitted."}</Text>
+        <Text variant="small">{alumni ? "Alumni accounts can’t submit new applications. You can still read this draft." : closed ? "Applications are closed, so this draft can’t be submitted. You can still view or save it." : progress.ready ? "Required responses ready. Review your profile before submitting." : "Your draft is saved; nothing has been submitted."}</Text>
       </Press>
       {/* A closed club cannot take a submission, so continuing is not the primary action. */}
       <Button testID={`application-open-${app.statusCode}`} variant={closed ? "secondary" : "primary"} icon={ArrowRight} label={closed ? "View draft" : "Continue draft"} onPress={onOpen} />
@@ -50,10 +52,10 @@ function StatusCard({ application: app, onOpen, onAction }: { application: Stude
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <ClubMark name={app.club.name} color={app.club.color} logoUrl={app.club.logoUrl} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text variant="card">{app.club.name}</Text>
+            <Text variant="card" numberOfLines={2}>{app.club.name}</Text>
             <Text variant="small">{decision ? attention ? "Membership offer ready" : "Decision received" : attention ? "Review interview options" : app.round?.name || app.statusLabel}</Text>
           </View>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
         </View>
         <StatusProgress application={app} />
         <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, gap: 3 }}>
@@ -106,13 +108,11 @@ export default function Applications() {
         contentInsetAdjustmentBehavior="never"
         data={visible}
         keyExtractor={item => item.id}
-        refreshControl={<RefreshControl refreshing={view.isRefetching} onRefresh={() => { void view.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top }}
+        refreshControl={<RefreshControl refreshing={view.isRefetching} onRefresh={() => { void view.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
         ListHeaderComponent={
           <View style={{ gap: space.content - 4 }}>
-            <View style={{ gap: 6 }}>
-              <Text variant="display" accessibilityRole="header">Applications</Text>
-              <Text variant="small">Your drafts, applications in review, interviews and decisions.</Text>
-            </View>
+            <Text variant="small">Your drafts, applications in review, interviews and decisions.</Text>
             {view.isPending ? (
               <>
                 <View style={{ flexDirection: "row", gap: 22 }}>{[64, 78, 84, 80].map((width, index) => <Skeleton key={index} width={width} height={18} />)}</View>
@@ -120,10 +120,10 @@ export default function Applications() {
               </>
             ) : view.isError && !data ? (
               <View accessibilityRole="alert">
-                <ErrorState message={view.error instanceof ApiError && view.error.offline ? view.error.message : "Your saved responses haven’t changed. Please try again."} offline={view.error instanceof ApiError && view.error.offline} onRetry={() => { void view.refetch(); }} />
+                <ErrorState message={errorMessage(view.error)} offline={view.error instanceof ApiError && view.error.unreachable} onRetry={() => { void view.refetch(); }} />
               </View>
             ) : data && !data.applications.length ? (
-              <EmptyState icon={FilePenLine} title="No applications yet." body="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button testID="applications-explore" label="Explore clubs" onPress={() => router.push("/explore")} />} />
+              <EmptyState icon={FilePenLine} title="No applications yet." body="Explore clubs and start an application. Your drafts and submissions appear here." action={<Button testID="applications-explore" label="Explore clubs" onPress={() => router.dismissTo("/explore")} />} />
             ) : data ? (
               <>
                 <StageTabs label="Application stage" items={data.stages} value={stage} onChange={setChosen} />
@@ -133,7 +133,7 @@ export default function Applications() {
             ) : null}
           </View>
         }
-        renderItem={({ item }) => item.stage === "drafts" ? <DraftCard application={item} onOpen={() => open(item)} /> : <StatusCard application={item} onOpen={() => open(item)} onAction={() => act(item)} />}
+        renderItem={({ item }) => item.stage === "drafts" ? <DraftCard application={item} alumni={!!data?.alumni} onOpen={() => open(item)} /> : <StatusCard application={item} onOpen={() => open(item)} onAction={() => act(item)} />}
         ListEmptyComponent={data?.applications.length ? (
           <Card><EmptyState title={`No applications in ${stageLabel}.`} body={stage === "drafts" ? "You have no drafts in progress." : "None of your applications are at this stage right now."} /></Card>
         ) : undefined}

@@ -4,6 +4,7 @@ import { activeMemberWhere } from "@/lib/permissions";
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { searchPublicClubIds } from "@/actions/typesense-search"
+import { resolveViewerSchool } from "@/utils/school-scope"
 
 export type WorkspaceSearchResult = {
   id: string
@@ -31,12 +32,13 @@ export async function searchWorkspace(
   })
   const clubIds = memberships.map((item) => item.clubId)
   const contains = { contains: text, mode: "insensitive" as const }
-  const typesenseClubIds = await searchPublicClubIds(text)
+  const [typesenseClubIds, school] = await Promise.all([searchPublicClubIds(text), resolveViewerSchool()])
+  // Public clubs are the viewer's school only; Typesense IDs are re-validated against it here.
   const [clubs, applications, applicants, rounds] = await Promise.all([
     prisma.club.findMany({
       where: typesenseClubIds === null
-        ? { isDiscoverable: true, suspendedAt: null, OR: [{ name: contains }, { category: contains }] }
-        : { isDiscoverable: true, suspendedAt: null, id: { in: typesenseClubIds.slice(0, 250) } },
+        ? { schoolId: school.id, isDiscoverable: true, suspendedAt: null, OR: [{ name: contains }, { category: contains }] }
+        : { schoolId: school.id, isDiscoverable: true, suspendedAt: null, id: { in: typesenseClubIds.slice(0, 250) } },
       select: { id: true, name: true, category: true },
       take: typesenseClubIds === null ? 6 : 250,
       orderBy: { name: "asc" },

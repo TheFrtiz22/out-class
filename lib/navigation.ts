@@ -60,12 +60,25 @@ export function personalRailSections(options: { settings?: boolean } = {}): Rail
 }
 
 /**
- * Inbox and account Settings, pinned to the bottom of the rail in every workspace: personal, member club,
- * leader club and admin. ProductShell appends it, so no workspace can leave it out. Its Settings id differs
- * from a club's own "settings" item, which stays in that club's section.
+ * Inbox and Settings, pinned to the bottom of the rail in every workspace: personal, member club, leader club
+ * and admin. ProductShell appends it, so no workspace can leave it out. Settings is account Settings, except in
+ * a club workspace whose own "settings" item is passed in: that one takes its place, so the rail shows a single
+ * Settings and it opens the club's settings. Account Settings stays in the account menu.
  */
-export function accountRailSection(): RailSection {
-  return { id: "account-foot", name: "Inbox and settings", pinned: true, items: [personal("inbox", TERMS.inbox, INBOX_HREF), personal("account-settings", "Settings", "/settings")] }
+export function accountRailSection(settings?: ProductNavItem): RailSection {
+  return { id: "account-foot", name: "Inbox and settings", pinned: true, items: [personal("inbox", TERMS.inbox, INBOX_HREF), settings ?? personal("account-settings", "Settings", "/settings")] }
+}
+
+/**
+ * A club workspace's rail and its pinned foot. The club's own Settings moves out of the Club section to the foot,
+ * below Inbox, in place of account Settings. Other workspaces, and a leader without club Settings, keep account
+ * Settings there.
+ */
+export function railWithFoot(sections: RailSection[], club: boolean): { sections: RailSection[]; foot: RailSection } {
+  const settings = club ? railItems(sections).find(item => item.id === "settings") : undefined
+  if (!settings) return { sections, foot: accountRailSection() }
+  const rest = sections.map(section => ({ ...section, items: section.items.filter(item => item.id !== "settings") })).filter(section => section.items.length)
+  return { sections: rest, foot: accountRailSection(settings) }
 }
 
 /** A member (non-leader) club page: personal sections plus that club's own pages. */
@@ -85,7 +98,7 @@ export function memberRailSections(clubId: string, clubName: string | undefined,
 
 /**
  * Club workspace rail: Recruiting (Overview · Applicants · Interviews · Decide), Club (Home · Calendar · Tasks ·
- * Members · Settings). The shell pins Inbox and account Settings below. Pages without a rail entry (`hidden`) are
+ * Members · Settings). The shell moves Settings to the pinned foot, below Inbox (railWithFoot). Pages without a rail entry (`hidden`) are
  * left out here but stay reachable, and allowed, through managerNavigation.
  */
 export function leaderRailSections(member: ClubAccess, clubId: string, search = ""): RailSection[] {

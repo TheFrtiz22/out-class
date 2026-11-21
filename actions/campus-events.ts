@@ -19,6 +19,7 @@ import {
   type EventFilters,
 } from "@/lib/campus-events";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { resolveViewerSchool } from "@/utils/school-scope";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { ActionError, actionResult } from "@/lib/action-result";
@@ -35,7 +36,7 @@ const eventSelect = {
   isPublic: true,
   audience: true,
   revision: true,
-  club: { select: { name: true, suspendedAt: true } },
+  club: { select: { name: true, suspendedAt: true, schoolId: true } },
   publication: { select: { status: true, category: true, contact: true, rsvpEnabled: true, rsvpRequired: true, capacity: true, rsvpDeadline: true, template: true, flyerId: true, submittedAt: true, submittedBy: true, reviewedAt: true, rejectionReason: true, approvedRevision: true, publishedAt: true } },
   _count: { select: { rsvps: true } },
 } as const;
@@ -112,13 +113,12 @@ async function locked(
     throw new ActionError("Event changed. Reload before continuing.");
   return e;
 }
-export async function getPublicCorkboard(input: EventFilters = {}) {
-  const f = eventFiltersSchema.parse(input),
-    range = eventDateWindow(f.period, f.date);
-  const savedUser = f.savedOnly ? (await requireAuth()).user : null;
+/** One school's board (utils/school-scope.ts resolves which); other schools' events never match. */
+async function readPublicCorkboard(schoolId: string, f: z.infer<typeof eventFiltersSchema>, savedUserId: string | null) {
+  const range = eventDateWindow(f.period, f.date);
   const where: Prisma.MeetingWhereInput = {
-    ...(savedUser ? { saves: { some: { userId: savedUser.id } } } : {}),
-    club: { is: { suspendedAt: null } },
+    ...(savedUserId ? { saves: { some: { userId: savedUserId } } } : {}),
+    club: { is: { suspendedAt: null, schoolId } },
     audience: "RECRUITMENT",
     isPublic: true,
     publication: {
@@ -175,6 +175,7 @@ export async function getPublicCorkboard(input: EventFilters = {}) {
     prisma.meeting.count({ where }),
     prisma.club.findMany({
       where: {
+        schoolId,
         suspendedAt: null,
         events: {
           some: {
@@ -195,10 +196,27 @@ export async function getPublicCorkboard(input: EventFilters = {}) {
     clubs,
   };
 }
+export async function getPublicCorkboard(input: EventFilters = {}) {
+  const f = eventFiltersSchema.parse(input);
+  const savedUser = f.savedOnly ? (await requireAuth()).user : null;
+  const school = await resolveViewerSchool();
+  return readPublicCorkboard(school.id, f, savedUser?.id ?? null);
+}
+/** The unfiltered board for the server-rendered /corkboard page, cached per school (the school id is in the key). */
+let defaultBoard: ((schoolId: string) => ReturnType<typeof readPublicCorkboard>) | undefined;
+export async function getDefaultPublicCorkboard() {
+  const school = await resolveViewerSchool();
+  if (!defaultBoard) {
+    const { unstable_cache } = await import("next/cache");
+    defaultBoard = unstable_cache((schoolId: string) => readPublicCorkboard(schoolId, eventFiltersSchema.parse({}), null), ["public-corkboard-default"], { revalidate: 60, tags: ["club-directory"] });
+  }
+  return defaultBoard(school.id);
+}
 export async function getPublicCampusEvent(eventId: string) {
   z.string().uuid().parse(eventId);
-  const e = await prisma.meeting.findUnique({
-    where: { id: eventId },
+  const school = await resolveViewerSchool();
+  const e = await prisma.meeting.findFirst({
+    where: { id: eventId, club: { is: { schoolId: school.id } } },
     select: publicEventSelect,
   });
   return e && eventIsPublished(e) ? present(e) : null;
@@ -223,9 +241,11 @@ async function setSavedCampusEventCommand(input: unknown) {
     await prisma.savedCampusEvent.deleteMany({ where: { userId: user.id, eventId } });
     return { saved: false };
   }
+  const school = await resolveViewerSchool();
   return prisma.$transaction(async tx => {
     const event = await locked(tx, eventId);
-    if (!eventIsPublished(event)) throw new ActionError("This event is no longer available.");
+    // Another school's event is "no longer available", like an unpublished one.
+    if (!eventIsPublished(event) || event.club.schoolId !== school.id) throw new ActionError("This event is no longer available.");
     await tx.savedCampusEvent.upsert({
       where: { userId_eventId: { userId: user.id, eventId } },
       create: { userId: user.id, eventId }, update: {},
@@ -506,13 +526,16 @@ export async function setCampusEventRsvp(input: unknown): Promise<RsvpResult> {
   if (refusal) return { ok: false, error: refusal };
   // Every RSVP for one event waits on its row lock (capacity is exact). A short
   // lock timeout turns a pile-up into a prompt "try again" instead of a 5 s hang.
+  // RSVP is for the viewer's own school's events; cancelling an existing RSVP stays possible.
+  const school = d.going ? await resolveViewerSchool() : null;
   let result: { going: boolean; count: number };
   try { result = await clubWriteTransaction(async (tx) => {
     const scope = await tx.meeting.findUnique({ where: { id: d.eventId }, select: { clubId: true } });
     if (!scope) throw new EventUnavailable();
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
-    const e = await locked(tx, d.eventId),
-      existing = await tx.eventRsvp.findUnique({
+    const e = await locked(tx, d.eventId);
+    if (school && e.club.schoolId !== school.id) throw new EventUnavailable();
+    const existing = await tx.eventRsvp.findUnique({
         where: { eventId_userId: { eventId: d.eventId, userId: user.id } },
       });
     if (!d.going) {

@@ -1,5 +1,6 @@
 import "server-only"
 import { prisma } from "@/utils/prisma"
+import { resolveViewerSchool } from "@/utils/school-scope"
 import { membershipRoleLabels, type MembershipRole } from "@/lib/copy/terms"
 
 /**
@@ -34,7 +35,9 @@ export async function invitationPreview(id: string, now = new Date()): Promise<I
 export async function clubLinkPreview(clubId: string): Promise<{ name: string } | null> {
   if (!clubId || clubId.length > 200) return null
   try {
-    return await prisma.club.findFirst({ where: { OR: [{ id: clubId }, { slug: clubId }], suspendedAt: null }, select: { name: true } })
+    // The viewer's school only: another school's club name is not shown (page renders are per request, never shared-cached).
+    const school = await resolveViewerSchool()
+    return await prisma.club.findFirst({ where: { OR: [{ id: clubId }, { slug: clubId }], schoolId: school.id, suspendedAt: null }, select: { name: true } })
   } catch {
     return null
   }

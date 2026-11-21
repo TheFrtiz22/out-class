@@ -3,7 +3,8 @@ import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Linking, View } from "react-native";
-import { addEventToCalendar, calendarMessages, type CalendarOutcome } from "~/components/explore/calendar";
+import { useIsAlumni } from "~/components/alumni-banner";
+import { addEventToCalendar, addedToCalendar, calendarMessages, type CalendarOutcome } from "~/components/explore/calendar";
 import { clubImage, eventDateLabel, eventScheduleLabel, eventSharePath, eventTimeLabel } from "~/components/explore/directory";
 import { BookmarkFilled } from "~/components/explore/event-card";
 import { usePrefetchClub, useSavedEvents } from "~/components/explore/hooks";
@@ -20,9 +21,13 @@ import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { CampusEvent, EventBoard, EventRsvpResult } from "~/lib/types";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** One campus event (the web board's detail dialog): facts, RSVP, save, Add to Calendar, share. */
 export default function EventDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const id = typeof params.id === "string" && UUID.test(params.id) ? params.id : "";
+  const alumni = useIsAlumni();
   const { colors, radius } = useTheme();
   const router = useRouter();
   const top = useHeaderInset();
@@ -33,7 +38,7 @@ export default function EventDetail() {
   const key = ["events.event", { eventId: id }] as const;
   // The board the student came from already holds this event: show it while the fresh copy loads.
   const fromBoard = () => queryClient.getQueriesData<InfiniteData<EventBoard>>({ queryKey: ["events.board"] }).flatMap(([, data]) => data?.pages ?? []).flatMap(page => page.events).find(item => item.id === id);
-  const detail = useQuery<CampusEvent | null>({ queryKey: key, queryFn: ({ signal }) => api.get<CampusEvent | null>("events.event", { eventId: id }, { signal }), placeholderData: () => fromBoard() });
+  const detail = useQuery<CampusEvent | null>({ queryKey: key, queryFn: ({ signal }) => api.get<CampusEvent | null>("events.event", { eventId: id }, { signal }), placeholderData: () => fromBoard(), enabled: !!id });
   const event = detail.data ?? null;
   const [sharing, setSharing] = useState(false);
   const [calendar, setCalendar] = useState<CalendarOutcome | "failed" | null>(null);
@@ -52,7 +57,8 @@ export default function EventDetail() {
   }
 
   let body;
-  if (!event && detail.isPending) body = <EventSkeleton />;
+  if (!id) body = <EmptyState title="This event is no longer available." action={<Button variant="secondary" label="Browse all events" onPress={() => router.replace("/events")} />} />;
+  else if (!event && detail.isPending) body = <EventSkeleton />;
   else if (!event && detail.isError) body = <ErrorState message={errorMessage(detail.error, "We couldn’t load this event. Please try again.")} offline={detail.error instanceof ApiError && detail.error.offline} onRetry={refresh} />;
   else if (!event) body = <EmptyState title="This event is no longer available." action={<Button variant="secondary" label="Browse all events" onPress={() => router.replace("/events")} />} />;
   else {
@@ -62,7 +68,7 @@ export default function EventDetail() {
     body = (
       <>
         <View style={{ gap: 6 }}>
-          <Text variant="eyebrow">{event.category} · Event</Text>
+          <Text variant="eyebrow">{event.category ? `${event.category} · Event` : "Event"}</Text>
           <Text variant="title" accessibilityRole="header" testID="event-title">{event.title}</Text>
           <Press accessibilityRole="link" accessibilityLabel={`Hosted by ${event.clubName}`} onPressIn={() => prefetchClub(event.clubId)} onPress={() => router.push({ pathname: "/club/[id]", params: { id: event.clubId } })} style={{ minHeight: TARGET, justifyContent: "center", alignSelf: "flex-start" }}>
             <Text color={colors.mutedForeground}>Hosted by <Text variant="bodyStrong" color={colors.brandInk}>{event.clubName}</Text></Text>
@@ -72,7 +78,7 @@ export default function EventDetail() {
         <Card padded={false} style={{ paddingHorizontal: 16 }}>
           <Fact label="Date & time" value={when} />
           <Divider />
-          <Fact label="Location" value={event.location} />
+          <Fact label="Location" value={event.location?.trim() || "Location not announced"} />
           <Divider />
           <Fact label="Students going" value={`${event.rsvpCount}${event.capacity !== null ? ` / ${event.capacity} capacity · ${Math.max(0, event.capacity - event.rsvpCount)} remaining` : ""}`} testID="event-going">
             {event.capacity !== null ? (
@@ -88,13 +94,14 @@ export default function EventDetail() {
           {event.rsvpDeadline ? <Text variant="small">RSVP by {eventDateLabel(event.rsvpDeadline)} · {eventTimeLabel(event.rsvpDeadline)}</Text> : null}
           <Text variant="small" color={colors.foreground}>{event.rsvpRequired ? "RSVP required" : event.rsvpEnabled ? "RSVP optional" : "No RSVP required"}</Text>
         </View>
-        <RsvpControls event={event} now={now} />
+        <RsvpControls event={event} now={now} alumni={alumni} />
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}><Button full variant={saved ? "accent" : "secondary"} testID="event-save" icon={saved ? BookmarkFilled : Bookmark} label={saved ? "Saved" : "Save"} accessibilityHint={event.title} disabled={!saves.ready} onPress={() => saves.setSaved(event.id, !saved)} /></View>
+            <View style={{ flex: 1 }}><Button full variant={saved ? "accent" : "secondary"} testID="event-save" icon={saved ? BookmarkFilled : Bookmark} label={saved ? "Saved" : "Save"} accessibilityHint={event.title} disabled={!saves.ready || alumni} onPress={() => saves.setSaved(event.id, !saved)} /></View>
             <View style={{ flex: 1 }}><Button full variant="secondary" testID="event-share" icon={Share} label="Share" onPress={() => setSharing(true)} /></View>
           </View>
-          <Button full variant="secondary" testID="event-calendar" icon={calendar === "added" ? Check : CalendarPlus} loading={adding} label="Add to Calendar" accessibilityHint={event.title} onPress={() => void addToCalendar(event)} />
+          {/* Added once already (here or on the board): another tap would write a duplicate entry. */}
+          <Button full variant="secondary" testID="event-calendar" icon={calendar === "added" || addedToCalendar(event.id) ? Check : CalendarPlus} loading={adding} label={addedToCalendar(event.id) ? "Added to Calendar" : "Add to Calendar"} disabled={addedToCalendar(event.id)} accessibilityHint={event.title} onPress={() => void addToCalendar(event)} />
           {calendar ? (
             <View accessibilityLiveRegion="polite" style={{ gap: 6 }}>
               <Text variant="small" testID="event-calendar-status" color={calendar === "added" ? colors.foreground : colors.mutedForeground}>{calendar === "failed" ? "We couldn’t add this event to your calendar. Try again." : calendarMessages[calendar]}</Text>
@@ -127,7 +134,7 @@ function Fact({ label, value, children, testID }: { label: string; value: string
 }
 
 /** RSVP (RsvpControls on the web): the new state shows at once; the server's answer (capacity, deadline, alumni) confirms or restores it. */
-function RsvpControls({ event, now }: { event: CampusEvent; now: number }) {
+function RsvpControls({ event, now, alumni }: { event: CampusEvent; now: number; alumni: boolean }) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const key = ["events.rsvp", { eventId: event.id }] as const;
@@ -159,6 +166,12 @@ function RsvpControls({ event, now }: { event: CampusEvent; now: number }) {
   const unavailable = rsvp.isError;
   const closed = !event.rsvpEnabled || +new Date(event.date) <= now || (!!event.rsvpDeadline && +new Date(event.rsvpDeadline) <= now);
   const full = event.capacity !== null && event.rsvpCount >= event.capacity;
+  // Alumni accounts cannot RSVP or cancel (the server refuses too), as on the web.
+  if (alumni && !loading) return going
+    ? <View accessible accessibilityRole="text" accessibilityLabel="You’re going" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><Text variant="bodyStrong" color={colors.success}>You’re going</Text><Check size={16} color={colors.success} /></View>
+    : <Text variant="small">Alumni accounts can’t RSVP.</Text>;
+  // An event that takes no RSVPs already says so above; a disabled button would only repeat it.
+  if (!event.rsvpEnabled && !going && !loading) return null;
   return (
     <View style={{ gap: 8 }} accessibilityState={{ busy: change.isPending || loading }}>
       {going ? (

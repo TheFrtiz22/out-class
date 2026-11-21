@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { RATE_LIMITS } from "@/lib/rate-limit"
 import { limitAction } from "@/lib/rate-limit-action"
 import { createClient } from "@/utils/supabase/server"
+import { resolveViewerSchool } from "@/utils/school-scope"
 
 const collection = "outclass_public_clubs_v1"
 
@@ -20,7 +21,9 @@ async function searchUserId() {
   } catch { return null }
 }
 
-/** Only public directory IDs are returned. Private records are never indexed or queried here. */
+/** Only public directory IDs of the viewer's school are returned. Private records are never indexed or queried here.
+ * The school is filtered in the query and again on each hit, and callers intersect the IDs with their own
+ * school-scoped database read, so an index that predates the schoolId field returns nothing (fallback search). */
 export async function searchPublicClubIds(input: string): Promise<string[] | null> {
   const query = input.trim().slice(0, 120)
   if (query.length < 2) return null
@@ -32,6 +35,8 @@ export async function searchPublicClubIds(input: string): Promise<string[] | nul
   const userId = await searchUserId()
   if (!(await limitAction(userId ? RATE_LIMITS.searchUser : RATE_LIMITS.searchAnonymous, { userId })).ok) return null
   try {
+    const school = await resolveViewerSchool()
+    if (!/^[A-Za-z0-9:_-]+$/.test(school.id)) return null
     const url = new URL(host)
     if (url.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && url.hostname === "localhost" && url.protocol === "http:")) return null
     url.pathname = `/collections/${collection}/documents/search`
@@ -42,7 +47,8 @@ export async function searchPublicClubIds(input: string): Promise<string[] | nul
       num_typos: "2,1,2,2",
       prefix: "true",
       per_page: "250",
-      include_fields: "id",
+      filter_by: `schoolId:=\`${school.id}\``,
+      include_fields: "id,schoolId",
     }).toString()
     const response = await fetch(url, { headers: { "X-TYPESENSE-API-KEY": key }, cache: "no-store", signal: AbortSignal.timeout(1800) })
     if (!response.ok) return null
@@ -51,7 +57,7 @@ export async function searchPublicClubIds(input: string): Promise<string[] | nul
     return data.hits.flatMap((hit: unknown) => {
       if (!hit || typeof hit !== "object" || !("document" in hit)) return []
       const doc = hit.document
-      return doc && typeof doc === "object" && "id" in doc && typeof doc.id === "string" ? [doc.id] : []
+      return doc && typeof doc === "object" && "id" in doc && typeof doc.id === "string" && "schoolId" in doc && doc.schoolId === school.id ? [doc.id] : []
     })
   } catch { return null }
 }

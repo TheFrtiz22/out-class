@@ -20,6 +20,8 @@ async function main() {
     name: collection,
     fields: [
       { name: "name", type: "string" },
+      // Search filters on the viewer's school (actions/typesense-search.ts); never another school's clubs.
+      { name: "schoolId", type: "string", facet: true },
       { name: "category", type: "string", optional: true },
       { name: "tagline", type: "string", optional: true },
       { name: "description", type: "string", optional: true }
@@ -30,13 +32,21 @@ async function main() {
     const create = await request("/collections", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(schema) })
     if (!create.ok) throw Error(`Collection creation failed: HTTP ${create.status}`)
   } else if (!existing.ok) throw Error(`Cannot inspect Typesense collection: HTTP ${existing.status}`)
+  else {
+    // Collections created before school scoping gain the field in place; search returns nothing scoped until this runs.
+    const current = await existing.json()
+    if (!current.fields?.some(field => field.name === "schoolId")) {
+      const patch = await request(`/collections/${collection}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fields: [schema.fields.find(field => field.name === "schoolId")] }) })
+      if (!patch.ok) throw Error(`Collection schoolId field addition failed: HTTP ${patch.status}`)
+    }
+  }
   const clubs = await prisma.club.findMany({
     where: { isDiscoverable: true, suspendedAt: null },
-    select: { id: true, name: true, category: true, tagline: true, description: true },
+    select: { id: true, schoolId: true, name: true, category: true, tagline: true, description: true },
     orderBy: { id: "asc" }
   })
   const lines = clubs.map(club => JSON.stringify({
-    id: club.id, name: club.name, category: club.category || "",
+    id: club.id, schoolId: club.schoolId, name: club.name, category: club.category || "",
     tagline: club.tagline || "", description: club.description || ""
   })).join("\n")
   if (lines) {

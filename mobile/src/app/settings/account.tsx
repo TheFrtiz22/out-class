@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { Field } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
 import { ExternalLink, LogOut } from "~/components/icons";
-import { useConfirm } from "~/components/sheet";
+import { SHEET_CLOSE_MS, useConfirm } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { TurnstileSheet } from "~/components/turnstile";
 import { Button, Card, Divider, ScreenScroll, Skeleton } from "~/components/ui";
@@ -16,6 +16,7 @@ import { haptics } from "~/lib/haptics";
 import { openOnWeb } from "~/lib/links";
 import { unregisterPushBeforeSignOut } from "~/lib/push";
 import { useApiQuery } from "~/lib/query";
+import type { SignupOptions } from "~/lib/signup";
 import { useTheme } from "~/lib/theme";
 import type { AccountDeletionStatus, Me } from "~/lib/types";
 
@@ -40,6 +41,11 @@ function AccountDeletion({ email, passwordAccount }: { email: string; passwordAc
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [challenge, setChallenge] = useState(false);
+  // The same site key sign-in uses: the build's own, else the server's (a build without one would send no token, and be refused every time).
+  const options = useApiQuery<SignupOptions>("auth.signupOptions", undefined, { anonymous: true, staleTime: 10 * 60_000, enabled: passwordAccount });
+  const siteKey = config.turnstileSiteKey || options.data?.turnstileSiteKey || null;
+  const opening = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (opening.current) clearTimeout(opening.current); }, []);
   const pending = status.data?.pending ?? null;
   const warnings = status.data?.warnings ?? [];
   const ready = confirmationMatches(typed, email) && (!passwordAccount || password.length > 0);
@@ -65,19 +71,24 @@ function AccountDeletion({ email, passwordAccount }: { email: string; passwordAc
     onSettled: () => client.invalidateQueries({ queryKey: DELETION_KEY }),
   });
 
-  async function submit(turnstileToken?: string) {
+  async function submit() {
+    if (opening.current) return;
     setMessage(""); setError("");
-    // Password accounts pass the same quick check as sign-in when it is configured.
-    if (passwordAccount && config.turnstileSiteKey && !turnstileToken) { setChallenge(true); return; }
+    // The question comes first and the check second: a sheet opened while another is still sliding away is
+    // presented over it, and on iOS dismissing the one underneath took the new one with it (nothing on screen).
     const ok = await confirm({ title: "Delete your OutClass account?", description: "Your account will be deleted in 14 days. You can cancel any time before then from this page.", confirmLabel: "Delete account", destructive: true });
-    if (ok) request.mutate(turnstileToken);
+    if (!ok) return;
+    // Password accounts pass the same quick check as sign-in, once the confirm sheet has gone.
+    if (passwordAccount && siteKey) { opening.current = setTimeout(() => { opening.current = null; setChallenge(true); }, SHEET_CLOSE_MS + 60); return; }
+    request.mutate(undefined);
   }
 
   return (
     <Card style={{ gap: 12 }} testID="account-deletion">
       <Text variant="section" accessibilityRole="header">Delete account</Text>
+      {status.isError && status.data ? <Text variant="caption" accessibilityRole="alert">Couldn’t refresh this status. Showing what was last loaded.</Text> : null}
       {status.isPending ? <View style={{ gap: 10 }}><Skeleton width="85%" /><Skeleton width="70%" /><Skeleton width={150} height={44} radius={22} /></View>
-        : status.isError ? <View style={{ gap: 8 }}><Text variant="small" color={colors.destructive} accessibilityRole="alert">{errorMessage(status.error)}</Text><Button variant="secondary" size="compact" label="Try again" onPress={() => status.refetch()} /></View>
+        : status.isError && !status.data ? <View style={{ gap: 8 }}><Text variant="small" color={colors.destructive} accessibilityRole="alert">{errorMessage(status.error)}</Text><Button variant="secondary" size="compact" label="Try again" onPress={() => status.refetch()} /></View>
           : pending ? (
             <>
               <Text testID="account-deletion-scheduled" variant="body">Your account is scheduled for deletion on <Text variant="bodyStrong">{easternLongDate(pending.scheduledFor)}</Text>.</Text>
@@ -111,7 +122,7 @@ function AccountDeletion({ email, passwordAccount }: { email: string; passwordAc
       {message ? <Text testID="account-deletion-message" variant="small" color={colors.foreground} accessibilityLiveRegion="polite">{message}</Text> : null}
       {error ? <Text testID="account-deletion-error" variant="small" color={colors.destructive} accessibilityRole="alert">{error}</Text> : null}
       {sheet}
-      <TurnstileSheet open={challenge} onClose={() => setChallenge(false)} onToken={token => { setChallenge(false); submit(token); }} />
+      <TurnstileSheet open={challenge} siteKey={siteKey} purpose="requesting deletion" onClose={() => setChallenge(false)} onToken={token => { setChallenge(false); request.mutate(token); }} />
     </Card>
   );
 }
@@ -138,7 +149,6 @@ export default function AccountSettings() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} automaticallyAdjustKeyboardInsets testID="settings-account-screen">
-        <Text variant="display" accessibilityRole="header">Account & Security</Text>
         <Card style={{ gap: 14 }}>
           <Text variant="section" accessibilityRole="header">Sign-in information</Text>
           <Detail label="University email" value={email} />
@@ -154,7 +164,7 @@ export default function AccountSettings() {
         </Card>
         {email ? <AccountDeletion email={email} passwordAccount={passwordAccount} /> : null}
       </ScreenScroll>
-      <Header title="Settings" back />
+      <Header title="Account & Security" back />
       {sheet}
     </View>
   );

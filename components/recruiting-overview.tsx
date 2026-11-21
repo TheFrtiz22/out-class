@@ -13,7 +13,7 @@ import { keyDates, pipeline, railHrefs, recruitingActive, recruitingNeeds, voteH
 import { InterviewsCard, clubLinkProps } from "@/components/club-home/club-home-sections"
 import { PageHeader } from "@/components/ui/page-header"
 import { Badge } from "@/components/ui/badge"
-import { CalendarPlus, Users2 } from "@/components/icons"
+import { CalendarPlus, FileText, Users2 } from "@/components/icons"
 import { welcomeDeadline } from "@/lib/welcome"
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
 import type { ClubAccess } from "@/lib/permissions"
@@ -49,6 +49,8 @@ export function RecruitingHero({ clubId, clubName, membership, data }: { clubId:
         {active && op?.intake && <Badge variant={applicationsClosed(op) ? "outline" : "success"} className="oc-command-status" data-state={applicationsClosed(op) ? "closed" : "open"}>Applications {applicationsClosed(op) ? "closed" : "open"}</Badge>}
         {/* Cycle actions appear once the overview shows an active cycle; with none, the page offers setup instead. */}
         {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link {...clubLinkProps(clubId, hrefs.applicants)}><Users2 aria-hidden="true" />Open applicants</Link></Button>}
+        {/* The application form and deadline (Recruiting › Application); shown with or without an active cycle. */}
+        {hasPermission(membership, "application.manage") && <Button variant="ghost" size="lg" asChild><Link {...clubLinkProps(clubId, `/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=application`)}><FileText aria-hidden="true" />Application</Link></Button>}
         {active && hasPermission(membership, "interviews.manage") && hrefs.interviews && <Button size="lg" data-tone="interview" asChild><Link {...clubLinkProps(clubId, `${hrefs.interviews}&interviewTab=schedule`)}><CalendarPlus aria-hidden="true" />{TERMS.scheduleInterviews}</Link></Button>}
       </DashboardActions>} />
   </DashboardHero>
@@ -87,6 +89,7 @@ export function RecruitingOverview({ data, refreshing = false, onChanged = () =>
   </Dashboard>
 
   return <Dashboard className="oc-command-center oc-command-recruiting" busy={refreshing}>
+    {club.isDiscoverable === false && <p className="oc-command-footnote oc-dashboard-note" data-testid="recruiting-unpublished">Not visible to students.{hasPermission(membership, "club.settings") && <> <Link className="underline underline-offset-4" {...clubLinkProps(club.id, `/club/${encodeURIComponent(club.id)}/workspace?section=settings&setting=general`)}>Publish profile</Link></>}</p>}
     {!hasPermission(membership, "applicants.identify") && hasPermission(membership, "applications.review") && <p className="oc-command-footnote oc-dashboard-note">Anonymous rounds only. Identity, files and unapproved free text remain withheld.</p>}
     <NeedsYouRow headingId="recruiting-needs" items={cards.map(card => ({ id: card.id, title: card.title, detail: card.detail, progress: card.progress, action: action(card) }))}
       clear={<><strong>You’re caught up.</strong> Votes, reviews, interview times and offers that need you will show up here.</>} />

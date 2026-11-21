@@ -4,7 +4,7 @@ import { CalendarStar, Home, Compass, FileText, Users2, Menu, Video, CalendarDay
 import type { ProductNavItem } from "@/lib/product-navigation"
 import { handleClubLink } from "@/lib/workspace-navigation"
 
-const icons: Record<string, IconComponent> = { recruiting: FileText, "student-dashboard": Home, "club-home": Home, explore: Compass, categories: Compass, status: CheckCircle2, calendar: CalendarDays, corkboard: CalendarStar, applications: FileText, clubs: Users2, inbox: Inbox, "student-profile": UserCircle, overview: Gauge, applicants: IdCard, interviews: Video, meetings: CalendarDays, "club-meetings": CalendarDays, tasks: ListChecks, "club-tasks": ListChecks, alumni: GraduationCap, "club-alumni": GraduationCap, members: Users2, decisions: Gavel, letters: FileText, announcements: Megaphone, settings: Settings, cycles: RefreshCw }
+const icons: Record<string, IconComponent> = { recruiting: FileText, "student-dashboard": Home, "club-home": Home, explore: Compass, categories: Compass, status: CheckCircle2, calendar: CalendarDays, corkboard: CalendarStar, applications: FileText, application: FileText, clubs: Users2, inbox: Inbox, "student-profile": UserCircle, overview: Gauge, applicants: IdCard, interviews: Video, meetings: CalendarDays, "club-meetings": CalendarDays, tasks: ListChecks, "club-tasks": ListChecks, alumni: GraduationCap, "club-alumni": GraduationCap, members: Users2, decisions: Gavel, letters: FileText, announcements: Megaphone, settings: Settings, cycles: RefreshCw }
 
 /** Phones: the only section navigation. `items` come from lib/navigation's bottomBarItems.
  * Five items (the personal bar, as in the app) leave no room for More; fewer end with More. */

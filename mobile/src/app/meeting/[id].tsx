@@ -3,15 +3,17 @@ import { useState } from "react";
 import { View } from "react-native";
 import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
+import { attendanceOpen, leaderTools } from "~/components/leader/access";
 import { ArrowUpRight, CalendarDays, CalendarPlus, MapPin, QrCode } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
+import { Button, Card, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
-import { addToCalendar, easternDateTime } from "~/lib/eastern";
+import { addToCalendar, easternRange } from "~/lib/eastern";
 import { openExternal } from "~/lib/links";
+import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
-import type { Meeting, MeetingResource } from "~/lib/types";
+import type { Me, Meeting, MeetingResource } from "~/lib/types";
 
 /** Resources a club attached (lib/meetings.ts `resourceSchema`); anything else is ignored. */
 function resources(value: unknown): MeetingResource[] {
@@ -25,32 +27,42 @@ export default function MeetingScreen() {
   const router = useRouter();
   const top = useHeaderInset();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const meeting = useApiQuery<Meeting>("meetings.meeting", { meetingId: id }, { enabled: !!id });
+  const valid = !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const meeting = useApiQuery<Meeting>("meetings.meeting", { meetingId: id }, { enabled: valid });
   const alumni = useIsAlumni();
   const [note, setNote] = useState("");
+  const [adding, setAdding] = useState(false);
   const data = meeting.data;
   const links = resources(data?.resources);
+  const pull = usePullRefresh(() => meeting.refetch());
   const upcoming = data ? +new Date(data.endDate || data.date) >= Date.now() : false;
+  // A leader with attendance access hosts check-in from here while attendance is open (the leader hub's own rule).
+  const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
+  const membership = data ? me.data?.memberships.find(item => item.clubId === data.clubId) : undefined;
+  const host = !!data && !!membership && leaderTools(membership, me.data?.profile).attendance && attendanceOpen(data);
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={meeting.isRefetching} onRefresh={() => meeting.refetch()} testID="meeting-screen">
-        {meeting.isPending ? (
+      <ScreenScroll top={top} refreshing={pull.refreshing} onRefresh={valid ? pull.onRefresh : undefined} testID="meeting-screen">
+        {!valid ? (
+          <Card><EmptyState icon={CalendarDays} title="Meeting unavailable" body="This link doesn’t point to a meeting. Check the link or ask the club for a new one." /></Card>
+        ) : meeting.isPending ? (
           <>
             <View style={{ gap: 10 }}><Skeleton width="45%" /><Skeleton width="80%" height={30} /><Skeleton width="70%" /></View>
             <Card style={{ gap: 10 }}><Skeleton width="30%" height={18} /><Skeleton /><Skeleton width="85%" /></Card>
             <Card style={{ gap: 10 }}><Skeleton width="30%" height={18} /><Skeleton /><Skeleton width="60%" /></Card>
           </>
-        ) : meeting.isError ? (
+        ) : meeting.isError && !data ? (
           <ErrorState message={errorMessage(meeting.error)} offline={meeting.error instanceof ApiError && meeting.error.offline} onRetry={() => meeting.refetch()} />
         ) : data ? (
           <>
+            {meeting.isError ? <Text variant="caption" accessibilityRole="alert" testID="meeting-refresh-failed">Couldn’t refresh this meeting. Showing what was last loaded.</Text> : null}
             <View style={{ gap: 8 }}>
               <Text variant="small">{data.club.name} · {data.audience === "MEMBERS" ? "Member meeting" : "Recruitment / Interest"}</Text>
               <Text variant="display" accessibilityRole="header">{data.title}</Text>
               <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
                 <View style={{ marginTop: 2 }}><CalendarDays size={18} color={colors.foreground} /></View>
-                <Text variant="bodyStrong" style={{ flex: 1 }}>{easternDateTime(data.date)}{data.endDate ? ` – ${easternDateTime(data.endDate)}` : ""}</Text>
+                <Text variant="bodyStrong" style={{ flex: 1 }}>{easternRange(data.date, data.endDate)}</Text>
               </View>
               <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
                 <View style={{ marginTop: 2 }}><MapPin size={18} color={colors.foreground} /></View>
@@ -60,12 +72,16 @@ export default function MeetingScreen() {
             </View>
 
             <View style={{ gap: 10 }}>
-              <Button full variant="secondary" icon={CalendarPlus} testID="meeting-add-calendar" label="Add to Calendar"
+              <Button full variant="secondary" icon={CalendarPlus} testID="meeting-add-calendar" label="Add to Calendar" loading={adding}
                 onPress={async () => {
-                  const result = await addToCalendar({ title: data.title, start: data.date, end: data.endDate, location: data.location, notes: [data.club.name, data.description].filter(Boolean).join("\n") });
-                  setNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : "");
+                  if (adding) return;
+                  setAdding(true); setNote("");
+                  try {
+                    const result = await addToCalendar({ title: data.title, start: data.date, end: data.endDate, location: data.location, notes: [data.club.name, data.description].filter(Boolean).join("\n") });
+                    setNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : result === "saved" ? "Added to your calendar." : "");
+                  } finally { setAdding(false); }
                 }} />
-              {note ? <Text variant="small" accessibilityRole="alert">{note}</Text> : null}
+              {note ? <Text variant="small" color={colors.foreground} accessibilityRole="alert">{note}</Text> : null}
             </View>
 
             {(["agenda", "recap"] as const).map(key => (
@@ -89,11 +105,14 @@ export default function MeetingScreen() {
             </Card>
 
             {/* Attendance is recorded by scanning the leader's current code; the server decides whether it counts. */}
-            {alumni ? <AlumniBanner action="checkIn" /> : upcoming ? (
+            {alumni ? <AlumniBanner action="checkIn" /> : upcoming || host ? (
               <Card style={{ gap: 10 }} testID="meeting-check-in">
                 <Text variant="section" accessibilityRole="header">Meeting check-in</Text>
-                <Text variant="small">Scan the QR displayed by the meeting leader. Codes expire quickly to protect attendance.</Text>
-                <Button icon={QrCode} testID="meeting-scan" label="Scan a code" onPress={() => router.push("/scan")} />
+                <Text variant="small">{host ? "Show the room's code from this phone, or scan another leader's code to check yourself in." : "Scan the QR displayed by the meeting leader. Codes expire quickly to protect attendance."}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                  {host ? <Button icon={QrCode} testID="meeting-host-check-in" label="Host check-in" onPress={() => router.push({ pathname: "/leader/[clubId]/check-in/[meetingId]", params: { clubId: data.clubId, meetingId: data.id } } as never)} /> : null}
+                  {upcoming ? <Button icon={QrCode} variant={host ? "secondary" : "primary"} testID="meeting-scan" label="Scan a code" onPress={() => router.push("/scan")} /> : null}
+                </View>
               </Card>
             ) : null}
           </>

@@ -1,5 +1,5 @@
 import * as Crypto from "expo-crypto";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { Check, Pause, XIcon } from "~/components/icons";
 import { type BallotResult, type Choice, OWN_APPLICATION_MESSAGE, type RoomEntry, type RoomSnapshot, outcomeLabels } from "~/components/voting/room";
@@ -31,6 +31,25 @@ export function BallotPanel({ room, entry, refresh }: { room: RoomSnapshot; entr
   const lock = useRef(false);
   const key = `${room.passNumber}:${room.currentApplicantId}`;
   const open = room.status === "OPEN" && entry?.ballotState === "OPEN";
+  // A vote whose answer was lost belongs to the ballot it was cast on. Once the room moves to another
+  // applicant or closes that ballot, it can no longer count: drop it (so the next ballot isn't locked)
+  // and say whether it was saved, from the server's own record.
+  const pendingKey = pending ? `${pending.passNumber}:${pending.applicationId}` : null;
+  const unconfirmed = !busy && !!pending && (pendingKey !== key || !open);
+  useEffect(() => {
+    if (!unconfirmed || !pending) return;
+    const savedChoice = pendingKey === key ? entry?.ownBallot?.choice : undefined;
+    setPending(null); setAttempt(null);
+    setError(savedChoice === pending.choice ? "" : "Voting moved on before your vote was confirmed. It may not have been recorded.");
+  }, [unconfirmed, pending, pendingKey, key, entry?.ownBallot?.choice]);
+
+  // A refusal or "moved on" note belongs to the applicant it was about: the next one starts clean. Kept: a
+  // vote still unconfirmed (its Retry; the effect above reports it once the move is seen), and a refusal
+  // whose own refresh is what moved the room.
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  const settledAt = useRef(0);
+  useEffect(() => { if (!pendingRef.current && !lock.current && Date.now() - settledAt.current > 1000) setError(""); }, [key]);
 
   async function vote(choice?: Choice) {
     if (lock.current || (!entry && !pending)) return;
@@ -50,7 +69,7 @@ export function BallotPanel({ room, entry, refresh }: { room: RoomSnapshot; entr
     } catch {
       haptics.error(); setAttempt(null);
       setError("Your vote could not be confirmed. Retry sends the same vote safely.");
-    } finally { lock.current = false; setBusy(false); }
+    } finally { lock.current = false; settledAt.current = Date.now(); setBusy(false); }
   }
 
   const recorded = ack?.key === key && ack.revision >= (entry?.ownBallot?.revision ?? -1) ? ack.choice : entry?.ownBallot?.choice;

@@ -23,10 +23,17 @@ export function Glass({ children, style, radius, ...rest }: ViewProps & { radius
       {children}
     </GlassView>
   );
+  // Android's BlurView draws only a translucent wash unless it is given a separate blur target, so text
+  // scrolling under the dock showed through the labels. A near-solid surface keeps it legible there.
+  if (Platform.OS === "android") return (
+    <View {...rest} style={[shape, edge, { backgroundColor: dark ? "rgba(22,38,56,0.94)" : "rgba(255,254,250,0.94)" }, style]}>
+      {children}
+    </View>
+  );
   return (
     <View {...rest} style={[shape, edge, style]}>
-      <BlurView intensity={Platform.OS === "android" ? 28 : 48} tint={dark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? "rgba(22,38,56,0.62)" : "rgba(255,254,250,0.66)" }]} />
+      <BlurView intensity={48} tint={dark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dark ? "rgba(22,38,56,0.62)" : "rgba(255,254,250,0.66)" }]} />
       {children}
     </View>
   );

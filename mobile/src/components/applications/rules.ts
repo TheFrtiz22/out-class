@@ -38,12 +38,45 @@ export function visibleQuestionIds(questions: ApplicationQuestion[], answers: Ap
 }
 export function wordCount(value: string) { return value.trim() ? value.trim().split(/\s+/u).length : 0; }
 
-/** The web's answerErrors, with its wording. Document links are checked by the server only. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** lib/student-profile.ts `storagePathSchema`: an uploaded document's private key ("<owner>/<file>"). */
+export function isUploadedDocument(value: string) {
+  const text = value.trim();
+  if (!text || text.includes("://") || text.startsWith("/") || text.includes("..") || /[\\%?#\x00-\x1f\x7f]/.test(text)) return false;
+  const parts = text.split("/");
+  return parts.length === 2 && UUID.test(parts[0]!) && parts[1]!.length > 0;
+}
+/** lib/student-profile.ts `normalizeWebUrl`: the address as the server stores it, or null when it is not a usable web link. */
+function normalizeWebUrl(value: string): string | null {
+  const text = value.trim();
+  if (!text || text.startsWith("/") || /^https?:\/\/\//i.test(text) || /[\s\\\x00-\x1f]/.test(text)) return null;
+  const explicit = /^[a-z][a-z0-9+.-]*:/i.test(text);
+  if (explicit && !/^https?:\/\//i.test(text)) return null;
+  try {
+    const url = new URL(explicit ? text : `https://${text}`);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,63}$/i.test(url.hostname)) return null;
+    return url.href;
+  } catch { return null; }
+}
+/**
+ * A document answer as the server stores it (lib/student-profile.ts `resumeReferenceSchema`): an
+ * uploaded PDF's key, or a normalized link. Null while it is not yet valid. Sending the stored form
+ * keeps the save contract's `expectedAnswers` token equal to what the server holds.
+ */
+export function documentReference(value: string): string | null {
+  const text = value.trim();
+  if (!text || isUploadedDocument(text)) return text;
+  return normalizeWebUrl(text);
+}
+
+/** The web's answerErrors, with its wording. */
 export function answerErrors(questions: ApplicationQuestion[], answers: ApplicationAnswer[], final: boolean) {
   const errors: Record<string, string> = {};
   for (const answer of answers) {
     const question = questions.find(item => item.id === answer.questionId);
     if (!question) { errors[answer.questionId] = "The application questions have changed. Reload before continuing."; continue; }
+    if (answer.response.trim() && question.type === "FILE_UPLOAD" && documentReference(answer.response) === null)
+      errors[question.id] = "Use an uploaded PDF or a valid document URL.";
     if (answer.response.trim() && question.type === "MULTIPLE_CHOICE" && question.options?.length && !question.options.includes(answer.response))
       errors[question.id] = "Choose one of the available options.";
     if (answer.response.trim() && question.type === "MULTI_SELECT") {

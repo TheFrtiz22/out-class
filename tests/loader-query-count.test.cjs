@@ -67,6 +67,8 @@ function load(n, file) {
     '@/utils/platform-admin': { requirePlatformAdmin: async () => ({}) },
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(prisma), isWriteContention: () => false },
     '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
+    // The viewer's school is resolved once per request (React cache), outside the per-row work counted here.
+    '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(),
   }
   return { mod: loader(mocks)(path.join(root, file)), trace }
 }

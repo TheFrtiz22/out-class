@@ -57,7 +57,8 @@ export function InterviewNotes({ entry }: { entry: InterviewEntry }) {
       if (!current.mounted) return;
       haptics.error();
       // A newer draft exists (another device or the web room): stop saving, say so, and offer the reload.
-      if (failure instanceof ApiError && failure.status === 409) { setState("conflict"); setMessage(failure.message); }
+      // A completed interview or removed access won't save on retry either: same path, Reload shows the current state.
+      if (failure instanceof ApiError && (failure.status === 409 || failure.code === "CLOSED" || failure.code === "ACCESS_REVOKED")) { setState("conflict"); setMessage(failure.message); }
       else { setState("error"); setMessage(errorMessage(failure, "Your interview could not be saved. Retry, or refresh your access and revision.")); }
     } finally {
       current.busy = false;

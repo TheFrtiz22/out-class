@@ -1,24 +1,28 @@
 import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CLUB_CARD_GAP, ClubCard, ClubCardSkeleton, clubCardHeight } from "~/components/explore/club-card";
 import { type DirectoryFilters, categoryIcon, clubRecruitment, emptyDirectoryFilters, filterDirectory, rankedCategories, recruitmentOptions } from "~/components/explore/directory";
+import { useIsAlumni } from "~/components/alumni-banner";
 import { useDirectory, usePrefetchClub, useSavedClubs } from "~/components/explore/hooks";
 import { FieldLabel, FilterChip, SearchField, useDebounced, useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
+import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Bookmark, CalendarDays, Compass, SlidersHorizontal, Users, X } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press } from "~/components/ui";
+import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
 import type { PublicClub } from "~/lib/types";
 
 const Separator = () => <View style={{ height: CLUB_CARD_GAP }} />;
 const keyOf = (club: PublicClub) => club.id;
 const sortOptions = [{ value: "name", label: "Name A–Z" }, { value: "deadline", label: "Next deadline" }];
-const filterLabel = (key: string, value: string) => key === "query" ? `“${value}”` : key === "recruitment" ? value === "open" ? "Applications open" : value === "closed" ? "Not currently open" : "Closing in 7 days" : `${key}: ${value}`;
+const filterLabel = (key: keyof DirectoryFilters, value: string) => key === "query" ? `“${value}”` : key === "recruitment" ? recruitmentOptions.find(option => option.value === value)?.label ?? value
+  : key === "time" ? `${value} hours / week` : key === "acceptance" ? `Acceptance up to ${value}%` : value;
 
 export default function Explore() {
   const theme = useTheme();
@@ -26,11 +30,17 @@ export default function Explore() {
   const router = useRouter();
   const top = useHeaderInset();
   const insets = useSafeAreaInsets();
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, height: screenHeight } = useWindowDimensions();
   const directory = useDirectory();
   const notice = useNotice({ dock: true });
   const saved = useSavedClubs(notice.show);
+  // Coming back to the tab after a failed load (offline, a server error) tries again, as the other tabs do.
+  useRefetchOnFocus(directory);
+  useRefetchOnFocus(saved.query);
   const prefetch = usePrefetchClub();
+  const alumni = useIsAlumni();
+  const list = useRef<FlatList<PublicClub>>(null);
+  useTabScrollToTop(list);
   const [query, setQuery] = useState("");
   const [choices, setChoices] = useState<DirectoryFilters>(emptyDirectoryFilters);
   const [sheet, setSheet] = useState(false);
@@ -60,20 +70,21 @@ export default function Explore() {
   const pressIn = useCallback((club: PublicClub) => prefetch(club.id), [prefetch]);
   const { setSaved, ids } = saved;
   const renderItem = useCallback(({ item, index }: { item: PublicClub; index: number }) => (
-    <ClubCard club={item} saved={ids.has(item.id)} height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} testID={`explore-club-${index}`} />
-  ), [ids, height, now, open, pressIn, setSaved]);
+    <ClubCard club={item} saved={ids.has(item.id)} height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} saveLocked={alumni} testID={`explore-club-${index}`} />
+  ), [ids, height, now, open, pressIn, setSaved, alumni]);
   const getItemLayout = useCallback((_: unknown, index: number) => ({ length: height + CLUB_CARD_GAP, offset: (height + CLUB_CARD_GAP) * index, index }), [height]);
 
-  const failed = directory.isError || !!directory.data?.error;
+  // A failed refresh keeps the loaded directory; only a first load that failed (or the server's own refusal) shows the error.
+  const failed = (directory.isError && !clubs) || !!directory.data?.error;
   const header = (
     <View style={{ gap: 14, paddingBottom: 12 }}>
-      <Text variant="display" accessibilityRole="header">Explore clubs</Text>
+      {directory.isRefetchError && !failed ? <StaleNote /> : null}
       <View style={{ flexDirection: "row", gap: 10 }}>
         <View style={{ flex: 1 }}><Button full variant="secondary" icon={CalendarDays} label="Events" testID="explore-events" onPress={() => router.push("/events")} /></View>
         <View style={{ flex: 1 }}><Button full variant="secondary" icon={Bookmark} label="Saved clubs" testID="explore-saved" onPress={() => router.push("/saved-clubs")} /></View>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <SearchField testID="explore-search" label="Search clubs" placeholder="Search clubs, interests, or keywords" value={query} onChangeText={setQuery} />
+        <SearchField testID="explore-search" label="Search clubs, interests, or keywords" placeholder="Search clubs or interests" value={query} onChangeText={setQuery} />
         <View>
           <IconButton testID="explore-filter" tone="surface" icon={SlidersHorizontal} label={sheetActive ? `Filter clubs (${sheetActive} active)` : "Filter clubs"} selected={sheetActive > 0} onPress={() => setSheet(true)} />
         </View>
@@ -92,7 +103,7 @@ export default function Explore() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
           <Text variant="small">Filters applied</Text>
           {active.map(key => (
-            <Press key={key} accessibilityLabel={`Remove ${key} filter`} onPress={() => change(key, emptyDirectoryFilters[key])}
+            <Press key={key} accessibilityLabel={`Remove filter: ${filterLabel(key, filters[key])}`} onPress={() => change(key, emptyDirectoryFilters[key])}
               style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
               <Text variant="smallStrong" numberOfLines={1} style={{ maxWidth: 200 }}>{filterLabel(key, filters[key])}</Text>
               <X size={14} color={colors.mutedForeground} />
@@ -127,6 +138,7 @@ export default function Explore() {
   return (
     <View style={{ flex: 1 }}>
       <FlatList
+        ref={list}
         testID="explore-screen"
         data={failed ? [] : filtered}
         keyExtractor={keyOf}
@@ -144,13 +156,15 @@ export default function Explore() {
         maxToRenderPerBatch={8}
         windowSize={9}
         removeClippedSubviews
-        refreshControl={<RefreshControl refreshing={directory.isRefetching} onRefresh={refresh} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
+        refreshControl={<RefreshControl refreshing={directory.isRefetching} onRefresh={refresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
       />
       <Header title="Explore" />
       {notice.element}
 
       <Sheet open={sheet} onClose={() => setSheet(false)} title="Filter clubs" testID="explore-filter-sheet">
-        <View style={{ gap: 10 }}>
+        {/* Every group can be on screen at once; a small phone scrolls rather than hiding Done. */}
+        <ScrollView style={{ maxHeight: screenHeight * 0.62 }} contentContainerStyle={{ gap: 10, paddingBottom: 4 }} showsVerticalScrollIndicator={false}>
           <FieldLabel>Availability</FieldLabel>
           <View accessibilityRole="radiogroup" style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {recruitmentOptions.map(option => <FilterChip key={option.value} testID={`explore-availability-${option.value}`} label={`${option.label} (${recruitmentCounts[option.value]})`} selected={choices.recruitment === option.value} onPress={() => change("recruitment", option.value)} />)}
@@ -175,7 +189,10 @@ export default function Explore() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {[...sortOptions, ...(acceptanceReported ? [{ value: "acceptance", label: "Reported acceptance rate" }] : [])].map(option => <FilterChip key={option.value} testID={`explore-sort-${option.value}`} label={option.label} selected={choices.sort === option.value} onPress={() => change("sort", option.value)} />)}
           </View>
-          <View style={{ marginTop: 10 }}><Button full size="large" label="Done" testID="explore-filter-done" onPress={() => setSheet(false)} /></View>
+        </ScrollView>
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+          <View style={{ flex: 1 }}><Button full size="large" variant="secondary" label="Reset" testID="explore-filter-reset" disabled={!sheetActive} onPress={() => setChoices(current => ({ ...emptyDirectoryFilters, category: current.category }))} /></View>
+          <View style={{ flex: 1 }}><Button full size="large" label={`Show ${filtered.length} ${filtered.length === 1 ? "club" : "clubs"}`} testID="explore-filter-done" onPress={() => setSheet(false)} /></View>
         </View>
       </Sheet>
     </View>
