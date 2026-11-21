@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
@@ -12,7 +12,6 @@ import { Card, Divider, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from
 import { ApiError, errorMessage } from "~/lib/api";
 import { readDocument, responseLabels, type AvailabilityDocument, type AvailabilityRound, type MyAvailability, type RoundAvailability } from "~/lib/availability";
 import { haptics } from "~/lib/haptics";
-import { openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 
@@ -71,7 +70,7 @@ export default function AvailabilitySettings() {
                 <ChevronDown size={18} color={colors.mutedForeground} />
               </Press>
               <Text variant="caption">{round ? "This response belongs only to this club and round. It does not change your global schedule." : "Save your usual week once. Round requests prefill this schedule and require a separate submission."}</Text>
-              <Press testID="availability-view-interviews" accessibilityRole="link" accessibilityHint="Opens on the web" onPress={() => openOnWeb("/settings/interviews")} style={{ minHeight: TARGET, justifyContent: "center", alignSelf: "flex-start" }}>
+              <Press testID="availability-view-interviews" accessibilityRole="link" onPress={() => router.push("/settings/interviews")} style={{ minHeight: TARGET, justifyContent: "center", alignSelf: "flex-start" }}>
                 <Text variant="smallStrong" color={colors.brandInk} style={{ textDecorationLine: "underline" }}>View my published interviews</Text>
               </Press>
             </View>

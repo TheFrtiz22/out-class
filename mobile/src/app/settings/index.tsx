@@ -3,11 +3,10 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
-import { ArrowUpRight, CalendarPlus, ChevronRight } from "~/components/icons";
+import { CalendarPlus, ChevronRight } from "~/components/icons";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Text } from "~/components/text";
 import { Card, Divider, Press, ScreenScroll, Segmented, TARGET } from "~/components/ui";
-import { openOnWeb } from "~/lib/links";
 import { type AppearancePreference, useTheme } from "~/lib/theme";
 
 // The web's Settings overview (lib/settings-navigation.ts `personalSettingsSections`), same labels and descriptions.
@@ -30,19 +29,17 @@ export default function SettingsOverview() {
       <ScreenScroll top={top} testID="settings-screen">
         <Card padded={false} style={{ paddingHorizontal: 16 }} accessibilityLabel="Settings overview">
           {sections.map((section, index) => {
-            const web = "web" in section ? section.web : null;
             return (
               <View key={section.id}>
                 {index ? <Divider /> : null}
-                <Press large testID={`settings-${section.id}`} accessibilityRole={web ? "link" : "button"} accessibilityLabel={`${section.label}. ${section.description}`} accessibilityHint={web ? "Opens on the web" : undefined}
-                  onPress={() => { if (web) openOnWeb(web); else router.push(("route" in section ? section.route : "/settings") as never); }}
+                <Press large testID={`settings-${section.id}`} accessibilityRole="button" accessibilityLabel={`${section.label}. ${section.description}`}
+                  onPress={() => router.push(section.route as never)}
                   style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, minHeight: TARGET + 12 }}>
                   <View style={{ flex: 1, gap: 3 }}>
                     <Text variant="bodyStrong">{section.label}</Text>
                     <Text variant="small">{section.description}</Text>
-                    {web ? <Text variant="caption">Open on web</Text> : null}
                   </View>
-                  {web ? <ArrowUpRight size={18} color={colors.mutedForeground} /> : <ChevronRight size={18} color={colors.mutedForeground} />}
+                  <ChevronRight size={18} color={colors.mutedForeground} />
                 </Press>
               </View>
             );

@@ -159,6 +159,14 @@ describe("global availability", () => {
   });
 });
 
+describe("interview schedule link", () => {
+  test("View my published interviews opens the schedule in the app", async () => {
+    await renderRoute(Screen());
+    await press("availability-view-interviews");
+    expect(routerState.router.push).toHaveBeenCalledWith("/settings/interviews");
+  });
+});
+
 describe("round availability", () => {
   async function openRound() {
     const rendered = await renderRoute(Screen());

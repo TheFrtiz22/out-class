@@ -44,6 +44,7 @@ export const mobileOperations = {
 
   // Settings → Interview schedule: the signed-in person's published panel assignments (app/(workspace)/settings/interviews).
   "interviews.panels": operation("GET", none, async () => (await import("@/actions/official-panel-schedule")).getMyInterviewPanelSchedule()),
+
   // Home, calendar
   "home.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileHome()),
   "calendar.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileCalendar()),
