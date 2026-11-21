@@ -173,7 +173,7 @@ export default function CalendarScreen() {
       {events.length > 0 ? (
         <>
           <Segmented label="Calendar view" value={view} onChange={setView} options={[{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }]} />
-          {options.length > 2 || filter !== "all" ? <FilterChips label="Filter event type" testID="calendar-type" value={filter} onChange={setFilter} options={options} /> : null}
+          {options.length > 2 || filter !== "all" ? <FilterChips label="Filter event type" testID="calendar-type" value={filter} onChange={setFilter} options={options} inline={4} moreLabel="More types" /> : null}
           {view === "agenda" ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: TARGET }}>
               <Text variant="body" style={{ flex: 1 }}>Include past events</Text>
