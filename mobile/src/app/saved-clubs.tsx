@@ -4,9 +4,11 @@ import { FlatList, Pressable, RefreshControl, View, useWindowDimensions } from "
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CLUB_CARD_GAP, ClubCard, ClubCardSkeleton, clubCardHeight } from "~/components/explore/club-card";
+import { useIsAlumni } from "~/components/alumni-banner";
 import { usePrefetchClub, useSavedClubs } from "~/components/explore/hooks";
 import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
+import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { ArrowRight, Bookmark, X } from "~/components/icons";
 import { Text } from "~/components/text";
 import { Button, EmptyState, ErrorState } from "~/components/ui";
@@ -29,7 +31,10 @@ export default function SavedClubsScreen() {
   const { fontScale } = useWindowDimensions();
   const notice = useNotice();
   const { query, items, setSaved } = useSavedClubs(notice.show);
+  useRefetchOnFocus(query);
   const prefetch = usePrefetchClub();
+  // Alumni keep their saved clubs but can't change them (the server refuses too): no swipe to remove, a locked bookmark.
+  const alumni = useIsAlumni();
   const [now] = useState(() => Date.now());
   const height = clubCardHeight(theme, fontScale);
 
@@ -37,10 +42,11 @@ export default function SavedClubsScreen() {
   const pressIn = useCallback((club: PublicClub) => prefetch(club.id), [prefetch]);
   const renderItem = useCallback(({ item, index }: { item: Item; index: number }) => (
     <Swipeable
+      enabled={!alumni}
       friction={1.6}
       rightThreshold={REMOVE_WIDTH / 2}
       overshootRight={false}
-      renderRightActions={() => (
+      renderRightActions={() => alumni ? null : (
         <Pressable testID={`saved-remove-${index}`} accessibilityRole="button" accessibilityLabel={`Remove ${item.club.name} from saved clubs`} onPress={() => setSaved(item.club, false)}
           style={{ width: REMOVE_WIDTH, height, marginLeft: 8, borderRadius: radius.lg, backgroundColor: colors.destructive, alignItems: "center", justifyContent: "center", gap: 4 }}>
           <X size={20} color={colors.destructiveForeground} />
@@ -48,9 +54,9 @@ export default function SavedClubsScreen() {
         </Pressable>
       )}
     >
-      <ClubCard club={item.club} saved height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} testID={`saved-club-${index}`} />
+      <ClubCard club={item.club} saved height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} saveLocked={alumni} testID={`saved-club-${index}`} />
     </Swipeable>
-  ), [colors, radius, height, now, open, pressIn, setSaved]);
+  ), [colors, radius, height, now, open, pressIn, setSaved, alumni]);
   const getItemLayout = useCallback((_: unknown, index: number) => ({ length: height + CLUB_CARD_GAP, offset: (height + CLUB_CARD_GAP) * index, index }), [height]);
 
   const header = (
@@ -63,10 +69,11 @@ export default function SavedClubsScreen() {
     <View accessibilityLabel="Loading Saved clubs…" accessibilityRole="progressbar" style={{ gap: CLUB_CARD_GAP }}>
       {Array.from({ length: 4 }, (_, index) => <ClubCardSkeleton key={index} height={height} />)}
     </View>
-  ) : query.isError ? (
+  ) : query.isError && !query.data ? (
     <ErrorState message={errorMessage(query.error, "Couldn’t load your saved clubs.")} offline={query.error instanceof ApiError && query.error.offline} onRetry={() => query.refetch()} />
   ) : (
-    <EmptyState icon={Bookmark} title="No saved clubs yet." body="Save a club from Explore or its profile, and you’ll find it here." action={<Button icon={ArrowRight} label="Browse clubs" testID="saved-browse" onPress={() => router.replace("/explore")} />} />
+    // Back to the tabs underneath, on Explore: a replace would stack a second tab shell.
+    <EmptyState icon={Bookmark} title="No saved clubs yet." body="Save a club from Explore or its profile, and you’ll find it here." action={<Button icon={ArrowRight} label="Browse clubs" testID="saved-browse" onPress={() => router.dismissTo("/explore")} />} />
   );
 
   return (

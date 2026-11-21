@@ -1,17 +1,20 @@
 import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CLUB_CARD_GAP, ClubCard, ClubCardSkeleton, clubCardHeight } from "~/components/explore/club-card";
 import { type DirectoryFilters, categoryIcon, clubRecruitment, emptyDirectoryFilters, filterDirectory, rankedCategories, recruitmentOptions } from "~/components/explore/directory";
+import { useIsAlumni } from "~/components/alumni-banner";
 import { useDirectory, usePrefetchClub, useSavedClubs } from "~/components/explore/hooks";
 import { FieldLabel, FilterChip, SearchField, useDebounced, useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
+import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Bookmark, CalendarDays, Compass, SlidersHorizontal, Users, X } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press } from "~/components/ui";
+import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
 import type { PublicClub } from "~/lib/types";
 
@@ -31,7 +34,13 @@ export default function Explore() {
   const directory = useDirectory();
   const notice = useNotice({ dock: true });
   const saved = useSavedClubs(notice.show);
+  // Coming back to the tab after a failed load (offline, a server error) tries again, as the other tabs do.
+  useRefetchOnFocus(directory);
+  useRefetchOnFocus(saved.query);
   const prefetch = usePrefetchClub();
+  const alumni = useIsAlumni();
+  const list = useRef<FlatList<PublicClub>>(null);
+  useTabScrollToTop(list);
   const [query, setQuery] = useState("");
   const [choices, setChoices] = useState<DirectoryFilters>(emptyDirectoryFilters);
   const [sheet, setSheet] = useState(false);
@@ -61,13 +70,15 @@ export default function Explore() {
   const pressIn = useCallback((club: PublicClub) => prefetch(club.id), [prefetch]);
   const { setSaved, ids } = saved;
   const renderItem = useCallback(({ item, index }: { item: PublicClub; index: number }) => (
-    <ClubCard club={item} saved={ids.has(item.id)} height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} testID={`explore-club-${index}`} />
-  ), [ids, height, now, open, pressIn, setSaved]);
+    <ClubCard club={item} saved={ids.has(item.id)} height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} saveLocked={alumni} testID={`explore-club-${index}`} />
+  ), [ids, height, now, open, pressIn, setSaved, alumni]);
   const getItemLayout = useCallback((_: unknown, index: number) => ({ length: height + CLUB_CARD_GAP, offset: (height + CLUB_CARD_GAP) * index, index }), [height]);
 
-  const failed = directory.isError || !!directory.data?.error;
+  // A failed refresh keeps the loaded directory; only a first load that failed (or the server's own refusal) shows the error.
+  const failed = (directory.isError && !clubs) || !!directory.data?.error;
   const header = (
     <View style={{ gap: 14, paddingBottom: 12 }}>
+      {directory.isRefetchError && !failed ? <StaleNote /> : null}
       <View style={{ flexDirection: "row", gap: 10 }}>
         <View style={{ flex: 1 }}><Button full variant="secondary" icon={CalendarDays} label="Events" testID="explore-events" onPress={() => router.push("/events")} /></View>
         <View style={{ flex: 1 }}><Button full variant="secondary" icon={Bookmark} label="Saved clubs" testID="explore-saved" onPress={() => router.push("/saved-clubs")} /></View>
@@ -127,6 +138,7 @@ export default function Explore() {
   return (
     <View style={{ flex: 1 }}>
       <FlatList
+        ref={list}
         testID="explore-screen"
         data={failed ? [] : filtered}
         keyExtractor={keyOf}

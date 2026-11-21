@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Linking, View } from "react-native";
 import { useIsAlumni } from "~/components/alumni-banner";
-import { addEventToCalendar, calendarMessages, type CalendarOutcome } from "~/components/explore/calendar";
+import { addEventToCalendar, addedToCalendar, calendarMessages, type CalendarOutcome } from "~/components/explore/calendar";
 import { clubImage, eventDateLabel, eventScheduleLabel, eventSharePath, eventTimeLabel } from "~/components/explore/directory";
 import { BookmarkFilled } from "~/components/explore/event-card";
 import { usePrefetchClub, useSavedEvents } from "~/components/explore/hooks";
@@ -100,7 +100,8 @@ export default function EventDetail() {
             <View style={{ flex: 1 }}><Button full variant={saved ? "accent" : "secondary"} testID="event-save" icon={saved ? BookmarkFilled : Bookmark} label={saved ? "Saved" : "Save"} accessibilityHint={event.title} disabled={!saves.ready || alumni} onPress={() => saves.setSaved(event.id, !saved)} /></View>
             <View style={{ flex: 1 }}><Button full variant="secondary" testID="event-share" icon={Share} label="Share" onPress={() => setSharing(true)} /></View>
           </View>
-          <Button full variant="secondary" testID="event-calendar" icon={calendar === "added" ? Check : CalendarPlus} loading={adding} label="Add to Calendar" accessibilityHint={event.title} onPress={() => void addToCalendar(event)} />
+          {/* Added once already (here or on the board): another tap would write a duplicate entry. */}
+          <Button full variant="secondary" testID="event-calendar" icon={calendar === "added" || addedToCalendar(event.id) ? Check : CalendarPlus} loading={adding} label={addedToCalendar(event.id) ? "Added to Calendar" : "Add to Calendar"} disabled={addedToCalendar(event.id)} accessibilityHint={event.title} onPress={() => void addToCalendar(event)} />
           {calendar ? (
             <View accessibilityLiveRegion="polite" style={{ gap: 6 }}>
               <Text variant="small" testID="event-calendar-status" color={calendar === "added" ? colors.foreground : colors.mutedForeground}>{calendar === "failed" ? "We couldn’t add this event to your calendar. Try again." : calendarMessages[calendar]}</Text>

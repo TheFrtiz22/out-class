@@ -1,5 +1,5 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewProps, StyleSheet, Switch, View, type ViewProps, type ViewStyle } from "react-native";
+import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewInstance, type ScrollViewProps, StyleSheet, Switch, View, type ViewProps, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -19,9 +19,18 @@ export const TARGET = 44;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** A pressable that settles slightly while held, as web controls do (styles/pressed-states.css). */
-export function Press({ children, style, large, onPressIn, onPressOut, disabled, ...rest }: PressableProps & { large?: boolean; style?: ViewStyle | ViewStyle[] }) {
+/**
+ * A pressable that settles slightly while held, as web controls do (styles/pressed-states.css).
+ * The second tap of a double tap is dropped here, so no row, card or button opens a screen twice.
+ */
+// A toggle (a checkbox, radio, tab or switch) takes every tap: a quick second tap is the person changing
+// their mind, and toggling twice repeats nothing. Only actions that open or submit something are guarded.
+const TOGGLE_ROLES = new Set(["checkbox", "radio", "tab", "switch"]);
+
+export function Press({ children, style, large, onPressIn, onPressOut, onPress, disabled, ...rest }: PressableProps & { large?: boolean; style?: ViewStyle | ViewStyle[] }) {
   const theme = useTheme();
+  const guarded = useSinglePress(onPress ?? undefined);
+  const press = rest.accessibilityRole && TOGGLE_ROLES.has(rest.accessibilityRole) ? onPress ?? undefined : guarded;
   const pressed = useSharedValue(0);
   const animated = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * (1 - (large ? theme.press.scaleLarge : theme.press.scale)) }],
@@ -33,6 +42,7 @@ export function Press({ children, style, large, onPressIn, onPressOut, disabled,
       accessibilityRole="button"
       disabled={disabled}
       {...rest}
+      onPress={press}
       onPressIn={event => { pressed.value = theme.a11y.reduceMotion ? 1 : withTiming(1, { duration: theme.duration.pressIn }); onPressIn?.(event); }}
       onPressOut={event => { pressed.value = spring(0, { kind: "quick", reduceMotion: theme.a11y.reduceMotion }); onPressOut?.(event); }}
       style={[style, animated]}
@@ -45,14 +55,14 @@ export function Press({ children, style, large, onPressIn, onPressOut, disabled,
 /** Presses closer together than this are one press: a double tap never submits twice. */
 const REPEAT_GUARD_MS = 450;
 /** `onPress`, ignoring a repeat that lands within the guard window (the second tap of a double tap). */
-function useSinglePress(onPress?: () => void) {
+export function useSinglePress<A extends unknown[]>(onPress?: (...args: A) => void) {
   const last = useRef(0);
   if (!onPress) return undefined;
-  return () => {
+  return (...args: A) => {
     const now = Date.now();
     if (now - last.current < REPEAT_GUARD_MS) return;
     last.current = now;
-    onPress();
+    onPress(...args);
   };
 }
 
@@ -67,11 +77,10 @@ export function Button({ label, onPress, variant = "primary", size = "default", 
     accent: { background: colors.brandSubtle, text: colors.brandInk, border: colors.brandSubtle },
   }[variant];
   const height = Math.max(TARGET, size === "large" ? controlHeight.large + 4 : size === "compact" ? controlHeight.compact : controlHeight.large);
-  const press = useSinglePress(onPress);
   return (
     <Press
       testID={testID}
-      onPress={press}
+      onPress={onPress}
       disabled={disabled || loading}
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
@@ -89,9 +98,8 @@ export function Button({ label, onPress, variant = "primary", size = "default", 
 /** A round icon-only control with a 44pt target. `label` is required: it is the accessible name. */
 export function IconButton({ icon: Icon, label, onPress, onLongPress, tone = "plain", selected, disabled, accessibilityHint, testID }: { icon: IconComponent; label: string; onPress?: () => void; onLongPress?: () => void; tone?: "plain" | "surface"; selected?: boolean; disabled?: boolean; accessibilityHint?: string; testID?: string }) {
   const { colors } = useTheme();
-  const press = useSinglePress(onPress);
   return (
-    <Press testID={testID} onPress={press} onLongPress={onLongPress} disabled={disabled} accessibilityLabel={label} accessibilityHint={accessibilityHint} accessibilityState={{ selected: !!selected, disabled: !!disabled }} hitSlop={6}
+    <Press testID={testID} onPress={onPress} onLongPress={onLongPress} disabled={disabled} accessibilityLabel={label} accessibilityHint={accessibilityHint} accessibilityState={{ selected: !!selected, disabled: !!disabled }} hitSlop={6}
       style={{ width: TARGET, height: TARGET, borderRadius: TARGET / 2, alignItems: "center", justifyContent: "center", backgroundColor: tone === "surface" ? colors.card : "transparent", borderWidth: tone === "surface" ? StyleSheet.hairlineWidth : 0, borderColor: colors.border }}>
       <Icon size={22} weight={selected ? "fill" : "regular"} color={selected ? colors.brandInk : colors.foreground} />
     </Press>
@@ -223,6 +231,11 @@ export function ErrorState({ message, onRetry, offline }: { message: string; onR
   );
 }
 
+/** A refresh that failed while loaded data is on screen: the data stays, with this one quiet line instead of an error page. */
+export function StaleNote() {
+  return <Text variant="small" accessibilityRole="alert" testID="stale-note">Couldn’t refresh. Showing saved data.</Text>;
+}
+
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 32 }}>
@@ -292,12 +305,13 @@ export function Toggle({ value, onValueChange, disabled, accessibilityLabel, tes
  * The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance, and a
  * focused field kept above the keyboard on both platforms.
  */
-export function ScreenScroll({ children, refreshing, onRefresh, dock, top = 0, contentStyle, ...rest }: ScrollViewProps & { refreshing?: boolean; onRefresh?: () => void; dock?: boolean; top?: number; contentStyle?: ViewStyle }) {
+export function ScreenScroll({ children, refreshing, onRefresh, dock, top = 0, contentStyle, ref, ...rest }: ScrollViewProps & { refreshing?: boolean; onRefresh?: () => void; dock?: boolean; top?: number; contentStyle?: ViewStyle; ref?: Ref<ScrollViewInstance> }) {
   const { colors, space } = useTheme();
   const insets = useSafeAreaInsets();
   const keyboard = useAndroidKeyboardInset();
   return (
     <ScrollView
+      ref={ref}
       style={{ flex: 1, backgroundColor: colors.background, marginBottom: keyboard ? keyboard + insets.bottom : 0 }}
       automaticallyAdjustKeyboardInsets
       keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}

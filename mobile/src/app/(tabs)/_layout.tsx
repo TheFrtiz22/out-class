@@ -37,15 +37,17 @@ const LIFT_SCALE = 0.08;
  * ticks as it crosses each tab, and on release locks onto the tab under the finger (as Instagram's
  * and Apple Music's tab bars do).
  */
-type DockProps = { state: { index: number; routes: { key: string; name: string }[] } };
-function Dock({ state }: DockProps) {
+type DockProps = { state: { index: number; routes: { key: string; name: string }[] }; navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => unknown } };
+function Dock({ state, navigation }: DockProps) {
   const router = useRouter();
   const { colors, radius, a11y } = useTheme();
   const insets = useSafeAreaInsets();
   // The dock steps aside for the keyboard rather than riding on top of it.
   const keyboard = useKeyboardShown();
   const home = useApiQuery<HomeView>("home.view", undefined, { staleTime: 30_000 });
-  const unread = Math.max(0, Number(home.data?.unread) || 0);
+  // The Inbox's own count, so marking everything read there clears the badge. (`unread`, the web's bell
+  // count, also counts task notifications the Inbox doesn't list; an older server sends only that.)
+  const unread = Math.max(0, Number(home.data?.inboxUnread ?? home.data?.unread) || 0);
 
   const routes = state.routes.filter(route => tabs.some(tab => tab.name === route.name));
   const current = Math.max(0, routes.findIndex(route => route.key === state.routes[state.index]?.key));
@@ -130,9 +132,11 @@ function Dock({ state }: DockProps) {
                   accessibilityState={{ selected }}
                   accessibilityLabel={badge ? `${tab.label}, ${badge} unread` : tab.label}
                   onPress={() => {
-                    // Selecting the tab you are on does nothing; another tab switches at once, with a tick.
+                    // Another tab switches at once, with a tick. The tab you are on gets the navigator's own
+                    // tabPress, which its list answers by scrolling to the top (useScrollToTop), as iOS tab bars do.
                     if (holding.current || Date.now() - droppedAt.current < 400) return;
                     if (!selected) { haptics.tick(); go(index); }
+                    else navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
                   }}
                   style={({ pressed }) => ({ flex: 1, minWidth: 62, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 2, borderRadius: radius.full, backgroundColor: !slot && selected ? colors.primary : pressed && !lit ? colors.muted : "transparent" })}
                 >

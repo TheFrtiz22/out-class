@@ -25,10 +25,11 @@ export function clubCardHeight(theme: Pick<Theme, "text" | "leading">, fontScale
   return Math.ceil(lines * scale) + 2 * PADDING + 14 + 4;
 }
 
-type Props = { club: PublicClub; saved: boolean; height: number; now: number; onOpen: (club: PublicClub) => void; onPressIn?: (club: PublicClub) => void; onToggleSaved?: (club: PublicClub, saved: boolean) => void; testID?: string };
+type Props = { club: PublicClub; saved: boolean; height: number; now: number; onOpen: (club: PublicClub) => void; onPressIn?: (club: PublicClub) => void; onToggleSaved?: (club: PublicClub, saved: boolean) => void; saveLocked?: boolean; testID?: string };
 
 /** One club in Explore and Saved clubs (components/clubs/discovery-card.tsx at list density). */
-export const ClubCard = memo(function ClubCard({ club, saved, height, now, onOpen, onPressIn, onToggleSaved, testID }: Props) {
+/** `saveLocked`: the bookmark still shows the saved state but can't be changed (alumni accounts are read-only; the server refuses too). */
+export const ClubCard = memo(function ClubCard({ club, saved, height, now, onOpen, onPressIn, onToggleSaved, saveLocked, testID }: Props) {
   const { colors, radius, dark } = useTheme();
   const recruitment = clubRecruitment(club, now);
   const deadline = recruitment.deadline ? `${recruitment.expired ? "Closed" : "Deadline"} · ${shortRecruitmentDate(recruitment.deadline, now)}` : "Deadline not published";
@@ -48,7 +49,7 @@ export const ClubCard = memo(function ClubCard({ club, saved, height, now, onOpe
       </Press>
       {onToggleSaved ? (
         <View style={{ position: "absolute", top: 6, right: 6 }}>
-          <IconButton testID={testID ? `${testID}-save` : undefined} icon={Bookmark} selected={saved} label={`${label}: ${club.name}`} onPress={() => onToggleSaved(club, !saved)} />
+          <IconButton testID={testID ? `${testID}-save` : undefined} icon={Bookmark} selected={saved} label={`${label}: ${club.name}`} disabled={saveLocked} onPress={() => onToggleSaved(club, !saved)} />
         </View>
       ) : null}
     </View>

@@ -1,8 +1,8 @@
 import { formatPhone } from "@outclass/shared/phone";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { View } from "react-native";
+import { useRef, useState } from "react";
+import { type ScrollViewInstance, View } from "react-native";
 import { AlumniBanner, isAlumniProfile } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
@@ -11,10 +11,11 @@ import { EditProfileSheet } from "~/components/profile/edit-sheet";
 import { PrivateImage, openPrivateDocument, photoParams } from "~/components/private-image";
 import { initials, isStoragePath, profileChecklist, resumeHref, safeProfileUrl, scholarSummary } from "~/components/profile/model";
 import { Text } from "~/components/text";
-import { Button, Card, ErrorState, IconButton, Row, ScreenScroll, Skeleton } from "~/components/ui";
+import { Button, Card, ErrorState, IconButton, Row, ScreenScroll, Skeleton, StaleNote } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { openExternal, openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { fonts, useTheme } from "~/lib/theme";
 import type { FullStudentProfile, ProfileSectionId } from "~/lib/types";
 
@@ -30,6 +31,8 @@ export default function Profile() {
   const top = useHeaderInset();
   const query = useApiQuery<{ profile: FullStudentProfile | null }>("profile");
   useRefetchOnFocus(query);
+  const scroll = useRef<ScrollViewInstance>(null);
+  useTabScrollToTop(scroll);
   const [editing, setEditing] = useState<ProfileSectionId | null>(null);
   const [lastSection, setLastSection] = useState<ProfileSectionId>("identity");
   // A photo chosen in this session shows at once; the saved one comes through the media route.
@@ -52,14 +55,14 @@ export default function Profile() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll dock top={top} refreshing={query.isRefetching} onRefresh={() => query.refetch()} testID="profile-screen">
+      <ScreenScroll ref={scroll} dock top={top} refreshing={query.isRefetching} onRefresh={() => query.refetch()} testID="profile-screen">
         {query.isPending ? (
           <View accessibilityLabel="Loading profile" accessibilityRole="progressbar" style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}><Skeleton width={80} height={80} radius={40} /><View style={{ flex: 1, gap: 10 }}><Skeleton width="70%" height={24} /><Skeleton width="55%" /><Skeleton width={120} height={36} radius={18} /></View></View>
             <Card style={{ gap: 10 }}><Skeleton width="35%" height={18} /><Skeleton /><Skeleton width="70%" /><Skeleton width="50%" /></Card>
             <Card style={{ gap: 10 }}><Skeleton width="25%" height={18} /><Skeleton width="80%" /></Card>
           </View>
-        ) : query.isError ? (
+        ) : query.isError && !query.data ? (
           query.error instanceof ApiError && query.error.offline
             ? <ErrorState message={errorMessage(query.error)} offline onRetry={() => query.refetch()} />
             : <View accessibilityRole="alert" style={{ gap: 10, paddingVertical: 24 }}><Text variant="section">Your profile couldn’t load</Text><Text variant="small">Your saved details haven’t changed.</Text><Button variant="secondary" label="Try again" onPress={() => query.refetch()} /></View>
@@ -67,10 +70,12 @@ export default function Profile() {
           <View style={{ gap: 10, paddingVertical: 24 }}>
             <Text variant="section" accessibilityRole="header">Complete your student profile.</Text>
             <Text variant="small">Complete student onboarding to create your recruiting profile.</Text>
-            <Button variant="secondary" icon={ExternalLink} label="Open on web" onPress={() => { openOnWeb("/profile"); }} />
+            {/* The same screen, and the same replace, the root layout uses for an account with no profile (so no second tab shell). */}
+            <Button variant="secondary" testID="profile-complete" label="Complete your profile" onPress={() => router.replace("/complete-profile" as never)} />
           </View>
         ) : (
           <>
+            {query.isRefetchError ? <StaleNote /> : null}
             <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
               <View accessible={false} testID="profile-avatar" style={{ width: 80, height: 80, borderRadius: 40, overflow: "hidden", backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
                 {localPhoto && profile.headshotUrl ? <Image source={{ uri: localPhoto }} style={{ width: 80, height: 80 }} contentFit="cover" />
@@ -174,11 +179,11 @@ export default function Profile() {
             <Card padded={false} style={{ paddingHorizontal: 16, borderRadius: radius.lg }}>
               <Row testID="profile-settings" leading={<Settings size={22} color={colors.brandInk} />} title="Settings" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/settings" as never)} />
             </Card>
-
-            <EditProfileSheet open={!!editing} initialSection={lastSection} profile={profile} onClose={() => setEditing(null)} onSaved={() => {}} onLocalPhoto={setLocalPhoto} />
           </>
         )}
       </ScreenScroll>
+      {/* Outside the loaded branch: a refetch while the sheet is open (picking a photo backgrounds the app) never unmounts the draft. */}
+      {profile ? <EditProfileSheet open={!!editing} initialSection={lastSection} profile={profile} onClose={() => setEditing(null)} onSaved={() => {}} onLocalPhoto={setLocalPhoto} /> : null}
       <Header title="Profile" actions={<IconButton icon={Settings} label="Settings" testID="profile-header-settings" onPress={() => router.push("/settings" as never)} />} />
     </View>
   );

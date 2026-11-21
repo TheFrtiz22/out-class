@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, RefreshControl, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
@@ -9,11 +9,12 @@ import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, TARGET, Toggle } from "~/components/ui";
+import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, StaleNote, TARGET, Toggle } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { addDays, addToCalendar, easternDateKey, easternTime, formatDateKey } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { fonts, useTheme } from "~/lib/theme";
 import type { AgendaEvent, CalendarView, Me, MyApplicationSummary } from "~/lib/types";
 
@@ -26,6 +27,10 @@ const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const startOf = (event: AgendaEvent) => new Date(event.startTime);
 const endOf = (event: AgendaEvent) => event.endTime ? new Date(event.endTime) : new Date(startOf(event).getTime() + (event.durationMinutes ?? (event.type === "Deadline" ? 0 : 60)) * 60_000);
 const timeLabel = (event: AgendaEvent) => (event.allDay ? "All day" : easternTime(event.startTime));
+/** The meeting a row opens: a meeting's own row, or a meeting the person checked in to (the server names it on attendance rows). */
+const meetingOf = (event: AgendaEvent) => (event.id.startsWith("meeting-") ? event.id.slice(8) : event.meetingId);
+/** A leader's interview-panel slot: it opens the club's interview tools, not an applicant's interview. */
+const isPanel = (event: AgendaEvent) => event.id.startsWith("panel-");
 
 /** The web's agenda groups (lib/student-agenda.ts): Eastern calendar boundaries, not 24-hour spans. */
 function agendaGroups(events: AgendaEvent[], now: number, includePast: boolean) {
@@ -119,11 +124,16 @@ export default function CalendarScreen() {
   const [month, setMonth] = useState(today.slice(0, 7));
   const [calendarNote, setCalendarNote] = useState("");
   const [feed, setFeed] = useState(false);
+  const list = useRef<SectionList<AgendaEvent>>(null);
+  useTabScrollToTop(list);
 
-  // `?type=meeting` (the web's old /clubs/meetings) opens Calendar filtered to club meetings.
-  useEffect(() => { if (params.type === "meeting") setFilter(MEETINGS_FILTER); }, [params.type]);
+  // `?type=meeting` (the web's old /clubs/meetings) opens Calendar filtered to club meetings. The param is
+  // then cleared, so the same link opened again after the filter was cleared filters again.
+  useEffect(() => { if (params.type === "meeting") { setFilter(MEETINGS_FILTER); router.setParams({ type: undefined }); } }, [params.type, router]);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60_000); return () => clearInterval(timer); }, []);
 
+  // A failed refresh keeps the loaded calendar; only a first load that failed shows the error.
+  const failed = calendar.isError && !calendar.data;
   const events = calendar.data?.events ?? [];
   // Only types this person actually has, so no chip leads to an empty list.
   const present = new Set(events.map(event => event.type));
@@ -145,7 +155,9 @@ export default function CalendarScreen() {
   }
   function openDetail(event: AgendaEvent) {
     setSelectedId(null);
-    if (event.id.startsWith("meeting-")) { router.push({ pathname: "/meeting/[id]", params: { id: event.id.slice(8) } } as never); return; }
+    const meetingId = meetingOf(event);
+    if (meetingId) { router.push({ pathname: "/meeting/[id]", params: { id: meetingId } } as never); return; }
+    if (isPanel(event)) { router.push({ pathname: "/leader/[clubId]/interviews", params: { clubId: event.clubId } } as never); return; }
     // The server names the club of a booked interview; the person's application to that club is the interview screen's subject.
     const applications = (me.data?.applications ?? []).filter(application => application.clubId === event.clubId);
     const application = applications.find(item => item.status === "INTERVIEWING") ?? applications[0];
@@ -157,6 +169,7 @@ export default function CalendarScreen() {
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
       {/* The title lives in the floating bar alone; Subscribe sits there too, so nothing here takes a line of its own. */}
       <Text variant="small">Times shown in Eastern Time.</Text>
+      {calendar.isRefetchError ? <StaleNote /> : null}
       {events.length > 0 ? (
         <>
           <Segmented label="Calendar view" value={view} onChange={setView} options={[{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }]} />
@@ -183,15 +196,16 @@ export default function CalendarScreen() {
   );
 
   const empty = calendar.isPending ? <View style={{ paddingTop: 12 }}><SkeletonRows count={4} avatar={false} /></View>
-    : calendar.isError ? <ErrorState message={errorMessage(calendar.error)} offline={calendar.error instanceof ApiError && calendar.error.offline} onRetry={() => calendar.refetch()} />
+    : failed ? <ErrorState message={errorMessage(calendar.error)} offline={calendar.error instanceof ApiError && calendar.error.offline} onRetry={() => calendar.refetch()} />
       : <EmptyState icon={CalendarDays} title={filtered ? "No events match these filters" : "Nothing coming up"} body={filtered ? "No events of this type are on your calendar." : includePast ? "You have no interviews, meetings or RSVP’d events yet." : "You have no interviews, meetings or RSVP’d events coming up."}
           action={filtered ? <Button variant="secondary" label="Clear filters" onPress={() => setFilter("all")} /> : <Button variant="secondary" label="Browse events" onPress={() => router.push("/events" as never)} />} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SectionList
+        ref={list}
         testID="calendar-screen"
-        sections={calendar.isPending || calendar.isError ? [] : sections.filter(section => view === "month" || section.data.length)}
+        sections={calendar.isPending || failed ? [] : sections.filter(section => view === "month" || section.data.length)}
         keyExtractor={item => item.id}
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
@@ -202,7 +216,7 @@ export default function CalendarScreen() {
         renderSectionHeader={({ section }) => <Text variant="section" accessibilityRole="header" style={{ paddingTop: 18, paddingBottom: 10 }}>{section.title}</Text>}
         renderSectionFooter={({ section }) => (view === "month" && !section.data.length ? <Text variant="small" style={{ paddingVertical: 8 }}>{filtered ? "No events on this day match your filters." : "Nothing scheduled."}</Text> : null)}
         renderItem={({ item, index, section }) => <EventRow event={item} first={index === 0} last={index === section.data.length - 1} onPress={() => { setCalendarNote(""); setSelectedId(item.id); }} />}
-        ListEmptyComponent={view === "agenda" || calendar.isPending || calendar.isError ? empty : undefined}
+        ListEmptyComponent={view === "agenda" || calendar.isPending || failed ? empty : undefined}
       />
       <Header title="Calendar" actions={<Button variant="ghost" size="compact" icon={CalendarPlus} testID="calendar-subscribe" label="Subscribe" accessibilityHint="Add OutClass to your calendar" onPress={() => setFeed(true)} style={{ alignSelf: "center" }} />} />
       <CalendarFeedSheet open={feed} onClose={() => setFeed(false)} />
@@ -220,11 +234,13 @@ export default function CalendarScreen() {
               <Text variant="body" style={{ flex: 1 }}>{selected.location?.trim() || (selected.type === "Deadline" ? "Online application" : "Location not announced")}</Text>
             </View>
             <Text variant="small">{selected.description?.trim() || (selected.readOnly ? "Review your scheduled event details below." : selected.type === "Deadline" ? "Open your application to review your progress and next steps before this deadline." : "Review this club event and manage your attendance below.")}</Text>
-            {selected.readOnly ? <Text variant="small">Contact the club if you need to change these arrangements.</Text> : null}
-            {selected.response ? <Text variant="smallStrong" accessibilityLiveRegion="polite">{selected.response === "declined" ? "Attendance cancelled" : selected.response === "confirmed" ? "Interview confirmed" : "You're going"}</Text> : null}
+            {/* Only a booked interview or a meeting is the club's to change; a panel slot is the leader's own, a past check-in is done. */}
+            {selected.readOnly && /^(booking|meeting)-/.test(selected.id) ? <Text variant="small">Contact the club if you need to change these arrangements.</Text> : null}
+            {selected.response ? <Text variant="smallStrong" accessibilityLiveRegion="polite">{isPanel(selected) ? "You’re on the panel" : selected.response === "declined" ? "Attendance cancelled" : selected.response === "confirmed" ? "Interview confirmed" : "You're going"}</Text> : null}
             {calendarNote ? <Text variant="small" accessibilityRole="alert">{calendarNote}</Text> : null}
             <View style={{ gap: 10, marginTop: 4 }}>
-              {selected.id.startsWith("meeting-") ? <Button full size="large" testID="calendar-open-meeting" label="Open agenda and recap" onPress={() => openDetail(selected)} /> : null}
+              {meetingOf(selected) ? <Button full size="large" testID="calendar-open-meeting" label="Open agenda and recap" onPress={() => openDetail(selected)} /> : null}
+              {isPanel(selected) ? <Button full size="large" testID="calendar-open-panel" label="Open interview tools" onPress={() => openDetail(selected)} /> : null}
               {interviewTarget(selected) ? <Button full size="large" testID="calendar-open-interview" label="View interview" onPress={() => openDetail(selected)} /> : null}
               <Button full size="large" variant="secondary" icon={CalendarPlus} testID="calendar-add" label="Add to Calendar"
                 onPress={async () => {
