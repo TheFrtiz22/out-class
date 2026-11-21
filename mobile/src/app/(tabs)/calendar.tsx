@@ -1,15 +1,18 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, RefreshControl, SectionList, View } from "react-native";
+import { Pressable, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AlumniBanner, useIsAlumni } from "~/components/alumni-banner";
+import { GlobalAvailabilityEditor } from "~/components/availability/global-editor";
 import { Header, useHeaderInset } from "~/components/header";
+import { HeaderBackdrop } from "~/components/header-backdrop";
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, MapPin } from "~/components/icons";
 import { FilterChips } from "~/components/inbox/filter-chips";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, StaleNote, TARGET, Toggle } from "~/components/ui";
+import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, StaleNote, TARGET, Toggle, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { addDays, addToCalendar, easternDateKey, easternTime, formatDateKey } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
@@ -22,6 +25,8 @@ import type { AgendaEvent, CalendarView, Me, MyApplicationSummary } from "~/lib/
 const MEETINGS_FILTER = "club-meetings";
 const typeOptions = [{ value: "all", label: "All event types" }, { value: MEETINGS_FILTER, label: "Club meetings" }, ...["Other", "Deadline", "Interview", "Interest Meeting", "Coffee Chat"].map(type => ({ value: type, label: type }))];
 const typeTone: Record<string, ChipTone> = { Interview: "interview", Deadline: "warning", "Interest Meeting": "info", "Coffee Chat": "brand", Other: "neutral" };
+type CalendarMode = "agenda" | "month" | "availability";
+const viewOptions: { value: CalendarMode; label: string }[] = [{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }, { value: "availability", label: "Availability" }];
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const startOf = (event: AgendaEvent) => new Date(event.startTime);
@@ -114,7 +119,11 @@ export default function CalendarScreen() {
   const calendar = useApiQuery<CalendarView>("calendar.view");
   useRefetchOnFocus(calendar);
   const me = useApiQuery<Me & { applications?: MyApplicationSummary[] }>("me", undefined, { staleTime: 5 * 60_000 });
-  const [view, setView] = useState<"agenda" | "month">("agenda");
+  const [view, setView] = useState<CalendarMode>("agenda");
+  // While a finger paints a range on the availability grid, the list holds still.
+  const [painting, setPainting] = useState(false);
+  const alumni = useIsAlumni();
+  const availability = view === "availability";
   const [filter, setFilter] = useState("all");
   const [includePast, setIncludePast] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -140,8 +149,8 @@ export default function CalendarScreen() {
   const hasMeetings = events.some(event => event.id.startsWith("meeting-"));
   const options = typeOptions.filter(option => option.value === "all" || option.value === filter || (option.value === MEETINGS_FILTER ? hasMeetings : present.has(option.value)));
   const visible = events.filter(event => filter === "all" || (filter === MEETINGS_FILTER ? event.id.startsWith("meeting-") : event.type === filter));
-  const sections = view === "agenda"
-    ? agendaGroups(visible, now, includePast)
+  const sections = availability ? []
+    : view === "agenda" ? agendaGroups(visible, now, includePast)
     : [{ title: formatDateKey(day, { weekday: "long", month: "long", day: "numeric" }), data: visible.filter(event => event.date === day).sort((a, b) => startOf(a).getTime() - startOf(b).getTime()) }];
   const eventDays = new Set(visible.map(event => event.date));
   const selected = events.find(event => event.id === selectedId) ?? null;
@@ -167,13 +176,20 @@ export default function CalendarScreen() {
 
   const header = (
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
-      {/* The title lives in the floating bar alone; Subscribe sits there too, so nothing here takes a line of its own. */}
-      <Text variant="small">Times shown in Eastern Time.</Text>
-      {calendar.isRefetchError ? <StaleNote /> : null}
-      {events.length > 0 ? (
+      {calendar.isRefetchError && !availability ? <StaleNote /> : null}
+      <Segmented label="Calendar view" value={view} onChange={setView} options={viewOptions} />
+      {availability ? (
+        <View style={{ gap: space.content - 4 }} testID="calendar-availability">
+          <AlumniBanner action="availability" />
+          <GlobalAvailabilityEditor readOnly={alumni} onPaintingChange={setPainting} />
+          <Press testID="calendar-availability-rounds" accessibilityRole="link" onPress={() => router.push("/settings/availability" as never)} style={{ minHeight: TARGET, justifyContent: "center", alignSelf: "flex-start" }}>
+            <Text variant="smallStrong" color={colors.brandInk} style={{ textDecorationLine: "underline" }}>Club interview rounds</Text>
+          </Press>
+        </View>
+      ) : null}
+      {events.length > 0 && !availability ? (
         <>
-          <Segmented label="Calendar view" value={view} onChange={setView} options={[{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }]} />
-          {options.length > 2 || filter !== "all" ? <FilterChips label="Filter event type" testID="calendar-type" value={filter} onChange={setFilter} options={options} /> : null}
+          {options.length > 2 || filter !== "all" ? <FilterChips label="Filter event type" testID="calendar-type" value={filter} onChange={setFilter} options={options} inline={4} moreLabel="More types" /> : null}
           {view === "agenda" ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: TARGET }}>
               <Text variant="body" style={{ flex: 1 }}>Include past events</Text>
@@ -200,24 +216,27 @@ export default function CalendarScreen() {
       : <EmptyState icon={CalendarDays} title={filtered ? "No events match these filters" : "Nothing coming up"} body={filtered ? "No events of this type are on your calendar." : includePast ? "You have no interviews, meetings or RSVP’d events yet." : "You have no interviews, meetings or RSVP’d events coming up."}
           action={filtered ? <Button variant="secondary" label="Clear filters" onPress={() => setFilter("all")} /> : <Button variant="secondary" label="Browse events" onPress={() => router.push("/events" as never)} />} />;
 
+  const pullControl = usePullControl(() => Promise.all([calendar.refetch(), me.refetch()]), top);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SectionList
         ref={list}
         testID="calendar-screen"
-        sections={calendar.isPending || failed ? [] : sections.filter(section => view === "month" || section.data.length)}
+        sections={calendar.isPending || failed || availability ? [] : sections.filter(section => view === "month" || section.data.length)}
         keyExtractor={item => item.id}
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
         scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={calendar.isRefetching} onRefresh={() => { calendar.refetch(); me.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
         ListHeaderComponent={header}
         renderSectionHeader={({ section }) => <Text variant="section" accessibilityRole="header" style={{ paddingTop: 18, paddingBottom: 10 }}>{section.title}</Text>}
         renderSectionFooter={({ section }) => (view === "month" && !section.data.length ? <Text variant="small" style={{ paddingVertical: 8 }}>{filtered ? "No events on this day match your filters." : "Nothing scheduled."}</Text> : null)}
         renderItem={({ item, index, section }) => <EventRow event={item} first={index === 0} last={index === section.data.length - 1} onPress={() => { setCalendarNote(""); setSelectedId(item.id); }} />}
-        ListEmptyComponent={view === "agenda" || calendar.isPending || failed ? empty : undefined}
+        ListEmptyComponent={availability ? undefined : view === "agenda" || calendar.isPending || failed ? empty : undefined}
+        scrollEnabled={!painting}
       />
+      {availability ? <HeaderBackdrop /> : null}
       <Header title="Calendar" actions={<Button variant="ghost" size="compact" icon={CalendarPlus} testID="calendar-subscribe" label="Subscribe" accessibilityHint="Add OutClass to your calendar" onPress={() => setFeed(true)} style={{ alignSelf: "center" }} />} />
       <CalendarFeedSheet open={feed} onClose={() => setFeed(false)} />
 

@@ -47,7 +47,7 @@ export default function LeaderHub() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="leader-hub" refreshing={me.isRefetching || meetings.isRefetching} onRefresh={() => { me.refetch(); meetings.refetch(); }}>
+      <ScreenScroll top={top} testID="leader-hub" onRefresh={() => Promise.all([me.refetch(), meetings.refetch()])}>
         <View style={{ gap: 4 }}>
           <Text variant="eyebrow">Leader tools</Text>
           <Text variant="title" accessibilityRole="header" numberOfLines={3}>{membership?.club.name ?? (me.isPending ? " " : "Club")}</Text>

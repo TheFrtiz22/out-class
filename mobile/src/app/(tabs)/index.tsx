@@ -5,6 +5,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ChevronRight, Compass, QrCode } from "~/components/icons";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { leaderMemberships } from "~/components/leader/access";
+import { LeaderToolsCard } from "~/components/leader/home-card";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, StaleNote, StatusChip } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
@@ -56,7 +57,7 @@ export default function Home() {
   useRefetchOnFocus(home);
   const me = useApiQuery<Me & { applications?: MyApplicationSummary[] }>("me", undefined, { staleTime: 5 * 60_000 });
   const data = home.data;
-  const refresh = () => { home.refetch(); me.refetch(); };
+  const refresh = () => Promise.all([home.refetch(), me.refetch()]);
   const next = data?.nextAction;
   const leading = leaderMemberships(me.data);
   const go = (route: Route) => router.push(route as never);
@@ -65,7 +66,7 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll ref={scroll} dock top={top} refreshing={home.isRefetching || me.isRefetching} onRefresh={refresh} testID="home-screen">
+      <ScreenScroll ref={scroll} dock top={top} onRefresh={refresh} testID="home-screen">
         {home.isPending ? (
           <>
             <Card style={{ gap: 10 }}><Skeleton width="40%" /><Skeleton width="80%" height={22} /><Skeleton width={120} height={44} radius={22} /></Card>
@@ -105,20 +106,12 @@ export default function Home() {
               )}
             </Card>
 
+            {/* Club leaders get their tools right under Next up, in a card of their own, rather than one row among many. */}
+            <LeaderToolsCard memberships={leading} profile={me.data?.profile} />
+
             <Card padded={false} style={{ paddingHorizontal: 16 }}>
               <Row testID="home-scan" leading={<QrCode size={24} color={colors.brandInk} />} title="Scan to check in" detail="Scan the code shown at a meeting" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/scan")} />
             </Card>
-
-            {leading.length ? (
-              <Card padded={false} style={{ paddingHorizontal: 16 }}>
-                {leading.map((membership, index) => (
-                  <View key={membership.id}>
-                    {index ? <Divider /> : null}
-                    <Row testID="home-leader-tools" leading={<ClubMark name={membership.club.name} color={membership.club.color} logoUrl={membership.club.logoUrl} size={40} />} title="Leader tools" detail={membership.club.name} trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push({ pathname: "/leader/[clubId]", params: { clubId: membership.clubId } })} />
-                  </View>
-                ))}
-              </Card>
-            ) : null}
 
             <View style={{ gap: 10 }}>
               <SectionHeader title="Tasks" action={data.tasks.length ? <Button variant="ghost" size="compact" label="All tasks" onPress={() => router.push("/tasks")} /> : undefined} />
@@ -188,7 +181,7 @@ export default function Home() {
           </>
         ) : null}
       </ScreenScroll>
-      <Header title={me.data?.profile?.firstName ? `Hi, ${me.data.profile.firstName}` : "Home"} />
+      <Header root title={me.data?.profile?.firstName ? `Hi, ${me.data.profile.firstName}` : "Home"} />
     </View>
   );
 }

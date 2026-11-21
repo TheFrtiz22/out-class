@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, Pressable, RefreshControl, View, useWindowDimensions } from "react-native";
+import { FlatList, Pressable, View, useWindowDimensions } from "react-native";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CLUB_CARD_GAP, ClubCard, ClubCardSkeleton, clubCardHeight } from "~/components/explore/club-card";
@@ -11,7 +11,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { ArrowRight, Bookmark, X } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, EmptyState, ErrorState } from "~/components/ui";
+import { Button, EmptyState, ErrorState, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useTheme } from "~/lib/theme";
 import type { PublicClub, SavedClubs } from "~/lib/types";
@@ -76,6 +76,7 @@ export default function SavedClubsScreen() {
     <EmptyState icon={Bookmark} title="No saved clubs yet." body="Save a club from Explore or its profile, and you’ll find it here." action={<Button icon={ArrowRight} label="Browse clubs" testID="saved-browse" onPress={() => router.dismissTo("/explore")} />} />
   );
 
+  const pullControl = usePullControl(() => query.refetch(), top);
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -91,7 +92,7 @@ export default function SavedClubsScreen() {
         contentContainerStyle={{ paddingTop: top + theme.space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
         contentInsetAdjustmentBehavior="never"
         scrollIndicatorInsets={{ top }}
-        refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => { void query.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
       />
       <Header title="Saved clubs" back />
       {notice.element}

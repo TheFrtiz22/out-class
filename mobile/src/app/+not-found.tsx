@@ -13,7 +13,7 @@ export default function NotFoundScreen() {
       <ScreenScroll top={top} testID="not-found-screen">
         <Card>
           <EmptyState icon={Compass} title="This page isn’t in the app" body="The link may be old or meant for the website."
-            action={<Button label="Go to Home" icon={Home} onPress={() => router.replace("/")} />} />
+            action={<Button label="Go to Home" icon={Home} onPress={() => router.dismissTo("/")} />} />
         </Card>
       </ScreenScroll>
       <Header title="Not found" back />

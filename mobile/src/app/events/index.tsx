@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
+import { FlatList, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useIsAlumni } from "~/components/alumni-banner";
 import { addEventToCalendar, addedToCalendar, calendarMessages } from "~/components/explore/calendar";
@@ -13,7 +13,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ChevronDown, ChevronUp, SlidersHorizontal } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, TARGET, Toggle } from "~/components/ui";
+import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, TARGET, Toggle, usePullControl } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
@@ -72,7 +72,7 @@ export default function EventsBoard() {
     <EventCard event={item} saved={ids.has(item.id)} saveReady={ready} onOpen={open} onToggleSaved={setSaved} onAddToCalendar={addToCalendar} addedToCalendar={addedToCalendar(item.id)} testID={`event-card-${index}`} />
     // eslint-disable-next-line react-hooks/exhaustive-deps -- calendarAdds is the signal that addedToCalendar() changed
   ), [ids, ready, open, setSaved, addToCalendar, calendarAdds]);
-  const refresh = () => { void board.refetch(); void saves.query.refetch(); };
+  const refresh = () => Promise.all([board.refetch(), saves.query.refetch()]);
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 12 }}>
@@ -106,6 +106,7 @@ export default function EventsBoard() {
     </View>
   );
 
+  const pullControl = usePullControl(refresh, top);
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -128,7 +129,7 @@ export default function EventsBoard() {
         initialNumToRender={5}
         windowSize={9}
         scrollIndicatorInsets={{ top }}
-        refreshControl={<RefreshControl refreshing={board.isRefetching && !board.isFetchingNextPage && !board.isPlaceholderData} onRefresh={refresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
+        refreshControl={pullControl}
       />
       <Header title="Events" back />
       {notice.element}

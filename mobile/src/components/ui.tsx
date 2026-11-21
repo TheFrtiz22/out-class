@@ -10,10 +10,11 @@ import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
 import { useAndroidKeyboardInset } from "~/lib/keyboard";
 import { spring } from "~/lib/motion";
+import { usePullRefresh } from "~/lib/pull-refresh";
 import { fonts, useTheme } from "~/lib/theme";
 
-/** Space the floating dock takes at the bottom of a tab screen (dock height + its inset). */
-export const DOCK_CLEARANCE = 92;
+/** Space the floating dock takes at the bottom of a tab screen (its 74pt height, lib/dock.ts, plus room to breathe). */
+export const DOCK_CLEARANCE = 100;
 /** Minimum touch target (44pt, Apple HIG; 48dp on Android is met by the same padding). */
 export const TARGET = 44;
 
@@ -301,14 +302,28 @@ export function Toggle({ value, onValueChange, disabled, accessibilityLabel, tes
   );
 }
 
+const noRefresh = () => undefined;
+/**
+ * The pull-to-refresh control every screen and list uses. It spins only while the person's own pull runs:
+ * `onRefresh` should return the refetches' promise, and the spinner stays until it settles. A query's own
+ * background reloads (opening a screen, returning to it, after a save) never show it.
+ * Pass `undefined` for a screen that can't be refreshed right now.
+ */
+export function usePullControl(onRefresh: (() => unknown) | undefined, top = 0) {
+  const { colors } = useTheme();
+  const pull = usePullRefresh(onRefresh ?? noRefresh);
+  return onRefresh ? <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} /> : undefined;
+}
+
 /**
  * The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance, and a
  * focused field kept above the keyboard on both platforms.
  */
-export function ScreenScroll({ children, refreshing, onRefresh, dock, top = 0, contentStyle, ref, ...rest }: ScrollViewProps & { refreshing?: boolean; onRefresh?: () => void; dock?: boolean; top?: number; contentStyle?: ViewStyle; ref?: Ref<ScrollViewInstance> }) {
+export function ScreenScroll({ children, onRefresh, dock, top = 0, contentStyle, ref, ...rest }: ScrollViewProps & { onRefresh?: () => unknown; dock?: boolean; top?: number; contentStyle?: ViewStyle; ref?: Ref<ScrollViewInstance> }) {
   const { colors, space } = useTheme();
   const insets = useSafeAreaInsets();
   const keyboard = useAndroidKeyboardInset();
+  const refreshControl = usePullControl(onRefresh, top);
   return (
     <ScrollView
       ref={ref}
@@ -320,7 +335,7 @@ export function ScreenScroll({ children, refreshing, onRefresh, dock, top = 0, c
       contentInsetAdjustmentBehavior="never"
       // The scroll bar runs between the floating header and the dock, not under them.
       scrollIndicatorInsets={{ top, bottom: dock ? DOCK_CLEARANCE : 0 }}
-      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} /> : undefined}
+      refreshControl={refreshControl}
       {...rest}
     >
       {children}

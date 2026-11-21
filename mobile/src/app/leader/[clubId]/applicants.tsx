@@ -1,13 +1,14 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { FlatList, RefreshControl, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { FlatList, ScrollView, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header, useHeaderInset } from "~/components/header";
 import { ExternalLink, Search, ShieldCheck, X } from "~/components/icons";
+import { OptionPicker } from "~/components/option-picker";
 import { PrivateImage, photoParams } from "~/components/private-image";
 import { Text } from "~/components/text";
-import { Button, Card, ErrorState, Press, Skeleton, SkeletonRows, TARGET, StatusChip } from "~/components/ui";
+import { Button, Card, ErrorState, Press, Skeleton, SkeletonRows, StatusChip, usePullControl } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
@@ -51,7 +52,6 @@ export default function Applicants() {
   const [roundId, setRoundId] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
   const [query, setQuery] = useState("");
-  const [pulling, setPulling] = useState(false);
   useEffect(() => { const timer = setTimeout(() => setQuery(typed.trim()), 350); return () => clearTimeout(timer); }, [typed]);
 
   const overview = useApiQuery<Overview>("leader.overview", { clubId, view: "recruiting" }, { scope: "leader", staleTime: 30_000 });
@@ -69,17 +69,6 @@ export default function Applicants() {
   const roundCounts = overview.data?.operations?.rounds ?? [];
   const roundName = (id: string) => first?.rounds.find(round => round.id === id)?.name ?? "Round unavailable";
   const filtered = !!query || !!roundId;
-
-  const chip = (id: string | null, label: string, count?: number) => {
-    const selected = roundId === id;
-    return (
-      <Press key={id ?? "all"} testID={`applicants-round-${id ?? "all"}`} onPress={() => setRoundId(id)} accessibilityLabel={count === undefined ? label : `${label}, ${count}`} accessibilityState={{ selected }}
-        style={{ minHeight: TARGET, paddingHorizontal: 14, borderRadius: radius.full, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.card, flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text variant="smallStrong" color={selected ? colors.primaryForeground : colors.foreground}>{label}</Text>
-        {count === undefined ? null : <Text variant="small" color={selected ? colors.primaryForeground : colors.mutedForeground} style={{ fontVariant: ["tabular-nums"] }}>{count}</Text>}
-      </Press>
-    );
-  };
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 4 }}>
@@ -106,14 +95,13 @@ export default function Applicants() {
           </Press>
         ) : null}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingHorizontal: 16 }} accessibilityRole="tablist" accessibilityLabel="Round">
-        {chip(null, "All rounds")}
-        {(roundCounts.length ? roundCounts : first?.rounds ?? []).map(round => chip(round.id, round.name, "count" in round ? (round as RoundCount).count : undefined))}
-      </ScrollView>
+      <OptionPicker label="Round" testID="applicants-round" sheetTitle="Rounds" moreLabel="All rounds" inline={3} value={roundId ?? "all"} onChange={id => setRoundId(id === "all" ? null : id)}
+        options={[{ value: "all", label: "All rounds" }, ...(roundCounts.length ? roundCounts : first?.rounds ?? []).map(round => ({ value: round.id, label: round.name, count: "count" in round ? (round as RoundCount).count : undefined }))]} />
       {first ? <Text variant="small" testID="applicants-total" accessibilityLiveRegion="polite">{first.page.total} applicant{first.page.total === 1 ? "" : "s"}</Text> : null}
     </View>
   );
 
+  const pullControl = usePullControl(() => Promise.all([overview.refetch(), pipeline.refetch()]), top);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
@@ -125,7 +113,7 @@ export default function Applicants() {
         contentContainerStyle={{ paddingTop: top + 12, paddingHorizontal: 16, paddingBottom: insets.bottom + 24, gap: 10 }}
         ListHeaderComponent={header}
         scrollIndicatorInsets={{ top }}
-        refreshControl={<RefreshControl refreshing={pulling} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} onRefresh={() => { setPulling(true); Promise.all([overview.refetch(), pipeline.refetch()]).finally(() => setPulling(false)); }} />}
+        refreshControl={pullControl}
         onEndReachedThreshold={0.6}
         onEndReached={() => { if (pipeline.hasNextPage && !pipeline.isFetchingNextPage) pipeline.fetchNextPage(); }}
         ListEmptyComponent={pipeline.isPending ? <SkeletonRows count={5} /> : pipeline.isError ? (
