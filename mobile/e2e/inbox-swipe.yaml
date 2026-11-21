@@ -10,7 +10,7 @@ appId: net.outclass.app
       - tapOn:
           id: "header-back"
 - tapOn:
-    id: "tab-inbox"
+    id: "header-inbox"
 - extendedWaitUntil:
     visible:
       id: "inbox-type-announcements"

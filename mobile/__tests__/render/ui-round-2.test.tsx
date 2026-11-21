@@ -67,7 +67,7 @@ describe("profile", () => {
 
 describe("page titles", () => {
   const cases: [string, string][] = [
-    ["(tabs)/calendar", "Calendar"], ["(tabs)/inbox", "Inbox"], ["(tabs)/explore", "Explore"], ["applications", "Applications"],
+    ["(tabs)/calendar", "Calendar"], ["inbox", "Inbox"], ["(tabs)/explore", "Explore"], ["applications", "Applications"],
     ["tasks", "Tasks"], ["events/index", "Events"], ["saved-clubs", "Saved clubs"], ["settings/index", "Settings"],
     ["settings/notifications", "Notifications"], ["settings/account", "Account & Security"],
   ];
@@ -180,7 +180,7 @@ describe("tab dock drag", () => {
   test("a plain tap still switches tabs", async () => {
     await renderDock();
     await new Promise(resolve => setTimeout(resolve, 450));
-    fireEvent.press(screen.getByTestId("tab-inbox"));
-    expect(routerState.router.navigate).toHaveBeenCalledWith("/inbox");
+    fireEvent.press(screen.getByTestId("tab-profile"));
+    expect(routerState.router.navigate).toHaveBeenCalledWith("/profile");
   });
 });

@@ -11,7 +11,7 @@ import { config } from "~/lib/config";
 export type AppRoute = { pathname: string; params?: Record<string, string> };
 
 /** The tab screens' paths (src/app/(tabs)). */
-export const TAB_PATHS: readonly string[] = ["/", "/explore", "/inbox", "/calendar", "/profile"];
+export const TAB_PATHS: readonly string[] = ["/", "/explore", "/clubs", "/calendar", "/profile"];
 type Navigator = { push(href: never): void; dismissTo(href: never): void };
 
 /**

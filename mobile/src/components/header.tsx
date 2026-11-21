@@ -3,9 +3,12 @@ import type { ReactNode } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Glass } from "~/components/glass";
-import { ArrowLeft, QrCode } from "~/components/icons";
+import { ArrowLeft, Bell, QrCode } from "~/components/icons";
 import { Text } from "~/components/text";
 import { IconButton, TARGET } from "~/components/ui";
+import { useApiQuery } from "~/lib/query";
+import { fonts, useTheme } from "~/lib/theme";
+import type { HomeView } from "~/lib/types";
 
 export const HEADER_HEIGHT = 56;
 /** A fitted title never drops below 10pt (half of 20pt), which a 45-character name needs on a 320pt-wide phone. */
@@ -16,8 +19,9 @@ export function useHeaderInset() {
 }
 
 /**
- * The floating glass header. Tab screens show their title with the scanner entry point (tap to
- * scan; the long-press app-icon shortcut opens the same screen). Pushed screens show Back.
+ * The floating glass header. Tab screens show their title with the Inbox bell (with the unread count)
+ * and the scanner entry point (tap to scan; the long-press app-icon shortcut opens the same screen).
+ * Pushed screens show Back.
  *
  * A tab opened from a pushed screen (Update profile in a draft) is a second copy of the tabs on top
  * of the stack, with no way back but the swipe. Its tab headers show Back too, which closes that copy.
@@ -46,9 +50,32 @@ export function Header({ title, back, root, actions, scanner = !back, fitTitle }
         {/* The bar has a fixed height, so the title scales less than body text and truncates rather than clips. */}
         <Text variant="section" accessibilityRole="header" numberOfLines={1} maxFontSizeMultiplier={1.35} adjustsFontSizeToFit={fitTitle} minimumFontScale={fitTitle ? TITLE_MIN_SCALE : undefined} style={{ flex: 1, fontSize: 20, lineHeight: 26 }}>{title}</Text>
         {actions}
+        {scanner ? <InboxBell /> : null}
         {scanner ? <IconButton icon={QrCode} label="Scan a code" testID="header-scan" onPress={() => router.push("/scan")} /> : null}
         {!actions && !scanner ? <View style={{ width: fitTitle ? 14 : TARGET }} /> : null}
       </Glass>
+    </View>
+  );
+}
+
+/**
+ * The Inbox, opened from the bell. The badge is the Inbox's own unread count, so marking everything
+ * read there clears it. (`unread`, the web's bell count, also counts task notifications the Inbox
+ * doesn't list; an older server sends only that.)
+ */
+function InboxBell() {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const home = useApiQuery<HomeView>("home.view", undefined, { staleTime: 30_000 });
+  const unread = Math.max(0, Number(home.data?.inboxUnread ?? home.data?.unread) || 0);
+  return (
+    <View>
+      <IconButton icon={Bell} label={unread ? `Inbox, ${unread} unread` : "Inbox"} testID="header-inbox" onPress={() => router.push("/inbox")} />
+      {unread ? (
+        <View pointerEvents="none" testID="header-inbox-badge" style={{ position: "absolute", top: 4, right: 2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.destructive, borderWidth: 1.5, borderColor: colors.card, alignItems: "center", justifyContent: "center" }}>
+          <Text maxFontSizeMultiplier={1.2} style={{ fontFamily: fonts.sansBold, fontSize: 10, lineHeight: 13, color: colors.destructiveForeground }}>{unread > 99 ? "99+" : unread}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
