@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useIsFocused, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
@@ -27,6 +27,8 @@ const WELCOME_POINTS = [
 
 export default function SignIn() {
   const { colors, a11y } = useTheme();
+  // Sign up opens on top of this screen; the light status bar must not stay over its light page.
+  const focused = useIsFocused();
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
   const router = useRouter();
@@ -59,7 +61,7 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
       {/* The navy panel runs under the status bar, so its time and battery are light while this screen shows. */}
-      <StatusBar style="light" />
+      {focused ? <StatusBar style="light" /> : null}
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}>
         {/* The welcome: OutClass's navy, the ivory hero logo and the web's own promise. */}
         <View testID="sign-in-welcome" style={{ backgroundColor: colors.rail, paddingTop: insets.top + 28, paddingHorizontal: 24, paddingBottom: 30, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, gap: 18, overflow: "hidden" }}>
