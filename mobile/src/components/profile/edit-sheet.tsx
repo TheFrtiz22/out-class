@@ -290,7 +290,7 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
           ) : null}
         </ScrollView>
         {status ? <Text testID="profile-edit-status" variant="small" accessibilityLiveRegion="polite">{status}</Text> : null}
-        {(dirty || error) && !busy ? <Button variant="ghost" size="compact" testID="profile-edit-discard" label="Discard changes" onPress={onClose} /> : null}
+        {(dirty || error) && !busy ? <Button variant="ghost" size="compact" testID="profile-edit-discard" label={dirty ? "Discard changes" : "Close"} onPress={onClose} /> : null}
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}><Button full variant="secondary" testID="profile-edit-save" label="Save" disabled={disabled || !dirty} onPress={() => { save(); }} /></View>
           <View style={{ flex: 1 }}><Button full testID="profile-edit-done" label={busy ? "Working…" : "Done"} loading={busy === "save"} disabled={disabled} onPress={done} /></View>

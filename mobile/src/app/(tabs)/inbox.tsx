@@ -13,10 +13,11 @@ import { clubName, ctaLabel, filterRows, fullDate, groupRows, opensInPlace, type
 import { InboxListRow } from "~/components/inbox/row";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows } from "~/components/ui";
+import { Button, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openOnWeb, resolveHref } from "~/lib/links";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
 import type { InboxRow } from "~/lib/types";
 
@@ -36,12 +37,16 @@ export default function Inbox() {
   const [now, setNow] = useState(Date.now());
   const [actionFailed, setActionFailed] = useState(false);
   const opening = useRef(false);
+  const list = useRef<SectionList<InboxRow>>(null);
+  useTabScrollToTop(list);
 
   // Emails and the web link to /inbox?tab=preferences; the same address opens the sheet here.
   useEffect(() => { if (params.tab === "preferences") setPreferences(true); }, [params.tab]);
   // Relative times move with the minute clock while the list is on screen.
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60_000); return () => clearInterval(timer); }, []);
 
+  // A failed refresh (or "load more") keeps the loaded list; only a first load that failed shows the error.
+  const failed = inbox.isError && !inbox.data;
   const items = inbox.data?.pages.flatMap(page => page.items) ?? [];
   const unread = inbox.data?.pages[0]?.unread ?? 0;
   const filtering = readFilter !== "all" || typeFilter !== "All";
@@ -71,6 +76,7 @@ export default function Inbox() {
   const header = (
     <View style={{ gap: space.content - 4, paddingBottom: 4 }}>
       <AlumniBanner />
+      {inbox.isRefetchError ? <StaleNote /> : null}
       {actionFailed ? <Text variant="small" color={colors.destructive} accessibilityRole="alert">Couldn’t update notifications.</Text> : null}
       {showFilters ? (
         <View style={{ gap: 10 }}>
@@ -84,8 +90,9 @@ export default function Inbox() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SectionList
+        ref={list}
         testID="inbox-screen"
-        sections={inbox.isPending || inbox.isError ? [] : sections}
+        sections={inbox.isPending || failed ? [] : sections}
         keyExtractor={item => item.id}
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
@@ -98,7 +105,7 @@ export default function Inbox() {
         renderSectionHeader={({ section }) => (
           <View style={{ paddingTop: 16, paddingBottom: 8, gap: 2 }}>
             <Text variant="card" accessibilityRole="header">{section.title}</Text>
-            {section.title === countSection ? <Text variant="caption" accessibilityLiveRegion="polite">{unread} unread · {items.length} {items.length === 1 ? "notification" : "notifications"}</Text> : null}
+            {section.title === countSection ? <Text variant="caption" accessibilityLiveRegion="polite">{unread} unread · {items.length} {inbox.hasNextPage ? "loaded" : items.length === 1 ? "notification" : "notifications"}</Text> : null}
           </View>
         )}
         renderItem={({ item, index, section }) => (
@@ -106,7 +113,7 @@ export default function Inbox() {
         )}
         ListEmptyComponent={
           inbox.isPending ? <View style={{ paddingTop: 12 }}><SkeletonRows count={5} /></View>
-            : inbox.isError ? <ErrorState message={errorMessage(inbox.error)} offline={inbox.error instanceof ApiError && inbox.error.offline} onRetry={() => inbox.refetch()} />
+            : failed ? <ErrorState message={errorMessage(inbox.error)} offline={inbox.error instanceof ApiError && inbox.error.offline} onRetry={() => inbox.refetch()} />
               : items.length ? <EmptyState icon={Bell} title="No matching notifications" body="Your filters hide every notification." action={<Button variant="secondary" label="Clear filters" onPress={() => { setReadFilter("all"); setTypeFilter("All"); }} />} />
                 : <EmptyState icon={Bell} title="No notifications yet" body="Nothing has been sent to you yet. Choose which updates you want by email." action={<Button variant="secondary" testID="inbox-empty-settings" label="Notification settings" onPress={() => setPreferences(true)} />} />
         }

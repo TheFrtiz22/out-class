@@ -42,7 +42,7 @@ export function useInboxActions() {
       }));
       client.setQueryData<Pages>(INBOX_KEY, { ...pages, pages: changed.map(page => ({ ...page, unread: Math.max(0, page.unread + delta) })) });
     }
-    if (home && delta) client.setQueryData<HomeView>(HOME_KEY, { ...home, unread: Math.max(0, home.unread + delta) });
+    if (home && delta) client.setQueryData<HomeView>(HOME_KEY, { ...home, unread: Math.max(0, home.unread + delta), ...(home.inboxUnread === undefined ? {} : { inboxUnread: Math.max(0, home.inboxUnread + delta) }) });
     return { pages, home };
   }
   function rollback(context?: { pages?: Pages; home?: HomeView }) {
@@ -91,8 +91,12 @@ export function useInboxActions() {
       await client.cancelQueries({ queryKey: INBOX_KEY });
       const at = new Date().toISOString();
       const context = apply(item => (item.readAt ? item : { ...item, readAt: at }));
-      const home = client.getQueryData<HomeView>(HOME_KEY);
-      if (home) client.setQueryData<HomeView>(HOME_KEY, { ...home, unread: 0 });
+      // Only the Inbox's own unread clears; task notifications the Inbox doesn't list stay in the total.
+      const home = context.home;
+      if (home) {
+        const cleared = home.inboxUnread ?? context.pages?.pages[0]?.unread ?? home.unread;
+        client.setQueryData<HomeView>(HOME_KEY, { ...home, unread: Math.max(0, home.unread - cleared), ...(home.inboxUnread === undefined ? {} : { inboxUnread: 0 }) });
+      }
       return context;
     },
     onError: (_error, _input, context) => rollback(context),

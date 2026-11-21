@@ -1,15 +1,17 @@
 import { useRouter } from "expo-router";
-import { View } from "react-native";
+import { useRef } from "react";
+import { type ScrollViewInstance, View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
 import { ChevronRight, Compass, QrCode } from "~/components/icons";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { leaderMemberships } from "~/components/leader/access";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, StatusChip } from "~/components/ui";
+import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, StaleNote, StatusChip } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { easternShortDateTime } from "~/lib/eastern";
 import { routeForHref } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
 import type { CalendarEvent, HomeView, Me, MyApplicationSummary, TaskNotification } from "~/lib/types";
 
@@ -27,9 +29,14 @@ function taskRoute(task: TaskNotification): Route {
   if (assignmentId && UUID.test(assignmentId)) return { pathname: "/task/[assignmentId]", params: { assignmentId, ...(UUID.test(task.clubId) ? { clubId: task.clubId } : {}) } };
   return routeForHref(task.taskHref) ?? { pathname: "/tasks" };
 }
-/** A meeting opens its agenda, a booked interview its application's interview screen; anything else the calendar. */
+/**
+ * A meeting (or a meeting the person checked in to) opens its agenda, a booked interview its application's
+ * interview screen, a leader's panel slot the club's interview tools; anything else the calendar.
+ */
 function eventRoute(event: CalendarEvent, applications: MyApplicationSummary[] = []): Route {
   if (event.id.startsWith("meeting-")) return { pathname: "/meeting/[id]", params: { id: event.id.slice(8) } };
+  if (event.meetingId) return { pathname: "/meeting/[id]", params: { id: event.meetingId } };
+  if (event.id.startsWith("panel-")) return { pathname: "/leader/[clubId]/interviews", params: { clubId: event.clubId } };
   if (event.id.startsWith("booking-")) {
     const own = applications.filter(application => application.clubId === event.clubId);
     const application = own.find(item => item.status === "INTERVIEWING") ?? own[0];
@@ -37,6 +44,8 @@ function eventRoute(event: CalendarEvent, applications: MyApplicationSummary[] =
   }
   return { pathname: "/calendar" };
 }
+/** The button names where it goes. */
+const eventActionLabel = (route: Route) => ({ "/meeting/[id]": "View meeting", "/interview/[applicationId]": "View interview", "/leader/[clubId]/interviews": "Open interview tools" } as Record<string, string>)[route.pathname] ?? "View calendar";
 const taskDetail = (task: TaskNotification) => task.taskActivity?.dueAt ? `${task.club} · Due ${easternShortDateTime(task.taskActivity.dueAt)}` : task.club;
 
 export default function Home() {
@@ -51,10 +60,12 @@ export default function Home() {
   const next = data?.nextAction;
   const leading = leaderMemberships(me.data);
   const go = (route: Route) => router.push(route as never);
+  const scroll = useRef<ScrollViewInstance>(null);
+  useTabScrollToTop(scroll);
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll dock top={top} refreshing={home.isRefetching || me.isRefetching} onRefresh={refresh} testID="home-screen">
+      <ScreenScroll ref={scroll} dock top={top} refreshing={home.isRefetching || me.isRefetching} onRefresh={refresh} testID="home-screen">
         {home.isPending ? (
           <>
             <Card style={{ gap: 10 }}><Skeleton width="40%" /><Skeleton width="80%" height={22} /><Skeleton width={120} height={44} radius={22} /></Card>
@@ -64,6 +75,7 @@ export default function Home() {
           <ErrorState message={errorMessage(home.error)} offline={home.error instanceof ApiError && home.error.offline} onRetry={refresh} />
         ) : data ? (
           <>
+            {home.isRefetchError ? <StaleNote /> : null}
             {/* To-do: the one next step the web's Home picks (lib/student-home.ts nextHomeAction). */}
             <Card tone="brand" style={{ gap: 10 }} testID="home-next-action">
               <Text variant="eyebrow" color={colors.brandInk}>Next up</Text>
@@ -77,7 +89,7 @@ export default function Home() {
                 <>
                   <Text variant="section">{next.event.title}</Text>
                   <Text variant="small" color={colors.foreground}>{eventWhen(next.event)}{next.event.location ? ` · ${next.event.location}` : ""}</Text>
-                  <Button label={next.event.id.startsWith("meeting-") ? "View meeting" : "View calendar"} onPress={() => go(eventRoute(next.event, me.data?.applications))} />
+                  <Button label={eventActionLabel(eventRoute(next.event, me.data?.applications))} onPress={() => go(eventRoute(next.event, me.data?.applications))} />
                 </>
               ) : next?.kind === "notification" ? (
                 <>

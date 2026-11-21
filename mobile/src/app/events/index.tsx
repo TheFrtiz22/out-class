@@ -1,10 +1,10 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, RefreshControl, View } from "react-native";
+import { FlatList, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useIsAlumni } from "~/components/alumni-banner";
-import { addEventToCalendar, calendarMessages } from "~/components/explore/calendar";
+import { addEventToCalendar, addedToCalendar, calendarMessages } from "~/components/explore/calendar";
 import { type EventFilters, eventBoardEmpty, eventCategories, initialEventFilters } from "~/components/explore/directory";
 import { EventCard, EventCardSkeleton } from "~/components/explore/event-card";
 import { useSavedEvents } from "~/components/explore/hooks";
@@ -32,6 +32,7 @@ export default function EventsBoard() {
   const router = useRouter();
   const top = useHeaderInset();
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const notice = useNotice();
   const saves = useSavedEvents(notice.show);
   const alumni = useIsAlumni();
@@ -50,22 +51,27 @@ export default function EventsBoard() {
   });
   const events = useMemo(() => board.data?.pages.flatMap(page => page.events) ?? [], [board.data]);
   const total = board.data?.pages[0]?.total ?? 0;
+  // A new filter keeps the last list on screen while it loads; say so rather than show the old count.
+  const updating = board.isPlaceholderData && board.isFetching;
   const menuFilters = [choices.category, choices.required, choices.savedOnly, choices.sort !== "soonest"].filter(Boolean).length;
   const change = (patch: Partial<EventFilters>) => setChoices(current => ({ ...current, ...patch }));
 
   const open = useCallback((event: CampusEvent) => router.push({ pathname: "/events/[id]", params: { id: event.id } }), [router]);
   const { show } = notice;
+  // Bumped when an event is added, so its card redraws with "Added".
+  const [calendarAdds, setCalendarAdds] = useState(0);
   const addToCalendar = useCallback((event: CampusEvent) => {
     addEventToCalendar(event)
-      .then(outcome => { if (outcome === "added") haptics.confirm(); else haptics.warning(); show(calendarMessages[outcome], outcome === "added" ? "ok" : "error"); })
+      .then(outcome => { if (outcome === "added") { haptics.confirm(); setCalendarAdds(count => count + 1); } else haptics.warning(); show(calendarMessages[outcome], outcome === "added" ? "ok" : "error"); })
       .catch(() => { haptics.error(); show("We couldn’t add this event to your calendar. Try again.") });
   }, [show]);
   const { ids, setSaved } = saves;
   // Alumni accounts keep their saved events but cannot change them (the server refuses too).
   const ready = saves.ready && !alumni;
   const renderItem = useCallback(({ item, index }: { item: CampusEvent; index: number }) => (
-    <EventCard event={item} saved={ids.has(item.id)} saveReady={ready} onOpen={open} onToggleSaved={setSaved} onAddToCalendar={addToCalendar} testID={`event-card-${index}`} />
-  ), [ids, ready, open, setSaved, addToCalendar]);
+    <EventCard event={item} saved={ids.has(item.id)} saveReady={ready} onOpen={open} onToggleSaved={setSaved} onAddToCalendar={addToCalendar} addedToCalendar={addedToCalendar(item.id)} testID={`event-card-${index}`} />
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- calendarAdds is the signal that addedToCalendar() changed
+  ), [ids, ready, open, setSaved, addToCalendar, calendarAdds]);
   const refresh = () => { void board.refetch(); void saves.query.refetch(); };
 
   const header = (
@@ -77,7 +83,7 @@ export default function EventsBoard() {
       </View>
       <Segmented label="When" options={periods} value={choices.period} onChange={period => change({ period })} />
       <Text variant="small" accessibilityLiveRegion="polite" testID="events-count">
-        {board.isPending ? "Loading campus events…" : board.isError ? "" : `${total} ${total === 1 ? "event" : "events"} · Times shown in Eastern Time`}
+        {board.isPending ? "Loading campus events…" : updating ? "Updating…" : board.isError ? "" : `${total} ${total === 1 ? "event" : "events"} · Times shown in Eastern Time`}
       </Text>
     </View>
   );
@@ -89,7 +95,8 @@ export default function EventsBoard() {
   ) : (
     <EmptyState title={emptyCopy.title} body={emptyCopy.description}
       action={emptyCopy.action.kind === "explore-clubs"
-        ? <Button variant="secondary" label={emptyCopy.action.label} onPress={() => router.replace("/explore")} />
+        // Back to the tabs already underneath, on Explore: a replace or push would stack a second tab shell.
+        ? <Button variant="secondary" testID="events-empty-explore" label={emptyCopy.action.label} onPress={() => router.dismissTo("/explore")} />
         : <Button variant="secondary" testID="events-empty-action" label={emptyCopy.action.label} onPress={() => { if (emptyCopy.action.kind === "clear-filters") { setQuery(""); setChoices({ ...initialEventFilters, savedOnly: choices.savedOnly, sort: choices.sort }); } else change({ savedOnly: false }); }} />} />
   );
   const footer = (
@@ -106,6 +113,7 @@ export default function EventsBoard() {
         data={board.isError ? [] : events}
         keyExtractor={keyOf}
         renderItem={renderItem}
+        extraData={calendarAdds}
         ItemSeparatorComponent={Separator}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
@@ -126,7 +134,8 @@ export default function EventsBoard() {
       {notice.element}
 
       <Sheet open={sheet} onClose={() => setSheet(false)} title="Event filters" testID="events-filter-sheet">
-        <View style={{ gap: 10 }}>
+        {/* Every group can be on screen at once; at large text sizes on a small phone it scrolls rather than hiding Done. */}
+        <ScrollView style={{ maxHeight: screenHeight * 0.62 }} contentContainerStyle={{ gap: 10, paddingBottom: 4 }} showsVerticalScrollIndicator={false}>
           <ToggleRow testID="events-saved-only" label="Saved events" value={choices.savedOnly} onChange={savedOnly => change({ savedOnly })} />
           <FieldLabel>Category</FieldLabel>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -138,10 +147,10 @@ export default function EventsBoard() {
             {sorts.map(option => <FilterChip key={option.value} label={option.label} selected={choices.sort === option.value} onPress={() => change({ sort: option.value })} />)}
           </View>
           <ToggleRow label="RSVP required" value={choices.required} onChange={required => change({ required })} />
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
-            <View style={{ flex: 1 }}><Button full size="large" variant="secondary" label="Reset filters" testID="events-filter-reset" onPress={() => { setQuery(""); setChoices(initialEventFilters); }} /></View>
-            <View style={{ flex: 1 }}><Button full size="large" label="Done" testID="events-filter-done" onPress={() => setSheet(false)} /></View>
-          </View>
+        </ScrollView>
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+          <View style={{ flex: 1 }}><Button full size="large" variant="secondary" label="Reset filters" testID="events-filter-reset" onPress={() => { setQuery(""); setChoices(initialEventFilters); }} /></View>
+          <View style={{ flex: 1 }}><Button full size="large" label="Done" testID="events-filter-done" onPress={() => setSheet(false)} /></View>
         </View>
       </Sheet>
     </View>
@@ -203,7 +212,7 @@ function MyRsvps({ onOpen }: { onOpen: (eventId: string) => void }) {
           {message ? <Text variant="small" color={message.tone === "error" ? colors.destructive : colors.foreground} accessibilityRole={message.tone === "error" ? "alert" : undefined} accessibilityLiveRegion="polite">{message.text}</Text> : null}
           {rsvps.isPending ? <View accessibilityLabel="Loading your RSVPs…" accessibilityRole="progressbar" style={{ gap: 8 }}><Skeleton width="70%" /><Skeleton width="50%" /></View>
             : rsvps.isError ? <View style={{ gap: 8 }}><Text variant="small" accessibilityRole="alert">{errorMessage(rsvps.error, "Your RSVPs could not be loaded.")}</Text><Button variant="secondary" size="compact" label="Retry" onPress={() => { void rsvps.refetch(); }} /></View>
-            : !rows.length ? <View style={{ gap: 4 }}><Text variant="small">You haven’t RSVP’d to an event. Events you RSVP to also appear on your calendar.</Text><Button variant="ghost" size="compact" label="Open your calendar" onPress={() => router.push("/calendar")} /></View>
+            : !rows.length ? <View style={{ gap: 4 }}><Text variant="small">You haven’t RSVP’d to an event. Events you RSVP to also appear on your calendar.</Text><Button variant="ghost" size="compact" testID="events-open-calendar" label="Open your calendar" onPress={() => router.dismissTo("/calendar")} /></View>
             : rows.map((row, index) => (
               <View key={row.eventId}>
                 {index ? <Divider /> : null}

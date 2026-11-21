@@ -4,7 +4,7 @@
  */
 export type ClubMarketing = { memberCount?: number; showMembers?: boolean; showAcceptance?: boolean; showAum?: boolean; dues?: string; commitment?: string; eligibility?: string; benefits?: string[]; faqs?: { question?: string; answer?: string }[]; sections?: { title?: string; body?: string }[] } | null;
 
-export type CalendarEvent = { id: string; clubId: string; startTime: string; endTime?: string; date: string; day: number; time: string; allDay?: boolean; title: string; club: string; color: string; type: string; location?: string; description?: string; durationMinutes?: number; response?: string };
+export type CalendarEvent = { id: string; clubId: string; startTime: string; endTime?: string; date: string; day: number; time: string; allDay?: boolean; title: string; club: string; color: string; type: string; location?: string; description?: string; durationMinutes?: number; response?: string; meetingId?: string };
 
 export type HomeApplication = { id: string; clubId: string; name: string; color: string; logoUrl?: string | null; status: string; statusCode: string; statusLabel: string; draft: boolean; closed: boolean; intakeClosed: boolean; responsesSaved?: number; deadline?: CalendarEvent };
 
@@ -12,7 +12,7 @@ export type TaskNotification = { id: string; clubId: string; club: string; color
 
 export type NextAction = { kind: "application"; application: HomeApplication } | { kind: "event"; event: CalendarEvent } | { kind: "notification"; notification: TaskNotification } | { kind: "explore" };
 
-export type HomeView = { generatedAt: string; applications: HomeApplication[]; agenda: CalendarEvent[]; agendaCount: number; nextAction: NextAction; tasks: TaskNotification[]; unread: number };
+export type HomeView = { generatedAt: string; applications: HomeApplication[]; agenda: CalendarEvent[]; agendaCount: number; nextAction: NextAction; tasks: TaskNotification[]; unread: number; inboxUnread?: number };
 
 export type Membership = { id: string; clubId: string; accessRole: string; role: string; title: string | null; status: string; alumniSince: string | null; isOwner: boolean; permissions: string[]; club: { id: string; slug: string; name: string; shortName: string | null; color: string; logoUrl: string | null; category: string | null } };
 

@@ -121,6 +121,7 @@ jest.mock("expo-router", () => {
     useNavigation: () => ({ setOptions: jest.fn(), addListener: jest.fn(() => jest.fn()), isFocused: () => true, goBack: router.back, canGoBack: router.canGoBack, getParent: () => undefined, dispatch: jest.fn() }),
     useIsFocused: () => true,
     useFocusEffect: (effect: () => void | (() => void)) => React.useEffect(effect, [effect]),
+    useScrollToTop: jest.fn(),
     Link,
     Redirect: () => null,
     Stack,
@@ -205,6 +206,11 @@ jest.mock("expo-brightness", () => ({
 }));
 jest.mock("expo-keep-awake", () => ({ useKeepAwake: jest.fn(), activateKeepAwakeAsync: jest.fn(async () => {}), deactivateKeepAwake: jest.fn(async () => {}) }));
 jest.mock("expo-calendar", () => ({
+  // The object API that campus events write through (components/explore/calendar.ts).
+  getCalendarPermissions: jest.fn(async () => ({ granted: true, canAskAgain: true })),
+  requestCalendarPermissions: jest.fn(async () => ({ granted: true, canAskAgain: true })),
+  getDefaultCalendarSync: jest.fn((() => { const calendar = { id: "cal", createEvent: jest.fn(async () => "event-id") }; return () => calendar; })()),
+  getCalendars: jest.fn(async () => []),
   requestCalendarPermissionsAsync: jest.fn(async () => ({ granted: true, status: "granted" })),
   getCalendarPermissionsAsync: jest.fn(async () => ({ granted: true, status: "granted" })),
   getCalendarsAsync: jest.fn(async () => [{ id: "cal", allowsModifications: true, source: { name: "iCloud" } }]),

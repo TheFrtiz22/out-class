@@ -3,7 +3,7 @@ import { memo } from "react";
 import { StyleSheet, View } from "react-native";
 import { EASTERN, clubImage, eventDateLabel, eventScheduleLabel } from "~/components/explore/directory";
 import type { IconComponent } from "~/components/icon-factory";
-import { Bookmark, CalendarPlus, Clock, MapPin } from "~/components/icons";
+import { Bookmark, CalendarPlus, Check, Clock, MapPin } from "~/components/icons";
 import { Text } from "~/components/text";
 import { Button, Press, Skeleton } from "~/components/ui";
 import { config } from "~/lib/config";
@@ -14,10 +14,10 @@ const month = new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, month: "shor
 const day = new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, day: "2-digit" });
 export const BookmarkFilled: IconComponent = props => <Bookmark {...props} weight="fill" />;
 
-type Props = { event: CampusEvent; saved: boolean; saveReady: boolean; onOpen: (event: CampusEvent) => void; onToggleSaved: (eventId: string, saved: boolean) => void; onAddToCalendar: (event: CampusEvent) => void; testID?: string };
+type Props = { event: CampusEvent; saved: boolean; saveReady: boolean; onOpen: (event: CampusEvent) => void; onToggleSaved: (eventId: string, saved: boolean) => void; onAddToCalendar: (event: CampusEvent) => void; addedToCalendar?: boolean; testID?: string };
 
 /** One event on the board's list (components/events/smart-event-card.tsx): date, host, title, when, where, save and calendar. */
-export const EventCard = memo(function EventCard({ event, saved, saveReady, onOpen, onToggleSaved, onAddToCalendar, testID }: Props) {
+export const EventCard = memo(function EventCard({ event, saved, saveReady, onOpen, onToggleSaved, onAddToCalendar, addedToCalendar, testID }: Props) {
   const { colors, radius, dark } = useTheme();
   const flyer = clubImage(event.flyerUrl, config.apiUrl);
   const when = eventScheduleLabel(event);
@@ -43,7 +43,7 @@ export const EventCard = memo(function EventCard({ event, saved, saveReady, onOp
       </Press>
       <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingBottom: 14 }}>
         <View style={{ flex: 1 }}><Button full size="compact" variant={saved ? "accent" : "secondary"} icon={saved ? BookmarkFilled : Bookmark} label={saved ? "Saved" : "Save"} accessibilityHint={event.title} disabled={!saveReady} testID={testID ? `${testID}-save` : undefined} onPress={() => onToggleSaved(event.id, !saved)} /></View>
-        <View style={{ flex: 1.4 }}><Button full size="compact" variant="secondary" icon={CalendarPlus} label="Add to Calendar" accessibilityHint={event.title} testID={testID ? `${testID}-calendar` : undefined} onPress={() => onAddToCalendar(event)} /></View>
+        <View style={{ flex: 1.4 }}><Button full size="compact" variant="secondary" icon={addedToCalendar ? Check : CalendarPlus} label={addedToCalendar ? "Added" : "Add to Calendar"} accessibilityHint={event.title} disabled={addedToCalendar} testID={testID ? `${testID}-calendar` : undefined} onPress={() => onAddToCalendar(event)} /></View>
       </View>
     </View>
   );
