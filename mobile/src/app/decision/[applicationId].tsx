@@ -19,6 +19,11 @@ import type { ApplicationsView, DecisionLetterView } from "~/lib/types";
  * The decision letter and its offer (web: DecisionLetterView). Opening the letter marks its
  * notification read, as the web does; Accept and Decline go through the confirm sheet.
  */
+// The web's student-facing labels (lib/application-status.ts), for a status the applications list hasn't caught up to.
+const STATUS_LABELS: Record<string, string> = {
+  DRAFTING: "Draft", SUBMITTED: "Submitted", IN_REVIEW: "In review", INTERVIEWING: "Interview", ACCEPTED: "Accepted", REJECTED: "Not selected", WAITLISTED: "Waitlisted",
+};
+
 export default function DecisionScreen() {
   const { applicationId, letterId } = useLocalSearchParams<{ applicationId: string; letterId?: string }>();
   const router = useRouter();
@@ -32,9 +37,12 @@ export default function DecisionScreen() {
   const [readError, setReadError] = useState("");
   const marked = useRef<string | null>(null);
   const clubName = letter?.clubName || applications.data?.applications.find(item => item.id === applicationId)?.club.name || "";
-  const pull = usePullRefresh(() => letterQuery.refetch());
-  // The application's own label ("In review", "Interviewing"), not the raw status code.
-  const statusLabel = applications.data?.applications.find(item => item.id === applicationId)?.statusLabel ?? (data ? data.currentStatus.charAt(0) + data.currentStatus.slice(1).toLowerCase().replace(/_/g, " ") : "");
+  const pull = usePullRefresh(() => letterQuery.refetch(), () => applications.refetch());
+  // The application's own label ("In review", "Not selected"), not the raw status code, but only while it
+  // describes the same status as the letter's fresh read: an older applications list never outranks it.
+  const listed = applications.data?.applications.find(item => item.id === applicationId);
+  const statusLabel = !data ? "" : listed && (listed.status === data.currentStatus || listed.statusCode === data.currentStatus) ? listed.statusLabel
+    : STATUS_LABELS[data.currentStatus] ?? data.currentStatus.charAt(0) + data.currentStatus.slice(1).toLowerCase().replace(/_/g, " ");
   const offerResponse = useOfferResponse(applicationId, clubName, "Your response could not be saved. Refresh and try again.");
 
   const notificationId = data?.notificationId;

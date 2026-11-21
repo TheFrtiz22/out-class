@@ -35,6 +35,8 @@ const variants: Variant[] = [
     overrides: { "interviews.schedule": { ...records.schedule, publicationState: "PAUSED", allowCancellation: false, allowRescheduling: false } }, expect: [/interview/i] },
   { name: "interview: alumni account", file: "interview/[applicationId]", params: { applicationId: ids.interviewApplication }, overrides: { me: alumniMe, "applications.view": { ...records.applicationsView, alumni: true } }, expect: [/interview/i] },
   { name: "decision: historical letter", file: "decision/[applicationId]", params: { applicationId: ids.decidedApplication }, overrides: { "decisions.letter": { ...records.decisionLetter, isCurrent: false, currentStatus: "REJECTED" } }, expect: [/historical letter/] },
+  { name: "decision: the letter's fresh status outranks an older applications list", file: "decision/[applicationId]", params: { applicationId: ids.decidedApplication },
+    overrides: { "decisions.letter": { ...records.decisionLetter, isCurrent: false, currentStatus: "REJECTED" } }, expect: [/Current status: Not selected\./] },
   { name: "decision: suspended club", file: "decision/[applicationId]", params: { applicationId: ids.decidedApplication }, overrides: { "decisions.letter": { ...records.decisionLetter, suspended: true } }, expect: [/suspended/] },
   { name: "decision: expired offer", file: "decision/[applicationId]", params: { applicationId: ids.decidedApplication }, overrides: { "decisions.letter": { ...records.decisionLetter, offer: { status: "PENDING", expiresAt: at(-1) } } }, expect: ["Decision"] },
   { name: "decision: rejection letter, no offer", file: "decision/[applicationId]", params: { applicationId: ids.decidedApplication },
