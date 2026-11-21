@@ -23,9 +23,14 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
  * A pressable that settles slightly while held, as web controls do (styles/pressed-states.css).
  * The second tap of a double tap is dropped here, so no row, card or button opens a screen twice.
  */
+// A toggle (a checkbox, radio, tab or switch) takes every tap: a quick second tap is the person changing
+// their mind, and toggling twice repeats nothing. Only actions that open or submit something are guarded.
+const TOGGLE_ROLES = new Set(["checkbox", "radio", "tab", "switch"]);
+
 export function Press({ children, style, large, onPressIn, onPressOut, onPress, disabled, ...rest }: PressableProps & { large?: boolean; style?: ViewStyle | ViewStyle[] }) {
   const theme = useTheme();
-  const press = useSinglePress(onPress ?? undefined);
+  const guarded = useSinglePress(onPress ?? undefined);
+  const press = rest.accessibilityRole && TOGGLE_ROLES.has(rest.accessibilityRole) ? onPress ?? undefined : guarded;
   const pressed = useSharedValue(0);
   const animated = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * (1 - (large ? theme.press.scaleLarge : theme.press.scale)) }],

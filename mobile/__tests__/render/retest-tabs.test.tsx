@@ -73,6 +73,19 @@ describe("a double tap opens a screen once", () => {
   });
 });
 
+test("a toggle takes a quick second tap: a chip picked and unpicked at once ends unpicked", async () => {
+  const { ChoiceChips } = require("~/components/choice-chips");
+  const { useState } = require("react");
+  function Harness() {
+    const [value, setValue] = useState([] as string[]);
+    return <ChoiceChips multiple testID="pick" label="Pick" value={value} onChange={setValue} options={[{ value: "a", label: "A" }, { value: "b", label: "B" }]} />;
+  }
+  await renderRoute(Harness);
+  await fireEvent.press(screen.getByTestId("pick-a"));
+  await fireEvent.press(screen.getByTestId("pick-a"));
+  expect(screen.getByTestId("pick-a").props.accessibilityState).toMatchObject({ checked: false });
+});
+
 describe("stacked screens go back to the tabs underneath", () => {
   test("Saved clubs (empty): Browse clubs", async () => {
     const Screen = require("~/app/saved-clubs").default;

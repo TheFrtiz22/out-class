@@ -25,8 +25,8 @@ function production(seen: { url: string; authorized: boolean }[]) {
   return jest.fn(call);
 }
 
-const realFetch = global.fetch;
-afterEach(() => { global.fetch = realFetch; });
+const realFetch = globalThis.fetch;
+afterEach(() => { globalThis.fetch = realFetch; });
 
 test("the API address is the host that serves it, never the apex that redirects", () => {
   expect(config.apiUrl).toBe("https://www.out-class.net");
@@ -41,7 +41,7 @@ test("the API address is the host that serves it, never the apex that redirects"
 
 test("a signed-in request reaches the server with its session and returns data", async () => {
   const seen: { url: string; authorized: boolean }[] = [];
-  global.fetch = production(seen) as unknown as typeof fetch;
+  globalThis.fetch = production(seen) as unknown as typeof fetch;
   await expect(api.get("home.view")).resolves.toEqual({ ok: true });
   expect(seen).toEqual([{ url: "https://www.out-class.net/api/mobile/v1/home.view", authorized: true }]);
 });
