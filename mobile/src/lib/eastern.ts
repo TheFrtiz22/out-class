@@ -23,7 +23,7 @@ function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   return found;
 }
 /** An Eastern-time label for an instant; "" for a missing or unreadable value rather than a crash. */
-const eastern = (options: Intl.DateTimeFormatOptions) => (value: Date | string | null | undefined) => {
+export const eastern = (options: Intl.DateTimeFormatOptions) => (value: Date | string | null | undefined) => {
   const date = toInstant(value);
   return date ? formatter({ timeZone: EASTERN, ...options }).format(date) : "";
 };

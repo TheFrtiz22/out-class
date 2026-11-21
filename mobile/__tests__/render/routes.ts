@@ -51,6 +51,7 @@ export const routes: RouteCase[] = [
   { file: "settings/availability", rich: ["Availability", "Your weekly rhythm", "My global availability · all clubs"], empty: ["No schedule saved"], error },
   { file: "settings/index", rich: ["Settings"], empty: ["Settings"], error: ["Settings"] },
   { file: "settings/interests", rich: ["Interests", "What are you into?", "2 of 6"], empty: ["0 of 6"], error },
+  { file: "settings/interviews", rich: ["Interview schedule", "Include past interviews", "Virginia Motorsports · First round interviews"], empty: ["No upcoming panels"], error },
   { file: "settings/notifications", rich: ["Notifications"], empty: ["Notifications"], error: ["Notifications"] },
   { file: "sign-in", segments: ["sign-in"], rich: ["Sign in"], empty: ["Sign in"], error: ["Sign in"] },
   { file: "task/[assignmentId]", params: { assignmentId: ids.assignment, clubId: ids.memberClub }, rich: [`Submit the ${longName} chassis design review packet`], empty: ["Task"], error },

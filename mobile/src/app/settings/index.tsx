@@ -16,7 +16,7 @@ const sections = [
   { id: "notifications", label: "Notifications", description: "Choose which club updates and reminders reach your email.", route: "/settings/notifications" },
   { id: "availability", label: "Availability", description: "Keep one availability schedule across all your clubs.", route: "/settings/availability" },
   { id: "interests", label: "Interests", description: "What you’re into, so we can suggest clubs. Only you see this.", route: "/settings/interests" },
-  { id: "interviews", label: "Interview schedule", description: "Your approved interview panels across all your clubs.", web: "/settings/interviews" },
+  { id: "interviews", label: "Interview schedule", description: "Your approved interview panels across all your clubs.", route: "/settings/interviews" },
 ] as const;
 
 export default function SettingsOverview() {
