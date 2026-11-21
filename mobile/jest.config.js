@@ -1,7 +1,7 @@
 /** Render tests (`pnpm test:render`): every route in src/app rendered in Node against fixtures. */
 const transformable = [
   "(jest-)?react-native", "@react-native(-community)?", "expo(nent)?", "@expo(nent)?", "@expo-google-fonts", "expo-.*",
-  "react-native-.*", "@react-navigation", "phosphor-react-native", "@outclass",
+  "react-native-.*", "@react-navigation", "phosphor-react-native", "@outclass", "@sentry",
 ].join("|");
 
 module.exports = {
