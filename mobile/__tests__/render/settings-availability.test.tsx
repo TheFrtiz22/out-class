@@ -40,8 +40,7 @@ describe("settings overview", () => {
 describe("global availability", () => {
   test("shows the saved week and autosaves a tapped quarter hour with the loaded revision", async () => {
     const { client } = await renderRoute(Screen());
-    expect(screen.getByText("Your weekly rhythm")).toBeTruthy();
-    expect(screen.getByTestId("availability-save-state").props.children).toBe("All changes saved");
+    expect(screen.getByTestId("availability-save-state").props.children).toBe("Saved");
     await press("availability-day-0");
     expect(checked("availability-grid-slot-36")).toBe(true); // Monday 9:00 AM
     expect(checked("availability-grid-slot-32")).toBe(false);
@@ -52,7 +51,7 @@ describe("global availability", () => {
     const [first] = posts("availability.save");
     expect(first).toMatchObject({ revision: 2, accountId: ids.user });
     expect(first.schedule.weekly[0]).toEqual([[480, 495], [540, 720]]);
-    expect(screen.getByTestId("availability-save-state").props.children).toBe("All changes saved");
+    expect(screen.getByTestId("availability-save-state").props.children).toBe("Saved");
     // The next edit is sent with the revision the server returned.
     await press("availability-grid-slot-33");
     await autosave(client);
@@ -184,7 +183,7 @@ describe("round availability", () => {
     await press(`availability-round-${ids.round}`);
     await settle(client);
     expect(apiState.calls.some(call => call.operation === "availability.round" && (call.input as { roundId: string }).roundId === ids.round)).toBe(true);
-    expect(screen.getByText("This response belongs only to this club and round. It does not change your global schedule.")).toBeTruthy();
+    expect(screen.getByText("Only for this round. Your global schedule stays the same.")).toBeTruthy();
   });
 
   test("submits the round, which confirms participation", async () => {
@@ -259,3 +258,61 @@ describe("round availability", () => {
   });
 });
 
+
+describe("a tidier page", () => {
+  test("the global week shows no wall of subtext, and a short saved state", async () => {
+    await renderRoute(Screen());
+    for (const gone of ["Your weekly rhythm", "Editing", /daylight saving/, /Eastern Time/, /Round requests prefill/, /touch and hold/]) expect(screen.queryByText(gone)).toBeNull();
+    expect(screen.getByTestId("availability-save-state").props.children).toBe("Saved");
+    expect(screen.getByText("Each block is 15 minutes. Tap one to switch it, or hold and drag to fill a range.")).toBeTruthy();
+  });
+
+  test("the four blocks in each hour are labelled as quarter hours", async () => {
+    await renderRoute(Screen());
+    // Hidden from screen readers (each block has its own spoken time), so the query includes hidden elements.
+    const columns = screen.getByTestId("availability-grid-columns", { includeHiddenElements: true });
+    for (const label of [":00", ":15", ":30", ":45"]) expect(screen.getByText(label, { includeHiddenElements: true })).toBeTruthy();
+    expect(columns.props.accessibilityElementsHidden).toBe(true);
+    // Every quarter hour still says its own time to a screen reader.
+    await press("availability-day-0");
+    expect(screen.getByTestId("availability-grid-slot-33").props.accessibilityLabel).toBe("Monday 8:15 AM to 8:30 AM");
+  });
+
+  test("the day line says the day and its hours, and Not submitted shows only when a day is unsubmitted", async () => {
+    await renderRoute(Screen());
+    await press("availability-day-0");
+    expect(screen.getByText("Mondays · 3 hours")).toBeTruthy();
+    expect(screen.queryByText("Not submitted")).toBeNull();
+  });
+
+  test("a new account sees the Not submitted key", async () => {
+    await renderRoute(Screen(), { mode: "empty" });
+    expect(screen.getByText("Not submitted")).toBeTruthy();
+    expect(screen.getByText(/· not submitted$/)).toBeTruthy();
+  });
+
+  test("a solid backdrop sits behind the header so the grid doesn't blur through it", async () => {
+    await renderRoute(Screen());
+    expect(screen.getByTestId("header-backdrop").props.pointerEvents).toBe("none");
+  });
+
+  test("dragging a range in specific dates still saves that date", async () => {
+    const { client } = await renderRoute(Screen());
+    await press("availability-day-3");
+    await fireEvent.press(screen.getByText("Specific dates"));
+    await press("availability-next-week");
+    await fireEvent(screen.getByTestId("availability-grid-rows"), "layout", { nativeEvent: { layout: { width: 358, height: 620, x: 0, y: 0 } } });
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId("availability-grid-paint"), [
+        { state: State.BEGAN, x: 70, y: 10 }, // 8:00 AM
+        { state: State.ACTIVE, x: 70, y: 10 },
+        { x: 340, y: 60 },
+        { state: State.END, x: 340, y: 60 }, // 9:45 AM
+      ]);
+    });
+    await autosave(client);
+    const saved = posts("availability.save").at(-1)!.schedule;
+    expect(Object.values(saved.exceptions)).toContainEqual([[480, 600]]);
+    expect(saved.weekly[3]).toEqual([]);
+  });
+});
