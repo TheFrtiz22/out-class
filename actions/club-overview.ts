@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { AppStatus } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
 import { offerTally } from "@/lib/offer-tally";
+import { activeRecruitmentCycle } from "@/lib/recruitment-cycle";
 import { requireClubMembership, requireClubPermission } from "@/utils/auth";
 import { hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -22,7 +23,8 @@ export async function getClubWorkspaceOverview(clubId: string, view: OverviewVie
   const [club, meeting, work, awaitingReview, recruitment, upcomingInterviews, votingSessions, operations, members] = await Promise.all([
     prisma.club.findUniqueOrThrow({
       where: { id: clubId },
-      select: { id: true, name: true, tagline: true },
+      // isDiscoverable: the Recruiting Overview says when students cannot find the club in Explore.
+      select: { id: true, name: true, tagline: true, isDiscoverable: true },
     }),
     !clubPart ? null : prisma.meeting.findFirst({
       where: { clubId, date: { gte: now } },
@@ -60,10 +62,11 @@ export async function getClubWorkspaceOverview(clubId: string, view: OverviewVie
         })
       : Promise.resolve(null),
     // One grouped read serves both the outcome counts and the offer tally (application status x current
-    // offer status), so the overview gains no extra query. Same visibility as before: identity viewers see
-    // every round, review-only viewers anonymous rounds only.
+    // offer status). Same visibility as before: identity viewers see every round, review-only viewers anonymous
+    // rounds only. Scoped like Recruiting insights (getRecruitingInsights): the active cycle when there is exactly
+    // one, else every cycle, so "Accepted" in Pipeline, Decisions delivered and Conversion count the same applicants.
     canReview
-      ? prisma.$queryRaw<{ status: AppStatus; offer: string | null; count: number }[]>`
+      ? activeRecruitmentCycle(prisma, clubId).then(cycle => prisma.$queryRaw<{ status: AppStatus; offer: string | null; count: number }[]>`
           SELECT a.status,
             CASE WHEN i.status = 'PENDING' AND i."expiresAt" <= ${now} THEN 'EXPIRED' ELSE i.status::text END AS offer,
             COUNT(*)::int AS count
@@ -71,7 +74,8 @@ export async function getClubWorkspaceOverview(clubId: string, view: OverviewVie
           LEFT JOIN "ClubInvitation" i ON i."applicationId" = a.id AND i."clubId" = a."clubId"
           WHERE a."clubId" = ${clubId} AND a.status <> 'DRAFTING'
             AND (${hasPermission(membership, "applicants.identify")} OR r."anonymousReview")
-          GROUP BY 1, 2`
+            AND (${cycle?.id ?? null}::text IS NULL OR a."recruitmentCycleId" = ${cycle?.id ?? null})
+          GROUP BY 1, 2`)
       : Promise.resolve(null),
     recruitingPart && hasPermission(membership, "interviews.manage")
       ? prisma.interviewBooking.count({ where: { slot: { clubId, startTime: { gte: now, lte: new Date(now.getTime() + 7 * 86400000) } } } })

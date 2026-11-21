@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { operation, type AnyMobileOperation } from "@/utils/mobile-api";
+import { mobileConfirmInput, mobileRegisterInput } from "@/lib/mobile-api/auth";
 
 /**
  * Every call the native app can make (docs/mobile/architecture.md). Each entry names an existing
@@ -16,6 +17,11 @@ const passthrough = z.unknown();
 const formData = z.instanceof(FormData);
 
 export const mobileOperations = {
+  // Account creation (signed out until the code is confirmed; lib/mobile-api/auth.ts)
+  "auth.signupOptions": operation("GET", none, async () => (await import("@/lib/mobile-api/auth")).mobileSignupOptions(), { public: true }),
+  "auth.register": operation("POST", mobileRegisterInput, async input => (await import("@/lib/mobile-api/auth")).mobileRegister(input), { public: true }),
+  "auth.confirmEmail": operation("POST", mobileConfirmInput, async (input, request) => (await import("@/lib/mobile-api/auth")).mobileConfirmEmail(input, request), { public: true }),
+  "terms.accept": operation("POST", none, async () => (await import("@/lib/mobile-api/auth")).mobileAcceptTerms()),
   // Account
   "me": operation("GET", none, async () => (await import("@/utils/current-user")).getCurrentUser()),
   "account.deletion": operation("GET", none, async () => (await import("@/actions/account-deletion")).getAccountDeletionRequest()),
@@ -23,6 +29,21 @@ export const mobileOperations = {
   "account.deletion.cancel": operation("POST", none, async () => (await import("@/actions/account-deletion")).cancelAccountDeletion()),
   "graduation.confirm": operation("POST", passthrough, async input => (await import("@/actions/graduation")).confirmGraduation(input)),
   "graduation.details": operation("POST", passthrough, async input => (await import("@/actions/graduation")).saveAlumniDetails(input)),
+
+  // Settings: the student's own club-interest survey (Settings → Interests on the web)
+  "interests": operation("GET", none, async () => (await import("@/actions/interest-survey")).getMyInterestSurvey()),
+  "interests.save": operation("POST", passthrough, async input => (await import("@/actions/interest-survey")).saveMyInterestSurvey(input)),
+
+  // Settings: the student's availability (Settings → Availability on the web). The round reads and saves are
+  // the interviewer's own response for one club and round; the actions check eligibility, revision and alumni.
+  "availability.mine": operation("GET", none, async () => (await import("@/actions/availability")).getMyAvailability()),
+  "availability.save": operation("POST", passthrough, async input => (await import("@/actions/availability")).saveMyAvailability(input)),
+  "availability.round": operation("GET", z.object({ clubId: uuid, roundId: uuid }).strict(), async input => (await import("@/actions/availability")).getMyRoundAvailability(input)),
+  "availability.round.save": operation("POST", passthrough, async input => (await import("@/actions/availability")).saveMyRoundAvailability(input)),
+  "availability.round.decline": operation("POST", passthrough, async input => (await import("@/actions/availability")).declineRoundParticipation(input)),
+
+  // Settings → Interview schedule: the signed-in person's published panel assignments (app/(workspace)/settings/interviews).
+  "interviews.panels": operation("GET", none, async () => (await import("@/actions/official-panel-schedule")).getMyInterviewPanelSchedule()),
 
   // Home, calendar
   "home.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileHome()),
@@ -52,7 +73,7 @@ export const mobileOperations = {
   // Profile
   "profile": operation("GET", none, async () => (await import("@/actions/profile")).getStudentProfile()),
   "profile.create": operation("POST", passthrough, async input => (await import("@/actions/profile")).upsertStudentProfile(input as never)),
-  "profile.updateSection": operation("POST", z.object({ input: z.unknown(), expected: z.string().max(200).optional() }).strict(), async ({ input, expected }) => (await import("@/actions/profile")).updateStudentProfileSection(input, expected)),
+  "profile.updateSection": operation("POST", z.object({ input: z.unknown(), expected: z.string().max(100_000).optional() }).strict(), async ({ input, expected }) => (await import("@/actions/profile")).updateStudentProfileSection(input, expected)),
   "profile.upload": operation("POST", formData, async input => (await import("@/actions/storage")).uploadProfileFile(input)),
 
   // Applications, interviews, decisions
@@ -89,15 +110,14 @@ export const mobileOperations = {
   "meetings.checkIn": operation("POST", z.object({ meetingId: uuid, token: z.string().min(16).max(256) }).strict(), async ({ meetingId, token }) => (await import("@/actions/meetings")).checkInMeeting(meetingId, token)),
   "meetings.checkIn.issue": operation("POST", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).issueMeetingCheckIn(clubId, meetingId)),
   "meetings.checkIn.close": operation("POST", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).closeMeetingCheckIn(clubId, meetingId)),
-  // Door mode: the student's personal pass, and the leader scanning it (actions/check-in-pass.ts)
-  "checkInPass.issue": operation("POST", none, async () => (await import("@/actions/check-in-pass")).issueCheckInPass()),
-  "checkInPass.scan": operation("POST", passthrough, async input => (await import("@/actions/check-in-pass")).scanCheckInPass(input)),
   "meetings.attendance": operation("GET", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).meetingAttendance(clubId, meetingId)),
 
   // Tasks
   "tasks.workspace": operation("GET", z.object({ clubId: uuid, focus: z.object({ taskId: uuid, assignmentId: uuid.optional() }).strict().optional() }).strict(), async ({ clubId, focus }) => (await import("@/actions/tasks")).getTaskWorkspace(clubId, focus)),
   "tasks.view": operation("POST", z.object({ assignmentId: uuid }).strict(), async ({ assignmentId }) => (await import("@/actions/tasks")).viewTask(assignmentId)),
   "tasks.submit": operation("POST", passthrough, async input => (await import("@/actions/tasks")).submitTask(input as never)),
+  // A task file: records it and returns a one-time upload address; the app then sends the bytes there (components/club-tasks.tsx).
+  "tasks.upload": operation("POST", passthrough, async input => (await import("@/actions/tasks")).uploadTaskFile(input as never)),
   "tasks.file": operation("GET", z.object({ fileId: uuid }).strict(), async ({ fileId }) => (await import("@/actions/tasks")).downloadTaskFile(fileId)),
 
   // Live voting

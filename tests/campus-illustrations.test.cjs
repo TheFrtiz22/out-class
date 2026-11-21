@@ -51,13 +51,14 @@ const { resolveSettingsTab } = load('lib/club-settings.ts')
 const settingsCases = [
  ['owner Appearance', {isOwner:true}, 'general', 'general', undefined],
  ['profile capability Appearance', {permissions:['club.settings']}, 'general', 'general', undefined],
- ['application-only inaccessible General', {permissions:['application.manage']}, 'general', 'application', undefined],
+ // The application form moved to Recruiting › Application, so application managers alone have no Settings section.
+ ['application-only has no settings', {permissions:['application.manage']}, 'general', undefined, undefined],
  ['members-only inaccessible General', {permissions:['members.manage']}, 'general', 'members', undefined],
  // Settings → Interviews moved into the Interviews tool, so interview managers have no Settings section.
  ['interviews-only has no settings', {permissions:['interviews.manage']}, 'general', undefined, undefined],
- ['direct operational tab', {isOwner:true}, 'application', 'application', undefined],
+ ['direct operational tab', {isOwner:true}, 'pipeline', 'pipeline', undefined],
  ['inaccessible operational request falls back to Appearance', {permissions:['club.settings']}, 'interviews', 'general', undefined],
- ['inaccessible operational request falls back to permitted operational tab', {permissions:['application.manage']}, 'members', 'application', undefined],
+ ['inaccessible operational request falls back to permitted operational tab', {permissions:['recruitment.manage']}, 'members', 'cycles', undefined],
  ['unknown requested tab follows permitted Appearance fallback', {isOwner:true}, 'unknown', 'general', undefined],
  ['default limited-permission tab', {permissions:['members.manage']}, null, 'members', undefined],
  ['no permitted settings', {permissions:[]}, 'general', undefined, undefined],

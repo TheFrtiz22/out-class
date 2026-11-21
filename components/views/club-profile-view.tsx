@@ -224,6 +224,10 @@ export function ClubProfileView({
         <MarketingProfile profile={publicProfile} action={primaryAction} />
       </div>
       {real && !demo.isDemoEnabled && !club.claimed && <UnclaimedProfileNotice club={club} />}
+      {/* Wide screens: story (About, What members do) on the left; recruiting facts, life, FAQ, events and leaders beside it.
+          Narrower screens stack the two columns in the same visitor order. */}
+      <div className="oc-club-body">
+      <div className="oc-club-main">
       {/* Members get their club's pages; everyone else sees its public events below. Without them, About shows only the club's own content. */}
       <AboutSection profile={publicProfile}>
         {user?.memberships.some(m => m.clubId === club.id) && <nav aria-label="Club pages" className="oc-club-links">
@@ -232,6 +236,8 @@ export function ClubProfileView({
         </nav>}
       </AboutSection>
       <MembersSection profile={publicProfile} reportClubId={real && !preview ? club.id : undefined} />
+      </div>
+      <div className="oc-club-aside">
       {recruitmentSection && <section className="oc-club-section oc-club-recruitment-section" aria-labelledby="club-recruitment">
         <h2 id="club-recruitment">Recruitment and requirements</h2>
         {deadlineText && <p className="oc-club-prose">{deadlineText}{recruitment.expired && " The deadline has passed. Existing drafts remain available."}</p>}
@@ -316,6 +322,8 @@ export function ClubProfileView({
           </ul>
         </section>
       )}
+      </div>
+      </div>
     </article>
   )
 }

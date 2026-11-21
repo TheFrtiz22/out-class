@@ -3,7 +3,9 @@ const read = file => fs.readFileSync(file, 'utf8')
 
 test('/corkboard renders the unfiltered public board on the server, cached and invalidated with event changes', () => {
   const page = read('app/(workspace)/corkboard/page.tsx')
-  assert.match(page, /unstable_cache\(\(\) => getPublicCorkboard\(\), \["public-corkboard-default"\], \{ revalidate: 60, tags: \["club-directory"\] \}\)/)
+  assert.match(page, /const readDefaultBoard = \(\) => getDefaultPublicCorkboard\(\)/)
+  // Cached per school: the school id is the cached function's argument, so it is part of the key.
+  assert.match(read('actions/campus-events.ts'), /unstable_cache\(\(schoolId: string\) => readPublicCorkboard\(schoolId, eventFiltersSchema\.parse\(\{\}\), null\), \["public-corkboard-default"\], \{ revalidate: 60, tags: \["club-directory"\] \}\)/)
   assert.match(page, /<CorkboardView initialBoard=\{initialBoard\} \/>/)
   assert.match(page, /readDefaultBoard\(\)\.catch\(\(\) => undefined\)/, 'a failed read falls back to the client load')
   assert.match(read('actions/campus-events.ts'), /revalidateTag\("club-directory"\)/, 'event changes invalidate the cached board')

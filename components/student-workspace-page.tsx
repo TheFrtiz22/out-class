@@ -7,13 +7,17 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { isUvaEmail } from "@/lib/auth"
 import { getLaunchClubs } from "@/lib/launch-clubs"
+import { DEFAULT_SCHOOL } from "@/lib/school-host"
+import { resolveViewerSchool } from "@/utils/school-scope"
 import { getStudentDashboardData } from "@/actions/applications"
 import { getClubDirectory } from "@/actions/club-directory"
 import { prisma } from "@/utils/prisma"
 import { AppShell, type StudentViews } from "@/components/app-shell"
 import { studentRouteForPath } from "@/lib/navigation"
 
-const getCachedLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
+const readLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
+// The launch participants are the launch school's (lib/launch-clubs.ts); another school's viewers see none.
+const getCachedLaunchClubs = async () => { const school = await resolveViewerSchool(); return school.id === DEFAULT_SCHOOL.id ? readLaunchClubs(school.id) : [] }
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
 function query(params: Record<string, string | string[] | undefined>) {

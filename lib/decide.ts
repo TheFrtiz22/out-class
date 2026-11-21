@@ -63,6 +63,11 @@ export function decideCounts(rooms: DecideRoom[]): Partial<Record<DecideTab, num
   }
 }
 
+/** Where Decide's Review and Send open the applicants still pending a decision: Applicants, filtered to the round. */
+export function pendingApplicantsHref(clubId: string, roundId: string, review = false) {
+  return `/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=applicants&decision=pending${roundId ? `&roundId=${encodeURIComponent(roundId)}` : ""}${review ? "&review=1" : ""}`
+}
+
 /** Rounds that have voting sessions, in first-seen order: the picker for members who can't read the round list. */
 export function roundsFromRooms(rooms: Pick<DecideRoom, "roundId" | "roundName">[]) {
   const seen = new Map<string, string>()

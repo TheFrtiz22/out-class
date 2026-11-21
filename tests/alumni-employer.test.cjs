@@ -8,6 +8,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs'), ts = require('typescript')
 
 function load(file, mocks = {}) {
+  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), ...mocks }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   const req = name => {
@@ -369,7 +370,7 @@ test('alumni: saving or removing a club or an event is refused before any write'
   const writes = []
   const prisma = {
     studentProfile: { findUnique: async ({ where }) => { assert.equal(where.userId, 'grad'); return { graduatedAt: ALUMNI_AT } } },
-    club: { findUnique: async () => assert.fail('no club lookup for an alumni save') },
+    club: { findFirst: async () => assert.fail('no club lookup for an alumni save') },
     corkboardClub: { upsert: async () => assert.fail('no club save'), deleteMany: async ({ where }) => { writes.push(['unsave-club', where]); return { count: 1 } } },
     savedCampusEvent: { upsert: async () => assert.fail('no event save'), deleteMany: async ({ where }) => { writes.push(['unsave-event', where]); return { count: 1 } } },
     $transaction: async () => assert.fail('no save transaction for alumni'),
@@ -383,7 +384,7 @@ test('alumni: saving or removing a club or an event is refused before any write'
   assert.deepEqual(await events.setSavedCampusEvent({ eventId: id(2), saved: false }), { $action: 'outclass.action/v1', ok: false, error: g.ALUMNI_REFUSALS.save, code: g.ALUMNI_REFUSED })
   assert.deepEqual(writes, [], 'no unsave writes for alumni')
   // A current student still saves.
-  const student = { ...prisma, studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, club: { findUnique: async () => ({ id: id(1) }) }, corkboardClub: { upsert: async () => ({ savedAt: new Date('2026-10-03T12:00:00Z') }) } }
+  const student = { ...prisma, studentProfile: { findUnique: async () => ({ graduatedAt: null }) }, club: { findFirst: async () => ({ id: id(1) }) }, corkboardClub: { upsert: async () => ({ savedAt: new Date('2026-10-03T12:00:00Z') }) } }
   const current = load('actions/club-directory.ts', { '@/utils/prisma': { prisma: student }, '@/utils/auth': auth, 'next/cache': { unstable_cache: fn => fn } })
   assert.deepEqual(await current.setCorkboardClub({ clubId: id(1), saved: true }), { saved: true, savedAt: '2026-10-03T12:00:00.000Z' })
   // A current student still removes a saved item.

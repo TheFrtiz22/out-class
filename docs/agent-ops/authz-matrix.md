@@ -224,3 +224,26 @@ Evidence: `scripts/staging/api-authz.cjs` (live HTTP against the production buil
 | Database (anon / authenticated roles) | `MeetingCheckInPass`: no privileges, RLS on; `WebPushSubscription` unchanged | | | | | | `tests/check-in-pass.test.cjs`, `tests/native-push.test.cjs` |
 
 Untested cells (carried to docs/mobile/FINAL_REPORT.md): cross-school (staging has one school); the `not-eligible` door answer and name withholding in anonymous review against live data; two concurrent scans of one pass from two clubs (fixed by claim-by-delete, not yet raced on PostgreSQL); maintenance mode on a mobile write; `voting.command` reached past input validation by a non-leader; revoked-member mid-session on the voting and interview operations.
+
+## 2026-11-18 · MULTISCHOOL-DIRECTORY-SCOPE-1 · Public listings scoped to the viewer's school (branch `multischool/directory-scope`)
+
+Resource: public club directory and Explore (`getClubDirectory`), club pages and their metadata/share cards (`getPublicClub`, `getPublicClubSeo`, `loadClubShareProfile`), Typesense club search (`searchPublicClubIds`) and account search (`searchWorkspace` clubs), campus events board and shared event links (`getPublicCorkboard`, `getDefaultPublicCorkboard`, `getPublicCampusEvent`), saved clubs (`getCorkboard`, `setCorkboardClub`), student calendar and meeting list public branch (`getStudentDashboardData`, `listMeetings`), sitemap, launch-club strip. School = `utils/school-scope.ts` `resolveViewerSchool()`: signed-in account's verified `SchoolIdentity` school, else the active school claiming its email domain (`SchoolIdentifierType.emailDomain`), else the `<key>.out-class.net` host's school (inactive school: empty scope), else the launch school (`school-uva`). Support sessions use the target account. Nothing is read from client input.
+
+| Actor | Directory / Explore list | Club page by id or slug | Search (DB + Typesense) | Events board / event link | Save club | Sitemap | Test |
+|---|---|---|---|---|---|---|---|
+| Student at school A (signed in, any host) | allow, A's clubs only | allow A; deny B (404, no title/description/share card) | A only; B hits dropped in query and on each hit, IDs re-validated in DB | A's events only; `clubId` of B returns nothing; B event link resolves to "Events" | A only; B refused "no longer available" | n/a | `tests/school-directory-scope.test.cjs` (uva × 4 cases) |
+| Student at school C (second school) | allow, C's clubs only | deny A (404) | C only | C only | C only | n/a | same (tech × 4 cases) |
+| Logged-out visitor, main domain | launch school only (unchanged behaviour) | launch school only | launch school only | launch school only | n/a (sign-in required) | launch school clubs at www | same; resolver precedence case |
+| Logged-out visitor, `<key>.out-class.net` | that school only; inactive school: nothing | that school only | that school only | that school only | n/a | that school's clubs at its origin | same (sitemap tech case, host cases) |
+| Student of A on B's host | A (identity wins over host) | A only | A only | A only | A only | n/a | same (resolver precedence) |
+| Support session (platform admin viewing as target) | target's school | target's school | target's school | target's school | refused upstream as before | n/a | same (support session case) |
+| Forged host / preview host / nested subdomain | launch school (no school named) | launch school | launch school | launch school | n/a | www | same (school hosts case) |
+
+Untested cells: none at unit level; the cross-school cells are not yet proven against disposable Postgres (no Docker on this machine) — CI disposable-integration must confirm. Direct RSVP/save-event by a known event id of another school is not a listing and was left unchanged (follow-up).
+
+Review follow-up (2026-11-18), same resource:
+- **Shared-cache responses are host-scoped, never viewer-scoped.** Club share cards (`loadClubShareProfile`, OG/Twitter images, `public, s-maxage=3600`), the share-card fallback, the sitemap (`force-dynamic`) and public club images (`/api/club-assets`, `s-maxage=300`) use `resolveHostSchool()`. A school host serves only its own clubs' images. The shared main domain keeps serving every school's images, because every school's signed-in students and platform admins use it and those bytes are public.
+- **Per-request responses are viewer-scoped.** Page metadata (`getPublicClubSeo`, `getPublicCampusEvent`) belongs to dynamic pages that read cookies, so it is never shared-cached.
+- **Invalid support sessions.** An invalid view-as cookie falls back to the signed-in account's school, never to the host.
+- **By-id refusals.** These now refuse another school's id: `getMeeting`, `clubLinkPreview`, public `/api/event-flyers` (private, no-store), RSVP (`going: true`) and save-event (`saved: true`). Cancelling an existing RSVP and removing a saved event stay allowed.
+- **Tests.** `tests/school-directory-scope.test.cjs`: the share-card host-only case, fallback card text, the sitemap dynamic case, by-id refusals for both schools, the club images host case, and the junk view-cookie case.

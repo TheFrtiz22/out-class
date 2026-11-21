@@ -3,6 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
 function load(file, mocks = {}) {
+  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/lib/school-host': require('./helpers/school-scope.cjs').schoolHost(), ...mocks }
   mocks = { ...require('./helpers/shell-stubs.cjs'), ...mocks }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
@@ -31,19 +32,19 @@ test('public metadata uses one absolute www canonical and factual social text', 
 })
 test('sitemap candidates exclude unclaimed listings, empty profiles, and seed boilerplate', async () => {
   const h = publicClubs([club, { ...club, id: 'unclaimed', claimedAt: null }, { ...club, id: 'empty', description: '' }, { ...club, id: 'seed', description: 'Basic directory listing provided by OutClass. Club leadership has not yet claimed this profile.' }])
-  assert.deepEqual((await h.api.getIndexableClubs()).map(c => c.id), ['real-club'])
-  assert.deepEqual(h.queries[0].where, { claimedAt: { not: null }, isDiscoverable: true, suspendedAt: null })
+  assert.deepEqual((await h.api.getIndexableClubs('school-uva')).map(c => c.id), ['real-club'])
+  assert.deepEqual(h.queries[0].where, { schoolId: 'school-uva', claimedAt: { not: null }, isDiscoverable: true, suspendedAt: null })
   assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name'])
 })
 test('club metadata lookup selects public identity and copy, never recruitment or account relations', async () => {
   const h = publicClubs([club])
   assert.equal((await h.api.getPublicClubSeo('alias')).id, 'real-club')
-  assert.deepEqual(h.queries[0].where, { OR: [{ id: 'alias' }, { slug: 'alias' }], suspendedAt: null })
+  assert.deepEqual(h.queries[0].where, { OR: [{ id: 'alias' }, { slug: 'alias' }], schoolId: 'school-uva', suspendedAt: null })
   assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name'])
 })
 test('public SEO fails closed during a database outage without loading sample clubs', async () => {
   const api = load('lib/public-club-seo.ts', { react: { cache: fn => fn }, 'next/cache': { unstable_cache: fn => fn }, '@/utils/prisma': { prisma: { club: { findMany: async () => { throw Error('offline') }, findFirst: async () => { throw Error('offline') } } } } })
-  assert.deepEqual(await api.getIndexableClubs(), [])
+  assert.deepEqual(await api.getIndexableClubs('school-uva'), [])
   assert.equal(await api.getPublicClubSeo('unknown'), null)
 })
 test('sitemap emits canonical public pages without query strings or fabricated timestamps', async () => {

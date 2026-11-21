@@ -74,9 +74,13 @@ export function clock(totalSeconds: number) {
   const pad = (value: number) => String(value).padStart(2, "0");
   return hours ? `${hours}:${pad(minutes)}:${pad(rest)}` : `${pad(minutes)}:${pad(rest)}`;
 }
-/** The timer for one interview, from its own start and end: time until it starts, then time remaining, then time's up. */
+/**
+ * The timer for one interview, from its own start and end: time until it starts, then time remaining, then
+ * time's up. More than a day out it is the day itself ("Wed, Nov 25"), since "49:12:05" reads as nothing.
+ */
 export function interviewClock(row: Pick<InterviewEntry, "startTime" | "endTime">, now: number) {
   const start = at(row.startTime), end = at(row.endTime);
+  if (start - now > 86_400_000) return { phase: "before" as const, label: "Starts", digits: new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, weekday: "short", month: "short", day: "numeric" }).format(new Date(start)) };
   if (now < start) return { phase: "before" as const, label: "Starts in", digits: clock((start - now) / 1000) };
   if (now <= end) return { phase: "during" as const, label: "Remaining interview time", digits: clock((end - now) / 1000) };
   return { phase: "after" as const, label: "Time’s up", digits: clock(0) };

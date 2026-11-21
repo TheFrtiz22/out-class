@@ -8,6 +8,7 @@ const sharp = require("sharp");
 
 // Custom module loader for TypeScript files in this repository
 function load(file, mocks = {}) {
+  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/lib/school-host': require('./helpers/school-scope.cjs').schoolHost(), ...mocks }
   const mod = { exports: {} };
   const content = fs.readFileSync(file, "utf8");
   const transpiled = ts.transpileModule(content, {

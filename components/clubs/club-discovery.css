@@ -644,3 +644,33 @@
   .oc-club-profile .oc-club-prose { font-size: var(--oc-text-small); line-height: 1.55; }
   .oc-club-profile > div:has(> .oc-marketing-profile) { margin-bottom: 4px; }
 }
+
+/* Wide screens: the club page uses the width beside the navigation. The hero spans the page; the story
+   (About, What members do) reads on the left and recruiting, club life, FAQ, events and leaders sit in a
+   side column, all on matching content cards. The columns switch on the page's own width (a container
+   query), so the workspace sidebar never squeezes them; narrower pages stack in the original visitor order. */
+@media (min-width: 1180px) {
+  .oc-club-profile { max-width: min(var(--oc-content-width), 78rem); container: oc-club-profile / inline-size; }
+}
+@container oc-club-profile (min-width: 56rem) {
+  .oc-club-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 23rem); gap: 0 24px; align-items: start; }
+  .oc-club-body:has(> .oc-club-aside:empty) > .oc-club-main,
+  .oc-club-body:has(> .oc-club-main:empty) > .oc-club-aside { grid-column: 1 / -1; }
+  .oc-club-main:empty, .oc-club-aside:empty { display: none; }
+  /* Both columns sit on the same content cards, so no text floats on the page background. */
+  .oc-club-main, .oc-club-aside { display: grid; gap: 16px; padding-top: 8px; }
+  .oc-club-profile .oc-club-main > .oc-club-section {
+    margin: 0; padding: 28px 32px; border: 1px solid var(--oc-content-edge, var(--border)); border-radius: var(--oc-content-radius);
+    background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow);
+  }
+  .oc-club-profile .oc-club-aside > .oc-club-section {
+    margin: 0; padding: 20px; border: 1px solid var(--oc-content-edge, var(--border)); border-radius: var(--oc-content-radius);
+    background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow);
+  }
+  .oc-club-profile .oc-club-aside > .oc-club-section > h2 { margin-bottom: 12px; font-family: var(--oc-font-sans); font-size: 1.0625rem; font-weight: var(--oc-weight-semibold); letter-spacing: 0; }
+  .oc-club-aside .oc-club-prose, .oc-club-aside .oc-club-list li, .oc-club-aside .oc-club-facts-list dd, .oc-club-aside .oc-club-faq :is(summary, p) { font-size: var(--oc-size-14); line-height: 1.6; }
+  .oc-club-aside .oc-club-facts-list { margin-top: 12px; gap: 12px; }
+  .oc-club-aside .oc-club-faq summary { min-height: 44px; }
+  /* The gallery gets a third column in the wider story column. */
+  .oc-club-main .oc-club-subsection .grid-cols-2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { questionConditionSchema } from "@/lib/student-applications";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { interviewCapabilities } from "@/lib/interview-access";
+import { deadlineInput } from "@/lib/application-deadline";
 export const roundTypes = [
   "APPLICATION_REVIEW",
   "INTERVIEW",
@@ -65,7 +66,8 @@ export const applicationSettingsSchema = z
     clubId: z.string().uuid(),
     version: z.number().int().min(0),
     open: z.boolean(),
-    deadline: z.string().datetime().nullable(),
+    // Eastern wall time (or an ISO instant); the server resolves it with deadlineInstant.
+    deadline: deadlineInput.nullable(),
     questions: z.array(questionDraftSchema).max(100),
   })
   .refine(
@@ -130,7 +132,6 @@ export function applicationAvailability(
 }
 export const settingsSections = [
   { id: "general", label: "Public profile", permission: "club.settings" },
-  { id: "application", label: "Recruitment & applications", permission: "application.manage" },
   { id: "profiles", label: "Applicant profiles", permission: "club.settings" },
   { id: "cycles", label: "Application cycles", permission: "recruitment.manage" },
   {

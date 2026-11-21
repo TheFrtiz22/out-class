@@ -1,6 +1,7 @@
 import { cache } from "react"
 import { unstable_cache } from "next/cache"
 import { prisma } from "@/utils/prisma"
+import { resolveViewerSchool } from "@/utils/school-scope"
 
 // Separate from recruitment projections: SEO never selects questions, applicants,
 // memberships, contact details, events, or any other account data.
@@ -12,17 +13,20 @@ export function isIndexableClub(club: PublicClubSeo | null): boolean {
     !club.description.includes("Club leadership has not yet claimed this profile.")
 }
 
+// Scoped to the viewer's school like the page itself, so another school's club yields no title or description.
 export const getPublicClubSeo = cache(async (id: string): Promise<PublicClubSeo | null> => {
   try {
-    return await prisma.club.findFirst({ where: { OR: [{ id }, { slug: id }], suspendedAt: null }, select: publicSeoFields })
+    const school = await resolveViewerSchool()
+    return await prisma.club.findFirst({ where: { OR: [{ id }, { slug: id }], schoolId: school.id, suspendedAt: null }, select: publicSeoFields })
   } catch {
     return null
   }
 })
 
-export const getIndexableClubs = unstable_cache(async () => {
+/** One school's indexable clubs; the school id argument is part of the cache key. */
+export const getIndexableClubs = unstable_cache(async (schoolId: string) => {
   try {
-    const clubs = await prisma.club.findMany({ where: { claimedAt: { not: null }, isDiscoverable: true, suspendedAt: null }, select: publicSeoFields, orderBy: { id: "asc" } })
+    const clubs = await prisma.club.findMany({ where: { schoolId, claimedAt: { not: null }, isDiscoverable: true, suspendedAt: null }, select: publicSeoFields, orderBy: { id: "asc" } })
     return clubs.filter(isIndexableClub)
   } catch {
     // Database outages must never cause fictional fixtures to enter the sitemap.

@@ -15,6 +15,15 @@ import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone";
 import { ALUMNI_REFUSALS, isAlumniProfile } from "@/lib/graduation";
 
 /**
+ * An attended meeting's calendar row is keyed by its attendance id, which opens nothing; the app opens the
+ * meeting itself, so its row also names it (`meetingId`). Added fields only: older app builds ignore them.
+ */
+function mobileCalendarEvents(dashboard: Awaited<ReturnType<typeof getStudentDashboardData>>) {
+  const meetingOf = new Map(dashboard.attendances.map(attendance => [attendance.id, attendance.eventId]));
+  return studentCalendarEvents(dashboard).map(event => meetingOf.has(event.id) ? { ...event, meetingId: meetingOf.get(event.id) } : event);
+}
+
+/**
  * Screen-shaped reads for the native app. The web derives Home and Calendar in the browser from
  * `getStudentDashboardData` with the pure helpers in lib/student-home.ts and
  * lib/student-calendar-data.ts; these run the same loaders and the same helpers on the server, so
@@ -24,7 +33,7 @@ import { ALUMNI_REFUSALS, isAlumniProfile } from "@/lib/graduation";
 export async function getMobileHome() {
   const [dashboard, taskNotifications, inbox] = await Promise.all([getStudentDashboardData(), getTaskNotifications(), getDurableNotifications()]);
   const now = new Date();
-  const events = studentCalendarEvents(dashboard);
+  const events = mobileCalendarEvents(dashboard);
   const applications = homeApplications(dashboard.applications, [], events).map(application => ({
     ...application,
     statusCode: applicationStatusCode(application.status),
@@ -41,12 +50,15 @@ export async function getMobileHome() {
     // The web's bell count (components/shell/product-shell.tsx): durable unread, plus computed notifications
     // that have no durable row of their own.
     unread: inbox.unread + taskNotifications.filter(item => !(item as { durableId?: string }).durableId && !item.read).length,
+    // The Inbox's own unread count. The app's Inbox badge uses it: the Inbox lists durable rows only, so a
+    // badge that also counted computed task notifications could never be cleared from there.
+    inboxUnread: inbox.unread,
   };
 }
 
 export async function getMobileCalendar() {
   const dashboard = await getStudentDashboardData();
-  return { generatedAt: new Date(), events: studentCalendarEvents(dashboard) };
+  return { generatedAt: new Date(), events: mobileCalendarEvents(dashboard) };
 }
 
 /**

@@ -8,19 +8,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
-import { canonicalEvaluationScore, formatOverall, rubricOverall, rubricScoresSchema, type ReviewRubric, type RubricScores } from "@/lib/review-rubric"
+import { canonicalEvaluationScore, emptyGradeDraft as emptyDraft, formatOverall, readGradeDraft as readDraft, rubricOverall, rubricScoresSchema, type GradeDraft as Draft, type ReviewRubric, type RubricScores } from "@/lib/review-rubric"
 
-type Draft = { scores: Record<string, string>; overall: string; override: boolean; notes: string }
-const emptyDraft: Draft = { scores: {}, overall: "", override: false, notes: "" }
 type Evaluation = { id: string; interviewerId: string; roundId: string | null; round: string; score: number; submittedAt: Date | string | null; rubricScores?: unknown }
 type App = { id: string; roundId: string; canEvaluate?: boolean; evaluations: Evaluation[] }
 
-/** Older review drafts stored `{ score, notes }`; they restore into the Overall field. */
-function readDraft(value: unknown): Draft {
-  if (!value || typeof value !== "object") return emptyDraft
-  const v = value as Partial<Draft> & { score?: string }
-  return { scores: v.scores && typeof v.scores === "object" ? v.scores : {}, overall: typeof v.overall === "string" ? v.overall : typeof v.score === "string" ? v.score : "", override: v.override === true || (!v.scores && typeof v.score === "string" && v.score !== ""), notes: typeof v.notes === "string" ? v.notes : "" }
-}
 const stepFor = (max: number) => max <= 10 ? 0.5 : 1
 
 /**
@@ -37,7 +29,7 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
   const [base, setBase] = useState(JSON.stringify(emptyDraft))
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
-  const save = useEditorDraft({ scope: { kind: "review", clubId, resourceId: `${app.id}:${app.roundId}` }, value: draft, restore: value => setDraft(readDraft(value)), enabled: canEvaluate, base })
+  const save = useEditorDraft({ scope: { kind: "review", clubId, resourceId: `${app.id}:${app.roundId}` }, value: draft, restore: value => setDraft(readDraft(value, rubric)), enabled: canEvaluate, base })
   useEffect(() => { setDraft(emptyDraft); setBase(JSON.stringify(emptyDraft)); setMessage("") }, [app.id, app.roundId])
 
   const mine = findReviewerEvaluation(app.evaluations, memberId, rounds.find(round => round.id === app.roundId))
@@ -46,7 +38,9 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
   const scored = entries.filter(item => item.raw.trim() !== "" && Number.isFinite(Number(item.raw)))
   const invalid = scored.find(item => Number(item.raw) < 0 || Number(item.raw) > item.max)
   const computed = useMemo(() => rubricOverall(scored.map(item => ({ score: Number(item.raw), max: item.max }))), [scored])
-  const overall = draft.override ? (draft.overall.trim() === "" ? null : Number(draft.overall)) : computed
+  // An override only exists where the overall row is shown (more than one category).
+  const override = draft.override && rubric.categories.length > 1
+  const overall = override ? (draft.overall.trim() === "" ? null : Number(draft.overall)) : computed
   const overallInvalid = overall !== null && (!Number.isFinite(overall) || overall < 0 || overall > 10)
   const stored = overall !== null && !overallInvalid ? canonicalEvaluationScore(overall) : null
   const ready = canEvaluate && !busy && !disabled && save.ready && save.recovery == null && stored !== null && !invalid
@@ -57,7 +51,7 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
     setBusy(true); setMessage("")
     try {
       await save.flush()
-      const rubricScores: RubricScores | undefined = rubric.categories.length ? { categories: scored.map(item => ({ id: item.id, label: item.label, max: item.max, score: Number(item.raw) })), overall: Math.round(overall * 10) / 10, overridden: draft.override || !scored.length } : undefined
+      const rubricScores: RubricScores | undefined = rubric.categories.length ? { categories: scored.map(item => ({ id: item.id, label: item.label, max: item.max, score: Number(item.raw) })), overall: Math.round(overall * 10) / 10, overridden: override || !scored.length } : undefined
       await submitEvaluation({ clubId, applicationId: app.id, roundId: app.roundId, roundName, score: stored, notes: draft.notes, ...(rubricScores ? { rubricScores } : {}) })
       await save.clear()
       setBase(JSON.stringify(draft))
@@ -90,15 +84,16 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
       </div>)}
     </div>
     {invalid && <p role="alert" className="text-control text-destructive">{invalid.label} must be between 0 and {invalid.max}.</p>}
-    <div className="oc-review-overall-row">
+    {/* One category is the overall score already, so it is shown once (its own row), not again as a second overall. */}
+    {rubric.categories.length > 1 && <div className="oc-review-overall-row">
       <div>
-        <p className="text-xs text-muted-foreground">{draft.override ? "Overall (edited)" : rubric.categories.length > 1 ? "Overall · average of scored categories" : "Out of 10"}</p>
+        <p className="text-xs text-muted-foreground">{draft.override ? "Overall (edited)" : "Overall · average of scored categories"}</p>
         {draft.override
           ? <span className="flex items-center gap-1"><Label htmlFor="grade-overall" className="sr-only">Overall score out of 10</Label><Input id="grade-overall" type="number" inputMode="decimal" min={1} max={10} step={0.1} className="oc-review-score-input" value={draft.overall} disabled={!canEvaluate || busy} onChange={event => set({ overall: event.target.value })} /><span className="text-xs text-muted-foreground">/10</span></span>
           : <p className="oc-review-overall"><span className="tabular-nums">{formatOverall(computed)}</span><span className="oc-review-overall-scale">/10</span></p>}
       </div>
       {canEvaluate && rubric.categories.length > 1 && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => set(draft.override ? { override: false } : { override: true, overall: computed === null ? "" : String(computed) })}>{draft.override ? "Use average" : "Edit"}</Button>}
-    </div>
+    </div>}
     {stored !== null && overall !== null && Math.abs(stored - overall) > 0.001 && <p className="text-xs text-muted-foreground">Ratings record this as {stored.toFixed(1)} (scores are kept in half points from 1 to 10).</p>}
     {overallInvalid && <p role="alert" className="text-control text-destructive">Enter an overall score from 0 to 10.</p>}
     <Label htmlFor="grade-notes" className="text-xs text-muted-foreground">Comment (optional)</Label>

@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Linking, View } from "react-native";
+import { ActivityIndicator, Linking, View } from "react-native";
 import { ArrowRight, CalendarDays, ChevronDown, ChevronUp, FileText } from "~/components/icons";
 import { openPrivateDocument } from "~/components/private-image";
 import { Text } from "~/components/text";
-import { Button, Card, Chip, ClubMark, Divider, Press, TARGET, statusTone } from "~/components/ui";
+import { Button, Card, ClubMark, Divider, Press, TARGET, StatusChip } from "~/components/ui";
 import { useTheme } from "~/lib/theme";
 import type { StudentApplication } from "~/lib/types";
 import { OfferCard } from "./offer-card";
@@ -29,11 +29,21 @@ export function ApplicationHeading({ application: app, eyebrow, children }: { ap
  * ApplicationTrackerView): current status and round, decision and offer, the interview for this
  * round, recorded interviews, and the submitted answers.
  */
-export function StatusDetail({ application: app, notice, alumniRespond }: { application: StudentApplication; notice: string; alumniRespond: string | null }) {
+export function StatusDetail({ application: app, notice, alumniRespond, onSwitch }: { application: StudentApplication; notice: string; alumniRespond: string | null; onSwitch?: () => void }) {
   const { colors, radius } = useTheme();
   const router = useRouter();
   const [responses, setResponses] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // The document being opened (it can take up to 20 s), and the one that couldn't be.
+  const [opening, setOpening] = useState<string | null>(null);
+  const [unopened, setUnopened] = useState<string | null>(null);
+  async function openDocument(questionId: string) {
+    if (opening) return;
+    setOpening(questionId); setUnopened(null);
+    const opened = await openPrivateDocument("application-attachments", { applicationId: app.id, questionId });
+    setOpening(null);
+    if (!opened) setUnopened(questionId);
+  }
   const letter = app.decisionLetters.length > 0;
   const booked = !!app.interview && !app.interview.past;
 
@@ -41,13 +51,13 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
     <>
       <ApplicationHeading application={app} eyebrow="Your application">
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
           <Text variant="caption" style={{ flexShrink: 1 }}>{app.submittedLabel ? `Submitted ${app.submittedLabel}` : "Submitted application"}</Text>
         </View>
       </ApplicationHeading>
       <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border, paddingVertical: 14, gap: 10 }}>
         <Text variant="small">Your responses are saved and read-only after submission.</Text>
-        <Button testID="application-view-status" variant="secondary" label="View status" onPress={() => setResponses(false)} />
+        <Button testID="application-view-status" variant="secondary" label="View status" onPress={() => { setResponses(false); onSwitch?.(); }} />
       </View>
       <Text variant="section" accessibilityRole="header">Your submitted responses</Text>
       {app.club.questions.map((question, index) => {
@@ -64,10 +74,13 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
               </Press>
             ) : attachment ? (
               // An uploaded PDF: the saved answer's own file through the media route; the server decides who may read it.
-              <Press testID={`application-attachment-${index + 1}`} onPress={() => { void openPrivateDocument("application-attachments", { applicationId: app.id, questionId: question.id }); }} accessibilityRole="link" accessibilityLabel="Open submitted document" style={{ minHeight: TARGET, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
-                <FileText size={16} color={colors.mutedForeground} />
-                <Text variant="small" color={colors.foreground} style={{ textDecorationLine: "underline" }}>Open submitted document</Text>
-              </Press>
+              <View style={{ gap: 4 }}>
+                <Press testID={`application-attachment-${index + 1}`} disabled={opening !== null} onPress={() => { void openDocument(question.id); }} accessibilityRole="link" accessibilityLabel="Open submitted document" accessibilityState={{ busy: opening === question.id, disabled: opening !== null }} style={{ minHeight: TARGET, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
+                  {opening === question.id ? <ActivityIndicator size="small" color={colors.mutedForeground} /> : <FileText size={16} color={colors.mutedForeground} />}
+                  <Text variant="small" color={colors.foreground} style={{ textDecorationLine: "underline" }}>{opening === question.id ? "Opening document…" : "Open submitted document"}</Text>
+                </Press>
+                {unopened === question.id ? <Text testID={`application-attachment-error-${index + 1}`} variant="small" color={colors.destructive} accessibilityRole="alert">This document couldn’t be opened. Try again, or ask the club.</Text> : null}
+              </View>
             ) : <Text variant="small" selectable style={{ lineHeight: 24 }}>{shown || "No response provided."}</Text>}
           </View>
         );
@@ -86,7 +99,7 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
       <Card accessibilityLabel="Current application status" testID="application-status" style={{ gap: 10 }}>
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
           <Text variant="section" accessibilityRole="header">{app.statusLabel}</Text>
-          <Chip label={app.statusLabel} tone={statusTone(app.statusCode)} />
+          <StatusChip label={app.statusLabel} code={app.statusCode} />
         </View>
         {!app.decision && app.round?.name ? <Text variant="small">Current club round · {app.round.name}</Text> : null}
         <Text variant="small" style={{ lineHeight: 22 }}>{app.nextStep}</Text>
@@ -138,8 +151,9 @@ export function StatusDetail({ application: app, notice, alumniRespond }: { appl
       ) : null}
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14 }}>
-        <Button testID="application-view-responses" variant="secondary" label="View submitted responses" onPress={() => setResponses(true)} />
-        <Button variant="ghost" icon={CalendarDays} label="Open calendar" onPress={() => router.push("/calendar")} />
+        <Button testID="application-view-responses" variant="secondary" label="View submitted responses" onPress={() => { setResponses(true); onSwitch?.(); }} />
+        {/* Back to the tabs underneath: navigate or push would stack a second tab bar on this screen. */}
+        <Button variant="ghost" icon={CalendarDays} testID="application-open-calendar" label="Open calendar" onPress={() => router.dismissTo("/calendar")} />
       </View>
     </>
   );

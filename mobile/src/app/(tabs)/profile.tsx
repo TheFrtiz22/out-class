@@ -1,20 +1,22 @@
 import { formatPhone } from "@outclass/shared/phone";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { View } from "react-native";
+import { useRef, useState } from "react";
+import { type ScrollViewInstance, View } from "react-native";
 import { AlumniBanner, isAlumniProfile } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { Check, ChevronRight, ExternalLink, FileText, Linkedin, Pencil, Settings } from "~/components/icons";
+import { AlumniDetailsSheet, alumniDetailsDraft } from "~/components/profile/alumni-details-sheet";
 import { EditProfileSheet } from "~/components/profile/edit-sheet";
 import { PrivateImage, openPrivateDocument, photoParams } from "~/components/private-image";
 import { initials, isStoragePath, profileChecklist, resumeHref, safeProfileUrl, scholarSummary } from "~/components/profile/model";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, ErrorState, IconButton, Row, ScreenScroll, Skeleton } from "~/components/ui";
+import { Button, Card, ErrorState, IconButton, Row, ScreenScroll, Skeleton, StaleNote } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { openExternal, openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
+import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { fonts, useTheme } from "~/lib/theme";
 import type { FullStudentProfile, ProfileSectionId } from "~/lib/types";
 
@@ -30,11 +32,14 @@ export default function Profile() {
   const top = useHeaderInset();
   const query = useApiQuery<{ profile: FullStudentProfile | null }>("profile");
   useRefetchOnFocus(query);
+  const scroll = useRef<ScrollViewInstance>(null);
+  useTabScrollToTop(scroll);
   const [editing, setEditing] = useState<ProfileSectionId | null>(null);
   const [lastSection, setLastSection] = useState<ProfileSectionId>("identity");
   // A photo chosen in this session shows at once; the saved one comes through the media route.
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
   const [resumeNote, setResumeNote] = useState("");
+  const [alumniEditing, setAlumniEditing] = useState(false);
   const profile = query.data?.profile ?? null;
   const edit = (section: ProfileSectionId) => { setLastSection(section); setEditing(section); };
 
@@ -45,18 +50,21 @@ export default function Profile() {
   const resume = resumeHref(profile?.resumeUrl);
   const scholar = profile ? scholarSummary(profile.scholarStatus) : null;
   const afterGraduation = !!profile && (!!profile.graduationConfirmedAt || isAlumniProfile(profile));
+  const classOf = profile?.gradYear ? `Class of ${profile.gradYear}` : "";
+  const studies = [profile?.major?.trim(), classOf].filter(Boolean).join(" · ");
+  const experiences = (profile?.experiences ?? []).filter(item => item.title.trim());
   const work = profile ? [profile.postGradRole?.trim(), profile.postGradEmployer?.trim()].filter(Boolean).join(" at ") : "";
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll dock top={top} refreshing={query.isRefetching} onRefresh={() => query.refetch()} testID="profile-screen">
+      <ScreenScroll ref={scroll} dock top={top} refreshing={query.isRefetching} onRefresh={() => query.refetch()} testID="profile-screen">
         {query.isPending ? (
           <View accessibilityLabel="Loading profile" accessibilityRole="progressbar" style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}><Skeleton width={80} height={80} radius={40} /><View style={{ flex: 1, gap: 10 }}><Skeleton width="70%" height={24} /><Skeleton width="55%" /><Skeleton width={120} height={36} radius={18} /></View></View>
             <Card style={{ gap: 10 }}><Skeleton width="35%" height={18} /><Skeleton /><Skeleton width="70%" /><Skeleton width="50%" /></Card>
             <Card style={{ gap: 10 }}><Skeleton width="25%" height={18} /><Skeleton width="80%" /></Card>
           </View>
-        ) : query.isError ? (
+        ) : query.isError && !query.data ? (
           query.error instanceof ApiError && query.error.offline
             ? <ErrorState message={errorMessage(query.error)} offline onRetry={() => query.refetch()} />
             : <View accessibilityRole="alert" style={{ gap: 10, paddingVertical: 24 }}><Text variant="section">Your profile couldn’t load</Text><Text variant="small">Your saved details haven’t changed.</Text><Button variant="secondary" label="Try again" onPress={() => query.refetch()} /></View>
@@ -64,11 +72,13 @@ export default function Profile() {
           <View style={{ gap: 10, paddingVertical: 24 }}>
             <Text variant="section" accessibilityRole="header">Complete your student profile.</Text>
             <Text variant="small">Complete student onboarding to create your recruiting profile.</Text>
-            <Button variant="secondary" icon={ExternalLink} label="Open on web" onPress={() => { openOnWeb("/profile"); }} />
+            {/* The same screen, and the same replace, the root layout uses for an account with no profile (so no second tab shell). */}
+            <Button variant="secondary" testID="profile-complete" label="Complete your profile" onPress={() => router.replace("/complete-profile" as never)} />
           </View>
         ) : (
           <>
-            <View style={{ flexDirection: "row", gap: 16, alignItems: "flex-start" }}>
+            {query.isRefetchError ? <StaleNote /> : null}
+            <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
               <View accessible={false} testID="profile-avatar" style={{ width: 80, height: 80, borderRadius: 40, overflow: "hidden", backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
                 {localPhoto && profile.headshotUrl ? <Image source={{ uri: localPhoto }} style={{ width: 80, height: 80 }} contentFit="cover" />
                   : <PrivateImage own kind="profile-photos" params={photoParams(profile.headshotUrl)} style={{ width: 80, height: 80 }}
@@ -76,20 +86,21 @@ export default function Profile() {
               </View>
               <View style={{ flex: 1, gap: 8 }}>
                 <Text variant="title" accessibilityRole="header" testID="profile-name">{profile.firstName} {profile.lastName}</Text>
-                <Text variant="small">{profile.major} · Class of {profile.gradYear}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-                  <Button size="compact" icon={Pencil} testID="profile-edit" label="Edit profile" onPress={() => edit("identity")} />
-                  {linkedin ? <Button size="compact" variant="secondary" icon={Linkedin} testID="profile-linkedin-open" label="LinkedIn" accessibilityHint="Opens in the browser" onPress={() => { openExternal(linkedin); }} /> : null}
-                  {resume ? <Button size="compact" variant="secondary" icon={FileText} testID="profile-resume-view" label="View résumé" accessibilityHint="Opens in the browser" onPress={async () => {
-                    setResumeNote("");
-                    if (/^https?:\/\//i.test(resume)) { openExternal(resume); return; }
-                    // An uploaded PDF: the owner's own file, through the media route.
-                    if (isStoragePath(profile.resumeUrl) ? !(await openPrivateDocument("resumes", { path: profile.resumeUrl! })) : !(await openOnWeb(resume))) setResumeNote(errorMessage(null));
-                  }} /> : null}
-                </View>
-                {resumeNote ? <Text variant="small" accessibilityRole="alert" color={colors.destructive}>{resumeNote}</Text> : null}
+                {studies ? <Text variant="small">{studies}</Text> : null}
               </View>
             </View>
+            {/* The three profile actions share one row under the name block, each an equal share of the width. */}
+            <View testID="profile-actions" style={{ flexDirection: "row", gap: 8 }}>
+              <Button size="compact" icon={Pencil} testID="profile-edit" label="Edit" accessibilityHint="Edit your profile" onPress={() => edit("identity")} style={{ flex: 1, paddingHorizontal: 10 }} />
+              {linkedin ? <Button size="compact" variant="secondary" icon={Linkedin} testID="profile-linkedin-open" label="LinkedIn" accessibilityHint="Opens in the browser" onPress={() => { openExternal(linkedin); }} style={{ flex: 1, paddingHorizontal: 10 }} /> : null}
+              {resume ? <Button size="compact" variant="secondary" icon={FileText} testID="profile-resume-view" label="Résumé" accessibilityHint="Opens your résumé in the browser" onPress={async () => {
+                setResumeNote("");
+                if (/^https?:\/\//i.test(resume)) { openExternal(resume); return; }
+                // An uploaded PDF: the owner's own file, through the media route.
+                if (isStoragePath(profile.resumeUrl) ? !(await openPrivateDocument("resumes", { path: profile.resumeUrl! })) : !(await openOnWeb(resume))) setResumeNote(errorMessage(null));
+              }} style={{ flex: 1, paddingHorizontal: 10 }} /> : null}
+            </View>
+            {resumeNote ? <Text variant="small" accessibilityRole="alert" color={colors.destructive}>{resumeNote}</Text> : null}
             <AlumniBanner />
 
             {!allAdded ? (
@@ -119,9 +130,9 @@ export default function Profile() {
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 8 }}>
                 <Text variant="bodyStrong">University of Virginia</Text>
-                <Text variant="small" style={{ fontVariant: ["tabular-nums"] }}>Class of {profile.gradYear}</Text>
+                {classOf ? <Text variant="small" style={{ fontVariant: ["tabular-nums"] }}>{classOf}</Text> : null}
               </View>
-              <Text variant="small">{profile.major}</Text>
+              <Text variant="small">{profile.major?.trim() || "Major not added"}</Text>
               {profile.highSchool ? <Text variant="small" color={colors.foreground}>High school: {profile.highSchool}</Text> : null}
               {profile.gender || profile.pronouns ? <Text variant="small" color={colors.foreground}>{[profile.gender && `Gender: ${profile.gender}`, profile.pronouns && `Pronouns: ${profile.pronouns}`].filter(Boolean).join(" · ")}</Text> : null}
               {profile.transferStudent ? <Text variant="small" color={colors.foreground}>Transfer student</Text> : null}
@@ -133,6 +144,19 @@ export default function Profile() {
                   {profile.satScore != null ? <Line label="SAT" value={String(profile.satScore)} /> : null}
                 </View>
               ) : null}
+            </Card>
+
+            <Card style={{ gap: 8 }} testID="profile-experience">
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text variant="card" accessibilityRole="header" style={{ flex: 1 }}>Experience</Text>
+                <Button variant="ghost" size="compact" testID="profile-edit-experience" label={experiences.length ? "Edit" : "Add"} accessibilityHint="Edit experience" onPress={() => edit("experience")} />
+              </View>
+              {experiences.length ? experiences.map((item, index) => (
+                <View key={index} style={{ gap: 2 }}>
+                  <Text variant="bodyStrong">{item.title.trim()}</Text>
+                  {[item.subtitle.trim(), item.period.trim()].some(Boolean) ? <Text variant="small">{[item.subtitle.trim(), item.period.trim()].filter(Boolean).join(" · ")}</Text> : null}
+                </View>
+              )) : <Text variant="small">Internships, research, projects or leadership. Not added yet.</Text>}
             </Card>
 
             <Card style={{ gap: 8 }} testID="profile-phone-card">
@@ -150,20 +174,19 @@ export default function Profile() {
                 <Line label="Working at" value={work || "Not added"} />
                 <Line label="Clubs’ alumni list" value={profile.alumniDirectoryVisible ?? true ? "Shown to current members" : "Hidden"} />
                 <Line label="“Where members go”" value={profile.alumniPlacementShare ?? true ? "Company name added" : "Not added"} />
-                <Button variant="secondary" size="compact" icon={ExternalLink} label="Open on web" accessibilityHint="Edit your after-graduation details on the site" onPress={() => { openOnWeb("/profile"); }} />
+                <Button variant="secondary" size="compact" icon={Pencil} testID="profile-after-graduation-edit" label="Edit" accessibilityHint="Edit your after-graduation details" onPress={() => setAlumniEditing(true)} />
               </Card>
             ) : null}
 
             <Card padded={false} style={{ paddingHorizontal: 16, borderRadius: radius.lg }}>
               <Row testID="profile-settings" leading={<Settings size={22} color={colors.brandInk} />} title="Settings" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/settings" as never)} />
-              <Divider />
-              <Row testID="profile-tasks" title="Tasks" detail="Your tasks across clubs" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/tasks")} />
             </Card>
-
-            <EditProfileSheet open={!!editing} initialSection={lastSection} profile={profile} onClose={() => setEditing(null)} onSaved={() => {}} onLocalPhoto={setLocalPhoto} />
           </>
         )}
       </ScreenScroll>
+      {/* Outside the loaded branch: a refetch while the sheet is open (picking a photo backgrounds the app) never unmounts the draft. */}
+      {profile ? <EditProfileSheet open={!!editing} initialSection={lastSection} profile={profile} onClose={() => setEditing(null)} onSaved={() => {}} onLocalPhoto={setLocalPhoto} /> : null}
+      {profile ? <AlumniDetailsSheet open={alumniEditing} initial={alumniDetailsDraft(profile)} onClose={() => setAlumniEditing(false)} /> : null}
       <Header title="Profile" actions={<IconButton icon={Settings} label="Settings" testID="profile-header-settings" onPress={() => router.push("/settings" as never)} />} />
     </View>
   );

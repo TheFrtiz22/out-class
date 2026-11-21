@@ -8,8 +8,8 @@ import { anonymousApplicantLabel } from "@/lib/anonymous-review"
 
 /**
  * Which dashboard asks. Club home ("club") reads club work only; the Recruiting Overview ("recruiting")
- * reads the cycle only; the Club home recruiting strip ("strip") reads intake, cycles, round counts and
- * votes. "all" is the full projection. Every part keeps its permission gate; a part a view does not
+ * reads the cycle only; the Club home recruiting strip ("strip") reads intake, cycles, round counts, votes and
+ * offers. "all" is the full projection. Every part keeps its permission gate; a part a view does not
  * read is returned empty, never filled from another scope.
  */
 export type OverviewView = "all" | "club" | "recruiting" | "strip"
@@ -22,7 +22,10 @@ export async function dashboardSummary(clubId: string, member: ClubAccess & { id
   const identify = hasPermission(member, "applicants.identify"), review = hasPermission(member, "applications.review"), manage = clubPart && hasPermission(member, "tasks.manage")
   const { eligible, unfinished } = reviewScope(clubId, member)
   const deep = read && recruitingPart
-  const [intake, cycles, rounds, queue, meetings, announcements, taskTotals, reviewWork, bookings, votes, scheduled, teamRows, offers, teamTasks] = await Promise.all([
+  // Pending membership offers: one gate and scope for the Overview's list and the count both dashboards show.
+  const offerAccess = identify && hasPermission(member, "decisions.manage")
+  const offerWhere = { clubId, status: "PENDING" as const, expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null, expiredAt: null, application: { clubId, status: "ACCEPTED" as const } }
+  const [intake, cycles, rounds, queue, meetings, announcements, taskTotals, reviewWork, bookings, votes, scheduled, teamRows, offers, teamTasks, offerCount] = await Promise.all([
     read ? prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { applicationOpen: true, applicationDeadline: true } }) : null,
     read ? prisma.recruitmentCycle.findMany({ where: { clubId, archivedAt: null }, orderBy: { createdAt: "desc" }, select: { id: true, name: true, _count: { select: { applications: { where: { status: { not: "DRAFTING" }, ...(!identify ? { round: { anonymousReview: true } } : {}) } } } } }, take: 10 }) : [],
     read ? prisma.$queryRaw<{ id: string; name: string; type: string; anonymous: boolean; count: number; eligible: number; pending: number; needsBooking: number; reviewed: number; bookingPublishedAt: Date | null; bookingPaused: boolean }[]>(Prisma.sql`
@@ -55,11 +58,14 @@ export async function dashboardSummary(clubId: string, member: ClubAccess & { id
       COUNT(*) FILTER (WHERE a."submittedAt" >= ${new Date(+now - 7 * 86400000)})::int AS "recentSubmissions"
       FROM "TaskAssignment" a JOIN "ClubTask" t ON t.id=a."taskId"
       WHERE t."clubId"=${clubId} AND t.kind='TASK' AND t.status <> 'DRAFT'`) : [],
-    recruitingPart && identify && hasPermission(member, "decisions.manage") ? prisma.clubInvitation.findMany({ where: { clubId, status: "PENDING", expiresAt: { gt: now }, revokedAt: null, acceptedAt: null, declinedAt: null, expiredAt: null, application: { clubId, status: "ACCEPTED" } }, select: { id: true, applicationId: true, expiresAt: true, application: { select: { id: true, round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } }, orderBy: [{ expiresAt: "asc" }, { id: "asc" }], take: 4 }) : [],
+    // The Recruiting Overview lists the four soonest-expiring offers by name; counts come from offerCount below.
+    offerAccess && recruitingPart ? prisma.clubInvitation.findMany({ where: offerWhere, select: { id: true, applicationId: true, expiresAt: true, application: { select: { id: true, round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } }, orderBy: [{ expiresAt: "asc" }, { id: "asc" }], take: 4 }) : [],
     // Club home Tasks for task managers: per task, never per person. Open tasks overdue or due this week.
     manage ? prisma.clubTask.findMany({ where: { clubId, kind: "TASK", status: { notIn: ["DRAFT", "DONE"] }, dueAt: { not: null, lte: week } }, select: { id: true, title: true, dueAt: true, _count: { select: { assignments: { where: { reviewedAt: null, OR: [{ submittedAt: null }, { revisionRequestedAt: { not: null } }] } } } } }, orderBy: [{ dueAt: "asc" }, { id: "asc" }], take: 12 }) : [],
+    // Every pending offer, counted (no names): the Recruiting Needs you title and the Club home strip.
+    offerAccess && stripPart ? prisma.clubInvitation.count({ where: offerWhere }) : 0,
   ])
-  return { teamTasks: teamTasks.flatMap(t => t._count.assignments > 0 && t.dueAt ? [{ id: t.id, title: t.title, dueAt: t.dueAt, outstanding: t._count.assignments }] : []), offers: offers.flatMap(o => o.application ? [{ id: o.id, applicationId: o.application.id, expiresAt: o.expiresAt, label: o.application.round.anonymousReview || !o.application.student.studentProfile ? anonymousApplicantLabel(o.application.id) : `${o.application.student.studentProfile.firstName} ${o.application.student.studentProfile.lastName}` }] : []), team: manage && teamRows.length ? teamRows[0] : null, asOf: now, intake, cycles: cycles.map(c => ({ id: c.id, name: c.name, applicants: c._count.applications })), rounds,
+  return { offerCount, teamTasks: teamTasks.flatMap(t => t._count.assignments > 0 && t.dueAt ? [{ id: t.id, title: t.title, dueAt: t.dueAt, outstanding: t._count.assignments }] : []), offers: offers.flatMap(o => o.application ? [{ id: o.id, applicationId: o.application.id, expiresAt: o.expiresAt, label: o.application.round.anonymousReview || !o.application.student.studentProfile ? anonymousApplicantLabel(o.application.id) : `${o.application.student.studentProfile.firstName} ${o.application.student.studentProfile.lastName}` }] : []), team: manage && teamRows.length ? teamRows[0] : null, asOf: now, intake, cycles: cycles.map(c => ({ id: c.id, name: c.name, applicants: c._count.applications })), rounds,
     queue,
     meetings: meetings.map(({ publication, revision, isPublic, ...m }) => ({ ...m, canRsvp: !!publication?.rsvpEnabled && eventIsPublished({ ...m, revision, isPublic, publication }) })), announcements, tasks: { assigned: taskTotals[0]!, completed: taskTotals[1]!, overdue: taskTotals[2]!, awaitingReview: taskTotals[3] }, reviewWork, bookings: bookings.map(({ application, round, ...b }) => ({ ...b, round: round ? { name: round.name } : null, candidate: application.student.studentProfile ? `${application.student.studentProfile.firstName} ${application.student.studentProfile.lastName}` : anonymousApplicantLabel(b.applicationId), kitQuestions: kitSchema.safeParse(round?.interviewKit).data?.length ?? 0 })), votes, scheduled }
 }

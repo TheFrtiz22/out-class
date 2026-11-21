@@ -44,7 +44,8 @@ export function ShareSheet({ open, onClose, target }: { open: boolean; onClose: 
   const short = useQuery({
     queryKey: ["share.shortLink", target.path],
     enabled: open && !!target.shortLink,
-    staleTime: Infinity,
+    // A short link is kept for the session; a miss ("" after a refusal or the wait) is asked again on the next open.
+    staleTime: query => (query.state.data ? Infinity : 0),
     retry: false,
     queryFn: () => Promise.race([
       api.post<{ code: string; shortUrl: string }>("share.shortLink", { target: target.path }).then(result => result.shortUrl.startsWith("/") ? `${config.apiUrl}${result.shortUrl}` : "").catch(() => ""),
@@ -69,7 +70,7 @@ export function ShareSheet({ open, onClose, target }: { open: boolean; onClose: 
       setStatus({ tone: "ok", message: "Link copied." });
     } catch {
       haptics.error();
-      setStatus({ tone: "error", message: "Couldn’t copy automatically. The link is selected, so copy it from the box." });
+      setStatus({ tone: "error", message: "Couldn’t copy automatically. Press and hold the link above to copy it." });
     }
   }
   async function share() {

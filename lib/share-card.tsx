@@ -5,6 +5,7 @@ import { join } from "node:path"
 import { ImageResponse } from "next/og"
 import sharp from "sharp"
 import { SHARE_CARD_COLORS as C } from "@/lib/share-card-palette"
+import { DEFAULT_SCHOOL, type SchoolScope } from "@/lib/school-host"
 
 /** Shared pieces of the OutClass link-preview cards (site and club): size, type, glass material. */
 export const SHARE_CARD_SIZE = { width: 1200, height: 630 }
@@ -59,7 +60,9 @@ export function rgba(color: string, alpha: number) {
  * The site-wide OutClass card (homepage and every page without its own): the same glass panel
  * over the Rotunda from the homepage opening (CC BY 2.0, credited in lib/photo-credits.ts). Served prerendered from /og/outclass.png.
  */
-export async function renderSiteShareCard(cacheControl = CACHE) {
+export async function renderSiteShareCard(cacheControl = CACHE, school: SchoolScope = DEFAULT_SCHOOL) {
+  // The Rotunda photograph and UVA copy belong to the launch school; any other school gets a neutral card with its name.
+  if (school.id !== DEFAULT_SCHOOL.id) return renderNeutralShareCard(cacheControl, school.name?.trim() || "OutClass")
   const [photo, wordmark, [serif, serifBold]] = await Promise.all([
     readFile(join(process.cwd(), "public/images/campus/rotunda-1600.webp")), loadWordmark(), loadType(),
   ])
@@ -82,6 +85,27 @@ export async function renderSiteShareCard(cacheControl = CACHE) {
         </div>
         <div style={{ display: "flex" }}>
           {["University of Virginia", "out-class.net"].map(label => <div key={label} style={{ display: "flex", flexShrink: 0, marginRight: 12, padding: "8px 20px", borderRadius: 999, color: C.navy, fontSize: 21, ...glassChip }}>{label}</div>)}
+        </div>
+      </div>
+    </div>,
+    { ...SHARE_CARD_SIZE, headers: { "Cache-Control": cacheControl }, fonts: caslon(serif, serifBold) },
+  )
+}
+
+/** The site card for a school other than the launch school: no campus photograph, no UVA copy. */
+async function renderNeutralShareCard(cacheControl: string, schoolName: string) {
+  const [wordmark, [serif, serifBold]] = await Promise.all([loadWordmark(), loadType()])
+  const chips = [...new Set([clip(schoolName, 32), "out-class.net"])]
+  return new ImageResponse(
+    <div style={{ display: "flex", position: "relative", width: "100%", height: "100%", fontFamily: "Caslon", backgroundColor: C.navy }}>
+      <div style={{ position: "absolute", top: 60, right: 60, bottom: 60, width: 540, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "46px 46px 40px", borderRadius: 44, ...glassPanel }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <img src={dataUrl("image/svg+xml", wordmark)} alt="OutClass" width={248} height={56} style={{ width: 248, height: 56 }} />
+          <div style={{ display: "flex", marginTop: 30, fontWeight: 600, fontSize: 44, lineHeight: 1.1, color: C.navy, letterSpacing: -1 }}>Apply to campus clubs with one profile.</div>
+          <div style={{ display: "flex", marginTop: 16, fontSize: 24, lineHeight: 1.35, color: C.body }}>Applications, interviews and decisions, all in one place.</div>
+        </div>
+        <div style={{ display: "flex" }}>
+          {chips.map(label => <div key={label} style={{ display: "flex", flexShrink: 0, marginRight: 12, padding: "8px 20px", borderRadius: 999, color: C.navy, fontSize: 21, ...glassChip }}>{label}</div>)}
         </div>
       </div>
     </div>,

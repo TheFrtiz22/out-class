@@ -45,7 +45,10 @@ export function ManagerOverview({ data, refreshing = false, onChanged = () => {}
     {strip && <RecruitingStripLink clubId={club.id} strip={strip} />}
     <NeedsYouRow headingId="club-home-needs" className="oc-club-home-needs"
       items={cards.map(card => ({ id: card.id, title: card.title, detail: card.detail, progress: card.progress, action: action(card) }))}
-      clear={<><strong>You’re clear for now.</strong> Overdue tasks, submissions and meetings that need you will show up here.</>} />
+      clear={strip && strip.attention > 0
+        // The strip above counts recruiting items, so "clear" names what it covers: club work only.
+        ? <><strong>No club work needs you.</strong> Recruiting items are on the Recruiting overview.</>
+        : <><strong>You’re clear for now.</strong> Overdue tasks, submissions and meetings that need you will show up here.</>} />
     {!demo.isDemoEnabled && organizationCapabilities(data.membership).canTransferOwnership && <OrganizationSetupChecklist key={club.id} clubId={club.id} compact />}
     <DashboardGrid main={<>
       <NextMeetingCard data={data} hrefs={hrefs} index={n + 1} onOpen={openMeeting} />

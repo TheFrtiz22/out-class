@@ -20,7 +20,7 @@ const utcDay = (date: string) => new Date(`${date}T00:00:00.000Z`);
  * Asks for write-only access (enough to add an event; the app never reads the calendar). A refusal
  * is an outcome, not an error: "denied" can be asked again, "blocked" needs Settings.
  */
-export async function addEventToCalendar(event: CampusEvent): Promise<CalendarOutcome> {
+async function writeEvent(event: CampusEvent): Promise<CalendarOutcome> {
   let permission = await Calendar.getCalendarPermissions(true);
   if (!permission.granted && permission.canAskAgain) permission = await Calendar.requestCalendarPermissions(true);
   if (!permission.granted) return permission.canAskAgain ? "denied" : "blocked";
@@ -46,6 +46,25 @@ export async function addEventToCalendar(event: CampusEvent): Promise<CalendarOu
   if (!calendar) return "unavailable";
   await calendar.createEvent(details);
   return "added";
+}
+
+/**
+ * Events added during this run of the app. The write goes straight into the calendar, so a second tap
+ * would add a duplicate entry: an added event's button reads "Added" instead, and a tap while the first
+ * write is still running shares its outcome.
+ */
+const added = new Set<string>();
+const running = new Map<string, Promise<CalendarOutcome>>();
+export const addedToCalendar = (eventId: string) => added.has(eventId);
+export function addEventToCalendar(event: CampusEvent): Promise<CalendarOutcome> {
+  if (added.has(event.id)) return Promise.resolve("added");
+  const current = running.get(event.id);
+  if (current) return current;
+  const task = writeEvent(event)
+    .then(outcome => { if (outcome === "added") added.add(event.id); return outcome; })
+    .finally(() => { running.delete(event.id); });
+  running.set(event.id, task);
+  return task;
 }
 
 export const calendarMessages: Record<CalendarOutcome, string> = {

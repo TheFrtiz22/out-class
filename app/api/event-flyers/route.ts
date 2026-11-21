@@ -6,6 +6,7 @@ import { eventIsPublished } from "@/lib/campus-events";
 import { privateFlyerStorage } from "@/utils/event-flyer-storage";
 import { auditSupportAction } from "@/utils/support-audit";
 import { z } from "zod";
+import { resolveViewerSchool } from "@/utils/school-scope";
 const headers = {
   "Cache-Control": "private, no-store, max-age=0",
   "X-Content-Type-Options": "nosniff",
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
     const read = () =>
       prisma.meeting.findUnique({
         where: { id: eventId },
-        include: { club: { select: { suspendedAt: true } }, publication: { include: { flyer: true } } },
+        include: { club: { select: { suspendedAt: true, schoolId: true } }, publication: { include: { flyer: true } } },
       });
     const e = await read();
     if (!e?.publication?.flyer || e.revision !== revision)
@@ -43,7 +44,8 @@ export async function GET(request: Request) {
         "platform.impersonation.event-flyer-read",
         eventId,
       );
-    } else if (!eventIsPublished(e))
+    } else if (!eventIsPublished(e) || e.club.schoolId !== (await resolveViewerSchool()).id)
+      // Public flyers are the viewer's school's only (responses are private, no-store, so per-viewer is safe).
       return new Response("Not found", { status: 404, headers });
     const storage = await privateFlyerStorage(),
       { data, error } = await storage.download(e.publication.flyer.path);

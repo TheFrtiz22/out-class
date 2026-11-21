@@ -19,6 +19,12 @@ export function recruitmentDeadline(value?: string | null) {
 export function recruitmentDate(value: Date | string) {
   return `${new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(value))} · Eastern Time`;
 }
+/** The card-width form: "Nov 30, 11:59 PM ET", with the year only when it is not this year's. */
+export function shortRecruitmentDate(value: Date | string, now = Date.now()) {
+  const date = new Date(value);
+  const year = (instant: Date | number) => new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, year: "numeric" }).format(instant);
+  return `${new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, month: "short", day: "numeric", ...(year(date) === year(now) ? {} : { year: "numeric" }), hour: "numeric", minute: "2-digit", hour12: true }).format(date)} ET`;
+}
 export function clubRecruitment(club: Pick<PublicClub, "source" | "claimed" | "applicationAvailable" | "applicationDeadline">, now = Date.now()) {
   const deadline = recruitmentDeadline(club.applicationDeadline);
   const expired = !!deadline && +deadline <= now;
@@ -120,7 +126,7 @@ const calendarDayLabel = (date: string) => new Intl.DateTimeFormat("en-US", { ti
 export function eventScheduleLabel(event: Pick<CampusEvent, "date" | "endDate" | "allDay">) {
   if (event.allDay) {
     const first = easternDate(event.date), last = shiftDay(easternDate(event.endDate), -1);
-    return `${eventDateLabel(event.date)}${last === first ? "" : ` – ${calendarDayLabel(last)}`} · All day`;
+    return `${eventDateLabel(event.date)}${last > first ? ` – ${calendarDayLabel(last)}` : ""} · All day`;
   }
   return `${eventDateLabel(event.date)} · ${eventTimeLabel(event.date)} – ${easternDate(event.date) === easternDate(event.endDate) ? "" : `${eventDateLabel(event.endDate)} · `}${eventTimeLabel(event.endDate)}`;
 }

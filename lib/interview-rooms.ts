@@ -71,6 +71,8 @@ function wall(date: Date, timezone: string) {
   const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date).map(p => [p.type, p.value]))
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`
 }
+/** The instant as a `datetime-local` value (YYYY-MM-DDTHH:MM) on the wall clock of `timezone`. */
+export function zonedInputValue(value: string | Date, timezone: string) { return wall(new Date(value), timezone) }
 /** Resolve local wall time explicitly; reject nonexistent or ambiguous DST times. */
 export function zonedInstant(date: string, time: string, timezone: string): Date {
   const target = `${date}T${time}`, base = new Date(`${target}:00Z`).getTime()

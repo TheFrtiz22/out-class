@@ -61,8 +61,13 @@ export async function listAdminReports(input: unknown) {
  * Cheap change check for the live Reports queue and the nav badge: open issue/feedback count and a
  * fingerprint of the visible queue. No report content; not audited (it runs every 20 s while an admin
  * page is visible), and the page reads content only through the audited listAdminReports.
+ * The check runs in the background, including while the console moves to /platform/login, so an
+ * Admin check that only asks to verify again is returned as a refusal rather than thrown as a 500.
  */
 export async function getAdminReportsPulse() {
+  return adminActionResult(adminReportsPulseCommand, "getAdminReportsPulse");
+}
+async function adminReportsPulseCommand() {
   await requirePlatformAdmin();
   const visible = { kind: { notIn: ["SUPPORT", "ACCOUNT_DELETION"] } };
   const [openFeedback, latest] = await Promise.all([

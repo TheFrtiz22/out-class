@@ -6,6 +6,8 @@ import { SANDBOXED_FILE_POLICY } from "@/lib/csp";
 import { requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { RATE_LIMITS, limitRequest } from "@/lib/rate-limit";
+import { schoolKeyFromHost } from "@/lib/school-host";
+import { resolveHostSchool } from "@/utils/school-scope";
 // Published, non-preview images are public by definition, so the CDN may hold them. Each upload gets
 // a new UUID reference, so a replaced image never reuses a cached URL; an unpublished image or suspended club clears from the CDN within s-maxage (about 5 minutes).
 const publicImageCache = 'public, max-age=300, s-maxage=300, stale-while-revalidate=60';
@@ -19,12 +21,15 @@ export async function GET(request: NextRequest) {
   if (!parsed.success) return missing();
   const reference = parsed.data, clubId = reference.split('/')[1], preview = params.get('preview') === '1';
   async function allowed() {
-    const club = await prisma.club.findUnique({ where: { id: clubId }, select: { logoUrl: true, bannerUrl: true, marketing: true, suspendedAt: true, isDiscoverable: true } });
+    const club = await prisma.club.findUnique({ where: { id: clubId }, select: { logoUrl: true, bannerUrl: true, marketing: true, suspendedAt: true, isDiscoverable: true, schoolId: true } });
     if (!club) return false;
     if (preview) {
       try { await requireClubPermission(clubId, ['club.settings']); return true; }
       catch { try { await requirePlatformAdmin(); return true; } catch { return false; } }
     }
+    // Public images are CDN-cached for everyone, so scope by host, never by viewer: a school's host serves only its
+    // own clubs' images; the shared main domain (every school's signed-in students, platform admins) keeps serving all.
+    if (schoolKeyFromHost(request.headers.get('host')) && club.schoolId !== (await resolveHostSchool()).id) return false;
     return !club.suspendedAt && clubProfileImages(club, true).includes(reference);
   }
   try {

@@ -16,6 +16,7 @@ import { adminActionResult } from "@/lib/admin-failure";
 import { readDemoTemplate } from "@/lib/demo/validate";
 import { clubPermissions } from "@/lib/permissions";
 import { boundedParse } from "@/lib/bounded-input";
+import { markClubClaimed, newClubProfileFieldVisibility } from "@/lib/profile-field-visibility";
 
 const resources = z.enum(platformResources);
 export type PlatformResource = z.infer<typeof resources>;
@@ -532,7 +533,7 @@ async function changePlatformResourceCommand(input: unknown, reason: string) {
         const { kind, id, ...fields } = data;
         const record = id
           ? await tx.club.update({ where: { id }, data: fields })
-          : await tx.club.create({ data: fields });
+          : await tx.club.create({ data: { ...fields, profileFieldVisibility: newClubProfileFieldVisibility() } });
         targetId = record.id;
         break;
       }
@@ -569,10 +570,7 @@ async function changePlatformResourceCommand(input: unknown, reason: string) {
         if (result.count !== 1)
           throw new Error("Claim changed. Reload before deciding.");
         if (data.approved) {
-          await tx.club.update({
-            where: { id: claim.clubId },
-            data: { claimedAt: new Date() },
-          });
+          await markClubClaimed(tx, claim.clubId);
           await tx.clubMember.upsert({
             where: {
               userId_clubId: { userId: claim.userId, clubId: claim.clubId },
@@ -604,11 +602,7 @@ async function changePlatformResourceCommand(input: unknown, reason: string) {
           })) <= 1
         )
           throw new Error("Assign another owner first.");
-        if (data.isOwner)
-          await tx.club.update({
-            where: { id: data.clubId },
-            data: { claimedAt: new Date() },
-          });
+        if (data.isOwner) await markClubClaimed(tx, data.clubId);
         const { kind, ...fields } = data;
         const record = await tx.clubMember.upsert({
           where,

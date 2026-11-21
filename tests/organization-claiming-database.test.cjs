@@ -45,7 +45,8 @@ test('first-login discovery and atomic ownership acceptance run against all repo
         ? (await db.query('SELECT i.* FROM "SchoolIdentity" i JOIN "School" s ON s.id=i."schoolId" AND s.active WHERE ("schoolId","identifierTypeId","normalizedIdentifier") IN (SELECT * FROM unnest($1::text[],$2::text[],$3::text[]))',[where.OR.map(o=>o.schoolId),where.OR.map(o=>o.identifierTypeId),where.OR.map(o=>o.normalizedIdentifier)])).rows
         : (await db.query('SELECT * FROM "SchoolIdentity" WHERE "userId"=$1 AND "verifiedAt" IS NOT NULL',[where.userId])).rows,
     },
-    club:{update:async({where,data})=>update('Club',where.id,data)},
+    // findUnique: markClubClaimed checks for a first claim (unclaimed, default profile fields) before stamping it.
+    club:{findUnique:byId('Club'),update:async({where,data})=>update('Club',where.id,data)},
     clubMember:{
       count:async({where})=>(await one('SELECT count(*)::int AS n FROM "ClubMember" WHERE "clubId"=$1 AND "isOwner"',[where.clubId])).n,
       findUnique:async({where})=>one('SELECT * FROM "ClubMember" WHERE "userId"=$1 AND "clubId"=$2',[where.userId_clubId.userId,where.userId_clubId.clubId]),
@@ -78,6 +79,8 @@ test('first-login discovery and atomic ownership acceptance run against all repo
   assert.equal((await one('SELECT * FROM "SchoolIdentity" WHERE id=$1',[identity])).userId,john);
   assert.equal((await one('SELECT count(*)::int AS n FROM "AuditLog" WHERE action=$1 AND "targetId"=$2',['school.identity.verify',identity])).n,1);
   const claimed=await one('SELECT * FROM "ClubInvitation" WHERE id=$1',[invitation]);assert.equal(claimed.status,'ACCEPTED');assert.equal(claimed.claimedUserId,john);assert.ok(claimed.claimedAt);
+  // A directory club's first owner claim stores the new-club profile fields (SAT and ACT off) in place of NULL.
+  const claimedClub=await one('SELECT "claimedAt","profileFieldVisibility" FROM "Club" WHERE id=$1',[club]);assert.ok(claimedClub.claimedAt);assert.equal(claimedClub.profileFieldVisibility.sat,false);assert.equal(claimedClub.profileFieldVisibility.act,false);assert.equal(claimedClub.profileFieldVisibility.major,true);
   const membership=await one('SELECT * FROM "ClubMember" WHERE "userId"=$1',[john]);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.isOwner,true);assert.equal(membership.status,'ACTIVE');
   assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember"')).n,1);assert.deepEqual(await api.getOrganizationInvitations(),[]);
 

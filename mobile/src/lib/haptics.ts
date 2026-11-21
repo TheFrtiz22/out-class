@@ -16,6 +16,8 @@ export const haptics = {
   warning: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)),
   /** A refusal or failure. */
   error: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)),
+  /** A control picked up under the finger: the tab bar's selection, lifted to drag. */
+  grab: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft)),
   /** Selection moved: a tab, a segment, a voting round tick. */
   tick: () => run(() => Haptics.selectionAsync()),
 };
