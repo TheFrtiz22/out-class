@@ -90,7 +90,8 @@ export default function Inbox() {
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
-        refreshControl={<RefreshControl refreshing={inbox.isRefetching && !inbox.isFetchingNextPage} onRefresh={() => { inbox.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
+        refreshControl={<RefreshControl refreshing={inbox.isRefetching && !inbox.isFetchingNextPage} onRefresh={() => { inbox.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
         onEndReachedThreshold={0.4}
         onEndReached={() => { if (inbox.hasNextPage && !inbox.isFetchingNextPage) inbox.fetchNextPage(); }}
         ListHeaderComponent={header}

@@ -119,7 +119,8 @@ export default function EventsBoard() {
         keyboardDismissMode="on-drag"
         initialNumToRender={5}
         windowSize={9}
-        refreshControl={<RefreshControl refreshing={board.isRefetching && !board.isFetchingNextPage && !board.isPlaceholderData} onRefresh={refresh} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top }}
+        refreshControl={<RefreshControl refreshing={board.isRefetching && !board.isFetchingNextPage && !board.isPlaceholderData} onRefresh={refresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
       />
       <Header title="Events" back />
       {notice.element}

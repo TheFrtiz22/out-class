@@ -125,7 +125,8 @@ export default function Applicants() {
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ paddingTop: top + 12, paddingHorizontal: 16, paddingBottom: insets.bottom + 24, gap: 10 }}
         ListHeaderComponent={header}
-        refreshControl={<RefreshControl refreshing={pulling} tintColor={colors.mutedForeground} progressViewOffset={top} onRefresh={() => { setPulling(true); Promise.all([overview.refetch(), pipeline.refetch()]).finally(() => setPulling(false)); }} />}
+        scrollIndicatorInsets={{ top }}
+        refreshControl={<RefreshControl refreshing={pulling} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} onRefresh={() => { setPulling(true); Promise.all([overview.refetch(), pipeline.refetch()]).finally(() => setPulling(false)); }} />}
         onEndReachedThreshold={0.6}
         onEndReached={() => { if (pipeline.hasNextPage && !pipeline.isFetchingNextPage) pipeline.fetchNextPage(); }}
         ListEmptyComponent={pipeline.isPending ? <SkeletonRows count={5} /> : pipeline.isError ? (

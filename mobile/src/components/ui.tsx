@@ -80,7 +80,8 @@ export function Button({ label, onPress, variant = "primary", size = "default", 
       style={[{ minHeight: height, paddingHorizontal: size === "compact" ? 14 : 18, paddingVertical: 6, borderRadius: radius.full, backgroundColor: palette.background, borderColor: palette.border, borderWidth: StyleSheet.hairlineWidth * 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, alignSelf: full ? "stretch" : "flex-start", maxWidth: "100%" }, ...(style ? [style] : [])]}
     >
       {loading ? <ActivityIndicator size="small" color={palette.text} /> : Icon ? <Icon size={18} color={palette.text} /> : null}
-      <Text variant="button" color={palette.text} numberOfLines={1} style={{ flexShrink: 1 }}>{label}</Text>
+      {/* Two lines before cutting off, so a label still reads at the largest text sizes. */}
+      <Text variant="button" color={palette.text} numberOfLines={2} style={{ flexShrink: 1, textAlign: "center" }}>{label}</Text>
     </Press>
   );
 }
@@ -124,9 +125,9 @@ export function Chip({ label, tone = "neutral", icon, testID }: { label: string;
   const toneColor = useToneColor();
   const Icon = icon ?? toneIcons[tone];
   return (
-    <View testID={testID} style={{ flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", flexShrink: 0, paddingVertical: 2 }}>
+    <View testID={testID} style={{ flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", flexShrink: 1, maxWidth: "100%", paddingVertical: 2 }}>
       <Icon size={16} weight={tone === "brand" ? "fill" : "regular"} color={toneColor(tone)} />
-      <Text variant="caption" color={colors.foreground} numberOfLines={1} style={{ fontFamily: fonts.sansMedium }}>{label}</Text>
+      <Text variant="caption" color={colors.foreground} numberOfLines={1} style={{ fontFamily: fonts.sansMedium, flexShrink: 1 }}>{label}</Text>
     </View>
   );
 }
@@ -146,8 +147,19 @@ const CLUB_ASSET = /^club-assets\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/
 /** A colour value React Native can draw: a club colour is free text on the server, and an unknown one warns. */
 const HEX_COLOR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 /** A club's mark: its logo when it has one, otherwise its initials on the club colour. */
+/**
+ * Navy or white initials, whichever reads on the club colour. A club types its own colour, and the web's own
+ * "Rotunda Orange" (#EAAA00) or a white is too light for white initials.
+ */
+export function clubInk(hex: string): string {
+  const raw = hex.replace("#", "");
+  const full = raw.length <= 4 ? raw.slice(0, 3).split("").map(c => c + c).join("") : raw.slice(0, 6);
+  const [r, g, b] = [0, 2, 4].map(i => { const v = parseInt(full.slice(i, i + 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! > 0.4 ? "#232d4b" : "#ffffff";
+}
 export function ClubMark({ name, color, logoUrl, size = 44 }: { name: string; color?: string | null; logoUrl?: string | null; size?: number }) {
-  const { radius } = useTheme();
+  const { radius, colors } = useTheme();
+  const background = color && HEX_COLOR.test(color.trim()) ? color.trim() : "#142d4e";
   const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
   const latin = words.filter(word => /^[A-Za-z0-9]/.test(word));
   const initials = (latin.length ? latin : words).slice(0, 2).map(word => Array.from(word)[0]!.toUpperCase()).join("");
@@ -156,10 +168,10 @@ export function ClubMark({ name, color, logoUrl, size = 44 }: { name: string; co
   const logo = !logoUrl ? null : CLUB_ASSET.test(logoUrl) ? `${config.apiUrl}/api/club-assets?reference=${encodeURIComponent(logoUrl)}`
     : logoUrl.startsWith("/") && !logoUrl.startsWith("//") ? `${config.apiUrl}${logoUrl}` : /^https?:\/\//i.test(logoUrl) ? logoUrl : null;
   return (
-    <View accessible={false} style={{ width: size, height: size, borderRadius: Math.min(radius.md, size / 3.4), backgroundColor: color && HEX_COLOR.test(color.trim()) ? color.trim() : "#142d4e", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+    <View accessible={false} style={{ width: size, height: size, borderRadius: Math.min(radius.md, size / 3.4), backgroundColor: background, alignItems: "center", justifyContent: "center", overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
       {/* "contain": the whole logo shows inside the box, never cropped; a non-square logo sits on the club colour. */}
       {logo && failed !== logo ? <Image source={{ uri: logo }} style={{ width: size, height: size }} contentFit="contain" transition={150} onError={() => setFailed(logo)} />
-        : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.displayStrong, fontSize: size * 0.36, lineHeight: size * 0.44, color: "#ffffff" }}>{initials}</Text>}
+        : <Text maxFontSizeMultiplier={1} style={{ fontFamily: fonts.displayStrong, fontSize: size * 0.36, lineHeight: size * 0.44, color: clubInk(background) }}>{initials}</Text>}
     </View>
   );
 }
@@ -251,7 +263,7 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
           <Pressable key={option.value} accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={option.label} hitSlop={{ top: 3, bottom: 3 }}
             onPress={() => { if (!selected) { haptics.tick(); onChange(option.value); } }}
             style={{ flex: 1, minHeight: TARGET - 6, alignItems: "center", justifyContent: "center", borderRadius: radius.full, backgroundColor: selected ? colors.card : "transparent", paddingHorizontal: 10 }}>
-            <Text variant="smallStrong" color={selected ? colors.foreground : colors.mutedForeground} numberOfLines={1}>{option.label}</Text>
+            <Text variant="smallStrong" color={selected ? colors.foreground : colors.mutedForeground} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} style={{ textAlign: "center" }}>{option.label}</Text>
           </Pressable>
         );
       })}

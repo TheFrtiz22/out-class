@@ -83,7 +83,8 @@ export default function SavedClubsScreen() {
         style={{ flex: 1, backgroundColor: colors.background }}
         contentContainerStyle={{ paddingTop: top + theme.space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
         contentInsetAdjustmentBehavior="never"
-        refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => { void query.refetch(); }} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top }}
+        refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => { void query.refetch(); }} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
       />
       <Header title="Saved clubs" back />
       {notice.element}

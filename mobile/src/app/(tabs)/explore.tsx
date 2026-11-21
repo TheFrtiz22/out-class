@@ -144,7 +144,8 @@ export default function Explore() {
         maxToRenderPerBatch={8}
         windowSize={9}
         removeClippedSubviews
-        refreshControl={<RefreshControl refreshing={directory.isRefetching} onRefresh={refresh} tintColor={colors.mutedForeground} progressViewOffset={top} />}
+        scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
+        refreshControl={<RefreshControl refreshing={directory.isRefetching} onRefresh={refresh} tintColor={colors.mutedForeground} colors={[colors.primary]} progressBackgroundColor={colors.card} progressViewOffset={top} />}
       />
       <Header title="Explore" />
       {notice.element}

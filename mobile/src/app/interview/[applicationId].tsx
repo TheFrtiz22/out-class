@@ -199,7 +199,7 @@ export default function InterviewScreen() {
                   {[{ value: "all", label: "All rooms" }, ...rooms.map(room => ({ value: room.id, label: room.name }))].map(option => {
                     const selected = option.value === roomId;
                     return (
-                      <Press key={option.value} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={option.label} onPress={() => { haptics.tick(); setRoomId(option.value); setDay(""); }}
+                      <Press key={option.value} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={option.label} onPress={() => { haptics.tick(); setRoomId(option.value); setDay(""); }} hitSlop={{ top: 3, bottom: 3 }}
                         style={{ minHeight: TARGET - 6, paddingHorizontal: 14, justifyContent: "center", borderRadius: radius.full, borderWidth: 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primary : colors.card }}>
                         <Text variant="smallStrong" color={selected ? colors.primaryForeground : colors.foreground}>{option.label}</Text>
                       </Press>

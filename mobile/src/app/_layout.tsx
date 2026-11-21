@@ -1,18 +1,19 @@
 import { SourceSans3_400Regular, SourceSans3_500Medium, SourceSans3_600SemiBold, SourceSans3_700Bold } from "@expo-google-fonts/source-sans-3";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationTheme, useGlobalSearchParams, usePathname, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
-import { Component, type ReactNode, useEffect, useRef, useState } from "react";
+import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Appearance, Platform, Pressable, Text as NativeText, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "~/lib/auth";
 import { hideDevToolsButton } from "~/lib/dev-tools";
 import { resolveHref } from "~/lib/links";
+import { pendingLinkFor } from "~/lib/pending-link";
 import { notificationPath } from "~/lib/push";
 import { createQueryClient, useApiQuery } from "~/lib/query";
 import { reportError } from "~/lib/report";
@@ -64,9 +65,15 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
 
 function Navigation() {
   const { session } = useAuth();
-  const { colors, dark } = useTheme();
+  const { colors, dark, loaded: themeLoaded } = useTheme();
   const segments = useSegments();
+  const pathname = usePathname();
+  const searchParams = useGlobalSearchParams();
   const router = useRouter();
+  // A link opened while signed out (a /q check-in or club code, a meeting) is followed once the person is in, not dropped for Home.
+  // Only a link that opened the app signed out counts: signing out from a screen must not bring the next sign-in back to it.
+  const pendingPath = useRef<string | null>(null);
+  const wasSignedIn = useRef(false);
   const ready = session !== undefined;
   // A signed-in account without a student profile (a new account, or one made on the web that never
   // finished) is held on complete-profile, as the web holds it on /signup.
@@ -77,12 +84,23 @@ function Navigation() {
     if (!ready) return;
     const onAuth = segments[0] === "sign-in" || segments[0] === "sign-up";
     const onProfile = segments[0] === "complete-profile";
-    if (!session) { if (!onAuth) router.replace("/sign-in"); }
+    if (session) wasSignedIn.current = true;
+    if (!session) {
+      if (!onAuth) {
+        if (!wasSignedIn.current) pendingPath.current = pendingLinkFor(pathname, segments[0], searchParams, segments) ?? pendingPath.current;
+        router.replace("/sign-in");
+      }
+    }
     else if (needsProfile) { if (!onProfile) router.replace("/complete-profile"); }
     // Wait for `me` before leaving, so a new account never flashes the tabs on its way to its profile.
-    else if ((onAuth || onProfile) && (me.data || me.isError)) router.replace("/");
-  }, [ready, session, needsProfile, me.data, me.isError, segments, router]);
-  useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => {}); }, [ready]);
+    else if ((onAuth || onProfile) && (me.data || me.isError)) {
+      const next = pendingPath.current;
+      pendingPath.current = null;
+      router.replace((next ?? "/") as never);
+    }
+  }, [ready, session, needsProfile, me.data, me.isError, segments, pathname, router]);
+  // The splash stays until the session and the saved Light/Dark choice are both read, so the first frame is in the right theme.
+  useEffect(() => { if (ready && themeLoaded) SplashScreen.hideAsync().catch(() => {}); }, [ready, themeLoaded]);
   // Should reading the stored session ever stall, the splash still goes away.
   useEffect(() => {
     const timer = setTimeout(() => { SplashScreen.hideAsync().catch(() => {}); }, LAUNCH_WAIT_MS);
@@ -120,8 +138,14 @@ function Navigation() {
     return () => subscription.remove();
   }, [ready, signedIn, router]);
 
+  // React Navigation paints its own containers behind screens; without this they stay light grey in dark mode.
+  const navigationTheme = useMemo(() => {
+    const base = dark ? DarkTheme : DefaultTheme;
+    return { ...base, colors: { ...base.colors, background: colors.background, card: colors.card, text: colors.foreground, border: colors.border, primary: colors.primary } };
+  }, [dark, colors]);
+
   return (
-    <>
+    <NavigationTheme value={navigationTheme}>
       <StatusBar style={dark ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background }, animation: "default", gestureEnabled: true, fullScreenGestureEnabled: false }}>
         <Stack.Screen name="(tabs)" />
@@ -131,7 +155,7 @@ function Navigation() {
         <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="q/[code]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
       </Stack>
-    </>
+    </NavigationTheme>
   );
 }
 

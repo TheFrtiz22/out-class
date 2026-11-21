@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AppState, Linking, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -134,6 +135,8 @@ export function ScanScreen({ initialCode }: { initialCode?: string }) {
   return (
     // The camera preview is always dark, so the scanner keeps its own dark surface in both themes.
     <View style={{ flex: 1, backgroundColor: "#000000" }} testID="scan-screen">
+      {/* Light clock and battery over the dark camera; the root style comes back when the scanner closes. */}
+      <StatusBar style="light" />
       {scanning ? (
         <CameraView style={StyleSheet.absoluteFill} facing="back" barcodeScannerSettings={{ barcodeTypes: ["qr"] }} onBarcodeScanned={event => onScanned(event.data)} onMountError={() => setCameraFailed(true)} />
       ) : null}
