@@ -6,6 +6,7 @@
  * only when Supabase asks for it.
  */
 import { act, fireEvent, screen } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 import SignIn from "~/app/sign-in";
 import { missingConfigMessage, signInFailure } from "~/lib/sign-in-error";
 import { supabase } from "~/lib/supabase";
@@ -93,6 +94,17 @@ describe("sign-in screen", () => {
     await fireEvent.press(screen.getByTestId("sign-in-submit"));
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
   }
+
+  test("opens as a welcome to OutClass, with Forgot password centred under the form", async () => {
+    await renderRoute(SignIn, { segments: ["sign-in"] });
+    expect(screen.getByTestId("sign-in-welcome")).toBeTruthy();
+    expect(screen.getByText("Welcome to OutClass")).toBeTruthy();
+    expect(screen.getByText("Discover clubs that fit you")).toBeTruthy();
+    const forgot = screen.getByTestId("sign-in-forgot");
+    expect(StyleSheet.flatten(forgot.props.style).alignSelf).toBe("center");
+    expect(screen.getByTestId("sign-in-sign-up")).toBeTruthy();
+    expect(loggedCrashes()).toEqual([]);
+  });
 
   test("signs in without a check when Supabase doesn't ask for one", async () => {
     signInWithPassword.mockClear();
