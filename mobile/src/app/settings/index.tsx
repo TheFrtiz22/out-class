@@ -15,7 +15,7 @@ const sections = [
   { id: "account", label: "Account & Security", description: "Your sign-in information and account security.", route: "/settings/account" },
   { id: "notifications", label: "Notifications", description: "Choose which club updates and reminders reach your email.", route: "/settings/notifications" },
   { id: "availability", label: "Availability", description: "Keep one availability schedule across all your clubs.", web: "/settings/availability" },
-  { id: "interests", label: "Interests", description: "What you’re into, so we can suggest clubs. Only you see this.", web: "/settings/interests" },
+  { id: "interests", label: "Interests", description: "What you’re into, so we can suggest clubs. Only you see this.", route: "/settings/interests" },
   { id: "interviews", label: "Interview schedule", description: "Your approved interview panels across all your clubs.", web: "/settings/interviews" },
 ] as const;
 

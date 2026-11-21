@@ -30,6 +30,10 @@ export const mobileOperations = {
   "graduation.confirm": operation("POST", passthrough, async input => (await import("@/actions/graduation")).confirmGraduation(input)),
   "graduation.details": operation("POST", passthrough, async input => (await import("@/actions/graduation")).saveAlumniDetails(input)),
 
+  // Settings: the student's own club-interest survey (Settings → Interests on the web)
+  "interests": operation("GET", none, async () => (await import("@/actions/interest-survey")).getMyInterestSurvey()),
+  "interests.save": operation("POST", passthrough, async input => (await import("@/actions/interest-survey")).saveMyInterestSurvey(input)),
+
   // Home, calendar
   "home.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileHome()),
   "calendar.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileCalendar()),
