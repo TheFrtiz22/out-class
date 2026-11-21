@@ -9,6 +9,7 @@ import { isMissing, isSubmitted, matchesFilter, ownTasks, relativeDue, requireme
 import { Text } from "~/components/text";
 import { Button, Card, Chip, Divider, EmptyState, ErrorState, Press, ScreenScroll, SkeletonRows } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
+import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ClubTask, Me, TaskAssignment } from "~/lib/types";
@@ -22,21 +23,28 @@ export default function Tasks() {
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
   // Alumni memberships stay on the roster without club access (lib/graduation.ts), so their task lists are not requested.
   const memberships = (me.data?.memberships ?? []).filter(membership => !membership.alumniSince && (!params.clubId || membership.clubId === params.clubId));
+  // Opened from My club or a notification, the list is one club's: the title and a way out say so.
+  const scoped = params.clubId ? me.data?.memberships.find(membership => membership.clubId === params.clubId)?.club : undefined;
+  const showAll = () => router.setParams({ clubId: undefined, taskId: undefined });
   const workspaces = useTaskWorkspaces(memberships);
   const [filter, setFilter] = useState<TaskFilter>("open");
   const now = Date.now();
   const focused = useRef<string | null>(null);
 
-  const loading = me.isPending || workspaces.some(query => query.isPending);
-  const refreshing = me.isRefetching || workspaces.some(query => query.isRefetching);
-  const refresh = () => { me.refetch(); workspaces.forEach(query => { query.refetch(); }); };
+  // Each club shows as its list arrives; only the memberships themselves hold the whole screen.
+  const loading = me.isPending;
+  const waiting = workspaces.some(query => query.isPending);
+  const refresh = () => Promise.all([me.refetch(), ...workspaces.map(query => query.refetch())]);
+  const pull = usePullRefresh(refresh);
   const clubs = memberships.map((membership, index) => {
     const all = ownTasks(workspaces[index]?.data);
     return { membership, query: workspaces[index], all, shown: all.filter(({ task, own }) => matchesFilter(task, own, filter, now)) };
   });
   const total = clubs.reduce((sum, club) => sum + club.all.length, 0);
   const shown = clubs.reduce((sum, club) => sum + club.shown.length, 0);
-  const failed = clubs.filter(club => club.query?.isError);
+  // A failed refetch keeps the club's loaded tasks; only a club with nothing to show gets the error card.
+  const failed = clubs.filter(club => club.query?.isError && !club.query.data);
+  const outdated = (me.isError && !!me.data) || clubs.some(club => club.query?.isError && !!club.query.data);
 
   // A notification names its task (`taskId`); open that task once its club's list has loaded.
   const target = params.taskId ? clubs.flatMap(club => club.all).find(({ task }) => task.id === params.taskId) : undefined;
@@ -50,16 +58,26 @@ export default function Tasks() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} refreshing={refreshing} onRefresh={refresh} testID="tasks-screen">
+      <ScreenScroll top={top} refreshing={pull.refreshing} onRefresh={pull.onRefresh} testID="tasks-screen">
         <AlumniBanner action="task" />
-        {me.isError ? (
-          <ErrorState message={errorMessage(me.error)} offline={me.error instanceof ApiError && me.error.offline} onRetry={refresh} />
+        {me.isError && !me.data ? (
+          <ErrorState message={errorMessage(me.error)} offline={me.error instanceof ApiError && me.error.offline} onRetry={() => { void refresh(); }} />
         ) : loading ? (
           <SkeletonRows count={4} avatar={false} />
+        ) : !memberships.length && params.clubId ? (
+          <Card><EmptyState title="You’re not a member of this club" body="Tasks appear here for clubs you’re an active member of." action={<Button variant="secondary" testID="tasks-show-all" label="Show all clubs" onPress={showAll} />} /></Card>
         ) : !memberships.length ? (
-          <Card><EmptyState title="You haven’t joined any clubs yet" body="Clubs appear here once you’re a member. An acceptance doesn’t make you a member on its own." action={<Button variant="secondary" label="Explore clubs" onPress={() => router.push("/explore")} />} /></Card>
+          // "Leave to" Explore: back to the tabs already underneath, not a second tab bar on top of this screen.
+          <Card><EmptyState title="You haven’t joined any clubs yet" body="Clubs appear here once you’re a member. An acceptance doesn’t make you a member on its own." action={<Button variant="secondary" testID="tasks-explore" label="Explore clubs" onPress={() => router.dismissTo("/explore")} />} /></Card>
         ) : (
           <>
+            {outdated ? <Text variant="caption" accessibilityRole="alert" testID="tasks-refresh-failed">Couldn’t refresh your tasks. Showing what was last loaded.</Text> : null}
+            {params.clubId ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text variant="small" style={{ flex: 1 }}>Showing {scoped?.name ?? "this club"} only.</Text>
+                <Button variant="ghost" size="compact" testID="tasks-show-all" label="Show all clubs" onPress={showAll} />
+              </View>
+            ) : null}
             <FilterChips label="Status" testID="tasks-filter" value={filter} onChange={setFilter} options={taskFilters} />
             {failed.map(club => (
               <Card key={club.membership.clubId} style={{ gap: 8 }} accessibilityRole="alert">
@@ -68,10 +86,10 @@ export default function Tasks() {
                 <Button variant="secondary" size="compact" label="Try again" onPress={() => club.query!.refetch()} />
               </Card>
             ))}
-            {clubs.filter(club => club.shown.length).map(club => (
+            {clubs.filter(club => club.shown.length || club.query?.isPending).map(club => (
               <View key={club.membership.clubId} style={{ gap: 10 }}>
                 {memberships.length > 1 ? <Text variant="section" accessibilityRole="header">{club.membership.club.name}</Text> : null}
-                <Card padded={false} style={{ paddingHorizontal: 16 }}>
+                {club.query?.isPending ? <View testID="tasks-club-loading"><SkeletonRows count={2} avatar={false} /></View> : <Card padded={false} style={{ paddingHorizontal: 16 }}>
                   {club.shown.map(({ task, own }, index) => {
                     const status = statusLabel(task, own, now);
                     const tone = isSubmitted(own) ? "success" : isMissing(task, own, now) ? "error" : "neutral";
@@ -93,10 +111,10 @@ export default function Tasks() {
                       </View>
                     );
                   })}
-                </Card>
+                </Card>}
               </View>
             ))}
-            {!shown && !failed.length ? (
+            {!shown && !failed.length && !waiting ? (
               <Card>
                 <EmptyState
                   title={filter !== "open" ? "No tasks match your filters." : "You're all caught up."}
@@ -108,7 +126,7 @@ export default function Tasks() {
           </>
         )}
       </ScreenScroll>
-      <Header title="Tasks" back />
+      <Header title={scoped ? `${scoped.shortName || scoped.name} tasks` : "Tasks"} back />
     </View>
   );
 }

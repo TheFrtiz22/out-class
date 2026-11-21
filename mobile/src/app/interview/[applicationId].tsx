@@ -42,6 +42,7 @@ export default function InterviewScreen() {
   const [notice, setNotice] = useState("");
   const [calendarNote, setCalendarNote] = useState("");
   const [added, setAdded] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const saving = useRef(false);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
@@ -112,11 +113,14 @@ export default function InterviewScreen() {
   }
 
   async function calendar() {
-    if (!booking || !data) return;
-    setCalendarNote("");
-    const result = await addToCalendar({ title: `${data.clubName} interview`, startTime: booking.startTime, endTime: booking.endTime, location: booking.location, notes: data.roundName });
-    if (result === "added") { haptics.save(); setAdded(booking.id + booking.slotId); setCalendarNote("Added to your calendar."); }
-    else setCalendarNote(result === "denied" ? "Calendar access is off for OutClass. You can allow it in Settings." : "This couldn’t be added to your calendar.");
+    // Asking for access and finding a calendar can take seconds on Android; a second tap meanwhile would add the event twice.
+    if (!booking || !data || adding) return;
+    setAdding(true); setCalendarNote("");
+    try {
+      const result = await addToCalendar({ title: `${data.clubName} interview`, startTime: booking.startTime, endTime: booking.endTime, location: booking.location, notes: data.roundName });
+      if (result === "added") { haptics.save(); setAdded(booking.id + booking.slotId); setCalendarNote("Added to your calendar."); }
+      else setCalendarNote(result === "denied" ? "Calendar access is off for OutClass. You can allow it in Settings." : "This couldn’t be added to your calendar.");
+    } finally { setAdding(false); }
   }
 
   const durations = [...new Set(rooms.map(room => room.duration))].join(" / ") || (booking ? String((+new Date(booking.endTime) - +new Date(booking.startTime)) / 60000) : "");
@@ -124,7 +128,6 @@ export default function InterviewScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll {...({ ref: scroll } as object)} top={top} testID="interview-screen" refreshing={schedule.isRefetching && !busy} onRefresh={() => { void schedule.refetch(); }}>
-        <Text variant="display" accessibilityRole="header">{booked ? "Your interview" : "Book your interview"}</Text>
         {schedule.isPending ? (
           <View accessibilityLabel="Loading interview times…" accessibilityRole="progressbar" style={{ gap: 16 }}>
             <Card style={{ gap: 10 }}><Skeleton width="40%" height={12} /><Skeleton width="70%" height={22} /><Skeleton width="90%" /></Card>
@@ -171,7 +174,7 @@ export default function InterviewScreen() {
                   <>
                     {allowRescheduling ? <Text variant="caption" color={colors.foreground} style={{ marginTop: 4 }}>Choose another time below to reschedule.</Text> : null}
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
-                      <Button testID="interview-add-calendar" variant="secondary" size="compact" icon={CalendarPlus} label={added === booking.id + booking.slotId ? "Added to Calendar" : "Add to Calendar"} disabled={added === booking.id + booking.slotId} onPress={() => void calendar()} />
+                      <Button testID="interview-add-calendar" variant="secondary" size="compact" icon={CalendarPlus} label={added === booking.id + booking.slotId ? "Added to Calendar" : "Add to Calendar"} loading={adding} disabled={added === booking.id + booking.slotId} onPress={() => void calendar()} />
                       {canCancel ? <Button testID="interview-cancel" variant="ghost" size="compact" label="Cancel interview" disabled={busy} onPress={() => void cancel()} /> : null}
                     </View>
                     {calendarNote ? <Text variant="caption" color={colors.foreground} accessibilityRole="alert" testID="interview-calendar-note">{calendarNote}</Text> : null}
@@ -264,7 +267,8 @@ export default function InterviewScreen() {
           </>
         ) : null}
       </ScreenScroll>
-      <Header title="Interview" back />
+      {/* The page title shows once, in the floating bar (the round's name heads the card below). */}
+      <Header title={booked ? "Your interview" : "Book your interview"} back />
       {sheet}
     </View>
   );

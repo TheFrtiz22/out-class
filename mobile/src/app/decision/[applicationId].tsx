@@ -10,6 +10,7 @@ import { ArrowRight, PartyPopper } from "~/components/icons";
 import { Text } from "~/components/text";
 import { Button, Card, ErrorState, ScreenScroll, Skeleton } from "~/components/ui";
 import { api, ApiError, errorMessage } from "~/lib/api";
+import { usePullRefresh } from "~/lib/pull-refresh";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
 import type { ApplicationsView, DecisionLetterView } from "~/lib/types";
@@ -31,6 +32,9 @@ export default function DecisionScreen() {
   const [readError, setReadError] = useState("");
   const marked = useRef<string | null>(null);
   const clubName = letter?.clubName || applications.data?.applications.find(item => item.id === applicationId)?.club.name || "";
+  const pull = usePullRefresh(() => letterQuery.refetch());
+  // The application's own label ("In review", "Interviewing"), not the raw status code.
+  const statusLabel = applications.data?.applications.find(item => item.id === applicationId)?.statusLabel ?? (data ? data.currentStatus.charAt(0) + data.currentStatus.slice(1).toLowerCase().replace(/_/g, " ") : "");
   const offerResponse = useOfferResponse(applicationId, clubName, "Your response could not be saved. Refresh and try again.");
 
   const notificationId = data?.notificationId;
@@ -56,7 +60,7 @@ export default function DecisionScreen() {
 
   const response = data && (acceptedLetter || !data.isCurrent || data.suspended || offer?.status === "ACCEPTED" || message) ? (
     <Card accessibilityLabel="Decision next steps" testID="decision-response" tone={active ? "brand" : "card"} style={{ gap: 10 }}>
-      {!data.isCurrent ? <Text variant="small" color={colors.foreground}>This is a historical letter. Your current decision is {data.currentStatus.toLowerCase()}. Offer controls reflect your current record.</Text> : null}
+      {!data.isCurrent ? <Text variant="small" color={colors.foreground}>This is a historical letter. Current status: {statusLabel}. Offer controls reflect your current record.</Text> : null}
       {data.suspended ? <Text variant="small" color={colors.foreground}>This club is suspended. Offer responses are currently unavailable.</Text> : null}
       {acceptedLetter ? (active ? (
         <>
@@ -83,7 +87,7 @@ export default function DecisionScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} testID="decision-screen" refreshing={letterQuery.isRefetching} onRefresh={() => { void letterQuery.refetch(); }}>
+      <ScreenScroll top={top} testID="decision-screen" refreshing={pull.refreshing} onRefresh={pull.onRefresh}>
         {letterQuery.isPending ? (
           <View accessibilityLabel="Opening your decision letter…" accessibilityRole="progressbar">
             <Card style={{ gap: 16, paddingVertical: 28 }}>
@@ -118,7 +122,7 @@ export default function DecisionScreen() {
             {letter ? <LetterPaper content={letter} logo={data.letter ? { applicationId, letterId: data.letter.id } : undefined} /> : (
               <Card style={{ gap: 10, paddingVertical: 24 }}>
                 <Text variant="title" accessibilityRole="header">Your decision</Text>
-                <Text variant="body">Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</Text>
+                <Text variant="body">Application status: {statusLabel}. A formal letter was not issued for this decision.</Text>
               </Card>
             )}
             {!active ? response : null}

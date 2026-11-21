@@ -65,6 +65,11 @@ export const easternDateTime = eastern({ weekday: "short", month: "short", day: 
 /** "Nov 18, 5:00 PM" in Eastern time (the web's `taskDate`). */
 export const easternShortDateTime = eastern({ month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true });
 export const easternLongDate = eastern({ dateStyle: "long" });
+/** "Wed, Nov 18, 5:00 PM – 6:00 PM": the end's date is shown only when it falls on another Eastern day. */
+export function easternRange(start: Date | string, end?: Date | string | null) {
+  if (!end || !toInstant(end)) return easternDateTime(start);
+  return `${easternDateTime(start)} – ${easternDateKey(start) === easternDateKey(end) ? easternTime(end) : easternDateTime(end)}`;
+}
 
 export type CalendarEntry = { title: string; start: Date | string; end?: Date | string | null; allDay?: boolean; location?: string | null; notes?: string | null };
 

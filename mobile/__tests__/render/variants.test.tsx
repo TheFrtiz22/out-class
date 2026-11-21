@@ -60,7 +60,7 @@ const variants: Variant[] = [
   { name: "leader tools: alumni membership", file: "leader/[clubId]/index", params: { clubId: ids.alumniClub }, overrides: {}, expect: ["No leader tools here"] },
   { name: "leader tools: `me` refused shows an error, not “no tools”", file: "leader/[clubId]/index", params: { clubId: ids.leaderClub },
     overrides: { me: () => { throw new ApiError(0, "OFFLINE", "You're offline. Check your connection and try again."); } }, expect: [/offline|Try again/i] },
-  { name: "tasks: deep link to one task opens it", file: "tasks", params: { clubId: ids.memberClub, taskId: ids.task }, overrides: {}, expect: ["Tasks"],
+  { name: "tasks: deep link to one task opens it", file: "tasks", params: { clubId: ids.memberClub, taskId: ids.task }, overrides: {}, expect: ["Virginia Motorsports tasks", "Show all clubs"],
     after: () => expect(routerState.router.push).toHaveBeenCalledWith(expect.objectContaining({ pathname: "/task/[assignmentId]", params: expect.objectContaining({ assignmentId: ids.assignment }) })) },
   { name: "tasks: one club's workspace refused", file: "tasks", overrides: { "tasks.workspace": (input: unknown) => { if ((input as { clubId: string }).clubId === ids.leaderClub) throw new ApiError(403, "FORBIDDEN", "No access"); return workspace(input); } }, expect: ["Tasks"] },
   { name: "task: project with child tasks and feedback", file: "task/[assignmentId]", params: { assignmentId: ids.projectAssignment, clubId: ids.memberClub }, overrides: {}, expect: ["Spring build project", "Related tasks"] },

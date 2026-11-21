@@ -8,7 +8,7 @@ import { FilterChip } from "~/components/explore/parts";
 import { Field, type FieldRef } from "~/components/field";
 import { TermsCheckbox } from "~/components/terms-checkbox";
 import { Text } from "~/components/text";
-import { Button } from "~/components/ui";
+import { Button, Skeleton } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { haptics } from "~/lib/haptics";
@@ -53,7 +53,7 @@ export default function CompleteProfile() {
       firstName: nameIssue(firstName, "First") ?? undefined,
       lastName: nameIssue(lastName, "Last") ?? undefined,
       major: major.trim() ? undefined : "Add your major, or your intended major.",
-      gradYear: gradYear ? undefined : "Choose your graduation year.",
+      gradYear: gradYear ? undefined : options.isPending ? "Graduation years are still loading. Try again in a moment." : "Choose your graduation year.",
       phone: normalizedPhone ? undefined : phone.trim() ? PHONE_INVALID_MESSAGE : "Add a phone number. Clubs call applicants they accept.",
       terms: termsRequired && !acceptTerms ? "Accept the Terms and Privacy Policy to continue." : undefined,
     };
@@ -102,6 +102,10 @@ export default function CompleteProfile() {
               <View style={{ gap: 8 }}>
                 <Text variant="small" color={colors.destructive}>{errorMessage(options.error)}</Text>
                 <Button variant="secondary" size="compact" label="Try again" onPress={() => options.refetch()} />
+              </View>
+            ) : options.isPending ? (
+              <View accessibilityLabel="Loading graduation years" accessibilityRole="progressbar" testID="profile-years-loading" style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {[0, 1, 2, 3].map(index => <Skeleton key={index} width={56} height={36} radius={18} />)}
               </View>
             ) : (
               <View accessibilityRole="radiogroup" style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
