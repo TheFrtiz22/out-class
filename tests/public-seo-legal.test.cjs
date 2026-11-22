@@ -133,7 +133,7 @@ test('Privacy Policy names every processor in use, every profile data category, 
   const legal = load('lib/legal-content.ts')
   const text = JSON.stringify(legal.privacyPolicy)
   // Each processor named in the policy is wired in code (the evidence is the second element).
-  for (const [name, evidence] of [['Supabase', ['package.json', /@supabase\/ssr/]], ['Vercel Web Analytics', ['app/layout.tsx', /@vercel\/analytics/]], ['Vercel Speed Insights', ['app/layout.tsx', /speed-insights/]], ['Resend', ['lib/notification-email.ts', /api\.resend\.com/]], ['Sentry', ['instrumentation-client.ts', /@sentry\/nextjs/]], ['Microsoft', ['lib/outlook-calendar.ts', /graph\.microsoft\.com/]], ['Cloudflare Turnstile', ['lib/turnstile.ts', /turnstile/i]], ['Typesense', ['actions/typesense-search.ts', /TYPESENSE_URL/]], ['GitHub', ['lib/transactional-email.ts', /raw\.githubusercontent\.com/]]]) {
+  for (const [name, evidence] of [['Supabase', ['package.json', /@supabase\/ssr/]], ['Vercel Web Analytics', ['app/layout.tsx', /@vercel\/analytics/]], ['Vercel Speed Insights', ['app/layout.tsx', /speed-insights/]], ['Resend', ['lib/notification-email.ts', /api\.resend\.com/]], ['Sentry', ['instrumentation-client.ts', /@sentry\/nextjs/]], ['Microsoft', ['lib/outlook-calendar.ts', /graph\.microsoft\.com/]], ['Cloudflare Turnstile', ['lib/turnstile.ts', /turnstile/i]], ['Typesense', ['actions/typesense-search.ts', /TYPESENSE_URL/]], ['GitHub', ['lib/transactional-email.ts', /raw\.githubusercontent\.com/]], ['Expo', ['lib/web-push.ts', /exp\.host/]], ['Browser push services', ['utils/notification-push.ts', /"web-push"/]]]) {
     assert.ok(text.includes(name), name)
     assert.match(fs.readFileSync(evidence[0], 'utf8'), evidence[1], name)
   }

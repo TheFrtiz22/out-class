@@ -73,7 +73,7 @@ export function SchoolRequestForm() {
       <div className="oc-request-field"><label htmlFor="request-message">What could OutClass help with? <span>(optional)</span></label><Textarea {...fieldProps("message")} maxLength={2000} rows={3} placeholder="A little about your campus or club…" />{fieldError("message")}</div>
       <div hidden aria-hidden="true"><label>Website<Input name="website" tabIndex={-1} autoComplete="off" maxLength={200} /></label></div>
     </fieldset>
-    <p id="request-contact-note" className="text-sm leading-6 text-muted-foreground">Your contact details will be shared with OutClass administrators to review your request and follow up. A request does not approve your university or create an account.</p>
+    <p id="request-contact-note" className="text-sm leading-6 text-muted-foreground">Your contact details will be shared with OutClass administrators to review your request and follow up. A request does not approve your university or create an account. <Link href="/privacy" prefetch={false} className="underline underline-offset-2">Privacy Policy</Link></p>
     <TurnstileWidget action="school-request" onToken={setTurnstileToken} resetKey={turnstileReset} />
     {error && <div ref={errorSummary} tabIndex={-1} role="alert" className="oc-request-error"><p>{error}</p><span>Your details are still here. You can try again.</span></div>}
     <Button className="oc-request-submit" type="submit" disabled={busy} loading={busy}>Submit school request</Button>

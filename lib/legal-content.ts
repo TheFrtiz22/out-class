@@ -72,6 +72,8 @@ const PROCESSORS = [
   "Cloudflare: Cloudflare Turnstile checks that sign-up, sign-in, password recovery and school-request forms are used by a person rather than an automated program. Turnstile receives technical information about your browser and device.",
   "Typesense (when enabled): search of the public club directory. It receives only public club information, never applicant or profile data.",
   "GitHub: images in our emails (such as our logo) are served from GitHub, which receives your IP address and email client details when your email client loads them.",
+  "Expo, Apple and Google: if you turn on push notifications in the OutClass app, Expo's push service relays each notification (its title, a short summary and the page it opens) to Apple Push Notification service or Google Firebase Cloud Messaging, which deliver it to your device. They receive your device's push token, not your name or email address.",
+  "Browser push services: if you turn on notifications in your web browser, the browser's vendor (for example Google, Apple or Mozilla) delivers them. The notification content is encrypted so the vendor cannot read it.",
 ]
 
 export const privacyPolicy: LegalDocument = {
@@ -93,7 +95,8 @@ export const privacyPolicy: LegalDocument = {
       "Calendar information: availability you enter, and if you choose to import them, the busy times from your Outlook calendar for a selected week. If you subscribe to your OutClass calendar feed, we issue a private feed link that you can reset.",
       "Communications: messages and requests you send to us or through the Services, including school requests submitted through our website, and records of the emails we send you and your email preferences.",
       "Issue reports and feedback: when you report an issue or send feedback, your message is stored with the page you were on, your browser and device type, screen size, the app version and any screenshot you choose to attach.",
-      "Technical and usage information: IP address, browser and device information, pages viewed, performance measurements, error reports and security logs collected automatically when you use the Services.",
+      "Technical and usage information: IP address, browser and device information, pages viewed, performance measurements, error reports (including crash reports from the OutClass app) and security logs collected automatically when you use the Services.",
+      "Notification tokens: if you turn on push notifications on a phone or in a browser, the push token or subscription that lets us deliver them, and which device or browser it belongs to. Turning notifications off, or deleting your account, removes it.",
     ] },
     { heading: "3. How we use personal information", paragraphs: ["We use personal information to:"], list: [
       "provide, operate and maintain the Services, including creating and managing your account and profile;",
@@ -106,7 +109,7 @@ export const privacyPolicy: LegalDocument = {
     { heading: "4. What Clubs see", paragraphs: [
       "When you apply to or join a Club, that Club's authorized members can see the information needed to run its recruiting and membership, and nothing about your applications to other Clubs. Specifically:",
     ], list: [
-      "Profile fields: your name, photo, major, academic year, GPA, SAT and ACT scores, experience, résumé and LinkedIn link, but only the fields the Club has chosen to show its reviewers and only fields you filled in. A Club may also apply minimum GPA or test-score rules it sets to applications submitted to it.",
+      "Profile fields: your name, photo, major, academic year, GPA, SAT and ACT scores, experience, résumé and LinkedIn link, but only the fields the Club has chosen to show its reviewers and only fields you filled in. Reviewers see your profile as it is now, so a résumé you replace after applying is the one they see. A Club may also apply minimum GPA or test-score rules it sets to applications submitted to it.",
       "Your phone number is required to submit an application. It is shown only to a Club that accepts you, and only to the members of that Club who manage its decisions, so they can call you about the offer. Reviewers and interviewers do not see it. We do not use it to send text messages.",
       "Gender is shown only in rounds where the Club has explicitly turned it on. In anonymous review rounds, your name and photo are hidden from reviewers.",
       "Your application answers and files for that Club, your interview bookings, and your attendance at that Club's events and meetings.",
@@ -139,7 +142,7 @@ export const privacyPolicy: LegalDocument = {
     ], list: [
       `Access: you can see your profile in the Services at any time, and you can ask us for a copy of the personal information we hold about you by emailing ${CONTACT_EMAIL}.`,
       "Correction: you can edit your profile in the Services, or ask us to correct information you cannot edit yourself.",
-      `Deletion: you can ask us to delete your account and personal information by emailing ${CONTACT_EMAIL}. Deleting your account does not remove copies of application materials that a Club has exported into its own records outside the Services.`,
+      `Deletion: you can delete your account in Settings, under Account & Security, on the website or in the OutClass app, or ask us by emailing ${CONTACT_EMAIL}. Deleting your account does not remove copies of application materials that a Club has exported into its own records outside the Services.`,
       `Export: you can ask for a copy of your profile and application information in a commonly used, machine-readable format by emailing ${CONTACT_EMAIL}.`,
       "Email choices: you can turn off optional email, such as Club announcements, task reminders and daily digests, in your email preferences or with the unsubscribe link in those emails. Unsubscribing does not stop email about your applications, decisions and interviews, which you can manage separately in your preferences, or emails needed to operate your account, such as sign-in codes and security notices.",
     ] },

@@ -21,8 +21,8 @@ export const REPORT_DETAILS_MAX = 1000
 export const REPORT_DEDUPE_MS = 24 * 60 * 60 * 1000
 export const REPORT_RATE_WINDOW_MS = 60 * 60 * 1000
 export const REPORT_RATE_LIMIT = 10
-/** Copyright claims follow the notice procedure in the Terms (§6 Reporting content). */
-export const TERMS_DMCA_HREF = "/terms#legal-6-reporting-content"
+/** Copyright claims follow the notice procedure in the Terms (§8 Copyright and DMCA notices). */
+export const TERMS_DMCA_HREF = "/terms#legal-8-copyright-and-dmca-notices"
 export const REPORT_CONFIRMATION = "Thanks. Our team will review this."
 export const REPORT_UNAVAILABLE = "This content can’t be reported right now."
 
