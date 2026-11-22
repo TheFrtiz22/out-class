@@ -6,7 +6,7 @@ export const PAGE_ROUTE_TEMPLATES = [
   "/", "/about", "/applications", "/applications/[applicationId]/decision", "/applications/status",
   "/auth/student-claim", "/auth/two-step", "/calendar", "/check-in", "/club-access/[clubId]", "/club-claims/[clubId]",
   "/club/[clubId]", "/club/[clubId]/interview", "/club/[clubId]/tasks", "/club/[clubId]/workspace",
-  "/clubs", "/clubs/meetings", "/clubs/tasks", "/cookies", "/corkboard", "/decisions", "/design-system",
+  "/clubs", "/clubs/meetings", "/clubs/tasks", "/cookies", "/corkboard", "/decisions", "/delete-account", "/design-system",
   "/explore", "/explore/categories", "/forgot-password", "/home", "/inbox", "/interviews", "/interviews/book",
   "/invitations/[id]", "/legal", "/live-voting", "/login", "/meetings", "/meetings/[id]",
   "/platform", "/platform/[section]", "/platform/claims", "/platform/clubs", "/platform/events", "/platform/login",

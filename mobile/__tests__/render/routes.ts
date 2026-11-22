@@ -55,7 +55,7 @@ export const routes: RouteCase[] = [
   { file: "settings/interests", rich: ["Interests", "What are you into?", "2 of 6"], empty: ["0 of 6"], error },
   { file: "settings/interviews", rich: ["Interview schedule", "Include past interviews", "Virginia Motorsports · First round interviews"], empty: ["No upcoming panels"], error },
   { file: "settings/notifications", rich: ["Notifications"], empty: ["Notifications"], error: ["Notifications"] },
-  { file: "sign-in", segments: ["sign-in"], rich: ["Sign in"], empty: ["Sign in"], error: ["Sign in"] },
+  { file: "sign-in", segments: ["sign-in"], rich: ["Sign in", "Terms of Service", "Privacy Policy"], empty: ["Sign in"], error: ["Sign in"] },
   { file: "task/[assignmentId]", params: { assignmentId: ids.assignment, clubId: ids.memberClub }, rich: [`Submit the ${longName} chassis design review packet`], empty: ["Task"], error },
   { file: "tasks", rich: ["Tasks", `Submit the ${longName} chassis design review packet`], empty: ["Tasks"], error },
   { file: "voting/[sessionId]", params: { sessionId: ids.session, clubId: ids.leaderClub }, rich: ["Applicant 2 of 3", "Close vote"], empty: [/vot|join|room/i], error },

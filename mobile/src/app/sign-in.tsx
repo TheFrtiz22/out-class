@@ -13,6 +13,7 @@ import { TurnstileSheet } from "~/components/turnstile";
 import { Button } from "~/components/ui";
 import { useAuth } from "~/lib/auth";
 import { config } from "~/lib/config";
+import { INDEPENDENCE_NOTE, openLegalPage } from "~/lib/legal";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
 import type { SignupOptions } from "~/lib/signup";
@@ -103,6 +104,17 @@ export default function SignIn() {
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
           <Button variant="secondary" full label="Create an account" testID="sign-in-sign-up" onPress={() => router.push("/sign-up")} />
+        </Animated.View>
+
+        {/* What signing in agrees to, and that OutClass isn't the university's (App Store 5.1.1, 5.2.1). */}
+        <Animated.View entering={enter(4)} style={{ paddingHorizontal: 24, paddingTop: 20, gap: 8 }}>
+          <Text variant="small" color={colors.mutedForeground} align="center" testID="sign-in-agreement">
+            By continuing, you agree to our{" "}
+            <Text variant="smallStrong" color={colors.primary} accessibilityRole="link" testID="sign-in-terms" onPress={() => openLegalPage("/terms")}>Terms of Service</Text>
+            {" "}and{" "}
+            <Text variant="smallStrong" color={colors.primary} accessibilityRole="link" testID="sign-in-privacy" onPress={() => openLegalPage("/privacy")}>Privacy Policy</Text>.
+          </Text>
+          <Text variant="caption" color={colors.mutedForeground} align="center" testID="sign-in-independence">{INDEPENDENCE_NOTE}</Text>
         </Animated.View>
       </ScrollView>
       <TurnstileSheet open={challenge} siteKey={siteKey} onClose={() => setChallenge(false)} onToken={token => { setChallenge(false); submit(token); }} />
