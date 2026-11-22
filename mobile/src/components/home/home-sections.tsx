@@ -152,7 +152,7 @@ function Progress({ done, total, filled, empty }: { done: number; total: number;
 export type LeaderOverview = { operations: {
   rounds?: { count: number; pending: number }[];
   bookings?: { id: string; candidate: string; slot: { startTime: string; location: string | null } }[];
-  votes?: { id: string; state: string; joinOpenedAt: string | null; round: { name: string } | null }[];
+  votes?: { id: string; mode?: string; state: string; joinOpenedAt: string | null; round: { name: string } | null }[];
 } | null };
 type PipelinePage = { applications: { studentId: string; student: { studentProfile: { firstName: string; lastName: string } | null } }[]; page: { total: number } };
 type Announcement = { id: string; publishedAt: string | null; _count?: { notifications: number } };
@@ -162,8 +162,11 @@ export function votingStatus(votes: NonNullable<LeaderOverview["operations"]>["v
   const list = votes ?? [];
   const pick = (state: string) => list.find(vote => vote.state === state);
   const named = (vote: { round: { name: string } | null }, text: string) => vote.round?.name ? `${vote.round.name}: ${text}` : text[0]!.toUpperCase() + text.slice(1);
+  // Only a LIVE room can be joined from the app; an open non-live session is read on the web (leader/[clubId]/voting.tsx).
+  const live = list.find(vote => vote.state === "OPEN" && vote.mode === "LIVE");
+  if (live) return { text: named(live, "voting is open now"), live: true, sessionId: live.id, roundName: live.round?.name ?? null };
   const open = pick("OPEN");
-  if (open) return { text: named(open, "voting is open now"), live: true, sessionId: open.id, roundName: open.round?.name ?? null };
+  if (open) return { text: named(open, "voting is open"), live: false };
   const paused = pick("PAUSED");
   if (paused) return { text: named(paused, "voting is paused"), live: false };
   const waiting = list.find(vote => vote.state === "DRAFT" && vote.joinOpenedAt);

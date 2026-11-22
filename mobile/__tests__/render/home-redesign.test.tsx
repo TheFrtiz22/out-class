@@ -72,6 +72,10 @@ describe("what goes in the hero card", () => {
     }
     expect(order).toEqual(["event:e", "vote:s1", "task:t1", "application:a7", "task:t3", "application:a14"]);
   });
+  test("an interview panel with only a length counts as under way until it ends", () => {
+    expect(pickHero(input({ agenda: [event("panel-1", -20 * 60_000, { endTime: undefined, durationMinutes: 45 })] }))?.id).toBe("event:panel-1");
+    expect(pickHero(input({ agenda: [event("panel-2", -50 * 60_000, { endTime: undefined, durationMinutes: 45 })] }))).toBeNull();
+  });
   test("an overdue task is pressing", () => {
     expect(pickHero(input({ tasks: [task("late", -2 * HOUR)] }))).toEqual(expect.objectContaining({ kind: "task", overdue: true }));
   });
@@ -155,7 +159,9 @@ describe("list order inside sections", () => {
     expect(upcoming([event("b", 2 * DAY), event("past", -3 * HOUR), event("a", DAY)], NOW).map(item => item.id)).toEqual(["a", "b"]);
   });
   test("voting status picks the state that matters most", () => {
-    expect(votingStatus([{ id: "1", state: "COMPLETED", joinOpenedAt: null, round: null }, { id: "2", state: "OPEN", joinOpenedAt: null, round: { name: "Round 1" } }])).toEqual(expect.objectContaining({ live: true, sessionId: "2", text: "Round 1: voting is open now" }));
+    expect(votingStatus([{ id: "1", state: "COMPLETED", joinOpenedAt: null, round: null }, { id: "2", mode: "LIVE", state: "OPEN", joinOpenedAt: null, round: { name: "Round 1" } }])).toEqual(expect.objectContaining({ live: true, sessionId: "2", text: "Round 1: voting is open now" }));
+    // An open session that isn't a live room is read on the web, so it isn't offered as "join now".
+    expect(votingStatus([{ id: "3", mode: "ASYNC", state: "OPEN", joinOpenedAt: null, round: { name: "Round 2" } }])).toEqual(expect.objectContaining({ live: false, text: "Round 2: voting is open" }));
     expect(votingStatus([{ id: "1", state: "DRAFT", joinOpenedAt: iso(0), round: null }]).text).toBe("Waiting room is open");
     expect(votingStatus([]).text).toBe("No voting session open");
     expect(votingStatus(undefined).live).toBe(false);
@@ -261,12 +267,29 @@ describe("Home on screen", () => {
 
   test("a live voting room in a led club becomes the hero", async () => {
     await renderRoute(Home(), { mode: "rich", overrides: {
-      "leader.overview": { operations: { rounds: [], bookings: [], votes: [{ id: ids.session, state: "OPEN", joinOpenedAt: new Date().toISOString(), round: { name: "Final round" } }] } },
+      "leader.overview": { operations: { rounds: [], bookings: [], votes: [{ id: ids.session, mode: "LIVE", state: "OPEN", joinOpenedAt: new Date().toISOString(), round: { name: "Final round" } }] } },
       "home.view": { ...(records.homeView as HomeView), agenda: [] },
     } });
     expect(within(screen.getByTestId("home-hero")).getByText("Voting is open: Final round")).toBeTruthy();
     await fireEvent.press(screen.getByTestId("home-hero-primary"));
     expect(routerState.router.push).toHaveBeenCalledWith({ pathname: "/leader/[clubId]/voting", params: { clubId: ids.leaderClub } });
+  });
+
+  test("an open session that isn't a live room is not the hero", async () => {
+    await renderRoute(Home(), { mode: "rich", overrides: {
+      "leader.overview": { operations: { rounds: [], bookings: [], votes: [{ id: ids.session, mode: "ASYNC", state: "OPEN", joinOpenedAt: null, round: { name: "Final round" } }] } },
+      "home.view": { ...(records.homeView as HomeView), agenda: [], tasks: [], applications: [] },
+    } });
+    expect(screen.queryByTestId("home-hero")).toBeNull();
+    expect(screen.getByText("Final round: voting is open")).toBeTruthy();
+  });
+
+  test("a meeting already under way (sent apart from the future-only agenda) is Happening now", async () => {
+    const home = records.homeView as HomeView;
+    const meeting = { ...home.agenda.find(item => item.id.startsWith("meeting-"))!, id: "meeting-under-way", allDay: false, type: "Other", startTime: new Date(Date.now() - 20 * 60_000).toISOString(), endTime: new Date(Date.now() + 40 * 60_000).toISOString() };
+    await renderRoute(Home(), { mode: "rich", overrides: { "home.view": { ...home, ongoing: [meeting], tasks: [] } } });
+    expect(within(screen.getByTestId("home-hero")).getByText("Happening now")).toBeTruthy();
+    expect(within(screen.getByTestId("home-hero")).getByText(meeting.title)).toBeTruthy();
   });
 
   test("leader data that fails to load leaves Home working", async () => {

@@ -2,7 +2,7 @@ import { getStudentDashboardData } from "@/actions/applications";
 import { getDurableNotifications } from "@/actions/communications";
 import { getTaskNotifications } from "@/actions/tasks";
 import { applicationStatusCode, applicationStatusLabel } from "@/lib/application-status";
-import { homeApplications, nextHomeAction, upcomingAgenda } from "@/lib/student-home";
+import { homeApplications, nextHomeAction, ongoingAgenda, upcomingAgenda } from "@/lib/student-home";
 import { studentCalendarEvents } from "@/lib/student-calendar-data";
 import { getStudentApplications } from "@/actions/applications";
 import { getCurrentUser } from "@/utils/current-user";
@@ -45,6 +45,8 @@ export async function getMobileHome() {
     applications,
     agenda: agenda.slice(0, 8),
     agendaCount: agenda.length,
+    // Meetings already under way, for the app's "Happening now" card (the agenda above is future-only).
+    ongoing: ongoingAgenda(events, now).slice(0, 4),
     nextAction: nextHomeAction(applications, agenda, now, taskNotifications),
     tasks: taskNotifications,
     // The web's bell count (components/shell/product-shell.tsx): durable unread, plus computed notifications

@@ -69,9 +69,11 @@ export const applicationDue = (application: HomeApplication, detail?: StudentApp
 };
 const taskDue = (task: TaskNotification) => task.taskActivity?.needsSubmission === false ? NaN : time(task.taskActivity?.dueAt);
 /** An event the person is going to that starts soon or is under way. Deadlines and declined events don't count. */
+/** When an event ends: its end time, or its start plus its length (interview panels carry only a length). */
+const eventEnd = (event: CalendarEvent) => Number.isFinite(time(event.endTime)) ? time(event.endTime) : event.durationMinutes ? time(event.startTime) + event.durationMinutes * 60_000 : NaN;
 function eventSoon(event: CalendarEvent, now: number) {
   if (event.allDay || event.type === "Deadline" || event.response?.toLowerCase() === "declined") return NaN;
-  const start = time(event.startTime), end = time(event.endTime);
+  const start = time(event.startTime), end = eventEnd(event);
   if (!Number.isFinite(start) || start > now + EVENT_SOON) return NaN;
   const over = Number.isFinite(end) ? end <= now : start < now - EVENT_GRACE;
   return over ? NaN : start;
@@ -137,7 +139,7 @@ export function rankApplications(input: Pick<HomeInput, "now" | "applications" |
 /** Upcoming agenda rows: not yet over, soonest first. */
 export function upcoming(agenda: CalendarEvent[], now: Date) {
   return agenda.filter(event => {
-    const end = time(event.endTime), start = time(event.startTime);
+    const end = eventEnd(event), start = time(event.startTime);
     return event.allDay ? easternDateKey(start) >= easternDateKey(now) : Number.isFinite(end) ? end > +now : start >= +now - EVENT_GRACE;
   }).sort((a, b) => time(a.startTime) - time(b.startTime));
 }
