@@ -76,10 +76,10 @@ describe("page titles", () => {
     await renderRoute(Screen, { mode: "rich" });
     expect(screen.getAllByText(title, { includeHiddenElements: true })).toHaveLength(1);
   });
-  test("Home greets by name in the bar and has no check-in pass", async () => {
+  test("Home greets by name in the bar (by time of day) and has no check-in pass", async () => {
     const Screen = require("~/app/(tabs)/index").default;
     await renderRoute(Screen, { mode: "rich" });
-    expect(screen.getAllByText(/^Hi, /)).toHaveLength(1);
+    expect(screen.getAllByText(/^(Good (morning|afternoon|evening)|Still up), /)).toHaveLength(1);
     expect(screen.queryByText(/Check-in pass/i)).toBeNull();
   });
   test("Calendar's Subscribe sits in the bar beside the title", async () => {

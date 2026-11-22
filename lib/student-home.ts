@@ -104,6 +104,28 @@ export function upcomingAgenda(events: ClubEvent[], now: Date) {
     )
     .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())
 }
+/**
+ * Events already under way (started, not yet over), with upcomingAgenda's filters. The app's Home shows one
+ * as "Happening now"; the agenda itself stays future-only so both clients keep the same list and counts.
+ * Without an end time an event counts as under way for its duration, or for 30 minutes.
+ */
+export function ongoingAgenda(events: ClubEvent[], now: Date) {
+  const end = (event: ClubEvent) => {
+    if (event.endTime) return new Date(event.endTime).getTime()
+    return eventStart(event).getTime() + (event.durationMinutes ?? 30) * 60_000
+  }
+  return events
+    .filter(
+      (event) =>
+        event.type !== "Deadline" &&
+        event.response !== "declined" &&
+        !event.forLeaders &&
+        !event.allDay &&
+        eventStart(event).getTime() < now.getTime() &&
+        end(event) > now.getTime(),
+    )
+    .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())
+}
 export function relevantUpdates(notifications: Notification[]) {
   return [...notifications]
     .sort(

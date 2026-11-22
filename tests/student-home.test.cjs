@@ -14,7 +14,7 @@ function load(file) {
   model._compile(source, filename)
   return model.exports
 }
-const { homeApplications, upcomingAgenda, nextHomeAction, relevantUpdates } =
+const { homeApplications, upcomingAgenda, ongoingAgenda, nextHomeAction, relevantUpdates } =
   load("lib/student-home.ts")
 const { studentCalendarEvents } = load("lib/student-calendar-data.ts")
 const now = new Date("2026-09-21T10:00:00")
@@ -86,6 +86,23 @@ test("agenda excludes declined, past, invalid, and deadline entries and sorts fu
     rows.map((row) => row.id),
     ["next", "later"],
   )
+})
+test("events under way are listed for the app's Happening now card; the agenda stays future-only", () => {
+  const at = (minutes) => new Date(now.getTime() + minutes * 60_000).toISOString()
+  const timed = (id, from, to, type = "Other", extra = {}) =>
+    event(id, "2026-09-21", "00:00", type, { startTime: at(from), ...(to === null ? {} : { endTime: at(to) }), ...extra })
+  const rows = [
+    timed("started", -30, 30),
+    timed("ended", -120, -60),
+    timed("panel", -15, null, "Interview", { durationMinutes: 30 }),
+    timed("short", -60, null),
+    timed("declined", -10, 20, "Interview", { response: "declined" }),
+    timed("leaders", -10, 20, "Other", { forLeaders: true }),
+    timed("allday", -10, 20, "Other", { allDay: true }),
+    timed("next", 60, 120),
+  ]
+  assert.deepEqual(ongoingAgenda(rows, now).map((row) => row.id), ["started", "panel"])
+  assert.deepEqual(upcomingAgenda(rows, now).map((row) => row.id), ["next"])
 })
 test("the nearest time-sensitive action wins without turning unknown deadlines into urgency", () => {
   const deadline = event("deadline", "2026-09-21", "12:00", "Deadline")
