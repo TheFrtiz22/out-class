@@ -3,7 +3,7 @@ import Link from "next/link"
 import { SectionReveal } from "@/components/motion/scroll-motion"
 import { PublicInformationPage } from "@/components/landing/public-information-page"
 import { Eye, LockKeyhole, Shield, ShieldCheck, UserCog, Users } from "@/components/icons"
-import { CONTACT_EMAIL, CONTACT_HREF, LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
+import { CONTACT_EMAIL, CONTACT_HREF } from "@/lib/legal-content"
 import { SECURITY_TXT_PATH } from "@/lib/security-txt"
 import { publicPageMetadata, publicPageStructuredData } from "@/lib/seo"
 import { cspNonce } from "@/utils/csp-nonce"
@@ -100,7 +100,7 @@ export default async function SecurityPage() {
       </Topic>
       <footer className="oc-security-updated">
         <p>Last updated {SECURITY_PAGE_UPDATED}.</p>
-        {LEGAL_PAGES_PUBLIC && <Link prefetch={false} className="oc-public-text-link" href="/privacy">Read the Privacy Policy</Link>}
+        <Link prefetch={false} className="oc-public-text-link" href="/privacy">Read the Privacy Policy</Link>
       </footer>
     </PublicInformationPage>
   )

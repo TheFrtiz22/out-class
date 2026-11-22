@@ -1,12 +1,12 @@
-import { notFound } from "next/navigation"
 import { LegalPage } from "@/components/landing/legal-page"
-import { LEGAL_PAGES_PUBLIC, privacyPolicy } from "@/lib/legal-content"
+import { LegalPlaceholderPage } from "@/components/landing/legal-placeholder-page"
+import { LEGAL_PAGES_PUBLIC, legalPlaceholders, privacyPolicy } from "@/lib/legal-content"
 import { pageTitle, privateRobots, publicPageMetadata } from "@/lib/seo"
 
-// Not public until the owner turns on LEGAL_PAGES_PUBLIC (lib/legal-content.ts): until then a 404.
+// Until the owner turns on LEGAL_PAGES_PUBLIC (lib/legal-content.ts) this is a marked placeholder, not indexed.
 export const metadata = LEGAL_PAGES_PUBLIC ? publicPageMetadata(pageTitle("Privacy Policy"), privacyPolicy.summary, "/privacy") : { title: "Privacy Policy", robots: privateRobots }
 
 export default function PrivacyPage() {
-  if (!LEGAL_PAGES_PUBLIC) notFound()
+  if (!LEGAL_PAGES_PUBLIC) return <LegalPlaceholderPage {...legalPlaceholders.privacy} />
   return <LegalPage {...privacyPolicy} />
 }

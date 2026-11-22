@@ -17,6 +17,17 @@ import { LEGAL_ORGANIZATION_NAME } from "@/lib/seo"
 export const LEGAL_PAGES_PUBLIC = false
 export const CONTACT_EMAIL = "hello@out-class.net"
 export const CONTACT_HREF = `mailto:${CONTACT_EMAIL}`
+/**
+ * Placeholders (owner, 2026-11-22: the Terms and Privacy Policy are not finished). While LEGAL_PAGES_PUBLIC
+ * is off, /terms and /privacy show a clearly marked placeholder instead of a 404, so sign-up, the footer,
+ * Settings and the mobile app can link to them. The drafts below stay unpublished; /cookies and /legal stay 404.
+ * The placeholders make no legal promises: replace them by turning LEGAL_PAGES_PUBLIC on after counsel review.
+ */
+export type LegalPlaceholder = { title: string; summary: string }
+export const legalPlaceholders: Record<"terms" | "privacy", LegalPlaceholder> = {
+  terms: { title: "Terms of Service", summary: "Placeholder. The OutClass Terms of Service are still being written and are not in effect yet. This page will show them once they are published." },
+  privacy: { title: "Privacy Policy", summary: "Placeholder. The OutClass Privacy Policy is still being written. This page will show it once it is published." },
+}
 const COMPANY = LEGAL_ORGANIZATION_NAME
 const SERVICE = "OutClass"
 

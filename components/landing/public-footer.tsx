@@ -47,14 +47,13 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
                 <a href="/signup">Get Started</a>
                 <a href="/login">Sign in</a>
               </div>
-              {LEGAL_PAGES_PUBLIC && <div className="oc-footer-group">
+              <div className="oc-footer-group">
                 <h2>Legal</h2>
                 <a href="/privacy">Privacy</a>
                 <a href="/terms">Terms</a>
-                <a href="/cookies">Cookies</a>
-                <a href="/legal">Legal</a>
+                {LEGAL_PAGES_PUBLIC && <><a href="/cookies">Cookies</a><a href="/legal">Legal</a></>}
                 <a href={CONTACT_HREF}>Contact</a>
-              </div>}
+              </div>
             </nav>
           </div>
           <a className="oc-footer-home" href={homeHref} aria-label="OutClass home"><InteractiveFooterWordmark /></a>
