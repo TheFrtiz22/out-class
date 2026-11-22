@@ -1,5 +1,5 @@
 /** Nov 21 retest of the tab screens: stale data on a failed refresh, double taps, tab targets, the Inbox badge, calendar rows. */
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 import { ApiError, api } from "~/lib/api";
 import type { AgendaEvent, HomeView } from "~/lib/types";
 import { apiState } from "./api-state";
@@ -59,7 +59,7 @@ describe("a failed background refresh keeps what is on screen", () => {
 });
 
 describe("a double tap opens a screen once", () => {
-  test.each([["(tabs)/index", "home-scan"], ["(tabs)/explore", "explore-club-0"], ["saved-clubs", "saved-club-0"], ["events/index", "event-card-0"], ["(tabs)/profile", "profile-settings"]])("%s %s", async (file, testID) => {
+  test.each([["(tabs)/index", "home-application-0"], ["(tabs)/explore", "explore-club-0"], ["saved-clubs", "saved-club-0"], ["events/index", "event-card-0"], ["(tabs)/profile", "profile-settings"]])("%s %s", async (file, testID) => {
     const Screen = require(`~/app/${file}`).default;
     await renderRoute(Screen, { mode: "rich" });
     const target = screen.getByTestId(testID);
@@ -168,8 +168,11 @@ describe("calendar rows open what they are", () => {
   test("Home's next interview says where it goes", async () => {
     const booking = homeView.agenda.find(item => item.id.startsWith("booking-"))!;
     const Screen = require("~/app/(tabs)/index").default;
-    await renderRoute(Screen, { mode: "rich", overrides: { "home.view": { ...homeView, nextAction: { kind: "event", event: booking } } } });
-    await fireEvent.press(screen.getByText("View interview"));
+    // An interview starting within the hour is Home's top card (Nov 22 redesign).
+    const soon = { ...booking, startTime: new Date(Date.now() + 3_600_000).toISOString(), endTime: new Date(Date.now() + 5_400_000).toISOString() };
+    await renderRoute(Screen, { mode: "rich", overrides: { "home.view": { ...homeView, tasks: [], agenda: [soon] } } });
+    expect(within(screen.getByTestId("home-hero-primary")).getByText("View interview")).toBeTruthy();
+    await fireEvent.press(screen.getByTestId("home-hero-primary"));
     expect(routerState.router.push).toHaveBeenCalledWith({ pathname: "/interview/[applicationId]", params: { applicationId: ids.interviewApplication } });
   });
 

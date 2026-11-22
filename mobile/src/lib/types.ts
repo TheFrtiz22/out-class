@@ -14,7 +14,7 @@ export type NextAction = { kind: "application"; application: HomeApplication } |
 
 export type HomeView = { generatedAt: string; applications: HomeApplication[]; agenda: CalendarEvent[]; agendaCount: number; nextAction: NextAction; tasks: TaskNotification[]; unread: number; inboxUnread?: number };
 
-export type Membership = { id: string; clubId: string; accessRole: string; role: string; title: string | null; status: string; alumniSince: string | null; isOwner: boolean; permissions: string[]; club: { id: string; slug: string; name: string; shortName: string | null; color: string; logoUrl: string | null; category: string | null } };
+export type Membership = { id: string; clubId: string; accessRole: string; role: string; title: string | null; status: string; alumniSince: string | null; isOwner: boolean; permissions: string[]; club: { id: string; slug: string; name: string; shortName: string | null; color: string; logoUrl: string | null; category: string | null; bannerUrl?: string | null } };
 
 export type Me = { id: string; email: string; role: string; profile: StudentProfile | null; memberships: Membership[]; adminRoles: Membership[] };
 

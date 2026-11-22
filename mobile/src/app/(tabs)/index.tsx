@@ -1,26 +1,20 @@
+import { useQueries } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { type ScrollViewInstance, View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
-import { ChevronRight, Compass, QrCode } from "~/components/icons";
+import { ApplicationsList, ClubCarousel, ComingUp, HomeHeroCard, type LeaderOverview, LeadingSection, TasksList, votingStatus } from "~/components/home/home-sections";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
-import { leaderMemberships } from "~/components/leader/access";
-import { LeaderToolsCard } from "~/components/leader/home-card";
-import { Text } from "~/components/text";
-import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SectionHeader, Skeleton, SkeletonRows, StaleNote, StatusChip } from "~/components/ui";
-import { ApiError, errorMessage } from "~/lib/api";
-import { easternShortDateTime } from "~/lib/eastern";
+import { leaderMemberships, leaderTools } from "~/components/leader/access";
+import { Card, ErrorState, ScreenScroll, Skeleton, SkeletonRows, StaleNote } from "~/components/ui";
+import { api, ApiError, errorMessage } from "~/lib/api";
+import { headerGreeting, useNow } from "~/lib/greeting";
+import { type HomeSectionId, type LeaderSignal, homeLayout, rankApplications, upcoming } from "~/lib/home-priority";
 import { openRoute, routeForHref } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
-import { useTheme } from "~/lib/theme";
-import type { CalendarEvent, HomeView, Me, MyApplicationSummary, TaskNotification } from "~/lib/types";
+import type { ApplicationsView, CalendarEvent, HomeView, Me, MyApplicationSummary, TaskNotification } from "~/lib/types";
 
-const eventWhen = (event: CalendarEvent) => {
-  const start = new Date(event.startTime);
-  if (!Number.isFinite(start.getTime())) return event.time;
-  return start.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "America/New_York" }) + (event.allDay ? "" : ` · ${event.time}`);
-};
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type Route = { pathname: string; params?: Record<string, string> };
 
@@ -47,23 +41,61 @@ function eventRoute(event: CalendarEvent, applications: MyApplicationSummary[] =
 }
 /** The button names where it goes. */
 const eventActionLabel = (route: Route) => ({ "/meeting/[id]": "View meeting", "/interview/[applicationId]": "View interview", "/leader/[clubId]/interviews": "Open interview tools" } as Record<string, string>)[route.pathname] ?? "View calendar";
-const taskDetail = (task: TaskNotification) => task.taskActivity?.dueAt ? `${task.club} · Due ${easternShortDateTime(task.taskActivity.dueAt)}` : task.club;
 
+/**
+ * Home, as in the owner's mockups: a greeting bar, a hero card only when something is pressing, then
+ * the sections in the order lib/home-priority.ts works out (most pressing first; empty ones hide).
+ */
 export default function Home() {
-  const { colors } = useTheme();
   const router = useRouter();
   const top = useHeaderInset();
+  const now = useNow();
   const home = useApiQuery<HomeView>("home.view");
   useRefetchOnFocus(home);
   const me = useApiQuery<Me & { applications?: MyApplicationSummary[] }>("me", undefined, { staleTime: 5 * 60_000 });
+  // The same read as the Applications tab and the dock's middle tab (shared cache): draft progress and what waits on the person.
+  const apps = useApiQuery<ApplicationsView>("applications.view", undefined, { staleTime: 60_000 });
   const data = home.data;
-  const refresh = () => Promise.all([home.refetch(), me.refetch()]);
-  const next = data?.nextAction;
   const leading = leaderMemberships(me.data);
+  // Each led club's recruiting overview (the Applicants screen's own query, so they share the cache).
+  const overviews = useQueries({
+    queries: leading.map(membership => ({
+      queryKey: ["leader", "leader.overview", { clubId: membership.clubId, view: "recruiting" }],
+      queryFn: ({ signal }: { signal: AbortSignal }) => api.get<LeaderOverview>("leader.overview", { clubId: membership.clubId, view: "recruiting" }, { signal }),
+      enabled: leaderTools(membership, me.data?.profile).applicants || leaderTools(membership, me.data?.profile).interviews || leaderTools(membership, me.data?.profile).voting,
+      staleTime: 30_000,
+    })),
+  });
+  const overviewByClub: Record<string, LeaderOverview | undefined> = {};
+  leading.forEach((membership, index) => { overviewByClub[membership.clubId] = overviews[index]?.data; });
+  const signals: LeaderSignal[] = leading.flatMap(membership => {
+    const ops = overviewByClub[membership.clubId]?.operations;
+    if (!ops) return [];
+    const vote = votingStatus(ops.votes);
+    return [{
+      clubId: membership.clubId, clubName: membership.club.name,
+      pendingReviews: (ops.rounds ?? []).reduce((sum, round) => sum + (Number.isSafeInteger(round.pending) && round.pending > 0 ? round.pending : 0), 0),
+      nextInterviewAt: ops.bookings?.[0]?.slot.startTime ?? null,
+      liveVote: vote.live && vote.sessionId ? { sessionId: vote.sessionId, roundName: vote.roundName ?? null } : null,
+    }];
+  });
+  const refresh = () => Promise.all([home.refetch(), me.refetch(), apps.refetch(), ...overviews.map(query => query.refetch())]);
   // A row that leads to another tab (the calendar) switches to it rather than stacking a second set of tabs.
   const go = (route: Route) => openRoute(router, route);
   const scroll = useRef<ScrollViewInstance>(null);
   useTabScrollToTop(scroll);
+
+  const details = new Map((apps.data?.applications ?? []).map(application => [application.id, application]));
+  const layout = data ? homeLayout({ now, applications: data.applications, details: apps.data?.applications, agenda: data.agenda, tasks: data.tasks, leading: signals, leads: leading.length > 0 }) : null;
+  const toEvent = (event: CalendarEvent) => eventRoute(event, me.data?.applications);
+  const heroEvent = layout?.hero?.kind === "event" ? layout.hero.event.id : null;
+  const sections: Record<HomeSectionId, () => ReactNode> = {
+    myClubs: () => me.isError && !me.data ? null : <ClubCarousel memberships={me.data?.memberships ?? []} agenda={data?.agenda ?? []} now={now} onOpen={go} />,
+    comingUp: () => <ComingUp events={upcoming(data?.agenda ?? [], now).filter(event => event.id !== heroEvent).slice(0, 3)} now={now} onOpen={go} routeFor={toEvent} />,
+    applications: () => <ApplicationsList applications={rankApplications({ now, applications: data?.applications ?? [], details: apps.data?.applications }).slice(0, 3)} details={details} onOpen={go} />,
+    leading: () => <LeadingSection memberships={leading} profile={me.data?.profile} overviews={overviewByClub} now={now} onOpen={go} />,
+    tasks: () => <TasksList tasks={(data?.tasks ?? []).slice(0, 3)} now={now} onOpen={go} routeFor={taskRoute} />,
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -75,114 +107,15 @@ export default function Home() {
           </>
         ) : home.isError && !data ? (
           <ErrorState message={errorMessage(home.error)} offline={home.error instanceof ApiError && home.error.offline} onRetry={refresh} />
-        ) : data ? (
+        ) : data && layout ? (
           <>
             {home.isRefetchError ? <StaleNote /> : null}
-            {/* To-do: the one next step the web's Home picks (lib/student-home.ts nextHomeAction). */}
-            <Card tone="brand" style={{ gap: 10 }} testID="home-next-action">
-              <Text variant="eyebrow" color={colors.brandInk}>Next up</Text>
-              {next?.kind === "application" ? (
-                <>
-                  <Text variant="section">Finish your {next.application.name} application</Text>
-                  {next.application.deadline ? <Text variant="small" color={colors.foreground}>Due {eventWhen(next.application.deadline)}</Text> : null}
-                  <Button label="Continue application" onPress={() => router.push({ pathname: "/application/[id]", params: { id: next.application.id } })} />
-                </>
-              ) : next?.kind === "event" ? (
-                <>
-                  <Text variant="section">{next.event.title}</Text>
-                  <Text variant="small" color={colors.foreground}>{eventWhen(next.event)}{next.event.location ? ` · ${next.event.location}` : ""}</Text>
-                  <Button label={eventActionLabel(eventRoute(next.event, me.data?.applications))} onPress={() => go(eventRoute(next.event, me.data?.applications))} />
-                </>
-              ) : next?.kind === "notification" ? (
-                <>
-                  <Text variant="section">{next.notification.title}</Text>
-                  <Text variant="small" color={colors.foreground} numberOfLines={2}>{next.notification.preview}</Text>
-                  <Button label={next.notification.cta ?? "Open task"} onPress={() => go(taskRoute(next.notification))} />
-                </>
-              ) : (
-                <>
-                  <Text variant="section">Find your next club</Text>
-                  <Button icon={Compass} label="Explore clubs" onPress={() => router.push("/explore")} />
-                </>
-              )}
-            </Card>
-
-            {/* Club leaders get their tools right under Next up, in a card of their own, rather than one row among many. */}
-            <LeaderToolsCard memberships={leading} profile={me.data?.profile} />
-
-            <Card padded={false} style={{ paddingHorizontal: 16 }}>
-              <Row testID="home-scan" leading={<QrCode size={24} color={colors.brandInk} />} title="Scan to check in" detail="Scan the code shown at a meeting" trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push("/scan")} />
-            </Card>
-
-            <View style={{ gap: 10 }}>
-              <SectionHeader title="Tasks" action={data.tasks.length ? <Button variant="ghost" size="compact" label="All tasks" onPress={() => router.push("/tasks")} /> : undefined} />
-              {data.tasks.length ? (
-                <Card padded={false} style={{ paddingHorizontal: 16 }}>
-                  {data.tasks.slice(0, 3).map((task, index) => (
-                    <View key={task.id}>
-                      {index ? <Divider /> : null}
-                      <Row leading={<ClubMark name={task.club} color={task.color} logoUrl={task.logoUrl} size={40} />} title={task.title} detail={taskDetail(task)} trailing={task.read ? <ChevronRight size={18} color={colors.mutedForeground} /> : <Chip label="New" tone="brand" />} onPress={() => go(taskRoute(task))} />
-                    </View>
-                  ))}
-                </Card>
-              ) : <Card><Text variant="small">No tasks right now.</Text></Card>}
-            </View>
-
-            <View style={{ gap: 10 }}>
-              <SectionHeader title="Applications" action={<Button variant="ghost" size="compact" label="View all" onPress={() => router.push("/applications")} />} />
-              {data.applications.length ? (
-                <Card padded={false} style={{ paddingHorizontal: 16 }}>
-                  {data.applications.map((application, index) => (
-                    <View key={application.id}>
-                      {index ? <Divider /> : null}
-                      <Row
-                        testID={`home-application-${application.statusCode}`}
-                        leading={<ClubMark name={application.name} color={application.color} logoUrl={application.logoUrl} size={40} />}
-                        title={application.name}
-                        detail={application.draft && application.intakeClosed ? "Applications closed" : undefined}
-                        trailing={<StatusChip label={application.statusLabel} code={application.statusCode} />}
-                        accessibilityLabel={`${application.name}, ${application.statusLabel}`}
-                        onPress={() => router.push({ pathname: "/application/[id]", params: { id: application.id } })}
-                      />
-                    </View>
-                  ))}
-                </Card>
-              ) : <Card><EmptyState title="No applications yet" body="Clubs you apply to appear here." action={<Button icon={Compass} label="Explore clubs" onPress={() => router.push("/explore")} />} /></Card>}
-            </View>
-
-            <View style={{ gap: 10 }}>
-              <SectionHeader title="My clubs" />
-              {me.isPending ? <SkeletonRows count={1} /> : me.isError && !me.data ? (
-                <Card style={{ gap: 8 }}><Text variant="small">{errorMessage(me.error, "Your clubs couldn’t load.")}</Text><Button variant="secondary" size="compact" label="Try again" onPress={() => me.refetch()} /></Card>
-              ) : me.data?.memberships.length ? (
-                <Card padded={false} style={{ paddingHorizontal: 16 }}>
-                  {me.data.memberships.map((membership, index) => (
-                    <View key={membership.id}>
-                      {index ? <Divider /> : null}
-                      <Row leading={<ClubMark name={membership.club.name} color={membership.club.color} logoUrl={membership.club.logoUrl} size={40} />} title={membership.club.name} detail={membership.alumniSince ? "Alumni" : membership.title ?? undefined} trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => router.push({ pathname: "/my-club/[clubId]", params: { clubId: membership.clubId } })} />
-                    </View>
-                  ))}
-                </Card>
-              ) : <Card><Text variant="small">Clubs you join appear here. An acceptance doesn’t make you a member on its own.</Text></Card>}
-            </View>
-
-            <View style={{ gap: 10 }}>
-              <SectionHeader title="Coming up" action={data.agendaCount ? <Button variant="ghost" size="compact" label="Calendar" onPress={() => router.push("/calendar")} /> : undefined} />
-              {data.agenda.length ? (
-                <Card padded={false} style={{ paddingHorizontal: 16 }}>
-                  {data.agenda.slice(0, 4).map((event, index) => (
-                    <View key={event.id}>
-                      {index ? <Divider /> : null}
-                      <Row title={event.title} detail={`${eventWhen(event)} · ${event.club}`} trailing={<ChevronRight size={18} color={colors.mutedForeground} />} onPress={() => go(eventRoute(event, me.data?.applications))} />
-                    </View>
-                  ))}
-                </Card>
-              ) : <Card><Text variant="small">Nothing scheduled.</Text></Card>}
-            </View>
+            {layout.hero ? <HomeHeroCard hero={layout.hero} now={now} onOpen={go} eventRoute={toEvent} eventAction={eventActionLabel} taskRoute={taskRoute} /> : null}
+            {layout.sections.map(id => <View key={id} testID={`home-section-${id}`}>{sections[id]()}</View>)}
           </>
         ) : null}
       </ScreenScroll>
-      <Header root title={me.data?.profile?.firstName ? `Hi, ${me.data.profile.firstName}` : "Home"} />
+      <Header root title={headerGreeting(now, me.data?.profile?.firstName)} />
     </View>
   );
 }

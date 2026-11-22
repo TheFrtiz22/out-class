@@ -1,13 +1,12 @@
 /**
  * Nov 21: chip filters no longer scroll sideways. A few options wrap on screen and the rest sit behind
  * a "More" chip that opens a searchable list (OptionPicker), on Explore, Calendar, Applicants and every
- * FilterChips row. Home gives club leaders their own Leader tools card near the top.
+ * FilterChips row. (Home's leader section moved to the Nov 22 redesign: home-redesign.test.tsx.)
  */
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { leaderShortcuts } from "~/components/leader/home-card";
 import { OptionPicker, type PickerOption, matchOptions, pickerLayout, sheetOrder } from "~/components/option-picker";
 import { ThemeProvider } from "~/lib/theme";
 import type { AgendaEvent, Me, Membership, PublicClub } from "~/lib/types";
@@ -185,40 +184,5 @@ describe("other chip filters wrap too", () => {
     await fireEvent.press(screen.getByTestId(`applicants-round-${ids.round}`));
     expect(screen.getByTestId(`applicants-round-${ids.round}`).props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
     expect(loggedCrashes()).toEqual([]);
-  });
-});
-
-describe("Home's leader tools", () => {
-  test("a club leader gets a Leader tools card with the club and its tools", async () => {
-    await renderRoute(require("~/app/(tabs)/index").default, { mode: "rich" });
-    const card = screen.getByTestId("home-leader-card");
-    expect(within(card).getByText("Leader tools")).toBeTruthy();
-    await fireEvent.press(screen.getByTestId("home-leader-tools"));
-    expect(routerState.router.push).toHaveBeenCalledWith(expect.objectContaining({ pathname: "/leader/[clubId]", params: { clubId: ids.leaderClub } }));
-    await fireEvent.press(screen.getByTestId("home-leader-applicants"));
-    expect(routerState.router.push).toHaveBeenCalledWith(expect.objectContaining({ pathname: "/leader/[clubId]/applicants", params: { clubId: ids.leaderClub } }));
-    expect(loggedCrashes()).toEqual([]);
-  });
-
-  test("the card sits right under Next up, above the rest of Home", async () => {
-    await renderRoute(require("~/app/(tabs)/index").default, { mode: "rich" });
-    const text = screenText(screen.toJSON());
-    expect(text.indexOf("Leader tools")).toBeGreaterThan(text.indexOf("Next up"));
-    expect(text.indexOf("Leader tools")).toBeLessThan(text.indexOf("Scan to check in"));
-  });
-
-  test("someone who leads no club sees no leader tools", async () => {
-    const me = records.me as Me;
-    await renderRoute(require("~/app/(tabs)/index").default, { mode: "rich", overrides: { me: { ...me, memberships: [records.memberMembership, records.alumniMembership] } } });
-    expect(screen.queryByTestId("home-leader-card")).toBeNull();
-    expect(screen.queryByText("Leader tools")).toBeNull();
-  });
-
-  test("shortcuts follow the leader's permissions", () => {
-    const leader = { ...(records.leaderMembership as Membership), isOwner: false, permissions: ["meetings.manage", "applications.review", "decisions.vote"] };
-    expect(leaderShortcuts(leader).map(tool => tool.key)).toEqual(["applicants", "voting", "announce"]);
-    expect(leaderShortcuts({ ...leader, permissions: ["meetings.attendance"] })).toEqual([]);
-    expect(leaderShortcuts({ ...leader, isOwner: true }).map(tool => tool.key)).toEqual(["applicants", "interviews", "voting", "announce"]);
-    expect(leaderShortcuts({ ...leader, alumniSince: "2026-01-01T00:00:00Z" })).toEqual([]);
   });
 });
