@@ -76,6 +76,22 @@ describe("reporting club content", () => {
     expect(loggedCrashes()).toEqual([]);
   });
 
+  test("a report that is still sending can't be dismissed, and its answer still shows", async () => {
+    let answer: (value: unknown) => void = () => {};
+    const Screen = require("~/app/club/[id]").default;
+    await renderRoute(Screen, { params: { id: records.fullClub.id } });
+    const { api } = require("~/lib/api") as { api: { post: jest.Mock } };
+    await fireEvent.press(screen.getByTestId("report-open"));
+    api.post.mockImplementationOnce(() => new Promise(resolve => { answer = resolve; }));
+    await sendReport("Spam");
+    // Back or a swipe while it sends must not close it (a late answer would land on the next report).
+    await act(async () => { fireEvent(screen.getByTestId("report-sheet", { includeHiddenElements: true }), "requestClose"); });
+    await wait(SHEET_CLOSE_MS + 120);
+    expect(screen.getByTestId("report-sheet")).toBeTruthy();
+    await act(async () => { answer({ ok: true, message: "Thanks. Our team will review this." }); });
+    expect(screen.getByTestId("report-done")).toHaveTextContent("Thanks. Our team will review this.");
+  });
+
   test("an announcement the person wrote has no report action", async () => {
     const row = { id: ids.inbox(1), clubId: ids.leaderClub, type: "ANNOUNCEMENT", title: "My own news", body: "Hello.", href: null, readAt: null, archivedAt: null, createdAt: new Date().toISOString(), club: { name: "Club", color: "#E57200", logoUrl: null }, eventKey: null, announcementId: "00000000-0000-4000-8000-000000000778", ownAnnouncement: true };
     const Screen = require("~/app/inbox").default;

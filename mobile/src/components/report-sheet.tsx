@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View } from "react-native";
 import { ChoiceChips } from "~/components/choice-chips";
 import { Field } from "~/components/field";
@@ -40,20 +40,24 @@ export function ReportSheet({ open, onClose, target, subject }: { open: boolean;
   const [details, setDetails] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ message: string; dmcaHref?: string } | null>(null);
+  // Each send gets a number; closing the sheet bumps it, so a late answer never lands on a reopened sheet.
+  const attempt = useRef(0);
   const send = useMutation({
-    mutationFn: () => api.post<ReportResult>("reports.content", { target, reason, details: details.trim() }),
-    onSuccess: result => {
+    mutationFn: (_attempt: number) => api.post<ReportResult>("reports.content", { target, reason, details: details.trim() }),
+    onSuccess: (result, sent) => {
+      if (sent !== attempt.current) return;
       if (result.ok) { haptics.confirm(); setDone({ message: result.message, dmcaHref: result.dmcaHref }); }
       else { haptics.error(); setError(result.error); }
     },
-    onError: reason => { haptics.error(); setError(errorMessage(reason, "Could not send your report. Try again.")); },
+    onError: (reason, sent) => { if (sent !== attempt.current) return; haptics.error(); setError(errorMessage(reason, "Could not send your report. Try again.")); },
   });
   function close() {
+    attempt.current += 1;
     onClose();
     setReason(null); setDetails(""); setError(null); setDone(null);
   }
   return (
-    <Sheet open={open} onClose={close} title={`Report ${subject}`} testID="report-sheet">
+    <Sheet open={open} onClose={close} title={`Report ${subject}`} dismissible={!send.isPending} testID="report-sheet">
       {done ? (
         <View style={{ gap: 14 }}>
           <Text variant="body" accessibilityRole="alert" testID="report-done">{done.message}</Text>
@@ -67,7 +71,7 @@ export function ReportSheet({ open, onClose, target, subject }: { open: boolean;
           <ChoiceChips label="Reason" testID="report-reason" options={reasons} value={reason} onChange={value => { setReason(value); setError(null); }} />
           <Field label="Details (optional)" testID="report-details" value={details} onChangeText={setDetails} multiline maxLength={DETAILS_MAX} />
           {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert" testID="report-error">{error}</Text> : null}
-          <Button full label="Send report" testID="report-send" loading={send.isPending} disabled={!reason || send.isPending} onPress={() => { setError(null); send.mutate(); }} />
+          <Button full label="Send report" testID="report-send" loading={send.isPending} disabled={!reason || send.isPending} onPress={() => { setError(null); send.mutate(attempt.current); }} />
         </View>
       )}
     </Sheet>
