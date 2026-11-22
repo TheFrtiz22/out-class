@@ -69,6 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await Promise.race([remote, timeout]).catch(() => supabase.auth.signOut({ scope: "local" }));
     queryClient.clear();
     clearPrivateMemory();
+    // Unsaved application answers kept on this device for offline recovery go with the account.
+    await import("~/lib/autosave").then(module => module.clearDeviceDrafts()).catch(() => {});
   }, [queryClient]);
 
   const value = useMemo(() => ({ session, signIn, signOut }), [session, signIn, signOut]);

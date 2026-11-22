@@ -1,16 +1,15 @@
-import * as WebBrowser from "expo-web-browser";
 import { Pressable, View } from "react-native";
 import { Check } from "~/components/icons";
 import { Text } from "~/components/text";
 import { TARGET } from "~/components/ui";
-import { config } from "~/lib/config";
+import { openLegalPage } from "~/lib/legal";
 import { haptics } from "~/lib/haptics";
 import { useTheme } from "~/lib/theme";
 
 /** The clickwrap box for account creation, with the Terms and Privacy Policy one tap away. */
 export function TermsCheckbox({ checked, onChange, error, testID }: { checked: boolean; onChange: (checked: boolean) => void; error?: string; testID?: string }) {
   const { colors } = useTheme();
-  const open = (path: string) => { WebBrowser.openBrowserAsync(`${config.apiUrl}${path}`).catch(() => {}); };
+  const open = openLegalPage;
   return (
     <View style={{ gap: 6 }}>
       <Pressable testID={testID} accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel="I agree to the Terms of Service and Privacy Policy"

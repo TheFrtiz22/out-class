@@ -10,6 +10,7 @@ import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
 import type { IconComponent } from "~/components/icon-factory";
 import { ArrowRight, Bookmark, Share } from "~/components/icons";
+import { ReportButton } from "~/components/report-sheet";
 import { ShareSheet } from "~/components/share-sheet";
 import { Text } from "~/components/text";
 import { Button, Card, EmptyState, ErrorState, ScreenScroll, Skeleton, StatusChip } from "~/components/ui";
@@ -38,6 +39,8 @@ export default function ClubPage() {
     ?? queryClient.getQueryData<SavedClubs>(["clubs.saved", null])?.items.find(item => item.club.id === id)?.club;
   const profile = useQuery({ ...clubQuery(id), enabled: !!id, placeholderData: () => { const club = summary(); return club ? { club } : undefined; } });
   const club = profile.data?.club ?? null;
+  // Anyone but the club's own members can flag its profile (App Store 1.2); the server re-checks.
+  const reportable = !!club && !me.data?.memberships?.some(item => item.clubId === club.id && !item.alumniSince);
   const [now] = useState(() => Date.now());
   const [sharing, setSharing] = useState(false);
   const [error, setError] = useState("");
@@ -128,7 +131,7 @@ export default function ClubPage() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} onRefresh={refresh} testID="club-screen">{body}</ScreenScroll>
-      <Header title={club?.name ?? "Club"} back fitTitle />
+      <Header title={club?.name ?? "Club"} back fitTitle actions={reportable ? <ReportButton target={{ type: "club", id: club.id }} subject="this club" /> : undefined} />
       {notice.element}
     </View>
   );

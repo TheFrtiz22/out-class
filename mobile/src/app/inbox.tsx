@@ -4,14 +4,15 @@ import { ActivityIndicator, ScrollView, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlumniBanner } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
-import { Archive, Bell, CheckCheck, ExternalLink, Mail, MailOpen, Settings } from "~/components/icons";
+import { Archive, Bell, CheckCheck, ExternalLink, Flag, Mail, MailOpen, Settings } from "~/components/icons";
 import { useInbox, useInboxActions } from "~/components/inbox/data";
 import { FilterChips } from "~/components/inbox/filter-chips";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { NotificationPreferencesSheet } from "~/components/inbox/preferences";
 import { clubName, ctaLabel, filterRows, fullDate, groupRows, opensInPlace, type ReadFilter, senderTitle, type TypeFilter, typeFilters, typeLabel } from "~/components/inbox/presentation";
 import { InboxListRow } from "~/components/inbox/row";
-import { Sheet } from "~/components/sheet";
+import { ReportSheet } from "~/components/report-sheet";
+import { SHEET_CLOSE_MS, Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, ClubMark, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote, usePullControl } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
@@ -35,6 +36,16 @@ export default function Inbox() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [actionFailed, setActionFailed] = useState(false);
+  // A club announcement the student received can be flagged to the OutClass team (App Store 1.2).
+  const [reporting, setReporting] = useState<string | null>(null);
+  const reportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (reportTimer.current) clearTimeout(reportTimer.current); }, []);
+  function reportAnnouncement(announcementId: string) {
+    // One sheet at a time: let the detail sheet finish closing before the report sheet opens.
+    setSelectedId(null);
+    if (reportTimer.current) clearTimeout(reportTimer.current);
+    reportTimer.current = setTimeout(() => { reportTimer.current = null; setReporting(announcementId); }, SHEET_CLOSE_MS + 60);
+  }
   const opening = useRef(false);
   const list = useRef<SectionList<InboxRow>>(null);
 
@@ -154,10 +165,14 @@ export default function Inbox() {
                 <View style={{ flex: 1 }}><Button full variant="secondary" testID="inbox-detail-read" icon={selected.readAt ? Mail : MailOpen} label={selected.readAt ? "Mark unread" : "Mark read"} onPress={() => setRead([selected.id], !selected.readAt)} /></View>
                 <View style={{ flex: 1 }}><Button full variant="ghost" testID="inbox-detail-archive" icon={Archive} label="Dismiss" onPress={() => { haptics.save(); dismiss([selected.id]); }} /></View>
               </View>
+              {selected.announcementId && !selected.ownAnnouncement ? (
+                <Button full variant="ghost" testID="inbox-detail-report" icon={Flag} label="Report this announcement" onPress={() => reportAnnouncement(selected.announcementId!)} />
+              ) : null}
             </View>
           </ScrollView>
         ) : null}
       </Sheet>
+      <ReportSheet open={!!reporting} onClose={() => setReporting(null)} target={{ type: "announcement", id: reporting ?? "" }} subject="this announcement" />
       <NotificationPreferencesSheet open={preferences} onClose={() => { setPreferences(false); if (params.tab) router.setParams({ tab: undefined }); }} />
     </View>
   );

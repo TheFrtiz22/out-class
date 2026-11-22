@@ -3,10 +3,11 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
-import { CalendarPlus, ChevronRight } from "~/components/icons";
+import { CalendarPlus, ChevronRight, ExternalLink, Mail } from "~/components/icons";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Text } from "~/components/text";
 import { Card, Divider, Press, ScreenScroll, Segmented, TARGET } from "~/components/ui";
+import { CONTACT_EMAIL, INDEPENDENCE_NOTE, emailSupport, openLegalPage } from "~/lib/legal";
 import { type AppearancePreference, useTheme } from "~/lib/theme";
 
 // The web's Settings overview (lib/settings-navigation.ts `personalSettingsSections`), same labels and descriptions.
@@ -16,6 +17,13 @@ const sections = [
   { id: "availability", label: "Availability", description: "Keep one availability schedule across all your clubs.", route: "/settings/availability" },
   { id: "interests", label: "Interests", description: "What you’re into, so we can suggest clubs. Only you see this.", route: "/settings/interests" },
   { id: "interviews", label: "Interview schedule", description: "Your approved interview panels across all your clubs.", route: "/settings/interviews" },
+] as const;
+
+// Terms, Privacy and a way to reach the developer, inside the app (App Store 1.2 and 5.1.1).
+const legal = [
+  { id: "terms", label: "Terms of Service", description: "Opens on the OutClass website.", open: () => openLegalPage("/terms"), icon: ExternalLink },
+  { id: "privacy", label: "Privacy Policy", description: "Opens on the OutClass website.", open: () => openLegalPage("/privacy"), icon: ExternalLink },
+  { id: "contact", label: "Contact us", description: `Questions, problems or a request about your data: ${CONTACT_EMAIL}`, open: emailSupport, icon: Mail },
 ] as const;
 
 export default function SettingsOverview() {
@@ -65,6 +73,23 @@ export default function SettingsOverview() {
             <ChevronRight size={18} color={colors.mutedForeground} />
           </Press>
         </Card>
+        <Card padded={false} style={{ paddingHorizontal: 16 }} testID="settings-legal">
+          <Text variant="caption" accessibilityRole="header" style={{ paddingTop: 14 }}>Legal and support</Text>
+          {legal.map((item, index) => (
+            <View key={item.id}>
+              {index ? <Divider /> : null}
+              <Press large testID={`settings-${item.id}`} accessibilityRole={item.id === "contact" ? "button" : "link"} accessibilityLabel={`${item.label}. ${item.description}`} onPress={item.open}
+                style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, minHeight: TARGET + 12 }}>
+                <View style={{ flex: 1, gap: 3 }}>
+                  <Text variant="bodyStrong">{item.label}</Text>
+                  <Text variant="small" selectable={item.id === "contact"}>{item.description}</Text>
+                </View>
+                <item.icon size={18} color={colors.mutedForeground} />
+              </Press>
+            </View>
+          ))}
+        </Card>
+        <Text variant="caption" align="center" testID="settings-independence">{INDEPENDENCE_NOTE}</Text>
         {Application.nativeApplicationVersion ? (
           <Text variant="caption" align="center" testID="settings-version" style={{ marginTop: 4 }}>
             OutClass {Application.nativeApplicationVersion}{Application.nativeBuildVersion ? ` (${Application.nativeBuildVersion})` : ""}

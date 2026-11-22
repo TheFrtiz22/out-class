@@ -41,6 +41,17 @@ function watchConnection() {
   Network.addNetworkStateListener(apply);
 }
 
+const DRAFT_KEY_PREFIX = "outclass:draft:";
+
+/**
+ * Removes every unsaved copy this device holds (all accounts). Called on sign-out, so a shared
+ * phone keeps no one's application answers after they leave.
+ */
+export async function clearDeviceDrafts() {
+  const keys = (await AsyncStorage.getAllKeys()).filter(key => key.startsWith(DRAFT_KEY_PREFIX));
+  if (keys.length) await AsyncStorage.multiRemove(keys);
+}
+
 /** Status text from the problem and whether the unsaved copy reached the device (lib/autosave-store.ts). */
 function connectionMessage(problem: ConnectionProblem, stored: boolean) {
   const lead = problem === "offline" ? "Offline" : "Couldn’t reach OutClass";
@@ -145,7 +156,7 @@ export function useAutosave<T>({ identity, owner, value, save, restore, enabled 
     if (!enabled) return;
     watchConnection();
     const original = latest.current;
-    const key = owner ? `outclass:draft:v1:${owner}:${identity}` : null;
+    const key = owner ? `${DRAFT_KEY_PREFIX}v1:${owner}:${identity}` : null;
     const update = () => render(count => count + 1);
     const entry: Entry<T> = { identity, ready: false, recovery: null, reviewing: false, baseline: original.serialize(original.value), key, queue: null as never };
     const recover = (content: T | null, server?: T) => {

@@ -10,6 +10,13 @@ type PublicConfig = { apiUrl?: string; supabaseUrl?: string; supabasePublishable
 function localConfig(): PublicConfig {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, "config.local.json"), "utf8")) as PublicConfig; } catch { return {}; }
 }
+/** One entry of the iOS privacy manifest's collected data: used only for the app to work, never for tracking. */
+const collected = (type: string, linked: boolean) => ({
+  NSPrivacyCollectedDataType: `NSPrivacyCollectedDataType${type}`,
+  NSPrivacyCollectedDataTypeLinked: linked,
+  NSPrivacyCollectedDataTypeTracking: false,
+  NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+});
 const local = localConfig();
 const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? local.apiUrl ?? "https://www.out-class.net";
 // The production Supabase project's address and publishable key. Both are public (the web sends the
@@ -75,7 +82,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     privacyManifests: {
       NSPrivacyTracking: false,
       NSPrivacyTrackingDomains: [],
-      NSPrivacyCollectedDataTypes: [],
+      // Matches the App Store privacy label (docs/mobile/store/privacy.md): nothing is used for tracking,
+      // everything only for the app to work. Crash and diagnostic data are not linked to the account.
+      NSPrivacyCollectedDataTypes: [
+        collected("Name", true),
+        collected("EmailAddress", true),
+        collected("PhoneNumber", true),
+        collected("PhotosorVideos", true),
+        collected("OtherUserContent", true),
+        collected("UserID", true),
+        collected("DeviceID", true),
+        collected("ProductInteraction", true),
+        collected("CrashData", false),
+        collected("OtherDiagnosticData", false),
+        collected("OtherDataTypes", true),
+      ],
       NSPrivacyAccessedAPITypes: [
         { NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryUserDefaults", NSPrivacyAccessedAPITypeReasons: ["CA92.1"] },
         { NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp", NSPrivacyAccessedAPITypeReasons: ["C617.1"] },

@@ -202,6 +202,7 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
                   <Button variant="secondary" size="compact" icon={ImagePlus} testID="profile-photo-library" label="Choose photo" loading={busy === "upload"} disabled={disabled} onPress={() => pickPhoto("library")} />
                   {draft.headshotUrl ? <Button variant="ghost" size="compact" testID="profile-photo-remove" label="Remove photo" disabled={disabled} onPress={() => { setPhotoPreview(null); onLocalPhoto?.(null); patch({ headshotUrl: null }); }} /> : null}
                 </View>
+                <Text variant="caption" testID="profile-photo-visibility">Clubs you apply to or join may see your photo.</Text>
               </View>
               <Text variant="caption">Your computing ID is managed by your university account.</Text>
             </>
@@ -285,6 +286,7 @@ export function EditProfileSheet({ open, onClose, profile, initialSection = "ide
                 <Text variant="smallStrong">Or upload a résumé (PDF, up to 10 MB)</Text>
                 <Button variant="secondary" icon={Upload} testID="profile-resume-upload" label="Choose PDF" loading={busy === "upload"} disabled={disabled} onPress={pickResume} />
               </View>
+              <Text variant="caption" testID="profile-resume-visibility">Clubs you apply to can see your résumé when they review your application. They see the one on your profile now, so a newer upload replaces it for them too.</Text>
               <Text variant="small">The document attachment saves automatically. Clear the résumé URL to remove the attachment. LinkedIn and résumé details are not imported automatically.</Text>
             </>
           ) : null}

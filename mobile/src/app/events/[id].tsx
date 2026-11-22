@@ -11,6 +11,7 @@ import { usePrefetchClub, useSavedEvents } from "~/components/explore/hooks";
 import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
 import { Bookmark, CalendarPlus, Check, Share } from "~/components/icons";
+import { ReportButton } from "~/components/report-sheet";
 import { ShareSheet } from "~/components/share-sheet";
 import { Text } from "~/components/text";
 import { Button, Card, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
@@ -117,7 +118,7 @@ export default function EventDetail() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} onRefresh={refresh} testID="event-screen">{body}</ScreenScroll>
-      <Header title="Event" back />
+      <Header title="Event" back actions={event ? <ReportButton target={{ type: "event", id: event.id }} subject="this event" /> : undefined} />
       {notice.element}
     </View>
   );

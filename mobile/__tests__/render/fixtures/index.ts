@@ -306,6 +306,7 @@ const rich: FixtureSet = {
   "events.rsvp.set": { ok: true, going: true, count: 150 },
   "events.myRsvps": [{ eventId: ids.event, title: campusEvent(1).title, available: true }, { eventId: uuid(599), title: "A cancelled event", available: false }],
   "share.shortLink": { url: "https://out-class.net/q/abc123", code: "abc123" },
+  "reports.content": { ok: true, message: "Thanks. Our team will review this." },
   // Profile
   "profile": { profile: fullProfile },
   "graduation.details": { saved: true },
