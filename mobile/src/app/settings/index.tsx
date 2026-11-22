@@ -3,12 +3,11 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
-import type { IconComponent } from "~/components/icon-factory";
-import { CalendarPlus, ChevronRight, FileText, Mail, ShieldCheck } from "~/components/icons";
-import { LEGAL_ROUTES, NOT_AFFILIATED, SUPPORT_EMAIL, contactSupport } from "~/components/legal";
+import { CalendarPlus, ChevronRight, ExternalLink, Mail } from "~/components/icons";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Text } from "~/components/text";
 import { Card, Divider, Press, ScreenScroll, Segmented, TARGET } from "~/components/ui";
+import { CONTACT_EMAIL, INDEPENDENCE_NOTE, emailSupport, openLegalPage } from "~/lib/legal";
 import { type AppearancePreference, useTheme } from "~/lib/theme";
 
 // The web's Settings overview (lib/settings-navigation.ts `personalSettingsSections`), same labels and descriptions.
@@ -20,12 +19,12 @@ const sections = [
   { id: "interviews", label: "Interview schedule", description: "Your approved interview panels across all your clubs.", route: "/settings/interviews" },
 ] as const;
 
-/** Legal & support: the in-app Terms and Privacy Policy, and email to support (App Store 5.1.1, Google Play user data policy). */
-const legalRows: { id: string; label: string; description: string; icon: IconComponent; route?: string }[] = [
-  { id: "terms", label: "Terms of Service", description: "The rules for using OutClass.", icon: FileText, route: LEGAL_ROUTES.terms },
-  { id: "privacy", label: "Privacy Policy", description: "What we collect and how we use it.", icon: ShieldCheck, route: LEGAL_ROUTES.privacy },
-  { id: "support", label: "Contact support", description: SUPPORT_EMAIL, icon: Mail },
-];
+// Terms, Privacy and a way to reach the developer, inside the app (App Store 1.2 and 5.1.1).
+const legal = [
+  { id: "terms", label: "Terms of Service", description: "Opens on the OutClass website.", open: () => openLegalPage("/terms"), icon: ExternalLink },
+  { id: "privacy", label: "Privacy Policy", description: "Opens on the OutClass website.", open: () => openLegalPage("/privacy"), icon: ExternalLink },
+  { id: "contact", label: "Contact us", description: `Questions, problems or a request about your data: ${CONTACT_EMAIL}`, open: emailSupport, icon: Mail },
+] as const;
 
 export default function SettingsOverview() {
   const { colors, appearance, setAppearance } = useTheme();
@@ -74,26 +73,23 @@ export default function SettingsOverview() {
             <ChevronRight size={18} color={colors.mutedForeground} />
           </Press>
         </Card>
-        <Card padded={false} style={{ paddingHorizontal: 16 }} testID="settings-legal" accessibilityLabel="Legal & support">
-          <Text variant="bodyStrong" accessibilityRole="header" style={{ paddingTop: 14 }}>Legal & support</Text>
-          {legalRows.map((row, index) => (
-            <View key={row.id}>
+        <Card padded={false} style={{ paddingHorizontal: 16 }} testID="settings-legal">
+          <Text variant="caption" accessibilityRole="header" style={{ paddingTop: 14 }}>Legal and support</Text>
+          {legal.map((item, index) => (
+            <View key={item.id}>
               {index ? <Divider /> : null}
-              <Press large testID={`settings-${row.id}`} accessibilityRole={row.route ? "button" : "link"} accessibilityLabel={`${row.label}. ${row.description}`}
-                onPress={() => (row.route ? router.push(row.route as never) : contactSupport())}
+              <Press large testID={`settings-${item.id}`} accessibilityRole={item.id === "contact" ? "button" : "link"} accessibilityLabel={`${item.label}. ${item.description}`} onPress={item.open}
                 style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, minHeight: TARGET + 12 }}>
-                <row.icon size={22} color={colors.brandInk} />
                 <View style={{ flex: 1, gap: 3 }}>
-                  <Text variant="bodyStrong">{row.label}</Text>
-                  <Text variant="small">{row.description}</Text>
+                  <Text variant="bodyStrong">{item.label}</Text>
+                  <Text variant="small" selectable={item.id === "contact"}>{item.description}</Text>
                 </View>
-                <ChevronRight size={18} color={colors.mutedForeground} />
+                <item.icon size={18} color={colors.mutedForeground} />
               </Press>
             </View>
           ))}
-          <Divider />
-          <Text variant="caption" testID="settings-not-affiliated" style={{ paddingVertical: 14 }}>{NOT_AFFILIATED}</Text>
         </Card>
+        <Text variant="caption" align="center" testID="settings-independence">{INDEPENDENCE_NOTE}</Text>
         {Application.nativeApplicationVersion ? (
           <Text variant="caption" align="center" testID="settings-version" style={{ marginTop: 4 }}>
             OutClass {Application.nativeApplicationVersion}{Application.nativeBuildVersion ? ` (${Application.nativeBuildVersion})` : ""}

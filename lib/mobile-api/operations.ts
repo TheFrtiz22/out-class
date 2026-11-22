@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActionError, operation, type AnyMobileOperation } from "@/utils/mobile-api";
+import { operation, type AnyMobileOperation } from "@/utils/mobile-api";
 import { mobileConfirmInput, mobileRegisterInput } from "@/lib/mobile-api/auth";
 
 /**
@@ -68,14 +68,8 @@ export const mobileOperations = {
   "events.rsvp": operation("GET", z.object({ eventId: uuid }).strict(), async ({ eventId }) => (await import("@/actions/campus-events")).getCampusEventRsvp(eventId)),
   "events.rsvp.set": operation("POST", passthrough, async input => (await import("@/actions/campus-events")).setCampusEventRsvp(input)),
   "events.myRsvps": operation("GET", none, async () => (await import("@/actions/campus-events")).getMyCampusEventRsvps()),
-  // Reporting a club, gallery image, event, flyer or announcement to the OutClass team (App Store 1.2). The action
-  // checks the reporter can see the target and returns its refusals as values; the app gets them as a 422 with that wording.
-  "content.report": operation("POST", passthrough, async input => {
-    const result = await (await import("@/actions/content-reports")).reportContent(input);
-    if (!result.ok) throw new ActionError(result.error, "REPORT_REFUSED");
-    return { message: result.message };
-  }),
   "share.shortLink": operation("POST", z.object({ target: z.string().min(1).max(2048) }).strict(), async input => (await import("@/actions/short-links")).createShortLink(input)),
+  "reports.content": operation("POST", passthrough, async input => (await import("@/actions/content-reports")).reportContent(input)),
 
   // Profile
   "profile": operation("GET", none, async () => (await import("@/actions/profile")).getStudentProfile()),

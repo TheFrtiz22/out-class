@@ -85,7 +85,7 @@ test('every page inherits a social image; public pages carry their own with the 
   assert.ok(fs.existsSync('app/og/outclass.png/route.tsx'))
 })
 
-test('Privacy, Terms, Cookies and Legal: formal text from one source, rendered by one component, and not public until the switch is on', async () => {
+test('Privacy, Terms, Cookies and Legal: formal text from one source, rendered by one component, and only placeholders public until the switch is on', async () => {
   const legal = load('lib/legal-content.ts')
   assert.equal(legal.LEGAL_PAGES_PUBLIC, false)
   const { LegalPage } = load('components/landing/legal-page.tsx', { './public-page-frame': { PublicPageFrame: ({ children }) => React.createElement('main', null, children) } })
@@ -98,18 +98,29 @@ test('Privacy, Terms, Cookies and Legal: formal text from one source, rendered b
   for (const content of [legal.privacyPolicy, legal.termsOfService]) assert.ok(content.sections.length >= 10, content.title)
   assert.match(JSON.stringify(legal.termsOfService), /Commonwealth of Virginia/)
   assert.match(JSON.stringify(legal.privacyPolicy), /do not sell personal information/)
-  // While the switch is off: middleware serves the real 404 page for all four routes (no streamed 200,
-  // no titles), the footer has no Legal column, and the sitemap omits them.
-  assert.match(fs.readFileSync('middleware.ts', 'utf8'), /if \(!LEGAL_PAGES_PUBLIC && \(path === "\/privacy" \|\| path === "\/terms" \|\| path === "\/cookies" \|\| path === "\/legal"\)\) \{\n\s*return NextResponse\.rewrite\(new URL\("\/__not-public"/)
-  for (const file of ['app/privacy/page.tsx', 'app/terms/page.tsx', 'app/cookies/page.tsx', 'app/legal/page.tsx']) {
+  // While the switch is off: middleware serves the real 404 page for Cookies and Legal (no streamed 200,
+  // no titles); Privacy and Terms render a marked placeholder with none of the draft text, not indexed.
+  const middleware = fs.readFileSync('middleware.ts', 'utf8')
+  assert.match(middleware, /if \(!LEGAL_PAGES_PUBLIC && \(path === "\/cookies" \|\| path === "\/legal"\)\) \{\n\s*return NextResponse\.rewrite\(new URL\("\/__not-public"/)
+  assert.doesNotMatch(middleware, /path === "\/privacy"|path === "\/terms"/)
+  for (const file of ['app/cookies/page.tsx', 'app/legal/page.tsx']) {
     const source = fs.readFileSync(file, 'utf8')
     assert.match(source, /if \(!LEGAL_PAGES_PUBLIC\) notFound\(\)/, file)
     const page = load(file, { 'next/navigation': { notFound: () => { throw Error('NEXT_NOT_FOUND') } }, '@/components/landing/legal-page': { LegalPage: () => null } }).default
     assert.throws(() => page(), /NEXT_NOT_FOUND/, file)
   }
+  const frame = { './public-page-frame': { PublicPageFrame: ({ children }) => React.createElement('main', null, children) } }
+  for (const [file, content] of [['app/privacy/page.tsx', legal.privacyPolicy], ['app/terms/page.tsx', legal.termsOfService]]) {
+    const mod = load(file, { '@/components/landing/legal-page': { LegalPage: () => { throw Error('draft rendered') } }, ...frame })
+    assert.deepEqual(mod.metadata.robots, { index: false, follow: false }, file)
+    const html = renderToStaticMarkup(mod.default())
+    assert.match(html, /Placeholder/); assert.match(html, new RegExp(`<h1[^>]*>${content.title}</h1>`)); assert.match(html, /href="mailto:hello@out-class\.net"/)
+    for (const section of content.sections) assert.ok(!html.includes(section.heading.replace(/&/g, '&amp;')), `${file} shows no draft section: ${section.heading}`)
+  }
   const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/components/landing/interactive-footer-wordmark': { InteractiveFooterWordmark: () => null } })
   const footer = renderToStaticMarkup(React.createElement(PublicFooter))
-  assert.doesNotMatch(footer, /<h[23]>Legal<\/h[23]>|href="\/privacy"|href="\/terms"|href="\/cookies"|href="\/legal"|mailto:/)
+  assert.match(footer, /<h2>Legal<\/h2>/); assert.match(footer, /href="\/privacy"/); assert.match(footer, /href="\/terms"/); assert.match(footer, /href="mailto:hello@out-class\.net"/)
+  assert.doesNotMatch(footer, /href="\/cookies"|href="\/legal"/)
   const sitemap = load('app/sitemap.ts', { '@/lib/public-club-seo': { getIndexableClubs: async () => [] } }).default
   const urls = (await sitemap()).map(entry => entry.url)
   assert.equal(urls.some(url => /\/(privacy|terms|cookies|legal)$/.test(url)), false)
@@ -122,7 +133,7 @@ test('Privacy Policy names every processor in use, every profile data category, 
   const legal = load('lib/legal-content.ts')
   const text = JSON.stringify(legal.privacyPolicy)
   // Each processor named in the policy is wired in code (the evidence is the second element).
-  for (const [name, evidence] of [['Supabase', ['package.json', /@supabase\/ssr/]], ['Vercel Web Analytics', ['app/layout.tsx', /@vercel\/analytics/]], ['Vercel Speed Insights', ['app/layout.tsx', /speed-insights/]], ['Resend', ['lib/notification-email.ts', /api\.resend\.com/]], ['Sentry', ['instrumentation-client.ts', /@sentry\/nextjs/]], ['Microsoft', ['lib/outlook-calendar.ts', /graph\.microsoft\.com/]], ['Cloudflare Turnstile', ['lib/turnstile.ts', /turnstile/i]], ['Typesense', ['actions/typesense-search.ts', /TYPESENSE_URL/]], ['GitHub', ['lib/transactional-email.ts', /raw\.githubusercontent\.com/]]]) {
+  for (const [name, evidence] of [['Supabase', ['package.json', /@supabase\/ssr/]], ['Vercel Web Analytics', ['app/layout.tsx', /@vercel\/analytics/]], ['Vercel Speed Insights', ['app/layout.tsx', /speed-insights/]], ['Resend', ['lib/notification-email.ts', /api\.resend\.com/]], ['Sentry', ['instrumentation-client.ts', /@sentry\/nextjs/]], ['Microsoft', ['lib/outlook-calendar.ts', /graph\.microsoft\.com/]], ['Cloudflare Turnstile', ['lib/turnstile.ts', /turnstile/i]], ['Typesense', ['actions/typesense-search.ts', /TYPESENSE_URL/]], ['GitHub', ['lib/transactional-email.ts', /raw\.githubusercontent\.com/]], ['Expo', ['lib/web-push.ts', /exp\.host/]], ['Browser push services', ['utils/notification-push.ts', /"web-push"/]]]) {
     assert.ok(text.includes(name), name)
     assert.match(fs.readFileSync(evidence[0], 'utf8'), evidence[1], name)
   }

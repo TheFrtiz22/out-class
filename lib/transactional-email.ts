@@ -63,11 +63,13 @@ export const emailPreferencesPath = '/inbox?tab=preferences';
 export const emailLegalName = 'OutClassPlatforms LLC';
 // No email builder has the recipient's school today (UVA is the only school); callers pass schoolName once they do.
 export const emailDefaultSchoolName = 'University of Virginia';
+/** The independence line beside the school name in every footer (the public site's footer says the same). */
+export const emailIndependenceNote = (schoolName = emailDefaultSchoolName) => `OutClass is independent and is not an official service of the ${schoolName.replace(/^the /i, '')}.`;
 
 /** Plain-text counterpart of the HTML footer's compliance lines. */
 export function emailTextFooter(siteUrl: string, options: { preferences?: boolean } = {}) {
   const origin = emailSiteOrigin(siteUrl), address = emailPostalAddress();
-  return [options.preferences === false ? '' : `Email preferences: ${origin}${emailPreferencesPath}`, `${emailLegalName}${address ? `, ${address}` : ''}`].filter(Boolean).join('\n');
+  return [options.preferences === false ? '' : `Email preferences: ${origin}${emailPreferencesPath}`, `${emailLegalName}${address ? `, ${address}` : ''}`, emailIndependenceNote()].filter(Boolean).join('\n');
 }
 
 // Double rule echoes the paired sabre strokes under the official wordmark.
@@ -118,6 +120,6 @@ ${outlookDark}
 <p class="eyebrow" style="margin:0 0 14px;color:#a83d0c;font-size:10px;line-height:16px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase">${esc(input.category || 'Account security')}</p>
 <h1 class="heading ink" style="margin:0 0 18px;color:#142d4e;font-family:${headingFont};font-size:${headingSize}px;line-height:${headingSize + 7}px;letter-spacing:-0.6px;font-weight:${['welcome', 'invitation'].includes(variant) ? 400 : 600};overflow-wrap:anywhere">${input.headingHtml || esc(input.title)}</h1>
 ${input.body}</td></tr>
-<tr><td class="inset footer" style="padding:12px 40px 32px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="divider" style="padding-top:20px;border-top:1px solid #c7ced5"><p class="muted" style="margin:0 0 18px;color:#596575;font-size:12px;line-height:20px">${esc(input.footer)}</p><p class="ink" style="margin:0;color:#142d4e;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:24px">One profile. Every opportunity.</p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px"><a class="text-link" href="${esc(origin)}/" style="color:#142d4e;text-decoration:underline">OutClass</a> &nbsp; / &nbsp; ${esc(input.schoolName || emailDefaultSchoolName)} &nbsp; / &nbsp; <a class="text-link" href="${esc(origin + emailPreferencesPath)}" style="color:#142d4e;text-decoration:underline">Email preferences</a></p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px">${esc(emailLegalName)}${address ? `, ${esc(address)}` : ''}</p></td></tr></table></td></tr>
+<tr><td class="inset footer" style="padding:12px 40px 32px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="divider" style="padding-top:20px;border-top:1px solid #c7ced5"><p class="muted" style="margin:0 0 18px;color:#596575;font-size:12px;line-height:20px">${esc(input.footer)}</p><p class="ink" style="margin:0;color:#142d4e;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:24px">One profile. Every opportunity.</p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px"><a class="text-link" href="${esc(origin)}/" style="color:#142d4e;text-decoration:underline">OutClass</a> &nbsp; / &nbsp; ${esc(input.schoolName || emailDefaultSchoolName)} &nbsp; / &nbsp; <a class="text-link" href="${esc(origin + emailPreferencesPath)}" style="color:#142d4e;text-decoration:underline">Email preferences</a></p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px">${esc(emailLegalName)}${address ? `, ${esc(address)}` : ''}</p><p class="muted" style="margin:6px 0 0;color:#596575;font-size:11px;line-height:18px">${esc(emailIndependenceNote(input.schoolName))}</p></td></tr></table></td></tr>
 </table><!--[if mso]></td></tr></table><![endif]--></td></tr></table></body></html>`;
 }

@@ -11,7 +11,7 @@ import { usePrefetchClub, useSavedEvents } from "~/components/explore/hooks";
 import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
 import { Bookmark, CalendarPlus, Check, Share } from "~/components/icons";
-import { ReportButton, ownsClub } from "~/components/report";
+import { ReportButton } from "~/components/report-sheet";
 import { ShareSheet } from "~/components/share-sheet";
 import { Text } from "~/components/text";
 import { Button, Card, Divider, EmptyState, ErrorState, Press, ScreenScroll, Skeleton, TARGET } from "~/components/ui";
@@ -20,7 +20,7 @@ import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
-import type { CampusEvent, EventBoard, EventRsvpResult, Me } from "~/lib/types";
+import type { CampusEvent, EventBoard, EventRsvpResult } from "~/lib/types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -36,7 +36,6 @@ export default function EventDetail() {
   const notice = useNotice();
   const saves = useSavedEvents(notice.show);
   const prefetchClub = usePrefetchClub();
-  const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
   const key = ["events.event", { eventId: id }] as const;
   // The board the student came from already holds this event: show it while the fresh copy loads.
   const fromBoard = () => queryClient.getQueriesData<InfiniteData<EventBoard>>({ queryKey: ["events.board"] }).flatMap(([, data]) => data?.pages ?? []).flatMap(page => page.events).find(item => item.id === id);
@@ -111,13 +110,6 @@ export default function EventDetail() {
             </View>
           ) : null}
         </View>
-        {/* The people who run the hosting club don't report their own event, as on the web. */}
-        {!me.isPending && !ownsClub(me.data?.memberships, event.clubId) ? (
-          <View style={{ flexDirection: "row", justifyContent: "center", gap: 16 }}>
-            <ReportButton target={{ type: "event", id: event.id }} label="Report event" text={event.flyerUrl ? "Report event" : "Report"} testID="event-report" />
-            {event.flyerUrl ? <ReportButton target={{ type: "event-flyer", eventId: event.id }} label="Report flyer" text="Report flyer" testID="event-report-flyer" /> : null}
-          </View>
-        ) : null}
         <ShareSheet open={sharing} onClose={() => setSharing(false)} target={{ path: eventSharePath(event.id), title: event.title, text: `${event.title} (${when}), hosted by ${event.clubName}`, subtitle: `Hosted by ${event.clubName} · ${when}` }} />
       </>
     );
@@ -126,7 +118,7 @@ export default function EventDetail() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} onRefresh={refresh} testID="event-screen">{body}</ScreenScroll>
-      <Header title="Event" back />
+      <Header title="Event" back actions={event ? <ReportButton target={{ type: "event", id: event.id }} subject="this event" /> : undefined} />
       {notice.element}
     </View>
   );

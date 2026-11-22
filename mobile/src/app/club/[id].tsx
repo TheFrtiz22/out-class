@@ -10,7 +10,7 @@ import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
 import type { IconComponent } from "~/components/icon-factory";
 import { ArrowRight, Bookmark, Share } from "~/components/icons";
-import { ReportButton, ownsClub } from "~/components/report";
+import { ReportButton } from "~/components/report-sheet";
 import { ShareSheet } from "~/components/share-sheet";
 import { Text } from "~/components/text";
 import { Button, Card, EmptyState, ErrorState, ScreenScroll, Skeleton, StatusChip } from "~/components/ui";
@@ -21,7 +21,7 @@ import { useTheme } from "~/lib/theme";
 import type { ClubDirectory, MyApplicationSummary, PublicClub, SavedClubs } from "~/lib/types";
 
 const BookmarkFilled: IconComponent = props => <Bookmark {...props} weight="fill" />;
-type Account = { applications?: MyApplicationSummary[]; memberships?: { clubId: string; alumniSince: string | null; status: string; isOwner: boolean; permissions: string[] }[]; profile?: { graduatedAt?: string | null } | null };
+type Account = { applications?: MyApplicationSummary[]; memberships?: { clubId: string; alumniSince: string | null }[]; profile?: { graduatedAt?: string | null } | null };
 type StartResult = { applicationId: string } | { applicationId: null; unavailable: string };
 
 export default function ClubPage() {
@@ -39,6 +39,8 @@ export default function ClubPage() {
     ?? queryClient.getQueryData<SavedClubs>(["clubs.saved", null])?.items.find(item => item.club.id === id)?.club;
   const profile = useQuery({ ...clubQuery(id), enabled: !!id, placeholderData: () => { const club = summary(); return club ? { club } : undefined; } });
   const club = profile.data?.club ?? null;
+  // Anyone but the club's own members can flag its profile (App Store 1.2); the server re-checks.
+  const reportable = !!club && !me.data?.memberships?.some(item => item.clubId === club.id && !item.alumniSince);
   const [now] = useState(() => Date.now());
   const [sharing, setSharing] = useState(false);
   const [error, setError] = useState("");
@@ -121,8 +123,6 @@ export default function ClubPage() {
         <LifeSection club={club} />
         <FaqSection club={club} />
         <ClubEventsSection events={events} onOpen={event => router.push({ pathname: "/events/[id]", params: { id: event.id } })} />
-        {/* Only a club that exists can be reported (not a directory preview), and never by the people who run it. */}
-        {club.source === "database" && !me.isPending && !ownsClub(me.data?.memberships, club.id) ? <ReportButton target={{ type: "club", id: club.id }} label={`Report ${club.name}`} testID="club-report" /> : null}
         <ShareSheet open={sharing} onClose={() => setSharing(false)} target={{ path: clubSharePath(club.id), title: club.name, text: `Check out ${club.name} on OutClass`, subtitle: "Anyone with the link can see the club’s public profile.", qrDescription: "Scan to see the club, follow it and apply on OutClass.", shortLink: true }} />
       </>
     );
@@ -131,7 +131,7 @@ export default function ClubPage() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll top={top} onRefresh={refresh} testID="club-screen">{body}</ScreenScroll>
-      <Header title={club?.name ?? "Club"} back fitTitle />
+      <Header title={club?.name ?? "Club"} back fitTitle actions={reportable ? <ReportButton target={{ type: "club", id: club.id }} subject="this club" /> : undefined} />
       {notice.element}
     </View>
   );

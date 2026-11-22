@@ -19,9 +19,10 @@ const workspace = fixtureSets.rich["tasks.workspace"] as (input: unknown) => unk
 
 type Variant = { name: string; file: string; params?: Record<string, string>; overrides: FixtureSet; expect: (string | RegExp)[]; failing?: string; after?: () => void };
 const variants: Variant[] = [
-  { name: "home: next action is an event", file: "(tabs)/index", overrides: { "home.view": { ...records.homeView, nextAction: { kind: "event", event: records.homeView.agenda[0] } } }, expect: [/View (calendar|meeting)/] },
+  // Nov 22 redesign: an event starting within 3 hours becomes the card on top, with the button for where it goes.
+  { name: "home: an event starting soon is on top", file: "(tabs)/index", overrides: { "home.view": { ...records.homeView, tasks: [], agenda: [{ ...records.homeView.agenda[0], allDay: false, type: "Meeting", startTime: at(0.04), endTime: at(0.08) }] } }, expect: [/Starts in \d+ min/, /View (calendar|meeting|interview)|Open interview tools/] },
   { name: "home: next action is a task", file: "(tabs)/index", overrides: { "home.view": { ...records.homeView, nextAction: { kind: "notification", notification: records.homeView.tasks[1] } } }, expect: ["Task 2", "Open"] },
-  { name: "home: profile not created yet", file: "(tabs)/index", overrides: { me: { ...records.me, profile: null } }, expect: ["Home"] },
+  { name: "home: profile not created yet", file: "(tabs)/index", overrides: { me: { ...records.me, profile: null } }, expect: [/Good (morning|afternoon|evening)|Still up/, "My Clubs"] },
   { name: "applications: alumni account", file: "applications", overrides: { me: alumniMe, "applications.view": { ...records.applicationsView, alumni: true } }, expect: ["Applications"] },
   { name: "application: alumni draft is read-only", file: "application/[id]", params: { id: ids.draftApplication }, overrides: { me: alumniMe, "applications.view": { ...records.applicationsView, alumni: true } }, expect: [/Why do you want to join/] },
   { name: "application: submitted, not a draft", file: "application/[id]", params: { id: ids.reviewApplication }, overrides: {}, expect: ["Virginia Motorsports"] },

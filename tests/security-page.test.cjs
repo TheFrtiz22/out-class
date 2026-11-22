@@ -66,12 +66,14 @@ test('security page renders one h1, the topic headings, metadata, JSON-LD and th
   assert.doesNotMatch(text(html), /certif|SOC ?2|ISO ?27001|penetration test|third-party audit|\b\d+ (?:tries|attempts|requests)\b|\bprisma\b|\/api\/|\.ts\b/i)
 })
 
-test('security page links the contact, security.txt, and the Privacy Policy only when legal pages are public', async () => {
-  const hidden = (await renderPage()).html
-  assert.ok(hidden.includes(`href="mailto:${legal.CONTACT_EMAIL}"`))
-  assert.ok(hidden.includes('href="/.well-known/security.txt"'))
-  assert.doesNotMatch(hidden, /href="\/privacy"/)
-  assert.match((await renderPage({ legalPublic: true })).html, /href="\/privacy"[^>]*>Read the Privacy Policy</)
+// /privacy always exists now: a marked placeholder until the policy is published (owner, 2026-11-22).
+test('security page links the contact, security.txt, and the Privacy Policy', async () => {
+  for (const legalPublic of [false, true]) {
+    const html = (await renderPage({ legalPublic })).html
+    assert.ok(html.includes(`href="mailto:${legal.CONTACT_EMAIL}"`))
+    assert.ok(html.includes('href="/.well-known/security.txt"'))
+    assert.match(html, /href="\/privacy"[^>]*>Read the Privacy Policy</)
+  }
 })
 
 test('each factual claim on the page is anchored in the code or text that makes it true', async () => {

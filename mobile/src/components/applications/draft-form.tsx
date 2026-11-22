@@ -207,7 +207,7 @@ export function DraftForm({ application, userId, alumni = false, onScrollTo, onS
         <View accessibilityRole="alert" testID="draft-error" style={{ borderWidth: 1, borderColor: colors.destructive, borderRadius: radius.md, padding: 14, gap: 8, backgroundColor: colors.card }}>
           <Text variant="small" color={colors.destructive}>{error}</Text>
           {questions.filter(question => errors[question.id]).map(question => (
-            <Press key={question.id} onPress={() => scrollTo(question.id)} accessibilityLabel={`${question.prompt}: ${errors[question.id]}`} style={{ minHeight: 32, justifyContent: "center" }}>
+            <Press key={question.id} onPress={() => scrollTo(question.id)} accessibilityLabel={`${question.prompt}: ${errors[question.id]}`} style={{ minHeight: TARGET, justifyContent: "center" }}>
               <Text variant="small" color={colors.destructive} style={linkStyle} numberOfLines={3}>{question.prompt}: {errors[question.id]}</Text>
             </Press>
           ))}
