@@ -19,6 +19,7 @@ const h1Exceptions = {
   "components/password-recovery.tsx": "forgot/reset password card serif display headline (public frame)",
   "components/landing/sign-in-card.tsx": "signed-out link card headline (invitation, club access, club claim)",
   "components/landing/legal-page.tsx": "Privacy and Terms document title",
+  "components/landing/legal-placeholder-page.tsx": "Privacy and Terms placeholder title, same page frame as legal-page",
   "app/not-found.tsx": "public 404 card headline",
   "app/error.tsx": "error card headline (no product shell to provide PageHeader)",
   "components/auth/account-unavailable.tsx": "disabled-account card headline (replaces every account page; no product shell)",
