@@ -35,7 +35,10 @@ clubs, campus, student organizations, recruiting, applications, interviews, even
 Education (primary), Productivity (secondary)
 
 ## Age rating
-4+ / Everyone. No user-generated public feeds, no web browsing, no gambling, no purchases.
+**Re-answer before submission (owner).** The earlier "4+ / Everyone" no longer fits: clubs post
+announcements, events, flyers and gallery images that students see (user-generated content, with
+in-app reporting), and the Terms set a minimum age of 13. No gambling, no purchases, no open web
+browsing. Expect a 13+ rating (Apple) / Teen (IARC); confirm with the questionnaires.
 
 ## Support and marketing URLs
 - Support: https://www.out-class.net/security (replace with a support page when one exists)

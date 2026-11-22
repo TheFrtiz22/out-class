@@ -69,6 +69,7 @@ export const mobileOperations = {
   "events.rsvp.set": operation("POST", passthrough, async input => (await import("@/actions/campus-events")).setCampusEventRsvp(input)),
   "events.myRsvps": operation("GET", none, async () => (await import("@/actions/campus-events")).getMyCampusEventRsvps()),
   "share.shortLink": operation("POST", z.object({ target: z.string().min(1).max(2048) }).strict(), async input => (await import("@/actions/short-links")).createShortLink(input)),
+  "reports.content": operation("POST", passthrough, async input => (await import("@/actions/content-reports")).reportContent(input)),
 
   // Profile
   "profile": operation("GET", none, async () => (await import("@/actions/profile")).getStudentProfile()),
