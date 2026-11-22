@@ -3,7 +3,9 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
-import { CalendarPlus, ChevronRight } from "~/components/icons";
+import type { IconComponent } from "~/components/icon-factory";
+import { CalendarPlus, ChevronRight, FileText, Mail, ShieldCheck } from "~/components/icons";
+import { LEGAL_ROUTES, NOT_AFFILIATED, SUPPORT_EMAIL, contactSupport } from "~/components/legal";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Text } from "~/components/text";
 import { Card, Divider, Press, ScreenScroll, Segmented, TARGET } from "~/components/ui";
@@ -17,6 +19,13 @@ const sections = [
   { id: "interests", label: "Interests", description: "What you’re into, so we can suggest clubs. Only you see this.", route: "/settings/interests" },
   { id: "interviews", label: "Interview schedule", description: "Your approved interview panels across all your clubs.", route: "/settings/interviews" },
 ] as const;
+
+/** Legal & support: the in-app Terms and Privacy Policy, and email to support (App Store 5.1.1, Google Play user data policy). */
+const legalRows: { id: string; label: string; description: string; icon: IconComponent; route?: string }[] = [
+  { id: "terms", label: "Terms of Service", description: "The rules for using OutClass.", icon: FileText, route: LEGAL_ROUTES.terms },
+  { id: "privacy", label: "Privacy Policy", description: "What we collect and how we use it.", icon: ShieldCheck, route: LEGAL_ROUTES.privacy },
+  { id: "support", label: "Contact support", description: SUPPORT_EMAIL, icon: Mail },
+];
 
 export default function SettingsOverview() {
   const { colors, appearance, setAppearance } = useTheme();
@@ -64,6 +73,26 @@ export default function SettingsOverview() {
             </View>
             <ChevronRight size={18} color={colors.mutedForeground} />
           </Press>
+        </Card>
+        <Card padded={false} style={{ paddingHorizontal: 16 }} testID="settings-legal" accessibilityLabel="Legal & support">
+          <Text variant="bodyStrong" accessibilityRole="header" style={{ paddingTop: 14 }}>Legal & support</Text>
+          {legalRows.map((row, index) => (
+            <View key={row.id}>
+              {index ? <Divider /> : null}
+              <Press large testID={`settings-${row.id}`} accessibilityRole={row.route ? "button" : "link"} accessibilityLabel={`${row.label}. ${row.description}`}
+                onPress={() => (row.route ? router.push(row.route as never) : contactSupport())}
+                style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, minHeight: TARGET + 12 }}>
+                <row.icon size={22} color={colors.brandInk} />
+                <View style={{ flex: 1, gap: 3 }}>
+                  <Text variant="bodyStrong">{row.label}</Text>
+                  <Text variant="small">{row.description}</Text>
+                </View>
+                <ChevronRight size={18} color={colors.mutedForeground} />
+              </Press>
+            </View>
+          ))}
+          <Divider />
+          <Text variant="caption" testID="settings-not-affiliated" style={{ paddingVertical: 14 }}>{NOT_AFFILIATED}</Text>
         </Card>
         {Application.nativeApplicationVersion ? (
           <Text variant="caption" align="center" testID="settings-version" style={{ marginTop: 4 }}>

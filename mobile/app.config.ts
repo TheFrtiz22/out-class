@@ -49,6 +49,11 @@ export function sentryDsn(env: NodeJS.ProcessEnv, file: PublicConfig): string {
   return chosen?.trim() ?? PRODUCTION_SENTRY_DSN;
 }
 
+/** One NSPrivacyCollectedDataTypes entry: never used for tracking, collected for App Functionality only. */
+export function collected(type: string, linked: boolean) {
+  return { NSPrivacyCollectedDataType: type, NSPrivacyCollectedDataTypeLinked: linked, NSPrivacyCollectedDataTypeTracking: false, NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"] };
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "OutClass",
@@ -75,7 +80,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     privacyManifests: {
       NSPrivacyTracking: false,
       NSPrivacyTrackingDomains: [],
-      NSPrivacyCollectedDataTypes: [],
+      // What the app collects, as the App Store privacy label must also say (Apple's NSPrivacyCollectedDataType* keys).
+      // Account and profile data is tied to the person; crash and diagnostic reports carry no user (src/lib/report.ts drops
+      // it), so they are not linked. Nothing is used for tracking, and crash reports serve App Functionality ("minimize app crashes").
+      NSPrivacyCollectedDataTypes: [
+        collected("NSPrivacyCollectedDataTypeName", true),
+        collected("NSPrivacyCollectedDataTypeEmailAddress", true),
+        collected("NSPrivacyCollectedDataTypePhoneNumber", true),
+        collected("NSPrivacyCollectedDataTypePhotosorVideos", true),
+        collected("NSPrivacyCollectedDataTypeOtherUserContent", true),
+        collected("NSPrivacyCollectedDataTypeUserID", true),
+        collected("NSPrivacyCollectedDataTypeCrashData", false),
+        collected("NSPrivacyCollectedDataTypeOtherDiagnosticData", false),
+      ],
       NSPrivacyAccessedAPITypes: [
         { NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryUserDefaults", NSPrivacyAccessedAPITypeReasons: ["CA92.1"] },
         { NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp", NSPrivacyAccessedAPITypeReasons: ["C617.1"] },

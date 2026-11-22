@@ -8,6 +8,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Field, type FieldRef } from "~/components/field";
 import { CalendarClock, ClipboardCheck, Compass } from "~/components/icons";
+import { AgreementLine, NOT_AFFILIATED } from "~/components/legal";
 import { Text } from "~/components/text";
 import { TurnstileSheet } from "~/components/turnstile";
 import { Button } from "~/components/ui";
@@ -103,6 +104,11 @@ export default function SignIn() {
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
           <Button variant="secondary" full label="Create an account" testID="sign-in-sign-up" onPress={() => router.push("/sign-up")} />
+        </Animated.View>
+
+        <Animated.View entering={enter(4)} style={{ paddingHorizontal: 24, paddingTop: 20, gap: 8 }}>
+          <AgreementLine />
+          <Text variant="caption" align="center" testID="sign-in-not-affiliated">{NOT_AFFILIATED}</Text>
         </Animated.View>
       </ScrollView>
       <TurnstileSheet open={challenge} siteKey={siteKey} onClose={() => setChallenge(false)} onToken={token => { setChallenge(false); submit(token); }} />

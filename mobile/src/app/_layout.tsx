@@ -86,14 +86,16 @@ function Navigation() {
     if (!ready) return;
     const onAuth = segments[0] === "sign-in" || segments[0] === "sign-up";
     const onProfile = segments[0] === "complete-profile";
+    // The Terms and Privacy Policy open from Sign in, so they are reachable signed out and while finishing a profile.
+    const onLegal = segments[0] === "legal";
     if (session) wasSignedIn.current = true;
     if (!session) {
-      if (!onAuth) {
+      if (!onAuth && !onLegal) {
         if (!wasSignedIn.current) pendingPath.current = pendingLinkFor(pathname, segments[0], searchParams, segments) ?? pendingPath.current;
         router.replace("/sign-in");
       }
     }
-    else if (needsProfile) { if (!onProfile) router.replace("/complete-profile"); }
+    else if (needsProfile) { if (!onProfile && !onLegal) router.replace("/complete-profile"); }
     // Wait for `me` before leaving, so a new account never flashes the tabs on its way to its profile.
     else if ((onAuth || onProfile) && (me.data || me.isError)) {
       const next = pendingPath.current;
@@ -155,6 +157,8 @@ function Navigation() {
         <Stack.Screen name="sign-in" options={{ animation: "fade" }} />
         <Stack.Screen name="sign-up" options={{ animation: "slide_from_right" }} />
         <Stack.Screen name="complete-profile" options={{ animation: "fade", gestureEnabled: false }} />
+        <Stack.Screen name="legal/terms" options={{ animation: "slide_from_right" }} />
+        <Stack.Screen name="legal/privacy" options={{ animation: "slide_from_right" }} />
         <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="q/[code]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
       </Stack>

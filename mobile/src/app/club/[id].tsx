@@ -10,6 +10,7 @@ import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
 import type { IconComponent } from "~/components/icon-factory";
 import { ArrowRight, Bookmark, Share } from "~/components/icons";
+import { ReportButton, ownsClub } from "~/components/report";
 import { ShareSheet } from "~/components/share-sheet";
 import { Text } from "~/components/text";
 import { Button, Card, EmptyState, ErrorState, ScreenScroll, Skeleton, StatusChip } from "~/components/ui";
@@ -20,7 +21,7 @@ import { useTheme } from "~/lib/theme";
 import type { ClubDirectory, MyApplicationSummary, PublicClub, SavedClubs } from "~/lib/types";
 
 const BookmarkFilled: IconComponent = props => <Bookmark {...props} weight="fill" />;
-type Account = { applications?: MyApplicationSummary[]; memberships?: { clubId: string; alumniSince: string | null }[]; profile?: { graduatedAt?: string | null } | null };
+type Account = { applications?: MyApplicationSummary[]; memberships?: { clubId: string; alumniSince: string | null; status: string; isOwner: boolean; permissions: string[] }[]; profile?: { graduatedAt?: string | null } | null };
 type StartResult = { applicationId: string } | { applicationId: null; unavailable: string };
 
 export default function ClubPage() {
@@ -120,6 +121,8 @@ export default function ClubPage() {
         <LifeSection club={club} />
         <FaqSection club={club} />
         <ClubEventsSection events={events} onOpen={event => router.push({ pathname: "/events/[id]", params: { id: event.id } })} />
+        {/* Only a club that exists can be reported (not a directory preview), and never by the people who run it. */}
+        {club.source === "database" && !me.isPending && !ownsClub(me.data?.memberships, club.id) ? <ReportButton target={{ type: "club", id: club.id }} label={`Report ${club.name}`} testID="club-report" /> : null}
         <ShareSheet open={sharing} onClose={() => setSharing(false)} target={{ path: clubSharePath(club.id), title: club.name, text: `Check out ${club.name} on OutClass`, subtitle: "Anyone with the link can see the club’s public profile.", qrDescription: "Scan to see the club, follow it and apply on OutClass.", shortLink: true }} />
       </>
     );

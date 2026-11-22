@@ -4,13 +4,14 @@ import { ActivityIndicator, ScrollView, SectionList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlumniBanner } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
-import { Archive, Bell, CheckCheck, ExternalLink, Mail, MailOpen, Settings } from "~/components/icons";
+import { Archive, Bell, CheckCheck, ExternalLink, Flag, Mail, MailOpen, Settings } from "~/components/icons";
 import { useInbox, useInboxActions } from "~/components/inbox/data";
 import { FilterChips } from "~/components/inbox/filter-chips";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { NotificationPreferencesSheet } from "~/components/inbox/preferences";
 import { clubName, ctaLabel, filterRows, fullDate, groupRows, opensInPlace, type ReadFilter, senderTitle, type TypeFilter, typeFilters, typeLabel } from "~/components/inbox/presentation";
 import { InboxListRow } from "~/components/inbox/row";
+import { ReportForm } from "~/components/report";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, ClubMark, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote, usePullControl } from "~/components/ui";
@@ -33,6 +34,9 @@ export default function Inbox() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("All");
   const [preferences, setPreferences] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Reporting an announcement happens inside its detail sheet (a second sheet over it would close both on iOS).
+  const [reporting, setReporting] = useState(false);
+  useEffect(() => { setReporting(false); }, [selectedId]);
   const [now, setNow] = useState(Date.now());
   const [actionFailed, setActionFailed] = useState(false);
   const opening = useRef(false);
@@ -155,6 +159,11 @@ export default function Inbox() {
                 <View style={{ flex: 1 }}><Button full variant="ghost" testID="inbox-detail-archive" icon={Archive} label="Dismiss" onPress={() => { haptics.save(); dismiss([selected.id]); }} /></View>
               </View>
             </View>
+            {/* A club announcement can be reported by the people it reached, never by its author (as on the web). */}
+            {selected.announcementId && !selected.ownAnnouncement ? reporting
+              ? <ReportForm target={{ type: "announcement", id: selected.announcementId }} onDone={() => setReporting(false)} />
+              : <Button variant="ghost" size="compact" icon={Flag} testID="inbox-detail-report" label="Report" accessibilityHint="Report announcement" style={{ alignSelf: "center" }} onPress={() => setReporting(true)} />
+              : null}
           </ScrollView>
         ) : null}
       </Sheet>

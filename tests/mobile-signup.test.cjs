@@ -49,7 +49,9 @@ test('the session goes only to the caller that proved the code; the options are 
 test('the app holds a signed-in account without a profile on complete-profile', () => {
   const layout = read('mobile/src/app/_layout.tsx')
   assert.match(layout, /const needsProfile = !!session && me\.data\?\.profile === null;/)
-  assert.match(layout, /else if \(needsProfile\) \{ if \(!onProfile\) router\.replace\("\/complete-profile"\); \}/)
+  // The only screens it lets through are the Terms and Privacy Policy (mobile/src/app/legal), which Sign in links to.
+  assert.match(layout, /else if \(needsProfile\) \{ if \(!onProfile && !onLegal\) router\.replace\("\/complete-profile"\); \}/)
+  assert.match(layout, /const onLegal = segments\[0\] === "legal";/)
   assert.match(layout, /segments\[0\] === "sign-in" \|\| segments\[0\] === "sign-up"/)
   const signup = read('mobile/src/lib/signup.ts')
   // The client email check is the server's own pattern.
