@@ -4,7 +4,7 @@
  * application answers left on the phone after sign-out.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 import * as WebBrowser from "expo-web-browser";
 import { Linking } from "react-native";
 import { SHEET_CLOSE_MS } from "~/components/sheet";
@@ -35,6 +35,18 @@ describe("reporting club content", () => {
     await sendReport("Spam", "  Posts the same ad every day  ");
     expect(reports()).toEqual([expect.objectContaining({ method: "POST", input: { target: { type: "club", id: records.fullClub.id }, reason: "SPAM", details: "Posts the same ad every day" } })]);
     expect(screen.getByTestId("report-done")).toHaveTextContent("Thanks. Our team will review this.");
+    expect(loggedCrashes()).toEqual([]);
+  });
+
+  test("the form scrolls inside the sheet and Send stays outside it, so large text can't push Send off screen", async () => {
+    const Screen = require("~/app/club/[id]").default;
+    await renderRoute(Screen, { params: { id: records.fullClub.id } });
+    await fireEvent.press(screen.getByTestId("report-open"));
+    const scroll = screen.getByTestId("report-form-scroll");
+    expect(scroll.props.style).toEqual(expect.objectContaining({ maxHeight: expect.any(Number) }));
+    expect(within(scroll).getByTestId("report-details")).toBeTruthy();
+    expect(within(scroll).queryByTestId("report-send")).toBeNull();
+    expect(screen.getByTestId("report-send")).toBeTruthy();
     expect(loggedCrashes()).toEqual([]);
   });
 

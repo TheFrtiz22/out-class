@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
-import { View } from "react-native";
+import { ScrollView, View, useWindowDimensions } from "react-native";
 import { ChoiceChips } from "~/components/choice-chips";
 import { Field } from "~/components/field";
 import { Flag } from "~/components/icons";
@@ -36,6 +36,7 @@ type ReportResult = { ok: true; message: string; dmcaHref?: string } | { ok: fal
  */
 export function ReportSheet({ open, onClose, target, subject }: { open: boolean; onClose: () => void; target: ReportTarget; subject: string }) {
   const { colors } = useTheme();
+  const { height } = useWindowDimensions();
   const [reason, setReason] = useState<Reason | null>(null);
   const [details, setDetails] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +68,13 @@ export function ReportSheet({ open, onClose, target, subject }: { open: boolean;
         </View>
       ) : (
         <View style={{ gap: 14 }}>
-          <Text variant="small">Tell the OutClass team what’s wrong. The club won’t see who reported it.</Text>
-          <ChoiceChips label="Reason" testID="report-reason" options={reasons} value={reason} onChange={value => { setReason(value); setError(null); }} />
-          <Field label="Details (optional)" testID="report-details" value={details} onChangeText={setDetails} multiline maxLength={DETAILS_MAX} />
-          {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert" testID="report-error">{error}</Text> : null}
+          {/* Large text or a short screen can make the form taller than the sheet: it scrolls, and Send stays below it. */}
+          <ScrollView testID="report-form-scroll" style={{ maxHeight: height * 0.5 }} contentContainerStyle={{ gap: 14 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <Text variant="small">Tell the OutClass team what’s wrong. The club won’t see who reported it.</Text>
+            <ChoiceChips label="Reason" testID="report-reason" options={reasons} value={reason} onChange={value => { setReason(value); setError(null); }} />
+            <Field label="Details (optional)" testID="report-details" value={details} onChangeText={setDetails} multiline maxLength={DETAILS_MAX} />
+            {error ? <Text variant="small" color={colors.destructive} accessibilityRole="alert" testID="report-error">{error}</Text> : null}
+          </ScrollView>
           <Button full label="Send report" testID="report-send" loading={send.isPending} disabled={!reason || send.isPending} onPress={() => { setError(null); send.mutate(attempt.current); }} />
         </View>
       )}
