@@ -298,9 +298,11 @@ model ApplicationQuestion {
   clubId    String
   club      Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
   prompt    String
-  type      QuestionType // ESSAY, FILE, MULTIPLE_CHOICE
+  type      QuestionType // ESSAY, SHORT_ANSWER, FILE_UPLOAD, MULTIPLE_CHOICE, MULTI_SELECT
   required  Boolean      @default(true)
   wordLimit Int?
+  /// SHORT_ANSWER only; 1-500 (CHECK ApplicationQuestion_characterLimit_range).
+  characterLimit Int?
 
   answers ApplicationAnswer[]
 
@@ -313,6 +315,7 @@ enum QuestionType {
   FILE_UPLOAD
   MULTIPLE_CHOICE
   MULTI_SELECT
+  SHORT_ANSWER
 }
 
 model Application {

@@ -3,12 +3,12 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {randomUUID}=require('node:crypto');
 const clubId=randomUUID(), q1=randomUUID(),q2=randomUUID(),r1=randomUUID(),r2=randomUUID();
 function load(file,mocks={}) {const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/lib/')?load(n.slice(2)+'.ts',mocks):require(n),mod,mod.exports);return mod.exports;}
-function harness() {
+function harness(extra={}) {
  const state={allowed:true,disabled:false,member:{isOwner:true,status:'ACTIVE'},club:{applicationVersion:0,pipelineVersion:0},questions:[{id:q1,prompt:'Why?',type:'ESSAY',required:true,wordLimit:null,options:[],_count:{answers:1}},{id:q2,prompt:'Upload?',type:'FILE_UPLOAD',required:false,wordLimit:null,options:[],_count:{answers:0}}],rounds:[{id:r1,name:'Applied',type:'APPLICATION_REVIEW',configuration:{},archivedAt:null,_count:{applications:0,interviewRooms:0,interviewRecords:0,votingSessions:0,scheduledBookings:0}},{id:r2,name:'Interview',type:'INTERVIEW',configuration:{futureOption:true},archivedAt:null,_count:{applications:1,interviewRooms:0,interviewRecords:1,votingSessions:0,scheduledBookings:0}}],historicalNames:[],activeApplicants:0,openRooms:0,voting:0,audits:[],invalidated:[]};
  const tx={evaluation:{findMany:async()=>state.historicalNames.map(value=>typeof value==='string'?{round:value,roundId:null}:value),updateMany:async({where,data})=>{state.renamedReviews={where,data};}},$queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:state.disabled?new Date():null})},clubMember:{findUnique:async()=>state.member},club:{findUniqueOrThrow:async()=>state.club,update:async({data})=>{for(const[k,v]of Object.entries(data))state.club[k]=v?.increment?state.club[k]+v.increment:v;}},application:{count:async()=>state.activeApplicants},interviewRoom:{count:async()=>state.openRooms},votingSession:{count:async()=>state.voting},auditLog:{create:async({data})=>state.audits.push(data)}};
  for(const[model,key]of [['applicationQuestion','questions'],['pipelineRound','rounds']])tx[model]={findMany:async()=>state[key].filter(r=>!r.archivedAt),create:async({data})=>{if(state[key].some(r=>r.id===data.id))throw Error('Unique ID');state[key].push({...data,_count:{answers:0}});},update:async({where,data})=>Object.assign(state[key].find(r=>r.id===where.id),data),delete:async({where})=>{state[key]=state[key].filter(r=>r.id!==where.id);}};
  const prisma={$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}};
- const api=unwrapActions(load('actions/club-settings.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async()=>{if(!state.allowed)throw Error('Denied');return{user:{id:'actor'}};}},'next/cache':{revalidatePath:path=>state.invalidated.push(path),revalidateTag:()=>{}}}));
+ const api=unwrapActions(load('actions/club-settings.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async()=>{if(!state.allowed)throw Error('Denied');return{user:{id:'actor'}};}},'next/cache':{revalidatePath:path=>state.invalidated.push(path),revalidateTag:()=>{}},...extra}));
  return{state,api};
 }
 const question=(id,prompt,type='ESSAY')=>({id,prompt,type,required:true,wordLimit:100,options:[]});
@@ -64,4 +64,15 @@ test('round rename-back without evaluation history remains valid',async()=>{
 
 test('kit-only and booking-only rounds cannot change type or lose saved setup on archive',async()=>{
  for(const data of [{interviewKit:[{id:q1,prompt:'Saved kit'}]},{bookingPublishedAt:new Date()}]){const h=harness();Object.assign(h.state.rounds[1],data,{_count:{applications:0,interviewRooms:0,interviewRecords:0,votingSessions:0,scheduledBookings:0}});await assert.rejects(h.api.savePipelineSettings({clubId,version:0,rounds:[round(r1,'Applied','APPLICATION_REVIEW'),round(r2,'Interview','CUSTOM')]}),/protected/);await h.api.savePipelineSettings({clubId,version:0,rounds:[round(r1,'Applied','APPLICATION_REVIEW')]});assert.ok(h.state.rounds.find(r=>r.id===r2).archivedAt);}
+});
+test('short answers store their character limit; other types never keep one',async()=>{
+ // Prisma's runtime only supplies DbNull here, so this runs without a generated client.
+ const h=harness({'@prisma/client':{Prisma:{DbNull:'DbNull'}}}),short=randomUUID(),essay=randomUUID();
+ await h.api.saveApplicationSettings({clubId,version:0,open:true,deadline:null,questions:[{...question(short,'Preferred name','SHORT_ANSWER'),wordLimit:40,characterLimit:80},{...question(essay,'Why?'),characterLimit:80}]});
+ const saved=id=>h.state.questions.find(q=>q.id===id);
+ assert.deepEqual([saved(short).type,saved(short).characterLimit,saved(short).wordLimit],['SHORT_ANSWER',80,null]);
+ assert.deepEqual([saved(essay).characterLimit,saved(essay).wordLimit],[null,100]);
+ await assert.rejects(h.api.saveApplicationSettings({clubId,version:1,open:true,deadline:null,questions:[{...question(short,'Preferred name','SHORT_ANSWER'),characterLimit:null}]}),/character limit/);
+ await assert.rejects(h.api.saveApplicationSettings({clubId,version:1,open:true,deadline:null,questions:[{...question(short,'Preferred name','SHORT_ANSWER'),characterLimit:501}]}),/character limit/);
+ assert.equal(saved(short).characterLimit,80,'a refused save changes nothing');
 });

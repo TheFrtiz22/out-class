@@ -14,10 +14,12 @@ export const applicationInputSchema = z.object({
 export type ApplicationQuestion = {
   id: string
   prompt: string
-  type: "ESSAY" | "FILE_UPLOAD" | "MULTIPLE_CHOICE" | "MULTI_SELECT"
+  type: "ESSAY" | "SHORT_ANSWER" | "FILE_UPLOAD" | "MULTIPLE_CHOICE" | "MULTI_SELECT"
   required: boolean
   options?: string[]
   wordLimit: number | null
+  /** SHORT_ANSWER only. */
+  characterLimit?: number | null
   /** Shown only when an earlier choice question has one of these answers. */
   showIf?: unknown
 }
@@ -59,6 +61,17 @@ export function visibleQuestionIds(questions: ApplicationQuestion[], answers: { 
   return visible
 }
 export { applicationStatusLabels } from "@/lib/application-status"
+/** Short answers: one line, at most this many characters (the database CHECK has the same bound). */
+export const SHORT_ANSWER_MAX_CHARACTERS = 500
+export const SHORT_ANSWER_DEFAULT_CHARACTERS = 150
+/** The limit a short answer is held to; a missing limit falls back to the maximum. */
+export function shortAnswerLimit(question: Pick<ApplicationQuestion, "characterLimit">) {
+  return question.characterLimit ?? SHORT_ANSWER_MAX_CHARACTERS
+}
+/** Counts as the input's maxLength does (UTF-16 code units), so the live count and the server agree. */
+export function characterCount(value: string) {
+  return value.length
+}
 export function wordCount(value: string) {
   return value.trim() ? value.trim().split(/\s+/u).length : 0
 }
@@ -96,6 +109,17 @@ export function answerErrors(
       wordCount(answer.response) > question.wordLimit
     )
       errors[question.id] = `Keep your answer within ${question.wordLimit} words.`
+    // Like word limits, a draft may run over the club's limit (a club can lower it after a student
+    // saved), but never past the short-answer maximum; submission is refused until the answer fits
+    // on one line within the club's limit.
+    if (!final && question.type === "SHORT_ANSWER" && characterCount(answer.response) > SHORT_ANSWER_MAX_CHARACTERS)
+      errors[question.id] = `Keep your answer within ${SHORT_ANSWER_MAX_CHARACTERS} characters.`
+    if (final && question.type === "SHORT_ANSWER") {
+      if (characterCount(answer.response) > shortAnswerLimit(question))
+        errors[question.id] = `Keep your answer within ${shortAnswerLimit(question)} characters.`
+      else if (/[\r\n]/u.test(answer.response))
+        errors[question.id] = "Keep your answer to one line."
+    }
   }
   if (final) {
     const visible = visibleQuestionIds(questions, answers)

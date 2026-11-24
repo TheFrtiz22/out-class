@@ -19,7 +19,7 @@ import {
 import { QuestionField } from "@/components/applications/question-field";
 import { ConditionEditor } from "@/components/applications/condition-editor";
 import { withValidConditions } from "@/lib/club-settings";
-import { questionCondition, visibleQuestionIds } from "@/lib/student-applications";
+import { SHORT_ANSWER_DEFAULT_CHARACTERS, SHORT_ANSWER_MAX_CHARACTERS, questionCondition, shortAnswerLimit, visibleQuestionIds } from "@/lib/student-applications";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { Button } from "@/components/ui/button";
@@ -307,10 +307,15 @@ export function ApplicationBuilderView({
                               !q.options.length
                                 ? ["Option 1", "Option 2"]
                                 : q.options,
+                            characterLimit:
+                              e.target.value === "SHORT_ANSWER"
+                                ? q.characterLimit ?? SHORT_ANSWER_DEFAULT_CHARACTERS
+                                : q.characterLimit,
                           })
                         }
                       >
                         <option value="ESSAY">Written response</option>
+                        <option value="SHORT_ANSWER">Short answer</option>
                         <option value="MULTIPLE_CHOICE">Multiple choice</option>
                         <option value="MULTI_SELECT">Select all that apply</option>
                         <option value="FILE_UPLOAD">PDF / document link</option>
@@ -338,6 +343,26 @@ export function ApplicationBuilderView({
                           onChange={(e) =>
                             edit(q.id, {
                               wordLimit: e.target.value
+                                ? Number(e.target.value)
+                                : null,
+                            })
+                          }
+                        />
+                      </label>
+                    )}
+                    {q.type === "SHORT_ANSWER" && (
+                      <label className="space-y-2 text-sm">
+                        Maximum characters
+                        <Input
+                          className="w-40"
+                          type="number"
+                          min={1}
+                          max={SHORT_ANSWER_MAX_CHARACTERS}
+                          required
+                          value={q.characterLimit ?? ""}
+                          onChange={(e) =>
+                            edit(q.id, {
+                              characterLimit: e.target.value
                                 ? Number(e.target.value)
                                 : null,
                             })
@@ -420,6 +445,7 @@ export function ApplicationBuilderView({
                     type: "ESSAY",
                     required: true,
                     wordLimit: null,
+                    characterLimit: null,
                     options: [],
                     showIf: null,
                   },
@@ -479,6 +505,8 @@ export function ApplicationBuilderView({
                 >
                   {q.type === "ESSAY" && q.wordLimit
                     ? `Up to ${q.wordLimit} words`
+                    : q.type === "SHORT_ANSWER"
+                      ? `${(responses[q.id] || "").length} / ${shortAnswerLimit(q)} characters`
                     : q.type === "FILE_UPLOAD"
                       ? "PDF or document link. Preview does not upload files."
                       : ""}

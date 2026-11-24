@@ -72,3 +72,57 @@ test('migration adds the enum value and a shape-checked condition column', { tim
     await assert.rejects(db.exec(`INSERT INTO "ApplicationQuestion"(id,"clubId",prompt,type,"showIf") VALUES('s','c','Bad','ESSAY','"text"')`), /showIf_shape/)
   } finally { await db.close() }
 })
+
+const short = { id: id(4), prompt: 'Preferred name?', type: 'SHORT_ANSWER', required: true, options: [], wordLimit: null, characterLimit: 10, showIf: null }
+test('short answers: one line within the club character limit at submit; drafts may run over up to the maximum', () => {
+  const err = (r, final = true, q = short) => apps.answerErrors([q], [{ questionId: q.id, response: r }], final)[q.id]
+  assert.equal(err('0123456789'), undefined, 'exactly at the limit')
+  assert.match(err('0123456789x'), /within 10 characters/)
+  assert.match(err('two\nlines'), /one line/)
+  assert.equal(err('0123456789x', false), undefined, 'a draft may exceed the club limit (it can be lowered later)')
+  assert.equal(err('x'.repeat(500), false), undefined)
+  assert.match(err('x'.repeat(501), false), /within 500 characters/, 'never past the short-answer maximum, even in a draft')
+  assert.match(err('x'.repeat(501), true, { ...short, characterLimit: null }), /within 500 characters/, 'a missing limit falls back to the maximum')
+  assert.match(err(''), /needs a response/)
+  assert.equal(apps.characterCount('héllo'), 5)
+  assert.equal(apps.shortAnswerLimit({ characterLimit: null }), 500)
+  assert.equal(apps.answerText(short, 'Sam'), 'Sam', 'reviewers see the text as written')
+  const progress = apps.applicationResponseProgress([short], [{ questionId: short.id, response: 'too long for it' }])
+  assert.deepEqual([progress.completed, progress.ready], [0, false], 'an over-limit answer does not count as complete')
+})
+
+test('builder validation: short answers need a 1-500 character limit; other types ignore it', () => {
+  const base = { clubId: id(9), version: 0, open: true, deadline: null }
+  const parse = q => applicationSettingsSchema.safeParse({ ...base, questions: [{ id: id(4), prompt: 'Name', type: 'SHORT_ANSWER', required: true, wordLimit: null, options: [], showIf: null, ...q }] })
+  assert.equal(parse({ characterLimit: 150 }).success, true)
+  assert.equal(parse({ characterLimit: 1 }).success, true)
+  assert.equal(parse({ characterLimit: 500 }).success, true)
+  assert.equal(parse({ characterLimit: 0 }).success, false)
+  assert.equal(parse({ characterLimit: 501 }).success, false)
+  assert.equal(parse({ characterLimit: 12.5 }).success, false)
+  assert.match(JSON.stringify(parse({ characterLimit: null }).error.issues), /character limit/)
+  const older = parse({ type: 'ESSAY', characterLimit: undefined })
+  assert.equal(older.success, true, 'drafts saved before short answers existed still parse')
+  assert.equal(older.data.questions[0].characterLimit, null)
+})
+
+test('mobile rules mirror the web short-answer validation', () => {
+  const mobile = load('mobile/src/components/applications/rules.ts')
+  for (const [response, final] of [['0123456789', true], ['0123456789x', true], ['a\nb', true], ['0123456789x', false], ['x'.repeat(501), false], ['', true]])
+    assert.equal(mobile.answerErrors([short], [{ questionId: short.id, response }], final)[short.id], apps.answerErrors([short], [{ questionId: short.id, response }], final)[short.id], JSON.stringify([response.slice(0, 12), final]))
+  assert.equal(mobile.shortAnswerLimit({}), apps.SHORT_ANSWER_MAX_CHARACTERS)
+})
+
+test('the answer field is one line, capped at the club limit, and turns pasted line breaks into spaces', () => {
+  const { QuestionField } = load('components/applications/question-field.tsx', new Proxy({}, { has: (_, n) => n.startsWith('@/components/'), get: (_, n) => n.startsWith('@/components/') ? new Proxy({}, { get: (_, k) => k }) : undefined }))
+  let value
+  const el = QuestionField({ question: short, value: 'Sam', onChange: v => { value = v } })
+  assert.equal(el.type, 'Input')
+  assert.equal(el.props.type, 'text')
+  assert.equal(el.props.maxLength, 10)
+  assert.equal(el.props['aria-describedby'], `help-${short.id}`)
+  el.props.onChange({ target: { value: 'Sam\r\nLee' } })
+  assert.equal(value, 'Sam Lee')
+  assert.equal(QuestionField({ question: { ...short, characterLimit: null }, value: '', onChange() {} }).props.maxLength, 500)
+})
+

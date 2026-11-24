@@ -7,11 +7,11 @@ import { Button, Press, TARGET } from "~/components/ui";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
 import type { ApplicationQuestion } from "~/lib/types";
-import { MAX_ANSWER_CHARACTERS, encodeSelections, isUploadedDocument, selectedOptions } from "./rules";
+import { MAX_ANSWER_CHARACTERS, encodeSelections, isUploadedDocument, selectedOptions, shortAnswerLimit } from "./rules";
 
 type Props = { question: ApplicationQuestion; value: string; onChange: (value: string) => void; onBlur?: () => void; invalid?: boolean; disabled?: boolean; index: number };
 
-/** One answer control per question type, as the web's QuestionField: essay box, choice, select-all, text or link. */
+/** One answer control per question type, as the web's QuestionField: essay box, short answer, choice, select-all, text or link. */
 export function QuestionField({ question, value, onChange, onBlur, invalid, disabled, index }: Props) {
   const { colors, radius, text } = useTheme();
   const { height } = useWindowDimensions();
@@ -95,9 +95,10 @@ export function QuestionField({ question, value, onChange, onBlur, invalid, disa
       editable={!disabled}
       multiline={essay}
       scrollEnabled={false}
-      maxLength={MAX_ANSWER_CHARACTERS}
+      maxLength={question.type === "SHORT_ANSWER" ? shortAnswerLimit(question) : MAX_ANSWER_CHARACTERS}
       value={value}
-      onChangeText={onChange}
+      // A short answer is one line: a pasted line break becomes a space.
+      onChangeText={question.type === "SHORT_ANSWER" ? text => onChange(text.replace(/[\r\n]+/gu, " ")) : onChange}
       onFocus={() => setFocused(true)}
       onBlur={() => { setFocused(false); onBlur?.(); }}
       placeholder={essay ? "Take your time. Write in your own voice." : link ? "https://…" : "Your response"}

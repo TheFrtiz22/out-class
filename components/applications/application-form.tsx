@@ -18,7 +18,7 @@ import {
   type getStudentApplications,
 } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
-import { answerErrors, wordCount, applicationResponseProgress, visibleQuestionIds } from "@/lib/student-applications"
+import { answerErrors, wordCount, characterCount, shortAnswerLimit, applicationResponseProgress, visibleQuestionIds } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -230,6 +230,8 @@ export function ApplicationForm({
               >
                 {question.type === "ESSAY"
                   ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`
+                  : question.type === "SHORT_ANSWER"
+                    ? `${characterCount(responses[question.id] || "")} / ${shortAnswerLimit(question)} characters`
                   : question.type === "FILE_UPLOAD"
                     ? "Use a document link the club can access. Attachments save automatically; uploading never submits your application."
                     : question.type === "MULTIPLE_CHOICE" ? "Select one option. If no choices are listed, ask the club for clarification." : "Enter your response."}

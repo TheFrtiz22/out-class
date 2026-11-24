@@ -37,6 +37,11 @@ export function visibleQuestionIds(questions: ApplicationQuestion[], answers: Ap
   return visible;
 }
 export function wordCount(value: string) { return value.trim() ? value.trim().split(/\s+/u).length : 0; }
+/** Short answers: one line, at most this many characters (web: SHORT_ANSWER_MAX_CHARACTERS). */
+export const SHORT_ANSWER_MAX_CHARACTERS = 500;
+export function shortAnswerLimit(question: Pick<ApplicationQuestion, "characterLimit">) { return question.characterLimit ?? SHORT_ANSWER_MAX_CHARACTERS; }
+/** Counts as the web input's maxLength does (UTF-16 code units). */
+export function characterCount(value: string) { return value.length; }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** lib/student-profile.ts `storagePathSchema`: an uploaded document's private key ("<owner>/<file>"). */
@@ -86,6 +91,14 @@ export function answerErrors(questions: ApplicationQuestion[], answers: Applicat
     }
     if (final && question.type === "ESSAY" && question.wordLimit != null && wordCount(answer.response) > question.wordLimit)
       errors[question.id] = `Keep your answer within ${question.wordLimit} words.`;
+    if (!final && question.type === "SHORT_ANSWER" && characterCount(answer.response) > SHORT_ANSWER_MAX_CHARACTERS)
+      errors[question.id] = `Keep your answer within ${SHORT_ANSWER_MAX_CHARACTERS} characters.`;
+    if (final && question.type === "SHORT_ANSWER") {
+      if (characterCount(answer.response) > shortAnswerLimit(question))
+        errors[question.id] = `Keep your answer within ${shortAnswerLimit(question)} characters.`;
+      else if (/[\r\n]/u.test(answer.response))
+        errors[question.id] = "Keep your answer to one line.";
+    }
   }
   if (final) {
     const visible = visibleQuestionIds(questions, answers);
