@@ -6,7 +6,7 @@
  * - Deep OutClass navy branding
  * - Organic rounded modules with smooth connected pill/capsule shapes
  * - Concentric circular finder patterns (1:1:3:1:1 radial ratio)
- * - Centered OutClass OC monogram in an Apple-style squircle badge
+ * - Centered OutClass OC mark (the app icon's monogram) in an Apple-style squircle badge
  * - Dynamic badge scaling and pattern protection
  * - 4-module quiet zone
  * - Lightweight memoized generation
@@ -24,7 +24,9 @@ import {
   DEFAULT_QUIET_ZONE_MODULES,
   ERROR_CORRECTION_LEVEL,
   APP_ICON_CORNER_RADIUS_RATIO,
-  OC_MONOGRAM_PATHS,
+  APP_ICON_VIEWBOX,
+  OC_MARK_PATH,
+  OC_MARK_TRANSFORM,
 } from "@/lib/qr/constants";
 
 export interface QRCodeRenderOptions {
@@ -140,7 +142,7 @@ function renderCircularFinder(
 }
 
 /**
- * Renders the centered OutClass OC monogram badge.
+ * Renders the centered OutClass mark: the app icon's ivory OC monogram on a navy squircle.
  */
 function renderCenterBadge(
   badgeStart: number,
@@ -155,15 +157,12 @@ function renderCenterBadge(
   const bw = badgeSize;
   const bh = badgeSize;
   const rx = bw * APP_ICON_CORNER_RADIUS_RATIO;
-  const scale = bw / 180;
+  const scale = bw / APP_ICON_VIEWBOX;
 
   return `
     <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="${rx}" fill="${badgeBgColor}" />
-    <g transform="translate(${bx}, ${by}) scale(${scale})">
-      <g style="transform: scale(95%); transform-origin: center">
-        <path fill="${badgeFgColor}" d="${OC_MONOGRAM_PATHS[0]}" />
-        <path fill="${badgeFgColor}" d="${OC_MONOGRAM_PATHS[1]}" />
-      </g>
+    <g transform="translate(${bx} ${by}) scale(${scale})">
+      <path fill="${badgeFgColor}" fill-rule="evenodd" transform="${OC_MARK_TRANSFORM}" d="${OC_MARK_PATH}" />
     </g>
   `;
 }

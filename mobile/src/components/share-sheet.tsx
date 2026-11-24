@@ -27,6 +27,18 @@ export type ShareTarget = {
   shortLink?: boolean;
 };
 
+/** The club's public page with its QR code: the same target from the club page, My club and Leader tools. */
+export function clubShareTarget(club: { id: string; name: string }): ShareTarget {
+  return {
+    path: `/club/${encodeURIComponent(club.id)}`,
+    title: club.name,
+    text: `Check out ${club.name} on OutClass`,
+    subtitle: "Anyone with the link can see the club’s public profile.",
+    qrDescription: "Scan to see the club, follow it and apply on OutClass.",
+    shortLink: true,
+  };
+}
+
 const QR_SIZE = 232;
 const SHORT_LINK_WAIT = 4000;
 

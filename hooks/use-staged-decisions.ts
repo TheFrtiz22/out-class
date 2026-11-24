@@ -11,6 +11,12 @@ import { userMessage } from "@/lib/user-message"
 export const STAGED_DECISIONS_SCOPE = "staged-decisions"
 const UNDO_MS = 5000
 type StageApp = { id: string; status: string; roundId: string }
+export const SEND_BATCH = 50
+type SendOutcome = { sent: number; stale: { applicationId: string; reason: string }[] }
+/** A later batch failed after earlier ones went out: `sent` decisions reached applicants, the rest stay saved. */
+export class PartialSendError extends Error {
+  constructor(readonly outcome: SendOutcome, cause: unknown) { super("Some decisions were sent before the rest failed.", { cause }) }
+}
 
 /**
  * The one client path for decisions: list, review flow, board and Decide all stage, undo and send through
@@ -99,11 +105,22 @@ export function useStagedDecisions(clubId: string, { enabled, rounds, name }: { 
     return ok
   }, [write])
 
+  // Each batch is one transaction holding the club's decision lock, so a large send goes out in parts that
+  // each finish well inside the write timeout instead of one long send that can time out and send nothing.
   const send = useCallback(async (applicationIds: string[]) => {
-    const result = await sendStagedDecisions({ clubId, applicationIds, confirmed: true })
-    announceDataChanged("applicants"); announceDataChanged("decisions"); announceDataChanged(STAGED_DECISIONS_SCOPE)
-    await reload()
-    return result
+    const total: SendOutcome = { sent: 0, stale: [] }
+    try {
+      for (let start = 0; start < applicationIds.length; start += SEND_BATCH) {
+        const result = await sendStagedDecisions({ clubId, applicationIds: applicationIds.slice(start, start + SEND_BATCH), confirmed: true })
+        total.sent += result.sent; total.stale.push(...result.stale)
+      }
+    } catch (error) {
+      throw total.sent ? new PartialSendError(total, error) : error
+    } finally {
+      announceDataChanged("applicants"); announceDataChanged("decisions"); announceDataChanged(STAGED_DECISIONS_SCOPE)
+      await reload()
+    }
+    return total
   }, [clubId, reload])
 
   return useMemo(() => ({ items, loaded, failed, reload, stage, unstage, send, get: (id: string) => items.get(id) }), [items, loaded, failed, reload, stage, unstage, send])

@@ -21,8 +21,10 @@ export function undoableDecision(s:UndoRoom,receipt:unknown):UndoableDecision|nu
 }
 import { roundTargetSummary, sessionTargetSummary } from "@/lib/voting-target-summary";
 export type LiveRoom=Prisma.VotingSessionGetPayload<{include:typeof import("@/utils/voting-room").roomInclude}>;
+type RoomOutcomes=Prisma.VotingSessionGetPayload<{include:typeof import("@/utils/voting-room").roomOutcomeInclude}>;
+type RoomAccess=Pick<LiveRoom,"leaderMemberIds"|"participants"|"presentationOptions">;
 type Member={id:string}&NonNullable<Parameters<typeof hasPermission>[0]>;
-export function roomAuthority(s: LiveRoom, m: Member, anonymous: boolean) {
+export function roomAuthority(s: RoomAccess, m: Member, anonymous: boolean) {
   if (!hasPermission(m, "applications.review") || (!anonymous && !hasPermission(m, "applicants.identify"))) throw Error("Voting presentation access denied.");
   const leader = s.leaderMemberIds.includes(m.id) && hasPermission(m, "decisions.start");
   // Open-electorate sessions: any member who may vote can join. Legacy sessions: only their saved voter list.
@@ -77,7 +79,7 @@ export function projectVotingRoom(s: LiveRoom, m: Member, anonymous: boolean, ro
  * only. Cancelled rooms are excluded; `partial` says some rooms were not
  * counted. No applicant IDs, ballots or tallies are returned.
  */
-export function projectRoundTargetSummary(rooms: LiveRoom[], m: Member, round: { name: string; final: boolean; anonymousReview: boolean }, truncated = false) {
+export function projectRoundTargetSummary(rooms: RoomOutcomes[], m: Member, round: { name: string; final: boolean; anonymousReview: boolean }, truncated = false) {
   if (!hasPermission(m, "applications.review") || (!round.anonymousReview && !hasPermission(m, "applicants.identify"))) throw Error("Applicant access denied.");
   const live = rooms.filter(s => meetingDetails((s.presentationOptions as { meeting?: unknown })?.meeting)?.status !== "CANCELLED");
   const visible = live.filter(s => { try { roomAuthority(s, m, round.anonymousReview); return true; } catch { return false; } });

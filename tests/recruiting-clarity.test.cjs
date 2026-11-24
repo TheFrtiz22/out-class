@@ -295,3 +295,12 @@ test('#19 a single-category rubric has no hidden overall: restored overrides fol
   assert.match(grading, /overridden: override \|\| !scored\.length/)
   assert.match(grading, /restore: value => setDraft\(readDraft\(value, rubric\)\)/)
 })
+
+test('Recruiting › Application stays mounted across its own publish, like the Settings page it came from', () => {
+  const source = fs.readFileSync('components/club-workspace.tsx', 'utf8')
+  // Publishing bumps the club's applicationVersion, which is part of the data scope; keying the page by that scope
+  // remounted the editor and dropped its "saved" confirmation. Configuration pages key by authorization only.
+  assert.match(source, /const configurationPage = section === "settings" \|\| \(section === "recruitment" && tool === "application"\);/)
+  assert.match(source, /<section key=\{`\$\{configurationPage \? authorizationScope : scope\}:\$\{section\}:\$\{active\}`\}/)
+  assert.match(source, /const authorizationScope = `\$\{demo\.isDemoEnabled \? "demo" : "live"\}:\$\{user\?\.id\}:\$\{clubId\}:\$\{authorizationKey\}`;/)
+})

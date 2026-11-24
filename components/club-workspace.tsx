@@ -132,6 +132,10 @@ export function ClubWorkspace({
   // Account, grant or privacy changes immediately hide prior resources.
   const authorizationScope = `${demo.isDemoEnabled ? "demo" : "live"}:${user?.id}:${clubId}:${authorizationKey}`;
   const scope = `${authorizationScope}:${membershipKey}:${privacyRevision}`;
+  // Configuration pages (Settings, and Recruiting › Application since it moved out of Settings) stay mounted across
+  // their own saves: publishing bumps the club's applicationVersion, which must not remount the editor and drop its
+  // confirmation. Authorization changes still remount them.
+  const configurationPage = section === "settings" || (section === "recruitment" && tool === "application");
   const owner = useRef(scope); owner.current = scope;
   // Each dashboard reads only what it shows: Club home the club view, the Recruiting Overview the recruiting view.
   // Both stay cached for this mounted workspace, so switching back shows the last read while it refreshes.
@@ -231,7 +235,7 @@ export function ClubWorkspace({
     <RecruitmentFocus />
         {loading || needsSelection ? <LoadingState label="Opening club workspace…" layout="workspace" /> : !membership ? <div className="space-y-4"><PageHeader title="Club workspace unavailable" /><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {section === "overview" && allowed
-            ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={manager ? <ClubHomeActions clubId={clubId} membership={membership} /> : allClubs} /></DashboardHero>
+            ? <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={current?.club.name || membership.club.name} context={{ mode: "club", clubId, membership, data: error ? null : current }} action={manager ? <ClubHomeActions clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} /> : allClubs} /></DashboardHero>
             : active === "overview" && allowed
             ? <RecruitingHero clubId={clubId} clubName={current?.club.name || membership.club.name} membership={membership} data={error ? null : current} />
             : <PageHeader density={section === "overview" ? "expressive" : "compact"} eyebrow={membership.club.name} title={nav.find(n => n.id === active)?.label || "Workspace"} action={active === "applicants" || section === "members" ? <div id="workspace-page-actions" data-page-header-slot className="contents" /> : manager ? undefined : allClubs} />}
@@ -244,7 +248,7 @@ export function ClubWorkspace({
               items={mobileDestinations(nav.filter(n => n.id !== "settings")).map(n => ({ id: n.id, label: n.id === "overview" ? TERMS.recruiting : n.label, href: n.href! }))}
               onNavigate={(event, href) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }} /></div>}
           </>}
-          {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
+          {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${configurationPage ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {/* Club home: the same page for leaders and members, gated by the overview's permission-scoped data. */}
             {section === "overview" && current && <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />}
             {section === "overview" && current && manager && hasPermission(membership, "meetings.manage") && <HomeAnnouncements clubId={clubId} privacyScope={scope} />}

@@ -12,12 +12,12 @@ function load(file,mocks={}){
 }
 const owner='00000000-0000-4000-8000-000000000001', appId='00000000-0000-4000-8000-000000000002', questionId='00000000-0000-4000-8000-000000000003'
 const url='http://localhost/api/application-attachments?applicationId='+appId+'&questionId='+questionId
-function setup({answer=true,publicBucket=false,response=owner+'/application.pdf',authError=null,reviewerStatus=null}={}){
+function setup({answer=true,publicBucket=false,response=owner+'/application.pdf',authError=null,reviewerStatus=null,graduatedAt=null}={}){
  let query, signed
  process.env.SUPABASE_SECRET_KEY='test-only'
  const api=load('app/api/application-attachments/route.ts',{
   '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth':{requireAuth:async()=>{if(authError)throw authError;return{user:{id:reviewerStatus?questionId:owner}}}},
-  '@/utils/prisma':{prisma:{applicationAnswer:{findFirst:async input=>{query=input;if(reviewerStatus && input.where.application.OR[1].club.members.some.status!==reviewerStatus)return null;return answer?{response,question:{clubId:'club'},application:{clubId:'club',studentId:owner}}:null}}}},
+  '@/utils/prisma':{prisma:{$queryRaw:async()=>[{graduatedAt}],clubMember:{findUnique:async()=>reviewerStatus?{userId:questionId,clubId:'club',status:reviewerStatus,alumniSince:null,isOwner:true,permissions:[]}:null},applicationAnswer:{findFirst:async input=>{query=input;if(reviewerStatus && input.where.application.OR[1].club.members.some.status!==reviewerStatus)return null;return answer?{response,question:{clubId:'club'},application:{clubId:'club',studentId:owner}}:null}}}},
   '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:publicBucket}}),from:bucket=>({createSignedUrl:async(...args)=>{signed={bucket,args};return{data:{signedUrl:'https://storage.test/signed'}}}})}})},
   'next/server':{NextResponse:class{constructor(body,init){this.body=body;Object.assign(this,init)}static redirect(url,init){return{status:302,url,...init}}}},
  })
@@ -82,4 +82,9 @@ test('only active identified reviewers can obtain application attachment downloa
   assert.equal(h.query().where.application.OR[1].club.members.some.userId, questionId)
   assert.equal(!!h.signed(), reviewerStatus === 'ACTIVE')
  }
+})
+test('a graduate kept as owner is hand-over only and cannot sign applicant attachments',async()=>{
+ const h=setup({reviewerStatus:'ACTIVE',graduatedAt:new Date('2020-05-20T12:00:00Z')}),result=await h.api.GET({url})
+ assert.equal(result.status,404)
+ assert.equal(h.signed(),undefined)
 })

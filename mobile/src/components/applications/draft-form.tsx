@@ -9,6 +9,7 @@ import { useConfirm } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, Card, Press, TARGET } from "~/components/ui";
 import { api, ApiError, errorMessage } from "~/lib/api";
+import { answersToken } from "~/lib/answers-token";
 import { type AutosaveState, useAutosave } from "~/lib/autosave";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
@@ -74,7 +75,7 @@ export function DraftForm({ application, userId, alumni = false, onScrollTo, onS
     save: async snapshot => {
       const sent = outgoing(snapshot);
       try {
-        await api.post("applications.saveDraft", { clubId: application.clubId, answers: sent, expectedAnswers: expected.current });
+        await api.post("applications.saveDraft", { clubId: application.clubId, answers: sent, expectedAnswers: await answersToken(expected.current) });
       } catch (cause) {
         if (cause instanceof ApiError && !cause.offline && cause.status !== 401) { setError(errorMessage(cause)); await reconcile(snapshot).catch(() => {}); }
         throw cause;
@@ -120,7 +121,7 @@ export function DraftForm({ application, userId, alumni = false, onScrollTo, onS
     try {
       await autosave.flush();
       const sent = outgoing(responses);
-      await api.post(final ? "applications.submit" : "applications.saveDraft", { clubId: application.clubId, answers: sent, expectedAnswers: expected.current });
+      await api.post(final ? "applications.submit" : "applications.saveDraft", { clubId: application.clubId, answers: sent, expectedAnswers: await answersToken(expected.current) });
       confirmed(sent);
       await autosave.reset();
       if (final) { haptics.confirm(); onSubmitted(); await queryClient.invalidateQueries({ queryKey: ["applications.view"] }); void queryClient.invalidateQueries({ queryKey: ["me"] }); }
