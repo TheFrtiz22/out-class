@@ -46,7 +46,8 @@ test("the shared constants are the web's QR constants", () => {
   assert.equal(shared.QR_ERROR_CORRECTION_LEVEL, webConstants.ERROR_CORRECTION_LEVEL)
   assert.equal(shared.QR_BADGE_VIEWBOX, webConstants.APP_ICON_VIEWBOX)
   assert.equal(shared.QR_BADGE_CORNER_RADIUS_RATIO, webConstants.APP_ICON_CORNER_RADIUS_RATIO)
-  assert.deepEqual([...shared.QR_MONOGRAM_PATHS], [...webConstants.OC_MONOGRAM_PATHS])
+  assert.equal(shared.QR_MARK_PATH, webConstants.OC_MARK_PATH)
+  assert.equal(shared.QR_MARK_TRANSFORM, webConstants.OC_MARK_TRANSFORM)
 })
 
 test("the module matrix is the one the web encodes (level H)", () => {
@@ -78,7 +79,7 @@ test("the drawn geometry equals the web's SVG: modules, quiet zone, finders and 
     assert.deepEqual(qr.finders, circles)
     const [, x, y, width, height, rx] = /<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" rx="([\d.]+)" fill="#142d4e" \/>/.exec(svg)
     assert.deepEqual([qr.badge.x, qr.badge.y, qr.badge.size, qr.badge.size, qr.badge.cornerRadius], [x, y, width, height, rx].map(Number))
-    assert.match(svg, new RegExp(`translate\\(${qr.badge.x}, ${qr.badge.y}\\) scale\\(${String(qr.badge.scale).replace(".", "\\.")}\\)`))
+    assert.match(svg, new RegExp(`translate\\(${qr.badge.x} ${qr.badge.y}\\) scale\\(${String(qr.badge.scale).replace(".", "\\.")}\\)`))
   }
 })
 
