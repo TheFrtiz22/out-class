@@ -26,3 +26,28 @@ test('decision template autosave changes future wording without publishing decis
  assert.equal((await refused(api.saveDecisionTemplates(clubId,{...next,ACCEPTED:{...next.ACCEPTED,body:'Other tab'}},'{}'),/another tab/)).code,'STALE')
  assert.ok(writes.every(data=>Object.keys(data).join(',')==='decisionLetterTemplates'))
 })
+test('the app may send the saved answers key as a SHA-256, so a long draft fits in one request',async()=>{
+ const {createHash}=require('node:crypto');const hash=key=>'sha256:'+createHash('sha256').update(key,'utf8').digest('hex')
+ const long='word '.repeat(19000)
+ let answers=[{questionId,response:long}],status='DRAFTING'
+ const tx={$queryRaw:async()=>[],studentProfile:{findUnique:async()=>({graduatedAt:null})},club:{findUnique:async()=>({testRequirement:'OPTIONAL'})},applicationQuestion:{findMany:async()=>[{id:questionId,type:'ESSAY',required:true,wordLimit:null}]},pipelineRound:{findFirst:async()=>({id:'round'})},recruitmentCycle:{findMany:async()=>[]},application:{findFirst:async()=>({id:'application',status}),updateMany:async({where,data})=>{if(status!==where.status)return{count:0};status=data.status;return{count:1}}},applicationAnswer:{findMany:async()=>answers,deleteMany:async()=>{answers=[]},createMany:async({data})=>{answers=data}}}
+ const api=unwrapActions(loader({'@/utils/auth':{requireAuth:async()=>({user:{id:userId}})},'@/utils/club-write-transaction':{clubWriteTransaction:fn=>fn(tx)},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath(){}}})('actions/applications.ts'))
+ const token=hash(student.applicationAnswersKey(answers))
+ assert.ok(token.length<80)
+ await api.saveApplicationDraft({clubId,expectedAnswers:token,answers:[{questionId,response:long+' more'}]})
+ assert.equal(answers[0].response,long+' more')
+ // Upper-case hex from a device is the same token.
+ await api.saveApplicationDraft({clubId,expectedAnswers:'sha256:'+hash(student.applicationAnswersKey(answers)).slice(7).toUpperCase(),answers:[{questionId,response:'third'}]})
+ assert.equal(answers[0].response,'third')
+ // A token for answers the server no longer holds is a conflict, as with the plain key.
+ await assert.rejects(api.saveApplicationDraft({clubId,expectedAnswers:token,answers:[{questionId,response:'stale device'}]}),/another tab/)
+ assert.equal(answers[0].response,'third')
+})
+test('an answer to a follow-up that is now hidden does not block submission, but a hidden document answer is still checked',()=>{
+ const choice=randomUUID(),followUp=randomUUID(),doc=randomUUID()
+ const questions=[{id:choice,prompt:'Track',type:'MULTIPLE_CHOICE',required:true,options:['Business','Chassis'],wordLimit:null},{id:followUp,prompt:'Why business?',type:'ESSAY',required:true,wordLimit:5,showIf:{questionId:choice,anyOf:['Business']}},{id:doc,prompt:'Portfolio',type:'FILE_UPLOAD',required:false,wordLimit:null,showIf:{questionId:choice,anyOf:['Business']}}]
+ const hidden=[{questionId:choice,response:'Chassis'},{questionId:followUp,response:'one two three four five six seven'}]
+ assert.deepEqual(student.answerErrors(questions,hidden,true),{})
+ assert.match(student.answerErrors(questions,[{questionId:choice,response:'Business'},hidden[1]],true)[followUp],/within 5 words/)
+ assert.match(student.answerErrors(questions,[...hidden,{questionId:doc,response:'javascript:alert(1)'}],true)[doc],/uploaded PDF or a valid document URL/)
+})

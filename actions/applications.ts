@@ -14,11 +14,22 @@ import { activeMemberWhere, hasPermission, type ClubAccess } from "@/lib/permiss
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
+import { createHash } from "node:crypto"
 import { ANSWER_TOO_LONG_MESSAGE, MAX_ANSWER_CHARACTERS, applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import type { z } from "zod"
 import { boundedParse } from "@/lib/bounded-input"
 import { ActionError, actionResult } from "@/lib/action-result"
 import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone"
+
+/**
+ * The save contract's compare token: the saved answers' key itself (the web form), or
+ * `sha256:` and the key's SHA-256 in hex (the mobile app), which keeps a long draft's
+ * request small enough to send.
+ */
+function answersKeyMatches(key: string, expected: string) {
+  if (expected.startsWith("sha256:")) return expected.slice(7).toLowerCase() === createHash("sha256").update(key, "utf8").digest("hex")
+  return key === expected
+}
 
 /** An over-long answer is the one schema failure a student can cause by typing, so it gets its own message. */
 function answersWithinLimit(input: unknown) {
@@ -72,7 +83,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     if (existing && parsed.expectedAnswers !== undefined) {
       const current = await tx.applicationAnswer.findMany({ where: { applicationId: existing.id }, select: { questionId: true, response: true } })
       const key = applicationAnswersKey(current)
-      if (key !== parsed.expectedAnswers && key !== applicationAnswersKey(parsed.answers))
+      if (!answersKeyMatches(key, parsed.expectedAnswers) && key !== applicationAnswersKey(parsed.answers))
         throw new ActionError("This application changed in another tab. Your responses are retained. Reopen it to compare before saving.")
     }
     const cycle = submit && !existing?.recruitmentCycleId && activeCycle ? { recruitmentCycleId: activeCycle.id } : {}
