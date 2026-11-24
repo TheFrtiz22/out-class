@@ -37,6 +37,8 @@ test('students can re-apply after rejection in the club\'s next active cycle', {
     '@prisma/client': { ...require('@prisma/client'), PrismaClient: Client },
     'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/cache': { revalidatePath() {}, revalidateTag() {}, unstable_cache: fn => fn },
+    // Fixture clubs carry the default school (school-uva), the viewer's school here.
+    '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(),
     '@/utils/auth': {
       requireAuth: async () => ({ user: request.getStore() }),
       requireClubPermission: async () => ({ user: request.getStore(), membership: {} }),

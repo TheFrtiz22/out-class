@@ -163,6 +163,7 @@ test('Typesense search filters by the viewer school in the query and drops any h
       '@/lib/rate-limit-action': { limitAction: async () => ({ ok: true }) },
       '@/utils/supabase/server': { createClient: async () => assert.fail('signed out') },
       '@/utils/school-scope': schoolScope(SCHOOLS.tech),
+      '@/utils/mobile-request': { mobileRequest: () => undefined },
     })
     assert.deepEqual(await search.searchPublicClubIds('investing'), ['tech-club'])
     assert.equal(requests[0].searchParams.get('filter_by'), 'schoolId:=`school-tech`')
