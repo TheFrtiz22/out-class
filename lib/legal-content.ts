@@ -49,7 +49,7 @@ export const LEGAL_EFFECTIVE_DATE = LEGAL_PLACEHOLDERS.effectiveDate
  * A value still in [brackets] is not decided yet; tests/copyright-page.test.cjs fails until none is left.
  */
 export const DMCA_AGENT = {
-  name: "[DMCA agent name, as filed]",
+  name: "Copyright Agent",
   serviceProvider: COMPANY,
   addressLines: ["301 15th St NW, Apt 1005", "Charlottesville, VA 22903"] as readonly string[],
   phone: "240-812-1683",

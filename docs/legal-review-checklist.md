@@ -8,12 +8,11 @@ Drafts: `lib/legal-content.ts` (Privacy Policy, Terms of Service, Cookie Policy,
 |---|---|---|
 | `[effective date]` | Header of every policy; Privacy §15, Terms §16, Cookies §5 | Owner, on publication |
 | `[mailing address: set OUTCLASS_POSTAL_ADDRESS]` | `/legal` when the env var is unset | Owner: set `OUTCLASS_POSTAL_ADDRESS` in Vercel (also used in every email footer) |
-| `[DMCA agent name, as filed]` | `/copyright`, Terms §8, `/legal` (`DMCA_AGENT`) | Owner: must match the Copyright Office filing (a person or a title such as "Copyright Agent") |
 | `[counsel: terms for users under 18, e.g. first-year students aged 17]` | Terms §2 | Counsel |
 | `[counsel/owner: retention period after account closure]` | Privacy §8 | Counsel and owner |
 | `[confirm state of organization: Virginia]` | Privacy §1, `/legal` | Owner |
 
-DMCA designated agent: registered with the U.S. Copyright Office on 2026-11-24 (DMCA-1087353, OutClassPlatforms LLC). The details live in `DMCA_AGENT` (`lib/legal-content.ts`) and are public now on `/copyright`, which does not wait for `LEGAL_PAGES_PUBLIC` because 17 U.S.C. § 512(c)(2) needs them on the site. Change them only together with the filing, and renew the designation every three years. The agent email is the shared contact address, `hello@out-class.net`.
+DMCA designated agent: registered with the U.S. Copyright Office on 2026-11-24 (DMCA-1087353, agent "Copyright Agent", OutClassPlatforms LLC; amendment active 2026-11-24). The details live in `DMCA_AGENT` (`lib/legal-content.ts`) and are public now on `/copyright`, which does not wait for `LEGAL_PAGES_PUBLIC` because 17 U.S.C. § 512(c)(2) needs them on the site. Change them only together with the filing, and renew the designation every three years. The agent email is the shared contact address, `hello@out-class.net`.
 
 Also confirm `hello@out-class.net` is monitored: it is the contact for privacy requests, content reports and removal appeals.
 
