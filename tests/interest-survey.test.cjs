@@ -160,7 +160,7 @@ test('privacy policy, deletion plan and settings describe the survey', () => {
 
 test('onboarding ends with the optional survey step; Home shows the one-time prompt', () => {
   const wizard = read('components/views/student-onboarding-wizard.tsx')
-  assert.match(wizard, /\{ label: "Interests", icon: Compass \}/)
+  assert.match(wizard, /\{ label: "Interests" \},\n\] as const/, 'Interests is the last step')
   assert.match(wizard, /setStep\(5\)/)
   assert.match(wizard, /const InterestSurveyForm = dynamic\(/, 'the survey loads in its own chunk')
   assert.match(wizard, /Skip for now/)

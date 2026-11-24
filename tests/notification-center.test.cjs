@@ -237,8 +237,9 @@ test('reseeding the shared store replaces what the last server payload supplied 
 test('the bell shows how many updates are unread, capped at 9+, and nothing at zero', () => {
   const badge = counts => notificationClickHarness({ counts }).nodes().find(n => n.props?.className === 'oc-floating-unread')
   assert.equal(badge({ unread: 0, pendingInvitations: 0 }), undefined)
-  assert.equal(badge({ unread: 3, pendingInvitations: 0 }).props.children, 3)
-  assert.equal(badge({ unread: 2, pendingInvitations: 1 }).props.children, 3, 'pending invitations count too')
-  assert.equal(badge({ unread: 12, pendingInvitations: 0 }).props.children, '9+')
-  assert.equal(badge({ unread: 9, pendingInvitations: 0 }).props.children, 9)
+  assert.equal(badge({ unread: 3, pendingInvitations: 0 }).props['data-count'], '3')
+  assert.equal(badge({ unread: 2, pendingInvitations: 1 }).props['data-count'], '3', 'pending invitations count too')
+  assert.equal(badge({ unread: 12, pendingInvitations: 0 }).props['data-count'], '9+')
+  assert.equal(badge({ unread: 9, pendingInvitations: 0 }).props['data-count'], '9')
+  assert.equal(badge({ unread: 3, pendingInvitations: 0 }).props.children, undefined, 'no text inside the button besides its name')
 })
