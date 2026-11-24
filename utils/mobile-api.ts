@@ -27,12 +27,14 @@ export type MobileOperation<Input = unknown, Output = unknown> = {
   run: (input: Input, request: Request) => Promise<Output>;
   /** Public operations (the club directory) run without a bearer token, as they do on the web. */
   public?: boolean;
+  /** A larger JSON body than the default 512,000 characters (a long application draft). */
+  maxBytes?: number;
 };
 
 /** Any registered operation, whatever its input and output types. */
-export type AnyMobileOperation = { method: "GET" | "POST"; input: z.ZodTypeAny; run: (input: never, request: Request) => Promise<unknown>; public?: boolean };
+export type AnyMobileOperation = { method: "GET" | "POST"; input: z.ZodTypeAny; run: (input: never, request: Request) => Promise<unknown>; public?: boolean; maxBytes?: number };
 
-export function operation<Schema extends z.ZodTypeAny, Output>(method: "GET" | "POST", input: Schema, run: (input: z.output<Schema>, request: Request) => Promise<Output>, options: { public?: boolean } = {}): MobileOperation<z.output<Schema>, Output> {
+export function operation<Schema extends z.ZodTypeAny, Output>(method: "GET" | "POST", input: Schema, run: (input: z.output<Schema>, request: Request) => Promise<Output>, options: { public?: boolean; maxBytes?: number } = {}): MobileOperation<z.output<Schema>, Output> {
   return { method, input, run, ...options };
 }
 
@@ -66,7 +68,9 @@ function bearerToken(request: Request): string | null {
 
 const digest = (error: unknown) => error && typeof error === "object" && "digest" in error ? String((error as { digest: unknown }).digest) : "";
 
-async function readInput(request: Request, method: "GET" | "POST"): Promise<unknown> {
+const DEFAULT_MAX_BODY = 512_000;
+
+async function readInput(request: Request, method: "GET" | "POST", maxBytes = DEFAULT_MAX_BODY): Promise<unknown> {
   if (method === "GET") {
     const raw = new URL(request.url).searchParams.get("input");
     return raw === null ? undefined : JSON.parse(raw);
@@ -74,7 +78,7 @@ async function readInput(request: Request, method: "GET" | "POST"): Promise<unkn
   const type = request.headers.get("content-type") ?? "";
   if (type.startsWith("multipart/form-data")) return await request.formData();
   const text = await request.text();
-  if (text.length > 512_000) throw new z.ZodError([{ code: "custom", path: [], message: "Request is too large." }]);
+  if (text.length > maxBytes) throw new z.ZodError([{ code: "custom", path: [], message: "Request is too large." }]);
   return text ? JSON.parse(text) : undefined;
 }
 
@@ -110,8 +114,9 @@ export async function handleMobileRequest(request: Request, name: string, operat
     }
   };
   const execute = async (): Promise<Response> => {
-    const raw = await readInput(request, found.method);
-    if (!(raw instanceof FormData)) assertBoundedInput(raw, { maxArrayLength: 500, maxTotalElements: 2_000, maxBytes: 512_000 });
+    const maxBytes = found.maxBytes ?? DEFAULT_MAX_BODY;
+    const raw = await readInput(request, found.method, maxBytes);
+    if (!(raw instanceof FormData)) assertBoundedInput(raw, { maxArrayLength: 500, maxTotalElements: 2_000, maxBytes });
     const result = await found.run(found.input.parse(raw), request);
     if (isActionResult(result)) {
       return result.ok ? success(result.data) : refusal(refusalStatus(result.code), result.code, result.error);

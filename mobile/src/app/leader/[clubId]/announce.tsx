@@ -6,10 +6,10 @@ import { ScrollView, View } from "react-native";
 import { Field, type FieldRef } from "~/components/field";
 import { Header, useHeaderInset } from "~/components/header";
 import { Megaphone } from "~/components/icons";
-import { canAnnounceToApplicants } from "~/components/leader/access";
+import { canAnnounceToApplicants, leaderTools } from "~/components/leader/access";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, ScreenScroll, Segmented, SectionHeader, Skeleton } from "~/components/ui";
+import { Button, Card, Divider, EmptyState, ErrorState, ScreenScroll, Segmented, SectionHeader, Skeleton, SkeletonRows } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { easternShortDateTime } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
@@ -43,6 +43,8 @@ export default function Announce() {
   // anyone else would write the post and then get "Identified applicant recipient access required."
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
   const membership = me.data?.memberships.find(item => item.clubId === clubId);
+  // Offered only to a role that can announce (meetings.manage), as the hub; the server checks again on publish.
+  const allowed = !!membership && leaderTools(membership, me.data?.profile).announce;
   const applicants = !!membership && canAnnounceToApplicants(membership, me.data?.profile);
   const audience: Audience = applicants ? chosen : "MEMBERS";
   const bodyField = useRef<FieldRef>(null);
@@ -52,7 +54,7 @@ export default function Announce() {
   const [error, setError] = useState("");
   const [done, setDone] = useState<Published | null>(null);
   const requestKey = useRef(Crypto.randomUUID());
-  const sent = useApiQuery<Sent[]>("leader.announcements", { clubId }, { scope: "leader" });
+  const sent = useApiQuery<Sent[]>("leader.announcements", { clubId }, { scope: "leader", enabled: allowed });
 
   const review = useMutation({
     mutationFn: () => api.get<Preview>("leader.announce.preview", { clubId, audience }),
@@ -73,6 +75,20 @@ export default function Announce() {
   const startOver = () => { requestKey.current = Crypto.randomUUID(); setTitle(""); setBody(""); setError(""); setDone(null); };
   const ready = title.trim().length > 0 && body.trim().length > 0;
 
+  if (!allowed) {
+    return (
+      <View style={{ flex: 1 }}>
+        <ScreenScroll top={top} testID="announce-unavailable" onRefresh={() => me.refetch()}>
+          {me.isPending ? <SkeletonRows count={3} avatar={false} /> : me.isError && !me.data ? (
+            <Card><ErrorState message={errorMessage(me.error)} offline={me.error instanceof ApiError && me.error.offline} onRetry={() => me.refetch()} /></Card>
+          ) : (
+            <Card><EmptyState title="No leader tools here" body="Your role in this club doesn't include announcements." /></Card>
+          )}
+        </ScreenScroll>
+        <Header title="Announce" back />
+      </View>
+    );
+  }
   if (done) {
     return (
       <View style={{ flex: 1 }}>

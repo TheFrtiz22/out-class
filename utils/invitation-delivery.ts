@@ -3,7 +3,7 @@ import { assertClubOperational } from "@/lib/club-suspension";
 import { randomUUID } from 'node:crypto';
 import { nextDigestAt, optionalEmailAllowed } from '@/lib/communications-policy';
 import { prisma, type AppTransactionClient } from '@/utils/prisma';
-import { canManageOrganizationInvitation } from '@/lib/organization-authorization';
+import { canManageOfferInvitation, canManageOrganizationInvitation } from '@/lib/organization-authorization';
 import { invitationEmailConfig, sendInvitationEmail } from '@/utils/email';
 
 export const EMAIL_COOLDOWN_MS = 15 * 60 * 1000;
@@ -41,7 +41,7 @@ export async function enqueueInvitationEmail(tx: AppTransactionClient, invitatio
   const existing = await tx.invitationDelivery.findUnique({ where: { idempotencyKey: key } });
   if (existing) return { queued: false, reused: true };
   const invitation = await tx.clubInvitation.findFirst({ where: { id: invitationId, clubId } });
-  if (!invitation || invitation.status !== 'PENDING' || invitation.expiresAt <= new Date() || invitation.acceptedAt || invitation.revokedAt || invitation.declinedAt || !canManageOrganizationInvitation(actor, invitation)) throw new Error('Invitation unavailable or above your authority.');
+  if (!invitation || invitation.status !== 'PENDING' || invitation.expiresAt <= new Date() || invitation.acceptedAt || invitation.revokedAt || invitation.declinedAt || !canManageOrganizationInvitation(actor, invitation) || !canManageOfferInvitation(actor, invitation)) throw new Error('Invitation unavailable or above your authority.');
   const pending = await tx.invitationDelivery.findFirst({ where: { invitationId, status: { in: ['QUEUED', 'SENDING'] } } });
   if (pending) return { queued: false, reused: true };
   const recent = await tx.invitationDelivery.findFirst({ where: { invitationId, createdAt: { gt: new Date(Date.now() - EMAIL_COOLDOWN_MS) }, status: { not: 'CANCELLED' } } });
@@ -161,7 +161,7 @@ export async function enqueueInvitationEmails(tx: AppTransactionClient, clubId: 
   const pending = [];
   for (const request of requests) {
     const invitation = byId.get(request.invitationId), history = deliveriesByInvite.get(request.invitationId) || [];
-    if (!invitation || invitation.status !== 'PENDING' || invitation.expiresAt <= now || invitation.acceptedAt || invitation.revokedAt || invitation.declinedAt || !canManageOrganizationInvitation(actor,invitation) || skipUnavailable && invitation.emailSendCount > 0) {
+    if (!invitation || invitation.status !== 'PENDING' || invitation.expiresAt <= now || invitation.acceptedAt || invitation.revokedAt || invitation.declinedAt || !canManageOrganizationInvitation(actor,invitation) || !canManageOfferInvitation(actor,invitation) || skipUnavailable && invitation.emailSendCount > 0) {
       if (skipUnavailable) { skipped++; continue; }
       throw new Error('Selection contains unavailable invitations or grants above your authority.');
     }

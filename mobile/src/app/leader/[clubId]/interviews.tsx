@@ -30,14 +30,20 @@ export default function InterviewDay() {
   const [now, setNow] = useState(Date.now());
   const [openId, setOpenId] = useState<string | null>(null);
   const rooms = useApiQuery<InterviewEntry[]>("leader.interviewRooms", { clubId }, { scope: "leader", staleTime: 0, refetchInterval: focused ? 60_000 : false });
+  // The schedule's statuses move by the minute; only the focus card's countdown ticks every second (FocusCard).
   useEffect(() => {
     if (!focused) return;
     setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 1000);
+    const timer = setInterval(() => setNow(Date.now()), 15_000);
     return () => clearInterval(timer);
   }, [focused]);
+  // A refusal (access removed, 4xx) clears the schedule and shows the server's answer, as the voting room does.
+  // A dropped or slow connection, an outage or a rate limit keeps the last schedule under "Couldn't refresh".
+  const failure = rooms.error instanceof ApiError ? rooms.error : null;
+  const reconnecting = rooms.isError && !!failure && (failure.unreachable || failure.status >= 500 || failure.status === 429) && !!rooms.data;
+  const data = rooms.isError && !reconnecting ? undefined : rooms.data;
 
-  const rows = rooms.data ?? [];
+  const rows = data ?? [];
   const day = interviewDay(rows, now);
   const selected = rows.find(row => row.id === openId) ?? null;
   const focus = selected ?? day.next;
@@ -73,15 +79,15 @@ export default function InterviewDay() {
             <Card style={{ gap: 12 }}><Skeleton width="30%" height={12} /><Skeleton width="68%" height={30} /><Skeleton width="50%" /><Skeleton width="44%" height={44} /></Card>
             <SkeletonRows count={3} avatar={false} />
           </View>
-        ) : rooms.isError && !rooms.data ? (
-          <Card><ErrorState offline={rooms.error instanceof ApiError && rooms.error.offline} message={rooms.error instanceof ApiError && rooms.error.unreachable ? rooms.error.message : "Couldn’t load your interviews. Check your current interview access and retry."} onRetry={() => rooms.refetch()} /></Card>
+        ) : rooms.isError && !data ? (
+          <Card><ErrorState offline={!!failure?.offline} message={failure && (failure.unreachable || (failure.status >= 400 && failure.status < 500)) ? failure.message : "Couldn’t load your interviews. Check your current interview access and retry."} onRetry={() => rooms.refetch()} /></Card>
         ) : !rows.length ? (
           <Card><EmptyState title="My interviews" body="You aren’t assigned to any interviews yet. Club leaders add you when they schedule interviews." /></Card>
         ) : (
           <>
             {/* A failed background refresh keeps the schedule (and an open notes editor) on screen. */}
             {rooms.isError ? <Text variant="small" accessibilityRole="alert" testID="interview-refresh-failed">Couldn’t refresh · showing your last schedule</Text> : null}
-            {focus ? <FocusCard key={focus.id} row={focus} now={now} next={focus.id === day.next?.id} notes={openId === focus.id} onEnter={() => enter(focus)} /> : (
+            {focus ? <FocusCard key={focus.id} row={focus} live={focused} next={focus.id === day.next?.id} notes={openId === focus.id} onEnter={() => enter(focus)} /> : (
               <Card testID="interview-next-none"><Text variant="small">Nothing here right now. Past time slots nobody booked are hidden.</Text></Card>
             )}
 
@@ -117,8 +123,16 @@ export default function InterviewDay() {
 }
 
 /** The interviewee in focus: name, time and place, the countdown, and (once entered) the private notes. */
-function FocusCard({ row, now, next, notes, onEnter }: { row: InterviewEntry; now: number; next: boolean; notes: boolean; onEnter: () => void }) {
+function FocusCard({ row, live, next, notes, onEnter }: { row: InterviewEntry; live: boolean; next: boolean; notes: boolean; onEnter: () => void }) {
   const { colors } = useTheme();
+  // The countdown's own 1 s clock: only this card re-renders every second, never the whole schedule.
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!live) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [live]);
   const timer = interviewClock(row, now);
   const low = timer.phase === "during" && +new Date(row.endTime) - now <= 60_000;
   const candidate = entryCandidate(row);

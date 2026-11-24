@@ -187,6 +187,8 @@ export async function startClubApplication(clubId: string): Promise<{ applicatio
   const { requireAuth } = await import("@/utils/auth");
   const { currentApplication, reapplicationUnavailable } = await import("@/lib/recruitment-cycle");
   const { user } = await requireAuth();
+  // Public clubs are the viewer's school only, as in getPublicClub: another school's club id opens nothing.
+  const school = await resolveViewerSchool();
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
@@ -199,9 +201,10 @@ export async function startClubApplication(clubId: string): Promise<{ applicatio
     await assertClubOperational(tx, clubId);
     const club = await tx.club.findUnique({
       where: { id: clubId },
-      select: { applicationOpen: true, applicationDeadline: true },
+      select: { applicationOpen: true, applicationDeadline: true, schoolId: true },
     });
-    if (!club || !applicationAvailability(club))
+    if (!club || club.schoolId !== school.id) return { applicationId: null, unavailable: "Applications are not available for this club." };
+    if (!applicationAvailability(club))
       return { applicationId: null, unavailable: "Applications are closed for this club." };
     const unavailable = await reapplicationUnavailable(tx, user.id, clubId);
     if (unavailable) return { applicationId: null, unavailable };
@@ -235,10 +238,12 @@ export async function getCorkboard() {
     orderBy: [{ savedAt: "desc" }, { clubId: "asc" }],
   });
   return {
-    items: records.map((record) => ({
-      club: present(record.club),
-      savedAt: record.savedAt.toISOString(),
-    })),
+    items: records.map((record) => {
+      // The same trimmed marketing as the Explore list: saved cards show directory fields only.
+      const club = present(record.club);
+      return { club: { ...club, marketing: directoryMarketing(club.marketing) },
+      savedAt: record.savedAt.toISOString() };
+    }),
   };
 }
 
@@ -249,9 +254,9 @@ export async function setCorkboardClub(input: unknown) {
   const { requireAuth } = await import("@/utils/auth");
   const { user } = await requireAuth();
   // Alumni accounts are read-only (lib/graduation.ts): saved clubs are neither added nor removed.
-  const { alumniRefusal } = await import("@/utils/graduation");
-  const alumni = await alumniRefusal(prisma, user.id, "save");
-  if (alumni) throw new Error(alumni);
+  // ActionError ALUMNI_ACCOUNT, so the app shows the read-only message rather than a generic refusal.
+  const { assertNotAlumni } = await import("@/utils/graduation");
+  await assertNotAlumni(prisma, user.id, "save");
   if (!data.saved) {
     await prisma.corkboardClub.deleteMany({
       where: { userId: user.id, clubId: data.clubId },

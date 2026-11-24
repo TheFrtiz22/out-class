@@ -37,18 +37,23 @@ export function clubRecruitment(club: Pick<PublicClub, "source" | "claimed" | "a
 // lib/club-directory.ts
 export type DirectoryFilters = { query: string; category: string; time: string; acceptance: string; sort: string; recruitment: string };
 export const emptyDirectoryFilters: DirectoryFilters = { query: "", category: "all", time: "all", acceptance: "all", sort: "name", recruitment: "all" };
+/** Search text without case or accents, so "societe" finds "Société". */
+const fold = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("en-US");
+/** A category as one key, whatever its case or stray spaces ("Pre-Professional" and "Pre-professional " are one). */
+const categoryKey = (category: string | null | undefined) => (category ?? "").trim().toLocaleLowerCase("en-US");
 /** The web's directory match when no search index is configured: every word must appear in the club's public text. */
 export function filterDirectory(clubs: PublicClub[], filters: DirectoryFilters, now = Date.now()) {
-  const words = filters.query.trim().toLocaleLowerCase("en-US").split(/\s+/).filter(Boolean);
+  const words = fold(filters.query.trim()).split(/\s+/).filter(Boolean);
   const deadlineOrder = (club: PublicClub) => {
     const recruitment = clubRecruitment(club, now);
     return recruitment.available && recruitment.deadline ? +recruitment.deadline : Infinity;
   };
   return clubs
     .filter(club => {
-      const text = [club.name, club.category, club.pitch, club.description || "", ...(club.tags ?? []), ...(club.marketing?.placements ?? [])].join(" ").toLocaleLowerCase("en-US");
+      // Where a club meets comes from its public upcoming events (clubs have no separate location field).
+      const text = fold([club.name, club.category, club.pitch, club.description || "", ...(club.tags ?? []), ...(club.marketing?.placements ?? []), ...(club.publicEvents ?? []).map(event => event.location ?? "")].join(" "));
       if (!words.every(word => text.includes(word))) return false;
-      if (filters.category !== "all" && (club.category ?? "").toLowerCase() !== filters.category.toLowerCase()) return false;
+      if (filters.category !== "all" && categoryKey(club.category) !== categoryKey(filters.category)) return false;
       const recruitment = clubRecruitment(club, now);
       if (filters.recruitment === "open" && !recruitment.available) return false;
       if (filters.recruitment === "closed" && recruitment.available) return false;
@@ -66,11 +71,17 @@ export const recruitmentOptions = [
   { value: "closing", label: "Closing in 7 days" },
 ] as const;
 
-/** Categories ranked by how many clubs carry them, then by name (components/views/explore-view.tsx). */
+/** Categories ranked by how many clubs carry them, then by name (components/views/explore-view.tsx). Spellings that differ only in case are one chip, labelled as first seen. */
 export function rankedCategories(clubs: PublicClub[]) {
-  const counts = new Map<string, number>();
-  for (const club of clubs) if (club.category) counts.set(club.category, (counts.get(club.category) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "en-US")).map(([category, count]) => ({ category, count }));
+  const counts = new Map<string, { category: string; count: number }>();
+  for (const club of clubs) {
+    const key = categoryKey(club.category);
+    if (!key) continue;
+    const entry = counts.get(key);
+    if (entry) entry.count += 1;
+    else counts.set(key, { category: club.category.trim(), count: 1 });
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count || a.category.localeCompare(b.category, "en-US"));
 }
 export function categoryIcon(category: string): IconComponent {
   const value = category.toLowerCase();

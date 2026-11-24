@@ -1,5 +1,5 @@
 import { getStudentDashboardData } from "@/actions/applications";
-import { getDurableNotifications } from "@/actions/communications";
+import { getUnreadNotificationCount } from "@/actions/communications";
 import { getTaskNotifications } from "@/actions/tasks";
 import { applicationStatusCode, applicationStatusLabel } from "@/lib/application-status";
 import { homeApplications, nextHomeAction, ongoingAgenda, upcomingAgenda } from "@/lib/student-home";
@@ -31,7 +31,8 @@ function mobileCalendarEvents(dashboard: Awaited<ReturnType<typeof getStudentDas
  * Authorization is the loaders' own (requireAuth inside each).
  */
 export async function getMobileHome() {
-  const [dashboard, taskNotifications, inbox] = await Promise.all([getStudentDashboardData(), getTaskNotifications(), getDurableNotifications()]);
+  // The header bell reads this view on every screen, so the Inbox count is a single count, not an Inbox page.
+  const [dashboard, taskNotifications, inboxUnread] = await Promise.all([getStudentDashboardData(), getTaskNotifications(), getUnreadNotificationCount()]);
   const now = new Date();
   const events = mobileCalendarEvents(dashboard);
   const applications = homeApplications(dashboard.applications, [], events).map(application => ({
@@ -51,10 +52,10 @@ export async function getMobileHome() {
     tasks: taskNotifications,
     // The web's bell count (components/shell/product-shell.tsx): durable unread, plus computed notifications
     // that have no durable row of their own.
-    unread: inbox.unread + taskNotifications.filter(item => !(item as { durableId?: string }).durableId && !item.read).length,
+    unread: inboxUnread + taskNotifications.filter(item => !(item as { durableId?: string }).durableId && !item.read).length,
     // The Inbox's own unread count. The app's Inbox badge uses it: the Inbox lists durable rows only, so a
     // badge that also counted computed task notifications could never be cleared from there.
-    inboxUnread: inbox.unread,
+    inboxUnread,
   };
 }
 

@@ -1,5 +1,6 @@
 "use server"
-import { activeMemberWhere } from "@/lib/permissions";
+import { activeMemberWhere, hasPermission } from "@/lib/permissions";
+import { graduateClubAccess, readGraduation, type GraduationReader } from "@/lib/graduate-access";
 
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
@@ -28,9 +29,13 @@ export async function searchWorkspace(
   if (text.length < 2) return []
   const memberships = await prisma.clubMember.findMany({
     where: { userId: user.id, ...activeMemberWhere, OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
-    select: { clubId: true },
   })
-  const clubIds = memberships.map((item) => item.clubId)
+  // A graduate kept as owner is hand-over only (lib/graduate-access.ts): no applicant search.
+  // Every row is the viewer's own membership, so their graduation date is read once.
+  let graduation: ReturnType<GraduationReader> | undefined
+  const read: GraduationReader = (userId) => (graduation ??= readGraduation(prisma)(userId))
+  const graded = await Promise.all(memberships.map((member) => graduateClubAccess(prisma, member, read)))
+  const clubIds = graded.filter((member) => hasPermission(member, "applicants.identify")).map((item) => item.clubId)
   const contains = { contains: text, mode: "insensitive" as const }
   const [typesenseClubIds, school] = await Promise.all([searchPublicClubIds(text), resolveViewerSchool()])
   // Public clubs are the viewer's school only; Typesense IDs are re-validated against it here.
