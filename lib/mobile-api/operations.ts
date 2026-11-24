@@ -15,6 +15,8 @@ const room = z.object({ clubId: uuid, sessionId: uuid }).strict();
 // These actions validate their own input with strict schemas; the boundary only bounds its size.
 const passthrough = z.unknown();
 const formData = z.instanceof(FormData);
+// Under the hosting platform's 4.5 MB request limit.
+const APPLICATION_MAX_BYTES = 4_000_000;
 
 export const mobileOperations = {
   // Account creation (signed out until the code is confirmed; lib/mobile-api/auth.ts)
@@ -81,8 +83,9 @@ export const mobileOperations = {
   "applications": operation("GET", none, async () => (await import("@/actions/applications")).getStudentApplications()),
   "applications.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileApplications()),
   "applications.start": operation("POST", club, async ({ clubId }) => (await import("@/actions/club-directory")).startClubApplication(clubId)),
-  "applications.saveDraft": operation("POST", passthrough, async input => (await import("@/actions/applications")).saveApplicationDraft(input as never)),
-  "applications.submit": operation("POST", passthrough, async input => (await import("@/actions/applications")).submitApplication(input as never)),
+  // A long draft (up to 200 answers of 100,000 characters each) needs more than the default body size.
+  "applications.saveDraft": operation("POST", passthrough, async input => (await import("@/actions/applications")).saveApplicationDraft(input as never), { maxBytes: APPLICATION_MAX_BYTES }),
+  "applications.submit": operation("POST", passthrough, async input => (await import("@/actions/applications")).submitApplication(input as never), { maxBytes: APPLICATION_MAX_BYTES }),
   "interviews.schedule": operation("GET", z.object({ applicationId: uuid }).strict(), async ({ applicationId }) => (await import("@/actions/interview-rooms")).getApplicantSchedule(applicationId)),
   "interviews.booking": operation("GET", z.object({ clubId: uuid, roundId: uuid }).strict(), async ({ clubId, roundId }) => (await import("@/actions/interview-rooms")).getBookingApplication(clubId, roundId)),
   "interviews.reserve": operation("POST", z.object({ applicationId: uuid, slotId: uuid }).strict(), async input => (await import("@/actions/interview-rooms")).reserveInterview(input)),

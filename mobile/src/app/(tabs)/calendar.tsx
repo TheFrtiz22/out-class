@@ -132,6 +132,9 @@ export default function CalendarScreen() {
   const [day, setDay] = useState(today);
   const [month, setMonth] = useState(today.slice(0, 7));
   const [calendarNote, setCalendarNote] = useState("");
+  // The system's new-event sheet can take a moment to open; a second tap must not open another.
+  const [adding, setAdding] = useState(false);
+  const addingRef = useRef(false);
   const [feed, setFeed] = useState(false);
   const list = useRef<SectionList<AgendaEvent>>(null);
   useTabScrollToTop(list);
@@ -261,10 +264,14 @@ export default function CalendarScreen() {
               {meetingOf(selected) ? <Button full size="large" testID="calendar-open-meeting" label="Open agenda and recap" onPress={() => openDetail(selected)} /> : null}
               {isPanel(selected) ? <Button full size="large" testID="calendar-open-panel" label="Open interview tools" onPress={() => openDetail(selected)} /> : null}
               {interviewTarget(selected) ? <Button full size="large" testID="calendar-open-interview" label="View interview" onPress={() => openDetail(selected)} /> : null}
-              <Button full size="large" variant="secondary" icon={CalendarPlus} testID="calendar-add" label="Add to Calendar"
+              <Button full size="large" variant="secondary" icon={CalendarPlus} testID="calendar-add" label="Add to Calendar" loading={adding}
                 onPress={async () => {
-                  const result = await addToCalendar({ title: selected.title, start: selected.startTime, end: endOf(selected), allDay: selected.allDay, location: selected.location, notes: [selected.club, selected.description].filter(Boolean).join("\n") });
-                  setCalendarNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : result === "saved" ? "Added to your calendar." : "");
+                  if (addingRef.current) return;
+                  addingRef.current = true; setAdding(true);
+                  try {
+                    const result = await addToCalendar({ title: selected.title, start: selected.startTime, end: endOf(selected), allDay: selected.allDay, location: selected.location, notes: [selected.club, selected.description].filter(Boolean).join("\n") });
+                    setCalendarNote(result === "unavailable" ? "Couldn’t open your calendar. Check that this device has a calendar set up." : result === "saved" ? "Added to your calendar." : "");
+                  } finally { addingRef.current = false; setAdding(false); }
                 }} />
             </View>
           </View>
