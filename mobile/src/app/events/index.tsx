@@ -13,7 +13,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ChevronDown, ChevronUp, SlidersHorizontal } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, TARGET, Toggle, usePullControl } from "~/components/ui";
+import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, StaleNote, TARGET, Toggle, usePullControl } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
@@ -23,6 +23,8 @@ import type { CampusEvent, EventBoard, EventRsvpResult } from "~/lib/types";
 const Separator = () => <View style={{ height: 12 }} />;
 const keyOf = (event: CampusEvent) => event.id;
 const periods: { value: EventFilters["period"]; label: string }[] = [{ value: "All", label: "Any time" }, { value: "Today", label: "Today" }, { value: "This Week", label: "This week" }, { value: "Weekend", label: "Weekend" }];
+/** The server refuses a longer search (lib/campus-event-schemas.ts). */
+const QUERY_MAX = 200;
 const sorts: { value: EventFilters["sort"]; label: string }[] = [{ value: "soonest", label: "Soonest" }, { value: "latest", label: "Latest" }, { value: "name", label: "Name A–Z" }];
 
 /** The campus Events board (components/views/corkboard-view.tsx, list view): search, When, filters, saved events, your RSVPs. */
@@ -40,7 +42,7 @@ export default function EventsBoard() {
   const [choices, setChoices] = useState<EventFilters>(initialEventFilters);
   const [sheet, setSheet] = useState(false);
   const search = useDebounced(query, 250);
-  const filters = useMemo(() => ({ ...choices, query: search.trim() }), [choices, search]);
+  const filters = useMemo(() => ({ ...choices, query: search.trim().slice(0, QUERY_MAX) }), [choices, search]);
 
   const board = useInfiniteQuery({
     queryKey: ["events.board", filters],
@@ -53,6 +55,8 @@ export default function EventsBoard() {
   const total = board.data?.pages[0]?.total ?? 0;
   // A new filter keeps the last list on screen while it loads; say so rather than show the old count.
   const updating = board.isPlaceholderData && board.isFetching;
+  // A failed refresh or next page keeps the loaded list (with a note); only a first load that failed shows the error.
+  const failed = board.isError && !board.data;
   const menuFilters = [choices.category, choices.required, choices.savedOnly, choices.sort !== "soonest"].filter(Boolean).length;
   const change = (patch: Partial<EventFilters>) => setChoices(current => ({ ...current, ...patch }));
 
@@ -76,21 +80,22 @@ export default function EventsBoard() {
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 12 }}>
+      {board.isError && !failed ? <StaleNote /> : null}
       <Text variant="small">Events on Grounds</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <SearchField testID="events-search" label="Search events" placeholder="Search events…" value={query} onChangeText={setQuery} />
+        <SearchField testID="events-search" label="Search events" placeholder="Search events…" value={query} onChangeText={setQuery} maxLength={QUERY_MAX} />
         <View><IconButton testID="events-filter" tone="surface" icon={SlidersHorizontal} label={menuFilters ? `Event filters (${menuFilters} active)` : "Event filters"} selected={menuFilters > 0} onPress={() => setSheet(true)} /></View>
       </View>
       <Segmented label="When" options={periods} value={choices.period} onChange={period => change({ period })} />
       <Text variant="small" accessibilityLiveRegion="polite" testID="events-count">
-        {board.isPending ? "Loading campus events…" : updating ? "Updating…" : board.isError ? "" : `${total} ${total === 1 ? "event" : "events"} · Times shown in Eastern Time`}
+        {board.isPending ? "Loading campus events…" : updating ? "Updating…" : failed ? "" : `${total} ${total === 1 ? "event" : "events"} · Times shown in Eastern Time`}
       </Text>
     </View>
   );
   const emptyCopy = eventBoardEmpty(filters);
   const empty = board.isPending ? (
     <View accessibilityLabel="Loading campus events…" accessibilityRole="progressbar" style={{ gap: 12 }}>{Array.from({ length: 4 }, (_, index) => <EventCardSkeleton key={index} />)}</View>
-  ) : board.isError ? (
+  ) : failed ? (
     <ErrorState message={errorMessage(board.error, "We couldn’t load campus events. Please try again.")} offline={board.error instanceof ApiError && board.error.offline} onRetry={refresh} />
   ) : (
     <EmptyState title={emptyCopy.title} body={emptyCopy.description}
@@ -111,7 +116,7 @@ export default function EventsBoard() {
     <View style={{ flex: 1 }}>
       <FlatList
         testID="events-screen"
-        data={board.isError ? [] : events}
+        data={failed ? [] : events}
         keyExtractor={keyOf}
         renderItem={renderItem}
         extraData={calendarAdds}
