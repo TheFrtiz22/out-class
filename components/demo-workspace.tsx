@@ -95,7 +95,7 @@ export function DemoClubSettings() {
             <li key={q.id}>
               {q.prompt}
               <span className="ml-2 text-xs text-muted-foreground">
-                {q.wordLimit} words · {q.required ? "Required" : "Optional"}
+                {q.type === "SHORT_ANSWER" ? `${q.characterLimit} characters` : `${q.wordLimit} words`} · {q.required ? "Required" : "Optional"}
               </span>
             </li>
           ))}

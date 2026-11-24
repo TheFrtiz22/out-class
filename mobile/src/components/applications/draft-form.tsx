@@ -16,7 +16,7 @@ import { fonts, useTheme } from "~/lib/theme";
 import type { ApplicationAnswer, ApplicationsView, StudentApplication } from "~/lib/types";
 import { AutosaveStatus } from "./autosave-status";
 import { QuestionField } from "./question-field";
-import { answerErrors, answersKey, documentReference, isUploadedDocument, responseProgress, visibleQuestionIds, wordCount } from "./rules";
+import { answerErrors, answersKey, characterCount, documentReference, isUploadedDocument, responseProgress, shortAnswerLimit, visibleQuestionIds, wordCount } from "./rules";
 
 type Responses = Record<string, string>;
 const serializeResponses = (value: Responses) => JSON.stringify(Object.entries(value).filter(([, response]) => response !== "").sort(([a], [b]) => a.localeCompare(b)));
@@ -234,6 +234,8 @@ export function DraftForm({ application, userId, alumni = false, onScrollTo, onS
           <Text variant="small">
             {question.type === "ESSAY"
               ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`
+              : question.type === "SHORT_ANSWER"
+                ? `${characterCount(responses[question.id] || "")} / ${shortAnswerLimit(question)} characters`
               : question.type === "FILE_UPLOAD"
                 ? "Use a document link the club can access. Attachments save automatically; uploading never submits your application."
                 : question.type === "MULTIPLE_CHOICE" ? "Select one option. If no choices are listed, ask the club for clarification."

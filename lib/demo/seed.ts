@@ -199,6 +199,14 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
         required: false,
         wordLimit: 150,
       },
+      {
+        id: uid(37, i),
+        prompt: "In one line, which first project would you pick up?",
+        type: "SHORT_ANSWER" as const,
+        required: false,
+        wordLimit: null,
+        characterLimit: 120,
+      },
     ],
     interviewQuestions:
       category === "Finance"
@@ -292,11 +300,11 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
         status,
         anonymousReviewText: round.anonymousReview ? "Manager-reviewed sample: compared alternative approaches, tested assumptions against evidence, and revised a team recommendation." : null as string | null,
         submittedAt: status === "DRAFTING" ? null : at(-8 + (a % 5)),
-        answers: club.questions.slice(0, status === "DRAFTING" ? 1 : 3).map((q, j) => ({
+        answers: club.questions.slice(0, status === "DRAFTING" ? 1 : 4).map((q, j) => ({
           id: `${id}-answer-${j}`,
           applicationId: id,
           questionId: q.id,
-          response: `Fictional response: ${j === 0 ? `I want to learn ${club.theme} by testing ideas with a team.` : j === 1 ? `In my ${activities[(a + c) % activities.length].toLowerCase()} project, I compared three approaches, asked teammates to challenge my assumptions, and revised our recommendation.` : `I would contribute ${skills[(a + c) % skills.length].toLowerCase()} and document what we learn.`} At ${club.name}, I would begin with a small research question and bring evidence to our next discussion.`,
+          response: q.type === "SHORT_ANSWER" ? `Fictional response: a small ${club.theme} research sprint.` : `Fictional response: ${j === 0 ? `I want to learn ${club.theme} by testing ideas with a team.` : j === 1 ? `In my ${activities[(a + c) % activities.length].toLowerCase()} project, I compared three approaches, asked teammates to challenge my assumptions, and revised our recommendation.` : `I would contribute ${skills[(a + c) % skills.length].toLowerCase()} and document what we learn.`} At ${club.name}, I would begin with a small research question and bring evidence to our next discussion.`,
         })),
         evaluations:
           ["DRAFTING", "SUBMITTED"].includes(status) || a % 5 === 1

@@ -26,7 +26,7 @@ export type InboxItem = { id: string; clubId: string | null; type: string; title
 export type InboxPage = { items: InboxItem[]; nextCursor: string | null; unread: number };
 
 // Applications, interviews, decisions (applications.view, interviews.schedule, decisions.letter)
-export type ApplicationQuestion = { id: string; prompt: string; type: "ESSAY" | "FILE_UPLOAD" | "MULTIPLE_CHOICE" | "MULTI_SELECT" | (string & {}); required: boolean; options?: string[] | null; wordLimit: number | null; showIf?: unknown };
+export type ApplicationQuestion = { id: string; prompt: string; type: "ESSAY" | "SHORT_ANSWER" | "FILE_UPLOAD" | "MULTIPLE_CHOICE" | "MULTI_SELECT" | (string & {}); required: boolean; options?: string[] | null; wordLimit: number | null; characterLimit?: number | null; showIf?: unknown };
 export type ApplicationAnswer = { questionId: string; response: string };
 export type ApplicationStageId = "drafts" | "in-review" | "interviews" | "decisions";
 export type StudentApplication = {

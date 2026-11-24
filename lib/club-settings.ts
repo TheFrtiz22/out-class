@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { questionConditionSchema } from "@/lib/student-applications";
+import { questionConditionSchema, SHORT_ANSWER_MAX_CHARACTERS } from "@/lib/student-applications";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { deadlineInput } from "@/lib/application-deadline";
@@ -25,14 +25,17 @@ export const roundConfigurationSchema = z.object({
   instructions: z.string().trim().max(5000).default(""),
   duration: z.number().int().min(5).max(180).default(30),
 });
+const characterLimitMessage = `Short answers need a character limit from 1 to ${SHORT_ANSWER_MAX_CHARACTERS}.`;
 export const questionDraftSchema = z
   .object({
     id: z.string().uuid(),
     prompt: z.string().trim().min(1).max(3000),
-    type: z.enum(["ESSAY", "MULTIPLE_CHOICE", "MULTI_SELECT", "FILE_UPLOAD"]),
+    type: z.enum(["ESSAY", "SHORT_ANSWER", "MULTIPLE_CHOICE", "MULTI_SELECT", "FILE_UPLOAD"]),
     showIf: questionConditionSchema.nullable().default(null),
     required: z.boolean(),
     wordLimit: z.number().int().min(1).max(10000).nullable(),
+    // Drafts saved before short answers existed have no characterLimit.
+    characterLimit: z.number().int().min(1, characterLimitMessage).max(SHORT_ANSWER_MAX_CHARACTERS, characterLimitMessage).nullable().default(null),
     options: z.array(z.string().trim().min(1).max(300)).max(30),
   })
   .superRefine((q, ctx) => {
@@ -45,6 +48,12 @@ export const questionDraftSchema = z
         path: ["options"],
         message:
           "Multiple choice questions need at least two distinct options.",
+      });
+    if (q.type === "SHORT_ANSWER" && q.characterLimit == null)
+      ctx.addIssue({
+        code: "custom",
+        path: ["characterLimit"],
+        message: characterLimitMessage,
       });
   });
 export type QuestionDraft = z.infer<typeof questionDraftSchema>;

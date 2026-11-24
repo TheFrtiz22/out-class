@@ -153,3 +153,19 @@ test('submission requires a phone number on the profile; drafts still save witho
   }
   assert.deepEqual(await setup({ profile: { id: 'profile', phone: '+442079460958' } }).submitApplication(body), { success: true, applicationId: 'app' })
 })
+
+test('short answers: the server refuses submission over the club character limit before any write; drafts save up to the maximum', async () => {
+  const short = { id: questionId, prompt: 'Preferred name?', type: 'SHORT_ANSWER', required: true, wordLimit: null, characterLimit: 5 }
+  const over = setup({ questions: [short] })
+  await assert.rejects(over.submitApplication({ clubId, answers: [{ questionId, response: 'Samuel' }] }), /within 5 characters/)
+  await assert.rejects(over.submitApplication({ clubId, answers: [{ questionId, response: 'Sa\nm' }] }), /one line/)
+  assert.equal(over.calls.some(([name]) => name === 'update' || name === 'answers' || name === 'delete'), false)
+  const draft = setup({ questions: [short] })
+  await draft.saveApplicationDraft({ clubId, answers: [{ questionId, response: 'Samuel' }] })
+  assert.deepEqual(draft.calls.find(([name]) => name === 'answers')[1].data, [{ applicationId: 'app', questionId, response: 'Samuel' }])
+  const huge = setup({ questions: [short] })
+  await assert.rejects(huge.saveApplicationDraft({ clubId, answers: [{ questionId, response: 'x'.repeat(501) }] }), /within 500 characters/)
+  assert.equal(huge.calls.some(([name]) => name === 'answers'), false)
+  const ok = setup({ questions: [short] })
+  assert.deepEqual(await ok.submitApplication({ clubId, answers: [{ questionId, response: 'Sam' }] }), { success: true, applicationId: 'app' })
+})

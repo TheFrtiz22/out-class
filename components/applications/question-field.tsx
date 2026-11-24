@@ -1,6 +1,6 @@
 "use client";
 import { NativeSelect } from "@/components/ui/native-select"
-import { MAX_ANSWER_CHARACTERS, encodeSelections, selectedOptions, type ApplicationQuestion } from "@/lib/student-applications";
+import { MAX_ANSWER_CHARACTERS, encodeSelections, selectedOptions, shortAnswerLimit, type ApplicationQuestion } from "@/lib/student-applications";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +35,18 @@ export function QuestionField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Take your time. Write in your own voice."
+      />
+    );
+  if (question.type === "SHORT_ANSWER")
+    return (
+      <Input
+        {...props}
+        type="text"
+        maxLength={shortAnswerLimit(question)}
+        value={value}
+        // One line: a pasted line break becomes a space.
+        onChange={(e) => onChange(e.target.value.replace(/[\r\n]+/gu, " "))}
+        placeholder="Your answer"
       />
     );
   if (question.type === "MULTI_SELECT" && question.options?.length) {
