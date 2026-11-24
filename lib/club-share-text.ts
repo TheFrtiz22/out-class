@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { pageTitle, SITE_URL } from "@/lib/seo"
+import { pageTitle, SITE_URL, clubPath } from "@/lib/seo"
 
 /** Text for club link previews; pure so it can be shared by metadata, the card and tests. */
 const UNCLAIMED = "Club leadership has not yet claimed this profile."
@@ -28,10 +28,10 @@ export function shareDescription(name: string, summary: string) {
  * Open Graph / X card text for a club link. Images come from the route's opengraph-image and
  * twitter-image files, so every public club link unfurls as a profile card, indexed or not.
  */
-export function clubShareMetadata(club: { id: string; name: string; summary: string }): Metadata {
+export function clubShareMetadata(club: { id: string; slug?: string | null; name: string; summary: string }): Metadata {
   const title = pageTitle(club.name)
   const description = shareDescription(club.name, club.summary)
-  const url = new URL(`/club/${encodeURIComponent(club.id)}`, SITE_URL).toString()
+  const url = new URL(clubPath(club), SITE_URL).toString()
   return {
     openGraph: { title, description, url, siteName: "OutClass", type: "website", locale: "en_US" },
     twitter: { card: "summary_large_image", title, description },

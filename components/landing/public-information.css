@@ -166,6 +166,9 @@
 .oc-campus-hero-photo img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: contain; }
 .oc-campus-context { padding-bottom: 64px; }
 .oc-campus-context h2 { max-width: 15ch; }
+.oc-campus-clubs ul { display: flex; flex-wrap: wrap; gap: 12px 32px; margin: 20px 0 0; padding: 0; list-style: none; }
+.oc-campus-clubs a { font-size: 1.0625rem; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 4px; }
+.oc-campus-clubs a:hover, .oc-campus-clubs a:focus-visible { text-decoration-color: currentColor; }
 /* FAQ: a compact index and readable, individually addressable answers. */
 .oc-information .oc-information-faq { padding-top: 64px; border-top: 1px solid var(--border); }
 .oc-faq-heading { margin-bottom: 48px; }

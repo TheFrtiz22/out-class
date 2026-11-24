@@ -34,13 +34,13 @@ test('sitemap candidates exclude unclaimed listings, empty profiles, and seed bo
   const h = publicClubs([club, { ...club, id: 'unclaimed', claimedAt: null }, { ...club, id: 'empty', description: '' }, { ...club, id: 'seed', description: 'Basic directory listing provided by OutClass. Club leadership has not yet claimed this profile.' }])
   assert.deepEqual((await h.api.getIndexableClubs('school-uva')).map(c => c.id), ['real-club'])
   assert.deepEqual(h.queries[0].where, { schoolId: 'school-uva', claimedAt: { not: null }, isDiscoverable: true, suspendedAt: null })
-  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name'])
+  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name', 'schoolId', 'slug'])
 })
 test('club metadata lookup selects public identity and copy, never recruitment or account relations', async () => {
   const h = publicClubs([club])
   assert.equal((await h.api.getPublicClubSeo('alias')).id, 'real-club')
   assert.deepEqual(h.queries[0].where, { OR: [{ id: 'alias' }, { slug: 'alias' }], schoolId: 'school-uva', suspendedAt: null })
-  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name'])
+  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name', 'schoolId', 'slug'])
 })
 test('public SEO fails closed during a database outage without loading sample clubs', async () => {
   const api = load('lib/public-club-seo.ts', { react: { cache: fn => fn }, 'next/cache': { unstable_cache: fn => fn }, '@/utils/prisma': { prisma: { club: { findMany: async () => { throw Error('offline') }, findFirst: async () => { throw Error('offline') } } } } })
@@ -103,6 +103,7 @@ test('public information pages render factual content, consistent entity referen
     'next/image': { __esModule: true, default: ({ priority, ...props }) => React.createElement('img', props) },
     'next/link': { __esModule: true, default: ({ prefetch, ...props }) => React.createElement('a', props) },
     '@/utils/csp-nonce': { cspNonce: async () => 'test-nonce' },
+    '@/lib/public-club-seo': { getIndexableClubs: async schoolId => schoolId === 'school-uva' ? [{ id: 'c1', slug: 'chess-club', name: 'Chess Club' }] : [] },
   }
   for (const path of ['/uva', '/about']) {
     const page = load(`app${path}/page.tsx`, { '@/lib/seo': seo, ...common })
@@ -128,6 +129,9 @@ test('public information pages render factual content, consistent entity referen
     assert.equal(graph.some(item => ['Organization', 'WebSite'].includes(item['@type'])), false)
     if (path === '/uva') {
       assert.equal(meta.title.absolute, 'Club recruitment at UVA · OutClass')
+      // Indexable club profiles are linked from /uva by their slug address, not only listed in the sitemap.
+      assert.match(html, /<h2 id="uva-clubs-title">UVA clubs on OutClass<\/h2>/)
+      assert.match(html, /<a href="\/club\/chess-club">Chess Club<\/a>/)
       const faq = graph.find(item => item['@type'] === 'FAQPage')
       assert.equal(faq.mainEntity.length, (html.match(/<details\b/g) || []).length)
       assert.equal(new Set(publicFaq.publicFaqs.map(item => item.id)).size, faq.mainEntity.length)
@@ -257,4 +261,37 @@ test('llms.txt lists only the public pages and indexable clubs, and robots lets 
   assert.equal(robots.rules.userAgent, '*', 'one rule for every crawler, so GPTBot, ClaudeBot, CCBot and Google-Extended are not singled out')
   assert.equal(robots.rules.disallow.some(rule => rule.startsWith('/llms')), false)
   assert.match(fs.readFileSync('middleware.ts', 'utf8'), /"\/sitemap\.xml", "\/llms\.txt"/)
+})
+
+test('club profiles use their readable slug as the public address, falling back to the id', () => {
+  assert.equal(seo.clubPath({ id: 'b90c1444', slug: 'mcintire-investment-institute' }), '/club/mcintire-investment-institute')
+  assert.equal(seo.clubPath({ id: 'b90c1444', slug: null }), '/club/b90c1444')
+  assert.equal(seo.clubPath({ id: 'a b' }), '/club/a%20b')
+  const graph = seo.clubStructuredData({ id: 'b90c1444', slug: 'chess-club', name: 'Chess Club', description: 'x' })['@graph']
+  assert.equal(graph[0].url, 'https://www.out-class.net/club/chess-club')
+  assert.equal(graph[1].itemListElement.at(-1).item, 'https://www.out-class.net/club/chess-club')
+})
+test('launch-school club titles say "at UVA" once; other schools keep the bare name', () => {
+  const { api } = publicClubs([])
+  assert.equal(api.clubSearchTitle({ name: 'McIntire Investment Institute', schoolId: 'school-uva' }), 'McIntire Investment Institute at UVA')
+  assert.equal(api.clubSearchTitle({ name: 'UVA Club Tennis', schoolId: 'school-uva' }), 'UVA Club Tennis')
+  assert.equal(api.clubSearchTitle({ name: 'University of Virginia Glee Club', schoolId: 'school-uva' }), 'University of Virginia Glee Club')
+  assert.equal(api.clubSearchTitle({ name: 'Chess Club', schoolId: 'school-tech' }), 'Chess Club')
+})
+
+test('/uva shows no club list when no club profile is indexable', async () => {
+  const React = require('react')
+  const { renderToStaticMarkup } = require('react-dom/server')
+  const page = load('app/uva/page.tsx', {
+    '@/lib/seo': seo,
+    '@/lib/public-club-seo': { getIndexableClubs: async () => [] },
+    '@/components/landing/public-information-page': { PublicInformationPage: ({ children }) => React.createElement('main', null, children) },
+    '@/components/landing/public-faq': { PublicFaq: () => null },
+    '@/lib/public-faq': { publicFaqs: [] },
+    '@/components/ui/button': { Button: ({ children }) => children },
+    'next/image': { __esModule: true, default: () => null },
+    'next/link': { __esModule: true, default: ({ prefetch, ...props }) => React.createElement('a', props) },
+    '@/utils/csp-nonce': { cspNonce: async () => 'n' },
+  })
+  assert.doesNotMatch(renderToStaticMarkup(await page.default()), /uva-clubs-title/)
 })
