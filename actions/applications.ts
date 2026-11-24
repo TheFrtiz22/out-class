@@ -62,7 +62,8 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
       if (!validPhone(profile.phone)) throw new ActionError(PHONE_REQUIRED_MESSAGE)
       if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new ActionError("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
-    const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
+    // In the form's own order: a follow-up is visible only after its parent (lib/student-applications.ts visibleQuestionIds).
+    const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null }, orderBy: [{ order: "asc" }, { id: "asc" }] })
     parsed.answers = normalizeApplicationAttachments(questions, parsed.answers)
     assertApplicationAttachmentOwnership(questions, parsed.answers, user.id)
     const errors = answerErrors(questions, parsed.answers, submit)

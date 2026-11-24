@@ -51,3 +51,7 @@ test('an answer to a follow-up that is now hidden does not block submission, but
  assert.match(student.answerErrors(questions,[{questionId:choice,response:'Business'},hidden[1]],true)[followUp],/within 5 words/)
  assert.match(student.answerErrors(questions,[...hidden,{questionId:doc,response:'javascript:alert(1)'}],true)[doc],/uploaded PDF or a valid document URL/)
 })
+test('saving loads the questions in form order, so a visible follow-up is still checked when the database returns it before its parent', () => {
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../actions/applications.ts'), 'utf8')
+  assert.match(source, /applicationQuestion\.findMany\(\{ where: \{ clubId: parsed\.clubId, archivedAt: null \}, orderBy: \[\{ order: "asc" \}, \{ id: "asc" \}\] \}\)/)
+})
