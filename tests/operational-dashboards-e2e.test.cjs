@@ -89,7 +89,8 @@ test('operational dashboards authorize summaries and persist inline work with re
  const race=await Promise.allSettled(['Concurrent response A','Concurrent response B'].map(text=>member.action('actions/tasks.ts','submitTask',[{assignmentId:ownAssignment.id,revision:currentAssignment.revision,text,link:'',fileIds:[]}])));assert.equal(race.filter(r=>r.status==='fulfilled').length,1)
  await memberPage.getByRole('button').filter({hasText:'Project update'}).click();await expect(memberPage.getByRole('dialog')).toContainText(announcement.body);await memberPage.screenshot({path:path.join(out,'announcement-390.png'),fullPage:true});await memberPage.keyboard.press('Escape')
  await memberPage.reload();await expect(memberPage.locator('.oc-welcome-header .oc-page-description:visible')).not.toContainText('overdue')
- await page.goto(config.appUrl+`/club/${second.id}/workspace?section=recruitment&tool=overview`);await page.getByText('No recruiting cycle is active.',{exact:false}).waitFor();await expect(page.locator('#workspace-content')).not.toContainText('Written review');await page.screenshot({path:path.join(out,'empty-recruiting.png'),fullPage:true})
+ // A streamed page can leave a hidden second copy of this text in the DOM; the person sees one, so wait for that one.
+ await page.goto(config.appUrl+`/club/${second.id}/workspace?section=recruitment&tool=overview`);await page.getByText('No recruiting cycle is active.',{exact:false}).filter({visible:true}).waitFor();await expect(page.locator('#workspace-content')).not.toContainText('Written review');await page.screenshot({path:path.join(out,'empty-recruiting.png'),fullPage:true})
  // Club home and the Recruiting Overview are read on the server with the page (#395), so a slow /api/workspace read is
  // only a background refresh: the dashboard is on screen at once, marked busy, and no loading skeleton appears.
  // Next may retain a hidden previous route, so only visible skeletons count.

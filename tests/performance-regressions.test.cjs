@@ -151,6 +151,21 @@ test('middleware avoids duplicate refresh only after demo/support guards; loader
   await middleware(new NextRequest('https://outclass.test/club/a/workspace')); assert.equal(refreshes, 1);
 });
 
+test('session client checks claims locally and passes through when they are missing or unavailable', async () => {
+  const run = async ({ claims = null, error = null, throws = false }) => {
+    const { createClient } = loader({ '@supabase/ssr': { createServerClient: (_u, _k, { cookies }) => ({ auth: {
+      getClaims: async () => { if (throws) throw new Error('jwks unreachable'); cookies.setAll([{ name: 'sb-x-auth-token', value: 'fresh', options: { path: '/' } }]); return error ? { data: null, error } : { data: { claims }, error: null }; },
+      getUser: async () => assert.fail('no remote user lookup'),
+    } }) } })('utils/supabase/middleware.ts');
+    return createClient(new NextRequest('https://www.outclass.test/'));
+  };
+  const ok = await run({ claims: { sub: 'u', email: 'student@virginia.edu', aal: 'aal1' } });
+  assert.equal(ok.status, 200); assert.equal(ok.cookies.get('sb-x-auth-token').value, 'fresh');
+  assert.equal((await run({ error: Object.assign(Error('expired'), { status: 401 }) })).status, 200);
+  const warn = console.warn; console.warn = () => {};
+  try { assert.equal((await run({ throws: true })).status, 200); } finally { console.warn = warn; }
+});
+
 test('query-only club transitions skip RSC navigation and preserve modified/cross-club links', () => {
   const changes = [], location = { href: `https://outclass.test/club/${clubId}/workspace` };
   const api = loader({}, { window: { location, history: { pushState: (_, __, href) => changes.push(href), replaceState: (_, __, href) => changes.push(href) } } })('lib/workspace-navigation.ts');
