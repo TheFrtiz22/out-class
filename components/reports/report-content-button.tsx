@@ -66,7 +66,7 @@ export function ReportContentButton({ target, label = "Report", ownerClubId, own
         <DialogDescription>{done ? REPORT_CONFIRMATION : "Reports go to the OutClass team. We don’t tell the person or club who reported them."}</DialogDescription>
       </DialogHeader>
       {done ? <>
-        {done.dmcaHref && <p className="text-sm">For copyright claims, also send a notice as described in the <Link className="underline underline-offset-4" href={done.dmcaHref}>Terms</Link>.</p>}
+        {done.dmcaHref && <p className="text-sm">For copyright claims, also send a formal notice to our designated agent, as described on our <Link className="underline underline-offset-4" href={done.dmcaHref}>copyright page</Link>.</p>}
         <DialogFooter><Button type="button" onClick={() => reset(false)}>Done</Button></DialogFooter>
       </> : <form className="space-y-4" onSubmit={e => { e.preventDefault(); void submit() }} aria-busy={busy}>
         <label className="block space-y-2 text-sm font-medium" htmlFor={`${ids}-reason`}>Reason

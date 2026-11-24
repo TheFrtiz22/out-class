@@ -7,7 +7,7 @@ import { publicPageMetadata } from "@/lib/seo"
 /**
  * The public support page: the Support URL for the App Store and Google Play listings
  * (docs/mobile/store/listing.md). Anyone can open it, signed in or not. It only points to pages
- * that already exist (/forgot-password, /delete-account, /security) and to the contact address.
+ * that already exist (/forgot-password, /delete-account, /security, /copyright) and to the contact address.
  */
 const description = "Get help with OutClass: signing in, resetting your password, deleting your account and contacting us."
 export const metadata = publicPageMetadata("Support", description, "/support")
@@ -35,6 +35,9 @@ export default function SupportPage() {
       </Topic>
       <Topic id="security" number="04" kicker="Security" title="Report a security problem.">
         <p>Read <a className="oc-public-text-link" href="/security">how OutClass protects student data</a>, and email us if you find a problem.</p>
+      </Topic>
+      <Topic id="copyright" number="05" kicker="Copyright" title="Report copyright infringement.">
+        <p>Copyright owners can send a DMCA notice to our designated agent. <a className="oc-public-text-link" href="/copyright">See where to send it and what to include</a>.</p>
       </Topic>
     </PublicInformationPage>
   )

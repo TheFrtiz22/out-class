@@ -21,6 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/uva` },
     { url: `${SITE_URL}/about` },
     { url: `${SITE_URL}/security` },
+    { url: `${SITE_URL}/copyright` },
     { url: `${SITE_URL}/request-school` },
     ...(LEGAL_PAGES_PUBLIC ? ["privacy", "terms", "cookies", "legal"].map(page => ({ url: `${SITE_URL}/${page}` })) : []),
     ...clubs.map(club => ({ url: `${SITE_URL}${clubPath(club)}` })),

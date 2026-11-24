@@ -66,13 +66,14 @@ describe("reporting club content", () => {
     expect(screen.queryByTestId("report-done")).toBeNull();
   });
 
-  test("a copyright report offers the Terms' notice section", async () => {
+  test("a copyright report offers the public copyright page", async () => {
     const Screen = require("~/app/events/[id]").default;
-    await renderRoute(Screen, { params: { id: ids.event }, overrides: { "reports.content": { ok: true, message: "Thanks. Our team will review this.", dmcaHref: "/terms#legal-8-copyright-and-dmca-notices" } } });
+    await renderRoute(Screen, { params: { id: ids.event }, overrides: { "reports.content": { ok: true, message: "Thanks. Our team will review this.", dmcaHref: "/copyright" } } });
     await fireEvent.press(screen.getByTestId("report-open"));
     await sendReport("Copyright infringement");
+    expect(screen.getByTestId("report-dmca")).toHaveTextContent("How to send a notice");
     await fireEvent.press(screen.getByTestId("report-dmca"));
-    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(expect.stringMatching(/\/terms#legal-8-copyright-and-dmca-notices$/));
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(expect.stringMatching(/\/copyright$/));
   });
 
   test("a club announcement in the inbox can be reported once its detail closes", async () => {
@@ -114,13 +115,15 @@ describe("reporting club content", () => {
 });
 
 describe("legal and support in Settings", () => {
-  test("Terms and Privacy open on the website and Contact us starts an email", async () => {
+  test("Terms, Privacy and Copyright open on the website and Contact us starts an email", async () => {
     const Screen = require("~/app/settings/index").default;
     await renderRoute(Screen);
     await fireEvent.press(screen.getByTestId("settings-terms"));
     expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(expect.stringMatching(/\/terms$/));
     await fireEvent.press(screen.getByTestId("settings-privacy"));
     expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(expect.stringMatching(/\/privacy$/));
+    await fireEvent.press(screen.getByTestId("settings-copyright"));
+    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(expect.stringMatching(/\/copyright$/));
     await fireEvent.press(screen.getByTestId("settings-contact"));
     expect(Linking.openURL).toHaveBeenLastCalledWith("mailto:hello@out-class.net");
     expect(screen.getByTestId("settings-independence")).toHaveTextContent(/not an official service of the University of Virginia/);
