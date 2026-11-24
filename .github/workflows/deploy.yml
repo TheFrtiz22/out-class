@@ -31,6 +31,22 @@ jobs:
       - run: pnpm validate
       # Vercel's Git integration deploys the authenticated App Router application.
       # Never publish the obsolete static out/ directory to GitHub Pages.
+  mobile:
+    # The native app (mobile/): type checks for the app and its tests, then the render test suite.
+    # Fast and offline: no simulator, no network, no credentials.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir mobile run typecheck
+      - run: pnpm --dir mobile run typecheck:tests
+      - run: pnpm --dir mobile exec jest --ci --maxWorkers=2
   dependency-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
