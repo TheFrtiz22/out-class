@@ -247,3 +247,22 @@ Review follow-up (2026-11-18), same resource:
 - **Invalid support sessions.** An invalid view-as cookie falls back to the signed-in account's school, never to the host.
 - **By-id refusals.** These now refuse another school's id: `getMeeting`, `clubLinkPreview`, public `/api/event-flyers` (private, no-store), RSVP (`going: true`) and save-event (`saved: true`). Cancelling an existing RSVP and removing a saved event stay allowed.
 - **Tests.** `tests/school-directory-scope.test.cjs`: the share-card host-only case, fallback card text, the sitemap dynamic case, by-id refusals for both schools, the club images host case, and the junk view-cookie case.
+
+## 2026-11-23 · UI-SAVE-ASSIGN-ME · "Assign me" on applicant grading (branch `ui/save-and-assign-me`)
+
+Resource: `InterviewPanelAssignment` (per applicant and round), written only by the existing audited `setInterviewPanelAssignment` (`actions/organization-members.ts`, audit `interview.panel.change`). Assign me is that call with the actor's own member id; no new grant path. Scope comes from the session (`requireAuth` → `clubMember` by `userId_clubId`); the client-supplied club, application, round and member ids are re-checked against that club. Two additions apply only when the target is the actor: an active recusal refuses the grant, and no assignment notice is sent to yourself.
+
+| Actor | Assign self (create grant) | Then grade (open interview / canEvaluate) | Notification | Test |
+|---|---|---|---|---|
+| Active owner, identified round | allow, audited | allow | none to self; assigning others still notifies them | `tests/interview-assign-me.test.cjs` cases 1–2 |
+| Member with review only (non-manager) | deny "Member management access denied" | deny (no grant) | none | same, case 3 |
+| Non-owner with members/leaders/interviews.manage | deny "Only an active owner…" | deny | none | same, case 3 |
+| Owner recused from this applicant | deny (recusal message), no audit | deny | none | same, case 4 |
+| Graduate kept as owner (handOverOnly) | deny | deny | none | same, case 5 |
+| Graduated leader (non-owner) | deny | deny | none | same, case 5 |
+| Owner, anonymous-review round | deny "Active identified reviewer…" | n/a (anonymous grading unchanged) | none | same, case 6 |
+| Owner of a suspended club | deny `CLUB_SUSPENDED` | deny | none | same, case 6 |
+| Leader of another club (no membership here) | deny | deny | none | same, case 8 |
+| Logged-out / expired session | deny at `requireAuth` | deny | none | existing `requireAuth` contract (not re-tested here) |
+
+Untested cells: none at unit level (fake-transaction harness). Not proven against disposable Postgres (no Docker on this machine): CI disposable-integration must confirm. UI visibility (owners only, identified round, not own application, not already gradable) is a convenience, not the boundary.

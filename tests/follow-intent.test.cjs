@@ -22,7 +22,7 @@ test('only a well-formed club id is read back, and it is removed once handled', 
   assert.equal(intent.withoutFollowIntent('/explore','?q=a&follow=tamid','#top'),'/explore?q=a#top')
 })
 
-test('signed-out Follow and Apply ask to create an account first, and the save finishes on return', () => {
+test('signed-out Save and Apply ask to create an account first, and the save finishes on return', () => {
   const button=fs.readFileSync('components/clubs/corkboard-button.tsx','utf8')
   assert.match(button,/authenticated \? void save\(\) : askToJoin\(\)/)
   assert.match(button,/readFollowIntent\(search\) !== club\.id/)

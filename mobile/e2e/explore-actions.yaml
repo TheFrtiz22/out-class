@@ -1,5 +1,5 @@
 # Writes in the Explore area as the staging student, each undone again: RSVP and cancel, Add to Calendar,
-# event share sheet, Follow a club and swipe it out of Saved clubs (-e MODE names the screenshots).
+# event share sheet, Save a club and swipe it out of Saved clubs (-e MODE names the screenshots).
 appId: net.outclass.app
 ---
 - openLink: "outclass://events"
@@ -49,12 +49,12 @@ appId: net.outclass.app
     point: 50%, 8%
 - openLink: "outclass://club/blue-ridge-consulting"
 - extendedWaitUntil:
-    visible: "Follow"
+    visible: "Save"
     timeout: 90000
 - tapOn:
     id: "club-follow"
 - extendedWaitUntil:
-    visible: "Following"
+    visible: "Saved"
     timeout: 30000
 - takeScreenshot: club-following-${MODE}
 - openLink: "outclass://saved-clubs"

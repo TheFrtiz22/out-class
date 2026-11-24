@@ -40,7 +40,7 @@ export const recruitmentSeason = {
   title: "From the activities fair to the first meeting.",
   caption: "A typical recruitment cycle",
   steps: [
-    { numeral: "i", title: "Activities fair", body: "Students follow clubs instead of signing paper lists." },
+    { numeral: "i", title: "Activities fair", body: "Students save clubs instead of signing paper lists." },
     { numeral: "ii", title: "Info sessions", body: "QR check-in, with attendance kept for review." },
     { numeral: "iii", title: "Applications", body: "One profile plus each club’s own questions." },
     { numeral: "iv", title: "Interviews", body: "Panels proposed, approved, then booked." },
@@ -99,9 +99,9 @@ export const featureGrid: Record<LandingPerspective, { kicker: string; title: st
       { title: "Status in one place", body: "See every application move from review to decision.", specimen: { label: "My applications", sub: "Spring 2027", rows: [
         { name: "Jefferson Investment Society", meta: "Interview Thursday 6:30 PM", status: "Interview", tone: "active" },
         { name: "Grounds Impact Consulting", meta: "Round 1 review", status: "In review", tone: "neutral" } ] } },
-      { title: "Follow clubs", body: "Hear when clubs you care about open applications.", specimen: { label: "Following", sub: "Two clubs", rows: [
+      { title: "Save clubs", body: "Hear when clubs you care about open applications.", specimen: { label: "Saved", sub: "Two clubs", rows: [
         { name: "Grounds Impact Consulting", meta: "Applications opened today", status: "Recruiting", tone: "active" },
-        { name: "Jefferson Investment Society", meta: "Opens January 20", status: "Following", tone: "neutral" } ] } },
+        { name: "Jefferson Investment Society", meta: "Opens January 20", status: "Saved", tone: "neutral" } ] } },
       { title: "My Clubs", body: "Meetings, tasks and announcements once you join.", specimen: { label: "My clubs", sub: "Jefferson Investment Society", rows: [
         { name: "New member meeting", meta: "Monday 7:00 PM", status: "Upcoming", tone: "active" },
         { name: "Onboarding tasks", meta: "2 of 4 done", status: "In progress", tone: "neutral" } ] } },

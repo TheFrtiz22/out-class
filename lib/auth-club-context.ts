@@ -23,7 +23,7 @@ export function returnClub(next: string): ReturnClub | null {
 /** One line under the sign-up or sign-in heading. */
 export function clubContextLine(name: string, follow: boolean, mode: "signup" | "login"): string {
   if (mode === "signup") return follow
-    ? `Create your profile to follow ${name}. You’ll go right back to it.`
+    ? `Create your profile to save ${name}. You’ll go right back to it.`
     : `Create your profile to continue to ${name}. You’ll go right back to it.`
-  return follow ? `Sign in to follow ${name}.` : `Sign in to continue to ${name}.`
+  return follow ? `Sign in to save ${name}.` : `Sign in to continue to ${name}.`
 }

@@ -28,7 +28,7 @@ import { ReviewGrading } from "./review-grading"
 import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
 import { useStagedDecisions, type StagedDecisions } from "@/hooks/use-staged-decisions"
 import { announceDataChanged } from "@/hooks/use-revalidate"
-import { moveApplicantRound, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+import { moveApplicantRound, reconsiderRejectedApplication, revokeRecruitmentOffer, setInterviewPanelAssignment } from "@/lib/workspace-api"
 import { userMessage } from "@/lib/user-message"
 import { hasPermission } from "@/lib/permissions"
 import { interviewCapabilities } from "@/lib/interview-access"
@@ -137,6 +137,11 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
   const linkedinUrl = !anonymous && profileFields.linkedin ? safeProfileUrl(profile?.linkedinUrl) : undefined
   const observationsEligible = !!app && canReview && hasPermission(membership, "applicants.identify") && !anonymous && !!app.recruitmentCycleId && app.studentId !== membership.userId && !activeRound?.anonymousReview
   const evaluateReason = !app || app.canEvaluate ? "" : app.studentId === membership.userId ? "You can’t grade your own application." : "Grading needs a panel assignment for this round; recruiting leads assign panels in Interviews › Scheduling. Submitted grades are read-only."
+  // Owners who could put themselves on this panel through the audited grant get Assign me; the server re-checks everything.
+  const interviewAccess = interviewCapabilities(membership)
+  const assignSelf = app && !app.canEvaluate && !anonymous && !activeRound?.anonymousReview && app.studentId !== membership.userId && interviewAccess.manageGrants && interviewAccess.participate
+    ? async () => { await setInterviewPanelAssignment({ clubId, applicationId: app.id, roundId: app.roundId, memberId: membership.id, assigned: true }); refresh(); announceDataChanged("applicants") }
+    : undefined
   const interviewLinks = [...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !anonymous ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]
   const toggle = (key: string) => (open: boolean) => setOpenSections(list => open ? [...list, key] : list.filter(item => item !== key))
   const facts = app ? joinFacts(profileFields.academicYear && profile?.academicYear, activeRound?.name, ...(profile ? applicantProfileFacts({ ...profile, academicYear: null }, profileFields) : []), profileFields.major && profile?.major) : ""
@@ -225,7 +230,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
         </main>
 
         <aside className="oc-review-flow-aside" aria-label="Grade and decide">
-          <ReviewGrading key={`${app.id}:${app.roundId}`} clubId={clubId} app={app} roundName={activeRound?.name ?? ""} rounds={rounds} rubric={rubric} memberId={membership.id} reason={evaluateReason} disabled={busy} onSubmitted={refresh} />
+          <ReviewGrading key={`${app.id}:${app.roundId}`} clubId={clubId} app={app} roundName={activeRound?.name ?? ""} rounds={rounds} rubric={rubric} memberId={membership.id} reason={evaluateReason} disabled={busy} onSubmitted={refresh} onAssignSelf={assignSelf} />
           {app.roundScore && <p className="text-xs text-muted-foreground">Rating {app.roundScore.average === null ? "—" : `${app.roundScore.average.toFixed(1)}/10`} · {app.roundScore.submitted}/{app.roundScore.required} reviews</p>}
 
           <section className="oc-review-decide" aria-labelledby="decide-heading">

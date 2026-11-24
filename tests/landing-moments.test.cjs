@@ -40,7 +40,7 @@ test("each feature is paired with real product UI and a text alternative", () =>
     }
   }
   assert.deepEqual(featureGrid.leader.features.map(f => f.title), ["Shared rubrics", "Interview rooms and panels", "Focused interview room", "Live voting", "Meetings and attendance", "Roles and access"])
-  assert.deepEqual(featureGrid.student.features.map(f => f.title), ["One profile", "Club-specific questions", "Book your interview", "Status in one place", "Follow clubs", "My Clubs"])
+  assert.deepEqual(featureGrid.student.features.map(f => f.title), ["One profile", "Club-specific questions", "Book your interview", "Status in one place", "Save clubs", "My Clubs"])
 })
 
 test("moments avoid generated-page tells: glass cards, hover on static content, uniform radius", () => {

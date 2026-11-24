@@ -27,7 +27,7 @@ export function ShareClubButton({ club, className, iconOnly }: { club: Pick<Dire
     subtitle="Anyone with the link can see the club’s public profile."
     className={className}
     iconOnly={iconOnly}
-    qr={{ filename: clubQrFilename(club.name), description: "Scan to see the club, follow it and apply on OutClass.", shortLink }}
+    qr={{ filename: clubQrFilename(club.name), description: "Scan to see the club, save it and apply on OutClass.", shortLink }}
   />
 }
 

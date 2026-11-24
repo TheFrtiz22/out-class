@@ -71,7 +71,7 @@ test('reviewed import packages carry no research notes or source links in public
   }
 })
 
-test('public club page: no logo wall, no unknown tiles, Follow instead of a device-only Subscribe', () => {
+test('public club page: no logo wall, no unknown tiles, Save instead of a device-only Subscribe', () => {
   const profile = fs.readFileSync('components/clubs/marketing-profile.tsx', 'utf8')
   const view = fs.readFileSync('components/views/club-profile-view.tsx', 'utf8')
   assert.doesNotMatch(profile, /Research source/)
@@ -81,7 +81,7 @@ test('public club page: no logo wall, no unknown tiles, Follow instead of a devi
   assert.match(profile, /SHOW_EMPLOYER_MARKS \? employerMark\(name\) : undefined/)
   assert.equal(fs.existsSync('components/clubs/subscribe-button.tsx'), false)
   assert.doesNotMatch(view, /Applications unavailable|email updates not yet available|Recruitment dates have not been published|No additional requirements have been published|No upcoming public events have been published/)
-  assert.match(view, /Applications aren’t open yet · Follow/)
+  assert.match(view, /Applications aren’t open yet · Save it/)
   // Visitor order: hero/action, about, what members do, recruitment, life, FAQ, events.
   const order = ['<MarketingProfile', '<AboutSection', '<MembersSection', 'id="club-recruitment"', '<LifeSection', '<FaqSection', 'id="club-events"'].map(token => view.indexOf(token))
   assert.ok(order.every(i => i > 0)); assert.deepEqual([...order].sort((a, b) => a - b), order)
