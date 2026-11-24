@@ -22,6 +22,8 @@ function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   if (!found) { found = new Intl.DateTimeFormat("en-US", options); formatters.set(key, found); }
   return found;
 }
+/** The cached Eastern-time formatter for an option set, for callers that need `formatToParts`. */
+export const easternFormatter = (options: Intl.DateTimeFormatOptions) => formatter({ timeZone: EASTERN, ...options });
 /** An Eastern-time label for an instant; "" for a missing or unreadable value rather than a crash. */
 export const eastern = (options: Intl.DateTimeFormatOptions) => (value: Date | string | null | undefined) => {
   const date = toInstant(value);
