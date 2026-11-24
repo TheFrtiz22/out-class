@@ -253,7 +253,8 @@ test('every public listing reads through the viewer school', () => {
   assert.match(read('actions/club-directory.ts'), /unstable_cache\(\s*async \(schoolId: string\)/)
   assert.match(read('lib/public-club-seo.ts'), /unstable_cache\(async \(schoolId: string\)/)
   // Student calendars list other clubs' public meetings from the student's school only.
-  assert.match(read('actions/applications.ts'), /schoolPublicMeetingVisibility\(school\.id\)/)
+  assert.match(read('actions/applications.ts'), /studentCalendarMeetings\(user\.id, school\.id\)/)
+  assert.match(read('actions/applications.ts'), /schoolPublicMeetingVisibility\(schoolId\)/)
   assert.match(read('actions/meetings.ts'), /schoolPublicMeetingVisibility\(school\.id\)/)
 })
 
