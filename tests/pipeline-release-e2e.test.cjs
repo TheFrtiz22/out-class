@@ -66,7 +66,7 @@ test('real desktop pointer and mobile touch support detail switching, global sea
    const rows=()=>page.locator('[data-applicant-id]').filter({visible:true});await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
    page.off('request',observeEntry);
    assert.equal(entryRequests.filter(request=>new URL(request.url()).searchParams.get('kind')==='pipelinePage').length,1,'Entry must still perform its fresh guarded page read');
-   assert.equal(entryRequests.filter(request=>new URL(request.url()).pathname===new URL(page.url()).pathname&&request.headers().rsc==='1').length,0,'Same-workspace CTA must not wait on an unused server navigation');
+   const serverNavigations=entryRequests.filter(request=>new URL(request.url()).pathname===new URL(page.url()).pathname&&request.headers().rsc==='1');assert.equal(serverNavigations.length,0,'Same-workspace CTA must not wait on an unused server navigation: '+JSON.stringify({size,touch,requests:serverNavigations.map(request=>({method:request.method(),search:new URL(request.url()).search,prefetch:request.headers()['next-router-prefetch']||null,action:!!request.headers()['next-action'],frame:request.frame()===page.mainFrame()}))}));
    await activate(rows().first());await page.getByRole('heading',{name:'Audit Student 000',exact:true}).waitFor();
    await page.locator('.oc-review-flow').getByText('Synthetic application evidence.',{exact:false}).first().waitFor();
    if(size>1){await activate(page.getByRole('button',{name:'Next applicant',exact:true}));await page.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();}
