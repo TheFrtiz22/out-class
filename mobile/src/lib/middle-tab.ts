@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
+import { useAuth } from "~/lib/auth";
 import { useApiQuery } from "~/lib/query";
 import type { ApplicationsView, Me, StudentApplication } from "~/lib/types";
 
@@ -9,7 +10,8 @@ import type { ApplicationsView, Me, StudentApplication } from "~/lib/types";
  */
 export type MiddleTab = "apply" | "clubs";
 
-const KEY = "outclass.middle-tab";
+/** Kept per account, so the next person to sign in on this phone never starts from someone else's tab. */
+const keyFor = (userId: string) => `outclass.middle-tab:${userId}`;
 
 /**
  * An application is settled when nothing more can happen on it from the applicant's side:
@@ -40,15 +42,17 @@ export function middleTabFor(view: Pick<ApplicationsView, "applications" | "alum
 export function useMiddleTab(): MiddleTab {
   const applications = useApiQuery<ApplicationsView>("applications.view", undefined, { staleTime: 60_000 });
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
-  const [stored, setStored] = useState<MiddleTab | null>(null);
+  const userId = useAuth().session?.user.id ?? null;
+  const [stored, setStored] = useState<{ userId: string; tab: MiddleTab } | null>(null);
   const known = applications.data && me.data ? middleTabFor(applications.data, me.data.memberships.length) : null;
 
   useEffect(() => {
+    if (!userId) return;
     let live = true;
-    AsyncStorage.getItem(KEY).then(value => { if (live && (value === "apply" || value === "clubs")) setStored(value); }).catch(() => {});
+    AsyncStorage.getItem(keyFor(userId)).then(value => { if (live && (value === "apply" || value === "clubs")) setStored({ userId, tab: value }); }).catch(() => {});
     return () => { live = false; };
-  }, []);
-  useEffect(() => { if (known) AsyncStorage.setItem(KEY, known).catch(() => {}); }, [known]);
+  }, [userId]);
+  useEffect(() => { if (known && userId) AsyncStorage.setItem(keyFor(userId), known).catch(() => {}); }, [known, userId]);
 
-  return known ?? stored ?? "apply";
+  return known ?? (stored && stored.userId === userId ? stored.tab : null) ?? "apply";
 }
