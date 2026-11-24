@@ -41,7 +41,7 @@ in-app reporting), and the Terms set a minimum age of 13. No gambling, no purcha
 browsing. Expect a 13+ rating (Apple) / Teen (IARC); confirm with the questionnaires.
 
 ## Support and marketing URLs
-- Support: https://www.out-class.net/security (replace with a support page when one exists)
+- Support: https://www.out-class.net/support
 - Privacy policy: required before submission. The site's Privacy Policy is not public yet
   (`LEGAL_PAGES_PUBLIC = false`, decision log 2026-11-07). **The app cannot be submitted until it is.**
 
