@@ -38,6 +38,9 @@
   [data-product-shell]:not([data-product-shell="personal"]) .oc-recruiting-strip { margin-bottom: 1rem; padding: .5rem .875rem; font-size: var(--oc-text-caption); }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions { flex-wrap: nowrap; gap: .5rem; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions > .oc-button { flex: 1 1 0; min-width: 0; height: 40px; min-height: 40px; padding-inline: .75rem; font-size: var(--oc-text-small); }
+  /* The club QR code shrinks to its icon so the two create buttons keep their words on a phone. */
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions > .oc-club-qr-button { flex: 0 0 40px; width: 40px; padding-inline: 0; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions .oc-club-qr-label { display: none; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting { gap: .75rem; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting .oc-date-chip { width: 3rem; height: 3rem; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-title { font-size: 1.1875rem; }

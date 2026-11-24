@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useDemoMode } from "@/contexts/demo-context"
 import { clubQrFilename } from "@/lib/club-qr"
 import { clubSharePath } from "@/lib/share-links"
+import { cn } from "@/lib/utils"
 
 /**
  * One click to the club's own QR code from the club workspace (Home and Recruiting headers): the same code as
@@ -36,8 +37,8 @@ export function ClubQrButton({ club, variant = "outline", size = "lg", className
   }
 
   return <>
-    <Button type="button" variant={variant} size={size} className={className} aria-busy={loading || undefined} disabled={loading} onClick={() => void present()}>
-      <QrCode aria-hidden="true" />{loading ? "Loading…" : "Club QR code"}
+    <Button type="button" variant={variant} size={size} className={cn("oc-club-qr-button", className)} aria-label="Club QR code" aria-busy={loading || undefined} disabled={loading} onClick={() => void present()}>
+      <QrCode aria-hidden="true" /><span className="oc-club-qr-label">{loading ? "Loading…" : "Club QR code"}</span>
     </Button>
     {value && <QrPresenterDialog
       trigger={false}
