@@ -47,6 +47,7 @@ export const routes: RouteCase[] = [
   { file: "meeting/[id]", params: { id: ids.meeting }, rich: [`Weekly general body meeting for all members of ${longName}`, "Slides"], empty: ["Meeting"], error },
   { file: "my-club/[clubId]", params: { clubId: ids.memberClub }, rich: ["Virginia Motorsports"], empty: ["My club"], error },
   { file: "q/[code]", params: { code: "abc123" }, rich: [/checked in|check-in|Checked/i], empty: [/isn.t|unavailable|not valid|expired/i], error },
+  { file: "reset-password", segments: ["reset-password"], params: { "#": "token_hash=pkce_0123456789abcdefABCDEF" }, rich: ["Set a new password", "Update password"], empty: ["Set a new password"], error: ["Set a new password"] },
   { file: "saved-clubs", rich: ["Saved clubs", longName], empty: ["Saved clubs"], error },
   { file: "scan", rich: [/scan/i], empty: [/scan/i], error: [/scan/i] },
   { file: "settings/account", rich: ["Account & Security", "Delete account"], empty: ["Account & Security"], error: ["Delete account"] },
