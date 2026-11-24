@@ -50,7 +50,6 @@ export const mobileOperations = {
   // Home, calendar
   "home.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileHome()),
   "calendar.view": operation("GET", none, async () => (await import("@/lib/mobile-api/views")).getMobileCalendar()),
-  "home.dashboard": operation("GET", none, async () => (await import("@/actions/applications")).getStudentDashboardData()),
   "home.taskNotifications": operation("GET", none, async () => (await import("@/actions/tasks")).getTaskNotifications()),
   "invitations": operation("GET", none, async () => (await import("@/actions/club-onboarding")).getOrganizationInvitations(false)),
   "calendarFeed": operation("GET", none, async () => (await import("@/actions/calendar-feed")).getCalendarFeedStatus()),
@@ -109,7 +108,8 @@ export const mobileOperations = {
   "push.unregister": operation("POST", passthrough, async input => (await import("@/actions/push-subscriptions")).removeNativePushDevice(input)),
 
   // Meetings and check-in
-  "meetings": operation("GET", z.object({ clubId: uuid.optional() }).strict().optional(), async input => (await import("@/actions/meetings")).listMeetings(input?.clubId)),
+  // Always one club: every screen asks for a club's meetings, and the all-clubs list has no date bound.
+  "meetings": operation("GET", z.object({ clubId: uuid }).strict(), async ({ clubId }) => (await import("@/actions/meetings")).listMeetings(clubId)),
   "meetings.meeting": operation("GET", z.object({ meetingId: uuid }).strict(), async ({ meetingId }) => (await import("@/actions/meetings")).getMeeting(meetingId)),
   "meetings.checkIn": operation("POST", z.object({ meetingId: uuid, token: z.string().min(16).max(256) }).strict(), async ({ meetingId, token }) => (await import("@/actions/meetings")).checkInMeeting(meetingId, token)),
   "meetings.checkIn.issue": operation("POST", clubMeeting, async ({ clubId, meetingId }) => (await import("@/actions/meetings")).issueMeetingCheckIn(clubId, meetingId)),

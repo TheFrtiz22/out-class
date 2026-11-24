@@ -5,6 +5,7 @@ import { RATE_LIMITS } from "@/lib/rate-limit"
 import { limitAction } from "@/lib/rate-limit-action"
 import { createClient } from "@/utils/supabase/server"
 import { resolveViewerSchool } from "@/utils/school-scope"
+import { mobileRequest } from "@/utils/mobile-request"
 
 const collection = "outclass_public_clubs_v1"
 
@@ -14,6 +15,9 @@ const collection = "outclass_public_clubs_v1"
  */
 async function searchUserId() {
   try {
+    // The native app sends no cookies: its bearer session was already verified for this request (utils/mobile-api.ts),
+    // so the limit is per account there too, not per (often shared campus) address.
+    if (mobileRequest()) return (await (await import("@/utils/auth")).getSessionState()).identity.data.user?.id ?? null
     const jar = await cookies()
     if (!jar.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))) return null
     const { data, error } = await (await createClient(jar)).auth.getClaims()
