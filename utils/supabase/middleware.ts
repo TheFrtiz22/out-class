@@ -1,17 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access";
-import { isUvaEmail } from "@/lib/auth";
 import { allowedWhileSecondFactorPending, RETURN_PATH_HEADER, twoStepChallengeHref, TWO_STEP_REQUIRED_MESSAGE, userMfaEnabled } from "@/lib/user-mfa";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder";
 
-/**
- * `signedInHome`: where a signed-in UVA account is sent instead of rendering this page (middleware.ts
- * passes it only for the bare homepage). The page makes the same decision; this saves its render.
- */
-export const createClient = async (request: NextRequest, options: { demoOnly?: boolean; signedInHome?: string } = {}) => {
+export const createClient = async (request: NextRequest, options: { demoOnly?: boolean } = {}) => {
   // With two-step sign-in on, forward the requested path (overwriting any client value) so a
   // server-side challenge redirect can return to it; requireAuth still passes it through safeReturnPath.
   const forwarded = () => {
@@ -70,8 +65,15 @@ export const createClient = async (request: NextRequest, options: { demoOnly?: b
   // grants nothing: every Server Component, Server Action and route handler still verifies the
   // exact token with Auth, binds it to a live auth.sessions row and applies the disabled-account
   // and two-step rules (getSessionState in utils/auth.ts).
-  const { data, error } = await supabase.auth.getClaims();
-  const claims = error ? null : data?.claims ?? null;
+  // A thrown error (signing keys unreachable, Auth down mid-refresh) must not take every page
+  // down: pass through and let the server's own Auth check decide, as it always does.
+  let claims: { aal?: unknown } | null = null;
+  try {
+    const { data, error } = await supabase.auth.getClaims();
+    claims = error ? null : data?.claims ?? null;
+  } catch (error) {
+    console.warn(JSON.stringify({ event: "middleware.claims.unavailable", error: error instanceof Error ? error.name : "unknown" }));
+  }
 
   // Optional two-step sign-in (flag-gated). A fast first gate only: getSessionUser/requireAuth
   // enforce the same rule with the Auth-verified user for Server Actions and every server loader.
@@ -90,16 +92,6 @@ export const createClient = async (request: NextRequest, options: { demoOnly?: b
       blocked.headers.set("Cache-Control", "private, no-store");
       return blocked;
     }
-  }
-
-  // The homepage sends every signed-in, confirmed UVA account to Home (app/page.tsx); a verified
-  // token stands in for that check here. Anything the page would decide differently (a disabled
-  // account, no profile yet) is decided again by Home itself.
-  if (options.signedInHome && claims && typeof claims.email === "string" && isUvaEmail(claims.email)) {
-    const home = NextResponse.redirect(new URL(options.signedInHome, request.url), 307);
-    supabaseResponse.cookies.getAll().forEach(cookie => home.cookies.set(cookie));
-    home.headers.set("Cache-Control", "private, no-store");
-    return home;
   }
 
   return supabaseResponse;

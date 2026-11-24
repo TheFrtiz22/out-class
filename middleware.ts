@@ -2,7 +2,7 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { DEMO_COOKIE } from '@/lib/demo/access'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
-import { legacyStudentRedirect, STUDENT_HOME, STUDENT_ROUTES } from "@/lib/student-routes"
+import { legacyStudentRedirect, STUDENT_ROUTES } from "@/lib/student-routes"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 import { RATE_LIMITS, RATE_LIMIT_MESSAGE, rateLimiter, rateLimitHeaders, rateLimitKey } from "@/lib/rate-limit-core"
 import { buildCsp, createNonce, cspAppliesTo, cspHeaderName, forwardCspToRendering, FRAME_ANCESTORS_POLICY, routeSetsOwnCsp, stripCspRequestHeaders } from "@/lib/csp"
@@ -99,7 +99,7 @@ async function route(request: NextRequest): Promise<Response> {
   // No identity forwarded by a client/header is trusted by downstream loaders.
   const ownsAuth = request.nextUrl.pathname === "/api/workspace" || request.nextUrl.pathname === "/api/users/me" ||
     request.method === "POST" && request.headers.has("next-action")
-  const response = ownsAuth ? NextResponse.next({ request: { headers: request.headers } }) : await createClient(request, { signedInHome: signedInHomeRedirect(request) })
+  const response = ownsAuth ? NextResponse.next({ request: { headers: request.headers } }) : await createClient(request)
   // Product views share the homepage URL. Preserve their query parameters and
   // authentication while explicitly keeping those responses out of search.
   const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error", "signup"].some(key => request.nextUrl.searchParams.has(key)) ||
@@ -108,23 +108,6 @@ async function route(request: NextRequest): Promise<Response> {
   const accountCookie = request.cookies.has(PLATFORM_VIEW_COOKIE) || request.cookies.get(DEMO_COOKIE)?.value === "1" || request.cookies.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   if (accountView || accountCookie) response.headers.set("X-Robots-Tag", "noindex, nofollow")
   return response
-}
-
-/**
- * A signed-in visit to the bare homepage (or an installed app launching at the old `/?source=pwa`)
- * goes straight to Home from here, as app/page.tsx would after a full server render. Only the
- * exact URLs: leader views, `next`, demo entry and every other parameter keep the page's own
- * handling, as do support sessions and Demo Mode. Loopback hosts fall through to the page (see
- * the legacy redirect above for why).
- */
-function signedInHomeRedirect(request: NextRequest): string | undefined {
-  if (request.nextUrl.pathname !== "/" || !["GET", "HEAD"].includes(request.method)) return undefined
-  if (/^(127\.0\.0\.1|\[::1\])(:\d+)?$/.test(request.headers.get("host") ?? "")) return undefined
-  if (request.cookies.has(PLATFORM_VIEW_COOKIE) || request.cookies.has(DEMO_COOKIE)) return undefined
-  const params = [...request.nextUrl.searchParams]
-  if (params.length === 0) return STUDENT_HOME
-  if (params.length === 1 && params[0][0] === "source" && params[0][1] === "pwa") return `${STUDENT_HOME}?source=pwa`
-  return undefined
 }
 
 export const config = {
