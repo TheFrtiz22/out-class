@@ -87,6 +87,8 @@ function Navigation() {
     const onAuth = segments[0] === "sign-in" || segments[0] === "sign-up";
     const onProfile = segments[0] === "complete-profile";
     if (session) wasSignedIn.current = true;
+    // The emailed reset link opens its own screen signed in or out, and the gate leaves it there.
+    if (segments[0] === "reset-password") return;
     if (!session) {
       if (!onAuth) {
         if (!wasSignedIn.current) pendingPath.current = pendingLinkFor(pathname, segments[0], searchParams, segments) ?? pendingPath.current;
@@ -117,7 +119,7 @@ function Navigation() {
   const handledResponse = useRef<string | null>(null);
   // While the gate still holds sign-in, sign-up or complete-profile (waiting for `me`), the push waits:
   // opened now, it would land on top of that screen and the gate could no longer replace it.
-  const gateHolding = segments[0] === "sign-in" || segments[0] === "sign-up" || segments[0] === "complete-profile";
+  const gateHolding = segments[0] === "sign-in" || segments[0] === "sign-up" || segments[0] === "complete-profile" || segments[0] === "reset-password";
   useEffect(() => {
     const path = notificationPath(lastResponse);
     if (!ready || !signedIn || gateHolding || !path || !lastResponse) return;
@@ -158,6 +160,7 @@ function Navigation() {
         <Stack.Screen name="sign-in" options={{ animation: "fade" }} />
         <Stack.Screen name="sign-up" options={{ animation: "slide_from_right" }} />
         <Stack.Screen name="complete-profile" options={{ animation: "fade", gestureEnabled: false }} />
+        <Stack.Screen name="reset-password" options={{ animation: "fade" }} />
         <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="q/[code]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
       </Stack>
