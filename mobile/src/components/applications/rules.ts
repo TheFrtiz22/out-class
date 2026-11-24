@@ -72,11 +72,15 @@ export function documentReference(value: string): string | null {
 /** The web's answerErrors, with its wording. */
 export function answerErrors(questions: ApplicationQuestion[], answers: ApplicationAnswer[], final: boolean) {
   const errors: Record<string, string> = {};
+  // An answer to a follow-up that is now hidden is not shown and cannot be fixed, so its content rules are skipped.
+  const visible = visibleQuestionIds(questions, answers);
   for (const answer of answers) {
     const question = questions.find(item => item.id === answer.questionId);
     if (!question) { errors[answer.questionId] = "The application questions have changed. Reload before continuing."; continue; }
+    // A document answer is always checked: it is stored, and a club may still open it.
     if (answer.response.trim() && question.type === "FILE_UPLOAD" && documentReference(answer.response) === null)
       errors[question.id] = "Use an uploaded PDF or a valid document URL.";
+    if (!visible.has(question.id)) continue;
     if (answer.response.trim() && question.type === "MULTIPLE_CHOICE" && question.options?.length && !question.options.includes(answer.response))
       errors[question.id] = "Choose one of the available options.";
     if (answer.response.trim() && question.type === "MULTI_SELECT") {
@@ -88,7 +92,6 @@ export function answerErrors(questions: ApplicationQuestion[], answers: Applicat
       errors[question.id] = `Keep your answer within ${question.wordLimit} words.`;
   }
   if (final) {
-    const visible = visibleQuestionIds(questions, answers);
     for (const question of questions) {
       if (question.required && visible.has(question.id) && !answers.some(answer => answer.questionId === question.id && answer.response.trim()))
         errors[question.id] = "This question needs a response before you submit.";

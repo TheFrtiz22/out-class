@@ -29,6 +29,8 @@ export function InterviewNotes({ entry }: { entry: InterviewEntry }) {
   const [message, setMessage] = useState("");
   const [openError, setOpenError] = useState("");
   const [opening, setOpening] = useState(true);
+  // What this phone had typed when a conflict was reloaded: kept read-only below the field to copy from.
+  const [unsaved, setUnsaved] = useState("");
   const live = useRef({ session, notes, saved, state, busy: false, mounted: true });
   live.current.session = session; live.current.notes = notes; live.current.saved = saved; live.current.state = state;
 
@@ -49,11 +51,15 @@ export function InterviewNotes({ entry }: { entry: InterviewEntry }) {
     if (current.busy || !current.session || current.session.completedAt || current.state === "conflict" || current.notes === current.saved) return;
     current.busy = true;
     const text = current.notes, record = current.session;
+    let failed = false;
     if (current.mounted) setState("saving");
     try {
       const result = await api.post<{ session: InterviewSession }>("leader.interviewSession.save", { ...scope, revision: record.revision, draft: { ...record.draft, additionalNotes: text } });
-      if (current.mounted) { setSession({ ...record, ...result.session }); setSaved(text); setState("idle"); setMessage(""); }
+      // Kept on the ref too, so a save after the notes closed goes out against the new revision.
+      current.session = { ...record, ...result.session }; current.saved = text;
+      if (current.mounted) { setSession(current.session); setSaved(text); setState("idle"); setMessage(""); }
     } catch (failure) {
+      failed = true;
       if (!current.mounted) return;
       haptics.error();
       // A newer draft exists (another device or the web room): stop saving, say so, and offer the reload.
@@ -62,16 +68,17 @@ export function InterviewNotes({ entry }: { entry: InterviewEntry }) {
       else { setState("error"); setMessage(errorMessage(failure, "Your interview could not be saved. Retry, or refresh your access and revision.")); }
     } finally {
       current.busy = false;
-      // Text typed while the save was in flight goes out next, against the new revision.
-      if (current.mounted && live.current.state !== "conflict" && live.current.state !== "error" && live.current.notes !== text) void save();
+      // Text typed while the save was in flight goes out next, against the new revision, also when the notes
+      // closed meanwhile (the closing save found this one in flight). No state is set after unmount.
+      if (!failed && live.current.state !== "conflict" && live.current.state !== "error" && live.current.notes !== text) void save();
     }
   }
 
   useEffect(() => {
     live.current.mounted = true;
     void open();
-    const forget = registerPrivateStore(() => { setSession(null); setNotes(""); setSaved(""); setOpenError("Your notes were cleared from this phone’s memory. Open the interview again."); });
-    return () => { void save(); live.current.mounted = false; forget(); };
+    const forget = registerPrivateStore(() => { setSession(null); setNotes(""); setSaved(""); setUnsaved(""); setOpenError("Your notes were cleared from this phone’s memory. Open the interview again."); });
+    return () => { live.current.mounted = false; void save(); forget(); };
     // One session per mounted interview; the parent keys this component by interview.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -101,9 +108,16 @@ export function InterviewNotes({ entry }: { entry: InterviewEntry }) {
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Text variant="small" testID="interview-save-status" accessibilityLiveRegion="polite" style={{ flex: 1 }} color={state === "conflict" || state === "error" ? colors.destructive : undefined}>{status}</Text>
         {state === "error" ? <Button label="Retry" variant="ghost" size="compact" testID="interview-save-retry" onPress={() => { setState("idle"); }} /> : null}
-        {state === "conflict" ? <Button label="Reload" variant="secondary" size="compact" testID="interview-reload" onPress={() => { void open(); }} /> : null}
+        {state === "conflict" ? <Button label="Reload" variant="secondary" size="compact" testID="interview-reload" onPress={() => { if (notes !== saved) setUnsaved(notes); void open(); }} /> : null}
       </View>
       {message ? <Text variant="small" color={colors.destructive} accessibilityRole="alert" testID="interview-save-message">{message}</Text> : null}
+      {unsaved ? (
+        <View style={{ gap: 4, borderRadius: 12, padding: 12, backgroundColor: colors.contentSoft }} testID="interview-unsaved">
+          <Text variant="smallStrong">Not saved from this phone · copy what you need</Text>
+          <Text variant="small" color={colors.foreground} selectable testID="interview-unsaved-text">{unsaved}</Text>
+          <Button label="Dismiss" variant="ghost" size="compact" testID="interview-unsaved-dismiss" onPress={() => setUnsaved("")} />
+        </View>
+      ) : null}
     </View>
   );
 }

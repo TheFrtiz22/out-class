@@ -1,5 +1,6 @@
 "use client"
 import type { ReactNode } from "react"
+import { ClubQrButton } from "@/components/clubs/club-qr-button"
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
@@ -51,6 +52,8 @@ export function RecruitingHero({ clubId, clubName, membership, data }: { clubId:
         {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link {...clubLinkProps(clubId, hrefs.applicants)}><Users2 aria-hidden="true" />Open applicants</Link></Button>}
         {/* The application form and deadline (Recruiting › Application); shown with or without an active cycle. */}
         {hasPermission(membership, "application.manage") && <Button variant="ghost" size="lg" asChild><Link {...clubLinkProps(clubId, `/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=application`)}><FileText aria-hidden="true" />Application</Link></Button>}
+        {/* The club's QR code for fairs, tables and info sessions: it opens the public page, where students apply. */}
+        <ClubQrButton club={{ id: clubId, name: clubName }} variant="ghost" />
         {active && hasPermission(membership, "interviews.manage") && hrefs.interviews && <Button size="lg" data-tone="interview" asChild><Link {...clubLinkProps(clubId, `${hrefs.interviews}&interviewTab=schedule`)}><CalendarPlus aria-hidden="true" />{TERMS.scheduleInterviews}</Link></Button>}
       </DashboardActions>} />
   </DashboardHero>

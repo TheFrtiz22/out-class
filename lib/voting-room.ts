@@ -64,7 +64,7 @@ export const OWN_APPLICATION_MESSAGE="Youâ€™re the applicant on screen; you canâ
 export function isOwnApplicationPresentation(value:unknown):value is OwnApplicationPresentation{return !!value&&typeof value==="object"&&(value as {ownApplication?:unknown}).ownApplication===true;}
 export function uniqueSelection(values: string[]) { if (new Set(values).size !== values.length) throw Error("Duplicate selection."); }
 export type RoomEntry = { applicationId: string; passNumber?: number; position: number; ballotState: string; confirmedDecision: string | null; ballots: { memberId: string; decision: string; revision: number }[] };
-export function roomOutcomes(s: { candidates: { applicationId: string }[]; passes: { number: number; candidates: RoomEntry[] }[] }) {
+export function roomOutcomes(s: { candidates: { applicationId: string }[]; passes: { number: number; candidates: Pick<RoomEntry, "applicationId" | "confirmedDecision">[] }[] }) {
   return s.candidates.map(c => {
     const ordered=[...s.passes].sort((a,b)=>b.number-a.number);
     // An unfinished revisit does not erase the previously confirmed Hold.

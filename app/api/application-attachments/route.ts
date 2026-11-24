@@ -1,4 +1,5 @@
-import { activeMemberWhere } from "@/lib/permissions";
+import { activeMemberWhere, hasPermission } from "@/lib/permissions";
+import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { auditSupportAction } from "@/utils/support-audit";
 import { NextResponse } from "next/server"
 import { z } from "zod"
@@ -33,6 +34,11 @@ export async function GET(request: Request) {
     if (!answer || answer.question.clubId !== answer.application.clubId || !isApplicationStoragePath(answer.response) ||
         !answer.response.startsWith(`${answer.application.studentId}/`))
       return new NextResponse("Not found", { status: 404, headers })
+    if (answer.application.studentId !== user.id) {
+      // A graduate kept as owner is hand-over only (lib/graduate-access.ts), which the membership filter above cannot see.
+      const member = await graduateClubAccessOrNull(prisma, await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: answer.application.clubId } } }))
+      if (!hasPermission(member, "applicants.identify")) return new NextResponse("Not found", { status: 404, headers })
+    }
     const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!secret) return new NextResponse("Storage unavailable", { status: 503, headers })
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret)

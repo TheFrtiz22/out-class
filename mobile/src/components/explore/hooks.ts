@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
-import { api, errorMessage } from "~/lib/api";
+import { ApiError, api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
 import type { ClubDirectory, PublicClub, SavedClubs } from "~/lib/types";
@@ -8,15 +8,27 @@ import type { ClubDirectory, PublicClub, SavedClubs } from "~/lib/types";
 const SAVED_CLUBS = ["clubs.saved", null] as const;
 const SAVED_EVENTS = ["events.savedIds", null] as const;
 
+/**
+ * The directory and club reads answer 200 with { error } when they fail (actions/club-directory.ts). Thrown, so
+ * React Query keeps the last loaded data on a failed refresh and a first load shows the server's message.
+ */
+function orThrow<T extends { error?: string }>(result: T): T {
+  if (result.error) throw new ApiError(503, "UNAVAILABLE", result.error);
+  return result;
+}
+
 /** The public directory: one read shared by Explore and anything that needs a club's summary. */
 export function useDirectory() {
-  return useApiQuery<ClubDirectory>("explore.directory", undefined, { staleTime: 60_000 });
+  return useApiQuery<ClubDirectory>("explore.directory", undefined, {
+    staleTime: 60_000,
+    queryFn: ({ signal }) => api.get<ClubDirectory>("explore.directory", undefined, { signal }).then(orThrow),
+  });
 }
 
 /** A club's full public profile, by id or slug. Prefetched on press-in from every list that opens it. */
 export const clubQuery = (club: string) => ({
   queryKey: ["club", { club }] as const,
-  queryFn: ({ signal }: { signal?: AbortSignal }) => api.get<{ club: PublicClub | null; error?: string }>("club", { club }, { signal }),
+  queryFn: ({ signal }: { signal?: AbortSignal }) => api.get<{ club: PublicClub | null; error?: string }>("club", { club }, { signal }).then(orThrow),
   staleTime: 60_000,
 });
 export function usePrefetchClub() {

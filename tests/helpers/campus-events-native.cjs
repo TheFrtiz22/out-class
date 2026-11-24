@@ -4,18 +4,22 @@ const {unwrapActions}=require('./action-result.cjs');
 const fs = require('node:fs'), path = require('node:path'), ts = require('typescript');
 const { PrismaClient } = require('@prisma/client');
 const { randomUUID } = require('node:crypto');
+const { UVA } = require('./school-scope.cjs');
 async function campusEventsNative(url) {
   const target = new URL(url);
   if (!['localhost', '127.0.0.1'].includes(target.hostname) || target.port !== '55442' || target.pathname !== '/postgres') throw Error('Events tests require the reserved disposable database at localhost:55442/postgres.');
   const prisma = new PrismaClient({ datasourceUrl: url });
   const users = [randomUUID(), randomUUID()]; let actor = users[0];
+  // utils/school-scope.ts reads the request (cookies/host); here every viewer is a student of the club's school
+  // unless a test moves the viewer to another school with asSchool().
+  let viewerSchool = UVA;
   await prisma.user.createMany({ data: users.map((id, i) => ({ id, email: `events-${id}-${i}@virginia.edu` })) });
-  const club = await prisma.club.create({ data: { name: 'OutClass Events Test', slug: `events-${randomUUID()}`, tagline: '', description: '', color: '#142d45', category: 'Arts' } });
+  const club = await prisma.club.create({ data: { name: 'OutClass Events Test', slug: `events-${randomUUID()}`, tagline: '', description: '', color: '#142d45', category: 'Arts', schoolId: UVA.id } });
   const cache = {};
   function load(file) {
     file = path.resolve(file); if (cache[file]) return cache[file].exports;
     const m = { exports: {} }; cache[file] = m;
-    const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => { if (!actor) throw Error('Sign in required'); return { user: { id: actor } }; } }, 'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/support-audit': { supportContext: async () => null, supportTransactionScope: { run: (_scope, fn) => fn() } }, '@/utils/admin-elevation': {}, '@/utils/platform-admin': {}, '@/lib/club-transaction-authorization': {} };
+    const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => { if (!actor) throw Error('Sign in required'); return { user: { id: actor } }; } }, 'next/cache': { revalidatePath() {}, revalidateTag() {} }, '@/utils/support-audit': { supportContext: async () => null, supportTransactionScope: { run: (_scope, fn) => fn() } }, '@/utils/admin-elevation': {}, '@/utils/platform-admin': {}, '@/lib/club-transaction-authorization': {}, '@/utils/school-scope': { resolveViewerSchool: async () => viewerSchool, resolveHostSchool: async () => UVA } };
     new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => name in mocks ? mocks[name] : name.startsWith('@/') ? load(name.slice(2) + '.ts') : require(name), m, m.exports);
     return m.exports;
   }
@@ -35,6 +39,6 @@ async function campusEventsNative(url) {
     }
     return events;
   }
-  return { prisma, api, users, club, seed, as: id => { actor = id; }, async close() { await prisma.club.delete({ where: { id: club.id } }); await prisma.user.deleteMany({ where: { id: { in: users } } }); await prisma.$disconnect(); } };
+  return { prisma, api, users, club, seed, as: id => { actor = id; }, asSchool: school => { viewerSchool = school; }, async close() { await prisma.club.delete({ where: { id: club.id } }); await prisma.user.deleteMany({ where: { id: { in: users } } }); await prisma.$disconnect(); } };
 }
 module.exports = { campusEventsNative };

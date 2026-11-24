@@ -4,14 +4,14 @@ import { useState } from "react";
 import { View } from "react-native";
 import { ALUMNI_REFUSALS, isAlumniProfile } from "~/components/alumni-banner";
 import { AboutSection, ClubEventsSection, ClubIdentity, FaqSection, LifeSection, MembersSection, RecruitmentSection, UnclaimedNotice } from "~/components/explore/club-sections";
-import { applicationStatusCode, applicationStatusLabel, clubRecruitment, clubSharePath, recruitmentDate } from "~/components/explore/directory";
+import { applicationStatusCode, applicationStatusLabel, clubRecruitment, recruitmentDate } from "~/components/explore/directory";
 import { clubQuery, useSavedClubs } from "~/components/explore/hooks";
 import { useNotice } from "~/components/explore/parts";
 import { Header, useHeaderInset } from "~/components/header";
 import type { IconComponent } from "~/components/icon-factory";
 import { ArrowRight, Bookmark, Share } from "~/components/icons";
 import { ReportButton } from "~/components/report-sheet";
-import { ShareSheet } from "~/components/share-sheet";
+import { ShareSheet, clubShareTarget } from "~/components/share-sheet";
 import { Text } from "~/components/text";
 import { Button, Card, EmptyState, ErrorState, ScreenScroll, Skeleton, StatusChip } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
@@ -123,7 +123,7 @@ export default function ClubPage() {
         <LifeSection club={club} />
         <FaqSection club={club} />
         <ClubEventsSection events={events} onOpen={event => router.push({ pathname: "/events/[id]", params: { id: event.id } })} />
-        <ShareSheet open={sharing} onClose={() => setSharing(false)} target={{ path: clubSharePath(club.id), title: club.name, text: `Check out ${club.name} on OutClass`, subtitle: "Anyone with the link can see the club’s public profile.", qrDescription: "Scan to see the club, follow it and apply on OutClass.", shortLink: true }} />
+        <ShareSheet open={sharing} onClose={() => setSharing(false)} target={clubShareTarget(club)} />
       </>
     );
   }

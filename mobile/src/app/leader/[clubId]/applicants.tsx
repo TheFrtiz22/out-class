@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { type InfiniteData, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, ScrollView, TextInput, View } from "react-native";
@@ -23,7 +23,8 @@ type Applicant = { id: string; studentId: string; roundId: string; status: strin
 type Cursor = { id: string; direction: "after" | "before" | "at"; scope: string };
 type Page = {
   rounds: { id: string; name: string }[]; applications: Applicant[];
-  page: { total: number; baseTotal: number; next: Cursor | null };
+  // `reset`: the cursor's anchor left the selection, so this is the first page again (lib/pipeline-page.ts).
+  page: { total: number; baseTotal: number; next: Cursor | null; reset?: boolean };
   profileFields: { major: boolean; academicYear: boolean; photo: boolean };
 };
 
@@ -54,16 +55,34 @@ export default function Applicants() {
   const [query, setQuery] = useState("");
   useEffect(() => { const timer = setTimeout(() => setQuery(typed.trim()), 350); return () => clearTimeout(timer); }, [typed]);
 
+  const queryClient = useQueryClient();
   const overview = useApiQuery<Overview>("leader.overview", { clubId, view: "recruiting" }, { scope: "leader", staleTime: 30_000 });
-  const pipeline = useInfiniteQuery<Page, Error, { pages: Page[] }, unknown[], Cursor | null>({
-    queryKey: ["leader", "leader.pipelinePage", clubId, roundId, query],
+  const pipelineKey = ["leader", "leader.pipelinePage", clubId, roundId, query];
+  const pipeline = useInfiniteQuery<Page, Error, InfiniteData<Page, Cursor | null>, unknown[], Cursor | null>({
+    queryKey: pipelineKey,
     initialPageParam: null,
     queryFn: ({ pageParam, signal }) => api.get<Page>("leader.pipelinePage", { clubId, query: { query, ...(roundId ? { roundId } : {}), ...(pageParam ? { cursor: pageParam } : {}) } }, { signal }),
     getNextPageParam: last => last.page.next,
     staleTime: 30_000,
     gcTime: 5 * 60_000,
   });
-  const pages = pipeline.data?.pages ?? [];
+  // A page the server answered with `reset` is page 1 again: the pages loaded before it are dropped (here at once,
+  // and in the cache just after), and paging restarts from it instead of repeating applicants.
+  const loaded = pipeline.data?.pages ?? [];
+  let resetAt = 0;
+  loaded.forEach((page, index) => { if (index && page.page.reset) resetAt = index; });
+  useEffect(() => {
+    if (!resetAt) return;
+    queryClient.setQueryData<InfiniteData<Page, Cursor | null>>(pipelineKey, data => data && data.pages.length > resetAt
+      ? { pages: data.pages.slice(resetAt), pageParams: [null, ...data.pageParams.slice(resetAt + 1)] } : data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetAt, pipeline.dataUpdatedAt]);
+  // A refusal (access removed, 4xx) clears the list and shows the server's answer, as the voting room does. A dropped
+  // or slow connection, an outage or a rate limit keeps the last list, and so does a next page refused as a stale
+  // request (400), which the footer offers to restart.
+  const failure = pipeline.error instanceof ApiError ? pipeline.error : null;
+  const keepLast = pipeline.isError && !!failure && (failure.unreachable || failure.status >= 500 || failure.status === 429 || (pipeline.isFetchNextPageError && failure.status === 400));
+  const pages = pipeline.isError && !keepLast ? [] : loaded.slice(resetAt);
   const first = pages[0];
   const applicants = pages.flatMap(page => page.applications);
   const roundCounts = overview.data?.operations?.rounds ?? [];
@@ -115,7 +134,7 @@ export default function Applicants() {
         scrollIndicatorInsets={{ top }}
         refreshControl={pullControl}
         onEndReachedThreshold={0.6}
-        onEndReached={() => { if (pipeline.hasNextPage && !pipeline.isFetchingNextPage) pipeline.fetchNextPage(); }}
+        onEndReached={() => { if (pipeline.hasNextPage && !pipeline.isFetchingNextPage && !pipeline.isFetchNextPageError) pipeline.fetchNextPage(); }}
         ListEmptyComponent={pipeline.isPending ? <SkeletonRows count={5} /> : pipeline.isError ? (
           <Card><ErrorState offline={pipeline.error instanceof ApiError && pipeline.error.offline} message={errorMessage(pipeline.error)} onRetry={() => pipeline.refetch()} /></Card>
         ) : (
@@ -124,7 +143,11 @@ export default function Applicants() {
             {first?.page.baseTotal && filtered ? <Button label="Clear filters" variant="secondary" size="compact" onPress={() => { setTyped(""); setQuery(""); setRoundId(null); }} /> : null}
           </Card>
         )}
-        ListFooterComponent={pipeline.isFetchingNextPage ? <SkeletonRows count={2} /> : undefined}
+        ListFooterComponent={pipeline.isFetchingNextPage ? <SkeletonRows count={2} /> : pipeline.isFetchNextPageError && applicants.length ? (
+          // A 400 means the next page's cursor no longer fits the list (the selection changed): start again from page 1.
+          <Card testID="applicants-more-error"><ErrorState offline={!!failure?.offline} message={failure?.status === 400 ? "The list changed since it loaded. Try again to start from the top." : errorMessage(pipeline.error, "Couldn’t load more applicants.")}
+            onRetry={() => { if (failure?.status === 400) void queryClient.resetQueries({ queryKey: pipelineKey, exact: true }); else void pipeline.fetchNextPage(); }} /></Card>
+        ) : undefined}
         renderItem={({ item }) => {
           const name = applicantName(item), hidden = anonymous(item), profile = item.student.studentProfile, fields = first?.profileFields;
           const facts = [fields?.academicYear !== false ? profile?.academicYear : null, !hidden && fields?.major !== false ? profile?.major : null].filter(Boolean).join(" · ");

@@ -49,6 +49,12 @@ export async function saveNotificationPreferences(input: unknown) {
   return saved;
 }
 
+/** The Inbox's unread count alone (one indexed count), for badges that do not show the rows. */
+export async function getUnreadNotificationCount() {
+  const { user } = await requireAuth();
+  return prisma.userNotification.count({ where: { userId: user.id, archivedAt: null, readAt: null } });
+}
+
 export async function getDurableNotifications(cursor?: string) {
   const { user } = await requireAuth();
   if (cursor) uuid.parse(cursor);

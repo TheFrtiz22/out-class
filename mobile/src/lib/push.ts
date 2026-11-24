@@ -89,6 +89,19 @@ export async function unregisterPushBeforeSignOut() {
   await Promise.race([push.disable(), new Promise(resolve => setTimeout(resolve, 2500))]);
 }
 
+/**
+ * After a session that ended without Sign out (revoked, expired, signed out elsewhere): the server can no
+ * longer be asked to stop this device's pushes, so the device stops receiving them itself. Turning push on
+ * again registers it afresh.
+ */
+export async function unregisterPushLocally() {
+  cachedToken = null;
+  // getExpoPushTokenAsync turned on Expo's persisted auto-registration, which would fetch and upload a fresh
+  // token at the next launch and bring the old account's pushes back. Off first; enable() turns it on again.
+  try { await Notifications.setAutoServerRegistrationEnabledAsync(false); } catch { /* best effort */ }
+  try { await Notifications.unregisterForNotificationsAsync(); } catch { /* best effort: nothing more to do signed out */ }
+}
+
 /** The site path a tapped notification carries (the server's lock-screen-safe payload: `data.url`). */
 export function notificationPath(response: Notifications.NotificationResponse | null | undefined): string | null {
   const url = (response?.notification.request.content.data as { url?: unknown } | undefined)?.url;

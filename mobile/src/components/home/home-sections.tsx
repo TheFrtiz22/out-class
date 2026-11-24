@@ -9,7 +9,7 @@ import { type LeaderTools, leaderTools } from "~/components/leader/access";
 import { Text } from "~/components/text";
 import { Card, Chip, ClubMark, Divider, Press, SectionHeader, TARGET } from "~/components/ui";
 import { config } from "~/lib/config";
-import { eastern, easternDateKey, toInstant } from "~/lib/eastern";
+import { addDays, eastern, easternDateKey, toInstant } from "~/lib/eastern";
 import { type HomeHero, applicationDue } from "~/lib/home-priority";
 import { useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
@@ -25,7 +25,8 @@ const dueDate = (value: string | number | null | undefined) => dueDateText(asDat
 const clock = (value: string | number | null | undefined) => clockText(asDate(value));
 const monthDay = eastern({ month: "short", day: "numeric" });
 const isToday = (value: string | number | null | undefined, now: Date) => { const date = toInstant(value); return !!date && easternDateKey(date) === easternDateKey(now); };
-const isTomorrow = (value: string | number | null | undefined, now: Date) => { const date = toInstant(value); return !!date && easternDateKey(date) === easternDateKey(+now + 86_400_000); };
+/** The next Eastern calendar day, not now + 24 hours (which is wrong on the days the clocks change). */
+const isTomorrow = (value: string | number | null | undefined, now: Date) => { const date = toInstant(value); return !!date && easternDateKey(date) === addDays(easternDateKey(now), 1); };
 /** "Today, 4:30 PM", "Tomorrow, 9 AM" or "Mon, Nov 23, 7:00 PM" (Eastern, as the rest of the app). */
 export function whenLabel(value: string | null | undefined, now: Date) {
   if (!toInstant(value)) return "";
@@ -77,7 +78,7 @@ export function HomeHeroCard({ hero, now, onOpen, eventRoute, eventAction, taskR
     const { event } = hero;
     const start = toInstant(event.startTime);
     const minutes = start ? Math.round((+start - +now) / 60_000) : NaN;
-    eyebrow = !Number.isFinite(minutes) ? "Coming up" : minutes <= 0 ? "Happening now" : minutes < 60 ? `Starts in ${minutes} min` : "Today";
+    eyebrow = !Number.isFinite(minutes) ? "Coming up" : minutes <= 0 ? "Happening now" : minutes < 60 ? `Starts in ${minutes} min` : isToday(event.startTime, now) ? "Today" : isTomorrow(event.startTime, now) ? "Tomorrow" : dueDate(event.startTime);
     corner = clock(event.startTime);
     title = event.title;
     detail = [event.location, event.club].filter(Boolean).join(" · ");
