@@ -96,6 +96,9 @@ export async function unregisterPushBeforeSignOut() {
  */
 export async function unregisterPushLocally() {
   cachedToken = null;
+  // getExpoPushTokenAsync turned on Expo's persisted auto-registration, which would fetch and upload a fresh
+  // token at the next launch and bring the old account's pushes back. Off first; enable() turns it on again.
+  try { await Notifications.setAutoServerRegistrationEnabledAsync(false); } catch { /* best effort */ }
   try { await Notifications.unregisterForNotificationsAsync(); } catch { /* best effort: nothing more to do signed out */ }
 }
 

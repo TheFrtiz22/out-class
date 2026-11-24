@@ -19,6 +19,7 @@ jest.mock("expo-notifications", () => ({
   requestPermissionsAsync: jest.fn(async () => ({ status: "granted", granted: true, canAskAgain: true })),
   getExpoPushTokenAsync: jest.fn(async () => ({ data: "ExponentPushToken[test]" })),
   unregisterForNotificationsAsync: jest.fn(async () => {}),
+  setAutoServerRegistrationEnabledAsync: jest.fn(async () => {}),
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn(async () => null),
   setBadgeCountAsync: jest.fn(async () => true),
@@ -104,6 +105,8 @@ describe("session end and account switching", () => {
     const unregistered = (mockedApi.post as jest.Mock).mock.calls.some(([operation]) => operation === "push.unregister")
       || (Notifications.unregisterForNotificationsAsync as jest.Mock).mock.calls.length > 0;
     expect(unregistered).toBe(true); // actual: nothing; the account's pushes keep arriving on this phone
+    // And Expo's persisted auto-registration is off, so the next launch doesn't register the phone again.
+    expect(Notifications.setAutoServerRegistrationEnabledAsync).toHaveBeenCalledWith(false);
     // Like Sign out, it takes the unsaved application answers kept on this phone with it.
     await waitFor(async () => expect(await AsyncStorage.getItem("outclass:draft:user-1:application:1")).toBeNull()); // actual: still there
   });
