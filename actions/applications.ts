@@ -199,9 +199,10 @@ prisma.application.findMany({
       round: {
         select: { name: true },
       },
-      answers: true,
+      answers: { select: { questionId: true, response: true } },
       bookings: {
-        include: { slot: true },
+        // Students see when and where; the slot's panel and staffing fields are the club's own.
+        select: { id: true, roundId: true, applicationId: true, slotId: true, slot: { select: { id: true, startTime: true, endTime: true, location: true } } },
       },
     },
     orderBy: applicationRecency,
@@ -210,8 +211,9 @@ prisma.application.findMany({
 prisma.eventAttendance.findMany({
     where: { studentId: user.id, event: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] } },
     include: {
+      // Agenda, recap and resources stay on the meeting page; the calendar needs only these.
       event: {
-        include: { club: { select: { name: true } } },
+        select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, club: { select: { name: true } } },
       },
     },
   }),
@@ -219,5 +221,11 @@ prisma.eventAttendance.findMany({
 prisma.meeting.findMany({ where: { AND: [{ OR: [schoolPublicMeetingVisibility(school.id), { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true, members: { where: { userId: user.id, ...activeMemberWhere }, select: { isOwner: true, permissions: true, status: true, alumniSince: true }, take: 1 } } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
-  return { applications, attendances, meetings: meetings.map(studentMeeting), panelAssignments }
+  return { applications: applications.map(dashboardApplication), attendances, meetings: meetings.map(studentMeeting), panelAssignments }
+}
+
+/** Home draws each club's logo, so it keeps only the logo settings of the club's public page content. */
+function dashboardApplication<A extends { club: { marketing: unknown } }>(app: A): A {
+  const { logoBackground, logoOnBrand } = (app.club.marketing ?? {}) as { logoBackground?: unknown; logoOnBrand?: unknown }
+  return { ...app, club: { ...app.club, marketing: { logoBackground, logoOnBrand } } }
 }

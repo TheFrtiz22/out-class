@@ -17,6 +17,8 @@ export const OFFLINE_MESSAGE = "You're offline. Check your connection and try ag
 export const TIMEOUT_MESSAGE = "OutClass is taking too long to answer. Check your connection and try again.";
 const GENERIC_MESSAGE = "Something went wrong. Try again in a moment.";
 const RATE_LIMIT_MESSAGE = "Too many requests. Wait a moment and try again.";
+// The server's own refusal wording for a missing session (utils/mobile-api.ts).
+const SIGNED_OUT_MESSAGE = "Sign in to continue.";
 
 /** How long a request may wait for an answer before it is given up (uploads get longer). */
 const TIMEOUT_MS = { GET: 20_000, POST: 30_000, upload: 120_000 } as const;
@@ -29,23 +31,27 @@ function within<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([promise, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(timeoutError()), ms); })]).finally(() => clearTimeout(timer));
 }
 
-async function accessToken(): Promise<string | null> {
+/** The signed-in session's token and whose it is. */
+async function currentSession(): Promise<{ token: string; userId: string } | null> {
   const { data } = await within(supabase.auth.getSession(), TIMEOUT_MS.GET);
-  return data.session?.access_token ?? null;
+  return data.session ? { token: data.session.access_token, userId: data.session.user.id } : null;
+}
+async function accessToken(): Promise<string | null> {
+  return (await currentSession())?.token ?? null;
 }
 
 // One refresh at a time: every request that meets a 401 together waits on the same one.
-let refreshing: Promise<boolean> | null = null;
-/** True when Auth issued a new session. Only Auth saying the session is gone signs the person out;
- * a refresh that could not reach Auth (a bad connection) leaves them signed in to try again. */
-function refreshAfterUnauthorized(): Promise<boolean> {
+let refreshing: Promise<string | null> | null = null;
+/** The account of the new session when Auth issued one, else null. Only Auth saying the session is gone
+ * signs the person out; a refresh that could not reach Auth (a bad connection) leaves them signed in to try again. */
+function refreshAfterUnauthorized(): Promise<string | null> {
   refreshing ??= (async () => {
     try {
       const refreshed = await within(supabase.auth.refreshSession(), TIMEOUT_MS.GET);
       const status = (refreshed.error as { status?: number } | null)?.status;
       if (refreshed.error && typeof status === "number" && status >= 400 && status < 500) await supabase.auth.signOut({ scope: "local" });
-      return !refreshed.error && !!refreshed.data.session;
-    } catch { return false; } finally { refreshing = null; }
+      return refreshed.error ? null : refreshed.data.session?.user.id ?? null;
+    } catch { return null; } finally { refreshing = null; }
   })();
   return refreshing;
 }
@@ -93,10 +99,14 @@ async function fetchWithin(url: string, init: RequestInit & { signal?: AbortSign
   }
 }
 
-async function request<T>(method: "GET" | "POST", operation: string, input: unknown, options: CallOptions, retried = false): Promise<T> {
+/** `retryFor`: on the one retry after a refresh, the account the first attempt was sent for. */
+async function request<T>(method: "GET" | "POST", operation: string, input: unknown, options: CallOptions, retryFor?: string): Promise<T> {
   const url = new URL(`/api/mobile/v1/${operation}`, config.apiUrl);
   const headers: Record<string, string> = { Accept: "application/json" };
-  const token = options.anonymous ? null : await accessToken();
+  const sent = options.anonymous ? null : await currentSession();
+  const token = sent?.token ?? null;
+  // A retry is never sent as another account (someone else signed in while the first attempt was out).
+  if (retryFor !== undefined && sent?.userId !== retryFor) throw new ApiError(401, "UNAUTHENTICATED", SIGNED_OUT_MESSAGE);
   if (token) headers.Authorization = `Bearer ${token}`;
   let body: BodyInit | undefined;
   if (method === "GET") {
@@ -132,8 +142,9 @@ async function request<T>(method: "GET" | "POST", operation: string, input: unkn
   // The server no longer accepts this session (expired, signed out elsewhere, disabled). A refused
   // request did nothing, so after a successful refresh it is sent once more with the new session.
   // A pending second step is not a stale session; refreshing would not change the answer.
-  if (response.status === 401 && token && code !== "TWO_STEP_REQUIRED" && !retried && !options.signal?.aborted) {
-    if (await refreshAfterUnauthorized()) return request<T>(method, operation, input, options, true);
+  // Only a refresh of the same account counts: a request made as one account is never re-sent as another.
+  if (response.status === 401 && sent && code !== "TWO_STEP_REQUIRED" && retryFor === undefined && !options.signal?.aborted) {
+    if (await refreshAfterUnauthorized() === sent.userId) return request<T>(method, operation, input, options, sent.userId);
   }
   throw new ApiError(response.status, code, message);
 }
