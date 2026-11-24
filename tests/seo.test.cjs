@@ -131,7 +131,7 @@ test('public information pages render factual content, consistent entity referen
       assert.equal(meta.title.absolute, 'Club recruitment at UVA · OutClass')
       // Indexable club profiles are linked from /uva by their slug address, not only listed in the sitemap.
       assert.match(html, /<h2 id="uva-clubs-title">UVA clubs on OutClass<\/h2>/)
-      assert.match(html, /<a href="\/club\/chess-club">Chess Club<\/a>/)
+      assert.ok(html.includes(`<a href="${seo.SITE_URL}/club/chess-club">Chess Club</a>`))
       const faq = graph.find(item => item['@type'] === 'FAQPage')
       assert.equal(faq.mainEntity.length, (html.match(/<details\b/g) || []).length)
       assert.equal(new Set(publicFaq.publicFaqs.map(item => item.id)).size, faq.mainEntity.length)
