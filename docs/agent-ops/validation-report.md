@@ -455,4 +455,5 @@ Final full run on the finished branch (2026-11-18, same loaded machine): **3178 
 
 - Changed suites: `tests/seo.test.cjs` 18/18 (new: slug paths in `clubPath` and JSON-LD, "at UVA" title cases, /uva club list rendered with slug links and hidden when empty), `tests/public-seo-legal.test.cjs`, `tests/club-share-preview.test.cjs`, `tests/launch-clubs.test.cjs`: all pass.
 - `pnpm run test:migrations`: pass (101 migrations, every table enforces RLS). `pnpm run lint`: 0 errors (17 existing warnings, none in changed files); ui-controls OK. `tsc --noEmit`: clean. `pnpm run build`: pass, no public source maps.
-- Full `node --test tests/*.test.cjs` in the build sandbox: browser suites fail there because Playwright's Chromium is not installed (no download access); CI runs them.
+- Full `node --test tests/*.test.cjs` in the build sandbox: stopped at its 28-minute limit; the only failure before then was a browser suite that can't start Playwright's Chromium there (not installed, no download access). CI's `validate` runs the full suite.
+- Codex review (P2): /uva club links were relative, so on another school's subdomain they would 404 (signed-out club reads are scoped to the host's school). Links are now absolute to the launch-school origin; `tests/seo.test.cjs` asserts the absolute href, 18/18.
