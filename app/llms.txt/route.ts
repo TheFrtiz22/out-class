@@ -24,6 +24,7 @@ export async function GET() {
     `- [Club recruitment at UVA](${SITE_URL}/uva): how UVA students find, apply to and interview with clubs`,
     `- [About](${SITE_URL}/about): who OutClass is for and why it exists`,
     `- [Security](${SITE_URL}/security): how OutClass protects student data`,
+    `- [Copyright and DMCA notices](${SITE_URL}/copyright): OutClass's designated copyright agent and how to send a notice`,
     `- [Request your school](${SITE_URL}/request-school): how another university can join`,
     ...(LEGAL_PAGES_PUBLIC ? [`- [Privacy Policy](${SITE_URL}/privacy)`, `- [Terms of Service](${SITE_URL}/terms)`] : []),
     "",

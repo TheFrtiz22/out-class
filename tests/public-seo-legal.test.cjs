@@ -150,7 +150,7 @@ test('Privacy Policy names every processor in use, every profile data category, 
 
 test('Terms cover eligibility (UVA, 13+, minors), acceptable use, reporting, removal and DMCA notice-and-takedown', () => {
   const legal = load('lib/legal-content.ts'), text = JSON.stringify(legal.termsOfService)
-  for (const phrase of ['@virginia.edu', 'at least 13', 'under 18', legal.LEGAL_PLACEHOLDERS.minorsClause, 'Acceptable use', 'Reporting content', 'Content removal', 'DMCA', '17 U.S.C. § 512', 'counter-notice', 'repeat infringers', legal.LEGAL_PLACEHOLDERS.dmcaAgentName, legal.LEGAL_PLACEHOLDERS.dmcaAgentAddress]) assert.ok(text.includes(phrase), phrase)
+  for (const phrase of ['@virginia.edu', 'at least 13', 'under 18', legal.LEGAL_PLACEHOLDERS.minorsClause, 'Acceptable use', 'Reporting content', 'Content removal', 'DMCA', '17 U.S.C. § 512', 'counter-notice', 'repeat infringers', legal.DMCA_AGENT.name, legal.DMCA_AGENT_ADDRESS, legal.DMCA_AGENT.phone, legal.DMCA_AGENT.email, '/copyright']) assert.ok(text.includes(phrase), phrase)
   const details = JSON.stringify(legal.legalDetails('1 Rotunda Way, Charlottesville, VA'))
   assert.match(details, /OutClassPlatforms LLC/); assert.match(details, /1 Rotunda Way/)
   assert.ok(JSON.stringify(legal.legalDetails('')).includes(legal.LEGAL_PLACEHOLDERS.mailingAddress))

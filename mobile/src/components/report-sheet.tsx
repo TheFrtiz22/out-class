@@ -62,8 +62,8 @@ export function ReportSheet({ open, onClose, target, subject }: { open: boolean;
       {done ? (
         <View style={{ gap: 14 }}>
           <Text variant="body" accessibilityRole="alert" testID="report-done">{done.message}</Text>
-          {done.dmcaHref ? <Text variant="small">Copyright owners can also send a formal notice as described in our Terms.</Text> : null}
-          {done.dmcaHref ? <Button variant="secondary" full label="Read the Terms" testID="report-dmca" onPress={() => { WebBrowser.openBrowserAsync(`${config.apiUrl}${done.dmcaHref}`).catch(() => {}); }} /> : null}
+          {done.dmcaHref ? <Text variant="small">Copyright owners can also send a formal notice to our designated copyright agent.</Text> : null}
+          {done.dmcaHref ? <Button variant="secondary" full label="How to send a notice" testID="report-dmca" onPress={() => { WebBrowser.openBrowserAsync(`${config.apiUrl}${done.dmcaHref}`).catch(() => {}); }} /> : null}
           <Button full label="Done" testID="report-close" onPress={close} />
         </View>
       ) : (

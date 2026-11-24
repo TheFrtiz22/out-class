@@ -93,10 +93,10 @@ test('a valid report writes one report and one audit row, and never notifies any
   assert.equal(ann.calls.created[0].targetId, `announcement:club-1:${ANN}`)
 })
 
-test('copyright reports point to the DMCA section of the Terms', async () => {
+test('copyright reports point to the public copyright page', async () => {
   const { server } = world()
   const result = await server.reportContent(input({ type: 'club-image', clubId: 'club-1', index: 0 }, 'COPYRIGHT'))
-  assert.equal(result.ok, true); assert.match(result.dmcaHref, /^\/terms#/)
+  assert.equal(result.ok, true); assert.equal(result.dmcaHref, '/copyright')
 })
 
 test('the same reporter and target within 24 hours is deduplicated without a new row', async () => {

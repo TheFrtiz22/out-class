@@ -23,6 +23,7 @@ const sections = [
 const legal = [
   { id: "terms", label: "Terms of Service", description: "Opens on the OutClass website.", open: () => openLegalPage("/terms"), icon: ExternalLink },
   { id: "privacy", label: "Privacy Policy", description: "Opens on the OutClass website.", open: () => openLegalPage("/privacy"), icon: ExternalLink },
+  { id: "copyright", label: "Copyright and DMCA", description: "Our copyright agent and how to send a notice. Opens on the website.", open: () => openLegalPage("/copyright"), icon: ExternalLink },
   { id: "contact", label: "Contact us", description: `Questions, problems or a request about your data: ${CONTACT_EMAIL}`, open: emailSupport, icon: Mail },
 ] as const;
 

@@ -35,15 +35,35 @@ const SERVICE = "OutClass"
 export const LEGAL_PLACEHOLDERS = {
   effectiveDate: "[effective date]",
   mailingAddress: "[mailing address: set OUTCLASS_POSTAL_ADDRESS]",
-  dmcaAgentName: "[DMCA designated agent name]",
-  dmcaAgentAddress: "[DMCA designated agent mailing address]",
-  dmcaAgentPhone: "[DMCA designated agent telephone]",
-  dmcaAgentEmail: "[DMCA designated agent email, e.g. copyright@out-class.net]",
   minorsClause: "[counsel: terms for users under 18, e.g. first-year students aged 17]",
   retentionPeriod: "[counsel/owner: retention period after account closure]",
   formationState: "[confirm state of organization: Virginia]",
 } as const
 export const LEGAL_EFFECTIVE_DATE = LEGAL_PLACEHOLDERS.effectiveDate
+
+/**
+ * The DMCA designated agent, as filed with the U.S. Copyright Office (registration DMCA-1087353, owner 2026-11-24).
+ * 17 U.S.C. § 512(c)(2) requires the agent's name, address, phone number and email to be public on the site;
+ * /copyright shows them, and the Terms and /legal repeat them. Every value must match the Copyright Office
+ * filing: change one here only together with the filing. The email is temporary until an OutClass address exists.
+ * A value still in [brackets] is not decided yet; tests/copyright-page.test.cjs fails until none is left.
+ */
+export const DMCA_AGENT = {
+  name: "Jesse Klinger",
+  serviceProvider: COMPANY,
+  addressLines: ["[DMCA agent street address, as filed]", "[DMCA agent city, state and ZIP, as filed]"] as readonly string[],
+  phone: "[DMCA agent phone, as filed]",
+  email: "klinger.jesse@gmail.com",
+} as const
+export const DMCA_AGENT_ADDRESS = DMCA_AGENT.addressLines.join(", ")
+const dmcaPhoneDigits = DMCA_AGENT.phone.replace(/\D/g, "")
+/** A tel: link for a 10-digit U.S. number, or null while the number is not set. */
+export const DMCA_AGENT_PHONE_HREF: string | null = dmcaPhoneDigits.length === 10 ? `tel:+1${dmcaPhoneDigits}` : null
+/** True once every agent detail is filled in (no [bracketed] placeholder left). */
+export const DMCA_AGENT_COMPLETE = ![DMCA_AGENT.name, DMCA_AGENT.phone, DMCA_AGENT.email, ...DMCA_AGENT.addressLines].some(value => /\[|\]/.test(value))
+export const DMCA_AGENT_EMAIL_HREF = `mailto:${DMCA_AGENT.email}`
+/** The public page with the agent's details and the notice and counter-notice steps. */
+export const COPYRIGHT_PAGE_PATH = "/copyright"
 
 export type LegalSection = { heading: string; paragraphs?: string[]; list?: string[] }
 export type LegalDocument = { title: string; summary: string; sections: LegalSection[] }
@@ -199,7 +219,7 @@ export const termsOfService: LegalDocument = {
     ] },
     { heading: "8. Copyright and DMCA notices", paragraphs: [
       "We respect intellectual property rights and respond to notices of alleged copyright infringement under the Digital Millennium Copyright Act (17 U.S.C. § 512). If you believe content on the Services infringes your copyright, send a written notice to our designated agent that includes: (a) your physical or electronic signature; (b) identification of the copyrighted work; (c) identification of the material you claim is infringing and information reasonably sufficient for us to locate it, such as a link; (d) your name, address, telephone number and email address; (e) a statement that you have a good-faith belief that the use is not authorized by the copyright owner, its agent or the law; and (f) a statement, under penalty of perjury, that the information in your notice is accurate and that you are the copyright owner or authorized to act on its behalf.",
-      `Designated agent: ${LEGAL_PLACEHOLDERS.dmcaAgentName}, ${COMPANY}, ${LEGAL_PLACEHOLDERS.dmcaAgentAddress}; telephone ${LEGAL_PLACEHOLDERS.dmcaAgentPhone}; email ${LEGAL_PLACEHOLDERS.dmcaAgentEmail}.`,
+      `Designated agent: ${DMCA_AGENT.name}, ${COMPANY}, ${DMCA_AGENT_ADDRESS}; telephone ${DMCA_AGENT.phone}; email ${DMCA_AGENT.email}. The same details and steps are on our Copyright page (${COPYRIGHT_PAGE_PATH}).`,
       "When we receive a valid notice we will remove or disable access to the material and notify the person who posted it. If you believe material was removed by mistake or misidentification, you may send our designated agent a counter-notice that includes your signature, identification of the removed material and its former location, a statement under penalty of perjury that you have a good-faith belief it was removed by mistake or misidentification, and your name, address and telephone number with your consent to the jurisdiction of the federal court for your district (or, if you are outside the United States, any district in which we may be found) and to accept service from the person who sent the notice. We may restore the material in 10 to 14 business days unless the complainant tells us it has filed a court action.",
       "We will terminate, in appropriate circumstances, the accounts of users who are repeat infringers. Sending a knowingly false notice or counter-notice may make you liable for damages.",
     ] },
@@ -242,9 +262,9 @@ export function legalDetails(postalAddress: string | null | undefined): LegalDoc
         `Mailing address: ${address}`,
         `Email: ${CONTACT_EMAIL}`,
       ] },
-      { heading: "Policies", list: ["Privacy Policy: /privacy", "Terms of Service: /terms", "Cookie Policy: /cookies"] },
+      { heading: "Policies", list: ["Privacy Policy: /privacy", "Terms of Service: /terms", "Cookie Policy: /cookies", `Copyright and DMCA notices: ${COPYRIGHT_PAGE_PATH}`] },
       { heading: "Reporting content", paragraphs: [`To report content that breaks our Terms, email ${CONTACT_EMAIL} (Terms section 6).`] },
-      { heading: "Copyright agent", paragraphs: [`DMCA notices: ${LEGAL_PLACEHOLDERS.dmcaAgentName}, ${LEGAL_PLACEHOLDERS.dmcaAgentAddress}; ${LEGAL_PLACEHOLDERS.dmcaAgentEmail} (Terms section 8).`] },
+      { heading: "Copyright agent", paragraphs: [`DMCA notices: ${DMCA_AGENT.name}, ${DMCA_AGENT_ADDRESS}; ${DMCA_AGENT.phone}; ${DMCA_AGENT.email} (see ${COPYRIGHT_PAGE_PATH} and Terms section 8).`] },
       { heading: "Independence", paragraphs: [`${SERVICE} is not an official service of the University of Virginia or any other institution and is not owned, sponsored or endorsed by any university.`] },
     ],
   }
