@@ -5,7 +5,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ChevronRight, Compass, FilePenLine, Users } from "~/components/icons";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { leaderMemberships } from "~/components/leader/access";
-import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Row, ScreenScroll, SkeletonRows } from "~/components/ui";
+import { Button, Card, ClubMark, Divider, EmptyState, ErrorState, RoleBadge, Row, ScreenScroll, SkeletonRows } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useApiQuery } from "~/lib/query";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
@@ -41,7 +41,7 @@ export function MyClubsList({ tab = false }: { tab?: boolean }) {
                       leading={<ClubMark name={membership.club.name} color={membership.club.color} logoUrl={membership.club.logoUrl} size={40} />}
                       title={membership.club.name}
                       detail={membership.alumniSince ? "Alumni" : membership.title ?? undefined}
-                      trailing={leading.has(membership.id) ? <Chip label="Leader" tone="brand" /> : <ChevronRight size={18} color={colors.mutedForeground} />}
+                      trailing={leading.has(membership.id) ? <RoleBadge label="Leader" testID="my-clubs-leader-badge" /> : <ChevronRight size={18} color={colors.mutedForeground} />}
                       onPress={() => router.push({ pathname: "/my-club/[clubId]", params: { clubId: membership.clubId } })}
                     />
                   </View>

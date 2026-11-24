@@ -141,6 +141,19 @@ export function Chip({ label, tone = "neutral", icon, testID }: { label: string;
   );
 }
 
+/**
+ * A role on a club row ("Leader"): a small tinted pill with the word alone, no dot or icon,
+ * so it reads as a label rather than a status.
+ */
+export function RoleBadge({ label, testID }: { label: string; testID?: string }) {
+  const { colors } = useTheme();
+  return (
+    <View testID={testID} style={{ alignSelf: "center", flexShrink: 0, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: colors.brandSubtle }}>
+      <Text variant="caption" color={colors.brandInk} numberOfLines={1} style={{ fontFamily: fonts.sansMedium }}>{label}</Text>
+    </View>
+  );
+}
+
 /** The tone the web gives each application status (student-facing labels come from the server). */
 export function statusTone(code: string): ChipTone {
   return ({ DRAFTING: "neutral", SUBMITTED: "neutral", IN_REVIEW: "info", INTERVIEWING: "interview", ACCEPTED: "success", REJECTED: "error", WAITLISTED: "warning" } as Record<string, ChipTone>)[code] ?? "neutral";

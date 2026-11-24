@@ -16,15 +16,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import {
   ArrowRight,
   ArrowLeft,
-  Mail,
-  ShieldCheck,
-  GraduationCap,
-  Briefcase,
   Upload,
   FileText,
   X,
-  Check,
-  Compass,
 } from "@/components/icons"
 
 import { Button } from "@/components/ui/button"
@@ -63,11 +57,11 @@ import { Panel } from "@/components/ui/panel"
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STEPS = [
-  { label: "Account", icon: ShieldCheck },
-  { label: "Verify", icon: Mail },
-  { label: "Academic", icon: GraduationCap },
-  { label: "Experience", icon: Briefcase },
-  { label: "Interests", icon: Compass },
+  { label: "Account" },
+  { label: "Verify" },
+  { label: "Academic" },
+  { label: "Experience" },
+  { label: "Interests" },
 ] as const
 
 // Steps 2 and 3 widgets load in their own chunks (server-rendered when visible). The wizard starts
@@ -87,9 +81,10 @@ const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10 MB
 function StepProgress({ current }: { current: number }) {
   return (
     <div className="mb-8">
-      {/* Step counter text */}
+      {/* Step counter text: names the current step, so the bar needs no icons on a phone */}
       <p className="mb-3 text-center text-xs font-medium text-muted-foreground">
         Step {current} of {STEPS.length}
+        <span className="sm:hidden"> · {STEPS[current - 1]?.label}</span>
       </p>
 
       {/* Segmented progress bar */}
@@ -105,26 +100,19 @@ function StepProgress({ current }: { current: number }) {
         ))}
       </div>
 
-      {/* Step labels */}
-      <div className="mt-2 flex">
-        {STEPS.map((step, i) => {
-          const Icon = step.icon
-          return (
-            <div
-              key={step.label}
-              className={`flex flex-1 items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
-                i + 1 <= current ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {i + 1 < current ? (
-                <Check className="size-3.5" />
-              ) : (
-                <Icon className="size-3.5" />
-              )}
-              <span className="hidden sm:inline">{step.label}</span>
-            </div>
-          )
-        })}
+      {/* Step labels: text only */}
+      <div className="mt-2 hidden sm:flex">
+        {STEPS.map((step, i) => (
+          <div
+            key={step.label}
+            aria-current={i + 1 === current ? "step" : undefined}
+            className={`flex-1 text-center text-xs font-medium transition-colors ${
+              i + 1 <= current ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            {step.label}
+          </div>
+        ))}
       </div>
     </div>
   )
