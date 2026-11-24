@@ -33,8 +33,10 @@ export async function GET(request: NextRequest) {
     return !club.suspendedAt && clubProfileImages(club, true).includes(reference);
   }
   try {
-    if (!await allowed()) return missing();
-    const storage = await privateClubAssetStorage();
+    // The access decision and the private-storage check are independent reads, so they run together;
+    // nothing is downloaded until both pass, and access is checked again after the download.
+    const [permitted, storage] = await Promise.all([allowed(), privateClubAssetStorage()]);
+    if (!permitted) return missing();
     const { data, error } = await storage.download(reference.slice('club-assets/'.length));
     if (error || !data || !await allowed()) return missing();
     const mime = reference.endsWith('.jpg') ? 'image/jpeg' : reference.endsWith('.png') ? 'image/png' : 'image/webp';

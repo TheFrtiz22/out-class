@@ -37,3 +37,35 @@ test('Storage readiness accepts only the exact original or bounded-runtime guard
  await db.exec(`ALTER POLICY outclass_club_assets_server_only ON storage.objects USING(${reviewed}) WITH CHECK(${reviewed});ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;`);
  await assert.rejects(api.privateClubAssetStorage(),/unavailable/);
 });
+
+// The public image route checks access and private storage together, downloads only when both pass,
+// and checks access again after the download.
+test('club image route: access and storage checks run together; nothing is served unless both pass',async()=>{
+ const NODE_ENV=process.env.NODE_ENV;process.env.NODE_ENV='production';
+ const clubId='00000000-0000-4000-8000-000000000001',reference=`club-assets/${clubId}/00000000-0000-4000-8000-000000000002.png`;
+ const run=async({club={logoUrl:reference,suspendedAt:null,schoolId:'school-uva'},storageFails=false,suspendDuringDownload=false}={})=>{
+  const log=[];let current=club;
+  const route=load('app/api/club-assets/route.ts',{
+   'next/server':{NextResponse:class{constructor(body,init={}){this.status=init.status??200;this.headers=new Headers(init.headers)}}},
+   '@/utils/prisma':{prisma:{club:{findUnique:async()=>{log.push('access:start');await new Promise(r=>setTimeout(r,5));log.push('access:end');return current}}}},
+   '@/utils/club-asset-storage':{privateClubAssetStorage:async()=>{log.push('storage:start');await new Promise(r=>setTimeout(r,5));if(storageFails)throw Error('Club image storage is unavailable.');log.push('storage:end');return{download:async()=>{log.push('download');if(suspendDuringDownload)current={...current,suspendedAt:new Date()};return{data:new Blob([Buffer.from('png')]),error:null}}}}},
+   '@/utils/auth':{requireClubPermission:async()=>assert.fail('public read')},'@/utils/platform-admin':{requirePlatformAdmin:async()=>assert.fail('public read')},
+   '@/lib/rate-limit':{RATE_LIMITS:{clubAssets:{}},limitRequest:()=>null},
+   '@/lib/school-host':{schoolKeyFromHost:()=>null},'@/utils/school-scope':{resolveHostSchool:async()=>({id:'school-uva'})},
+   '@/lib/csp':{SANDBOXED_FILE_POLICY:"default-src 'none'"},
+  });
+  const response=await route.GET({headers:new Headers({host:'www.out-class.net'}),nextUrl:new URL(`https://www.out-class.net/api/club-assets?reference=${encodeURIComponent(reference)}`)});
+  return {status:response.status,log};
+ };
+ try{
+  const ok=await run();
+  assert.equal(ok.status,200);
+  assert.ok(ok.log.indexOf('storage:start')<ok.log.indexOf('access:end'),'storage check starts before the access read finishes');
+  assert.ok(ok.log.indexOf('download')>ok.log.indexOf('access:end')&&ok.log.indexOf('download')>ok.log.indexOf('storage:end'),'download waits for both checks');
+  const unpublished=await run({club:{logoUrl:null,suspendedAt:null,schoolId:'school-uva'}});
+  assert.equal(unpublished.status,404);assert.ok(!unpublished.log.includes('download'));
+  const insecure=await run({storageFails:true});
+  assert.equal(insecure.status,404);assert.ok(!insecure.log.includes('download'));
+  assert.equal((await run({suspendDuringDownload:true})).status,404,'access is checked again after the download');
+ }finally{process.env.NODE_ENV=NODE_ENV}
+});
