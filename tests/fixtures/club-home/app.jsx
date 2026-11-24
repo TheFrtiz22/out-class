@@ -29,7 +29,7 @@ function ClubHomeFixture() {
   const name = data.club.name
   return <ProductShell manager={manager} sections={manager ? leaderRailSections(member, clubId, params.toString()) : memberRailSections(clubId, name)} mode={manager ? 'club' : 'clubs'} active="overview" clubId={clubId} clubName={name} title="Club home" onSelect={() => {}} onNavigate={() => {}}>
     {/* Same composition as components/club-workspace.tsx for section=overview. */}
-    <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={name} context={{ mode: 'club', clubId, membership: member, data }} action={<ClubHomeActions clubId={clubId} membership={member} />} /></DashboardHero>
+    <DashboardHero className="oc-club-home-hero" ambientClassName="oc-club-home-ambient"><ClubOverviewHeader className="oc-club-home-greeting" density="expressive" clubName={name} context={{ mode: 'club', clubId, membership: member, data }} action={<ClubHomeActions clubId={clubId} clubName={name} membership={member} />} /></DashboardHero>
     <section className="shell-content-enter" aria-label="Club home" data-refreshes={refreshes}>
       <ManagerOverview data={data} onChanged={() => setRefreshes(n => n + 1)} />
     </section>

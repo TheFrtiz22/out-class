@@ -159,6 +159,8 @@ describe("leader hub", () => {
   test("a check-in-only role has no empty Run the club card", async () => {
     await hub(leaderWith(["meetings.attendance"]));
     expect(screen.getByText("Check-in")).toBeTruthy();
+    // The club's own QR code is there for every leader role, check-in only included.
+    expect(screen.getByTestId("leader-club-qr")).toBeTruthy();
     expect(screen.queryByText("Run the club")).toBeNull();
     expect(screen.queryByText("Recruiting settings and application builder")).toBeNull();
   });
@@ -166,6 +168,13 @@ describe("leader hub", () => {
   test("a graduate whose membership is still current gets no tools", async () => {
     await hub({ ...records.me, profile: { ...records.me.profile!, graduatedAt: at(-1) } });
     expect(screen.getByText("No leader tools here")).toBeTruthy();
+  });
+
+  test("Club QR code opens the club's public page code in one tap", async () => {
+    await hub(records.me);
+    await fireEvent.press(screen.getByTestId("leader-club-qr"));
+    expect(screen.getByTestId("share-sheet")).toBeTruthy();
+    expect(screen.getByTestId("share-link").props.children).toMatch(new RegExp(`/club/${ids.leaderClub}$`));
   });
 
   test("the next meeting opens its page", async () => {
@@ -185,6 +194,13 @@ describe("leader entries", () => {
   test("My club offers no Leader tools to a plain member", async () => {
     await renderRoute(require("~/app/my-club/[clubId]").default, { params: { clubId: ids.memberClub } });
     expect(screen.queryByTestId("my-club-leader-tools")).toBeNull();
+  });
+
+  test("My club shows the club QR code in one tap, for members too", async () => {
+    await renderRoute(require("~/app/my-club/[clubId]").default, { params: { clubId: ids.memberClub } });
+    await fireEvent.press(screen.getByTestId("my-club-qr"));
+    expect(screen.getByTestId("share-sheet")).toBeTruthy();
+    expect(screen.getByTestId("share-link").props.children).toMatch(new RegExp(`/club/${ids.memberClub}$`));
   });
 
   test("the meeting page lets a leader host check-in while attendance is open", async () => {
