@@ -1,9 +1,10 @@
 /**
  * Universal links (iOS) and app links (Android) for the native app, net.outclass.app.
  *
- * Only `/q/*` short links are claimed: they are first-party, carry every QR code (check-in,
- * club, voting join) and live on the apex domain for every school. Everything else stays a web
- * link. The host is never a security boundary: the app sends a scanned or opened code to the
+ * Two paths are claimed. `/q/*` short links are first-party, carry every QR code (check-in,
+ * club, voting join) and live on the apex domain for every school. `/reset-password` is the
+ * emailed password reset link (on www), which the app finishes on its own screen by calling the
+ * same reset the website runs. Everything else stays a web link. The host is never a security boundary: the app sends a scanned or opened code to the
  * server, which authorizes it against the signed-in session exactly as the website does.
  *
  * Both files are served only once their identifiers are configured, so an unconfigured
@@ -11,7 +12,7 @@
  *   OUTCLASS_IOS_APP_ID            "<Apple Team ID>.net.outclass.app"
  *   OUTCLASS_ANDROID_CERT_SHA256   the Play signing certificate fingerprint(s), comma-separated
  */
-export const APP_LINK_PATHS = ["/q/*"] as const;
+export const APP_LINK_PATHS = ["/q/*", "/reset-password"] as const;
 
 const IOS_APP_ID = /^[A-Z0-9]{10}\.[A-Za-z0-9.-]{1,155}$/;
 const SHA256_FINGERPRINT = /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/;
@@ -20,7 +21,7 @@ export function appleAppSiteAssociation(env: Record<string, string | undefined> 
   const appId = env.OUTCLASS_IOS_APP_ID?.trim();
   if (!appId || !IOS_APP_ID.test(appId)) return null;
   return {
-    applinks: { details: [{ appIDs: [appId], components: APP_LINK_PATHS.map(path => ({ "/": path, comment: "First-party short links" })) }] },
+    applinks: { details: [{ appIDs: [appId], components: APP_LINK_PATHS.map(path => ({ "/": path, comment: path === "/reset-password" ? "Emailed password reset" : "First-party short links" })) }] },
     // Password AutoFill offers the site's saved OutClass password in the app.
     webcredentials: { apps: [appId] },
   };

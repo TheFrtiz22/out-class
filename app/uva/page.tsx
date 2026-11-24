@@ -2,7 +2,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { PublicInformationPage } from "@/components/landing/public-information-page"
-import { publicPageMetadata, publicPageStructuredData, SITE_URL } from "@/lib/seo"
+import { publicPageMetadata, publicPageStructuredData, SITE_URL, clubPath } from "@/lib/seo"
+import { getIndexableClubs } from "@/lib/public-club-seo"
+import { DEFAULT_SCHOOL } from "@/lib/school-host"
 import { publicFaqs } from "@/lib/public-faq"
 import { PublicFaq } from "@/components/landing/public-faq"
 import { cspNonce } from "@/utils/csp-nonce"
@@ -25,7 +27,11 @@ const structuredData = {
 }
 
 export default async function UvaPage() {
+  // Same set as the sitemap: claimed, discoverable profiles with a real description. Linking them here
+  // gives crawlers (and students) a path to each club page beyond the sitemap.
+  const clubsRequest = getIndexableClubs(DEFAULT_SCHOOL.id) // started first so both reads run together
   const nonce = await cspNonce()
+  const clubs = await clubsRequest
   return (
     <PublicInformationPage
       className="oc-editorial-page oc-campus-page"
@@ -48,6 +54,8 @@ export default async function UvaPage() {
     >
       <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <section className="oc-campus-context oc-public-section"><p className="oc-public-kicker">Starting at the University of Virginia</p><div className="oc-editorial-split"><h2>One profile.<br />Every opportunity.</h2><div className="oc-editorial-prose"><p>Students can discover organizations, submit applications, manage interviews, and follow their recruitment status. Leaders have tools to configure applications, coordinate interviews, evaluate applicants, and manage decisions.</p><p>OutClass is independent: it is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university.</p><a className="oc-public-text-link" href="/about">The story behind OutClass</a></div></div></section>
+      {/* Absolute links: these are UVA clubs, which only resolve on the launch-school origin, even if /uva is opened on another school's subdomain. */}
+      {clubs.length > 0 && <section className="oc-public-section oc-campus-clubs" aria-labelledby="uva-clubs-title"><p className="oc-public-kicker">Club profiles</p><h2 id="uva-clubs-title">UVA clubs on OutClass</h2><ul>{clubs.map(club => <li key={club.id}><Link prefetch={false} href={`${SITE_URL}${clubPath(club)}`}>{club.name}</Link></li>)}</ul></section>}
       <section id="faq" className="oc-public-section oc-information-faq" aria-labelledby="faq-title">
         <div className="oc-faq-heading"><p className="oc-public-kicker">Frequently asked questions</p><h2 id="faq-title">Questions about using OutClass</h2><p>Accounts, applications, interview scheduling, and who can use OutClass.</p></div>
         <PublicFaq />

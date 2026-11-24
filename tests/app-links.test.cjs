@@ -1,4 +1,4 @@
-// Universal links / app links for the native app: only /q is claimed, and nothing is published
+// Universal links / app links for the native app: only /q and the emailed reset link are claimed, and nothing is published
 // until real identifiers are configured.
 const { test } = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), ts = require('typescript')
 const root = path.join(__dirname, '..')
@@ -15,10 +15,10 @@ test('nothing is served until identifiers are configured, and malformed ones are
   assert.equal(links.appLinkResponse(null).status, 404)
 })
 
-test('only first-party /q short links open the app', async () => {
+test('only first-party /q short links and the emailed reset link open the app', async () => {
   const apple = links.appleAppSiteAssociation({ OUTCLASS_IOS_APP_ID: 'ABCDE12345.net.outclass.app' })
   assert.deepEqual(apple.applinks.details[0].appIDs, ['ABCDE12345.net.outclass.app'])
-  assert.deepEqual(apple.applinks.details[0].components.map(c => c['/']), ['/q/*'])
+  assert.deepEqual(apple.applinks.details[0].components.map(c => c['/']), ['/q/*', '/reset-password'])
   const android = links.androidAssetLinks({ OUTCLASS_ANDROID_CERT_SHA256: FINGERPRINT.toLowerCase() })
   assert.equal(android[0].target.package_name, 'net.outclass.app')
   assert.deepEqual(android[0].target.sha256_cert_fingerprints, [FINGERPRINT])
@@ -26,6 +26,11 @@ test('only first-party /q short links open the app', async () => {
   assert.equal(response.headers.get('content-type'), 'application/json')
   assert.deepEqual(await response.json(), apple)
   const config = fs.readFileSync(path.join(root, 'mobile/app.config.ts'), 'utf8')
-  assert.match(config, /pathPrefix: "\/q\/"/, 'the Android intent filter claims the same path')
-  assert.match(config, /applinks:out-class\.net/)
+  assert.match(config, /pathPrefix: "\/q\/"/, 'the Android intent filter claims the same paths')
+  assert.match(config, /path: "\/reset-password"/)
+  // The reset email links to www (the apex answers with a redirect), so both hosts are claimed.
+  assert.match(config, /host: "www\.out-class\.net"/)
+  assert.match(config, /applinks:out-class\.net"/)
+  assert.match(config, /applinks:www\.out-class\.net"/)
+  assert.doesNotMatch(config, /pathPrefix: "\/"[^q]/, 'no catch-all path is claimed')
 })

@@ -13,7 +13,7 @@ export function pendingLinkFor(
   segments: readonly string[] = [],
 ): string | null {
   if (!pathname || pathname === "/" || !pathname.startsWith("/")) return null;
-  if (firstSegment === "sign-in" || firstSegment === "sign-up" || firstSegment === "complete-profile") return null;
+  if (firstSegment === "sign-in" || firstSegment === "sign-up" || firstSegment === "complete-profile" || firstSegment === "reset-password") return null;
   const inPath = new Set(segments.map((s) => s.match(/^\[(?:\.\.\.)?(.+)\]$/)?.[1]).filter(Boolean) as string[]);
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {

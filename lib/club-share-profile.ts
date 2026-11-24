@@ -11,7 +11,7 @@ import { shareSummary } from "@/lib/club-share-text"
  * metadata does not pull sharp/next/og into its bundle.
  */
 const shareFields = {
-  id: true, name: true, tagline: true, description: true, category: true, color: true,
+  id: true, slug: true, name: true, tagline: true, description: true, category: true, color: true,
   logoUrl: true, bannerUrl: true, marketing: true, suspendedAt: true, school: { select: { name: true } },
 } as const
 

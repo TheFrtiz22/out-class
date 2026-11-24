@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { SITE_URL } from "@/lib/seo"
+import { SITE_URL, clubPath } from "@/lib/seo"
 import { getIndexableClubs } from "@/lib/public-club-seo"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 import { DEFAULT_SCHOOL, schoolOrigin } from "@/lib/school-host"
@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const clubs = await getIndexableClubs(school.id)
   if (school.id !== DEFAULT_SCHOOL.id) {
     const origin = schoolOrigin(school)
-    return [{ url: `${origin}/` }, ...clubs.map(club => ({ url: `${origin}/club/${encodeURIComponent(club.id)}` }))]
+    return [{ url: `${origin}/` }, ...clubs.map(club => ({ url: `${origin}${clubPath(club)}` }))]
   }
   return [
     { url: `${SITE_URL}/` },
@@ -23,6 +23,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/security` },
     { url: `${SITE_URL}/request-school` },
     ...(LEGAL_PAGES_PUBLIC ? ["privacy", "terms", "cookies", "legal"].map(page => ({ url: `${SITE_URL}/${page}` })) : []),
-    ...clubs.map(club => ({ url: `${SITE_URL}/club/${encodeURIComponent(club.id)}` })),
+    ...clubs.map(club => ({ url: `${SITE_URL}${clubPath(club)}` })),
   ]
 }
