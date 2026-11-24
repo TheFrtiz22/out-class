@@ -115,16 +115,19 @@ function Navigation() {
   // A tapped push opens the screen for the path it carries (the same mapping as the Inbox), once.
   const lastResponse = Notifications.useLastNotificationResponse();
   const handledResponse = useRef<string | null>(null);
+  // While the gate still holds sign-in, sign-up or complete-profile (waiting for `me`), the push waits:
+  // opened now, it would land on top of that screen and the gate could no longer replace it.
+  const gateHolding = segments[0] === "sign-in" || segments[0] === "sign-up" || segments[0] === "complete-profile";
   useEffect(() => {
     const path = notificationPath(lastResponse);
-    if (!ready || !signedIn || !path || !lastResponse) return;
+    if (!ready || !signedIn || gateHolding || !path || !lastResponse) return;
     const id = lastResponse.notification.request.identifier;
     if (handledResponse.current === id) return;
     handledResponse.current = id;
     // "reuse": a push for the Inbox while the Inbox is open leaves it in place instead of stacking a second one.
     resolveHref(path).then(route => openRoute(router, route ?? { pathname: "/inbox" }, "reuse")).catch(() => {});
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
-  }, [ready, signedIn, lastResponse, router]);
+  }, [ready, signedIn, gateHolding, lastResponse, router]);
   // Long-press app-icon shortcuts: offered only while signed in, and routed like any other link.
   useEffect(() => {
     QuickActions?.setItems(signedIn ? [

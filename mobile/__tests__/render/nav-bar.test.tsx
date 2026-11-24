@@ -84,7 +84,7 @@ describe("the dock", () => {
     await renderDock([app("ACCEPTED", { offerStatus: "ACCEPTED" }), app("REJECTED")]);
     expect(screen.getByTestId("tab-clubs-clubs").props.accessibilityLabel).toBe("My Clubs");
     expect(screen.queryByTestId("tab-clubs-apply")).toBeNull();
-    expect(await AsyncStorage.getItem("outclass.middle-tab")).toBe("clubs");
+    expect(await AsyncStorage.getItem("outclass.middle-tab:user-1")).toBe("clubs"); // kept per account (lib/middle-tab.ts)
   });
 
   test("keeps Apply while an offer still waits for an answer", async () => {

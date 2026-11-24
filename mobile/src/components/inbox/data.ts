@@ -27,9 +27,13 @@ const chunks = (ids: string[]) => Array.from({ length: Math.ceil(ids.length / 10
 export function useInboxActions() {
   const client = useQueryClient();
 
+  /** The cache entry a key has now: a new one (or none) once the cache was cleared, as every account change clears it (lib/auth.tsx). */
+  const entry = (key: readonly unknown[]) => client.getQueryCache().find({ queryKey: key, exact: true });
+
   function apply(change: (item: InboxRow) => InboxRow | null) {
     const pages = client.getQueryData<Pages>(INBOX_KEY);
     const home = client.getQueryData<HomeView>(HOME_KEY);
+    const entries = { pages: entry(INBOX_KEY), home: entry(HOME_KEY) };
     let delta = 0;
     if (pages) {
       const changed = pages.pages.map(page => ({
@@ -43,9 +47,12 @@ export function useInboxActions() {
       client.setQueryData<Pages>(INBOX_KEY, { ...pages, pages: changed.map(page => ({ ...page, unread: Math.max(0, page.unread + delta) })) });
     }
     if (home && delta) client.setQueryData<HomeView>(HOME_KEY, { ...home, unread: Math.max(0, home.unread + delta), ...(home.inboxUnread === undefined ? {} : { inboxUnread: Math.max(0, home.inboxUnread + delta) }) });
-    return { pages, home };
+    return { pages, home, entries };
   }
-  function rollback(context?: { pages?: Pages; home?: HomeView }) {
+  function rollback(context?: ReturnType<typeof apply>) {
+    // A request that fails after a sign-out or account switch must not write the previous account's lists
+    // back into the cache the next account reads.
+    if (context && ((context.pages && entry(INBOX_KEY) !== context.entries.pages) || (context.home && entry(HOME_KEY) !== context.entries.home))) return;
     if (context?.pages) client.setQueryData(INBOX_KEY, context.pages);
     if (context?.home) client.setQueryData(HOME_KEY, context.home);
     haptics.error();
@@ -79,7 +86,8 @@ export function useInboxActions() {
     mutationFn: async () => {
       const ids: string[] = [];
       let cursor: string | undefined;
-      for (let page = 0; page < 40; page++) {
+      // Until the server says there is no next page; the cap only guards against a cursor that never ends.
+      for (let page = 0; page < 1_000; page++) {
         const result: InboxRows = await api.get<InboxRows>("inbox", cursor ? { cursor } : undefined);
         ids.push(...result.items.filter(item => !item.readAt).map(item => item.id));
         if (!result.nextCursor || ids.length >= result.unread) break;
