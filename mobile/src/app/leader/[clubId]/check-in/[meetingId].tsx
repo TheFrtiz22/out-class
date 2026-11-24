@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useKeepAwake } from "expo-keep-awake";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,8 +32,16 @@ export default function CheckInHost() {
   const { width, height } = useWindowDimensions();
   const router = useRouter();
   const { confirm, sheet } = useConfirm();
-  useKeepAwake();
-  useBrightnessBoost();
+  // Bright, awake, polling and issuing codes only while this screen is the one on top (as the voting room's useLive):
+  // a push or the Scan quick action pushed over it stops all four until it is back.
+  const focused = useIsFocused();
+  useEffect(() => {
+    if (!focused) return;
+    const tag = `check-in-host-${meetingId}`;
+    activateKeepAwakeAsync(tag).catch(() => {});
+    return () => { deactivateKeepAwake(tag).catch(() => {}); };
+  }, [focused, meetingId]);
+  useBrightnessBoost(focused);
 
   const leave = () => { if (router.canGoBack()) router.back(); else router.replace({ pathname: "/leader/[clubId]", params: { clubId } } as never); };
   const close = useMutation({
@@ -51,17 +59,22 @@ export default function CheckInHost() {
     queryKey: ["leader", "checkIn.issue", clubId, meetingId],
     queryFn: () => api.post<Issued>("meetings.checkIn.issue", { clubId, meetingId }),
     refetchInterval: query => query.state.status === "error" ? 5_000 : 60_000,
-    staleTime: 0, gcTime: 0, retry: 1, enabled: !closing,
+    staleTime: 0, gcTime: 0, retry: 1, enabled: !closing && focused,
   });
   const [now, setNow] = useState(Date.now());
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 2_000); return () => clearInterval(timer); }, []);
+  useEffect(() => {
+    if (!focused) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 2_000);
+    return () => clearInterval(timer);
+  }, [focused]);
   // A code past its 90 s life no longer checks anyone in: never leave it up while the next one is on its way.
   // Timed from when this phone received it, so a phone clock that is off can't hide a live code.
   const expired = !!code.data && now - code.dataUpdatedAt >= 85_000;
   const attendance = useQuery<Attendee[], Error>({
     queryKey: ["leader", "meetings.attendance", clubId, meetingId],
     queryFn: () => api.get<Attendee[]>("meetings.attendance", { clubId, meetingId }),
-    refetchInterval: 4_000, gcTime: 0,
+    refetchInterval: 4_000, gcTime: 0, enabled: focused,
   });
   const count = attendance.data?.length;
   const previous = useRef<number | undefined>(undefined);
