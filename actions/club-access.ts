@@ -17,7 +17,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { clubPermissions, hasPermission, activeMemberWhere } from "@/lib/permissions";
 import { onboardingRolePermissions } from "@/lib/club-onboarding";
-import { canControlOrganizationAccess, canManageOrganizationInvitation, organizationCapabilities } from "@/lib/organization-authorization";
+import { canControlOrganizationAccess, canManageOfferInvitation, canManageOrganizationInvitation, canSeeRecruitmentOffers, organizationCapabilities } from "@/lib/organization-authorization";
 import { isUvaEmail } from "@/lib/auth";
 import { hasConfirmedUniversityEmail } from "@/utils/verified-email-policy";
 import { isActiveMembership } from "@/lib/permissions";
@@ -34,7 +34,7 @@ const invitationSchema = z.object({
 }).strict();
 
 export async function getClubAccess(clubId: string) {
-  await requireClubPermission(clubId, ["leaders.manage"]);
+  const { membership } = await requireClubPermission(clubId, ["leaders.manage"]);
   return {
     members: rosterMembers((await prisma.clubMember.findMany({
       where: { clubId },
@@ -47,6 +47,8 @@ export async function getClubAccess(clubId: string) {
         declinedAt: null,
         revokedAt: null,
         expiresAt: { gt: new Date() },
+        // Recruitment offers name accepted applicants; they stay behind the Decisions gate.
+        ...(canSeeRecruitmentOffers(membership) ? {} : { applicationId: null }),
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -267,7 +269,7 @@ async function revokeClubInvitationCommand(
     const actor = await graduateClubAccessOrNull(tx, await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } }));
     if (!hasPermission(actor, "leaders.manage")) throw new ActionError("Access denied.");
     const invitation = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
-    if (!invitation || invitation.clubId !== clubId || !canManageOrganizationInvitation(actor, invitation)) {
+    if (!invitation || invitation.clubId !== clubId || !canManageOrganizationInvitation(actor, invitation) || !canManageOfferInvitation(actor, invitation)) {
       throw new ActionError("Only an authorized owner can revoke higher-authority invitations.");
     }
     const result = await revokeClubInvitations(tx, { id: invitationId, clubId, status: "PENDING", acceptedAt: null }, user.id, "club-access.revocation");
