@@ -53,7 +53,7 @@ export const journeySamples: { [A in LandingPerspective]: Record<(typeof journey
     discover: { card: "Explore clubs", sub: "Recruiting this spring", rows: [
       { name: "Jefferson Investment Society", meta: "Finance · applications open", chip: "Recruiting", tone: "active" },
       { name: "Grounds Impact Consulting", meta: "Consulting · applications open", chip: "Recruiting", tone: "active" },
-      { name: "Following", meta: "Get updates when a club opens", chip: "2 clubs", tone: "neutral" } ] },
+      { name: "Saved", meta: "Find them again in one place", chip: "2 clubs", tone: "neutral" } ] },
     apply: { card: "Application · Jefferson Investment Society", sub: "Due Friday 11:59 PM", rows: [
       { name: "Profile", meta: "Academics and experience", chip: "Included", tone: "done" },
       { name: "Resume", meta: "Updated Oct 20", chip: "Included", tone: "done" },

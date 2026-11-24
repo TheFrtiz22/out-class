@@ -12,7 +12,7 @@ export function ClubQrPanel({ club }: { club: { id: string; name: string } }) {
   return <section aria-label="Club QR code" className="oc-club-qr-panel">
     <QrCodeCard
       title="Your club’s QR code"
-      description="Print it for posters and tables, or show it full screen at the club fair. Scanning opens your public page, where students can follow your club or apply."
+      description="Print it for posters and tables, or show it full screen at the club fair. Scanning opens your public page, where students can save your club or apply."
       path={clubSharePath(club.id)}
       filename={clubQrFilename(club.name)}
     />

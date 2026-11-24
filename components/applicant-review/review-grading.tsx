@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { submitEvaluation } from "@/lib/workspace-api"
+import { userMessage } from "@/lib/user-message"
 import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
 import { canonicalEvaluationScore, emptyGradeDraft as emptyDraft, formatOverall, readGradeDraft as readDraft, rubricOverall, rubricScoresSchema, type GradeDraft as Draft, type ReviewRubric, type RubricScores } from "@/lib/review-rubric"
 
@@ -19,16 +20,18 @@ const stepFor = (max: number) => max <= 10 ? 0.5 : 1
  * Grading for one applicant: the club's categories (each on its own scale), an overall out of 10 that follows the
  * categories unless edited, and an optional comment. Entries autosave as a private draft; Submit grade records the
  * evaluation (submitted grades can't be changed) and updates the Rating column. No category is required.
+ * `onAssignSelf` (owners not yet on this applicant's panel) offers Assign me, which uses the audited panel grant.
  */
-export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason, rounds, onSubmitted, disabled = false }: {
+export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason, rounds, onSubmitted, onAssignSelf, disabled = false }: {
   clubId: string; app: App; roundName: string; rubric: ReviewRubric; memberId: string; reason: string; disabled?: boolean
-  rounds: { id: string; name: string }[]; onSubmitted: () => void
+  rounds: { id: string; name: string }[]; onSubmitted: () => void; onAssignSelf?: () => Promise<void>
 }) {
   const canEvaluate = app.canEvaluate === true
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [base, setBase] = useState(JSON.stringify(emptyDraft))
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
+  const [assigning, setAssigning] = useState(false)
   const save = useEditorDraft({ scope: { kind: "review", clubId, resourceId: `${app.id}:${app.roundId}` }, value: draft, restore: value => setDraft(readDraft(value, rubric)), enabled: canEvaluate, base })
   useEffect(() => { setDraft(emptyDraft); setBase(JSON.stringify(emptyDraft)); setMessage("") }, [app.id, app.roundId])
 
@@ -61,6 +64,14 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
     finally { setBusy(false) }
   }
 
+  async function assignSelf() {
+    if (!onAssignSelf || assigning) return
+    setAssigning(true); setMessage("")
+    try { await onAssignSelf(); setMessage("You’re on this panel.") }
+    catch (error) { setMessage(userMessage(error, "Couldn’t add you to this panel.")) }
+    finally { setAssigning(false) }
+  }
+
   if (!rubric.categories.length) return null
   if (mine?.submittedAt) return <section className="oc-review-grading" aria-labelledby="grading-heading">
     <h3 id="grading-heading" className="oc-review-panel-heading">Your grade</h3>
@@ -71,7 +82,9 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
 
   return <section className="oc-review-grading" aria-labelledby="grading-heading" data-autosave-editor="true" onBlur={canEvaluate ? save.onBlur : undefined} data-unsaved={canEvaluate && JSON.stringify(draft) !== base || undefined}>
     <div className="flex items-baseline justify-between gap-2"><h3 id="grading-heading" className="oc-review-panel-heading">Grade</h3>{canEvaluate && <AutosaveStatus save={save} />}</div>
-    {!canEvaluate && <p className="text-xs text-muted-foreground">{reason}</p>}
+    {!canEvaluate && (onAssignSelf
+      ? <div className="flex flex-wrap items-center gap-2"><p className="text-xs text-muted-foreground">{reason}</p><Button type="button" variant="outline" size="sm" disabled={assigning || disabled} onClick={() => void assignSelf()}>{assigning ? "Assigning…" : "Assign me"}</Button></div>
+      : <p className="text-xs text-muted-foreground">{reason}</p>)}
     <div className="oc-review-categories">
       {entries.map(item => <div key={item.id} className="oc-review-category">
         <Label htmlFor={`grade-${item.id}`} className="min-w-0 truncate">{item.label}</Label>

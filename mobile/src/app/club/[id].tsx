@@ -85,7 +85,7 @@ export default function ClubPage() {
       else start.mutate(club.id);
     };
     const follow = (variant: "primary" | "secondary") => (
-      <Button full variant={variant} size="large" testID="club-follow" icon={following ? BookmarkFilled : Bookmark} label={following ? "Following" : "Follow"} accessibilityHint={following ? `Removes ${club.name} from your saved clubs` : `Saves ${club.name} to your saved clubs`} disabled={saved.query.isPending || alumni} onPress={() => saved.setSaved(club, !following)} />
+      <Button full variant={variant} size="large" testID="club-follow" icon={following ? BookmarkFilled : Bookmark} label={following ? "Saved" : "Save"} accessibilityHint={following ? `Removes ${club.name} from your saved clubs` : `Saves ${club.name} to your saved clubs`} disabled={saved.query.isPending || alumni} onPress={() => saved.setSaved(club, !following)} />
     );
     const share = <Button full variant="secondary" size="large" testID="club-share" icon={Share} label="Share" onPress={() => setSharing(true)} />;
     const action = (
@@ -99,7 +99,7 @@ export default function ClubPage() {
         ) : closed ? (
           <>
             <View style={{ flexDirection: "row", gap: 10 }}><View style={{ flex: 1 }}>{follow(alumni ? "secondary" : "primary")}</View><View style={{ flex: 1 }}>{share}</View></View>
-            <Text variant="small">{alumni ? ALUMNI_REFUSALS.apply : recruitment.expired ? "The application deadline has passed · Follow to keep this club in your saved clubs" : "Applications aren’t open yet · Follow to keep this club in your saved clubs"}</Text>
+            <Text variant="small">{alumni ? ALUMNI_REFUSALS.apply : recruitment.expired ? "The application deadline has passed · Save it to find it again in Saved clubs" : "Applications aren’t open yet · Save it to find it again in Saved clubs"}</Text>
           </>
         ) : (
           <>

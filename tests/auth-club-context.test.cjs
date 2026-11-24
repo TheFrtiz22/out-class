@@ -13,9 +13,9 @@ test('return paths to a public club page name the club; anything else does not',
 })
 
 test('context lines read as one sentence for each case', () => {
-  assert.equal(ctx.clubContextLine('TAMID', true, 'signup'), 'Create your profile to follow TAMID. You’ll go right back to it.')
+  assert.equal(ctx.clubContextLine('TAMID', true, 'signup'), 'Create your profile to save TAMID. You’ll go right back to it.')
   assert.equal(ctx.clubContextLine('TAMID', false, 'signup'), 'Create your profile to continue to TAMID. You’ll go right back to it.')
-  assert.equal(ctx.clubContextLine('TAMID', true, 'login'), 'Sign in to follow TAMID.')
+  assert.equal(ctx.clubContextLine('TAMID', true, 'login'), 'Sign in to save TAMID.')
   assert.equal(ctx.clubContextLine('TAMID', false, 'login'), 'Sign in to continue to TAMID.')
 })
 

@@ -27,6 +27,7 @@ import { ALUMNI_REFUSALS, ALUMNI_REFUSED } from "@/lib/graduation";
 import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOfferInvitation, canManageOrganizationInvitation, canSeeRecruitmentOffers, organizationCapabilities, organizationRoles, organizationRolePermissions } from "@/lib/organization-authorization";
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
+import { isRecused, RECUSED_MESSAGE } from "@/lib/recusal";
 import { boundedParse } from "@/lib/bounded-input";
 import { ActionError, actionResult } from "@/lib/action-result";
 
@@ -115,13 +116,16 @@ async function setInterviewPanelAssignmentCommand(input: unknown) {
     // A grant adds the target's official commitments across clubs.
     if (data.assigned) await lockSchedulingPeople(tx, { exclusive: [target.userId] });
     if (data.assigned && (target.user.disabledAt || !interviewCapabilities(target).participate || app.roundId !== round.id || round.anonymousReview)) throw new ActionError("Active identified reviewer and current round required.");
+    // "Assign me" is this same grant with the actor as target: someone who stepped out of this applicant stays out.
+    const self = target.userId === user.id;
+    if (data.assigned && self && await isRecused(tx, app.id, target.id)) throw new ActionError(RECUSED_MESSAGE);
     const key = { applicationId: app.id, roundId: round.id, memberId: target.id };
     const old = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: key } });
     if (data.assigned) {
       const bookings=await tx.interviewBooking.findMany({where:{applicationId:app.id,roundId:round.id},include:{slot:{include:{room:true}}}});
       await assertOfficialPanelConflicts(tx,[target.userId],bookings.filter(b=>!b.slot.panelScheduleVersionId||b.slot.publishedPanelMemberIds.includes(target.id)).map(b=>({id:b.slot.id,startTime:b.slot.startTime.toISOString(),endTime:b.slot.endTime.toISOString(),buffer:b.slot.room?.buffer??0})));
       const grant = await tx.interviewPanelAssignment.upsert({ where: { applicationId_roundId_memberId: key }, create: { ...key, grantedBy: user.id }, update: { revokedAt: null, grantedBy: user.id, ...(old?.revokedAt ? { grantedAt: new Date() } : {}), bookingManaged: false, bookingId: null } });
-      if (!old || old.revokedAt) await notifyInterviewAssignment(tx, grant, "assigned");
+      if ((!old || old.revokedAt) && !self) await notifyInterviewAssignment(tx, grant, "assigned");
     } else {
       if (old && !old.revokedAt) await notifyInterviewAssignment(tx, old, "cancelled");
       await tx.interviewPanelAssignment.updateMany({ where: key, data: { revokedAt: new Date(), bookingManaged: false, bookingId: null } });

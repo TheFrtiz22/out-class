@@ -12,12 +12,12 @@ import { followReturnPath, readFollowIntent, withoutFollowIntent } from "@/lib/f
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
 
-/** One follow intent per page load, even if the club's button renders twice. */
+/** One save intent per page load, even if the club's button renders twice. */
 const finishedIntents = new Set<string>()
 
 /**
  * Saves a club to the signed-in account (Saved clubs). `mode="follow"` is the same account
- * record presented as Follow on public club pages; there are no email updates behind it.
+ * record presented as a compact Save / Saved toggle on public club pages; there are no email updates behind it.
  * Signed out, either mode asks the visitor to create an account or sign in, then returns to the
  * same page with `?follow=<clubId>`, where this button finishes the save (lib/follow-intent.ts).
  */
@@ -43,20 +43,20 @@ export function CorkboardButton({ club, mode = "save", className = "w-full", var
     finishedIntents.add(club.id)
     window.history.replaceState(window.history.state, "", withoutFollowIntent(pathname, search, hash))
     const { saved: already, alumni: blocked, saveClub: persist } = latest.current
-    if (already) { toast.success(`You’re following ${club.name}`, { description: "It’s in your saved clubs." }); return }
+    if (already) { toast.success(`Saved ${club.name}`, { description: "It’s in your saved clubs." }); return }
     if (blocked) return
     persist(club, true)
-      .then(() => toast.success(`You’re following ${club.name}`, { description: "It’s in your saved clubs." }))
+      .then(() => toast.success(`Saved ${club.name}`, { description: "It’s in your saved clubs." }))
       .catch(e => setError(userMessage(e, "Couldn’t save this club.")))
   }, [authenticated, loading, club])
   if (club.source === "preview") return null
   // Alumni accounts are read-only (lib/graduation.ts): saved clubs are neither added nor removed.
   if (authenticated && isAlumniProfile(user?.profile)) return null
   const label = mode === "follow"
-    ? saved ? "Following" : "Follow"
+    ? saved ? "Saved" : "Save"
     : authenticated ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "Save club"
   const name = mode === "follow"
-    ? `${saved ? "Following" : "Follow"} ${club.name}`
+    ? `${saved ? "Saved" : "Save"} ${club.name}`
     : `${label}: ${club.name}`
   function askToJoin() {
     const { pathname, search } = window.location
@@ -68,7 +68,7 @@ export function CorkboardButton({ club, mode = "save", className = "w-full", var
     </Button>
     {error && <p role="status" className="text-sm text-destructive">{error}<Button type="button" variant="link" size="sm" className="ml-2 h-auto min-h-11 px-0" onClick={() => void refresh()}>Retry</Button></p>}
     {prompt && <JoinPromptDialog open onOpenChange={open => { if (!open) setPrompt(null) }}
-      title={`Follow ${club.name}`}
+      title={`Save ${club.name}`}
       description="Create a free OutClass account to save this club and keep its events, deadlines and application in one place. You’ll come right back here."
       returnPath={prompt} />}
   </div>
