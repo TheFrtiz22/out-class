@@ -240,7 +240,8 @@ test('settings and authenticated navigation across roles, saves, history and res
       await studentPage.screenshot({ path: path.join(artifacts, `${width === 390 ? 'mobile' : 'tablet'}-notifications.png`), fullPage: true });
       await leaderPage.setViewportSize({ width, height: 900 });
       await open(leaderPage, `/club/${first.id}/workspace?section=settings&setting=general`);
-      await leaderPage.locator('#organization-settings-section').selectOption('members');
+      // A streamed page can leave a hidden second copy of the selector in the DOM; use the one on screen.
+      await leaderPage.locator('#organization-settings-section').filter({ visible: true }).selectOption('members');
       await leaderPage.getByRole('heading', { name: 'Interviewer eligibility', exact: true }).waitFor();
       await noOverflow(leaderPage);
     }
