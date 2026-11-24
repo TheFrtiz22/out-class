@@ -262,7 +262,7 @@ describe("Explore at scale", () => {
   });
 });
 
-describe("Saved clubs at scale and Follow", () => {
+describe("Saved clubs at scale and Save", () => {
   test("200 saved clubs: the count reads 200 and the list is virtualized", async () => {
     await renderRoute(route("saved-clubs"), { mode: "rich", overrides: { "clubs.saved": { items: clubs600.slice(0, 200).map(item => ({ club: item, savedAt: new Date().toISOString() })) } } });
     expect(screen.getByTestId("saved-count").props.children.join("")).toBe("200 saved clubs");
@@ -270,19 +270,19 @@ describe("Saved clubs at scale and Follow", () => {
     expect(loggedCrashes()).toEqual([]);
   });
 
-  test("a refused unfollow puts Following back and says why; a double tap sends one request", async () => {
+  test("a refused unsave puts Saved back and says why; a double tap sends one request", async () => {
     const { client } = await renderRoute(route("club/[id]"), { mode: "rich", params: { id: fullClub.id }, overrides: { "clubs.save": () => { throw new ApiError(403, "FORBIDDEN", "Alumni accounts can’t change saved clubs."); } } });
-    expect(screen.getByText("Following")).toBeTruthy();
+    expect(screen.getByText("Saved")).toBeTruthy();
     const follow = screen.getByTestId("club-follow");
     await fireEvent.press(follow);
     await fireEvent.press(follow);
     await settle(client);
     expect(apiState.calls.filter(call => call.operation === "clubs.save")).toHaveLength(1);
-    expect(screen.getByText("Following")).toBeTruthy();
+    expect(screen.getByText("Saved")).toBeTruthy();
     expect(screen.getByText("Alumni accounts can’t change saved clubs.")).toBeTruthy();
   });
 
-  test("following from the club page shows on Saved clubs (shared cache, refetched from a server that remembers)", async () => {
+  test("saving from the club page shows on Saved clubs (shared cache, refetched from a server that remembers)", async () => {
     const target = club(9999);
     const server = new Map<string, PublicClub>([[fullClub.id, fullClub]]);
     const overrides = {
@@ -293,7 +293,7 @@ describe("Saved clubs at scale and Follow", () => {
     const { client } = await renderRoute(route("club/[id]"), { mode: "rich", params: { id: target.id }, overrides });
     await fireEvent.press(screen.getByTestId("club-follow"));
     await settle(client);
-    expect(screen.getByText("Following")).toBeTruthy();
+    expect(screen.getByText("Saved")).toBeTruthy();
     const saved = client.getQueryData<{ items: { club: PublicClub }[] }>(["clubs.saved", null]);
     expect(saved?.items.some(item => item.club.id === target.id)).toBe(true);
   });
