@@ -126,6 +126,22 @@ test('native offers: publication, student authority, membership, retries and rac
   }
  });
 
+ await t.test('member managers without applicant identity neither see nor manage recruitment offers',async()=>{
+  const a=await fresh();await decide(a);const o=await offer(a);
+  const manager=await db.user.create({data:{email:`member-manager-${randomUUID()}@demo.invalid`}});
+  await db.clubMember.create({data:{clubId:club.id,userId:manager.id,accessRole:'ADMIN',permissions:['members.manage','leaders.manage']}});
+  const m=api(db,manager.id);
+  assert.equal((await m.members.getOrganizationMemberManagement(club.id)).invitations.some(i=>i.id===o.id),false);
+  assert.equal((await m.access.getClubAccess(club.id)).invitations.some(i=>i.id===o.id),false);
+  await refused(m.members.manageOrganizationInvitation({clubId:club.id,invitationId:o.id,action:'REVOKE'}),/unavailable|authority/);
+  await refused(m.members.bulkOrganizationInvitations({clubId:club.id,invitationIds:[o.id],action:'REVOKE'}),/unavailable|authority/);
+  await refused(m.access.revokeClubInvitation(club.id,o.id),/authorized owner/);
+  assert.equal((await offer(a)).status,'PENDING');
+  // The owner, who holds identify and decisions, still sees the pending offer.
+  assert.equal((await l.members.getOrganizationMemberManagement(club.id)).invitations.some(i=>i.id===o.id),true);
+  assert.equal((await l.access.getClubAccess(club.id)).invitations.some(i=>i.id===o.id),true);
+ });
+
   }finally{await db.$disconnect()}
  // Fixtures intentionally remain in this disposable database for inspection.
 });

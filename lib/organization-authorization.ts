@@ -39,6 +39,18 @@ export function canRemoveOrganizationMember(actor: ClubAccess | null | undefined
   return organizationCapabilities(actor).canManageMembers && isRosterMembership(target) && canControlOrganizationAccess(actor, target);
 }
 
+/**
+ * A recruitment offer is a ClubInvitation tied to an application: it names who was accepted.
+ * Listing, revoking or resending one follows the Decisions gate (identify + decisions.manage),
+ * not the membership gates, so members.manage alone never reveals accepted applicants.
+ */
+export function canSeeRecruitmentOffers(actor: ClubAccess | null | undefined) {
+  return hasPermission(actor, "applicants.identify") && hasPermission(actor, "decisions.manage");
+}
+export function canManageOfferInvitation(actor: ClubAccess | null | undefined, invitation: { applicationId?: string | null }) {
+  return !invitation.applicationId || canSeeRecruitmentOffers(actor);
+}
+
 export function canManageOrganizationInvitation(actor: ClubAccess | null | undefined, invitation: { requestedRole: MembershipAccessRole; permissions: readonly string[] }) {
   // A graduate kept as owner hands over by transfer or by making a current member owner, not by invitation.
   if (actor?.handOverOnly) return false;
