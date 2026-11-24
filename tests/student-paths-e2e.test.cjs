@@ -75,7 +75,8 @@ test("student workspace paths: old URLs redirect, back/forward and reload stay o
   })
 
   await t.test("reloading or opening a path directly renders that view", async () => {
-    for (const [path, id] of [["/clubs/tasks", "clubs"], ["/applications", "applications"], ["/explore", "explore"]]) {
+    // /clubs/tasks has its own rail item (Tasks, under Applications) since the rail foot change (#384).
+    for (const [path, id] of [["/clubs/tasks", "tasks"], ["/applications", "applications"], ["/explore", "explore"]]) {
       await page.goto(config.appUrl + path); await shell()
       assert.equal(here(), path)
       assert.equal(await page.locator(`[data-tour="nav-${id}"]`).filter({ visible: true }).first().getAttribute("aria-current"), "page", path)
