@@ -116,6 +116,12 @@ jest.mock("expo-router", () => {
 }
 jest.mock("expo-font", () => ({ useFonts: () => [true, null], loadAsync: jest.fn(async () => {}), isLoaded: () => true }));
 jest.mock("expo-splash-screen", () => ({ preventAutoHideAsync: jest.fn(async () => true), hideAsync: jest.fn(async () => true), setOptions: jest.fn() }));
+// SHA-256 as the native module computes it (UTF-8 input, lowercase hex), for the draft save token.
+jest.mock("expo-crypto", () => {
+  const actual = jest.requireActual("expo-crypto");
+  const { createHash } = jest.requireActual("node:crypto");
+  return { ...actual, digestStringAsync: jest.fn(async (_algorithm: string, data: string) => createHash("sha256").update(data, "utf8").digest("hex")) };
+});
 jest.mock("expo-secure-store", () => {
   const store = new Map<string, string>();
   return {

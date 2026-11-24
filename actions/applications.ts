@@ -1,4 +1,5 @@
 "use server"
+import type { Prisma } from "@prisma/client"
 import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 
 import { assertClubOperational } from "@/lib/club-suspension";
@@ -14,11 +15,22 @@ import { activeMemberWhere, hasPermission, type ClubAccess } from "@/lib/permiss
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
+import { createHash } from "node:crypto"
 import { ANSWER_TOO_LONG_MESSAGE, MAX_ANSWER_CHARACTERS, applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import type { z } from "zod"
 import { boundedParse } from "@/lib/bounded-input"
 import { ActionError, actionResult } from "@/lib/action-result"
 import { PHONE_REQUIRED_MESSAGE, validPhone } from "@/lib/phone"
+
+/**
+ * The save contract's compare token: the saved answers' key itself (the web form), or
+ * `sha256:` and the key's SHA-256 in hex (the mobile app), which keeps a long draft's
+ * request small enough to send.
+ */
+function answersKeyMatches(key: string, expected: string) {
+  if (expected.startsWith("sha256:")) return expected.slice(7).toLowerCase() === createHash("sha256").update(key, "utf8").digest("hex")
+  return key === expected
+}
 
 /** An over-long answer is the one schema failure a student can cause by typing, so it gets its own message. */
 function answersWithinLimit(input: unknown) {
@@ -51,7 +63,8 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
       if (!validPhone(profile.phone)) throw new ActionError(PHONE_REQUIRED_MESSAGE)
       if (!meetsTestRequirement(configuration.testRequirement, profile)) throw new ActionError("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
-    const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
+    // In the form's own order: a follow-up is visible only after its parent (lib/student-applications.ts visibleQuestionIds).
+    const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null }, orderBy: [{ order: "asc" }, { id: "asc" }] })
     parsed.answers = normalizeApplicationAttachments(questions, parsed.answers)
     assertApplicationAttachmentOwnership(questions, parsed.answers, user.id)
     const errors = answerErrors(questions, parsed.answers, submit)
@@ -72,7 +85,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     if (existing && parsed.expectedAnswers !== undefined) {
       const current = await tx.applicationAnswer.findMany({ where: { applicationId: existing.id }, select: { questionId: true, response: true } })
       const key = applicationAnswersKey(current)
-      if (key !== parsed.expectedAnswers && key !== applicationAnswersKey(parsed.answers))
+      if (!answersKeyMatches(key, parsed.expectedAnswers) && key !== applicationAnswersKey(parsed.answers))
         throw new ActionError("This application changed in another tab. Your responses are retained. Reopen it to compare before saving.")
     }
     const cycle = submit && !existing?.recruitmentCycleId && activeCycle ? { recruitmentCycleId: activeCycle.id } : {}
@@ -166,6 +179,18 @@ function studentCalendarWindow() {
   return { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }
 }
 
+/**
+ * The student's own calendar: every meeting of a club they belong to, the public meetings of clubs they
+ * applied to, and public events they RSVP'd to or saved. Check-ins come separately through their attendances. Every other
+ * public meeting at the school stays on the events board; at 200 clubs that is about 14,000 meetings a Home load.
+ */
+function studentCalendarMeetings(userId: string, schoolId: string) {
+  return { AND: [studentCalendarWindow(), { OR: [
+    { club: { members: { some: { userId, ...activeMemberWhere } } } },
+    { AND: [schoolPublicMeetingVisibility(schoolId), { OR: [{ club: { applications: { some: { studentId: userId } } } }, { rsvps: { some: { userId } } }, { saves: { some: { userId } } }] }] },
+  ] }] } satisfies Prisma.MeetingWhereInput
+}
+
 /** Members-only meetings of a club the student helps run are leader work: Calendar keeps them, student Home does not. */
 function studentMeeting<M extends { audience: string; club: { name: string; members: ClubAccess[] } }>({ club: { members, ...club }, ...meeting }: M) {
   return { ...meeting, club, forLeaders: meeting.audience !== "RECRUITMENT" && hasPermission(members[0], "meetings.manage") }
@@ -187,9 +212,10 @@ prisma.application.findMany({
       round: {
         select: { name: true },
       },
-      answers: true,
+      answers: { select: { questionId: true, response: true } },
       bookings: {
-        include: { slot: true },
+        // Students see when and where; the slot's panel and staffing fields are the club's own.
+        select: { id: true, roundId: true, applicationId: true, slotId: true, slot: { select: { id: true, startTime: true, endTime: true, location: true } } },
       },
     },
     orderBy: applicationRecency,
@@ -198,14 +224,21 @@ prisma.application.findMany({
 prisma.eventAttendance.findMany({
     where: { studentId: user.id, event: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] } },
     include: {
+      // Agenda, recap and resources stay on the meeting page; the calendar needs only these.
       event: {
-        include: { club: { select: { name: true } } },
+        select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, club: { select: { name: true } } },
       },
     },
   }),
 
-prisma.meeting.findMany({ where: { AND: [{ OR: [schoolPublicMeetingVisibility(school.id), { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true, members: { where: { userId: user.id, ...activeMemberWhere }, select: { isOwner: true, permissions: true, status: true, alumniSince: true }, take: 1 } } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: studentCalendarMeetings(user.id, school.id), select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true, members: { where: { userId: user.id, ...activeMemberWhere }, select: { isOwner: true, permissions: true, status: true, alumniSince: true }, take: 1 } } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
-  return { applications, attendances, meetings: meetings.map(studentMeeting), panelAssignments }
+  return { applications: applications.map(dashboardApplication), attendances, meetings: meetings.map(studentMeeting), panelAssignments }
+}
+
+/** Home draws each club's logo, so it keeps only the logo settings of the club's public page content. */
+function dashboardApplication<A extends { club: { marketing: unknown } }>(app: A): A {
+  const { logoBackground, logoOnBrand } = (app.club.marketing ?? {}) as { logoBackground?: unknown; logoOnBrand?: unknown }
+  return { ...app, club: { ...app.club, marketing: { logoBackground, logoOnBrand } } }
 }

@@ -69,6 +69,8 @@ export function answerErrors(
 ) {
   const errors: Record<string, string> = {}
   const seen = new Set<string>()
+  // An answer to a follow-up that is now hidden is not shown and cannot be fixed, so its content rules are skipped.
+  const visible = visibleQuestionIds(questions, answers)
   for (const answer of answers) {
     const question = questions.find((item) => item.id === answer.questionId)
     if (!question || seen.has(answer.questionId)) {
@@ -77,11 +79,13 @@ export function answerErrors(
       continue
     }
     seen.add(answer.questionId)
+    // A document answer is always checked: it is stored, and a club may still open it.
     if (answer.response.trim() && question.type === "FILE_UPLOAD") {
       if (!resumeReferenceSchema.safeParse(answer.response).success) {
         errors[question.id] = "Use an uploaded PDF or a valid document URL."
       }
     }
+    if (!visible.has(question.id)) continue
     if (answer.response.trim() && question.type === "MULTIPLE_CHOICE" && question.options?.length && !question.options.includes(answer.response))
       errors[question.id] = "Choose one of the available options."
     if (answer.response.trim() && question.type === "MULTI_SELECT") {
@@ -98,7 +102,6 @@ export function answerErrors(
       errors[question.id] = `Keep your answer within ${question.wordLimit} words.`
   }
   if (final) {
-    const visible = visibleQuestionIds(questions, answers)
     for (const question of questions) {
       if (
         question.required && visible.has(question.id) &&

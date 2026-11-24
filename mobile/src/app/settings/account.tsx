@@ -14,7 +14,6 @@ import { config } from "~/lib/config";
 import { easternLongDate } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
 import { openOnWeb } from "~/lib/links";
-import { unregisterPushBeforeSignOut } from "~/lib/push";
 import { useApiQuery } from "~/lib/query";
 import type { SignupOptions } from "~/lib/signup";
 import { useTheme } from "~/lib/theme";
@@ -143,7 +142,8 @@ export default function AccountSettings() {
     const ok = await confirm({ title: "Sign out?", confirmLabel: "Sign out" });
     if (!ok) return;
     setLeaving(true);
-    try { await unregisterPushBeforeSignOut().catch(() => {}); await signOut(); } finally { setLeaving(false); }
+    // signOut() stops this device's pushes itself, within its own deadline.
+    try { await signOut(); } finally { setLeaving(false); }
   }
 
   return (

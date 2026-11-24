@@ -19,7 +19,7 @@ export function useDebounced<T>(value: T, delay: number) {
 }
 
 /** The pill search field of Explore and Events (components/ui/search-field.tsx): icon, text, clear. */
-export function SearchField({ label, placeholder, value, onChangeText, testID }: { label: string; placeholder: string; value: string; onChangeText: (value: string) => void; testID?: string }) {
+export function SearchField({ label, placeholder, value, onChangeText, testID, maxLength }: { label: string; placeholder: string; value: string; onChangeText: (value: string) => void; testID?: string; maxLength?: number }) {
   const { colors, radius, text } = useTheme();
   const [focused, setFocused] = useState(false);
   return (
@@ -32,6 +32,7 @@ export function SearchField({ label, placeholder, value, onChangeText, testID }:
         placeholderTextColor={colors.mutedForeground}
         value={value}
         onChangeText={onChangeText}
+        maxLength={maxLength}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         returnKeyType="search"

@@ -21,6 +21,7 @@ type ConnectionProblem = "offline" | "unreachable";
 type StoredDraft<T> = { value: T; baseline: string; at: number };
 
 const DEBOUNCE_MS = 850;
+const DEVICE_WRITE_MS = 1000;
 const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -159,14 +160,34 @@ export function useAutosave<T>({ identity, owner, value, save, restore, enabled 
     const key = owner ? `${DRAFT_KEY_PREFIX}v1:${owner}:${identity}` : null;
     const update = () => render(count => count + 1);
     const entry: Entry<T> = { identity, ready: false, recovery: null, reviewing: false, baseline: original.serialize(original.value), key, queue: null as never };
+    // The device copy is written at most every DEVICE_WRITE_MS while typing (a long draft is large), and
+    // at once when the app leaves the foreground or the screen closes.
+    let deviceWrite: ReturnType<typeof setTimeout> | null = null;
+    let unwritten: StoredDraft<T> | null = null;
+    const writeDeviceCopy = () => {
+      if (deviceWrite) clearTimeout(deviceWrite);
+      deviceWrite = null;
+      if (!key || !unwritten) return;
+      const draft = unwritten;
+      unwritten = null;
+      AsyncStorage.setItem(key, JSON.stringify(draft)).catch(() => {});
+    };
     const recover = (content: T | null, server?: T) => {
       if (!key) return false;
-      if (content === null) { AsyncStorage.removeItem(key).catch(() => {}); entry.baseline = latest.current.serialize(entry.queue.value); return false; }
+      if (content === null) {
+        if (deviceWrite) clearTimeout(deviceWrite);
+        deviceWrite = null; unwritten = null;
+        AsyncStorage.removeItem(key).catch(() => {}); entry.baseline = latest.current.serialize(entry.queue.value); return false;
+      }
       if (server !== undefined) entry.baseline = latest.current.serialize(server);
-      AsyncStorage.setItem(key, JSON.stringify({ value: content, baseline: entry.baseline, at: Date.now() } satisfies StoredDraft<T>)).catch(() => {});
+      unwritten = { value: content, baseline: entry.baseline, at: Date.now() };
+      // Offline, the device copy is the only copy: write it now.
+      if (!online) writeDeviceCopy();
+      else if (!deviceWrite) deviceWrite = setTimeout(writeDeviceCopy, DEVICE_WRITE_MS);
       return true;
     };
-    const queue = new AutosaveQueue<T>(original.value, data => latest.current.save(data), update, recover);
+    // A save that fails writes the device copy at once, so "Changes saved on this device" is true.
+    const queue = new AutosaveQueue<T>(original.value, data => latest.current.save(data).catch(error => { writeDeviceCopy(); throw error; }), update, recover);
     entry.queue = queue;
     holder.current = entry;
     let live = true;
@@ -188,13 +209,14 @@ export function useAutosave<T>({ identity, owner, value, save, restore, enabled 
       update();
     })();
     const flush = () => { void queue.flush().catch(() => {}); };
-    const appState = AppState.addEventListener("change", state => { if (state !== "active") flush(); });
-    const connection = (isOnline: boolean) => { if (isOnline) flush(); else queue.markOffline(); };
+    const appState = AppState.addEventListener("change", state => { if (state !== "active") { writeDeviceCopy(); flush(); } });
+    const connection = (isOnline: boolean) => { if (isOnline) flush(); else { writeDeviceCopy(); queue.markOffline(); } };
     onlineListeners.add(connection);
     return () => {
       live = false;
       appState.remove(); onlineListeners.delete(connection);
       queue.dispose();
+      writeDeviceCopy();
       // Leaving the screen saves what is unsaved; the device copy remains if that save fails.
       if (queue.dirty) flush();
       if (holder.current === entry) holder.current = null;

@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { limitRequest, RATE_LIMITS } from "@/lib/rate-limit";
 import { handleMobileMedia } from "@/utils/mobile-api";
 
 // Private media for the native app: the web's own handlers, reached with the app's bearer session
@@ -18,6 +19,9 @@ const handlers: Record<string, () => Promise<Handler>> = {
 };
 
 export async function GET(request: Request, { params }: { params: Promise<{ kind: string }> }) {
+  // Per address before any token is verified, as on the operation route; handleMobileMedia then limits per account.
+  const limited = limitRequest(request, RATE_LIMITS.mobileApiAddress);
+  if (limited) return limited;
   const { kind } = await params;
   const load = Object.hasOwn(handlers, kind) ? handlers[kind] : undefined;
   return handleMobileMedia(request, load ? await load() : undefined);

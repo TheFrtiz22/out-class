@@ -158,7 +158,7 @@ export function AboutSection({ club, children }: { club: PublicClub; children?: 
     <Section title="About" testID="club-about">
       {about ? <Text>{about}</Text> : null}
       {sections.map((section, index) => <ProfileSection key={index} section={section} parent="About" />)}
-      {links.length ? <View accessibilityLabel="More from the club">{links.map(link => <LinkRow key={link.url} label={link.label} url={link.url} icon={link.video ? Play : undefined} />)}</View> : null}
+      {links.length ? <View accessibilityLabel="More from the club">{links.map((link, index) => <LinkRow key={`${index}:${link.url}`} label={link.label} url={link.url} icon={link.video ? Play : undefined} />)}</View> : null}
       {children}
     </Section>
   );

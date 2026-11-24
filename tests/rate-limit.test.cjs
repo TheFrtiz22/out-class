@@ -7,7 +7,7 @@ const ts = require("typescript")
 const root = path.resolve(__dirname, "..")
 const read = file => fs.readFileSync(path.join(root, file), "utf8")
 function load(file, mocks = {}) {
-  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/lib/school-host': require('./helpers/school-scope.cjs').schoolHost(), ...mocks }
+  mocks = { '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/lib/school-host': require('./helpers/school-scope.cjs').schoolHost(), '@/utils/mobile-request': { mobileRequest: () => undefined }, ...mocks }
   const mod = { exports: {} }
   const code = ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   new Function("require", "module", "exports", code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.slice(2) + ".ts", mocks) : require(name), mod, mod.exports)

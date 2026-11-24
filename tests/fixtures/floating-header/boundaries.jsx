@@ -84,3 +84,5 @@ export function TutorialWalkthrough() { return null }
 export default function Image({ src, alt, priority: _priority, unoptimized: _unoptimized, ...props }) { return <img src={src} alt={alt} {...props} /> }
 export async function getAdminReportsPulse() { return { openFeedback: 0, fingerprint: 'fixture' } }
 export async function removePushSubscription() { return { ok: true } }
+// Club QR buttons ask for a /q short link on click; the fixture has none, so they fall back to the page's own address.
+export async function createShortLink() { return { shortUrl: '' } }

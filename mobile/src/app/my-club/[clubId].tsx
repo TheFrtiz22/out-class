@@ -4,7 +4,8 @@ import { View } from "react-native";
 import { AlumniBanner } from "~/components/alumni-banner";
 import { Header, useHeaderInset } from "~/components/header";
 import { hasLeaderTools } from "~/components/leader/access";
-import { CalendarDays, ChevronRight, FilePenLine } from "~/components/icons";
+import { CalendarDays, ChevronRight, FilePenLine, QrCode } from "~/components/icons";
+import { ShareSheet, clubShareTarget } from "~/components/share-sheet";
 import { isMissing, isSubmitted, matchesFilter, ownTasks, relativeDue, statusLabel } from "~/components/tasks/presentation";
 import { Text } from "~/components/text";
 import { Button, Card, Chip, ClubMark, Divider, EmptyState, ErrorState, Press, ScreenScroll, SectionHeader, Segmented, Skeleton, SkeletonRows } from "~/components/ui";
@@ -30,6 +31,7 @@ export default function MyClub() {
   const tasksEnabled = !!clubId && !!member && !member.alumniSince;
   const tasks = useApiQuery<TaskWorkspace>("tasks.workspace", { clubId }, { enabled: tasksEnabled });
   const [when, setWhen] = useState<"upcoming" | "past">("upcoming");
+  const [sharing, setSharing] = useState(false);
   const now = Date.now();
   // `refetch` ignores `enabled`, so an alumni membership's task list is not asked for here either.
   const refresh = () => Promise.all([me.refetch(), clubId ? meetings.refetch() : null, tasksEnabled ? tasks.refetch() : null]);
@@ -64,7 +66,9 @@ export default function MyClub() {
               {/* The same gate as Home's leader rows; each tool is authorized again by the server. */}
               {hasLeaderTools(member, me.data?.profile) ? <Button size="compact" testID="my-club-leader-tools" label="Leader tools" onPress={() => router.push({ pathname: "/leader/[clubId]", params: { clubId: member.clubId } } as never)} /> : null}
               <Button variant="secondary" size="compact" testID="my-club-public" label="View club page" onPress={() => router.push({ pathname: "/club/[id]", params: { id: member.clubId } } as never)} />
+              <Button variant="secondary" size="compact" testID="my-club-qr" icon={QrCode} label="Club QR code" onPress={() => setSharing(true)} />
             </View>
+            <ShareSheet open={sharing} onClose={() => setSharing(false)} target={clubShareTarget({ id: member.clubId, name: member.club.name })} />
 
             <View style={{ gap: 10 }}>
               <SectionHeader title="Tasks" action={allTasks ? <Button variant="ghost" size="compact" testID="my-club-all-tasks" label="All tasks" onPress={() => router.push({ pathname: "/tasks", params: { clubId: member.clubId } })} /> : undefined} />

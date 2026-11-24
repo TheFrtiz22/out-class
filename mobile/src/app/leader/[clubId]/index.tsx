@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { View } from "react-native";
 import { Header, useHeaderInset } from "~/components/header";
+import { ShareSheet, clubShareTarget } from "~/components/share-sheet";
 import { CalendarDays, ChevronRight, ExternalLink, Gavel, Megaphone, QrCode, Users, Video } from "~/components/icons";
 import type { IconComponent } from "~/components/icon-factory";
 import { attendanceOpen, canAnnounceToApplicants, canOpenSettings, leaderTools } from "~/components/leader/access";
@@ -23,6 +24,7 @@ export default function LeaderHub() {
   const router = useRouter();
   const top = useHeaderInset();
   const me = useApiQuery<Me>("me", undefined, { staleTime: 5 * 60_000 });
+  const [sharing, setSharing] = useState(false);
   const membership = me.data?.memberships.find(item => item.clubId === clubId);
   const tools = membership ? leaderTools(membership, me.data?.profile) : null;
   const meetings = useApiQuery<LeaderMeeting[]>("meetings", { clubId }, { enabled: !!tools?.attendance, scope: "leader" });
@@ -85,6 +87,14 @@ export default function LeaderHub() {
               </View>
             ) : null}
 
+            {/* Every leader can show the club's own code at a fair or table; it opens the public club page. */}
+            <View style={{ gap: 10 }}>
+              <SectionHeader title="Share the club" />
+              <Card padded={false} style={{ paddingHorizontal: 16 }}>
+                {tool(QrCode, "Club QR code", "For posters, tables and the club fair", () => setSharing(true), "leader-club-qr")}
+              </Card>
+            </View>
+
             {/* Only the tools this role has, divided between them; a check-in-only role has no section at all. */}
             {run.length ? (
               <View style={{ gap: 10 }}>
@@ -107,6 +117,7 @@ export default function LeaderHub() {
           </>
         )}
       </ScreenScroll>
+      {membership ? <ShareSheet open={sharing} onClose={() => setSharing(false)} target={clubShareTarget({ id: membership.clubId, name: membership.club.name })} /> : null}
       <Header title="Leader tools" back />
     </View>
   );

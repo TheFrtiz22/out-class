@@ -136,7 +136,8 @@ describe("the order of Home's sections", () => {
     const layout = homeLayout(input({ applications: [draft("a", 3 * DAY)] }));
     expect(layout.hero?.id).toBe("application:a");
     expect(layout.urgent.applications).toBe(false);
-    expect(layout.sections).toEqual(["myClubs", "applications"]);
+    // Its only item is in the hero, so the section hides rather than repeat it (docs/mobile/home-priority.md).
+    expect(layout.sections).toEqual(["myClubs"]);
   });
   test("the mockup's day: a draft due soon in the hero, Leading next, then My Clubs", () => {
     const layout = homeLayout(input({ leads: true, leading: [{ ...vote, liveVote: null, pendingReviews: 12 }], applications: [draft("mii", 5 * DAY)] }));

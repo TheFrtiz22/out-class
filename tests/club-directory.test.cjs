@@ -6,7 +6,7 @@ const Module = require("node:module")
 const path = require("node:path")
 function load(file, dependencies = {}) {
   dependencies = { "next/cache": { unstable_cache: fn => fn }, "@/utils/school-scope": require('./helpers/school-scope.cjs').schoolScope(), ...dependencies }
-  if (dependencies["@/utils/prisma"]?.prisma) { const db=dependencies["@/utils/prisma"].prisma; db.$queryRaw ||= async()=>[]; db.$transaction ||= async fn=>fn(db); db.club ||= {}; db.club.findUnique ||= async()=>({applicationOpen:true}); }
+  if (dependencies["@/utils/prisma"]?.prisma) { const db=dependencies["@/utils/prisma"].prisma; db.$queryRaw ||= async()=>[]; db.$transaction ||= async fn=>fn(db); db.club ||= {}; db.club.findUnique ||= async()=>({applicationOpen:true,schoolId:'school-uva'}); }
   const filename = path.resolve(__dirname, "..", file)
   const output = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -234,7 +234,7 @@ test('open and not-open filters partition the full directory without hiding club
 test("a closed club or one with no round returns its reason instead of throwing, so production shows it", async () => {
   const actions = (club, round) => load("actions/club-directory.ts", {
     "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": { requireAuth: async () => ({ user: { id: "student" } }) },
-    "@/utils/prisma": { prisma: { club: { findUnique: async () => club }, application: { findFirst: async () => null, create: async () => { throw new Error("must not create") } }, pipelineRound: { findFirst: async () => round } } },
+    "@/utils/prisma": { prisma: { club: { findUnique: async () => club && { schoolId: "school-uva", ...club } }, application: { findFirst: async () => null, create: async () => { throw new Error("must not create") } }, pipelineRound: { findFirst: async () => round } } },
   })
   assert.deepEqual(await actions({ applicationOpen: false, applicationDeadline: null }, { id: "r" }).startClubApplication("club"), { applicationId: null, unavailable: "Applications are closed for this club." })
   assert.deepEqual(await actions({ applicationOpen: true, applicationDeadline: new Date(Date.now() - 60000) }, { id: "r" }).startClubApplication("club"), { applicationId: null, unavailable: "Applications are closed for this club." })
@@ -262,4 +262,23 @@ test("Explore adds local matches (locations) to Typesense results without reorde
   const sync = fs.readFileSync("scripts/sync-typesense-public-clubs.cjs", "utf8")
   // Plus schoolId, which search filters on (actions/typesense-search.ts).
   assert.match(sync, /select: \{ id: true, schoolId: true, name: true, category: true, tagline: true, description: true \}/)
+})
+test("another school's club id opens no application (the viewer's school only, as on the club page)", async () => {
+  const actions = load("actions/club-directory.ts", {
+    "@/utils/graduation": { alumniRefusal: async () => null, assertNotAlumni: async () => {} }, "@/utils/auth": { requireAuth: async () => ({ user: { id: "student" } }) },
+    "@/utils/prisma": { prisma: { club: { findUnique: async () => ({ applicationOpen: true, applicationDeadline: null, schoolId: "school-other" }) }, application: { findFirst: async () => null, create: async () => { throw new Error("must not create") } }, pipelineRound: { findFirst: async () => ({ id: "r" }) } } },
+  })
+  assert.deepEqual(await actions.startClubApplication("club"), { applicationId: null, unavailable: "Applications are not available for this club." })
+})
+test('saved clubs carry the same trimmed marketing as the directory list, not the club\'s full marketing record', async () => {
+  const record = { id: 'saved-club', name: 'Saved society', claimedAt: new Date(), suspendedAt: null, applicationOpen: true,
+    applicationDeadline: null, tagline: 'Research', description: 'Public profile', color: '#142d4e', category: 'Academic',
+    logoUrl: null, bannerUrl: null, marketing: { showMembers: true, memberCount: 40, researchSources: [{ label: 'Research source 1', url: 'https://example.test/x' }], aum: 'Not publicly disclosed' },
+    acceptanceRate: null, aumValue: null, testRequirement: 'OPTIONAL', campusKey: 'uva', directorySource: null, pipelineRounds: [], questions: [], events: [] }
+  const api = load('actions/club-directory.ts', {
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }) },
+    '@/utils/prisma': { prisma: { corkboardClub: { findMany: async () => [{ club: record, savedAt: new Date() }] } } },
+  })
+  const { items } = await api.getCorkboard()
+  assert.deepEqual(items[0].club.marketing, { showMembers: true, memberCount: 40 })
 })
