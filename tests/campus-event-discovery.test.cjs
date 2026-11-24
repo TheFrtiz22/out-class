@@ -75,6 +75,13 @@ test('native Prisma: account-scoped idempotent saves, shared filtered pagination
     assert.equal(rsvp.going, true); assert.equal(rsvp.count, 1);
     assert.equal((await h.api.getPublicCampusEvent(event.id)).rsvpCount, 1);
     assert.equal((await h.api.setCampusEventRsvp({ eventId: event.id, going: false })).count, 0);
+    // A viewer from another school sees none of this school's events and cannot save or RSVP to them.
+    h.asSchool({ id: 'school-elsewhere', key: 'elsewhere' });
+    assert.equal(await h.api.getPublicCampusEvent(event.id), null);
+    assert.equal((await h.api.getPublicCorkboard({ clubId: h.club.id })).total, 0);
+    await assert.rejects(h.api.setSavedCampusEvent({ eventId: events[1].id, saved: true }), /no longer available/);
+    assert.deepEqual(await h.api.setCampusEventRsvp({ eventId: event.id, going: true }), { ok: false, error: 'This event is no longer available.' });
+    h.asSchool(require('./helpers/school-scope.cjs').UVA);
     // Expected refusals come back as values: production redacts thrown server-action messages.
     // Changing RSVP settings returns a publication to DRAFT (database moderation guard); re-approve it.
     const setCapacity = async capacity => {
