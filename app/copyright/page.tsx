@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { SectionReveal } from "@/components/motion/scroll-motion"
 import { PublicInformationPage } from "@/components/landing/public-information-page"
-import { CONTACT_EMAIL, CONTACT_HREF, DMCA_AGENT, DMCA_AGENT_EMAIL_HREF, DMCA_AGENT_PHONE_HREF } from "@/lib/legal-content"
+import { DMCA_AGENT, DMCA_AGENT_EMAIL_HREF, DMCA_AGENT_PHONE_HREF } from "@/lib/legal-content"
 import { publicPageMetadata } from "@/lib/seo"
 
 /**
@@ -53,7 +53,7 @@ export default function CopyrightPage() {
           Phone: {DMCA_AGENT_PHONE_HREF ? <a className="oc-public-text-link" href={DMCA_AGENT_PHONE_HREF}>{DMCA_AGENT.phone}</a> : DMCA_AGENT.phone}<br />
           Email: <a className="oc-public-text-link" href={DMCA_AGENT_EMAIL_HREF}>{DMCA_AGENT.email}</a>
         </address>
-        <p>Email is the fastest way to reach us. This address is only for copyright notices. For anything else, including other reports about content, write to <a className="oc-public-text-link" href={CONTACT_HREF}>{CONTACT_EMAIL}</a>.</p>
+        <p>Email is the fastest way to reach us. Put “DMCA notice” or “DMCA counter-notice” in the subject line so it reaches the right person.</p>
       </Topic>
       <Topic id="notice" number="02" kicker="Takedown notice" title="What to include in a notice.">
         <p>To be effective, your notice must be in writing and include:</p>

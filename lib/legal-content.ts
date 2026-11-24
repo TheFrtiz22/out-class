@@ -45,15 +45,15 @@ export const LEGAL_EFFECTIVE_DATE = LEGAL_PLACEHOLDERS.effectiveDate
  * The DMCA designated agent, as filed with the U.S. Copyright Office (registration DMCA-1087353, owner 2026-11-24).
  * 17 U.S.C. § 512(c)(2) requires the agent's name, address, phone number and email to be public on the site;
  * /copyright shows them, and the Terms and /legal repeat them. Every value must match the Copyright Office
- * filing: change one here only together with the filing. The email is temporary until an OutClass address exists.
+ * filing: change one here only together with the filing.
  * A value still in [brackets] is not decided yet; tests/copyright-page.test.cjs fails until none is left.
  */
 export const DMCA_AGENT = {
-  name: "Jesse Klinger",
+  name: "[DMCA agent name, as filed]",
   serviceProvider: COMPANY,
-  addressLines: ["[DMCA agent street address, as filed]", "[DMCA agent city, state and ZIP, as filed]"] as readonly string[],
-  phone: "[DMCA agent phone, as filed]",
-  email: "klinger.jesse@gmail.com",
+  addressLines: ["301 15th St NW, Apt 1005", "Charlottesville, VA 22903"] as readonly string[],
+  phone: "240-812-1683",
+  email: CONTACT_EMAIL,
 } as const
 export const DMCA_AGENT_ADDRESS = DMCA_AGENT.addressLines.join(", ")
 const dmcaPhoneDigits = DMCA_AGENT.phone.replace(/\D/g, "")

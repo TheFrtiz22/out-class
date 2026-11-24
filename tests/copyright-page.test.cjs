@@ -65,7 +65,7 @@ test('the page is public, indexable and listed in the sitemap, llms.txt and the 
 })
 
 test('the footer, Terms and Privacy placeholders, Support, Terms §8, /legal, content reports and the app all point to /copyright', () => {
-  const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/lib/legal-content': legal, '@/lib/photo-credits': load('lib/photo-credits.ts') })
+  const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/lib/legal-content': legal, '@/lib/photo-credits': load('lib/photo-credits.ts'), '@/components/landing/footer-controls': { FooterAudienceLinks: () => null, FooterBackToTop: () => null }, '@/components/landing/interactive-footer-wordmark': { InteractiveFooterWordmark: () => null } })
   assert.match(renderToStaticMarkup(React.createElement(PublicFooter)), /href="\/copyright"/)
   const { LegalPlaceholderPage } = load('components/landing/legal-placeholder-page.tsx', { '@/lib/legal-content': legal, './public-page-frame': { PublicPageFrame: ({ children }) => React.createElement('main', null, children) } })
   assert.match(renderToStaticMarkup(React.createElement(LegalPlaceholderPage, legal.legalPlaceholders.terms)), /href="\/copyright"/)
@@ -83,7 +83,6 @@ test('the agent details are complete and are the only place they are written', (
   assert.equal(legal.DMCA_AGENT_COMPLETE, true, `DMCA agent details still have a placeholder: ${JSON.stringify(legal.DMCA_AGENT)}`)
   assert.ok(legal.DMCA_AGENT_PHONE_HREF, 'agent phone is a 10-digit number')
   // One source: the page, Terms and /legal read DMCA_AGENT; no file repeats the email or phone literally.
-  for (const file of ['app/copyright/page.tsx', 'app/support/page.tsx', 'components/landing/public-footer.tsx', 'components/landing/legal-placeholder-page.tsx']) {
-    assert.ok(!read(file).includes(legal.DMCA_AGENT.email), `${file} repeats the agent email`)
-  }
+  const page = read('app/copyright/page.tsx')
+  for (const value of [legal.DMCA_AGENT.email, legal.DMCA_AGENT.phone, ...legal.DMCA_AGENT.addressLines]) assert.ok(!page.includes(value), `the page repeats ${value}`)
 })
