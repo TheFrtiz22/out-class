@@ -7,7 +7,7 @@ import type { CalendarEvent, HomeApplication, StudentApplication, TaskNotificati
  *
  * 1. The hero card holds the single most pressing thing, and shows only when something is pressing.
  * 2. The sections below it sort by how much they need the person today; empty sections hide.
- * 3. Whatever is in the hero doesn't also push its own section up: it is already on top.
+ * 3. Whatever is in the hero doesn't also push its own section up, and isn't listed again in it: it is already on top.
  */
 export const HOUR = 3_600_000;
 export const DAY = 24 * HOUR;
@@ -152,10 +152,11 @@ export function homeLayout(input: HomeInput): HomeLayout {
   const details = new Map((input.details ?? []).map(detail => [detail.id, detail]));
   const present: Partial<Record<HomeSectionId, boolean>> = {
     myClubs: true,
-    comingUp: upcoming(input.agenda, input.now).length > 0,
-    applications: input.applications.length > 0,
+    // The hero's own item is left out of its section, so a section whose only item is in the hero hides.
+    comingUp: upcoming(input.agenda, input.now).some(event => `event:${event.id}` !== heroId),
+    applications: input.applications.some(application => `application:${application.id}` !== heroId),
     leading: !!input.leads,
-    tasks: input.tasks.length > 0,
+    tasks: input.tasks.some(task => `task:${task.id}` !== heroId),
   };
   const urgent: Partial<Record<HomeSectionId, boolean>> = {
     leading: (input.leading ?? []).some(signal => signal.pendingReviews > 0 || !!signal.liveVote || (isToday(time(signal.nextInterviewAt), input.now) && time(signal.nextInterviewAt) >= now)),

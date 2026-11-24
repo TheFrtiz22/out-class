@@ -90,13 +90,14 @@ export default function Home() {
   const agenda = data ? [...(data.ongoing ?? []).filter(event => !data.agenda.some(item => item.id === event.id)), ...data.agenda] : [];
   const layout = data ? homeLayout({ now, applications: data.applications, details: apps.data?.applications, agenda, tasks: data.tasks, leading: signals, leads: leading.length > 0 }) : null;
   const toEvent = (event: CalendarEvent) => eventRoute(event, me.data?.applications);
-  const heroEvent = layout?.hero?.kind === "event" ? layout.hero.event.id : null;
+  // Whatever is in the hero is left out of the section below it (docs/mobile/home-priority.md).
+  const heroId = layout?.hero?.id;
   const sections: Record<HomeSectionId, () => ReactNode> = {
     myClubs: () => me.isError && !me.data ? null : <ClubCarousel memberships={me.data?.memberships ?? []} agenda={agenda} now={now} onOpen={go} />,
-    comingUp: () => <ComingUp events={upcoming(agenda, now).filter(event => event.id !== heroEvent).slice(0, 3)} now={now} onOpen={go} routeFor={toEvent} />,
-    applications: () => <ApplicationsList applications={rankApplications({ now, applications: data?.applications ?? [], details: apps.data?.applications }).slice(0, 3)} details={details} onOpen={go} />,
+    comingUp: () => <ComingUp events={upcoming(agenda, now).filter(event => `event:${event.id}` !== heroId).slice(0, 3)} now={now} onOpen={go} routeFor={toEvent} />,
+    applications: () => <ApplicationsList applications={rankApplications({ now, applications: (data?.applications ?? []).filter(application => `application:${application.id}` !== heroId), details: apps.data?.applications }).slice(0, 3)} details={details} onOpen={go} />,
     leading: () => <LeadingSection memberships={leading} profile={me.data?.profile} overviews={overviewByClub} now={now} onOpen={go} />,
-    tasks: () => <TasksList tasks={(data?.tasks ?? []).slice(0, 3)} now={now} onOpen={go} routeFor={taskRoute} />,
+    tasks: () => <TasksList tasks={(data?.tasks ?? []).filter(task => `task:${task.id}` !== heroId).slice(0, 3)} now={now} onOpen={go} routeFor={taskRoute} />,
   };
 
   return (
