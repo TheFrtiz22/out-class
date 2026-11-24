@@ -145,8 +145,8 @@ for (const [name, school] of Object.entries(SCHOOLS)) {
     const { default: sitemap } = load('app/sitemap.ts', { '@/lib/public-club-seo': seoLib, '@/lib/school-host': schoolHost(), '@/utils/school-scope': schoolScope(school), '@/lib/legal-content': { LEGAL_PAGES_PUBLIC: false } })
     const urls = (await sitemap()).map(entry => entry.url)
     const origin = school.id === 'school-uva' ? 'https://www.out-class.net' : 'https://tech.out-class.net'
-    assert.ok(urls.includes(`${origin}/club/${own(school)(w).id}`))
-    assert.ok(!urls.some(url => url.includes(other(school)(w).id)))
+    assert.ok(urls.includes(`${origin}/club/${own(school)(w).slug}`))
+    assert.ok(!urls.some(url => url.includes(other(school)(w).id) || url.includes(other(school)(w).slug)))
     assert.ok(urls.every(url => url.startsWith(origin)))
   })
 }

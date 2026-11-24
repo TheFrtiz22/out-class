@@ -29,7 +29,9 @@ const structuredData = {
 export default async function UvaPage() {
   // Same set as the sitemap: claimed, discoverable profiles with a real description. Linking them here
   // gives crawlers (and students) a path to each club page beyond the sitemap.
-  const [nonce, clubs] = await Promise.all([cspNonce(), getIndexableClubs(DEFAULT_SCHOOL.id)])
+  const clubsRequest = getIndexableClubs(DEFAULT_SCHOOL.id) // started first so both reads run together
+  const nonce = await cspNonce()
+  const clubs = await clubsRequest
   return (
     <PublicInformationPage
       className="oc-editorial-page oc-campus-page"
