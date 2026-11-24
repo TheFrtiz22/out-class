@@ -12,6 +12,8 @@ function ui(file,props,mocks,exportName){
  const component=load(file)[exportName];return {render(){index=0;const tree=component(props);while(effects.length)effects.shift()();return expand(tree)}};
 }
 const zone='America/New_York',soon=Date.now()+10*60000,day=86400000;
+// 15:00 UTC two days out is late morning in New York, so times an hour apart never straddle midnight there.
+const midday=(()=>{const d=new Date(Date.now()+2*day);d.setUTCHours(15,0,0,0);return +d})();
 const row=(id,start,extra={})=>({id,slotId:id,roomId:'room',clubId:'c',roundId:'r2',roundName:'Round 2',roomName:'Shannon 318C',location:'Shannon 318C',timezone:zone,startTime:new Date(start).toISOString(),endTime:new Date(start+20*60000).toISOString(),applicationId:'a-'+id,bookingId:'b-'+id,candidate:'Applicant '+id,interviewers:[],completed:false,started:false,cancelled:false,canOpen:true,...extra});
 function list(rows,rounds=[{id:'r1',name:'Round 1'},{id:'r2',name:'Round 2'}],props={}){
  const mocks={'@/contexts/demo-context':{useDemoMode:()=>({ready:true})},'./interview-read-scope':{useAssignedInterviewRooms:()=>list.read??=()=>Promise.resolve(rows)},
@@ -48,8 +50,8 @@ test('My interviews folds a day\'s unbooked times into one line under the booked
  assert.equal(words.split('Applicant booked').length-1,1);
 });
 test('a booked interview whose applicant is withheld stays a booked row, not an open time',async()=>{
- const withheld=row('anon',soon+day,{applicationId:null,candidate:'Anonymous applicant',canOpen:false});
- const h=list([withheld,row('o1',soon+day+30*60000,{bookingId:null,applicationId:null,candidate:null})]);
+ const withheld=row('anon',midday,{applicationId:null,candidate:'Anonymous applicant',canOpen:false});
+ const h=list([withheld,row('o1',midday+30*60000,{bookingId:null,applicationId:null,candidate:null})]);
  h.render();await flush();const words=text(h.render());
  assert.match(words,/Anonymous applicant/);
  assert.match(words,/1 more open time nobody has booked yet/);
