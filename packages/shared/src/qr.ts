@@ -5,7 +5,7 @@
  *
  * Rules carried over unchanged: error correction level H, a 4-module quiet zone, navy modules on a white
  * surface, rounded modules that merge with their neighbours, concentric circular finders (radii 3.5, 2.5,
- * 1.5 modules), and the OC monogram on a squircle badge whose modules are cleared.
+ * 1.5 modules), and the OutClass mark (the app icon's OC monogram) on a squircle badge whose modules are cleared.
  */
 // The package's own matrix generator, the same one the web's `QRCode.create` calls (no canvas, no Node APIs).
 // @ts-expect-error qrcode ships no types for its core entry; the shape used is declared below.
@@ -23,14 +23,16 @@ export const QR_MODULE_RADIUS = 0.45;
 /** Proportions of the app-icon squircle the badge follows. */
 export const QR_BADGE_VIEWBOX = 180;
 export const QR_BADGE_CORNER_RADIUS_RATIO = 37 / 180;
-/** The monogram is drawn at 95% of the badge, about its centre. */
-export const QR_BADGE_ART_SCALE = 0.95;
-
-/** The interlocking OC monogram (public/icon.svg), in the 180-unit badge box. Same paths as lib/qr/constants.ts. */
-export const QR_MONOGRAM_PATHS = [
-  "M101.141 53H136.632C151.023 53 162.689 64.6662 162.689 79.0573V112.904H148.112V79.0573C148.112 78.7105 148.098 78.3662 148.072 78.0251L112.581 112.898C112.701 112.902 112.821 112.904 112.941 112.904H148.112V126.672H112.941C98.5504 126.672 86.5638 114.891 86.5638 100.5V66.7434H101.141V100.5C101.141 101.15 101.191 101.792 101.289 102.422L137.56 66.7816C137.255 66.7563 136.945 66.7434 136.632 66.7434H101.141V53Z",
-  "M65.2926 124.136L14 66.7372H34.6355L64.7495 100.436V66.7372H80.1365V118.47C80.1365 126.278 70.4953 129.958 65.2926 124.136Z",
-] as const;
+/**
+ * The OutClass mark (public/brand/premium-board/11_app_icon_white.svg, the app icon's ivory OC monogram) as one
+ * even-odd path in its own coordinates, and the transform that centres it in the 180-unit badge box. Same values as
+ * lib/qr/constants.ts OC_MARK_PATH and OC_MARK_TRANSFORM.
+ */
+export const QR_MARK_PATH =
+  "M102.27 141.01 C89.79 138.36 80.47 130.62 76.44 119.57 C75.5 117.01 74.62 116.49 69.24 115.4 C60.83 113.68 56.3 111.35 50.89 105.97 C44.54 99.64 41.66 92.01 41.66 81.5 C41.66 71.35 44.37 64.03 50.74 56.94 C59.41 47.31 67.45 43.88 81.46 43.88 C99.18 43.87 110 51.18 114.65 66.29 L116.34 71.76 121.52 72.37 C124.37 72.71 128.64 73.67 131.01 74.5 C134.94 75.89 135.48 75.88 137.16 74.35 C138.18 73.43 139.17 72.86 139.37 73.09 C140.24 74.1 140.88 96.13 140.03 95.83 C139.52 95.65 137.39 92.12 135.3 88 C131.11 79.73 126.2 75.39 119.87 74.37 L116.28 73.78 115.79 81.36 C114.92 94.99 106.2 107.82 94.55 112.64 C90.6 114.28 90.15 114.78 90.66 116.99 C96.83 143.72 126.26 147.1 138.23 122.46 C140.66 117.47 142.36 116.56 141.43 120.75 C139.4 129.95 137.76 134.11 135.6 135.52 C128.26 140.33 111.82 143.04 102.27 141.01 Z M74.6 106.25 C74.73 96.89 76.99 91.13 83.18 84.42 C87.63 79.59 96.22 74.03 99.25 74.01 C102.92 73.99 100.2 61.34 94.98 54.13 C84.64 39.85 66.7 43.64 60.07 61.49 C54.4 76.77 56.32 98.46 64.21 108.12 C65.76 110.02 72.05 113.99 73.5 113.99 C74.07 113.99 74.54 110.68 74.6 106.25 Z M94.53 107.13 C98.74 100.77 101.08 93.23 101.69 84.08 L102.25 75.5 98.1 79.48 C95.06 82.4 93.44 85.09 92.1 89.48 C88.83 100.16 88.31 111 91.05 111 C91.56 111 93.12 109.26 94.53 107.13 Z";
+const QR_MARK_CENTER = { x: 91.65, y: 92.75 };
+const QR_MARK_SCALE = (QR_BADGE_VIEWBOX / 175) * 1.168;
+export const QR_MARK_TRANSFORM = `translate(${QR_BADGE_VIEWBOX / 2} ${QR_BADGE_VIEWBOX / 2}) scale(${QR_MARK_SCALE}) translate(${-QR_MARK_CENTER.x} ${-QR_MARK_CENTER.y})`;
 
 /** The raw module matrix for a payload at error correction H: `data[row * size + col]` is 1 for a dark module. */
 export function qrModules(payload: string): { size: number; data: Uint8Array } {
