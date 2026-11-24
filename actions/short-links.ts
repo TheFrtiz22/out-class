@@ -4,7 +4,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { findOrCreateReusableShortLink } from "@/lib/short-link-store";
 import { shareableShortLinkType } from "@/lib/short-links";
-import { alumniRefusal } from "@/utils/graduation";
+import { assertNotAlumni } from "@/utils/graduation";
 
 /**
  * Browser-callable: returns a compact, permanent /q link for a shareable
@@ -23,8 +23,7 @@ export async function createShortLink(input: {
   const { user } = await requireAuth();
   // Every shareable target is club-scoped (voting links, club profiles), so alumni accounts
   // (read-only, lib/graduation.ts) create none; QrCodeCard falls back to the full address.
-  const alumni = await alumniRefusal(prisma, user.id, "share");
-  if (alumni) throw new Error(alumni);
+  await assertNotAlumni(prisma, user.id, "share");
   const target = typeof input?.target === "string" ? input.target : "";
   const type = shareableShortLinkType(target);
   if (!type) throw new Error("This destination cannot be shortened.");

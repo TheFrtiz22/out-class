@@ -12,8 +12,8 @@ function ui(file,props,mocks,exportName){
  const component=load(file)[exportName];return {render(){index=0;const tree=component(props);while(effects.length)effects.shift()();return expand(tree)}};
 }
 const zone='America/New_York',soon=Date.now()+10*60000,day=86400000;
-// Tomorrow at noon Eastern: rows 30 and 60 minutes later stay on the same day whatever time the suite runs.
-const noonTomorrow=(()=>{const t=Date.now()+day,p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:zone,hour:'numeric',minute:'numeric',hourCycle:'h23'}).formatToParts(t).map(x=>[x.type,x.value]));return t-((Number(p.hour)-12)*60+Number(p.minute))*60000})();
+// 15:00 UTC two days out is late morning in New York, so times an hour apart never straddle midnight there.
+const midday=(()=>{const d=new Date(Date.now()+2*day);d.setUTCHours(15,0,0,0);return +d})();
 const row=(id,start,extra={})=>({id,slotId:id,roomId:'room',clubId:'c',roundId:'r2',roundName:'Round 2',roomName:'Shannon 318C',location:'Shannon 318C',timezone:zone,startTime:new Date(start).toISOString(),endTime:new Date(start+20*60000).toISOString(),applicationId:'a-'+id,bookingId:'b-'+id,candidate:'Applicant '+id,interviewers:[],completed:false,started:false,cancelled:false,canOpen:true,...extra});
 function list(rows,rounds=[{id:'r1',name:'Round 1'},{id:'r2',name:'Round 2'}],props={}){
  const mocks={'@/contexts/demo-context':{useDemoMode:()=>({ready:true})},'./interview-read-scope':{useAssignedInterviewRooms:()=>list.read??=()=>Promise.resolve(rows)},
@@ -40,7 +40,9 @@ test('My interviews shows Up next, Needs notes and Done once each, with one clea
 });
 test('My interviews folds a day\'s unbooked times into one line under the booked interviews',async()=>{
  const open=(id,start)=>row(id,start,{bookingId:null,applicationId:null,candidate:null});
- const h=list([row('booked',noonTomorrow),open('o1',noonTomorrow+30*60000),open('o2',noonTomorrow+60*60000),open('o3',noonTomorrow+day)]);
+ // Noon Eastern two days out, so the hour of times stays on one Eastern day whenever the suite runs (near midnight too).
+ const ymd=new Intl.DateTimeFormat('en-CA',{timeZone:zone}).format(new Date(Date.now()+2*day)),noon=Date.parse(`${ymd}T12:00:00-05:00`);
+ const h=list([row('booked',noon),open('o1',noon+30*60000),open('o2',noon+60*60000),open('o3',noon+day)]);
  h.render();await flush();const tree=h.render(),words=text(tree);
  assert.doesNotMatch(words,/Open time slot/);
  assert.match(words,/2 more open times nobody has booked yet/);
@@ -48,8 +50,8 @@ test('My interviews folds a day\'s unbooked times into one line under the booked
  assert.equal(words.split('Applicant booked').length-1,1);
 });
 test('a booked interview whose applicant is withheld stays a booked row, not an open time',async()=>{
- const withheld=row('anon',noonTomorrow,{applicationId:null,candidate:'Anonymous applicant',canOpen:false});
- const h=list([withheld,row('o1',noonTomorrow+30*60000,{bookingId:null,applicationId:null,candidate:null})]);
+ const withheld=row('anon',midday,{applicationId:null,candidate:'Anonymous applicant',canOpen:false});
+ const h=list([withheld,row('o1',midday+30*60000,{bookingId:null,applicationId:null,candidate:null})]);
  h.render();await flush();const words=text(h.render());
  assert.match(words,/Anonymous applicant/);
  assert.match(words,/1 more open time nobody has booked yet/);

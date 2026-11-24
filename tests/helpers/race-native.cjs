@@ -28,7 +28,7 @@ function loader(mocks) {
 /** A verified UVA account as requireAuth({ verifyEmail: true }) returns it. */
 const account = user => user && ({ user, supabaseUser: { id: user.id, email: user.email, confirmation_sent_at: '2026-09-01T00:00:00Z', email_confirmed_at: '2026-10-01T00:00:00Z' } });
 
-async function raceFixture(t, { roundTripMs = 6 } = {}) {
+async function raceFixture(t, { roundTripMs = 6, mocks: extraMocks = {} } = {}) {
   const url = new URL(databaseUrl);
   assert.ok(['127.0.0.1', 'localhost'].includes(url.hostname) && url.pathname === '/outclass_security_test', 'Requires the disposable local outclass_security_test database');
   const { PrismaClient } = require('@prisma/client');
@@ -68,7 +68,7 @@ async function raceFixture(t, { roundTripMs = 6 } = {}) {
       },
     },
   };
-  const load = loader(mocks);
+  const load = loader({ ...mocks, ...extraMocks });
   const as = (user, fn) => request.run(user, fn);
   const settle = promise => promise.then(value => ({ ok: true, value }), error => ({ ok: false, error: String(error?.message || error), refused: error?.refused === true, code: error?.code }));
   /** Start both calls in the same tick, with simulated latency so their transactions overlap. */

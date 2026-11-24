@@ -1,4 +1,4 @@
-import { EASTERN, easternDateKey } from "~/lib/eastern";
+import { eastern, easternDateKey, easternFormatter } from "~/lib/eastern";
 
 /** One row of the interviewer's own schedule (lib/interview-entry.ts InterviewRoomEntry). */
 export type InterviewEntry = {
@@ -30,12 +30,14 @@ export function entryLabel(row: InterviewEntry, now: number) {
 }
 /** "1:00–1:20 PM", or "11:30 AM–12:10 PM" when the period changes, in Eastern time. */
 export function timeRange(row: Pick<InterviewEntry, "startTime" | "endTime">) {
-  const parts = (value: string) => new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, hour: "numeric", minute: "2-digit" }).formatToParts(new Date(value));
+  const parts = (value: string) => easternFormatter({ hour: "numeric", minute: "2-digit" }).formatToParts(new Date(value));
   const pick = (list: Intl.DateTimeFormatPart[], type: string) => list.find(part => part.type === type)?.value ?? "";
   const a = parts(row.startTime), b = parts(row.endTime), clock = (list: Intl.DateTimeFormatPart[]) => `${pick(list, "hour")}:${pick(list, "minute")}`;
   return `${clock(a)}${pick(a, "dayPeriod") === pick(b, "dayPeriod") ? "" : ` ${pick(a, "dayPeriod")}`}–${clock(b)} ${pick(b, "dayPeriod")}`;
 }
-export const shortDay = (row: InterviewEntry) => new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, weekday: "short", month: "short", day: "numeric" }).format(new Date(row.startTime));
+// Cached formatters (lib/eastern.ts): the schedule re-renders often and Intl formatters are slow to build on Hermes.
+const easternShortDay = eastern({ weekday: "short", month: "short", day: "numeric" });
+export const shortDay = (row: InterviewEntry) => easternShortDay(row.startTime);
 
 /**
  * The day's view: today's interviews in time order (Eastern), the next interviewee, unfinished past
@@ -80,7 +82,7 @@ export function clock(totalSeconds: number) {
  */
 export function interviewClock(row: Pick<InterviewEntry, "startTime" | "endTime">, now: number) {
   const start = at(row.startTime), end = at(row.endTime);
-  if (start - now > 86_400_000) return { phase: "before" as const, label: "Starts", digits: new Intl.DateTimeFormat("en-US", { timeZone: EASTERN, weekday: "short", month: "short", day: "numeric" }).format(new Date(start)) };
+  if (start - now > 86_400_000) return { phase: "before" as const, label: "Starts", digits: easternShortDay(row.startTime) };
   if (now < start) return { phase: "before" as const, label: "Starts in", digits: clock((start - now) / 1000) };
   if (now <= end) return { phase: "during" as const, label: "Remaining interview time", digits: clock((end - now) / 1000) };
   return { phase: "after" as const, label: "Time’s up", digits: clock(0) };

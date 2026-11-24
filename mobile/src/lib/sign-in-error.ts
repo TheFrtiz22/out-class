@@ -35,6 +35,8 @@ export function signInFailure(error: NonNullable<AuthErrorLike>, dev: boolean = 
     if (dev) message += `\n\nSetup: the Supabase key from ${config.supabaseSource || "this app's config"} was refused. Delete mobile/config.local.json and any EXPO_PUBLIC_SUPABASE_* settings (mobile/.env), then run pnpm start --clear.`;
   }
   else if (needsCaptcha) message = "One more check is needed before you can sign in.";
+  // The web's wording (lib/auth-email.ts passwordSignInError); the app has no sign-in code to offer instead.
+  else if (error.code === "email_not_confirmed") message = "Confirm your UVA email before signing in.";
   else if (error.status === 400 || error.code === "invalid_credentials") message = "That email or password isn't right.";
   else if (error.status === 429) message = "Too many attempts. Wait a moment and try again.";
   // supabase-js reports a request that never reached the server (offline, bad address) with status 0.

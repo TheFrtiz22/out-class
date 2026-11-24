@@ -10,7 +10,7 @@ function harness(live=false){
  const tx={applicantRecusal:{findFirst:async()=>null},clubMember:{findFirst:async()=>({id:memberId,status:'ACTIVE',permissions:caps})},application:{findFirst:async()=>app},applicantObservation:{findMany:async()=>[]},votingSession:{findFirst:async({where})=>where.id===sessionId&&where.clubId===clubId?{...session,participants:participant?session.participants:[]}:null}};
  if(live){
   Object.assign(app,{recruitmentCycleId:uuid(20)});Object.assign(session,{id:sessionId,clubId,cycleId:uuid(20),roundId:round.id,mode:'LIVE',leaderMemberIds:[memberId],activeApplicationId:applicationId,passes:[]});
-  Object.assign(tx,{$queryRaw:async()=>[],club:{findUnique:async()=>({suspendedAt:null})},user:{findUnique:async()=>({disabledAt:null})},pipelineRound:{findFirst:async()=>round},recruitmentCycle:{findFirst:async()=>({id:uuid(20)})}});
+  Object.assign(tx,{$queryRaw:async()=>[],votingBallot:{findMany:async()=>[]},club:{findUnique:async()=>({suspendedAt:null})},user:{findUnique:async()=>({disabledAt:null})},pipelineRound:{findFirst:async()=>round},recruitmentCycle:{findFirst:async()=>({id:uuid(20)})}});
   tx.clubMember.findUnique=async()=>({id:memberId,status:'ACTIVE',permissions:caps});
  }
  const api=load('actions/applicant-intelligence.ts',{'@/utils/auth':{requireClubPermission:async(c,required)=>{if(c!==clubId||!required.every(v=>caps.includes(v)))throw Error('Denied');return{user:{id:memberId},membership:{id:memberId}}}},'@/utils/prisma':{prisma:{$transaction:f=>f(tx)}}});
