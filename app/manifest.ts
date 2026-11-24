@@ -10,8 +10,11 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "OutClass",
     short_name: "OutClass",
     description: "Student organization applications and recruitment.",
+    // Launch straight into Home: starting at "/" cost every launch a redirect (a full server
+    // render of the homepage) before Home began. Signed-out launches go from Home to sign-in,
+    // which returns to Home. `id` stays "/" so existing installs remain the same app.
     // The source tag tells installed launches apart in analytics; no route reads it.
-    start_url: "/?source=pwa",
+    start_url: "/home?source=pwa",
     scope: "/",
     display: "standalone",
     orientation: "any",

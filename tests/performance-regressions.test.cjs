@@ -151,6 +151,38 @@ test('middleware avoids duplicate refresh only after demo/support guards; loader
   await middleware(new NextRequest('https://outclass.test/club/a/workspace')); assert.equal(refreshes, 1);
 });
 
+test('bare homepage: only exact signed-in-eligible URLs ask the session client for a Home redirect', async () => {
+  const seen = [];
+  const { middleware } = loader({ '@/utils/supabase/middleware': { createClient: async (_request, options) => { seen.push(options?.signedInHome); return new Response('ok'); } } })('middleware.ts');
+  const { DEMO_COOKIE } = loader()('lib/demo/access.ts');
+  const ask = async (url, init) => { seen.length = 0; await middleware(new NextRequest(url, init)); return seen[0]; };
+  assert.equal(await ask('https://www.outclass.test/'), '/home');
+  assert.equal(await ask('https://www.outclass.test/?source=pwa'), '/home?source=pwa');
+  for (const url of ['https://www.outclass.test/?next=%2Fclubs', 'https://www.outclass.test/?view=leader-dashboard', 'https://www.outclass.test/?source=pwa&x=1', 'https://www.outclass.test/?audience=leaders', 'https://www.outclass.test/home'])
+    assert.equal(await ask(url), undefined, url);
+  // Loopback hosts keep the page's redirect (a middleware redirect would move them to localhost).
+  assert.equal(await ask('http://127.0.0.1:3000/', { headers: { host: '127.0.0.1:3000' } }), undefined);
+  assert.equal(await ask('https://www.outclass.test/', { headers: { cookie: `${DEMO_COOKIE}=1` } }), undefined);
+  assert.equal(await ask('https://www.outclass.test/', { headers: { cookie: 'outclass-platform-view=1' } }), undefined);
+  assert.equal(await ask('https://www.outclass.test/', { method: 'HEAD' }), '/home');
+});
+
+test('session client: a verified UVA token is sent Home with refreshed cookies; anything else renders the page', async () => {
+  const run = async ({ claims, error = null, signedInHome = '/home' }) => {
+    const { createClient } = loader({ '@supabase/ssr': { createServerClient: (_u, _k, { cookies }) => ({ auth: {
+      getClaims: async () => { cookies.setAll([{ name: 'sb-x-auth-token', value: 'fresh', options: { path: '/' } }]); return error ? { data: null, error } : { data: { claims }, error: null }; },
+      getUser: async () => assert.fail('no remote user lookup'),
+    } }) } })('utils/supabase/middleware.ts');
+    return createClient(new NextRequest('https://www.outclass.test/'), { signedInHome: signedInHome ?? undefined });
+  };
+  const home = await run({ claims: { sub: 'u', email: 'student@virginia.edu', aal: 'aal1' } });
+  assert.equal(home.status, 307); assert.equal(new URL(home.headers.get('location')).pathname, '/home');
+  assert.equal(home.cookies.get('sb-x-auth-token').value, 'fresh'); assert.match(home.headers.get('cache-control'), /no-store/);
+  assert.equal((await run({ claims: { sub: 'u', email: 'someone@gmail.com' } })).status, 200);
+  assert.equal((await run({ claims: null, error: Object.assign(Error('expired'), { status: 401 }) })).status, 200);
+  assert.equal((await run({ claims: { sub: 'u', email: 'student@virginia.edu' }, signedInHome: null })).status, 200);
+});
+
 test('query-only club transitions skip RSC navigation and preserve modified/cross-club links', () => {
   const changes = [], location = { href: `https://outclass.test/club/${clubId}/workspace` };
   const api = loader({}, { window: { location, history: { pushState: (_, __, href) => changes.push(href), replaceState: (_, __, href) => changes.push(href) } } })('lib/workspace-navigation.ts');

@@ -74,8 +74,14 @@ test('support/impersonation sessions resolve the target without consulting the t
  assert.deepEqual(h.state.calls,[],'the impersonated path does not read the provider session');
 });
 
-function middlewareFor({user=enrolled,aal='aal1'}={}){
- return loader({'@supabase/ssr':{createServerClient:()=>({auth:{getUser:async()=>({data:{user},error:null}),getSession:async()=>({data:{session:{access_token:tokenWith(id,aal)}}})}})}})('utils/supabase/middleware.ts');
+// The middleware verifies the token locally (getClaims) and never asks Auth for the user; the
+// assurance check mirrors Supabase's: level from the token, enrolment from the session's factors.
+function middlewareFor({user=enrolled,aal='aal1',claimsError=null,calls=[]}={}){
+ const verified=(user.factors??[]).some(f=>f.status==='verified');
+ return loader({'@supabase/ssr':{createServerClient:()=>({auth:{
+  getUser:async()=>{calls.push('getUser');return{data:{user},error:null};},
+  getClaims:async()=>{calls.push('getClaims');return claimsError?{data:null,error:claimsError}:{data:{claims:{sub:id,aal}},error:null};},
+  mfa:{getAuthenticatorAssuranceLevel:async()=>{calls.push('aal');return{data:{currentLevel:aal,nextLevel:verified?'aal2':aal},error:null};}}}})}})('utils/supabase/middleware.ts');
 }
 test('middleware: enrolled aal1 pages redirect, APIs and writes 401, allowed paths and demo-only pass; flag off passes',async()=>{
  process.env.OUTCLASS_USER_MFA='1';
@@ -89,6 +95,21 @@ test('middleware: enrolled aal1 pages redirect, APIs and writes 401, allowed pat
  assert.equal((await middlewareFor({user:plain}).createClient(new NextRequest('https://outclass.test/home'))).status,200);
  delete process.env.OUTCLASS_USER_MFA;
  assert.equal((await createClient(new NextRequest('https://outclass.test/home'))).status,200);
+});
+
+test('middleware: no remote Auth user lookup on ordinary requests; a failed local check passes through to server auth',async()=>{
+ delete process.env.OUTCLASS_USER_MFA;
+ const calls=[];
+ assert.equal((await middlewareFor({calls}).createClient(new NextRequest('https://outclass.test/home'))).status,200);
+ assert.deepEqual(calls,['getClaims']);
+ process.env.OUTCLASS_USER_MFA='1';
+ const aal2=[];
+ assert.equal((await middlewareFor({aal:'aal2',calls:aal2}).createClient(new NextRequest('https://outclass.test/home'))).status,200);
+ assert.deepEqual(aal2,['getClaims'],'a verified aal2 token needs no factor lookup');
+ const failed=[];
+ const res=await middlewareFor({claimsError:Object.assign(Error('jwks unavailable'),{status:0}),calls:failed}).createClient(new NextRequest('https://outclass.test/club/x/workspace'));
+ assert.equal(res.status,200,'middleware grants nothing; server loaders verify the session');
+ assert.deepEqual(failed,['getClaims']);
 });
 
 // Attempt rows go to an isolated PGlite database built from the full migration chain, so the
