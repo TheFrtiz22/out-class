@@ -68,3 +68,38 @@ export async function mobileAcceptTerms() {
   if ("error" in result && typeof result.error === "string") throw new ActionError(result.error, "TERMS_REFUSED");
   return { accepted: true as const };
 }
+
+export const mobileResetPasswordInput = z.object({
+  tokenHash: z.string().max(512),
+  password: z.string().max(512),
+  confirmation: z.string().max(512),
+  authenticatorCode: z.string().max(6).optional(),
+}).strict();
+
+const RESET_UNAVAILABLE = "Password recovery is temporarily unavailable. Please try again later.";
+
+/**
+ * Sets a new password from the emailed reset link, opened in the app (lib/app-links.ts claims
+ * /reset-password). The same steps as the website (lib/password-reset-complete.ts), through an
+ * isolated provider client, so the app's own session is never used or replaced. Like the website,
+ * it ends by signing the account out everywhere; the app then asks for the new password.
+ */
+export async function mobileResetPassword(input: z.infer<typeof mobileResetPasswordInput>, request: Request) {
+  // The website's per-address limit for the same route.
+  if (!rateLimiter.check(RATE_LIMITS.passwordRecovery, rateLimitKey({ forwardedFor: request.headers.get("x-forwarded-for"), isIp: nodeIsIp })).ok)
+    throw new ActionError(RATE_LIMIT_MESSAGE, "RATE_LIMITED");
+  const { passwordReset } = await import("@/lib/password-recovery");
+  const { passwordIssue } = await import("@/lib/password-policy");
+  const reset = passwordReset.safeParse({ ...input, authenticatorCode: input.authenticatorCode || undefined });
+  if (!reset.success) throw new ActionError(passwordIssue(input.password) ?? "Use matching passwords and a valid reset link.", "RESET_REFUSED");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new ActionError(RESET_UNAVAILABLE, AUTH_UNAVAILABLE);
+  const { createClient } = await import("@supabase/supabase-js");
+  const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const { completePasswordReset } = await import("@/lib/password-reset-complete");
+  const done = await completePasswordReset(client, reset.data, url);
+  if (done.status === 200 && done.body.message) return { message: done.body.message };
+  throw new ActionError(done.body.error ?? RESET_UNAVAILABLE,
+    done.status === 503 ? AUTH_UNAVAILABLE : done.body.needsNewLink ? "RESET_LINK_INVALID" : "RESET_REFUSED");
+}

@@ -7,7 +7,9 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
-        "/api/", "/auth/", "/login", "/signup", "/forgot-password", "/reset-password",
+        // Sign-in, signup and password pages are crawlable on purpose: they send noindex (page metadata and
+        // X-Robots-Tag in next.config.mjs), which Google only reads on pages it may fetch. Every page links them.
+        "/api/", "/auth/",
         "/platform", "/settings/", "/club-access/", "/club-claims/", "/invitations/",
         "/club/*/workspace", "/club/*/tasks", "/meetings", "/check-in",
         "/interviews", "/decisions", "/vote", "/live-voting", "/voting/",

@@ -12,9 +12,9 @@ const operations = read('lib/mobile-api/operations.ts')
 const auth = read('lib/mobile-api/auth.ts')
 const shared = read('lib/email-code-session.ts')
 
-test('only the three sign-up steps are new public operations; terms.accept needs a session', () => {
+test('only the three sign-up steps and the emailed password reset are public auth operations; terms.accept needs a session', () => {
   const publicOps = [...operations.matchAll(/^\s*"([\w.]+)": operation\(.*\{ public: true \}\),?$/gm)].map(match => match[1]).filter(name => name.startsWith('auth.') || name.startsWith('terms.'))
-  assert.deepEqual(publicOps.sort(), ['auth.confirmEmail', 'auth.register', 'auth.signupOptions'])
+  assert.deepEqual(publicOps.sort(), ['auth.confirmEmail', 'auth.register', 'auth.resetPassword', 'auth.signupOptions'])
   assert.match(operations, /"terms\.accept": operation\("POST", none, async \(\) => \(await import\("@\/lib\/mobile-api\/auth"\)\)\.mobileAcceptTerms\(\)\),/)
 })
 

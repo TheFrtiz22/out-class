@@ -167,5 +167,7 @@ test('sitemap lists public pages and indexable clubs; robots keeps every private
   for (const url of ['/', '/uva', '/about', '/club/club%20one']) assert.ok(urls.includes(url), url)
   assert.equal(urls.includes('/explore'), false)
   const robots = load('app/robots.ts').default()
-  for (const path of ['/api/', '/login', '/signup', '/settings/', '/invitations/', '/club-access/', '/club-claims/', '/club/*/workspace', '/check-in', '/voting/', '/preview']) assert.ok(robots.rules.disallow.includes(path), path)
+  for (const path of ['/api/', '/settings/', '/invitations/', '/club-access/', '/club-claims/', '/club/*/workspace', '/check-in', '/voting/', '/preview']) assert.ok(robots.rules.disallow.includes(path), path)
+  // Sign-in pages stay crawlable so crawlers can read their noindex (tests/public-seo-legal.test.cjs).
+  for (const path of ['/login', '/signup']) assert.equal(robots.rules.disallow.includes(path), false, path)
 })

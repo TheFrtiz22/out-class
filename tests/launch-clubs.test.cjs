@@ -19,7 +19,7 @@ test("launch participants require explicit UVA marketing approval and expose onl
   assert.deepEqual(query.where, { schoolId: "school-uva", marketingApprovedAt: { not: null } })
   await getLaunchClubs("school-tech")
   assert.deepEqual(query.where, { schoolId: "school-tech", marketingApprovedAt: { not: null } }, "another school's launch list is its own")
-  assert.deepEqual(query.select, { id: true, name: true, logoUrl: true, color: true, marketing: true })
+  assert.deepEqual(query.select, { id: true, slug: true, name: true, logoUrl: true, color: true, marketing: true })
 })
 test("unavailable database or unapplied migration never substitutes demo partnerships", async () => {
   const { getLaunchClubs } = load(async () => { throw new Error("database unavailable") })

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { operation, type AnyMobileOperation } from "@/utils/mobile-api";
-import { mobileConfirmInput, mobileRegisterInput } from "@/lib/mobile-api/auth";
+import { mobileConfirmInput, mobileRegisterInput, mobileResetPasswordInput } from "@/lib/mobile-api/auth";
 
 /**
  * Every call the native app can make (docs/mobile/architecture.md). Each entry names an existing
@@ -23,6 +23,7 @@ export const mobileOperations = {
   "auth.signupOptions": operation("GET", none, async () => (await import("@/lib/mobile-api/auth")).mobileSignupOptions(), { public: true }),
   "auth.register": operation("POST", mobileRegisterInput, async input => (await import("@/lib/mobile-api/auth")).mobileRegister(input), { public: true }),
   "auth.confirmEmail": operation("POST", mobileConfirmInput, async (input, request) => (await import("@/lib/mobile-api/auth")).mobileConfirmEmail(input, request), { public: true }),
+  "auth.resetPassword": operation("POST", mobileResetPasswordInput, async (input, request) => (await import("@/lib/mobile-api/auth")).mobileResetPassword(input, request), { public: true }),
   "terms.accept": operation("POST", none, async () => (await import("@/lib/mobile-api/auth")).mobileAcceptTerms()),
   // Account
   "me": operation("GET", none, async () => (await import("@/utils/current-user")).getCurrentUser()),

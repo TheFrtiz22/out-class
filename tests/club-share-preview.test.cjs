@@ -17,6 +17,7 @@ test('club share metadata points at the canonical club URL and leaves images to 
   assert.equal(meta.openGraph.title, 'Virginia Venture Fund · OutClass')
   assert.equal(meta.twitter.card, 'summary_large_image')
   assert.equal(meta.openGraph.images, undefined)
+  assert.equal(text.clubShareMetadata({ id: 'abc', slug: 'virginia-venture-fund', name: 'Virginia Venture Fund', summary: '' }).openGraph.url, 'https://www.out-class.net/club/virginia-venture-fund')
 })
 
 test('share card renderer only reads assets the club publicly shows and never fetches remote URLs', () => {
@@ -26,7 +27,7 @@ test('share card renderer only reads assets the club publicly shows and never fe
   assert.match(card, /stored\.split\("\/"\)\[1\] !== club\.id/)
   assert.doesNotMatch(card, /\bfetch\(/)
   const fields = /const shareFields = \{([\s\S]*?)\} as const/.exec(fs.readFileSync('lib/club-share-profile.ts', 'utf8'))[1]
-  assert.deepEqual([...fields.matchAll(/(\w+): (?:true|\{)/g)].map(m => m[1]), ['id', 'name', 'tagline', 'description', 'category', 'color', 'logoUrl', 'bannerUrl', 'marketing', 'suspendedAt', 'school', 'select', 'name'])
+  assert.deepEqual([...fields.matchAll(/(\w+): (?:true|\{)/g)].map(m => m[1]), ['id', 'slug', 'name', 'tagline', 'description', 'category', 'color', 'logoUrl', 'bannerUrl', 'marketing', 'suspendedAt', 'school', 'select', 'name'])
   for (const kind of ['opengraph', 'twitter']) assert.match(fs.readFileSync(`app/(workspace)/club/[clubId]/${kind}-image.tsx`, 'utf8'), /renderClubShareCard\(\(await params\)\.clubId\)/)
 })
 

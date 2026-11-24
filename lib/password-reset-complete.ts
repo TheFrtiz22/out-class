@@ -1,0 +1,144 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import { isUvaEmail } from "@/lib/auth";
+
+/** The checked reset input: lib/password-recovery.ts passwordReset, without the confirmation. */
+export type PasswordResetInput = { tokenHash: string; password: string; authenticatorCode?: string };
+export type PasswordResetResult = { status: number; body: { message?: string; error?: string; needsNewLink?: true } };
+
+const result = (body: PasswordResetResult["body"], status = 200): PasswordResetResult => ({ status, body });
+
+/**
+ * Completes a password reset from the emailed single-use recovery token. Shared by the website
+ * (app/api/auth/password-recovery) and the native app (lib/mobile-api/auth.ts), so both apply the
+ * same checks: a UVA account, the account's own verified authenticator when it has one, the
+ * password policy, the identity proof and the global sign-out afterwards.
+ *
+ * `client` must be an isolated provider client (no stored session, no refresh) that never
+ * touches the caller's own session.
+ */
+export async function completePasswordReset(
+  client: SupabaseClient,
+  input: PasswordResetInput,
+  url: string,
+): Promise<PasswordResetResult> {
+  try {
+    const { data, error } = await client.auth.verifyOtp({
+      token_hash: input.tokenHash,
+      type: "recovery",
+    });
+    if (
+      error ||
+      !data.session ||
+      !data.user?.email ||
+      !isUvaEmail(data.user.email)
+    )
+      return result(
+        {
+          error:
+            "This link is invalid, expired, or already used. Request a new reset link.",
+          needsNewLink: true,
+        },
+        400,
+      );
+    if (input.authenticatorCode) {
+      // The recovery token establishes the account. Only its already verified
+      // factor may upgrade this isolated recovery session; never enroll/remove
+      // factors or borrow the visitor's normal login/Admin session.
+      const factors = await client.auth.mfa.listFactors();
+      let verified: Awaited<ReturnType<typeof client.auth.mfa.challengeAndVerify>> | null = null;
+      if (!factors.error) {
+        for (const factor of factors.data.totp.filter((item) => item.status === "verified")) {
+          verified = await client.auth.mfa.challengeAndVerify({
+            factorId: factor.id, code: input.authenticatorCode,
+          });
+          // Only a code mismatch warrants checking the next owned factor.
+          // Provider outages, session errors and rate limits stop immediately.
+          if (!verified.error || verified.error.code !== "mfa_verification_failed") break;
+        }
+      }
+      const identity = verified && !verified.error ? await client.auth.getUser() : null;
+      const assurance = identity && !identity.error
+        ? await client.auth.mfa.getAuthenticatorAssuranceLevel() : null;
+      if (!verified || verified.error || !identity || identity.error ||
+          identity.data.user?.id !== data.user.id ||
+          identity.data.user?.email?.trim().toLowerCase() !== data.user.email.trim().toLowerCase() ||
+          !assurance || assurance.error || assurance.data.currentLevel !== "aal2") {
+        await client.auth.signOut({ scope: "local" });
+        return result({ error: "Authenticator verification failed. Request a new reset link and enter a fresh code from your account’s authenticator.", needsNewLink: true }, 400);
+      }
+    }
+    const updated = await client.auth.updateUser({
+      password: input.password,
+    });
+    if (updated.error) {
+      await client.auth.signOut({ scope: "local" });
+      if (updated.error.code === "insufficient_aal")
+        return result(
+          {
+            error:
+              "This account requires multi-factor authentication. Request a new reset link, then enter its authenticator code with your new password. If you no longer have your authenticator, contact OutClass support.",
+            needsNewLink: true,
+          },
+          400,
+        );
+      return result(
+        {
+          error:
+            "The password could not be changed. It must meet your account’s security requirements and differ from the current password. Request a new link to try again.",
+          needsNewLink: true,
+        },
+        400,
+      );
+    }
+    // A consumed email recovery token proves mailbox control even for legacy
+    // accounts without a signup confirmation_sent_at. Bind server-only proof to
+    // the exact provider identity and confirmation timestamp; email changes
+    // invalidate the receipt. Never use an email/user ID supplied by the browser.
+    const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (secret) {
+      try {
+        const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+        const current = await admin.auth.admin.getUserById(data.user.id);
+        if (current.error || !current.data.user || current.data.user.id !== data.user.id ||
+          current.data.user.email?.trim().toLowerCase() !== data.user.email.trim().toLowerCase() ||
+          !current.data.user.email_confirmed_at ||
+          current.data.user.email_confirmed_at !== data.user.email_confirmed_at) {
+          throw new Error("Recovery identity changed.");
+        }
+        const identity = current.data.user;
+        const recorded = await admin.auth.admin.updateUserById(identity.id, { app_metadata: {
+          outclass_verified_email: { method: "password_recovery_v1", userId: identity.id,
+            email: identity.email!.trim().toLowerCase(), emailConfirmedAt: identity.email_confirmed_at,
+            verifiedAt: new Date().toISOString() },
+        } });
+        if (recorded.error) throw new Error("Recovery identity proof unavailable.");
+      } catch {
+        // The password already changed. Fail closed for invitation access while
+        // preserving the existing recovery response and revocation behavior.
+        console.warn("Password reset completed; university identity proof unavailable");
+      }
+    }
+    // Revoke refresh sessions; existing access JWTs expire according to provider configuration.
+    try {
+      const signedOut = await client.auth.signOut({ scope: "global" });
+      if (signedOut.error) throw signedOut.error;
+    } catch {
+      console.warn("Password reset completed; session revocation unavailable");
+    }
+    return result({
+      message:
+        "Your password has been updated. Sign in with your new password.",
+    });
+  } catch {
+    return result(
+      {
+        error:
+          "We couldn’t confirm the password change. Try signing in, or request a new reset link.",
+        needsNewLink: true,
+      },
+      503,
+    );
+  }
+
+}

@@ -71,7 +71,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: false,
     // Universal links: the web serves apple-app-site-association. The apex domain carries /q
     // short links for every school, so only it is associated.
-    associatedDomains: ["applinks:out-class.net"],
+    associatedDomains: ["applinks:out-class.net", "applinks:www.out-class.net"],
     infoPlist: {
       NSCameraUsageDescription: "OutClass uses the camera to scan check-in codes and to take your profile photo.",
       NSPhotoLibraryUsageDescription: "OutClass uses your photo library so you can choose a profile photo.",
@@ -122,7 +122,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // so the permission is removed from the merged manifest (no Play Store data-safety question for it).
     blockedPermissions: ["android.permission.RECORD_AUDIO"],
     intentFilters: [
-      { action: "VIEW", autoVerify: true, data: [{ scheme: "https", host: "out-class.net", pathPrefix: "/q/" }], category: ["BROWSABLE", "DEFAULT"] },
+      { action: "VIEW", autoVerify: true, data: [{ scheme: "https", host: "out-class.net" }, { scheme: "https", host: "www.out-class.net" }, { scheme: "https", pathPrefix: "/q/" }, { scheme: "https", path: "/reset-password" }], category: ["BROWSABLE", "DEFAULT"] },
     ],
   },
   plugins: [
