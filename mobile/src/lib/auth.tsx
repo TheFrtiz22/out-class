@@ -13,7 +13,8 @@ type AuthValue = {
   session: Session | null | undefined;
   /** null on success; otherwise what to tell the person, and whether a Turnstile check is needed first. */
   signIn: (email: string, password: string, captchaToken?: string) => Promise<SignInFailure | null>;
-  signOut: () => Promise<void>;
+  /** Ends this account's sessions everywhere, or with `{ thisDeviceOnly: true }` only on this phone. */
+  signOut: (options?: { thisDeviceOnly?: boolean }) => Promise<void>;
 };
 const AuthContext = createContext<AuthValue>({ session: undefined, signIn: async () => null, signOut: async () => {} });
 
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async ({ thisDeviceOnly = false }: { thisDeviceOnly?: boolean } = {}) => {
     signingOut.current = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // While the session can still authorize it: stop this device's pushes for the account.
         await unregisterPushBeforeSignOut().catch(() => {});
         if (late) return;
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut(thisDeviceOnly ? { scope: "local" } : undefined);
         if (error) throw error;
       })();
       const deadline = new Promise<never>((_, reject) => { timer = setTimeout(() => { late = true; reject(new Error("timeout")); }, SIGN_OUT_DEADLINE_MS); });

@@ -56,8 +56,9 @@ export default function ResetPassword() {
     try {
       await api.post("auth.resetPassword", { tokenHash: token, password, confirmation, ...(usesAuthenticator && code ? { authenticatorCode: code } : {}) }, { anonymous: true });
       haptics.confirm();
-      // The reset signed this account out everywhere; drop the phone's own copy of the old session.
-      if (session) await signOut().catch(() => {});
+      // The server already signed the reset account out everywhere. The phone may be signed in to that
+      // account or another one, so it only drops its own session here and never ends anyone's others.
+      if (session) await signOut({ thisDeviceOnly: true }).catch(() => {});
       setPassword(""); setConfirmation(""); setCode("");
       setDone(true);
     } catch (error) {

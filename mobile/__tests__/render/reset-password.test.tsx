@@ -69,8 +69,11 @@ describe("set a new password", () => {
     await fill(GOOD);
     await submit();
     expect(resets()).toEqual([{ method: "POST", operation: "auth.resetPassword", input: { tokenHash: TOKEN, password: GOOD, confirmation: GOOD } }]);
-    // The server signed the account out everywhere; the phone drops its own session too.
-    expect(supabase.auth.signOut).toHaveBeenCalled();
+    // The server signed the reset account out everywhere; the phone drops only its own session,
+    // so a phone signed in to another account never ends that account's other sessions.
+    expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
+    expect(supabase.auth.signOut).not.toHaveBeenCalledWith();
+    expect(supabase.auth.signOut).not.toHaveBeenCalledWith({ scope: "global" });
     expect(screen.getByTestId("reset-password-done")).toBeTruthy();
     expect(screen.queryByTestId("reset-password-password")).toBeNull();
     await fireEvent.press(screen.getByTestId("reset-password-sign-in"));
