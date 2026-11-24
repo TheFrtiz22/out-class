@@ -5,7 +5,7 @@ import { requireClubPermission } from "@/utils/auth";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { votingReadLimits } from "@/lib/voting-transaction-limits";
 import { hasPermission } from "@/lib/permissions";
-import { roomInclude, roomFingerprint } from "@/utils/voting-room";
+import { roomOutcomeInclude, roomFingerprint } from "@/utils/voting-room";
 import { OPEN_ELECTORATE } from "@/lib/voting-room";
 import { projectRoundTargetSummary } from "@/lib/voting-room-projection";
 
@@ -30,7 +30,7 @@ export async function getRoundTargetSummary(input: unknown) {
     const rooms = await tx.votingSession.findMany({
       where: { clubId: d.clubId, roundId: d.roundId, mode: "LIVE", ...(d.cycleId ? { cycleId: d.cycleId } : {}),
         ...(!observer ? { OR: [...(leader ? [{ leaderMemberIds: { has: m.id } }] : []), ...(voter ? [{ participants: { some: { memberId: m.id } } }, { presentationOptions: { path: ["electorate"], equals: OPEN_ELECTORATE } }] : [])] } : {}) },
-      include: roomInclude, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: ROUND_SESSION_LIMIT + 1,
+      include: roomOutcomeInclude, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: ROUND_SESSION_LIMIT + 1,
     });
     const summary = projectRoundTargetSummary(rooms.slice(0, ROUND_SESSION_LIMIT), m, { name: round.name, final: later === 0, anonymousReview: round.anonymousReview }, rooms.length > ROUND_SESSION_LIMIT);
     return { summary, access: accessFingerprint(m) };
