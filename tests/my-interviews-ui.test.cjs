@@ -40,7 +40,9 @@ test('My interviews shows Up next, Needs notes and Done once each, with one clea
 });
 test('My interviews folds a day\'s unbooked times into one line under the booked interviews',async()=>{
  const open=(id,start)=>row(id,start,{bookingId:null,applicationId:null,candidate:null});
- const h=list([row('booked',midday),open('o1',midday+30*60000),open('o2',midday+60*60000),open('o3',midday+day)]);
+ // Noon Eastern two days out, so the hour of times stays on one Eastern day whenever the suite runs (near midnight too).
+ const ymd=new Intl.DateTimeFormat('en-CA',{timeZone:zone}).format(new Date(Date.now()+2*day)),noon=Date.parse(`${ymd}T12:00:00-05:00`);
+ const h=list([row('booked',noon),open('o1',noon+30*60000),open('o2',noon+60*60000),open('o3',noon+day)]);
  h.render();await flush();const tree=h.render(),words=text(tree);
  assert.doesNotMatch(words,/Open time slot/);
  assert.match(words,/2 more open times nobody has booked yet/);
