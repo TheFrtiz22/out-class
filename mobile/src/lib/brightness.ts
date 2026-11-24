@@ -6,10 +6,11 @@ import { AppState, Platform } from "react-native";
  * Raise the screen to full brightness while a code is shown, and put it back afterwards. On iOS the
  * screen's brightness is system-wide, so it is also put back while the app is in the background. On
  * Android the screen goes back to following the system setting (auto-brightness included) instead of
- * staying at the level it had when the code opened.
+ * staying at the level it had when the code opened. `enabled` false (the screen is covered) puts it back too.
  */
-export function useBrightnessBoost() {
+export function useBrightnessBoost(enabled = true) {
   useEffect(() => {
+    if (!enabled) return;
     let previous: number | null = null, raised = false;
     const raise = () => {
       if (raised) return;
@@ -25,5 +26,5 @@ export function useBrightnessBoost() {
     raise();
     const subscription = AppState.addEventListener("change", state => { if (state === "active") raise(); else if (state === "background") restore(); });
     return () => { subscription.remove(); restore(); };
-  }, []);
+  }, [enabled]);
 }

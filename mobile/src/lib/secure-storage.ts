@@ -15,6 +15,23 @@ const storedCount = async (key: string) => {
   return Number.isInteger(count) && count > 0 && count <= MAX_CHUNKS ? count : 0;
 };
 
+/**
+ * `value` in pieces of at most `size` UTF-16 units. A piece never ends on the first half of a surrogate
+ * pair (an emoji): the Keychain stores UTF-8, where half a pair becomes U+FFFD and the value no longer
+ * reads back as written, so such a piece ends one unit earlier.
+ */
+function split(value: string, size: number): string[] {
+  const pieces: string[] = [];
+  for (let start = 0; start < value.length;) {
+    let end = Math.min(start + size, value.length);
+    const last = value.charCodeAt(end - 1);
+    if (end < value.length && last >= 0xd800 && last <= 0xdbff) end--;
+    pieces.push(value.slice(start, end));
+    start = end;
+  }
+  return pieces.length ? pieces : [""];
+}
+
 async function remove(key: string, count: number) {
   for (let index = 0; index < count; index++) await SecureStore.deleteItemAsync(`${key}.${index}`).catch(() => {});
   await SecureStore.deleteItemAsync(countKey(key)).catch(() => {});
@@ -38,9 +55,9 @@ export const secureStorage = {
   async setItem(rawKey: string, value: string): Promise<void> {
     const key = safe(rawKey);
     const previous = await storedCount(key).catch(() => 0);
-    const size = /^[\x00-\x7f]*$/.test(value) ? CHUNK : NARROW_CHUNK;
-    const count = Math.max(1, Math.ceil(value.length / size));
-    for (let index = 0; index < count; index++) await SecureStore.setItemAsync(`${key}.${index}`, value.slice(index * size, (index + 1) * size));
+    const pieces = split(value, /^[\x00-\x7f]*$/.test(value) ? CHUNK : NARROW_CHUNK);
+    const count = pieces.length;
+    for (let index = 0; index < count; index++) await SecureStore.setItemAsync(`${key}.${index}`, pieces[index]);
     await SecureStore.setItemAsync(countKey(key), String(count));
     for (let index = count; index < previous; index++) await SecureStore.deleteItemAsync(`${key}.${index}`).catch(() => {});
   },

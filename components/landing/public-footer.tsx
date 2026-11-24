@@ -40,6 +40,7 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
                 <a href="/uva">OutClass at UVA</a>
                 <a href="/request-school">Request Your School</a>
                 <a href="/security">Security</a>
+                <a href="/support">Support</a>
                 <a href="/uva#faq">FAQ</a>
               </div>
               <div className="oc-footer-group">

@@ -23,15 +23,18 @@ test('Phase 1 GET reads preserve live authority, no-store, Demo isolation and co
  await t.test('three independent Interview Rooms requests overlap, exclude the scheduler and tolerate rapid navigation',async()=>{
   const browser=await chromium.launch({headless:true});try{
    const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.addCookies([...actor.cookies].map(([name,value])=>({name,value,url:config.appUrl})));
+   // The fixture account owns the club, so with no interviews assigned My interviews sends it to Schedule (the
+   // organizer copy from #419; components/interviews/interview-rooms-list.tsx). The Schedule tab is not opened.
+   const emptyRooms=async()=>{await page.getByText('You aren’t assigned to any interviews yet. Set interview times and interviewers on Schedule.',{exact:true}).waitFor();await page.getByRole('button',{name:'Open schedule',exact:true}).filter({visible:true}).first().waitFor()};
    const page=await context.newPage(),errors=[],reads=[];let active=0,max=0,record=false;
    page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(record&&r.url().includes('/api/workspace?')){const kind=new URL(r.url()).searchParams.get('kind');if(['assignedRooms','interviewWorkspace','interviewRounds'].includes(kind)){reads.push({r,kind,start:Date.now(),end:null});active++;max=Math.max(max,active)}}});
    const finish=r=>{const item=reads.find(x=>x.r===r);if(item&&!item.end){item.end=Date.now();active--}};page.on('requestfinished',finish);page.on('requestfailed',finish);
    await page.goto(config.appUrl+'/club/'+clubId+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:false}).first().waitFor();
-   record=true;await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click();await page.getByText('You aren’t assigned to any interview rooms yet. Club leaders add you to a panel when they schedule interviews.',{exact:true}).waitFor();
+   record=true;await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click();await emptyRooms();
    assert.equal(reads.length,3);assert.equal(max,3);assert.ok(Math.max(...reads.map(r=>r.start))<Math.min(...reads.map(r=>r.end??Infinity)));assert.equal(await page.getByRole('heading',{name:'Interview schedule',exact:true}).count(),0);
    record=false;
    for(let i=0;i<5;i++){let applicants=page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first();if(!await applicants.count()){await page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first().focus();await page.keyboard.press('ArrowRight');applicants=page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first()}await applicants.focus();await page.keyboard.press('Enter');await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().focus();await page.keyboard.press('Enter')}
-   await page.getByText('You aren’t assigned to any interview rooms yet. Club leaders add you to a panel when they schedule interviews.',{exact:true}).waitFor();assert.deepEqual(errors,[]);await context.close();
+   await emptyRooms();assert.deepEqual(errors,[]);await context.close();
   }finally{await browser.close()}
  });
  await t.test('GET preserves anonymous-round assignment projection and cross-club membership boundaries',async()=>{

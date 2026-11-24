@@ -35,11 +35,11 @@ test('direct application start rejects suspension under the existing transaction
   const tx = {
     $queryRaw: async strings => { assert.equal(inTransaction, true); const sql = strings.join(''); queries.push(sql); return sql.includes('"suspendedAt"') && suspended ? [{ id: clubId }] : []; },
     application: { findFirst: async () => existing, create: async ({ data }) => { created.push(data); return { id: 'draft' }; } },
-    club: { findUnique: async () => ({ applicationOpen: true, applicationDeadline: null }) },
+    club: { findUnique: async () => ({ applicationOpen: true, applicationDeadline: null, schoolId: 'school-uva' }) },
     pipelineRound: { findFirst: async () => ({ id: 'round' }) },
   };
   const prisma = { $transaction: async fn => { inTransaction = true; try { return await fn(tx); } finally { inTransaction = false; } } };
-  const api = loader({ '@/utils/prisma': { prisma }, '@/utils/graduation':{alumniRefusal:async()=>null,assertNotAlumni:async()=>{}},'@/utils/auth': { requireAuth: async () => ({ user: { id: actorId } }) }, 'next/cache': { unstable_cache: fn => fn } })('actions/club-directory.ts');
+  const api = loader({ '@/utils/prisma': { prisma }, '@/utils/school-scope': require('./helpers/school-scope.cjs').schoolScope(), '@/utils/graduation':{alumniRefusal:async()=>null,assertNotAlumni:async()=>{}},'@/utils/auth': { requireAuth: async () => ({ user: { id: actorId } }) }, 'next/cache': { unstable_cache: fn => fn } })('actions/club-directory.ts');
   await assert.rejects(api.startClubApplication(clubId), /club is suspended/);
   assert.equal(created.length, 0); assert.match(queries[0], /FOR UPDATE/);
   suspended = false;

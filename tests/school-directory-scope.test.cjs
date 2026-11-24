@@ -163,6 +163,7 @@ test('Typesense search filters by the viewer school in the query and drops any h
       '@/lib/rate-limit-action': { limitAction: async () => ({ ok: true }) },
       '@/utils/supabase/server': { createClient: async () => assert.fail('signed out') },
       '@/utils/school-scope': schoolScope(SCHOOLS.tech),
+      '@/utils/mobile-request': { mobileRequest: () => undefined },
     })
     assert.deepEqual(await search.searchPublicClubIds('investing'), ['tech-club'])
     assert.equal(requests[0].searchParams.get('filter_by'), 'schoolId:=`school-tech`')
@@ -252,7 +253,8 @@ test('every public listing reads through the viewer school', () => {
   assert.match(read('actions/club-directory.ts'), /unstable_cache\(\s*async \(schoolId: string\)/)
   assert.match(read('lib/public-club-seo.ts'), /unstable_cache\(async \(schoolId: string\)/)
   // Student calendars list other clubs' public meetings from the student's school only.
-  assert.match(read('actions/applications.ts'), /schoolPublicMeetingVisibility\(school\.id\)/)
+  assert.match(read('actions/applications.ts'), /studentCalendarMeetings\(user\.id, school\.id\)/)
+  assert.match(read('actions/applications.ts'), /schoolPublicMeetingVisibility\(schoolId\)/)
   assert.match(read('actions/meetings.ts'), /schoolPublicMeetingVisibility\(school\.id\)/)
 })
 

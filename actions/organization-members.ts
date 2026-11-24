@@ -24,7 +24,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { graduateClubAccessOrNull } from "@/lib/graduate-access";
 import { ALUMNI_REFUSALS, ALUMNI_REFUSED } from "@/lib/graduation";
-import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOrganizationInvitation, organizationCapabilities, organizationRoles, organizationRolePermissions } from "@/lib/organization-authorization";
+import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOfferInvitation, canManageOrganizationInvitation, canSeeRecruitmentOffers, organizationCapabilities, organizationRoles, organizationRolePermissions } from "@/lib/organization-authorization";
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
 import { isRecused, RECUSED_MESSAGE } from "@/lib/recusal";
@@ -169,7 +169,7 @@ export async function getOrganizationMemberManagement(clubId: string) {
     const profileFields = normalizeProfileFieldVisibility(club.profileFieldVisibility);
     const [members, invitations, identifierTypes] = await Promise.all([
       tx.clubMember.findMany({ where: { clubId }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } }, orderBy: { joinedAt: "asc" } }),
-      tx.clubInvitation.findMany({ where: { clubId }, select: { id: true, email: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, status: true, expiresAt: true, schoolIdentity: { select: { normalizedIdentifier: true } }, deliveries: { select: { status: true, createdAt: true, failureCode: true }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" } }),
+      tx.clubInvitation.findMany({ where: { clubId, ...(canSeeRecruitmentOffers(actor) ? {} : { applicationId: null }) }, select: { id: true, email: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, status: true, expiresAt: true, schoolIdentity: { select: { normalizedIdentifier: true } }, deliveries: { select: { status: true, createdAt: true, failureCode: true }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" } }),
       tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, school: { active: true }, verification: "EMAIL_LOCAL_PART" }, select: { id: true, label: true }, orderBy: { id: "asc" } }),
     ]);
     return { actor, profileFields, members: members.map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? restrictProfileFields(memberAcademicProfile(m.user.studentProfile), profileFields) : null } })), invitations, identifierTypes };
@@ -232,7 +232,7 @@ async function manageOrganizationInvitationCommand(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     const invitation = await tx.clubInvitation.findFirst({ where: { id: data.invitationId, clubId: data.clubId } });
-    if (!invitation || invitation.status !== "PENDING" || invitation.acceptedAt || invitation.declinedAt || invitation.revokedAt || !canManageOrganizationInvitation(actor, invitation)) throw new ActionError("Invitation unavailable or above your authority.");
+    if (!invitation || invitation.status !== "PENDING" || invitation.acceptedAt || invitation.declinedAt || invitation.revokedAt || !canManageOrganizationInvitation(actor, invitation) || !canManageOfferInvitation(actor, invitation)) throw new ActionError("Invitation unavailable or above your authority.");
     if (data.action === "REVOKE") {
       await tx.invitationDelivery.updateMany({ where: { invitationId: invitation.id, status: "QUEUED" }, data: { status: "CANCELLED" } });
       await revokeClubInvitations(tx, { id: invitation.id, clubId: data.clubId, status: "PENDING" }, user.id, "organization.invitation.revoke");
@@ -275,7 +275,7 @@ async function bulkOrganizationInvitationsCommand(input: unknown) {
   const result = await prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     const invitations = await tx.clubInvitation.findMany({ where: { id: { in: data.invitationIds }, clubId: data.clubId } });
-    if (invitations.length !== data.invitationIds.length || invitations.some(i => i.status !== "PENDING" || i.revokedAt || i.acceptedAt || i.declinedAt || !canManageOrganizationInvitation(actor, i))) throw new ActionError("Selection contains unavailable invitations or grants above your authority.");
+    if (invitations.length !== data.invitationIds.length || invitations.some(i => i.status !== "PENDING" || i.revokedAt || i.acceptedAt || i.declinedAt || !canManageOrganizationInvitation(actor, i) || !canManageOfferInvitation(actor, i))) throw new ActionError("Selection contains unavailable invitations or grants above your authority.");
     let queued = 0;
     if (data.action === "REVOKE") {
       await tx.invitationDelivery.updateMany({ where: { invitationId: { in: data.invitationIds }, status: "QUEUED" }, data: { status: "CANCELLED" } });

@@ -29,6 +29,8 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
   const rosterCount = roster?.clubId === clubId ? roster.count : null
   if (!club || !hasPermission(member, "club.settings")) return <p role="alert">Settings are not available with your current access.</p>
   return <div className="oc-club-settings space-y-10">
+    {/* The club's QR code first, so it is never below the long profile editor; Home and Recruiting also open it. */}
+    {!demo.isDemoEnabled && <ClubQrPanel club={club} />}
     <ClubProfileEditor clubId={clubId} key={clubId} rosterCount={rosterCount} initial={profileDraft({ ...club, logoUrl: demo.isDemoEnabled && club.logoUrl?.startsWith("data:image/svg") ? null : club.logoUrl })} demo={demo.isDemoEnabled} onUpload={demo.isDemoEnabled ? undefined : async file => { const data = new FormData(); data.set("clubId", clubId); data.set("admin", "false"); data.set("file", file); return unwrapAction(await uploadClubAsset(data)).reference; }} onSave={async (profile, expected) => {
       if (demo.isDemoEnabled) loadedDemoStore().demoStore.mutate(state => {
         if (clubId !== state.clubs[0].id || state.perspective.role !== "leader") throw new UserFacingError("Demo management is limited to MII leaders.")
@@ -38,6 +40,5 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
       try { await refreshUser() } catch { /* The saved profile is authoritative; keep the editor usable. */ }
       onSaved?.()
     }} />
-    {!demo.isDemoEnabled && <ClubQrPanel club={club} />}
   </div>
 }

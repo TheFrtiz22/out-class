@@ -6,7 +6,7 @@ import { Panel } from "@/components/ui/panel"
 import { LoadingState } from "@/components/ui/loading-state"
 import { useConfirm } from "@/components/ui/confirm-dialog"
 import { useDemoMode } from "@/contexts/demo-context"
-import { useStagedDecisions } from "@/hooks/use-staged-decisions"
+import { PartialSendError, useStagedDecisions } from "@/hooks/use-staged-decisions"
 import { stagedLabel, type StagedDecisionView } from "@/lib/staged-decisions"
 import { pluralize } from "@/lib/copy/terms"
 import { formatPhone, phoneHref } from "@/lib/phone"
@@ -40,10 +40,15 @@ export function StagedDecisionsPanel({ clubId, roundId }: { clubId: string; roun
     if (!(await confirm({ title: `Send ${pluralize(chosen.length, "decision")}?`, description: `${finals ? `${pluralize(finals, "applicant")} will see their decision${demo.isDemoEnabled ? " (fictional letters only; no email in Demo)" : ", with a letter and email according to your club's settings"}. ` : ""}Round moves notify applicants that they advanced. This can't be undone from here.`, confirmLabel: "Send now" }))) return
     setBusy(true)
     try {
-      const result = await staged.send(chosen.slice(0, 200))
+      const result = await staged.send(chosen)
       setStale(result.stale); setSelected(null)
       toast.success(`${pluralize(result.sent, "decision")} sent`, { description: result.stale.length ? `${pluralize(result.stale.length, "applicant")} changed and stayed here.` : undefined })
-    } catch { toast.error("Couldn’t send these decisions", { description: "Nothing was sent. Check your access and try again." }) }
+    } catch (error) {
+      if (error instanceof PartialSendError) {
+        setStale(error.outcome.stale); setSelected(null)
+        toast.error(`${pluralize(error.outcome.sent, "decision")} sent, then sending stopped`, { description: "The decisions still listed here weren’t sent. Try again to send them." })
+      } else toast.error("Couldn’t send these decisions", { description: "Nothing was sent. Check your access and try again." })
+    }
     finally { setBusy(false) }
   }
   return <Panel as="section" aria-labelledby="staged-heading" className="oc-workspace-stack">
