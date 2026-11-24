@@ -72,7 +72,12 @@ export function serializeJsonLd(data: unknown): string {
   return JSON.stringify(data).replace(/[<>&\u2028\u2029]/g, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`)
 }
 
-export type ClubStructuredDataInput = { id: string; name: string; description: string; logoUrl?: string | null; sameAs?: (string | null | undefined)[] }
+export type ClubStructuredDataInput = { id: string; slug?: string | null; name: string; description: string; logoUrl?: string | null; sameAs?: (string | null | undefined)[] }
+
+/** A club's public profile path: its readable slug when known, else its id (both resolve to the same page). */
+export function clubPath(club: { id: string; slug?: string | null }) {
+  return `/club/${encodeURIComponent(club.slug || club.id)}`
+}
 
 /**
  * The trail above a club's own page. Signed out (what crawlers see) it follows the public pages and
@@ -86,7 +91,7 @@ export function clubBreadcrumbs(clubName: string, { signedIn = false }: { signed
 
 /** Organization data for an indexable public club page, from fields the page already shows. */
 export function clubStructuredData(club: ClubStructuredDataInput) {
-  const url = new URL(`/club/${encodeURIComponent(club.id)}`, SITE_URL).toString()
+  const url = new URL(clubPath(club), SITE_URL).toString()
   // Only absolute web URLs or bundled /logos files; uploaded assets and data: URIs are left out.
   const logo = club.logoUrl && (/^https:\/\//i.test(club.logoUrl) ? club.logoUrl : /^\/logos\/[\w.-]+$/.test(club.logoUrl) ? `${SITE_URL}${club.logoUrl}` : undefined)
   const sameAs = [...new Set((club.sameAs ?? []).filter((link): link is string => !!link && /^https?:\/\//i.test(link)))]

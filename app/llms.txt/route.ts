@@ -1,4 +1,4 @@
-import { SITE_URL, SITE_DESCRIPTION, ORGANIZATION_DESCRIPTION, LEGAL_ORGANIZATION_NAME } from "@/lib/seo"
+import { SITE_URL, clubPath, SITE_DESCRIPTION, ORGANIZATION_DESCRIPTION, LEGAL_ORGANIZATION_NAME } from "@/lib/seo"
 import { getIndexableClubs } from "@/lib/public-club-seo"
 import { LEGAL_PAGES_PUBLIC } from "@/lib/legal-content"
 import { DEFAULT_SCHOOL } from "@/lib/school-host"
@@ -27,7 +27,7 @@ export async function GET() {
     `- [Request your school](${SITE_URL}/request-school): how another university can join`,
     ...(LEGAL_PAGES_PUBLIC ? [`- [Privacy Policy](${SITE_URL}/privacy)`, `- [Terms of Service](${SITE_URL}/terms)`] : []),
     "",
-    ...(clubs.length ? ["## Club profiles", "", ...clubs.map(club => `- [${club.name.replace(/[[\]]/g, " ").replace(/\s+/g, " ").trim()}](${SITE_URL}/club/${encodeURIComponent(club.id)})`), ""] : []),
+    ...(clubs.length ? ["## Club profiles", "", ...clubs.map(club => `- [${club.name.replace(/[[\]]/g, " ").replace(/\s+/g, " ").trim()}](${SITE_URL}${clubPath(club)})`), ""] : []),
     "## Optional",
     "",
     `- [Sitemap](${SITE_URL}/sitemap.xml)`,

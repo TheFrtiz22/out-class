@@ -213,5 +213,10 @@ test('GPA and test scores stay optional and labelled optional in signup and prof
 test('robots allows the new public pages and keeps the private disallows', () => {
   const robots = load('app/robots.ts').default()
   for (const p of ['/privacy', '/terms', '/cookies', '/legal', '/request-school']) assert.equal(robots.rules.disallow.some(d => p.startsWith(d.replace('*', ''))), false, p)
-  for (const p of ['/login', '/signup', '/invitations/', '/club-access/', '/club-claims/', '/check-in', '/voting/', '/platform', '/settings/']) assert.ok(robots.rules.disallow.includes(p), p)
+  for (const p of ['/invitations/', '/club-access/', '/club-claims/', '/check-in', '/voting/', '/platform', '/settings/']) assert.ok(robots.rules.disallow.includes(p), p)
+  // Sign-in and password pages stay crawlable so Google can read their noindex; blocking them hid it.
+  for (const p of ['/login', '/signup', '/forgot-password', '/reset-password']) {
+    assert.equal(robots.rules.disallow.some(d => p.startsWith(d.replace('*', ''))), false, p)
+    assert.match(fs.readFileSync('next.config.mjs', 'utf8'), new RegExp(`"${p.slice(1)}"`), `${p} keeps its X-Robots-Tag noindex`)
+  }
 })
