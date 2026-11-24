@@ -1,4 +1,5 @@
 "use server"
+import type { Prisma } from "@prisma/client"
 import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 
 import { assertClubOperational } from "@/lib/club-suspension";
@@ -178,6 +179,18 @@ function studentCalendarWindow() {
   return { OR: [{ date: { gte: since } }, { endDate: { gte: since } }] }
 }
 
+/**
+ * The student's own calendar: every meeting of a club they belong to, the public meetings of clubs they
+ * applied to, and public events they RSVP'd to or saved. Check-ins come separately through their attendances. Every other
+ * public meeting at the school stays on the events board; at 200 clubs that is about 14,000 meetings a Home load.
+ */
+function studentCalendarMeetings(userId: string, schoolId: string) {
+  return { AND: [studentCalendarWindow(), { OR: [
+    { club: { members: { some: { userId, ...activeMemberWhere } } } },
+    { AND: [schoolPublicMeetingVisibility(schoolId), { OR: [{ club: { applications: { some: { studentId: userId } } } }, { rsvps: { some: { userId } } }, { saves: { some: { userId } } }] }] },
+  ] }] } satisfies Prisma.MeetingWhereInput
+}
+
 /** Members-only meetings of a club the student helps run are leader work: Calendar keeps them, student Home does not. */
 function studentMeeting<M extends { audience: string; club: { name: string; members: ClubAccess[] } }>({ club: { members, ...club }, ...meeting }: M) {
   return { ...meeting, club, forLeaders: meeting.audience !== "RECRUITMENT" && hasPermission(members[0], "meetings.manage") }
@@ -218,7 +231,7 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { AND: [{ OR: [schoolPublicMeetingVisibility(school.id), { club: { members: { some: { userId: user.id, ...activeMemberWhere } } } }] }, studentCalendarWindow()] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true, members: { where: { userId: user.id, ...activeMemberWhere }, select: { isOwner: true, permissions: true, status: true, alumniSince: true }, take: 1 } } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: studentCalendarMeetings(user.id, school.id), select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true, members: { where: { userId: user.id, ...activeMemberWhere }, select: { isOwner: true, permissions: true, status: true, alumniSince: true }, take: 1 } } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
   return { applications: applications.map(dashboardApplication), attendances, meetings: meetings.map(studentMeeting), panelAssignments }

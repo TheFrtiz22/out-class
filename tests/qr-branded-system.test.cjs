@@ -107,12 +107,13 @@ test("2. Different QR matrix sizes decode accurately across versions", async () 
   }
 });
 
-test("3. Embedded logo rendering with official OC monogram retains error correction margin", async () => {
+test("3. Embedded logo rendering with the OutClass mark retains error correction margin", async () => {
   const payload = "https://out-class.net/q/monogram";
 
   // With logo enabled
   const svgWithLogo = qrRenderer.generateOutClassQRSVG(payload, { showLogo: true });
-  assert.ok(svgWithLogo.includes(qrConstants.OC_MONOGRAM_PATHS[0].slice(0, 20)));
+  assert.ok(svgWithLogo.includes(qrConstants.OC_MARK_PATH.slice(0, 20)));
+  assert.ok(svgWithLogo.includes('fill-rule="evenodd"'), "the OC mark has counters and needs the even-odd rule");
   assert.equal(await decodeSvg(svgWithLogo), payload);
 
   // With logo disabled
@@ -516,4 +517,30 @@ test("17. Reusable destinations share short links while check-in links are uniqu
   const checkIn1 = await linkStore.createMeetingCheckInShortLink({ platformContent }, { ...window, token: "1".repeat(64) });
   const checkIn2 = await linkStore.createMeetingCheckInShortLink({ platformContent }, { ...window, token: "2".repeat(64) });
   assert.notEqual(checkIn1.code, checkIn2.code);
+});
+
+test("The centre badge is the OutClass app icon's mark, not the old placeholder", () => {
+  const appIcon = fs.readFileSync("public/brand/premium-board/11_app_icon_white.svg", "utf8");
+  const iconPath = /id="ink-oc-ivory"[^>]*\sd="([^"]+)"/.exec(appIcon)[1];
+  assert.equal(qrConstants.OC_MARK_PATH, iconPath);
+  const svg = qrRenderer.generateOutClassQRSVG("https://out-class.net/q/brand");
+  // The earlier badge art (a slashed square beside a V) read as "V0"; none of it may come back.
+  assert.ok(!svg.includes("M101.141 53H136.632"));
+  assert.ok(!svg.includes("M65.2926 124.136"));
+  assert.ok(!/style="transform/.test(svg), "badge art is placed with SVG transforms, which every rasterizer honours");
+});
+
+test("Every OutClass QR size and payload length decodes with the mark, down to small print sizes", async () => {
+  const payloads = [
+    "https://out-class.net/q/a7K2mP",
+    "https://www.out-class.net/club/82f44255-4682-4cb8-a86d-b112acda3a3d",
+    "https://out-class.net/meetings/00000000-0000-4000-8000-000000000001/check-in?t=1234567890abcdef1234567890abcdef",
+    "https://out-class.net/voting/rooms/253d3ff8-35eb-4619-81bf-c7c195bbf4fe?clubId=9f08f800-4a19-4aeb-891e-6d2153ccba8e&view=member",
+  ];
+  for (const payload of payloads) {
+    const svg = qrRenderer.generateOutClassQRSVG(payload);
+    // At least about 3 px a module, as on a phone screen or a printed table card.
+    const sizes = payload.length < 80 ? [120, 240, 600] : [200, 240, 600];
+    for (const size of sizes) assert.equal(await decodeSvg(svg, size), payload, `${payload} at ${size}px`);
+  }
 });

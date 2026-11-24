@@ -20,3 +20,9 @@ test("student home keeps only a club's logo settings from its public page conten
   assert.match(source, /marketing: \{ logoBackground, logoOnBrand \}/)
   assert.match(dashboard, /answers: \{ select: \{ questionId: true, response: true \} \}/)
 })
+
+test("student home's calendar is the student's own, not every public meeting at the school", () => {
+  assert.match(dashboard, /prisma\.meeting\.findMany\(\{ where: studentCalendarMeetings\(user\.id, school\.id\)/)
+  const scope = source.slice(source.indexOf("function studentCalendarMeetings"), source.indexOf("/** Members-only meetings"))
+  assert.match(scope, /AND: \[schoolPublicMeetingVisibility\(schoolId\), \{ OR: \[\{ club: \{ applications: \{ some: \{ studentId: userId \} \} \} \}, \{ rsvps: \{ some: \{ userId \} \} \}, \{ saves: \{ some: \{ userId \} \} \}\] \}\]/)
+})
