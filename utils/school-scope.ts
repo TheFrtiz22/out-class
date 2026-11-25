@@ -9,7 +9,7 @@ import { DEFAULT_SCHOOL, schoolKeyFromHost, type SchoolScope } from "@/lib/schoo
 
 const schoolFields = { id: true, key: true } as const
 /** A client that can read an account's school: the shared client, or an open transaction. */
-type SchoolReader = Pick<AppTransactionClient, "user" | "schoolIdentifierType">
+type SchoolReader = Pick<AppTransactionClient, "user" | "schoolIdentifierType" | "school">
 
 /**
  * The school a signed-in account belongs to: its verified SchoolIdentity (utils/school-identity.ts),
@@ -47,7 +47,7 @@ async function schoolForUser(userId: string, db: SchoolReader = prisma): Promise
  * that already holds a transaction passes it as `db`, so the lookup does not wait for a second connection.
  */
 export async function resolveAccountSchool(userId: string, db: SchoolReader = prisma): Promise<SchoolScope> {
-  return (await schoolForUser(userId, db)) ?? resolveHostSchool()
+  return (await schoolForUser(userId, db)) ?? resolveHostSchool(db)
 }
 
 /** The effective account: a valid support session's target, otherwise the verified session user.
@@ -82,10 +82,10 @@ export const resolveViewerSchool = cache(async (): Promise<SchoolScope> => {
  * The host-named school (or the launch school). Use it for every response a shared cache may hold
  * (sitemap, share-card images, publicly cached assets): those must never depend on the viewer.
  */
-export async function resolveHostSchool(): Promise<SchoolScope> {
+export async function resolveHostSchool(db: Pick<AppTransactionClient, "school"> = prisma): Promise<SchoolScope> {
   const key = schoolKeyFromHost((await headers()).get("host"))
   if (!key) return DEFAULT_SCHOOL
-  const school = await prisma.school.findUnique({ where: { key }, select: { ...schoolFields, name: true, active: true } })
+  const school = await db.school.findUnique({ where: { key }, select: { ...schoolFields, name: true, active: true } })
   if (!school) return DEFAULT_SCHOOL
   // An id no Club row can carry: an inactive school's host lists nothing rather than another school's clubs.
   return school.active ? { id: school.id, key: school.key, name: school.name } : { id: `inactive:${school.key}`, key: school.key, name: school.name }
