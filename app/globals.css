@@ -136,6 +136,11 @@
     outline: 2px solid var(--ring);
     outline-offset: 3px;
   }
+  /* A heading that receives focus from script (tabindex="-1", so a screen reader announces where the user landed)
+     is not a control; a ring around it reads as something to press. Keyboard users never tab to it. */
+  :where(h1, h2, h3, h4, h5, h6)[tabindex="-1"]:focus-visible {
+    outline: none;
+  }
 }
 
 @utility motion-micro {
