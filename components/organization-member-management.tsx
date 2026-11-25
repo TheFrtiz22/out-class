@@ -1,6 +1,6 @@
 "use client";
 import { userMessage } from "@/lib/user-message"
-import { pluralize } from "@/lib/copy/terms"
+import { memberTitleLabel, pluralize } from "@/lib/copy/terms"
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
@@ -992,7 +992,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 {data?.profileFields?.academicYear !== false && <> · {active.user.studentProfile?.academicYear || "Year not provided"}</>}
               </p>
               <p className="text-sm text-muted-foreground">
-                {active.title || active.role.replaceAll("_", " ")} · Groups:{" "}
+                {memberTitleLabel(active)} · Groups:{" "}
                 {active.groups.join(", ") || "None"} · Cohort:{" "}
                 {active.cohort || "Not set"}
               </p>
