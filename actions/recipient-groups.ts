@@ -58,6 +58,9 @@ async function saveRecipientGroupCommand(input: unknown) {
       if (previous.kind === d.kind && previous.name === d.name && audienceKey(previous.rules) === audienceKey(rules) && audienceKey(entries.map(e=>e.userId)) === audienceKey(ids)) return previous;
       if (d.revision === null || previous.revision !== d.revision) throw new ActionError("Group changed. Reload before saving.", "STALE");
     } else if (d.revision !== null) throw new ActionError("Recipient group unavailable in this club.", "STALE");
+    // Names are unique per club ignoring case (RecipientGroup_club_name_normalized): refuse with the reason rather than hit the index.
+    if (await tx.recipientGroup.findFirst({ where: { clubId: d.clubId, id: { not: d.id }, name: { equals: d.name, mode: "insensitive" } }, select: { id: true } }))
+      throw new ActionError(`This club already has a group named "${d.name}". Choose another name.`, "NAME_TAKEN");
     const spec = d.kind === "MANUAL" ? { include: [{ source: "PEOPLE", userIds: ids }] } : rules;
     const resolved = await resolveRecipientAudience(tx, d.clubId, user.id, spec);
     if (d.kind === "MANUAL" && resolved.length !== ids.length) throw new ActionError("One or more recipients are unavailable in this club.", "STALE");
