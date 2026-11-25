@@ -122,3 +122,11 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Merged as 5df4d055. Production deployment dpl_CdJ8Qngz6SiTmV5E715wmCdnfNx9 queued; rollback target is the current production deployment dpl_2S19S64aiez6wvH13W1UdWpvHfVM (8a70a46).
 - PR #546 red dispatch (3087354) confirmed: the five new recusal, own-application and reveal tests failed.
 - Deleting my scratch branch `debug/check-in-hold` was refused by GitHub (HTTP 403). Left in place; it is not for merge.
+
+## 07:03 PR #545 deploy verified live
+
+- Production dpl_CdJ8Qngz6SiTmV5E715wmCdnfNx9 (5df4d055) READY on www, apex and uva.
+- Remote browser, desktop 1440×900: /club/aif renders the club page (About, recruitment, deadline, required questions).
+- Phone 500×900: /explore redirects to /login?next=%2Fexplore with the sign-in form, email-code option and menu button; /club/aif renders in full.
+- No rollback needed. Signed-in journeys not re-run live: no test-account password is typed by this run.
+- PR #546 conflicted with #545 in actions/crm.ts imports (both import from lib/recusal). Resolved by importing both `assertMayDecideApplicant` and `isRecused`; merge commit cabda9a2, gates re-running.
