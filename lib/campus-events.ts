@@ -199,6 +199,6 @@ export function eventSchedule(start: string, customEnd: string, duration: string
   const date = !allDay && existing && !existing.allDay && newYorkInput(existing.date) === start ? new Date(existing.date) : newYorkInstant(allDay ? `${start.slice(0, 10)}T00:00` : start);
   const endDate = allDay ? newYorkInstant(`${eventDay(lastDay || start.slice(0, 10), 1)}T00:00`)
     : duration === "custom" ? (existing && !existing.allDay && newYorkInput(existing.endDate) === customEnd ? new Date(existing.endDate) : newYorkInstant(customEnd)) : new Date(+date + Number(duration) * 60000);
-  if (!Number.isFinite(+endDate) || endDate <= date) throw Error(allDay ? "End Date must be on or after Start Date." : "End Time must be after Start Time.");
+  if (!Number.isFinite(+endDate) || endDate <= date) throw Error(allDay ? "End date must be on or after the start date." : "End time must be after the start time.");
   return { date, endDate };
 }

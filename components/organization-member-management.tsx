@@ -998,7 +998,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 {active.groups.join(", ") || "None"} · Cohort:{" "}
                 {active.cohort || "Not set"}
               </p>
-              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual onSaved={() => reload()} />}
+              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual single onSaved={() => reload()} />}
               {error && (
                 <p role="alert" className="text-sm text-destructive">
                   {error}

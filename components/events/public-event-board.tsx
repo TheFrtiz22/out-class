@@ -231,7 +231,8 @@ export function PublicEventBoard({ initialBoard }: { initialBoard?: PublicEventB
         </div>
       </div>
       {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}
-      <p className="oc-event-result" role="status" aria-live="polite">
+      {/* With nothing to show, the empty state below already says so; "0 events" above it only repeats it. Screen readers still hear the count. */}
+      <p className={!loading && !error && total === 0 ? "oc-event-result sr-only" : "oc-event-result"} role="status" aria-live="polite">
         {loading
           ? "Loading campus events…"
           : error ||

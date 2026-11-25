@@ -55,7 +55,8 @@ export function StagedDecisionsPanel({ clubId, roundId }: { clubId: string; roun
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 id="staged-heading" className="oc-section-heading">Decisions to send</h2>
         <p className="text-sm text-muted-foreground">Saved during review. Applicants see nothing until you send.</p></div>
-      <Button disabled={busy || !chosen.length} onClick={() => void send()}>{busy ? "Sending…" : chosen.length === rows.length ? `Send all ${rows.length || ""}`.trim() : `Send ${chosen.length} selected`}</Button>
+      {/* With nothing saved there is nothing to send, so no greyed-out button above the empty note. */}
+      {rows.length > 0 && <Button disabled={busy || !chosen.length} onClick={() => void send()}>{busy ? "Sending…" : chosen.length === rows.length ? `Send all ${rows.length}` : `Send ${chosen.length} selected`}</Button>}
     </div>
     {!staged.loaded ? <LoadingState label="Loading saved decisions…" layout="rows" rows={2} />
       : staged.failed ? <div role="alert" className="flex items-center gap-2"><p className="text-sm">Saved decisions couldn’t be loaded.</p><Button variant="outline" size="sm" onClick={() => void staged.reload()}>Retry</Button></div>

@@ -34,7 +34,7 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
         </div>)}
       </div>
       <div className="ml-auto flex flex-wrap gap-2">
-        <Popover><PopoverTrigger asChild><Button variant="outline" className="shadow-none"><SlidersHorizontal className="size-4" />View Settings</Button></PopoverTrigger>
+        <Popover><PopoverTrigger asChild><Button variant="outline" className="shadow-none"><SlidersHorizontal className="size-4" />View settings</Button></PopoverTrigger>
           <PopoverContent className="w-60 rounded-xl border-border bg-popover shadow-none" align="end">
             <p className="mb-3 text-sm font-semibold">Visible columns</p>
             {crmColumns.map(column => <label key={column.id} className="flex items-center gap-2 rounded p-2 text-sm hover:bg-muted">
@@ -42,7 +42,7 @@ export function CRMViewManager({ clubId = "vvf" }: { clubId?: string }) {
             </label>)}
           </PopoverContent>
         </Popover>
-        <SegmentedControl label="CRM layout" value={crm.layout} onChange={layout => update(p => ({ ...p, crm: { ...p.crm, layout } }))} options={[{ value: "table", label: <span className="inline-flex items-center gap-2"><Rows3 className="size-4" />Table View</span> }, { value: "pipeline", label: <span className="inline-flex items-center gap-2"><LayoutGrid className="size-4" />Board View</span> }]} />
+        <SegmentedControl label="CRM layout" value={crm.layout} onChange={layout => update(p => ({ ...p, crm: { ...p.crm, layout } }))} options={[{ value: "table", label: <span className="inline-flex items-center gap-2"><Rows3 className="size-4" />Table view</span> }, { value: "pipeline", label: <span className="inline-flex items-center gap-2"><LayoutGrid className="size-4" />Board view</span> }]} />
         <Popover><PopoverTrigger asChild><Button variant="outline" className="shadow-none">Save view</Button></PopoverTrigger>
           <PopoverContent className="rounded-xl border-border bg-popover shadow-none" align="end">
             <form className="space-y-3" onSubmit={event => { event.preventDefault(); saveView() }}>

@@ -45,7 +45,7 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
           <div className="flex size-12 items-center justify-center rounded-full bg-success/10">
             <CheckCircle2 className="size-6 text-success" />
           </div>
-          <h3 className="oc-card-heading ">Interview Confirmed</h3>
+          <h3 className="oc-card-heading ">Interview confirmed</h3>
           <p className="text-sm text-muted-foreground">
             You&apos;re booked for {scheduleDate} at {selectedSlot.time} at {activeLocation.locationName}.
           </p>
