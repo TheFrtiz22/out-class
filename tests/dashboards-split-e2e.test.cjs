@@ -19,7 +19,9 @@ test('Club home and the Recruiting Overview do different jobs, accessibly', { sk
       page.on('request', request => { const url = new URL(request.url()); if (url.searchParams.get('kind') === 'overview') views.push(JSON.parse(url.searchParams.get('args'))[1] ?? 'all') })
 
       await page.goto(account.config.appUrl + `${base}?section=overview`)
-      await page.locator('.oc-club-home').waitFor()
+      // Until React swaps it in, the streamed server render waits in a hidden <div hidden id="S:0"> beside the
+      // visible dashboard, so wait for the visible one only.
+      await page.locator('.oc-club-home:visible').first().waitFor()
       const skip = page.getByRole('button', { name: 'Skip', exact: true })
       if (await skip.isVisible().catch(() => false)) await skip.click()
       await page.waitForTimeout(1500)
