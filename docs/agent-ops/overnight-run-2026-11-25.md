@@ -232,3 +232,10 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 ## 08:34 UTC: merge 7, PR #549 (a student applies only to clubs at their own school)
 - All required gates green on 6ac0eb6f. Merged as 9d4f0c17.
 - App compatibility: the app submits through the same server action path; a UVA account applying to a UVA club is unchanged. Only a cross-school submit or draft is now refused with "This club isn't open to students at your school."
+
+## 08:40 UTC: PR #549 deploy verified live
+- Production deployment `dpl_3pCJrXTihK6D5zb9LB56Sz2ceTQD` (commit 9d4f0c17) READY.
+- Vercel runtime errors, last 30 minutes: none. Sentry: no unresolved issues first seen in the last hour.
+- Live check: public test club page at 1440 px; signed-out `/applications` at 500 px redirects to sign-in with `next=/applications`.
+- The submit itself needs a signed-in student; the same-school refusal is verified by unit and native-transaction suites in CI, not on the live site.
+- No rollback needed.
