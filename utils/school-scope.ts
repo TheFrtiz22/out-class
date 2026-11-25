@@ -1,7 +1,6 @@
 import { cache } from "react"
 import { cookies, headers } from "next/headers"
-import type { Prisma } from "@prisma/client"
-import { prisma } from "@/utils/prisma"
+import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { getSessionUser } from "@/utils/auth"
 import { platformViewSession } from "@/utils/platform-view-as"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
@@ -10,7 +9,7 @@ import { DEFAULT_SCHOOL, schoolKeyFromHost, type SchoolScope } from "@/lib/schoo
 
 const schoolFields = { id: true, key: true } as const
 /** A client that can read an account's school: the shared client, or an open transaction. */
-type SchoolReader = Pick<Prisma.TransactionClient, "user" | "schoolIdentifierType">
+type SchoolReader = Pick<AppTransactionClient, "user" | "schoolIdentifierType">
 
 /**
  * The school a signed-in account belongs to: its verified SchoolIdentity (utils/school-identity.ts),
