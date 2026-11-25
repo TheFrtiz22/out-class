@@ -46,7 +46,7 @@ test('#3 the Club home strip counts exactly the items on the Recruiting Overview
 test('#3 Club home does not say "You’re clear" beside a strip that says recruiting items need you', () => {
   const src = read('components/manager-overview.tsx')
   assert.match(src, /clear=\{strip && strip\.attention > 0/)
-  assert.match(src, /No club work needs you\.<\/strong> Recruiting items are on the Recruiting overview\./)
+  assert.match(src, /Nothing urgent in club work\.<\/strong> Recruiting items are on the Recruiting overview\./)
 })
 
 test('#3 a voting session is listed once; two sessions in one round are summarized, not repeated', () => {
