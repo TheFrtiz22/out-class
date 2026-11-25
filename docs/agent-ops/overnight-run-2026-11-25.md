@@ -299,3 +299,11 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - #552's Local Auth job failed before any test ran: the local Supabase stack did not start. Re-ran that job.
 - Sentry OUT-CLASS-D (Date rendered on `/inbox`, release 6e2a1649): `lib/demo/store.ts` on main now turns revived snapshot dates back into strings for the Inbox, which matches this error. Likely fixed already; verified by reading code only.
 - App gap 3 (web hand-offs ask leaders to sign in again): not built. It needs a new session hand-off from the app's token to a web cookie, which is a new sign-in path; that is too risky to add unattended overnight.
+
+## 10:43 UTC: merge 9, PR #552 (decision publication suite scoped to the club's school)
+- All PR checks green, including validate, and the dispatched integration run had the scheduler and audiences suites passing. Merged as b7f52075. Test-only change.
+
+## 10:48 UTC: PR #552 deploy verified live
+- Production deployment `dpl_23Ligr9RraubhS1VuVkGByWWynai` (commit b7f52075) READY. Vercel runtime errors, last 20 minutes: none.
+- Live: `/explore` signed out redirects to sign-in with the return path kept, at 1440 px and 500 px. No rollback.
+- PR #553 brought up to date with main (merge commit 23c6646c) so its integration run includes the fix; dispatched run 45597776774.
