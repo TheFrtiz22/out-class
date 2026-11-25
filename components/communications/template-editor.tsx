@@ -57,5 +57,5 @@ export function DecisionTemplateEditor({clubId,inline=false}:{clubId:string;inli
  {preview&&<LetterPaper preview decision={selected==='NOT_ADVANCED'?'REJECTED':selected} marketing={club.marketing} content={resolveLetter(selected,templates,{firstName:'Alex',fullName:'Alex Student',clubName:club.name,roundName:'First round',date:new Date(),expiresAt:new Date(Date.now()+30*86400000),logoReference:null,accent:club.color})} logoSource={clubAssetSource(club.logoUrl,true)}/>}</>}
 </>;
  if(inline)return <div data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={autosave.dirty} data-saving={autosave.saving} className="space-y-4">{body}</div>;
- return <details data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={autosave.dirty} data-saving={autosave.saving} className="border-y py-4"><summary className="cursor-pointer font-medium">Decision Letters</summary><div className="space-y-4 pt-5">{body}</div></details>;
+ return <details data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={autosave.dirty} data-saving={autosave.saving} className="border-y py-4"><summary className="cursor-pointer font-medium">Decision letters</summary><div className="space-y-4 pt-5">{body}</div></details>;
 }
