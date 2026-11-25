@@ -13,7 +13,7 @@ test("the profile details checklist ends with a button that opens Edit profile",
 })
 
 test("the header button and the checklist button open the same edit dialog", () => {
-  assert.match(src, /const editDialog = \(trigger: ReactNode, section\?: ProfileSection\) => <EditStudentProfileDialog/)
+  assert.match(src, /const editDialog = \(trigger: ReactNode, section\?: ProfileSection, onOpenChange\?: \(open: boolean\) => void\) => <EditStudentProfileDialog/)
   assert.match(src, /const editProfile = editDialog\(/)
 })
 
@@ -21,10 +21,15 @@ test("each checklist item maps to the editor section where it is filled in", () 
   for (const label of ["Name", "Education", "Résumé", "Experience", "LinkedIn"]) assert.match(src, new RegExp(`"?${label}"?: "(identity|education|links|experience)"`), label)
 })
 
-test("the open editor is not remounted when the first missing section changes after a save", () => {
-  // A key tied to the section would replace the open dialog with a closed one once a save fills that section.
+test("autosave in the checklist editor doesn't close it", () => {
   const dialog = src.slice(src.indexOf("const editDialog ="), src.indexOf("const editProfile ="))
-  assert.doesNotMatch(dialog, /key=\{section\}/)
+  assert.doesNotMatch(dialog, /<EditStudentProfileDialog\s+key=/, "a key that follows the first missing item remounts the open editor after each autosave")
+  assert.match(src, /const showChecklist = !allAdded \|\| checklistEditing/)
+  assert.match(src, /\{showChecklist && <Panel as="aside">/)
+  assert.match(src, /, setChecklistEditing\)\}/)
+  const editor = fs.readFileSync(path.join(__dirname, "..", "components/edit-student-profile-dialog.tsx"), "utf8")
+  assert.match(editor, /setOpen\(false\); onOpenChange\?\.\(false\)/)
+  assert.match(editor, /setOpen\(value\)\n    onOpenChange\?\.\(true\)/)
   // The dialog picks up the section each time it opens.
-  assert.match(fs.readFileSync(path.join(__dirname, "..", "components/edit-student-profile-dialog.tsx"), "utf8"), /if \(value\) setSection\(initialSection\)/)
+  assert.match(editor, /if \(value\) setSection\(initialSection\)/)
 })

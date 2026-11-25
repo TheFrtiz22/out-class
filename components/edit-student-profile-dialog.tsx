@@ -43,6 +43,7 @@ export function EditStudentProfileDialog({
   onSaved,
   sections,
   extra,
+  onOpenChange,
 }: {
   trigger?: ReactNode
   profile?: FullStudentProfile
@@ -52,6 +53,8 @@ export function EditStudentProfileDialog({
   sections?: ProfileSection[]
   /** Extra tools shown in the dialog, e.g. "Import from résumé". A function receives `sync`, which loads a profile saved elsewhere into the open editor. */
   extra?: ReactNode | ((sync: (profile: FullStudentProfile) => void) => ReactNode)
+  /** Told when the editor opens and closes, so a parent can keep its trigger on screen while it's open. */
+  onOpenChange?: (open: boolean) => void
 }) {
   const [section, setSection] = useState<ProfileSection>(initialSection)
   const { user } = useAuth(), demo = useDemoMode()
@@ -69,8 +72,9 @@ export function EditStudentProfileDialog({
   useEffect(() => () => { if (photoSource?.startsWith("blob:")) URL.revokeObjectURL(photoSource) }, [photoSource])
   async function begin(value: boolean) {
     if (busy) return
-    if (!value) { try { await autosave.flush(); setOpen(false) } catch { return }; return }
+    if (!value) { try { await autosave.flush(); setOpen(false); onOpenChange?.(false) } catch { return }; return }
     setOpen(value)
+    onOpenChange?.(true)
     if (value) setSection(initialSection)
     setPhotoSource(null)
     setError("")

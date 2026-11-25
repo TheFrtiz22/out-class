@@ -31,6 +31,8 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   const [pending, setPending] = useState(true)
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
+  // Keeps the checklist (and the editor opened from it) on screen until the student closes the editor, even once every item is added.
+  const [checklistEditing, setChecklistEditing] = useState(false)
   const [saved, setSaved] = useState(false)
   useEffect(() => {
     let active = true
@@ -91,13 +93,16 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   const checklist = profileChecklist(profile)
   const completed = checklist.filter((item) => item.complete).length
   const allAdded = completed === checklist.length
+  const showChecklist = !allAdded || checklistEditing
   // Where each checklist item is edited, so "Add missing details" opens on the first one still missing.
   const checklistSection: Record<string, ProfileSection> = { Name: "identity", Education: "education", "Résumé": "links", Experience: "experience", LinkedIn: "links" }
   const resume = resolveResumeUrl(profile.resumeUrl)
   const linkedin = safeProfileUrl(profile.linkedinUrl)
   // One entry point: "Edit profile" opens every section; "Import from résumé" lives inside it.
-  const editDialog = (trigger: ReactNode, section?: ProfileSection) => <EditStudentProfileDialog
+  // No key on the editor: autosave updates the checklist while it is open, and a new key would close it mid-edit.
+  const editDialog = (trigger: ReactNode, section?: ProfileSection, onOpenChange?: (open: boolean) => void) => <EditStudentProfileDialog
     section={section}
+    onOpenChange={onOpenChange}
     profile={profile!}
     sections={["identity", "education", "experience", "links", "contact"]}
     extra={sync => <ResumeImportDialog key={profile!.userId} profile={profile!} label="Import from résumé" onSaved={value => { setProfile(value); setSaved(true); sync(value) }} />}
@@ -151,7 +156,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
         </div>
       </header>
       {/* Once every suggested detail is added, the checklist has nothing left to say, so the sections take the full width. */}
-      <div className={`grid items-start gap-[var(--oc-content-gap)]${allAdded ? "" : " lg:grid-cols-[minmax(0,1fr)_16rem]"}`}>
+      <div className={`grid items-start gap-[var(--oc-content-gap)]${showChecklist ? " lg:grid-cols-[minmax(0,1fr)_16rem]" : ""}`}>
         <div className="oc-workspace-stack">
           {section(
             "Education",
@@ -210,7 +215,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           )}
           <AlumniDetailsPanel key={profile.userId} profile={profile} />
         </div>
-        {!allAdded && <Panel as="aside">
+        {showChecklist && <Panel as="aside">
           <h3 className="oc-card-heading ">Profile details</h3>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {completed} of {checklist.length} profile details added. These are suggestions, not
@@ -246,7 +251,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             ))}
           </ul>
           {/* The checklist ends with the way to finish it, so a missing detail isn't a dead end. */}
-          <div className="mt-4" data-checklist-action>{editDialog(<Button size="sm" variant="outline"><Pencil className="size-3.5" aria-hidden="true" />Add missing details</Button>, checklistSection[checklist.find(item => !item.complete)?.label ?? ""])}</div>
+          <div className="mt-4" data-checklist-action>{editDialog(<Button size="sm" variant="outline"><Pencil className="size-3.5" aria-hidden="true" />Add missing details</Button>, checklistSection[checklist.find(item => !item.complete)?.label ?? ""], setChecklistEditing)}</div>
         </Panel>}
       </div>
     </article>
