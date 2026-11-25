@@ -118,7 +118,8 @@ export function InterviewPipelineBuilderView({
     try {
       await draftSave.flush();
       await savePipelineSettings(input);
-      await draftSave.clear();
+      // The composer commits rounds this editor has not rendered yet; mark those as the saved copy.
+      await draftSave.clear(proposed);
       setRounds(proposed);
       setBaseline(editorValue(proposed));
       setNotice("Recruiting pipeline saved.");
