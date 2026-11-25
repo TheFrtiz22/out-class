@@ -737,13 +737,17 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => setAttempt((value) => value + 1)}
-          >
-            Try again
-          </Button>
+          {/* Reloading helps only when the directory itself failed to load; a refused change (like removing the
+              last owner) keeps the directory, and its message says what to do instead. */}
+          {!data && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setAttempt((value) => value + 1)}
+            >
+              Try again
+            </Button>
+          )}
         </div>
       )}
       {loading ? (
