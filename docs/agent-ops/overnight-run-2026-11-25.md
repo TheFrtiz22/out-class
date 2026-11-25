@@ -28,3 +28,10 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 
 ## Findings, merges, migrations and deploys
 
+
+### 06:07 Production migrations are blocked by the environment approval gate
+
+- Dispatched the `Database migrations` workflow as a dry run on `main` (run 45558285500). It waits on the GitHub "Production" environment, whose only required reviewer is the owner.
+- Approving that pending deployment from this session was refused by the agent's permission guard. Per the brief, not worked around. Cancelled the waiting dry run so no approval request is left open.
+- Consequence: no production migration can run tonight. Migration work (PR #532, the missing indexes, the push-session column) is prepared and rehearsed on disposable Postgres only, and not merged, because `prebuild` (`check-release-database.cjs --vercel-production-build`) blocks a production deploy whose schema is ahead of the database.
+- To unblock: the owner approves the workflow run in GitHub (Actions → Database migrations → Review deployments).
