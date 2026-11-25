@@ -65,7 +65,7 @@ export function workspaceRoute(pathname: string, params: URLSearchParams, member
   const settings = pathname.startsWith("/settings") && !schedule
   const meetings = pathname.startsWith("/meetings")
   const organizations = pathname.startsWith("/club-claims") || pathname.startsWith("/invitations")
-  const title = settings ? personalSettingsSectionFor(pathname)?.label ?? "Settings" : schedule ? "My Interview Schedule" : meetings ? "Meetings" : organizations ? "Clubs" : pathname === "/saved-clubs" ? "Saved clubs" : pathname === "/corkboard" ? "Events" : /^\/club\/[^/]+$/.test(pathname) ? "Club profile" : "OutClass"
+  const title = settings ? personalSettingsSectionFor(pathname)?.label ?? "Settings" : schedule ? "My interview schedule" : meetings ? "Meetings" : organizations ? "Clubs" : pathname === "/saved-clubs" ? "Saved clubs" : pathname === "/corkboard" ? "Events" : /^\/club\/[^/]+$/.test(pathname) ? "Club profile" : "OutClass"
   const active = settings || organizations ? "settings" : schedule ? "calendar" : meetings ? "meetings" : pathname === "/corkboard" || pathname === "/saved-clubs" ? "corkboard" : "explore"
   return { kind: "personal", clubId: "", manager: false, mode: meetings ? "clubs" : "explore", sections: personalRailSections(), active, title }
 }
