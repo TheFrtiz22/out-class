@@ -139,7 +139,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
   const primaryCategories = rankedCategories.slice(0, PRIMARY_CATEGORIES)
   if (selectedCategory !== "all" && categories.includes(selectedCategory) && !primaryCategories.includes(selectedCategory)) primaryCategories.push(selectedCategory)
   const moreCategories = rankedCategories.filter((category) => !primaryCategories.includes(category))
-  const { suggestions } = useSuggestedClubs(loading || error ? null : clubs)
+  const { suggestions, basis } = useSuggestedClubs(loading || error ? null : clubs)
   // Typesense is an optional relevance/typo index, never an authority on visibility.
   // Cross-check every ID against the current public directory before rendering.
   useEffect(() => {
@@ -313,7 +313,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
           {!active.length && suggestions.length > 0 && (
             <section className="oc-explore-section oc-explore-suggested" aria-labelledby="suggested-title">
               <div className="oc-explore-section-heading"><div><h2 id="suggested-title">Suggested for you</h2></div>
-              <p>Based on the clubs you saved and your major.</p></div>
+              {basis && <p>{basis}</p>}</div>
               <SuggestedClubTiles suggestions={suggestions} onOpen={open} />
             </section>
           )}
