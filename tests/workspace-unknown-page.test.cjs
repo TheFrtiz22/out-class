@@ -10,6 +10,11 @@ test('a mistyped or stale workspace link says the page does not exist, not that 
   assert.match(workspace, /const unknownPage = !\(workspacePageIds\[mode === "recruiting" \? "recruiting" : "club"\] as readonly string\[\]\)\.includes\(active\)/)
   assert.match(workspace, /unknownPage \? <div role="alert"[^>]*><p>This page doesn’t exist\. The link may be out of date\.<\/p>/)
   assert.match(workspace, /"Go to Recruiting" : "Go to club home"/)
+  // The recovery link goes to a recruiting page this member's navigation actually offers, never a bare
+  // section=recruitment link that defaults to Applicants (which interview-only managers can't open).
+  assert.match(workspace, /const recoveryPage = mode === "recruiting" \? nav\.find\(n => n\.href && !n\.hidden\) : undefined/)
+  assert.match(workspace, /<Link href=\{recoveryPage\?\.href \?\? clubWorkspaceHref\(clubId, "overview"\)\}/)
+  assert.doesNotMatch(workspace, /clubWorkspaceHref\(clubId, mode === "recruiting" \? "recruitment" : "overview"\)/)
   // Missing permission keeps its own message.
   assert.match(workspace, /<p role="alert">This section isn’t available with your current access\.<\/p>\)/)
 })
