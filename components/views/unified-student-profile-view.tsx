@@ -7,7 +7,7 @@ import { Check, Pencil } from "@/components/icons"
 import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import {
-  gpaSchema, profileChecklist, resolveResumeUrl, safeProfileUrl,
+  formatGpa, gpaSchema, profileChecklist, resolveResumeUrl, safeProfileUrl,
   type FullStudentProfile,
   type ProfileSection,
 } from "@/lib/student-profile"
@@ -170,7 +170,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                   {profile.gpa != null && (
                     <div className="flex gap-2">
                       <dt className="text-muted-foreground">{gpaLabel(profile)}</dt>
-                      <dd>{gpaSchema.safeParse(profile.gpa).success ? `${profile.gpa} / 4.00` : `${profile.gpa} · Confirm a GPA out of 4.0 in Education`}</dd>
+                      <dd>{gpaSchema.safeParse(profile.gpa).success ? `${formatGpa(profile.gpa)} / 4.00` : `${profile.gpa} · Confirm a GPA out of 4.0 in Education`}</dd>
                     </div>
                   )}
                   {profile.actScore != null && <div><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}
