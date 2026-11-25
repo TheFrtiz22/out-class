@@ -107,3 +107,11 @@ The app calls the same `/api/mobile/v1/*` ops, which run the website's own Serve
 8. Nothing is cached between launches, so opening the app offline shows errors, not the last data.
 
 Ops the server offers that the app never calls: `graduation.confirm`, `explore.search`, `leader.rounds`, `applications`, `invitations`, `home.taskNotifications`.
+
+## 06:55 Check-in burst test diagnosis (PR #548)
+
+- Debug run showed the statement hook was never called: the first member checked in straight through. Cause: `utils/prisma.ts` caches its client on `globalThis.outclassPrismaBase` outside production, so every race fixture after the first in a file reused the first fixture's client, with its latency and without the new hook. The test-side bug, not the app.
+- Fix 8493a114: `tests/helpers/race-native.cjs` clears the cached client when a fixture starts and ends. Red dispatch on `red/check-in-hold` (b22b5990 + helper fix, old FOR UPDATE lock) to confirm the held-member test now fails for the intended reason.
+- PR #545 red dispatch (7dc88b38) confirmed: exactly the five new self-decision and recusal tests failed.
+- App hand-offs: `openOnWeb` uses `WebBrowser.openBrowserAsync` (SFSafariViewController / Custom Tabs), which keeps its own cookies, so a leader likely signs in once per device rather than on every hand-off (corrects gap 3 above; still not verified on a device).
+- Two-step accounts in the app are only reachable when `OUTCLASS_USER_MFA=1`; the web challenge route is cookie and same-origin based, so an app fix needs a new bearer-token op with the same attempt limit. Not built tonight.
