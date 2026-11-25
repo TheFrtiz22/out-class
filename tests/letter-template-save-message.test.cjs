@@ -10,7 +10,7 @@ function load(file, mocks = {}) {
 const letters = load('lib/decision-letters.ts')
 const accepted = patch => ({ ACCEPTED: { ...letters.defaultLetters.ACCEPTED, ...patch } })
 
-// Settings › Communications › Decision Letters autosaves; a template the schema refuses used to throw a ZodError,
+// Settings › Communications › Decision letters autosaves; a template the schema refuses used to throw a ZodError,
 // which the autosave status shows as "Your changes are still here. Reconnect and retry." although nothing was offline.
 test('a letter with an unknown placeholder names the placeholder and the field', () => {
   assert.equal(letters.letterTemplatesProblem(accepted({ footer: 'Thanks {{nope.field}}' })), 'Footer: {{nope.field}} isn’t an available variable. Use one listed under the letter.')

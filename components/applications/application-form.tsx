@@ -229,10 +229,10 @@ export function ApplicationForm({
                 className="text-control leading-relaxed text-muted-foreground"
               >
                 {question.type === "ESSAY"
-                  ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`
+                  ? <EssayWordCount words={wordCount(responses[question.id] || "")} limit={question.wordLimit} />
                   : question.type === "FILE_UPLOAD"
                     ? "Use a document link the club can access. Attachments save automatically; uploading never submits your application."
-                    : question.type === "MULTIPLE_CHOICE" ? "Select one option. If no choices are listed, ask the club for clarification." : "Enter your response."}
+                    : question.type === "MULTIPLE_CHOICE" ? question.options?.length ? "Select one option." : "This question has no choices yet. Ask the club, then come back to answer it." : "Enter your response."}
                 {errors[question.id] && (
                   <p className="mt-2 text-destructive">
                     {errors[question.id]}
@@ -308,4 +308,12 @@ export function ApplicationForm({
       </Dialog>
     </div>
   )
+}
+
+/** The essay word count, which turns red and says how far over as soon as an answer passes the club's limit. */
+function EssayWordCount({ words, limit }: { words: number; limit: number | null | undefined }) {
+  if (limit == null) return <>{words} {words === 1 ? "word" : "words"} · No word limit specified</>
+  const over = words - limit
+  if (over > 0) return <span className="font-medium text-destructive" data-word-limit-over>{words} words · {over} over the {limit}-word limit. Shorten your answer to submit.</span>
+  return <>{words} {words === 1 ? "word" : "words"} · {limit} maximum</>
 }

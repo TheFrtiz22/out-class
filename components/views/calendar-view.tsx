@@ -33,7 +33,11 @@ import { StudentBookingPreview } from "@/components/views/scheduler/student-book
 import { agendaGroups } from "@/lib/student-agenda"
 import { cn } from "@/lib/utils"
 import type { ClubEvent } from "@/lib/data"
+import { clubInterviewHref } from "@/lib/interview-entry"
 import type { ViewId } from "@/lib/views"
+
+/** An interview-panel slot the person sits on (lib/student-calendar-data.ts), not an interview of their own. */
+const isPanelEvent = (event: ClubEvent) => event.id.startsWith("panel-")
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const eventStyle = {
@@ -131,7 +135,9 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
     },
   )
   const selected = events.find((event) => event.id === selectedId)
-  const application = trackedApps.find((app) => app.clubId === selected?.clubId)
+  /** A slot this person interviews on as a panelist: it belongs to their club's interview tools, not to an application of theirs. */
+  const selectedPanel = !!selected && isPanelEvent(selected)
+  const application = selectedPanel ? undefined : trackedApps.find((app) => app.clubId === selected?.clubId)
   const linkedNotifications = notifications.filter(
     (notification) => notification.eventId === selectedId,
   )
@@ -282,7 +288,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                             <p className="mb-1 text-xs font-medium text-muted-foreground">
                               {event.type}
                               {event.response === "declined" && " · Declined"}
-                              {event.response === "confirmed" && " · Confirmed"}
+                              {event.response === "confirmed" && (isPanelEvent(event) ? " · You’re on the panel" : " · Confirmed")}
                             </p>
                             <h4 className="break-words text-sm font-semibold leading-6">
                               {event.title}
@@ -311,10 +317,10 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
           ) : (
             <>
               {view === "month" ? (
-                <div className="min-w-[650px]">
+                <div className="sm:min-w-[650px]">
                   <div className="grid grid-cols-7 border-b bg-muted">
                     {weekdays.map((day) => (
-                      <div key={day} className="p-3 text-center text-xs text-muted-foreground">
+                      <div key={day} className="px-0.5 py-3 text-center text-xs text-muted-foreground sm:p-3">
                         {day}
                       </div>
                     ))}
@@ -327,7 +333,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                         <div
                           key={key}
                           className={cn(
-                            "min-h-32 space-y-1 border-b border-r border-border p-2",
+                            "min-h-20 min-w-0 space-y-1 border-b border-r border-border p-1 sm:min-h-32 sm:p-2",
                             day.getMonth() !== cursor.getMonth() &&
                               "bg-muted text-muted-foreground",
                           )}
@@ -353,7 +359,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-control leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                                "hidden w-full rounded p-1.5 text-left text-control leading-snug sm:block hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
@@ -362,6 +368,22 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                               <span className="line-clamp-2">{event.title}</span>
                             </button>
                           ))}
+                          {dayEvents.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              aria-label={`${dayEvents.length} event${dayEvents.length === 1 ? "" : "s"} on ${key}`}
+                              onClick={() => {
+                                setDate(key)
+                                setView("day")
+                              }}
+                              className="flex h-auto w-full items-center justify-center gap-0.5 rounded px-0 py-1 sm:hidden"
+                            >
+                              {dayEvents.slice(0, 3).map((event) => <span key={event.id} aria-hidden="true" className={cn("size-1.5 rounded-full bg-primary", event.response === "declined" && "opacity-50")} />)}
+                              {dayEvents.length > 3 && <span aria-hidden="true" className="text-xs leading-none text-muted-foreground">+{dayEvents.length - 3}</span>}
+                            </Button>
+                          )}
                           {dayEvents.length > 3 && (
                             <Button
                               type="button"
@@ -371,7 +393,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                                 setDate(key)
                                 setView("day")
                               }}
-                              className="h-auto px-0 py-0.5 text-xs"
+                              className="hidden h-auto px-0 py-0.5 text-xs sm:inline-flex"
                             >
                               +{dayEvents.length - 3} more
                             </Button>
@@ -529,14 +551,16 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                       ? "Open your application to review your progress and next steps before this deadline."
                       : "Review this club event and manage your attendance below.")}
               </p>
-              {selected.readOnly && (
+              {selected.readOnly && !selectedPanel && (
                 <p className="text-sm text-muted-foreground">
                   Contact the club if you need to change these arrangements.
                 </p>
               )}
               {selected.response && (
                 <p role="status" className="text-sm font-medium">
-                  {selected.response === "declined"
+                  {selectedPanel
+                    ? "You’re on the panel"
+                    : selected.response === "declined"
                     ? "Attendance cancelled"
                     : selected.response === "confirmed"
                       ? "Interview confirmed"
@@ -589,6 +613,11 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                     }}
                   >
                     Change interview time
+                  </Button>
+                )}
+                {selectedPanel && selected.clubId && (
+                  <Button variant="outline" asChild>
+                    <Link href={clubInterviewHref(selected.clubId)}>Open interview tools</Link>
                   </Button>
                 )}
                 {selected.id.startsWith("meeting-") && (

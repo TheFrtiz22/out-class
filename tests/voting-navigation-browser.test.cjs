@@ -5,7 +5,7 @@ test('leader landing, selected setup, dedicated room, return/resume and member e
  const f=await fixture(),browser=await chromium.launch({headless:true}),leader=await browser.newPage({viewport:{width:1280,height:800}}),member=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
  for(const page of [leader,member])page.on('pageerror',e=>errors.push(e.message));
  try{
-  await leader.goto(f.url+'/landing?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:'Start voting session',exact:true}).waitFor();await leader.getByText('No active sessions.',{exact:true}).waitFor();
+  await leader.goto(f.url+'/landing?actor=leader&decisionTab=voting');await leader.getByRole('link',{name:'Start voting session',exact:true}).waitFor();await leader.getByText('No voting sessions yet. Start one when applicants are ready for a vote.',{exact:true}).waitFor();
   // The Decisions tab row this step used to click is gone: Decide's Vote/Send steps (components/live-voting/decide-page)
   // switch through the same canLeaveWorkspace() guard. This fixture renders the Voting room alone.
   assert.equal(f.h.state().sessions.length,0);

@@ -646,6 +646,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </span>
               </div>
             )}
+            {/* How many the list holds after search and filters; the table itself never says. */}
+            {rows.length > 0 && <p className="text-sm text-muted-foreground" aria-live="polite">{pluralize(rows.length, invitesOpen ? "invitation" : "member")}</p>}
             {rows.length > 0 && <DataTable
               caption={invitesOpen ? "Club invitations" : "Club members"}
               rows={pageRows}
@@ -996,7 +998,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 {active.groups.join(", ") || "None"} · Cohort:{" "}
                 {active.cohort || "Not set"}
               </p>
-              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual onSaved={() => reload()} />}
+              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual single onSaved={() => reload()} />}
               {error && (
                 <p role="alert" className="text-sm text-destructive">
                   {error}

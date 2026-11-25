@@ -88,9 +88,9 @@ export function UpdatesCard({ data, hrefs, index, onOpen }: { data: Overview; hr
 export function WeekCard({ data, hrefs, index, onMeeting, onTask }: { data: Overview; hrefs: RailHrefs; index: number; onMeeting: (id: string, title: string) => void; onTask: (taskId: string, assignmentId: string, title: string) => void }) {
   const items = thisWeek(data).map(item => ({ id: item.id, at: item.at, kind: item.kind === "task" ? "deadline" : "meeting", title: item.title, detail: item.detail || undefined,
     onClick: item.meetingId ? () => onMeeting(item.meetingId!, item.title) : item.assignmentId ? () => onTask(item.taskId!, item.assignmentId!, item.title) : undefined }))
-  return <DashboardCard id="club-home-week" title="This week" index={index} className="oc-club-home-card oc-club-home-week"
+  return <DashboardCard id="club-home-week" title="Next 7 days" index={index} className="oc-club-home-card oc-club-home-week"
     more={hrefs.meetings ? { ...clubLinkProps(data.club.id, hrefs.meetings), label: "Meetings" } : undefined}>
-    <DateChipList items={items} empty="Nothing on the club calendar this week." when={memberDate} />
+    <DateChipList items={items} empty="Nothing on the club calendar in the next 7 days." when={memberDate} />
   </DashboardCard>
 }
 
