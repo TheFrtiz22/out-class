@@ -64,3 +64,16 @@ test('matching uses every word against the page and its workspace', () => {
   assert.deepEqual(matchDestinations(pages, '   '), [])
   assert.equal(matchDestinations(pages, 'calendar')[0].title, 'Calendar', 'title matches rank first')
 })
+
+test('a query that only names a club offers that club once, at its home page, not every page in it', () => {
+  const pages = searchDestinations({ memberships: [
+    { clubId: 'c1', club: { name: 'McIntire Investment Institute' }, isOwner: true },
+    { clubId: 'c2', club: { name: 'Rowing' }, permissions: ['meetings.manage'] },
+  ] })
+  const found = matchDestinations(pages, 'invest')
+  assert.equal(found.length, 1)
+  assert.equal(found[0].title, 'Club home')
+  assert.equal(found[0].scope, 'McIntire Investment Institute')
+  assert.ok(matchDestinations(pages, 'rowing').length === 1, 'a member workspace is offered once too')
+  assert.ok(matchDestinations(pages, 'applicants invest').some(page => page.title === 'Applicants'), 'a page word still finds that page')
+})

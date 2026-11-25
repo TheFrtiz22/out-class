@@ -63,5 +63,11 @@ export function matchDestinations(pages: readonly SearchDestination[], query: st
     const score = (title.startsWith(words[0]) ? 0 : words.some(word => title.includes(word)) ? 1 : 2)
     return [{ page, score }]
   })
-  return scored.sort((a, b) => a.score - b.score).slice(0, limit).map(entry => entry.page)
+  // A query that only names a workspace ("invest" for McIntire Investment Institute) offers that workspace once, at its
+  // home page, instead of every page in it, so the clubs and records below stay in view.
+  const home = (page: SearchDestination) => page.title === "Club home" || page.title === "Home"
+  const byScope = new Map<string, SearchDestination>()
+  for (const { page, score } of scored) if (score === 2 && (!byScope.has(page.scope) || home(page) && !home(byScope.get(page.scope)!))) byScope.set(page.scope, page)
+  const kept = scored.filter(({ page, score }) => score < 2 || byScope.get(page.scope) === page)
+  return kept.sort((a, b) => a.score - b.score).slice(0, limit).map(entry => entry.page)
 }
