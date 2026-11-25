@@ -115,3 +115,10 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - PR #545 red dispatch (7dc88b38) confirmed: exactly the five new self-decision and recusal tests failed.
 - App hand-offs: `openOnWeb` uses `WebBrowser.openBrowserAsync` (SFSafariViewController / Custom Tabs), which keeps its own cookies, so a leader likely signs in once per device rather than on every hand-off (corrects gap 3 above; still not verified on a device).
 - Two-step accounts in the app are only reachable when `OUTCLASS_USER_MFA=1`; the web challenge route is cookie and same-origin based, so an app fix needs a new bearer-token op with the same attempt limit. Not built tonight.
+
+## 06:57 Merge 1: PR #545 (self-decision and recusal guard)
+
+- Gates on head 6007eb04: validate (test, test:migrations, lint, typecheck, build), Native PostgreSQL security and transactions, Applicant workflow application-writing, Integration infrastructure coverage, mobile, merge: all green. Red dispatch on 7dc88b38 failed exactly the five new tests.
+- Merged as 5df4d055. Production deployment dpl_CdJ8Qngz6SiTmV5E715wmCdnfNx9 queued; rollback target is the current production deployment dpl_2S19S64aiez6wvH13W1UdWpvHfVM (8a70a46).
+- PR #546 red dispatch (3087354) confirmed: the five new recusal, own-application and reveal tests failed.
+- Deleting my scratch branch `debug/check-in-hold` was refused by GitHub (HTTP 403). Left in place; it is not for merge.
