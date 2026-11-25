@@ -19,7 +19,9 @@ import { normalizeProfileFieldVisibility, restrictApplicationProfile, type Profi
 import { normalizeReviewRubric } from "@/lib/review-rubric";
 
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
-import { assertMayDecideApplicant } from "@/lib/recusal";
+import { assertMayDecideApplicant, isRecused } from "@/lib/recusal";
+import { applicationReviewVisibility } from "@/lib/application-review-visibility";
+import { visibleQuestionIds } from "@/lib/student-applications";
 
 import { testRequirements } from "@/lib/test-scores";
 import {
@@ -320,12 +322,21 @@ async function revealApplicantIdentityCommand(
           include: { studentProfile: { include: { experiences: true } } },
         },
         evaluations: { omit: { notes: true, applicantQuestions: true } },
-        answers: { include: { question: true } },
+        interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
+        // Question order matters: a follow-up is visible only after its parent is (visibleQuestionIds).
+        answers: { include: { question: true }, orderBy: [{ question: { order: "asc" } }, { id: "asc" }] },
         bookings: { include: { slot: true } },
       },
     });
     if (!application) throw new ActionError("Application unavailable.");
-    const { club, ...revealed } = application;
+    const { club, interviewAssignments: _assignments, ...identified } = application;
+    // A reveal shows who the applicant is. Review data follows the canonical detail read (lib/pipeline-detail.ts):
+    // only the evaluations this member may see, only visible answers, and nothing once they stepped out.
+    const recused = await isRecused(tx, application.id, membership.id);
+    const visibleQuestions = visibleQuestionIds(application.answers.flatMap(a => a.question ? [a.question] : []), application.answers);
+    const revealed = { ...identified,
+      evaluations: recused ? [] : applicationReviewVisibility(application, membership).evaluations,
+      answers: recused ? [] : application.answers.filter(a => !a.question || visibleQuestions.has(a.questionId)) };
     await tx.auditLog.create({
       data: {
         actorId: user.id,

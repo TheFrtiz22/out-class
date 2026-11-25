@@ -6,6 +6,7 @@ import { z } from "zod"
 import { requireAuth } from "@/utils/auth"
 import { prisma } from "@/utils/prisma"
 import { isApplicationStoragePath } from "@/lib/student-applications"
+import { isRecused } from "@/lib/recusal"
 import { createClient } from "@supabase/supabase-js"
 
 const querySchema = z.object({ applicationId: z.string().uuid(), questionId: z.string().uuid() })
@@ -37,7 +38,9 @@ export async function GET(request: Request) {
     if (answer.application.studentId !== user.id) {
       // A graduate kept as owner is hand-over only (lib/graduate-access.ts), which the membership filter above cannot see.
       const member = await graduateClubAccessOrNull(prisma, await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: answer.application.clubId } } }))
-      if (!hasPermission(member, "applicants.identify")) return new NextResponse("Not found", { status: 404, headers })
+      if (!member || !hasPermission(member, "applicants.identify")) return new NextResponse("Not found", { status: 404, headers })
+      // A reviewer who stepped out of this applicant no longer sees their answers (actions/crm.ts), so not their files either.
+      if (await isRecused(prisma, parsed.data.applicationId, member.id)) return new NextResponse("Not found", { status: 404, headers })
     }
     const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!secret) return new NextResponse("Storage unavailable", { status: 503, headers })

@@ -32,7 +32,7 @@ test('pipeline redacts even owners; anonymous-only reviewers receive only anonym
 })
 test('identity reveal requires permission and a reason, writes audit before returning identity', async () => {
   let denied=true, audited=false
-  const tx={user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>({status:'ACTIVE',isOwner:true})},$queryRaw:async()=>[],application:{findFirst:async()=>app},auditLog:{create:async({data})=>{assert.equal(data.action,'applicant.identity.reveal');audited=true}}}
+  const tx={user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>({status:'ACTIVE',isOwner:true})},$queryRaw:async()=>[],applicantRecusal:{findFirst:async()=>null},application:{findFirst:async()=>app},auditLog:{create:async({data})=>{assert.equal(data.action,'applicant.identity.reveal');audited=true}}}
   const api=unwrapActions(load('actions/crm.ts',{'@/utils/auth':{requireClubPermission:async(_,caps)=>{assert.deepEqual(caps,['applicants.identify']);if(denied)throw Error('Denied');return {user:{id:'manager'}}}},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath:()=>{}}}))
   await assert.rejects(api.revealApplicantIdentity(clubId,id,'Resolve an application issue'),/Denied/)
   denied=false
