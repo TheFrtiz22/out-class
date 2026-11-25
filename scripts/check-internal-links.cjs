@@ -6,8 +6,9 @@
 // Starts from /, /about, /explore, /login, /uva, /request-school and every /sitemap.xml entry, fetches
 // each same-origin page without credentials, and fails when a same-origin <a href>, <link
 // rel=canonical> or <meta property=og:url> target ends (after same-origin redirects) at a status >= 400.
-// While LEGAL_PAGES_PUBLIC (lib/legal-content.ts) is false the hidden legal pages are expected to 404,
-// and any page that links to them fails the check. Absolute URLs on the production site origin
+// While LEGAL_PAGES_PUBLIC (lib/legal-content.ts) is false, /cookies and /legal are expected to 404
+// and any page that links to them fails the check. /privacy and /terms are marked placeholders in
+// that state (owner, 2026-11-22), so links to them are ordinary links. Absolute URLs on the production site origin
 // (lib/seo.ts SITE_URL, as canonical/og:url/sitemap entries use) are checked by path against the
 // local app: production is never requested. Requests never leave loopback.
 const fs = require('node:fs')
@@ -15,7 +16,7 @@ const path = require('node:path')
 
 const repo = path.resolve(__dirname, '..')
 const SEEDS = ['/', '/about', '/explore', '/login', '/uva', '/request-school']
-const HIDDEN_LEGAL = ['/privacy', '/terms', '/cookies', '/legal']
+const HIDDEN_LEGAL = ['/cookies', '/legal']
 // Never requested: GET handlers with side effects (logout, demo mode, OAuth start) or private APIs.
 const SKIP_PREFIXES = ['/api/', '/auth/', '/_next/']
 // Dynamic pages (e.g. hundreds of /club/<id> from the sitemap) are sampled per route shape.

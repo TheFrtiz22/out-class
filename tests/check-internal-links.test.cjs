@@ -30,11 +30,14 @@ test('reads the real legal-page and site-origin constants', () => {
   assert.throws(() => links.readLegalPagesPublic('nothing'))
   assert.equal(typeof links.readLegalPagesPublic(), 'boolean')
   assert.ok(links.readSiteOrigins().includes('https://www.out-class.net'))
-  assert.equal(links.isHiddenLegalPath('/privacy', false), true)
-  assert.equal(links.isHiddenLegalPath('/terms/', false), true)
+  // /privacy and /terms are marked placeholders while the legal pages are off (owner, 2026-11-22),
+  // so sign-up, the footer, Settings and the app can link to them; /cookies and /legal stay 404.
+  assert.equal(links.isHiddenLegalPath('/privacy', false), false)
+  assert.equal(links.isHiddenLegalPath('/terms/', false), false)
+  assert.equal(links.isHiddenLegalPath('/cookies', false), true)
   assert.equal(links.isHiddenLegalPath('/legal/x', false), true)
   assert.equal(links.isHiddenLegalPath('/privacy-settings', false), false)
-  assert.equal(links.isHiddenLegalPath('/privacy', true), false)
+  assert.equal(links.isHiddenLegalPath('/cookies', true), false)
 })
 
 test('extracts anchors, canonical and og:url; samples id-like routes', () => {
@@ -51,8 +54,8 @@ test('extracts anchors, canonical and og:url; samples id-like routes', () => {
 test('crawls a loopback fixture and reports broken and hidden-legal links', async () => {
   const pages = {
     '/': '<a href="/about">a</a><a href="/missing">m</a><a href="/old">o</a><a href="mailto:x@y.z">x</a><a href="/api/auth/logout">l</a>',
-    '/about': '<link rel="canonical" href="https://www.out-class.net/about"><a href="/privacy">p</a>',
-    '/explore': '<a href="/">home</a>', '/login': 'ok', '/uva': 'ok', '/request-school': 'ok',
+    '/about': '<link rel="canonical" href="https://www.out-class.net/about"><a href="/cookies">c</a><a href="/privacy">p</a>',
+    '/explore': '<a href="/">home</a>', '/login': 'ok', '/uva': 'ok', '/request-school': 'ok', '/privacy': 'placeholder',
   }
   let apiRequested = false
   const server = http.createServer((req, res) => {
@@ -68,8 +71,9 @@ test('crawls a loopback fixture and reports broken and hidden-legal links', asyn
     const summary = await links.crawl({ base: `http://127.0.0.1:${server.address().port}`, log: () => {} })
     assert.equal(apiRequested, false)
     assert.ok(summary.failures.some(f => f.startsWith('/missing -> 404 (linked from /')), summary.failures.join('\n'))
-    if (!summary.legalPublic) assert.ok(summary.failures.some(f => f === '/about links to hidden legal page /privacy (a)'), summary.failures.join('\n'))
-    assert.equal(summary.failures.some(f => f.startsWith('/old') || f.startsWith('/privacy ->')), false, 'redirects resolve and the hidden page 404 is expected')
+    if (!summary.legalPublic) assert.ok(summary.failures.some(f => f === '/about links to hidden legal page /cookies (a)'), summary.failures.join('\n'))
+    assert.equal(summary.failures.some(f => f.includes('/privacy')), false, 'the placeholder privacy page is an ordinary link')
+    assert.equal(summary.failures.some(f => f.startsWith('/old') || f.startsWith('/cookies ->')), false, 'redirects resolve and the hidden page 404 is expected')
     assert.equal(summary.truncated, false)
   } finally { server.close() }
 })

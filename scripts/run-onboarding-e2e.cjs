@@ -171,6 +171,9 @@ async function ready(url,headers={}){
  }
  if(keep){app.unref();console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{
+ // --keep keeps the app only after a pass. After a failure the still-attached `next start` child would hold
+ // this process open until the CI job's 75-minute limit; stop it (the workflow's cleanup step stops the stack).
+ if(keep&&process.exitCode&&app&&app.exitCode===null){app.kill('SIGTERM');app.unref();}
  if(!keep&&stackTouched){if(app)app.kill('SIGTERM');const [binary,args]=invocation('supabase',['stop','--workdir',root,'--no-backup']);const result=spawnSync(binary,args,{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),(result.stdout||'')+(result.stderr||''));
   if(result.status===0)for(const name of ['config.json','server.pid','mailpit-key.pem','mailpit-cert.pem'])fs.rmSync(path.join(root,name),{force:true});
  }
