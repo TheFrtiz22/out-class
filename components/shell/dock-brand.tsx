@@ -1,5 +1,18 @@
-/** Approved premium-board wordmark outlines. O and C separate as the dock opens. */
+import { OutClassLogo } from "@/components/outclass-logo"
+
+/**
+ * The rail's brand. The labelled rail (1280px and wider) shows the full OutClass lockup with the sabre;
+ * the icon-only rail keeps the interlocked OC mark, drawn from the wordmark outlines below.
+ */
 export function DockBrand() {
+  return <>
+    <span className="oc-dock-brand-lockup" aria-hidden="true"><OutClassLogo variant="dark" /></span>
+    <DockMark />
+  </>
+}
+
+/** Approved premium-board wordmark outlines; only the O and C show, interlocked, in the icon-only rail. */
+function DockMark() {
   return <span className="oc-dock-brand-art" aria-hidden="true">
     <svg viewBox="0 0 446 105" width="220" height="52" focusable="false" fillRule="evenodd">
       <path className="oc-dock-letter-o" d="M53.02 83.46 C42.73 80.57 35.68 74.95 30.76 65.72 C28.87 62.16 28.52 59.94 28.51 51.5 C28.5 39.81 30.32 34.94 37.46 27.59 C56.31 8.2 88.98 12.53 99.83 35.85 C103.33 43.38 103.5 55.95 100.19 63.29 C96.99 70.41 89.07 78.24 81.8 81.51 C74.07 84.98 61.48 85.83 53.02 83.46 Z M74.6 78.94 C81.96 74.39 86.91 57.47 84.94 43.58 C82.73 28 75.65 19 65.6 19 C57.16 19.01 51.77 23.25 47.81 33 C45.92 37.66 45.57 40.41 45.55 51 C45.52 61.94 45.81 64.14 47.83 68.62 C50.48 74.51 55.39 79.68 59.59 81.01 C63.72 82.32 70.69 81.36 74.6 78.94 Z" />

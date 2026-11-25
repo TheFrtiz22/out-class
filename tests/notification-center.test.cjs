@@ -125,7 +125,7 @@ test('platform notification expansion reaches the existing inbox while profile a
   assert.equal(viewHref('personal', 'inbox'), '/inbox')
 })
 
-function notificationClickHarness({ read = false, result = true, allowed = true, sameClub = true } = {}) {
+function notificationClickHarness({ read = false, result = true, allowed = true, sameClub = true, counts } = {}) {
   const slots = []; let cursor = 0; const events = []
   const react = {
     useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial; return [slots[i], next => { slots[i] = typeof next === 'function' ? next(slots[i]) : next }] },
@@ -148,7 +148,7 @@ function notificationClickHarness({ read = false, result = true, allowed = true,
     '@/components/organization-invitation-card': { OrganizationInvitationCard: 'Invitation' },
     './notification-center.css': {},
   })
-  const render = () => { cursor = 0; return NotificationCenter({ unread: read ? 0 : 1, pendingInvitations: 0, loadState: {}, onRetry() {}, onNavigate() {} }) }
+  const render = () => { cursor = 0; return NotificationCenter({ unread: counts?.unread ?? (read ? 0 : 1), pendingInvitations: counts?.pendingInvitations ?? 0, loadState: {}, onRetry() {}, onNavigate() {} }) }
   const nodes = node => !node || typeof node !== 'object' ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)]
   const link = () => nodes(render()).find(n => n.type === 'Link')
   const click = extra => { const event = { button: 0, defaultPrevented: false, preventDefault() { this.defaultPrevented = true }, ...extra }; link().props.onClick(event); return event }
@@ -232,4 +232,14 @@ test('reseeding the shared store replaces what the last server payload supplied 
   assert.deepEqual(state.trackedApps.map(a => a.clubId).sort(), ['club-a', 'club-c'], 'withdrawn server application removed, client-only kept')
   assert.ok(!state.events.some(e => e.id === 'booking-b1'), 'the old booking time is gone')
   assert.ok(state.events.some(e => e.id === 'booking-b2'), 'the new booking time is shown')
+})
+
+test('the bell shows how many updates are unread, capped at 9+, and nothing at zero', () => {
+  const badge = counts => notificationClickHarness({ counts }).nodes().find(n => n.props?.className === 'oc-floating-unread')
+  assert.equal(badge({ unread: 0, pendingInvitations: 0 }), undefined)
+  assert.equal(badge({ unread: 3, pendingInvitations: 0 }).props['data-count'], '3')
+  assert.equal(badge({ unread: 2, pendingInvitations: 1 }).props['data-count'], '3', 'pending invitations count too')
+  assert.equal(badge({ unread: 12, pendingInvitations: 0 }).props['data-count'], '9+')
+  assert.equal(badge({ unread: 9, pendingInvitations: 0 }).props['data-count'], '9')
+  assert.equal(badge({ unread: 3, pendingInvitations: 0 }).props.children, undefined, 'no text inside the button besides its name')
 })

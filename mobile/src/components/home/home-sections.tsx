@@ -7,7 +7,7 @@ import type { IconComponent } from "~/components/icon-factory";
 import { ChevronRight, Gavel, Megaphone, Plus, Users, Video } from "~/components/icons";
 import { type LeaderTools, leaderTools } from "~/components/leader/access";
 import { Text } from "~/components/text";
-import { Card, Chip, ClubMark, Divider, Press, SectionHeader, TARGET } from "~/components/ui";
+import { Card, Chip, ClubMark, Divider, Press, RoleBadge, SectionHeader, TARGET } from "~/components/ui";
 import { config } from "~/lib/config";
 import { addDays, eastern, easternDateKey, toInstant } from "~/lib/eastern";
 import { type HomeHero, applicationDue } from "~/lib/home-priority";
@@ -342,7 +342,7 @@ export function ComingUp({ events, now, onOpen, routeFor }: { events: CalendarEv
                   <Text variant="bodyStrong" numberOfLines={2}>{event.title}</Text>
                   {detail ? <Text variant="small" numberOfLines={1}>{detail}</Text> : null}
                 </View>
-                {leader ? <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, borderWidth: 1, borderColor: colors.border }}><Text variant="caption" color={colors.foreground}>Leader</Text></View> : null}
+                {leader ? <RoleBadge label="Leader" /> : null}
               </Press>
             </View>
           );
