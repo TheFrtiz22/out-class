@@ -19,6 +19,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ListChecks } from "@/components/icons";
 import "@/components/clubs/interview-kit-editor.css";
+import { pluralize } from "@/lib/copy/terms"
 export function InterviewKitEditor({
   clubId,
   rounds,
@@ -99,7 +100,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   }
   return (
     <section className="oc-kit-round" data-autosave-editor="true" data-unsaved={dirty} data-saving={busy} aria-label={roundInfo.name}>
-      <h3><button type="button" id={'kit-heading-' + round} aria-expanded={open} aria-controls={'kit-panel-' + round} onClick={() => setOpen(value => !value)} className="flex min-h-11 w-full items-center gap-3 p-4 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring"><ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform motion-reduce:transition-none ${open ? "" : "-rotate-90"}`} /><span className="flex-1 font-medium">{roundInfo.name}</span><span className="text-xs text-muted-foreground">{!canReadKit ? "Restricted" : loaded ? `${questions.length} questions` : message ? "Could not load" : "Loading…"}</span>{(busy || autosave.error || dirty) && <span className="text-xs" role="status">{busy ? "Saving…" : autosave.error ? "Couldn't save" : "Unsaved changes"}</span>}</button></h3>
+      <h3><button type="button" id={'kit-heading-' + round} aria-expanded={open} aria-controls={'kit-panel-' + round} onClick={() => setOpen(value => !value)} className="flex min-h-11 w-full items-center gap-3 p-4 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring"><ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform motion-reduce:transition-none ${open ? "" : "-rotate-90"}`} /><span className="flex-1 font-medium">{roundInfo.name}</span><span className="text-xs text-muted-foreground">{!canReadKit ? "Restricted" : loaded ? pluralize(questions.length, "question") : message ? "Could not load" : "Loading…"}</span>{(busy || autosave.error || dirty) && <span className="text-xs" role="status">{busy ? "Saving…" : autosave.error ? "Couldn't save" : "Unsaved changes"}</span>}</button></h3>
       <div id={'kit-panel-' + round} hidden={!open} aria-labelledby={'kit-heading-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>Only a President, Vice-president or Board member can edit these questions. Assigned interviewers see them in the interview room.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Choose who can edit questions</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">You can read these questions. Only a President, Vice-president or Board member can edit them; the club owner sets those offices in Schedule, under Confirm interviewers.</p>}

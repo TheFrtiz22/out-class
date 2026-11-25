@@ -30,6 +30,7 @@ import { clubRecruitment } from "@/lib/recruitment-presentation"
 import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
+import { pluralize } from "@/lib/copy/terms"
 
 const recruitmentOptions = [
   { value: "all", label: "All clubs" },
@@ -324,7 +325,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
               <ul className="oc-explore-grid">{featured.map(club => card(club, "featured"))}</ul>
             </section>
           )}
-          {!active.length && available.length > 0 && <details className="oc-explore-available group"><summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden"><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Applications open · {available.length} clubs</summary>
+          {!active.length && available.length > 0 && <details className="oc-explore-available group"><summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden"><ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform duration-150 group-open:rotate-0 motion-reduce:transition-none" />Applications open · {pluralize(available.length, "club")}</summary>
             <p>An A–Z selection of clubs accepting applications. Check their profiles for requirements.</p>
             <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Applications open</small></span><ArrowRight size={16} aria-hidden="true" /></button></li>)}</ul>
           </details>}
