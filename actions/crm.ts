@@ -273,7 +273,7 @@ async function setApplicationStatusCommand(
   const application = await clubWriteTransaction(async (tx) => {
     const member = await authorizeClubTransaction(tx, parsed.clubId, user.id, ["decisions.manage", "applicants.identify"]);
     const target = await tx.application.findFirst({ where: { id: parsed.applicationId, clubId: parsed.clubId }, select: { id: true, studentId: true } });
-    if (!target) throw new ActionError("Application unavailable.");
+    if (!target) throw new ActionError("Application changed or is not available for this club. Reload the page and try again.");
     await assertMayDecideApplicant(tx, target, { userId: user.id, memberId: member.id });
     const decision = await publishRecruitmentDecision(tx, parsed, user.id);
     const updated = await tx.application.findFirst({
