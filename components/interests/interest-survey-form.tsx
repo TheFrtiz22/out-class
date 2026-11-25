@@ -1,5 +1,5 @@
 "use client"
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { FilterChips } from "@/components/ui/filter-chips"
 import { Button } from "@/components/ui/button"
 import { saveMyInterestSurvey } from "@/lib/workspace-api"
@@ -15,7 +15,7 @@ import {
  * The four survey questions, shared by onboarding's last step, the Home prompt and Settings → Interests.
  * Saves only the signed-in student's own answers (actions/interest-survey.ts) with the revision it loaded.
  */
-export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = "Save", idPrefix = "interests", privacyNote = true }: {
+export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = "Save", idPrefix = "interests", privacyNote = true, guardUnsaved = false }: {
   initial: InterestSurveyDocument | null
   onSaved: (survey: InterestSurveyDocument) => void
   /** A Skip or Cancel button, placed beside Save. */
@@ -24,8 +24,15 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
   idPrefix?: string
   /** Settings already says "Only you see this" in its page description. */
   privacyNote?: boolean
+  /**
+   * Settings only: ask before leaving with unsaved choices. Onboarding leaves the page on purpose right after
+   * Continue or Skip, so it must not ask there.
+   */
+  guardUnsaved?: boolean
 }) {
   const [answers, setAnswers] = useState<InterestAnswers>(() => initial ? { interests: initial.interests, goals: initial.goals, weeklyHours: initial.weeklyHours, selectivity: initial.selectivity } : { ...emptyInterestAnswers })
+  // The answers as last loaded or saved: a choice that differs from them is unsaved until Save.
+  const [baseline, setBaseline] = useState(() => interestAnswersKey(answers))
   const [revision, setRevision] = useState(initial?.revision ?? 0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -34,6 +41,14 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
   const full = answers.interests.length >= MAX_INTERESTS
   // Alumni accounts are read-only (lib/graduation.ts): answers show but cannot change.
   const alumni = isAlumniProfile(useAuth().user?.profile)
+  // Marked unsaved, the shell's links and menus ask before leaving (lib/product-navigation.ts); a reload or a closed tab asks too.
+  const dirty = guardUnsaved && !alumni && interestAnswersKey(answers) !== baseline
+  useEffect(() => {
+    if (!dirty) return
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", warn)
+    return () => window.removeEventListener("beforeunload", warn)
+  }, [dirty])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -41,7 +56,7 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
     setBusy(true); setError("")
     try {
       const survey = await saveMyInterestSurvey({ ...answers, revision })
-      setRevision(survey.revision); setSaved(true)
+      setRevision(survey.revision); setSaved(true); setBaseline(interestAnswersKey(answers))
       onSaved(survey)
     } catch (err) {
       setError(userMessage(err, "Couldn’t save your interests. Try again."))
@@ -56,7 +71,7 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
     {control}
   </section>
 
-  return <form onSubmit={submit} className="space-y-6" aria-busy={busy || undefined}><fieldset disabled={alumni} className="contents">
+  return <form onSubmit={submit} className="space-y-6" aria-busy={busy || undefined} data-unsaved={dirty} data-saving={guardUnsaved && busy}><fieldset disabled={alumni} className="contents">
     {question("into", "What are you into?", `${answers.interests.length} of ${MAX_INTERESTS}`,
       <FilterChips<InterestId> multiple className="oc-chip-row-wrap" label="What are you into?" value={answers.interests}
         onChange={value => set({ interests: value.slice(0, MAX_INTERESTS) })}
@@ -79,4 +94,9 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
       <span role="status" className="text-sm text-muted-foreground">{saved && !busy ? "Saved" : ""}</span>
     </div>}
   </form>
+}
+
+/** Order-insensitive fingerprint of the answers, so re-picking the same chips is not a change. */
+export function interestAnswersKey(answers: InterestAnswers) {
+  return JSON.stringify([[...answers.interests].sort(), [...answers.goals].sort(), answers.weeklyHours ?? null, answers.selectivity ?? null])
 }
