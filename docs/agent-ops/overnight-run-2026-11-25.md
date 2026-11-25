@@ -221,3 +221,10 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 ## 08:21 UTC: merge 6, PR #546 (review reads honor recusal, own application and score visibility)
 - All required gates green on 3ac31b17 (validate, integration infrastructure, native security, native transactions, application-writing, mobile). Merged as 5e28d688.
 - Server-only change; the current app build does not call these reviewer actions. Waiting for the production deploy, then live check.
+
+## 08:25 UTC: PR #546 deploy verified live
+- Production deployment `dpl_htGALib6gGurN6XwL8zgei84CFeQ` (commit 5e28d688) READY and serving the production aliases.
+- Vercel runtime errors, last 30 minutes: none. Sentry: no unresolved issues first seen in the last hour.
+- Live check: `/uva` at 1440 px and the public test club page at 500 px render correctly. Signed-out request to the attachments route (changed in this PR) is refused with "Invalid attachment reference", not a server error.
+- Reviewer reads (the core of this PR) need a signed-in reviewer; verified by the unit and native suites in CI, not on the live site.
+- No rollback needed.
