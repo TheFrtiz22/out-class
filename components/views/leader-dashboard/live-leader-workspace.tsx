@@ -425,7 +425,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         {view !== "ranked" && <><SearchField
             ref={search}
             aria-label="Search applicants"
-            placeholder="Name, anonymous ID, or major"
+            placeholder="Name, ID or major"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onClear={() => setQuery("")}
