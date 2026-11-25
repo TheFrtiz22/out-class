@@ -257,7 +257,12 @@ async function inspectAdminStudentCommand(userId: string, reason: string) {
   await requirePlatformAdmin({ fresh: true }); uuid.parse(userId); reasonSchema.parse(reason);
   const profile = await inspectPlatformRecord("users", userId, reason);
   const { data, error } = await adminAuth().auth.admin.getUserById(userId);
-  if (error || !data.user) throw Error("Authentication identity unavailable. Retry before changing the account.");
   const lastInvitation = await prisma.auditLog.findFirst({ where: { targetId: userId, action: { in: ["platform.student.invitation.sent", "platform.student.invitation.resend"] } }, orderBy: { createdAt: "desc" }, select: { createdAt: true } });
+  // A profile with no Auth identity (seeded, or its sign-in was removed) is still inspectable; only a
+  // provider failure is retried. Auth answers 404 / user_not_found for an identity that does not exist.
+  const providerError = error as { status?: number; code?: string } | null;
+  if (profile && providerError && (providerError.status === 404 || providerError.code === "user_not_found"))
+    return { profile, invitation: { status: "NO_SIGN_IN" as const, invitedAt: null, claimedAt: null, lastSentAt: lastInvitation?.createdAt || null } };
+  if (error || !data.user) throw Error("Authentication identity unavailable. Retry before changing the account.");
   return { profile, invitation: { status: data.user.invited_at ? data.user.email_confirmed_at ? "CLAIMED" : "INVITED" : data.user.email_confirmed_at ? "REGISTERED" : "UNCONFIRMED", invitedAt: data.user.invited_at || null, claimedAt: data.user.invited_at ? data.user.email_confirmed_at || null : null, lastSentAt: lastInvitation?.createdAt || null } };
 }
