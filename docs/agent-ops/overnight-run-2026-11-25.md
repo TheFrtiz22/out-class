@@ -201,3 +201,8 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - tests/applicant-intelligence.test.cjs "feedback never discloses … self-review …": its self-review case opened the review panel on the reviewer's own application and expected feedback withheld. PR #546 now refuses that panel outright, as voting and previews already did ("Applicant unavailable for this reviewer.").
 - Fix (3ac31b17): the self-review case now asserts the refusal. The property the test guards (no feedback from your own application) is checked more strictly, not less. The other cases in that test are unchanged. Validate re-running. Lint, typecheck and build had not run (the chain stops at tests).
 - Expected next: PR #549's validate will likely fail in unit suites that mock prisma without users or club schools (e.g. autosave-actions). Waiting for the real list before changing fixtures.
+
+## 07:46 Merge 5: PR #550 (app: after you apply, offer to turn on notifications)
+- All required gates green on 4ecaec07, including mobile. The red proof is logged above, and the Codex P2 (dismissal lost when switching to the responses view) was fixed in 4ecaec07. Merged as 384ef101.
+- The change touches only mobile/. No server or API change, so the current app build is unaffected. Nothing was published to the stores or over the air; that release is the owner's call.
+- The web deploy for this merge will be checked like the others.
