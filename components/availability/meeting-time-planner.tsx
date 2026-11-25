@@ -7,6 +7,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { Panel } from "@/components/ui/panel"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { useDemoMode } from "@/contexts/demo-context"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { addDays, monday, today, WEEK_DAYS } from "@/lib/availability"
 import { getMeetingTimePlanner, getMeetingTimeRoster } from "@/lib/availability-workspace-read"
 import { bestMeetingTimes, DEFAULT_MEETING_DURATION, plannerEarliestStart, durationLabel, MEETING_DURATIONS, plannerWeekRange, type MeetingPlannerHeatmap, type MeetingSlotRoster } from "@/lib/meeting-time-planner"
@@ -46,9 +47,8 @@ export function MeetingTimePlanner({ clubId }: { clubId: string }) {
   }, [clubId, week, duration, selected, demo.isDemoEnabled])
   // Until the read for the chosen week and length returns, the previous grid stays visible but dimmed and inert.
   const current = data && data.week === week && data.duration === duration ? data : null
-  // A minute clock, so a suggested start drops out of Best times once it has passed while the planner stays open.
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 60_000); return () => window.clearInterval(id) }, [])
+  // The shared minute clock, so a suggested start drops out of Best times once it has passed while the planner stays open.
+  const now = useServerAnchoredNow()
   const best = useMemo(() => current ? bestMeetingTimes(current.free, current.duration, 3, plannerEarliestStart(current.week, now)) : [], [current, now])
   const rosterPanel = useRef<HTMLDivElement>(null)
   useEffect(() => {

@@ -29,6 +29,7 @@ test("best times never suggest a start that has already passed", () => {
 
 test("the planner re-checks Best times every minute while it stays open", () => {
   const src = fs.readFileSync(path.join(__dirname, "../components/availability/meeting-time-planner.tsx"), "utf8")
-  assert.match(src, /setInterval\(\(\) => setNow\(Date\.now\(\)\), 60_000\)/)
+  assert.match(src, /const now = useServerAnchoredNow\(\)/)
+  assert.doesNotMatch(src, /setInterval/)
   assert.match(src, /plannerEarliestStart\(current\.week, now\)\) : \[\], \[current, now\]\)/)
 })
