@@ -29,8 +29,13 @@
 .oc-recruiting-strip-go { display: inline-flex; align-items: center; gap: .25rem; margin-left: auto; font-weight: var(--oc-weight-semibold); color: var(--interview); }
 @media (forced-colors: active) { .oc-recruiting-strip { border-color: CanvasText; } .oc-recruiting-strip-dot { background: Highlight; forced-color-adjust: none; } }
 
-/* Recruiting Overview hero actions sit beside the applications badge. */
+/* Recruiting Overview hero actions: the applications status, outline secondary actions, one filled primary. */
 .oc-recruiting-actions { align-items: center; }
+.oc-recruiting-status-dot { width: .5rem; height: .5rem; border-radius: 50%; flex-shrink: 0; background: var(--muted-foreground); }
+.oc-recruiting-status[data-state="open"] .oc-recruiting-status-dot { background: var(--success); }
+/* Members who can't change intake see the status as plain text at button height, not as a button. */
+.oc-recruiting-status[data-static] { display: inline-flex; align-items: center; gap: .5rem; height: 2.75rem; padding-inline: .5rem; color: var(--muted-foreground); font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold, 600); white-space: nowrap; }
+@media (forced-colors: active) { .oc-recruiting-status-dot { background: CanvasText; forced-color-adjust: none; } .oc-recruiting-status[data-state="open"] .oc-recruiting-status-dot { background: Highlight; } }
 .oc-recruiting-empty { padding: var(--oc-content-padding); }
 
 /* Phones and tablets inside the signed-in shell: app-style meeting actions and interview rows. */
@@ -41,6 +46,8 @@
   /* The club QR code shrinks to its icon so the two create buttons keep their words on a phone. */
   [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions > .oc-club-qr-button { flex: 0 0 40px; width: 40px; padding-inline: 0; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-club-home-actions .oc-club-qr-label { display: none; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-recruiting-actions > .oc-club-qr-button { width: 44px; padding-inline: 0; }
+  [data-product-shell]:not([data-product-shell="personal"]) .oc-recruiting-actions .oc-club-qr-label { display: none; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting { gap: .75rem; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting .oc-date-chip { width: 3rem; height: 3rem; }
   [data-product-shell]:not([data-product-shell="personal"]) .oc-next-meeting-title { font-size: 1.1875rem; }

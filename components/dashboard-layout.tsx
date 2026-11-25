@@ -14,6 +14,7 @@ import { inPlaceSections, isLeaderWorkspaceView, leaderWorkspaceHref, personalRa
 import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useInWorkspaceShell, useShellBindings } from "@/components/shell/workspace-shell-context"
+import { PAGE_HEADER_ACTIONS_ID } from "@/hooks/use-page-header-actions"
 export interface DashboardLayoutProps {
   children: ReactNode; view: ViewId; appMode: AppMode; onNavigate: (view: ViewId, section?: PersonalSection) => void;
   onModeChange: (mode: AppMode, clubId?: string) => void;
@@ -52,7 +53,7 @@ function DashboardContent({ children, view, appMode, onNavigate, personalSection
   useShellBindings({ title, active: universalView ? view : section, onSelect: select, onNavigate }, inShell)
   if (leaderView && managed) return inShell ? <WorkspaceLoading label="Opening club workspace…" /> : <OutClassLoadingScreen />
   const content = <>
-    {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} description={view === "inbox" ? "Announcements, application updates and tasks from your clubs." : undefined} className={view === "inbox" ? "oc-notifications-header" : undefined} action={view === "inbox" ? <InboxNotificationSettings /> : undefined} />}
+    {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} description={view === "inbox" ? "Announcements, application updates and tasks from your clubs." : undefined} className={view === "inbox" ? "oc-notifications-header" : undefined} action={view === "inbox" ? <InboxNotificationSettings /> : view === "calendar" ? <div id={PAGE_HEADER_ACTIONS_ID} data-page-header-slot className="contents" /> : undefined} />}
     {(["interview-scheduler", "screening-dashboard", "broadcast-messages"].includes(view) || appMode === "admin") && <p className="mb-6 border-l-2 pl-4 text-sm text-muted-foreground">Existing workspace tools · preview controls do not publish changes or send messages.</p>}
     {children}
   </>

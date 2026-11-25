@@ -41,7 +41,7 @@ test('Recruiting Overview CTAs into the same club workspace switch views client-
  const workspace=`/club/${data.club.id}/workspace`,text=n=>typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):''
  const links=hosts.filter(n=>n.type==='a'&&typeof n.props.href==='string'&&n.props.href.split('?')[0]===workspace)
  const names=links.map(n=>text(n.props.children).trim())
- for(const name of ['All applicants','Open applicants'])assert.ok(names.includes(name),`${name} renders as a same-workspace link (${names})`)
+ for(const name of ['All applicants','Applicants'])assert.ok(names.includes(name),`${name} renders as a same-workspace link (${names})`)
  assert.ok(links.length>=3,'review, applicants and setup CTAs are covered')
  const saved={window:globalThis.window,document:globalThis.document},pushed=[]
  globalThis.document={querySelector:()=>null};globalThis.window={location:{href:`https://outclass.test${workspace}?section=recruitment&tool=overview`},history:{pushState:(_,__,href)=>pushed.push(href),replaceState(){throw Error('CTA must add a history entry')}},confirm:()=>true}
