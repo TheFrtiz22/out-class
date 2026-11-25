@@ -156,3 +156,9 @@ export function profileSectionSnapshot(profile: object, section: ProfileSection)
   const keys = section === "identity" ? ["firstName", "lastName", "headshotUrl"] : section === "links" ? ["linkedinUrl", "resumeUrl"] : section === "contact" ? ["phone"] : ["highSchool", "gender", "pronouns", "transferStudent", "major", "gradYear", "scholarStatus", "gpa", "satScore", "actScore", "actEnglish", "actMath", "actReading", "actScience"]
   return JSON.stringify(keys.map(key => [key, source[key] ?? null]))
 }
+
+const gpaFormat = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 3 })
+/** A GPA as it reads on a transcript: 4 → "4.00", 3.7 → "3.70", 3.875 → "3.875". */
+export function formatGpa(gpa: number) {
+  return Number.isFinite(gpa) ? gpaFormat.format(gpa) : String(gpa)
+}
