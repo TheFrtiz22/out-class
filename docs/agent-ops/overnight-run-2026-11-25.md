@@ -186,3 +186,9 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Production deploy for 041029fb is READY and aliased to all three production domains. The public test club page (/club/aif) renders correctly at 500 and 1440 wide. No rollback.
 - PR #549: application-writing passed on the re-run (0f9a6160). Waiting only on validate.
 - Noticed while checking: the test club page says "Applications aren't open yet" and also shows an application deadline of Dec 16. That's consistent if applications are closed but a deadline is set. Not a bug; noted for wording.
+
+## 07:32 Merge 4: PR #548 (QR check-in: a room of members checks in side by side)
+- Every required gate green on 8493a114, red proof logged above. Merged as 40e077b3. No migration.
+- Load before/after is in the 07:24 table: 150-member burst went from 81/150 to 150/150 checked in, p95 2129 ms to 997 ms.
+- Deploy check pending.
+- PR #546: the Codex P2 (reveal must read answers in question order) was already fixed in bdf053b1, which is in the PR head. Thread resolved. Waiting on validate.
