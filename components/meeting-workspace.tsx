@@ -138,7 +138,7 @@ function MeetingAttendanceState({ meeting, polling, onOpen }: { meeting: Meeting
   }, [opened, polling, load, start, end]);
   useRevalidate(load, { enabled: opened, scopes: ["meetings"] });
   const check = () => { onOpen(meeting.id); void load() };
-  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{count === null ? failed ? "Attendance unavailable." : opened ? "Loading attendance…" : "Attendance not loaded" : `${count} recorded check-in${count === 1 ? "" : "s"}${failed ? " · Couldn’t update" : polling && live() ? " · updating live" : ""}`}</span>{(!opened || failed && count === null) && <Button size="sm" variant="ghost" disabled={busy} onClick={check}>{busy ? "Loading…" : failed ? "Try again" : "Check attendance"}</Button>}</div>;
+  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{count === null ? failed ? "Attendance unavailable." : opened ? "Loading attendance…" : "" : `${count} recorded check-in${count === 1 ? "" : "s"}${failed ? " · Couldn’t update" : polling && live() ? " · updating live" : ""}`}</span>{(!opened || failed && count === null) && <Button size="sm" variant="ghost" disabled={busy} onClick={check}>{busy ? "Loading…" : failed ? "Try again" : "Check attendance"}</Button>}</div>;
 }
 
 function MeetingEditor({
