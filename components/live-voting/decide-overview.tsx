@@ -22,7 +22,7 @@ type Templates = Awaited<ReturnType<typeof getDecisionTemplates>>;
 type LetterCounts = Awaited<ReturnType<typeof getRoundLetterCounts>>;
 
 function Figure({ label, sublabel, value }: { label: string; sublabel?: string; value: number | string }) {
-  return <div className="min-w-0"><dt className="text-xs text-muted-foreground">{label}{sublabel && <span className="block">{sublabel}</span>}</dt><dd className="m-0 text-xl font-semibold tabular-nums">{value}</dd></div>;
+  return <div className="flex min-w-0 flex-col"><dt className="text-xs text-muted-foreground">{label}{sublabel && <span className="block">{sublabel}</span>}</dt><dd className="m-0 mt-auto text-xl font-semibold tabular-nums">{value}</dd></div>;
 }
 
 /** A real link to another Decide tab: the workspace's unsaved-work guard, then in-place club navigation. */
