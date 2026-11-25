@@ -292,3 +292,10 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Fails now and then with "expected 100, got 0" after the browser-history step on the 5000-applicant cohort (main run 45575470024; run 45564144516 earlier).
 - Cause: after `goForward`, rows were counted while the overview's review-queue rows still matched the selector.
 - Fix: PR #553 waits for the overview to leave before counting, as the entry step already does. Disposable-integrations dispatched on the branch (run 45591523753).
+
+## 10:17 UTC: PR #552 and #553 integration runs (disposable)
+- #552 branch (run 45591518865): Native PostgreSQL / scheduler and audiences pass, so the fix works; on #553's branch, which lacks it, both still fail the same test (run 45591523753). Red then green.
+- #553 branch: Local Auth, settings and navigation passed, including the pipeline e2e test it changes.
+- #552's Local Auth job failed before any test ran: the local Supabase stack did not start. Re-ran that job.
+- Sentry OUT-CLASS-D (Date rendered on `/inbox`, release 6e2a1649): `lib/demo/store.ts` on main now turns revived snapshot dates back into strings for the Inbox, which matches this error. Likely fixed already; verified by reading code only.
+- App gap 3 (web hand-offs ask leaders to sign in again): not built. It needs a new session hand-off from the app's token to a web cookie, which is a new sign-in path; that is too risky to add unattended overnight.
