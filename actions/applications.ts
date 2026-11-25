@@ -5,7 +5,7 @@ import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 import { assertClubOperational } from "@/lib/club-suspension";
 import { activeRecruitmentCycle, applicationRecency, currentApplication, reapplicationUnavailable } from "@/lib/recruitment-cycle";
 import { publicMeetingVisibility, schoolPublicMeetingVisibility } from "@/lib/campus-events";
-import { resolveViewerSchool } from "@/utils/school-scope";
+import { resolveAccountSchool, resolveViewerSchool } from "@/utils/school-scope";
 
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement } from "@/lib/test-scores"
@@ -45,7 +45,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
   if (!answersWithinLimit(input)) throw new ActionError(ANSWER_TOO_LONG_MESSAGE, "TOO_LONG")
   const parsed = boundedParse(applicationInputSchema, input)
   // The school whose clubs this account may list (utils/school-scope.ts): a student applies only there.
-  const school = await resolveViewerSchool()
+  const school = await resolveAccountSchool(user.id)
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction")
   const applicationId = await clubWriteTransaction(async (tx) => {
     // FOR SHARE (not FOR UPDATE) on the club: leader configuration changes,
