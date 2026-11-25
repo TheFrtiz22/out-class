@@ -97,7 +97,10 @@ export function MeetingList({ clubId, clubIds, filters, embedded = false, initia
 
     {loading && <LoadingState label="Loading meetings…" layout="schedule" rows={3} />}
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
-    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} />}
+    {!loading && !error && !visible.length && (audience === "ALL"
+      // Unfiltered: no audience to blame, so the empty state doesn't name one.
+      ? <EmptyState tone="outlined" density="compact" align="start" title={`No ${period} meetings`} description={period === "upcoming" ? "Nothing is scheduled yet." : "No meetings have happened yet."} />
+      : <EmptyState tone="outlined" density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} />)}
     <ul className="oc-meeting-list grid gap-2">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
       <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-3 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-5 sm:py-4"><CalendarDays aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}{meeting.recap?.trim() ? " · Recap available" : ""}</p><h3 className="oc-card-heading mt-1 break-words">{meeting.title}</h3><p className="mt-1.5 flex flex-wrap items-start gap-x-4 gap-y-1 text-sm"><span>{meetingDate(meeting.date)}{meeting.endDate && ` – ${meetingDate(meeting.endDate)}`}</span><span className="flex min-w-0 items-start gap-1.5 break-words text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</span></p><span className="sr-only">Open agenda, resources and attendance</span></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}
@@ -138,7 +141,7 @@ function MeetingAttendanceState({ meeting, polling, onOpen }: { meeting: Meeting
   }, [opened, polling, load, start, end]);
   useRevalidate(load, { enabled: opened, scopes: ["meetings"] });
   const check = () => { onOpen(meeting.id); void load() };
-  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{count === null ? failed ? "Attendance unavailable." : opened ? "Loading attendance…" : "Attendance not loaded" : `${count} recorded check-in${count === 1 ? "" : "s"}${failed ? " · Couldn’t update" : polling && live() ? " · updating live" : ""}`}</span>{(!opened || failed && count === null) && <Button size="sm" variant="ghost" disabled={busy} onClick={check}>{busy ? "Loading…" : failed ? "Try again" : "Check attendance"}</Button>}</div>;
+  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{count === null ? failed ? "Attendance unavailable." : opened ? "Loading attendance…" : "" : `${count} recorded check-in${count === 1 ? "" : "s"}${failed ? " · Couldn’t update" : polling && live() ? " · updating live" : ""}`}</span>{(!opened || failed && count === null) && <Button size="sm" variant="ghost" disabled={busy} onClick={check}>{busy ? "Loading…" : failed ? "Try again" : "Check attendance"}</Button>}</div>;
 }
 
 function MeetingEditor({
@@ -161,10 +164,11 @@ function MeetingEditor({
   const [fields,setFields] = useState(() => ({ title: meeting?.title ?? "", description: meeting?.description ?? "", date: localDate(meeting ? new Date(meeting.date) : new Date()), endDate: meeting?.endDate ? localDate(new Date(meeting.endDate)) : "", location: meeting?.location ?? "", audience: meeting?.audience ?? "RECRUITMENT", agenda: meeting?.agenda ?? "", recap: meeting?.recap ?? "" }));
   const draftSave = useEditorDraft({ scope: { kind: "meeting", clubId, resourceId: meeting?.id ?? "new" }, value: { fields,resources }, restore: d=>{setFields(d.fields);setResources(d.resources)}, base: meeting ? String(meeting.revision) : "new" });
   const [tab, setTab] = useState("details");
-  const change = (key: keyof typeof fields, value: string) => setFields(current=>({...current,[key]:value}));
+  // An edit answers the last refusal ("End time must follow the start."), so the stale message goes with it.
+  const change = (key: keyof typeof fields, value: string) => { setFields(current=>({...current,[key]:value})); if (failed) { setFailed(false); setMessage("") } };
   return (
     <form data-saving={busy} data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
-      className="space-y-4 py-4"
+      className="space-y-4"
       onInvalidCapture={event => { const field = event.target as HTMLElement; if (field.closest('section[hidden]')) setTab("resources"); else if (field.closest('div[hidden]')) setTab("details") }}
       onSubmit={async (e) => {
         e.preventDefault();
@@ -225,7 +229,7 @@ function MeetingEditor({
           <NativeSelect
             name="audience"
             value={fields.audience} onChange={e=>change("audience",e.target.value)}
-            className="ml-3 rounded border p-2"
+            className="mt-1 w-full"
           >
             <option value="RECRUITMENT">Recruitment / Interest</option>
             <option value="MEMBERS">Members</option>
@@ -309,10 +313,10 @@ function MeetingEditor({
                   }
                 />
               </label>
-              <label>
-                Type{" "}
+              <label className="block text-sm">
+                Type
                 <NativeSelect
-                  className="rounded border p-2"
+                  className="mt-1 w-full"
                   value={r.kind}
                   onChange={(e) =>
                     setResources(

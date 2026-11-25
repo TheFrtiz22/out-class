@@ -29,6 +29,7 @@ function headerHarness({ pathname = '/', hash = '', scrollY = 0 } = {}) {
     '@/components/ui/button': { Button: 'Button' },
     '@/components/icons': { Menu: 'Menu', X: 'X' },
     './rolling-navigation-label': { RollingNavigationLabel },
+    '@/contexts/auth-context': { useOptionalAuth: () => undefined },
     './perspective-switcher': { PerspectiveSwitcher: 'PerspectiveSwitcher' },
   }, { window, document })
   function render() { cursor = 0; refCursor = 0; effects.length = 0; return PublicNavigation({ hero: true }) }

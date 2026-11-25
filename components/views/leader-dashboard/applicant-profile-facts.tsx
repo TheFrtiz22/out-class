@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { ProfileFieldVisibility } from "@/lib/profile-field-visibility"
-import { safeProfileUrl } from "@/lib/student-profile"
+import { formatGpa, safeProfileUrl } from "@/lib/student-profile"
 import { scholarSummary } from "@/lib/scholar-status"
 
 type Experience = { id: string; title: string; subtitle: string; period: string }
@@ -13,7 +13,7 @@ export type ApplicantProfileFactsProfile = {
 export function applicantProfileFacts(profile: ApplicantProfileFactsProfile, fields: ProfileFieldVisibility) {
   return [
     fields.academicYear && profile.academicYear ? profile.academicYear : null,
-    fields.gpa && profile.gpa != null ? `GPA ${profile.gpa}` : null,
+    fields.gpa && profile.gpa != null ? `GPA ${formatGpa(profile.gpa)}` : null,
     fields.act && profile.actScore != null ? `ACT ${profile.actScore}` : null,
     fields.sat && profile.satScore != null ? `SAT ${profile.satScore}` : null,
   ].filter((fact): fact is string => fact !== null)

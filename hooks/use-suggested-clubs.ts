@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useCorkboard } from "@/contexts/corkboard-context"
 import { getClubDirectory } from "@/lib/workspace-api"
-import { suggestClubs, type ClubSuggestion } from "@/lib/club-suggestions"
+import { suggestClubs, suggestionBasis, type ClubSuggestion } from "@/lib/club-suggestions"
 import type { DirectoryClub } from "@/lib/club-directory"
 import { useInterestSurvey } from "@/hooks/use-interest-survey"
 
@@ -32,5 +32,5 @@ export function useSuggestedClubs(directory: readonly DirectoryClub[] | null, li
     () => clubs && hasSignal ? suggestClubs(clubs, { saved: items.map(item => item.club), major, survey, exclude: memberIds }, limit) : [],
     [clubs, hasSignal, items, major, survey, memberIds, limit],
   )
-  return { suggestions, hasSignal, loading: savedLoading || (hasSignal && !clubs), savedCount: items.length }
+  return { suggestions, hasSignal, loading: savedLoading || (hasSignal && !clubs), savedCount: items.length, basis: suggestionBasis({ savedCount: items.length, major, survey }) }
 }

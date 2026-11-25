@@ -12,13 +12,14 @@ import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { VotingPresentationChanged } from "@/lib/voting-room";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { assertNotRecused } from "@/lib/recusal";
-import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
+import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay, reviewerLabel } from "@/lib/applicant-display";
 import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 import { boundedParse } from "@/lib/bounded-input";
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
 // refuseRecused: Pros/Cons feed voting, so a member who stepped out of this applicant can't read or write them.
 // The live voting room's shared presentation (sessionId) keeps its own room rules.
-async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>, membershipId: string, refuseRecused = true) {
+// A reviewer never reads or writes review material about their own application, in any context.
+async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>, membershipId: string, viewerUserId: string, refuseRecused = true) {
   const member = await tx.clubMember.findFirst({ where: { id: membershipId, clubId: input.clubId } });
   if (!hasPermission(member, "applications.review")) throw new Error("Review access required.");
   const app = await tx.application.findFirst({
@@ -26,7 +27,7 @@ async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>
     // The club's profile field choice is read with the application, in the same snapshot.
     include: { club: { select: { profileFieldVisibility: true } }, round: true, student: { include: { studentProfile: { include: { experiences: true } } } }, evaluations: { omit: { notes: true, applicantQuestions: true } }, answers: { include: { question: true } }, bookings: { include: { slot: true } } },
   });
-  if (!app || (!app.round.anonymousReview && !hasPermission(member, "applicants.identify"))) throw new Error("Applicant unavailable for this reviewer.");
+  if (!app || app.studentId === viewerUserId || (!app.round.anonymousReview && !hasPermission(member, "applicants.identify"))) throw new Error("Applicant unavailable for this reviewer.");
   if (refuseRecused) await assertNotRecused(tx, app.id, membershipId);
   return { app: { ...app, evaluations: app.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, member };
 }
@@ -34,7 +35,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   const data = boundedParse(scope, input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
-    let { app, member: reviewer } = await authorized(tx, data, membership.id, !data.sessionId);
+    let { app, member: reviewer } = await authorized(tx, data, membership.id, user.id, !data.sessionId);
     // Voting slides and setup previews never show a member their own application (as review keeps reviewers off it).
     if ((data.sessionId || data.previewConfig) && app.studentId === user.id) throw new Error("Applicant unavailable for this reviewer.");
     let config=readDisplayConfig(app.round.applicantDisplay);
@@ -49,7 +50,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
         const member=await authorizeClubTransaction(tx,data.clubId,user.id,["applications.review"],{readOnly:true});
         // The initial general-display lookup preceded the club lock. Reload its
         // privacy/field context under that lock before returning LIVE content.
-        ({app,member:reviewer}=await authorized(tx,data,member.id,false));
+        ({app,member:reviewer}=await authorized(tx,data,member.id,user.id,false));
         const {s,round}=await loadVotingRoom(tx,data.clubId,voting.id);
         const role=roomAuthority(s,member,round.anonymousReview);
         if(app.roundId!==s.roundId||app.recruitmentCycleId!==s.cycleId)throw Error("Voting presentation changed. Reload the page to continue.");
@@ -76,7 +77,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
         if (!final.stableRound || final.stableRound.clubId !== data.clubId || final.stableRound.anonymousReview
           || final.interviewRecords.some(record => record.anonymousReview)) {
           feedback.withheld = true;
-        } else if (final.notes) feedback.items.push(`${final.round} · Reviewer ${final.interviewerId}\n${final.notes}`);
+        } else if (final.notes) feedback.items.push(`${final.round} · ${reviewerLabel(app.evaluations)(final.interviewerId)}\n${final.notes}`);
       }
     }
     const display = projectApplicantDisplay(app, app.round, config, observations.map(o => ({
@@ -91,7 +92,7 @@ export async function saveApplicantObservation(input: unknown) {
   return prisma.$transaction(async tx => {
     await lockOperationalClub(tx, data.clubId);
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} FOR UPDATE`;
-    const { app } = await authorized(tx, data, membership.id);
+    const { app } = await authorized(tx, data, membership.id, user.id);
     // Free text can identify an applicant. Preserve existing observations without exposing them anonymously.
     if (app.round.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
     if (data.id) {
@@ -110,7 +111,7 @@ export async function deleteApplicantObservation(input: unknown) {
   return prisma.$transaction(async tx => {
     await lockOperationalClub(tx, data.clubId);
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} FOR UPDATE`;
-    const { app } = await authorized(tx, data, membership.id);
+    const { app } = await authorized(tx, data, membership.id, user.id);
     if (app.round.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
     const removed = await tx.applicantObservation.deleteMany({ where: { id: data.id, applicationId: app.id, authorId: user.id, kind:{in:['PRO','CON']} } });
     if (removed.count !== 1) throw new Error("Only the author can delete this observation.");
@@ -129,6 +130,8 @@ export async function saveApplicantDisplayConfiguration(input: unknown) {
   const data = boundedParse(z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), version: z.number().int().min(0), config: displayConfigSchema }).strict(), input);
   const { user } = await requireClubPermission(data.clubId, ["interviews.manage"]);
   return prisma.$transaction(async tx => {
+    // Re-check the live grant inside the write: access removed after the pre-check stops the save.
+    await authorizeClubTransaction(tx, data.clubId, user.id, ["interviews.manage"]);
     await lockOperationalClub(tx, data.clubId);
     const changed = await tx.pipelineRound.updateMany({ where: { id: data.roundId, clubId: data.clubId, displayVersion: data.version }, data: { applicantDisplay: data.config, displayVersion: { increment: 1 } } });
     if (changed.count !== 1) throw new Error("Configuration changed or round unavailable. Reload before saving.");

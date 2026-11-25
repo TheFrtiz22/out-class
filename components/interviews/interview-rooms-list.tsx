@@ -85,7 +85,7 @@ export function InterviewRoomsList({ clubId, onSchedule }: { clubId: string; onS
         {days.length > 1 && <SegmentedControl label="Show one day" value={activeDate} onChange={day => { setDate(day); setParam("interviewDate", day); }} options={[{ value: "", label: "All days" }, ...days.map(group => ({ value: group.day, label: group.day === today(group.timezone) ? "Today" : shortDay(group.entries[0]) }))]} />}
       </div>
       {shownDays.map(group => { const first = group.entries[0], last = group.entries.reduce((latest, row) => +new Date(row.endTime) > +new Date(latest.endTime) ? row : latest, first), booked = group.entries.filter(row => row.bookingId).length; return <section key={group.day} aria-label={group.label} className="space-y-1.5">
-        <h4 className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-muted-foreground"><span className="font-medium text-foreground">{group.day === today(group.timezone) ? "Today" : group.label}</span><span className="tabular-nums">{interviewTimeRange({ startTime: first.startTime, endTime: last.endTime, timezone: group.timezone })} · {booked ? pluralize(booked, "interview") : "No bookings yet"}</span></h4>
+        <h4 className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-muted-foreground"><span className="font-medium text-foreground">{group.day === today(group.timezone) ? "Today" : group.label}</span><span className="tabular-nums">{interviewTimeRange({ startTime: first.startTime, endTime: last.endTime, timezone: group.timezone })}{booked ? ` · ${pluralize(booked, "interview")}` : ""}</span></h4>
         {(() => { const interviews = group.entries.filter(row => row.bookingId), open = group.entries.length - interviews.length; return <ul className="oc-my-interviews">
           {interviews.map(row => <InterviewRow key={row.id} row={row} primary={row.id === firstAction} />)}
           {/* Unbooked times are one quiet line, so the booked interviews are what stands out. */}
@@ -102,6 +102,6 @@ export function InterviewRoomsList({ clubId, onSchedule }: { clubId: string; onS
       <CollapsibleContent className="oc-interview-day-content" inert={!doneOpen} aria-hidden={!doneOpen}><ul className="oc-my-interviews">{done.map(row => <InterviewRow key={row.id} row={row} withDay />)}</ul></CollapsibleContent>
     </Collapsible>}
     {!loading && !error && !empty && <p className="text-xs text-muted-foreground">{zones.length === 1 && zones[0] === SCHEDULING_TIMEZONE ? `Times are in ${SCHEDULING_TIMEZONE_LABEL}.` : "Times are in each room’s time zone."}</p>}
-    {!error && unbooked && <p className="border-t pt-3 text-sm text-muted-foreground">Some applicants assigned to you haven’t booked a time slot yet. <Link className="inline-flex min-h-10 items-center underline" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open the interview room</Link></p>}
+    {!error && unbooked && <p className="border-t pt-3 text-sm text-muted-foreground">Some applicants assigned to you haven’t booked a time slot yet. <Link className="py-2.5 underline underline-offset-4" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open the interview room</Link></p>}
   </section>;
 }

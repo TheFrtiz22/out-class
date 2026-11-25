@@ -19,12 +19,14 @@ test('Club home and the Recruiting Overview do different jobs, accessibly', { sk
       page.on('request', request => { const url = new URL(request.url()); if (url.searchParams.get('kind') === 'overview') views.push(JSON.parse(url.searchParams.get('args'))[1] ?? 'all') })
 
       await page.goto(account.config.appUrl + `${base}?section=overview`)
-      await page.locator('.oc-club-home').waitFor()
+      // Until React swaps it in, the streamed server render waits in a hidden <div hidden id="S:0"> beside the
+      // visible dashboard, so wait for the visible one only.
+      await page.locator('.oc-club-home:visible').first().waitFor()
       const skip = page.getByRole('button', { name: 'Skip', exact: true })
       if (await skip.isVisible().catch(() => false)) await skip.click()
       await page.waitForTimeout(1500)
       // Club home: club cards only, one recruiting strip, and its data read is the club view plus the strip summary.
-      for (const name of ['Next meeting', 'This week']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 1, name)
+      for (const name of ['Next meeting', 'Next 7 days']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 1, name)
       for (const name of ['Recruiting pipeline', 'Your interviews', 'Pipeline by round', 'Review queue']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 0, name)
       assert.equal(await page.locator('.oc-recruiting-strip').count(), 1)
       assert.ok(views.includes('club') && views.includes('strip') && !views.includes('all') && !views.includes('recruiting'), `Club home reads ${views.join(', ')}`)

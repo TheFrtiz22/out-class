@@ -79,9 +79,19 @@ export function slotRoster(members: readonly { name: string; states: Availabilit
 }
 
 /** The best few non-overlapping start times by free members (ties: earlier first), for quick picks. */
-export function bestMeetingTimes(free: number[][], minutes: number, limit = 3) {
+/** The first start still ahead in `week` (Monday, YYYY-MM-DD) in the scheduling zone: null for a future week. */
+export function plannerEarliestStart(week: string, now: number | Date = Date.now()): { day: number; minute: number } | null {
+  const here = localParts(now, SCHEDULING_TIMEZONE)
+  if (here.date < week) return null
+  if (here.date > addDays(week, 6)) return { day: 7, minute: 0 }
+  return { day: Math.round((+new Date(`${here.date}T12:00:00Z`) - +new Date(`${week}T12:00:00Z`)) / 86400000), minute: here.minute }
+}
+
+/** Up to `limit` non-overlapping starts with the most members free; starts before `earliest` (already past) are never suggested. */
+export function bestMeetingTimes(free: number[][], minutes: number, limit = 3, earliest: { day: number; minute: number } | null = null) {
   const all: { day: number; slot: number; count: number }[] = [], length = durationSlots(minutes)
-  free.forEach((slots, day) => slots.forEach((count, slot) => { if (count > 0) all.push({ day, slot, count }) }))
+  const ahead = (day: number, slot: number) => !earliest || day > earliest.day || (day === earliest.day && slot * 15 >= earliest.minute)
+  free.forEach((slots, day) => slots.forEach((count, slot) => { if (count > 0 && ahead(day, slot)) all.push({ day, slot, count }) }))
   const picked: typeof all = []
   for (const candidate of all.sort((a, b) => b.count - a.count || a.day - b.day || a.slot - b.slot)) {
     if (picked.length >= limit) break

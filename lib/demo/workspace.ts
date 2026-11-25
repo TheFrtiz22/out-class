@@ -21,7 +21,7 @@ import type * as tutorials from "@/actions/tutorials"
 import { tutorialExperience, tutorialInput } from "@/lib/tutorials"
 import { corkboardInput } from "@/lib/corkboard"
 import * as demoVoting from "./voting"
-import { defaultDisplayConfig, displayConfigSchema, projectApplicantDisplay } from "@/lib/applicant-display"
+import { defaultDisplayConfig, displayConfigSchema, projectApplicantDisplay, reviewerLabel } from "@/lib/applicant-display"
 import { z } from "zod"
 import * as demoAccessSetup from "./interview-access-setup"
 import * as demoRoomApi from "./interview-rooms"
@@ -461,7 +461,7 @@ export const getApplicantDisplay: Demo<"getApplicantDisplay"> = input => {
       const historical = s.clubs[0].rounds.find(r => r.id === evaluation.roundId);
       if (!evaluation.submittedAt || !historical || historical.anonymousReview
         || s.interviews.some(r => r.applicationId === app.id && r.roundId === evaluation.roundId && r.interviewerId === evaluation.interviewerId && r.anonymousReview)) feedback.withheld = true;
-      else if (evaluation.notes) feedback.items.push(`${evaluation.round} · Reviewer ${evaluation.interviewerId}\n${evaluation.notes}`);
+      else if (evaluation.notes) feedback.items.push(`${evaluation.round} · ${reviewerLabel(app.evaluations)(evaluation.interviewerId)}\n${evaluation.notes}`);
     }
   }
   const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id), feedback, demoProfileFieldVisibility(input.clubId));

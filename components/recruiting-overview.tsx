@@ -13,7 +13,6 @@ import { Dashboard, DashboardActions, DashboardCard, DashboardFoot, DashboardGri
 import { keyDates, pipeline, railHrefs, recruitingActive, recruitingNeeds, voteHref, type NeedsCard } from "@/components/club-home/club-home-model"
 import { InterviewsCard, clubLinkProps } from "@/components/club-home/club-home-sections"
 import { PageHeader } from "@/components/ui/page-header"
-import { Badge } from "@/components/ui/badge"
 import { CalendarPlus, FileText, Users2 } from "@/components/icons"
 import { welcomeDeadline } from "@/lib/welcome"
 import { useWelcomeClock } from "@/hooks/use-welcome-clock"
@@ -43,17 +42,26 @@ export function RecruitingHero({ clubId, clubName, membership, data }: { clubId:
   const cycle = op?.cycles[0]?.name
   const active = !!op && recruitingActive(op)
   const countdown = data && active ? welcomeDeadline({ mode: "club", clubId, membership, data }, now) : null
+  const closed = !!op && applicationsClosed(op)
+  const status = active && op?.intake ? `Applications ${closed ? "closed" : "open"}` : null
+  const canEditApplication = hasPermission(membership, "application.manage")
+  const applicationHref = `/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=application`
   return <DashboardHero className="oc-recruiting-hero" glow="recruiting">
     <PageHeader density="expressive" eyebrow={clubName} title={cycle ? `${cycle} recruiting` : TERMS.recruiting}
       description={countdown ?? (active && op?.intake?.applicationDeadline ? `Deadline ${memberDate(op.intake.applicationDeadline)}` : undefined)}
       action={<DashboardActions className="oc-recruiting-actions">
-        {active && op?.intake && <Badge variant={applicationsClosed(op) ? "outline" : "success"} className="oc-command-status" data-state={applicationsClosed(op) ? "closed" : "open"}>Applications {applicationsClosed(op) ? "closed" : "open"}</Badge>}
-        {/* Cycle actions appear once the overview shows an active cycle; with none, the page offers setup instead. */}
-        {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link {...clubLinkProps(clubId, hrefs.applicants)}><Users2 aria-hidden="true" />Open applicants</Link></Button>}
-        {/* The application form and deadline (Recruiting › Application); shown with or without an active cycle. */}
-        {hasPermission(membership, "application.manage") && <Button variant="ghost" size="lg" asChild><Link {...clubLinkProps(clubId, `/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=application`)}><FileText aria-hidden="true" />Application</Link></Button>}
+        {/* One set: the applications status (it opens the Application settings, where intake is opened, closed and
+            given a deadline), outline secondary actions, and Schedule interviews as the one filled button. */}
+        {status && (canEditApplication
+          ? <Button variant="outline" size="lg" className="oc-recruiting-status" data-state={closed ? "closed" : "open"} title="Open, close or change the deadline in Application settings" asChild>
+              <Link {...clubLinkProps(clubId, applicationHref)}><span className="oc-recruiting-status-dot" aria-hidden="true" />{status}</Link>
+            </Button>
+          : <span className="oc-recruiting-status" data-static="" data-state={closed ? "closed" : "open"}><span className="oc-recruiting-status-dot" aria-hidden="true" />{status}</span>)}
+        {/* With no status to show (no active cycle) the application form keeps its own button. */}
+        {!status && canEditApplication && <Button variant="outline" size="lg" asChild><Link {...clubLinkProps(clubId, applicationHref)}><FileText aria-hidden="true" />Application</Link></Button>}
+        {active && hrefs.applicants && <Button variant="outline" size="lg" asChild><Link {...clubLinkProps(clubId, hrefs.applicants)}><Users2 aria-hidden="true" />Applicants</Link></Button>}
         {/* The club's QR code for fairs, tables and info sessions: it opens the public page, where students apply. */}
-        <ClubQrButton club={{ id: clubId, name: clubName }} variant="ghost" />
+        <ClubQrButton club={{ id: clubId, name: clubName }} variant="outline" />
         {active && hasPermission(membership, "interviews.manage") && hrefs.interviews && <Button size="lg" data-tone="interview" asChild><Link {...clubLinkProps(clubId, `${hrefs.interviews}&interviewTab=schedule`)}><CalendarPlus aria-hidden="true" />{TERMS.scheduleInterviews}</Link></Button>}
       </DashboardActions>} />
   </DashboardHero>

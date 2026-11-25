@@ -1,5 +1,6 @@
 "use client";
 import { userMessage } from "@/lib/user-message"
+import { memberTitleLabel, pluralize } from "@/lib/copy/terms"
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
@@ -346,7 +347,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               ? { permissions }
               : {}),
         }),
-      `${count} memberships updated.`,
+      `${pluralize(count, "membership")} updated.`,
       optimistic,
       ids.has(base.actor.id),
     );
@@ -645,6 +646,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </span>
               </div>
             )}
+            {/* How many the list holds after search and filters; the table itself never says. */}
+            {rows.length > 0 && <p className="text-sm text-muted-foreground" aria-live="polite">{pluralize(rows.length, invitesOpen ? "invitation" : "member")}</p>}
             {rows.length > 0 && <DataTable
               caption={invitesOpen ? "Club invitations" : "Club members"}
               rows={pageRows}
@@ -690,6 +693,12 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 className="rounded-xl border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground"
               >
                 {invitesOpen ? "No invitations match." : "No members match."}
+                {/* A search or filter that hides everyone gets its own way back to the full list. */}
+                {(query || roleFilter || yearFilter || groupFilter || statusFilter) && (
+                  <Button type="button" variant="link" size="sm" className="ml-2 h-auto p-0" onClick={() => { setQuery(""); setRoleFilter(""); setYearFilter(""); setGroupFilter(""); setStatusFilter(""); resetPaging() }}>
+                    Clear search and filters
+                  </Button>
+                )}
               </p>
             )}
             {pages > 1 && (
@@ -737,13 +746,17 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => setAttempt((value) => value + 1)}
-          >
-            Try again
-          </Button>
+          {/* Reloading helps only when the directory itself failed to load; a refused change (like removing the
+              last owner) keeps the directory, and its message says what to do instead. */}
+          {!data && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setAttempt((value) => value + 1)}
+            >
+              Try again
+            </Button>
+          )}
         </div>
       )}
       {loading ? (
@@ -981,11 +994,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 {data?.profileFields?.academicYear !== false && <> · {active.user.studentProfile?.academicYear || "Year not provided"}</>}
               </p>
               <p className="text-sm text-muted-foreground">
-                {active.title || active.role.replaceAll("_", " ")} · Groups:{" "}
+                {memberTitleLabel(active)} · Groups:{" "}
                 {active.groups.join(", ") || "None"} · Cohort:{" "}
                 {active.cohort || "Not set"}
               </p>
-              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual onSaved={() => reload()} />}
+              {caps.canManageMembers && active.status === "ACTIVE" && !active.alumniSince && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual single onSaved={() => reload()} />}
               {error && (
                 <p role="alert" className="text-sm text-destructive">
                   {error}

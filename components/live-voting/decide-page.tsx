@@ -7,6 +7,7 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 import { canLeaveWorkspace, decideAccess } from "@/lib/product-navigation";
 import { decisionsHref, legacyVotingHistoryHref } from "@/lib/voting-navigation";
+import { useStagedDecisions } from "@/hooks/use-staged-decisions";
 import { decideCounts, decideTab, decideTabs, overviewDefaultRound, pendingApplicantsHref, readyToSend, roundsFromRooms, type DecideStep, type DecideTab } from "@/lib/decide";
 import { listLiveVotingRooms } from "@/lib/voting-room-api";
 import { getWorkspaceRounds } from "@/lib/workspace-api";
@@ -27,6 +28,7 @@ const DecisionTemplateEditor = dynamic(() => import("@/components/communications
 
 type Rooms = Awaited<ReturnType<typeof listLiveVotingRooms>>;
 
+const noRounds: never[] = [];
 /**
  * Decide: pick a round, see its Overview (the default tab), then Review, Vote and Send as ordered steps. The round
  * lives in the URL (`roundId`), as does the tab (`decisionTab`). Each step reuses the existing screen: the shared
@@ -63,7 +65,10 @@ export function DecidePage({ clubId, member }: { clubId: string; member: ClubAcc
     return () => { current = false };
   }, [clubId, cycleId, canManageRounds, access.canVote, demo.ready]);
   const rows = rooms?.identity === identity ? rooms.rows : null, roomsFailed = !!rooms?.failed && rooms.identity === identity;
-  const counts = rows ? decideCounts(rows) : null;
+  // Decisions saved during review wait on Send too, so the Send badge counts them with closed sessions.
+  const staged = useStagedDecisions(clubId, { enabled: access.canSend && !!access.canDecide, rounds: noRounds });
+  const stagedCount = [...staged.items.values()].filter(row => !roundId || row.expectedRoundId === roundId).length;
+  const counts = rows || staged.loaded ? decideCounts(rows ?? [], stagedCount) : null;
   const rounds = managedRounds ?? (allRooms ? roundsFromRooms(allRooms) : []);
   const search = params.toString();
   const go = (href: string, replace = false) => { if (!canLeaveWorkspace()) return; if (navigateWithinClub(href, replace)) return; if (replace) router.replace(href, { scroll: false }); else router.push(href, { scroll: false }) };

@@ -12,6 +12,9 @@
 .oc-page-header-action { position: relative; z-index: 1; }
 /* A portal slot (e.g. #workspace-page-actions) takes no room until a view fills it. */
 .oc-page-header-action:has(> [data-page-header-slot]:only-child:empty) { display: none; }
+/* Calendar's buttons sit beside a one-line title: centred on the title's line, they don't make the row taller, so the title keeps
+   the same gap below the shell header as every other page (tests/header-gap-e2e.test.cjs). Phones put them on their own row. */
+@media (min-width: 640px) { .oc-calendar-header > .oc-page-header-action { margin-block: min(0px, calc((var(--oc-text-title) * var(--oc-leading-heading) - var(--oc-control-height)) / 2)); } }
 .oc-metric-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .75rem; margin-block: 0 var(--oc-density-gap); padding: 0; border: 0; }
 .oc-metric-strip > div { position: relative; min-width: 0; min-height: 4.25rem; display: grid; grid-template-columns: auto 1fr; gap: .25rem .5rem; align-content: center; align-items: baseline; padding: .85rem 1rem; background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 .oc-metric-strip > div:first-child { padding-left: 1rem; border-left: 1px solid var(--oc-content-edge); }
@@ -54,7 +57,6 @@
 [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] > div { border-color: var(--border); }
 [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] :is(.text-neutral-500,.text-neutral-400) { color: var(--muted-foreground); }
-[data-product-shell] .oc-calendar-workspace > header { padding-bottom: .5rem; }
 [data-product-shell] .oc-calendar-workspace section > ul > li > button { border-radius: var(--oc-radius-md); padding-inline: .75rem; }
 [data-product-shell] .oc-calendar-workspace section > ul > li > button:hover { background: var(--oc-surface-blue); }
 
@@ -70,6 +72,8 @@
 [data-product-shell] .oc-marketing-profile h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 500; letter-spacing: var(--oc-tracking-heading); }
 [data-product-shell] .oc-marketing-profile dl { border: 0; border-radius: 0; background: transparent; border-block: 1px solid var(--border); padding-block: .75rem; text-align: left; }
 [data-product-shell] .oc-marketing-profile dl > div { text-align: left; }
+/* The figures already end on a rule, so the actions under them don't draw a second one 24px lower. */
+[data-product-shell] .oc-marketing-profile dl + .oc-club-hero-actions { border-top: 0; margin-top: 1rem; }
 [data-product-shell] .oc-marketing-profile dd { font-size: var(--oc-text-metric); line-height: 1.2; font-weight: 500; font-variant-numeric: tabular-nums; }
 [data-product-shell] .oc-marketing-sections > section { border: 0; border-radius: 0; background: transparent; padding: 1rem 0; border-top: 1px solid var(--border); }
 @media (max-width: 639px) {
@@ -132,6 +136,9 @@
 [data-product-shell] [data-slot="surface"][data-density="roomy"]:not([data-tone="plain"]) { padding: 1.75rem; }
 
 .oc-notifications-header .oc-page-description { font-size: var(--oc-text-caption); margin-top: .35rem; }
+/* The settings gear stays beside the Inbox title: the long description wraps under the title instead of pushing the gear onto its own row on phones. */
+.oc-notifications-header { flex-wrap: nowrap; align-items: flex-start; }
+.oc-notifications-header > .oc-page-header-action { flex-shrink: 0; margin-top: min(0px, calc((var(--oc-text-title) * var(--oc-leading-heading) - var(--oc-control-height)) / 2)); }
 
 /* Quiet status annotations: neutral text and a small semantic rule, without colored capsules. */
 .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0; border-inline-start: 2px solid var(--badge-accent, var(--border)); border-radius: 0; background: transparent; color: inherit; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }

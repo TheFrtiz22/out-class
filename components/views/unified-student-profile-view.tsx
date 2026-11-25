@@ -7,7 +7,7 @@ import { Check, Pencil } from "@/components/icons"
 import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import {
-  gpaSchema, profileChecklist,
+  formatGpa, gpaSchema, profileChecklist, resolveResumeUrl, safeProfileUrl,
   type FullStudentProfile,
   type ProfileSection,
 } from "@/lib/student-profile"
@@ -91,6 +91,8 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   const checklist = profileChecklist(profile)
   const completed = checklist.filter((item) => item.complete).length
   const allAdded = completed === checklist.length
+  const resume = resolveResumeUrl(profile.resumeUrl)
+  const linkedin = safeProfileUrl(profile.linkedinUrl)
   // One entry point: "Edit profile" opens every section; "Import from résumé" lives inside it.
   const editProfile = <EditStudentProfileDialog
     profile={profile!}
@@ -168,10 +170,10 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                   {profile.gpa != null && (
                     <div className="flex gap-2">
                       <dt className="text-muted-foreground">{gpaLabel(profile)}</dt>
-                      <dd>{gpaSchema.safeParse(profile.gpa).success ? `${profile.gpa} / 4.00` : `${profile.gpa} · Confirm a GPA out of 4.0 in Education`}</dd>
+                      <dd>{gpaSchema.safeParse(profile.gpa).success ? `${formatGpa(profile.gpa)} / 4.00` : `${profile.gpa} · Confirm a GPA out of 4.0 in Education`}</dd>
                     </div>
                   )}
-                  {profile.actScore != null && <div><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}
+                  {profile.actScore != null && <div className="flex gap-2"><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}
                   {profile.satScore != null && (
                     <div className="flex gap-2">
                       <dt className="text-muted-foreground">SAT</dt>
@@ -187,6 +189,14 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
             "experience",
             profile.experiences.length ? <ul className="space-y-3">{profile.experiences.map(item => <li key={item.id} className="text-sm"><p className="font-medium">{item.title}</p>{(item.subtitle || item.period) && <p className="text-muted-foreground">{[item.subtitle, item.period].filter(Boolean).join(" · ")}</p>}</li>)}</ul>
               : <p className="text-sm text-muted-foreground">Not added. Add roles, jobs or activities in Edit profile.</p>,
+          )}
+          {section(
+            "Résumé and links",
+            "links",
+            <ul className="space-y-2 text-sm">
+              <li>{resume ? <a href={resume} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">View résumé<span className="sr-only"> (opens in a new tab)</span></a> : <span className="text-muted-foreground">No résumé added. Upload one in Edit profile.</span>}</li>
+              <li>{linkedin ? <a href={linkedin} target="_blank" rel="noopener noreferrer" className="break-all underline underline-offset-4">LinkedIn profile<span className="sr-only"> (opens in a new tab)</span></a> : <span className="text-muted-foreground">No LinkedIn added.</span>}</li>
+            </ul>,
           )}
           {section(
             "Phone",

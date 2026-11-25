@@ -16,6 +16,12 @@ export type PanelAssignment = {
   startTime: string; endTime: string; buffer: number; version: number; availabilityOverridden?: boolean;
 };
 
+/** Room and place without repeating a place that matches the room name or is blank. */
+const roomPlace = (panel: Pick<PanelAssignment, "roomName" | "location">) => {
+  const room = panel.roomName.trim(), place = (panel.location ?? "").trim();
+  return !place || place.toLowerCase() === room.toLowerCase() ? room : room ? `${room} · ${place}` : place;
+};
+
 const longDate = eastern({ weekday: "long", month: "long", day: "numeric", year: "numeric" });
 const caption = (panel: PanelAssignment) => ["Eastern Time", panel.buffer ? `${panel.buffer} minute buffer` : "", "Official assignment", panel.availabilityOverridden ? "Availability overridden" : "", panel.version ? `Published version ${panel.version}` : ""].filter(Boolean).join(" · ");
 
@@ -32,7 +38,7 @@ function PanelCard({ panel }: { panel: PanelAssignment }) {
       </View>
       <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
         <View style={{ marginTop: 2 }}><MapPin size={16} color={colors.foreground} /></View>
-        <Text variant="bodyStrong" style={{ flex: 1 }} selectable>{panel.roomName} · {panel.location}</Text>
+        <Text variant="bodyStrong" style={{ flex: 1 }} selectable>{roomPlace(panel)}</Text>
       </View>
       <Text variant="body">{longDate(panel.startTime)} · {easternTime(panel.startTime)}–{easternTime(panel.endTime)}</Text>
       <Text variant="caption">{caption(panel)}</Text>
@@ -87,7 +93,7 @@ export default function InterviewScheduleSettings() {
         )}
         <Press testID="interviews-update-availability" accessibilityRole="link" onPress={() => router.push("/settings/availability" as never)}
           style={{ minHeight: TARGET + 4, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
-          <Text variant="bodyStrong" color={colors.brandInk}>Update My Availability</Text>
+          <Text variant="bodyStrong" color={colors.brandInk}>Update my availability</Text>
           <ChevronRight size={18} color={colors.brandInk} />
         </Press>
       </ScreenScroll>

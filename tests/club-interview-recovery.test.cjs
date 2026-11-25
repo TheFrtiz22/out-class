@@ -17,7 +17,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`,recruitmentTools:()=>[{id:'interviews'}]},
   '@/lib/recruiting-settings':{RECRUITING_SETTINGS_PARAM:'recruitingSettings',recruitingSettingsSection:()=>null,canOpenRecruitingSettings:()=>false,recruitingSettingsSections:[],withRecruitingSettings:q=>new URLSearchParams(q)},
   '@/lib/club-workspace-preference':{clubWorkspacePreferenceKey:()=> 'test-preference'},
-  '@/lib/product-navigation':{mobileDestinations:items=>items,canLeaveWorkspace:()=>true,managerNavigation:()=>[{id:'interviews',label:'Interviews'}]},
+  '@/lib/product-navigation':{mobileDestinations:items=>items,canLeaveWorkspace:()=>true,managerNavigation:()=>[{id:'interviews',label:'Interviews'}],workspacePageIds:{club:[],recruiting:['interviews']}},
   '@/lib/navigation':{leaderRailSections:()=>[{id:'recruiting',items:[{id:'interviews',label:'Interviews'}]}],memberRailSections:()=>[],studentPath:()=>'/home'},
   '@/lib/club-settings':{resolveSettingsTab:()=>({})},
   '@/lib/campus-illustrations':{clubCampusIllustration:()=>undefined},

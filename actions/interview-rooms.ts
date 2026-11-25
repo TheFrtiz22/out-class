@@ -83,6 +83,8 @@ async function createInterviewRoomCommand(raw: RoomInput) {
   const { user } = await requireClubPermission(input.clubId, ["interviews.manage"])
   const slots = roomSlots(input)
   const result = await atomic(async tx => {
+    // Re-check the live grant inside the write, as the other room writes do: access removed after the pre-check stops it.
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
     // Serialize competing room creation and overlap checks within this club.
     await lockOperationalClub(tx, input.clubId)
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null } })

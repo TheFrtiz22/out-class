@@ -80,8 +80,8 @@ export function isPrivateResume(value: string) { return !!value && storagePathSc
 export const profileSectionSchemaFor = (storedGradYear?: number | null) => z.discriminatedUnion("section", [
   z.object({
     section: z.literal("identity"),
-    firstName: z.string().trim().min(1).max(100),
-    lastName: z.string().trim().min(1).max(100),
+    firstName: z.string().trim().min(1, "Add your first name.").max(100),
+    lastName: z.string().trim().min(1, "Add your last name.").max(100),
     headshotUrl: headshotUrlSchema.nullable().or(z.literal("")).optional(),
   }),
   z.object({
@@ -89,7 +89,7 @@ export const profileSectionSchemaFor = (storedGradYear?: number | null) => z.dis
     ...profileEducationFields,
     scholarStatus: scholarStatusSchema.optional(),
     ...actShape,
-    major: z.string().trim().min(1).max(200),
+    major: z.string().trim().min(1, "Add your major.").max(200),
     gradYear: graduationYearSchemaFor(storedGradYear),
     gpa: gpaSchema.nullable().optional(),
     satScore: z.number().int().min(400).max(1600).nullable(),
@@ -99,8 +99,8 @@ export const profileSectionSchemaFor = (storedGradYear?: number | null) => z.dis
     experiences: z
       .array(
         z.object({
-          title: z.string().trim().min(1).max(200),
-          subtitle: z.string().trim().min(1).max(200),
+          title: z.string().trim().min(1, "Add a role or project for each experience.").max(200),
+          subtitle: z.string().trim().min(1, "Add an organization for each experience.").max(200),
           period: z.string().trim().max(100),
         }),
       )
@@ -143,10 +143,22 @@ export function profileChecklist(profile: FullStudentProfile) {
   ]
 }
 
+/** An experience row with something in it; blank rows stay in the editor but are never saved. */
+export function hasExperienceContent(item: { title: string; subtitle: string; period: string }) {
+  return [item.title, item.subtitle, item.period].some(value => (value ?? "").trim())
+}
+
 /** Compare only this section so independent profile sections can save concurrently. */
 export function profileSectionSnapshot(profile: object, section: ProfileSection) {
   const source = profile as Record<string, unknown>
-  if (section === "experience") return JSON.stringify((source.experiences as { title: string; subtitle: string; period: string }[] ?? []).map(({ title, subtitle, period }) => ({ title, subtitle, period })))
+  // Blank rows are left out, so an editor still holding one matches the saved list it came from.
+  if (section === "experience") return JSON.stringify((source.experiences as { title: string; subtitle: string; period: string }[] ?? []).filter(hasExperienceContent).map(({ title, subtitle, period }) => ({ title, subtitle, period })))
   const keys = section === "identity" ? ["firstName", "lastName", "headshotUrl"] : section === "links" ? ["linkedinUrl", "resumeUrl"] : section === "contact" ? ["phone"] : ["highSchool", "gender", "pronouns", "transferStudent", "major", "gradYear", "scholarStatus", "gpa", "satScore", "actScore", "actEnglish", "actMath", "actReading", "actScience"]
   return JSON.stringify(keys.map(key => [key, source[key] ?? null]))
+}
+
+const gpaFormat = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 3 })
+/** A GPA as it reads on a transcript: 4 → "4.00", 3.7 → "3.70", 3.875 → "3.875". */
+export function formatGpa(gpa: number) {
+  return Number.isFinite(gpa) ? gpaFormat.format(gpa) : String(gpa)
 }

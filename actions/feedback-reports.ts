@@ -6,6 +6,7 @@ import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { requirePlatformAdmin } from "@/utils/platform-admin"
 import { ActionError, actionResult } from "@/lib/action-result"
+import { adminActionResult } from "@/lib/admin-failure"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { limitAction } from "@/lib/rate-limit-action"
 import { RATE_LIMITS } from "@/lib/rate-limit"
@@ -95,5 +96,5 @@ async function getFeedbackScreenshotCommand(input: unknown) {
 
 /** Platform admins only: a short-lived signed link to a report's screenshot. Audited. */
 export async function getFeedbackScreenshot(input: unknown) {
-  return actionResult(() => getFeedbackScreenshotCommand(input), "getFeedbackScreenshot")
+  return adminActionResult(() => getFeedbackScreenshotCommand(input), "getFeedbackScreenshot")
 }

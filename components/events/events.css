@@ -11,6 +11,14 @@
   gap: 6px;
   font-size: var(--oc-size-13);
 }
+/* A checkbox row: the box sits before its words instead of stretching across the grid label above them. */
+.oc-event-editor label.oc-event-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+.oc-event-editor label.oc-event-check > input[type="checkbox"] { flex: none; width: auto; margin: 0; }
 .oc-event-editor select {
   padding: 9px;
   border: 1px solid var(--border);

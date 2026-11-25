@@ -16,7 +16,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { taskInputSchema, taskState } from "@/lib/tasks"
-import { taskDate, type TaskWorkspace as Workspace, type ClubTask as Task, type TaskAssignment as Assignment, type TaskRun as Run } from "@/lib/task-presentation"
+import { taskDate, taskDueLabel, type TaskWorkspace as Workspace, type ClubTask as Task, type TaskAssignment as Assignment, type TaskRun as Run } from "@/lib/task-presentation"
 import { getTaskWorkspace, viewTask, submitTask, uploadTaskFile, downloadTaskFile } from "@/lib/workspace-api"
 import { Button } from "@/components/ui/button"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -27,6 +27,7 @@ import { SearchField } from "@/components/ui/search-field"
 import { PillSelect } from "@/components/ui/pill-select"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { useConfirm } from "@/components/ui/confirm-dialog"
+import { taskRequirementsLabel, taskRequirementsSentence } from "@/lib/task-requirements"
 const dateLabel=taskDate
 function relativeDue(value:Date|string|null,now:number) { if(!value)return "No due date";const due=new Date(value),today=new Date(now),tomorrow=new Date(now);tomorrow.setDate(tomorrow.getDate()+1);const time=due.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});return due.toDateString()===today.toDateString()?`Today ${time}`:due.toDateString()===tomorrow.toDateString()?`Tomorrow ${time}`:taskDate(value) }
 function isMissing(task:Task,assignment:Assignment,now:number){return task.status!=="DONE"&&!assignment.reviewedAt&&(!assignment.submittedAt||!!assignment.revisionRequestedAt)&&!!task.dueAt&&+new Date(task.dueAt)<now}
@@ -57,7 +58,7 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
   useRevalidate(()=>setRefresh(value=>value+1),{scopes:["tasks"],enabled:!busy&&!dirty})
   useEffect(()=>{if(!dirty&&!busy)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=""};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn)},[dirty,busy])
   useEffect(()=>{if(manager||!focusedTask||focusedTask===consumedFocus.current||!workspace)return;const task=workspace.tasks.find(task=>task.id===focusedTask),own=task?.assignments.find(assignment=>assignment.memberId===workspace.memberId);if(own){consumedFocus.current=focusedTask;setActive(task!.id);if(!own.viewedAt)void viewTask(own.id).catch(()=>{})}},[focusedTask,workspace,manager])
-  async function run(fn:()=>Promise<unknown>){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){setError(userMessage(error, "Could not save. Please try again."));return false}finally{setBusy(false)}}
+  async function run(fn:()=>Promise<unknown>,options?:{onError?:(message:string)=>void}){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){const message=userMessage(error, "Could not save. Please try again.");if(options?.onError)options.onError(message);else setError(message);return false}finally{setBusy(false)}}
   async function closeTask(){if(busy||document.querySelector('[data-task-uploading="true"]'))return;if(dirty&&!(await confirm({title:"Close task?",description:"Unsaved changes will be lost.",confirmLabel:"Close task",cancelLabel:"Keep editing",tone:"danger"})))return;setActive(null);setDirty(false);setSavedAssignment(null)}
   async function open(task:Task,event?:React.MouseEvent<HTMLElement>){const trigger=event?.currentTarget??document.activeElement as HTMLElement;if(dirty&&!(await confirm({title:"Open another task?",description:"Unsaved changes will be lost.",confirmLabel:"Open task",cancelLabel:"Keep editing",tone:"danger"})))return;taskTrigger.current=trigger;setActive(task.id);setDirty(false);setSavedAssignment(null);const own=task.assignments.find(assignment=>assignment.memberId===workspace?.memberId);if(own&&!own.viewedAt)void viewTask(own.id).catch(()=>{})}
   const personal=workspace?.tasks.filter(task=>task.status!=="DRAFT"&&task.assignments.some(assignment=>assignment.memberId===workspace.memberId))??[]
@@ -82,15 +83,15 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
         <div className="oc-task-filters">{/* Status and grouping are separate controls; counts live in the Status options. */}{filter!=="projects"&&<PillSelect label="Status" prefix="Status" className="oc-task-filter" value={filter} active={filter!=="open"} onChange={setFilter} options={[{value:"open",label:"Active"},{value:"due",label:`Due (${counts.due})`},{value:"overdue",label:`Overdue (${counts.missing})`},{value:"submitted",label:`Submitted (${counts.submitted})`},{value:"completed",label:"Completed"},{value:"all",label:"All tasks"}]}/>}<PillSelect label="Group by" prefix="Group by" size="compact" className="oc-task-group-by" active={filter==="projects"} value={filter==="projects"?"project":"none"} onChange={next=>setFilter(next==="project"?"projects":"open")} options={[{value:"none",label:"None"},{value:"project",label:"Project"}]}/><SearchField aria-label="Search tasks" value={query} onChange={event=>setQuery(event.target.value)} onClear={()=>setQuery("")} placeholder="Search tasks" containerClassName="oc-task-search-control"/></div>
       </div>}
       {!tasks.length&&!shared&&<EmptyState role="status" tone="outlined" density="compact" className="oc-task-empty" title={query.trim()||filter!=="open"?"No tasks match your filters.":"You're all caught up."} description={query.trim()||filter!=="open"?"Try another search or clear the filters.":personal.length?"No tasks need your attention. You can still view earlier work.":"New tasks will appear here."} action={(query.trim()||filter!=="open")?<Button type="button" variant="outline" size="sm" onClick={()=>{setQuery("");setFilter("open")}}>Clear filters</Button>:personal.length>0?<Button type="button" variant="outline" size="sm" onClick={()=>setFilter("all")}>View all tasks</Button>:undefined}/>}
-      <ul className="oc-task-list">{tasks.map(task=>{const own=task.assignments.find(assignment=>assignment.memberId===workspace.memberId)!,status=task.status==="DONE"?"Closed":taskState(task,own,now),tone=!own.revisionRequestedAt&&(own.submittedAt||own.reviewedAt)?"submitted":isMissing(task,own,now)?"missing":"due";return <li key={task.id}><button type="button" className={`oc-task-row oc-task-${tone}`} onClick={event=>void open(task,event)}><span className="oc-task-icon"><FilePenLine aria-hidden="true"/></span><span className="oc-task-row-copy"><strong>{task.title}</strong><span>{membership?.club.name??"Your club"}{task.projectId?` · ${task.project?.title??workspace.tasks.find(project=>project.id===task.projectId)?.title??"Related project"}`:""}{own.groupLabel?` · ${own.groupLabel}`:""}</span><small>{task.kind==="PROJECT"?"Project":task.requirements?.length?task.requirements.map(type=>({TEXT:"Written response",LINK:"Link",FILE:"File upload"})[type as "TEXT"]).join(" + "):"Written response, link, or file"} · {status}</small></span><span className="oc-task-deadline"><CalendarClock aria-hidden="true"/>{relativeDue(task.dueAt,now)}</span></button></li>})}</ul>
-      <Sheet open={!!active} onOpenChange={open=>{if(!open)void closeTask()}}><SheetContent className="oc-workspace-drawer oc-task-drawer w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={event=>{event.preventDefault();if(taskTrigger.current?.isConnected)taskTrigger.current.focus();else document.getElementById("workspace-content")?.focus()}}><div className="oc-task-detail-icon"><FilePenLine aria-hidden="true"/></div><SheetTitle className="oc-task-detail-title">{active?.title||"Task details"}</SheetTitle><SheetDescription>{membership?.club.name??"Your club"} · {active?.kind==="PROJECT"?"Project":"Assignment"}</SheetDescription>{active&&<div className="oc-task-detail-meta"><span><CalendarClock size={16}/>Due {relativeDue(active.dueAt,now)}</span><span>{taskState(active,active.assignments.find(assignment=>assignment.memberId===workspace.memberId)!,now)}</span></div>}{error&&<p role="alert" className="oc-task-error">{error}</p>}{active&&<div onChangeCapture={event=>{if((event.target as HTMLElement).closest("form"))setDirty(true)}} onClickCapture={event=>{if((event.target as HTMLElement).closest("[data-task-edit]"))setDirty(true)}}><TaskDetail key={`${active.id}-${active.revision}`} task={active} workspace={workspace} manager={false} run={run} busy={busy} onOpen={open} savedAssignmentId={savedAssignmentId} onSubmitted={setSavedAssignment}/></div>}</SheetContent></Sheet>
+      <ul className="oc-task-list">{tasks.map(task=>{const own=task.assignments.find(assignment=>assignment.memberId===workspace.memberId)!,status=task.status==="DONE"?"Closed":taskState(task,own,now),tone=!own.revisionRequestedAt&&(own.submittedAt||own.reviewedAt)?"submitted":isMissing(task,own,now)?"missing":"due";return <li key={task.id}><button type="button" className={`oc-task-row oc-task-${tone}`} onClick={event=>void open(task,event)}><span className="oc-task-icon"><FilePenLine aria-hidden="true"/></span><span className="oc-task-row-copy"><strong>{task.title}</strong><span>{membership?.club.name??"Your club"}{task.projectId?` · ${task.project?.title??workspace.tasks.find(project=>project.id===task.projectId)?.title??"Related project"}`:""}{own.groupLabel?` · ${own.groupLabel}`:""}</span><small>{task.kind==="PROJECT"?"Project":task.requirements?.length?taskRequirementsLabel(task.requirements):"Written response, link, or file"} · {status}</small></span><span className="oc-task-deadline"><CalendarClock aria-hidden="true"/>{relativeDue(task.dueAt,now)}</span></button></li>})}</ul>
+      <Sheet open={!!active} onOpenChange={open=>{if(!open)void closeTask()}}><SheetContent className="oc-workspace-drawer oc-task-drawer w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={event=>{event.preventDefault();if(taskTrigger.current?.isConnected)taskTrigger.current.focus();else document.getElementById("workspace-content")?.focus()}}><div className="oc-task-detail-icon"><FilePenLine aria-hidden="true"/></div><SheetTitle className="oc-task-detail-title">{active?.title||"Task details"}</SheetTitle><SheetDescription>{membership?.club.name??"Your club"} · {active?.kind==="PROJECT"?"Project":"Task"}</SheetDescription>{active&&<div className="oc-task-detail-meta"><span><CalendarClock size={16}/>{active.dueAt?`Due ${relativeDue(active.dueAt,now)}`:"No due date"}</span><span>{taskState(active,active.assignments.find(assignment=>assignment.memberId===workspace.memberId)!,now)}</span></div>}{error&&<p role="alert" className="oc-task-error">{error}</p>}{active&&<div onChangeCapture={event=>{if((event.target as HTMLElement).closest("form"))setDirty(true)}} onClickCapture={event=>{if((event.target as HTMLElement).closest("[data-task-edit]"))setDirty(true)}}><TaskDetail key={`${active.id}-${active.revision}`} task={active} workspace={workspace} manager={false} run={run} busy={busy} onOpen={open} savedAssignmentId={savedAssignmentId} onSubmitted={setSavedAssignment}/></div>}</SheetContent></Sheet>
     </>}
   </div>
 }
 // A successful submit reloads the workspace, and the new revision remounts the form below, so the "saved" confirmation is held by the caller.
 export function TaskDetail({task,workspace,run,busy,onOpen,savedAssignmentId,onSubmitted}:{task:Task;workspace:Workspace;manager:false;run:Run;busy:boolean;onOpen:(task:Task)=>void;savedAssignmentId?:string|null;onSubmitted?:(assignmentId:string|null)=>void}) {
   const own=task.assignments.find(assignment=>assignment.memberId===workspace.memberId)
-  return <section className="space-y-5 py-5">{task.projectId&&<p className="text-sm text-muted-foreground">Project · {task.project?.title??workspace.tasks.find(project=>project.id===task.projectId)?.title??"Related project"}</p>}{own?.groupLabel&&<p className="text-sm font-medium">Assigned group · {own.groupLabel}</p>}<h3 className="oc-card-heading">Instructions</h3><p className="whitespace-pre-wrap break-words text-sm leading-7">{task.description||"No additional instructions."}</p>{resources(task).length>0&&<ul aria-label="Task resources" className="space-y-2 rounded-xl border p-4 text-sm">{resources(task).map((resource,index)=><li key={index}><a className="break-words underline" href={resource.url} target="_blank" rel="noreferrer">{resource.label} <ArrowUpRight size={14} className="inline-block align-text-bottom" /></a></li>)}</ul>}{own&&task.kind==="TASK"&&<Submission key={`${own.id}-${own.revision}`} task={task} assignment={own} run={run} busy={busy} saved={savedAssignmentId===own.id} onSubmitted={onSubmitted}/>} {task.kind==="PROJECT"&&<div><h3 className="oc-card-heading">Related tasks</h3><ul className="mt-3 space-y-2">{workspace.tasks.filter(child=>child.projectId===task.id).map(child=><li key={child.id}><Button variant="ghost" onClick={()=>onOpen(child)}>{child.title}</Button><span className="text-xs text-muted-foreground">Due {taskDate(child.dueAt)}</span></li>)}</ul></div>}</section>
+  return <section className="space-y-5 py-5">{task.projectId&&<p className="text-sm text-muted-foreground">Project · {task.project?.title??workspace.tasks.find(project=>project.id===task.projectId)?.title??"Related project"}</p>}{own?.groupLabel&&<p className="text-sm font-medium">Assigned group · {own.groupLabel}</p>}<h3 className="oc-card-heading">Instructions</h3><p className="whitespace-pre-wrap break-words text-sm leading-7">{task.description||"No additional instructions."}</p>{resources(task).length>0&&<ul aria-label="Task resources" className="space-y-2 rounded-xl border p-4 text-sm">{resources(task).map((resource,index)=><li key={index}><a className="break-words underline" href={resource.url} target="_blank" rel="noreferrer">{resource.label} <ArrowUpRight size={14} className="inline-block align-text-bottom" /></a></li>)}</ul>}{own&&task.kind==="TASK"&&<Submission key={`${own.id}-${own.revision}`} task={task} assignment={own} run={run} busy={busy} saved={savedAssignmentId===own.id} onSubmitted={onSubmitted}/>} {task.kind==="PROJECT"&&<div><h3 className="oc-card-heading">Related tasks</h3><ul className="mt-3 space-y-2">{workspace.tasks.filter(child=>child.projectId===task.id).map(child=><li key={child.id}><Button variant="ghost" onClick={()=>onOpen(child)}>{child.title}</Button><span className="text-xs text-muted-foreground">{taskDueLabel(child.dueAt)}</span></li>)}</ul></div>}</section>
 }
 function Submission({
   task,
@@ -127,7 +128,9 @@ function Submission({
         const data = new FormData(e.currentTarget);
         try { await draftSave.flush() } catch { return }
         setSubmitted(false);
+        setError("");
         onSubmitted?.(null);
+        // A refusal shows beside Submit, where the member is looking, not at the top of the drawer.
         const success = await run(() =>
           submitTask({
             assignmentId: a.id,
@@ -136,6 +139,7 @@ function Submission({
             link: String(data.get("link") || ""),
             fileIds: files.map((f) => f.id),
           }),
+          { onError: setError },
         );
         if (success) { await draftSave.clear(); setSubmitted(true); onSubmitted?.(a.id); }
       }}
@@ -147,10 +151,15 @@ function Submission({
           ? `Submitted ${dateLabel(a.submittedAt)}${closed ? "" : " · You can update it until it is reviewed or the task closes."}`
           : "No submission yet. Late submissions are accepted while the task is open and are labeled late."}
       </p>
+      {a.feedback && (
+        <div role="note" className="whitespace-pre-wrap break-words rounded-xl border p-4 text-sm">
+          <strong className="flex items-center gap-2"><CheckCircle2 size={16} />{a.revisionRequestedAt ? "Revisions requested" : "Review feedback"}</strong> {a.feedback}
+        </div>
+      )}
       <p className="text-xs text-muted-foreground">
         Required:{" "}
         {task.requirements.length
-          ? task.requirements.map((s) => s.toLowerCase()).join(" + ")
+          ? taskRequirementsSentence(task.requirements)
           : "text, a link, or a file"}
         .{" "}
         {closed
@@ -282,11 +291,6 @@ function Submission({
       {uploading && (
         <p role="status" className="text-sm">
           Uploading securely… Keep this page open.
-        </p>
-      )}
-      {a.feedback && (
-        <p className="whitespace-pre-wrap break-words text-sm">
-          <strong className="flex items-center gap-2"><CheckCircle2 size={16} />{a.revisionRequestedAt ? "Revisions requested" : "Review feedback"}</strong> {a.feedback}
         </p>
       )}
       {(submitted || saved) && <p role="status" className="text-sm text-success">Your submission was saved.</p>}

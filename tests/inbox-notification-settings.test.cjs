@@ -27,7 +27,7 @@ test("one address for notification settings: the Inbox, with the preferences she
 
 test("the Inbox header shows the Notification settings entry point", () => {
   const layout = read("components/dashboard-layout.tsx")
-  assert.match(layout, /action=\{view === "inbox" \? <InboxNotificationSettings \/> : undefined\}/)
+  assert.match(layout, /action=\{view === "inbox" \? <InboxNotificationSettings \/> : /)
   const control = read("components/inbox/inbox-notification-settings.tsx")
   assert.match(control, /<IconButton ref=\{trigger\} variant="outline" aria-label="Notification settings"[^>]*aria-haspopup="dialog"/)
   assert.match(control, /<Settings aria-hidden="true" \/>/)

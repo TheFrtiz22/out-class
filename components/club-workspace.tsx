@@ -14,7 +14,7 @@ import { ManagerOverview } from "@/components/manager-overview";
 import { ClubHomeActions } from "@/components/club-home/club-home-actions";
 import { ShellState } from "@/components/shell/shell-state";
 import { useShellBindings } from "@/components/shell/workspace-shell-context";
-import { canLeaveWorkspace, managerNavigation, mobileDestinations } from "@/lib/product-navigation";
+import { canLeaveWorkspace, managerNavigation, mobileDestinations, workspacePageIds } from "@/lib/product-navigation";
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView), { loading: () => <WorkspaceLoading label="Loading recruiting rules…" layout="form" rows={3} /> });
 import { HomeAnnouncements } from "@/components/club-home/home-announcements";
 import type { ViewId } from "@/lib/views";
@@ -220,6 +220,9 @@ export function ClubWorkspace({
   }
   if (suspended) return <div className="max-w-[var(--oc-reading-width)] space-y-4"><PageHeader title="This club is suspended" /><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div>;
   if (resolvingEntry || moved || legacyRoom) return <WorkspaceLoading label="Opening club workspace…" />;
+  const unknownPage = !(workspacePageIds[mode === "recruiting" ? "recruiting" : "club"] as readonly string[]).includes(active);
+  // Send a stale link to a page this member can open: their first recruiting page, or club home.
+  const recoveryPage = mode === "recruiting" ? nav.find(n => n.href && !n.hidden) : undefined;
   const allowed = mode === "recruiting" ? manager && (recruitmentTools(membership!).length > 0 || active === "application") && nav.some(n => n.id === active) : nav.some(n => n.id === active);
   function navigate(view: ViewId) {
     if (view === "interview-workspace") { openInterviewRoom(); return }
@@ -248,7 +251,7 @@ export function ClubWorkspace({
               items={mobileDestinations(nav.filter(n => n.id !== "settings")).map(n => ({ id: n.id, label: n.id === "overview" ? TERMS.recruiting : n.label, href: n.href! }))}
               onNavigate={(event, href) => { if (!canLeaveWorkspace()) { event.preventDefault(); return } handleClubLink(event, href) }} /></div>}
           </>}
-          {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${configurationPage ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
+          {needsOverview && error ? <Card variant="glass" role="alert" className="oc-dashboard-error"><div className="oc-dashboard-state px-[var(--oc-content-padding)]"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div></Card> : needsOverview && !current ? <DashboardLoading mode={mode === "recruiting" ? "recruiting" : "club"} /> : !allowed ? (unknownPage ? <div role="alert" className="space-y-3"><p>This page doesn’t exist. The link may be out of date.</p><Link href={recoveryPage?.href ?? clubWorkspaceHref(clubId, "overview")} className="inline-flex min-h-11 items-center underline underline-offset-4">{recoveryPage ? "Go to Recruiting" : "Go to club home"}</Link></div> : <p role="alert">This section isn’t available with your current access.</p>) : <section key={`${configurationPage ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {/* Club home: the same page for leaders and members, gated by the overview's permission-scoped data. */}
             {section === "overview" && current && <ManagerOverview data={current} refreshing={overviewPending} onChanged={() => setRetry(n => n + 1)} />}
             {section === "overview" && current && manager && hasPermission(membership, "meetings.manage") && <HomeAnnouncements clubId={clubId} privacyScope={scope} />}

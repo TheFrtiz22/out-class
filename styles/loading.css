@@ -46,21 +46,6 @@ body > .oc-loading-screen {
   justify-items: center;
   gap: 18px;
 }
-.oc-loading-identity::before {
-  content: "";
-  position: absolute;
-  width: 164px;
-  height: 164px;
-  top: -43px;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 1px solid rgb(86 121 154 / 12%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-.oc-loading-screen[data-variant="navy"] .oc-loading-identity::before {
-  border-color: rgb(255 247 236 / 14%);
-}
 /* A continuous traveling segment communicates activity for the entire wait. */
 .oc-loading-line {
   position: relative;

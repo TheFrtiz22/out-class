@@ -10,6 +10,7 @@ import { recipientAudienceSchema, audienceKey, audienceCapabilities } from "@/li
 import { resolveRecipientAudience } from "@/utils/recipient-audience";
 import { assertBoundedInput, boundedParse, inputLimitsFor } from "@/lib/bounded-input";
 const uuid = z.string().uuid();
+const likeLiteral = (value: string) => value.replace(/[\\%_]/g, c => "\\" + c);
 const saveInput = z.object({ clubId: uuid, id: uuid, revision: z.number().int().nonnegative().nullable(), name: z.string().trim().min(1).max(100),
   kind: z.enum(["MANUAL", "RULES"]), userIds: z.array(uuid).max(1000).default([]), rules: recipientAudienceSchema.optional(),
 }).strict().superRefine((d,ctx)=>{
@@ -58,6 +59,10 @@ async function saveRecipientGroupCommand(input: unknown) {
       if (previous.kind === d.kind && previous.name === d.name && audienceKey(previous.rules) === audienceKey(rules) && audienceKey(entries.map(e=>e.userId)) === audienceKey(ids)) return previous;
       if (d.revision === null || previous.revision !== d.revision) throw new ActionError("Group changed. Reload before saving.", "STALE");
     } else if (d.revision !== null) throw new ActionError("Recipient group unavailable in this club.", "STALE");
+    // Names are unique per club ignoring case (RecipientGroup_club_name_normalized): refuse with the reason rather than hit the index.
+    // Prisma compares insensitive equality with ILIKE, so % and _ are escaped to match the name literally, as the index does.
+    if (await tx.recipientGroup.findFirst({ where: { clubId: d.clubId, id: { not: d.id }, name: { equals: likeLiteral(d.name), mode: "insensitive" } }, select: { id: true } }))
+      throw new ActionError(`This club already has a group named "${d.name}". Choose another name.`, "NAME_TAKEN");
     const spec = d.kind === "MANUAL" ? { include: [{ source: "PEOPLE", userIds: ids }] } : rules;
     const resolved = await resolveRecipientAudience(tx, d.clubId, user.id, spec);
     if (d.kind === "MANUAL" && resolved.length !== ids.length) throw new ActionError("One or more recipients are unavailable in this club.", "STALE");

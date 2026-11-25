@@ -63,6 +63,13 @@ export function membershipRoleLabel(member: { accessRole?: string | null; isOwne
   return membershipRoleLabels[(member.accessRole ?? "MEMBER") as MembershipRole] ?? membershipRoleLabels.MEMBER
 }
 
+/** A member's club title, or their legacy role in words ("General member", not "GENERAL MEMBER"). */
+export const memberRoleTitles: Record<string, string> = { PRESIDENT: "President", RECRUITMENT_LEAD: "Recruitment lead", GENERAL_MEMBER: "General member" }
+export function memberTitleLabel(member: { title?: string | null; role: string }) {
+  if (member.title?.trim()) return member.title.trim()
+  return memberRoleTitles[member.role] ?? member.role.charAt(0) + member.role.slice(1).toLowerCase().replaceAll("_", " ")
+}
+
 /**
  * "1 applicant", "2 applicants". Pass the plural when it is not the singular plus "s".
  * `pluralize(3, "result")` → "3 results"; `pluralize(1, "class", "classes")` → "1 class".

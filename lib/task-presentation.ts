@@ -5,7 +5,8 @@ export type TaskWorkspace = Awaited<ReturnType<typeof getTaskWorkspace>>
 export type ClubTask = TaskWorkspace["tasks"][number]
 export type TaskAssignment = ClubTask["assignments"][number]
 export type TaskMember = TaskWorkspace["members"][number]
-export type TaskRun = (fn: () => Promise<unknown>) => Promise<boolean>
+/** `onError` shows a refusal where the action was taken (beside its button) instead of at the top of the page. */
+export type TaskRun = (fn: () => Promise<unknown>, options?: { onError?: (message: string) => void }) => Promise<boolean>
 export type ReviewEntry = { task: ClubTask; assignment: TaskAssignment }
 export function taskAudienceMode(audience:TaskAudience) {
   if(audience.random)return "random"
@@ -20,6 +21,10 @@ export function taskYearLabel(year: number, now=Date.now()) {
   return academicYear({ gradYear: year }, new Date(now))
 }
 export function taskDate(value: Date|string|null) { return value ? new Date(value).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "No due date" }
+/** "Due Dec 1, 5:00 PM", or "No due date" alone, never "Due No due date". */
+export function taskDueLabel(value: Date|string|null) { return value ? `Due ${taskDate(value)}` : "No due date" }
+/** The task's status in the same words as the builder's Status menu: "Open", "In progress", "Closed", or "Draft". */
+export function taskStatusLabel(status: string) { return ({ DRAFT: "Draft", OPEN: "Open", IN_PROGRESS: "In progress", DONE: "Closed" } as Record<string,string>)[status] ?? status }
 export function taskLocalDate(value: Date|string|null) { if(!value)return ""; const date=new Date(value);date.setMinutes(date.getMinutes()-date.getTimezoneOffset());return date.toISOString().slice(0,16) }
 export function needsTaskReview(assignment: Pick<TaskAssignment,"submittedAt"|"reviewedAt"|"revisionRequestedAt">) { return !!assignment.submittedAt && !assignment.reviewedAt && !assignment.revisionRequestedAt }
 export function taskCounts(task: ClubTask, now=Date.now()) {

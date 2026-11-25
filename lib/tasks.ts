@@ -1,6 +1,7 @@
 import { ActionError } from "@/lib/action-result"
 import { academicYear } from "@/lib/recruitment-profile";
 import { z } from "zod";
+import { boundedSafeParse } from "@/lib/bounded-input";
 const uuid = z.string().uuid();
 export const safeTaskLink = z
   .string()
@@ -17,7 +18,7 @@ export const safeTaskLink = z
     } catch {
       return false;
     }
-  }, "Use an http or https link.");
+  }, "Use a full link that starts with https://.");
 export const taskAudienceSchema = z.object({
   everyone: z.boolean().default(false),
   match: z.enum(["ANY", "ALL"]).default("ANY"),
@@ -115,6 +116,16 @@ export const submissionSchema = z.object({
   link: safeTaskLink,
   fileIds: z.array(uuid).max(5),
 });
+/** A submission the member can fix themselves: the message to show, or null. Anything else still fails the full parse. */
+export function taskSubmissionProblem(input: unknown): string | null {
+  // Bounded first: an oversized request is refused by its size, never walked element by element here.
+  const parsed = boundedSafeParse(submissionSchema, input);
+  if (parsed.success) return null;
+  const issue = parsed.error.issues.find((item) => item.path[0] === "link" || item.path[0] === "text");
+  if (!issue) return null;
+  if (issue.path[0] === "text") return issue.code === "too_big" ? "Keep your written response under 30,000 characters." : null;
+  return issue.code === "too_big" ? "Use a shorter link." : issue.message;
+}
 export function validateTaskSubmission(
   requirements: string[],
   input: z.infer<typeof submissionSchema>,

@@ -19,6 +19,9 @@ import { normalizeProfileFieldVisibility, restrictApplicationProfile, type Profi
 import { normalizeReviewRubric } from "@/lib/review-rubric";
 
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
+import { assertMayDecideApplicant, isRecused } from "@/lib/recusal";
+import { applicationReviewVisibility } from "@/lib/application-review-visibility";
+import { visibleQuestionIds } from "@/lib/student-applications";
 
 import { testRequirements } from "@/lib/test-scores";
 import {
@@ -190,13 +193,14 @@ async function moveApplicantRoundCommand(
 
   const application = await prisma.$transaction(async (tx) => {
     // Serialize progression with pipeline reordering/archive.
-    await authorizeClubTransaction(tx, parsed.clubId, user.id, ["recruitment.manage", "applicants.identify"]);
+    const member = await authorizeClubTransaction(tx, parsed.clubId, user.id, ["recruitment.manage", "applicants.identify"]);
     const round = await tx.pipelineRound.findFirst({
       where: { id: parsed.newRoundId, clubId: parsed.clubId, archivedAt: null },
     });
     if (!round) throw new ActionError("Round is not available for this club.");
     const current = await tx.application.findFirst({ where: { id: parsed.applicationId, clubId: parsed.clubId } });
     if (!current) throw new ActionError("Application unavailable.");
+    await assertMayDecideApplicant(tx, current, { userId: user.id, memberId: member.id });
     assertRecruitmentRoundMove(current.status);
     const result = await tx.application.updateMany({
       where: {
@@ -269,7 +273,10 @@ async function setApplicationStatusCommand(
   ]);
 
   const application = await clubWriteTransaction(async (tx) => {
-    await authorizeClubTransaction(tx, parsed.clubId, user.id, ["decisions.manage", "applicants.identify"]);
+    const member = await authorizeClubTransaction(tx, parsed.clubId, user.id, ["decisions.manage", "applicants.identify"]);
+    const target = await tx.application.findFirst({ where: { id: parsed.applicationId, clubId: parsed.clubId }, select: { id: true, studentId: true } });
+    if (!target) throw new ActionError("Application changed or is not available for this club. Reload the page and try again.");
+    await assertMayDecideApplicant(tx, target, { userId: user.id, memberId: member.id });
     const decision = await publishRecruitmentDecision(tx, parsed, user.id);
     const updated = await tx.application.findFirst({
       where: { id: parsed.applicationId, clubId: parsed.clubId },
@@ -315,12 +322,21 @@ async function revealApplicantIdentityCommand(
           include: { studentProfile: { include: { experiences: true } } },
         },
         evaluations: { omit: { notes: true, applicantQuestions: true } },
-        answers: { include: { question: true } },
+        interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
+        // Question order matters: a follow-up is visible only after its parent is (visibleQuestionIds).
+        answers: { include: { question: true }, orderBy: [{ question: { order: "asc" } }, { id: "asc" }] },
         bookings: { include: { slot: true } },
       },
     });
     if (!application) throw new ActionError("Application unavailable.");
-    const { club, ...revealed } = application;
+    const { club, interviewAssignments: _assignments, ...identified } = application;
+    // A reveal shows who the applicant is. Review data follows the canonical detail read (lib/pipeline-detail.ts):
+    // only the evaluations this member may see, only visible answers, and nothing once they stepped out.
+    const recused = await isRecused(tx, application.id, membership.id);
+    const visibleQuestions = visibleQuestionIds(application.answers.flatMap(a => a.question ? [a.question] : []), application.answers);
+    const revealed = { ...identified,
+      evaluations: recused ? [] : applicationReviewVisibility(application, membership).evaluations,
+      answers: recused ? [] : application.answers.filter(a => !a.question || visibleQuestions.has(a.questionId)) };
     await tx.auditLog.create({
       data: {
         actorId: user.id,

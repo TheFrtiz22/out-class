@@ -50,6 +50,8 @@ test('an ordinary role label updates immediately and rolls back if the server re
   reject(Object.assign(Error('Grant changed'),{userFacing:true}));await h.flush();
   assert.equal(nodes(h.render()).filter(n=>['select','NativeSelect'].includes(n.type?.name??n.type)&&n.props.name==='role').at(-1).props.defaultValue,'MEMBER');
   assert.ok(JSON.stringify(h.render()).includes('Grant changed'));
+  // The refusal says what to do; a reload button beside it would only reload the same directory.
+  assert.equal(nodes(h.render()).find(n=>['button','Button'].includes(n.type)&&JSON.stringify(n.props.children)==='"Try again"'),undefined);
  }finally{global.FormData=FormDataBefore;restore()}
 });
 

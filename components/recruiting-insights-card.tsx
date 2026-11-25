@@ -22,15 +22,17 @@ export function RecruitingInsightsCards({ clubId, index }: { clubId: string; ind
   if (demo.isDemoEnabled || failed || !data || !data.funnel.applied) return null
   const f = data.funnel, rate = (n: number) => f.applied ? `${Math.round(n / f.applied * 100)}%` : "—"
   const flagged = data.reviewers.filter(r => r.offset !== null && Math.abs(r.offset) >= 0.5)
+  // "In line" is only a finding once at least one reviewer has enough shared applicants to compare.
+  const compared = data.reviewers.some(r => r.offset !== null)
   return <>
     <DashboardCard id="dashboard-funnel" title="Conversion" aside={data.cycleName ?? undefined} index={index}>
-      <MetricTiles items={[{ label: "Applied", value: f.applied }, { label: `Interviewed · ${rate(f.interviewed)}`, value: f.interviewed }, { label: `Accepted · ${rate(f.admitted)}`, value: f.admitted }, { label: `Joined · ${rate(f.joined)}`, value: f.joined }]} />
+      <MetricTiles items={[{ label: "Applied", value: f.applied }, { label: `Reached interviews · ${rate(f.interviewed)}`, value: f.interviewed }, { label: `Accepted · ${rate(f.admitted)}`, value: f.admitted }, { label: `Joined · ${rate(f.joined)}`, value: f.joined }]} />
       {/* Counts the whole cycle, so it differs from the in-progress count in Pipeline by round. */}
       <DashboardFoot>Everyone who applied this cycle, including applicants already decided.</DashboardFoot>
     </DashboardCard>
     {data.reviewers.length > 0 && <DashboardCard id="dashboard-calibration" title="Reviewer calibration" index={index + 1}>
       {flagged.length ? <ul className="space-y-2 text-sm">{flagged.slice(0, 5).map(r => <li key={r.memberId}><strong className="font-medium">{r.name}</strong><span className="block text-muted-foreground">{calibrationLabel(r.offset)} · {r.compared} shared</span></li>)}</ul>
-        : <DashboardQuiet>Reviewers are scoring in line with each other.</DashboardQuiet>}
+        : <DashboardQuiet>{compared ? "Reviewers are scoring in line with each other." : "Not enough shared reviews to compare yet. This fills in once two panelists score the same applicant."}</DashboardQuiet>}
       <DashboardFoot>Compared only with other panelists on the same applicant and round. Raw scores are unchanged.</DashboardFoot>
     </DashboardCard>}
   </>

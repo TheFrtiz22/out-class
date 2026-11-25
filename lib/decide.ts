@@ -54,12 +54,13 @@ export const sessionToRun = (room: GroupedRoom) => { const group = votingSession
 
 /**
  * Tab counts for the selected round (rooms are already filtered to it by the server read):
- * Vote = sessions still to run (see sessionToRun); Send = applicants in closed sessions waiting to be sent.
+ * Vote = sessions still to run (see sessionToRun); Send = applicants in closed sessions waiting to be sent, plus
+ * `staged` decisions saved during review for this round (Decide › Send lists both).
  */
-export function decideCounts(rooms: DecideRoom[]): Partial<Record<DecideTab, number>> {
+export function decideCounts(rooms: DecideRoom[], staged = 0): Partial<Record<DecideTab, number>> {
   return {
     voting: rooms.filter(sessionToRun).length,
-    letters: rooms.filter(readyToSend).reduce((total, room) => total + room.applicantCount, 0),
+    letters: rooms.filter(readyToSend).reduce((total, room) => total + room.applicantCount, 0) + staged,
   }
 }
 
