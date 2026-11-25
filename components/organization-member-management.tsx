@@ -690,6 +690,12 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 className="rounded-xl border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground"
               >
                 {invitesOpen ? "No invitations match." : "No members match."}
+                {/* A search or filter that hides everyone gets its own way back to the full list. */}
+                {(query || roleFilter || yearFilter || groupFilter || statusFilter) && (
+                  <Button type="button" variant="link" size="sm" className="ml-2 h-auto p-0" onClick={() => { setQuery(""); setRoleFilter(""); setYearFilter(""); setGroupFilter(""); setStatusFilter(""); resetPaging() }}>
+                    Clear search and filters
+                  </Button>
+                )}
               </p>
             )}
             {pages > 1 && (
