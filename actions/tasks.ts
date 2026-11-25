@@ -29,6 +29,7 @@ import {
   bulkReviewSchema,
   type TaskAudience,
   submissionSchema,
+  taskSubmissionProblem,
   validateTaskSubmission,
   taskFileSchema,
   type TaskInput,
@@ -308,6 +309,9 @@ async function viewTaskCommand(assignmentId: string) {
   return { success: true };
 }
 async function submitTaskCommand(input: z.infer<typeof submissionSchema>) {
+  // A link or response the member can correct gets their message, not the client's "Could not save".
+  const problem = taskSubmissionProblem(input);
+  if (problem) throw new ActionError(problem);
   const data = boundedParse(submissionSchema, input);
   const { user, assignment } = await ownedAssignment(data.assignmentId);
   // Alumni cannot submit tasks (lib/graduation.ts), including a graduate kept as owner.
