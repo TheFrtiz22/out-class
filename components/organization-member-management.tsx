@@ -1,5 +1,6 @@
 "use client";
 import { userMessage } from "@/lib/user-message"
+import { pluralize } from "@/lib/copy/terms"
 import { LoadingState } from "@/components/ui/loading-state"
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { MemberGroupBuilder } from "@/components/member-group-builder";
@@ -346,7 +347,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
               ? { permissions }
               : {}),
         }),
-      `${count} memberships updated.`,
+      `${pluralize(count, "membership")} updated.`,
       optimistic,
       ids.has(base.actor.id),
     );
