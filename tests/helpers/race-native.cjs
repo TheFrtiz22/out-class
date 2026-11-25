@@ -34,10 +34,13 @@ async function raceFixture(t, { roundTripMs = 6, mocks: extraMocks = {}, beforeS
   const url = new URL(databaseUrl);
   assert.ok(['127.0.0.1', 'localhost'].includes(url.hostname) && url.pathname === '/outclass_security_test', 'Requires the disposable local outclass_security_test database');
   const { PrismaClient } = require('@prisma/client');
+  // utils/prisma keeps its client on globalThis outside production. Without clearing it, a second
+  // fixture in the same file would reuse the first fixture's client: its latency and statement hook.
+  delete globalThis.outclassPrismaBase;
   const operator = new PrismaClient({ datasourceUrl: databaseUrl });
   // The application connects as the non-superuser role that owns the tables, as in production.
   const base = new PrismaClient({ datasourceUrl: databaseUrl.replace('fixture_superuser@', 'outclass_production_app@') });
-  t.after(async () => { await base.$disconnect(); await operator.$disconnect(); });
+  t.after(async () => { delete globalThis.outclassPrismaBase; await base.$disconnect(); await operator.$disconnect(); });
   const identity = await operator.$queryRaw`SELECT current_database() AS name, host(inet_server_addr()) AS address`;
   assert.equal(identity[0].name, 'outclass_security_test'); assert.equal(identity[0].address, '127.0.0.1');
 
