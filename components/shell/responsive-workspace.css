@@ -31,6 +31,8 @@
   .oc-workspace-drawer button,
   .oc-workspace-drawer select,
   .oc-interview-candidate button { min-height: 44px; }
+  /* Switches keep their pill shape; their ::after already gives a 44px touch target. */
+  :is(main, [role="main"], .oc-voting-stage, [data-product-shell], .oc-workspace-drawer, .oc-interview-candidate) button[data-slot="switch"] { min-height: 0; }
   .oc-workspace-drawer button { white-space: normal; overflow-wrap: anywhere; }
   [data-product-shell] main { padding-inline: 1rem; }
 }
