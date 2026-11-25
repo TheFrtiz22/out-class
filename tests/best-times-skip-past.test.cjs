@@ -1,5 +1,7 @@
 const test = require("node:test")
 const assert = require("node:assert/strict")
+const fs = require("node:fs")
+const path = require("node:path")
 const { loadComponent } = require("./helpers/component-module.cjs")
 const planner = loadComponent("lib/meeting-time-planner.ts")
 
@@ -23,4 +25,10 @@ test("best times never suggest a start that has already passed", () => {
   assert.deepEqual(best.map(t => `${t.day}:${t.slot}`), ["2:56", "3:40"])
   // A future week (earliest null) keeps every start, as before.
   assert.equal(planner.bestMeetingTimes(free, 60).length, 3)
+})
+
+test("the planner re-checks Best times every minute while it stays open", () => {
+  const src = fs.readFileSync(path.join(__dirname, "../components/availability/meeting-time-planner.tsx"), "utf8")
+  assert.match(src, /setInterval\(\(\) => setNow\(Date\.now\(\)\), 60_000\)/)
+  assert.match(src, /plannerEarliestStart\(current\.week, now\)\) : \[\], \[current, now\]\)/)
 })

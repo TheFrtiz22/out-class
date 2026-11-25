@@ -46,7 +46,10 @@ export function MeetingTimePlanner({ clubId }: { clubId: string }) {
   }, [clubId, week, duration, selected, demo.isDemoEnabled])
   // Until the read for the chosen week and length returns, the previous grid stays visible but dimmed and inert.
   const current = data && data.week === week && data.duration === duration ? data : null
-  const best = useMemo(() => current ? bestMeetingTimes(current.free, current.duration, 3, plannerEarliestStart(current.week)) : [], [current])
+  // A minute clock, so a suggested start drops out of Best times once it has passed while the planner stays open.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 60_000); return () => window.clearInterval(id) }, [])
+  const best = useMemo(() => current ? bestMeetingTimes(current.free, current.duration, 3, plannerEarliestStart(current.week, now)) : [], [current, now])
   const rosterPanel = useRef<HTMLDivElement>(null)
   useEffect(() => {
     // Where the roster sits below the grid (phones and tablets), bring it into view when a time is chosen.
