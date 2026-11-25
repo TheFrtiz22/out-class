@@ -31,7 +31,7 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 | D | Short links (`/q/[code]`) have no rate limit | Nov 24 web report | Stale: `RATE_LIMITS.shortLinks` (600/min) is applied in `middleware.ts`. Codes are 6-char base62. No change. |
 | E | Explore directory reads all future events uncached | Nov 24 web report | Measured fine at launch scale (1.35 MB, ~70 ms at 200 clubs). Low priority. |
 | F | PR #532 short-answer question needs a production migration | Open PR | Blocked (production migrations gated). Rehearse on disposable Postgres; do not merge. |
-| G | 4 unindexed composite foreign keys (Supabase advisor) | Supabase advisor | Migration PR prepared, not merged (gated). |
+| G | 4 unindexed composite foreign keys (Supabase advisor) | Supabase advisor | Checked: already covered. Each FK's two columns are the leading columns of an existing index, in the other order (e.g. `ApplicantRecusal(clubId, memberId)` for FK `(memberId, clubId)`); the advisor compares column order. No migration needed. |
 | H | Authorization review: mobile API and recruiting actions | Brief step 2 | Reviews running |
 
 ## Findings, merges, migrations and deploys
@@ -43,3 +43,9 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 - Approving that pending deployment from this session was refused by the agent's permission guard. Per the brief, not worked around. Cancelled the waiting dry run so no approval request is left open.
 - Consequence: no production migration can run tonight. Migration work (PR #532, the missing indexes, the push-session column) is prepared and rehearsed on disposable Postgres only, and not merged, because `prebuild` (`check-release-database.cjs --vercel-production-build`) blocks a production deploy whose schema is ahead of the database.
 - To unblock: the owner approves the workflow run in GitHub (Actions → Database migrations → Review deployments).
+
+### 06:25 Supabase performance advisor: no real gap
+
+- The 4 "unindexed foreign key" findings are covered by existing composite indexes whose leading columns are the FK's columns in a different order. Postgres uses them for the FK equality lookups. No migration.
+- 70 "unused index" findings: expected before launch (little traffic). Not dropping any: removing indexes is not additive and could hurt at launch load.
+- Auth uses a fixed 10 connections: noted for the owner, a dashboard setting, not code.
