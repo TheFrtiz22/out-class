@@ -9,7 +9,8 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { privateClubAssetStorage, referencedClubAssetBytes } from "@/utils/club-asset-storage";
 import { prepareClubImage } from "@/lib/club-image";
 import { UPLOAD_QUOTA_MESSAGES, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
-import { ActionError, actionResult } from "@/lib/action-result";
+import { ActionError } from "@/lib/action-result";
+import { adminActionResult } from "@/lib/admin-failure";
 
 async function uploadClubAssetCommand(input: FormData) {
   const keys = ['clubId', 'file', 'admin'];
@@ -57,5 +58,5 @@ async function uploadClubAssetCommand(input: FormData) {
 // Returned through actionResult so the reason (file type, size, upload limit) reaches the person:
 // production replaces a thrown message with a generic one.
 export async function uploadClubAsset(input: FormData) {
-  return actionResult(() => uploadClubAssetCommand(input), "uploadClubAsset")
+  return adminActionResult(() => uploadClubAssetCommand(input), "uploadClubAsset")
 }

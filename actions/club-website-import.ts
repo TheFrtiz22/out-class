@@ -2,7 +2,8 @@
 import { z } from "zod"
 import { requireClubPermission } from "@/utils/auth"
 import { requirePlatformAdmin } from "@/utils/platform-admin"
-import { ActionError, actionResult } from "@/lib/action-result"
+import { ActionError } from "@/lib/action-result"
+import { adminActionResult } from "@/lib/admin-failure"
 import { boundedParse } from "@/lib/bounded-input"
 import { limitAction } from "@/lib/rate-limit-action"
 import { RATE_LIMIT_MESSAGE, RATE_LIMITS } from "@/lib/rate-limit"
@@ -20,5 +21,5 @@ async function importClubFromWebsiteCommand(input: unknown) {
 
 /** Reads a club's public website into suggested profile values. Saves nothing. */
 export async function importClubFromWebsite(input: { url: string; clubId?: string }) {
-  return actionResult(() => importClubFromWebsiteCommand(input), "importClubFromWebsite")
+  return adminActionResult(() => importClubFromWebsiteCommand(input), "importClubFromWebsite")
 }
