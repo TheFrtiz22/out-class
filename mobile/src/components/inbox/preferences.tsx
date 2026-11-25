@@ -82,7 +82,7 @@ export function NotificationPreferencesForm({ onSaved }: { onSaved?: () => void 
     <View style={{ gap: 14 }} accessibilityLabel="Email notification preferences">
       <PushRow />
       <Divider />
-      <Text variant="small">Choose the updates you want by email. In-app updates and security emails are always available. Daily summaries are prepared after midnight UTC.</Text>
+      <Text variant="small">Choose the updates you want by email. In-app updates and security emails are always available. Daily summaries go out once a day, in the evening, US Eastern time.</Text>
       {prefs ? (
         <>
           <View>
