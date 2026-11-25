@@ -7,6 +7,8 @@ const scenario = () => new URLSearchParams(location.search).get('scenario') || '
 const day = 86400000, at = offset => new Date(Date.now() + offset)
 const iso = d => d.toISOString()
 const ymd = d => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+// Real calendar events carry a display time (lib/student-calendar-data.ts); the detail dialog reads it.
+const hm = d => d.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })
 const club = (id, name, color) => ({ id, name, color, applicationOpen: true })
 const applications = () => scenario() !== 'full' ? [] : [
   { id: 'app-mii', clubId: clubs[0].id, status: 'DRAFTING', club: club(clubs[0].id, clubs[0].name, '#142d45'), answers: [{ response: 'Why finance' }, { response: 'Experience' }, { response: '' }] },
@@ -15,8 +17,10 @@ const applications = () => scenario() !== 'full' ? [] : [
   { id: 'app-ventures', clubId: 'fixture-ventures', status: 'IN_REVIEW', club: club('fixture-ventures', 'Campus Ventures', '#4a4466') },
   { id: 'app-consulting', clubId: 'fixture-consulting', status: 'ACCEPTED', club: club('fixture-consulting', 'Community Consulting', '#1f3550') },
 ]
-const event = (id, offset, type, title, clubName, extra = {}) => { const d = at(offset); return { id, date: ymd(d), startTime: iso(d), day: d.getDate(), title, club: clubName, color: '#142d45', type, ...extra } }
-const events = () => scenario() !== 'full' ? [] : [
+const event = (id, offset, type, title, clubName, extra = {}) => { const d = at(offset); return { id, date: ymd(d), startTime: iso(d), time: hm(d), day: d.getDate(), title, club: clubName, color: '#142d45', type, ...extra } }
+// scenario=panel: one interview-panel slot the person sits on, in a club they also applied to.
+const panelEvents = () => [event('panel-slot-1', day + 3600000, 'Interview', `${clubs[0].name} interview panel`, clubs[0].name, { clubId: clubs[0].id, readOnly: true, location: 'Room 1', description: 'First interview · Room 1', durationMinutes: 30, response: 'confirmed' })]
+const events = () => scenario() === 'panel' ? panelEvents() : scenario() !== 'full' ? [] : [
   event('deadline-mii', 1.5 * day, 'Deadline', 'Application deadline', clubs[0].name, { clubId: clubs[0].id }),
   event('interview-volunteers', 2 * day + 3600000, 'Interview', 'First-round interview', clubs[1].name, { clubId: clubs[1].id, location: 'Rouss & Robertson 223', response: 'confirmed' }),
   event('chat-design', 4 * day, 'Coffee Chat', 'Coffee chat with the studio', 'Campus Design Studio', { location: 'Grit Coffee' }),
@@ -32,9 +36,10 @@ export function useAuth() {
   return { ...value, user: { ...value.user, applications: applications(), memberships: value.user.memberships.map(m => ({ ...m, status: 'ACTIVE' })) } }
 }
 const noop = () => {}
+const applicationsFor = clubId => [{ id: 'app-panel', clubId, status: 'DRAFTING', club: club(clubId, clubs[0].name, '#142d45') }]
 export function useApplicationState() {
   const items = scenario() === 'full' ? [{ clubId: clubs[0].id, taskActivity: { assignmentId: 'task-1', dueAt: iso(at(-day)), needsSubmission: true } }] : []
-  return { events: events(), trackedApps: [], notifications: notifications(), personalTaskActivities: { userId: 'fixture-user', items }, hydrated: true,
+  return { events: events(), trackedApps: scenario() === 'panel' ? applicationsFor(clubs[0].id) : [], notifications: notifications(), personalTaskActivities: { userId: 'fixture-user', items }, hydrated: true,
     focusApplication: noop, focusEvent: noop, focusNotification: noop, markNotificationRead: async () => true, syncTaskNotifications: noop, syncDurableNotifications: noop, durableUnread: 1 }
 }
 // Self-loading cards that call server actions are outside these fixtures.
