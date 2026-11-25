@@ -25,6 +25,14 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 
 | # | Item | Source | Status |
 | --- | --- | --- | --- |
+| A | CI "Applicant workflow / shell" hangs to the 75-minute limit on every main run | CI on main | PR #544 (fix), CI running |
+| B | Club with `isDiscoverable=false` still has a public page | Nov 24 web report | Checked: by design ("unlisted"): noindex, out of Explore/search/sitemap, reachable by link for invite-only recruiting. No change. |
+| C | Applying to a hidden club by direct link | Nov 24 web report | Same as B: intended for invite-only recruiting. No change. |
+| D | Short links (`/q/[code]`) have no rate limit | Nov 24 web report | Stale: `RATE_LIMITS.shortLinks` (600/min) is applied in `middleware.ts`. Codes are 6-char base62. No change. |
+| E | Explore directory reads all future events uncached | Nov 24 web report | Measured fine at launch scale (1.35 MB, ~70 ms at 200 clubs). Low priority. |
+| F | PR #532 short-answer question needs a production migration | Open PR | Blocked (production migrations gated). Rehearse on disposable Postgres; do not merge. |
+| G | 4 unindexed composite foreign keys (Supabase advisor) | Supabase advisor | Migration PR prepared, not merged (gated). |
+| H | Authorization review: mobile API and recruiting actions | Brief step 2 | Reviews running |
 
 ## Findings, merges, migrations and deploys
 
