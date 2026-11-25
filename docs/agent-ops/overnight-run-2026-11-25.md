@@ -272,3 +272,10 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 ## 09:56 UTC: merge 8, PR #551 (check-in: visitors from another school are refused)
 - All required gates green on 80459f89 (validate, integration infrastructure, native security, native transactions, application-writing, mobile). Merged as 272d1205.
 - App compatibility: the app checks in through the same server action; members and same-school visitors are unchanged. Closes M3. Waiting for the production deploy, then live check.
+
+## 10:03 UTC: PR #551 deploy verified live
+- Production deployment `dpl_Gydw72US9iAxgh8aStcDVGq6yEDf` (commit 272d1205) READY.
+- Vercel runtime errors, last 15 minutes: none. Sentry: no unresolved issues first seen in the last hour.
+- Live check: signed-out `/check-in?meetingId=…` at 1440 px shows the sign-in prompt with the return path kept; public test club page at 500 px renders correctly.
+- The refusal itself needs a signed-in student from another school (no second school is live); verified by the unit test and the red run, not on the live site.
+- No rollback needed.
