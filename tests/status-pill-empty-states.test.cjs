@@ -86,7 +86,10 @@ test("interview day rows show the first and last slot time", () => {
   assert.equal(dates.interviewDaySpan([row("a", "2026-11-10T14:00:00Z")], "America/New_York"), "9:00 AM EST")
   // My interviews shows each day as "1:00–1:50 PM · 1 interview" (open time slots are not counted as interviews) and picks a day with buttons, not a calendar.
   const list = read("components/interviews/interview-rooms-list.tsx")
-  assert.match(list, /interviewTimeRange\(\{ startTime: first\.startTime, endTime: last\.endTime, timezone: group\.timezone \}\)\} · \{booked \? pluralize\(booked, "interview"\) : "No bookings yet"\}/)
+  // A day with nothing booked shows only its time range; the open-times line under it already says "none booked yet".
+  assert.match(list, /interviewTimeRange\(\{ startTime: first\.startTime, endTime: last\.endTime, timezone: group\.timezone \}\)\}\{booked \? ` · \$\{pluralize\(booked, "interview"\)\}` : ""\}/)
+  assert.doesNotMatch(list, /"No bookings yet"/)
+  assert.match(list, /`\$\{pluralize\(open, "open time"\)\}, none booked yet`/)
   assert.doesNotMatch(list, /type="date"|<DateField/)
   assert.match(list, /<SegmentedControl label="Show one day"/)
 })
