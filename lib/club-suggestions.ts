@@ -65,6 +65,18 @@ export function surveyOptionMatches(option: Matcher, club: Pick<DirectoryClub, "
   return option.terms.some(term => terms.has(term))
 }
 
+/** The line under "Suggested for you", naming only the signals this student actually gave. */
+export function suggestionBasis({ savedCount, major, survey }: { savedCount: number; major?: string | null; survey?: Pick<InterestAnswers, "interests" | "goals"> | null }) {
+  const parts = [
+    savedCount > 0 ? "the clubs you saved" : "",
+    survey?.interests.length || survey?.goals.length ? "your interests" : "",
+    major?.trim() ? "your major" : "",
+  ].filter(Boolean)
+  if (!parts.length) return ""
+  const list = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
+  return `Based on ${list}.`
+}
+
 export function suggestClubs(directory: readonly DirectoryClub[], { saved, major, survey, exclude = [] }: SuggestionInput, limit = 6): ClubSuggestion[] {
   const skip = new Set([...exclude, ...saved.map(club => club.id)])
   const savedProfiles = saved.map(club => ({ club, category: club.category.trim().toLocaleLowerCase(), terms: clubTerms(club), tags: new Set((club.tags ?? []).map(tag => tag.toLocaleLowerCase())) }))
