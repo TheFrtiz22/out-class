@@ -12,6 +12,9 @@
 .oc-page-header-action { position: relative; z-index: 1; }
 /* A portal slot (e.g. #workspace-page-actions) takes no room until a view fills it. */
 .oc-page-header-action:has(> [data-page-header-slot]:only-child:empty) { display: none; }
+/* Calendar's buttons sit beside a one-line title: centred on the title's line, they don't make the row taller, so the title keeps
+   the same gap below the shell header as every other page (tests/header-gap-e2e.test.cjs). Phones put them on their own row. */
+@media (min-width: 640px) { .oc-calendar-header > .oc-page-header-action { margin-block: min(0px, calc((var(--oc-text-title) * var(--oc-leading-heading) - var(--oc-control-height)) / 2)); } }
 .oc-metric-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .75rem; margin-block: 0 var(--oc-density-gap); padding: 0; border: 0; }
 .oc-metric-strip > div { position: relative; min-width: 0; min-height: 4.25rem; display: grid; grid-template-columns: auto 1fr; gap: .25rem .5rem; align-content: center; align-items: baseline; padding: .85rem 1rem; background: var(--oc-content-surface); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); box-shadow: var(--oc-content-shadow); }
 .oc-metric-strip > div:first-child { padding-left: 1rem; border-left: 1px solid var(--oc-content-edge); }
@@ -54,7 +57,6 @@
 [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] > div { border-color: var(--border); }
 [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] :is(.text-neutral-500,.text-neutral-400) { color: var(--muted-foreground); }
-[data-product-shell] .oc-calendar-workspace > header { padding-bottom: .5rem; }
 [data-product-shell] .oc-calendar-workspace section > ul > li > button { border-radius: var(--oc-radius-md); padding-inline: .75rem; }
 [data-product-shell] .oc-calendar-workspace section > ul > li > button:hover { background: var(--oc-surface-blue); }
 
