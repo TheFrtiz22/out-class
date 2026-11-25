@@ -307,3 +307,17 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Production deployment `dpl_23Ligr9RraubhS1VuVkGByWWynai` (commit b7f52075) READY. Vercel runtime errors, last 20 minutes: none.
 - Live: `/explore` signed out redirects to sign-in with the return path kept, at 1440 px and 500 px. No rollback.
 - PR #553 brought up to date with main (merge commit 23c6646c) so its integration run includes the fix; dispatched run 45597776774.
+
+## 10:56 UTC: main's integration suite green again
+- Main push run 45597739840 (b7f52075): all 11 disposable-integration jobs passed, scheduler and audiences included.
+
+## 11:14 UTC: merge 10, PR #553 (pipeline e2e counts forward rows only once the overview has gone)
+- All checks green, including validate and the full integration run on the updated branch. Two jobs (application-writing, dashboards) first failed because the local Supabase stack did not start, before any test ran; re-run, both passed. This start failure happened three times in an hour (also #552's Local Auth job): CI infrastructure, not code. Merged as 7aadc545. Test-only change.
+
+## 11:19 UTC: PR #553 deploy verified live
+- Production deployment `dpl_AerjnjovY4dpuMmgasUYgnybvDr8` (commit 7aadc545) READY. Vercel runtime errors, last 40 minutes: none. Live: `/uva` renders with its club list and FAQ. No rollback.
+
+## 11:20 UTC: more not built (decided)
+- Club directory paging: production has 47 clubs (38 listed), so the whole-directory read is fine today. Paging changes the directory API the current app build reads, so it waits for a planned app release.
+- App inbox does not merge task updates ("Revisions requested", "Submission reviewed") the way the website inbox does; the app shows the same states on its Tasks screen, so no data is missing. Gap 9, not built.
+- Recommendation for the owner: the Native PostgreSQL scheduler and audiences suites are not required on PRs, which is how #549 merged while breaking them. Making them required is a repository setting, left to the owner.
