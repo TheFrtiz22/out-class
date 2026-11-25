@@ -3,10 +3,11 @@
 // separates lines, and a long preview ends with an ellipsis instead of stopping mid-word.
 const { test } = require('node:test'), assert = require('node:assert/strict')
 const fs = require('node:fs'), path = require('node:path'), ts = require('typescript')
+const { loadComponent } = require('./helpers/component-module.cjs')
 function load() {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', 'lib/communications-client.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require', 'module', 'exports', 'window', code)(n => n === '@/lib/scheduling-config' ? { SCHEDULING_TIMEZONE: 'America/New_York', schedulingDateTime: String } : require(n), mod, mod.exports, {})
+  new Function('require', 'module', 'exports', 'window', code)(n => n === '@/lib/scheduling-config' ? { SCHEDULING_TIMEZONE: 'America/New_York', schedulingDateTime: String } : n === '@/lib/club-assets' ? loadComponent('lib/club-assets.ts') : require(n), mod, mod.exports, {})
   return mod.exports
 }
 const base = { id: 'n1', type: 'INTERVIEW', title: 'Interview panel schedule · First interview', createdAt: '2026-11-25T17:32:00Z', readAt: null, href: '/settings/interviews?clubId=c&roundId=r', eventKey: 'panel-schedule:v1:u1', clubId: 'c', club: { name: 'QA' } }
