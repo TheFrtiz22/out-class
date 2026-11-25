@@ -33,7 +33,7 @@ export function SmartEventCard({ event, save, onOpen }: { event: CampusEvent; sa
       <p className="oc-smart-event-description">{event.description}</p>
       <div className="oc-smart-event-footer">
         <div className="oc-smart-event-actions"><EventSaveButton event={event} {...save} /><EventCalendarButton event={event} /></div>
-        <a className="oc-event-pill oc-event-pill-primary" href={`/corkboard?event=${event.id}`} onClick={open}>View Event<ArrowUpRight size={16} aria-hidden="true" /></a>
+        <a className="oc-event-pill oc-event-pill-primary" href={`/corkboard?event=${event.id}`} onClick={open}>View event<ArrowUpRight size={16} aria-hidden="true" /></a>
       </div>
       {event.rsvpEnabled && <p className="oc-smart-event-rsvp">{event.capacity !== null && event.rsvpCount >= event.capacity ? "Event full" : event.rsvpRequired ? "RSVP required · Register in event details" : "RSVP available in event details"}</p>}
     </div>
