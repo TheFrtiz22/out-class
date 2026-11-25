@@ -206,3 +206,9 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - All required gates green on 4ecaec07, including mobile. The red proof is logged above, and the Codex P2 (dismissal lost when switching to the responses view) was fixed in 4ecaec07. Merged as 384ef101.
 - The change touches only mobile/. No server or API change, so the current app build is unaffected. Nothing was published to the stores or over the air; that release is the owner's call.
 - The web deploy for this merge will be checked like the others.
+
+## 07:54 UTC: PR #550 deploy verified live
+- Production deployment `dpl_EEkUmyyXz1jzYqhpavaTQV9ceH9r` (commit 384ef101) READY at 07:51, aliased to out-class.net, www.out-class.net and uva.out-class.net.
+- Vercel runtime errors, last 30 minutes: none. Sentry: no unresolved issues first seen in the last hour.
+- Live check: `/` at 1440 px and `/login` at 500 px render correctly. PR #550 changes only the Expo app, so no web journey changed; no app release was published (left to the owner).
+- No rollback needed.
