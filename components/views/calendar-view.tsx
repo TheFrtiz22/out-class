@@ -311,10 +311,10 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
           ) : (
             <>
               {view === "month" ? (
-                <div className="min-w-[650px]">
+                <div className="sm:min-w-[650px]">
                   <div className="grid grid-cols-7 border-b bg-muted">
                     {weekdays.map((day) => (
-                      <div key={day} className="p-3 text-center text-xs text-muted-foreground">
+                      <div key={day} className="px-0.5 py-3 text-center text-xs text-muted-foreground sm:p-3">
                         {day}
                       </div>
                     ))}
@@ -327,7 +327,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                         <div
                           key={key}
                           className={cn(
-                            "min-h-32 space-y-1 border-b border-r border-border p-2",
+                            "min-h-20 min-w-0 space-y-1 border-b border-r border-border p-1 sm:min-h-32 sm:p-2",
                             day.getMonth() !== cursor.getMonth() &&
                               "bg-muted text-muted-foreground",
                           )}
@@ -353,7 +353,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                               onClick={() => open(event)}
                               title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-control leading-snug hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                                "hidden w-full rounded p-1.5 text-left text-control leading-snug sm:block hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
@@ -362,6 +362,22 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                               <span className="line-clamp-2">{event.title}</span>
                             </button>
                           ))}
+                          {dayEvents.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              aria-label={`${dayEvents.length} event${dayEvents.length === 1 ? "" : "s"} on ${key}`}
+                              onClick={() => {
+                                setDate(key)
+                                setView("day")
+                              }}
+                              className="flex h-auto w-full items-center justify-center gap-0.5 rounded px-0 py-1 sm:hidden"
+                            >
+                              {dayEvents.slice(0, 3).map((event) => <span key={event.id} aria-hidden="true" className={cn("size-1.5 rounded-full bg-primary", event.response === "declined" && "opacity-50")} />)}
+                              {dayEvents.length > 3 && <span aria-hidden="true" className="text-xs leading-none text-muted-foreground">+{dayEvents.length - 3}</span>}
+                            </Button>
+                          )}
                           {dayEvents.length > 3 && (
                             <Button
                               type="button"
@@ -371,7 +387,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                                 setDate(key)
                                 setView("day")
                               }}
-                              className="h-auto px-0 py-0.5 text-xs"
+                              className="hidden h-auto px-0 py-0.5 text-xs sm:inline-flex"
                             >
                               +{dayEvents.length - 3} more
                             </Button>
