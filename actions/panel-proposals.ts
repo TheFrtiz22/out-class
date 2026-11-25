@@ -12,6 +12,7 @@ import { loadPanelPlanningScene, publicPanelScene } from "@/utils/panel-planning
 import { assignmentKey, generatePanelAssignments, panelAssignmentsSchema, panelDocumentSchema, panelOptionsSchema, panelScopeSchema, panelWindowSchema, panelDraftScene, sameSessionTime, validatePanelDocument, type PanelAssignment, type PanelDocument, type PanelProposalView, type PanelScene, type PanelValidation, type PanelWorkspace } from "@/lib/panel-proposals"
 import { boundedParse } from "@/lib/bounded-input"
 import { ActionError, actionResult, type ActionResult } from "@/lib/action-result"
+import { regeneratedRequired } from "@/lib/panel-required"
 
 const changed = "The draft changed in another tab. Reload before editing again."
 /** Codes `generatePanelProposal` returns for expected refusals; the workspace acts on NO_OPEN_SESSIONS. */
@@ -105,7 +106,7 @@ async function generatePanelProposalCommand(raw: unknown): Promise<PanelWorkspac
     const sessions = live.scene.sessions.filter(s => s.active || s.unstaffOnly).map(s => {
       const baseline = baselines.get(s.id)
       if (s.active && fixedSlots.has(s.id) && baseline && !sameSessionTime(s, baseline)) return baseline
-      return s.unstaffOnly ? { ...s, originalRequired: s.required } : { ...s, originalRequired: s.required, required: baseline?.originalRequired !== undefined && !baseline.unstaffOnly ? baseline.required : s.required }
+      return s.unstaffOnly ? { ...s, originalRequired: s.required } : { ...s, originalRequired: s.required, required: regeneratedRequired(s.required, baseline) }
     })
     const document: PanelDocument = { version: 1, window: input.window, options: input.options, sessions: sessions.filter(s => !s.unstaffOnly), assignments: planned }
     // A retained lock on a changed time is a visible conflict, never a premise for fresh assignments.
