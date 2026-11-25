@@ -19,7 +19,7 @@ import { normalizeProfileFieldVisibility, restrictApplicationProfile, type Profi
 import { normalizeReviewRubric } from "@/lib/review-rubric";
 
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
-import { isRecused } from "@/lib/recusal";
+import { assertMayDecideApplicant, isRecused } from "@/lib/recusal";
 import { applicationReviewVisibility } from "@/lib/application-review-visibility";
 import { visibleQuestionIds } from "@/lib/student-applications";
 
@@ -193,13 +193,14 @@ async function moveApplicantRoundCommand(
 
   const application = await prisma.$transaction(async (tx) => {
     // Serialize progression with pipeline reordering/archive.
-    await authorizeClubTransaction(tx, parsed.clubId, user.id, ["recruitment.manage", "applicants.identify"]);
+    const member = await authorizeClubTransaction(tx, parsed.clubId, user.id, ["recruitment.manage", "applicants.identify"]);
     const round = await tx.pipelineRound.findFirst({
       where: { id: parsed.newRoundId, clubId: parsed.clubId, archivedAt: null },
     });
     if (!round) throw new ActionError("Round is not available for this club.");
     const current = await tx.application.findFirst({ where: { id: parsed.applicationId, clubId: parsed.clubId } });
     if (!current) throw new ActionError("Application unavailable.");
+    await assertMayDecideApplicant(tx, current, { userId: user.id, memberId: member.id });
     assertRecruitmentRoundMove(current.status);
     const result = await tx.application.updateMany({
       where: {
@@ -272,7 +273,10 @@ async function setApplicationStatusCommand(
   ]);
 
   const application = await clubWriteTransaction(async (tx) => {
-    await authorizeClubTransaction(tx, parsed.clubId, user.id, ["decisions.manage", "applicants.identify"]);
+    const member = await authorizeClubTransaction(tx, parsed.clubId, user.id, ["decisions.manage", "applicants.identify"]);
+    const target = await tx.application.findFirst({ where: { id: parsed.applicationId, clubId: parsed.clubId }, select: { id: true, studentId: true } });
+    if (!target) throw new ActionError("Application changed or is not available for this club. Reload the page and try again.");
+    await assertMayDecideApplicant(tx, target, { userId: user.id, memberId: member.id });
     const decision = await publishRecruitmentDecision(tx, parsed, user.id);
     const updated = await tx.application.findFirst({
       where: { id: parsed.applicationId, clubId: parsed.clubId },

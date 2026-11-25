@@ -6,6 +6,7 @@ import {clubWriteTransaction} from "@/utils/club-write-transaction";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {START_NEXT_CYCLE_ACTION,cycleDecisionBlocker,cycleVotingBlocker,nextCycleDeadline} from "@/lib/recruitment-cycle";
 import {ActionError,actionResult} from "@/lib/action-result";
+import {assertMayDecideApplicant} from "@/lib/recusal";
 const uuid=z.string().uuid();
 export async function getRecruitmentCycles(clubId:string){
  uuid.parse(clubId);const {user}=await requireClubPermission(clubId,["recruitment.manage"]);
@@ -63,9 +64,10 @@ async function reconsiderRejectedApplicationCommand(input:unknown){
  const d=z.object({clubId:uuid,applicationId:uuid,expectedGuard:z.string().regex(/^[a-f0-9]{64}$/),reason:z.string().trim().min(10).max(1000)}).strict().parse(input);
  const {user}=await requireClubPermission(d.clubId,["decisions.manage","applicants.identify"]);
  return clubWriteTransaction(async tx=>{
-  await authorizeClubTransaction(tx,d.clubId,user.id,["decisions.manage","applicants.identify"]);
+  const member=await authorizeClubTransaction(tx,d.clubId,user.id,["decisions.manage","applicants.identify"]);
   const app=await tx.application.findFirst({where:{id:d.applicationId,clubId:d.clubId,status:"REJECTED",round:{archivedAt:null}}});
   if(!app||decisionPublicationGuard(app)!==d.expectedGuard)throw new ActionError("This decision changed while you were viewing it. Refresh to see the current status.","STALE");
+  await assertMayDecideApplicant(tx,app,{userId:user.id,memberId:member.id});
   // Reopening is unavailable once the student has re-applied: review their current application instead.
   if(await tx.application.findFirst({where:{studentId:app.studentId,clubId:d.clubId,status:{not:"REJECTED"}},select:{id:true}}))throw new ActionError("This student has re-applied. Review their current application instead.","REAPPLIED");
   const result=await tx.application.updateMany({where:{id:app.id,clubId:d.clubId,status:"REJECTED",decisionVersion:app.decisionVersion,decisionStateRevision:app.decisionStateRevision},data:{status:"IN_REVIEW",decisionVersion:{increment:1}}});
