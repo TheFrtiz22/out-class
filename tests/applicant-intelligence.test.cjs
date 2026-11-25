@@ -134,3 +134,11 @@ test('a recused member cannot read, add, edit or delete Pros and Cons; others ar
  await assert.rejects(h.api.deleteApplicantObservation({...h.scope,id:observationId}),/stepped out/);
  assert.deepEqual(h.observations().map(o=>o.body),['Before stepping out']);
 });
+
+test('a reviewer never sees the applicant display, scores or Pros/Cons of their own application',async()=>{
+ // Voting slides and previews already refused this; the ordinary review panel must too.
+ const h=harness();h.app.studentId='author';
+ await assert.rejects(h.api.getApplicantDisplay(h.scope),/unavailable/);
+ await assert.rejects(h.api.saveApplicantObservation({...h.scope,kind:'PRO',body:'About myself'}),/unavailable/);
+ assert.equal(h.observations().length,0);
+});
