@@ -32,7 +32,10 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 | E | Explore directory reads all future events uncached | Nov 24 web report | Measured fine at launch scale (1.35 MB, ~70 ms at 200 clubs). Low priority. |
 | F | PR #532 short-answer question needs a production migration | Open PR | Blocked (production migrations gated). Rehearse on disposable Postgres; do not merge. |
 | G | 4 unindexed composite foreign keys (Supabase advisor) | Supabase advisor | Checked: already covered. Each FK's two columns are the leading columns of an existing index, in the other order (e.g. `ApplicantRecusal(clubId, memberId)` for FK `(memberId, clubId)`); the advisor compares column order. No migration needed. |
-| H | Authorization review: mobile API and recruiting actions | Brief step 2 | Reviews running |
+| H | Authorization review: mobile API and recruiting actions | Brief step 2 | Done. Findings H1–H3 fixed (PRs below); M1, M3, M4, R1, R5, R6 logged under "Found, not fixed". |
+| H1 | A reviewer can make a decision on their own application, or on one they are recused from, through direct decision paths | Review | PR #545 |
+| H2 | A recused reviewer still sees evaluations, answers and attachments through identity reveal and the attachment route; a reviewer sees their own application's review data | Review | PR #546 |
+| H3 | Leaders of a suspended club can still search its applicants (web search, app `explore.search`) | Review | PR #547 |
 
 ## Findings, merges, migrations and deploys
 
@@ -56,3 +59,19 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 - PR #532's `20261123120000_short_answer_question` then applies cleanly on top: adds enum value `SHORT_ANSWER`, nullable `ApplicationQuestion.characterLimit`, and the 1–500 CHECK. Additive, no data rewritten.
 - Production ledger (read-only query): 101 applied, 0 unfinished, latest `20261118140000_native_push_platform_required`, matching main.
 - #532 stays unmerged: its new column would make `prebuild` block the production deploy until the migration runs, and running it needs the owner's approval in GitHub.
+
+## 07:05 Review findings and fixes in flight
+
+- **PR #545** (self-decision and recusal guard). Red dispatch on test-only commit 7dc88b38. First PR run failed `Native PostgreSQL / transactions` test 12: the new pre-read changed the cross-club refusal text from "Application changed or is not available…" to "Application unavailable.". Fixed in 6007eb04 by keeping the original wording. Re-running.
+- **PR #546** (recusal guard on review reads). Red dispatch on 3087354. CI running.
+- **PR #547** (suspended-club search). Red dispatch on test-only 8300fd33. CI running.
+- Preview deployments log `DATABASE_URL` errors at runtime. Expected: previews are kept off the staging DB on purpose. Not a bug.
+
+## Found, not fixed
+
+- **M1, cross-school application.** `actions/applications.ts` `persistApplication` does not compare `club.schoolId` with the viewer's school. Repro: as a UVA student, `POST /api/mobile/v1/applications.submit` with a club id from another school. Impact today is nil: one school, and sign-in is UVA email only. The fix needs `@/utils/school-scope` mocked in five test fixtures (action-results, autosave-actions, club-suspension, student-applications, graduation); deferred behind higher-impact work.
+- **M3, check-in has no school check.** `actions/meetings.ts:195` `checkIn`. Same single-school reasoning as M1.
+- **M4, member reads in suspended clubs.** Unconfirmed; needs a pass over member-facing reads.
+- **R1, peer scores in the default applicant display.** Any review member sees each reviewer's score; `tests/applicant-intelligence.test.cjs:53` asserts this, so it is current policy. Left for the owner to decide.
+- **R5, `stageDecision` is last-write-wins.** Two leaders staging different decisions at once: the later silently replaces the earlier. No data loss beyond the overwritten staging.
+- **R6, résumé visibility in the interview room.** Needs a check that interviewers who are recused do not get the résumé link.
