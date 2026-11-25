@@ -142,3 +142,10 @@ export function myInterviewSections(rows: InterviewRoomEntry[], now = Date.now()
   const upNext = rest.filter(row => !row.completed && !row.cancelled && !ended(row)).sort(byStart);
   return { upNext, needsNotes, done };
 }
+
+/** Room and place on one line, without repeating a place that matches the room name or is blank. */
+export function roomPlaceLabel(roomName: string, location?: string | null) {
+  const room = roomName.trim(), place = (location ?? "").trim();
+  if (!place || place.toLowerCase() === room.toLowerCase()) return room;
+  return room ? `${room} · ${place}` : place;
+}
