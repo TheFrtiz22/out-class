@@ -33,7 +33,11 @@ import { StudentBookingPreview } from "@/components/views/scheduler/student-book
 import { agendaGroups } from "@/lib/student-agenda"
 import { cn } from "@/lib/utils"
 import type { ClubEvent } from "@/lib/data"
+import { clubInterviewHref } from "@/lib/interview-entry"
 import type { ViewId } from "@/lib/views"
+
+/** An interview-panel slot the person sits on (lib/student-calendar-data.ts), not an interview of their own. */
+const isPanelEvent = (event: ClubEvent) => event.id.startsWith("panel-")
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const eventStyle = {
@@ -131,7 +135,9 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
     },
   )
   const selected = events.find((event) => event.id === selectedId)
-  const application = trackedApps.find((app) => app.clubId === selected?.clubId)
+  /** A slot this person interviews on as a panelist: it belongs to their club's interview tools, not to an application of theirs. */
+  const selectedPanel = !!selected && isPanelEvent(selected)
+  const application = selectedPanel ? undefined : trackedApps.find((app) => app.clubId === selected?.clubId)
   const linkedNotifications = notifications.filter(
     (notification) => notification.eventId === selectedId,
   )
@@ -282,7 +288,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                             <p className="mb-1 text-xs font-medium text-muted-foreground">
                               {event.type}
                               {event.response === "declined" && " · Declined"}
-                              {event.response === "confirmed" && " · Confirmed"}
+                              {event.response === "confirmed" && (isPanelEvent(event) ? " · You’re on the panel" : " · Confirmed")}
                             </p>
                             <h4 className="break-words text-sm font-semibold leading-6">
                               {event.title}
@@ -529,14 +535,16 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                       ? "Open your application to review your progress and next steps before this deadline."
                       : "Review this club event and manage your attendance below.")}
               </p>
-              {selected.readOnly && (
+              {selected.readOnly && !selectedPanel && (
                 <p className="text-sm text-muted-foreground">
                   Contact the club if you need to change these arrangements.
                 </p>
               )}
               {selected.response && (
                 <p role="status" className="text-sm font-medium">
-                  {selected.response === "declined"
+                  {selectedPanel
+                    ? "You’re on the panel"
+                    : selected.response === "declined"
                     ? "Attendance cancelled"
                     : selected.response === "confirmed"
                       ? "Interview confirmed"
@@ -589,6 +597,11 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                     }}
                   >
                     Change interview time
+                  </Button>
+                )}
+                {selectedPanel && selected.clubId && (
+                  <Button variant="outline" asChild>
+                    <Link href={clubInterviewHref(selected.clubId)}>Open interview tools</Link>
                   </Button>
                 )}
                 {selected.id.startsWith("meeting-") && (
