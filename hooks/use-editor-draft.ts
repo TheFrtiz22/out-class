@@ -59,7 +59,8 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
       session.revision = result.revision; session.mutation = null
     },
   })
-  async function clear() {
+  /** After a domain commit, drop the working copy. Pass `committed` when the editor is about to adopt a value it has not rendered yet (e.g. a dialog added an item), so adopting it is not recorded as a new unsaved edit. */
+  async function clear(committed?: T) {
     await autosave.flush()
     // A successful domain commit must never be reported as failed because cleanup failed.
     try { sessionStorage.setItem(`outclass:committed-draft:${identity}`, String(session.revision)) } catch {}
@@ -69,7 +70,7 @@ export function useEditorDraft<T>({ scope, value, restore, enabled = true, base 
         if (!("error" in result)) session.revision = result.revision
       } catch { /* The revision tombstone prevents this tab from restoring a consumed draft. */ }
     }
-    await autosave.reset()
+    await autosave.reset(committed)
   }
   return { ...autosave, ready, error: loadError || autosave.error, state: loadError ? "error" as const : autosave.state,
     flush: async () => { if (!ready || recovery !== null) throw new UserFacingError("Resolve draft recovery before continuing."); await autosave.flush() },

@@ -5,7 +5,7 @@ import { registerAutosaveNavigation } from "@/lib/autosave-navigation"
 import { AutosaveQueue, type AutosaveState } from "@/lib/autosave-queue"
 import { createDraftStore, recoveryDecision, validDraftOwner, type DraftPersistence } from "@/lib/autosave-store"
 
-export type AutosaveHandle = { state: AutosaveState; error: string; dirty: boolean; saving: boolean; flush: () => Promise<void>; reset: () => Promise<void>; onBlur: () => void; recovery?: unknown; restoreRecovery?: () => void; discardRecovery?: () => Promise<void>; recoveryKind?: RecoveryKind; reviewRecovery?: () => void; reviewing?: boolean }
+export type AutosaveHandle<T = unknown> = { state: AutosaveState; error: string; dirty: boolean; saving: boolean; flush: () => Promise<void>; /** Mark `value` (default: the current value) as saved and drop the local copy. */ reset: (value?: T) => Promise<void>; onBlur: () => void; recovery?: unknown; restoreRecovery?: () => void; discardRecovery?: () => Promise<void>; recoveryKind?: RecoveryKind; reviewRecovery?: () => void; reviewing?: boolean }
 /** "local": an unsaved copy from this device, newer than the server's version. "conflict": the server moved on since the copy was made. */
 export type RecoveryKind = "local" | "conflict"
 /**
@@ -17,7 +17,7 @@ export type RecoveryKind = "local" | "conflict"
  * dismissed ("Keep newer version") or read ("Review my copy"); it is never restored or saved.
  * While a copy is offered or reviewed, the queue is held and edits snap back, so nothing overwrites it.
  */
-export function useAutosave<T>({ identity, value, save, enabled = true, restore, owner, persistence = "device" }: { identity: string; value: T; save: (value: T) => Promise<void>; enabled?: boolean; restore?: (value: T) => void; owner?: string | null; persistence?: DraftPersistence }): AutosaveHandle {
+export function useAutosave<T>({ identity, value, save, enabled = true, restore, owner, persistence = "device" }: { identity: string; value: T; save: (value: T) => Promise<void>; enabled?: boolean; restore?: (value: T) => void; owner?: string | null; persistence?: DraftPersistence }): AutosaveHandle<T> {
   const [, render] = useState(0)
   const latest = useRef({ identity, value, save, restore }); latest.current = { identity, value, save, restore }
   const holder = useRef<{ identity: string; queue: AutosaveQueue<T>; recovery: { value: T; kind: RecoveryKind } | null; reviewing?: boolean; ignore?: string; discard: () => void } | null>(null)
@@ -87,7 +87,7 @@ export function useAutosave<T>({ identity, value, save, enabled = true, restore,
   }
   return {
     state: queue?.state ?? "idle", error: queue?.error ?? "", dirty: queue?.dirty ?? false, saving: queue?.saving ?? false,
-    flush, reset: async () => { await flush(); queue?.reset(latest.current.value) },
+    flush, reset: async (value: T = latest.current.value) => { await flush(); queue?.reset(value) },
     onBlur: () => { void flush().catch(() => {}) }, recovery: entry?.recovery?.value, recoveryKind: entry?.recovery?.kind,
     reviewing: entry?.reviewing ?? false,
     // Only a copy that is newer than the server's version can be restored; a conflict copy never is.
