@@ -84,7 +84,7 @@ export function MeetingList({ clubId, clubIds, filters, embedded = false, initia
     member = user?.memberships.find((m) => m.clubId === clubId);
   const visible = meetings.filter(m => (clubId || !clubIds || clubIds.includes(m.clubId)) && (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
-    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
+    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="oc-section-heading">Club meetings</h1>{clubId && <Link className="text-sm underline" href="/meetings">All available meetings</Link>}</div>}
     {notice && <p role="status" className="text-sm">{notice}</p>}
     <div className="oc-meeting-toolbar flex flex-wrap items-center gap-3 border-b pb-4">
       <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-3">
