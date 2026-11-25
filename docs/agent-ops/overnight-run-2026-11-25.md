@@ -326,3 +326,10 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 
 - Vercel runtime errors, last 2 hours: none.
 - Sentry, last 24 hours: only OUT-CLASS-5 (Supabase client created without URL and key on `/login`), seen at 06:13 on a preview deployment of a feature branch. Previews deliberately carry no Supabase settings (they stay off the staging DB), so this is expected there and not a production fault. No production issue open.
+
+## 11:27 UTC: second authorization pass (read only), result
+
+- Covered: tasks (workspace, review, submissions, file downloads), announcements and audiences, recipient groups, decision letters, member roles, invitations and ownership transfer, every voting action (setup, room, ballots, discussion, finalization), meetings, campus events, calendar feeds, and the web API routes outside `/api/mobile` (workspace, exports, attachments, resumes, photos, assets, flyers, letter assets, communications stream, calendar, school requests, internal cron routes, platform admin, student claim).
+- Result: no authorization or cross-club isolation bug. Every client id is constrained to the caller's club or user, and permission is checked on the owning club inside the write transaction. Members cannot grant themselves permissions they lack; the last owner is protected.
+- Looks intentional, not fixed: a member with tasks.manage can approve their own task submission (they already control the task); a member with members.manage can edit any member's targeting groups and cohort (labels for audiences only, no access). I re-read `updateTaskMember` on main: it is club-scoped and permission-checked in the transaction.
+- Third pass started (read only): sign-in and account security routes (two-step, password reset, email confirmation, email code, redirects, app token refresh and revocation) and the remaining workspace actions (availability, panel proposals, interview kits, CRM, club overview).
