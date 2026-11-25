@@ -36,7 +36,7 @@ import type { ClubEvent } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 import "./student-home.css"
 import { applicationStage, applicationStages as sharedStages, stageCounts } from "@/lib/application-stages"
-import { TERMS, pluralize as plural } from "@/lib/copy/terms"
+import { TERMS, membershipRoleLabel, pluralize as plural } from "@/lib/copy/terms"
 
 function when(event: ClubEvent | Date) {
   return (event instanceof Date ? event : eventStart(event)).toLocaleString("en-US", {
@@ -239,7 +239,7 @@ export function StudentDashboardView({
       <div className="oc-home-phone-heading-row"><h2 id="home-phone-clubs-title" className="oc-home-phone-heading">{TERMS.myClubs}</h2><DashboardMore onClick={() => onNavigate("my-clubs")}>All clubs</DashboardMore></div>
       {clubs.length ? <ul className="oc-home-club-grid">{clubs.map(m => <li key={m.clubId}><a href={clubWorkspaceHref(m.clubId)} className="oc-home-club-tile">
         <ClubLogo clubId={m.clubId} logoUrl={m.club.logoUrl} text={m.club.name.slice(0, 2)} color={m.club.color ?? undefined} />
-        <strong>{m.club.name}</strong><small>{m.role === "PRESIDENT" ? "President" : m.role === "RECRUITMENT_LEAD" ? "Recruitment lead" : "Member"}</small>
+        <strong>{m.club.name}</strong><small>{membershipRoleLabel(m)}</small>
       </a></li>)}</ul>
         : <Card variant="glass" className="oc-home-phone-empty"><DashboardQuiet>Clubs you join appear here, with their meetings and tasks.</DashboardQuiet></Card>}
     </section>
