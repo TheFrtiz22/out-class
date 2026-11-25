@@ -232,7 +232,7 @@ export function ApplicationForm({
                   ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`
                   : question.type === "FILE_UPLOAD"
                     ? "Use a document link the club can access. Attachments save automatically; uploading never submits your application."
-                    : question.type === "MULTIPLE_CHOICE" ? "Select one option. If no choices are listed, ask the club for clarification." : "Enter your response."}
+                    : question.type === "MULTIPLE_CHOICE" ? question.options?.length ? "Select one option." : "This question has no choices yet. Ask the club, then come back to answer it." : "Enter your response."}
                 {errors[question.id] && (
                   <p className="mt-2 text-destructive">
                     {errors[question.id]}
