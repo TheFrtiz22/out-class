@@ -168,7 +168,7 @@ function MeetingEditor({
   const change = (key: keyof typeof fields, value: string) => { setFields(current=>({...current,[key]:value})); if (failed) { setFailed(false); setMessage("") } };
   return (
     <form data-saving={busy} data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
-      className="space-y-4 py-4"
+      className="space-y-4"
       onInvalidCapture={event => { const field = event.target as HTMLElement; if (field.closest('section[hidden]')) setTab("resources"); else if (field.closest('div[hidden]')) setTab("details") }}
       onSubmit={async (e) => {
         e.preventDefault();
@@ -229,7 +229,7 @@ function MeetingEditor({
           <NativeSelect
             name="audience"
             value={fields.audience} onChange={e=>change("audience",e.target.value)}
-            className="ml-3 rounded border p-2"
+            className="mt-1 w-full"
           >
             <option value="RECRUITMENT">Recruitment / Interest</option>
             <option value="MEMBERS">Members</option>
@@ -313,10 +313,10 @@ function MeetingEditor({
                   }
                 />
               </label>
-              <label>
-                Type{" "}
+              <label className="block text-sm">
+                Type
                 <NativeSelect
-                  className="rounded border p-2"
+                  className="mt-1 w-full"
                   value={r.kind}
                   onChange={(e) =>
                     setResources(
