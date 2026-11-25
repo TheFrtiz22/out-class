@@ -363,18 +363,20 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                             </button>
                           ))}
                           {dayEvents.length > 0 && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               aria-label={`${dayEvents.length} event${dayEvents.length === 1 ? "" : "s"} on ${key}`}
                               onClick={() => {
                                 setDate(key)
                                 setView("day")
                               }}
-                              className="flex w-full items-center justify-center gap-0.5 rounded py-1 hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:hidden"
+                              className="flex h-auto w-full items-center justify-center gap-0.5 rounded px-0 py-1 sm:hidden"
                             >
                               {dayEvents.slice(0, 3).map((event) => <span key={event.id} aria-hidden="true" className={cn("size-1.5 rounded-full bg-primary", event.response === "declined" && "opacity-50")} />)}
                               {dayEvents.length > 3 && <span aria-hidden="true" className="text-xs leading-none text-muted-foreground">+{dayEvents.length - 3}</span>}
-                            </button>
+                            </Button>
                           )}
                           {dayEvents.length > 3 && (
                             <Button
