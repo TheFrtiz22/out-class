@@ -10,7 +10,8 @@ const phone = () => css.match(/@container \(max-width: 520px\) \{([\s\S]*?)\n\}/
 test("phone applicants sort row shrinks Sort instead of wrapping Filters and More", () => {
   const rules = phone()
   assert.match(rules, /\.oc-toolbar-sort \{ flex: 1 1 0; min-width: 0; \}/)
-  assert.match(rules, /\.oc-toolbar-sort \.oc-pill-select-trigger \{ min-width: 0; \}/)
+  assert.match(rules, /\.oc-toolbar-sort \.oc-sort-control \{ display: flex; width: 100%; min-width: 0; \}/)
+  assert.match(rules, /\.oc-toolbar-sort \.oc-pill-select-trigger \{ flex: 1 1 auto; width: auto; min-width: 0; \}/)
   assert.match(rules, /\.oc-toolbar-sort \[data-slot="select-value"\] \{[^}]*text-overflow: ellipsis/)
   assert.match(rules, /\.oc-toolbar-tools \{ order: 7; gap: \.25rem; \}/)
 })

@@ -92,9 +92,14 @@
   .oc-applicants-toolbar { column-gap: .5rem; }
   /* Sort takes what Filters and More leave and truncates its value, so the three never wrap apart on a phone. */
   .oc-applicants-toolbar .oc-toolbar-sort { flex: 1 1 0; min-width: 0; }
-  .oc-applicants-toolbar .oc-toolbar-sort .oc-sort-control,
-  .oc-applicants-toolbar .oc-toolbar-sort .oc-pill-select-trigger { min-width: 0; }
-  .oc-applicants-toolbar .oc-toolbar-sort [data-slot="select-value"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* The control fills its slot (it is inline-flex, sized to its content, by default), and the pill is what gives
+     way: without this the control kept its full width and Filters was painted over the sort arrow. */
+  .oc-applicants-toolbar .oc-toolbar-sort .oc-sort-control { display: flex; width: 100%; min-width: 0; }
+  .oc-applicants-toolbar .oc-toolbar-sort .oc-pill-select-trigger { flex: 1 1 auto; width: auto; min-width: 0; }
+  /* The field name matters more than the word "Sort" here; the prefix is aria-hidden and the group keeps its name. */
+  .oc-applicants-toolbar .oc-toolbar-sort .oc-pill-select-prefix { display: none; }
+  .oc-applicants-toolbar .oc-toolbar-sort .oc-sort-direction { flex-shrink: 0; }
+  .oc-applicants-toolbar .oc-toolbar-sort [data-slot="select-value"] { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 /* Compact board */
