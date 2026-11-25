@@ -60,14 +60,17 @@ function apiHarness() {
  const room={...input(),id:id(3),isOpen:true,panelMemberIds:[],approvedPanelMemberIds:[]}
  const slot={id:id(4),clubId:id(1),roomId:room.id,room,startTime:new Date('2099-09-07T14:00Z'),endTime:new Date('2099-09-07T14:20Z'),capacity:1,_count:{bookings:0}}
  const app={id:id(5),studentId:id(6),clubId:id(1),roundId:id(2),status:'INTERVIEWING',recruitmentCycleId:null}
- const state={room,slot,app,existing:null,others:[],created:[],deleted:[],audit:[],permission:true,retries:0,attempts:0,failCreate:false}
+ const state={room,slot,app,existing:null,others:[],created:[],deleted:[],audit:[],permission:true,retries:0,attempts:0,failCreate:false,
+  // The caller's live membership as the write transaction reads it; a test can revoke it after the pre-check.
+  manager:{id:id(60),userId:id(6),clubId:id(1),status:'ACTIVE',permissions:['interviews.manage']}}
  const tx={
   $queryRaw:async()=>[],
+  user:{findUnique:async()=>({disabledAt:null})},
   studentProfile:{findUnique:async()=>({graduatedAt:null})},
   application:{findFirst:async({where})=>state.app && where.id===state.app.id && (!where.studentId||where.studentId===state.app.studentId)?state.app:null},
   interviewSlot:{findUnique:async()=>state.slot,findMany:async()=>state.others},
   pipelineRound:{findUnique:async()=>({bookingAllowCancellation:true}),findUniqueOrThrow:async()=>({id:id(2),type:"INTERVIEW",bookingPublishedAt:new Date(),bookingSlots:[core.bookingSlotSnapshot(state.slot,state.room)],bookingCycleId:null,bookingAllowRescheduling:true}),findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},
-  clubMember:{count:async()=>0,findMany:async()=>[]},
+  clubMember:{count:async()=>0,findMany:async()=>[],findUnique:async({where})=>where.userId_clubId.clubId===state.manager.clubId&&where.userId_clubId.userId===state.manager.userId?state.manager:null},
   interviewRoom:{create:async({data})=>{state.created.push(data);return {id:id(3)}},update:async()=>{}},
   interviewPanelAssignment:{findMany:async()=>[]},
   auditLog:{create:async({data})=>state.audit.push(data)},
@@ -99,6 +102,12 @@ test('rescheduling replaces only on success, and cancellation checks ownership a
  state.deleted=[];state.app.studentId=id(70);await assert.rejects(api.cancelRoomBooking(id(8)),/couldn.t find that interview/);assert.equal(state.deleted.length,0)
  state.app.studentId=id(6);state.existing.slot.startTime=new Date(0);await assert.rejects(api.cancelRoomBooking(id(8)),/already started/)
  state.existing.slot.startTime=new Date('2099-09-08T14:00Z');await api.cancelRoomBooking(id(8));assert.deepEqual(state.deleted,[id(8)])
+})
+test('room creation re-checks the caller\'s grant inside the write transaction',async()=>{
+ // Access revoked after the request's pre-check (another leader removed it) must stop the write.
+ const h=apiHarness();h.state.manager.permissions=[]
+ await assert.rejects(h.api.createInterviewRoom(input()),/permissions changed/)
+ assert.equal(h.state.created.length,0);assert.equal(h.state.audit.length,0)
 })
 test('room creation checks permission, round, panel membership, and overlapping location/panel windows',async()=>{
  const denied=apiHarness();denied.state.permission=false;await assert.rejects(denied.api.createInterviewRoom(input()),/Denied/)
