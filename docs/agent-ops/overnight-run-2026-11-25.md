@@ -239,3 +239,14 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Live check: public test club page at 1440 px; signed-out `/applications` at 500 px redirects to sign-in with `next=/applications`.
 - The submit itself needs a signed-in student; the same-school refusal is verified by unit and native-transaction suites in CI, not on the live site.
 - No rollback needed.
+
+## 08:47 UTC: Load numbers: drafts, interview booking, live-vote ballots (disposable PostgreSQL in CI, never production)
+- Ran the repo's own contention benchmark (`scripts/run-contention-benchmark.cjs`) on main 9d4f0c17 in a throwaway GitHub Actions job (run 45578393429, temporary branch `bench/contention-2026-11-25`, never merged). Simulated round-trip 0 ms and 2 ms. 14/14 correctness checks passed.
+- Application drafts, 20 concurrent first saves in one club: 20/20 saved; p95 143 ms (0 ms RTT), 86 ms (2 ms RTT).
+- Interview self-booking: no over-capacity slots and no lost bookings at any size.
+  - 20 students, 1 club: p95 649 ms / 443 ms. 20 students over 3 clubs: p95 335 ms / 335 ms.
+  - 60 students, 1 club: p95 2413 ms / 2169 ms. 60 students over 3 clubs: p95 1248 ms / 1112 ms.
+  - About 46 statements per booking; bookings in one club serialize on the club, so time grows with the queue, not with RTT.
+- Live-vote ballots in one room: 15/40/80 voters all recorded.
+  - 0 ms RTT: p95 240 / 510 / 737 ms. 2 ms RTT: p95 538 / 1369 / 2744 ms. Ballots serialize on the voting session by design.
+- Decision: no fix. Every case is correct and stays far inside the transaction limits (booking 20 s, voting 30 s, pool wait 5-10 s). The worst realistic case (60 students booking one club's interviews in the same second) is about 2.4 s for the last one in line. Cutting the ~46 statements per booking is a refactor of the booking path, so it goes on the "not built" list rather than into tonight's run. Production RTT between Vercel and Supabase was not measured (no load on production); ballot time scales with it.
