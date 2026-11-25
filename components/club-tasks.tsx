@@ -57,7 +57,7 @@ export function ClubTasks({clubId,embedded=false,initialScope="team",personalOnl
   useRevalidate(()=>setRefresh(value=>value+1),{scopes:["tasks"],enabled:!busy&&!dirty})
   useEffect(()=>{if(!dirty&&!busy)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=""};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn)},[dirty,busy])
   useEffect(()=>{if(manager||!focusedTask||focusedTask===consumedFocus.current||!workspace)return;const task=workspace.tasks.find(task=>task.id===focusedTask),own=task?.assignments.find(assignment=>assignment.memberId===workspace.memberId);if(own){consumedFocus.current=focusedTask;setActive(task!.id);if(!own.viewedAt)void viewTask(own.id).catch(()=>{})}},[focusedTask,workspace,manager])
-  async function run(fn:()=>Promise<unknown>){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){setError(userMessage(error, "Could not save. Please try again."));return false}finally{setBusy(false)}}
+  async function run(fn:()=>Promise<unknown>,options?:{onError?:(message:string)=>void}){setBusy(true);setError("");readTicket.current++;try{await fn();setDirty(false);const ticket=++readTicket.current;try{const data=await getTaskWorkspace(clubId);if(ticket===readTicket.current){setWorkspace(data);setStale(false)}}catch{setError("Your changes were saved, but the updated list could not load. Try again to see them.")}window.dispatchEvent?.(new Event("outclass:tasks-changed"));return true}catch(error){const message=userMessage(error, "Could not save. Please try again.");if(options?.onError)options.onError(message);else setError(message);return false}finally{setBusy(false)}}
   async function closeTask(){if(busy||document.querySelector('[data-task-uploading="true"]'))return;if(dirty&&!(await confirm({title:"Close task?",description:"Unsaved changes will be lost.",confirmLabel:"Close task",cancelLabel:"Keep editing",tone:"danger"})))return;setActive(null);setDirty(false);setSavedAssignment(null)}
   async function open(task:Task,event?:React.MouseEvent<HTMLElement>){const trigger=event?.currentTarget??document.activeElement as HTMLElement;if(dirty&&!(await confirm({title:"Open another task?",description:"Unsaved changes will be lost.",confirmLabel:"Open task",cancelLabel:"Keep editing",tone:"danger"})))return;taskTrigger.current=trigger;setActive(task.id);setDirty(false);setSavedAssignment(null);const own=task.assignments.find(assignment=>assignment.memberId===workspace?.memberId);if(own&&!own.viewedAt)void viewTask(own.id).catch(()=>{})}
   const personal=workspace?.tasks.filter(task=>task.status!=="DRAFT"&&task.assignments.some(assignment=>assignment.memberId===workspace.memberId))??[]
@@ -127,7 +127,9 @@ function Submission({
         const data = new FormData(e.currentTarget);
         try { await draftSave.flush() } catch { return }
         setSubmitted(false);
+        setError("");
         onSubmitted?.(null);
+        // A refusal shows beside Submit, where the member is looking, not at the top of the drawer.
         const success = await run(() =>
           submitTask({
             assignmentId: a.id,
@@ -136,6 +138,7 @@ function Submission({
             link: String(data.get("link") || ""),
             fileIds: files.map((f) => f.id),
           }),
+          { onError: setError },
         );
         if (success) { await draftSave.clear(); setSubmitted(true); onSubmitted?.(a.id); }
       }}

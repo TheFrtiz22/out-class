@@ -17,10 +17,10 @@ export function DashboardTask({ clubId, taskId, assignmentId, review = false, on
     getTaskWorkspace(clubId, { taskId, assignmentId }).then(value => { if (current) { setWorkspace(value); setError(""); const own = value.tasks[0]?.assignments.find(a => a.memberId === value.memberId); if (own && !own.viewedAt) void viewTask(own.id).catch(() => {}) } }).catch(() => { if (current) { setWorkspace(null); setError("This task could not load. Check your access or try again.") } })
     return () => { current = false }
   }, [clubId, taskId, assignmentId, retry])
-  async function run(fn: () => Promise<unknown>) {
+  async function run(fn: () => Promise<unknown>, options?: { onError?: (message: string) => void }) {
     setBusy(true); setError(""); setNotice("")
     try { await fn(); onChanged(); try { setWorkspace(await getTaskWorkspace(clubId, { taskId, assignmentId })) } catch { setWorkspace(null); setError("Saved, but the updated task could not load. Retry to check its current state.") } setNotice("Changes saved to your account."); return true }
-    catch (e) { setError(userMessage(e, "Could not save. Your response is still here.")); return false }
+    catch (e) { const message = userMessage(e, "Could not save. Your response is still here."); if (options?.onError) options.onError(message); else setError(message); return false }
     finally { setBusy(false) }
   }
   const task = workspace?.tasks.find(t => t.id === selectedId)
