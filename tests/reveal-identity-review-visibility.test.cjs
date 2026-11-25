@@ -14,7 +14,7 @@ const clubId = id(1), applicationId = id(2), roundId = id(3), questionId = id(4)
 // Revealing an applicant's identity is about who they are. It must not hand out more review data than the
 // canonical pipeline detail (lib/pipeline-detail.ts): peers' scores only to closing leadership, nothing to a
 // member who stepped out of the applicant, and never a reviewer's grades on their own application.
-function fixture({ offices = [], recused = false, applicant = 'student' } = {}) {
+function fixture({ offices = [], recused = false, applicant = 'student', answers } = {}) {
   const app = { id: applicationId, clubId, studentId: applicant, status: 'IN_REVIEW', roundId, decisionVersion: 1, decisionStateRevision: 1,
     club: { profileFieldVisibility: null },
     round: { id: roundId, name: 'Review', type: 'REVIEW', anonymousReview: true, applicantDisplay: null, archivedAt: null },
@@ -22,12 +22,18 @@ function fixture({ offices = [], recused = false, applicant = 'student' } = {}) 
       studentProfile: { id: id(8), userId: applicant, firstName: 'Ada', lastName: 'Lee', computingId: 'al1', major: 'Math', gradYear: 2028, headshotUrl: null, experiences: [] } },
     evaluations: [{ id: id(9), applicationId, interviewerId: peerMember, roundId, round: 'Review', score: 9, rubricScores: { fit: 5 }, submittedAt: new Date(), createdAt: new Date() }],
     interviewAssignments: [],
-    answers: [{ id: id(10), applicationId, questionId, response: 'Private essay', question: { id: questionId, clubId, type: 'ESSAY', prompt: 'Why?', options: [], order: 0, showIf: null } }],
+    answers: answers ?? [{ id: id(10), applicationId, questionId, response: 'Private essay', question: { id: questionId, clubId, type: 'ESSAY', prompt: 'Why?', options: [], order: 0, showIf: null } }],
     bookings: [] };
   const member = { id: viewerMember, userId: viewerUser, clubId, status: 'ACTIVE', isOwner: false, permissions: ['applications.review', 'applicants.identify'], interviewOffices: offices, alumniSince: null };
   const tx = {
     $queryRaw: async () => [],
-    application: { findFirst: async ({ where }) => where.id === applicationId && where.clubId === clubId ? app : null },
+    // Rows come back in storage order unless the query asks for question order, as PostgreSQL may.
+    application: { findFirst: async ({ where, include }) => {
+      if (where.id !== applicationId || where.clubId !== clubId) return null;
+      const order = include?.answers?.orderBy;
+      const byQuestion = Array.isArray(order) && order.some(o => o.question?.order === 'asc');
+      return byQuestion ? { ...app, answers: [...app.answers].sort((a, b) => a.question.order - b.question.order) } : app;
+    } },
     applicantRecusal: { findFirst: async ({ where }) => recused && where.applicationId === applicationId && where.memberId === viewerMember && where.liftedAt === null ? { id: 'recusal' } : null },
     auditLog: { create: async () => ({}) },
   };
@@ -61,4 +67,14 @@ test('closing leadership still sees submitted scores and answers after a reveal'
   assert.equal(revealed.evaluations.length, 1);
   assert.equal(revealed.evaluations[0].score, 9);
   assert.equal(revealed.answers[0].response, 'Private essay');
+});
+test('a reveal keeps a follow-up answer that the database returns before its parent question', async () => {
+  const parentId = id(11), followUpId = id(12);
+  const parent = { id: parentId, clubId, type: 'MULTIPLE_CHOICE', prompt: 'Have you led a team?', options: ['Yes', 'No'], order: 0, showIf: null };
+  const followUp = { id: followUpId, clubId, type: 'ESSAY', prompt: 'Tell us about it', options: [], order: 1, showIf: { questionId: parentId, anyOf: ['Yes'] } };
+  const revealed = await fixture({ offices: ['PRESIDENT'], answers: [
+    { id: id(13), applicationId, questionId: followUpId, response: 'Ran the robotics club', question: followUp },
+    { id: id(14), applicationId, questionId: parentId, response: 'Yes', question: parent },
+  ] })();
+  assert.deepEqual(revealed.answers.map(a => a.response).sort(), ['Ran the robotics club', 'Yes'], 'the visible follow-up is part of the reveal');
 });
