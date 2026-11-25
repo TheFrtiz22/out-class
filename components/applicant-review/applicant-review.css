@@ -82,9 +82,11 @@
   .oc-applicants-toolbar .oc-toolbar-search { order: 5; flex-basis: 7rem; min-width: 7rem; }
   .oc-applicants-toolbar .oc-toolbar-sort { order: 6; }
 }
-@container (max-width: 420px) {
-  /* Phones: search gets the full row so its placeholder stays readable. */
+@container (max-width: 520px) {
+  /* Phones: view · status, then search on its own row so its placeholder stays readable, then sort · filters · more.
+     Filters and More share the sort row instead of wrapping onto a row of their own. */
   .oc-applicants-toolbar .oc-toolbar-search { flex-basis: 100%; }
+  .oc-applicants-toolbar .oc-toolbar-tools { order: 7; }
 }
 
 /* Compact board */
