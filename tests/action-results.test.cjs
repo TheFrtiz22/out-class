@@ -3,6 +3,7 @@
 // stubbed persistence and check the returned envelope the browser receives.
 const { test } = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), ts = require('typescript');
+const { UVA, schoolScope } = require('./helpers/school-scope.cjs');
 
 function loader(mocks) {
   const cache = new Map();
@@ -22,7 +23,7 @@ const clubId = '00000000-0000-4000-8000-000000000001', questionId = '00000000-00
 function applications({ applicationOpen = true, profile = true, status = 'DRAFTING', failure } = {}) {
   const tx = {
     $queryRaw: async () => [],
-    club: { findUnique: async () => { if (failure) throw failure; return { testRequirement: 'OPTIONAL', applicationOpen, applicationDeadline: null } } },
+    club: { findUnique: async () => { if (failure) throw failure; return { schoolId: UVA.id, testRequirement: 'OPTIONAL', applicationOpen, applicationDeadline: null } } },
     studentProfile: { findUnique: async () => profile ? { id: 'profile', phone: '+14345550123' } : null },
     applicationQuestion: { findMany: async () => [{ id: questionId, prompt: 'Why?', type: 'ESSAY', required: true, wordLimit: 50 }] },
     pipelineRound: { findFirst: async () => ({ id: 'round' }) },
@@ -35,6 +36,7 @@ function applications({ applicationOpen = true, profile = true, status = 'DRAFTI
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
     '@/utils/prisma': { prisma: {} },
     '@/utils/official-panel-schedule': {},
+    '@/utils/school-scope': schoolScope(),
     'next/cache': { revalidatePath: () => {} },
   })('actions/applications.ts');
 }
@@ -95,6 +97,7 @@ test('decision guards return safe failures for stale offers and suspended clubs'
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn({ $queryRaw: async () => [{ id: clubId }] }) },
     '@/utils/prisma': { prisma: {} },
     '@/utils/official-panel-schedule': {},
+    '@/utils/school-scope': schoolScope(),
     'next/cache': { revalidatePath: () => {} },
   })('actions/applications.ts');
   const result = await suspended.saveApplicationDraft(input);

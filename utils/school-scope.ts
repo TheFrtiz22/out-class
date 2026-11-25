@@ -39,6 +39,14 @@ async function schoolForUser(userId: string): Promise<SchoolScope | null> {
   return type?.school ?? null
 }
 
+/**
+ * The school of an account already authenticated by the caller (requireAuth's user): the same answer
+ * resolveViewerSchool gives, without validating the session a second time. Writes use this.
+ */
+export async function resolveAccountSchool(userId: string): Promise<SchoolScope> {
+  return (await schoolForUser(userId)) ?? resolveHostSchool()
+}
+
 /** The effective account: a valid support session's target, otherwise the verified session user.
  * An invalid or expired view-as cookie falls back to the signed-in account, never to the host. */
 async function viewerUserId(): Promise<string | null> {
