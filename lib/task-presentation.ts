@@ -21,6 +21,8 @@ export function taskYearLabel(year: number, now=Date.now()) {
   return academicYear({ gradYear: year }, new Date(now))
 }
 export function taskDate(value: Date|string|null) { return value ? new Date(value).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "No due date" }
+/** "Due Dec 1, 5:00 PM", or "No due date" alone, never "Due No due date". */
+export function taskDueLabel(value: Date|string|null) { return value ? `Due ${taskDate(value)}` : "No due date" }
 export function taskLocalDate(value: Date|string|null) { if(!value)return ""; const date=new Date(value);date.setMinutes(date.getMinutes()-date.getTimezoneOffset());return date.toISOString().slice(0,16) }
 export function needsTaskReview(assignment: Pick<TaskAssignment,"submittedAt"|"reviewedAt"|"revisionRequestedAt">) { return !!assignment.submittedAt && !assignment.reviewedAt && !assignment.revisionRequestedAt }
 export function taskCounts(task: ClubTask, now=Date.now()) {
