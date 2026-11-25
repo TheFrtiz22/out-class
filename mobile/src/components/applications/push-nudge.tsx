@@ -11,7 +11,7 @@ type NudgeState = PushStatus | "loading" | "asking" | "enabled" | "failed" | "di
  * (`~/lib/push` status "off"). Turning it on goes through the same path as the switch in
  * notification preferences; nothing is asked until the student taps.
  */
-export function PushNudge() {
+export function PushNudge({ onDismiss }: { onDismiss: () => void }) {
   const [state, setState] = useState<NudgeState>("loading");
   useEffect(() => {
     let live = true;
@@ -34,7 +34,7 @@ export function PushNudge() {
       {state === "failed" ? <Text variant="caption" accessibilityRole="alert" testID="push-nudge-failed">Notifications didn’t turn on. You can try again, or later in notification preferences.</Text> : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         <Button testID="push-nudge-enable" label="Turn on notifications" loading={state === "asking"} onPress={() => void enable()} />
-        <Button testID="push-nudge-dismiss" variant="secondary" label="Not now" disabled={state === "asking"} onPress={() => setState("dismissed")} />
+        <Button testID="push-nudge-dismiss" variant="secondary" label="Not now" disabled={state === "asking"} onPress={() => { setState("dismissed"); onDismiss(); }} />
       </View>
     </Card>
   );

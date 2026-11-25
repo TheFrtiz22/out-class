@@ -65,6 +65,11 @@ describe("after submitting, the app offers push once", () => {
     await fireEvent.press(screen.getByTestId("push-nudge-dismiss"));
     expect(screen.queryByTestId("push-nudge")).toBeNull();
     expect(push.enable).not.toHaveBeenCalled();
+    // Leaving for the submitted responses and coming back does not bring it back.
+    await fireEvent.press(screen.getByTestId("application-view-responses"));
+    await fireEvent.press(screen.getByTestId("application-view-status"));
+    await wait(20);
+    expect(screen.queryByTestId("push-nudge")).toBeNull();
   });
 
   test("a phone that did not turn on says so and keeps the offer", async () => {
