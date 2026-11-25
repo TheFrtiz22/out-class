@@ -9,7 +9,8 @@
 .oc-task-total.oc-task-missing:not([data-zero="true"]) strong { color: var(--destructive); }
 .oc-task-controls, .oc-task-filters, .oc-task-search-line { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
 .oc-task-filters { flex: 1; min-width: min(100%, 24rem); gap: .5rem; }
-.oc-task-filter { min-width: 0; flex: 0 1 11rem; }
+/* Sized to its label ("Status: Submitted (12)") so the value is never cut to "Activ"; it still shrinks on a tiny screen. */
+.oc-task-filter { min-width: 0; max-width: 100%; flex: 0 1 auto; }
 .oc-task-filter select { min-height: 2.75rem; background: var(--card); }
 .oc-task-search-control { min-width: 0; flex: 1; }
 .oc-task-search-line .oc-task-search-control { flex-basis: 15rem; }
@@ -46,7 +47,6 @@
 @media (max-width: 639px) {
   .oc-task-controls { gap: .75rem; }
   .oc-task-filters { width: 100%; flex-basis: 100%; }
-  .oc-task-filter { flex: 0 1 9rem; }
   .oc-task-row { grid-template-columns: 1.5rem minmax(0, 1fr); gap: .5rem .75rem; padding: .875rem; }
   .oc-task-icon { width: 1.5rem; height: 1.5rem; align-self: start; margin-top: .15rem; }
   .oc-task-icon svg { width: 1rem; height: 1rem; }
