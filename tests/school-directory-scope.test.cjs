@@ -259,10 +259,10 @@ test('every public listing reads through the viewer school', () => {
 })
 
 // ---- By-id reads, cached responses and writes (authz review follow-up) ----
-const realScope = ({ host, signedInUser = null }) => load('utils/school-scope.ts', {
+const realScope = ({ host, signedInUser = null, prisma = null }) => load('utils/school-scope.ts', {
   react: { cache: fn => fn },
   'next/headers': { cookies: async () => ({ has: () => false }), headers: async () => ({ get: name => (name === 'host' ? host : null) }) },
-  '@/utils/prisma': { prisma: {
+  '@/utils/prisma': { prisma: prisma ?? {
     user: { findUnique: async ({ where }) => (signedInUser && where.id === signedInUser.id ? signedInUser : null) },
     schoolIdentifierType: { findFirst: async () => null },
     school: { findUnique: async ({ where }) => Object.values(SCHOOLS).map(s => ({ ...s, name: s.key.toUpperCase(), active: true })).find(s => s.key === where.key) ?? null },
@@ -272,6 +272,20 @@ const realScope = ({ host, signedInUser = null }) => load('utils/school-scope.ts
   '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'view' },
   '@/lib/school-host': schoolHost(),
   '@/utils/mobile-request': { mobileRequest: () => undefined },
+})
+
+test('a write holding a transaction reads the account school, host fallback included, through that transaction', async () => {
+  // A room of visitors checking in must not each wait for a second pooled connection (actions/meetings.ts).
+  const shared = new Proxy({}, { get: (_, model) => ({ findUnique: async () => assert.fail(`shared client read ${String(model)}`), findFirst: async () => assert.fail(`shared client read ${String(model)}`) }) })
+  const reads = []
+  const tx = {
+    user: { findUnique: async () => { reads.push('user'); return { email: 'visitor@example.org', schoolIdentities: [] } } },
+    schoolIdentifierType: { findFirst: async () => { reads.push('schoolIdentifierType'); return null } },
+    school: { findUnique: async ({ where }) => { reads.push(`school:${where.key}`); return { ...SCHOOLS.tech, name: 'TECH', active: true } } },
+  }
+  const scope = realScope({ host: 'tech.out-class.net', prisma: shared })
+  assert.deepEqual(await scope.resolveAccountSchool('visitor', tx), { id: SCHOOLS.tech.id, key: SCHOOLS.tech.key, name: 'TECH' })
+  assert.deepEqual(reads, ['user', 'schoolIdentifierType', 'school:tech'])
 })
 
 test('share cards depend on the host only: signed-in and signed-out requests on one host get the same card data', async () => {

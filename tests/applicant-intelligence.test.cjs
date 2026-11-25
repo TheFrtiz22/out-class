@@ -18,11 +18,14 @@ function application() {
 function harness() {
   let app=application(), permission=true, actor='author'; let observations=[]; const recusals=[];
   const member={id:'membership',permissions:['applications.review','applicants.identify','interviews.manage'],status:'ACTIVE'};
+  // The caller's live membership as a write transaction reads it; revokeInTransaction() models a grant removed after the pre-check.
+  let liveMember=member;
   const tx={
     evaluation:{findMany:async()=>app.evaluations.filter(e=>e.submittedAt)},
     $queryRaw:async()=>[],
     applicantRecusal:{findFirst:async({where})=>recusals.find(r=>r.applicationId===where.applicationId&&r.memberId===where.memberId&&where.liftedAt===null)??null},
-    clubMember:{findFirst:async({where})=>permission&&where.clubId===clubId?member:null},
+    user:{findUnique:async()=>({disabledAt:null})},
+    clubMember:{findFirst:async({where})=>permission&&where.clubId===clubId?member:null,findUnique:async({where})=>permission&&where.userId_clubId.clubId===clubId&&where.userId_clubId.userId===actor?{...liveMember,userId:actor,clubId}:null},
     application:{findFirst:async({where})=>where.id===applicationId&&where.clubId===clubId&&app.status!=='DRAFTING'?app:null},
     applicantObservation:{
       findMany:async({where})=>observations.filter(o=>o.applicationId===where.applicationId).map(o=>({...o,author:{studentProfile:{firstName:'Reviewer',lastName:'One'}}})),
@@ -34,7 +37,7 @@ function harness() {
     auditLog:{create:async()=>({})},
   };
   const api=load('actions/applicant-intelligence.ts',{'@/utils/auth':{requireClubPermission:async(id,caps)=>{if(!permission||id!==clubId||!caps.every(c=>member.permissions.includes(c)))throw Error('Denied');return{user:{id:actor},membership:member}}},'@/utils/prisma':{prisma:{...tx,$transaction:async f=>f(tx)}}});
-  return {api,app,member,observations:()=>observations,recuse(){recusals.push({applicationId,memberId:member.id})},deny(){permission=false},otherAuthor(){actor='other'},scope:{clubId,applicationId}};
+  return {api,app,member,observations:()=>observations,recuse(){recusals.push({applicationId,memberId:member.id})},deny(){permission=false},revokeInTransaction(){liveMember={...member,permissions:['applications.review']}},otherAuthor(){actor='other'},scope:{clubId,applicationId}};
 }
 for(const kind of ['PRO','CON']) test(`${kind} creation, attribution, own edit/delete and other-author denial`,async()=>{
  const h=harness();await h.api.saveApplicantObservation({...h.scope,kind,body:'Thoughtful evidence'});
@@ -114,11 +117,14 @@ test('authorized absent feedback is absent; withheld feedback is explicit withou
  h.member.interviewOffices=[];view=await h.api.getApplicantDisplay(h.scope);assert.equal(view.sections.find(s=>s.field==='feedback').withheld,true);assert.ok(view.withheld.includes('feedback'));
 });
 test('feedback never discloses drafts, unresolved legacy rounds, historical anonymous evidence, self-review, or owner-only rights',async()=>{
- for(const edit of [h=>{h.app.evaluations[0].submittedAt=null},h=>{h.app.evaluations[0].stableRound=null},h=>{h.app.evaluations[0].stableRound.anonymousReview=true},h=>{h.app.evaluations[0].interviewRecords=[{anonymousReview:true}]},h=>{h.app.studentId='author'},h=>{h.member.interviewOffices=[];h.member.isOwner=true}]){
+ for(const edit of [h=>{h.app.evaluations[0].submittedAt=null},h=>{h.app.evaluations[0].stableRound=null},h=>{h.app.evaluations[0].stableRound.anonymousReview=true},h=>{h.app.evaluations[0].interviewRecords=[{anonymousReview:true}]},h=>{h.member.interviewOffices=[];h.member.isOwner=true}]){
   const h=harness();h.member.interviewOffices=['BOARD'];h.app.evaluations[0].submittedAt=new Date();h.app.evaluations[0].stableRound={clubId,anonymousReview:false};h.app.evaluations[0].interviewRecords=[];
   edit(h);
   const view=await h.api.getApplicantDisplay(h.scope);assert.doesNotMatch(JSON.stringify(view),/Secret feedback/);assert.ok(view.withheld.includes('feedback'));
  }
+ // Self-review: the reviewer's own application is refused outright, so nothing about it (feedback included) is disclosed.
+ const self=harness();self.member.interviewOffices=['BOARD'];self.app.evaluations[0].submittedAt=new Date();self.app.evaluations[0].stableRound={clubId,anonymousReview:false};self.app.evaluations[0].interviewRecords=[];self.app.studentId='author';
+ await assert.rejects(self.api.getApplicantDisplay(self.scope),/unavailable/);
 });
 test('configuration cannot override feedback disclosure in voting or preview',async()=>{
  const h=harness();h.member.permissions.push('decisions.manage');
@@ -133,4 +139,18 @@ test('a recused member cannot read, add, edit or delete Pros and Cons; others ar
  await assert.rejects(h.api.saveApplicantObservation({...h.scope,id:observationId,kind:'PRO',body:'Edited'}),/stepped out/);
  await assert.rejects(h.api.deleteApplicantObservation({...h.scope,id:observationId}),/stepped out/);
  assert.deepEqual(h.observations().map(o=>o.body),['Before stepping out']);
+});
+
+test('a reviewer never sees the applicant display, scores or Pros/Cons of their own application',async()=>{
+ // Voting slides and previews already refused this; the ordinary review panel must too.
+ const h=harness();h.app.studentId='author';
+ await assert.rejects(h.api.getApplicantDisplay(h.scope),/unavailable/);
+ await assert.rejects(h.api.saveApplicantObservation({...h.scope,kind:'PRO',body:'About myself'}),/unavailable/);
+ assert.equal(h.observations().length,0);
+});
+
+test('saving the applicant display re-checks interviews.manage inside the write transaction',async()=>{
+ const h=harness();h.revokeInTransaction();
+ await assert.rejects(h.api.saveApplicantDisplayConfiguration({clubId,roundId,version:0,config:defaultDisplayConfig}),/permissions changed/);
+ assert.equal(h.app.round.displayVersion,0);
 });

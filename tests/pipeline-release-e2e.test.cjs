@@ -72,8 +72,12 @@ test('real desktop pointer and mobile touch support detail switching, global sea
    if(size>1){await activate(page.getByRole('button',{name:'Next applicant',exact:true}));await page.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();}
    await activate(page.locator('.oc-review-flow').getByRole('button',{name:'Close review',exact:true}).first());await page.locator('.oc-review-flow').waitFor({state:'hidden'});
    const last=size<=100?'Audit Student '+String(size-1).padStart(3,'0'):'Scale Student '+String(size-1).padStart(5,'0');
-   await page.getByRole('searchbox',{name:'Search applicants',exact:true}).fill(last);await page.getByText(last,{exact:true}).filter({visible:true}).first().waitFor();assert.equal(await rows().count(),1);
-   await page.goBack();await page.locator('.oc-command-recruiting').waitFor();await page.goForward();await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
+   await page.getByRole('searchbox',{name:'Search applicants',exact:true}).fill(last);await page.getByText(last,{exact:true}).filter({visible:true}).first().waitFor();
+   // The name can show before the filtered list settles (the list re-renders, or the unfiltered list already holds it), so wait for exactly one visible row.
+   await page.waitForFunction(()=>Array.from(document.querySelectorAll('[data-applicant-id]')).filter(e=>e.getClientRects().length>0).length===1,null,{timeout:15000}).catch(()=>{});assert.equal(await rows().count(),1);
+   await page.goBack();await page.locator('.oc-command-recruiting').waitFor();await page.goForward();
+   // As on entry: the overview's review-queue rows match too, so count only once the overview has gone.
+   await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);console.log('cohort '+size+' '+(touch?'mobile touch':'desktop pointer')+' complete');
   }finally{await context.close();await actor.client.auth.signOut({scope:'local'});}
  }}finally{await browser.close();}

@@ -2,7 +2,7 @@
 import { ActionError, actionResult } from "@/lib/action-result";
 import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
 import { schoolPublicMeetingVisibility } from "@/lib/campus-events";
-import { resolveViewerSchool } from "@/utils/school-scope";
+import { resolveAccountSchool, resolveViewerSchool } from "@/utils/school-scope";
 import { createHash, randomBytes } from "node:crypto";
 import {
   closeMeetingCheckInShortLinks,
@@ -13,7 +13,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { assertNotAlumni } from "@/utils/graduation";
-import { hasPermission, activeMemberWhere } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere, isActiveMembership } from "@/lib/permissions";
 import {
   meetingInputSchema,
   meetingFields,
@@ -183,16 +183,28 @@ async function checkInMeetingCommand(
   return prisma.$transaction(async (tx) => {
     const scope = await tx.meeting.findUnique({ where: { id: meetingId }, select: { clubId: true } });
     if (!scope) throw unavailable();
-    // Same lock order as before (club share lock, then the meeting row); the
-    // suspension state is read after eligibility is known.
+    // Lock order: club share lock, then the meeting row, then the member's own row.
+    // The meeting is shared so a room of members checks in side by side; issuing or
+    // closing the code takes it exclusively and still waits for check-ins in progress.
+    // The member's own row orders their concurrent tabs (unique (eventId, studentId)).
+    // The suspension state is read after eligibility is known.
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
-    await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR SHARE`;
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
     const meeting = await tx.meeting.findUnique({ where: { id: meetingId }, include: { publication: true } });
     if (!meeting) throw unavailable();
     const membership = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: meeting.clubId } },
     });
     if (!canReadMeeting(meeting, membership)) throw unavailable();
+    if (!isActiveMembership(membership)) {
+      // A public recruitment meeting admits non-members, but only students at the club's own school
+      // (the same rule as applying, actions/applications.ts). Read inside this transaction so a room
+      // of visitors checking in never waits on a second pool connection.
+      const club = await tx.club.findUnique({ where: { id: meeting.clubId }, select: { schoolId: true } });
+      const school = await resolveAccountSchool(user.id, tx);
+      if (!club || club.schoolId !== school.id) throw unavailable();
+    }
     await assertClubOperational(tx, meeting.clubId);
     const access = await tx.meetingCheckInToken.findFirst({
       where: {

@@ -35,7 +35,7 @@ test('a client requesting leader search gains no private results without authori
  const {calls,searchWorkspace}=setup();await searchWorkspace('Alex',true)
  assert.equal(calls.filter(([name])=>name==='applications').length,1)
  assert.equal(calls.some(([name])=>name==='rounds'),false)
- assert.deepEqual(calls[0][1].where,{userId:'student',status:'ACTIVE',alumniSince:null,OR:[{isOwner:true},{permissions:{has:'applicants.identify'}}]})
+ assert.deepEqual(calls[0][1].where,{userId:'student',status:'ACTIVE',alumniSince:null,club:{suspendedAt:null},OR:[{isOwner:true},{permissions:{has:'applicants.identify'}}]})
 })
 test('applicant and round queries use only server-derived leader clubs and exclude drafts',async()=>{
  const {calls,searchWorkspace}=setup([member('authorized-club')]);await searchWorkspace('Alex',true)
@@ -64,4 +64,10 @@ test('a current owner still searches the applicants of their club',async()=>{
  const {calls,searchWorkspace}=setup([member('owned-club',{isOwner:true,permissions:[]})])
  await searchWorkspace('Alex')
  assert.deepEqual(calls.find(([name])=>name==='rounds')[1].where.clubId,{in:['owned-club']})
+})
+test('a suspended club grants no applicant or round search to its leaders',async()=>{
+ // Suspension closes a club's workspace (actions/availability.ts reads only unsuspended memberships);
+ // search must not stay a side door to its applicants on the web or through the app's explore.search.
+ const {calls,searchWorkspace}=setup();await searchWorkspace('Alex',true)
+ assert.deepEqual(calls.find(([name])=>name==='memberships')[1].where.club,{suspendedAt:null})
 })

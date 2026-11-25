@@ -15,6 +15,7 @@ import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {roundPublicationKey} from "@/utils/decision-scheduling";
 import { boundedParse } from "@/lib/bounded-input";
 import { ActionError, actionResult } from "@/lib/action-result";
+import {assertMayDecideApplicant} from "@/lib/recusal";
 const uuid=z.string().uuid();
 async function scheduleDecisionPublicationCommand(input:unknown){
  const d=boundedParse(decisionScheduleInput, input),scheduledAt=resolveScheduleTime(d.localTime,d.timeZone,d.occurrence);
@@ -22,7 +23,7 @@ async function scheduleDecisionPublicationCommand(input:unknown){
  const {user}=await requireClubPermission(d.clubId,[...caps]);
  if(await supportContext())throw new ActionError("Exit temporary support impersonation before scheduling decisions.");
  return clubWriteTransaction(async tx=>{
-  await authorizeClubTransaction(tx,d.clubId,user.id,[...caps]);
+  const member=await authorizeClubTransaction(tx,d.clubId,user.id,[...caps]);
   const existing=await tx.scheduledCommunication.findUnique({where:{id:d.id}});
   const request=JSON.stringify(d);
   if(existing){if(existing.clubId===d.clubId&&existing.senderId===user.id&&existing.kind==="DECISION"&&existing.body===request)return {id:existing.id,status:existing.status};throw new ActionError("Schedule identifier already used.");}
@@ -52,6 +53,9 @@ async function scheduleDecisionPublicationCommand(input:unknown){
    voting={id:session.id,revision:session.revision};
   }else decisions=[{id:selection.applicationId,passNumber:0,decision:selection.status}];
   const apps=await tx.application.findMany({where:{clubId:d.clubId,id:{in:decisions.map(a=>a.id)}},include:{round:true,student:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}});
+  // A direct decision is one leader's call, so it gets the staged path's checks: not their own application,
+  // not an applicant they stepped out of. (A voting outcome is the room's, checked when ballots are cast.)
+  if(selection.kind==="DIRECT")for(const app of apps)await assertMayDecideApplicant(tx,app,{userId:user.id,memberId:member.id});
   const applications=decisions.sort((a,b)=>a.id.localeCompare(b.id)).map(item=>{
    const app=apps.find(a=>a.id===item.id);
    if(!app||voting&&(app.roundId!==votingRoundId||app.status!==expectedStatuses.get(app.id))||app.round.archivedAt||app.status==="DRAFTING"||app.status===item.decision||selection.kind==="DIRECT"&&decisionPublicationGuard(app)!==selection.expectedGuard)throw new ActionError("Application changed or unavailable.");

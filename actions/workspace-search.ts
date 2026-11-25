@@ -28,7 +28,8 @@ export async function searchWorkspace(
   const text = query.trim().slice(0, 120)
   if (text.length < 2) return []
   const memberships = await prisma.clubMember.findMany({
-    where: { userId: user.id, ...activeMemberWhere, OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
+    // A suspended club's workspace is closed (as in actions/availability.ts), so its records stay out of search.
+    where: { userId: user.id, ...activeMemberWhere, club: { suspendedAt: null }, OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
   })
   // A graduate kept as owner is hand-over only (lib/graduate-access.ts): no applicant search.
   // Every row is the viewer's own membership, so their graduation date is read once.
