@@ -228,3 +228,7 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Live check: `/uva` at 1440 px and the public test club page at 500 px render correctly. Signed-out request to the attachments route (changed in this PR) is refused with "Invalid attachment reference", not a server error.
 - Reviewer reads (the core of this PR) need a signed-in reviewer; verified by the unit and native suites in CI, not on the live site.
 - No rollback needed.
+
+## 08:34 UTC: merge 7, PR #549 (a student applies only to clubs at their own school)
+- All required gates green on 6ac0eb6f. Merged as 9d4f0c17.
+- App compatibility: the app submits through the same server action path; a UVA account applying to a UVA club is unchanged. Only a cross-school submit or draft is now refused with "This club isn't open to students at your school."
