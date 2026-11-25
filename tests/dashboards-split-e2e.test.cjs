@@ -26,7 +26,7 @@ test('Club home and the Recruiting Overview do different jobs, accessibly', { sk
       if (await skip.isVisible().catch(() => false)) await skip.click()
       await page.waitForTimeout(1500)
       // Club home: club cards only, one recruiting strip, and its data read is the club view plus the strip summary.
-      for (const name of ['Next meeting', 'This week']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 1, name)
+      for (const name of ['Next meeting', 'Next 7 days']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 1, name)
       for (const name of ['Recruiting pipeline', 'Your interviews', 'Pipeline by round', 'Review queue']) assert.equal(await page.getByRole('heading', { name, exact: true }).count(), 0, name)
       assert.equal(await page.locator('.oc-recruiting-strip').count(), 1)
       assert.ok(views.includes('club') && views.includes('strip') && !views.includes('all') && !views.includes('recruiting'), `Club home reads ${views.join(', ')}`)
