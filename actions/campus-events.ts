@@ -23,6 +23,7 @@ import { resolveViewerSchool } from "@/utils/school-scope";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { ActionError, actionResult } from "@/lib/action-result";
+import { adminActionResult } from "@/lib/admin-failure";
 import { alumniRefusal, assertNotAlumni } from "@/utils/graduation";
 const eventSelect = {
   id: true,
@@ -675,7 +676,7 @@ export async function commandCampusEvent(...args: Parameters<typeof commandCampu
 }
 
 export async function reviewCampusEvent(...args: Parameters<typeof reviewCampusEventCommand>) {
-  return actionResult(() => reviewCampusEventCommand(...args), "reviewCampusEvent")
+  return adminActionResult(() => reviewCampusEventCommand(...args), "reviewCampusEvent")
 }
 
 export async function setSavedCampusEvent(...args: Parameters<typeof setSavedCampusEventCommand>) {

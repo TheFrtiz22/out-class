@@ -16,6 +16,7 @@ import { acceptIdentityInvitationInTransaction, recipientInvitation, createIdent
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
 import { boundedParse } from "@/lib/bounded-input";
 import { ActionError, actionResult } from "@/lib/action-result";
+import { adminActionResult } from "@/lib/admin-failure";
 
 const id = z.string().uuid();
 const invitationInput = z.object({
@@ -160,7 +161,7 @@ export async function declineIdentityClubInvitation(...args: Parameters<typeof d
 }
 
 export async function revokeIdentityClubInvitation(...args: Parameters<typeof revokeIdentityClubInvitationCommand>) {
-  return actionResult(() => revokeIdentityClubInvitationCommand(...args), "revokeIdentityClubInvitation")
+  return adminActionResult(() => revokeIdentityClubInvitationCommand(...args), "revokeIdentityClubInvitation")
 }
 
 export async function recordRosterImport(...args: Parameters<typeof recordRosterImportCommand>) {
