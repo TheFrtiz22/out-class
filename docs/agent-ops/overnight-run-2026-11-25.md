@@ -36,6 +36,9 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 | H1 | A reviewer can make a decision on their own application, or on one they are recused from, through direct decision paths | Review | PR #545 |
 | H2 | A recused reviewer still sees evaluations, answers and attachments through identity reveal and the attachment route; a reviewer sees their own application's review data | Review | PR #546 |
 | H3 | Leaders of a suspended club can still search its applicants (web search, app `explore.search`) | Review | PR #547 |
+| M4 | Member reads in suspended clubs | Review | Checked, by design: `requireClubPermission` refuses suspended clubs and the workspace shows a suspended state (docs/club-suspension-review.md). The other user-scoped membership lists (account deletion, alumni) are fine. Search was the one side door (H3). |
+| R6 | Résumé access for recused or self interviewers | Review | Checked, fine: every résumé read and the `/api/interview-resumes` route go through `authorizeInterview`, which refuses the applicant themselves and recused members. The president/VP moderation list shows names only. |
+| L1 | QR check-in: every member's check-in took the meeting row `FOR UPDATE`, so a room checked in one at a time | Load review | PR #548 (meeting `FOR SHARE` + member's own row `FOR UPDATE`). Burst numbers below. |
 
 ## Findings, merges, migrations and deploys
 
@@ -71,7 +74,15 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 
 - **M1, cross-school application.** `actions/applications.ts` `persistApplication` does not compare `club.schoolId` with the viewer's school. Repro: as a UVA student, `POST /api/mobile/v1/applications.submit` with a club id from another school. Impact today is nil: one school, and sign-in is UVA email only. The fix needs `@/utils/school-scope` mocked in five test fixtures (action-results, autosave-actions, club-suspension, student-applications, graduation); deferred behind higher-impact work.
 - **M3, check-in has no school check.** `actions/meetings.ts:195` `checkIn`. Same single-school reasoning as M1.
-- **M4, member reads in suspended clubs.** Unconfirmed; needs a pass over member-facing reads.
 - **R1, peer scores in the default applicant display.** Any review member sees each reviewer's score; `tests/applicant-intelligence.test.cjs:53` asserts this, so it is current policy. Left for the owner to decide.
 - **R5, `stageDecision` is last-write-wins.** Two leaders staging different decisions at once: the later silently replaces the earlier. No data loss beyond the overwritten staging.
-- **R6, résumé visibility in the interview room.** Needs a check that interviewers who are recused do not get the résumé link.
+
+## 06:32 Live site baseline (signed out)
+
+- Desktop 1440×900: `/explore` redirects to `/login?next=/explore` with the sign-in form, as designed.
+- Phone width 500×900 (the browser's minimum): `/uva` and the public test club `/club/aif` render cleanly; nav collapses to the menu button; no horizontal scroll.
+- Signed-in journeys on production are **not** run by hand: this run never types or reads a password, and there is no unattended sign-in for a test account. Signed-in journeys are covered by the CI end-to-end suites (Applicant workflow, Local Auth/settings/navigation) on disposable Supabase.
+
+## 06:35 Load: QR check-in burst (PR #548)
+
+Scenario: a room of members scans the same QR code at once, through the real `checkInMeeting` on disposable PostgreSQL (security suite), 2 ms simulated round trip per statement (co-located pdx1 ↔ us-west-2). Before numbers come from the dispatch on the test-only commit b22b5990; after numbers from the PR run.
