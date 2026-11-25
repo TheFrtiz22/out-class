@@ -86,6 +86,7 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   dependencies['@/components/views/landing.css'] = {}
   dependencies['@/lib/navigation'] = require('./helpers/navigation-module.cjs')
   dependencies['@/components/ui/breadcrumbs'] = { Breadcrumbs: 'Breadcrumbs' }
+  dependencies['@/components/shell/workspace-shell-context'] = { useShellBindings() {} }
   dependencies['@/lib/seo'] = { clubBreadcrumbs: (name, { signedIn } = {}) => signedIn ? [{ label: 'Explore' }, { label: name }] : [{ label: 'OutClass' }, { label: 'UVA' }, { label: name }] }
   new Function('require', 'module', 'exports', 'window', code)(name => dependencies[name] || require(name), mod, mod.exports, window)
   function nodes(node) { return !node || typeof node !== 'object' ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)] }
