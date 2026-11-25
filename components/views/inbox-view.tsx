@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useApplicationState } from "@/lib/application-state"
 import type { ViewId } from "@/lib/views"
-import { notificationGroups, notificationPriority } from "@/lib/student-agenda"
+import { notificationCountLabel, notificationGroups, notificationPriority } from "@/lib/student-agenda"
 import { toast } from "sonner"
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
@@ -94,8 +94,8 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   // Bulk actions only affect checked notifications in the current results.
   const checkedIds = filtered.filter((item) => checked.has(item.id)).map((item) => item.id)
   const groups = notificationGroups(filtered, sort === "club", sort === "priority")
-  const countGroup = groups.find(group => group.label === "Club updates")?.label ?? groups[0]?.label
-  const notificationCount = <p className="text-xs font-normal normal-case tracking-normal text-muted-foreground" role="status">{unread} unread · {items.length} {items.length === 1 ? "notification" : "notifications"}</p>
+  // Each heading counts its own rows; the Unread/Read tabs and filters narrow them first.
+  const countLine = (list: typeof filtered) => <p className="text-xs font-normal normal-case tracking-normal text-muted-foreground">{notificationCountLabel(list)}</p>
   const selected = items.find((item) => item.id === selectedId)
   const allChecked = filtered.length > 0 && checkedIds.length === filtered.length
 
@@ -201,14 +201,14 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
           </div>
           {!groups.length && <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
             <h3 className="oc-card-heading uppercase tracking-wider text-muted-foreground">Club updates</h3>
-            {notificationCount}
+            {countLine(filtered)}
           </div>}
           <div className="oc-inbox-workspace space-y-6">
             {groups.map((group) => (
               <section key={group.label} aria-label={group.label}>
                 <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
                   <h3 className="oc-card-heading uppercase tracking-wider text-muted-foreground">{group.label}</h3>
-                  {group.label === countGroup && notificationCount}
+                  {countLine(group.items)}
                 </div>
                 <div className="divide-y divide-border">
                   {group.items.map((item) => (

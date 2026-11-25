@@ -49,3 +49,8 @@ export function notificationGroups(items: Notification[], byClub: boolean, byPri
   }
   return [...groups].map(([label, items]) => ({ label, items }))
 }
+/** "2 unread · 4 notifications" for the rows under one inbox heading. */
+export function notificationCountLabel(items: Pick<Notification, "read">[]) {
+  const unread = items.filter(item => !item.read).length
+  return `${unread} unread · ${items.length} ${items.length === 1 ? "notification" : "notifications"}`
+}
