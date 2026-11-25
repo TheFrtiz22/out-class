@@ -86,3 +86,24 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 ## 06:35 Load: QR check-in burst (PR #548)
 
 Scenario: a room of members scans the same QR code at once, through the real `checkInMeeting` on disposable PostgreSQL (security suite), 2 ms simulated round trip per statement (co-located pdx1 ↔ us-west-2). Before numbers come from the dispatch on the test-only commit b22b5990; after numbers from the PR run.
+
+- 06:40: both the red dispatch and the first PR run stopped at the held-member test with "Promise resolution is still pending but the event loop has already resolved", so neither gave numbers and the red was not for the intended reason. Diagnosing on a debug branch (not for merge) before trusting the test.
+
+## 06:45 PR #546 review finding
+
+- Codex (P2): the reveal query read answers with no order, and `visibleQuestionIds` only admits a follow-up after its parent, so a visible follow-up essay could drop out of a reveal. Confirmed by reading `lib/student-applications.ts:49`. Test added on red branch `red/reveal-answer-order` (dispatched), fix bdf053b1 orders answers by question order then id, as `lib/pipeline-detail.ts` does. Thread answered and resolved.
+
+## 06:45 App vs website gaps (read from code, not run on a device)
+
+The app calls the same `/api/mobile/v1/*` ops, which run the website's own Server Actions after the bearer-token check; no authorization bypass found. Gaps, most likely to be hit first:
+
+1. Push is off until the person turns it on in Inbox preferences (`mobile/src/components/inbox/preferences.tsx:43`), so students miss interview and decision alerts by default.
+2. Leaders cannot open or decide on an applicant in the app; every applicant tap opens the website (`applicants.tsx:155`). There is no op for `setApplicationStatus` or `moveApplicantRound`.
+3. Web hand-offs (`openOnWeb`) open a plain in-app browser without the session, so leaders likely sign in again on each one (inferred).
+4. Accounts with two-step sign-in: the server answers `TWO_STEP_REQUIRED` but the app has no screen to finish it (`mobile/src/app/sign-in.tsx`); what the person then sees is inferred.
+5. App club search matches locally (`mobile/src/components/explore/directory.ts`) instead of the website's Typesense search, so results can differ.
+6. Leaders cannot create meetings in the app, only host and close check-in.
+7. No email-code sign-in; "Forgot password" opens the website.
+8. Nothing is cached between launches, so opening the app offline shows errors, not the last data.
+
+Ops the server offers that the app never calls: `graduation.confirm`, `explore.search`, `leader.rounds`, `applications`, `invitations`, `home.taskNotifications`.
