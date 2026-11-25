@@ -8,6 +8,7 @@ import { Button, Card, ClubMark, Divider, Press, TARGET, StatusChip } from "~/co
 import { useTheme } from "~/lib/theme";
 import type { StudentApplication } from "~/lib/types";
 import { OfferCard } from "./offer-card";
+import { PushNudge } from "./push-nudge";
 import { StatusProgress } from "./status-progress";
 
 /** Club mark, eyebrow, name and a line of detail: the heading of an application screen. */
@@ -95,6 +96,8 @@ export function StatusDetail({ application: app, notice, alumniRespond, onSwitch
         {app.submittedLabel ? <Text variant="caption">Submitted {app.submittedLabel}</Text> : null}
       </ApplicationHeading>
       {notice ? <Text variant="small" accessibilityRole="alert" testID="application-notice">{notice}</Text> : null}
+      {/* The notice is set only by a submit on this screen: the one moment to offer push. */}
+      {notice ? <PushNudge /> : null}
 
       <Card accessibilityLabel="Current application status" testID="application-status" style={{ gap: 10 }}>
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
