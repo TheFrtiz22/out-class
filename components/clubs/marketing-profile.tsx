@@ -26,9 +26,13 @@ function socials(m: ClubMarketing) {
   ].filter(s => s.url)
 }
 
-/** Two links to the same page: ignores protocol, "www.", case and a trailing slash. */
+/** Two links to the same page: ignores protocol, "www.", the host's case and a trailing slash. Paths and queries keep their case. */
 const samePage = (a: string, b: string) => {
-  const key = (url: string) => url.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/+$/, "")
+  const key = (url: string) => {
+    const rest = url.trim().replace(/^https?:\/\//i, ""), cut = rest.search(/[/?#]/)
+    const host = (cut < 0 ? rest : rest.slice(0, cut)).toLowerCase().replace(/^www\./, "")
+    return (host + (cut < 0 ? "" : rest.slice(cut))).replace(/\/+$/, "")
+  }
   return !!a && !!b && key(a) === key(b)
 }
 

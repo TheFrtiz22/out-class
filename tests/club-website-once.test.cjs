@@ -9,10 +9,12 @@ test('About links skip the link that is the club website', () => {
   assert.match(source, /m\.links\.filter\(l => l\.url && !samePage\(l\.url, m\.website\)\)/)
 })
 
-test('the same page matches across protocol, www, case and trailing slash', () => {
-  const body = source.match(/const samePage = \(a: string, b: string\) => \{([\s\S]*?)\n\}/)[1]
+test('the same page matches across protocol, www, host case and trailing slash, not path case', () => {
+  const body = source.match(/const samePage = \(a: string, b: string\) => \{\n([\s\S]*?)\n\}\n/)[1]
   const samePage = new Function('a', 'b', body.replace(/: string/g, ''))
   assert.equal(samePage('https://www.Club.org/', 'http://club.org'), true)
   assert.equal(samePage('https://club.org/join', 'https://club.org'), false)
   assert.equal(samePage('https://club.org', ''), false)
+  assert.equal(samePage('https://club.org/Join', 'https://club.org/join'), false)
+  assert.equal(samePage('https://CLUB.org/Join/', 'club.org/Join'), true)
 })
