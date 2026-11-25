@@ -6,6 +6,8 @@ const ts = require('typescript')
 const clubId='00000000-0000-4000-8000-000000000001', applicationId='00000000-0000-4000-8000-000000000002', newRoundId='00000000-0000-4000-8000-000000000003'
 function load(file, prisma, roles) {
  prisma.user ||= {findUnique:async()=>({disabledAt:null})};
+ // Decisions and round moves check recusal in the same transaction (lib/recusal.ts); nobody is recused here.
+ prisma.applicantRecusal ||= {findFirst:async()=>null};
  prisma.clubMember ||= {findFirst:async()=>({id:"reviewer",status:"ACTIVE",permissions:["applications.review","applicants.identify"]})}; prisma.clubMember.findUnique ||= async()=>({status:"ACTIVE",isOwner:true}); prisma.$queryRaw ||= async()=>[]; prisma.$transaction = async fn => fn(prisma); prisma.auditLog = {create: async () => ({})};
  const mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
