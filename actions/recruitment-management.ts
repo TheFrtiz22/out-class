@@ -33,6 +33,11 @@ async function saveRecruitmentCycleCommand(input:unknown){
   // Archiving freezes the cycle's votes and ends its recruiting: refuse while any vote is live or unfinalized,
   // or while an applicant is still waiting on a decision (the same rule as starting the next cycle).
   if(existing&&d.archived&&!existing.archivedAt){const blocker=await cycleVotingBlocker(tx,d.clubId,existing)??await cycleDecisionBlocker(tx,d.clubId,existing,"archive");if(blocker)throw new ActionError(blocker,"CYCLE_NOT_CLOSABLE");}
+  // A new or restored open cycle must be the club's only one, as when starting the next cycle: with two open,
+  // the club has no active cycle, so new submissions join none and interview booking stays shut.
+  if(!d.archived&&(!existing||existing.archivedAt)&&await tx.recruitmentCycle.count({where:{clubId:d.clubId,archivedAt:null,id:{not:d.id}}}))
+   throw new ActionError("Archive the club's other open cycle first, so new applications join only one cycle.","OTHER_CYCLES_OPEN");
+  if(await tx.recruitmentCycle.findFirst({where:{clubId:d.clubId,name:d.name,id:{not:d.id}},select:{id:true}}))throw new ActionError("A cycle with this name already exists.","CYCLE_NAME_TAKEN");
   await tx.recruitmentCycle.upsert({where:{id:d.id},create:{id:d.id,clubId:d.clubId,name:d.name,archivedAt:d.archived?new Date():null},update:{name:d.name,archivedAt:d.archived?existing?.archivedAt??new Date():null}});
   await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:d.id,action:"recruitment.cycle.saved",details:{name:d.name,archived:d.archived}}});
   return {success:true};
