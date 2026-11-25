@@ -50,7 +50,10 @@ function when(event: ClubEvent | Date) {
 }
 function applicationNote(app: HomeApplication) {
   return app.draft
-    ? app.deadline
+    // A draft the club no longer accepts can't be finished, so don't invite the student back into it.
+    ? app.intakeClosed
+      ? "Applications closed"
+      : app.deadline
       ? `Deadline · ${when(app.deadline)}`
       : app.responsesSaved !== undefined
         ? `${app.responsesSaved} ${app.responsesSaved === 1 ? "response" : "responses"} saved`
