@@ -24,5 +24,10 @@ test('blank names are refused with a plain message, not a validator default', ()
 
 test('a just-added, still empty experience is not sent, so adding one does not fail the save', () => {
   const dialog = fs.readFileSync('components/edit-student-profile-dialog.tsx', 'utf8')
-  assert.match(dialog, /experiences: snapshot\.experiences\.filter\(item => \[item\.title, item\.subtitle, item\.period\]\.some\(value => value\.trim\(\)\)\)/)
+  assert.match(dialog, /experiences: snapshot\.experiences\.filter\(hasExperienceContent\)/)
+  // The shared filter drops a row only when title, subtitle and period are all blank.
+  const { hasExperienceContent } = load('lib/student-profile.ts')
+  assert.equal(hasExperienceContent({ title: '', subtitle: ' ', period: '' }), false)
+  assert.equal(hasExperienceContent({ title: '', subtitle: '', period: '2025' }), true)
+  assert.equal(hasExperienceContent({ title: 'Treasurer', subtitle: '', period: '' }), true)
 })

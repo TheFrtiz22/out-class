@@ -13,7 +13,7 @@ import { getStudentProfile, updateStudentProfileSection } from "@/lib/workspace-
 import { uploadProfileFile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
-import { profileSectionSnapshot, gpaSchema, genderValues, pronounValues, type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
+import { profileSectionSnapshot, hasExperienceContent, gpaSchema, genderValues, pronounValues, type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
 import {
   Dialog,
   DialogContent,
@@ -115,7 +115,7 @@ export function EditStudentProfileDialog({
               }
             : section === "experience"
               // An entry the student has just added and not typed into yet is not sent; it would only fail the save.
-              ? { section, experiences: snapshot.experiences.filter(item => [item.title, item.subtitle, item.period].some(value => value.trim())) }
+              ? { section, experiences: snapshot.experiences.filter(hasExperienceContent) }
               : section === "contact"
                 ? { section, phone: snapshot.phone ?? "" }
                 : { section, linkedinUrl: snapshot.linkedinUrl, resumeUrl: snapshot.resumeUrl }
