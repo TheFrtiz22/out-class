@@ -85,3 +85,38 @@ test('browser: private draft hydration, lost acknowledgement followed by new edi
   await page.reload();await field.waitFor();await page.waitForFunction(()=>!document.querySelector('textarea')?.disabled);assert.equal(await field.inputValue(),'');assert.equal(published,1);assert.deepEqual(errors,[])
  }finally{await browser?.close();await new Promise(r=>server.close(r))}
 })
+
+test('browser: committing a changed value then reloading the saved version shows no false "saved elsewhere" conflict',async()=>{
+ // Mirrors the recruiting pipeline: a dialog commits a new item, the editor adopts it, then reloads the
+ // server's version (which adds an id). The committed value must not be left behind as a device copy.
+ let draft=null,server=[{name:'Round 1',id:'r1'}]
+ const fixture=`import React,{useState,useEffect}from'react';import{createRoot}from'react-dom/client';import{useEditorDraft}from'@/hooks/use-editor-draft';import{AutosaveStatus}from'@/components/ui/autosave-status';
+ function App(){const[items,setItems]=useState([]),[baseline,setBaseline]=useState(''),[loaded,setLoaded]=useState(false),[reload,setReload]=useState(0),[note,setNote]=useState('');
+ useEffect(()=>{let on=true;setLoaded(false);fetch('/items').then(r=>r.json()).then(data=>{if(!on)return;setItems(data);setBaseline(JSON.stringify(data));setLoaded(true)});return()=>{on=false}},[reload]);
+ const save=useEditorDraft({scope:{kind:'pipeline',clubId:'00000000-0000-4000-8000-000000000001'},value:items,restore:setItems,enabled:loaded,base:baseline});
+ async function add(){const next=[...items,{name:'Round '+(items.length+1)}];await save.flush();await fetch('/items',{method:'POST',body:JSON.stringify(next)});await save.clear(next);setItems(next);setBaseline(JSON.stringify(next));setNote('Saved round');setReload(n=>n+1)}
+ return <><AutosaveStatus save={save}/><ul>{items.map(i=><li key={i.name}>{i.name}{i.id?' saved':''}</li>)}</ul><button disabled={!loaded} onClick={()=>void add()}>Add round</button><p>{note}</p></>};createRoot(document.getElementById('root')).render(<App/>);`
+ const js=bundle(fixture,{
+  '@/contexts/auth-context':"exports.useAuth=()=>({user:{id:'draft-owner'}})",
+  '@/contexts/demo-context':"exports.useDemoMode=()=>({isDemoEnabled:false})",
+  '@/actions/editor-drafts':"exports.getEditorDraft=async()=>{const r=await fetch('/draft');return r.json()};exports.saveEditorDraft=async data=>{const r=await fetch('/draft',{method:'POST',body:JSON.stringify(data)});return r.json()}",
+ })
+ const http2=http.createServer(async(req,res)=>{
+  if(req.url==='/fixture.js'){res.setHeader('Content-Type','text/javascript');res.end(js);return}
+  res.setHeader('Content-Type','application/json')
+  if(req.url==='/items'){if(req.method==='GET'){res.end(JSON.stringify(server));return}let body='';for await(const c of req)body+=c;server=JSON.parse(body).map((i,n)=>({...i,id:i.id||'r'+(n+1)}));res.end('{}');return}
+  if(req.url==='/draft'){if(req.method==='GET'){res.end(JSON.stringify(draft));return}let body='';for await(const c of req)body+=c;const input=JSON.parse(body);draft={...input,revision:(draft?.revision??0)+1};res.end(JSON.stringify({revision:draft.revision}));return}
+  res.setHeader('Content-Type','text/html');res.end('<div id="root"></div><script src="/fixture.js"></script>')
+ })
+ await new Promise(r=>http2.listen(0,'127.0.0.1',r));let browser
+ try{
+  browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));const url=`http://127.0.0.1:${http2.address().port}`
+  await page.goto(url);await page.getByText('Round 1 saved').waitFor();await page.getByRole('button',{name:'Add round'}).click()
+  await page.getByText('Round 2 saved').waitFor();await page.waitForTimeout(1500)
+  assert.equal(await page.getByText(/saved elsewhere|draft from an earlier version/).count(),0,'no recovery banner right after the save')
+  await page.reload();await page.getByText('Round 2 saved').waitFor();await page.waitForTimeout(500)
+  assert.equal(await page.getByText(/saved elsewhere|draft from an earlier version/).count(),0,'no recovery banner after reopening')
+  assert.equal(await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('outclass:autosave:v2:')).length),0,'no device copy left behind')
+  assert.deepEqual(errors,[])
+ }finally{await browser?.close();await new Promise(r=>http2.close(r))}
+})
