@@ -177,7 +177,9 @@ export function ClubProfileView({
   // Real clubs render from server data; only sample clubs wait for device customization.
   if (!ready && !real) return <LoadingState label="Loading club profile…" layout="workspace" rows={3} />
   const closed = real && !application && !recruitment.available
-  const deadlineText = recruitment.deadline
+  // Beside "Applications aren’t open yet" a future deadline reads as an open window, so a real club shows it only
+  // while applications are open, once it has passed, or to someone who already has an application there.
+  const deadlineText = recruitment.deadline && (!real || recruitment.showDeadline || !!application)
     ? `${demo.isDemoEnabled ? "Sample application deadline" : "Application deadline"}: ${recruitmentDate(recruitment.deadline)}`
     : deadline ? `Application deadline: ${deadline.date} · ${deadline.time}` : ""
   const primaryAction = <div className="oc-club-action-row">
