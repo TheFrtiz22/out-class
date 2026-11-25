@@ -40,13 +40,19 @@ test('one member held inside check-in does not block another member', { skip: !d
   let holdUser = null, held, release;
   const holding = new Promise(resolve => { held = resolve; });
   const gate = new Promise(resolve => { release = resolve; });
+  const keep = setInterval(() => {}, 1000); t.after(() => clearInterval(keep));
   const f = await checkInFixture(t, { roundTripMs: 0, beforeStatement: async ({ model, operation, args }) => {
+    if (holdUser) console.error('DEBUG hook', model, operation, JSON.stringify(args?.where ?? null));
     // Pause the first member after their transaction has taken its meeting lock.
     if (holdUser && model === 'EventAttendance' && operation === 'findUnique' && args?.where?.eventId_studentId?.studentId === holdUser) { held(); await gate; }
   } });
   const first = await f.member('first'), second = await f.member('second');
   holdUser = first.id;
   const firstCall = f.as(first, () => f.meetings.checkInMeeting(f.meeting.id, f.token));
+  const early = await Promise.race([holding.then(() => 'held'), firstCall.then(r => 'settled ' + JSON.stringify(r), e => 'threw ' + e.message), new Promise(r => setTimeout(() => r('timeout'), 8000))]);
+  console.error('DEBUG early', early);
+  const locks = await f.operator.$queryRawUnsafe(`SELECT l.locktype, l.mode, l.granted, l.relation::regclass::text AS rel, a.state, left(a.query, 120) AS q FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid WHERE a.datname = current_database() AND a.pid <> pg_backend_pid() AND l.locktype IN ('relation','tuple','transactionid')`);
+  console.error('DEBUG locks', JSON.stringify(locks));
   await holding;
   const secondCall = f.as(second, () => f.meetings.checkInMeeting(f.meeting.id, f.token));
   const outcome = await Promise.race([secondCall.then(r => r.status), new Promise(resolve => setTimeout(() => resolve('waited'), 3000))]);
