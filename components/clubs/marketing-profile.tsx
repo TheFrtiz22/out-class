@@ -26,6 +26,12 @@ function socials(m: ClubMarketing) {
   ].filter(s => s.url)
 }
 
+/** Two links to the same page: ignores protocol, "www.", case and a trailing slash. */
+const samePage = (a: string, b: string) => {
+  const key = (url: string) => url.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/+$/, "")
+  return !!a && !!b && key(a) === key(b)
+}
+
 /**
  * Identity block: banner, logo, name (h1 on the public page), one-line description, category,
  * club-reported figures, social links and the primary action.
@@ -57,7 +63,7 @@ const sectionClass = "oc-club-section"
 export function AboutSection({ profile, children, assetPreview = false }: SectionProps & { children?: ReactNode }) {
   const m = publicMarketing(profile.marketing)
   const sections = m.sections.filter(s => s.visible && s.kind === "about")
-  const links = [...(m.videoUrl ? [{ label: "Watch our introduction", url: m.videoUrl, video: true }] : []), ...m.links.filter(l => l.url).map(l => ({ label: l.label || "Club website", url: l.url, video: false }))]
+  const links = [...(m.videoUrl ? [{ label: "Watch our introduction", url: m.videoUrl, video: true }] : []), ...m.links.filter(l => l.url && !samePage(l.url, m.website)).map(l => ({ label: l.label || "Club website", url: l.url, video: false }))]
   if (!profile.description && !sections.length && !links.length && !children) return null
   return <section className={sectionClass} aria-labelledby="club-about">
     <h2 id="club-about">About</h2>
