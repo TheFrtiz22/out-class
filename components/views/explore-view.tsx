@@ -100,7 +100,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
     if (isDemoActive()) return
     const id = new URLSearchParams(filterQuery).get("club")
     if (!id) { pushedClub.current = false; setSelected(null); return }
-    const club = clubs.find(item => item.id === id || item.slug === id)
+    const club = clubs.find(item => item.id === id)
     if (club) setSelected(current => current?.id === club.id ? current : club)
   }, [filterQuery, clubs])
   const { isDemoEnabled } = useDemoMode()
