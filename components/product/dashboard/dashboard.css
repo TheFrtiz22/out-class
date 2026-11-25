@@ -74,7 +74,9 @@
 
 /* Metric tiles: big serif numbers, labels as text. */
 .oc-metric-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: 1rem .75rem; margin: 0; }
-.oc-metric-tiles > div { display: grid; gap: .375rem; min-width: 0; }
+/* The number sits at the bottom of each tile, so a label that wraps ("Reached interviews · 100%" on a phone) does not push its figure below the others. */
+.oc-metric-tiles > div { display: grid; grid-template-rows: 1fr auto; align-items: end; gap: .375rem; min-width: 0; }
+.oc-metric-tiles dt { align-self: start; }
 .oc-metric-tiles dt { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
 .oc-metric-tiles dd { margin: 0; font-size: 1.75rem; }
 .oc-metric-tiles dd small { font-family: var(--oc-font-sans); font-size: var(--oc-text-caption); color: var(--muted-foreground); }

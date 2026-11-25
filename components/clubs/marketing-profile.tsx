@@ -26,6 +26,17 @@ function socials(m: ClubMarketing) {
   ].filter(s => s.url)
 }
 
+/** Two links to the same page: ignores protocol, "www.", the host's case and a slash at the end of the path. Paths and queries keep their case, and queries are compared as written. */
+const samePage = (a: string, b: string) => {
+  const key = (url: string) => {
+    const rest = url.trim().replace(/^https?:\/\//i, ""), cut = rest.search(/[/?#]/), q = rest.search(/[?#]/)
+    const host = (cut < 0 ? rest : rest.slice(0, cut)).toLowerCase().replace(/^www\./, "")
+    const path = cut < 0 ? "" : rest.slice(cut, q < 0 ? undefined : q).replace(/\/+$/, "")
+    return host + path + (q < 0 ? "" : rest.slice(q))
+  }
+  return !!a && !!b && key(a) === key(b)
+}
+
 /**
  * Identity block: banner, logo, name (h1 on the public page), one-line description, category,
  * club-reported figures, social links and the primary action.
@@ -42,7 +53,7 @@ export function MarketingProfile({ profile, action, compact = false, assetPrevie
       {profile.tagline && <p className="mt-2 text-base leading-7 text-muted-foreground">{profile.tagline}</p>}
       {profile.category && <p className="oc-club-category mt-3"><span className="sr-only">Category: </span>{profile.category}</p>}
       <ProfileStatistics profile={profile} compact={compact} />
-      {(links.length > 0 || action) && <div className="oc-club-hero-actions mt-6 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+      {(links.length > 0 || action) && <div className={`oc-club-hero-actions mt-6 flex flex-wrap items-center ${action ? "justify-between" : "justify-start"} gap-4 border-t pt-4`}>
         {action && <div className="oc-club-primary-action min-w-0 flex-1">{action}</div>}
         {links.length > 0 && <ul className="flex gap-1" aria-label="Club links">{links.map(({ label, url, icon: Icon }) => <li key={label}><a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${profile.name} ${label}${label === "Email" ? "" : " (opens in a new tab)"}`} className="oc-tap-target inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-2"><Icon size={20} aria-hidden="true" /></a></li>)}</ul>}
       </div>}
@@ -57,7 +68,7 @@ const sectionClass = "oc-club-section"
 export function AboutSection({ profile, children, assetPreview = false }: SectionProps & { children?: ReactNode }) {
   const m = publicMarketing(profile.marketing)
   const sections = m.sections.filter(s => s.visible && s.kind === "about")
-  const links = [...(m.videoUrl ? [{ label: "Watch our introduction", url: m.videoUrl, video: true }] : []), ...m.links.filter(l => l.url).map(l => ({ label: l.label || "Club website", url: l.url, video: false }))]
+  const links = [...(m.videoUrl ? [{ label: "Watch our introduction", url: m.videoUrl, video: true }] : []), ...m.links.filter(l => l.url && !samePage(l.url, m.website)).map(l => ({ label: l.label || "Club website", url: l.url, video: false }))]
   if (!profile.description && !sections.length && !links.length && !children) return null
   return <section className={sectionClass} aria-labelledby="club-about">
     <h2 id="club-about">About</h2>
