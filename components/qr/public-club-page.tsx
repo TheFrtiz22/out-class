@@ -1,4 +1,5 @@
 "use client"
+import { useShellBindings } from "@/components/shell/workspace-shell-context"
 import { ApplicationStateProvider } from "@/lib/application-state"
 import { ClubProfileView } from "@/components/views/club-profile-view"
 import { useState, useEffect, useRef } from "react"
@@ -27,6 +28,8 @@ export function PublicClubPage({
   embedded?: boolean
 }) {
   const [view, setView] = useState<ViewId | "profile">("profile")
+  // The browser tab and history name the club, not "Club profile", once the workspace shell is around it.
+  useShellBindings({ title: club.name })
   const { user } = useAuth()
   const identity = authenticated ? user?.id ?? "" : "public"
   const initialOwner = useRef(identity)
