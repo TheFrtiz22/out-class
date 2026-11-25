@@ -179,7 +179,7 @@ export function interviewPerson(booking: Booking, rounds: Overview["operations"]
 }
 
 export type WeekItem = { id: string; kind: "meeting" | "task"; at: Date; title: string; detail: string; meetingId?: string; assignmentId?: string; taskId?: string }
-/** Club home "This week": meetings and task due dates in the next seven days, soonest first. No recruiting dates. */
+/** Club home "Next 7 days": meetings and task due dates in the next seven days, soonest first. No recruiting dates. */
 export function thisWeek(data: Overview): WeekItem[] {
   const op = data.operations, now = +new Date(op.asOf)
   const soon = (at: Date | string | null | undefined) => !!at && +new Date(at) >= now && +new Date(at) <= now + 7 * DAY

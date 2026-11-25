@@ -46,5 +46,6 @@
 .oc-club-faq summary { display:flex; align-items:center; min-height:52px; padding:8px 0; cursor:pointer; font-size:var(--oc-size-16); font-weight:500; }
 .oc-club-faq summary:focus-visible { outline:2px solid var(--ring); outline-offset:2px; border-radius:var(--oc-radius-sm); }
 .oc-club-faq p { padding:0 0 16px; white-space:pre-line; font-size:var(--oc-size-16); line-height:1.7; color:var(--muted-foreground); }
-@media (max-width:639px) { .oc-club-hero-actions { flex-direction:column; align-items:stretch; } }
+/* Stacked on a phone, the link icons sit centred under the centred Report link instead of alone at the left edge. */
+@media (max-width:639px) { .oc-club-hero-actions { flex-direction:column; align-items:stretch; } .oc-club-hero-actions > ul { justify-content:center; } }
 .oc-member-outcomes .oc-member-outcome-mark { display:inline-block; vertical-align:middle; margin-right:8px; height:20px; width:auto; object-fit:contain; }

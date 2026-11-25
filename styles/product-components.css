@@ -72,6 +72,8 @@
 [data-product-shell] .oc-marketing-profile h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 500; letter-spacing: var(--oc-tracking-heading); }
 [data-product-shell] .oc-marketing-profile dl { border: 0; border-radius: 0; background: transparent; border-block: 1px solid var(--border); padding-block: .75rem; text-align: left; }
 [data-product-shell] .oc-marketing-profile dl > div { text-align: left; }
+/* The figures already end on a rule, so the actions under them don't draw a second one 24px lower. */
+[data-product-shell] .oc-marketing-profile dl + .oc-club-hero-actions { border-top: 0; margin-top: 1rem; }
 [data-product-shell] .oc-marketing-profile dd { font-size: var(--oc-text-metric); line-height: 1.2; font-weight: 500; font-variant-numeric: tabular-nums; }
 [data-product-shell] .oc-marketing-sections > section { border: 0; border-radius: 0; background: transparent; padding: 1rem 0; border-top: 1px solid var(--border); }
 @media (max-width: 639px) {
