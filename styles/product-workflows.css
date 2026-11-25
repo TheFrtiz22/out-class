@@ -78,3 +78,6 @@
 [data-product-shell] .oc-interviewer-hub section { border-color: var(--oc-content-edge); border-radius: var(--oc-radius-lg); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow) }
 [data-product-shell] .oc-interviewer-hub .bg-black { background: var(--primary); }
 [data-product-shell] .oc-interviewer-hub .text-amber-700 { color: var(--warning); }
+
+/* Phone day picker: share the row so Sat and Sun are visible without scrolling; scroll stays as the fallback on very narrow screens. */
+.oc-availability-calendar .oc-segmented-control.oc-availability-day-picker > button[data-segment] { flex: 1 0 auto; padding-inline: .25rem; }
