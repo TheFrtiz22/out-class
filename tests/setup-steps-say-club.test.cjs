@@ -12,3 +12,10 @@ test("club setup checklist steps say club, not organization", () => {
   assert.match(src, /title: 'Complete club profile'/)
   assert.match(src, /title: 'Claim club'/)
 })
+
+test("club setup checklist's loading, error and finished states say club", () => {
+  const src = fs.readFileSync("components/organization-setup-checklist.tsx", "utf8")
+  for (const stale of ["organization setup progress", "organization setup checklist", "Organization setup checklist", "Organization setup complete"]) assert.ok(!src.includes(stale), stale)
+  assert.match(src, /aria-label="Club setup checklist"/)
+  assert.match(src, /'Club setup complete'/)
+})
