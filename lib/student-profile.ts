@@ -143,10 +143,16 @@ export function profileChecklist(profile: FullStudentProfile) {
   ]
 }
 
+/** An experience row with something in it; blank rows stay in the editor but are never saved. */
+export function hasExperienceContent(item: { title: string; subtitle: string; period: string }) {
+  return [item.title, item.subtitle, item.period].some(value => (value ?? "").trim())
+}
+
 /** Compare only this section so independent profile sections can save concurrently. */
 export function profileSectionSnapshot(profile: object, section: ProfileSection) {
   const source = profile as Record<string, unknown>
-  if (section === "experience") return JSON.stringify((source.experiences as { title: string; subtitle: string; period: string }[] ?? []).map(({ title, subtitle, period }) => ({ title, subtitle, period })))
+  // Blank rows are left out, so an editor still holding one matches the saved list it came from.
+  if (section === "experience") return JSON.stringify((source.experiences as { title: string; subtitle: string; period: string }[] ?? []).filter(hasExperienceContent).map(({ title, subtitle, period }) => ({ title, subtitle, period })))
   const keys = section === "identity" ? ["firstName", "lastName", "headshotUrl"] : section === "links" ? ["linkedinUrl", "resumeUrl"] : section === "contact" ? ["phone"] : ["highSchool", "gender", "pronouns", "transferStudent", "major", "gradYear", "scholarStatus", "gpa", "satScore", "actScore", "actEnglish", "actMath", "actReading", "actScience"]
   return JSON.stringify(keys.map(key => [key, source[key] ?? null]))
 }
