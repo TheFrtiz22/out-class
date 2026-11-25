@@ -80,8 +80,8 @@ export function isPrivateResume(value: string) { return !!value && storagePathSc
 export const profileSectionSchemaFor = (storedGradYear?: number | null) => z.discriminatedUnion("section", [
   z.object({
     section: z.literal("identity"),
-    firstName: z.string().trim().min(1).max(100),
-    lastName: z.string().trim().min(1).max(100),
+    firstName: z.string().trim().min(1, "Add your first name.").max(100),
+    lastName: z.string().trim().min(1, "Add your last name.").max(100),
     headshotUrl: headshotUrlSchema.nullable().or(z.literal("")).optional(),
   }),
   z.object({
@@ -89,7 +89,7 @@ export const profileSectionSchemaFor = (storedGradYear?: number | null) => z.dis
     ...profileEducationFields,
     scholarStatus: scholarStatusSchema.optional(),
     ...actShape,
-    major: z.string().trim().min(1).max(200),
+    major: z.string().trim().min(1, "Add your major.").max(200),
     gradYear: graduationYearSchemaFor(storedGradYear),
     gpa: gpaSchema.nullable().optional(),
     satScore: z.number().int().min(400).max(1600).nullable(),
@@ -99,8 +99,8 @@ export const profileSectionSchemaFor = (storedGradYear?: number | null) => z.dis
     experiences: z
       .array(
         z.object({
-          title: z.string().trim().min(1).max(200),
-          subtitle: z.string().trim().min(1).max(200),
+          title: z.string().trim().min(1, "Add a role or project for each experience.").max(200),
+          subtitle: z.string().trim().min(1, "Add an organization for each experience.").max(200),
           period: z.string().trim().max(100),
         }),
       )

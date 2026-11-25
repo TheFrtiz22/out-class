@@ -114,7 +114,8 @@ export function EditStudentProfileDialog({
                 actScore: snapshot.actScore, actEnglish: snapshot.actEnglish, actMath: snapshot.actMath, actReading: snapshot.actReading, actScience: snapshot.actScience,
               }
             : section === "experience"
-              ? { section, experiences: snapshot.experiences }
+              // An entry the student has just added and not typed into yet is not sent; it would only fail the save.
+              ? { section, experiences: snapshot.experiences.filter(item => [item.title, item.subtitle, item.period].some(value => value.trim())) }
               : section === "contact"
                 ? { section, phone: snapshot.phone ?? "" }
                 : { section, linkedinUrl: snapshot.linkedinUrl, resumeUrl: snapshot.resumeUrl }
