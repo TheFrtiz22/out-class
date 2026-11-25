@@ -114,11 +114,14 @@ test('authorized absent feedback is absent; withheld feedback is explicit withou
  h.member.interviewOffices=[];view=await h.api.getApplicantDisplay(h.scope);assert.equal(view.sections.find(s=>s.field==='feedback').withheld,true);assert.ok(view.withheld.includes('feedback'));
 });
 test('feedback never discloses drafts, unresolved legacy rounds, historical anonymous evidence, self-review, or owner-only rights',async()=>{
- for(const edit of [h=>{h.app.evaluations[0].submittedAt=null},h=>{h.app.evaluations[0].stableRound=null},h=>{h.app.evaluations[0].stableRound.anonymousReview=true},h=>{h.app.evaluations[0].interviewRecords=[{anonymousReview:true}]},h=>{h.app.studentId='author'},h=>{h.member.interviewOffices=[];h.member.isOwner=true}]){
+ for(const edit of [h=>{h.app.evaluations[0].submittedAt=null},h=>{h.app.evaluations[0].stableRound=null},h=>{h.app.evaluations[0].stableRound.anonymousReview=true},h=>{h.app.evaluations[0].interviewRecords=[{anonymousReview:true}]},h=>{h.member.interviewOffices=[];h.member.isOwner=true}]){
   const h=harness();h.member.interviewOffices=['BOARD'];h.app.evaluations[0].submittedAt=new Date();h.app.evaluations[0].stableRound={clubId,anonymousReview:false};h.app.evaluations[0].interviewRecords=[];
   edit(h);
   const view=await h.api.getApplicantDisplay(h.scope);assert.doesNotMatch(JSON.stringify(view),/Secret feedback/);assert.ok(view.withheld.includes('feedback'));
  }
+ // Self-review: the reviewer's own application is refused outright, so nothing about it (feedback included) is disclosed.
+ const self=harness();self.member.interviewOffices=['BOARD'];self.app.evaluations[0].submittedAt=new Date();self.app.evaluations[0].stableRound={clubId,anonymousReview:false};self.app.evaluations[0].interviewRecords=[];self.app.studentId='author';
+ await assert.rejects(self.api.getApplicantDisplay(self.scope),/unavailable/);
 });
 test('configuration cannot override feedback disclosure in voting or preview',async()=>{
  const h=harness();h.member.permissions.push('decisions.manage');
