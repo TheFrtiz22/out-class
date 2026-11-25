@@ -11,6 +11,8 @@ const icons: Record<string, IconComponent> = { recruiting: FileText, "student-da
 export function MobileNavigation({ items, active, onSelect, onLink, onMore }: {
   items: ProductNavItem[]; active: string; onSelect: (id: string) => void; onLink: (event: React.MouseEvent<HTMLAnchorElement>) => void; onMore: () => void
 }) {
+  // A section that lives only in More (Alumni, Tasks, Settings…) lights More, so the bar always shows where you are.
+  const inMore = !!active && !items.some(item => active === item.id || !!item.matches?.includes(active))
   return <nav className="oc-mobile-navigation" aria-label="Sections">
     {items.map(item => {
       const Icon = icons[item.id] || Home
@@ -18,6 +20,6 @@ export function MobileNavigation({ items, active, onSelect, onLink, onMore }: {
       const content = <><Icon size={20} weight={props["aria-current"] ? "fill" : "regular"} aria-hidden="true" /><span>{item.label}</span></>
       return item.href ? <Link key={item.id} href={item.href} prefetch={false} {...props} onClick={event => { onLink(event); handleClubLink(event, item.href!) }}>{content}</Link> : <button type="button" key={item.id} {...props} onClick={() => onSelect(item.id)}>{content}</button>
     })}
-    {items.length < 5 && <button type="button" data-navigation-toggle className="oc-mobile-destination" aria-label="More sections" onClick={onMore}><Menu size={20} aria-hidden="true" /><span>More</span></button>}
+    {items.length < 5 && <button type="button" data-navigation-toggle className="oc-mobile-destination" aria-label="More sections" data-current={inMore || undefined} onClick={onMore}><Menu size={20} weight={inMore ? "fill" : "regular"} aria-hidden="true" /><span>More</span></button>}
   </nav>
 }
