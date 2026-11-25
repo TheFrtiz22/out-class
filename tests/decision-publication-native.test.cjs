@@ -2,6 +2,8 @@ const {unwrapActions,refused}=require('./helpers/action-result.cjs');
 const guard = require("./helpers/communications-loader.cjs").loader({})("lib/decision-publication-guard.ts").decisionPublicationGuard;
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{AsyncLocalStorage}=require('node:async_hooks');
 const {loader}=require('./helpers/communications-loader.cjs');
+// Fixture accounts carry no school identity; like the other native suites, every viewer here is a student of the club's school.
+const {schoolScope}=require('./helpers/school-scope.cjs');
 const url=process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL;
 test('decision controls, cycles and scheduled publication on bounded PostgreSQL',{skip:!url,timeout:180000},async t=>{
  const u=new URL(url);assert.equal(u.hostname,'127.0.0.1');assert.equal(u.port,'58453');assert.equal(u.pathname,'/outclass_audiences_test');
@@ -16,7 +18,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
  const club=await db.club.create({data:{slug:randomUUID(),name:'Decision fixture',tagline:'',description:'',category:'Other',color:'#142d45'}});
  const member=await db.clubMember.create({data:{clubId:club.id,userId:leader.id,isOwner:true}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Review',order:0,type:'CUSTOM'}});
  let acting=leader,support=null;
- const load=loader({'@/utils/prisma':{prisma:db},'@/utils/auth':{requireClubPermission:async()=>({user:acting,membership:member}),requireAuth:async()=>({user:acting})},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()},'@/utils/admin-elevation':{requireAdminElevation:async()=>{throw Error('Unexpected elevation')}},'next/cache':{revalidatePath(){}}});
+ const load=loader({'@/utils/prisma':{prisma:db},'@/utils/auth':{requireClubPermission:async()=>({user:acting,membership:member}),requireAuth:async()=>({user:acting})},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()},'@/utils/admin-elevation':{requireAdminElevation:async()=>{throw Error('Unexpected elevation')}},'next/cache':{revalidatePath(){}},'@/utils/school-scope':schoolScope()});
  const schedules=unwrapActions(load('actions/decision-schedules.ts')),worker=load('utils/scheduled-communications.ts'),management=unwrapActions(load('actions/recruitment-management.ts')),rawManagement=load('actions/recruitment-management.ts'),communications=unwrapActions(load('actions/communications.ts')),offers=load('utils/recruitment-offers.ts');
  async function application(){const user=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}});return db.application.create({data:{studentId:user.id,clubId:club.id,roundId:round.id,status:'IN_REVIEW',submittedAt:new Date()}})}
  const input=(app,status='WAITLISTED')=>({id:randomUUID(),clubId:club.id,localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER',selection:{kind:'DIRECT',applicationId:app.id,expectedGuard:guard(app),status}});
