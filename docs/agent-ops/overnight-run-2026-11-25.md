@@ -60,7 +60,7 @@ Times are UTC. "Ran" means executed here or in CI; "read" means verified by read
 - Production ledger (read-only query): 101 applied, 0 unfinished, latest `20261118140000_native_push_platform_required`, matching main.
 - #532 stays unmerged: its new column would make `prebuild` block the production deploy until the migration runs, and running it needs the owner's approval in GitHub.
 
-## 07:05 Review findings and fixes in flight
+## 06:30 Review findings and fixes in flight
 
 - **PR #545** (self-decision and recusal guard). Red dispatch on test-only commit 7dc88b38. First PR run failed `Native PostgreSQL / transactions` test 12: the new pre-read changed the cross-club refusal text from "Application changed or is not available…" to "Application unavailable.". Fixed in 6007eb04 by keeping the original wording. Re-running.
 - **PR #546** (recusal guard on review reads). Red dispatch on 3087354. CI running.
