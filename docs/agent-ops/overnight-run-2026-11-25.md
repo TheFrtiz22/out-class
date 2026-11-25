@@ -153,3 +153,15 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 
 - M3, check-in from another school: a valid, unexpired QR token is still required, so the caller has to be at the meeting. Low impact; recorded, not fixed tonight.
 - R5, staged decisions are last-write-wins: `stageDecision` documents "Record (or replace)" and the board shows who staged it; send re-checks the application. Treated as intended, not a bug.
+
+## 07:16 PR #547 deploy verified live
+- Production deploy for ab3ff6d0 (merge of #547) is READY and aliased to www.out-class.net, out-class.net and uva.out-class.net.
+- Checked in the browser: /explore and /clubs send a signed-out visitor to sign in (desktop 1440 wide), and /uva lists both UVA clubs and renders correctly at 500 wide. Nothing broken; no rollback.
+
+## 07:16 Merge 3: PR #544 (CI shell suite exits after a failure instead of hanging)
+- All required gates green on 06e8e0fe, plus every optional suite. Merged as 041029fb. CI-only change; the deploy will be checked like the others.
+
+## 07:16 PR #549 first CI run: two native suites failed
+- Native PostgreSQL / transactions: "provider validation happens once, before acquisition" counted 2 calls, and one suite's auth mock has no getSessionUser. Native PostgreSQL / security: mock-recruiting-cycle failed the same way.
+- Cause: the fix called resolveViewerSchool, which validates the session through the auth provider a second time. That is a real cost on every submit, not just a test artefact.
+- Fix (0f9a6160): new resolveAccountSchool(userId) in utils/school-scope.ts gives the same answer for an account requireAuth already validated; persistApplication uses it. The existing test that counts provider calls is unchanged.
