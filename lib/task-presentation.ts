@@ -5,7 +5,8 @@ export type TaskWorkspace = Awaited<ReturnType<typeof getTaskWorkspace>>
 export type ClubTask = TaskWorkspace["tasks"][number]
 export type TaskAssignment = ClubTask["assignments"][number]
 export type TaskMember = TaskWorkspace["members"][number]
-export type TaskRun = (fn: () => Promise<unknown>) => Promise<boolean>
+/** `onError` shows a refusal where the action was taken (beside its button) instead of at the top of the page. */
+export type TaskRun = (fn: () => Promise<unknown>, options?: { onError?: (message: string) => void }) => Promise<boolean>
 export type ReviewEntry = { task: ClubTask; assignment: TaskAssignment }
 export function taskAudienceMode(audience:TaskAudience) {
   if(audience.random)return "random"
