@@ -24,5 +24,8 @@ export function clubRecruitment(club: {
   const available = club.source !== "preview" && club.applicationAvailable === true && !expired
   const closingSoon = available && !!deadline && +deadline - now <= 7 * 86400000
   const label = club.source === "preview" ? "Sample club" : club.claimed === false ? "Unclaimed" : expired ? "Deadline passed" : available ? "Applications open" : club.applicationAvailable === false ? "Applications unavailable" : "Recruitment not published"
-  return { deadline, expired, available, closingSoon, label }
+  // A deadline only means something while applications are open, or to say they closed. Beside "Applications
+  // unavailable" a future date read as an open window, so it is left out there.
+  const showDeadline = available || expired
+  return { deadline, expired, available, closingSoon, label, showDeadline }
 }
