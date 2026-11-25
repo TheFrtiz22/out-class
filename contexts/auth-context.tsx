@@ -132,6 +132,11 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
   );
 }
 
+/** The session where one exists; public pages render without assuming a provider or a signed-in account. */
+export function useOptionalAuth() {
+  return useContext(AuthContext);
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
