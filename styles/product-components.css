@@ -136,6 +136,9 @@
 [data-product-shell] [data-slot="surface"][data-density="roomy"]:not([data-tone="plain"]) { padding: 1.75rem; }
 
 .oc-notifications-header .oc-page-description { font-size: var(--oc-text-caption); margin-top: .35rem; }
+/* The settings gear stays beside the Inbox title: the long description wraps under the title instead of pushing the gear onto its own row on phones. */
+.oc-notifications-header { flex-wrap: nowrap; align-items: flex-start; }
+.oc-notifications-header > .oc-page-header-action { flex-shrink: 0; margin-top: min(0px, calc((var(--oc-text-title) * var(--oc-leading-heading) - var(--oc-control-height)) / 2)); }
 
 /* Quiet status annotations: neutral text and a small semantic rule, without colored capsules. */
 .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0; border-inline-start: 2px solid var(--badge-accent, var(--border)); border-radius: 0; background: transparent; color: inherit; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }
