@@ -390,3 +390,37 @@ Found:
 - Final sweep at 15:40: Vercel runtime errors, last 3 hours: only two `ADMIN_MFA_REQUIRED` denials on `/platform` at 15:28 (the admin page correctly refusing a session without two-step; expected). Sentry, production, last 24 hours: no unresolved issues. Live pages: `/club/aif` at 1440×900 and `/uva` at 500×900 render fully.
 - No production migrations were applied in this run (the GitHub "Production" environment approval gate blocks the migration job; logged as a guard).
 - 15:48: PR #558 deploy dpl_B71VZhiRt4i9edbNFZBF7WgUXCiK READY on out-class.net; `/login` renders at 500×900. The GitHub Pages deploy for the merge failed once with a 500 from GitHub's Pages service ("re-run the deployment at a later time"); one rerun succeeded. Main validate and integrations for e010e934 were still running when the run ended.
+
+## 16:00 to 23:50 UTC: live testing in the owner's Chrome, signed in as admin
+
+The cloud browser was blocked at OutClass sign-in, so this part ran in the owner's own Chrome. The owner did the password and email-code re-checks; this run never typed or read a password. All test data lives in the club "OutClass Live QA 20261125" (fake applicants with the outclass-answerkeys and LiveQA names). The owner said to keep those records. No email or push went to real people.
+
+- Merged: 96 more PRs (#559 to #665, not counting the still-open ones below). Every one had test, lint, typecheck, build and integration checks green, plus a Codex review with no unresolved findings, before it merged. Most were UX copy and phone layout fixes from the live sweep. Notable correctness fixes:
+  - #559: admin Inspect works for a profile with no sign-in.
+  - #561: no false "saved elsewhere" banner after adding a round.
+  - #565: a regenerated interview schedule follows each slot's interviewers.
+  - #574: the verify-again refusal is returned from admin-reachable actions.
+  - #580: a task submission's size is checked before it is parsed.
+  - #581: a blank experience row no longer trips "changed in another tab".
+  - #603: an out-of-date workspace link says so instead of blaming access.
+  - #618: a meeting start that has already passed is never suggested.
+- Deploys: Vercel READY after each batch. No runtime errors found in the hourly checks. No rollbacks. No migrations.
+- Phone-width sweep (390px): no sideways overflow on /clubs, /explore, /applications, /calendar, /settings (and its subpages) or the club workspace sections.
+
+### Tested live
+- Student surfaces: Explore, club pages, apply and drafts, profile editor, inbox, calendar, settings.
+- Leader workspace: applicants, review panel, Decide, members, meetings, events, tasks, cycles, club profile, interview schedule and availability.
+- Admin: Inspect, records, search.
+
+### Partly tested, and what is left
+- Live interview room (/club/<id>/interview): it opens, and notes, score and submit work on the written round (8/10 submitted for one test applicant). The First-interview round could not be run, because no test applicant has booked a slot. Booking needs signing in as the fake applicant. Gaps found but not fixed:
+  - The written round uses interview wording ("Interview · Written application", "Average interview score", "Interview complete").
+  - The candidate picker shows "Profile not provided" where the applicants list shows the email-style name.
+- Live voting: /live-voting now points to each club's Voting room (#638 cleaned up its empty states). A full session (prepare, join, vote, reveal, history) was not run end to end before the run was stopped. This is the top item for the next run.
+- The club switcher arrows now sit inside the blue club tab (#675, open). The live check is still owed once it merges.
+
+### Still open at the end (merge loops stopped; nothing merges unattended)
+- #662 (applicants Sort, Filters and More on one phone row) fails list-pages-browser: at 375px the Sort control is not fully clickable. This needs a fix, not a rerun.
+- Waiting on checks or Codex: #599, #634, #641, #644, #649, #656, #658, #663, #664, #666, #667, #668, #669, #670, #672, #673, #674, #675, #676, #677, #678.
+- Left alone on purpose: #200, #288, #532.
+- Carried over from the morning: the open-items list above (interview slot release after rejection, profile field limits, email-code guess limit, Supabase secure password change, required scheduler and audiences suites, reviewers seeing each other's scores). Also the app gaps and the temporary branch bench/contention-2026-11-25.
