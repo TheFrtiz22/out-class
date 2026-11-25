@@ -173,7 +173,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
                       <dd>{gpaSchema.safeParse(profile.gpa).success ? `${formatGpa(profile.gpa)} / 4.00` : `${profile.gpa} · Confirm a GPA out of 4.0 in Education`}</dd>
                     </div>
                   )}
-                  {profile.actScore != null && <div><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}
+                  {profile.actScore != null && <div className="flex gap-2"><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}
                   {profile.satScore != null && (
                     <div className="flex gap-2">
                       <dt className="text-muted-foreground">SAT</dt>
