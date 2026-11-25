@@ -217,3 +217,7 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - validate on 0f9a6160 failed 17 of 3359 unit tests, all in four suites (action-results, autosave-actions, club-suspension, student-applications) that build their own transaction mocks for `actions/applications.ts`. Cause: the new same-school check reads the student's school and the club's `schoolId`, and those fixtures had neither.
 - Fix (6ac0eb6f): those fixtures now mock school scoping with the shared test helper (launch school) and give their test club that school. No assertion was changed or removed. The other gates on 0f9a6160 were already green.
 - Could not run the suites locally: the project's packages (e.g. zod) aren't installed here and installing them needs the owner's yes. CI is the check.
+
+## 08:21 UTC: merge 6, PR #546 (review reads honor recusal, own application and score visibility)
+- All required gates green on 3ac31b17 (validate, integration infrastructure, native security, native transactions, application-writing, mobile). Merged as 5e28d688.
+- Server-only change; the current app build does not call these reviewer actions. Waiting for the production deploy, then live check.
