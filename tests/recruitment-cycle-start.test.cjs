@@ -235,6 +235,29 @@ test('start refusals are returned with the leader-facing reason; a lost permissi
  await assert.rejects(h.api.saveRecruitmentCycle({id:fall,clubId:clubX,name:'',archived:true}),'invalid input is a thrown validation error, never a result');
 });
 
+test('creating or restoring a cycle while another is open is refused, so the club keeps one active cycle',async()=>{
+ let h=harness();
+ const created=await h.api.saveRecruitmentCycle({id:newId,clubId:clubX,name:'Spring 2027',archived:false});
+ // Two open cycles leave the club with no active cycle: new submissions get none and interview booking stays shut.
+ assert.deepEqual([created.ok,created.code],[false,'OTHER_CYCLES_OPEN']);
+ assert.equal(h.state().cycles.filter(c=>c.clubId===clubX).length,1);assert.equal(h.state().audit.length,0);
+ h=harness();h.state().cycles.push({id:newId,clubId:clubX,name:'Spring 2025',archivedAt:past,createdAt:past});
+ const restored=await h.api.saveRecruitmentCycle({id:newId,clubId:clubX,name:'Spring 2025',archived:false});
+ assert.deepEqual([restored.ok,restored.code],[false,'OTHER_CYCLES_OPEN']);
+ assert.equal(+h.state().cycles.find(c=>c.id===newId).archivedAt,+past,'the archived cycle stays archived');
+ // Once the other cycle is archived the same create succeeds; another club's open cycle never counts.
+ h=harness();await h.archive();
+ unwrapAction(await h.api.saveRecruitmentCycle({id:newId,clubId:clubX,name:'Spring 2027',archived:false}));
+ assert.equal(h.state().cycles.find(c=>c.id===newId).archivedAt,null);
+});
+
+test('a cycle name already used in the club is refused with the reason, not a database error',async()=>{
+ const h=harness();await h.archive();
+ const result=await h.api.saveRecruitmentCycle({id:newId,clubId:clubX,name:'Fall 2026',archived:true});
+ assert.deepEqual([result.ok,result.code],[false,'CYCLE_NAME_TAKEN']);
+ assert.equal(h.state().cycles.filter(c=>c.clubId===clubX).length,1);
+});
+
 test('decision publication and offer responses do not depend on whether the cycle is archived',()=>{
  const fs=require('node:fs');
  for(const file of ['utils/recruitment-offers.ts','actions/recruitment-offers.ts','actions/decision-schedules.ts','utils/scheduled-communications.ts'])
