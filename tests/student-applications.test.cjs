@@ -3,6 +3,7 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
+const { UVA, schoolScope } = require('./helpers/school-scope.cjs')
 function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
@@ -17,7 +18,7 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
   const calls = []
   const tx = {
     $queryRaw: async()=>[],
-    club: { findUnique: async () => ({ testRequirement, applicationOpen, applicationDeadline }) },
+    club: { findUnique: async () => ({ schoolId: UVA.id, testRequirement, applicationOpen, applicationDeadline }) },
     studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? { phone: '+14345550123', ...profile } : { id: 'profile', phone: '+14345550123' }) : null },
     applicationQuestion: { findMany: async args => { calls.push(['questions', args]); return questions } },
     pipelineRound: { findFirst: async () => ({ id: 'first-round' }) },
@@ -34,6 +35,7 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
   }
   const actions = unwrapActions(load('actions/applications.ts', {
     '@/lib/student-applications': helpers,
+    '@/utils/school-scope': schoolScope(),
     '@/utils/auth': { requireAuth: async () => ({ user: { id: userId } }) },
     '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
