@@ -185,7 +185,7 @@ export function ClubProfileView({
       ? <>
           {!preview && <CorkboardButton club={club} onNavigate={onNavigate} mode="follow" variant="default" className="oc-club-apply" />}
           {real && !preview && <ShareClubButton club={club} className="oc-club-share" />}
-          <p className="oc-club-action-note">Applications aren’t open yet · Save it to find it again in Saved clubs</p>
+          <p className="oc-club-action-note">{recruitment.expired ? "Applications have closed" : "Applications aren’t open yet"} · Save it to find it again in Saved clubs</p>
         </>
       : <>
           <Button style={customized ? { backgroundColor: accent, color: contrast } : undefined} className="oc-club-apply" disabled={applyDisabled} onClick={() => void apply()}>
