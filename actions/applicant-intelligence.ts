@@ -12,7 +12,7 @@ import { loadVotingRoom, roomAuthority } from "@/utils/voting-room";
 import { VotingPresentationChanged } from "@/lib/voting-room";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { assertNotRecused } from "@/lib/recusal";
-import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
+import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay, reviewerLabel } from "@/lib/applicant-display";
 import { normalizeProfileFieldVisibility } from "@/lib/profile-field-visibility";
 import { boundedParse } from "@/lib/bounded-input";
 const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
@@ -77,7 +77,7 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
         if (!final.stableRound || final.stableRound.clubId !== data.clubId || final.stableRound.anonymousReview
           || final.interviewRecords.some(record => record.anonymousReview)) {
           feedback.withheld = true;
-        } else if (final.notes) feedback.items.push(`${final.round} · Reviewer ${final.interviewerId}\n${final.notes}`);
+        } else if (final.notes) feedback.items.push(`${final.round} · ${reviewerLabel(app.evaluations)(final.interviewerId)}\n${final.notes}`);
       }
     }
     const display = projectApplicantDisplay(app, app.round, config, observations.map(o => ({

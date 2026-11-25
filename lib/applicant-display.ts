@@ -27,6 +27,11 @@ export type ObservationView = { id: string; kind: string; body: string; author: 
 export type DisplaySection = { field: ApplicantField; label: string; items: string[]; withheld?: boolean };
 export type ApplicantDisplay = { applicationId: string; roundId: string; anonymous: boolean; configured: ApplicantField[]; visible: ApplicantField[]; withheld: ApplicantField[]; sections: DisplaySection[]; photo: string | null; observations: ObservationView[]; links: { field: "resume" | "linkedin"; label: string; href: string }[] };
 const anonymousFields = new Set<ApplicantField>(["academicYear", "gpa", "sat", "act", "applicationContext", "score"]);
+/** Reviewers are numbered in the order they first appear on the application, so a raw account id never reaches a reader. */
+export function reviewerLabel(evaluations: readonly { interviewerId: string }[]): (interviewerId: string) => string {
+  const order = [...new Set(evaluations.map(e => e.interviewerId))];
+  return interviewerId => { const n = order.indexOf(interviewerId); return n < 0 ? "Reviewer" : `Reviewer ${n + 1}`; };
+}
 /** Call only after authorizing the application. Config removes fields; it never grants access. */
 export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApplication, round: { id: string; name: string; anonymousReview: boolean; applicantDisplay?: unknown }, config: ApplicantDisplayConfig, observations: ObservationView[], feedback: { items: string[]; withheld: boolean } = { items: [], withheld: true }, profileFields?: ProfileFieldVisibility): ApplicantDisplay {
   // The club profile field setting is a ceiling: a hidden field behaves as if it was never selected.
@@ -51,7 +56,7 @@ export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApp
     applicationContext: [`${round.name} · ${safe.status}`],
     pros: anonymous ? [] : observations.filter(o => o.kind === "PRO").map(o => `${o.body}\n(${o.author})`),
     cons: anonymous ? [] : observations.filter(o => o.kind === "CON").map(o => `${o.body}\n(${o.author})`),
-    score: safe.evaluations.map(e => `${e.round}: ${e.score} / 10 · Reviewer ${e.interviewerId}`),
+    score: safe.evaluations.map(e => `${e.round}: ${e.score} / 10 · ${reviewerLabel(safe.evaluations)(e.interviewerId)}`),
     feedback: anonymous ? [] : feedback.items,
   };
   return {
