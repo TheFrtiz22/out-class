@@ -231,7 +231,7 @@ export function ApplicantReviewFlow({ membership, ids, startId, title, staged: s
 
         <aside className="oc-review-flow-aside" aria-label="Grade and decide">
           <ReviewGrading key={`${app.id}:${app.roundId}`} clubId={clubId} app={app} roundName={activeRound?.name ?? ""} rounds={rounds} rubric={rubric} memberId={membership.id} reason={evaluateReason} disabled={busy} onSubmitted={refresh} onAssignSelf={assignSelf} />
-          {app.roundScore && <p className="text-xs text-muted-foreground">Rating {app.roundScore.average === null ? "—" : `${app.roundScore.average.toFixed(1)}/10`} · {app.roundScore.submitted}/{app.roundScore.required} reviews</p>}
+          {app.roundScore && <p className="text-xs text-muted-foreground">{app.roundScore.required === 0 && app.roundScore.submitted === 0 ? "Not scored yet" : <>Rating {app.roundScore.average === null ? "—" : `${app.roundScore.average.toFixed(1)}/10`} · {app.roundScore.submitted}/{app.roundScore.required} reviews</>}</p>}
 
           <section className="oc-review-decide" aria-labelledby="decide-heading">
             <div className="flex items-center justify-between gap-2">
