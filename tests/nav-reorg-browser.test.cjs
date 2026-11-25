@@ -70,8 +70,9 @@ test('browser: old links, Decide stepper, Recruiting settings drawer, Calendar s
   const overview = steps.getByRole('button', { name: /^Overview/ })
   const reviewStep = steps.getByRole('button', { name: /^Review/ }), vote = steps.getByRole('button', { name: /^Vote/ }), send = steps.getByRole('button', { name: /^Send/ })
   await expect(overview).toHaveAttribute('aria-current', 'step')
-  await expect(vote).toHaveText(/Vote, \d+ sessions? to run\d+$/); await expect(send).toHaveText(/Send, \d+ applicants? ready to send\d+$/)
-  await expect(vote.locator('.oc-stepper-badge')).toHaveText(/^\d+$/); await expect(send.locator('.oc-stepper-badge')).toHaveText(/^\d+$/)
+  // A zero count shows no badge (the spoken label still says 0); a non-zero count shows the same number as a badge.
+  await expect(vote).toHaveText(/Vote, (0 sessions to run|([1-9]\d*) sessions? to run\2)$/); await expect(send).toHaveText(/Send, (0 applicants ready to send|([1-9]\d*) applicants? ready to send\2)$/)
+  await expect(steps.locator('.oc-stepper-badge').filter({ hasText: /^0$/ })).toHaveCount(0)
   // Review (#281): a summary that opens the shared applicant review in Applicants (pending a decision, review open),
   // instead of repeating the Applicants table; then back to Decide and Overview before the round and history checks.
   await page.getByRole('button', { name: 'Next: Review', exact: true }).click()

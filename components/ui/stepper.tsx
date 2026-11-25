@@ -10,8 +10,8 @@ export type Step<T extends string> = { id: T; label: ReactNode; complete?: boole
  * Numbered steps for a sequential workflow: circles joined by a line, a check on finished steps, the
  * current step filled (aria-current="step"). The ordered list announces each step's position. Steps are
  * buttons when `onSelect` is given, otherwise a plain ordered list. On phones only the current step keeps
- * its visible label (the others stay in the accessible name). `badge` shows a count after the label (hidden from
- * assistive tech: put the spoken form in the label).
+ * its visible label (the others stay in the accessible name). `badge` shows a non-zero count after the label (hidden
+ * from assistive tech: put the spoken form in the label); a zero count shows no badge.
  */
 export function Stepper<T extends string>({ label, steps, current, onSelect, className }: {
   label: string; steps: Step<T>[]; current: T; onSelect?: (id: T) => void; className?: string
@@ -21,7 +21,7 @@ export function Stepper<T extends string>({ label, steps, current, onSelect, cla
       {steps.map((step, index) => {
         const active = step.id === current
         const marker = <span className="oc-stepper-marker" aria-hidden="true">{step.complete && !active ? <Check /> : index + 1}</span>
-        const badge = step.badge != null && <span className="oc-stepper-badge" aria-hidden="true">{step.badge}</span>
+        const badge = step.badge != null && step.badge > 0 && <span className="oc-stepper-badge" aria-hidden="true">{step.badge}</span>
         return <li key={step.id} data-active={active || undefined} data-complete={step.complete || undefined}>
           {onSelect
             ? <button type="button" className="oc-stepper-step" data-step={step.id} aria-current={active ? "step" : undefined} disabled={step.disabled} onClick={() => onSelect(step.id)}>
