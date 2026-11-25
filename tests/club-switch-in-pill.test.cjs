@@ -1,0 +1,21 @@
+const test = require("node:test")
+const assert = require("node:assert/strict")
+const fs = require("node:fs")
+
+const read = file => fs.readFileSync(file, "utf8")
+
+test("a leader of several clubs switches club from the selected club segment, not a second name beside the pill", () => {
+  const selector = read("components/shell/workspace-selector.tsx")
+  assert.match(selector, /const clubMenu = option\.id === "leader" && current === "leader" && access\.clubs\.length > 1 && clubSwitcher/)
+  assert.match(selector, /\{clubMenu && <ChevronsUpDown className="oc-workspace-option-chevron" size=\{14\} aria-hidden="true" \/>\}<\/Link>/)
+  assert.match(selector, /\{clubMenu \? clubMenu\(link\) : link\}/)
+  assert.doesNotMatch(selector, /oc-workspace-club-switch/, "no separate club picker beside the pill")
+  const switcher = read("components/club-workspace-switcher.tsx")
+  assert.match(switcher, /<DropdownMenuTrigger asChild>\{children\}<\/DropdownMenuTrigger>/, "the segment itself opens the club menu")
+  assert.match(switcher, /if \(!current \|\| access\.clubs\.length < 2\) return children/, "with one club the segment stays a plain link")
+  assert.doesNotMatch(switcher, /oc-header-club-name|Switch club:/)
+  assert.match(read("components/shell/product-shell.tsx"), /clubSwitcher=\{manager && !platform && allowed \? trigger => <ClubWorkspaceSwitcher clubId=\{clubId\} access=\{access\}>\{trigger\}<\/ClubWorkspaceSwitcher> : undefined\}/)
+  const css = read("components/shell/floating-header.css")
+  assert.match(css, /\.oc-evolving-toggle \.oc-evolving-segments \.oc-workspace-option-menu \{ flex-direction: row; gap: 6px; \}/)
+  assert.doesNotMatch(css, /\.oc-header-club[ {>]|\.oc-workspace-club-switch/)
+})

@@ -78,13 +78,11 @@
 .oc-workspace-segment[data-placeholder] .oc-workspace-option { opacity: 0.55; cursor: default; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::before, .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option::after { display: none; }
 .oc-evolving-toggle :is(a,button):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; box-shadow: var(--focus-halo-inset-4) }
-/* A leader of several clubs picks another club beside the pill, in the same row. */
-.oc-workspace-club-switch { display: flex; flex: 0 1 auto; min-width: 0; justify-content: flex-start; }
-.oc-header-club { display: flex; align-items: center; justify-content: center; gap: 6px; width: min(100%,240px); min-width: 0; min-height: 44px; padding: 4px 8px; border-radius: 12px; color: var(--muted-foreground); font-size: var(--oc-size-12); font-weight: 500; text-align: center; }
-.oc-header-club > :first-child { display: none; }
-.oc-header-club-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.oc-header-club > svg:last-child { flex-shrink: 0; width: 12px; }
-button.oc-header-club:hover { color: var(--primary); background: color-mix(in srgb, var(--school-primary) 4%, transparent); }
+/* A leader of several clubs switches club from the selected club segment: the arrows follow the name. */
+.oc-evolving-toggle .oc-evolving-segments .oc-workspace-option-menu { flex-direction: row; gap: 6px; }
+.oc-workspace-option-menu .oc-workspace-option-label { min-width: 0; }
+.oc-workspace-option-chevron { flex-shrink: 0; width: 14px; height: 14px; opacity: 0.8; }
+.oc-workspace-option-menu:hover .oc-workspace-option-chevron, .oc-workspace-option-menu[data-state="open"] .oc-workspace-option-chevron { opacity: 1; }
 .oc-header-club-menu [role="menuitem"] { min-height: 48px; }
 .oc-header-club-menu [role="menuitem"] > :first-child { width: 28px; height: 28px; flex-shrink: 0; }
 .oc-evolving-guest { border-radius: 999px; background: var(--primary); }
@@ -100,7 +98,6 @@ button.oc-header-club:hover { color: var(--primary); background: color-mix(in sr
   .oc-product-header-row { gap: 12px; }
   .oc-product-utilities { gap: 8px; }
   .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { padding-inline: 2px; }
-  .oc-header-club { width: auto; max-width: 160px; }
 }
 @media (max-width: 1023px) { [data-product-shell] { --oc-shell-gutter: 20px; } .oc-product-header { margin-left: 0; } .oc-product-header .oc-floating-drawer { display: none; } }
 @media (max-width: 759px) {
@@ -126,7 +123,6 @@ button.oc-header-club:hover { color: var(--primary); background: color-mix(in sr
   /* One label in the DOM: the phone pill swaps in the short label visually (the name already starts with it). */
   .oc-workspace-option-label[data-mini] { font-size: 0; }
   .oc-workspace-option-label[data-mini]::after { content: attr(data-mini); font-size: var(--oc-size-12); }
-  .oc-workspace-club-switch { display: none; }
 }
 @media (max-width: 639px) {
   .oc-product-header { padding: 10px 12px; }

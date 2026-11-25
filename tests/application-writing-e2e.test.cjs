@@ -72,7 +72,7 @@ test('application writing and branding through real sessions, server actions, Po
   await settings.reload();await expect(picker.getByRole('button',{name:'Custom',exact:true})).toHaveAttribute('aria-pressed','true')
   await expect(picker.locator('img')).toHaveCSS('background-color','rgb(49, 91, 81)')
   await picker.screenshot({path:path.join(out,'logo-settings.png')})
-  await settings.getByRole('button',{name:/Switch club:/}).click()
+  await settings.locator('header [data-workspace-kind="leader"] a[aria-haspopup="menu"]').click()
   await expect(settings.getByRole('menu').getByRole('menuitem').filter({hasText:club.name}).locator('img')).toHaveCSS('background-color','rgb(49, 91, 81)')
   await settings.keyboard.press('Escape')
   await page.reload();await expect(page.locator('.oc-writing-identity img')).toHaveCSS('background-color','rgb(49, 91, 81)')
