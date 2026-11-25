@@ -58,17 +58,17 @@ export function InterestSurveyForm({ initial, onSaved, secondary, submitLabel = 
 
   return <form onSubmit={submit} className="space-y-6" aria-busy={busy || undefined}><fieldset disabled={alumni} className="contents">
     {question("into", "What are you into?", `${answers.interests.length} of ${MAX_INTERESTS}`,
-      <FilterChips<InterestId> multiple label="What are you into?" value={answers.interests}
+      <FilterChips<InterestId> multiple className="oc-chip-row-wrap" label="What are you into?" value={answers.interests}
         onChange={value => set({ interests: value.slice(0, MAX_INTERESTS) })}
         options={INTEREST_CHIPS.map(chip => ({ value: chip.id, label: chip.label, disabled: full && !answers.interests.includes(chip.id) }))} />)}
     {question("goals", "What do you want from a club?", null,
-      <FilterChips<GoalId> multiple label="What do you want from a club?" value={answers.goals} onChange={value => set({ goals: value })}
+      <FilterChips<GoalId> multiple className="oc-chip-row-wrap" label="What do you want from a club?" value={answers.goals} onChange={value => set({ goals: value })}
         options={CLUB_GOALS.map(goal => ({ value: goal.id, label: goal.label }))} />)}
     {question("hours", "How much time?", "per week",
-      <FilterChips<WeeklyHours | ""> label="How much time per week?" value={answers.weeklyHours ?? ""} onChange={value => set({ weeklyHours: value || null })}
+      <FilterChips<WeeklyHours | ""> className="oc-chip-row-wrap" label="How much time per week?" value={answers.weeklyHours ?? ""} onChange={value => set({ weeklyHours: value || null })}
         options={WEEKLY_HOURS.map(option => ({ value: option.id, label: option.label }))} />)}
     {question("selective", "Open to applying to selective clubs?", null,
-      <FilterChips<Selectivity | ""> label="Open to applying to selective clubs?" value={answers.selectivity ?? ""} onChange={value => set({ selectivity: value || null })}
+      <FilterChips<Selectivity | ""> className="oc-chip-row-wrap" label="Open to applying to selective clubs?" value={answers.selectivity ?? ""} onChange={value => set({ selectivity: value || null })}
         options={SELECTIVITY.map(option => ({ value: option.id, label: option.label }))} />)}
     {privacyNote && <p className="text-xs text-muted-foreground">Only you see these. Clubs never do.</p>}
     {error && <p role="alert" className="oc-feedback">{error}</p>}
