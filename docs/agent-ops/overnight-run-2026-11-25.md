@@ -141,3 +141,15 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - `persistApplication` took any clubId, so a student could draft or submit to another school's club through the website action or the app's `applications.submit`. Read paths already scope to the viewer's school.
 - Fix: resolve `resolveViewerSchool()` and refuse when `club.schoolId` differs ("This club isn't open to students at your school."), before any write.
 - Failing-first test in tests/application-submit-race-native.test.cjs on red/apply-same-school (test-only 7936dce7), dispatched on the disposable security database. PR: https://github.com/TheFrtiz22/out-class/pull/549
+
+## 07:25 Improvement 1 → PR #550 (app offers push after a submit)
+
+- Highest-impact gap from the app review: push is opt-in on the phone and most students would never turn it on, so invites and decisions wait until the app is opened.
+- Change: a one-time "Hear back on this phone" card on the application screen right after a submit, only when push is off and the system can still ask. Uses the same `push.enable()` as the preferences switch. No server change.
+- Failing-first render test mobile/__tests__/render/push-nudge.test.tsx (test-only commit on red/push-nudge, deploy.yml dispatched). PR: https://github.com/TheFrtiz22/out-class/pull/550
+- Release is left to the owner (no OTA, no store submission).
+
+## 07:25 Findings not fixed (decided)
+
+- M3, check-in from another school: a valid, unexpired QR token is still required, so the caller has to be at the meeting. Low impact; recorded, not fixed tonight.
+- R5, staged decisions are last-write-wins: `stageDecision` documents "Record (or replace)" and the board shows who staged it; send re-checks the application. Treated as intended, not a bug.
