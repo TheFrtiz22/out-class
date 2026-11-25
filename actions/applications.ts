@@ -32,6 +32,8 @@ function answersKeyMatches(key: string, expected: string) {
   return key === expected
 }
 
+const OTHER_SCHOOL_APPLICATION_MESSAGE = "This club isn't open to students at your school."
+
 /** An over-long answer is the one schema failure a student can cause by typing, so it gets its own message. */
 function answersWithinLimit(input: unknown) {
   const answers = (input as { answers?: unknown } | null)?.answers
@@ -42,6 +44,8 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
   const { user } = await requireAuth()
   if (!answersWithinLimit(input)) throw new ActionError(ANSWER_TOO_LONG_MESSAGE, "TOO_LONG")
   const parsed = boundedParse(applicationInputSchema, input)
+  // The school whose clubs this account may list (utils/school-scope.ts): a student applies only there.
+  const school = await resolveViewerSchool()
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction")
   const applicationId = await clubWriteTransaction(async (tx) => {
     // FOR SHARE (not FOR UPDATE) on the club: leader configuration changes,
@@ -53,7 +57,8 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     // Alumni keep their history but cannot apply: no new drafts, edits or submissions (lib/graduation.ts).
     await assertNotAlumni(tx, user.id, "apply")
-    const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
+    const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { schoolId: true, applicationOpen: true, applicationDeadline: true, testRequirement: true } })
+    if (configuration && configuration.schoolId !== school.id) throw new ActionError(OTHER_SCHOOL_APPLICATION_MESSAGE)
     if (!configuration || submit && !applicationAvailability(configuration)) throw new ActionError("Applications are closed for this club. Your saved draft is retained.")
     if (submit) {
       const profile = await tx.studentProfile.findUnique({ where: { userId: user.id } })
