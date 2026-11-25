@@ -13,7 +13,16 @@ import "./availability.css"
 import { NativeSelect } from "@/components/ui/native-select"
 
 /** Uses the existing directory's selection instead of building another roster. */
-export function InterviewerEligibilityControls({ clubId, selectedIds, onSaved, individual = false, refreshKey = "" }: { clubId: string; selectedIds: string[]; onSaved?: () => Promise<void>; individual?: boolean; refreshKey?: string }) {
+/** Where a member's interviewer status comes from, in words a club leader uses. */
+export function interviewerStatusLine(member: { role: string; override: boolean | null; rounds: { id: string; override: boolean | null }[] }, roles: string[], roundId: string) {
+  const roundOverride = roundId ? member.rounds.find(r => r.id === roundId)?.override ?? null : null
+  const eligible = roundOverride ?? member.override ?? roles.includes(member.role)
+  const source = roundOverride !== null ? "set for this person in this round" : member.override !== null && member.override !== undefined ? "set for this person" : "from their role"
+  return `${eligible ? "Can interview" : "Can’t interview"} · ${source}`
+}
+
+/** `single` is the member's own panel: one person is already in view, so there is no selection to count. */
+export function InterviewerEligibilityControls({ clubId, selectedIds, onSaved, individual = false, single = false, refreshKey = "" }: { clubId: string; selectedIds: string[]; onSaved?: () => Promise<void>; individual?: boolean; single?: boolean; refreshKey?: string }) {
   const demo = useDemoMode()
   const [data, setData] = useState<Awaited<ReturnType<typeof getInterviewerEligibility>> | null>(null), [roles, setRoles] = useState<string[]>([])
   const [roundId, setRoundId] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false), [attempt, setAttempt] = useState(0), [notice, setNotice] = useState("")
@@ -41,8 +50,8 @@ export function InterviewerEligibilityControls({ clubId, selectedIds, onSaved, i
     {!data && !error && <LoadingState label="Loading interviewers…" layout="table" rows={3} />}
     {data && <fieldset disabled={busy} className="space-y-4">{!individual && <section><h4 className="text-sm font-medium">Roles that can interview</h4><div className="my-3 flex flex-wrap gap-4">{organizationRoles.map(role => <label key={role} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="oc-checkbox" checked={roles.includes(role)} onChange={e => setRoles(values => e.target.checked ? [...values, role] : values.filter(v => v !== role))} />{organizationRoleLabels[role]}</label>)}</div><Button variant="outline" onClick={() => void save()}>Save role defaults</Button></section>}
       {(individual || selectedIds.length > 0) && <><label className="block text-sm">Applies to<NativeSelect value={roundId} className="oc-av-select mt-1 block w-full sm:w-auto" onChange={e => setRoundId(e.target.value)}><option value="">This club · all rounds by default</option>{data.rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</NativeSelect></label>
-      <p className="text-sm">{selected.length ? `${selected.length} active member${selected.length === 1 ? "" : "s"} selected` : "Select members in the directory to update them together."}</p>
-      {selected.length === 1 && (() => { const member = selected[0], override = roundId ? member.rounds.find(r => r.id === roundId)?.override : member.override; const eligible = override ?? (roundId ? member.override : null) ?? data.roles.includes(member.role); return <p className="text-xs text-muted-foreground">{member.name}: {eligible ? "Can interview" : "Can’t interview"}{override === undefined || override === null ? " (inherited)" : " (individual override)"}</p> })()}
+      {!single && <p className="text-sm">{selected.length ? `${selected.length} active member${selected.length === 1 ? "" : "s"} selected` : "Select members in the directory to update them together."}</p>}
+      {selected.length === 1 && <p className={single ? "text-sm" : "text-xs text-muted-foreground"} data-interviewer-status>{single ? "" : `${selected[0].name}: `}{interviewerStatusLine(selected[0], data.roles, roundId)}</p>}
       <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!selected.length} onClick={() => void save(true)}>Allow to interview</Button><Button variant="outline" disabled={!selected.length} onClick={() => void save(false)}>Exclude from interviewing</Button><Button variant="ghost" disabled={!selected.length} onClick={() => void save(null)}>Use the default</Button></div></>}
     </fieldset>}
     {notice && <p role="status" className="text-xs">{notice}</p>}{error && <div className="space-y-2"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => { setError(""); setAttempt(v => v + 1) }}>Reload</Button></div>}
