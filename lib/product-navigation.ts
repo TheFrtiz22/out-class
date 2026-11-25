@@ -36,6 +36,11 @@ export function personalDestination(id: string): { view: import("@/lib/views").V
  * Anonymous Review and Auto-Reject Rules are no longer destinations: they are sections of the Recruiting settings
  * drawer (lib/recruiting-settings), opened from Applicants and from club Settings.
  */
+/** Every page id a club workspace can open, for anyone. An id outside these is a broken or stale link, not missing access. */
+export const workspacePageIds = {
+  recruiting: ["overview", "applicants", "resumes", "reviews", "interviews", "decisions", "application", "settings"],
+  club: ["overview", "calendar", "tasks", "members", "alumni", "settings"],
+} as const
 export function managerNavigation(member: ClubAccess, clubId: string, mode: string, search = ""): ProductNavItem[] {
   const href = (section: string, tool?: string) => `/club/${encodeURIComponent(clubId)}/workspace?section=${section}${tool ? `&tool=${tool}` : ""}`
   const item = (id: string, label: string, section = id, extra = {}) => ({ id, label, href: href(section, section === "recruitment" ? id : undefined), ...extra })
