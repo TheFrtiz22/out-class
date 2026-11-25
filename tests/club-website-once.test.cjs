@@ -17,4 +17,6 @@ test('the same page matches across protocol, www, host case and trailing slash, 
   assert.equal(samePage('https://club.org', ''), false)
   assert.equal(samePage('https://club.org/Join', 'https://club.org/join'), false)
   assert.equal(samePage('https://CLUB.org/Join/', 'club.org/Join'), true)
+  assert.equal(samePage('https://club.org/?next=/join', 'https://club.org/?next=/join/'), false)
+  assert.equal(samePage('https://club.org/apply/?ref=x', 'https://club.org/apply?ref=x'), true)
 })
