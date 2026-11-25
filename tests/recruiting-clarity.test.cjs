@@ -166,7 +166,12 @@ test('#7 the application form lives in Recruiting; the old Settings URL redirect
   assert.ok(!nav.managerNavigation(editor, 'c', 'recruiting').some(i => i.id === 'overview'), 'no Overview link that would be refused')
   assert.equal(rail.bottomBarItems(rail.leaderRailSections(editor, 'c'), 'leader', 'application').find(i => i.id === 'recruiting').href, '/club/c/workspace?section=recruitment&tool=application')
   assert.match(read('components/club-workspace.tsx'), /\(recruitmentTools\(membership!\)\.length > 0 \|\| active === "application"\)/)
-  assert.match(read('components/recruiting-overview.tsx'), /hasPermission\(membership, "application\.manage"\) && <Button variant="ghost" size="lg" asChild><Link \{\.\.\.clubLinkProps\(clubId, `[^`]*tool=application`\)\}><FileText aria-hidden="true" \/>Application<\/Link>/)
+  // The Recruiting header reaches the form through the applications status pill (or its own button with no active cycle).
+  const hero = read('components/recruiting-overview.tsx')
+  assert.match(hero, /const canEditApplication = hasPermission\(membership, "application\.manage"\)/)
+  assert.match(hero, /const applicationHref = `[^`]*section=recruitment&tool=application`/)
+  assert.match(hero, /canEditApplication\s*\? <Button variant="outline" size="lg" className="oc-recruiting-status"[^>]*asChild>\s*<Link \{\.\.\.clubLinkProps\(clubId, applicationHref\)\}>/)
+  assert.match(hero, /!status && canEditApplication && <Button variant="outline" size="lg" asChild><Link \{\.\.\.clubLinkProps\(clubId, applicationHref\)\}><FileText aria-hidden="true" \/>Application<\/Link>/)
   const { availableSettings } = load('lib/club-settings.ts')
   assert.ok(!availableSettings({ isOwner: true }).some(item => item.id === 'application'))
   const settings = read('components/club-settings-workspace.tsx')
