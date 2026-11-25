@@ -263,3 +263,8 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - "DATABASE_URL not found" and "Supabase URL and API key are required" on `/login`: these come from a preview deployment (branch `ui/calendar-recruiting-header-loader`), which has no database by design. Not production.
 - Sentry OUT-CLASS-D (a date rendered as text on `/inbox`, 2026-11-16) and OUT-CLASS-E (`revision` of undefined in a club workspace, 2026-11-17): one occurrence each on older releases, no source maps, not seen again since. Could not reproduce from the code; recorded under bugs not fixed.
 - PR #551: Applicant workflow / application-writing failed at its build step ("npm failed", build log not reachable from here). Likely cause: the new optional reader in `utils/school-scope.ts` was typed with Prisma's base transaction client, while the app's client is extended. Retyped with `AppTransactionClient` like the other readers (commit pushed); checks re-running.
+
+## 09:35 UTC: PR #551 red proof and review follow-up
+- Red run 45579330717 on `red/check-in-same-school` (test only, on main): 3370 unit tests, exactly 1 failed, the new visitor check-in test. Other suites green.
+- PR head f50c35bb: every required gate green.
+- Codex (P2): a visitor with no school identity on a school subdomain falls back to the host school, and that lookup still used the shared client inside the check-in transaction. Confirmed by reading `utils/school-scope.ts`. Fix 80459f89 passes the transaction through `resolveHostSchool` too. New test in `tests/school-directory-scope.test.cjs`, run locally: fails without the fix ("shared client read school"), passes with it. Thread answered. Gates re-running.
