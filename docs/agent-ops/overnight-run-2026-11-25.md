@@ -279,3 +279,16 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Live check: signed-out `/check-in?meetingId=…` at 1440 px shows the sign-in prompt with the return path kept; public test club page at 500 px renders correctly.
 - The refusal itself needs a signed-in student from another school (no second school is live); verified by the unit test and the red run, not on the live site.
 - No rollback needed.
+
+## 10:05 — Finding: main's native scheduler and audiences suites red since #549
+
+- Main push runs 45577342737 (9d4f0c17) and 45590079676 (272d1205): `Native PostgreSQL / scheduler` and `/ audiences` fail `decision-publication-native` test 14 with "`headers` was called outside a request scope". These suites are not PR gates, so #549 and #551 merged green.
+- Cause: the fixture's accounts use `@demo.invalid` emails with no school identity, so `resolveAccountSchool` falls back to the request host, which only exists inside a real request. Production requests always have a host, so the live site is not affected; it is a fixture gap.
+- Fix: PR #552 gives the suite the shared `tests/helpers/school-scope.cjs` stand-in that the other native suites use. Red proof is the two main runs above. Disposable-integrations dispatched on the branch (run 45591518865).
+- Lesson: after a merge that touches actions used by native suites, watch the main push run of disposable-integrations, not only the PR gates.
+
+## 10:05 — Finding: flaky Local Auth test 7 (pipeline release e2e)
+
+- Fails now and then with "expected 100, got 0" after the browser-history step on the 5000-applicant cohort (main run 45575470024; run 45564144516 earlier).
+- Cause: after `goForward`, rows were counted while the overview's review-queue rows still matched the selector.
+- Fix: PR #553 waits for the overview to leave before counting, as the entry step already does. Disposable-integrations dispatched on the branch (run 45591523753).
