@@ -2,7 +2,7 @@
 import { ActionError, actionResult } from "@/lib/action-result";
 import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
 import { schoolPublicMeetingVisibility } from "@/lib/campus-events";
-import { resolveViewerSchool } from "@/utils/school-scope";
+import { resolveAccountSchool, resolveViewerSchool } from "@/utils/school-scope";
 import { createHash, randomBytes } from "node:crypto";
 import {
   closeMeetingCheckInShortLinks,
@@ -13,7 +13,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { assertNotAlumni } from "@/utils/graduation";
-import { hasPermission, activeMemberWhere } from "@/lib/permissions";
+import { hasPermission, activeMemberWhere, isActiveMembership } from "@/lib/permissions";
 import {
   meetingInputSchema,
   meetingFields,
@@ -197,6 +197,14 @@ async function checkInMeetingCommand(
       where: { userId_clubId: { userId: user.id, clubId: meeting.clubId } },
     });
     if (!canReadMeeting(meeting, membership)) throw unavailable();
+    if (!isActiveMembership(membership)) {
+      // A public recruitment meeting admits non-members, but only students at the club's own school
+      // (the same rule as applying, actions/applications.ts). Read inside this transaction so a room
+      // of visitors checking in never waits on a second pool connection.
+      const club = await tx.club.findUnique({ where: { id: meeting.clubId }, select: { schoolId: true } });
+      const school = await resolveAccountSchool(user.id, tx);
+      if (!club || club.schoolId !== school.id) throw unavailable();
+    }
     await assertClubOperational(tx, meeting.clubId);
     const access = await tx.meetingCheckInToken.findFirst({
       where: {

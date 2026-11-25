@@ -1,5 +1,6 @@
 import { cache } from "react"
 import { cookies, headers } from "next/headers"
+import type { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { getSessionUser } from "@/utils/auth"
 import { platformViewSession } from "@/utils/platform-view-as"
@@ -8,13 +9,15 @@ import { mobileRequest } from "@/utils/mobile-request"
 import { DEFAULT_SCHOOL, schoolKeyFromHost, type SchoolScope } from "@/lib/school-host"
 
 const schoolFields = { id: true, key: true } as const
+/** A client that can read an account's school: the shared client, or an open transaction. */
+type SchoolReader = Pick<Prisma.TransactionClient, "user" | "schoolIdentifierType">
 
 /**
  * The school a signed-in account belongs to: its verified SchoolIdentity (utils/school-identity.ts),
  * else the active school whose identifier type claims the account's email domain. Null when neither.
  */
-async function schoolForUser(userId: string): Promise<SchoolScope | null> {
-  const user = await prisma.user.findUnique({
+async function schoolForUser(userId: string, db: SchoolReader = prisma): Promise<SchoolScope | null> {
+  const user = await db.user.findUnique({
     where: { id: userId },
     select: {
       email: true,
@@ -31,7 +34,7 @@ async function schoolForUser(userId: string): Promise<SchoolScope | null> {
   if (verified) return verified
   const domain = user.email.split("@")[1]?.trim().toLowerCase()
   if (!domain) return null
-  const type = await prisma.schoolIdentifierType.findFirst({
+  const type = await db.schoolIdentifierType.findFirst({
     where: { emailDomain: domain, school: { active: true } },
     select: { school: { select: schoolFields } },
     orderBy: { schoolId: "asc" },
@@ -41,10 +44,11 @@ async function schoolForUser(userId: string): Promise<SchoolScope | null> {
 
 /**
  * The school of an account already authenticated by the caller (requireAuth's user): the same answer
- * resolveViewerSchool gives, without validating the session a second time. Writes use this.
+ * resolveViewerSchool gives, without validating the session a second time. Writes use this; a write
+ * that already holds a transaction passes it as `db`, so the lookup does not wait for a second connection.
  */
-export async function resolveAccountSchool(userId: string): Promise<SchoolScope> {
-  return (await schoolForUser(userId)) ?? resolveHostSchool()
+export async function resolveAccountSchool(userId: string, db: SchoolReader = prisma): Promise<SchoolScope> {
+  return (await schoolForUser(userId, db)) ?? resolveHostSchool()
 }
 
 /** The effective account: a valid support session's target, otherwise the verified session user.
