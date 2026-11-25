@@ -319,7 +319,8 @@ async function revealApplicantIdentityCommand(
         },
         evaluations: { omit: { notes: true, applicantQuestions: true } },
         interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
-        answers: { include: { question: true } },
+        // Question order matters: a follow-up is visible only after its parent is (visibleQuestionIds).
+        answers: { include: { question: true }, orderBy: [{ question: { order: "asc" } }, { id: "asc" }] },
         bookings: { include: { slot: true } },
       },
     });
