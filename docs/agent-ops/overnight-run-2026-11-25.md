@@ -181,3 +181,8 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 
 ## 07:24 PR #549 re-run
 - 0f9a6160: both native suites now pass (security, transactions). Applicant workflow / application-writing failed because local Supabase didn't start on the runner. Nothing ran, so it isn't this change. The failed job was re-run.
+
+## 07:26 PR #544 deploy verified live
+- Production deploy for 041029fb is READY and aliased to all three production domains. The public test club page (/club/aif) renders correctly at 500 and 1440 wide. No rollback.
+- PR #549: application-writing passed on the re-run (0f9a6160). Waiting only on validate.
+- Noticed while checking: the test club page says "Applications aren't open yet" and also shows an application deadline of Dec 16. That's consistent if applications are closed but a deadline is set. Not a bug; noted for wording.
