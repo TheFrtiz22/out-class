@@ -173,7 +173,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
   }
   const headerActions = (
     <div role="group" aria-label="Calendar actions" className="flex flex-wrap items-center justify-end gap-3">
-      <AvailabilityButton label="Availability" variant="outline" />
+      <AvailabilityButton label="Availability" variant="outline" className="min-h-10" />
       <CalendarSubscribe />
       {bookingDates.length > 0 && (
         <Button variant="outline" onClick={() => setBooking(true)}>
