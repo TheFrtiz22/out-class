@@ -150,6 +150,11 @@ function Submission({
           ? `Submitted ${dateLabel(a.submittedAt)}${closed ? "" : " · You can update it until it is reviewed or the task closes."}`
           : "No submission yet. Late submissions are accepted while the task is open and are labeled late."}
       </p>
+      {a.feedback && (
+        <div role="note" className="whitespace-pre-wrap break-words rounded-xl border p-4 text-sm">
+          <strong className="flex items-center gap-2"><CheckCircle2 size={16} />{a.revisionRequestedAt ? "Revisions requested" : "Review feedback"}</strong> {a.feedback}
+        </div>
+      )}
       <p className="text-xs text-muted-foreground">
         Required:{" "}
         {task.requirements.length
@@ -285,11 +290,6 @@ function Submission({
       {uploading && (
         <p role="status" className="text-sm">
           Uploading securely… Keep this page open.
-        </p>
-      )}
-      {a.feedback && (
-        <p className="whitespace-pre-wrap break-words text-sm">
-          <strong className="flex items-center gap-2"><CheckCircle2 size={16} />{a.revisionRequestedAt ? "Revisions requested" : "Review feedback"}</strong> {a.feedback}
         </p>
       )}
       {(submitted || saved) && <p role="status" className="text-sm text-success">Your submission was saved.</p>}
