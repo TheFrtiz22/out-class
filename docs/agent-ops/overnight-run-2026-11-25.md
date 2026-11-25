@@ -353,3 +353,8 @@ Found, not fixed (decided):
 - Deploy dpl_9FMfFEE5iRxv4v5bETdjKzELJz9w (4119dfeb) READY and serving out-class.net. Live check: `/club/aif` at 1440×900 renders in full; `/login` at 500×900 shows the sign-in form, email-code option and menu. No rollback.
 - Main after #554: validate green (45609058291). Integrations (45609058341) failed once in "Local Auth, settings and navigation": the pipeline browser test counted 0 rows right after searching for an applicant (line 78), then passed on a rerun of the same job. Timing flake in the test, not in #554 (which only touched server-side interview writes).
 - Test-only fix opened: PR #555 waits for exactly one visible row before the count. Main is green now.
+
+## 12:40 UTC: two more decided items
+
+- Two-step password re-check counting correct passwords: not changed. The admin elevation re-check (`app/api/platform/elevation/route.ts:58`) and account-deletion re-check (`actions/account-deletion.ts:107`) also count every attempt, correct or not, toward 5 per 15 minutes, so this is the codebase's consistent rule rather than a slip. Only the two-step code step refunds successes.
+- App offline cache (gap 8): not built. The app already uses React Query, but keeping data across launches needs a persister and on-device storage packages that the app doesn't have today (new native dependencies need an app release and owner sign-off), plus a decision on wiping student data from the phone at sign-out.
