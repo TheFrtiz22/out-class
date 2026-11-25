@@ -108,6 +108,10 @@ test('recipient audiences on bounded native PostgreSQL',{skip:!url,timeout:12000
   await refused(groups.saveRecipientGroup({clubId:club.id,id:second.id,revision:second.revision,name:'FINANCE',kind:'MANUAL',userIds:[]}),/already has a group named/);
   assert.equal((await db.recipientGroup.findUniqueOrThrow({where:{id:second.id}})).name,'Second list');
   await groups.deleteRecipientGroup(club.id,second.id,second.revision);
+  // Wildcard characters are compared literally: "Fin%" is a different name from "Finance".
+  const wildcard=await groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'Fin%',kind:'MANUAL',userIds:[]});
+  await refused(groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'fin%',kind:'MANUAL',userIds:[]}),/already has a group named/);
+  await groups.deleteRecipientGroup(club.id,wildcard.id,wildcard.revision);
  });
  await t.test('foreign, anonymous and disabled people cannot be assigned; denied operations roll back',async()=>{
   for(const userIds of [[outsider.id],[anonymous.id]])await refused(groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'Invalid',kind:'MANUAL',userIds}),/unavailable/);
