@@ -137,7 +137,9 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
         ?.focus({ preventScroll: true })
     }
   }, [selected])
-  useEffect(() => { setSelected(null) }, [section])
+  // Switching sections closes an open club; the first render keeps a club opened from ?club= in the URL.
+  const shownSection = useRef(section)
+  useEffect(() => { if (shownSection.current === section) return; shownSection.current = section; setSelected(null) }, [section])
   const categories = useMemo(
     () => [...new Set(clubs.map((club) => club.category).filter(Boolean))].sort(),
     [clubs],

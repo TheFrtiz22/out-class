@@ -22,3 +22,9 @@ test("a ?club= address opens that club, and leaving it closes the profile", () =
   assert.match(src, /if \(!id\) \{ pushedClub\.current = false; setSelected\(null\); return \}/)
   assert.match(src, /\}, \[filterQuery, clubs\]\)/)
 })
+
+test('a direct ?club= load is not cleared by the section reset on first render', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '../components/views/explore-view.tsx'), 'utf8')
+  assert.doesNotMatch(src, /useEffect\(\(\) => \{ setSelected\(null\) \}, \[section\]\)/)
+  assert.match(src, /useEffect\(\(\) => \{ if \(shownSection\.current === section\) return; shownSection\.current = section; setSelected\(null\) \}, \[section\]\)/)
+})
