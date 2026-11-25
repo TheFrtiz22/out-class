@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useEffect,useRef,useState } from 'react';
 import { getDecisionTemplates,saveDecisionTemplates,setFormalDecisionLetters } from '@/lib/workspace-api';
-import { defaultLetters,letterVariables,resolveLetter,notAdvancedUsesRejection,type LetterKind,type LetterTemplate,letterTemplatesSchema,celebrationKinds,celebrationLabels,defaultCelebration } from '@/lib/decision-letters';
+import { defaultLetters,letterVariables,resolveLetter,notAdvancedUsesRejection,type LetterKind,type LetterTemplate,letterTemplatesSchema,letterTemplatesProblem,celebrationKinds,celebrationLabels,defaultCelebration } from '@/lib/decision-letters';
 import { AcceptanceBanner,LetterPaper } from './decision-letter';
 import { Celebration,useCelebration } from './decision-celebration';
 import { PillGroup, SegmentedControl } from '@/components/ui/segmented-control';
@@ -15,6 +15,7 @@ import { clubAssetSource } from '@/lib/club-assets';
 import { Button } from '@/components/ui/button';
 import { Toggle } from "@/components/ui/toggle"
 import { Textarea } from "@/components/ui/textarea"
+import { UserFacingError } from "@/lib/action-result"
 
 /** Letter fields in sentence case; the editor uses the shared input surface so a saved letter reads as editable text. */
 const letterFieldLabels = { title: "Title", body: "Letter body", closing: "Closing", signer: "Signer and title (optional)", footer: "Footer" } as const
@@ -28,6 +29,8 @@ export function DecisionTemplateEditor({clubId,inline=false}:{clubId:string;inli
  const template=templates[selected]??defaultLetters[selected];
  const celebration=useCelebration(),celebrationKind=selected==='ACCEPTED'?template.celebration??defaultCelebration:'none';
  const autosave=useAutosave({identity:`${user?.id}:decision-templates:${clubId}`,owner:demo.isDemoEnabled?null:user?.id,value:templates,restore:setTemplates,enabled:!!club,save:async value=>{
+  // A refused template is the leader's to fix, not a connection problem: say what to change.
+  const problem=letterTemplatesProblem(value);if(problem)throw new UserFacingError(problem);
   const parsed=letterTemplatesSchema.parse(value);
   await saveDecisionTemplates(clubId,parsed,expected.current);
   expected.current=JSON.stringify(parsed);
