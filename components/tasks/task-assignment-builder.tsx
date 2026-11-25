@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
+import { pluralize } from "@/lib/copy/terms"
 export function TaskAssignmentBuilder({workspace,source,editing=false,kind:initialKind="TASK",projectId,run,busy,onSaved,onDirty}:{workspace:TaskWorkspace;source?:ClubTask;editing?:boolean;kind?:"TASK"|"PROJECT";projectId?:string;run:TaskRun;busy:boolean;onSaved:()=>void;onDirty:(dirty:boolean)=>void}) {
   const fixed=!!source && editing && source.status!=="DRAFT"
   const [title,setTitle]=useState(source?.title??""),[description,setDescription]=useState(source?.description??""),[kind,setKind]=useState(source?.kind??initialKind),[project,setProject]=useState(source?.projectId??projectId??""),[due,setDue]=useState(editing?taskLocalDate(source?.dueAt??null):""),[status,setStatus]=useState(source?.status==="DRAFT"?"OPEN":editing?source?.status??"OPEN":"OPEN"),[requirements,setRequirements]=useState(source?.requirements??["TEXT"]),[resources,setResources]=useState(taskInputSchema.shape.resources.safeParse(source?.resources).data??[])
@@ -41,7 +42,7 @@ export function TaskAssignmentBuilder({workspace,source,editing=false,kind:initi
       <section className="oc-builder-section"><p className="oc-eyebrow">Review & {fixed?"save":"assign"}</p><h3 className="oc-section-heading">{title}</h3><p className="whitespace-pre-wrap text-sm leading-6">{description || "No additional instructions."}</p><div className="oc-task-inline-meta"><span>{kind==="PROJECT"?"Project":"Task"}{project?` · ${projects.find(item=>item.id===project)?.title??"Related project"}`:""}</span><span>Due {due?taskDate(new Date(due)):"date not set"}</span><span>{requirements.map(value=>({TEXT:"Written response",LINK:"Link",FILE:"File"})[value as "TEXT"]).join(" + ") || (kind==="PROJECT"?"Progress tracked through related tasks":"Any submission format")}</span></div></section>
       <TaskRecipientPreview recipients={recipients}/>
       <p className="text-xs text-muted-foreground">{fixed?"Editing details preserves every recipient and all submitted work.":"These recipients will be saved when you assign. New roster changes will require you to review the list again."}</p>
-      <Button disabled={busy||checking} className="w-full sm:w-auto">{busy?"Saving…":fixed?"Save changes":`Assign to ${recipients.length} members`}<ArrowRight size={16}/></Button>
+      <Button disabled={busy||checking} className="w-full sm:w-auto">{busy?"Saving…":fixed?"Save changes":`Assign to ${pluralize(recipients.length, "member")}`}<ArrowRight size={16}/></Button>
     </>:<>
       <div hidden={stage !== "edit"} className="space-y-5"><section className="oc-builder-section"><h3>Task details</h3><label className="oc-task-field-label">Title<Input  required maxLength={200} placeholder={kind==="PROJECT"?"e.g. New member education":"e.g. Company research memo"} value={title} onChange={event=>setTitle(event.target.value)}/></label><label className="oc-task-field-label">Instructions<Textarea rows={3} maxLength={10000} placeholder="What should members do?" value={description} onChange={event=>setDescription(event.target.value)}/></label>
 

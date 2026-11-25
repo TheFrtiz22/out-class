@@ -21,6 +21,7 @@ import { RANKED_REVIEW_NO_CYCLE, bandsFromBoundaries, rankedBandLabels, rankedBa
 import { VotingTargetSummary, type ScopedTargetSummary } from "@/components/voting-target-summary"
 import { bandCounts } from "@/lib/voting-target-summary"
 import "./ranked-review-list.css"
+import { plural } from "@/lib/copy/terms"
 
 type Pipeline = Awaited<ReturnType<typeof getRankedReviewRound>>
 type Settings = Awaited<ReturnType<typeof getRankedReviewSettings>>
@@ -229,7 +230,7 @@ export function RankedReviewList({ clubId, rounds, initialRoundId, api, onOpen, 
         {notScoredShown.length > 0 && <div className="oc-ranked-group" data-group="not-scored"><h4 className="text-xs font-medium">Not scored · {notScored.length}</h4><p className="text-xs text-muted-foreground">Waiting for an interview score.</p><ul className="oc-ranked-list">{notScoredShown.map(renderRow)}</ul></div>}
         {hiddenShown.length > 0 && <div className="oc-ranked-group" data-group="hidden"><h4 className="text-xs font-medium">Score not available · {hidden.length}</h4><p className="text-xs text-muted-foreground">Scores show after you submit your review.</p><ul className="oc-ranked-list">{hiddenShown.map(renderRow)}</ul></div>}
         {remaining > 0 && <div className="oc-ranked-more flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <p aria-live="polite" className="mr-auto">Showing {visibleCount} of {ordered.length} applicants</p>
+          <p aria-live="polite" className="mr-auto">Showing {visibleCount} of {ordered.length} {plural(ordered.length, "applicant")}</p>
           <Button type="button" size="sm" variant="outline" onClick={() => showMore(RANKED_PAGE_SIZE)}>Show {Math.min(RANKED_PAGE_SIZE, remaining)} more</Button>
           {remaining > RANKED_PAGE_SIZE && <Button type="button" size="sm" variant="ghost" onClick={() => showMore(remaining)}>Show all {ordered.length}</Button>}
         </div>}
