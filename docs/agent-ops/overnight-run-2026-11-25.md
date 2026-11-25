@@ -192,3 +192,7 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Load before/after is in the 07:24 table: 150-member burst went from 81/150 to 150/150 checked in, p95 2129 ms to 997 ms.
 - Deploy check pending.
 - PR #546: the Codex P2 (reveal must read answers in question order) was already fixed in bdf053b1, which is in the PR head. Thread resolved. Waiting on validate.
+
+## 07:41 PR #548 deploy verified live
+- Production deploy for 40e077b3 is READY. /club/mii renders correctly at 1440 and 500 wide (the banner photo loads; an earlier gradient was the placeholder before the image arrived). Vercel shows no runtime errors in the last hour. No rollback.
+- QR check-in itself can't be run on production: it needs a signed-in member and a live meeting code, and load against production is off limits. It is covered by the native burst test above.
