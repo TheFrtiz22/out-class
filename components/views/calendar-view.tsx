@@ -1,6 +1,8 @@
 "use client"
 import { EmptyState } from "@/components/ui/empty-state"
-import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, minuteLabel } from "@/lib/scheduling-config"
+import { SCHEDULING_TIMEZONE, minuteLabel } from "@/lib/scheduling-config"
+import { createPortal } from "react-dom"
+import { usePageHeaderActions } from "@/hooks/use-page-header-actions"
 import { AvailabilityButton } from "@/components/availability/availability-button"
 import { CalendarSubscribe } from "@/components/calendar-subscribe"
 import { localParts } from "@/lib/availability"
@@ -74,6 +76,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [booking, setBooking] = useState(false)
   const [bookingDate, setBookingDate] = useState("")
+  const actionSlot = usePageHeaderActions()
   const nowMs = useServerAnchoredNow(serverNow)
   const now = useMemo(() => new Date(nowMs), [nowMs])
   const today = localParts(now, SCHEDULING_TIMEZONE).date
@@ -168,18 +171,21 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
     anchor.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
+  const headerActions = (
+    <div role="group" aria-label="Calendar actions" className="flex flex-wrap items-center justify-end gap-3">
+      <AvailabilityButton label="Availability" variant="outline" />
+      <CalendarSubscribe />
+      {bookingDates.length > 0 && (
+        <Button variant="outline" onClick={() => setBooking(true)}>
+          Book or change interview
+        </Button>
+      )}
+    </div>
+  )
   return (
     <div className="oc-calendar-workspace oc-workspace-stack">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
-          Times shown in {SCHEDULING_TIMEZONE_LABEL}.
-        </p>
-        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton label="Availability" variant="outline" /><CalendarSubscribe />{bookingDates.length > 0 && (
-          <Button variant="outline" onClick={() => setBooking(true)}>
-            Book or change interview
-          </Button>
-        )}</div>
-      </header>
+      {/* The actions sit beside the page title when the header offers a slot; otherwise (the public club page) on their own row. */}
+      {actionSlot !== undefined && (actionSlot ? createPortal(headerActions, actionSlot) : <div className="flex justify-end">{headerActions}</div>)}
       {/* With nothing scheduled, show the agenda empty state only; views and filters appear once there are events. */}
       {events.length > 0 && <SegmentedControl label="Calendar view" value={view} onChange={setView} options={(["agenda", "month", "week", "day"] as const).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} />}
       {events.length > 0 && view !== "agenda" && (
