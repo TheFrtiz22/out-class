@@ -1,0 +1,25 @@
+# Temporary, benchmark-only branch for the 2026-11-25 overnight run. Never merged.
+# Runs scripts/run-contention-benchmark.cjs on a throwaway PostgreSQL container in the runner.
+name: contention benchmark (temporary)
+on:
+  push:
+    branches: [bench/contention-2026-11-25]
+permissions:
+  contents: read
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/run-contention-benchmark.cjs
+        env:
+          OUTCLASS_CONTENTION_RTT_MS: "0,2"
+          OUTCLASS_BOOKING_RTT_MS: "0,2"
+          OUTCLASS_BALLOT_RTT_MS: "0,2"
