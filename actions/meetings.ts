@@ -183,10 +183,14 @@ async function checkInMeetingCommand(
   return prisma.$transaction(async (tx) => {
     const scope = await tx.meeting.findUnique({ where: { id: meetingId }, select: { clubId: true } });
     if (!scope) throw unavailable();
-    // Same lock order as before (club share lock, then the meeting row); the
-    // suspension state is read after eligibility is known.
+    // Lock order: club share lock, then the meeting row, then the member's own row.
+    // The meeting is shared so a room of members checks in side by side; issuing or
+    // closing the code takes it exclusively and still waits for check-ins in progress.
+    // The member's own row orders their concurrent tabs (unique (eventId, studentId)).
+    // The suspension state is read after eligibility is known.
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
-    await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR SHARE`;
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
     const meeting = await tx.meeting.findUnique({ where: { id: meetingId }, include: { publication: true } });
     if (!meeting) throw unavailable();
     const membership = await tx.clubMember.findUnique({
