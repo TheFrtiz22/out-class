@@ -20,3 +20,11 @@ test("the header button and the checklist button open the same edit dialog", () 
 test("each checklist item maps to the editor section where it is filled in", () => {
   for (const label of ["Name", "Education", "Résumé", "Experience", "LinkedIn"]) assert.match(src, new RegExp(`"?${label}"?: "(identity|education|links|experience)"`), label)
 })
+
+test("the open editor is not remounted when the first missing section changes after a save", () => {
+  // A key tied to the section would replace the open dialog with a closed one once a save fills that section.
+  const dialog = src.slice(src.indexOf("const editDialog ="), src.indexOf("const editProfile ="))
+  assert.doesNotMatch(dialog, /key=\{section\}/)
+  // The dialog picks up the section each time it opens.
+  assert.match(fs.readFileSync(path.join(__dirname, "..", "components/edit-student-profile-dialog.tsx"), "utf8"), /if \(value\) setSection\(initialSection\)/)
+})

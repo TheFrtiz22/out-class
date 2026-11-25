@@ -97,7 +97,6 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   const linkedin = safeProfileUrl(profile.linkedinUrl)
   // One entry point: "Edit profile" opens every section; "Import from résumé" lives inside it.
   const editDialog = (trigger: ReactNode, section?: ProfileSection) => <EditStudentProfileDialog
-    key={section}
     section={section}
     profile={profile!}
     sections={["identity", "education", "experience", "links", "contact"]}
