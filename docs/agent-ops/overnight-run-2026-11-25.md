@@ -196,3 +196,8 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 ## 07:41 PR #548 deploy verified live
 - Production deploy for 40e077b3 is READY. /club/mii renders correctly at 1440 and 500 wide (the banner photo loads; an earlier gradient was the placeholder before the image arrived). Vercel shows no runtime errors in the last hour. No rollback.
 - QR check-in itself can't be run on production: it needs a signed-in member and a live meeting code, and load against production is off limits. It is covered by the native burst test above.
+
+## 07:47 PR #546 validate failed: 1 of 3365 unit tests
+- tests/applicant-intelligence.test.cjs "feedback never discloses … self-review …": its self-review case opened the review panel on the reviewer's own application and expected feedback withheld. PR #546 now refuses that panel outright, as voting and previews already did ("Applicant unavailable for this reviewer.").
+- Fix (3ac31b17): the self-review case now asserts the refusal. The property the test guards (no feedback from your own application) is checked more strictly, not less. The other cases in that test are unchanged. Validate re-running. Lint, typecheck and build had not run (the chain stops at tests).
+- Expected next: PR #549's validate will likely fail in unit suites that mock prisma without users or club schools (e.g. autosave-actions). Waiting for the real list before changing fixtures.
