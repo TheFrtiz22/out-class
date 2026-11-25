@@ -161,7 +161,8 @@ function MeetingEditor({
   const [fields,setFields] = useState(() => ({ title: meeting?.title ?? "", description: meeting?.description ?? "", date: localDate(meeting ? new Date(meeting.date) : new Date()), endDate: meeting?.endDate ? localDate(new Date(meeting.endDate)) : "", location: meeting?.location ?? "", audience: meeting?.audience ?? "RECRUITMENT", agenda: meeting?.agenda ?? "", recap: meeting?.recap ?? "" }));
   const draftSave = useEditorDraft({ scope: { kind: "meeting", clubId, resourceId: meeting?.id ?? "new" }, value: { fields,resources }, restore: d=>{setFields(d.fields);setResources(d.resources)}, base: meeting ? String(meeting.revision) : "new" });
   const [tab, setTab] = useState("details");
-  const change = (key: keyof typeof fields, value: string) => setFields(current=>({...current,[key]:value}));
+  // An edit answers the last refusal ("End time must follow the start."), so the stale message goes with it.
+  const change = (key: keyof typeof fields, value: string) => { setFields(current=>({...current,[key]:value})); if (failed) { setFailed(false); setMessage("") } };
   return (
     <form data-saving={busy} data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
       className="space-y-4 py-4"
