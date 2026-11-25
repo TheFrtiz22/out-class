@@ -30,7 +30,7 @@ test("saved clubs load only where shown; saving works on club profile, Explore a
   let reads = 0
   page.on("request", request => { const url = new URL(request.url()); if (url.pathname === "/api/workspace" && url.searchParams.get("kind") === "corkboard") reads++ })
   const visit = async route => { const response = await page.goto(config.appUrl + route, { waitUntil: "networkidle" }); assert.ok(response && response.status() < 400, `${route} loads`) }
-  const saveButton = () => page.getByRole("button", { name: `Save to saved clubs: ${club.name}` })
+  const saveButton = () => page.getByRole("button", { name: `Save club: ${club.name}` })
   const removeButton = () => page.getByRole("button", { name: `Remove from saved clubs: ${club.name}` })
   const savedRows = () => db.corkboardClub.count({ where: { userId: created.data.user.id, clubId: club.id } })
   // Poll the database until it reaches the expected count; fail with the last value otherwise.

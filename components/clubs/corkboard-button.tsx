@@ -54,7 +54,7 @@ export function CorkboardButton({ club, mode = "save", className = "w-full", var
   if (authenticated && isAlumniProfile(user?.profile)) return null
   const label = mode === "follow"
     ? saved ? "Saved" : "Save"
-    : authenticated ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "Save club"
+    : authenticated && saved ? "Remove from saved clubs" : "Save club"
   const name = mode === "follow"
     ? `${saved ? "Saved" : "Save"} ${club.name}`
     : `${label}: ${club.name}`
