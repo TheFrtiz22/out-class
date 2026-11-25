@@ -373,7 +373,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                               className="flex w-full items-center justify-center gap-0.5 rounded py-1 hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:hidden"
                             >
                               {dayEvents.slice(0, 3).map((event) => <span key={event.id} aria-hidden="true" className={cn("size-1.5 rounded-full bg-primary", event.response === "declined" && "opacity-50")} />)}
-                              {dayEvents.length > 3 && <span aria-hidden="true" className="text-[10px] leading-none text-muted-foreground">+{dayEvents.length - 3}</span>}
+                              {dayEvents.length > 3 && <span aria-hidden="true" className="text-xs leading-none text-muted-foreground">+{dayEvents.length - 3}</span>}
                             </button>
                           )}
                           {dayEvents.length > 3 && (
