@@ -91,16 +91,21 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
   const checklist = profileChecklist(profile)
   const completed = checklist.filter((item) => item.complete).length
   const allAdded = completed === checklist.length
+  // Where each checklist item is edited, so "Add missing details" opens on the first one still missing.
+  const checklistSection: Record<string, ProfileSection> = { Name: "identity", Education: "education", "Résumé": "links", Experience: "experience", LinkedIn: "links" }
   const resume = resolveResumeUrl(profile.resumeUrl)
   const linkedin = safeProfileUrl(profile.linkedinUrl)
   // One entry point: "Edit profile" opens every section; "Import from résumé" lives inside it.
-  const editProfile = <EditStudentProfileDialog
+  const editDialog = (trigger: ReactNode, section?: ProfileSection) => <EditStudentProfileDialog
+    key={section}
+    section={section}
     profile={profile!}
     sections={["identity", "education", "experience", "links", "contact"]}
     extra={sync => <ResumeImportDialog key={profile!.userId} profile={profile!} label="Import from résumé" onSaved={value => { setProfile(value); setSaved(true); sync(value) }} />}
     onSaved={(value) => { setProfile(value); setSaved(true) }}
-    trigger={<Button size="sm"><Pencil className="size-3.5" aria-hidden="true" />Edit profile</Button>}
+    trigger={trigger}
   />
+  const editProfile = editDialog(<Button size="sm"><Pencil className="size-3.5" aria-hidden="true" />Edit profile</Button>)
   function section(title: string, key: ProfileSection, children: ReactNode, description?: string) {
     return (
       <Panel as="section" aria-label={title}>
@@ -241,6 +246,8 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
               </li>
             ))}
           </ul>
+          {/* The checklist ends with the way to finish it, so a missing detail isn't a dead end. */}
+          <div className="mt-4" data-checklist-action>{editDialog(<Button size="sm" variant="outline"><Pencil className="size-3.5" aria-hidden="true" />Add missing details</Button>, checklistSection[checklist.find(item => !item.complete)?.label ?? ""])}</div>
         </Panel>}
       </div>
     </article>
