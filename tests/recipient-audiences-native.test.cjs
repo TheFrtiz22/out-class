@@ -102,6 +102,12 @@ test('recipient audiences on bounded native PostgreSQL',{skip:!url,timeout:12000
   await refused(groups.deleteRecipientGroup(club.id,manual.id,manual.revision),/other saved rules/);
   await refused(groups.saveRecipientGroup({clubId:club.id,id:manual.id,revision:1,name:'Cycle',kind:'RULES',rules:{include:[{source:'GROUP',groupId:ruleGroup.id}]}}),/cycle/);
   assert.equal((await db.recipientGroup.findUniqueOrThrow({where:{id:manual.id}})).kind,'MANUAL');
+  // Group names are unique per club ignoring case: a taken name is refused with its reason, not a database error.
+  await refused(groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'finance',kind:'MANUAL',userIds:[]}),/already has a group named "finance"/);
+  const second=await groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'Second list',kind:'MANUAL',userIds:[]});
+  await refused(groups.saveRecipientGroup({clubId:club.id,id:second.id,revision:second.revision,name:'FINANCE',kind:'MANUAL',userIds:[]}),/already has a group named/);
+  assert.equal((await db.recipientGroup.findUniqueOrThrow({where:{id:second.id}})).name,'Second list');
+  await groups.deleteRecipientGroup(club.id,second.id,second.revision);
  });
  await t.test('foreign, anonymous and disabled people cannot be assigned; denied operations roll back',async()=>{
   for(const userIds of [[outsider.id],[anonymous.id]])await refused(groups.saveRecipientGroup({clubId:club.id,id:randomUUID(),revision:null,name:'Invalid',kind:'MANUAL',userIds}),/unavailable/);
