@@ -63,7 +63,10 @@ test('real desktop pointer and mobile touch support detail switching, global sea
    await activate(page.locator('.oc-command-recruiting').getByRole('link',{name:'All applicants',exact:true}));
    // The overview's own review-queue rows also carry data-applicant-id; count only after it has gone.
    await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});
-   const rows=()=>page.locator('[data-applicant-id]').filter({visible:true});await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
+   const rows=()=>page.locator('[data-applicant-id]').filter({visible:true});
+   // After history navigation the list can re-render between the first row showing and the count: wait for the full page of rows, then assert it.
+   const settle=n=>page.waitForFunction(n=>Array.from(document.querySelectorAll('[data-applicant-id]')).filter(e=>e.getClientRects().length>0).length===n,n,{timeout:15000}).catch(()=>{});
+   await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
    page.off('request',observeEntry);
    assert.equal(entryRequests.filter(request=>new URL(request.url()).searchParams.get('kind')==='pipelinePage').length,1,'Entry must still perform its fresh guarded page read');
    const serverNavigations=entryRequests.filter(request=>new URL(request.url()).pathname===new URL(page.url()).pathname&&request.headers().rsc==='1');assert.equal(serverNavigations.length,0,'Same-workspace CTA must not wait on an unused server navigation: '+JSON.stringify({size,touch,requests:serverNavigations.map(request=>({method:request.method(),search:new URL(request.url()).search,prefetch:request.headers()['next-router-prefetch']||null,action:!!request.headers()['next-action'],frame:request.frame()===page.mainFrame()}))}));
@@ -77,7 +80,7 @@ test('real desktop pointer and mobile touch support detail switching, global sea
    await page.waitForFunction(()=>Array.from(document.querySelectorAll('[data-applicant-id]')).filter(e=>e.getClientRects().length>0).length===1,null,{timeout:15000}).catch(()=>{});assert.equal(await rows().count(),1);
    await page.goBack();await page.locator('.oc-command-recruiting').waitFor();await page.goForward();
    // As on entry: the overview's review-queue rows match too, so count only once the overview has gone.
-   await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});await rows().first().waitFor();assert.equal(await rows().count(),Math.min(100,size));
+   await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});await rows().first().waitFor();await settle(Math.min(100,size));assert.equal(await rows().count(),Math.min(100,size));
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);console.log('cohort '+size+' '+(touch?'mobile touch':'desktop pointer')+' complete');
   }finally{await context.close();await actor.client.auth.signOut({scope:'local'});}
  }}finally{await browser.close();}
