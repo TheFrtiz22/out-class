@@ -313,10 +313,10 @@ function MeetingEditor({
                   }
                 />
               </label>
-              <label>
-                Type{" "}
+              <label className="block text-sm">
+                Type
                 <NativeSelect
-                  className="rounded border p-2"
+                  className="mt-1 w-full"
                   value={r.kind}
                   onChange={(e) =>
                     setResources(

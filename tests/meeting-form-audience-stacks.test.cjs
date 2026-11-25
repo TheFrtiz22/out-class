@@ -19,3 +19,9 @@ test("meeting editor form adds no extra top padding inside its sheet", () => {
   assert.match(form, /className="space-y-4"/)
   assert.doesNotMatch(form, /py-4/)
 })
+
+test("meeting editor's resource Type select stacks like the other resource fields", () => {
+  const type = editor.slice(editor.indexOf("Resource / file URL"), editor.indexOf('<option value="LINK">'))
+  assert.match(type, /<label className="block text-sm">\s*Type\s*<NativeSelect\s*className="mt-1 w-full"/)
+  assert.doesNotMatch(editor, /rounded border p-2/)
+})
