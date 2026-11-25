@@ -2125,7 +2125,7 @@ Shared tokens used below (light theme, `styles/tokens.css`, `styles/navigation-g
 - **Source:** `app/(workspace)/settings/layout.tsx`, `page.tsx`, `components/settings/personal-settings-layout.tsx`, `personal-settings-overview.tsx`, `lib/settings-navigation.ts`, `components/clubs/club-settings.css`, `components/shell/product-shell.tsx` (account menu)
 - **Layout (top to bottom):**
   1. Page header: h1 `Settings` (Libre Caslon 26px), description 6px below (15px muted). No breadcrumb on the overview.
-  2. One card (`section` aria-label `Settings overview`): panel fill and edge as above, 20px horizontal padding, rows separated by 1px `#dfe3dd` dividers. Each row is a full-width link with 20px vertical padding: label (h2, 14px, weight 600, navy), description 4px below (14px / 24px, muted). No icons, no chevrons, no badges.
+  2. One card (`section` aria-label `Settings overview`): panel fill and edge as above, 20px horizontal padding, rows separated by 1px `#dfe3dd` dividers. Each row is a full-width link with 20px vertical padding: label (h2, 14px, weight 600, navy), description 4px below (14px / 24px, muted), and an 18px muted `ChevronRight` at the right edge of the row (navy on hover). No other icons, no badges.
   3. Dock (no tab highlighted). Card radius renders at about 16px; the five rows fill y 160–650 of the page.
 - **Exact copy:** title `Settings`; subtitle `Your account, notifications, availability and interests.`
 
