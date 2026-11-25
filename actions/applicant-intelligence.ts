@@ -130,6 +130,8 @@ export async function saveApplicantDisplayConfiguration(input: unknown) {
   const data = boundedParse(z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), version: z.number().int().min(0), config: displayConfigSchema }).strict(), input);
   const { user } = await requireClubPermission(data.clubId, ["interviews.manage"]);
   return prisma.$transaction(async tx => {
+    // Re-check the live grant inside the write: access removed after the pre-check stops the save.
+    await authorizeClubTransaction(tx, data.clubId, user.id, ["interviews.manage"]);
     await lockOperationalClub(tx, data.clubId);
     const changed = await tx.pipelineRound.updateMany({ where: { id: data.roundId, clubId: data.clubId, displayVersion: data.version }, data: { applicantDisplay: data.config, displayVersion: { increment: 1 } } });
     if (changed.count !== 1) throw new Error("Configuration changed or round unavailable. Reload before saving.");
