@@ -165,3 +165,19 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Native PostgreSQL / transactions: "provider validation happens once, before acquisition" counted 2 calls, and one suite's auth mock has no getSessionUser. Native PostgreSQL / security: mock-recruiting-cycle failed the same way.
 - Cause: the fix called resolveViewerSchool, which validates the session through the auth provider a second time. That is a real cost on every submit, not just a test artefact.
 - Fix (0f9a6160): new resolveAccountSchool(userId) in utils/school-scope.ts gives the same answer for an account requireAuth already validated; persistApplication uses it. The existing test that counts provider calls is unchanged.
+
+## 07:24 Red-then-green proofs (tests run on main without the fix)
+- PR #549 (red/apply-same-school, run 45565314540): "a club at another school refuses both a draft and a submit" fails on main. The draft/submit goes through. Right reason.
+- PR #550 (red/push-nudge, run 45565720038): the three "after submitting, the app offers push once" tests fail on main. The offer does not exist yet. Right reason.
+- PR #548 (red/check-in-hold, run 45564144516): "one member held inside check-in does not block another member" fails on main (actual 'waited', expected 'checked-in'). The room-sized burst fails with 69 of 150 members refused. Right reason.
+- Also on red/check-in-hold: Local Auth, settings and navigation test 7 ("desktop pointer and mobile touch support detail switching…") failed, expected 100 and got 0. That branch only adds a native test, so this looks like a flaky browser suite on main. The same suite passed on PR #544's head. Noted, not chased.
+
+## 07:24 Load numbers: QR check-in burst (disposable PostgreSQL in CI, never production)
+| Members | Before (main) | After (PR #548) |
+| --- | --- | --- |
+| 60 | 60/60 checked in, p50 855 ms, p95 1551 ms | 60/60, p50 233 ms, p95 429 ms |
+| 150 | 81/150 checked in. 69 refused "Unable to start a transaction in the given time". p50 1151 ms, p95 2129 ms | 150/150, p50 586 ms, p95 997 ms |
+- The bottleneck: check-in held a lock on the meeting row for every member, so a burst queued on one row and timed out waiting for a pool connection.
+
+## 07:24 PR #549 re-run
+- 0f9a6160: both native suites now pass (security, transactions). Applicant workflow / application-writing failed because local Supabase didn't start on the runner. Nothing ran, so it isn't this change. The failed job was re-run.
