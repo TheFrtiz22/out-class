@@ -321,3 +321,8 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Club directory paging: production has 47 clubs (38 listed), so the whole-directory read is fine today. Paging changes the directory API the current app build reads, so it waits for a planned app release.
 - App inbox does not merge task updates ("Revisions requested", "Submission reviewed") the way the website inbox does; the app shows the same states on its Tasks screen, so no data is missing. Gap 9, not built.
 - Recommendation for the owner: the Native PostgreSQL scheduler and audiences suites are not required on PRs, which is how #549 merged while breaking them. Making them required is a repository setting, left to the owner.
+
+## 11:22 UTC: production sweep while the second authorization pass runs
+
+- Vercel runtime errors, last 2 hours: none.
+- Sentry, last 24 hours: only OUT-CLASS-5 (Supabase client created without URL and key on `/login`), seen at 06:13 on a preview deployment of a feature branch. Previews deliberately carry no Supabase settings (they stay off the staging DB), so this is expected there and not a production fault. No production issue open.
