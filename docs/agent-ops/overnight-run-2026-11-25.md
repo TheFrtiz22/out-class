@@ -130,3 +130,14 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Phone 500×900: /explore redirects to /login?next=%2Fexplore with the sign-in form, email-code option and menu button; /club/aif renders in full.
 - No rollback needed. Signed-in journeys not re-run live: no test-account password is typed by this run.
 - PR #546 conflicted with #545 in actions/crm.ts imports (both import from lib/recusal). Resolved by importing both `assertMayDecideApplicant` and `isRecused`; merge commit cabda9a2, gates re-running.
+
+## 07:10 Merge 2: PR #547 (suspended clubs out of workspace applicant search)
+
+- Gates green on 6a1c7850: validate, Integration infrastructure coverage, Native PostgreSQL / security and transactions, Applicant workflow / application-writing, mobile.
+- Merged as ab3ff6d0. Production deploy dpl_24X9NNnXQMpcCeVNRozzxeS4pMpf queued; live check follows.
+
+## 07:10 Finding M1 → PR #549 (apply only at your own school)
+
+- `persistApplication` took any clubId, so a student could draft or submit to another school's club through the website action or the app's `applications.submit`. Read paths already scope to the viewer's school.
+- Fix: resolve `resolveViewerSchool()` and refuse when `club.schoolId` differs ("This club isn't open to students at your school."), before any write.
+- Failing-first test in tests/application-submit-race-native.test.cjs on red/apply-same-school (test-only 7936dce7), dispatched on the disposable security database. PR: https://github.com/TheFrtiz22/out-class/pull/549
