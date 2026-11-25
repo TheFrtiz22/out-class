@@ -42,7 +42,7 @@ export function MarketingProfile({ profile, action, compact = false, assetPrevie
       {profile.tagline && <p className="mt-2 text-base leading-7 text-muted-foreground">{profile.tagline}</p>}
       {profile.category && <p className="oc-club-category mt-3"><span className="sr-only">Category: </span>{profile.category}</p>}
       <ProfileStatistics profile={profile} compact={compact} />
-      {(links.length > 0 || action) && <div className="oc-club-hero-actions mt-6 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+      {(links.length > 0 || action) && <div className={`oc-club-hero-actions mt-6 flex flex-wrap items-center ${action ? "justify-between" : "justify-start"} gap-4 border-t pt-4`}>
         {action && <div className="oc-club-primary-action min-w-0 flex-1">{action}</div>}
         {links.length > 0 && <ul className="flex gap-1" aria-label="Club links">{links.map(({ label, url, icon: Icon }) => <li key={label}><a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${profile.name} ${label}${label === "Email" ? "" : " (opens in a new tab)"}`} className="oc-tap-target inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-2"><Icon size={20} aria-hidden="true" /></a></li>)}</ul>}
       </div>}

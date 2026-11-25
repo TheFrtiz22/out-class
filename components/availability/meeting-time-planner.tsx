@@ -7,9 +7,10 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { Panel } from "@/components/ui/panel"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { useDemoMode } from "@/contexts/demo-context"
+import { useServerAnchoredNow } from "@/hooks/use-server-now"
 import { addDays, monday, today, WEEK_DAYS } from "@/lib/availability"
 import { getMeetingTimePlanner, getMeetingTimeRoster } from "@/lib/availability-workspace-read"
-import { bestMeetingTimes, DEFAULT_MEETING_DURATION, durationLabel, MEETING_DURATIONS, plannerWeekRange, type MeetingPlannerHeatmap, type MeetingSlotRoster } from "@/lib/meeting-time-planner"
+import { bestMeetingTimes, DEFAULT_MEETING_DURATION, plannerEarliestStart, durationLabel, MEETING_DURATIONS, plannerWeekRange, type MeetingPlannerHeatmap, type MeetingSlotRoster } from "@/lib/meeting-time-planner"
 import { minuteLabel, SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { userMessage } from "@/lib/user-message"
 import { WeeklyCalendar } from "./weekly-calendar"
@@ -46,7 +47,9 @@ export function MeetingTimePlanner({ clubId }: { clubId: string }) {
   }, [clubId, week, duration, selected, demo.isDemoEnabled])
   // Until the read for the chosen week and length returns, the previous grid stays visible but dimmed and inert.
   const current = data && data.week === week && data.duration === duration ? data : null
-  const best = useMemo(() => current ? bestMeetingTimes(current.free, current.duration) : [], [current])
+  // The shared minute clock, so a suggested start drops out of Best times once it has passed while the planner stays open.
+  const now = useServerAnchoredNow()
+  const best = useMemo(() => current ? bestMeetingTimes(current.free, current.duration, 3, plannerEarliestStart(current.week, now)) : [], [current, now])
   const rosterPanel = useRef<HTMLDivElement>(null)
   useEffect(() => {
     // Where the roster sits below the grid (phones and tablets), bring it into view when a time is chosen.
