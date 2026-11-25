@@ -69,7 +69,8 @@
   .oc-status-card-heading { flex-wrap: wrap; }
   .oc-status-card-heading > div { flex-basis: calc(100% - 4rem); }
   .oc-application-management-row { display: grid; grid-template-columns: 2.75rem minmax(0,1fr); align-items: start; padding: 1rem; gap: .75rem; }
-  .oc-application-management-row > div, .oc-application-management-row > .oc-management-state, .oc-application-management-row > button { grid-column: 2; }
+  /* The body by class: a club without a logo image renders its monogram as a div, which must stay in column 1. */
+  .oc-application-management-row > .oc-management-body, .oc-application-management-row > .oc-management-state, .oc-application-management-row > button { grid-column: 2; }
   .oc-application-management-row > .oc-management-state { margin-left: 0; }
   .oc-application-management-row > button { justify-self: start; }
 }

@@ -17,7 +17,7 @@ export function ApplicationManagementCard({ application: app, deadline, sample =
   const closed = applicationIntakeClosed(app.club, Date.now(), deadline)
   return <article className="oc-application-management-row">
     <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || DEFAULT_CLUB_COLOR} />
-    <div className="min-w-0 flex-1"><h2>{app.club.name}</h2><p>{draft ? progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions" : app.submittedAt ? `Submitted ${applicantDate(app.submittedAt)}` : "Submitted application"}</p>
+    <div className="oc-management-body min-w-0 flex-1"><h2>{app.club.name}</h2><p>{draft ? progress.total ? `${progress.completed} of ${progress.total} required responses ready` : "No required club questions" : app.submittedAt ? `Submitted ${applicantDate(app.submittedAt)}` : "Submitted application"}</p>
       {draft && <><p>{due ? `${sample ? "Sample deadline" : "Deadline"} · ${recruitmentDate(due)}` : "Deadline not published"}{closed && <strong className="font-medium"> · Applications closed</strong>}</p><Progress value={progress.percent} className="oc-draft-progress" aria-label={`Required responses ready for ${app.club.name}`} /><p>{closed ? "Applications are closed, so this draft can’t be submitted. You can still view or save it." : progress.ready ? "Required responses ready. Review your profile before submitting." : "Your draft is saved; nothing has been submitted."}</p></>}</div>
     <StatusPill status={app.status} className="oc-management-state" />
     {/* A closed club cannot take a submission, so continuing is not the primary action. */}
