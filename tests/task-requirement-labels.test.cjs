@@ -17,6 +17,8 @@ test("the submission form, task rows and assign review use the shared labels", (
   assert.doesNotMatch(tasks, /requirements\.map\(\(s\) => s\.toLowerCase\(\)\)/)
   assert.match(tasks, /taskRequirementsSentence\(task\.requirements\)/)
   assert.match(tasks, /taskRequirementsLabel\(task\.requirements\)/)
+  // The task sheet calls a task a Task, as the list, Inbox and builder do.
+  assert.match(tasks, /active\?\.kind==="PROJECT"\?"Project":"Task"/)
   const builder = fs.readFileSync("components/tasks/task-assignment-builder.tsx", "utf8")
   assert.doesNotMatch(builder, /FILE:"File"\}/)
   assert.match(builder, /taskRequirementsLabel\(requirements\)/)
