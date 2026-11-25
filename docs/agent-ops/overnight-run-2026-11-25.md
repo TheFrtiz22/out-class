@@ -268,3 +268,7 @@ Ops the server offers that the app never calls: `graduation.confirm`, `explore.s
 - Red run 45579330717 on `red/check-in-same-school` (test only, on main): 3370 unit tests, exactly 1 failed, the new visitor check-in test. Other suites green.
 - PR head f50c35bb: every required gate green.
 - Codex (P2): a visitor with no school identity on a school subdomain falls back to the host school, and that lookup still used the shared client inside the check-in transaction. Confirmed by reading `utils/school-scope.ts`. Fix 80459f89 passes the transaction through `resolveHostSchool` too. New test in `tests/school-directory-scope.test.cjs`, run locally: fails without the fix ("shared client read school"), passes with it. Thread answered. Gates re-running.
+
+## 09:56 UTC: merge 8, PR #551 (check-in: visitors from another school are refused)
+- All required gates green on 80459f89 (validate, integration infrastructure, native security, native transactions, application-writing, mobile). Merged as 272d1205.
+- App compatibility: the app checks in through the same server action; members and same-school visitors are unchanged. Closes M3. Waiting for the production deploy, then live check.
