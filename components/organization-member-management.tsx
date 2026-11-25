@@ -646,6 +646,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </span>
               </div>
             )}
+            {/* How many the list holds after search and filters; the table itself never says. */}
+            {rows.length > 0 && <p className="text-sm text-muted-foreground" aria-live="polite">{pluralize(rows.length, invitesOpen ? "invitation" : "member")}</p>}
             {rows.length > 0 && <DataTable
               caption={invitesOpen ? "Club invitations" : "Club members"}
               rows={pageRows}
