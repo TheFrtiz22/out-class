@@ -23,6 +23,14 @@ export function notificationDestination(item: Notification, applications: Pick<T
   return { kind: "detail" } as const
 }
 
+/**
+ * The kind shown on an Inbox row. Every interview notice (a booking link, a confirmed time, an interviewer's panel
+ * schedule) shares one type, so it reads "Interview" rather than calling a confirmation or a schedule an invite.
+ */
+export function notificationTypeLabel(type: Notification["type"]) {
+  return type === "Interview Invite" ? "Interview" : type
+}
+
 export function notificationRelativeTime(createdAt: string | undefined, fallback: string, now = Date.now()) {
   const date = Date.parse(createdAt || "")
   if (!Number.isFinite(date)) return fallback

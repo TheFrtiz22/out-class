@@ -25,6 +25,7 @@ import { useOrganizationInvitations } from "@/contexts/organization-invitations-
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
 import { pluralize } from "@/lib/copy/terms"
+import { notificationTypeLabel } from "@/lib/notification-presentation"
 import { notificationSettingsHref } from "@/lib/settings-navigation"
 
 const filters = ["All", "Announcements", "Interviews", "Urgent"] as const
@@ -276,7 +277,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                           {item.urgent && (
                             <Badge variant="warning">Urgent</Badge>
                           )}
-                          <span>{item.type}</span>
+                          <span>{notificationTypeLabel(item.type)}</span>
                           <span aria-hidden="true">·</span>
                           <time dateTime={item.createdAt}>
                             {item.fullDate === "Just now" && item.createdAt
@@ -352,7 +353,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 </div>
                 <div>
                   <p className="mb-2 text-xs text-muted-foreground">
-                    {selected.type} · {selected.fullDate}
+                    {notificationTypeLabel(selected.type)} · {selected.fullDate}
                   </p>
                   <h2
                     ref={detailHeading}
