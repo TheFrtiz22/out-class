@@ -15,9 +15,11 @@ export function AutosaveStatus({ save }: { save: StatusHandle }) {
     </div>
     return <div className="text-xs text-muted-foreground" role="status">Unsaved changes from this device are available. <button type="button" className="underline" onClick={save.restoreRecovery}>Restore draft</button>{" · "}<button type="button" className="underline" onClick={discard}>Discard</button></div>
   }
-  if (save.state === "idle") return null
+  // The line is always in the layout, empty while idle, so its first "Saving…" never pushes the controls below it
+  // (a button moving under the pointer as the text the person just typed saves). It is also a live region from the start.
+  if (save.state === "idle") return <div role="status" aria-live="polite" className="min-h-4 text-xs" />
   const connection = save.state === "offline" || save.state === "unreachable"
-  return <div role="status" aria-live="polite" className="flex items-center gap-2 text-xs text-muted-foreground">
+  return <div role="status" aria-live="polite" className="flex min-h-4 items-center gap-2 text-xs text-muted-foreground">
     {connection ? <><span>{save.error || (save.state === "offline" ? "Offline. Changes save when you reconnect" : "Couldn’t reach OutClass")}</span><button type="button" className="underline" onClick={retry}>Retry</button></>
       : save.state === "error" ? <><span>Couldn’t save. </span><button type="button" className="underline" onClick={retry}>Retry</button>{save.error && <span className="ml-2">{save.error}</span>}</>
       : save.state === "saved" ? "Saved" : <><LoadingIndicator size="sm" /><span>Saving…</span></>}
