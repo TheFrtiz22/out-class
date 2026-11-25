@@ -92,6 +92,9 @@ test('disposable real Auth/password/MFA elevation, Admin routes/actions, invitat
  const claimLog=await db.auditLog.findFirst({where:{targetId:invited.id,action:'student.invitation.claim'}});assert.equal(claimLog.actorId,invited.id);
  await assert.rejects(admin.action('actions/admin-workspace.ts','resendAdminStudentInvitation',[invited.id,'Do not resend a previously claimed invitation.']));
  const inspected=await admin.action('actions/admin-workspace.ts','inspectAdminStudent',[invited.id,'Verify account claim timestamp in the local regression.']);assert.equal(inspected.invitation.status,'CLAIMED');
+ // A profile with no Auth identity (seeded or orphaned) is still inspectable; Inspect must not fail outright.
+ const orphan=await db.user.create({data:{id:randomUUID(),email:'orphan'+randomUUID().replaceAll('-','').slice(0,10)+'@virginia.edu'}});t.after(()=>db.user.delete({where:{id:orphan.id}}).catch(()=>{}));
+ const orphanInspected=await admin.action('actions/admin-workspace.ts','inspectAdminStudent',[orphan.id,'Inspect a profile that has no sign-in identity.']);assert.equal(orphanInspected.invitation.status,'NO_SIGN_IN');assert.equal(orphanInspected.profile.id,orphan.id);
  const copy=new Actor(c);copy.cookies=new Map(admin.cookies);const providerSession=(await copy.client.auth.getSession()).data.session;assert.ok(providerSession);assert.equal((await service.auth.admin.signOut(providerSession.access_token,'local')).error,null);await denied(admin);
  const logout=await admin.request('/api/auth/logout',{method:'POST',headers:{origin:c.appUrl}});assert.equal(logout.status,200);
  assert.ok((await db.adminElevation.findUnique({where:{id:elevation.id}})).revokedAt);await denied(admin);
