@@ -358,3 +358,10 @@ Found, not fixed (decided):
 
 - Two-step password re-check counting correct passwords: not changed. The admin elevation re-check (`app/api/platform/elevation/route.ts:58`) and account-deletion re-check (`actions/account-deletion.ts:107`) also count every attempt, correct or not, toward 5 per 15 minutes, so this is the codebase's consistent rule rather than a slip. Only the two-step code step refunds successes.
 - App offline cache (gap 8): not built. The app already uses React Query, but keeping data across launches needs a persister and on-device storage packages that the app doesn't have today (new native dependencies need an app release and owner sign-off), plus a decision on wiping student data from the phone at sign-out.
+
+## 13:38 UTC: merge 12, PR #555 live, main green
+
+- PR #555 (merge c4efb136), test-only: the pipeline browser test waits for exactly one visible row after searching before it counts. Validate (45614366640) green; the full dispatched integration run (45615990909) green, including "Local Auth, settings and navigation", which a PR-triggered run skips.
+- Deploy dpl_4oSY6kvAUQwEcYTEy4gUEMTATT5w READY. Live check at 1440×900: `/club/aif` renders; `/explore` signed out redirects to `/login?next=%2Fexplore`. Vercel runtime errors, last 3 hours: none. No rollback.
+- Main after #555: validate (45619089417) green. Integrations (45619089439) failed once in "Private Storage and native PostgreSQL" because the local Supabase stack did not start before any test ran (CI infrastructure, about the fifth time today); re-ran that job and the run finished green.
+- Next: a read-only pass over failure and edge states (double submits, deadlines passing mid-edit, closed or withdrawn records, error handling in forms) while time remains.
