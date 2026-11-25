@@ -11,6 +11,7 @@ import { ApplicationStatusProgress, InstructionsText, applicantDate, decisionLet
 import type { StudentApplication } from "./application-form"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { PageHeader } from "@/components/ui/page-header"
+import { clubMonogram } from "@/lib/club-assets"
 
 export function ApplicationStatusDetail({ application: app, notice, onBack, onResponses, onCalendar, onRefresh, onBookingChanged, onMyClubs }: {
   application: StudentApplication; notice: string; onBack: () => void; onResponses: () => void; onCalendar: () => void; onRefresh: () => void; onBookingChanged: () => void; onMyClubs: () => void;
@@ -20,7 +21,7 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
   return <>
     <Button variant="ghost" size="sm" className="-ml-3" onClick={onBack}><ArrowLeft size={16} />Status</Button>
     <header className="flex items-start gap-4">
-      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || DEFAULT_CLUB_COLOR} />
+      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={clubMonogram(app.club.name)} color={app.club.color || DEFAULT_CLUB_COLOR} />
       <div className="min-w-0"><p className="oc-eyebrow">{decision ? "Decision received" : "Application progress"}</p><PageHeader title={app.club.name} focusable />
         {app.submittedAt && <p className="mt-2 text-xs text-muted-foreground">Submitted {applicantDate(app.submittedAt)}</p>}</div>
     </header>
