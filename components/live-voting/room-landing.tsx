@@ -35,11 +35,12 @@ export function VotingRoomLanding({clubId}:{clubId:string}){
   useEffect(()=>{if(legacyId)router.replace(legacyVotingHistoryHref(clubId,legacyId,demo.isDemoEnabled))},[legacyId,clubId,demo.isDemoEnabled,router]);
   // With no sessions yet, someone who can start one sees how many of this round's applicants are ready (the
   // setup read they would open next). Without a round in view, or if the read fails, the plain empty state stays.
-  const noRooms=snapshot?.identity===identity&&snapshot.rooms.length===0;
+  // Keyed on each session-list read (a new snapshot on every refresh), so focus and storage refreshes update it too.
+  const emptyRead=snapshot?.identity===identity&&snapshot.rooms.length===0?snapshot:null;
   const [ready,setReady]=useState<{identity:string;count:number;round:string}|null>(null);
-  useEffect(()=>{let current=true;if(!noRooms||!canStart||!cycleId||!roundId)return;
+  useEffect(()=>{let current=true;if(!emptyRead||!canStart||!cycleId||!roundId)return;
     getLiveVotingSetup({clubId,cycleId,roundId}).then(s=>{if(current)setReady({identity,count:s.applicants.length,round:s.rounds.find(r=>r.id===roundId)?.name??"this round"})}).catch(()=>{});
-    return()=>{current=false}},[noRooms,canStart,clubId,cycleId,roundId,identity]);
+    return()=>{current=false}},[emptyRead,canStart,clubId,cycleId,roundId,identity]);
   const readyNow=ready?.identity===identity?ready:null;
   const [discarding,setDiscarding]=useState<(typeof drafts)[number]|null>(null),[discardBusy,setDiscardBusy]=useState(false),[discardError,setDiscardError]=useState('');
   async function discard(){if(!discarding||discardBusy)return;setDiscardBusy(true);setDiscardError('');try{await discardVotingSetupDraft({clubId,draftId:discarding.id});const id=discarding.id;setDrafts(v=>v.filter(d=>d.id!==id));setDiscarding(null);}catch{setDiscardError('The draft could not be discarded. Check your connection and retry.');}finally{setDiscardBusy(false);}}

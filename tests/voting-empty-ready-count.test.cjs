@@ -1,7 +1,7 @@
 // Voting room with no sessions: someone who can start one sees how many of the round's applicants are ready,
 // with a button into setup. Others, pages without a round in view, and failed reads keep the plain empty state.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript')
-globalThis.window??={addEventListener(){},removeEventListener(){}}
+const listeners={};globalThis.window={addEventListener(t,f){listeners[t]=f},removeEventListener(){}}
 const tick=async()=>{for(let n=0;n<40;n++)await Promise.resolve()}
 const transpile=file=>ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText
 function load(file,mocks){const resolved=[file,`${file}.ts`,`${file}.tsx`].find(f=>fs.existsSync(f)&&fs.statSync(f).isFile());const mod={exports:{}};new Function('require','module','exports',transpile(resolved))(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(path.join(n.slice(2)),mocks):require(n),mod,mod.exports);return mod.exports}
@@ -18,7 +18,7 @@ function setup({permissions=ALL,search='cycleId=c1&roundId=r1',setup:setupRead}=
  const {VotingRoomLanding}=load('components/live-voting/room-landing.tsx',mocks)
  const render=()=>{cursor=0;return VotingRoomLanding({clubId:'club'})}
  const flush=async()=>{for(let n=0;n<4;n++){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick();render()}}
- return {render,flush,calls}
+ return {render,flush,calls,setSetup(fn){setupRead=fn}}
 }
 const text=node=>node==null||typeof node==='boolean'?'':typeof node!=='object'?String(node):Array.isArray(node)?node.map(text).join(''):text(node.props?.children)
 const find=(node,pred)=>{if(!node||typeof node!=='object')return null;if(Array.isArray(node)){for(const n of node){const r=find(n,pred);if(r)return r}return null}if(pred(node))return node;return find(node.props?.children,pred)}
@@ -39,4 +39,11 @@ test('voters without setup rights, pages without a round, and failed reads keep 
   const f=setup(opts);f.render();await f.flush();assert.equal(text(empty(f.render())),plain,JSON.stringify(opts))
   if(!opts.setup)assert.equal(f.calls.filter(c=>c[0]==='setup').length,0,'no setup read')
  }
+})
+test('returning to the tab refreshes the ready count with the session list',async()=>{
+ // Codex review on #700: a leader who saw 0 ready kept seeing it after applicants became eligible elsewhere.
+ const f=setup({setup:()=>({rounds:[{id:'r1',name:'First interview'}],applicants:[]})});f.render();await f.flush()
+ assert.equal(text(empty(f.render())),'No applicants in First interview are ready for a vote yet.')
+ f.setSetup(()=>({rounds:[{id:'r1',name:'First interview'}],applicants:[{id:'a'},{id:'b'}]}));listeners.focus();await f.flush()
+ assert.equal(text(empty(f.render())),'2 applicants in First interview are ready for a vote.Start voting session')
 })
