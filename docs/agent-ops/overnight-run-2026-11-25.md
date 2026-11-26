@@ -508,3 +508,30 @@ Owner brief (18:51 ET): finish the overnight run's open PRs, then live voting an
 - Landscape phones: the bottom bar takes about a quarter of the 375px height; with the header and title, no list rows show without scrolling. Consider hiding the bar on scroll or shrinking it in landscape.
 - Edit profile: the photo field is the raw browser "Choose File / No file chosen" control.
 - Voting ended screen: "Voting ended" and "1 passed" appear twice with large empty gaps.
+
+## 2026-11-26 ~04:30 to ~07:00 UTC: unattended overnight run (owner asleep; merges and own-fix migrations pre-approved)
+
+### Merged and checked
+- #683 run log; #685 tab rows on phones (live: Applications at 375px shows `data-overflow="end"` and the right-edge fade); #686 profile photo and résumé are real buttons (live: "Replace photo", "Upload résumé" in Edit profile; closed without changes).
+- #687 landscape phones: slim, centred dock. #689 recused reviewer gets the recusal message, not a generic error (Sentry OUT-CLASS-M / Vercel runtime error on `/club/[clubId]/workspace`): `RecusedError` is now an `ActionError` (`RECUSED`); test red on main, green after.
+- #690 mobile CI: `leader-retest` and `stress-leader` interview-day tests failed every night from ~23:00 ET into the next day, because fixtures put interviews hours from the real clock. A shared `pinEasternMorning()` fakes only `Date`. Proved by running main at 23:54 ET (fails) and the branch (64/64).
+- #691 e2e: `operational-dashboards-e2e` read React's hidden streamed copy of the club home (`[id="S:0"]`); it now reads the one in `main`.
+- #682 re-checked live at 820px: two-row Applicants toolbar, sort fits.
+
+### Sentry / runtime errors
+- OUT-CLASS-M (RecusedError thrown): fixed in #689.
+- OUT-CLASS-K (ZodError "Use an http or https link."): last seen 17:34 UTC Nov 25, before commit `052fcd26` (18:04) that pre-checks task links into a plain refusal. That message no longer exists on main. No action.
+- Admin elevation refusals: expected.
+
+### Back/Forward on Applicants (the "stuck loading" from the earlier entry)
+- Four instrumented CI runs on `debug/pipeline-forward-diag` (not for merge). It isn't a stuck read: the page always recovers by itself (20 s later the list shows all 100).
+- Found and fixed in PR #693: Forward re-sends an identical user object, and `SelectedClubWorkspace` keyed on its identity, so the list flashed "Preparing…" for about 150 ms and read the pipeline twice. It now keys on the account's content. The unit test is red on main and green after; the authz reviewer approved.
+- The e2e test still sees 0 rows on Forward with #693 applied, so a second cause remains, under investigation with navigation and settle-error tracing. Likely a document-level navigation that destroys the evaluate context and makes the test's settle step return early.
+
+### New, not yet explained
+- `settings-navigation-e2e` saw a React hydration error (#418) on `/meetings/<id>` once, at 00:37 ET. The meeting page renders no dates on the server; no cause found in the shell. Watching for a repeat.
+
+### Open PRs at this point
+- #684 (signed-in "Voting has moved" page): CI found `handOverOnly` selected as a column (it isn't one). It now marks graduates through `lib/graduate-access.ts` with one graduation read, plus a test for a graduate kept as owner.
+- #688 (review-round wording, unbooked link): two tests followed the old link and workspace shape; updated. The interview suites pass (the only local failures are the sandbox's missing Prisma engine, the same on main).
+- #693 (above).
