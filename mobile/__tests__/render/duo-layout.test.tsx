@@ -1,12 +1,13 @@
 /**
  * The iPhone Duo keeps its camera and status along a side edge, and unfolded its screen is wide and nearly square.
- * Full-width screens add the side safe areas to their gutters and, when wide, centre content in a readable column.
+ * Full-width screens add the side safe areas to their gutters. Content isn't centred in a fixed column: unfolded,
+ * the centre is the folding region (Apple HIG, Designing for iPhone Duo).
  * Found in the iOS Simulator (iPhone Duo): the sign-in hero and every screen ran under the right-edge status column.
  */
 import { render, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { READABLE_WIDTH, useScreenGutters } from "~/components/ui";
+import { useScreenGutters } from "~/components/ui";
 import { captureConsole, loggedCrashes, releaseConsole, renderRoute } from "./harness";
 
 beforeEach(captureConsole);
@@ -28,11 +29,7 @@ const gutters = async (metrics: typeof phone, base?: number) => {
 describe("useScreenGutters", () => {
   test("an iPhone keeps the 16pt gutters", async () => expect(await gutters(phone)).toBe("16,16"));
   test("a narrow screen with a status column on the right adds it to the right gutter", async () => expect(await gutters(duoNarrow)).toBe("16,68"));
-  test("an unfolded Duo centres a readable column clear of the status column", async () => {
-    const [left, right] = (await gutters(duoOpen)).split(",").map(Number);
-    expect(880 - left - right).toBe(READABLE_WIDTH);
-    expect(right - left).toBe(52);
-  });
+  test("an unfolded Duo clears the status column without centring a column across the fold", async () => expect(await gutters(duoOpen)).toBe("16,68"));
   test("bars use their own base gutter", async () => expect(await gutters(duoNarrow, 12)).toBe("12,64"));
 });
 
@@ -45,16 +42,16 @@ describe("screens on an unfolded Duo", () => {
     let bar = dock.parent;
     while (bar && flat(bar.props.style).position !== "absolute") bar = bar.parent;
     const style = flat(bar!.props.style);
-    expect(style.right).toBeGreaterThanOrEqual(52 + 12);
-    expect(880 - style.left - style.right).toBeLessThanOrEqual(READABLE_WIDTH + 24);
+    expect(style.left).toBe(12);
+    expect(style.right).toBe(52 + 12);
     expect(loggedCrashes()).toEqual([]);
   });
-  test("a scrolling screen pads its content into the readable column", async () => {
+  test("a scrolling screen pads its content clear of the status column", async () => {
     await renderRoute(require("~/app/(tabs)/index").default, { mode: "rich", metrics: duoOpen });
     const scroll = screen.getByTestId("home-screen");
     const content = flat(scroll.props.contentContainerStyle);
-    expect(content.paddingRight).toBeGreaterThanOrEqual(52 + 16);
-    expect(880 - content.paddingLeft - content.paddingRight).toBe(READABLE_WIDTH);
+    expect(content.paddingLeft).toBe(16);
+    expect(content.paddingRight).toBe(52 + 16);
     expect(loggedCrashes()).toEqual([]);
   });
 });

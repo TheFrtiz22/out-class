@@ -1,7 +1,7 @@
 import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewInstance, type ScrollViewProps, StyleSheet, Switch, View, type ViewProps, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
-import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import type { IconComponent } from "~/components/icon-factory";
 import { CalendarClock, CheckCircle2, Circle, Clock, Eye, FilePenLine, Send, XCircle } from "~/components/icons";
@@ -332,19 +332,16 @@ export function usePullControl(onRefresh: (() => unknown) | undefined, top = 0) 
  * The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance, and a
  * focused field kept above the keyboard on both platforms.
  */
-/** Widest a screen's content column grows, so cards and text stay readable on wide screens (an unfolded iPhone Duo, an iPad). */
-export const READABLE_WIDTH = 640;
 /**
- * Horizontal gutters for a full-width screen: the base gutter plus the device's left and right safe areas (the
- * iPhone Duo keeps its camera and status on a side edge), centring the content in a readable column when wide.
- * Returns padding for scroll content and left/right for absolutely placed bars such as the header and dock.
+ * Horizontal gutters for a full-width screen: the base gutter plus the device's left and right safe areas. The
+ * iPhone Duo keeps its camera, status bar and controls along a side edge, so content must clear that edge
+ * (Apple HIG, Designing for iPhone Duo: "use size classes, layout margins, and safe area insets"). Content is not
+ * centred in a fixed-width column: on the wide inner display the centre is the folding region, so wide layouts
+ * show more content instead (see useLayoutClass). Returns padding for scroll content and left/right for bars.
  */
 export function useScreenGutters(base = 16) {
   const insets = useSafeAreaInsets();
-  // The provider's frame follows the window as the Duo folds, unfolds or rotates.
-  const { width } = useSafeAreaFrame();
-  const extra = Math.max(0, (width - insets.left - insets.right - 2 * base - READABLE_WIDTH) / 2);
-  const left = base + insets.left + extra, right = base + insets.right + extra;
+  const left = base + insets.left, right = base + insets.right;
   return { left, right, padding: { paddingLeft: left, paddingRight: right } };
 }
 
