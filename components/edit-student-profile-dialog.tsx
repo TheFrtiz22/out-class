@@ -8,7 +8,7 @@ import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { useEffect, useRef, useState, type ReactNode, type FormEvent } from "react"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { ProfilePhotoCrop } from "@/components/profile-photo-crop"
-import { Plus, Trash2 } from "@/components/icons"
+import { Camera, Plus, Trash2, Upload } from "@/components/icons"
 import { getStudentProfile, updateStudentProfileSection } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
@@ -59,6 +59,7 @@ export function EditStudentProfileDialog({
   const [section, setSection] = useState<ProfileSection>(initialSection)
   const { user } = useAuth(), demo = useDemoMode()
   const expected = useRef("")
+  const photoInput = useRef<HTMLInputElement>(null), resumeInput = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<FullStudentProfile | null>(null)
   const [busy, setBusy] = useState(false)
@@ -220,9 +221,14 @@ export function EditStudentProfileDialog({
                   {field("lastName", "Last name", true)}
                   <div className="space-y-2">
                     <Label htmlFor="profile-headshot">Profile photo (JPEG, PNG or WebP, up to 5 MB)</Label>
-                    <Input
+                    {/* The browser's own file control reads "Choose File · No file chosen"; an OutClass button opens it instead.
+                        The input keeps its label for assistive tech and tests but takes no tab stop of its own. */}
+                    <input
+                      ref={photoInput}
                       id="profile-headshot"
                       type="file"
+                      className="sr-only"
+                      tabIndex={-1}
                       accept="image/jpeg,image/png,image/webp"
                       onChange={event => {
                         const file = event.target.files?.[0]
@@ -231,8 +237,11 @@ export function EditStudentProfileDialog({
                       }}
                     />
                     {photoSource && <ProfilePhotoCrop source={photoSource} onCancel={() => setPhotoSource(null)} onSave={async file => { await upload(file, "headshot"); setPhotoSource(null) }} />}
-                    {draft.headshotUrl && <Button type="button" variant="outline" onClick={() => setPhotoSource(profilePhotoSource(draft.headshotUrl) ?? null)}>Re-edit photo</Button>}
-                    {draft.headshotUrl && <Button type="button" variant="ghost" onClick={() => { setPhotoSource(null); setDraft({ ...draft, headshotUrl: null }) }}>Remove photo</Button>}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button type="button" variant="outline" data-file-picker="photo" onClick={() => photoInput.current?.click()}><Camera className="size-4" aria-hidden="true" />{draft.headshotUrl ? "Replace photo" : "Choose photo"}</Button>
+                      {draft.headshotUrl && <Button type="button" variant="outline" onClick={() => setPhotoSource(profilePhotoSource(draft.headshotUrl) ?? null)}>Re-edit photo</Button>}
+                      {draft.headshotUrl && <Button type="button" variant="ghost" onClick={() => { setPhotoSource(null); setDraft({ ...draft, headshotUrl: null }) }}>Remove photo</Button>}
+                    </div>
                     <p className="text-xs text-muted-foreground">Your photo saves with your other changes.</p>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -396,15 +405,19 @@ export function EditStudentProfileDialog({
                   {field("resumeUrl", "Résumé URL")}
                   <div className="space-y-2">
                     <Label htmlFor="profile-upload">Or upload a résumé (PDF, up to 10 MB)</Label>
-                    <Input
+                    <input
+                      ref={resumeInput}
                       id="profile-upload"
                       type="file"
+                      className="sr-only"
+                      tabIndex={-1}
                       accept="application/pdf"
                       onChange={(event) => {
                         void upload(event.target.files?.[0])
                         event.target.value = ""
                       }}
                     />
+                    <Button type="button" variant="outline" data-file-picker="resume" onClick={() => resumeInput.current?.click()}><Upload className="size-4" aria-hidden="true" />Upload résumé</Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Uploads save as you go. Clear the résumé URL to remove the attachment.
