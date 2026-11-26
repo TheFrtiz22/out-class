@@ -32,8 +32,10 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
   const [assigning, setAssigning] = useState(false)
+  // Once a grade goes in from this panel the member is plainly on it, so Assign me is no longer offered.
+  const [submittedHere, setSubmittedHere] = useState(false)
   const save = useEditorDraft({ scope: { kind: "review", clubId, resourceId: `${app.id}:${app.roundId}` }, value: draft, restore: value => setDraft(readDraft(value, rubric)), enabled: canEvaluate, base })
-  useEffect(() => { setDraft(emptyDraft); setBase(JSON.stringify(emptyDraft)); setMessage("") }, [app.id, app.roundId])
+  useEffect(() => { setDraft(emptyDraft); setBase(JSON.stringify(emptyDraft)); setMessage(""); setSubmittedHere(false) }, [app.id, app.roundId])
 
   const mine = findReviewerEvaluation(app.evaluations, memberId, rounds.find(round => round.id === app.roundId))
   const submitted = mine?.submittedAt ? rubricScoresSchema.safeParse(mine.rubricScores) : null
@@ -59,6 +61,7 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
       await save.clear()
       setBase(JSON.stringify(draft))
       setMessage("Grade submitted.")
+      setSubmittedHere(true)
       onSubmitted()
     } catch { setMessage("Couldn’t submit this grade. Your entries are still here. Check your access, then try again.") }
     finally { setBusy(false) }
@@ -82,8 +85,8 @@ export function ReviewGrading({ clubId, app, roundName, rubric, memberId, reason
 
   return <section className="oc-review-grading" aria-labelledby="grading-heading" data-autosave-editor="true" onBlur={canEvaluate ? save.onBlur : undefined} data-unsaved={canEvaluate && JSON.stringify(draft) !== base || undefined}>
     <div className="flex items-baseline justify-between gap-2"><h3 id="grading-heading" className="oc-review-panel-heading">Grade</h3>{canEvaluate && <AutosaveStatus save={save} />}</div>
-    {!canEvaluate && (onAssignSelf
-      ? <div className="flex flex-wrap items-center gap-2"><p className="text-xs text-muted-foreground">{reason}</p><Button type="button" variant="outline" size="sm" disabled={assigning || disabled} onClick={() => void assignSelf()}>{assigning ? "Assigning…" : "Assign me"}</Button></div>
+    {!canEvaluate && (onAssignSelf && !submittedHere
+      ? <div className="flex flex-wrap items-center gap-2"><p className="text-xs text-muted-foreground" data-assign-self-hint>You’re not on this applicant’s panel yet. Assign yourself to grade them.</p><Button type="button" variant="outline" size="sm" disabled={assigning || disabled} onClick={() => void assignSelf()}>{assigning ? "Assigning…" : "Assign me"}</Button></div>
       : <p className="text-xs text-muted-foreground">{reason}</p>)}
     <div className="oc-review-categories">
       {entries.map(item => <div key={item.id} className="oc-review-category">
