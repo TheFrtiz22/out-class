@@ -121,3 +121,11 @@ export const roomCommandResultSchema=z.object({revision:z.number().int().nonnega
 // Voting after an interview round starts with what the interviews found; other rounds start without it. Either can be changed.
 const interviewEvidence:LiveRoomField[]=["interviewScore","finalInterviewThoughts"];
 export function interviewRoundFields(fields:LiveRoomField[],type?:string|null):LiveRoomField[]{const interview=type==="INTERVIEW"||type==="GROUP_INTERVIEW";return interview?[...fields,...interviewEvidence.filter(f=>!fields.includes(f))]:fields.filter(f=>!interviewEvidence.includes(f));}
+
+
+/** What ending voting leaves unresolved, naming only the groups that have someone in them. */
+export function endVotingDescription(held:number,unreviewed:number){
+ const parts=[held&&`${held} held`,unreviewed&&`${unreviewed} unreviewed`].filter(Boolean) as string[];
+ const left=parts.length?`${parts.join(" and ")} applicant${held+unreviewed===1?"":"s"} will stay unresolved. `:"Every applicant has an outcome. ";
+ return `${left}No messages will be sent.`;
+}

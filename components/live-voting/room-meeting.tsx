@@ -7,7 +7,7 @@ import {Button} from "@/components/ui/button";
 import {Dialog,DialogContent,DialogTitle} from "@/components/ui/dialog";
 import {commandLiveVotingRoom,getLiveVotingSummary,previewLiveVotingFinalization,finalizeLiveVotingRoom,sendLiveVotingNotifications} from "@/lib/voting-room-api";
 import type {useLiveVotingRoom} from "@/hooks/use-live-voting-room";
-import {roomCommandSchema,leadingBallotChoice,outcomeLabels,savedOutcomeLabels} from "@/lib/voting-room";
+import {roomCommandSchema,leadingBallotChoice,outcomeLabels,savedOutcomeLabels,endVotingDescription} from "@/lib/voting-room";
 import type {z} from "zod";
 import {decisionsHref} from "@/lib/voting-navigation";
 import {useDemoMode} from "@/contexts/demo-context";
@@ -52,7 +52,7 @@ export function LeaderControls({room,refresh,member,transitioning=false,summaryS
  useEffect(()=>{if(staleRevision===null)return;const t=setTimeout(()=>setStaleRevision(null),4000);return()=>clearTimeout(t);},[staleRevision]);
  const waitingForSnapshot=room.revision<confirmedRevision||awaitingNewer;
  const counts=(s:string)=>room.outcomes.filter(o=>o.outcome===s).length,missing=Math.max(0,room.participation.eligible-room.participation.voted);
- const confirmEnd=()=>confirm({title:"End voting?",description:`${counts("HOLD")} Hold and ${counts("UNREVIEWED")} Unreviewed applicants will remain unresolved. No messages will be sent.`,confirmLabel:"End voting now",tone:"danger"});
+ const confirmEnd=()=>confirm({title:"End voting?",description:endVotingDescription(counts("HOLD"),counts("UNREVIEWED")),confirmLabel:"End voting now",tone:"danger"});
  // Shown as soon as the room snapshot reports it, not only after a Close attempt.
  const removed=room.electorateChange?.removed??0,electorateNotice=electorateIssue||(removed?`${removed} voter${removed===1?"":"s"} can no longer vote, so voting is paused. Recount without ${removed===1?"this voter":"them"} and give a reason to close, or restore ${removed===1?"their":"those voters'"} access to continue.`:"");
  const leading=entry&&"totals"in entry&&entry.totals?leadingBallotChoice(entry.totals)??"UNREVIEWED":"UNREVIEWED";

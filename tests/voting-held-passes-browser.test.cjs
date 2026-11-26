@@ -87,6 +87,9 @@ test('full session across devices: intermission, held passes with fresh ballots,
    await s.getByRole('heading',{name:'2 passed',exact:true}).waitFor();assert.deepEqual(await s.getByRole('list',{name:'Passed applicants'}).getByRole('listitem').allTextContents(),['Applicant 1','Applicant 2']);
    assert.match(await s.locator('.vr-intermission-counts').innerText(),/Passed\s*2[\s\S]*Held\s*0[\s\S]*Not passed\s*1[\s\S]*Unreviewed\s*0/);
   }
+  // Once voting has ended the projector stops inviting joins, and screen readers on every view hear that it ended.
+  assert.equal(await projector.locator('.vr-aud-join').count(),0,'no join QR after the session ends');
+  for(const p of all)assert.equal(await p.getByText('Waiting for the leader.',{exact:true}).count(),0,'no stale waiting announcement after the end');
   await leader.getByRole('region',{name:'Voting result',exact:true}).waitFor();
   // The pressed End voting button is gone: focus lands on the result heading, not the page.
   await leader.waitForFunction(()=>document.activeElement?.textContent==='2 passed');
