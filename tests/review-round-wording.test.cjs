@@ -36,10 +36,12 @@ test('room title, closing heading and round score follow the round kind', () => 
 
 test('"haven\'t booked a time slot yet" counts interview rounds only and opens that applicant', () => {
   const { firstUnbooked } = harness().load('lib/interview-round-kind.ts')
-  const workspace = { rounds: [{ id: 'written', review: true }, { id: 'first', review: false }], applications: [{ id: 'a1', assignedRoundIds: ['written'] }, { id: 'a2', assignedRoundIds: ['written', 'first'] }] }
+  const workspace = { rounds: [{ id: 'written', review: true }, { id: 'first', review: false }], applications: [{ id: 'a1', roundId: 'written', assignedRoundIds: ['written'] }, { id: 'a2', roundId: 'first', assignedRoundIds: ['written', 'first'] }] }
   assert.equal(firstUnbooked({ ...workspace, applications: [workspace.applications[0]] }, []), null, 'a review round is never "unbooked"')
   assert.deepEqual(firstUnbooked(workspace, []), { applicationId: 'a2', roundId: 'first' })
   assert.equal(firstUnbooked(workspace, [{ applicationId: 'a2', roundId: 'first' }]), null, 'a booked interview clears it')
+  assert.equal(firstUnbooked({ ...workspace, applications: [{ id: 'a3', roundId: 'written', assignedRoundIds: ['first'] }] }, []), null, 'an assignment outside the applicant\'s current round cannot be opened, so it is not offered')
+  assert.equal(firstUnbooked({ ...workspace, rounds: [{ id: 'first', archived: true }] }, []), null, 'nor one in an archived round')
   const src = fs.readFileSync('components/interviews/interview-rooms-list.tsx', 'utf8')
   assert.match(src, /interviewTab=rooms&roundId=\$\{encodeURIComponent\(unbooked\.roundId\)\}&applicationId=\$\{encodeURIComponent\(unbooked\.applicationId\)\}/)
 })
