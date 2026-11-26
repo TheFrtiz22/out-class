@@ -135,7 +135,7 @@ export function EditStudentProfileDialog({
   })
   async function save(event: FormEvent) {
     event.preventDefault()
-    try { await autosave.flush(); setOpen(false) } catch { /* Retry remains beside the editor. */ }
+    try { await autosave.flush(); setOpen(false); onOpenChange?.(false) } catch { /* Retry remains beside the editor. */ }
   }
   async function upload(file?: File, kind: "resume" | "headshot" = "resume") {
     if (!file || !draft) return

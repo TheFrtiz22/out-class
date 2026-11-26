@@ -28,7 +28,8 @@ test("autosave in the checklist editor doesn't close it", () => {
   assert.match(src, /\{showChecklist && <Panel as="aside">/)
   assert.match(src, /, setChecklistEditing\)\}/)
   const editor = fs.readFileSync(path.join(__dirname, "..", "components/edit-student-profile-dialog.tsx"), "utf8")
-  assert.match(editor, /setOpen\(false\); onOpenChange\?\.\(false\)/)
+  // Every way the editor closes (Cancel, Escape, overlay and Save) tells the parent, or the checklist stays up reading "5 of 5".
+  assert.equal(editor.match(/setOpen\(false\)/g).length, editor.match(/setOpen\(false\); onOpenChange\?\.\(false\)/g).length)
   assert.match(editor, /setOpen\(value\)\n    onOpenChange\?\.\(true\)/)
   // The dialog picks up the section each time it opens.
   assert.match(editor, /if \(value\) setSection\(initialSection\)/)
