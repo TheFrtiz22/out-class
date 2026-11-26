@@ -11,6 +11,7 @@
 @import "../styles/data-table.css";
 @import "../styles/editorial.css";
 @import "../styles/navigation-glass.css";
+@import "../styles/inbox.css";
 @import "../styles/pressed-states.css";
 /* Shared dashboard pieces (components/product/dashboard), global like the other primitives. */
 @import "../components/product/dashboard/dashboard.css";

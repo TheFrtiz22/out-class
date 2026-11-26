@@ -9,8 +9,8 @@ import { useInbox, useInboxActions } from "~/components/inbox/data";
 import { FilterChips } from "~/components/inbox/filter-chips";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { NotificationPreferencesSheet } from "~/components/inbox/preferences";
-import { clubName, ctaLabel, filterRows, fullDate, groupRows, opensInPlace, type ReadFilter, senderTitle, type TypeFilter, typeFilters, typeLabel } from "~/components/inbox/presentation";
-import { InboxListRow } from "~/components/inbox/row";
+import { clubName, ctaLabel, filterRows, fullDate, groupRows, isUrgent, opensInPlace, type ReadFilter, senderTitle, type TypeFilter, typeFilters, typeLabel } from "~/components/inbox/presentation";
+import { InboxListRow, UrgentPill } from "~/components/inbox/row";
 import { ReportSheet } from "~/components/report-sheet";
 import { SHEET_CLOSE_MS, Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
@@ -153,7 +153,10 @@ export default function Inbox() {
               </View>
             </View>
             <View style={{ gap: 4 }}>
-              <Text variant="caption">{typeLabel(selected)} · {fullDate(selected.createdAt)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                {isUrgent(selected) ? <UrgentPill /> : null}
+                <Text variant="caption">{typeLabel(selected)} · {fullDate(selected.createdAt)}</Text>
+              </View>
               <Text variant="section" accessibilityRole="header">{selected.title}</Text>
             </View>
             <Text variant="body" selectable>{selected.body}</Text>
