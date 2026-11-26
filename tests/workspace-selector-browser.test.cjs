@@ -14,7 +14,9 @@ test('workspace pill switches workspace only: same segments everywhere, eligibil
   await page.route('**/api/platform/eligibility',async route=>{calls++;if(delay)await new Promise(resolve=>release=resolve);await route.fulfill({status:fail?500:200,contentType:'application/json',body:JSON.stringify({eligible})})})
   const go=(role,path='/')=>page.goto(`${fixture.base}${path}${path.includes('?')?'&':'?'}role=${role}`,{waitUntil:'networkidle'})
   const header=page.locator('header'),workspaces=header.getByRole('navigation',{name:'Workspaces',exact:true}),dock=page.locator('aside.oc-expanding-dock')
-  const choice=name=>workspaces.getByRole('link',{name,exact:true}),leaderChoice=()=>workspaces.locator('[data-workspace-kind="leader"] a')
+  // The club menu is modal: while it is open everything else, the pill's nav included, is aria-hidden, so the
+  // selected club tab is found by structure rather than through the Workspaces navigation role.
+  const choice=name=>workspaces.getByRole('link',{name,exact:true}),leaderChoice=()=>header.locator('.oc-workspace-segment[data-workspace-kind="leader"] a')
   const kinds=()=>workspaces.locator('.oc-workspace-segment').evaluateAll(items=>items.map(item=>item.dataset.workspaceKind))
   const selected=name=>expect(workspaces.locator('.oc-workspace-segment[data-selected="true"]')).toHaveAttribute('data-workspace-label',name)
   const shot=async name=>{if(screenshots){await page.evaluate(async()=>{await document.fonts.ready;await Promise.all(document.getAnimations().map(animation=>animation.finished.catch(()=>{})))});fs.mkdirSync(screenshots,{recursive:true});await page.screenshot({path:`${screenshots}/${name}.png`})}}
