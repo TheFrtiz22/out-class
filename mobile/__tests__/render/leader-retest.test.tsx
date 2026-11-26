@@ -41,6 +41,23 @@ describe("live voting room", () => {
     expect(loggedCrashes()).toEqual([]);
   });
 
+  test("once voting has ended, the heading gives the passed count and the figures don't repeat it", async () => {
+    // As on the web (#701): the ended summary said "3 passed" and then "3 Passed" again.
+    const ended = { ...records.roomSnapshot, status: "COMPLETED", currentApplicantId: null };
+    await room({ "voting.room": ended });
+    const summary = screen.getByTestId("voting-intermission");
+    expect(screen.getByText("3 passed")).toBeTruthy();
+    expect(screen.queryByLabelText("Passed 3")).toBeNull();
+    for (const label of ["Held 1", "Not passed 2", "Unreviewed 9"]) expect(screen.getByLabelText(label)).toBeTruthy();
+    expect(summary).toBeTruthy();
+    expect(loggedCrashes()).toEqual([]);
+  });
+
+  test("between passes all four figures stay", async () => {
+    await room({ "voting.room": { ...records.roomSnapshot, status: "PAUSED", currentApplicantId: null } });
+    for (const label of ["Passed 3", "Held 1", "Not passed 2", "Unreviewed 9"]) expect(screen.getByLabelText(label)).toBeTruthy();
+  });
+
   test("a refusal still clears the room, without a retry first", async () => {
     let calls = 0;
     const { client } = await room({ "voting.room": () => { calls += 1; if (calls > 1) throw new ApiError(403, "FORBIDDEN", "No access"); return records.roomSnapshot; } });
