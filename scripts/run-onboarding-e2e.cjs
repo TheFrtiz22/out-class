@@ -166,7 +166,7 @@ async function ready(url,headers={}){
  if(activeInterviews){
   const seedResult=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--active-rooms','--seed'],{cwd:repo,env,stdio:'inherit'});
   if(seedResult.status!==0)throw Error('Active Interview Rooms fixture seeding failed; inspect the disposable test log.');
-  const activeResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/active-interview-navigation-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+  const activeResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/active-interview-navigation-e2e.test.cjs','tests/live-voting-multi-person-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
   if(activeResult.status!==0)throw Error('Active Interview Rooms reviewer and revocation integration failed; inspect the disposable test log.');
  }
  if(keep){app.unref();console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}

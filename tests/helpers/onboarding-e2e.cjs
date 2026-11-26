@@ -93,12 +93,17 @@ class Actor {
   }
   return response;
  }
- async action(file,name,args){
+ async action(file,name,args,{params={}}={}){
   const manifest=JSON.parse(fs.readFileSync(path.join(this.config.buildDir,'server/server-reference-manifest.json')));
   const entry=Object.entries(manifest.node).find(([,value])=>actionSourceMatches(value.filename,file)&&value.exportedName===name);assert.ok(entry,`Action ${file}:${name} is in the production manifest`);
-  const [actionId,definition]=entry;const worker=Object.keys(definition.workers).find(w=>w==='app/page')||Object.keys(definition.workers)[0];
-  // Next forwards the action to its owning worker. No handler or Auth/DB mock is used.
-  const route=worker==='app/(workspace)/platform/page'?'/platform':worker==='app/page'?'/':worker==='app/(workspace)/settings/organizations/page'?'/settings/organizations':'/';
+  const [actionId,definition]=entry;const workers=Object.keys(definition.workers);
+  // Post to a page that owns the action: app/page if it does, else a static owning page, else one whose
+  // dynamic segments the caller filled (params). No handler or Auth/DB mock is used.
+  const toRoute=worker=>'/'+worker.replace(/^app\/?/,'').replace(/\/?page$/,'').split('/').filter(part=>part&&!/^\(.*\)$/.test(part)).map(part=>{const m=part.match(/^\[(.+)\]$/);return m?params[m[1]]:part}).join('/');
+  const legacy=w=>w==='app/(workspace)/platform/page'?'/platform':w==='app/(workspace)/settings/organizations/page'?'/settings/organizations':'/';
+  let route;
+  if(!Object.keys(params).length){const w=workers.find(w=>w==='app/page')||workers[0];route=legacy(w);}
+  else{const w=workers.find(w=>w==='app/page')||workers.find(w=>w.endsWith('/page')&&[...w.matchAll(/\[([^\]]+)\]/g)].every(m=>params[m[1]]));assert.ok(w,`Action ${name} has an owning page for params ${Object.keys(params)}: ${workers.join(', ')}`);route=w==='app/page'?'/':toRoute(w);}
   const body=args.some(value=>value instanceof FormData)?await encodeReply(args):JSON.stringify(args);
   const response=await this.request(route,{method:'POST',headers:{origin:this.config.appUrl,...(typeof body==='string'?{'content-type':'text/plain;charset=UTF-8'}:{}),'next-action':actionId,accept:'text/x-component'},body});
   const text=await response.text();
