@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Glass } from "~/components/glass";
 import { ArrowLeft, Bell, QrCode } from "~/components/icons";
 import { Text } from "~/components/text";
-import { IconButton, TARGET } from "~/components/ui";
+import { IconButton, TARGET, useScreenGutters } from "~/components/ui";
 import { useApiQuery } from "~/lib/query";
 import { fonts, useTheme } from "~/lib/theme";
 import type { HomeView } from "~/lib/types";
@@ -34,6 +34,7 @@ export function useHeaderInset() {
  */
 export function Header({ title, back, root, actions, scanner = !back, fitTitle }: { title: string; back?: boolean; root?: boolean; actions?: ReactNode; scanner?: boolean; fitTitle?: boolean }) {
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters(12);
   const router = useRouter();
   const focused = useIsFocused();
   const canDismiss = useCanDismiss();
@@ -42,7 +43,7 @@ export function Header({ title, back, root, actions, scanner = !back, fitTitle }
   // A hook, not navigation.getState(): reading navigation state during render is stale and warns.
   const stacked = !back && !root && focused && canDismiss;
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", top: insets.top + 4, left: 12, right: 12, zIndex: 20 }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", top: insets.top + 4, left: gutters.left, right: gutters.right, zIndex: 20 }}>
       <Glass radius={HEADER_HEIGHT / 2} style={{ height: HEADER_HEIGHT, flexDirection: "row", alignItems: "center", paddingHorizontal: 6, gap: 2 }}>
         {back && !root ? <IconButton icon={ArrowLeft} label="Back" testID="header-back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />
           // `dismiss` pops the whole copy of the tabs; `back` would first step through the tabs' own history.

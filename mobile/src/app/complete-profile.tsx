@@ -8,7 +8,7 @@ import { FilterChip } from "~/components/explore/parts";
 import { Field, type FieldRef } from "~/components/field";
 import { TermsCheckbox } from "~/components/terms-checkbox";
 import { Text } from "~/components/text";
-import { Button, Skeleton } from "~/components/ui";
+import { Button, Skeleton, useScreenGutters } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { haptics } from "~/lib/haptics";
@@ -28,6 +28,7 @@ const metadataName = (value: unknown) => typeof value === "string" ? value.trim(
 export default function CompleteProfile() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters(24);
   const queryClient = useQueryClient();
   const { session, signOut } = useAuth();
   const metadata = session?.user.user_metadata ?? {};
@@ -74,7 +75,7 @@ export default function CompleteProfile() {
 
   return (
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, gap: 24 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, ...gutters.padding, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, gap: 24 }}>
         <View style={{ gap: 6 }}>
           <Text variant="eyebrow">Almost done</Text>
           <Text variant="display" accessibilityRole="header">Finish your profile</Text>

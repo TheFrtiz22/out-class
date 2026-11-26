@@ -7,7 +7,7 @@ import { ArrowLeft } from "~/components/icons";
 import { TermsCheckbox } from "~/components/terms-checkbox";
 import { Text } from "~/components/text";
 import { TurnstileSheet } from "~/components/turnstile";
-import { Button, TARGET } from "~/components/ui";
+import { Button, TARGET, useScreenGutters } from "~/components/ui";
 import { api, errorMessage } from "~/lib/api";
 import { config } from "~/lib/config";
 import { haptics } from "~/lib/haptics";
@@ -27,6 +27,7 @@ type Pending = { kind: "register" } | { kind: "resend" };
 export default function SignUp() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters(24);
   const router = useRouter();
   const options = useApiQuery<SignupOptions>("auth.signupOptions", undefined, { anonymous: true, staleTime: 10 * 60_000 });
   const siteKey = options.data?.turnstileSiteKey ?? config.turnstileSiteKey ?? null;
@@ -116,7 +117,7 @@ export default function SignUp() {
 
   return (
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24, gap: 24 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, ...gutters.padding, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24, gap: 24 }}>
         <Pressable testID="sign-up-back" accessibilityRole="button" accessibilityLabel={step === "code" ? "Back to your details" : "Back to sign in"} hitSlop={8}
           onPress={() => step === "code" ? changeEmail() : router.canGoBack() ? router.back() : router.replace("/sign-in")}
           style={{ width: TARGET, height: TARGET, marginLeft: -10, alignItems: "center", justifyContent: "center" }}>

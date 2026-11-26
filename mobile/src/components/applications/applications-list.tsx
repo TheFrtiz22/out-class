@@ -7,7 +7,7 @@ import { StatusProgress } from "~/components/applications/status-progress";
 import { Header, useHeaderInset } from "~/components/header";
 import { ArrowRight, CalendarDays, FilePenLine } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, Card, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, StatusChip, usePullControl } from "~/components/ui";
+import { Button, Card, ClubMark, DOCK_CLEARANCE, EmptyState, ErrorState, Press, Skeleton, SkeletonRows, StatusChip, usePullControl, useScreenGutters } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useApiQuery } from "~/lib/query";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
@@ -91,6 +91,7 @@ export function ApplicationsList({ tab = false, extra }: { tab?: boolean; extra?
   useTabScrollToTop(list);
   const top = useHeaderInset();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   const { colors, space } = useTheme();
   const view = useApiQuery<ApplicationsView>("applications.view");
   const [chosen, setChosen] = useState<ApplicationStageId | null>(null);
@@ -113,7 +114,7 @@ export function ApplicationsList({ tab = false, extra }: { tab?: boolean; extra?
         ref={list}
         testID="applications-screen"
         style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + (tab ? DOCK_CLEARANCE : 24), gap: space.content - 4 }}
+        contentContainerStyle={{ paddingTop: top + space.control, ...gutters.padding, paddingBottom: insets.bottom + (tab ? DOCK_CLEARANCE : 24), gap: space.content - 4 }}
         contentInsetAdjustmentBehavior="never"
         data={visible}
         keyExtractor={item => item.id}

@@ -14,6 +14,7 @@ import { useKeyboardShown } from "~/lib/keyboard";
 import { spring } from "~/lib/motion";
 import { useMiddleTab } from "~/lib/middle-tab";
 import { fonts, useTheme } from "~/lib/theme";
+import { useScreenGutters } from "~/components/ui";
 
 type Tab = { name: string; label: string; icon: IconComponent; href: "/" | "/explore" | "/clubs" | "/calendar" | "/profile" };
 // Five tabs. The middle one is Apply while an application is still open and My Clubs once they are all
@@ -50,6 +51,7 @@ function Dock({ state, emitter, navigation }: DockProps) {
   const router = useRouter();
   const { colors, radius, a11y } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters(12);
   // The dock steps aside for the keyboard rather than riding on top of it.
   const keyboard = useKeyboardShown();
   const mode = useMiddleTab();
@@ -126,9 +128,9 @@ function Dock({ state, emitter, navigation }: DockProps) {
 
   if (keyboard) return null;
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: Math.max(insets.bottom, 10), alignItems: "stretch" }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", left: gutters.left, right: gutters.right, bottom: Math.max(insets.bottom, 10), alignItems: "stretch" }}>
       {/* The shadow sits on a wrapper: the glass clips its own corners, which would clip a shadow drawn on it. */}
-      <View style={{ marginHorizontal: 12, borderRadius: radius.full, shadowColor: colors.schoolPrimary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
+      <View style={{ borderRadius: radius.full, shadowColor: colors.schoolPrimary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
         <GestureDetector gesture={drag}>
           <Glass radius={radius.full} accessibilityRole="tablist" testID="tab-dock" onLayout={event => { const next = event.nativeEvent.layout.width; dockWidth.value = next; setWidth(next); }} style={{ flexDirection: "row", padding: DOCK_PADDING }}>
             {slot ? <Animated.View pointerEvents="none" testID="tab-selection" style={[{ position: "absolute", top: DOCK_PADDING, bottom: DOCK_PADDING, left: DOCK_PADDING, width: slot, borderRadius: radius.full, backgroundColor: colors.primary }, pill]} /> : null}

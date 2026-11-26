@@ -7,7 +7,7 @@ import { AppState, Linking, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CheckCircle2, ExternalLink, X } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, IconButton } from "~/components/ui";
+import { Button, IconButton, useScreenGutters } from "~/components/ui";
 import { ApiError, OFFLINE_MESSAGE, errorMessage } from "~/lib/api";
 import { easternDateTime } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
@@ -22,6 +22,7 @@ type Phase = { name: "scanning" } | { name: "working" } | { name: "result"; outc
 export function ScanScreen({ initialCode }: { initialCode?: string }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters(12);
   const router = useRouter();
   const queryClient = useQueryClient();
   const [permission, requestPermission, getPermission] = useCameraPermissions();
@@ -140,7 +141,7 @@ export function ScanScreen({ initialCode }: { initialCode?: string }) {
       {scanning ? (
         <CameraView style={StyleSheet.absoluteFill} facing="back" barcodeScannerSettings={{ barcodeTypes: ["qr"] }} onBarcodeScanned={event => onScanned(event.data)} onMountError={() => setCameraFailed(true)} />
       ) : null}
-      <View pointerEvents="box-none" style={{ position: "absolute", zIndex: 1, top: insets.top + 8, left: 12, right: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View pointerEvents="box-none" style={{ position: "absolute", zIndex: 1, top: insets.top + 8, left: gutters.left, right: gutters.right, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <View style={{ backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 22 }}><IconButton icon={({ size }) => <X size={size} color="#ffffff" />} label="Close scanner" testID="scan-close" onPress={leave} /></View>
       </View>
 

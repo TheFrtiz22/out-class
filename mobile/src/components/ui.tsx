@@ -1,7 +1,7 @@
 import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, type PressableProps, RefreshControl, ScrollView, type ScrollViewInstance, type ScrollViewProps, StyleSheet, Switch, View, type ViewProps, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import type { IconComponent } from "~/components/icon-factory";
 import { CalendarClock, CheckCircle2, Circle, Clock, Eye, FilePenLine, Send, XCircle } from "~/components/icons";
@@ -332,9 +332,26 @@ export function usePullControl(onRefresh: (() => unknown) | undefined, top = 0) 
  * The scrolling body of a screen: canvas colour, safe areas, pull-to-refresh, dock clearance, and a
  * focused field kept above the keyboard on both platforms.
  */
+/** Widest a screen's content column grows, so cards and text stay readable on wide screens (an unfolded iPhone Duo, an iPad). */
+export const READABLE_WIDTH = 640;
+/**
+ * Horizontal gutters for a full-width screen: the base gutter plus the device's left and right safe areas (the
+ * iPhone Duo keeps its camera and status on a side edge), centring the content in a readable column when wide.
+ * Returns padding for scroll content and left/right for absolutely placed bars such as the header and dock.
+ */
+export function useScreenGutters(base = 16) {
+  const insets = useSafeAreaInsets();
+  // The provider's frame follows the window as the Duo folds, unfolds or rotates.
+  const { width } = useSafeAreaFrame();
+  const extra = Math.max(0, (width - insets.left - insets.right - 2 * base - READABLE_WIDTH) / 2);
+  const left = base + insets.left + extra, right = base + insets.right + extra;
+  return { left, right, padding: { paddingLeft: left, paddingRight: right } };
+}
+
 export function ScreenScroll({ children, onRefresh, dock, top = 0, contentStyle, ref, ...rest }: ScrollViewProps & { onRefresh?: () => unknown; dock?: boolean; top?: number; contentStyle?: ViewStyle; ref?: Ref<ScrollViewInstance> }) {
   const { colors, space } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   const keyboard = useAndroidKeyboardInset();
   const refreshControl = usePullControl(onRefresh, top);
   return (
@@ -343,7 +360,7 @@ export function ScreenScroll({ children, onRefresh, dock, top = 0, contentStyle,
       style={{ flex: 1, backgroundColor: colors.background, marginBottom: keyboard ? keyboard + insets.bottom : 0 }}
       automaticallyAdjustKeyboardInsets
       keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-      contentContainerStyle={[{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + (dock ? DOCK_CLEARANCE : 24), gap: space.content - 4 }, contentStyle]}
+      contentContainerStyle={[{ paddingTop: top + space.control, ...gutters.padding, paddingBottom: insets.bottom + (dock ? DOCK_CLEARANCE : 24), gap: space.content - 4 }, contentStyle]}
       keyboardShouldPersistTaps="handled"
       contentInsetAdjustmentBehavior="never"
       // The scroll bar runs between the floating header and the dock, not under them.
