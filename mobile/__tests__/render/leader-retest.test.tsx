@@ -8,7 +8,7 @@ import { interviewClock } from "~/components/leader/interviews";
 import { ApiError, TIMEOUT_MESSAGE } from "~/lib/api";
 import type { Me, Membership } from "~/lib/types";
 import { ids, records } from "./fixtures";
-import { captureConsole, loggedCrashes, releaseConsole, renderRoute, settle } from "./harness";
+import { captureConsole, loggedCrashes, pinEasternMorning, releaseConsole, renderRoute, settle } from "./harness";
 import { routerState } from "./router-state";
 
 beforeEach(captureConsole);
@@ -70,18 +70,11 @@ describe("live voting room", () => {
 });
 
 describe("interview day", () => {
-  // The fixture's interviews are hours from now, so late in the Eastern evening they fall on tomorrow and
-  // "interview day" has nothing to enter. Pin the clock (Date only; timers stay real) to 10 AM Eastern today
-  // and move the fixture's rows by the same amount, so the test reads the same day at any hour.
   afterEach(() => { jest.useRealTimers(); });
   test("a failed background refresh keeps the schedule and the open notes", async () => {
-    const real = Date.now();
-    const pinned = Date.parse(`${new Date(real - 5 * 3_600_000).toISOString().slice(0, 10)}T15:00:00Z`);
-    const shift = (iso: unknown) => typeof iso === "string" ? new Date(Date.parse(iso) + pinned - real).toISOString() : iso;
-    const fixture = require("./fixtures").fixtureSets.rich["leader.interviewRooms"] as { items?: Record<string, unknown>[] } | Record<string, unknown>[];
-    const move = (row: Record<string, unknown>) => ({ ...row, startTime: shift(row.startTime), endTime: shift(row.endTime) });
-    const rooms = (Array.isArray(fixture) ? fixture.map(move) : { ...fixture, items: fixture.items?.map(move) }) as unknown;
-    jest.useFakeTimers({ now: pinned, doNotFake: ["nextTick", "setImmediate", "clearImmediate", "setTimeout", "clearTimeout", "setInterval", "clearInterval", "queueMicrotask", "requestAnimationFrame", "cancelAnimationFrame", "requestIdleCallback", "cancelIdleCallback", "hrtime", "performance"] });
+    const moved = pinEasternMorning();
+    const shift = (iso: unknown) => typeof iso === "string" ? new Date(Date.parse(iso) + moved).toISOString() : iso;
+    const rooms = (require("./fixtures").fixtureSets.rich["leader.interviewRooms"] as Record<string, unknown>[]).map(row => ({ ...row, startTime: shift(row.startTime), endTime: shift(row.endTime) })) as unknown;
     const { client } = await renderRoute(require("~/app/leader/[clubId]/interviews").default, {
       params: { clubId: ids.leaderClub }, overrides: { "leader.interviewRooms": thenFail(rooms, () => new ApiError(0, "OFFLINE", "You're offline.")) },
     });
