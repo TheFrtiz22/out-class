@@ -135,7 +135,7 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   if (await ruled.isVisible()) await ruled.getByRole('button', { name: 'Confirm Pass', exact: true }).click()
   else { await confirm.getByText(/^Leading choice: Pass$/).waitFor(); await confirm.getByRole('button', { name: 'Pass', exact: true }).click() }
   await leaderPage.getByText(/^Applicant 3 of 4\./).first().waitFor({ state: 'attached', timeout: 20000 })
-  const decide = async (applicationId, passNumber, choice) => { await command('OPEN_VOTING'); await command('CLOSE_VOTING'); const r = await command('DECIDE_AND_ADVANCE', { applicationId, passNumber, choice, reason: 'Synthetic decision' }); return r }
+  const decide = async (applicationId, passNumber, choice) => { await command('OPEN_VOTING'); await command('CLOSE_VOTING', { confirmed: true, applicationId, passNumber }); const r = await command('DECIDE_AND_ADVANCE', { applicationId, passNumber, choice, reason: 'Synthetic decision' }); return r }
   await decide(apps[2].id, 1, 'REJECT'); await decide(apps[3].id, 1, 'ACCEPT')
   await command('NEXT_PASS')
   await decide(apps[0].id, 2, 'ACCEPT')
