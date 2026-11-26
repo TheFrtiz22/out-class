@@ -210,7 +210,8 @@ function Intermission({ room, leader }: { room: RoomSnapshot; leader: boolean })
   const { pass, hold, notPass, unreviewed } = room.targetSummary.decisions;
   const counts = (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-      {([["Passed", pass], ["Held", hold], ["Not passed", notPass], ["Unreviewed", unreviewed]] as const).map(([name, count]) => (
+      {/* Once voting has ended the heading already gives the passed count, so the figures skip it (as on the web). */}
+      {([["Passed", pass], ["Held", hold], ["Not passed", notPass], ["Unreviewed", unreviewed]] as const).filter(([name]) => !(room.status === "COMPLETED" && name === "Passed")).map(([name, count]) => (
         <View key={name} accessible accessibilityLabel={`${name} ${count}`} style={{ minWidth: 64 }}><Text variant="metric" style={{ fontSize: 24, lineHeight: 30 }}>{count}</Text><Text variant="caption">{name}</Text></View>
       ))}
     </View>
