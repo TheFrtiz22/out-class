@@ -26,7 +26,14 @@ type StartResult = { applicationId: string } | { applicationId: null; unavailabl
 
 export default function ClubPage() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
-  const id = typeof params.id === "string" ? params.id.trim() : "";
+  return <ClubPageView id={typeof params.id === "string" ? params.id.trim() : ""} />;
+}
+
+/**
+ * A club's page. As a screen it has a back button; as the detail pane beside Explore's list on a wide screen
+ * (`pane`), it has no back button, because the list stays on screen beside it.
+ */
+export function ClubPageView({ id, pane = false }: { id: string; pane?: boolean }) {
   const { colors } = useTheme();
   const router = useRouter();
   const top = useHeaderInset();
@@ -130,8 +137,8 @@ export default function ClubPage() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenScroll top={top} onRefresh={refresh} testID="club-screen">{body}</ScreenScroll>
-      <Header title={club?.name ?? "Club"} back fitTitle actions={reportable ? <ReportButton target={{ type: "club", id: club.id }} subject="this club" /> : undefined} />
+      <ScreenScroll top={top} dock={pane} onRefresh={refresh} testID={pane ? "club-pane" : "club-screen"}>{body}</ScreenScroll>
+      <Header title={club?.name ?? "Club"} back={!pane} scanner={pane ? false : undefined} fitTitle actions={reportable ? <ReportButton target={{ type: "club", id: club.id }} subject="this club" /> : undefined} />
       {notice.element}
     </View>
   );
