@@ -141,7 +141,7 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   await command('END')
   // Members' phones say "Session ended"; the projector says "Voting ended".
   const ended = async (page, text, label) => page.getByText(text).first().waitFor({ timeout: 25000 }).catch(async error => {
-    const session = await db.votingSession.findUnique({ where: { id: scope.sessionId }, select: { status: true, revision: true } }).catch(e => String(e))
+    const session = await db.votingSession.findUnique({ where: { id: scope.sessionId }, select: { state: true, endedAt: true, revision: true } }).catch(e => String(e))
     throw new Error(error.message + '\n' + label + ' ' + page.url() + ' session=' + JSON.stringify(session) + '\n' + (await page.locator('body').innerText().catch(() => '?')).slice(0, 1200))
   })
   await ended(projector, /Voting ended/, 'PROJECTOR')
