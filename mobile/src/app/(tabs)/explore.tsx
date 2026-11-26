@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useIsFocused, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,7 +14,7 @@ import { OptionPicker, type PickerOption } from "~/components/option-picker";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
 import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote, usePullControl, useScreenGutters } from "~/components/ui";
-import { ClubPageView } from "~/app/club/[id]";
+import { ClubPageView } from "~/components/explore/club-page-view";
 import { useLayoutClass } from "~/lib/layout";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
@@ -57,11 +57,21 @@ export default function Explore() {
   const gutters = useScreenGutters();
   const [selected, setSelected] = useState<string | null>(null);
   // Folding with a club open keeps it open: compact shows it as its own screen (Apple: keep state between displays).
+  // Only while Explore is the screen in view: folding on another tab or deeper screen keeps the choice until the
+  // person comes back to Explore, rather than pushing the club over what they're doing.
+  const focused = useIsFocused();
+  const folded = useRef(false);
   const previous = useRef(layout);
   useEffect(() => {
-    if (previous.current === "regular" && layout === "compact" && selected) { router.push({ pathname: "/club/[id]", params: { id: selected } }); setSelected(null); }
+    if (previous.current === "regular" && layout === "compact" && selected) folded.current = true;
+    if (layout === "regular") folded.current = false;
     previous.current = layout;
-  }, [layout, selected, router]);
+    if (folded.current && focused && selected) {
+      folded.current = false;
+      router.push({ pathname: "/club/[id]", params: { id: selected } });
+      setSelected(null);
+    }
+  }, [layout, selected, router, focused]);
 
   const clubs = directory.data?.clubs;
   const filters = useMemo(() => ({ ...choices, query: search }), [choices, search]);
