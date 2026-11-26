@@ -47,7 +47,7 @@ export const outcomeLabels = { ACCEPT: "Pass", HOLD: "Hold", REJECT: "Do not pas
 export const savedOutcomeLabels = { ACCEPT: "Passed", HOLD: "Held", REJECT: "Not passed" } as const;
 export const OWN_APPLICATION_MESSAGE = "You’re the applicant on screen; you can’t see or vote on this one.";
 export const ROOM_UNAVAILABLE = "Voting room unavailable. Reconnect or retry; your last command may already be saved.";
-export const SESSION_ENDED = "Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.";
+export const SESSION_ENDED = "Voting ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.";
 
 export const currentPass = (room: RoomSnapshot) => room.history.find(pass => pass.number === room.passNumber);
 export const currentEntry = (room: RoomSnapshot) => currentPass(room)?.candidates.find(candidate => candidate.applicationId === room.currentApplicantId);

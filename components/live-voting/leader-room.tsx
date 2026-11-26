@@ -74,7 +74,7 @@ export function LeaderView({room,entry,clubId,sessionId,demoScoped,refresh,membe
    stage={stage(applicantPosition(room))}
    discussion={room.discussion&&!demoScoped?<DiscussionLeader clubId={clubId} sessionId={sessionId} discussion={room.discussion} refresh={refresh}/>:null}
    controls={room.meeting?.status!=='CANCELLED'?<LeaderControls room={room} refresh={refresh} member={member} transitioning={transitioning} summaryState={summaryState} nextLabel={next}/>:null}/>
-  {room.status==="COMPLETED"&&<p role="status">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}
+  {room.status==="COMPLETED"&&<p role="status">Voting ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</p>}
   <p className="sr-only">{entry?`${applicantPosition(room)}. ${entry.ballotState==="OPEN"?"Voting open":"Voting closed or waiting"}.`:room.status==="COMPLETED"?"Voting ended.":"Waiting for the leader."}</p>
   {qrDialog}
  </div>;
