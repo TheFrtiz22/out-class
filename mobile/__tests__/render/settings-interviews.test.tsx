@@ -49,7 +49,7 @@ describe("interview schedule", () => {
     expect(screen.getByText("Added to your calendar.")).toBeTruthy();
   });
 
-  test("Update My Availability opens the availability screen", async () => {
+  test("Update my availability opens the availability screen", async () => {
     await renderRoute(Screen());
     await fireEvent.press(screen.getByTestId("interviews-update-availability"));
     expect(routerState.router.push).toHaveBeenCalledWith("/settings/availability");

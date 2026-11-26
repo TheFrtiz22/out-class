@@ -52,7 +52,7 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
   return <div className="oc-availability-calendar" data-unsaved={preview !== null}>
     {!readOnly && <p role="status" className="mb-2 min-h-4 text-xs text-muted-foreground">{preview ? "Editing selection · release to save." : "Selections save after you release."}</p>}
     <div className="mb-3 sm:hidden">
-      <SegmentedControl label="Day to edit" size="compact" value={String(mobileDay)} onChange={value => { const i = Number(value); setMobileDay(i); setFocus({ day: i, slot: focus.slot }) }}
+      <SegmentedControl label="Day to edit" size="compact" className="oc-availability-day-picker" value={String(mobileDay)} onChange={value => { const i = Number(value); setMobileDay(i); setFocus({ day: i, slot: focus.slot }) }}
         options={WEEK_DAYS.map((day, i) => ({ value: String(i), label: day.slice(0, 3) }))} />
     </div>
     <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><p id={instructionsId}>{readOnly ? `Arrow keys move between times. Home and End move to the first and last time.${onSelect ? " Enter or Space chooses a time." : ""}` : mobile
