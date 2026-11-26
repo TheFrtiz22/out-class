@@ -14,7 +14,7 @@ import { InboxListRow, UrgentPill } from "~/components/inbox/row";
 import { ReportSheet } from "~/components/report-sheet";
 import { SHEET_CLOSE_MS, Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, ClubMark, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote, usePullControl } from "~/components/ui";
+import { Button, ClubMark, EmptyState, ErrorState, IconButton, Segmented, SkeletonRows, StaleNote, usePullControl, useScreenGutters } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { openOnWeb, openRoute, resolveHref } from "~/lib/links";
@@ -25,6 +25,7 @@ export default function Inbox() {
   const { colors, space } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   const top = useHeaderInset();
   const params = useLocalSearchParams<{ tab?: string }>();
   const inbox = useInbox();
@@ -106,7 +107,7 @@ export default function Inbox() {
         keyExtractor={item => item.id}
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
-        contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingTop: top + space.control, ...gutters.padding, paddingBottom: insets.bottom + 24 }}
         scrollIndicatorInsets={{ top }}
         refreshControl={pullControl}
         onEndReachedThreshold={0.4}

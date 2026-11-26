@@ -6,7 +6,7 @@ import { KeyboardAvoidingView, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Field, type FieldRef } from "~/components/field";
 import { Text } from "~/components/text";
-import { Button } from "~/components/ui";
+import { Button, useScreenGutters } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { useAuth } from "~/lib/auth";
 import { config } from "~/lib/config";
@@ -23,6 +23,7 @@ import { useTheme } from "~/lib/theme";
 export default function ResetPassword() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters(24);
   const router = useRouter();
   const { session, signOut } = useAuth();
   const params = useLocalSearchParams();
@@ -71,7 +72,7 @@ export default function ResetPassword() {
 
   return (
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24, paddingHorizontal: 24, gap: 16 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24, ...gutters.padding, gap: 16 }}>
         <View style={{ gap: 6 }}>
           <View style={{ width: 36, height: 3, borderRadius: 2, backgroundColor: colors.brandOrange }} />
           <Text variant="title" accessibilityRole="header">{done ? "Password updated" : "Set a new password"}</Text>

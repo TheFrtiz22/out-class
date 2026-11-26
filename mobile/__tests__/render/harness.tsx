@@ -13,7 +13,7 @@ import { resetRouter } from "./router-state";
 /** An iPhone 15-sized window with a notch and a home indicator. */
 const metrics = { frame: { x: 0, y: 0, width: 393, height: 852 }, insets: { top: 59, left: 0, right: 0, bottom: 34 } };
 
-export type RenderOptions = { mode?: ApiMode; params?: Record<string, string | string[] | undefined>; segments?: string[]; pathname?: string; overrides?: FixtureSet; providers?: boolean; strictInputs?: boolean };
+export type RenderOptions = { mode?: ApiMode; params?: Record<string, string | string[] | undefined>; segments?: string[]; pathname?: string; overrides?: FixtureSet; providers?: boolean; strictInputs?: boolean; metrics?: typeof metrics };
 
 /** Errors logged while rendering that mean a crash, not a warning. */
 const crashPattern = /TypeError|ReferenceError|RangeError|is not a function|Cannot read propert|undefined is not|null is not|Invalid time value|Maximum update depth|Rendered (more|fewer) hooks/;
@@ -57,7 +57,7 @@ export async function renderRoute(Screen: ComponentType, options: RenderOptions 
   const tree = options.providers === false ? <Screen /> : (
     // The app's root wraps everything in the gesture root (src/app/_layout.tsx); the tab dock's drag needs it.
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <SafeAreaProvider initialMetrics={options.metrics ?? metrics}>
         <QueryClientProvider client={client}>
           <ThemeProvider>
             <AuthProvider>

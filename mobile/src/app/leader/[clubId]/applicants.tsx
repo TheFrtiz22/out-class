@@ -8,7 +8,7 @@ import { ExternalLink, Search, ShieldCheck, X } from "~/components/icons";
 import { OptionPicker } from "~/components/option-picker";
 import { PrivateImage, photoParams } from "~/components/private-image";
 import { Text } from "~/components/text";
-import { Button, Card, ErrorState, Press, Skeleton, SkeletonRows, StatusChip, usePullControl } from "~/components/ui";
+import { Button, Card, ErrorState, Press, Skeleton, SkeletonRows, StatusChip, usePullControl, useScreenGutters } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
@@ -49,6 +49,7 @@ export default function Applicants() {
   const { clubId } = useLocalSearchParams<{ clubId: string }>();
   const top = useHeaderInset();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   const { colors, radius, text } = useTheme();
   const [roundId, setRoundId] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
@@ -129,7 +130,7 @@ export default function Applicants() {
         keyExtractor={app => app.id}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={{ paddingTop: top + 12, paddingHorizontal: 16, paddingBottom: insets.bottom + 24, gap: 10 }}
+        contentContainerStyle={{ paddingTop: top + 12, ...gutters.padding, paddingBottom: insets.bottom + 24, gap: 10 }}
         ListHeaderComponent={header}
         scrollIndicatorInsets={{ top }}
         refreshControl={pullControl}

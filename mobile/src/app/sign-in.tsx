@@ -10,7 +10,7 @@ import { Field, type FieldRef } from "~/components/field";
 import { CalendarClock, ClipboardCheck, Compass } from "~/components/icons";
 import { Text } from "~/components/text";
 import { TurnstileSheet } from "~/components/turnstile";
-import { Button } from "~/components/ui";
+import { Button, useScreenGutters } from "~/components/ui";
 import { useAuth } from "~/lib/auth";
 import { config } from "~/lib/config";
 import { INDEPENDENCE_NOTE, openLegalPage } from "~/lib/legal";
@@ -31,6 +31,7 @@ export default function SignIn() {
   // Sign up opens on top of this screen; the light status bar must not stay over its light page.
   const focused = useIsFocused();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters(24);
   const { signIn } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -65,7 +66,7 @@ export default function SignIn() {
       {focused ? <StatusBar style="light" /> : null}
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}>
         {/* The welcome: OutClass's navy, the ivory hero logo and the web's own promise. */}
-        <View testID="sign-in-welcome" style={{ backgroundColor: colors.rail, paddingTop: insets.top + 28, paddingHorizontal: 24, paddingBottom: 30, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, gap: 18, overflow: "hidden" }}>
+        <View testID="sign-in-welcome" style={{ backgroundColor: colors.rail, paddingTop: insets.top + 28, ...gutters.padding, paddingBottom: 30, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, gap: 18, overflow: "hidden" }}>
           <Image accessibilityLabel="OutClass" source={require("../../assets/brand/10_hero_transparent.svg")} style={{ width: 176, height: 44 }} contentFit="contain" contentPosition="left" />
           <Animated.View entering={enter(0)} style={{ gap: 10 }}>
             <View style={{ width: 36, height: 3, borderRadius: 2, backgroundColor: colors.brandOrange }} />
@@ -84,7 +85,7 @@ export default function SignIn() {
           </Animated.View>
         </View>
 
-        <Animated.View entering={enter(2)} style={{ paddingHorizontal: 24, paddingTop: 28, gap: 14 }}>
+        <Animated.View entering={enter(2)} style={{ ...gutters.padding, paddingTop: 28, gap: 14 }}>
           <View style={{ gap: 4 }}>
             <Text variant="title">Sign in</Text>
             <Text variant="small" color={colors.mutedForeground}>Use your UVA email and OutClass password.</Text>
@@ -97,7 +98,7 @@ export default function SignIn() {
           <Button variant="ghost" size="compact" label="Forgot password?" testID="sign-in-forgot" style={{ alignSelf: "center" }} onPress={() => { WebBrowser.openBrowserAsync(`${config.apiUrl}/forgot-password`).catch(() => {}); }} />
         </Animated.View>
 
-        <Animated.View entering={enter(3)} style={{ paddingHorizontal: 24, paddingTop: 18, gap: 10, alignItems: "center" }}>
+        <Animated.View entering={enter(3)} style={{ ...gutters.padding, paddingTop: 18, gap: 10, alignItems: "center" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, alignSelf: "stretch" }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <Text variant="small" color={colors.mutedForeground}>New to OutClass?</Text>
@@ -107,7 +108,7 @@ export default function SignIn() {
         </Animated.View>
 
         {/* What signing in agrees to, and that OutClass isn't the university's (App Store 5.1.1, 5.2.1). */}
-        <Animated.View entering={enter(4)} style={{ paddingHorizontal: 24, paddingTop: 20, gap: 8 }}>
+        <Animated.View entering={enter(4)} style={{ ...gutters.padding, paddingTop: 20, gap: 8 }}>
           <Text variant="small" color={colors.mutedForeground} align="center" testID="sign-in-agreement">
             By continuing, you agree to our{" "}
             <Text variant="smallStrong" color={colors.primary} accessibilityRole="link" testID="sign-in-terms" onPress={() => openLegalPage("/terms")}>Terms of Service</Text>

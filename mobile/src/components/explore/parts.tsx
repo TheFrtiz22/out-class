@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { IconComponent } from "~/components/icon-factory";
 import { Search, X } from "~/components/icons";
 import { Text } from "~/components/text";
-import { DOCK_CLEARANCE, TARGET } from "~/components/ui";
+import { DOCK_CLEARANCE, TARGET, useScreenGutters } from "~/components/ui";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
 
@@ -91,10 +91,11 @@ export function useNotice({ dock = false }: { dock?: boolean } = {}) {
 function NoticeBar({ text, tone, dock, onDismiss }: { text: string; tone: "error" | "ok"; dock: boolean; onDismiss: () => void }) {
   const { colors, radius, dark } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   return (
     <View
       pointerEvents="box-none"
-      style={{ position: "absolute", left: 16, right: 16, bottom: insets.bottom + (dock ? DOCK_CLEARANCE : 16), zIndex: 30 }}
+      style={{ position: "absolute", left: gutters.left, right: gutters.right, bottom: insets.bottom + (dock ? DOCK_CLEARANCE : 16), zIndex: 30 }}
     >
       <Pressable testID="notice" accessibilityRole="button" accessibilityLabel={text} accessibilityHint="Dismisses this message" accessibilityLiveRegion="polite" onPress={onDismiss}
         style={{ borderRadius: radius.lg, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: tone === "error" ? colors.destructive : colors.border, shadowColor: colors.schoolPrimary, shadowOpacity: dark ? 0 : 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } }}>
