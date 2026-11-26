@@ -127,7 +127,7 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   // A clear result: when the session's voting rule decides, the room asks to confirm the rule's outcome;
   // otherwise it shows the leading choice. Either way the outcome is Pass.
   const ruled = leaderPage.getByRole('region', { name: 'Confirm rule outcome' })
-  await ruled.or(confirm).first().waitFor({ timeout: 20000 })
+  await ruled.or(confirm).first().waitFor({ timeout: 20000 }).catch(async error => { throw new Error(error.message + '\nLEADER SCREEN: ' + (await leaderPage.locator('main').innerText().catch(() => '?')).slice(0, 1500)) })
   if (await ruled.isVisible()) await ruled.getByRole('button', { name: 'Confirm Pass', exact: true }).click()
   else { await confirm.getByText(/^Leading choice: Pass$/).waitFor(); await confirm.getByRole('button', { name: 'Pass', exact: true }).click() }
   await leaderPage.getByText(/^Applicant 3 of 4\./).first().waitFor({ state: 'attached', timeout: 20000 })
