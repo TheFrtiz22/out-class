@@ -68,8 +68,8 @@ export default function Explore() {
     previous.current = layout;
     if (folded.current && focused && selected) {
       folded.current = false;
+      // The choice stays: unfolding and coming back shows the same club beside the list.
       router.push({ pathname: "/club/[id]", params: { id: selected } });
-      setSelected(null);
     }
   }, [layout, selected, router, focused]);
 
@@ -100,8 +100,8 @@ export default function Explore() {
   const pressIn = useCallback((club: PublicClub) => prefetch(club.id), [prefetch]);
   const { setSaved, ids } = saved;
   const renderItem = useCallback(({ item, index }: { item: PublicClub; index: number }) => (
-    <ClubCard club={item} saved={ids.has(item.id)} height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} saveLocked={alumni} testID={`explore-club-${index}`} />
-  ), [ids, height, now, open, pressIn, setSaved, alumni]);
+    <ClubCard club={item} saved={ids.has(item.id)} height={height} now={now} onOpen={open} onPressIn={pressIn} onToggleSaved={setSaved} saveLocked={alumni} selected={regular && item.id === selected} testID={`explore-club-${index}`} />
+  ), [ids, height, now, open, pressIn, setSaved, alumni, regular, selected]);
   const getItemLayout = useCallback((_: unknown, index: number) => ({ length: height + CLUB_CARD_GAP, offset: (height + CLUB_CARD_GAP) * index, index }), [height]);
 
   // A failed refresh keeps the loaded directory; only a first load that failed (or the server's own refusal) shows the error.

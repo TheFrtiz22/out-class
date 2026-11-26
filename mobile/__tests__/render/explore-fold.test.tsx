@@ -87,3 +87,19 @@ test("crossing the breakpoint resizes the club list instead of remounting it (sc
   expect(screen.getByTestId("explore-screen")).toBe(list);
   expect(loggedCrashes()).toEqual([]);
 });
+
+test("the chosen club is marked selected in the list, and stays chosen after a fold opens it", async () => {
+  const { client } = await renderRoute(explore(), { mode: "rich" });
+  fireEvent.press(screen.getByTestId("explore-club-0"));
+  await screen.findByTestId("club-pane");
+  expect(screen.getByTestId("explore-club-0").props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+  expect(screen.getByTestId("explore-club-1").props.accessibilityState).toEqual(expect.objectContaining({ selected: false }));
+  mockLayout = "compact"; await rerender(client);
+  expect(routerState.router.push).toHaveBeenCalledTimes(1);
+  await rerender(client);
+  expect(routerState.router.push).toHaveBeenCalledTimes(1);
+  mockLayout = "regular"; await rerender(client);
+  expect(screen.getByTestId("club-pane")).toBeTruthy();
+  expect(screen.getByTestId("explore-club-0").props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+  expect(loggedCrashes()).toEqual([]);
+});

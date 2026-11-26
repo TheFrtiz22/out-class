@@ -25,18 +25,18 @@ export function clubCardHeight(theme: Pick<Theme, "text" | "leading">, fontScale
   return Math.ceil(lines * scale) + 2 * PADDING + 14 + 4;
 }
 
-type Props = { club: PublicClub; saved: boolean; height: number; now: number; onOpen: (club: PublicClub) => void; onPressIn?: (club: PublicClub) => void; onToggleSaved?: (club: PublicClub, saved: boolean) => void; saveLocked?: boolean; testID?: string };
+type Props = { club: PublicClub; saved: boolean; height: number; now: number; onOpen: (club: PublicClub) => void; onPressIn?: (club: PublicClub) => void; onToggleSaved?: (club: PublicClub, saved: boolean) => void; saveLocked?: boolean; selected?: boolean; testID?: string };
 
 /** One club in Explore and Saved clubs (components/clubs/discovery-card.tsx at list density). */
 /** `saveLocked`: the bookmark still shows the saved state but can't be changed (alumni accounts are read-only; the server refuses too). */
-export const ClubCard = memo(function ClubCard({ club, saved, height, now, onOpen, onPressIn, onToggleSaved, saveLocked, testID }: Props) {
+export const ClubCard = memo(function ClubCard({ club, saved, height, now, onOpen, onPressIn, onToggleSaved, saveLocked, selected = false, testID }: Props) {
   const { colors, radius, dark } = useTheme();
   const recruitment = clubRecruitment(club, now);
   const deadline = recruitment.deadline ? `${recruitment.expired ? "Closed" : "Deadline"} · ${shortRecruitmentDate(recruitment.deadline, now)}` : "Deadline not published";
   const label = onToggleSaved ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "";
   return (
-    <View style={{ height, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, shadowColor: colors.schoolPrimary, shadowOpacity: dark ? 0 : 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
-      <Press large testID={testID} accessibilityLabel={`View ${club.name} club page`} accessibilityHint={`${club.category || "Student organization"}. ${recruitment.label}. ${deadline}.`} onPressIn={() => onPressIn?.(club)} onPress={() => onOpen(club)}
+    <View style={{ height, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: selected ? 2 : StyleSheet.hairlineWidth, borderColor: selected ? colors.brandInk : colors.border, shadowColor: colors.schoolPrimary, shadowOpacity: dark ? 0 : 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
+      <Press large testID={testID} accessibilityLabel={`View ${club.name} club page`} accessibilityState={{ selected }} accessibilityHint={`${club.category || "Student organization"}. ${recruitment.label}. ${deadline}.`} onPressIn={() => onPressIn?.(club)} onPress={() => onOpen(club)}
         style={{ flex: 1, flexDirection: "row", gap: 12, padding: PADDING, paddingRight: onToggleSaved ? 52 : PADDING }}>
         <ClubMark name={club.name} color={club.color} logoUrl={clubImage(club.logoUrl, config.apiUrl)} size={MARK} />
         <View style={{ flex: 1 }}>
