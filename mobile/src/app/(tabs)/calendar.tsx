@@ -23,7 +23,9 @@ import type { AgendaEvent, CalendarView, Me, MyApplicationSummary } from "~/lib/
 
 // The web's event types and its "Club meetings" filter (components/views/calendar-view.tsx).
 const MEETINGS_FILTER = "club-meetings";
-const typeOptions = [{ value: "all", label: "All event types" }, { value: MEETINGS_FILTER, label: "Club meetings" }, ...["Other", "Deadline", "Interview", "Interest Meeting", "Coffee Chat"].map(type => ({ value: type, label: type }))];
+// Stored event types are title case ("Interest Meeting", shared with web); labels follow the app's sentence case.
+const typeLabel = (type: string) => type.charAt(0) + type.slice(1).toLowerCase();
+const typeOptions = [{ value: "all", label: "All event types" }, { value: MEETINGS_FILTER, label: "Club meetings" }, ...["Other", "Deadline", "Interview", "Interest Meeting", "Coffee Chat"].map(type => ({ value: type, label: typeLabel(type) }))];
 const typeTone: Record<string, ChipTone> = { Interview: "interview", Deadline: "warning", "Interest Meeting": "info", "Coffee Chat": "brand", Other: "neutral" };
 type CalendarMode = "agenda" | "month" | "availability";
 const viewOptions: { value: CalendarMode; label: string }[] = [{ value: "agenda", label: "Agenda" }, { value: "month", label: "Month" }, { value: "availability", label: "Availability" }];
@@ -57,7 +59,7 @@ function EventRow({ event, first, last, onPress }: { event: AgendaEvent; first: 
   const status = event.response === "declined" ? " · Declined" : event.response === "confirmed" ? " · Confirmed" : "";
   return (
     <Press large testID={`calendar-event-${event.id.split("-")[0]}`} onPress={onPress}
-      accessibilityLabel={`${event.title}. ${event.type}${status}. ${formatDateKey(event.date, { weekday: "long", month: "long", day: "numeric" })}, ${timeLabel(event)}. ${event.club}${event.location ? `, ${event.location}` : ""}`}
+      accessibilityLabel={`${event.title}. ${typeLabel(event.type)}${status}. ${formatDateKey(event.date, { weekday: "long", month: "long", day: "numeric" })}, ${timeLabel(event)}. ${event.club}${event.location ? `, ${event.location}` : ""}`}
       style={{ flexDirection: "row", gap: 14, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 0.5, borderBottomWidth: last ? 0.5 : 0, borderTopLeftRadius: first ? radius.lg : 0, borderTopRightRadius: first ? radius.lg : 0, borderBottomLeftRadius: last ? radius.lg : 0, borderBottomRightRadius: last ? radius.lg : 0 }}>
       <View style={{ width: 68 }}>
         <Text variant="smallStrong" style={{ fontVariant: ["tabular-nums"] }}>{timeLabel(event)}</Text>
@@ -65,7 +67,7 @@ function EventRow({ event, first, last, onPress }: { event: AgendaEvent; first: 
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-          <Chip label={event.type} tone={typeTone[event.type] ?? "neutral"} />
+          <Chip label={typeLabel(event.type)} tone={typeTone[event.type] ?? "neutral"} />
           {status ? <Text variant="caption">{status.slice(3)}</Text> : null}
         </View>
         <Text variant="bodyStrong" numberOfLines={3}>{event.title}</Text>

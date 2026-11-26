@@ -160,6 +160,21 @@ describe("Calendar event types", () => {
     expect(loggedCrashes()).toEqual([]);
   });
 
+  test("type labels use sentence case; the stored type still filters", async () => {
+    const events = [event(1, "Interview"), event(3, "Interest Meeting"), event(4, "Coffee Chat")];
+    await renderRoute(require("~/app/(tabs)/calendar").default, { mode: "rich", overrides: { "calendar.view": { generatedAt: new Date().toISOString(), events } } });
+    const text = screenText(screen.toJSON());
+    expect(text).toContain("Interest meeting");
+    expect(text).toContain("Coffee chat");
+    expect(text).not.toMatch(/Interest Meeting|Coffee Chat/);
+    await fireEvent.press(screen.getByTestId("calendar-type-interest-meeting"));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 400)); });
+    const filtered = screenText(screen.toJSON());
+    expect(filtered).toContain("Event 3");
+    expect(filtered).not.toContain("Event 4");
+    expect(loggedCrashes()).toEqual([]);
+  });
+
   test("the usual calendar's types fit on screen", async () => {
     await renderRoute(require("~/app/(tabs)/calendar").default, { mode: "rich" });
     expect(insideHorizontalScroll(screen.getByTestId("calendar-type"))).toBe(false);
