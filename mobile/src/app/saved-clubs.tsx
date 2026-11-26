@@ -11,7 +11,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { ArrowRight, Bookmark, X } from "~/components/icons";
 import { Text } from "~/components/text";
-import { Button, EmptyState, ErrorState, usePullControl } from "~/components/ui";
+import { Button, EmptyState, ErrorState, usePullControl, useScreenGutters } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useTheme } from "~/lib/theme";
 import type { PublicClub, SavedClubs } from "~/lib/types";
@@ -28,6 +28,7 @@ export default function SavedClubsScreen() {
   const router = useRouter();
   const top = useHeaderInset();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   const { fontScale } = useWindowDimensions();
   const notice = useNotice();
   const { query, items, setSaved } = useSavedClubs(notice.show);
@@ -89,7 +90,7 @@ export default function SavedClubsScreen() {
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={{ paddingTop: top + theme.space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingTop: top + theme.space.control, ...gutters.padding, paddingBottom: insets.bottom + 24 }}
         contentInsetAdjustmentBehavior="never"
         scrollIndicatorInsets={{ top }}
         refreshControl={pullControl}

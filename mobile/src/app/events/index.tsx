@@ -13,7 +13,7 @@ import { Header, useHeaderInset } from "~/components/header";
 import { ChevronDown, ChevronUp, SlidersHorizontal } from "~/components/icons";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, StaleNote, TARGET, Toggle, usePullControl } from "~/components/ui";
+import { Button, Card, Divider, EmptyState, ErrorState, IconButton, Press, Segmented, Skeleton, StaleNote, TARGET, Toggle, usePullControl, useScreenGutters } from "~/components/ui";
 import { ApiError, api, errorMessage } from "~/lib/api";
 import { haptics } from "~/lib/haptics";
 import { useApiQuery } from "~/lib/query";
@@ -34,6 +34,7 @@ export default function EventsBoard() {
   const router = useRouter();
   const top = useHeaderInset();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   const { height: screenHeight } = useWindowDimensions();
   const notice = useNotice();
   const saves = useSavedEvents(notice.show);
@@ -127,7 +128,7 @@ export default function EventsBoard() {
         onEndReached={() => { if (board.hasNextPage && !board.isFetchingNextPage) void board.fetchNextPage(); }}
         onEndReachedThreshold={0.6}
         style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={{ paddingTop: top + theme.space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingTop: top + theme.space.control, ...gutters.padding, paddingBottom: insets.bottom + 24 }}
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
