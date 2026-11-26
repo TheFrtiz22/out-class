@@ -636,7 +636,12 @@
   .oc-club-profile .oc-club-back { margin-bottom: 8px; }
   .oc-club-action-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
   .oc-club-profile .oc-club-apply, .oc-club-profile .oc-club-follow { width: 100%; min-height: 46px; }
-  .oc-club-profile .oc-club-share { justify-self: start; min-height: 44px; }
+  /* Save and Share sit side by side as equal halves under the full-width Apply button; Share alone spans the row. */
+  .oc-club-action-row { grid-template-columns: 1fr 1fr; }
+  .oc-club-action-row > * { grid-column: 1 / -1; }
+  .oc-club-action-row > .space-y-2:has(+ .oc-club-share), .oc-club-action-row > .space-y-2 + .oc-club-share { grid-column: auto; }
+  .oc-club-action-row > .space-y-2:has(+ .oc-club-share) > button { width: 100%; }
+  .oc-club-profile .oc-club-share { width: 100%; min-height: 46px; }
   .oc-club-action-note { font-size: var(--oc-text-caption); }
   .oc-club-profile .oc-club-section { margin-top: 12px; padding: 16px; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
   .oc-club-profile .oc-club-events, .oc-club-profile .oc-club-leadership { padding-top: 16px; }
