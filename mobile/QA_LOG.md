@@ -37,7 +37,13 @@ Leader: club home (`/my-club/[clubId]`), Leader tools, check-in (`/leader/[clubI
 | 11-26 | iPhone Duo (inner) / iPad | Explore | Crossing the breakpoint remounted the club list (scroll and search focus lost); one stable row now (Codex finding) | #704 |
 | 11-26 | iPhone Duo (inner) / iPad | Home | Sections in two even columns, carousel full width | #708 |
 | 11-26 | CI | Disposable Supabase (application-writing) | Local stack failed to start once; passed on re-run | Infra flake |
-| 11-26 | Mac checkout | Expo Go | Mac is on main at #696, missing #698+; untracked `mobile/assets/icon/` (rejected icon layers) blocks the pull. Owner to remove it and pull, then on-device fold checks | Owner step |
+| 11-26 | Mac checkout | Expo Go | Mac is on main at #696, missing #698+; untracked `mobile/assets/icon/` (rejected icon layers) blocks the pull. Moved to `Claude outputs/rejected-icon-attempt/` and pulled (owner approved) | Done |
+| 11-26 | iPhone Duo Simulator (flat, half-folded, folded) | Interview day, Live voting, Home, Explore | Two-pane and two-column layouts render on device; folding mid-session keeps state; folded opens the selected club full screen | Verified on device |
+| 11-26 | iPhone Duo (inner) | Explore | Split view didn't mark the chosen club; choice cleared after a fold. Codex: refolding on the opened page re-queued it | #710 |
+| 11-26 | iPhone Duo (inner) | Leader tools | One stretched column across the fold; now two even columns | #711 |
+| 11-26 | iPhone Duo (inner) | Calendar, Events, Saved clubs | View switcher and switch under the status column (fixed 16pt list padding) | #712 |
+| 11-26 | iPhone Duo (half-folded) | Tab dock | Apply tab sat on the crease; dock keeps to the leading half when five tabs fit (Codex: narrow split view keeps full width) | #713 |
+| 11-26 | iPhone Duo (inner) | Apply, Profile, Calendar | Single column on the inner display; readable, clear of the status column. Two-column candidates | Open (design) |
 | 11-26 | iPhone 17e | Calendar | Filter chips mixed "Interview" and "Interest Meeting" casing; labels now sentence case, stored types unchanged | #709 |
 
 ## Recommendations
