@@ -48,3 +48,10 @@ test('successful and failed reads cannot settle during the gap between Auth noti
   f.rotateBeforeCommit();assert.equal(f.render(props).type,'WorkspaceLoading');await f.flush();assert.equal(f.requests.length,1);
   f.commitEpoch();f.render(props);await f.flush();assert.equal(f.requests.length,2);f.requests[1].resolve({members:[]});await tick();assert.equal(f.render(props).type,'Members');f.cleanup();
  });
+
+test('an identical user object re-sent by navigation keeps the shown workspace and makes no second read',async()=>{
+ // Back/Forward re-renders the root layout with a fresh but identical initialUser; the pipeline flashed "Preparing" and read again.
+ const f=setup(),props={kind:'pipeline',clubId:'club',privacyScope:'scope'};f.setUser({id:'one',memberships:[{clubId:'club',permissions:['applications.review']}]});f.render(props);await f.flush();f.requests[0].resolve({clubId:'club'});await tick();assert.equal(f.render(props).type,'Pipeline');
+ f.setUser({id:'one',memberships:[{clubId:'club',permissions:['applications.review']}]});assert.equal(f.render(props).type,'Pipeline','the same account stays shown');await f.flush();assert.equal(f.requests.length,1,'no second read');
+ f.setUser({id:'one',memberships:[{clubId:'club',permissions:[]}]});assert.equal(f.render(props).type,'WorkspaceLoading','a changed permission hides it');await f.flush();assert.equal(f.requests.length,2,'and reads again');f.cleanup();
+});

@@ -57,11 +57,15 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
   // Same full identity/session ownership as interview reads. This is a mounted
   // visit, not a cache: leaving or changing authority always starts a new GET.
   const mode = "decisions" as const
-  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, decision, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, decision, demo.ready, demo.isDemoEnabled])
+  // The account by content, not object identity: a navigation (Back/Forward) re-sends an identical user
+  // object, which must not hide the shown workspace and read it again. Any change to the account (a different
+  // user, membership or permission) changes the key and fences the visit as before.
+  const account = useMemo(() => user ? JSON.stringify(user) : null, [user])
+  const owner = useMemo(() => ({ user: account, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, decision, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [account, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, decision, demo.ready, demo.isDemoEnabled])
   const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
   const lastRead = useRef<typeof owner | null>(null)
   useEffect(() => {
-    if (!demo.ready || demo.isDemoEnabled || loading || !user || !isReadAuthorityCurrent(readAuthority)) return
+    if (!demo.ready || demo.isDemoEnabled || loading || !account || !isReadAuthorityCurrent(readAuthority)) return
     recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
     lastRead.current = owner
     let current = true
@@ -69,7 +73,7 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
       if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, value })
     }).catch(() => { if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, failed: true }) })
     return () => { current = false }
-  }, [kind, clubId, mode, decision, owner, demo.ready, demo.isDemoEnabled, loading, user, readAuthority, isReadAuthorityCurrent])
+  }, [kind, clubId, mode, decision, owner, demo.ready, demo.isDemoEnabled, loading, account, readAuthority, isReadAuthorityCurrent])
   const current = demo.ready && !demo.isDemoEnabled && !loading && isReadAuthorityCurrent(readAuthority) && result?.owner === owner ? result : null
   if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
   const entry = current?.value
