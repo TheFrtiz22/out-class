@@ -54,4 +54,17 @@ describe("screens on an unfolded Duo", () => {
     expect(content.paddingRight).toBe(52 + 16);
     expect(loggedCrashes()).toEqual([]);
   });
+  // Found on the Duo Simulator: these lists padded a fixed 16pt, so Calendar's view switcher and past-events
+  // switch ran under the status column.
+  test.each([
+    ["Calendar", "~/app/(tabs)/calendar", "calendar-screen"],
+    ["Events", "~/app/events/index", "events-screen"],
+    ["Saved clubs", "~/app/saved-clubs", "saved-clubs-screen"],
+  ])("%s pads its list clear of the status column", async (_name, path, testID) => {
+    await renderRoute(require(path).default, { mode: "rich", metrics: duoOpen });
+    const content = flat(screen.getByTestId(testID).props.contentContainerStyle);
+    expect(content.paddingLeft).toBe(16);
+    expect(content.paddingRight).toBe(52 + 16);
+    expect(loggedCrashes()).toEqual([]);
+  });
 });

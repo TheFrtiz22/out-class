@@ -12,7 +12,7 @@ import { useRefetchOnFocus } from "~/components/inbox/use-refetch-on-focus";
 import { CalendarFeedSheet } from "~/components/profile/calendar-feed-sheet";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, StaleNote, TARGET, Toggle, usePullControl } from "~/components/ui";
+import { Button, Chip, type ChipTone, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, Segmented, SkeletonRows, StaleNote, TARGET, Toggle, usePullControl, useScreenGutters } from "~/components/ui";
 import { ApiError, errorMessage } from "~/lib/api";
 import { addDays, addToCalendar, easternDateKey, easternTime, formatDateKey } from "~/lib/eastern";
 import { haptics } from "~/lib/haptics";
@@ -116,6 +116,7 @@ export default function CalendarScreen() {
   const { colors, space } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const gutters = useScreenGutters();
   const top = useHeaderInset();
   const params = useLocalSearchParams<{ type?: string }>();
   const calendar = useApiQuery<CalendarView>("calendar.view");
@@ -231,7 +232,7 @@ export default function CalendarScreen() {
         keyExtractor={item => item.id}
         stickySectionHeadersEnabled={false}
         contentInsetAdjustmentBehavior="never"
-        contentContainerStyle={{ paddingTop: top + space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
+        contentContainerStyle={{ paddingTop: top + space.control, ...gutters.padding, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
         scrollIndicatorInsets={{ top, bottom: DOCK_CLEARANCE }}
         refreshControl={pullControl}
         ListHeaderComponent={header}
