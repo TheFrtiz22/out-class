@@ -78,9 +78,13 @@ test('real desktop pointer and mobile touch support detail switching, global sea
    await page.getByRole('searchbox',{name:'Search applicants',exact:true}).fill(last);await page.getByText(last,{exact:true}).filter({visible:true}).first().waitFor();
    // The name can show before the filtered list settles (the list re-renders, or the unfiltered list already holds it), so wait for exactly one visible row.
    await page.waitForFunction(()=>Array.from(document.querySelectorAll('[data-applicant-id]')).filter(e=>e.getClientRects().length>0).length===1,null,{timeout:15000}).catch(()=>{});assert.equal(await rows().count(),1);
+   await page.evaluate(()=>{window.__ocDiag=[];window.addEventListener('outclass:workspace-read',e=>window.__ocDiag.push([Math.round(performance.now()),e.detail.kind,e.detail.causes.join('+')]));});
+   const diagReq=[];const onReq=r=>{const u=new URL(r.url());if(u.searchParams.get('kind')||r.headers().rsc==='1')diagReq.push([Date.now()%100000,'req',u.pathname,u.searchParams.get('kind'),r.headers().rsc||''])};const onRes=r=>{const u=new URL(r.url());if(u.searchParams.get('kind'))diagReq.push([Date.now()%100000,'res',u.searchParams.get('kind'),r.status()])};page.on('request',onReq);page.on('response',onRes);
    await page.goBack();await page.locator('.oc-command-recruiting').waitFor();await page.goForward();
    // As on entry: the overview's review-queue rows match too, so count only once the overview has gone.
-   await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});await rows().first().waitFor();await settle(Math.min(100,size));assert.equal(await rows().count(),Math.min(100,size));
+   await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});await rows().first().waitFor();const firstCount=await rows().count();await settle(Math.min(100,size));
+   const finalCount=await rows().count();if(finalCount!==Math.min(100,size)){const d=await page.evaluate(()=>({url:location.href,diag:window.__ocDiag,text:document.querySelector('main')?.innerText.slice(0,600),search:document.querySelector('input[type=search]')?.value,all:document.querySelectorAll('[data-applicant-id]').length}));throw new Error('FORWARD-DIAG '+JSON.stringify({size,touch,firstCount,finalCount,d,diagReq}));}
+   page.off('request',onReq);page.off('response',onRes);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);console.log('cohort '+size+' '+(touch?'mobile touch':'desktop pointer')+' complete');
   }finally{await context.close();await actor.client.auth.signOut({scope:'local'});}
  }}finally{await browser.close();}
