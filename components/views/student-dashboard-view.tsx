@@ -37,6 +37,7 @@ import type { ViewId } from "@/lib/views"
 import "./student-home.css"
 import { applicationStage, applicationStages as sharedStages, stageCounts } from "@/lib/application-stages"
 import { TERMS, membershipRoleLabel, pluralize as plural } from "@/lib/copy/terms"
+import { clubMonogram } from "@/lib/club-assets"
 
 function when(event: ClubEvent | Date) {
   return (event instanceof Date ? event : eventStart(event)).toLocaleString("en-US", {
@@ -231,7 +232,7 @@ export function StudentDashboardView({
     </section>}
     <DashboardCard id="home-phone-applications-title" title="Applications" className="oc-home-phone-applications" more={{ onClick: () => onNavigate("tracker"), label: "View all" }}>
       {applications.length ? <GlassRowList>{applications.slice(0, 5).map(app => <li key={app.id}><GlassRow onClick={() => openApplication(app)} className="oc-home-application" title={app.name} detail={applicationNote(app)}
-        lead={<ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} marketing={app.marketing} text={app.name.slice(0, 2)} color={app.color} />}
+        lead={<ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} marketing={app.marketing} text={clubMonogram(app.name)} color={app.color} />}
         trailing={<span className="oc-dashboard-row-end"><StatusPill status={app.status} /></span>} /></li>)}</GlassRowList>
         : <DashboardQuiet><strong>Nothing submitted yet.</strong> Find clubs to apply to in Explore. <DashboardMore onClick={() => onNavigate("explore")}>Explore clubs</DashboardMore></DashboardQuiet>}
     </DashboardCard>
@@ -241,7 +242,7 @@ export function StudentDashboardView({
     <section className="oc-home-phone-clubs" aria-labelledby="home-phone-clubs-title">
       <div className="oc-home-phone-heading-row"><h2 id="home-phone-clubs-title" className="oc-home-phone-heading">{TERMS.myClubs}</h2><DashboardMore onClick={() => onNavigate("my-clubs")}>All clubs</DashboardMore></div>
       {clubs.length ? <ul className="oc-home-club-grid">{clubs.map(m => <li key={m.clubId}><a href={clubWorkspaceHref(m.clubId)} className="oc-home-club-tile">
-        <ClubLogo clubId={m.clubId} logoUrl={m.club.logoUrl} text={m.club.name.slice(0, 2)} color={m.club.color ?? undefined} />
+        <ClubLogo clubId={m.clubId} logoUrl={m.club.logoUrl} text={clubMonogram(m.club.name)} color={m.club.color ?? undefined} />
         <strong>{m.club.name}</strong><small>{membershipRoleLabel(m)}</small>
       </a></li>)}</ul>
         : <Card variant="glass" className="oc-home-phone-empty"><DashboardQuiet>Clubs you join appear here, with their meetings and tasks.</DashboardQuiet></Card>}
@@ -268,7 +269,7 @@ export function StudentDashboardView({
               {applications.length ? <>
                 <PipelineBars stages={stages} compactStages={stages} />
                 <GlassRowList>{applications.slice(0, 4).map(app => <li key={app.id}><GlassRow onClick={() => openApplication(app)} className="oc-home-application" title={app.name} detail={applicationNote(app)}
-                  lead={<ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} marketing={app.marketing} text={app.name.slice(0, 2)} color={app.color} />}
+                  lead={<ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} marketing={app.marketing} text={clubMonogram(app.name)} color={app.color} />}
                   trailing={<span className="oc-dashboard-row-end"><StatusPill status={app.status} /><ChevronRight size={16} aria-hidden="true" /></span>} /></li>)}</GlassRowList>
                 {applications.length > 4 && <DashboardFoot>Showing 4 of {applications.length} applications</DashboardFoot>}
               </> : empty("No applications yet", "You haven’t started an application. Find a club to apply to and your progress will show here.", <DashboardMore onClick={() => onNavigate("explore")}>Explore clubs</DashboardMore>)}

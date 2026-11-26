@@ -2,6 +2,7 @@
 import { SCHEDULING_TIMEZONE, schedulingDateTime } from "@/lib/scheduling-config"
 import type { Notification } from "@/lib/data";
 import type { getDurableNotifications } from "@/actions/communications";
+import { clubMonogram } from "@/lib/club-assets"
 export const communicationsChanged = () => window.dispatchEvent(new Event("outclass:communications-changed"));
 const notificationTypes: Record<string, Notification["type"]> = {
   DECISION: "Decision Available", OFFER_RESPONSE: "Offer Confirmation", ANNOUNCEMENT: "Announcement", INTERVIEW: "Interview Invite", APPLICATION: "Application Update",
@@ -21,7 +22,7 @@ export function inboxNotification(item: Awaited<ReturnType<typeof getDurableNoti
     ...(item.announcementId ? { announcementId: item.announcementId, ownAnnouncement: item.ownAnnouncement } : {}),
     ...(item.type === "TASK" ? { taskHref: item.href } : {}),
     type: notificationTypes[item.type] ?? "OutClass Update", urgent: item.type === "INTERVIEW",
-    club: item.club?.name || "OutClass", color: item.club?.color || "#142d45", logoUrl: item.club?.logoUrl, marketing: item.club?.marketing, logoText: (item.club?.name || "OC").slice(0, 2),
+    club: item.club?.name || "OutClass", color: item.club?.color || "#142d45", logoUrl: item.club?.logoUrl, marketing: item.club?.marketing, logoText: clubMonogram(item.club?.name || "OC"),
     senderName: item.club?.name || "OutClass", senderTitle: item.type === "MESSAGE" ? "Private message" : "Club update",
     title: item.title, preview: notificationPreview(item.body), body: [item.body], timestamp: new Date(item.createdAt).toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE }), fullDate: schedulingDateTime(item.createdAt), createdAt: new Date(item.createdAt).toISOString(), read: !!item.readAt, cta: item.eventKey?.startsWith("interview-assignment:") ? "Open interview room" : item.href.startsWith("/settings/interviews") ? "View my schedule" : item.href.startsWith("/interviews/book") ? (item.eventKey?.includes(":confirmed:") ? "View interview" : "Book interview") : item.type === "DECISION" ? "View Decision" : item.type === "OFFER_RESPONSE" ? "View response" : item.type === "MESSAGE" ? "Open conversation" : item.type === "TASK" ? "View task" : item.type === "APPLICATION" || item.type === "INTERVIEW" ? "View application" : item.type === "INVITATION" ? "Review invitation" : undefined };
 }

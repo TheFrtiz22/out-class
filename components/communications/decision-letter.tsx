@@ -4,6 +4,7 @@ import { useCallback,useEffect,useId,useRef,useState } from 'react';
 import { useServerAnchoredNow } from '@/hooks/use-server-now';
 import Link from 'next/link';
 import { ClubLogo } from '@/components/club-logo';
+import { clubMonogram } from '@/lib/club-assets';
 import { useSearchParams } from 'next/navigation';
 import { getDecisionLetter,respondToOffer,setDecisionNotificationsRead } from '@/lib/workspace-api';
 import { useAuth } from '@/contexts/auth-context';
@@ -18,12 +19,7 @@ import { PageHeader } from "@/components/ui/page-header";
 /** Leaving a letter returns to the Decisions stage of Applications, where this letter lives
  * (equal to applicantStatusHref(undefined, "decisions"); tests/nav-cleanup-redirects.test.cjs checks both). */
 const decisionsHref = '/applications?tab=decisions';
-const MINOR_WORDS=new Set(['of','the','and','at','for','in','a','an','&']);
-/** Up to three initials for the seal, skipping minor words ("Club of Investing" -> "CI"). */
-export function clubMonogram(name:string){
- const words=name.split(/\s+/).filter(word=>word&&!MINOR_WORDS.has(word.toLowerCase()));
- return (words.length?words:[name]).slice(0,3).map(word=>Array.from(word.replace(/[^\p{L}\p{N}]/gu,''))[0]??'').join('').toUpperCase()||'OC';
-}
+export { clubMonogram };
 /** Embossed seal beside the signature: club initials inside a ring of the club name. Decorative. */
 function LetterSeal({clubName,accent}:{clubName:string;accent:string}){
  const id=useId().replace(/:/g,'');
@@ -42,7 +38,7 @@ export function LetterPaper({content,preview=false,logoSource,marketing,decision
  return <article className="decision-paper" data-decision={decision?.toLowerCase()} aria-label={preview?'Sample decision letter preview':'Formal decision letter'} style={accent?{['--letter-accent' as string]:accent}:undefined}>
   {preview&&<p className="decision-preview">PREVIEW · SAMPLE STUDENT · NOT A PUBLISHED DECISION</p>}
   <header className="decision-masthead">
-   {logoSource&&<ClubLogo logoUrl={logoSource} marketing={marketing} text={content.clubName.slice(0,2)} color={content.accent} alt={`${content.clubName} logo`} size="lg" className="!size-[72px]"/>}
+   {logoSource&&<ClubLogo logoUrl={logoSource} marketing={marketing} text={clubMonogram(content.clubName)} color={content.accent} alt={`${content.clubName} logo`} size="lg" className="!size-[72px]"/>}
    <p className="decision-eyebrow">{content.clubName}</p>
    <p className="decision-subtitle">Recruitment correspondence</p>
    <div className="decision-rule" aria-hidden="true"/>

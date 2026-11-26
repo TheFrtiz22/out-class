@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { ClubLogo } from "@/components/club-logo"
-import { clubAssetSource } from "@/lib/club-assets"
+import { clubAssetSource, clubMonogram } from "@/lib/club-assets"
 import { ReportContentButton } from "@/components/reports/report-content-button"
 import type { ReactNode } from "react"
 import { Globe, Instagram, Linkedin, Mail, ExternalLink, Play } from "@/components/icons"
@@ -48,7 +48,7 @@ export function MarketingProfile({ profile, action, compact = false, assetPrevie
   return <div className="oc-marketing-profile overflow-hidden rounded-2xl border oc-glass-surface">
     <div className={`oc-marketing-cover ${compact ? "h-32" : "h-44 sm:h-56"}`} style={{ background: `linear-gradient(120deg, ${profile.color}, var(--input))` }}>{profile.bannerUrl && <img src={clubAssetSource(profile.bannerUrl, assetPreview)} alt="" className="size-full object-cover" style={{ objectPosition: `${m.bannerPosition.x}% ${m.bannerPosition.y}%` }} />}</div>
     <div className={compact ? "px-5 pb-5" : "px-5 pb-6 sm:px-8"}>
-      <ClubLogo logoUrl={profile.logoUrl} marketing={profile.marketing} assetPreview={assetPreview} text={profile.name.split(/\s+/).map(w => w[0]).slice(0, 3).join("")} color={profile.color} size="xl" alt={`${profile.name} logo`} className="-mt-10 mb-4 relative z-10 border-4 border-card !rounded-2xl" />
+      <ClubLogo logoUrl={profile.logoUrl} marketing={profile.marketing} assetPreview={assetPreview} text={clubMonogram(profile.name)} color={profile.color} size="xl" alt={`${profile.name} logo`} className="-mt-10 mb-4 relative z-10 border-4 border-card !rounded-2xl" />
       <Heading className="oc-club-profile-title font-serif text-3xl font-semibold tracking-tight sm:text-4xl">{profile.name || "Your club name"}</Heading>
       {profile.tagline && <p className="mt-2 text-base leading-7 text-muted-foreground">{profile.tagline}</p>}
       {profile.category && <p className="oc-club-category mt-3"><span className="sr-only">Category: </span>{profile.category}</p>}

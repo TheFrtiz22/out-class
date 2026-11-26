@@ -33,6 +33,7 @@ import {
   type StudentApplication,
 } from "@/components/applications/application-form"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
+import { clubMonogram } from "@/lib/club-assets"
 
 const trackerLabels: Record<string, TrackerStatus> = {
   DRAFTING: "Drafting",
@@ -105,7 +106,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
           id: app.id,
           clubId: app.clubId,
           clubName: app.club.name,
-          logoText: app.club.name.slice(0, 2),
+          logoText: clubMonogram(app.club.name),
           logoUrl: app.club.logoUrl,
           marketing: app.club.marketing,
           color: app.club.color || DEFAULT_CLUB_COLOR,
@@ -279,7 +280,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all", serverNow }:
             clubId={app.clubId}
             logoUrl={app.club.logoUrl} marketing={app.club.marketing}
             color={app.club.color || DEFAULT_CLUB_COLOR}
-            text={app.club.name.slice(0, 2)}
+            text={clubMonogram(app.club.name)}
             size="md"
           />
           <div className="min-w-0 flex-1">

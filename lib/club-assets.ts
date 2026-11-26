@@ -20,3 +20,5 @@ export function clubLogoSource(value: string | null | undefined, clubId: string 
   const legacyKey = clubId || text.toLowerCase();
   return clubAssetSource(value?.trim(), preview) || (Object.hasOwn(bundledClubLogos, legacyKey) ? bundledClubLogos[legacyKey] : "");
 }
+
+export { clubMonogram } from "@/lib/club-monogram";

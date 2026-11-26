@@ -10,6 +10,7 @@ import { applicationAvailability } from "@/lib/club-settings";
 import { prisma } from "@/utils/prisma";
 import type { DirectoryClub } from "@/lib/club-directory";
 import { resolveViewerSchool } from "@/utils/school-scope";
+import { clubMonogram } from "@/lib/club-assets";
 
 // Explicit public fields only: no applicants, emails, memberships, or evaluations.
 const publicFields = {
@@ -71,11 +72,7 @@ function present(club: PublicClubRecord): DirectoryClub {
     directorySource: club.directorySource,
     id: club.id,
     name: club.name,
-    logoText: club.name
-      .split(/\s+/)
-      .map((word) => word[0])
-      .slice(0, 3)
-      .join(""),
+    logoText: clubMonogram(club.name),
     logoUrl: club.logoUrl,
     bannerUrl: club.bannerUrl,
     color: club.color,
