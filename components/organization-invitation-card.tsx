@@ -10,7 +10,7 @@ import Link from "next/link";
 import { clubWorkspaceHref } from "@/lib/club-workspace";
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { unwrapped } from "@/lib/action-result"
-import { clubMonogram } from "@/lib/club-assets"
+import { clubMonogram } from "@/lib/club-monogram"
 const acceptIdentityClubInvitation = unwrapped(acceptIdentityClubInvitationAction)
 const declineIdentityClubInvitation = unwrapped(declineIdentityClubInvitationAction)
 const setOrganizationInvitationDismissed = unwrapped(setOrganizationInvitationDismissedAction)
