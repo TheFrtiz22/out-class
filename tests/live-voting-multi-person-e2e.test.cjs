@@ -124,8 +124,12 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
 
   // Close and confirm the clear Pass, then decide 3 and 4 quickly; then the held applicant in pass 2.
   await leaderPage.getByRole('button', { name: 'Close vote', exact: true }).click()
-  await confirm.getByText(/^Leading choice: Pass$/).waitFor({ timeout: 20000 })
-  await confirm.getByRole('button', { name: 'Pass', exact: true }).click()
+  // A clear result: when the session's voting rule decides, the room asks to confirm the rule's outcome;
+  // otherwise it shows the leading choice. Either way the outcome is Pass.
+  const ruled = leaderPage.getByRole('region', { name: 'Confirm rule outcome' })
+  await ruled.or(confirm).first().waitFor({ timeout: 20000 })
+  if (await ruled.isVisible()) await ruled.getByRole('button', { name: 'Confirm Pass', exact: true }).click()
+  else { await confirm.getByText(/^Leading choice: Pass$/).waitFor(); await confirm.getByRole('button', { name: 'Pass', exact: true }).click() }
   await leaderPage.getByText(/^Applicant 3 of 4\./).first().waitFor({ state: 'attached', timeout: 20000 })
   const decide = async (applicationId, passNumber, choice) => { await command('OPEN_VOTING'); await command('CLOSE_VOTING'); const r = await command('DECIDE_AND_ADVANCE', { applicationId, passNumber, choice, reason: 'Synthetic decision' }); return r }
   await decide(apps[2].id, 1, 'REJECT'); await decide(apps[3].id, 1, 'ACCEPT')
