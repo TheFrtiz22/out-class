@@ -104,6 +104,8 @@
 .oc-segmented-control[data-size="compact"] { min-height: 46px; }
 .oc-segmented-control button { position: relative; z-index: 1; flex: 1 0 auto; min-width: max-content; min-height: 44px; padding: .5rem 1rem; border: 0; border-radius: var(--oc-radius-full); background: transparent; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; cursor: pointer; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 .oc-segmented-control[data-size="compact"] button { min-height: 36px; padding-block: .375rem; }
+/* Edit profile on phones: the five sections wrap onto two rows instead of hiding Links and Phone past the right edge. */
+@media (max-width: 639px) { .oc-profile-section-picker > .oc-segmented-control:not([data-sliding]) { flex-wrap: wrap; overflow: visible; border-radius: var(--oc-radius-xl); } }
 .oc-segmented-control button:disabled { cursor: not-allowed; opacity: .5; }
 @media (hover: hover) and (pointer: fine) { .oc-segmented-control button:not([data-selected]):not(:disabled):hover { background: var(--oc-glass-hover-tint); } }
 .oc-segmented-control button[data-selected] { color: var(--oc-glass-cream); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }

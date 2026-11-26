@@ -191,12 +191,13 @@ export function EditStudentProfileDialog({
           <DialogTitle>{sections ? "Edit profile" : titles[section]}</DialogTitle>
           <DialogDescription>{sections ? "Choose a section. Changes save as you go." : "Changes save as you go."}</DialogDescription>
         </DialogHeader>
-        {sections && <SegmentedControl label="Profile section" size="compact" value={section} onChange={async next => {
+        {/* The wrapper lets the dialog grid row grow when the sections wrap onto two rows on phones. */}
+        {sections && <div className="oc-profile-section-picker"><SegmentedControl label="Profile section" size="compact" value={section} onChange={async next => {
           if (next === section || busy) return
           try { await autosave.flush() } catch { return }
           if (draft) expected.current = profileSectionSnapshot(draft, next as ProfileSection)
           setSection(next as ProfileSection)
-        }} options={sections.map(id => ({ value: id, label: titles[id] }))} />}
+        }} options={sections.map(id => ({ value: id, label: titles[id] }))} /></div>}
         {typeof extra === "function" ? extra(synced => { setDraft(synced); expected.current = profileSectionSnapshot(synced, section); setOriginalGpa(synced.gpa ?? null); setOriginalPhoto(synced.headshotUrl ?? null) }) : extra}
         {error && (
           <p role="alert" className="text-sm text-destructive">
