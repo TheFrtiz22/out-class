@@ -55,6 +55,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   const [selectedId, setSelectedId] = useState<string | null>(null)
   useEffect(() => {
     if (focusNotificationId && items.some((item) => item.id === focusNotificationId)) {
+      setReadingOrder([])
       setSelectedId(focusNotificationId)
       markNotificationRead(focusNotificationId)
       focusNotification(null)
@@ -66,6 +67,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   const [checked, setChecked] = useState<Set<string>>(new Set())
   // Checkboxes appear only while selecting; rows otherwise open on click and offer read/delete on hover.
   const [selecting, setSelecting] = useState(false)
+  const [readingOrder, setReadingOrder] = useState<string[]>([])
   const clubs = useMemo(() => [...new Set(items.map((item) => item.club))].sort(), [items])
   const unread = items.filter((item) => !item.read).length
   const filtered = useMemo(() => {
@@ -122,10 +124,15 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   // Notification settings open from the Inbox header; filters show only once the list is long enough to need them.
   const filtering = !!query || filter !== "All" || club !== "all" || readFilter !== "all" || sort !== "priority"
   const showFilters = items.length >= 5 || filtering
-  // Reading order for the previous/next controls: the rows as listed, group by group.
-  const order = groups.flatMap((group) => group.items.map((item) => item.id))
+  // Reading order for the previous/next controls: the rows as listed when a notification was opened from the
+  // list. Opening marks it read, which can drop it from Unread or move it under "Unread first", so the order
+  // is kept from that moment (minus deleted rows) rather than recomputed after each read.
+  const listed = groups.flatMap((group) => group.items.map((item) => item.id))
+  const sequence = readingOrder.filter((id) => items.some((item) => item.id === id))
+  const order = selected && sequence.includes(selected.id) ? sequence : listed
   const position = selected ? order.indexOf(selected.id) : -1
-  function open(id: string) {
+  function open(id: string, keepOrder = false) {
+    if (!keepOrder) setReadingOrder(listed)
     setSelectedId(id)
     markNotificationRead(id)
   }
@@ -313,8 +320,8 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   <ArrowLeft className="size-4" />
                   Inbox
                 </Button>
-                <IconButton size="icon-sm" aria-label="Previous notification" disabled={position <= 0} onClick={() => open(order[position - 1])}><ChevronUp /></IconButton>
-                <IconButton size="icon-sm" aria-label="Next notification" disabled={position < 0 || position >= order.length - 1} onClick={() => open(order[position + 1])}><ChevronDown /></IconButton>
+                <IconButton size="icon-sm" aria-label="Previous notification" disabled={position <= 0} onClick={() => open(order[position - 1], true)}><ChevronUp /></IconButton>
+                <IconButton size="icon-sm" aria-label="Next notification" disabled={position < 0 || position >= order.length - 1} onClick={() => open(order[position + 1], true)}><ChevronDown /></IconButton>
                 {position >= 0 && <span className="oc-inbox-position">{position + 1} of {order.length}</span>}
                 <span className="flex-1" />
                 <Button variant="ghost" size="sm" onClick={() => setNotificationsRead([selected.id], !selected.read)}>
