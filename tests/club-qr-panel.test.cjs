@@ -37,7 +37,7 @@ test('the club QR code is one click from Home and Recruiting on web, and one tap
   assert.match(fs.readFileSync('components/recruiting-overview.tsx', 'utf8'), /<ClubQrButton club=\{\{ id: clubId, name: clubName \}\}/)
   const sheet = fs.readFileSync('mobile/src/components/share-sheet.tsx', 'utf8')
   assert.match(sheet, /export function clubShareTarget/)
-  for (const file of ['mobile/src/app/club/[id].tsx', 'mobile/src/app/my-club/[clubId].tsx', 'mobile/src/app/leader/[clubId]/index.tsx'])
+  for (const file of ['mobile/src/components/explore/club-page-view.tsx', 'mobile/src/app/my-club/[clubId].tsx', 'mobile/src/app/leader/[clubId]/index.tsx'])
     assert.match(fs.readFileSync(file, 'utf8'), /target=\{clubShareTarget\(/, file)
   assert.match(fs.readFileSync('mobile/src/app/leader/[clubId]/index.tsx', 'utf8'), /"Club QR code"/)
   assert.match(fs.readFileSync('mobile/src/app/my-club/[clubId].tsx', 'utf8'), /label="Club QR code"/)

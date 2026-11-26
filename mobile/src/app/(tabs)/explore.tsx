@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useIsFocused, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, ScrollView, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CLUB_CARD_GAP, ClubCard, ClubCardSkeleton, clubCardHeight } from "~/components/explore/club-card";
@@ -13,7 +13,9 @@ import { Bookmark, CalendarDays, Compass, SlidersHorizontal, Users, X } from "~/
 import { OptionPicker, type PickerOption } from "~/components/option-picker";
 import { Sheet } from "~/components/sheet";
 import { Text } from "~/components/text";
-import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote, usePullControl } from "~/components/ui";
+import { Button, DOCK_CLEARANCE, EmptyState, ErrorState, IconButton, Press, StaleNote, usePullControl, useScreenGutters } from "~/components/ui";
+import { ClubPageView } from "~/components/explore/club-page-view";
+import { useLayoutClass } from "~/lib/layout";
 import { ApiError, errorMessage } from "~/lib/api";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import { useTheme } from "~/lib/theme";
@@ -48,6 +50,28 @@ export default function Explore() {
   // One clock per visit, so a deadline does not flip a card's state mid-scroll.
   const [now, setNow] = useState(() => Date.now());
   const search = useDebounced(query, 180);
+  // Regular width (the Duo's inner display, iPad): the list sits beside the chosen club's page, as Mail shows a list
+  // beside an email. Compact: a club opens as its own screen.
+  const layout = useLayoutClass();
+  const regular = layout === "regular";
+  const gutters = useScreenGutters();
+  const [selected, setSelected] = useState<string | null>(null);
+  // Folding with a club open keeps it open: compact shows it as its own screen (Apple: keep state between displays).
+  // Only while Explore is the screen in view: folding on another tab or deeper screen keeps the choice until the
+  // person comes back to Explore, rather than pushing the club over what they're doing.
+  const focused = useIsFocused();
+  const folded = useRef(false);
+  const previous = useRef(layout);
+  useEffect(() => {
+    if (previous.current === "regular" && layout === "compact" && selected) folded.current = true;
+    if (layout === "regular") folded.current = false;
+    previous.current = layout;
+    if (folded.current && focused && selected) {
+      folded.current = false;
+      router.push({ pathname: "/club/[id]", params: { id: selected } });
+      setSelected(null);
+    }
+  }, [layout, selected, router, focused]);
 
   const clubs = directory.data?.clubs;
   const filters = useMemo(() => ({ ...choices, query: search }), [choices, search]);
@@ -69,7 +93,10 @@ export default function Explore() {
   const change = (key: keyof DirectoryFilters, value: string) => { if (key === "query") setQuery(value); else setChoices(current => ({ ...current, [key]: value })); };
   const clear = () => { setQuery(""); setChoices(emptyDirectoryFilters); };
   const refresh = () => { setNow(Date.now()); return Promise.all([directory.refetch(), saved.query.refetch()]); };
-  const open = useCallback((club: PublicClub) => router.push({ pathname: "/club/[id]", params: { id: club.id } }), [router]);
+  const open = useCallback((club: PublicClub) => {
+    if (regular) setSelected(club.id);
+    else router.push({ pathname: "/club/[id]", params: { id: club.id } });
+  }, [router, regular]);
   const pressIn = useCallback((club: PublicClub) => prefetch(club.id), [prefetch]);
   const { setSaved, ids } = saved;
   const renderItem = useCallback(({ item, index }: { item: PublicClub; index: number }) => (
@@ -134,7 +161,7 @@ export default function Explore() {
   );
 
   const pullControl = usePullControl(refresh, top);
-  return (
+  const listPane = (
     <View style={{ flex: 1 }}>
       <FlatList
         ref={list}
@@ -147,7 +174,7 @@ export default function Explore() {
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={{ paddingTop: top + theme.space.control, paddingHorizontal: 16, paddingBottom: insets.bottom + DOCK_CLEARANCE }}
+        contentContainerStyle={{ paddingTop: top + theme.space.control, ...(regular ? { paddingLeft: gutters.left, paddingRight: 16 } : gutters.padding), paddingBottom: insets.bottom + DOCK_CLEARANCE }}
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -160,6 +187,24 @@ export default function Explore() {
       />
       <Header title="Explore" />
       {notice.element}
+    </View>
+  );
+  return (
+    <View style={{ flex: 1 }}>
+      {/* One row in both size classes, so folding or unfolding resizes the list instead of remounting it (scroll
+          position and search focus survive). Two equal panes when regular: the crease falls on their boundary. */}
+      <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.background }}>
+        {listPane}
+        {regular ? (
+          <View testID="explore-detail" style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: colors.border }}>
+            {selected ? <ClubPageView key={selected} id={selected} pane /> : (
+              <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: gutters.right, paddingBottom: DOCK_CLEARANCE }}>
+                <EmptyState icon={Compass} title="Choose a club" body="Its page opens here, beside the list." />
+              </View>
+            )}
+          </View>
+        ) : null}
+      </View>
 
       <Sheet open={sheet} onClose={() => setSheet(false)} title="Filter clubs" testID="explore-filter-sheet">
         {/* Every group can be on screen at once; a small phone scrolls rather than hiding Done. */}
