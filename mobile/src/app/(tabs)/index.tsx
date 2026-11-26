@@ -14,6 +14,8 @@ import { openRoute, routeForHref } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
 import { useTabScrollToTop } from "~/lib/scroll-to-top";
 import type { ApplicationsView, CalendarEvent, HomeView, Me, MyApplicationSummary, TaskNotification } from "~/lib/types";
+import { useLayoutClass } from "~/lib/layout";
+import { useTheme } from "~/lib/theme";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type Route = { pathname: string; params?: Record<string, string> };
@@ -100,6 +102,12 @@ export default function Home() {
     tasks: () => <TasksList tasks={(data?.tasks ?? []).filter(task => `task:${task.id}` !== heroId).slice(0, 3)} now={now} onOpen={go} routeFor={taskRoute} />,
   };
 
+  // Regular width (the iPhone Duo's inner display, iPad): the carousel stays full width and the other sections
+  // share two even columns, so nothing sits across the fold (Apple's Duo guidance: even-column grids).
+  const regular = useLayoutClass() === "regular";
+  const { space } = useTheme();
+  const section = (id: HomeSectionId) => <View key={id} testID={`home-section-${id}`}>{sections[id]()}</View>;
+
   return (
     <View style={{ flex: 1 }}>
       <ScreenScroll ref={scroll} dock top={top} onRefresh={refresh} testID="home-screen">
@@ -114,7 +122,18 @@ export default function Home() {
           <>
             {home.isRefetchError ? <StaleNote /> : null}
             {layout.hero ? <HomeHeroCard hero={layout.hero} now={now} onOpen={go} eventRoute={toEvent} eventAction={eventActionLabel} taskRoute={taskRoute} /> : null}
-            {layout.sections.map(id => <View key={id} testID={`home-section-${id}`}>{sections[id]()}</View>)}
+            {regular ? (
+              <>
+                {layout.sections.filter(id => id === "myClubs").map(section)}
+                <View testID="home-columns" style={{ flexDirection: "row", gap: 16, alignItems: "flex-start" }}>
+                  {[0, 1].map(column => (
+                    <View key={column} testID={`home-column-${column}`} style={{ flex: 1, gap: space.content - 4 }}>
+                      {layout.sections.filter(id => id !== "myClubs").filter((_, index) => index % 2 === column).map(section)}
+                    </View>
+                  ))}
+                </View>
+              </>
+            ) : layout.sections.map(section)}
           </>
         ) : null}
       </ScreenScroll>
