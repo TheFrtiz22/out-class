@@ -764,6 +764,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       ) : (
         data && (
           <>
+            {/* Add member moves into the page header and the dialogs render in portals, so this row is often empty; empty:hidden keeps it from adding a gap above the list. */}
             <div className="flex flex-wrap gap-2 empty:hidden" role="group" aria-label="Member actions">
               {caps.canManageMembers && actionSlot !== undefined && (actionSlot ? createPortal(addMembers, actionSlot) : addMembers)}
               {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." open={addOpen} onOpenChange={setAddOpen}>{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy} loading={busy}>Add member</Button></div></form>}</ActionWorkflow>}
