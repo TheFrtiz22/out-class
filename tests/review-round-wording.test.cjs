@@ -29,6 +29,9 @@ test('room title, closing heading and round score follow the round kind', () => 
   assert.match(view, /<InterviewKitSession key=\{`\$\{active\.id\}-\$\{round\.id\}`\} review=\{!!round\.review\}/)
   const kit = fs.readFileSync('components/interview-kit-session.tsx', 'utf8')
   assert.match(kit, /session\.completedAt \? \(review \? "Review complete" : "Interview complete"\)/)
+  // A review round has no interview, so its closing note is "Final thoughts" (label and length message).
+  assert.match(kit, /<label htmlFor="final-interview-thoughts">\{review \? "Final thoughts" : "Final interview thoughts"\}<\/label>/)
+  assert.match(kit, /\$\{review \? "Final thoughts" : "Final interview thoughts"\} must be 50 words or fewer/)
   assert.match(kit, /<RoundScore review=\{review\}/)
   const refs = fs.readFileSync('components/interview-review-references.tsx', 'utf8')
   assert.match(refs, /review \? "Average review score" : "Average interview score"/)
