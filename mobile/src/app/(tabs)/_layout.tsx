@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Glass } from "~/components/glass";
 import type { IconComponent } from "~/components/icon-factory";
 import { CalendarDays, Compass, FilePenLine, Home, UserRound, Users } from "~/components/icons";
@@ -15,6 +15,7 @@ import { spring } from "~/lib/motion";
 import { useMiddleTab } from "~/lib/middle-tab";
 import { fonts, useTheme } from "~/lib/theme";
 import { useScreenGutters } from "~/components/ui";
+import { useLayoutClass } from "~/lib/layout";
 
 type Tab = { name: string; label: string; icon: IconComponent; href: "/" | "/explore" | "/clubs" | "/calendar" | "/profile" };
 // Five tabs. The middle one is Apply while an application is still open and My Clubs once they are all
@@ -26,6 +27,9 @@ const tabs: Tab[] = [
   { name: "calendar", href: "/calendar", label: "Calendar", icon: CalendarDays },
   { name: "profile", href: "/profile", label: "Profile", icon: UserRound },
 ];
+// Each tab's minimum width; the dock needs every tab at that width plus its padding.
+const DOCK_TAB_MIN_WIDTH = 64;
+const DOCK_MIN_WIDTH = tabs.length * DOCK_TAB_MIN_WIDTH + DOCK_PADDING * 2;
 const middle = { apply: { label: "Apply", icon: FilePenLine }, clubs: { label: "My Clubs", icon: Users } } as const;
 
 
@@ -52,6 +56,13 @@ function Dock({ state, emitter, navigation }: DockProps) {
   const { colors, radius, a11y } = useTheme();
   const insets = useSafeAreaInsets();
   const gutters = useScreenGutters(12);
+  // Regular width (the iPhone Duo's inner display, iPad): the dock stays in the leading half, so no tab sits on
+  // the fold when the Duo is partly open, but only when that half fits every tab at its minimum width (a narrow
+  // iPad split view near the breakpoint keeps the full-width dock).
+  const frameWidth = useSafeAreaFrame().width;
+  const halfRight = frameWidth / 2 + 12;
+  const halfFits = frameWidth - gutters.left - halfRight >= DOCK_MIN_WIDTH;
+  const dockRight = useLayoutClass() === "regular" && halfFits ? Math.max(gutters.right, halfRight) : gutters.right;
   // The dock steps aside for the keyboard rather than riding on top of it.
   const keyboard = useKeyboardShown();
   const mode = useMiddleTab();
@@ -128,7 +139,7 @@ function Dock({ state, emitter, navigation }: DockProps) {
 
   if (keyboard) return null;
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", left: gutters.left, right: gutters.right, bottom: Math.max(insets.bottom, 10), alignItems: "stretch" }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", left: gutters.left, right: dockRight, bottom: Math.max(insets.bottom, 10), alignItems: "stretch" }}>
       {/* The shadow sits on a wrapper: the glass clips its own corners, which would clip a shadow drawn on it. */}
       <View style={{ borderRadius: radius.full, shadowColor: colors.schoolPrimary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
         <GestureDetector gesture={drag}>
@@ -154,7 +165,7 @@ function Dock({ state, emitter, navigation }: DockProps) {
                     if (!selected) { haptics.tick(); go(index); }
                     else (emitter ?? navigation)?.emit?.({ type: "tabPress", target: route.key, canPreventDefault: true });
                   }}
-                  style={({ pressed }) => ({ flex: 1, minWidth: 64, minHeight: DOCK_TAB_HEIGHT, alignItems: "center", justifyContent: "center", gap: 3, borderRadius: radius.full, backgroundColor: !slot && selected ? colors.primary : pressed && !lit ? colors.muted : "transparent" })}
+                  style={({ pressed }) => ({ flex: 1, minWidth: DOCK_TAB_MIN_WIDTH, minHeight: DOCK_TAB_HEIGHT, alignItems: "center", justifyContent: "center", gap: 3, borderRadius: radius.full, backgroundColor: !slot && selected ? colors.primary : pressed && !lit ? colors.muted : "transparent" })}
                 >
                   <Icon size={DOCK_ICON} weight={lit ? "fill" : "regular"} color={lit ? colors.primaryForeground : colors.foreground} />
                   <Text maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{ fontFamily: lit ? fonts.sansSemibold : fonts.sansMedium, fontSize: 12, lineHeight: 15, color: lit ? colors.primaryForeground : colors.foreground }}>{tab.label}</Text>
