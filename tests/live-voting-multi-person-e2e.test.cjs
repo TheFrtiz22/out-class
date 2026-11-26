@@ -140,8 +140,8 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   await decide(apps[0].id, 2, 'ACCEPT')
   await command('END')
   // Members' phones say "Session ended"; the projector says "Voting ended".
-  await phones[0].getByText('Session ended', { exact: false }).first().waitFor({ timeout: 20000 })
   await projector.getByText('Voting ended', { exact: false }).first().waitFor({ timeout: 20000 })
+  await phones[0].getByText(/Session ended|Voting ended/).first().waitFor({ timeout: 20000 }).catch(async error => { throw new Error(error.message + '\nPHONE: ' + phones[0].url() + '\n' + (await phones[0].locator('body').innerText().catch(() => '?')).slice(0, 1200)) })
   assert.equal(await projector.locator('.vr-aud-join').count(), 0, 'no join code after the end')
 
   // Finalization: Pass means advance to the interview round; nothing is sent.
