@@ -67,6 +67,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "outclass",
   userInterfaceStyle: "automatic",
   ios: {
+    // Icon Composer document (iOS 26 Liquid Glass): the ivory OC monogram on navy. icon.png stays the fallback.
+    icon: "./assets/icon/OutClass.icon",
     bundleIdentifier: "net.outclass.app",
     supportsTablet: false,
     // Universal links: the web serves apple-app-site-association. The apex domain carries /q
