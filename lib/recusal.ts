@@ -3,8 +3,10 @@ import { ActionError } from "@/lib/action-result"
 
 export const RECUSED_MESSAGE = "You've stepped out of reviewing this applicant because you know them. A recruitment lead can undo this."
 
-export class RecusedError extends Error {
-  constructor() { super(RECUSED_MESSAGE); this.name = "RecusedError" }
+/** A refusal the reviewer can act on (ask a recruitment lead), so it is an ActionError: converted actions return it
+ *  as a result with its message, instead of a thrown error that production shows as a generic failure. */
+export class RecusedError extends ActionError {
+  constructor() { super(RECUSED_MESSAGE, "RECUSED"); this.name = "RecusedError" }
 }
 
 /** Active (not lifted) recusal for this member and application, read in the
