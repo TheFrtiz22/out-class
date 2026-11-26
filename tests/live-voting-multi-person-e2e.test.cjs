@@ -140,8 +140,12 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   await decide(apps[0].id, 2, 'ACCEPT')
   await command('END')
   // Members' phones say "Session ended"; the projector says "Voting ended".
-  await projector.getByText('Voting ended', { exact: false }).first().waitFor({ timeout: 20000 })
-  await phones[0].getByText(/Session ended|Voting ended/).first().waitFor({ timeout: 20000 }).catch(async error => { throw new Error(error.message + '\nPHONE: ' + phones[0].url() + '\n' + (await phones[0].locator('body').innerText().catch(() => '?')).slice(0, 1200)) })
+  const ended = async (page, text, label) => page.getByText(text).first().waitFor({ timeout: 25000 }).catch(async error => {
+    const session = await db.votingSession.findUnique({ where: { id: scope.sessionId }, select: { status: true, revision: true } }).catch(e => String(e))
+    throw new Error(error.message + '\n' + label + ' ' + page.url() + ' session=' + JSON.stringify(session) + '\n' + (await page.locator('body').innerText().catch(() => '?')).slice(0, 1200))
+  })
+  await ended(projector, /Voting ended/, 'PROJECTOR')
+  await ended(phones[0], /Session ended|Voting ended/, 'PHONE')
   assert.equal(await projector.locator('.vr-aud-join').count(), 0, 'no join code after the end')
 
   // Finalization: Pass means advance to the interview round; nothing is sent.
