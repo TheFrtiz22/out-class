@@ -39,7 +39,7 @@ function resolver({user=memberId,demo=false}={}){
 }
 function page(file,href){
  const calls=[];const redirect=to=>{calls.push(['redirect',to]);throw Object.assign(Error('NEXT_REDIRECT'),{to})};
- const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(n=>n==='next/navigation'?{redirect}:n==='@/utils/legacy-voting-link'?{liveRoomHrefForLegacyLink:async id=>{calls.push(['resolve',id]);return href(id)}}:n==='@/components/live-voting/voting-link-moved'?{VotingLinkMoved:function VotingLinkMoved(){}}:n==='react/jsx-runtime'?{jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})}:require(n),mod,mod.exports);
+ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(n=>n==='next/navigation'?{redirect}:n==='@/utils/legacy-voting-link'?{liveRoomHrefForLegacyLink:async id=>{calls.push(['resolve',id]);return href(id)},votingRoomsForViewer:async()=>({signedIn:true,clubs:[{id:clubId,name:'Chess'}]})}:n==='@/components/live-voting/voting-link-moved'?{VotingLinkMoved:function VotingLinkMoved(){}}:n==='react/jsx-runtime'?{jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})}:require(n),mod,mod.exports);
  return{calls,render:async args=>{try{return await mod.exports.default(args)}catch(e){if(e.message==='NEXT_REDIRECT')return{redirected:e.to};throw e}}};
 }
 
@@ -58,6 +58,7 @@ test('/vote and /live-voting redirect a QR-style ?session= link to the voting-ro
  const tree=await unmapped.render({searchParams:Promise.resolve({session:'demo-session-1'})});
  assert.equal(tree.type.name,'VotingLinkMoved');assert.equal(tree.props.next,'/live-voting?session=demo-session-1','sign-in returns to the original link');
  assert.equal((await unmapped.render({searchParams:Promise.resolve({})})).props.next,'/live-voting');
+ assert.deepEqual(tree.props.clubs,[{id:clubId,name:'Chess'}],'a signed-in viewer gets their Voting rooms');assert.equal(tree.props.signedIn,true);
  const source=fs.readFileSync('app/(focus)/live-voting/page.tsx','utf8');assert.doesNotMatch(source,/^"use client"|BroadcastChannel|localStorage/m);
 });
 
@@ -228,4 +229,18 @@ test('with demo=1 the history page and its close command never reach the server 
   assert.equal(w.demoStore.get().votingSessions.find(s=>s.id===w.session.id).state,'COMPLETED','Demo closes in the Demo store');
   assert.equal(w.d.calls(),0,'no server action was invoked');assert.equal(w.fetches(),0,'no workspace read reached the server');
  }finally{w.restore()}
+});
+
+test('the generic voting page: signed-in viewers see only their own Voting rooms and no Sign in', async () => {
+ const members=[
+  {clubId:'c-lead',status:'ACTIVE',alumniSince:null,isOwner:false,permissions:['decisions.view'],handOverOnly:false,club:{name:'Alpha'}},
+  {clubId:'c-plain',status:'ACTIVE',alumniSince:null,isOwner:false,permissions:[],handOverOnly:false,club:{name:'Beta'}},
+  {clubId:'c-own',status:'ACTIVE',alumniSince:null,isOwner:true,permissions:[],handOverOnly:false,club:{name:'Gamma'}},
+ ];
+ const make=(user)=>load('utils/legacy-voting-link.ts',{'server-only':{},'next/headers':{cookies:async()=>({get:()=>undefined,has:()=>false})},'@/lib/demo/access':{DEMO_COOKIE:'d'},'@/lib/platform-view-as':{PLATFORM_VIEW_COOKIE:'p'},'@/utils/auth':{getSessionUser:async()=>({data:{user:user?{id:user,email:'member@virginia.edu',email_confirmed_at:'2026-01-01T00:00:00Z'}:null},error:null})},'@/utils/prisma':{prisma:{user:{findUnique:async()=>({disabledAt:null})},clubMember:{findMany:async({where})=>{assert.equal(where.userId,user);assert.deepEqual(where.club,{suspendedAt:null});return members}}}}});
+ assert.deepEqual(await make(memberId).votingRoomsForViewer(),{signedIn:true,clubs:[{id:'c-lead',name:'Alpha'},{id:'c-own',name:'Gamma'}]},'only clubs whose voting sessions the viewer may see');
+ assert.deepEqual(await make(null).votingRoomsForViewer(),{signedIn:false,clubs:[]});
+ const src=fs.readFileSync('components/live-voting/voting-link-moved.tsx','utf8');
+ assert.match(src,/\{!signedIn && <Link className=\{linkClass\} href=\{signInHref\(next\)\}>Sign in<\/Link>\}/,'no Sign in for a signed-in viewer');
+ assert.match(src,/tool=decisions&decisionTab=voting/);
 });

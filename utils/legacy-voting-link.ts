@@ -1,4 +1,4 @@
-import { activeMemberWhere } from "@/lib/permissions";
+import { activeMemberWhere, hasPermission } from "@/lib/permissions";
 import "server-only"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
@@ -27,5 +27,24 @@ export async function liveRoomHrefForLegacyLink(sessionId: string | undefined | 
   } catch {
     // A degraded lookup keeps the generic page and its own error handling.
     return null
+  }
+}
+
+/**
+ * For the generic "Voting has moved" page: whether the viewer is signed in, and the clubs whose Voting room
+ * they may open (active, unsuspended, with decisions.view or decisions.manage). Nothing about any session.
+ */
+export async function votingRoomsForViewer(): Promise<{ signedIn: boolean; clubs: { id: string; name: string }[] }> {
+  try {
+    const viewer = await verifiedViewer()
+    if (viewer.state !== "VERIFIED") return { signedIn: viewer.state === "SKIPPED", clubs: [] }
+    const members = await prisma.clubMember.findMany({
+      where: { userId: viewer.userId, ...activeMemberWhere, club: { suspendedAt: null } },
+      select: { clubId: true, status: true, alumniSince: true, isOwner: true, permissions: true, handOverOnly: true, club: { select: { name: true } } },
+      orderBy: { club: { name: "asc" } },
+    })
+    return { signedIn: true, clubs: members.filter(m => hasPermission(m, "decisions.view") || hasPermission(m, "decisions.manage")).map(m => ({ id: m.clubId, name: m.club.name })) }
+  } catch {
+    return { signedIn: false, clubs: [] }
   }
 }
