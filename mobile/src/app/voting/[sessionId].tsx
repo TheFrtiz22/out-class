@@ -21,6 +21,7 @@ import { haptics } from "~/lib/haptics";
 import { openOnWeb } from "~/lib/links";
 import { shouldRetry, useApiQuery } from "~/lib/query";
 import { useTheme } from "~/lib/theme";
+import { useLayoutClass } from "~/lib/layout";
 
 type Mode = "leader" | "member";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -102,8 +103,24 @@ export default function VotingRoomScreen() {
     </>
   );
 
+  // The room's lists: who is in the room, the applicant queue and the web links. On a regular-width screen (the
+  // Duo's inner display, iPad) they get their own pane on the leading side, beside the stage and host controls,
+  // which stay the first pane's children in both layouts so folding mid-vote never remounts them.
+  const split = useLayoutClass() === "regular" && valid && !gate && !!room && mode === "leader";
+  const roomLists = (current: RoomSnapshot) => (
+    <>
+      <InRoom room={current} onShowQr={current.status !== "COMPLETED" ? () => setJoinQr(true) : undefined} />
+      <Queue room={current} labels={labels} />
+      <Card padded={false} style={{ paddingHorizontal: 16 }}>
+        <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title="Prepare slides" detail="Open on web" onPress={() => { openOnWeb(`/voting/rooms/${encodeURIComponent(current.id)}/prepare?clubId=${encodeURIComponent(current.clubId)}`); }} />
+        <Divider />
+        <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title="Show on projector" detail="Open on web" onPress={() => { openOnWeb(webRoomPath(current.clubId, current.id, "present")); }} />
+      </Card>
+    </>
+  );
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, flexDirection: split ? "row-reverse" : "column" }}>
       <ScreenScroll top={top} testID="voting-room" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" onRefresh={() => Promise.all([roomQuery.refetch(), gate ? join.refetch() : null])}>
         {valid && leader && room?.permissions.voter ? (
           <Segmented label="Voting view" value={mode === "member" ? "member" : "leader"} onChange={value => setChosen(value)} options={[{ value: "leader", label: "Lead voting" }, { value: "member", label: "Your vote" }]} />
@@ -179,13 +196,7 @@ export default function VotingRoomScreen() {
               {mode === "leader" ? (
                 <>
                   {room.meeting?.status !== "CANCELLED" ? <HostControls room={room} entry={entry} labels={labels} next={nextLabel(room, labels)} refresh={refresh} confirm={confirm} /> : null}
-                  <InRoom room={room} onShowQr={room.status !== "COMPLETED" ? () => setJoinQr(true) : undefined} />
-                  <Queue room={room} labels={labels} />
-                  <Card padded={false} style={{ paddingHorizontal: 16 }}>
-                    <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title="Prepare slides" detail="Open on web" onPress={() => { openOnWeb(`/voting/rooms/${encodeURIComponent(room.id)}/prepare?clubId=${encodeURIComponent(room.clubId)}`); }} />
-                    <Divider />
-                    <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title="Show on projector" detail="Open on web" onPress={() => { openOnWeb(webRoomPath(room.clubId, room.id, "present")); }} />
-                  </Card>
+                  {split ? null : roomLists(room)}
                 </>
               ) : (
                 <>
@@ -197,6 +208,11 @@ export default function VotingRoomScreen() {
             </>
           )}
       </ScreenScroll>
+      {split && room ? (
+        <View style={{ flex: 1, borderRightWidth: 1, borderRightColor: colors.border }}>
+          <ScreenScroll top={top} testID="voting-room-lists" onRefresh={refresh}>{roomLists(room)}</ScreenScroll>
+        </View>
+      ) : null}
       <Header title={title} back />
       {sheet}
       {valid ? <ShareSheet open={joinQr} onClose={() => setJoinQr(false)} target={{ path: webRoomPath(clubId!, sessionId, "member"), title: "Join this voting session", text: "Join this voting session", qrDescription: "Sign in with your club account.", shortLink: true }} /> : null}
