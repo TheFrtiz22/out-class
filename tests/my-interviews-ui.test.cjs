@@ -17,7 +17,7 @@ const midday=(()=>{const d=new Date(Date.now()+2*day);d.setUTCHours(15,0,0,0);re
 const row=(id,start,extra={})=>({id,slotId:id,roomId:'room',clubId:'c',roundId:'r2',roundName:'Round 2',roomName:'Shannon 318C',location:'Shannon 318C',timezone:zone,startTime:new Date(start).toISOString(),endTime:new Date(start+20*60000).toISOString(),applicationId:'a-'+id,bookingId:'b-'+id,candidate:'Applicant '+id,interviewers:[],completed:false,started:false,cancelled:false,canOpen:true,...extra});
 function list(rows,rounds=[{id:'r1',name:'Round 1'},{id:'r2',name:'Round 2'}],props={}){
  const mocks={'@/contexts/demo-context':{useDemoMode:()=>({ready:true})},'./interview-read-scope':{useAssignedInterviewRooms:()=>list.read??=()=>Promise.resolve(rows)},
-  '@/lib/workspace-api':{getInterviewWorkspace:()=>Promise.resolve({applications:[]}),getInterviewRounds:()=>Promise.resolve({status:'ready',rounds})},
+  '@/lib/workspace-api':{getInterviewWorkspace:()=>Promise.resolve({rounds:[],applications:[]}),getInterviewRounds:()=>Promise.resolve({status:'ready',rounds})},
   '@/lib/serialized-workspace-read':{serializedWorkspaceRead:(read,done,fail)=>({poll:()=>read().then(done,fail),refresh:()=>read().then(done,fail),dispose(){}})}};
  list.read=undefined;global.setInterval=()=>0;global.clearInterval=()=>{};
  return ui('components/interviews/interview-rooms-list.tsx',{clubId:'c',...props},mocks,'InterviewRoomsList');
