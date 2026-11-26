@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Glass } from "~/components/glass";
 import type { IconComponent } from "~/components/icon-factory";
 import { CalendarDays, Compass, FilePenLine, Home, UserRound, Users } from "~/components/icons";
@@ -15,6 +15,7 @@ import { spring } from "~/lib/motion";
 import { useMiddleTab } from "~/lib/middle-tab";
 import { fonts, useTheme } from "~/lib/theme";
 import { useScreenGutters } from "~/components/ui";
+import { useLayoutClass } from "~/lib/layout";
 
 type Tab = { name: string; label: string; icon: IconComponent; href: "/" | "/explore" | "/clubs" | "/calendar" | "/profile" };
 // Five tabs. The middle one is Apply while an application is still open and My Clubs once they are all
@@ -52,6 +53,10 @@ function Dock({ state, emitter, navigation }: DockProps) {
   const { colors, radius, a11y } = useTheme();
   const insets = useSafeAreaInsets();
   const gutters = useScreenGutters(12);
+  // Regular width (the iPhone Duo's inner display, iPad): the dock stays in the leading half, so no tab sits on
+  // the fold when the Duo is partly open. Five tabs still have ~80pt each there.
+  const frameWidth = useSafeAreaFrame().width;
+  const dockRight = useLayoutClass() === "regular" ? Math.max(gutters.right, frameWidth / 2 + 12) : gutters.right;
   // The dock steps aside for the keyboard rather than riding on top of it.
   const keyboard = useKeyboardShown();
   const mode = useMiddleTab();
@@ -128,7 +133,7 @@ function Dock({ state, emitter, navigation }: DockProps) {
 
   if (keyboard) return null;
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", left: gutters.left, right: gutters.right, bottom: Math.max(insets.bottom, 10), alignItems: "stretch" }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", left: gutters.left, right: dockRight, bottom: Math.max(insets.bottom, 10), alignItems: "stretch" }}>
       {/* The shadow sits on a wrapper: the glass clips its own corners, which would clip a shadow drawn on it. */}
       <View style={{ borderRadius: radius.full, shadowColor: colors.schoolPrimary, shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
         <GestureDetector gesture={drag}>
