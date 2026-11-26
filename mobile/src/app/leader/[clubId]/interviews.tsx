@@ -13,6 +13,7 @@ import { haptics } from "~/lib/haptics";
 import { openOnWeb } from "~/lib/links";
 import { useApiQuery } from "~/lib/query";
 import { fonts, useTheme } from "~/lib/theme";
+import { useLayoutClass } from "~/lib/layout";
 
 const tones: Record<string, ChipTone> = { "Scheduled now": "success", "In progress": "interview", Upcoming: "info", "Review submitted": "neutral", Cancelled: "neutral", "Scheduled time has ended": "warning", "Not booked": "neutral", "Ended unbooked": "neutral" };
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -69,8 +70,42 @@ export default function InterviewDay() {
   };
   const list = (items: InterviewEntry[], withDay = false) => items.map((row, index) => <View key={row.id}>{index ? <Divider /> : null}{line(row, withDay)}</View>);
 
+  // Regular width (the Duo's inner display, iPad): the schedule on the leading side, the interview in focus
+  // (timer and notes) beside it, as Apple's guidance shows a list beside its detail. The focus card stays the
+  // first pane's child in both layouts (the row is laid out right to left), so folding or unfolding mid-interview
+  // never remounts it: half-typed notes and the open session stay as they are.
+  const regular = useLayoutClass() === "regular";
+  const ready = !rooms.isPending && !(rooms.isError && !data) && rows.length > 0;
+  const split = regular && ready;
+  const schedule = (
+    <>
+      <View style={{ gap: 10 }}>
+        <SectionHeader title="Today" action={<Text variant="small">{day.booked.length ? plural(day.booked.length, "interview") : "No bookings yet"}</Text>} />
+        {day.booked.length ? <Card padded={false} style={{ paddingHorizontal: 16 }} testID="interview-today">{list(day.booked)}</Card> : null}
+        {day.openTimes ? <Text variant="small">{day.booked.length ? `${plural(day.openTimes, "more open time")} nobody has booked yet` : `${plural(day.openTimes, "open time")}, none booked yet`}</Text> : null}
+      </View>
+
+      {day.needsNotes.filter(row => !day.booked.includes(row)).length ? (
+        <View style={{ gap: 10 }}>
+          <SectionHeader title={`Needs notes · ${day.needsNotes.filter(row => !day.booked.includes(row)).length}`} />
+          <Card padded={false} style={{ paddingHorizontal: 16 }}>{list(day.needsNotes.filter(row => !day.booked.includes(row)), true)}</Card>
+        </View>
+      ) : null}
+
+      {day.later.length ? (
+        <View style={{ gap: 10 }}>
+          <SectionHeader title="Up next" />
+          <Card padded={false} style={{ paddingHorizontal: 16 }}>{list(day.later, true)}</Card>
+        </View>
+      ) : null}
+
+      <Card padded={false} style={{ paddingHorizontal: 16 }}>
+        <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title="My interviews" detail="Open on web" onPress={() => { openOnWeb(`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=interviews&interviewTab=rooms`); }} />
+      </Card>
+    </>
+  );
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, flexDirection: split ? "row-reverse" : "column" }}>
       <ScreenScroll top={top} testID="interview-day" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" onRefresh={() => rooms.refetch()}>
         {/* The page's name is in the bar ("Interview day"); the day it covers is the one line above the schedule. */}
         <Text variant="eyebrow">{formatDateKey(easternDateKey(now), { weekday: "long", month: "long", day: "numeric" })} · Eastern Time</Text>
@@ -91,32 +126,15 @@ export default function InterviewDay() {
               <Card testID="interview-next-none"><Text variant="small">Nothing here right now. Past time slots nobody booked are hidden.</Text></Card>
             )}
 
-            <View style={{ gap: 10 }}>
-              <SectionHeader title="Today" action={<Text variant="small">{day.booked.length ? plural(day.booked.length, "interview") : "No bookings yet"}</Text>} />
-              {day.booked.length ? <Card padded={false} style={{ paddingHorizontal: 16 }} testID="interview-today">{list(day.booked)}</Card> : null}
-              {day.openTimes ? <Text variant="small">{day.booked.length ? `${plural(day.openTimes, "more open time")} nobody has booked yet` : `${plural(day.openTimes, "open time")}, none booked yet`}</Text> : null}
-            </View>
-
-            {day.needsNotes.filter(row => !day.booked.includes(row)).length ? (
-              <View style={{ gap: 10 }}>
-                <SectionHeader title={`Needs notes · ${day.needsNotes.filter(row => !day.booked.includes(row)).length}`} />
-                <Card padded={false} style={{ paddingHorizontal: 16 }}>{list(day.needsNotes.filter(row => !day.booked.includes(row)), true)}</Card>
-              </View>
-            ) : null}
-
-            {day.later.length ? (
-              <View style={{ gap: 10 }}>
-                <SectionHeader title="Up next" />
-                <Card padded={false} style={{ paddingHorizontal: 16 }}>{list(day.later, true)}</Card>
-              </View>
-            ) : null}
-
-            <Card padded={false} style={{ paddingHorizontal: 16 }}>
-              <Row leading={<ExternalLink size={22} color={colors.mutedForeground} />} title="My interviews" detail="Open on web" onPress={() => { openOnWeb(`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=interviews&interviewTab=rooms`); }} />
-            </Card>
+            {split ? null : schedule}
           </>
         )}
       </ScreenScroll>
+      {split ? (
+        <View style={{ flex: 1, borderRightWidth: 1, borderRightColor: colors.border }}>
+          <ScreenScroll top={top} testID="interview-schedule" onRefresh={() => rooms.refetch()}>{schedule}</ScreenScroll>
+        </View>
+      ) : null}
       <Header title="Interview day" back />
     </View>
   );
