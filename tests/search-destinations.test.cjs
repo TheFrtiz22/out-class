@@ -77,3 +77,14 @@ test('a query that only names a club offers that club once, at its home page, no
   assert.ok(matchDestinations(pages, 'rowing').length === 1, 'a member workspace is offered once too')
   assert.ok(matchDestinations(pages, 'applicants invest').some(page => page.title === 'Applicants'), 'a page word still finds that page')
 })
+
+test('collapsing keeps pages matched by their own keywords, and two clubs with the same name each keep a row', () => {
+  const pages = searchDestinations({ memberships: [
+    { clubId: 'c1', club: { name: 'Chess Club' }, isOwner: true },
+    { clubId: 'c2', club: { name: 'Chess Club' }, isOwner: true },
+  ] })
+  const account = matchDestinations(pages, 'account').map(page => page.title)
+  assert.ok(account.includes('Profile') && account.includes('Settings'), `"account" still offers Profile and Settings (${account})`)
+  const chess = matchDestinations(pages, 'chess')
+  assert.deepEqual(chess.map(page => page.href).sort(), ['/club/c1/workspace?section=overview', '/club/c2/workspace?section=overview'].sort(), 'each same-named club gets its own home row')
+})
