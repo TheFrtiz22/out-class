@@ -55,10 +55,12 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   const notificationsBefore = await db.userNotification.count({ where: { clubId } })
 
   // The leader creates an open-electorate session (anyone eligible who joins votes, late arrivals included).
+  // Voting-room actions are owned by the club workspace page; post them there.
+  const act = (actor, file, name, args) => actor.action(file, name, args, { params: { clubId } })
   const scope = { clubId, sessionId: randomUUID() }
-  await leader.action('actions/voting-room.ts', 'createLiveVotingRoom', [{ ...scope, cycleId: cycle.id, roundId: applied.id, applicationIds: apps.map(a => a.id), leaderMemberIds: [leaderMember.id], targetSize: 2, presentationOptions: { fields: ['name'], highlights: {} } }])
-  const room = actor => actor.action('actions/voting-room.ts', 'getLiveVotingRoom', [scope])
-  const command = async (action, extra = {}) => { const r = await room(leader); return leader.action('actions/voting-room.ts', 'commandLiveVotingRoom', [{ ...scope, action, revision: r.revision, requestId: randomUUID(), ...extra }]) }
+  await act(leader, 'actions/voting-room.ts', 'createLiveVotingRoom', [{ ...scope, cycleId: cycle.id, roundId: applied.id, applicationIds: apps.map(a => a.id), leaderMemberIds: [leaderMember.id], targetSize: 2, presentationOptions: { fields: ['name'], highlights: {} } }])
+  const room = actor => act(actor, 'actions/voting-room.ts', 'getLiveVotingRoom', [scope])
+  const command = async (action, extra = {}) => { const r = await room(leader); return act(leader, 'actions/voting-room.ts', 'commandLiveVotingRoom', [{ ...scope, action, revision: r.revision, requestId: randomUUID(), ...extra }]) }
   await command('START')
 
   // Browsers: the leader on a laptop, the projector, four voters on phones (the fifth joins later).
@@ -135,9 +137,9 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
 
   // Finalization: Pass means advance to the interview round; nothing is sent.
   const mapping = { kind: 'ADVANCE', roundId: next.id }
-  const preview = await leader.action('actions/voting-room-finalization.ts', 'previewLiveVotingFinalization', [{ ...scope, mapping }])
+  const preview = await act(leader, 'actions/voting-room-finalization.ts', 'previewLiveVotingFinalization', [{ ...scope, mapping }])
   const r = await room(leader)
-  await leader.action('actions/voting-room-finalization.ts', 'finalizeLiveVotingRoom', [{ ...scope, mapping, requestId: randomUUID(), revision: r.revision, guard: preview.guard, confirmed: true }])
+  await act(leader, 'actions/voting-room-finalization.ts', 'finalizeLiveVotingRoom', [{ ...scope, mapping, requestId: randomUUID(), revision: r.revision, guard: preview.guard, confirmed: true }])
   const moved = await db.application.findMany({ where: { id: { in: apps.map(a => a.id) } }, select: { id: true, roundId: true } })
   assert.deepEqual(moved.filter(a => a.roundId === next.id).map(a => a.id).sort(), [apps[0].id, apps[1].id, apps[3].id].sort(), 'the three passed applicants advance; the rejected one stays')
   assert.equal(await db.userNotification.count({ where: { clubId } }), notificationsBefore, 'voting and finalization notify no one')
