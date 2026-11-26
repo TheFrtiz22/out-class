@@ -191,10 +191,11 @@ export default function Explore() {
   );
   return (
     <View style={{ flex: 1 }}>
-      {regular ? (
-        // Two equal panes: with the fold unknown to the app, the crease falls on the pane boundary.
-        <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.background }}>
-          {listPane}
+      {/* One row in both size classes, so folding or unfolding resizes the list instead of remounting it (scroll
+          position and search focus survive). Two equal panes when regular: the crease falls on their boundary. */}
+      <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.background }}>
+        {listPane}
+        {regular ? (
           <View testID="explore-detail" style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: colors.border }}>
             {selected ? <ClubPageView key={selected} id={selected} pane /> : (
               <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: gutters.right, paddingBottom: DOCK_CLEARANCE }}>
@@ -202,8 +203,8 @@ export default function Explore() {
               </View>
             )}
           </View>
-        </View>
-      ) : listPane}
+        ) : null}
+      </View>
 
       <Sheet open={sheet} onClose={() => setSheet(false)} title="Filter clubs" testID="explore-filter-sheet">
         {/* Every group can be on screen at once; a small phone scrolls rather than hiding Done. */}

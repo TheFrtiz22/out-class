@@ -77,3 +77,13 @@ test("in the pane, a failed save's notice sits above the tab dock", async () => 
     expect(bottom).toBeGreaterThanOrEqual(DOCK_CLEARANCE);
   }
 });
+
+test("crossing the breakpoint resizes the club list instead of remounting it (scroll position survives)", async () => {
+  const { client } = await renderRoute(explore(), { mode: "rich" });
+  const list = screen.getByTestId("explore-screen");
+  mockLayout = "compact"; await rerender(client);
+  expect(screen.getByTestId("explore-screen")).toBe(list);
+  mockLayout = "regular"; await rerender(client);
+  expect(screen.getByTestId("explore-screen")).toBe(list);
+  expect(loggedCrashes()).toEqual([]);
+});
