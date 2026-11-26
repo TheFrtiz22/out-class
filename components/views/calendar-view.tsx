@@ -38,6 +38,8 @@ import type { ViewId } from "@/lib/views"
 
 /** An interview-panel slot the person sits on (lib/student-calendar-data.ts), not an interview of their own. */
 const isPanelEvent = (event: ClubEvent) => event.id.startsWith("panel-")
+/** "Interview · You’re on the panel": the event kind and your answer, shared by the agenda and week/day rows. */
+const eventStatusLine = (event: ClubEvent) => `${event.type}${event.response === "declined" ? " · Declined" : event.response === "confirmed" ? (isPanelEvent(event) ? " · You’re on the panel" : " · Confirmed") : ""}`
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const eventStyle = {
@@ -286,9 +288,7 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="mb-1 text-xs font-medium text-muted-foreground">
-                              {event.type}
-                              {event.response === "declined" && " · Declined"}
-                              {event.response === "confirmed" && (isPanelEvent(event) ? " · You’re on the panel" : " · Confirmed")}
+                              {eventStatusLine(event)}
                             </p>
                             <h4 className="break-words text-sm font-semibold leading-6">
                               {event.title}
@@ -426,19 +426,20 @@ export function CalendarView({ onNavigate, serverNow }: { onNavigate?: (view: Vi
                                 type="button"
                                 onClick={() => open(event)}
                                 className={cn(
-                                  "flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                                  "flex w-full items-start gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                                   eventStyle[event.type],
                                 )}
                               >
-                                <span className="w-24 font-medium">{(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))}</span>
-                                <span className="flex-1">
-                                  <strong className="block">{event.title}</strong>
+                                {/* Same status line as the agenda; the title gets the width so a phone row stays a few lines long. */}
+                                <span className="w-20 shrink-0 font-medium">{(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))}</span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block text-xs">{eventStatusLine(event)}</span>
+                                  <strong className="block break-words">{event.title}</strong>
                                   <span className="text-xs">
                                     {event.club}
                                     {event.location && ` · ${event.location}`}
                                   </span>
                                 </span>
-                                <span className="text-xs">{event.response ?? event.type}</span>
                               </button>
                             ))}
                           </div>
