@@ -1,4 +1,5 @@
 import { activeMemberWhere } from "@/lib/permissions";
+import { graduateClubAccess, readGraduation } from "@/lib/graduate-access";
 import { decideAccess } from "@/lib/product-navigation";
 import "server-only"
 import { z } from "zod"
@@ -41,11 +42,14 @@ export async function votingRoomsForViewer(): Promise<{ signedIn: boolean; clubs
     if (viewer.state !== "VERIFIED") return { signedIn: viewer.state === "SKIPPED", clubs: [] }
     const members = await prisma.clubMember.findMany({
       where: { userId: viewer.userId, ...activeMemberWhere, club: { suspendedAt: null } },
-      select: { clubId: true, status: true, alumniSince: true, isOwner: true, permissions: true, handOverOnly: true, club: { select: { name: true } } },
+      select: { userId: true, clubId: true, status: true, alumniSince: true, isOwner: true, permissions: true, club: { select: { name: true } } },
       orderBy: { club: { name: "asc" } },
     })
     // The same gate as the Voting room itself (Decide → Vote), so every link offered opens.
-    return { signedIn: true, clubs: members.filter(m => decideAccess(m).canVote).map(m => ({ id: m.clubId, name: m.club.name })) }
+    // A graduate kept as owner is hand-over only (lib/graduate-access.ts): no Voting room link.
+    const graduation = members.length ? readGraduation(prisma)(viewer.userId) : null
+    const marked = await Promise.all(members.map(m => graduateClubAccess(prisma, m, () => graduation!)))
+    return { signedIn: true, clubs: marked.filter(m => decideAccess(m).canVote).map(m => ({ id: m.clubId, name: m.club.name })) }
   } catch {
     return { signedIn: false, clubs: [] }
   }
