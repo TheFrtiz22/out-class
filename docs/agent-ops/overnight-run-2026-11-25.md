@@ -535,3 +535,29 @@ Owner brief (18:51 ET): finish the overnight run's open PRs, then live voting an
 - #684 (signed-in "Voting has moved" page): CI found `handOverOnly` selected as a column (it isn't one). It now marks graduates through `lib/graduate-access.ts` with one graduation read, plus a test for a graduate kept as owner.
 - #688 (review-round wording, unbooked link): two tests followed the old link and workspace shape; updated. The interview suites pass (the only local failures are the sandbox's missing Prisma engine, the same on main).
 - #693 (above).
+
+## 2026-11-26 ~07:00 to ~11:00 UTC: overnight run, continued
+
+### Merged and checked live
+- #684 "Voting has moved", signed in: live it lists the viewer's two Voting rooms (MII, LiveQA) with no Sign in, and LiveQA's link opens its Voting room. CI caught `handOverOnly` selected as if it were a column; graduates are now marked through `lib/graduate-access.ts` with one graduation read.
+- #688 review-round wording: live on LiveQA's Written application round the room shows "Review complete", "Average review score" and "Your score". #695 then changed the closing note to "Final thoughts" on review rounds.
+- #693 Applicants Back/Forward (below). Live: after Forward, one `pipelinePage` read, rows held for the whole 4 s sample, no second "Preparing".
+- #687 landscape dock: live at 812×375 it is a 50px centred bar, with no sideways scroll.
+- #694 run log.
+
+### Back/Forward on Applicants: root cause and fix (#693)
+- A navigation re-sends an identical `initialUser`, so `useAuth().user` becomes a new object. Two places keyed reads on that identity: `SelectedClubWorkspace` (owner) and `LiveLeaderWorkspace` (the `authority` that `usePipelinePage` fences on). Both hid the list and read it again, about 150 ms per Back/Forward. Both now key on content (`JSON.stringify`), so any real account, membership or permission change still fences. The authz reviewer approved; the BigInt concern doesn't apply (no BigInt in the schema; the user already travels as JSON).
+- `pipeline-release-e2e` › history (cohort 100), which failed in every run tonight before the fix, passed in 2 of 2 full runs after it.
+
+### Multi-person live voting, full stack (#696)
+- New `live-voting-multi-person-e2e` in the disposable integration workflow: 5 voters (late joiner, revoked member), observer, outsider, leader and projector. It covers ties, reconnect, privacy, NEXT_PASS, END, finalization and no notifications. Green in run 45792457408 (41 s, no skips). No product bugs found. The test had been ignoring room conflicts (`{ ok: false }`); it now fails on them.
+
+### Intermittent CI failures seen (not product changes; logged for follow-up)
+- `pipeline-release-e2e`: once, the "All applicants" call to action made a server navigation (an `_rsc` GET) where the test expects a client switch (cohort 1 desktop). Passed on re-run.
+- `workspace-shell-e2e` › "a cancelled switch (unsaved changes) slides the indicator back": once, no unsaved-changes prompt. Passed in the other four runs.
+- React #418 hydration error once on `/meetings/<id>`: this is the pre-existing BUG-1 in the task ledger, not new.
+- Local Supabase failed to start several times (infrastructure); re-runs passed.
+
+### Design suggestions added
+- Voting room wording: members' phones say "Session ended" while the projector says "Voting ended". Pick one.
+- Club page on phones: "Share" is half-width under two full-width buttons; make it full width or put it beside Save.
