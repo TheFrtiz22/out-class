@@ -42,7 +42,8 @@ function InterviewRow({ row, withDay, primary }: { row: InterviewRoomEntry; with
 }
 
 /** My interviews: what is coming up, what still needs notes, and what is done. Nothing appears twice. */
-export function InterviewRoomsList({ clubId, onSchedule }: { clubId: string; onSchedule?: () => void }) {
+/** `tabbed`: shown under a "My interviews" tab, so the heading is kept for screen readers but not drawn twice. */
+export function InterviewRoomsList({ clubId, onSchedule, tabbed = false }: { clubId: string; onSchedule?: () => void; tabbed?: boolean }) {
   const demo = useDemoMode();
   const assignedRooms = useAssignedInterviewRooms(clubId);
   const [rows, setRows] = useState<InterviewRoomEntry[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [unbooked, setUnbooked] = useState(false);
@@ -76,7 +77,7 @@ export function InterviewRoomsList({ clubId, onSchedule }: { clubId: string; onS
   const zones = [...new Set(rows.map(row => row.timezone))];
   const empty = !upNext.length && !needsNotes.length && !done.length;
   return <section aria-label="My interviews" className="space-y-6 pb-20 md:pb-6">
-    <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">My interviews</h2>{usedRounds.length > 1 && <RoundSelect label="Filter my interviews by round" value={activeRound} onChange={value => { setRoundId(value); setParam("interviewRound", value); }} rounds={usedRounds} />}</header>
+    <header className={tabbed && usedRounds.length < 2 ? "sr-only" : "flex flex-wrap items-center justify-between gap-3"}><h2 className={tabbed ? "sr-only" : "oc-section-heading"}>My interviews</h2>{usedRounds.length > 1 && <RoundSelect label="Filter my interviews by round" value={activeRound} onChange={value => { setRoundId(value); setParam("interviewRound", value); }} rounds={usedRounds} />}</header>
     {loading && <LoadingState label="Loading your interviews…" layout="schedule" rows={3} />}
     {error && <div role="alert">{error} <Button variant="outline" onClick={() => setRetry(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && empty && <div role="status" className="space-y-2 rounded-lg border border-dashed p-5 text-sm text-muted-foreground"><p>{rows.length ? onSchedule ? "No upcoming interviews. Past times nobody booked are hidden; set new times on Schedule." : "No upcoming interviews. Past times nobody booked are hidden." : onSchedule ? "You aren’t assigned to any interviews yet. Set interview times and interviewers on Schedule." : "You aren’t assigned to any interviews yet. Club leaders add you when they schedule interviews."}</p>{onSchedule && <Button onClick={onSchedule}>Open schedule</Button>}{!rows.length && !onSchedule && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=overview`}>Back to recruiting overview</Link>}</div>}
@@ -102,6 +103,6 @@ export function InterviewRoomsList({ clubId, onSchedule }: { clubId: string; onS
       <CollapsibleContent className="oc-interview-day-content" inert={!doneOpen} aria-hidden={!doneOpen}><ul className="oc-my-interviews">{done.map(row => <InterviewRow key={row.id} row={row} withDay />)}</ul></CollapsibleContent>
     </Collapsible>}
     {!loading && !error && !empty && <p className="text-xs text-muted-foreground">{zones.length === 1 && zones[0] === SCHEDULING_TIMEZONE ? `Times are in ${SCHEDULING_TIMEZONE_LABEL}.` : "Times are in each room’s time zone."}</p>}
-    {!error && unbooked && <p className="border-t pt-3 text-sm text-muted-foreground">Some applicants assigned to you haven’t booked a time slot yet. <Link className="inline-flex min-h-10 items-center underline" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open the interview room</Link></p>}
+    {!error && unbooked && <p className="border-t pt-3 text-sm text-muted-foreground">Some applicants assigned to you haven’t booked a time slot yet. <Link className="py-2.5 underline underline-offset-4" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open the interview room</Link></p>}
   </section>;
 }

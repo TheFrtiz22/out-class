@@ -43,16 +43,16 @@ export function SavedClubsView({
         <p role="alert" className="text-sm text-destructive">
           {error}
           <Button variant="ghost" onClick={() => void refresh()}>
-            Retry Saved clubs
+            Try again
           </Button>
         </p>
       )}
       {loading ? (
-        <LoadingState label="Loading Saved clubs…" layout="cards" rows={3} />
+        <LoadingState label="Loading saved clubs…" layout="cards" rows={3} />
       ) : !authenticated ? (
-        <EmptyState density="compact" tone="subtle" icon={<Bookmark />} title="Sign in to see your saved clubs." description="Sign in to save clubs and revisit them across devices." action={<div className="flex flex-wrap justify-center gap-2"><Button onClick={() => onNavigate("auth")}>Sign in</Button><Button variant="outline" onClick={() => onNavigate("explore")}>Browse Explore</Button></div>} />
+        <EmptyState density="compact" tone="subtle" icon={<Bookmark />} title="Sign in to see your saved clubs." description="Sign in to save clubs and revisit them across devices." action={<div className="flex flex-wrap justify-center gap-2"><Button onClick={() => onNavigate("auth")}>Sign in</Button><Button variant="outline" onClick={() => onNavigate("explore")}>Browse clubs</Button></div>} />
       ) : error && !items.length ? (
-        <EmptyState role="alert" density="compact" tone="subtle" icon={<Bookmark />} title="Couldn’t load your saved clubs." description={error} action={<Button variant="outline" onClick={() => void refresh()}>Retry Saved clubs</Button>} />
+        <EmptyState role="alert" density="compact" tone="subtle" icon={<Bookmark />} title="Couldn’t load your saved clubs." description={error} action={<Button variant="outline" onClick={() => void refresh()}>Try again</Button>} />
       ) : items.length ? (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">

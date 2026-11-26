@@ -104,6 +104,8 @@
 .oc-segmented-control[data-size="compact"] { min-height: 46px; }
 .oc-segmented-control button { position: relative; z-index: 1; flex: 1 0 auto; min-width: max-content; min-height: 44px; padding: .5rem 1rem; border: 0; border-radius: var(--oc-radius-full); background: transparent; color: var(--primary); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); white-space: nowrap; cursor: pointer; transition: color var(--oc-glass-quick) var(--oc-glass-ease), background-color var(--oc-glass-quick) var(--oc-glass-ease); }
 .oc-segmented-control[data-size="compact"] button { min-height: 36px; padding-block: .375rem; }
+/* Edit profile on phones: the five sections wrap onto two rows instead of hiding Links and Phone past the right edge. */
+@media (max-width: 639px) { .oc-profile-section-picker > .oc-segmented-control:not([data-sliding]) { flex-wrap: wrap; overflow: visible; border-radius: var(--oc-radius-xl); } }
 .oc-segmented-control button:disabled { cursor: not-allowed; opacity: .5; }
 @media (hover: hover) and (pointer: fine) { .oc-segmented-control button:not([data-selected]):not(:disabled):hover { background: var(--oc-glass-hover-tint); } }
 .oc-segmented-control button[data-selected] { color: var(--oc-glass-cream); background: var(--oc-glass-pill-navy); box-shadow: var(--oc-glass-pill-navy-depth); }
@@ -136,6 +138,9 @@
 [data-product-shell] [data-slot="surface"][data-density="roomy"]:not([data-tone="plain"]) { padding: 1.75rem; }
 
 .oc-notifications-header .oc-page-description { font-size: var(--oc-text-caption); margin-top: .35rem; }
+/* The settings gear stays beside the Inbox title: the long description wraps under the title instead of pushing the gear onto its own row on phones. */
+.oc-notifications-header { flex-wrap: nowrap; align-items: flex-start; }
+.oc-notifications-header > .oc-page-header-action { flex-shrink: 0; margin-top: min(0px, calc((var(--oc-text-title) * var(--oc-leading-heading) - var(--oc-control-height)) / 2)); }
 
 /* Quiet status annotations: neutral text and a small semantic rule, without colored capsules. */
 .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0; border-inline-start: 2px solid var(--badge-accent, var(--border)); border-radius: 0; background: transparent; color: inherit; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }

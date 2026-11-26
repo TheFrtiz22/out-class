@@ -1,23 +1,24 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Check, ChevronsUpDown } from "@/components/icons"
+import { Check } from "@/components/icons"
 import { availableSettings } from "@/lib/club-settings"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { hasPermission } from "@/lib/permissions"
 import { ClubLogo } from "@/components/club-logo"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { ReactElement } from "react"
 import type { WorkspaceAccess } from "@/components/shell/use-workspace-access"
 import { DEFAULT_CLUB_COLOR } from "@/lib/club-colors"
 import { clubMonogram } from "@/lib/club-assets"
 
-/** Club selection is one level below workspace selection. Only managed clubs enter here. */
-export function ClubWorkspaceSwitcher({ clubId, access, onSwitch }: { clubId: string; access: WorkspaceAccess; onSwitch?: () => void }) {
+/** Club selection is one level below workspace selection. Only managed clubs enter here. The selected club
+ *  segment of the workspace pill is the trigger (`children`), so the club name appears once, with the menu on it. */
+export function ClubWorkspaceSwitcher({ clubId, access, onSwitch, children }: { clubId: string; access: WorkspaceAccess; onSwitch?: () => void; children: ReactElement }) {
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const current = access.clubs.find(member => member.clubId === clubId)
-  if (!current || access.clubs.length < 2) return null
-  const identity = <><ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} marketing={current.club.marketing} color={current.club.color || DEFAULT_CLUB_COLOR} text={clubMonogram(current.club.name)} /><span className="oc-header-club-name">{current.club.name}</span></>
+  if (!current || access.clubs.length < 2) return children
   function switchTo(id: string) {
     if (id === clubId || !canLeaveWorkspace()) return
     const next = access.clubs.find(member => member.clubId === id)
@@ -30,8 +31,8 @@ export function ClubWorkspaceSwitcher({ clubId, access, onSwitch }: { clubId: st
     router.push(application ? `/club/${encodeURIComponent(id)}/workspace?section=recruitment&tool=application` : section ? `/club/${encodeURIComponent(id)}/workspace?section=settings&setting=${section.id}` : clubWorkspaceHref(id))
     onSwitch?.()
   }
-  return <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="oc-header-club" aria-label={`Switch club: ${current.club.name}`}>{identity}<ChevronsUpDown size={14} aria-hidden="true" /></button></DropdownMenuTrigger>
-    <DropdownMenuContent align="start" sideOffset={8} collisionPadding={12} className="oc-header-club-menu w-80 max-w-[calc(100vw-24px)]">
+  return <DropdownMenu><DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+    <DropdownMenuContent align="center" sideOffset={8} collisionPadding={12} className="oc-header-club-menu w-80 max-w-[calc(100vw-24px)]">
       {access.clubs.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchTo(member.clubId)}>
         <ClubLogo clubId={member.clubId} logoUrl={member.club.logoUrl} marketing={member.club.marketing} color={member.club.color || DEFAULT_CLUB_COLOR} text={clubMonogram(member.club.name)} />
         <span className="min-w-0 flex-1 whitespace-normal">{member.club.name}</span>{member.clubId === clubId && <Check aria-label="Current club" />}

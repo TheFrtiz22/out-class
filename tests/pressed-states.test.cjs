@@ -55,7 +55,7 @@ test('shared controls and the main custom controls define an :active style', () 
     '[data-slot="select-item"]', '[data-slot="command-item"]', '[data-slot="select-trigger"]', '[data-slot="checkbox"]', '[data-slot="switch"]', '.oc-toggle',
     '.oc-segmented-control button', '.oc-filter-chips-more', '.oc-section-tabs > a[data-segment]', '.oc-dt tbody tr[data-openable]', 'button.oc-dt-card-open',
     '.oc-dock-rail nav', '.oc-context-sidebar nav', '.oc-mobile-destination', '.oc-floating-circle', '.oc-floating-search', '.oc-workspace-option',
-    'button.oc-header-club', '[role="menuitem"]', '.oc-pinned-flyer', '.oc-explore-card article', '.oc-explore-suggested-list', '[data-slot="card"]',
+    '[role="menuitem"]', '.oc-pinned-flyer', '.oc-explore-card article', '.oc-explore-suggested-list', '[data-slot="card"]',
   ]
   for (const control of controls) assert.ok(activeTone.some(rule => rule.selector.includes(control)), `${control} has a pressed tone`)
   for (const rule of activeTone) assert.doesNotMatch(rule.body, /transform/, `scale only inside the no-preference block: ${rule.selector}`)
@@ -66,7 +66,7 @@ test('reduced motion drops every press transform and keeps the tone; focus rings
   const scaled = rules(noPreference.slice(noPreference.indexOf('{') + 1)).filter(rule => /transform/.test(rule.body))
   assert.ok(scaled.length >= 3)
   assert.match(reduce, /\[data-button\]:active,[\s\S]*\{ transform: none !important; \}/)
-  for (const hook of ['[data-slot="card"]', '.oc-explore-card article', '.oc-floating-circle', 'button.oc-header-club', '.oc-directory-recruitment button']) assert.ok(reduce.includes(hook), `${hook} has no transform under reduced motion`)
+  for (const hook of ['[data-slot="card"]', '.oc-explore-card article', '.oc-floating-circle', '.oc-directory-recruitment button']) assert.ok(reduce.includes(hook), `${hook} has no transform under reduced motion`)
   assert.match(reduce, /\.oc-pinned-flyer:active \{ transform: rotate\(var\(--flyer-rotation\)\) !important; \}/)
   assert.ok(activeTone.length > 10)
   assert.doesNotMatch(css, /:focus-visible[^,{]*\{[^}]*outline/, 'no focus outline changes here')

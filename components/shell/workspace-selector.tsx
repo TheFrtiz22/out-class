@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { startTransition, useEffect, useState, type CSSProperties, type ReactNode } from "react"
+import { startTransition, useEffect, useState, type CSSProperties, type ReactElement } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
+import { ChevronsUpDown } from "@/components/icons"
 import { availableSettings } from "@/lib/club-settings"
 import { workspaceOptionName, workspaceOptions, type WorkspaceKind, type WorkspaceOption } from "@/lib/navigation"
 import type { WorkspaceAccess } from "./use-workspace-access"
@@ -31,7 +32,7 @@ function leaveMayPrompt() {
  * spring slide plays while the next workspace loads. The target clears when the URL settles; a
  * cancelled leave (unsaved changes) clears it straight away and the indicator slides back.
  */
-export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitcher }: { access: WorkspaceAccess; current: WorkspaceKind; clubId: string; onSwitch?: () => void; clubSwitcher?: ReactNode }) {
+export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitcher }: { access: WorkspaceAccess; current: WorkspaceKind; clubId: string; onSwitch?: () => void; clubSwitcher?: (trigger: ReactElement) => ReactElement }) {
   const confirmed = useWorkspaceOptions(access, clubId)
   // While eligibility is rechecked, a known admin keeps a non-interactive Admin segment so the pill doesn't change width.
   const options: (WorkspaceOption & { placeholder?: boolean })[] = access.adminPlaceholder && !confirmed.some(option => option.id === "admin") ? [...confirmed, { id: "admin", label: "Admin", href: "/platform", placeholder: true }] : confirmed
@@ -66,8 +67,10 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitc
         const short = shown !== option.id ? abbreviated : null
         if (option.placeholder) return <div key={option.id} className="oc-workspace-segment" data-selected={shown === option.id} data-workspace-kind={option.id} data-workspace-label={option.label} data-placeholder="true" aria-hidden="true">
           <span className="oc-workspace-option" aria-disabled="true"><span className="oc-workspace-option-label">{option.label}</span></span></div>
-        return <div key={option.id} className="oc-workspace-segment" data-selected={shown === option.id} data-workspace-kind={option.id} data-workspace-label={option.label}>
-        <Link data-workspace-option href={option.href} className="oc-workspace-option" aria-label={abbreviated ? `${abbreviated}, ${workspaceOptionName(option)}` : workspaceOptionName(option)} title={option.id === "leader" ? option.label : undefined} aria-current={current === option.id ? "page" : undefined}
+        // A leader of several clubs switches club from the selected club segment itself: the up/down arrows sit
+        // beside the name and pressing it opens the club menu, so the name isn't repeated beside the pill.
+        const clubMenu = option.id === "leader" && current === "leader" && access.clubs.length > 1 && clubSwitcher
+        const link = <Link data-workspace-option href={option.href} className={clubMenu ? "oc-workspace-option oc-workspace-option-menu" : "oc-workspace-option"} aria-label={abbreviated ? `${abbreviated}, ${workspaceOptionName(option)}` : workspaceOptionName(option)} title={option.id === "leader" ? option.label : undefined} aria-current={current === option.id ? "page" : undefined}
           onMouseEnter={() => { if (current !== option.id) router.prefetch(option.href) }}
           onFocus={() => { if (current !== option.id) router.prefetch(option.href) }}
           onKeyDown={event => {
@@ -88,9 +91,10 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, clubSwitc
             if (canLeaveWorkspace()) go(option)
             else setTarget(null)
           }))
-        }}><span className="oc-workspace-option-label" data-mini={abbreviated ?? undefined}>{short ?? option.label}</span></Link>
+        }}><span className="oc-workspace-option-label" data-mini={abbreviated ?? undefined}>{short ?? option.label}</span>{clubMenu && <ChevronsUpDown className="oc-workspace-option-chevron" size={14} aria-hidden="true" />}</Link>
+        return <div key={option.id} className="oc-workspace-segment" data-selected={shown === option.id} data-workspace-kind={option.id} data-workspace-label={option.label}>
+        {clubMenu ? clubMenu(link) : link}
       </div> })}
     </nav></div>
-    {current === "leader" && access.clubs.length > 1 && clubSwitcher && <div className="oc-workspace-club-switch">{clubSwitcher}</div>}
   </div>
 }

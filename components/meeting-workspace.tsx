@@ -84,7 +84,7 @@ export function MeetingList({ clubId, clubIds, filters, embedded = false, initia
     member = user?.memberships.find((m) => m.clubId === clubId);
   const visible = meetings.filter(m => (clubId || !clubIds || clubIds.includes(m.clubId)) && (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="oc-workspace-stack max-w-[var(--oc-content-width)]">
-    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
+    {!embedded && <PageHeader title="Club meetings" action={clubId ? <Link className="text-sm underline" href="/meetings">All available meetings</Link> : undefined} />}
     {notice && <p role="status" className="text-sm">{notice}</p>}
     <div className="oc-meeting-toolbar flex flex-wrap items-center gap-3 border-b pb-4">
       <div role="toolbar" aria-label="Meeting filters" className="flex flex-wrap items-center gap-3">
@@ -99,8 +99,8 @@ export function MeetingList({ clubId, clubIds, filters, embedded = false, initia
     {error && <div role="alert" className="oc-feedback"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !visible.length && (audience === "ALL"
       // Unfiltered: no audience to blame, so the empty state doesn't name one.
-      ? <EmptyState density="compact" align="start" title={`No ${period} meetings`} description={period === "upcoming" ? "Nothing is scheduled yet." : "No meetings have happened yet."} />
-      : <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} />)}
+      ? <EmptyState tone="outlined" density="compact" align="start" title={`No ${period} meetings`} description={period === "upcoming" ? "Nothing is scheduled yet." : "No meetings have happened yet."} />
+      : <EmptyState tone="outlined" density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Nothing is scheduled for this audience yet." : "No meetings for this audience have happened yet."} />)}
     <ul className="oc-meeting-list grid gap-2">{visible.map(meeting => <li key={meeting.id} className="min-w-0">
       <button type="button" onClick={() => setActiveId(meeting.id)} className="oc-content-panel group flex w-full text-left gap-3 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-5 sm:py-4"><CalendarDays aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}{meeting.recap?.trim() ? " · Recap available" : ""}</p><h3 className="oc-card-heading mt-1 break-words">{meeting.title}</h3><p className="mt-1.5 flex flex-wrap items-start gap-x-4 gap-y-1 text-sm"><span>{meetingDate(meeting.date)}{meeting.endDate && ` – ${meetingDate(meeting.endDate)}`}</span><span className="flex min-w-0 items-start gap-1.5 break-words text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</span></p><span className="sr-only">Open agenda, resources and attendance</span></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} polling={pollingId === meeting.id} onOpen={setPollingId} />}
@@ -168,7 +168,7 @@ function MeetingEditor({
   const change = (key: keyof typeof fields, value: string) => { setFields(current=>({...current,[key]:value})); if (failed) { setFailed(false); setMessage("") } };
   return (
     <form data-saving={busy} data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
-      className="space-y-4 py-4"
+      className="space-y-4"
       onInvalidCapture={event => { const field = event.target as HTMLElement; if (field.closest('section[hidden]')) setTab("resources"); else if (field.closest('div[hidden]')) setTab("details") }}
       onSubmit={async (e) => {
         e.preventDefault();
@@ -229,7 +229,7 @@ function MeetingEditor({
           <NativeSelect
             name="audience"
             value={fields.audience} onChange={e=>change("audience",e.target.value)}
-            className="ml-3 rounded border p-2"
+            className="mt-1 w-full"
           >
             <option value="RECRUITMENT">Recruitment / Interest</option>
             <option value="MEMBERS">Members</option>
@@ -313,10 +313,10 @@ function MeetingEditor({
                   }
                 />
               </label>
-              <label>
-                Type{" "}
+              <label className="block text-sm">
+                Type
                 <NativeSelect
-                  className="rounded border p-2"
+                  className="mt-1 w-full"
                   value={r.kind}
                   onChange={(e) =>
                     setResources(

@@ -47,7 +47,7 @@ export function ManagerOverview({ data, refreshing = false, onChanged = () => {}
       items={cards.map(card => ({ id: card.id, title: card.title, detail: card.detail, progress: card.progress, action: action(card) }))}
       clear={strip && strip.attention > 0
         // The strip above counts recruiting items, so "clear" names what it covers: club work only.
-        ? <><strong>No club work needs you.</strong> Recruiting items are on the Recruiting overview.</>
+        ? <><strong>Nothing urgent in club work.</strong> Recruiting items are on the Recruiting overview.</>
         : <><strong>You’re clear for now.</strong> Overdue tasks, submissions and meetings that need you will show up here.</>} />
     {!demo.isDemoEnabled && organizationCapabilities(data.membership).canTransferOwnership && <OrganizationSetupChecklist key={club.id} clubId={club.id} compact />}
     <DashboardGrid main={<>

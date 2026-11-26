@@ -93,7 +93,7 @@ export default function InterviewScheduleSettings() {
         )}
         <Press testID="interviews-update-availability" accessibilityRole="link" onPress={() => router.push("/settings/availability" as never)}
           style={{ minHeight: TARGET + 4, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
-          <Text variant="bodyStrong" color={colors.brandInk}>Update My Availability</Text>
+          <Text variant="bodyStrong" color={colors.brandInk}>Update my availability</Text>
           <ChevronRight size={18} color={colors.brandInk} />
         </Press>
       </ScreenScroll>
