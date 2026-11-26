@@ -31,6 +31,7 @@ test('phone Explore: filters sit behind a Filter button with an active count; de
 test('phone club page: full-width actions and card sections only below 1024px',()=>{
  const s=css('components/clubs/club-discovery.css'),phone=s.slice(s.lastIndexOf('@media (max-width: 1023px) {'));
  assert.match(phone,/\.oc-club-action-row \{ display: grid; grid-template-columns: 1fr;/);
+ assert.match(phone,/\.oc-club-action-row \{ grid-template-columns: 1fr 1fr; \}/,'Save and Share share a row on phones');
  assert.match(phone,/\.oc-club-profile \.oc-club-section \{[^}]*border-radius: var\(--oc-content-radius\)/);
 });
 test('phone Events open on the card list until the student picks a view; desktop keeps the board',()=>{
