@@ -7,7 +7,8 @@ const fs = require('node:fs')
 const source = fs.readFileSync(require('node:path').join(__dirname, '../components/interviews/interview-rooms-list.tsx'), 'utf8')
 
 test('the interview room link flows with its sentence', () => {
-  const link = source.match(/<Link className="([^"]*)" href=\{clubInterviewHref\(clubId, "interviewTab=rooms"\)\}>Open the interview room<\/Link>/)
+  // The link opens the room on the first unbooked applicant's round (#688), so its href carries that query.
+  const link = source.match(/<Link className="([^"]*)" href=\{clubInterviewHref\(clubId, `interviewTab=rooms[^`]*`\)\}>Open the interview room<\/Link>/)
   assert.ok(link, 'link present')
   assert.doesNotMatch(link[1], /inline-flex|min-h-/)
   assert.match(link[1], /py-2\.5/)

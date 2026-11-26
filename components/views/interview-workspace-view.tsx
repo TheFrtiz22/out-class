@@ -149,7 +149,7 @@ function InterviewSession({
     return () => { current = false }
   }, [arrival, activeId, arrivalRetry, rememberApplicant, accessRevoked])
   const round = data?.rounds.find((item) => item.id === roundId)
-  useFocusFrame({ task: round ? `Interview · ${round.name}` : undefined })
+  useFocusFrame({ task: round ? `${round.review ? "Review" : "Interview"} · ${round.name}` : undefined })
   const queue = interviewQueue(data?.applications || [], roundId)
   const active = queue.find((app) => app.id === activeId)
   const [kitDirty, setKitDirty] = useState(false)
@@ -382,7 +382,7 @@ function InterviewSession({
         </div>
       ) : (
         <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
-          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList} onAccessRevoked={accessRevoked}
+          {round && <InterviewKitSession key={`${active.id}-${round.id}`} review={!!round.review} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList} onAccessRevoked={accessRevoked}
 
 room={{ club: membership.club.name, badge: badge || Array.from(membership.club.name.trim())[0]?.toUpperCase() || "", round: round.name }} onExitRoom={onExit} demoGuide={demo ? <DemoInterviewGuideContent /> : undefined}
 toolbar={() => <><Button type="button" variant="outline" disabled={busy} onClick={() => void returnToList()}><ArrowLeft className="size-4" />Interviews</Button><span className="oc-room-divider" aria-hidden="true" /><div ref={setCandidateSlot} className="oc-room-candidate" /></>}
