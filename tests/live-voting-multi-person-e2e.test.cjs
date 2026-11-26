@@ -60,7 +60,8 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   const scope = { clubId, sessionId: randomUUID() }
   await act(leader, 'actions/voting-room.ts', 'createLiveVotingRoom', [{ ...scope, cycleId: cycle.id, roundId: applied.id, applicationIds: apps.map(a => a.id), leaderMemberIds: [leaderMember.id], targetSize: 2, presentationOptions: { fields: ['name'], highlights: {} } }])
   const room = actor => act(actor, 'actions/voting-room.ts', 'getLiveVotingRoom', [scope])
-  const command = async (action, extra = {}) => { const r = await room(leader); return act(leader, 'actions/voting-room.ts', 'commandLiveVotingRoom', [{ ...scope, action, revision: r.revision, requestId: randomUUID(), ...extra }]) }
+  // Room conflicts come back as { ok: false, code, message } (actions/voting-room.ts domainResult), not as a thrown refusal.
+  const command = async (action, extra = {}) => { const r = await room(leader); const res = await act(leader, 'actions/voting-room.ts', 'commandLiveVotingRoom', [{ ...scope, action, revision: r.revision, requestId: randomUUID(), ...extra }]); if (res && res.ok === false) throw new Error(`Room command ${action} refused: ${res.code} ${res.message}`); return res }
   await command('START')
 
   // Browsers: the leader on a laptop, the projector, four voters on phones (the fifth joins later).
@@ -138,7 +139,8 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
   await decide(apps[2].id, 1, 'REJECT'); await decide(apps[3].id, 1, 'ACCEPT')
   await command('NEXT_PASS')
   await decide(apps[0].id, 2, 'ACCEPT')
-  await command('END')
+  await command('END', { confirmed: true })
+  assert.equal((await db.votingSession.findUnique({ where: { id: scope.sessionId }, select: { state: true } })).state, 'COMPLETED', 'END with confirmation completes the session')
   // Members' phones say "Session ended"; the projector says "Voting ended".
   const ended = async (page, text, label) => page.getByText(text).first().waitFor({ timeout: 25000 }).catch(async error => {
     const session = await db.votingSession.findUnique({ where: { id: scope.sessionId }, select: { state: true, endedAt: true, revision: true } }).catch(e => String(e))
