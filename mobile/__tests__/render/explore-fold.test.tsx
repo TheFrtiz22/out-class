@@ -103,3 +103,23 @@ test("the chosen club is marked selected in the list, and stays chosen after a f
   expect(screen.getByTestId("explore-club-0").props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
   expect(loggedCrashes()).toEqual([]);
 });
+
+test("folding again while the fold-opened club page is still open doesn't queue it twice (Back reaches the list)", async () => {
+  const { client } = await renderRoute(explore(), { mode: "rich" });
+  fireEvent.press(screen.getByTestId("explore-club-0"));
+  await screen.findByTestId("club-pane");
+  mockLayout = "compact"; await rerender(client);
+  expect(routerState.router.push).toHaveBeenCalledTimes(1);
+  // The club page is now on top: Explore loses focus. Unfold and fold again on that page.
+  focus(false); await rerender(client);
+  mockLayout = "regular"; await rerender(client);
+  mockLayout = "compact"; await rerender(client);
+  // Back: Explore is in view again, folded. It must not reopen the same club.
+  focus(true); await rerender(client);
+  expect(routerState.router.push).toHaveBeenCalledTimes(1);
+  // A later unfold and fold from Explore itself opens the club again, as the first fold did.
+  mockLayout = "regular"; await rerender(client);
+  mockLayout = "compact"; await rerender(client);
+  expect(routerState.router.push).toHaveBeenCalledTimes(2);
+  expect(loggedCrashes()).toEqual([]);
+});

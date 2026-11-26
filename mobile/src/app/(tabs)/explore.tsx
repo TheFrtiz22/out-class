@@ -62,14 +62,19 @@ export default function Explore() {
   const focused = useIsFocused();
   const folded = useRef(false);
   const previous = useRef(layout);
+  // The club already opened full screen by a fold. Folding again while that page is open must not queue it a
+  // second time (Back would reopen it); coming back to Explore ends the handoff.
+  const handedOff = useRef<string | null>(null);
+  useEffect(() => { if (focused) handedOff.current = null; }, [focused]);
   useEffect(() => {
-    if (previous.current === "regular" && layout === "compact" && selected) folded.current = true;
+    if (previous.current === "regular" && layout === "compact" && selected && selected !== handedOff.current) folded.current = true;
     if (layout === "regular") folded.current = false;
     previous.current = layout;
     if (folded.current && focused && selected) {
       folded.current = false;
       // The choice stays: unfolding and coming back shows the same club beside the list.
       router.push({ pathname: "/club/[id]", params: { id: selected } });
+      handedOff.current = selected;
     }
   }, [layout, selected, router, focused]);
 
