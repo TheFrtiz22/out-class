@@ -31,6 +31,10 @@ test('Applicants list after Back then Forward: repeated attempts with full read 
     await page.evaluate(()=>{window.__reads.length=0});
     if(i===0){await activate(page.locator('.oc-command-recruiting').getByRole('link',{name:'All applicants',exact:true}));await page.locator('.oc-command-recruiting').waitFor({state:'hidden'});}
     await rows().first().waitFor({timeout:20000});
+    // As the release test does before searching: open the review on the first row, step to the next applicant, close.
+    log.push({t:at(),ev:'step',name:'review'});await activate(rows().first());await page.locator('.oc-review-flow').waitFor();
+    await page.getByRole('button',{name:'Next applicant',exact:true}).first().click({timeout:10000}).catch(()=>{});await page.waitForTimeout(400);
+    await activate(page.locator('.oc-review-flow').getByRole('button',{name:'Close review',exact:true}).first());await page.locator('.oc-review-flow').waitFor({state:'hidden'});
     const last=size<=100?'Audit Student '+String(size-1).padStart(3,'0'):'Scale Student '+String(size-1).padStart(5,'0');
     const box=page.getByRole('searchbox',{name:'Search applicants',exact:true});await box.fill(last);
     await page.waitForFunction(()=>Array.from(document.querySelectorAll('[data-applicant-id]')).filter(e=>e.getClientRects().length>0).length===1,null,{timeout:15000}).catch(()=>{});
