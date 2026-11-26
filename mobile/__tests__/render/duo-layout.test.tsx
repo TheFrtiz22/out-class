@@ -47,6 +47,14 @@ describe("screens on an unfolded Duo", () => {
     expect(style.right).toBe(880 / 2 + 12);
     expect(loggedCrashes()).toEqual([]);
   });
+  test("a regular width whose half can't fit five tabs keeps the full-width dock (narrow iPad split view)", async () => {
+    const narrowRegular = { frame: { x: 0, y: 0, width: 620, height: 900 }, insets: { top: 24, left: 0, right: 0, bottom: 20 } };
+    await renderRoute(require("~/app/(tabs)/_layout").default, { mode: "rich", metrics: narrowRegular });
+    let bar = screen.getByTestId("tab-dock").parent;
+    while (bar && flat(bar.props.style).position !== "absolute") bar = bar.parent;
+    expect(flat(bar!.props.style).right).toBe(12);
+    expect(loggedCrashes()).toEqual([]);
+  });
   test("folded (compact), the dock runs the full width but clears the status column", async () => {
     await renderRoute(require("~/app/(tabs)/_layout").default, { mode: "rich", metrics: duoNarrow });
     let bar = screen.getByTestId("tab-dock").parent;
