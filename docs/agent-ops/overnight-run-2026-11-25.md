@@ -424,3 +424,57 @@ The cloud browser was blocked at OutClass sign-in, so this part ran in the owner
 - Waiting on checks or Codex: #599, #634, #641, #644, #649, #656, #658, #663, #664, #666, #667, #668, #669, #670, #672, #673, #674, #675, #676, #677, #678.
 - Left alone on purpose: #200, #288, #532.
 - Carried over from the morning: the open-items list above (interview slot release after rejection, profile field limits, email-code guess limit, Supabase secure password change, required scheduler and audiences suites, reviewers seeing each other's scores). Also the app gaps and the temporary branch bench/contention-2026-11-25.
+
+## 2026-11-25 23:55 to 2026-11-26 ~04:45 UTC: follow-up session (finish open PRs, voting and interview rooms)
+
+Owner brief (18:51 ET): finish the overnight run's open PRs, then live voting and live interview rooms, then every journey; merge when green and check live in the owner's Chrome. Same off-limits list as before.
+
+### Session start
+- main `7a35c669` (#660). Production deploys followed main; Vercel runtime errors (3h): only two expected `ADMIN_ELEVATION_REQUIRED` refusals on `/platform/claims`.
+- Owner's local checkout on the Mac has untracked files (brand kit, bundles, mockups, `.idea`); not mine, not touched. Work ran from a fresh clone in the cloud container.
+- Environment: dependencies installed with `--ignore-scripts` in the throwaway container (Prisma's engine host is blocked by the egress allowlist; the client was generated with stand-in engine paths, pdf assets copied by hand). Browser tests ran in the container's Google Chrome. Native-PostgreSQL suites and typecheck need the real engine, so CI is their source of truth.
+
+### Open PRs from the overnight run
+| PR | What was wrong | What I did | Result |
+| --- | --- | --- | --- |
+| #662 | Sort control kept its full width inside a shrunken slot, so Filters was painted over the sort arrow (360px here, 375px with CI fonts). Codex flagged the same twice. | Control fills its slot, the pill shrinks and truncates, the visual "Sort:" prefix is hidden on phones so the field name shows. New `tests/phone-applicants-sort-row-browser.test.cjs` checks 320–390px for overlap and clickable ends; it fails on the old head at 320px. | Merged `ce3444f4` |
+| #634 | New review: Save/Done closed the editor without telling the page, so a finished checklist stayed on screen ("5 of 5"). Codex found the same afterwards. | `save()` now notifies; test checks every `setOpen(false)` does. | Merged `671ccae0` |
+| #675 | The club menu is modal, so while open it hides the pill's nav from the accessibility tree and the test's role lookup failed. Product behaviour correct. | Test finds the club tab by structure. | Merged `91566e22`; live check still owed (Chrome) |
+| #673 | Chevron at 18px, outside the 14/16/20/24 icon scale. | 16px. | Merged `37fea894` |
+| #668 | Raw `<h1>` instead of `PageHeader`. | `PageHeader` with the link as its action. | Merged `39ab2127` |
+| #669 | Codex: collapsing dropped keyword matches ("account" lost Settings) and grouped by club name. | Collapse only on a workspace-name match; group by workspace id. Red test first. | Merged `714800fa` |
+| #672 | Literal 1.25rem radius. | `var(--oc-radius-xl)`. | Merged `f923fcce` |
+| #599 | Invitation card imported `clubMonogram` from `club-assets`, which drags in a schema module the instant-feedback loader can't load. | Import-free `lib/club-monogram.ts`; `club-assets` re-exports it through the `@/lib` alias the native loaders resolve; two later conflicts with main resolved. | Merged `5b683e8a` |
+| #644 | Two Codex threads on outdated lines (already fixed on the branch). | Replied, resolved. | Merged `0158d2e7` |
+| #656, #677 | Merge conflicts with main. | Resolved (#677's change was already on main via #663; it keeps its comment and test). | #656 merged `f047f7f0`; #677 merged `19291e52` |
+| #658 | `club-workspace-refinements-browser` failed twice in CI ("Decide" group not visible); passes here on the branch and merged with main. | Re-ran; green on the third run. | Merged `5cd94293` |
+| #674, #670, #667, #666, #664, #649, #663, #641, #678, #676 | Green, no open threads. | Merged. | Merged |
+| #200, #288, #532 | Left alone as instructed. | | |
+
+### Main after the merges
+- Disposable integrations on main failed three times after #669 merged, in "Local Auth, settings and navigation" (`pipeline-release-e2e` test 7, line 83: 0 of 100 rows after Back/Forward), plus once each in "Applicant workflow / shell" (cancelled-switch prompt, fixed 900 ms wait) and "dashboards".
+- Diagnosis: dispatched the suite on `red/main-without-669` (main with #669 reverted, diagnosis only, not for merge). It failed the same pipeline step, so #669 is not the cause. Main's own run on `714800fa` passed on rerun, and on `5cd94293` every job passed except application-writing, where local Supabase failed to start before any test (re-run requested).
+- Conclusion: `pipeline-release-e2e` test 7 is still intermittent after the overnight fixes (#553, #555, #558), worse when many runs share runners. Not fixed: it needs the local Supabase stack, which this environment can't run. Recommend owner or a run with Docker reproduces it.
+- `red/main-without-669` and `red/...` scratch branches are left in place (branch deletion was refused earlier in the overnight run).
+- #679 (this log) shows as merged by the owner's GitHub account at 00:40 UTC; this run did not merge it. The "Merge bot" workflow is still triggered on every push to main (its runs are being cancelled). Owner to confirm whether it should stay enabled.
+
+### Live voting and live interview rooms
+- **Production, signed in as the owner (before Chrome dropped):** Home, LiveQA workspace, Decide → Vote ("No voting sessions yet"), Members. LiveQA has three members: the owner and two synthetic interviewers whose passwords this run doesn't have. Signing in as them needs an email code to a `@virginia.edu` address, which is off limits. So a multi-person session on production cannot be run by an agent alone.
+- **Harnesses (real room actions, harness database; browser tests in Chrome):** all 72 non-native voting files, 292 tests, pass on main `7a35c669`. Covered: several members voting at once, duplicate and stale clicks, reconnect reading authoritative state, late joiners voting on the applicant on screen and every later one, ties becoming Hold, own-ballot-only privacy for leader, voter, non-participant, outsider and revoked member, totals only after close, rule results hidden mid-pass, finalization advancing every viewer once.
+- **Interview rooms:** all interview, booking and slot suites (354 tests) pass once the environment is complete (two first failures were this container's missing Prisma engine and pdf.js assets, not product). Native-PostgreSQL race suites for voting and booking run in CI's disposable integrations.
+- **First-interview round live:** still not run. Booking a slot needs a signed-in test applicant; the owner's own draft application to LiveQA can't stand in because the self-decision guard (#545) correctly stops the owner moving their own application into the interview round.
+- **Expo app:** `typecheck` clean, 38 jest suites / 812 tests pass on main. No simulator in this environment.
+
+### Chrome
+- Claude in Chrome on the owner's Mac connected at the start, then stopped answering about 10 minutes in and kept flapping for the rest of the session (connected in the list, unreachable on use). A second connected Chrome reported itself as "Andrews MacBook Pro"; not the owner's machine, so not used. Live checks of today's merges are still owed.
+
+### Design and UX suggestions
+1. Applicants toolbar on phones: drop the "Sort:" word and show the field (built in #662). At 320px the field still truncates to one letter; acceptable for very old phones.
+2. `/live-voting` for a signed-in member shows "Sign in with your club account" with a Sign in button. For a signed-in person it should list their clubs' Voting rooms (the generic page is right only for a stale session link). Not built: needs a small server read of the viewer's clubs.
+3. Interview room on non-interview rounds (LiveQA's "Written application"): the room says "Interview complete" and "Average interview score". Either list only Interview / Group interview rounds in the room or switch its words to "Review" for other round types. Owner decision.
+4. The voting room's empty state ("Start one when applicants are ready for a vote") could show how many applicants are in a votable status, so a leader knows whether starting makes sense.
+
+### Needs the owner
+- Live multi-person voting and the First-interview round: sign in a second account (or let a teammate join) and book one LiveQA slot as a test applicant; then the run can drive the leader side.
+- Production migrations: none opened in this session. #532 still needs its migration approved.
+- Earlier open items unchanged: interview slot release after rejection (E3), profile field limits (E4), email-code guess ceiling, Supabase "Secure password change", making the scheduler and audiences suites required, reviewers seeing each other's scores (R1).
