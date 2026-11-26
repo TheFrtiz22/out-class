@@ -28,13 +28,17 @@ Leader: club home (`/my-club/[clubId]`), Leader tools, check-in (`/leader/[clubI
 | 11-26 | iPhone 17e | Home, Explore, Apply, Calendar, Profile, Leader tools, Live voting | Render cleanly; no clipping | — |
 | 11-26 | iPhone 17e | Voting ended summary | "1 passed" heading repeated by a "Passed 1" figure | #702 |
 | 11-26 | iPhone Duo (outer and inner) | Every screen | Right-edge camera and status column covered header buttons, "All tasks" and badges; no screen used side safe areas | #703 |
-| 11-26 | iPhone Duo (inner, flat and half-folded) | Home | Single column stretched edge to edge; dock stretched | Two-pane layouts #704/#706/#707; Home grid pending |
+| 11-26 | iPhone Duo (inner, flat and half-folded) | Home | Single column stretched edge to edge; dock stretched | Two-pane layouts #704/#706/#707, Home two-column grid #708 (all merged) |
 | 11-26 | iPhone Duo (inner) / iPad | Explore | Club list beside the club's page; fold opens the selected club full screen only when Explore is focused | #704 |
 | 11-26 | iPhone Duo (inner) / iPad | Interview day | Schedule beside the interview in focus; fold keeps typed notes and the open session (render test) | #706 |
 | 11-26 | iPhone Duo (inner) / iPad | Live voting (leader) | In the room, Queue and web links beside the stage and host controls; fold keeps a typed reason (render test) | #707 |
 | 11-26 | iPad | App config | `supportsTablet: true`, all iPad orientations; iPhone stays portrait | #705 |
-| 11-26 | CI | Web `list-pages-browser` | Members (Demo) at 375px missed its sort control once; main passed the same test minutes earlier. Re-run | Flake, watching |
-| 11-26 | iPhone 17e | Calendar | Filter chips mix "Interview" and "Interest Meeting" casing (stored event types, shared with web) | Open |
+| 11-26 | CI | Web `list-pages-browser` | Members (Demo) at 375px missed its sort control once; main passed the same test minutes earlier. Re-run | Flake (passed on re-run) |
+| 11-26 | iPhone Duo (inner) / iPad | Explore | Crossing the breakpoint remounted the club list (scroll and search focus lost); one stable row now (Codex finding) | #704 |
+| 11-26 | iPhone Duo (inner) / iPad | Home | Sections in two even columns, carousel full width | #708 |
+| 11-26 | CI | Disposable Supabase (application-writing) | Local stack failed to start once; passed on re-run | Infra flake |
+| 11-26 | Mac checkout | Expo Go | Mac is on main at #696, missing #698+; untracked `mobile/assets/icon/` (rejected icon layers) blocks the pull. Owner to remove it and pull, then on-device fold checks | Owner step |
+| 11-26 | iPhone 17e | Calendar | Filter chips mixed "Interview" and "Interest Meeting" casing; labels now sentence case, stored types unchanged | #709 |
 
 ## Recommendations
 
