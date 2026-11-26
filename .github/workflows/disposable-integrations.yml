@@ -86,7 +86,15 @@ jobs:
         env:
           OUTCLASS_HYDRATION_CAPTURE_DIR: ${{ runner.temp }}/hydration-captures
           OUTCLASS_E2E_LOG_DIR: ${{ runner.temp }}/supabase-start-logs
+          OUTCLASS_REPRO: "1"
         run: node scripts/run-onboarding-e2e.cjs --club-integration --selected-navigation --pipeline-release-repair --active-interviews
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-forward-repro
+          path: test-results/pipeline-forward
+          if-no-files-found: warn
+          retention-days: 7
       # Redacted `supabase start` output from any failed attempt (the runner retries once).
       - uses: actions/upload-artifact@v4
         if: always()

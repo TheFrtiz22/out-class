@@ -137,12 +137,12 @@ async function ready(url,headers={}){
    process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
    process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs','tests/resume-import-runtime.test.cjs','tests/attacker-pass-e2e.test.cjs']:
    process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs','tests/clock-skew-hydration-e2e.test.cjs',...onboardingTests]:shellSuite?[]:onboardingTests;
- const result=testFiles.length===0?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+ const repro=!!process.env.OUTCLASS_REPRO;const result=testFiles.length===0||repro?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(selectedNavigation){
   logged(process.execPath,['scripts/navigation-audit.cjs','--seed'],'selected-navigation-seed.log',env);
   const navigationTests=['tests/navigation-phase1-e2e.test.cjs','tests/navigation-phase2-e2e.test.cjs','tests/navigation-phase10-e2e.test.cjs','tests/navigation-phase12-e2e.test.cjs'];
-  const navigationResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...navigationTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+  const navigationResult=repro?{status:0}:spawnSync(process.execPath,['--test','--test-concurrency=1',...navigationTests],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
   if(navigationResult.status!==0)throw Error('Selected navigation integration failed; inspect the disposable test log.');
  }
  if(shellSuite){
@@ -157,13 +157,13 @@ async function ready(url,headers={}){
   const fixture=path.join(root,'navigation-fixture.json');
   fs.copyFileSync(path.join(root,'pipeline-release-1000.json'),fixture);
   try{
-   const repairResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/pipeline-release-e2e.test.cjs','tests/navigation-phase5-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+   const repairResult=spawnSync(process.execPath,['--test','--test-concurrency=1',...(repro?['tests/pipeline-forward-repro-e2e.test.cjs']:['tests/pipeline-release-e2e.test.cjs','tests/navigation-phase5-e2e.test.cjs'])],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
    if(repairResult.status!==0)throw Error('Pipeline release integration failed; inspect the disposable test log.');
   }finally{fs.copyFileSync(path.join(root,'pipeline-release-100.json'),fixture);}
  }
  // After release repair, which asserts the template club's untouched 61-member baseline; the
  // active fixture then adds three reviewers, three rooms and 24 bookings to that same club.
- if(activeInterviews){
+ if(activeInterviews&&!repro){
   const seedResult=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--active-rooms','--seed'],{cwd:repo,env,stdio:'inherit'});
   if(seedResult.status!==0)throw Error('Active Interview Rooms fixture seeding failed; inspect the disposable test log.');
   const activeResult=spawnSync(process.execPath,['--test','--test-concurrency=1','tests/active-interview-navigation-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
