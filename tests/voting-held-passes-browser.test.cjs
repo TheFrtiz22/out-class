@@ -85,7 +85,8 @@ test('full session across devices: intermission, held passes with fresh ballots,
   await member.getByRole('region',{name:'Voting summary',exact:true}).waitFor();
   for(const p of [member,projector]){const s=p.getByRole('region',{name:'Voting summary',exact:true});
    await s.getByRole('heading',{name:'2 passed',exact:true}).waitFor();assert.deepEqual(await s.getByRole('list',{name:'Passed applicants'}).getByRole('listitem').allTextContents(),['Applicant 1','Applicant 2']);
-   assert.match(await s.locator('.vr-intermission-counts').innerText(),/Passed\s*2[\s\S]*Held\s*0[\s\S]*Not passed\s*1[\s\S]*Unreviewed\s*0/);
+   // The heading gives the passed count; the figures don't repeat it.
+   const figures=await s.locator('.vr-intermission-counts').innerText();assert.doesNotMatch(figures,/(^|\n)Passed/);assert.match(figures,/Held\s*0[\s\S]*Not passed\s*1[\s\S]*Unreviewed\s*0/);
   }
   // Once voting has ended the projector stops inviting joins, and screen readers on every view hear that it ended.
   assert.equal(await projector.locator('.vr-aud-join').count(),0,'no join QR after the session ends');
@@ -112,7 +113,7 @@ test('ending early from an applicant: crossfade to the summary; Hold and Unrevie
   const poll=setInterval(()=>void focus([member,projector]),300);
   try{for(const p of all){await p.locator('.vr-intermission-kicker',{hasText:'Voting ended'}).waitFor({timeout:20000});await p.locator('.vr-slide-ready').waitFor();}}finally{clearInterval(poll);}
   for(const [i,p] of all.entries()){const w=await stop(p);assert.deepEqual(w.modes,['fade'],`device ${i}: a gentle crossfade to the summary`);assert.equal(w.fadeMoved,0);assert.equal(new Set(w.header).size,1);}
-  for(const p of [member,projector])assert.match(await p.getByRole('region',{name:'Voting summary',exact:true}).locator('.vr-intermission-counts').innerText(),/Passed\s*1[\s\S]*Held\s*1[\s\S]*Not passed\s*0[\s\S]*Unreviewed\s*1/);
+  for(const p of [member,projector]){const summary=p.getByRole('region',{name:'Voting summary',exact:true});assert.equal((await summary.locator('h2').innerText()).trim(),'1 passed');const figures=await summary.locator('.vr-intermission-counts').innerText();assert.doesNotMatch(figures,/(^|\n)Passed/);assert.match(figures,/Held\s*1[\s\S]*Not passed\s*0[\s\S]*Unreviewed\s*1/);}
   assert.equal(f.h.state().notifications.length,0);
   assert.deepEqual(errors,[]);
  }finally{for(const c of contexts)await c.close();await browser.close();await f.close();}

@@ -163,7 +163,7 @@ export default function VotingRoomScreen() {
               {room.meeting?.status === "CANCELLED" ? <Card tone="soft"><Text variant="small">This session was cancelled. Saved votes and outcomes are kept.</Text></Card> : null}
 
               <Card testID="voting-status" accessibilityLabel="Session progress" style={{ gap: 8 }}>
-                <Text variant="card" testID="voting-status-label">{mode === "leader" ? voteStatusLabel(room, entry) : room.status === "COMPLETED" ? "Session ended" : entry?.ballotState === "OPEN" ? "Voting open" : entry?.ballotState === "CLOSED" || entry?.ballotState === "CONFIRMED" ? "Voting closed" : "Waiting for voting"}</Text>
+                <Text variant="card" testID="voting-status-label">{mode === "leader" ? voteStatusLabel(room, entry) : room.status === "COMPLETED" ? "Voting ended" : entry?.ballotState === "OPEN" ? "Voting open" : entry?.ballotState === "CLOSED" || entry?.ballotState === "CONFIRMED" ? "Voting closed" : "Waiting for voting"}</Text>
                 {room.status === "OPEN" && entry?.ballotState === "OPEN" ? (
                   <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ height: 6, borderRadius: radius.full, backgroundColor: colors.muted, overflow: "hidden" }}>
                     <View style={{ height: 6, borderRadius: radius.full, backgroundColor: colors.brandInk, width: `${room.participation.eligible ? Math.min(100, room.participation.voted * 100 / room.participation.eligible) : 0}%` }} />
@@ -189,7 +189,7 @@ export default function VotingRoomScreen() {
                 </>
               ) : (
                 <>
-                  {room.status === "COMPLETED" ? <Text variant="small">Session ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</Text> : null}
+                  {room.status === "COMPLETED" ? <Text variant="small">Voting ended. Unresolved applicants and saved votes are preserved. No applicant notifications were sent.</Text> : null}
                   {mode === "member" ? <BallotPanel room={room} entry={entry} refresh={refresh} /> : null}
                   {!room.ownApplicant ? <ClosedTotals room={room} entry={entry} /> : null}
                 </>
