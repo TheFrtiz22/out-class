@@ -2,15 +2,25 @@ import { useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import ReanimatedSwipeable, { type SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
 import type { IconComponent } from "~/components/icon-factory";
-import { Archive, Check, Mail } from "~/components/icons";
-import { clubName, fullDate, isUrgent, preview, relativeTime, typeLabel } from "~/components/inbox/presentation";
+import { Archive, Check, ChevronRight, Clock, Mail } from "~/components/icons";
+import { clubName, fullDate, isUrgent, preview, relativeTime, typeLabel, URGENT_RED } from "~/components/inbox/presentation";
 import { Text } from "~/components/text";
-import { Chip, ClubMark, Press } from "~/components/ui";
+import { ClubMark, Press } from "~/components/ui";
 import { haptics } from "~/lib/haptics";
 import { fonts, useTheme } from "~/lib/theme";
 import type { InboxRow } from "~/lib/types";
 
 const ACTION_WIDTH = 84;
+
+/** Urgent updates carry the same white-on-red pill as the web Inbox, in light and dark appearance. */
+export function UrgentPill() {
+  return (
+    <View accessible={false} style={{ flexDirection: "row", alignItems: "center", gap: 4, height: 22, paddingHorizontal: 9, borderRadius: 11, backgroundColor: URGENT_RED }}>
+      <Clock size={12} color="#ffffff" />
+      <Text variant="caption" color="#ffffff" style={{ fontFamily: fonts.sansSemibold }}>Urgent</Text>
+    </View>
+  );
+}
 
 function SwipeAction({ icon: Icon, label, background, color, onPress, testID }: { icon: IconComponent; label: string; background: string; color: string; onPress: () => void; testID?: string }) {
   return (
@@ -31,7 +41,7 @@ export function InboxListRow({ item, now, first, last, onOpen, onRead, onArchive
   const swipe = useRef<SwipeableMethods>(null);
   const unread = !item.readAt;
   const readLabel = unread ? "Mark read" : "Mark unread";
-  const corners = { borderTopLeftRadius: first ? radius.lg : 0, borderTopRightRadius: first ? radius.lg : 0, borderBottomLeftRadius: last ? radius.lg : 0, borderBottomRightRadius: last ? radius.lg : 0 };
+  const corners = { borderTopLeftRadius: first ? radius.xl2 : 0, borderTopRightRadius: first ? radius.xl2 : 0, borderBottomLeftRadius: last ? radius.xl2 : 0, borderBottomRightRadius: last ? radius.xl2 : 0 };
   const act = (action: () => void) => { haptics.save(); swipe.current?.close(); action(); };
 
   return (
@@ -53,21 +63,25 @@ export function InboxListRow({ item, now, first, last, onOpen, onRead, onArchive
           large
           testID={`inbox-row-${item.type.toLowerCase()}`}
           onPress={onOpen}
-          accessibilityLabel={`${unread ? "Unread. " : ""}${clubName(item)}. ${item.title}. ${typeLabel(item)}, ${relativeTime(item.createdAt, fullDate(item.createdAt), now)}`}
+          accessibilityLabel={`${unread ? "Unread. " : ""}${isUrgent(item) ? "Urgent. " : ""}${clubName(item)}. ${item.title}. ${typeLabel(item)}, ${relativeTime(item.createdAt, fullDate(item.createdAt), now)}`}
           accessibilityActions={[{ name: "read", label: readLabel }, { name: "archive", label: "Dismiss" }]}
           onAccessibilityAction={event => { if (event.nativeEvent.actionName === "read") onRead(unread); if (event.nativeEvent.actionName === "archive") onArchive(); }}
-          style={{ backgroundColor: unread ? colors.contentSoft : colors.card, paddingVertical: 14, paddingRight: 16, paddingLeft: 13, borderLeftWidth: 3, borderLeftColor: unread ? colors.primary : "transparent", gap: 6 }}
+          style={{ backgroundColor: colors.card, paddingVertical: 12, paddingRight: 14, paddingLeft: 10, flexDirection: "row", alignItems: "flex-start", gap: 10 }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <ClubMark name={clubName(item)} color={item.club?.color} logoUrl={item.club?.logoUrl} size={28} />
-            <Text variant="caption" numberOfLines={1} style={{ flex: 1 }}>{clubName(item)}</Text>
-            {unread ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary }} /> : null}
-          </View>
-          <Text variant={unread ? "bodyStrong" : "body"} style={unread ? undefined : { fontFamily: fonts.sansMedium }}>{item.title}</Text>
-          {item.body ? <Text variant="small" numberOfLines={2}>{preview(item)}</Text> : null}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-            {isUrgent(item) ? <Chip label="Urgent" tone="warning" /> : null}
-            <Text variant="caption">{typeLabel(item)} · {relativeTime(item.createdAt, fullDate(item.createdAt), now)}</Text>
+          <View style={{ width: 8, height: 8, borderRadius: 4, marginTop: 16, backgroundColor: unread ? colors.primary : "transparent" }} />
+          <ClubMark name={clubName(item)} color={item.club?.color} logoUrl={item.club?.logoUrl} size={40} />
+          <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text variant="small" numberOfLines={1} style={{ flex: 1, color: colors.foreground, fontFamily: unread ? fonts.sansBold : fonts.sansMedium }}>{clubName(item)}</Text>
+              <Text variant="caption" style={{ fontVariant: ["tabular-nums"] }}>{relativeTime(item.createdAt, fullDate(item.createdAt), now)}</Text>
+              <ChevronRight size={13} color={colors.mutedForeground} />
+            </View>
+            <Text variant={unread ? "bodyStrong" : "body"} numberOfLines={1}>{item.title}</Text>
+            {item.body ? <Text variant="small" numberOfLines={2}>{preview(item)}</Text> : null}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 4 }}>
+              {isUrgent(item) ? <UrgentPill /> : null}
+              <Text variant="caption">{typeLabel(item)}</Text>
+            </View>
           </View>
         </Press>
       </ReanimatedSwipeable>

@@ -131,7 +131,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const auth = useAuth()
   const { readAuthority, isReadAuthorityCurrent } = auth
-  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, auth.loading, membership, demo.ready, demo.isDemoEnabled])
+  // By content, not object identity: Back/Forward re-sends an identical account (components/selected-club-workspace.tsx),
+  // which must not hide the shown applicants and read them again. Any real account or membership change still changes it.
+  const account = useMemo(() => auth.user ? JSON.stringify(auth.user) : null, [auth.user])
+  const membershipKey = useMemo(() => JSON.stringify(membership), [membership])
+  const authority = useMemo(() => ({ user: account, readAuthority: auth.readAuthority, support: auth.isImpersonating, loading: auth.loading, membership: membershipKey, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [account, auth.readAuthority, auth.isImpersonating, auth.loading, membershipKey, demo.ready, demo.isDemoEnabled])
   const canStartVoting = hasPermission(membership, "applications.review") && hasPermission(membership, "decisions.manage") && hasPermission(membership, "decisions.start")
   const canReview = hasPermission(membership, "applications.review")
   const canDecide = hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")

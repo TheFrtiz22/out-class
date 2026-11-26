@@ -41,6 +41,16 @@
 @media (max-width: 639px) {
   .oc-workspace-content { padding-top: .625rem; padding-inline: 1rem; }
 }
+/* Phones held sideways (short screens): the bar is a slim, centred strip with icon and label side by side, so the
+   page keeps most of its 320–430px of height. The content's bottom padding follows the shorter bar. */
+@media (max-width: 1023px) and (max-height: 500px) and (orientation: landscape) {
+  [data-product-shell] { --oc-shell-mobile-height: 3rem; }
+  .oc-mobile-navigation { left: 50%; right: auto; width: min(36rem, calc(100% - 24px)); transform: translateX(-50%); padding: .25rem; border-radius: 20px; }
+  .oc-mobile-destination { min-height: 2.5rem; flex-direction: row; gap: .4rem; border-radius: 14px; }
+  .oc-mobile-destination svg { width: 1.125rem; height: 1.125rem; }
+  .oc-mobile-destination[aria-current="page"]::before, .oc-mobile-destination[data-current]::before { top: 2px; }
+  body:has([data-product-shell]) { --oc-toast-offset: calc(4rem + env(safe-area-inset-bottom)); }
+}
 .oc-workspace-switcher-trigger { display: flex; align-items: center; gap: .65rem; width: 100%; padding: .8rem .65rem; text-align: left; border-radius: var(--oc-radius-md); background: var(--oc-rail-selected); border: 1px solid #526675; color: var(--oc-rail-text); }
 .oc-workspace-switcher-trigger > :first-child { width: 2rem; height: 2rem; flex-shrink: 0; }
 .oc-workspace-switcher-trigger > span:nth-child(2) { min-width: 0; flex: 1; }

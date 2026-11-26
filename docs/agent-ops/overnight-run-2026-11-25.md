@@ -478,3 +478,60 @@ Owner brief (18:51 ET): finish the overnight run's open PRs, then live voting an
 - Live multi-person voting and the First-interview round: sign in a second account (or let a teammate join) and book one LiveQA slot as a test applicant; then the run can drive the leader side.
 - Production migrations: none opened in this session. #532 still needs its migration approved.
 - Earlier open items unchanged: interview slot release after rejection (E3), profile field limits (E4), email-code guess ceiling, Supabase "Secure password change", making the scheduler and audiences suites required, reviewers seeing each other's scores (R1).
+
+## 2026-11-26 ~02:30 to ~06:30 UTC: live checks once Chrome came back
+
+### Today's merges checked live (owner's Chrome, signed in)
+- Desktop: #675 club menu in the blue tab (opens, lists both clubs, Escape closes); #599 "OLQ" initials; #664 "Complete club profile".
+- Phone 375×812 (a 375px same-origin frame over the signed-in page, because the window won't resize below 1512px): #662 Applicants toolbar one row, no overlap, no sideways scroll; #673 Settings chevrons; #668 Meetings page title; #672, #666 and #634 in Edit profile and the profile checklist.
+- Sideways scroll, portrait and landscape (812×375): none on Home, Explore, Applications, Calendar, Inbox, My Clubs, /club/aif, /uva, Applicants.
+
+### Live voting, end to end on production (LiveQA, First interview, 2 test applicants)
+- One person in three views (leader, member, projector tabs). LiveQA has only one member who can vote; the two synthetic interviewers aren't eligible.
+- Worked: setup (round, applicants, rule, preview), start, join, Something to add (raise, leader sees it, Acknowledge reaches the member, projector shows nothing), open voting, ballot, change of ballot, reconnect by reload (ballot kept), leader sees only "1 of 1 voted" while open, close shows totals on leader and projector, override against the ballot needs a reason, Undo keeps the ballot, a Hold pass, Pass without a vote (confirmation says no ballots, no messages), End voting ("No applicant notifications were sent"). Member and projector followed every step without reloads.
+- Not run: finalization (kept both test applicants in First interview for the booking test); several voters at once, ties and late joiners (need more eligible members).
+- Fixed: PR #681 (merged `816e9afc`, checked live): after End voting the projector kept the join QR and "Members: scan to vote", the screen-reader status still said "Waiting for the leader.", and the dialog said "0 Hold and 0 Unreviewed applicants will remain unresolved".
+
+### Landscape bug fixed
+- PR #682 (merged `2f0c4055`): at 812×375 the Applicants toolbar stayed on one row it didn't fit (search cut to "Name, ID or r", sort arrow under Filters by 19px, More past the edge). Two rows below 860px, and the sort control fits its slot at every width. New browser test covers 700–1280px.
+
+### Real bug found, not fixed: Applicants list stuck loading after Back then Forward
+- Diagnostic run on `debug/pipeline-forward-empty` (not for merge) recorded the page when `pipeline-release-e2e` test 7 fails: URL `…tool=applicants`, zero rows, "Preparing your applicant pipeline…" still shown after 15 s, 100-applicant club. So the intermittent CI failure is the product, not the test: the list can stay on its loading state after history navigation.
+- Not reproduced live on LiveQA (3 applicants) in one try. Likely a page read that is skipped or discarded for an auth or query owner that changes during the Back/Forward remount (`hooks/use-pipeline-page.ts`); not confirmed. Needs the local Supabase stack (Docker) to reproduce and fix; this environment can't run it.
+
+### First-interview round
+- Leader side: Interviews shows 4 open times on Nov 26, 10 AM–12 PM, none booked. The interview room offers only Written application because interviewers are assigned through bookings. Still needs a signed-in test applicant to book.
+- Small mismatch: "Some applicants assigned to you haven't booked a time slot yet. Open the interview room" opens the room on Written application.
+
+### More design suggestions
+- Applications on phones: the fourth tab ("Decisions") is cut off at the right edge with no sign the row scrolls.
+- Landscape phones: the bottom bar takes about a quarter of the 375px height; with the header and title, no list rows show without scrolling. Consider hiding the bar on scroll or shrinking it in landscape.
+- Edit profile: the photo field is the raw browser "Choose File / No file chosen" control.
+- Voting ended screen: "Voting ended" and "1 passed" appear twice with large empty gaps.
+
+## 2026-11-26 ~04:30 to ~07:00 UTC: unattended overnight run (owner asleep; merges and own-fix migrations pre-approved)
+
+### Merged and checked
+- #683 run log; #685 tab rows on phones (live: Applications at 375px shows `data-overflow="end"` and the right-edge fade); #686 profile photo and résumé are real buttons (live: "Replace photo", "Upload résumé" in Edit profile; closed without changes).
+- #687 landscape phones: slim, centred dock. #689 recused reviewer gets the recusal message, not a generic error (Sentry OUT-CLASS-M / Vercel runtime error on `/club/[clubId]/workspace`): `RecusedError` is now an `ActionError` (`RECUSED`); test red on main, green after.
+- #690 mobile CI: `leader-retest` and `stress-leader` interview-day tests failed every night from ~23:00 ET into the next day, because fixtures put interviews hours from the real clock. A shared `pinEasternMorning()` fakes only `Date`. Proved by running main at 23:54 ET (fails) and the branch (64/64).
+- #691 e2e: `operational-dashboards-e2e` read React's hidden streamed copy of the club home (`[id="S:0"]`); it now reads the one in `main`.
+- #682 re-checked live at 820px: two-row Applicants toolbar, sort fits.
+
+### Sentry / runtime errors
+- OUT-CLASS-M (RecusedError thrown): fixed in #689.
+- OUT-CLASS-K (ZodError "Use an http or https link."): last seen 17:34 UTC Nov 25, before commit `052fcd26` (18:04) that pre-checks task links into a plain refusal. That message no longer exists on main. No action.
+- Admin elevation refusals: expected.
+
+### Back/Forward on Applicants (the "stuck loading" from the earlier entry)
+- Four instrumented CI runs on `debug/pipeline-forward-diag` (not for merge). It isn't a stuck read: the page always recovers by itself (20 s later the list shows all 100).
+- Found and fixed in PR #693: Forward re-sends an identical user object, and `SelectedClubWorkspace` keyed on its identity, so the list flashed "Preparing…" for about 150 ms and read the pipeline twice. It now keys on the account's content. The unit test is red on main and green after; the authz reviewer approved.
+- The e2e test still sees 0 rows on Forward with #693 applied, so a second cause remains, under investigation with navigation and settle-error tracing. Likely a document-level navigation that destroys the evaluate context and makes the test's settle step return early.
+
+### New, not yet explained
+- `settings-navigation-e2e` saw a React hydration error (#418) on `/meetings/<id>` once, at 00:37 ET. The meeting page renders no dates on the server; no cause found in the shell. Watching for a repeat.
+
+### Open PRs at this point
+- #684 (signed-in "Voting has moved" page): CI found `handOverOnly` selected as a column (it isn't one). It now marks graduates through `lib/graduate-access.ts` with one graduation read, plus a test for a graduate kept as owner.
+- #688 (review-round wording, unbooked link): two tests followed the old link and workspace shape; updated. The interview suites pass (the only local failures are the sandbox's missing Prisma engine, the same on main).
+- #693 (above).

@@ -1,4 +1,5 @@
 "use client";
+import { firstUnbooked } from "@/lib/interview-round-kind";
 import { useAssignedInterviewRooms } from "./interview-read-scope";
 import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read";
 import { useEffect, useState } from "react";
@@ -46,18 +47,18 @@ function InterviewRow({ row, withDay, primary }: { row: InterviewRoomEntry; with
 export function InterviewRoomsList({ clubId, onSchedule, tabbed = false }: { clubId: string; onSchedule?: () => void; tabbed?: boolean }) {
   const demo = useDemoMode();
   const assignedRooms = useAssignedInterviewRooms(clubId);
-  const [rows, setRows] = useState<InterviewRoomEntry[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [unbooked, setUnbooked] = useState(false);
+  const [rows, setRows] = useState<InterviewRoomEntry[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [unbooked, setUnbooked] = useState<{ applicationId: string; roundId: string } | null>(null);
   const [date, setDate] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("interviewDate") || "");
   // This filter belongs to My interviews alone. Schedule keeps its own round in `roundId`.
   const [rounds, setRounds] = useState<{id:string;name:string}[]>([]), [roundId, setRoundId] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("interviewRound") || "");
   const [doneOpen, setDoneOpen] = useState(false);
   useEffect(() => {
     if (!demo.ready) return;
-    setRows([]); setUnbooked(false); setLoading(true);
+    setRows([]); setUnbooked(null); setLoading(true);
     const reader = serializedWorkspaceRead(
       () => Promise.all([assignedRooms(), getInterviewWorkspace(clubId), getInterviewRounds(clubId)]),
-      ([result, workspace, available]) => { setRows(result); setRounds(interviewRoomRoundOptions(available.rounds, result)); setUnbooked(workspace.applications.some(a => a.assignedRoundIds.some(r => !result.some(row => row.applicationId === a.id && row.roundId === r)))); setError(""); setLoading(false); },
-      () => { setRows([]); setUnbooked(false); setError("Couldn’t load your interviews. Check your current interview access and retry."); setLoading(false); },
+      ([result, workspace, available]) => { setRows(result); setRounds(interviewRoomRoundOptions(available.rounds, result)); setUnbooked(firstUnbooked(workspace, result)); setError(""); setLoading(false); },
+      () => { setRows([]); setUnbooked(null); setError("Couldn’t load your interviews. Check your current interview access and retry."); setLoading(false); },
     );
     const visible = () => { if (!document.hidden) void reader.poll(); };
     const changed = () => { void reader.refresh(); };
@@ -103,6 +104,6 @@ export function InterviewRoomsList({ clubId, onSchedule, tabbed = false }: { clu
       <CollapsibleContent className="oc-interview-day-content" inert={!doneOpen} aria-hidden={!doneOpen}><ul className="oc-my-interviews">{done.map(row => <InterviewRow key={row.id} row={row} withDay />)}</ul></CollapsibleContent>
     </Collapsible>}
     {!loading && !error && !empty && <p className="text-xs text-muted-foreground">{zones.length === 1 && zones[0] === SCHEDULING_TIMEZONE ? `Times are in ${SCHEDULING_TIMEZONE_LABEL}.` : "Times are in each room’s time zone."}</p>}
-    {!error && unbooked && <p className="border-t pt-3 text-sm text-muted-foreground">Some applicants assigned to you haven’t booked a time slot yet. <Link className="py-2.5 underline underline-offset-4" href={clubInterviewHref(clubId, "interviewTab=rooms")}>Open the interview room</Link></p>}
+    {!error && unbooked && <p className="border-t pt-3 text-sm text-muted-foreground">Some applicants assigned to you haven’t booked a time slot yet. <Link className="py-2.5 underline underline-offset-4" href={clubInterviewHref(clubId, `interviewTab=rooms&roundId=${encodeURIComponent(unbooked.roundId)}&applicationId=${encodeURIComponent(unbooked.applicationId)}`)}>Open the interview room</Link></p>}
   </section>;
 }

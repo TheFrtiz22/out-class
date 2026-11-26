@@ -8,7 +8,7 @@ import { interviewClock } from "~/components/leader/interviews";
 import { ApiError, TIMEOUT_MESSAGE } from "~/lib/api";
 import type { Me, Membership } from "~/lib/types";
 import { ids, records } from "./fixtures";
-import { captureConsole, loggedCrashes, releaseConsole, renderRoute, settle } from "./harness";
+import { captureConsole, loggedCrashes, pinEasternMorning, releaseConsole, renderRoute, settle } from "./harness";
 import { routerState } from "./router-state";
 
 beforeEach(captureConsole);
@@ -70,8 +70,11 @@ describe("live voting room", () => {
 });
 
 describe("interview day", () => {
+  afterEach(() => { jest.useRealTimers(); });
   test("a failed background refresh keeps the schedule and the open notes", async () => {
-    const rooms = (require("./fixtures").fixtureSets.rich["leader.interviewRooms"]) as unknown;
+    const moved = pinEasternMorning();
+    const shift = (iso: unknown) => typeof iso === "string" ? new Date(Date.parse(iso) + moved).toISOString() : iso;
+    const rooms = (require("./fixtures").fixtureSets.rich["leader.interviewRooms"] as Record<string, unknown>[]).map(row => ({ ...row, startTime: shift(row.startTime), endTime: shift(row.endTime) })) as unknown;
     const { client } = await renderRoute(require("~/app/leader/[clubId]/interviews").default, {
       params: { clubId: ids.leaderClub }, overrides: { "leader.interviewRooms": thenFail(rooms, () => new ApiError(0, "OFFLINE", "You're offline.")) },
     });

@@ -99,3 +99,15 @@ export function screenText(tree: Node | Node[]): string {
   walk(tree, lines);
   return lines.filter(Boolean).join("\n");
 }
+
+/**
+ * Interview-day screens show today's Eastern interviews, and fixtures put them minutes or hours from now, so late
+ * in the Eastern evening they fall on tomorrow. Fake only Date (timers stay real) at 10 AM Eastern today. Returns
+ * how far the clock moved, to shift times a fixture already computed from the real clock. Undo with jest.useRealTimers().
+ */
+export function pinEasternMorning() {
+  const real = Date.now();
+  const pinned = Date.parse(`${new Date(real - 5 * 3_600_000).toISOString().slice(0, 10)}T15:00:00Z`);
+  jest.useFakeTimers({ now: pinned, doNotFake: ["nextTick", "setImmediate", "clearImmediate", "setTimeout", "clearTimeout", "setInterval", "clearInterval", "queueMicrotask", "requestAnimationFrame", "cancelAnimationFrame", "requestIdleCallback", "cancelIdleCallback", "hrtime", "performance"] });
+  return pinned - real;
+}

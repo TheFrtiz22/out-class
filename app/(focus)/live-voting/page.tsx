@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { VotingLinkMoved } from "@/components/live-voting/voting-link-moved"
-import { liveRoomHrefForLegacyLink } from "@/utils/legacy-voting-link"
+import { liveRoomHrefForLegacyLink, votingRoomsForViewer } from "@/utils/legacy-voting-link"
 
 export const metadata = { title: "Live voting", robots: { index: false, follow: false } }
 
@@ -11,5 +11,6 @@ export default async function LiveVotingPage({ searchParams }: { searchParams: P
   const id = typeof session === "string" ? session : null
   const href = await liveRoomHrefForLegacyLink(id)
   if (href) redirect(href)
-  return <VotingLinkMoved next={id ? `/live-voting?session=${encodeURIComponent(id)}` : "/live-voting"} />
+  const { signedIn, clubs } = await votingRoomsForViewer()
+  return <VotingLinkMoved next={id ? `/live-voting?session=${encodeURIComponent(id)}` : "/live-voting"} signedIn={signedIn} clubs={clubs} />
 }

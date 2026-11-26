@@ -31,10 +31,10 @@ function useReferencePoll<T>(enabled: boolean, request: () => Promise<T>, onValu
   }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 }
 // After a handoff the room unmounts these widgets (setData(null)); they show nothing further themselves.
-export function RoundScore({ scope, onAccessRevoked }: ReferenceProps) {
+export function RoundScore({ scope, onAccessRevoked, review = false }: ReferenceProps & { review?: boolean }) {
   const [value, setValue] = useState<RoundScoreSummary | null>(null), [error, setError] = useState(false), [retry, setRetry] = useState(0);
   useReferencePoll(true, () => getInterviewRoundScore(scope), v => { setValue(v); setError(false); }, () => { setValue(null); setError(true); }, onAccessRevoked, [scope.clubId, scope.applicationId, scope.roundId, retry]);
-  return <section aria-label="Round score" className="oc-round-score"><h3>Average interview score</h3>{error ? <p role="status">Round scores unavailable under current access. <Button type="button" variant="ghost" onClick={() => setRetry(v => v + 1)}>Retry</Button></p> : value ? <><p>{formatAverage(value.average)}{value.average !== null && " / 10"}{value.provisional && " · Provisional"}</p><p className="text-xs text-muted-foreground">{value.average === null ? `${value.submitted} of ${value.required} reviews submitted` : `${scoredEvaluationsLabel(value.submitted)} · ${value.submitted} of ${value.required} reviews submitted`}</p></> : <LoadingState label="Loading round scores…" layout="inline" />}</section>;
+  return <section aria-label="Round score" className="oc-round-score"><h3>{review ? "Average review score" : "Average interview score"}</h3>{error ? <p role="status">Round scores unavailable under current access. <Button type="button" variant="ghost" onClick={() => setRetry(v => v + 1)}>Retry</Button></p> : value ? <><p>{formatAverage(value.average)}{value.average !== null && " / 10"}{value.provisional && " · Provisional"}</p><p className="text-xs text-muted-foreground">{value.average === null ? `${value.submitted} of ${value.required} reviews submitted` : `${scoredEvaluationsLabel(value.submitted)} · ${value.submitted} of ${value.required} reviews submitted`}</p></> : <LoadingState label="Loading round scores…" layout="inline" />}</section>;
 }
 export function EarlierRounds({ scope, onAccessRevoked }: ReferenceProps) {
   const [open, setOpen] = useState(false), [value, setValue] = useState<Awaited<ReturnType<typeof getEarlierInterviewReviews>> | null>(null), [error, setError] = useState(false), [retry, setRetry] = useState(0);

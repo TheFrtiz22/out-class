@@ -11,7 +11,7 @@ import { classifyScan, redeemShortLink } from "~/lib/scan";
 import type { Me, Membership } from "~/lib/types";
 import { apiState, resolveFixture } from "./api-state";
 import { ids, records } from "./fixtures";
-import { captureConsole, loggedCrashes, releaseConsole, renderRoute, settle } from "./harness";
+import { captureConsole, loggedCrashes, pinEasternMorning, releaseConsole, renderRoute, settle } from "./harness";
 
 beforeEach(captureConsole);
 afterEach(releaseConsole);
@@ -130,6 +130,8 @@ const interviews = (rows: InterviewEntry[]) => renderRoute(require("~/app/leader
 const notesField = () => screen.getByTestId("interview-notes-field");
 
 describe("interview day", () => {
+  beforeEach(() => { pinEasternMorning(); });
+  afterEach(() => { jest.useRealTimers(); });
   test("100 interviews: one focus card, every booked one listed once", async () => {
     // Inside the current Eastern day: 100 back-to-back starting 5 minutes ago (each 10 minutes; some spill past midnight near its end).
     const rows = Array.from({ length: 100 }, (_, i) => entry(i, -5 + i * 0.1));

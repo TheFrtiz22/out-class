@@ -54,9 +54,6 @@
 [data-product-shell] .oc-student-profile > header { padding: var(--oc-content-padding); margin-bottom: var(--oc-content-gap); border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
 [data-product-shell] .oc-student-profile > header h2 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 400; }
 [data-product-shell] .oc-student-profile > header [data-slot="avatar"] { border-radius: var(--oc-radius-lg); }
-[data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] { border: 1px solid var(--oc-content-edge); border-radius: var(--oc-content-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
-[data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] > div { border-color: var(--border); }
-[data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] :is(.text-neutral-500,.text-neutral-400) { color: var(--muted-foreground); }
 [data-product-shell] .oc-calendar-workspace section > ul > li > button { border-radius: var(--oc-radius-md); padding-inline: .75rem; }
 [data-product-shell] .oc-calendar-workspace section > ul > li > button:hover { background: var(--oc-surface-blue); }
 
@@ -160,10 +157,6 @@
 /* Phones and tablets, as in the OutClass app (Inbox, Calendar, Profile). Desktop keeps the layouts above. */
 .oc-calendar-filter-toggle { display: none !important; }
 @media (max-width: 1023px) {
-  /* Inbox: compact day/group headings and rows. */
-  [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] section > div:first-child { padding: 12px 16px 6px; border-bottom: 0; }
-  [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] section h3 { color: var(--foreground); font-family: var(--oc-font-sans); font-size: 1rem; font-weight: var(--oc-weight-semibold); letter-spacing: 0; text-transform: none; }
-
   /* Calendar: a Filter button opens search, type and the past/declined toggles. */
   .oc-calendar-filter-toggle { display: inline-flex !important; align-self: flex-start; min-height: 44px; border-radius: var(--oc-radius-full); }
   .oc-calendar-filter-toggle[aria-expanded="true"] { background: var(--oc-glass-pill-navy, var(--primary)); color: var(--oc-glass-cream); }
