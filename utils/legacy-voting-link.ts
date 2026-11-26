@@ -1,4 +1,5 @@
-import { activeMemberWhere, hasPermission } from "@/lib/permissions";
+import { activeMemberWhere } from "@/lib/permissions";
+import { decideAccess } from "@/lib/product-navigation";
 import "server-only"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
@@ -32,7 +33,7 @@ export async function liveRoomHrefForLegacyLink(sessionId: string | undefined | 
 
 /**
  * For the generic "Voting has moved" page: whether the viewer is signed in, and the clubs whose Voting room
- * they may open (active, unsuspended, with decisions.view or decisions.manage). Nothing about any session.
+ * they may open (active, unsuspended, and the Voting room's own `decideAccess().canVote`). Nothing about any session.
  */
 export async function votingRoomsForViewer(): Promise<{ signedIn: boolean; clubs: { id: string; name: string }[] }> {
   try {
@@ -43,7 +44,8 @@ export async function votingRoomsForViewer(): Promise<{ signedIn: boolean; clubs
       select: { clubId: true, status: true, alumniSince: true, isOwner: true, permissions: true, handOverOnly: true, club: { select: { name: true } } },
       orderBy: { club: { name: "asc" } },
     })
-    return { signedIn: true, clubs: members.filter(m => hasPermission(m, "decisions.view") || hasPermission(m, "decisions.manage")).map(m => ({ id: m.clubId, name: m.club.name })) }
+    // The same gate as the Voting room itself (Decide → Vote), so every link offered opens.
+    return { signedIn: true, clubs: members.filter(m => decideAccess(m).canVote).map(m => ({ id: m.clubId, name: m.club.name })) }
   } catch {
     return { signedIn: false, clubs: [] }
   }

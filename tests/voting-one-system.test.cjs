@@ -233,12 +233,14 @@ test('with demo=1 the history page and its close command never reach the server 
 
 test('the generic voting page: signed-in viewers see only their own Voting rooms and no Sign in', async () => {
  const members=[
-  {clubId:'c-lead',status:'ACTIVE',alumniSince:null,isOwner:false,permissions:['decisions.view'],handOverOnly:false,club:{name:'Alpha'}},
+  {clubId:'c-lead',status:'ACTIVE',alumniSince:null,isOwner:false,permissions:['applications.review','decisions.view'],handOverOnly:false,club:{name:'Alpha'}},
+  {clubId:'c-view-only',status:'ACTIVE',alumniSince:null,isOwner:false,permissions:['decisions.view'],handOverOnly:false,club:{name:'Delta'}},
+  {clubId:'c-manage-only',status:'ACTIVE',alumniSince:null,isOwner:false,permissions:['decisions.manage'],handOverOnly:false,club:{name:'Epsilon'}},
   {clubId:'c-plain',status:'ACTIVE',alumniSince:null,isOwner:false,permissions:[],handOverOnly:false,club:{name:'Beta'}},
   {clubId:'c-own',status:'ACTIVE',alumniSince:null,isOwner:true,permissions:[],handOverOnly:false,club:{name:'Gamma'}},
  ];
  const make=(user)=>load('utils/legacy-voting-link.ts',{'server-only':{},'next/headers':{cookies:async()=>({get:()=>undefined,has:()=>false})},'@/lib/demo/access':{DEMO_COOKIE:'d'},'@/lib/platform-view-as':{PLATFORM_VIEW_COOKIE:'p'},'@/utils/auth':{getSessionUser:async()=>({data:{user:user?{id:user,email:'member@virginia.edu',email_confirmed_at:'2026-01-01T00:00:00Z'}:null},error:null})},'@/utils/prisma':{prisma:{user:{findUnique:async()=>({disabledAt:null})},clubMember:{findMany:async({where})=>{assert.equal(where.userId,user);assert.deepEqual(where.club,{suspendedAt:null});return members}}}}});
- assert.deepEqual(await make(memberId).votingRoomsForViewer(),{signedIn:true,clubs:[{id:'c-lead',name:'Alpha'},{id:'c-own',name:'Gamma'}]},'only clubs whose voting sessions the viewer may see');
+ assert.deepEqual(await make(memberId).votingRoomsForViewer(),{signedIn:true,clubs:[{id:'c-lead',name:'Alpha'},{id:'c-own',name:'Gamma'}]},'only clubs whose Voting room the viewer can open (decideAccess.canVote)');
  assert.deepEqual(await make(null).votingRoomsForViewer(),{signedIn:false,clubs:[]});
  const src=fs.readFileSync('components/live-voting/voting-link-moved.tsx','utf8');
  assert.match(src,/\{!signedIn && <Link className=\{linkClass\} href=\{signInHref\(next\)\}>Sign in<\/Link>\}/,'no Sign in for a signed-in viewer');
