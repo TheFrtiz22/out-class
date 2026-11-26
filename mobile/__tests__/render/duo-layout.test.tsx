@@ -34,7 +34,7 @@ describe("useScreenGutters", () => {
 });
 
 describe("screens on an unfolded Duo", () => {
-  const flat = (style: unknown): Record<string, number> => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+  const flat = (style: unknown): Record<string, number | string> => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
   test("Home's content and the tab dock stay clear of the right-edge status column", async () => {
     await renderRoute(require("~/app/(tabs)/_layout").default, { mode: "rich", metrics: duoOpen });
     const dock = screen.getByTestId("tab-dock");
