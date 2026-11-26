@@ -227,7 +227,7 @@ export function EditStudentProfileDialog({
                     />
                     {photoSource && <ProfilePhotoCrop source={photoSource} onCancel={() => setPhotoSource(null)} onSave={async file => { await upload(file, "headshot"); setPhotoSource(null) }} />}
                     {draft.headshotUrl && <Button type="button" variant="outline" onClick={() => setPhotoSource(profilePhotoSource(draft.headshotUrl) ?? null)}>Re-edit photo</Button>}
-                    <Button type="button" variant="ghost" onClick={() => { setPhotoSource(null); setDraft({ ...draft, headshotUrl: null }) }}>Remove photo</Button>
+                    {draft.headshotUrl && <Button type="button" variant="ghost" onClick={() => { setPhotoSource(null); setDraft({ ...draft, headshotUrl: null }) }}>Remove photo</Button>}
                     <p className="text-xs text-muted-foreground">Your photo saves with your other changes.</p>
                   </div>
                   <p className="text-xs text-muted-foreground">
