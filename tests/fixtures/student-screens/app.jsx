@@ -11,6 +11,7 @@ import { InboxView } from '@/components/views/inbox-view'
 import { CalendarView } from '@/components/views/calendar-view'
 import { UnifiedStudentProfileView } from '@/components/views/unified-student-profile-view'
 import { personalRailSections } from '@/lib/navigation'
+import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { FixtureBoundary, fixtureClubs } from './state'
 
 function Screens() {
@@ -22,6 +23,8 @@ function Screens() {
     inbox: ['inbox', 'Inbox', <InboxView onNavigate={() => {}} />],
     calendar: ['calendar', 'Calendar', <CalendarView onNavigate={() => {}} />],
     profile: ['student-profile', 'Profile', <UnifiedStudentProfileView />],
+    // The Applications tab row on its own (the tracker's data reads aren't stubbed here).
+    tabs: ['applications', 'Applications', <UnderlineTabs label="Applications" value={new URLSearchParams(location.search).get('tab') || 'drafts'} onChange={() => {}} items={[{ id: 'drafts', label: 'Drafts', count: 2 }, { id: 'review', label: 'In review', count: 0 }, { id: 'interviews', label: 'Interviews', count: 0 }, { id: 'decisions', label: 'Decisions', count: 0 }]} />],
   }
   const [active, title, body] = screens[page] || screens.explore
   return <ProductShell sections={personalRailSections()} mode="explore" active={active} title={title} onSelect={() => {}} onNavigate={() => {}}>{body}</ProductShell>

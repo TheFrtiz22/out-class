@@ -1,6 +1,6 @@
 "use client"
 import Link from "next/link"
-import { useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from "react"
+import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 /**
@@ -27,6 +27,30 @@ export function UnderlineTabs<T extends string>({ label, items, value, onChange,
   const enabled = items.map((item, i) => item.disabled ? -1 : i).filter(i => i >= 0)
   const selectedIndex = items.findIndex(item => item.id === value)
   const stop = selectedIndex >= 0 && !items[selectedIndex]?.disabled ? selectedIndex : enabled[0] ?? 0
+  // A row that scrolls sideways fades on the side with more tabs, so a cut-off tab reads as "scroll for more";
+  // the selected tab is brought into view.
+  useEffect(() => {
+    const el = list.current
+    if (!el) return
+    const update = () => {
+      const start = el.scrollLeft > 1, end = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+      if (start || end) el.dataset.overflow = start && end ? "both" : start ? "start" : "end"
+      else delete el.dataset.overflow
+    }
+    // Scroll the row only (never the page) so the selected tab is fully visible.
+    const tab = el.querySelector<HTMLElement>('[role=tab][aria-selected="true"]')
+    if (tab) {
+      const box = el.getBoundingClientRect(), at = tab.getBoundingClientRect()
+      const left = at.left - box.left + el.scrollLeft, right = left + at.width
+      if (left < el.scrollLeft) el.scrollLeft = left
+      else if (right > el.scrollLeft + el.clientWidth) el.scrollLeft = right - el.clientWidth
+    }
+    update()
+    el.addEventListener("scroll", update, { passive: true })
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update)
+    observer?.observe(el)
+    return () => { el.removeEventListener("scroll", update); observer?.disconnect() }
+  }, [value, items.length])
   const onKeyDown = (event: KeyboardEvent<HTMLElement>, i: number) => {
     const at = enabled.indexOf(i)
     const target = event.key === "ArrowRight" ? enabled[(at + 1) % enabled.length]
